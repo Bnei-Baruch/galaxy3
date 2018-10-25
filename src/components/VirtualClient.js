@@ -394,11 +394,8 @@ class VirtualClient extends Component {
                     Janus.debug(list);
                     for(let f in list) {
                         let id = list[f]["id"];
-                        //let display = list[f]["display"];
                         let display = JSON.parse(list[f]["display"]);
-                        let audio = list[f]["audio_codec"];
-                        let video = list[f]["video_codec"];
-                        Janus.debug("  >> [" + id + "] " + display + " (audio: " + audio + ", video: " + video + ")");
+                        Janus.debug("  >> [" + id + "] " + display);
                         if(display.role === "user")
                             this.newRemoteFeed(id, false);
                     }

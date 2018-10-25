@@ -323,23 +323,21 @@ class ShidurClient extends Component {
                 // Any new feed to attach to?
                 if(msg["publishers"] !== undefined && msg["publishers"] !== null) {
                     let list = msg["publishers"];
+                    let feeds_list = list.filter(feeder => JSON.parse(feeder.display).role === "user");
                     Janus.debug("Got a list of available publishers/feeds:");
                     Janus.debug(list);
-                    for(let f in list) {
+                    for(let f in feeds_list) {
                         let id = list[f]["id"];
-                        let display = list[f]["display"];
+                        let display = JSON.parse(feeds_list[f]["display"]);
                         let talk = list[f]["talking"];
-                        let audio = list[f]["audio_codec"];
-                        let video = list[f]["video_codec"];
-                        Janus.debug("  >> [" + id + "] " + display + " (audio: " + audio + ", video: " + video + ")");
-                        if(display.match("user-"))
-                            this.newRemoteFeed(id, handle, talk);
+                        Janus.debug("  >> [" + id + "] " + display);
+                        this.newRemoteFeed(id, handle, talk);
                     }
                 }
             } else if(event === "talking") {
                 let {feeds} = this.state;
                 let id = msg["id"];
-                let room = msg["room"];
+                //let room = msg["room"];
                 Janus.log("User: "+id+" - start talking");
                 for(let i=1; i<MAX_FEEDS; i++) {
                     if(feeds[handle][i] !== null && feeds[handle][i] !== undefined && feeds[handle][i].rfid === id) {
@@ -350,7 +348,7 @@ class ShidurClient extends Component {
             } else if(event === "stopped-talking") {
                 let {feeds} = this.state;
                 let id = msg["id"];
-                let room = msg["room"];
+                //let room = msg["room"];
                 Janus.log("User: "+id+" - stop talking");
                 for(let i=1; i<MAX_FEEDS; i++) {
                     if(feeds[handle][i] !== null && feeds[handle][i] !== undefined && feeds[handle][i].rfid === id) {
@@ -369,13 +367,10 @@ class ShidurClient extends Component {
                     Janus.debug(list);
                     for(let f in list) {
                         let id = list[f]["id"];
-                        let talk = list[f]["talking"];
-                        let display = list[f]["display"];
-                        let audio = list[f]["audio_codec"];
-                        let video = list[f]["video_codec"];
-                        Janus.debug("  >> [" + id + "] " + display + " (audio: " + audio + ", video: " + video + ")");
-                        if(display.match("user-"))
-                            this.newRemoteFeed(id, handle, talk);
+                        let display = JSON.parse(list[f]["display"]);
+                        Janus.debug("  >> [" + id + "] " + display);
+                        if(display.role === "user")
+                            this.newRemoteFeed(id, handle, false);
                     }
                 } else if(msg["leaving"] !== undefined && msg["leaving"] !== null) {
                     // One of the publishers has gone away?
