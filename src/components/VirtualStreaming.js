@@ -26,7 +26,7 @@ class VirtualStreaming extends Component {
     componentDidMount() {
         if(this.state.room) {
             geoInfo('https://v4g.kbb1.com/geo.php?action=get', user => {
-                console.log(user);
+                Janus.log(user);
                 this.setState({user});
                 localStorage.setItem("extip", user.external_ip);
                 let server = "";
@@ -50,21 +50,21 @@ class VirtualStreaming extends Component {
            this.state.janus.destroy();
         if(!servers)
             return;
-        console.log(" -- Going to connect to: " + servers);
+        Janus.log(" -- Going to connect to: " + servers);
         let janus = new Janus({
             server: servers,
             iceServers: [{urls: "stun:jnsuk.kbb1.com:3478"}],
             success: () => {
-                console.log(" :: Connected to JANUS");
+                Janus.log(" :: Connected to JANUS");
                 this.initVideoStream();
                 this.initDataStream();
                 this.initAudioStream();
             },
             error: (error) => {
-                console.log(error);
+                Janus.log(error);
             },
             destroyed: () => {
-                console.log("kill");
+                Janus.log("kill");
             }
         });
         this.setState({janus});
@@ -76,23 +76,23 @@ class VirtualStreaming extends Component {
             plugin: "janus.plugin.streaming",
             opaqueId: "videostream-"+Janus.randomString(12),
             success: (videostream) => {
-                console.log(videostream);
+                Janus.log(videostream);
                 this.setState({videostream});
                 videostream.send({message: {request: "watch", id: videos}});
             },
             error: (error) => {
-                console.log("Error attaching plugin: " + error);
+                Janus.log("Error attaching plugin: " + error);
             },
             onmessage: (msg, jsep) => {
                 this.onStreamingMessage(this.state.videostream, msg, jsep, false);
             },
             onremotestream: (stream) => {
-                console.log("Got a remote stream!", stream);
+                Janus.log("Got a remote stream!", stream);
                 let video = this.refs.remoteVideo;
                 Janus.attachMediaStream(video, stream);
             },
             oncleanup: () => {
-                console.log("Got a cleanup notification");
+                Janus.log("Got a cleanup notification");
             }
         });
     };
@@ -103,23 +103,23 @@ class VirtualStreaming extends Component {
             plugin: "janus.plugin.streaming",
             opaqueId: "audiostream-"+Janus.randomString(12),
             success: (audiostream) => {
-                console.log(audiostream);
+                Janus.log(audiostream);
                 this.setState({audiostream});
                 audiostream.send({message: {request: "watch", id: audios}});
             },
             error: (error) => {
-                console.log("Error attaching plugin: " + error);
+                Janus.log("Error attaching plugin: " + error);
             },
             onmessage: (msg, jsep) => {
                 this.onStreamingMessage(this.state.audiostream, msg, jsep, false);
             },
             onremotestream: (stream) => {
-                console.log("Got a remote stream!", stream);
+                Janus.log("Got a remote stream!", stream);
                 let audio = this.refs.remoteAudio;
                 Janus.attachMediaStream(audio, stream);
             },
             oncleanup: () => {
-                console.log("Got a cleanup notification");
+                Janus.log("Got a cleanup notification");
             }
         });
     };
@@ -129,30 +129,30 @@ class VirtualStreaming extends Component {
             plugin: "janus.plugin.streaming",
             opaqueId: "datastream-"+Janus.randomString(12),
             success: (datastream) => {
-                console.log(datastream);
+                Janus.log(datastream);
                 this.setState({datastream});
                 let body = { request: "watch", id: 101 };
                 datastream.send({"message": body});
             },
             error: (error) => {
-                console.log("Error attaching plugin: " + error);
+                Janus.log("Error attaching plugin: " + error);
             },
             onmessage: (msg, jsep) => {
                 this.onStreamingMessage(this.state.datastream, msg, jsep, true);
             },
             ondataopen: () => {
-                console.log("The DataStreamChannel is available!");
+                Janus.log("The DataStreamChannel is available!");
             },
             ondata: (data) => {
                 let json = JSON.parse(data);
-                console.log("We got data from the DataStreamChannel! ", json);
+                Janus.log("We got data from the DataStreamChannel! ", json);
                 this.checkData(json);
             },
             onremotestream: (stream) => {
-                console.log("Got a remote stream!", stream);
+                Janus.log("Got a remote stream!", stream);
             },
             oncleanup: () => {
-                console.log("Got a cleanup notification");
+                Janus.log("Got a cleanup notification");
             }
         });
     };
@@ -163,18 +163,18 @@ class VirtualStreaming extends Component {
             plugin: "janus.plugin.streaming",
             opaqueId: "trlstream-"+Janus.randomString(12),
             success: (trlstream) => {
-                console.log(trlstream);
+                Janus.log(trlstream);
                 this.setState({trlstream});
                 trlstream.send({message: {request: "watch", id: streamId}});
             },
             error: (error) => {
-                console.log("Error attaching plugin: " + error);
+                Janus.log("Error attaching plugin: " + error);
             },
             onmessage: (msg, jsep) => {
                 this.onStreamingMessage(this.state.trlstream, msg, jsep, false);
             },
             onremotestream: (stream) => {
-                console.log("Got a remote stream!", stream);
+                Janus.log("Got a remote stream!", stream);
                 let audio = this.refs.trlAudio;
                 Janus.attachMediaStream(audio, stream);
                 this.state.trlstream.getVolume();
@@ -182,28 +182,28 @@ class VirtualStreaming extends Component {
                 this.setState({v});
             },
             oncleanup: () => {
-                console.log("Got a cleanup notification");
+                Janus.log("Got a cleanup notification");
             }
         });
     };
 
     onStreamingMessage = (handle, msg, jsep, initdata) => {
-        console.log("Got a message", msg);
+        Janus.log("Got a message", msg);
 
         if(jsep !== undefined && jsep !== null) {
-            console.log("Handling SDP as well...", jsep);
+            Janus.log("Handling SDP as well...", jsep);
 
             // Answer
             handle.createAnswer({
                 jsep: jsep,
                 media: { audioSend: false, videoSend: false, data: initdata },
                 success: function(jsep) {
-                    console.log("Got SDP!", jsep);
+                    Janus.log("Got SDP!", jsep);
                     let body = { request: "start" };
                     handle.send({message: body, jsep: jsep});
                 },
                 error: function(error) {
-                    console.log("WebRTC error: " + error);
+                    Janus.log("WebRTC error: " + error);
                 }
             });
         }
@@ -229,9 +229,9 @@ class VirtualStreaming extends Component {
             } else {
                 this.initTranslationStream(trllang[localStorage.getItem("langtext")] || 303);
             }
-            console.log("You now talking");
+            Janus.log("You now talking");
         } else {
-            console.log("Stop talking");
+            Janus.log("Stop talking");
             clearInterval(this.state.v);
             this.refs.remoteAudio.volume = this.state.mixvolume;
             let abody = { "request": "switch", "id": Number(localStorage.getItem("lang")) || 15};
@@ -250,7 +250,7 @@ class VirtualStreaming extends Component {
         } else if (audio.volume + 0.04 <= this.state.mixvolume) {
             audio.volume = audio.volume + 0.04;
         }
-        //console.log(":: Trl level: " + volume + " :: Current mixvolume: " + audio.volume)
+        //Janus.log(":: Trl level: " + volume + " :: Current mixvolume: " + audio.volume)
     };
 
     setVideo = (videos) => {

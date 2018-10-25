@@ -39,7 +39,7 @@ class SndmanClient extends Component {
             this.initVideoRoom();
         });
         setInterval(() => getState('state/galaxy/pr5', (program) => {
-            //console.log(" :: Get State: ", program);
+            //Janus.log(" :: Get State: ", program);
             if(JSON.stringify(program) !== JSON.stringify(this.state.program)) {
                 this.setState({program});
                 this.attachToPreview(program.room);
@@ -68,7 +68,7 @@ class SndmanClient extends Component {
                             cb.session = s;
                             vglist[cb.name] = cb;
                             this.setState({vglist});
-                            //console.log(" :: VGLIST: ", vglist[cb.name]);
+                            //Janus.log(" :: VGLIST: ", vglist[cb.name]);
                             //vglist.push(cb);
                         });
                     }
@@ -274,20 +274,20 @@ class SndmanClient extends Component {
         videoroom.send({"message": isrfwd,
             success: (data) => {
                 data_forward.isr = data["rtp_stream"]["data_stream_id"];
-                console.log(" :: ISR Data Forward: ", data);
+                Janus.log(" :: ISR Data Forward: ", data);
             },
         });
         videoroom.send({"message": eurfwd,
             success: (data) => {
                 data_forward.eur = data["rtp_stream"]["data_stream_id"];
-                console.log(" :: EUR Data Forward: ", data);
+                Janus.log(" :: EUR Data Forward: ", data);
                 this.setState({onoff_but: false});
             },
         });
         videoroom.send({"message": eukfwd,
             success: (data) => {
                 data_forward.euk = data["rtp_stream"]["data_stream_id"];
-                console.log(" :: EUK Data Forward: ", data);
+                Janus.log(" :: EUK Data Forward: ", data);
             },
         });
     };
@@ -428,14 +428,14 @@ class SndmanClient extends Component {
 
     startForward = () => {
         const {feeds, room, videoroom} = this.state;
-        console.log(" :: Start forward from room: ", room);
+        Janus.log(" :: Start forward from room: ", room);
         let port = 5630;
         feeds.forEach((feed,i) => {
             if (feed !== null && feed !== undefined) {
                 let forward = { "request": "rtp_forward","publisher_id":feed.rfid,"room":room,"secret":`${SECRET}`,"host":`${DANTE_IN_IP}`,"audio_port":port};
                 videoroom.send({"message": forward,
                     success: (data) => {
-                    console.log(":: Forward callback: ", data);
+                    Janus.log(":: Forward callback: ", data);
                         let streamid = data["rtp_stream"]["audio_stream_id"];
                         feeds[i].streamid = streamid;
                     },
@@ -448,13 +448,13 @@ class SndmanClient extends Component {
 
      stopForward = () => {
          const {feeds, room, videoroom} = this.state;
-         console.log(" :: Stop forward from room: ", room);
+         Janus.log(" :: Stop forward from room: ", room);
          feeds.forEach((feed,i) => {
              if (feed !== null && feed !== undefined) {
                  let stopfw = { "request":"stop_rtp_forward","stream_id":feed.streamid,"publisher_id":feed.rfid,"room":room,"secret":`${SECRET}` };
                  videoroom.send({"message": stopfw,
                      success: (data) => {
-                         console.log(":: Forward callback: ", data);
+                         Janus.log(":: Forward callback: ", data);
                          feeds[i].streamid = null;
                      },
                  });
@@ -468,7 +468,7 @@ class SndmanClient extends Component {
          let req = {"request":"listforwarders", "room":room, "secret":`${SECRET}`}
          videoroom.send ({"message": req,
              success: (data) => {
-                console.log(" :: List forwarders: ", data);
+                Janus.log(" :: List forwarders: ", data);
             }
          })
      };
@@ -476,7 +476,7 @@ class SndmanClient extends Component {
     sendMessage = (user, talk) => {
         let {videoroom,room} = this.state;
         var message = `{"talk":${talk},"name":"${user.display}","ip":"${user.ip}","col":4,"room":${room}}`;
-        console.log(":: Sending message: ",message);
+        Janus.log(":: Sending message: ",message);
         videoroom.data({ text: message })
     };
 
@@ -484,7 +484,7 @@ class SndmanClient extends Component {
         const {feeds, room, videoroom, forward} = this.state;
         // TODO: WE need solution for joining users to already forwarded room
         if(forward) {
-            console.log(" :: Stop forward from room: ", room);
+            Janus.log(" :: Stop forward from room: ", room);
             feeds.forEach((feed,i) => {
                 if (feed !== null && feed !== undefined) {
                     // FIXME: if we change sources on client based on room id (not ip) we send message only once
@@ -492,7 +492,7 @@ class SndmanClient extends Component {
                     let stopfw = { "request":"stop_rtp_forward","stream_id":feed.streamid,"publisher_id":feed.rfid,"room":room,"secret":`${SECRET}` };
                     videoroom.send({"message": stopfw,
                         success: (data) => {
-                            console.log(":: Forward callback: ", data);
+                            Janus.log(":: Forward callback: ", data);
                             feeds[i].streamid = null;
                         },
                     });
@@ -500,7 +500,7 @@ class SndmanClient extends Component {
             });
             this.setState({feeds, forward: false});
         } else {
-            console.log(" :: Start forward from room: ", room);
+            Janus.log(" :: Start forward from room: ", room);
             let port = 5630;
             feeds.forEach((feed,i) => {
                 if (feed !== null && feed !== undefined) {
@@ -508,7 +508,7 @@ class SndmanClient extends Component {
                     let forward = { "request": "rtp_forward","publisher_id":feed.rfid,"room":room,"secret":`${SECRET}`,"host":"10.66.23.104","audio_port":port};
                     videoroom.send({"message": forward,
                         success: (data) => {
-                            console.log(":: Forward callback: ", data);
+                            Janus.log(":: Forward callback: ", data);
                             let streamid = data["rtp_stream"]["audio_stream_id"];
                             feeds[i].streamid = streamid;
                         },
@@ -533,7 +533,7 @@ class SndmanClient extends Component {
         if (this.state.room === room)
             return;
         this.setState({onoff_but: true});
-        console.log(" :: Attaching to Preview: ", room);
+        Janus.log(" :: Attaching to Preview: ", room);
         feeds.forEach(feed => {
             if (feed !== null && feed !== undefined) {
                 this.sendMessage(feed.rfuser, false);
@@ -542,11 +542,11 @@ class SndmanClient extends Component {
                     let stopfw = { "request":"stop_rtp_forward","stream_id":feed.streamid,"publisher_id":feed.rfid,"room":this.state.room,"secret":`${SECRET}` };
                     videoroom.send({"message": stopfw,
                         success: (data) => {
-                            console.log(":: Forward callback: ", data);
+                            Janus.log(":: Forward callback: ", data);
                         },
                     });
                 }
-                console.log("-- :: Remove Feed: ",feed);
+                Janus.log("-- :: Remove Feed: ",feed);
                 feed.detach();
             }
         });
@@ -561,7 +561,7 @@ class SndmanClient extends Component {
 
 
   render() {
-      //console.log(" --- ::: RENDER ::: ---");
+      //Janus.log(" --- ::: RENDER ::: ---");
       const { name } = this.state.program;
       const { forward,onoff_but } = this.state;
       const width = "400";

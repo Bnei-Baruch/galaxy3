@@ -33,7 +33,7 @@ class SDIOutClient extends Component {
             this.initVideoRoom();
         });
         setInterval(() => getState('state/galaxy/pr5', (program) => {
-            //console.log(" :: Get State: ", program);
+            //Janus.log(" :: Get State: ", program);
             if(JSON.stringify(program) !== JSON.stringify(this.state.program)) {
                 this.setState({program});
                 this.attachToPreview(program.room);
@@ -378,10 +378,10 @@ class SDIOutClient extends Component {
         const {feeds} = this.state;
         if (this.state.room === room)
             return;
-        console.log(" :: Attaching to Preview: ", room);
+        Janus.log(" :: Attaching to Preview: ", room);
         feeds.forEach(feed => {
             if (feed !== null && feed !== undefined) {
-                console.log("-- :: Remove Feed: ",feed);
+                Janus.log("-- :: Remove Feed: ",feed);
                 feed.detach();
             }
         });
@@ -391,7 +391,7 @@ class SDIOutClient extends Component {
 
 
   render() {
-      //console.log(" --- ::: RENDER ::: ---");
+      //Janus.log(" --- ::: RENDER ::: ---");
       const { name } = this.state.program;
       const width = "400";
       const height = "300";

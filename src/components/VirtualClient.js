@@ -41,7 +41,7 @@ class VirtualClient extends Component {
         let {user} = this.state;
         checkNotification();
         geoInfo('https://v4g.kbb1.com/geo.php?action=get', data => {
-            console.log(data);
+            Janus.log(data);
             user.ip = data.external_ip;
         });
         initJanus(janus => {
@@ -65,11 +65,11 @@ class VirtualClient extends Component {
             let audio_devices = devices.filter(device => device.kind === "audioinput");
             let video_devices = devices.filter(device => device.kind === "videoinput");
             if (video_devices.length === 0) {
-                console.log(" :: No Video input device found!");
+                Janus.log(" :: No Video input device found!");
                 this.setState({audio_devices});
                 this.setAudioDevice(audio_devices[0].deviceId);
             } else if (audio_devices.length === 0) {
-                console.log(" :: No Audio input device found!");
+                Janus.log(" :: No Audio input device found!");
                 this.setState({video_devices});
                 this.setVideoDevice(video_devices[0].deviceId);
             } else {
@@ -85,7 +85,7 @@ class VirtualClient extends Component {
             this.setState({video_device});
             if(this.state.video_device !== "") {
                 checkDevices(this.state.audio_device,video_device,stream => {
-                    console.log(" :: Check Devices: ", stream);
+                    Janus.log(" :: Check Devices: ", stream);
                     let myvideo = this.refs.localVideo;
                     Janus.attachMediaStream(myvideo, stream);
                 })
@@ -98,7 +98,7 @@ class VirtualClient extends Component {
             this.setState({audio_device});
             if(this.state.audio_device !== "") {
                 checkDevices(audio_device,this.state.video_device,stream => {
-                    console.log(" :: Check Devices: ", stream);
+                    Janus.log(" :: Check Devices: ", stream);
                     let myvideo = this.refs.localVideo;
                     Janus.attachMediaStream(myvideo, stream);
                     if(this.state.audioContext) {
@@ -117,7 +117,7 @@ class VirtualClient extends Component {
         if (videoroom) {
             videoroom.send({message: {request: "list"},
                 success: (data) => {
-                    console.log(" :: Get Rooms List: ", data.list)
+                    Janus.log(" :: Get Rooms List: ", data.list)
                     data.list.sort((a, b) => {
                         // if (a.num_participants > b.num_participants) return -1;
                         // if (a.num_participants < b.num_participants) return 1;
@@ -171,7 +171,7 @@ class VirtualClient extends Component {
                 Janus.debug(" ::: Got a local stream :::");
                 let {videoroom} = this.state;
                 Janus.log(mystream);
-                // console.log(" -- GOT AUDIO TRACK: ", mystream.getAudioTracks()[0])
+                // Janus.log(" -- GOT AUDIO TRACK: ", mystream.getAudioTracks()[0])
                 // mystream.getAudioTracks()[0].enabled = false;
                 videoroom.muteAudio();
                 this.setState({mystream});
@@ -346,7 +346,7 @@ class VirtualClient extends Component {
                 if(msg["publishers"] !== undefined && msg["publishers"] !== null) {
                     let list = msg["publishers"];
                     let feeds_list = list.filter(feeder => JSON.parse(feeder.display).role === "user");
-                    console.log(":: Got Pulbishers list: ", feeds_list);
+                    Janus.log(":: Got Pulbishers list: ", feeds_list);
                     if(feeds_list.length > 11) {
                         alert("Max users in this room is reached");
                         window.location.reload();
@@ -473,7 +473,7 @@ class VirtualClient extends Component {
     exitRoom = () => {
         let {videoroom, room} = this.state;
         let leave = {request : "leave"};
-        console.log(room);
+        Janus.log(room);
         videoroom.send({"message": leave});
         this.setState({muted: false, mystream: null, room: "", selected_room: "", i: "", feeds: []});
         this.initVideoRoom();
@@ -489,7 +489,7 @@ class VirtualClient extends Component {
     };
 
     registerUsername = (i) => {
-        console.log(i);
+        Janus.log(i);
         let {videoroom, rooms, user} = this.state;
         let room = rooms[i].room;
         let name = rooms[i].description;
@@ -531,7 +531,7 @@ class VirtualClient extends Component {
 
 
   render() {
-      //console.log(" --- ::: RENDER ::: ---");
+      //Janus.log(" --- ::: RENDER ::: ---");
       const { rooms,room,audio_devices,video_devices,video_device,audio_device,i,muted,cammuted,mystream,selected_room,count} = this.state;
       const width = "134";
       const height = "100";

@@ -37,7 +37,7 @@ class AdminClient extends Component {
             this.setState({janus});
             this.initVideoRoom();
             initChatRoom(janus, null, chatroom => {
-                console.log(":: Got Chat Handle: ",chatroom);
+                Janus.log(":: Got Chat Handle: ",chatroom);
                 this.setState({chatroom});
             }, data => {
                 this.onData(data);
@@ -61,7 +61,7 @@ class AdminClient extends Component {
         if (videoroom) {
             videoroom.send({message: {request: "list"},
                 success: (data) => {
-                    //console.log(" :: Get Rooms List: ", data.list)
+                    //Janus.log(" :: Get Rooms List: ", data.list)
                     data.list.sort((a, b) => {
                         // if (a.num_participants > b.num_participants) return -1;
                         // if (a.num_participants < b.num_participants) return 1;
@@ -80,7 +80,7 @@ class AdminClient extends Component {
         let req = {"request":"listforwarders", "room":room, "secret":`${SECRET}`}
         videoroom.send ({"message": req,
             success: (data) => {
-                console.log(" :: List forwarders: ", data);
+                Janus.log(" :: List forwarders: ", data);
             }
         })
     };
@@ -316,7 +316,7 @@ class AdminClient extends Component {
     };
 
     onData = (data) => {
-        console.log(":: We got message from Data Channel: ",data);
+        Janus.log(":: We got message from Data Channel: ",data);
         var json = JSON.parse(data);
         // var transaction = json["transaction"];
         // if (transactions[transaction]) {
@@ -336,14 +336,14 @@ class AdminClient extends Component {
             var whisper = json["whisper"];
             if (whisper === true) {
                 // Private message
-                console.log("-:: It's private message: "+dateString+" : from: "+from+" : "+msg)
+                Janus.log("-:: It's private message: "+dateString+" : from: "+from+" : "+msg)
             } else {
                 // Public message
                 let {messages} = this.state;
                 //let message = dateString+" : "+from+" : "+msg;
                 let message = JSON.parse(msg);
                 message.time = dateString;
-                console.log("-:: It's public message: "+message);
+                Janus.log("-:: It's public message: "+message);
                 messages.push(message);
                 this.setState({messages});
                 if(this.state.visible)
@@ -353,18 +353,18 @@ class AdminClient extends Component {
             // Somebody joined
             var username = json["username"];
             var display = json["display"];
-            console.log("-:: Somebody joined - username: "+username+" : display: "+display)
+            Janus.log("-:: Somebody joined - username: "+username+" : display: "+display)
         } else if (what === "leave") {
             // Somebody left
             var username = json["username"];
             var when = new Date();
-            console.log("-:: Somebody left - username: "+username+" : Time: "+getDateString())
+            Janus.log("-:: Somebody left - username: "+username+" : Time: "+getDateString())
         } else if (what === "kicked") {
             // Somebody was kicked
             // var username = json["username"];
         } else if (what === "destroyed") {
             let room = json["room"];
-            console.log("The room: "+room+" has been destroyed")
+            Janus.log("The room: "+room+" has been destroyed")
         }
     };
 
@@ -386,7 +386,7 @@ class AdminClient extends Component {
             text: JSON.stringify(message),
             error: (reason) => { alert(reason); },
             success: () => {
-                console.log(":: Message sent ::");
+                Janus.log(":: Message sent ::");
                 this.setState({input_value: ""});
             }
         });
@@ -538,10 +538,10 @@ class AdminClient extends Component {
         let room = rooms[i].room;
         if (this.state.current_room === room)
             return;
-        console.log(" :: Attaching to Preview: ", room);
+        Janus.log(" :: Attaching to Preview: ", room);
         feeds.forEach(feed => {
             if (feed !== null && feed !== undefined) {
-                console.log("-- :: Remove Feed: ",feed);
+                Janus.log("-- :: Remove Feed: ",feed);
                 feed.detach();
             }
         });
@@ -554,7 +554,7 @@ class AdminClient extends Component {
 
         joinChatRoom(chatroom,room,user)
         // initChatRoom(this.state.janus, room, chatroom => {
-        //     console.log(":: Got Chat Handle: ",chatroom);
+        //     Janus.log(":: Got Chat Handle: ",chatroom);
         //     this.setState({chatroom});
         // }, data => {
         //     this.onData(data);
@@ -566,15 +566,15 @@ class AdminClient extends Component {
         //let room = this.state.current_room;
         let videoreq = {request : "leave", "room": room};
         let chatreq = {textroom : "leave", transaction: Janus.randomString(12),"room": room};
-        console.log(room);
+        Janus.log(room);
         videoroom.send({"message": videoreq,
             success: () => {
-                console.log(":: Video room leave callback: ");
+                Janus.log(":: Video room leave callback: ");
                 //this.getRoomList();
             }});
         chatroom.data({text: JSON.stringify(chatreq),
             success: () => {
-                console.log(":: Text room leave callback: ");
+                Janus.log(":: Text room leave callback: ");
                 //this.getRoomList();
             }
         });
@@ -606,10 +606,10 @@ class AdminClient extends Component {
         };
         chatroom.data({text: JSON.stringify(req),
             success: () => {
-                console.log(":: Successfuly created room: ",id);
+                Janus.log(":: Successfuly created room: ",id);
             },
             error: (reason) => {
-                console.log(reason);
+                Janus.log(reason);
             }
         });
     };
@@ -625,10 +625,10 @@ class AdminClient extends Component {
         };
         chatroom.data({text: JSON.stringify(req),
             success: () => {
-                console.log(":: Successfuly removed room: ", id);
+                Janus.log(":: Successfuly removed room: ", id);
             },
             error: (reason) => {
-                console.log(reason);
+                Janus.log(reason);
             }
         });
     };
@@ -653,10 +653,10 @@ class AdminClient extends Component {
             is_private: false,
             permanent: true,
         };
-        console.log(description);
+        Janus.log(description);
         videoroom.send({"message": janus_room,
             success: (data) => {
-                console.log(":: Create callback: ", data);
+                Janus.log(":: Create callback: ", data);
                 this.getRoomList();
                 alert("Room: "+description+" created!")
                 this.createChatRoom(roomid,description);
@@ -675,7 +675,7 @@ class AdminClient extends Component {
         };
         videoroom.send({"message": janus_room,
             success: (data) => {
-                console.log(":: Remove callback: ", data);
+                Janus.log(":: Remove callback: ", data);
                 this.getRoomList();
                 alert("Room ID: "+roomid+" removed!");
                 this.removeChatRoom(roomid);
@@ -686,7 +686,7 @@ class AdminClient extends Component {
     disableRoom = (e, data, i) => {
         e.preventDefault();
         if (e.type === 'contextmenu') {
-            console.log(data)
+            Janus.log(data)
             // let {disabled_rooms} = this.state;
             // disabled_rooms.push(data);
             // this.setState({disabled_rooms});
@@ -699,7 +699,7 @@ class AdminClient extends Component {
 
 
   render() {
-      //console.log(" --- ::: RENDER ::: ---");
+      //Janus.log(" --- ::: RENDER ::: ---");
       const { rooms,current_room,devices,description,feeds,i,roomid,messages } = this.state;
       const width = "134";
       const height = "100";

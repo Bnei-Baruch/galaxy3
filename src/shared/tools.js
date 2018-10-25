@@ -65,7 +65,7 @@ export const joinChatRoom = (textroom, roomid, user) => {
     //     $('#chatroom').css('height', ($(window).height()-420)+"px");
     //     $('#datasend').removeAttr('disabled');
     //     // Any participants already in?
-    //     console.log("Participants:", response.participants);
+    //     Janus.log("Participants:", response.participants);
     //     if(response.participants && response.participants.length > 0) {
     //         for(var i in response.participants) {
     //             var p = response.participants[i];
@@ -232,7 +232,7 @@ export const micLevel = (stream, canvas, cb) => {
 
         var average = values / length;
 
-//          console.log(Math.round(average - 40));
+//          Janus.log(Math.round(average - 40));
 
         canvasContext.clearRect(0, 0, 15, 35);
         canvasContext.fillStyle = gradient;
@@ -270,13 +270,13 @@ export const checkDevices = (audioid,videoid,cb) => {
                 case 'SecurityError':
                     message = 'Permission denied!';
                     break;
-                default: console.log('Permission devices usage is Rejected! You must grant it.', e);
+                default: Janus.log('Permission devices usage is Rejected! You must grant it.', e);
                     return;
             }
-            console.log(message);
+            Janus.log(message);
         });
     // } else {
-    //     console.log('Uncompatible browser!');
+    //     Janus.log('Uncompatible browser!');
     // }
 };
 
@@ -284,7 +284,7 @@ export const getDevices = (cb) => {
     navigator.mediaDevices.enumerateDevices().then(devices => {
         cb(devices);
         if (devices.length === 0)
-            console.log(":: We did not found any input device");
+            Janus.log(":: We did not found any input device");
     });
 };
 
@@ -297,7 +297,7 @@ export const getState = (path, cb) => fetch(`${WFRP_STATE}/${path}`)
             cb(data);
         }
     })
-    .catch(ex => console.log(`get ${path}`, ex));
+    .catch(ex => Janus.log(`get ${path}`, ex));
 
 export const putData = (path, data, cb) => fetch(`${WFDB_STATE}/${path}`, {
     method: 'PUT',
@@ -309,7 +309,7 @@ export const putData = (path, data, cb) => fetch(`${WFDB_STATE}/${path}`, {
             return response.json().then(respond => cb(respond));
         }
     })
-    .catch(ex => console.log("Put Data error:", ex));
+    .catch(ex => Janus.log("Put Data error:", ex));
 
 export const getData = (url, request, cb) => fetch(`${url}`,{
         method: 'POST',
@@ -320,7 +320,7 @@ export const getData = (url, request, cb) => fetch(`${url}`,{
             return response.json().then(data => cb(data));
         }
     })
-    .catch(ex => console.log(`get ${url}`, ex));
+    .catch(ex => Janus.log(`get ${url}`, ex));
 
 export const geoInfo = (url,cb) => fetch(`${url}`)
     .then((response) => {
@@ -328,7 +328,7 @@ export const geoInfo = (url,cb) => fetch(`${url}`)
         return response.json().then(data => cb(data));
     }
 })
-    .catch(ex => console.log(`get geoInfo`, ex));
+    .catch(ex => Janus.log(`get geoInfo`, ex));
 
 export const getSessions = (cb) => {
     let request = { "janus": "list_sessions", "transaction": Janus.randomString(12), "admin_secret": ADMIN_SECRET };
@@ -379,19 +379,19 @@ export const getHandleInfo = (session, handle,cb) => {
 //         data: JSON.stringify(request),
 //         success: function(json) {
 //             if(json["janus"] !== "success") {
-//                 console.log("Ooops: " + json["error"].code + " " + json["error"].reason);       // FIXME
+//                 Janus.log("Ooops: " + json["error"].code + " " + json["error"].reason);       // FIXME
 //                 if(refresh !== true)
 //                     bootbox.alert(json["error"].reason);
 //                 return;
 //             }
-//             console.log("Got info:");
-//             console.log(json);
+//             Janus.log("Got info:");
+//             Janus.log(json);
 //             sgroups[port].handleInfo = json["info"];
 //             sgroups[port].extip = sgroups[port].handleInfo.streams["0"].components["0"]["selected-pair"].split(" ")[3].split(":")[0];
 //             sendStart(port,true);
 //         },
 //         error: function(XMLHttpRequest, textStatus, errorThrown) {
-//             console.log(textStatus + ": " + errorThrown);   // FIXME
+//             Janus.log(textStatus + ": " + errorThrown);   // FIXME
 //             bootbox.alert("Couldn't contact the backend: is Janus down, or is the Admin/Monitor interface disabled?");
 //             $('#update-handle').click(updateHandleInfo);
 //         },

@@ -48,7 +48,7 @@ class ShidurClient extends Component {
             this.setState({janus,user});
             this.initVideoRoom(null, "preview");
             getState('state/galaxy/pr5', (pgm_state) => {
-                console.log(" :: Get State: ", pgm_state);
+                Janus.log(" :: Get State: ", pgm_state);
                 this.setState({program_room: pgm_state.room, program_name: pgm_state.name, pgm_state});
                 this.initVideoRoom(pgm_state.room, "program");
             });
@@ -66,7 +66,7 @@ class ShidurClient extends Component {
         if (preview) {
             preview.send({message: {request: "list"},
                 success: (data) => {
-                    //console.log(" :: Get Rooms List: ", data.list)
+                    //Janus.log(" :: Get Rooms List: ", data.list)
                     data.list.forEach((room, i) => {
                         if (program_room === room.room || preview_room === room.room) {
                             data.list[i].num_participants = room.num_participants - 1;
@@ -458,7 +458,7 @@ class ShidurClient extends Component {
 
     attachToPreview = (group, index) => {
         const {feeds} = this.state;
-        console.log(" :: Attaching to Preview: ",group);
+        Janus.log(" :: Attaching to Preview: ",group);
         let room = group.room;
         let name = group.description;
         if(this.state.preview_room === room)
@@ -494,9 +494,9 @@ class ShidurClient extends Component {
         // Save Program State
         let pgm_state = { index: 0, room: preview_room, name: preview_name};
         this.setState({pgm_state});
-        console.log(" :: Attaching to Program: ",preview_name,pgm_state);
+        Janus.log(" :: Attaching to Program: ",preview_name,pgm_state);
         putData(`state/galaxy/pr5`, pgm_state, (cb) => {
-            console.log(":: Save to state: ",cb);
+            Janus.log(":: Save to state: ",cb);
         });
 
         // Select next group
@@ -507,7 +507,7 @@ class ShidurClient extends Component {
     selectGroup = (group, i) => {
         group.index = i;
         this.setState({group});
-        console.log(group);
+        Janus.log(group);
         this.attachToPreview(group);
     };
 
@@ -537,7 +537,7 @@ class ShidurClient extends Component {
 
 
   render() {
-      //console.log(" --- ::: RENDER ::: ---");
+      //Janus.log(" --- ::: RENDER ::: ---");
       const { feeds,preview_room,preview_name,program_name,disabled_rooms,rooms,group,pgm_state } = this.state;
       const width = "400";
       const height = "300";

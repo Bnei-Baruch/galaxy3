@@ -22,19 +22,19 @@ class ChatClient extends Component {
     };
 
     componentDidUpdate(prevProps) {
-        //console.log(" -- componentDidUpdate -- ",prevProps)
+        //Janus.log(" -- componentDidUpdate -- ",prevProps)
         if (prevProps.janus !== this.state.janus) {
             this.setState({janus: prevProps.janus})
-            console.log(" -- Janus was updated");
+            Janus.log(" -- Janus was updated");
             initChatRoom(prevProps.janus, null, chatroom => {
-                console.log(":: Got Chat Handle: ", chatroom);
+                Janus.log(":: Got Chat Handle: ", chatroom);
                 this.setState({chatroom});
             }, data => {
                 this.onData(data);
             });
         }
         if (prevProps.room !== this.state.room) {
-            console.log(" -- Room was updated");
+            Janus.log(" -- Room was updated");
             let {user,chatroom,room} = this.state;
             if(prevProps.room === "") {
                 this.exitRoom(room);
@@ -55,14 +55,14 @@ class ChatClient extends Component {
         let chatreq = {textroom : "leave", transaction: Janus.randomString(12),"room": room};
         chatroom.data({text: JSON.stringify(chatreq),
             success: () => {
-                console.log(":: Text room leave callback: ");
+                Janus.log(":: Text room leave callback: ");
                 this.setState({messages:[]});
             }
         });
     };
 
     onData = (data) => {
-        console.log(":: We got message from Data Channel: ",data);
+        Janus.log(":: We got message from Data Channel: ",data);
         var json = JSON.parse(data);
         // var transaction = json["transaction"];
         // if (transactions[transaction]) {
@@ -82,14 +82,14 @@ class ChatClient extends Component {
             var whisper = json["whisper"];
             if (whisper === true) {
                 // Private message
-                console.log("-:: It's private message: "+dateString+" : "+from+" : "+msg)
+                Janus.log("-:: It's private message: "+dateString+" : "+from+" : "+msg)
             } else {
                 // Public message
                 let {messages} = this.state;
                 //let message = dateString+" : "+from+" : "+msg;
                 let message = JSON.parse(msg);
                 message.time = dateString;
-                console.log("-:: It's public message: "+message);
+                Janus.log("-:: It's public message: "+message);
                 messages.push(message);
                 this.setState({messages});
                 if(this.props.visible) {
@@ -102,18 +102,18 @@ class ChatClient extends Component {
             // Somebody joined
             var username = json["username"];
             var display = json["display"];
-            console.log("-:: Somebody joined - username: "+username+" : display: "+display)
+            Janus.log("-:: Somebody joined - username: "+username+" : display: "+display)
         } else if (what === "leave") {
             // Somebody left
             var username = json["username"];
             var when = new Date();
-            console.log("-:: Somebody left - username: "+username+" : Time: "+getDateString())
+            Janus.log("-:: Somebody left - username: "+username+" : Time: "+getDateString())
         } else if (what === "kicked") {
             // Somebody was kicked
             // var username = json["username"];
         } else if (what === "destroyed") {
             let room = json["room"];
-            console.log("The room: "+room+" has been destroyed")
+            Janus.log("The room: "+room+" has been destroyed")
         }
     };
 
@@ -135,7 +135,7 @@ class ChatClient extends Component {
             text: JSON.stringify(message),
             error: (reason) => { alert(reason); },
             success: () => {
-                console.log(":: Message sent ::");
+                Janus.log(":: Message sent ::");
                 this.setState({input_value: ""});
             }
         });
