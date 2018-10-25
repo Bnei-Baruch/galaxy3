@@ -1,11 +1,28 @@
 
 export const MAX_FEEDS = 20;
+export const DATA_PORT = 5102;
+export const DANTE_IN_IP = process.env.REACT_APP_DANTE_IN_IP;
+export const WFRP_STATE = process.env.REACT_APP_WFRP_STATE;
+export const WFDB_STATE = process.env.REACT_APP_WFDB_STATE;
+export const JANUS_SERVER = process.env.REACT_APP_JANUS_SERVER;
+export const JANUS_ADMIN = process.env.REACT_APP_JANUS_ADMIN;
+export const STUN_SERVER = process.env.REACT_APP_STUN_SERVER;
+export const ADMIN_SECRET = process.env.REACT_APP_ADMIN_SECRET;
+export const SECRET = process.env.REACT_APP_SECRET;
+export const JANUS_SRV_ISRPT = process.env.REACT_APP_JANUS_SRV_ISRPT;
+export const JANUS_SRV_EURND = process.env.REACT_APP_JANUS_SRV_EURND;
+export const JANUS_SRV_EURUK = process.env.REACT_APP_JANUS_SRV_EURUK;
+export const JANUS_SRV_ISRLC = process.env.REACT_APP_JANUS_SRV_ISRLC;
+export const JANUS_IP_ISRPT = process.env.REACT_APP_JANUS_IP_ISRPT;
+export const JANUS_IP_EURND = process.env.REACT_APP_JANUS_IP_EURND;
+export const JANUS_IP_EURUK = process.env.REACT_APP_JANUS_IP_EURUK;
+
 
 export const servers_options = [
-    { key: 1, text: 'Israel (PT)', value: 'https://v4g.kbb1.com/janustrl' },
-    { key: 2, text: 'Europe (ND)', value: 'https://jnseur.kbb1.com/janustrl' },
-    { key: 3, text: 'Europe (UK)', value: 'https://jnsuk.kbb1.com/janustrl' },
-    { key: 4, text: 'Merkaz (PT)', value: 'https://v4g.kbb1.com/januslcl' },
+    { key: 1, text: 'Israel (PT)', value: `${JANUS_SRV_ISRPT}` },
+    { key: 2, text: 'Europe (ND)', value: `${JANUS_SRV_EURND}` },
+    { key: 3, text: 'Europe (UK)', value: `${JANUS_SRV_EURUK}` },
+    { key: 4, text: 'Merkaz (PT)', value: `${JANUS_SRV_ISRLC}` },
 ];
 
 export const videos_options = [
@@ -94,6 +111,7 @@ export const audiog_options = [
 ];
 
 export const gxycol = [0, 201, 203, 202, 204];
+
 export const trllang = {
         "Hebrew": 301,
         "Russian": 302,

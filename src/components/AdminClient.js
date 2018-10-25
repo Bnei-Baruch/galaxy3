@@ -3,7 +3,7 @@ import { Janus } from "../lib/janus";
 import {Segment, Menu, Select, Button, Input, Table, Grid, Message,Sidebar} from "semantic-ui-react";
 import {initJanus,initChatRoom,getDateString,joinChatRoom} from "../shared/tools";
 import './VideoConteiner.scss'
-import {MAX_FEEDS} from "../shared/consts";
+import {MAX_FEEDS, SECRET} from "../shared/consts";
 //import Volume from "./Slider";
 
 class AdminClient extends Component {
@@ -77,7 +77,7 @@ class AdminClient extends Component {
 
     listForward = (room) => {
         const {videoroom} = this.state;
-        let req = {"request":"listforwarders", "room":room, "secret":"adminpwd"}
+        let req = {"request":"listforwarders", "room":room, "secret":`${SECRET}`}
         videoroom.send ({"message": req,
             success: (data) => {
                 console.log(" :: List forwarders: ", data);
@@ -599,7 +599,7 @@ class AdminClient extends Component {
             textroom : "create",
             room : id,
             transaction: Janus.randomString(12),
-            secret: "adminpwd",
+            secret: `${SECRET}`,
             description : description,
             is_private : false,
             permanent : true
@@ -620,7 +620,7 @@ class AdminClient extends Component {
             textroom: "destroy",
             room: id,
             transaction: Janus.randomString(12),
-            secret: "adminpwd",
+            secret: `${SECRET}`,
             permanent: true,
         };
         chatroom.data({text: JSON.stringify(req),
@@ -640,7 +640,7 @@ class AdminClient extends Component {
             request : "create",
             room: roomid,
             description: description,
-            secret: "adminpwd",
+            secret: `${SECRET}`,
             publishers: 20,
             bitrate: 150000,
             fir_freq: 10,
@@ -670,7 +670,7 @@ class AdminClient extends Component {
         let janus_room = {
             request: "destroy",
             room: roomid,
-            secret: "adminpwd",
+            secret: `${SECRET}`,
             permanent: true,
         };
         videoroom.send({"message": janus_room,

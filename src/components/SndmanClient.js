@@ -4,7 +4,7 @@ import {Button, Segment} from "semantic-ui-react";
 import {getState, initJanus, getSessions, getHandles, getHandleInfo} from "../shared/tools";
 import './SDIOutClient.css';
 import './VideoConteiner.scss'
-import {MAX_FEEDS} from "../shared/consts";
+import {DATA_PORT, JANUS_IP_EURND, JANUS_IP_EURUK, JANUS_IP_ISRPT, MAX_FEEDS, DANTE_IN_IP, SECRET} from "../shared/consts";
 
 class SndmanClient extends Component {
 
@@ -264,13 +264,13 @@ class SndmanClient extends Component {
 
     forwardOwnFeed = (room) => {
         let {myid,videoroom,data_forward} = this.state;
-        let isrip = "146.185.60.44";
-        let eurip = "163.172.67.149";
-        let ukip = "46.28.55.209";
-        let dport = 5102;
-        let isrfwd = { "request": "rtp_forward","publisher_id":myid,"room":room,"secret":"adminpwd","host":isrip,"data_port":dport};
-        let eurfwd = { "request": "rtp_forward","publisher_id":myid,"room":room,"secret":"adminpwd","host":eurip,"data_port":dport};
-        let eukfwd = { "request": "rtp_forward","publisher_id":myid,"room":room,"secret":"adminpwd","host":ukip,"data_port":dport};
+        let isrip = `${JANUS_IP_ISRPT}`;
+        let eurip = `${JANUS_IP_EURND}`;
+        let ukip = `${JANUS_IP_EURUK}`;
+        let dport = DATA_PORT;
+        let isrfwd = { "request": "rtp_forward","publisher_id":myid,"room":room,"secret":`${SECRET}`,"host":isrip,"data_port":dport};
+        let eurfwd = { "request": "rtp_forward","publisher_id":myid,"room":room,"secret":`${SECRET}`,"host":eurip,"data_port":dport};
+        let eukfwd = { "request": "rtp_forward","publisher_id":myid,"room":room,"secret":`${SECRET}`,"host":ukip,"data_port":dport};
         videoroom.send({"message": isrfwd,
             success: (data) => {
                 data_forward.isr = data["rtp_stream"]["data_stream_id"];
@@ -432,7 +432,7 @@ class SndmanClient extends Component {
         let port = 5630;
         feeds.forEach((feed,i) => {
             if (feed !== null && feed !== undefined) {
-                let forward = { "request": "rtp_forward","publisher_id":feed.rfid,"room":room,"secret":"adminpwd","host":"10.66.23.104","audio_port":port};
+                let forward = { "request": "rtp_forward","publisher_id":feed.rfid,"room":room,"secret":`${SECRET}`,"host":`${DANTE_IN_IP}`,"audio_port":port};
                 videoroom.send({"message": forward,
                     success: (data) => {
                     console.log(":: Forward callback: ", data);
@@ -451,7 +451,7 @@ class SndmanClient extends Component {
          console.log(" :: Stop forward from room: ", room);
          feeds.forEach((feed,i) => {
              if (feed !== null && feed !== undefined) {
-                 let stopfw = { "request":"stop_rtp_forward","stream_id":feed.streamid,"publisher_id":feed.rfid,"room":room,"secret":"adminpwd" };
+                 let stopfw = { "request":"stop_rtp_forward","stream_id":feed.streamid,"publisher_id":feed.rfid,"room":room,"secret":`${SECRET}` };
                  videoroom.send({"message": stopfw,
                      success: (data) => {
                          console.log(":: Forward callback: ", data);
@@ -465,7 +465,7 @@ class SndmanClient extends Component {
 
      listForward = (room) => {
          const {videoroom} = this.state;
-         let req = {"request":"listforwarders", "room":room, "secret":"adminpwd"}
+         let req = {"request":"listforwarders", "room":room, "secret":`${SECRET}`}
          videoroom.send ({"message": req,
              success: (data) => {
                 console.log(" :: List forwarders: ", data);
@@ -489,7 +489,7 @@ class SndmanClient extends Component {
                 if (feed !== null && feed !== undefined) {
                     // FIXME: if we change sources on client based on room id (not ip) we send message only once
                     this.sendMessage(feed.rfuser, false);
-                    let stopfw = { "request":"stop_rtp_forward","stream_id":feed.streamid,"publisher_id":feed.rfid,"room":room,"secret":"adminpwd" };
+                    let stopfw = { "request":"stop_rtp_forward","stream_id":feed.streamid,"publisher_id":feed.rfid,"room":room,"secret":`${SECRET}` };
                     videoroom.send({"message": stopfw,
                         success: (data) => {
                             console.log(":: Forward callback: ", data);
@@ -505,7 +505,7 @@ class SndmanClient extends Component {
             feeds.forEach((feed,i) => {
                 if (feed !== null && feed !== undefined) {
                     this.sendMessage(feed.rfuser, true);
-                    let forward = { "request": "rtp_forward","publisher_id":feed.rfid,"room":room,"secret":"adminpwd","host":"10.66.23.104","audio_port":port};
+                    let forward = { "request": "rtp_forward","publisher_id":feed.rfid,"room":room,"secret":`${SECRET}`,"host":"10.66.23.104","audio_port":port};
                     videoroom.send({"message": forward,
                         success: (data) => {
                             console.log(":: Forward callback: ", data);
@@ -539,7 +539,7 @@ class SndmanClient extends Component {
                 this.sendMessage(feed.rfuser, false);
                 if(feed.streamid) {
                     this.setState({forward: false});
-                    let stopfw = { "request":"stop_rtp_forward","stream_id":feed.streamid,"publisher_id":feed.rfid,"room":this.state.room,"secret":"adminpwd" };
+                    let stopfw = { "request":"stop_rtp_forward","stream_id":feed.streamid,"publisher_id":feed.rfid,"room":this.state.room,"secret":`${SECRET}` };
                     videoroom.send({"message": stopfw,
                         success: (data) => {
                             console.log(":: Forward callback: ", data);

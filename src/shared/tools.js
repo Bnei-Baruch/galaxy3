@@ -1,11 +1,5 @@
-import { Janus } from "../lib/janus";
-
-const WFRP_STATE = process.env.REACT_APP_WFRP_STATE;
-const WFDB_STATE = process.env.REACT_APP_WFDB_STATE;
-const JANUS_SERVER = process.env.REACT_APP_JANUS_SERVER;
-const JANUS_ADMIN = process.env.REACT_APP_JANUS_ADMIN;
-const STUN_SERVER = process.env.REACT_APP_STUN_SERVER;
-const SECRET = process.env.REACT_APP_SECRET;
+import {Janus} from "../lib/janus";
+import {JANUS_ADMIN, JANUS_SERVER, ADMIN_SECRET, STUN_SERVER, WFDB_STATE, WFRP_STATE} from "./consts";
 
 
 export const initJanus = (cb) => {
@@ -337,7 +331,7 @@ export const geoInfo = (url,cb) => fetch(`${url}`)
     .catch(ex => console.log(`get geoInfo`, ex));
 
 export const getSessions = (cb) => {
-    let request = { "janus": "list_sessions", "transaction": Janus.randomString(12), "admin_secret": SECRET };
+    let request = { "janus": "list_sessions", "transaction": Janus.randomString(12), "admin_secret": ADMIN_SECRET };
     getData(JANUS_ADMIN,request,(json) => {
         let sessions = json["sessions"];
         cb(sessions);
@@ -347,7 +341,7 @@ export const getSessions = (cb) => {
 export const getHandles = (session,cb) => {
     if(session === null || session === undefined)
         return;
-    let request = { "janus": "list_handles", "transaction": Janus.randomString(12), "admin_secret": SECRET };
+    let request = { "janus": "list_handles", "transaction": Janus.randomString(12), "admin_secret": ADMIN_SECRET };
     getData(`${JANUS_ADMIN}/${session}`,request,(json) => {
         let handles = json["handles"];
         cb(handles);
@@ -357,7 +351,7 @@ export const getHandles = (session,cb) => {
 export const getHandleInfo = (session, handle,cb) => {
     if(handle === null || handle === undefined)
         return;
-    let request = { "janus": "handle_info", "transaction": Janus.randomString(12), "admin_secret": SECRET };
+    let request = { "janus": "handle_info", "transaction": Janus.randomString(12), "admin_secret": ADMIN_SECRET };
     getData(`${JANUS_ADMIN}/${session}/${handle}`,request,(json) => {
         let handleInfo = json["info"];
         if(handleInfo.opaque_id === "videoroom_user" && handleInfo["plugin_specific"]["type"] === "publisher") {
