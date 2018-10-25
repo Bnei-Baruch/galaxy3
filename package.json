@@ -1,0 +1,33 @@
+{
+  "name": "galaxy3",
+  "version": "0.1.0",
+  "private": true,
+  "homepage": ".",
+  "dependencies": {
+    "node-sass": "^4.9.4",
+    "react": "^16.5.2",
+    "react-dom": "^16.5.2",
+    "react-new-window": "^0.0.9",
+    "react-rangeslider": "^2.2.0",
+    "react-scripts": "2.0.4",
+    "semantic-ui-css": "^2.4.0",
+    "semantic-ui-react": "^0.82.5",
+    "webrtc-adapter": "^6.4.0"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "deploy": "react-scripts build && scripts/deploy.sh",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject"
+  },
+  "eslintConfig": {
+    "extends": "react-app"
+  },
+  "browserslist": [
+    ">0.2%",
+    "not dead",
+    "not ie <= 11",
+    "not op_mini all"
+  ]
+}

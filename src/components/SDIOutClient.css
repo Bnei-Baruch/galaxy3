@@ -1,0 +1,48 @@
+/** {*/
+    /*margin: 1;*/
+    /*padding: 1;*/
+    /*cursor: none;*/
+/*}*/
+
+/*.preview_sdi {*/
+    /*width: 590px;*/
+    /*height: 400px;*/
+    /*background-color: black!important;*/
+/*}*/
+
+.preview_sdi {
+    width: 714px;
+    height: 444px;
+    background-color: black!important;
+}
+
+.preview_snd {
+    width: 490px;
+    height: 300px;
+    background-color: black!important;
+}
+
+.segment_sdi {
+    max-width: 620px;
+    min-width: 620px;
+}
+
+.segment_snd {
+    max-width: 520px;
+
+}
+
+.overlay {
+    font-family: "Liberation Serif";
+    line-height: 1.1285em;
+    position: absolute;
+    right: 50px;
+    color: #FFF;
+    text-align: center;
+    font-size: 45px;
+    background-color: blue;
+    width: auto;
+    padding: 0px 10px;
+    z-index: 2147483647;
+    float: right !important;
+}
