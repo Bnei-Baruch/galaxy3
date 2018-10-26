@@ -338,7 +338,7 @@ class AdminClient extends Component {
                 },
                 onremotestream: (stream) => {
                     Janus.debug("Remote feed #" + this.state.switchFeed.rfindex);
-                    let switchvideo = this.refs["switchVideo" + this.state.switchFeed.rfid];
+                    let switchvideo = this.refs.switchVideo;
                     Janus.attachMediaStream(switchvideo, stream);
                     //var videoTracks = stream.getVideoTracks();
                 },
@@ -349,12 +349,16 @@ class AdminClient extends Component {
     };
 
     switchFeed = (id) => {
-        let switchfeed = {"request" : "switch", "feed" : id, "audio" : true, "video" : true, "data" : false};
-        this.state.switchFeed.send ({"message": switchfeed,
-            success: (data) => {
-                Janus.log(" :: Switch Feed: ", data);
-            }
-        })
+        if(!this.state.switchFeed) {
+            this.newSwitchFeed(id,false);
+        } else {
+            let switchfeed = {"request" : "switch", "feed" : id, "audio" : true, "video" : true, "data" : false};
+            this.state.switchFeed.send ({"message": switchfeed,
+                success: (data) => {
+                    Janus.log(" :: Switch Feed: ", data);
+                }
+            })
+        }
     };
 
     publishOwnFeed = (useAudio) => {
@@ -779,8 +783,9 @@ class AdminClient extends Component {
     getUserInfo = (userinfo) => {
         Janus.log(userinfo);
         let {session,handle} = userinfo;
-        getPublisherInfo(session,handle,info => {
-            Janus.log(info);
+        getPublisherInfo(session,handle,json => {
+            Janus.log(json);
+            this.switchFeed(json.info.plugin_specific.id)
             }
         )
     };
@@ -967,6 +972,14 @@ class AdminClient extends Component {
 
                 </Sidebar.Pusher>
             </Sidebar.Pushable>
+            <video className='mirror' ref="switchVideo"
+                   id="switchVideo"
+                   width='640'
+                   height='360'
+                   autoPlay={autoPlay}
+                   controls={controls}
+                   muted={true}
+                   playsinline={true}/>
 
         </Segment>
 
