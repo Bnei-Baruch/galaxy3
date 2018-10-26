@@ -780,12 +780,12 @@ class AdminClient extends Component {
         }
     };
 
-    getUserInfo = (userinfo) => {
+    getUserInfo = (userinfo,id) => {
         Janus.log(userinfo);
+        this.switchFeed(id);
         let {session,handle} = userinfo;
         getPublisherInfo(session,handle,json => {
             Janus.log(json);
-            this.switchFeed(json.info.plugin_specific.id)
             }
         )
     };
@@ -823,7 +823,7 @@ class AdminClient extends Component {
       let users_grid = feeds.map((feed,i) => {
           if(feed) {
               return (
-                  <Table.Row key={i} onClick={() => this.getUserInfo(feed.rfuser)} >
+                  <Table.Row key={i} onClick={() => this.getUserInfo(feed.rfuser,feed.rfid)} >
                       <Table.Cell>{feed.rfuser.name}</Table.Cell>
                   </Table.Row>
               )
