@@ -19,6 +19,7 @@ class AdminClient extends Component {
         roomid: "",
         videoroom: null,
         remotefeed: null,
+        switchFeed: null,
         myid: null,
         mypvtid: null,
         mystream: null,
@@ -273,6 +274,87 @@ class AdminClient extends Component {
                     Janus.log(" ::: Got a cleanup notification (remote feed " + id + ") :::");
                 }
             });
+    };
+
+    newSwitchFeed = (id, talk) => {
+        this.state.janus.attach(
+            {
+                plugin: "janus.plugin.videoroom",
+                opaqueId: "switchfeed_user",
+                success: (pluginHandle) => {
+                    let switchFeed = pluginHandle;
+                    switchFeed.simulcastStarted = false;
+                    //this.setState({remotefeed});
+                    Janus.log("Plugin attached! (" + switchFeed.getPlugin() + ", id=" + switchFeed.getId() + ")");
+                    Janus.log("  -- This is a subscriber");
+                    // We wait for the plugin to send us an offer
+                    let listen = { "request": "join", "room": this.state.current_room, "ptype": "subscriber", "feed": id, "private_id": this.state.mypvtid };
+                    switchFeed.send({"message": listen});
+                    this.setState({switchFeed});
+                },
+                error: (error) => {
+                    Janus.error("  -- Error attaching plugin...", error);
+                },
+                onmessage: (msg, jsep) => {
+                    Janus.debug(" ::: Got a message (subscriber) :::");
+                    Janus.debug(msg);
+                    let event = msg["videoroom"];
+                    Janus.debug("Event: " + event);
+                    if(msg["error"] !== undefined && msg["error"] !== null) {
+                        Janus.debug(":: Error msg: " + msg["error"]);
+                    } else if(event !== undefined && event !== null) {
+                        if(event === "attached") {
+                            // Subscriber created and attached
+                            Janus.log("Successfully attached to feed " + this.state.switchFeed.rfid + " (" + this.state.switchFeed.rfuser + ") in room " + msg["room"]);
+                        } else {
+                            // What has just happened?
+                        }
+                    }
+                    if(jsep !== undefined && jsep !== null) {
+                        Janus.debug("Handling SDP as well...");
+                        Janus.debug(jsep);
+                        // Answer and attach
+                        this.state.switchFeed.createAnswer(
+                            {
+                                jsep: jsep,
+                                media: { audioSend: false, videoSend: false },	// We want recvonly audio/video
+                                success: (jsep) => {
+                                    Janus.debug("Got SDP!");
+                                    Janus.debug(jsep);
+                                    let body = { "request": "start", "room": this.state.current_room };
+                                    this.state.switchFeed.send({"message": body, "jsep": jsep});
+                                },
+                                error: (error) => {
+                                    Janus.error("WebRTC error:", error);
+                                }
+                            });
+                    }
+                },
+                webrtcState: (on) => {
+                    Janus.log("Janus says this WebRTC PeerConnection (feed #" + this.state.switchFeed.rfindex + ") is " + (on ? "up" : "down") + " now");
+                },
+                onlocalstream: (stream) => {
+                    // The subscriber stream is recvonly, we don't expect anything here
+                },
+                onremotestream: (stream) => {
+                    Janus.debug("Remote feed #" + this.state.switchFeed.rfindex);
+                    let switchvideo = this.refs["switchVideo" + this.state.switchFeed.rfid];
+                    Janus.attachMediaStream(switchvideo, stream);
+                    //var videoTracks = stream.getVideoTracks();
+                },
+                oncleanup: () => {
+                    Janus.log(" ::: Got a cleanup notification (remote feed " + id + ") :::");
+                }
+            });
+    };
+
+    switchFeed = (id) => {
+        let switchfeed = {"request" : "switch", "feed" : id, "audio" : true, "video" : true, "data" : false};
+        this.state.switchFeed.send ({"message": switchfeed,
+            success: (data) => {
+                Janus.log(" :: Switch Feed: ", data);
+            }
+        })
     };
 
     publishOwnFeed = (useAudio) => {
