@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import { Janus } from "../lib/janus";
 import {Segment, Menu, Select, Button, Input, Table, Grid, Message,Sidebar} from "semantic-ui-react";
-import {initJanus,initChatRoom,getDateString,joinChatRoom} from "../shared/tools";
+import {initJanus, initChatRoom, getDateString, joinChatRoom, getPublisherInfo} from "../shared/tools";
 import '../shared/VideoConteiner.scss'
 import {MAX_FEEDS, SECRET} from "../shared/consts";
 //import VolumeSlider from "./Slider";
@@ -694,6 +694,15 @@ class AdminClient extends Component {
         }
     };
 
+    getUserInfo = (userinfo) => {
+        Janus.log(userinfo);
+        let {session,handle} = userinfo;
+        getPublisherInfo(session,handle,info => {
+            Janus.log(info);
+            }
+        )
+    };
+
     handleShowClick = () => this.setState({ visible: !this.state.visible })
 
 
@@ -727,7 +736,7 @@ class AdminClient extends Component {
       let users_grid = feeds.map((feed,i) => {
           if(feed) {
               return (
-                  <Table.Row key={i}>
+                  <Table.Row key={i} onClick={() => this.getUserInfo(feed.rfuser)} >
                       <Table.Cell>{feed.rfuser.name}</Table.Cell>
                   </Table.Row>
               )
