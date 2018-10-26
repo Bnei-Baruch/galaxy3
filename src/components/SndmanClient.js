@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import { Janus } from "../lib/janus";
 import {Button, Segment} from "semantic-ui-react";
-import {getState, initJanus, getSessions, getHandles, getHandleInfo} from "../shared/tools";
+import {getState, initJanus} from "../shared/tools";
 import './SDIOutClient.css';
 import '../shared/VideoConteiner.scss'
 import {DATA_PORT, JANUS_IP_EURND, JANUS_IP_EURUK, JANUS_IP_ISRPT, MAX_FEEDS, DANTE_IN_IP, SECRET} from "../shared/consts";
@@ -52,30 +52,30 @@ class SndmanClient extends Component {
         this.state.janus.destroy();
     };
 
-    getVgList = () => {
-        getSessions(cb => {
-            let {vglist} = this.state;
-            for(let i=0; i<cb.length; i++) {
-                let s = cb[i];
-                let cs = Object.values(vglist).filter(user => user.session === s);
-                if(cs.length > 0) continue;
-                getHandles(s,cb => {
-                    for(let i=0; i<cb.length; i++) {
-                        let h = cb[i];
-                        getHandleInfo(s,h,cb => {
-                            //let cur = {'name':cb , 'handle':h , 'session':s};
-                            cb.handle = h;
-                            cb.session = s;
-                            vglist[cb.name] = cb;
-                            this.setState({vglist});
-                            //Janus.log(" :: VGLIST: ", vglist[cb.name]);
-                            //vglist.push(cb);
-                        });
-                    }
-                });
-            }
-        });
-    };
+    // getVgList = () => {
+    //     getSessions(cb => {
+    //         let {vglist} = this.state;
+    //         for(let i=0; i<cb.length; i++) {
+    //             let s = cb[i];
+    //             let cs = Object.values(vglist).filter(user => user.session === s);
+    //             if(cs.length > 0) continue;
+    //             getHandles(s,cb => {
+    //                 for(let i=0; i<cb.length; i++) {
+    //                     let h = cb[i];
+    //                     getHandleInfo(s,h,cb => {
+    //                         //let cur = {'name':cb , 'handle':h , 'session':s};
+    //                         cb.handle = h;
+    //                         cb.session = s;
+    //                         vglist[cb.name] = cb;
+    //                         this.setState({vglist});
+    //                         //Janus.log(" :: VGLIST: ", vglist[cb.name]);
+    //                         //vglist.push(cb);
+    //                     });
+    //                 }
+    //             });
+    //         }
+    //     });
+    // };
 
     initVideoRoom = (roomid) => {
         if(this.state.videoroom)

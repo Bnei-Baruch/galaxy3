@@ -363,38 +363,11 @@ export const getHandleInfo = (session, handle,cb) => {
     })
 };
 
-// function updateHandleInfo(vs, vh, port, vname) {
-//     var session = vs;
-//     var handle = vh;
-//     if(handle === null || handle === undefined) {
-//         return;
-//     }
-//     var updateHandle = currentHandle;
-//     var request = { "janus": "handle_info", "transaction": randomString(12), "admin_secret": secret };
-//     $.ajax({
-//         type: 'POST',
-//         url: srvadmin + "/" + session + "/" + handle,
-//         cache: false,
-//         contentType: "application/json",
-//         data: JSON.stringify(request),
-//         success: function(json) {
-//             if(json["janus"] !== "success") {
-//                 Janus.log("Ooops: " + json["error"].code + " " + json["error"].reason);       // FIXME
-//                 if(refresh !== true)
-//                     bootbox.alert(json["error"].reason);
-//                 return;
-//             }
-//             Janus.log("Got info:");
-//             Janus.log(json);
-//             sgroups[port].handleInfo = json["info"];
-//             sgroups[port].extip = sgroups[port].handleInfo.streams["0"].components["0"]["selected-pair"].split(" ")[3].split(":")[0];
-//             sendStart(port,true);
-//         },
-//         error: function(XMLHttpRequest, textStatus, errorThrown) {
-//             Janus.log(textStatus + ": " + errorThrown);   // FIXME
-//             bootbox.alert("Couldn't contact the backend: is Janus down, or is the Admin/Monitor interface disabled?");
-//             $('#update-handle').click(updateHandleInfo);
-//         },
-//         dataType: "json"
-//     });
-// }
+export const getPublisherInfo = (session, handle,cb) => {
+    if(handle === null || handle === undefined)
+        return;
+    let request = { "janus": "handle_info", "transaction": Janus.randomString(12), "admin_secret": ADMIN_SECRET };
+    getData(`${JANUS_ADMIN}/${session}/${handle}`,request,(json) => {
+        cb(json);
+    })
+};
