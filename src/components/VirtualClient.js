@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import NewWindow from 'react-new-window';
 import { Janus } from "../lib/janus";
 import {Segment, Menu, Select, Button,Sidebar,Input,Label} from "semantic-ui-react";
-import {geoInfo, initJanus, checkDevices, micLevel, checkNotification} from "../shared/tools";
+import {geoInfo, initJanus, getDevicesStream, micLevel, checkNotification,testDevices} from "../shared/tools";
 import '../shared/VideoConteiner.scss'
 import {MAX_FEEDS} from "../shared/consts";
 import nowebcam from './nowebcam.jpeg';
@@ -55,29 +55,56 @@ class VirtualClient extends Component {
         this.state.janus.destroy();
     };
 
-    initDevices = () => {
+    initDevices = (video) => {
+        if(video) {
+            Janus.listDevices(devices => {
+                if (devices.length > 0) {
+                    let audio_devices = devices.filter(device => device.kind === "audioinput");
+                    let video_devices = devices.filter(device => device.kind === "videoinput") || null;
+                    Janus.log(" :: Got Video devices: ", video_devices);
+                    Janus.log(" :: Got Audio devices: ", audio_devices);
+                    this.setState({video_devices, audio_devices});
+                    this.setDevice(video_devices[0].deviceId, audio_devices[0].deviceId);
+                } else {
+                    testDevices(true, false);
+                    // Right now if we get some problem with video device the - enumerateDevices()
+                    // back empty array, so we need to call this once more with video:false
+                    // to get audio device only
+                    Janus.log(" :: Try to get audio only");
+                    testDevices(false, true, stream => {
+                        if(stream) {
+                            this.initDevices(false);
+                        } else {
+                            Janus.log(" :: Fail to get audio only");
+                            //TODO: Try to get fail reson and notify user
+                        }
+                    });
+                }
+            });
+        } else {
+            Janus.listDevices(devices => {
+                let audio_devices = devices.filter(device => device.kind === "audioinput");
+                if (audio_devices.length > 0) {
+                    Janus.log(" :: Got Audio devices: ", audio_devices);
+                    this.setState({audio_devices});
+                    this.setDevice(null, audio_devices[0].deviceId);
+                } else {
+                    Janus.log(" :: No Audio input device found!");
+                    //TODO: Try to get fail reson and notify user
+                }
+            }, { audio: true, video: false });
+        }
 
-        Janus.listDevices(devices => {
-            let audio_devices = devices.filter(device => device.kind === "audioinput");
-            if (audio_devices.length > 0) {
-                Janus.log(" :: Got Audio devices: ", audio_devices);
-                this.setState({audio_devices});
-                this.setAudioDevice(audio_devices[0].deviceId);
-            } else {
-                Janus.log(" :: No Audio input device found!");
-            }
-        }, { audio: true, video: false });
-
-        Janus.listDevices(devices => {
-            let video_devices = devices.filter(device => device.kind === "videoinput");
-            if (video_devices.length > 0) {
-                Janus.log(" :: Got Video devices: ", video_devices);
-                this.setState({video_devices});
-                this.setVideoDevice(video_devices[0].deviceId);
-            } else {
-                Janus.log(" :: No Video input device found!");
-            }
-        }, { audio: false, video: true });
+        // Janus.listDevices(devices => {
+        //     let video_devices = devices.filter(device => device.kind === "videoinput");
+        //     if (video_devices.length > 0) {
+        //         Janus.log(" :: Got Video devices: ", video_devices);
+        //         this.setState({video_devices});
+        //         this.setVideoDevice(video_devices[0].deviceId);
+        //     } else {
+        //         Janus.log(" :: No Video input device found!");
+        //     }
+        // }, { audio: false, video: true });
 
         // if (navigator.getUserMedia) {
         //     navigator.mediaDevices.enumerateDevices().then(devices => {
@@ -105,24 +132,44 @@ class VirtualClient extends Component {
         // }
     };
 
-    setVideoDevice = (video_device) => {
-        if(video_device !== this.state.video_device) {
-            this.setState({video_device});
-            if(this.state.video_device !== "") {
-                checkDevices(this.state.audio_device,video_device,stream => {
-                    Janus.log(" :: Check Devices: ", stream);
-                    let myvideo = this.refs.localVideo;
-                    Janus.attachMediaStream(myvideo, stream);
-                })
-            }
-        }
-    };
+    // setVideoDevice = (video_device) => {
+    //     if(video_device !== this.state.video_device) {
+    //         this.setState({video_device});
+    //         if(this.state.video_device !== "") {
+    //             checkDevices(this.state.audio_device,video_device,stream => {
+    //                 Janus.log(" :: Check Devices: ", stream);
+    //                 let myvideo = this.refs.localVideo;
+    //                 Janus.attachMediaStream(myvideo, stream);
+    //             })
+    //         }
+    //     }
+    // };
+    //
+    // setAudioDevice = (audio_device) => {
+    //     if(audio_device !== this.state.audio_device) {
+    //         this.setState({audio_device});
+    //         if(this.state.audio_device !== "") {
+    //             checkDevices(audio_device,this.state.video_device,stream => {
+    //                 Janus.log(" :: Check Devices: ", stream);
+    //                 let myvideo = this.refs.localVideo;
+    //                 Janus.attachMediaStream(myvideo, stream);
+    //                 if(this.state.audioContext) {
+    //                     this.state.audioContext.close();
+    //                 }
+    //                 micLevel(stream ,this.refs.canvas1,audioContext => {
+    //                     this.setState({audioContext});
+    //                 });
+    //             })
+    //         }
+    //     }
+    // };
 
-    setAudioDevice = (audio_device) => {
-        if(audio_device !== this.state.audio_device) {
-            this.setState({audio_device});
-            if(this.state.audio_device !== "") {
-                checkDevices(audio_device,this.state.video_device,stream => {
+    setDevice = (video_device,audio_device) => {
+        if(audio_device !== this.state.audio_device || video_device !== this.state.video_device) {
+            this.setState({video_device,audio_device});
+            if(this.state.audio_device !== "" || this.state.video_device !== "") {
+                Janus.log(" :: Going to check Devices: ");
+                getDevicesStream(audio_device,video_device,stream => {
                     Janus.log(" :: Check Devices: ", stream);
                     let myvideo = this.refs.localVideo;
                     Janus.attachMediaStream(myvideo, stream);
@@ -169,11 +216,7 @@ class VirtualClient extends Component {
                 let {user} = this.state;
                 user.handle = videoroom.getId();
                 this.setState({videoroom, user});
-
-                // Janus.listDevices(devices => {
-                //     console.log(devices)
-                // }, { audio: true, video: false });
-                this.initDevices();
+                this.initDevices(true);
                 // Get list rooms
                 this.getRoomList();
             },
@@ -643,7 +686,7 @@ class VirtualClient extends Component {
                                   placeholder="Select Device:"
                                   value={video_device}
                                   options={vdevices_list}
-                                  onChange={(e, {value}) => this.setVideoDevice(value)} />
+                                  onChange={(e, {value}) => this.setDevice(value,audio_device)} />
                           :
                           <Button disabled={!mystream}
                                   positive={!cammuted}
@@ -658,7 +701,7 @@ class VirtualClient extends Component {
                                   placeholder="Select Device:"
                                   value={audio_device}
                                   options={adevices_list}
-                                  onChange={(e, {value}) => this.setAudioDevice(value)}/>
+                                  onChange={(e, {value}) => this.setDevice(video_device,value)}/>
                           :
                           <Button disabled={!mystream}
                                   positive={!muted}

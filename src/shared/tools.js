@@ -248,33 +248,39 @@ export const checkNotification = () => {
     }
 };
 
-export const checkDevices = (audioid,videoid,cb) => {
+export const getDevicesStream = (audioid,videoid,cb) => {
     let height = (Janus.webRTCAdapter.browserDetails.browser === "safari") ? 480 : 360;
-    navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia;
     let video = videoid ? { height:height,width:640,deviceId: {exact: videoid}} : "";
     let audio = audioid ? { deviceId: {exact: audioid}} : "";
-    // if (navigator.getUserMedia) {
-        navigator.getUserMedia({ audio: audio, video: video }, stream => {
+        navigator.mediaDevices
+            .getUserMedia({ audio: audio, video: video }).then(stream => {
             cb(stream);
-        }, function (e) {
-            var message;
-            switch (e.name) {
-                case 'NotFoundError':
-                case 'DevicesNotFoundError':
-                    message = 'No input devices found.';
-                    break;
-                case 'SourceUnavailableError':
-                    message = 'Your input device is busy';
-                    break;
-                case 'PermissionDeniedError':
-                case 'SecurityError':
-                    message = 'Permission denied!';
-                    break;
-                default: Janus.log('Permission devices usage is Rejected! You must grant it.', e);
-                    return;
-            }
-            Janus.log(message);
         });
+};
+
+export const testDevices = (video,audio,cb) => {
+    // if (navigator.mediaDevices) {
+    navigator.mediaDevices.getUserMedia({ audio: audio, video: video }).then(stream => {
+        cb(stream);
+    }, function (e) {
+        var message;
+        switch (e.name) {
+            case 'NotFoundError':
+            case 'DevicesNotFoundError':
+                message = 'No input devices found.';
+                break;
+            case 'SourceUnavailableError':
+                message = 'Your input device is busy';
+                break;
+            case 'PermissionDeniedError':
+            case 'SecurityError':
+                message = 'Permission denied!';
+                break;
+            default: Janus.log('Permission devices usage is Rejected! You must grant it.', e);
+                return;
+        }
+        Janus.log(message);
+    });
     // } else {
     //     Janus.log('Uncompatible browser!');
     // }
