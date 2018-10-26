@@ -56,28 +56,53 @@ class VirtualClient extends Component {
     };
 
     initDevices = () => {
-        navigator.mediaDevices.enumerateDevices().then(devices => {
-            Janus.log(" :: Got devices: ", devices);
-            if (devices.length === 0) {
-                alert(":: NO input devices found :(");
-                return
-            }
+
+        Janus.listDevices(devices => {
             let audio_devices = devices.filter(device => device.kind === "audioinput");
-            let video_devices = devices.filter(device => device.kind === "videoinput");
-            if (video_devices.length === 0) {
-                Janus.log(" :: No Video input device found!");
+            if (audio_devices.length > 0) {
+                Janus.log(" :: Got Audio devices: ", audio_devices);
                 this.setState({audio_devices});
                 this.setAudioDevice(audio_devices[0].deviceId);
-            } else if (audio_devices.length === 0) {
+            } else {
                 Janus.log(" :: No Audio input device found!");
+            }
+        }, { audio: true, video: false });
+
+        Janus.listDevices(devices => {
+            let video_devices = devices.filter(device => device.kind === "videoinput");
+            if (video_devices.length > 0) {
+                Janus.log(" :: Got Video devices: ", video_devices);
                 this.setState({video_devices});
                 this.setVideoDevice(video_devices[0].deviceId);
             } else {
-                this.setState({audio_devices, video_devices});
-                this.setVideoDevice(video_devices[0].deviceId);
-                this.setAudioDevice(audio_devices[0].deviceId);
+                Janus.log(" :: No Video input device found!");
             }
-        });
+        }, { audio: false, video: true });
+
+        // if (navigator.getUserMedia) {
+        //     navigator.mediaDevices.enumerateDevices().then(devices => {
+        //         Janus.log(" :: Got devices: ", devices);
+        //         if (devices.length === 0) {
+        //             alert(":: NO input devices found :(");
+        //             return
+        //         }
+        //         let audio_devices = devices.filter(device => device.kind === "audioinput");
+        //         let video_devices = devices.filter(device => device.kind === "videoinput");
+        //         if (video_devices.length === 0) {
+        //             Janus.log(" :: No Video input device found!");
+        //             this.setState({audio_devices});
+        //             this.setAudioDevice(audio_devices[0].deviceId);
+        //         } else if (audio_devices.length === 0) {
+        //             Janus.log(" :: No Audio input device found!");
+        //             this.setState({video_devices});
+        //             this.setVideoDevice(video_devices[0].deviceId);
+        //         } else {
+        //             this.setState({audio_devices, video_devices});
+        //             this.setVideoDevice(video_devices[0].deviceId);
+        //             this.setAudioDevice(audio_devices[0].deviceId);
+        //         }
+        //     });
+        // }
     };
 
     setVideoDevice = (video_device) => {
@@ -145,8 +170,10 @@ class VirtualClient extends Component {
                 user.handle = videoroom.getId();
                 this.setState({videoroom, user});
 
-                Janus.listDevices(this.initDevices, { audio: true, video: false });
-                //this.initDevices();
+                // Janus.listDevices(devices => {
+                //     console.log(devices)
+                // }, { audio: true, video: false });
+                this.initDevices();
                 // Get list rooms
                 this.getRoomList();
             },
