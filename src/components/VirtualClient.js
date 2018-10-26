@@ -3,7 +3,7 @@ import NewWindow from 'react-new-window';
 import { Janus } from "../lib/janus";
 import {Segment, Menu, Select, Button,Sidebar,Input,Label} from "semantic-ui-react";
 import {geoInfo, initJanus, checkDevices, micLevel, checkNotification} from "../shared/tools";
-import './VideoConteiner.scss'
+import '../shared/VideoConteiner.scss'
 import {MAX_FEEDS} from "../shared/consts";
 import nowebcam from './nowebcam.jpeg';
 import ChatClient from "./ChatClient";

@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import { Janus } from "../lib/janus";
 import { Segment, Menu, Select, Button, Grid } from 'semantic-ui-react';
-import Volume from "./Slider";
+import VolumeSlider from "../shared/VolumeSlider";
 import {videos_options, audiog_options, gxycol, trllang} from "../shared/consts";
 import {geoInfo} from "../shared/tools";
 
@@ -355,7 +355,7 @@ class VirtualStreaming extends Component {
                                     onClick={this.toggleFullScreen}/>
                         </Grid.Column>
                         <Grid.Column width={12}>
-                            <Volume volume={this.setVolume}/>
+                            <VolumeSlider volume={this.setVolume}/>
                         </Grid.Column>
                         <Grid.Column width={1}>
                             <Button positive={!muted}

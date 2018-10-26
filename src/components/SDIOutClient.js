@@ -3,7 +3,7 @@ import { Janus } from "../lib/janus";
 import {Segment} from "semantic-ui-react";
 import {getState, initJanus} from "../shared/tools";
 import './SDIOutClient.css';
-import './VideoConteiner.scss'
+import '../shared/VideoConteiner.scss'
 import {MAX_FEEDS} from "../shared/consts";
 
 class SDIOutClient extends Component {

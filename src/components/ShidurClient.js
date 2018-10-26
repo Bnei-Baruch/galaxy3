@@ -3,7 +3,7 @@ import { Janus } from "../lib/janus";
 import {Segment, Table} from "semantic-ui-react";
 import {getState, putData, initJanus} from "../shared/tools";
 import {MAX_FEEDS} from "../shared/consts";
-import './VideoConteiner.scss'
+import '../shared/VideoConteiner.scss'
 import nowebcam from './nowebcam.jpeg';
 
 class ShidurClient extends Component {

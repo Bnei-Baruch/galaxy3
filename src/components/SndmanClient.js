@@ -3,7 +3,7 @@ import { Janus } from "../lib/janus";
 import {Button, Segment} from "semantic-ui-react";
 import {getState, initJanus, getSessions, getHandles, getHandleInfo} from "../shared/tools";
 import './SDIOutClient.css';
-import './VideoConteiner.scss'
+import '../shared/VideoConteiner.scss'
 import {DATA_PORT, JANUS_IP_EURND, JANUS_IP_EURUK, JANUS_IP_ISRPT, MAX_FEEDS, DANTE_IN_IP, SECRET} from "../shared/consts";
 
 class SndmanClient extends Component {

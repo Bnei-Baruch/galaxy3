@@ -1,11 +1,11 @@
 import React, { Component } from 'react';
 import { Janus } from "../lib/janus";
 import { Segment, Menu, Select, Button, Grid } from 'semantic-ui-react';
-import Volume from "./Slider";
+import VolumeSlider from "../shared/VolumeSlider";
 import {servers_options, videos_options, audios_options} from "../shared/consts";
 
 
-class StreamingTest extends Component {
+class AdminStreaming extends Component {
 
     state = {
         janus: null,
@@ -250,7 +250,7 @@ class StreamingTest extends Component {
               <Grid.Column>
               </Grid.Column>
               <Grid.Column width={14}>
-                  <Volume volume={this.setVolume} />
+                  <VolumeSlider volume={this.setVolume} />
               </Grid.Column>
               <Grid.Column width={1}>
                   <Button positive={!muted}
@@ -266,4 +266,4 @@ class StreamingTest extends Component {
   }
 }
 
-export default StreamingTest;
+export default AdminStreaming;

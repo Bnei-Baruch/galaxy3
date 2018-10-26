@@ -1,9 +1,9 @@
 import React, {Component} from 'react';
 import {Message} from 'semantic-ui-react';
 import Slider from 'react-rangeslider'
-import '../shared/slider.css';
+import './VolumeSlider.css';
 
-class Volume extends Component {
+class VolumeSlider extends Component {
 
     state = {
         value: 1
@@ -35,4 +35,4 @@ class Volume extends Component {
     }
 }
 
-export default Volume;
+export default VolumeSlider;

@@ -2,7 +2,7 @@ import React, { Component, Fragment } from 'react';
 import 'semantic-ui-css/semantic.min.css';
 import './App.css';
 // import SndmanClient from "./components/SndmanClient";
-// import Streaming from "./components/Streaming";
+// import AdminStreaming from "./components/AdminStreaming";
 // import ShidurClient from "./components/ShidurClient";
 // import AdminClient from "./components/AdminClient";
 // import SDIOutClient from "./components/SDIOutClient";

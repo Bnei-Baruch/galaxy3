@@ -2,9 +2,9 @@ import React, { Component } from 'react';
 import { Janus } from "../lib/janus";
 import {Segment, Menu, Select, Button, Input, Table, Grid, Message,Sidebar} from "semantic-ui-react";
 import {initJanus,initChatRoom,getDateString,joinChatRoom} from "../shared/tools";
-import './VideoConteiner.scss'
+import '../shared/VideoConteiner.scss'
 import {MAX_FEEDS, SECRET} from "../shared/consts";
-//import Volume from "./Slider";
+//import VolumeSlider from "./Slider";
 
 class AdminClient extends Component {
 
