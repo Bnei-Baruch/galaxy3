@@ -249,6 +249,7 @@ export const checkNotification = () => {
 };
 
 export const getDevicesStream = (audioid,videoid,cb) => {
+    //FIXME: Safari does not agree to give nHD resolution
     let height = (Janus.webRTCAdapter.browserDetails.browser === "safari") ? 480 : 360;
     let video = videoid ? { height:height,width:640,deviceId: {exact: videoid}} : "";
     let audio = audioid ? { deviceId: {exact: audioid}} : "";
@@ -259,7 +260,6 @@ export const getDevicesStream = (audioid,videoid,cb) => {
 };
 
 export const testDevices = (video,audio,cb) => {
-    // if (navigator.mediaDevices) {
     navigator.mediaDevices.getUserMedia({ audio: audio, video: video }).then(stream => {
         cb(stream);
     }, function (e) {
@@ -280,17 +280,6 @@ export const testDevices = (video,audio,cb) => {
                 return;
         }
         Janus.log(message);
-    });
-    // } else {
-    //     Janus.log('Uncompatible browser!');
-    // }
-};
-
-export const getDevices = (cb) => {
-    navigator.mediaDevices.enumerateDevices().then(devices => {
-        cb(devices);
-        if (devices.length === 0)
-            Janus.log(":: We did not found any input device");
     });
 };
 

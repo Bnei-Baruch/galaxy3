@@ -100,13 +100,13 @@ class ChatClient extends Component {
             }
         } else if (what === "join") {
             // Somebody joined
-            var username = json["username"];
-            var display = json["display"];
+            let username = json["username"];
+            let display = json["display"];
             Janus.log("-:: Somebody joined - username: "+username+" : display: "+display)
         } else if (what === "leave") {
             // Somebody left
-            var username = json["username"];
-            var when = new Date();
+            let username = json["username"];
+            //var when = new Date();
             Janus.log("-:: Somebody left - username: "+username+" : Time: "+getDateString())
         } else if (what === "kicked") {
             // Somebody was kicked
