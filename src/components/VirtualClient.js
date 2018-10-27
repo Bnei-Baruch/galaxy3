@@ -364,6 +364,8 @@ class VirtualClient extends Component {
                 },
                 ondata: (data) => {
                     Janus.debug("We got data from the DataChannel! (feed) " + data);
+                    let msg = JSON.parse(data);
+                    Janus.log(" :: We got msg via DataChannel: ",msg)
                 },
                 oncleanup: () => {
                     Janus.log(" ::: Got a cleanup notification (remote feed " + id + ") :::");
@@ -541,7 +543,7 @@ class VirtualClient extends Component {
     sendMessage = (key,value) => {
         let {videoroom,user} = this.state;
         user[key] = value;
-        var message = JSON.stringify({user});
+        var message = JSON.stringify(user);
         Janus.log(":: Sending message: ",message);
         videoroom.data({ text: message })
     };
@@ -733,6 +735,10 @@ class VirtualClient extends Component {
                           <canvas className={muted ? 'hidden' : 'vumeter'} ref="canvas1" id="canvas1" width="15" height="35" />
                       </Menu.Item>
                       <Menu.Item >
+                          <Button disabled={!mystream}
+                                  color='orange'
+                                  icon='question'
+                                  onClick={() => this.sendMessage("question",true)} /> :::
                           <Button color='blue' disabled={this.state.shidur} onClick={this.showShidur} icon='tv' />
                           {this.state.shidur ?
                               <NewWindow
