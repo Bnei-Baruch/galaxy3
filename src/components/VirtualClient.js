@@ -66,20 +66,20 @@ class VirtualClient extends Component {
                 Janus.log(" :: Got Audio devices: ", audio_devices);
                 this.setState({video_devices, audio_devices});
                 this.setDevice(video_id, audio_id);
-            } else {
-                testDevices(true, false);
+            } else if(video) {
+                //Try to get video fail reson
+                testDevices(true, false, steam => {});
                 // Right now if we get some problem with video device the - enumerateDevices()
                 // back empty array, so we need to call this once more with video:false
                 // to get audio device only
-                Janus.log(" :: Try to get audio only");
-                testDevices(false, true, stream => {
-                    if(stream) {
-                        this.initDevices(false);
-                    } else {
-                        Janus.log(" :: Fail to get audio only");
-                        //TODO: Try to get fail reson and notify user
-                    }
-                });
+                Janus.log(" :: Trying to get audio only");
+                this.initDevices(false);
+            } else {
+                //Try to get audio fail reson
+                testDevices(true, false, steam => {});
+                alert(" :: No input devices found ::");
+                //FIXME: What we going to do in this case?
+                this.setState({audio_device: null});
             }
         }, { audio: true, video: video });
     };
@@ -293,15 +293,15 @@ class VirtualClient extends Component {
             });
     };
 
-    publishOwnFeed = (useAudio) => {
-        // Publish our stream
+    publishOwnFeed = (useVideo) => {
+        // FIXME: Does we allow video only mode?
         let {videoroom,audio_device,video_device} = this.state;
         let height = (Janus.webRTCAdapter.browserDetails.browser === "safari") ? 480 : 360;
         videoroom.createOffer(
             {
                 // Add data:true here if you want to publish datachannels as well
                 media: {
-                    audioRecv: false, videoRecv: false, audioSend: useAudio, videoSend: true, audio: {
+                    audioRecv: false, videoRecv: false, audioSend: true, videoSend: useVideo, audio: {
                         deviceId: {
                             exact: audio_device
                         }
@@ -320,12 +320,12 @@ class VirtualClient extends Component {
                 success: (jsep) => {
                     Janus.debug("Got publisher SDP!");
                     Janus.debug(jsep);
-                    let publish = { "request": "configure", "audio": useAudio, "video": true, "data": true };
+                    let publish = { "request": "configure", "audio": true, "video": useVideo, "data": true };
                     videoroom.send({"message": publish, "jsep": jsep});
                 },
                 error: (error) => {
                     Janus.error("WebRTC error:", error);
-                    if (useAudio) {
+                    if (useVideo) {
                         this.publishOwnFeed(false);
                     } else {
                         Janus.error("WebRTC error... " + JSON.stringify(error));
@@ -618,7 +618,7 @@ class VirtualClient extends Component {
                                  value={this.state.username_value}
                                  onChange={(v,{value}) => this.setState({username_value: value})} />
                           :
-                          <Button disabled={mystream}
+                          <Button disabled={mystream || !audio_device}
                                   positive
                                   icon='add user'
                                   onClick={this.joinRoom} />
