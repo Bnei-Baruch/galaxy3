@@ -972,7 +972,7 @@ class AdminClient extends Component {
 
                 </Sidebar.Pusher>
             </Sidebar.Pushable>
-            <video className='mirror' ref="switchVideo"
+            <video ref="switchVideo"
                    id="switchVideo"
                    width='640'
                    height='360'

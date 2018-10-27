@@ -261,6 +261,12 @@ class VirtualClient extends Component {
             onremotestream: (stream) => {
                 // The publisher stream is sendonly, we don't expect anything here
             },
+            ondataopen: (data) => {
+                Janus.log("The DataChannel is available!(publisher)");
+            },
+            ondata: (data) => {
+                Janus.debug("We got data from the DataChannel! (publisher) " + data);
+            },
             oncleanup: () => {
                 Janus.log(" ::: Got a cleanup notification: we are unpublished now :::");
             }
@@ -320,7 +326,7 @@ class VirtualClient extends Component {
                                 jsep: jsep,
                                 // Add data:true here if you want to subscribe to datachannels as well
                                 // (obviously only works if the publisher offered them in the first place)
-                                media: { audioSend: false, videoSend: false },	// We want recvonly audio/video
+                                media: { audioSend: false, videoSend: false, data:true },	// We want recvonly audio/video
                                 success: (jsep) => {
                                     Janus.debug("Got SDP!");
                                     Janus.debug(jsep);
@@ -353,6 +359,12 @@ class VirtualClient extends Component {
                         // Yes remote video
                     }
                 },
+                ondataopen: (data) => {
+                    Janus.log("The DataChannel is available!(feed)");
+                },
+                ondata: (data) => {
+                    Janus.debug("We got data from the DataChannel! (feed) " + data);
+                },
                 oncleanup: () => {
                     Janus.log(" ::: Got a cleanup notification (remote feed " + id + ") :::");
                 }
@@ -378,14 +390,15 @@ class VirtualClient extends Component {
                         deviceId: {
                             exact: video_device
                         }
-                    }
+                    },
+                    data: true
                 },
                 //media: { audioRecv: false, videoRecv: false, audioSend: useAudio, videoSend: true },	// Publishers are sendonly
                 simulcast: false,
                 success: (jsep) => {
                     Janus.debug("Got publisher SDP!");
                     Janus.debug(jsep);
-                    let publish = { "request": "configure", "audio": useAudio, "video": true };
+                    let publish = { "request": "configure", "audio": useAudio, "video": true, "data": true };
                     videoroom.send({"message": publish, "jsep": jsep});
                 },
                 error: (error) => {
@@ -525,6 +538,14 @@ class VirtualClient extends Component {
         }
     };
 
+    sendMessage = (key,value) => {
+        let {videoroom,user} = this.state;
+        user[key] = value;
+        var message = JSON.stringify({user});
+        Janus.log(":: Sending message: ",message);
+        videoroom.data({ text: message })
+    };
+
     joinRoom = () => {
         let {videoroom, selected_room, user, username_value} = this.state;
         localStorage.setItem("room", selected_room);
@@ -571,6 +592,7 @@ class VirtualClient extends Component {
         let {videoroom,cammuted} = this.state;
         cammuted ? videoroom.unmuteVideo() : videoroom.muteVideo();
         this.setState({cammuted: !cammuted});
+        this.sendMessage("camera", this.state.cammuted);
     };
 
     micMute = () => {
