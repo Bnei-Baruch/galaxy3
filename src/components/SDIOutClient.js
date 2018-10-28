@@ -262,7 +262,7 @@ class SDIOutClient extends Component {
                         let audio = list[f]["audio_codec"];
                         let video = list[f]["video_codec"];
                         Janus.debug("  >> [" + id + "] " + display + " (audio: " + audio + ", video: " + video + ")");
-                        if(display.role === "user")
+                        if(display.role === "user" && video)
                             this.newRemoteFeed(id, talk);
                     }
                 }
@@ -304,7 +304,7 @@ class SDIOutClient extends Component {
                         let audio = list[f]["audio_codec"];
                         let video = list[f]["video_codec"];
                         Janus.debug("  >> [" + id + "] " + display + " (audio: " + audio + ", video: " + video + ")");
-                        if(display.role === "user")
+                        if(display.role === "user" && video)
                             this.newRemoteFeed(id, false);
                     }
                 } else if(msg["leaving"] !== undefined && msg["leaving"] !== null) {
