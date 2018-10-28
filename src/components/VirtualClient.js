@@ -550,6 +550,8 @@ class VirtualClient extends Component {
       const controls = false;
       //const vmuted = true;
 
+      let iOS = ['iPad', 'iPhone', 'iPod'].indexOf(navigator.platform) >= 0;
+
       let rooms_list = rooms.map((data,i) => {
           const {room, num_participants, description} = data;
           return ({ key: room, text: description, value: i, description: num_participants.toString()})
@@ -595,14 +597,14 @@ class VirtualClient extends Component {
           <Segment className="virtual_segment" color='blue' raised>
 
               <Segment textAlign='center' className="ingest_segment">
-                  <Menu secondary>
+                  <Menu>
                       <Menu.Item>
                           <Menu.Item >
                               <Button disabled={!mystream}
                                       icon='user x'
                                       onClick={this.exitRoom} />
                           </Menu.Item>
-                          <Select className='room_selection'
+                          <Select
                               disabled={mystream}
                               error={!selected_room}
                               scrolling
@@ -611,51 +613,22 @@ class VirtualClient extends Component {
                               options={rooms_list}
                               onClick={this.getRoomList}
                               onChange={(e, {value}) => this.selectRoom(value)} />
-                          <Input className='name_selection'
-                                 disabled={mystream}
-                                 icon='user circle' fluid
-                                 placeholder="Type your name..."
-                                 value={this.state.username_value}
-                                 onChange={(v,{value}) => this.setState({username_value: value})} />
                           :
                           <Button disabled={mystream || !audio_device}
                                   positive
                                   icon='add user'
                                   onClick={this.joinRoom} />
                       </Menu.Item>
-                      <Menu.Item >
-                          <Select className='select_device'
-                                  disabled={mystream}
-                                  error={!video_device}
-                                  placeholder="Select Device:"
-                                  value={video_device}
-                                  options={vdevices_list}
-                                  onChange={(e, {value}) => this.setDevice(value,audio_device)} />
-                          :
-                          <Button disabled={!mystream}
-                                  positive={!cammuted}
-                                  negative={cammuted}
-                                  icon={!cammuted ? "video camera" : "eye slash"}
-                                  onClick={this.camMute}/>
+                      <Menu.Item>
+                          <Input className='name_selection'
+                              disabled={mystream}
+                              icon='user circle' fluid
+                              placeholder="Type your name..."
+                              value={this.state.username_value}
+                              onChange={(v,{value}) => this.setState({username_value: value})} />
                       </Menu.Item>
                       <Menu.Item >
-                          <Select className='select_device'
-                                  disabled={mystream}
-                                  error={!audio_device}
-                                  placeholder="Select Device:"
-                                  value={audio_device}
-                                  options={adevices_list}
-                                  onChange={(e, {value}) => this.setDevice(video_device,value)}/>
-                          :
-                          <Button disabled={!mystream}
-                                  positive={!muted}
-                                  negative={muted}
-                                  icon={!muted ? "microphone" : "microphone slash"}
-                                  onClick={this.micMute}/>
-                          <canvas className={muted ? 'hidden' : 'vumeter'} ref="canvas1" id="canvas1" width="15" height="35" />
-                      </Menu.Item>
-                      <Menu.Item >
-                          <Button disabled={!mystream}
+                          <Button disabled={true}
                                   color='orange'
                                   icon='question'
                                   onClick={() => this.sendMessage("question",true)} /> :::
@@ -671,55 +644,126 @@ class VirtualClient extends Component {
                           }
                       </Menu.Item>
                   </Menu>
+                  <Menu secondary>
+                  <Menu.Item >
+                      <Select className='select_device'
+                              disabled={mystream}
+                              error={!video_device}
+                              placeholder="Select Device:"
+                              value={video_device}
+                              options={vdevices_list}
+                              onChange={(e, {value}) => this.setDevice(value,audio_device)} />
+                      :
+                      <Button disabled={!mystream}
+                              positive={!cammuted}
+                              negative={cammuted}
+                              icon={!cammuted ? "video camera" : "eye slash"}
+                              onClick={this.camMute}/>
+                  </Menu.Item>
+                  <Menu.Item >
+                      <Select className='select_device'
+                              disabled={mystream}
+                              error={!audio_device}
+                              placeholder="Select Device:"
+                              value={audio_device}
+                              options={adevices_list}
+                              onChange={(e, {value}) => this.setDevice(video_device,value)}/>
+                      :
+                      <Button disabled={!mystream}
+                              positive={!muted}
+                              negative={muted}
+                              icon={!muted ? "microphone" : "microphone slash"}
+                              onClick={this.micMute}/>
+                      <canvas className={muted ? 'hidden' : 'vumeter'} ref="canvas1" id="canvas1" width="15" height="35" />
+                  </Menu.Item>
+                  </Menu>
               </Segment>
-              <Sidebar.Pushable as={Segment}>
 
-                  <Sidebar
-                      as={Segment}
-                      direction='right'
-                      animation='overlay'
-                      // onHide={this.handleSidebarHide}
-                      vertical
-                      visible={this.state.visible}
-                      width='wide'
-                  >
-                      <ChatClient
+
+              {/*Semantic Sidebar crash iOS client*/}
+              {
+
+                  iOS
+
+                  ?
+
+                  <Segment attached className="videos_segment"
+                              onDoubleClick={() => this.setState({ visible: !this.state.visible })} >
+                  <div className="wrapper">
+                      {/*<div className="title"><span>{name}</span></div>*/}
+                      <div className="videos">
+                          <div className="videos__wrapper">
+                              <div className="video">
+                                  <video className='mirror' ref="localVideo"
+                                         id="localVideo"
+                                         poster={nowebcam}
+                                         width={width}
+                                         height={height}
+                                         autoPlay={autoPlay}
+                                         controls={controls}
+                                         muted={true}
+                                         playsInline={true}/>
+                              </div>
+                              {videos}
+                          </div>
+                      </div>
+                  </div>
+              </Segment>
+
+                      :
+
+                  <Sidebar.Pushable as={Segment}>
+
+                      <Sidebar
+                          as={Segment}
+                          direction='right'
+                          animation='overlay'
+                          // onHide={this.handleSidebarHide}
+                          vertical
                           visible={this.state.visible}
-                          janus={this.state.janus}
-                          room={room}
-                          user={this.state.user}
-                            onNewMsg={this.onNewMsg} />
-                  </Sidebar>
+                          width='wide'
+                      >
+                          <ChatClient
+                              visible={this.state.visible}
+                              janus={this.state.janus}
+                              room={room}
+                              user={this.state.user}
+                              onNewMsg={this.onNewMsg} />
+                      </Sidebar>
 
-                  <Sidebar.Pusher>
-                      <Button attached='top' size='mini' toggle compact disabled={!mystream}
-                              onClick={() => this.setState({ visible: !this.state.visible, count: 0 })}>
-                          {this.state.visible ? "Close" : "Open"} chat {count > 0 ? l : ""}</Button>
-                      <Segment attached className="videos_segment"
-                               onDoubleClick={() => this.setState({ visible: !this.state.visible })} >
-                          <div className="wrapper">
-                              {/*<div className="title"><span>{name}</span></div>*/}
-                              <div className="videos">
-                                  <div className="videos__wrapper">
-                                      <div className="video">
-                                          <video className='mirror' ref="localVideo"
-                                                 id="localVideo"
-                                                 poster={nowebcam}
-                                                 width={width}
-                                                 height={height}
-                                                 autoPlay={autoPlay}
-                                                 controls={controls}
-                                                 muted={true}
-                                                 playsInline={true}/>
+                      <Sidebar.Pusher>
+                          <Button attached='top' size='mini' toggle compact disabled={!mystream}
+                                  onClick={() => this.setState({ visible: !this.state.visible, count: 0 })}>
+                              {this.state.visible ? "Close" : "Open"} chat {count > 0 ? l : ""}</Button>
+                          <Segment attached className="videos_segment"
+                                   onDoubleClick={() => this.setState({ visible: !this.state.visible })} >
+                              <div className="wrapper">
+                                  {/*<div className="title"><span>{name}</span></div>*/}
+                                  <div className="videos">
+                                      <div className="videos__wrapper">
+                                          <div className="video">
+                                              <video className='mirror' ref="localVideo"
+                                                     id="localVideo"
+                                                     poster={nowebcam}
+                                                     width={width}
+                                                     height={height}
+                                                     autoPlay={autoPlay}
+                                                     controls={controls}
+                                                     muted={true}
+                                                     playsInline={true}/>
+                                          </div>
+                                          {videos}
                                       </div>
-                                      {videos}
                                   </div>
                               </div>
-                          </div>
-                      </Segment>
+                          </Segment>
 
-                  </Sidebar.Pusher>
-              </Sidebar.Pushable>
+                      </Sidebar.Pusher>
+                  </Sidebar.Pushable>
+
+              }
+
+
           </Segment>
 
     );

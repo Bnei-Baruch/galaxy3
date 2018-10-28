@@ -10,10 +10,10 @@ body {
 
 .name_selection {
     /*margin-top: 30px!important;*/
-    position: absolute!important;
-    top: 45px!important;
+    /*position: absolute!important;*/
+    /*top: 45px!important;*/
     width: 196px!important;
-    right: 55px!important;
+    /*right: 55px!important;*/
 }
 
 .ui.selection.dropdown .menu {
