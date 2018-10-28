@@ -36,7 +36,7 @@ export const joinChatRoom = (textroom, roomid, user) => {
         textroom: "join",
         transaction: transaction,
         room: roomid,
-        username: user.name,
+        username: user.id,
         display: user.display
     };
     // myusername = username;

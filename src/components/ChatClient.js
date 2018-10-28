@@ -154,7 +154,7 @@ class ChatClient extends Component {
             return (
                 <div key={i}><p>
                     <i style={{color: 'grey'}}>{time}</i> -
-                    <b style={{color: user.role === "admin" ? 'red' : 'blue'}}>{user.name}</b>:
+                    <b style={{color: user.role === "admin" ? 'red' : 'blue'}}>{user.display}</b>:
                 </p>{text}</div>
             );
         });

@@ -39,6 +39,7 @@ class ShidurClient extends Component {
         audio: null,
         muted: true,
         user: {},
+        users: {},
     };
 
     componentDidMount() {
@@ -104,9 +105,10 @@ class ShidurClient extends Component {
                 let user = { session: 0, handle: 0};
                 user.role = "shidur";
                 user.display = "shidur";
+                user.id = Janus.randomString(10);
+                user.name = "shidur";
 
                 if(roomid) {
-                    //let register = { "request": "join", "room": roomid, "ptype": "publisher", "display": "user_shidur" };
                     let register = { "request": "join", "room": roomid, "ptype": "publisher", "display": JSON.stringify(user) };
                     hdl.send({"message": register});
                 } else {
@@ -173,18 +175,20 @@ class ShidurClient extends Component {
                     } else if(event !== undefined && event !== null) {
                         if(event === "attached") {
                             // Subscriber created and attached
-                            let {feeds} = this.state;
+                            let {feeds,users} = this.state;
                             for(let i=1;i<MAX_FEEDS;i++) {
                                 if(feeds[handle][i] === undefined || feeds[handle][i] === null) {
                                     remoteFeed.rfindex = i;
                                     remoteFeed.rfid = msg["id"];
                                     remoteFeed.rfuser = JSON.parse(msg["display"]);
+                                    remoteFeed.rfuser.rfid = msg["id"];
                                     remoteFeed.talk = talk;
                                     feeds[handle][i] = remoteFeed;
+                                    users[remoteFeed.rfuser.id] = remoteFeed.rfuser;
                                     break;
                                 }
                             }
-                            this.setState({feeds});
+                            this.setState({feeds,users});
                             Janus.log("Successfully attached to feed " + remoteFeed.rfid + " (" + remoteFeed.rfuser + ") in room " + msg["room"]);
                         } else if(event === "event") {
                             // Check if we got an event on a simulcast-related event from this publisher

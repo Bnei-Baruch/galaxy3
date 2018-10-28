@@ -32,6 +32,7 @@ class VirtualClient extends Component {
         cammuted: false,
         shidur: false,
         user: {},
+        users: {},
         username_value: localStorage.getItem("username") || "",
         visible: false
     };
@@ -222,18 +223,20 @@ class VirtualClient extends Component {
                     } else if(event !== undefined && event !== null) {
                         if(event === "attached") {
                             // Subscriber created and attached
-                            let {feeds} = this.state;
+                            let {feeds,users} = this.state;
                             for(let i=1;i<MAX_FEEDS;i++) {
                                 if(feeds[i] === undefined || feeds[i] === null) {
                                     remoteFeed.rfindex = i;
                                     remoteFeed.rfid = msg["id"];
                                     remoteFeed.rfuser = JSON.parse(msg["display"]);
+                                    remoteFeed.rfuser.rfid = msg["id"];
                                     remoteFeed.talk = talk;
                                     feeds[i] = remoteFeed;
+                                    users[remoteFeed.rfuser.id] = remoteFeed.rfuser;
                                     break;
                                 }
                             }
-                            this.setState(feeds);
+                            this.setState({feeds,users});
                             Janus.log("Successfully attached to feed " + remoteFeed.rfid + " (" + remoteFeed.rfuser + ") in room " + msg["room"]);
                         }
                     }
@@ -471,9 +474,14 @@ class VirtualClient extends Component {
     joinRoom = () => {
         let {videoroom, selected_room, user, username_value} = this.state;
         localStorage.setItem("room", selected_room);
+        //FIXME: will be id from keyclock
+        user.id = Janus.randomString(10);
+        //FIXME: will be role from keyclock
         user.role = "user";
-        user.display = username_value || "user-"+Janus.randomString(4);
-        user.name = user.display;
+        //FIXME: wiill be name from keyclock
+        user.name = "user-"+Janus.randomString(4);
+        //This name will see other users
+        user.display = username_value || user.name;
         localStorage.setItem("username", user.display);
         let register = { "request": "join", "room": selected_room, "ptype": "publisher", "display": JSON.stringify(user) };
         videoroom.send({"message": register});

@@ -23,6 +23,7 @@ class SDIOutClient extends Component {
         audio: null,
         muted: true,
         user: {},
+        users: {},
     };
 
     componentDidMount() {
@@ -56,17 +57,17 @@ class SDIOutClient extends Component {
                 //let {user} = this.state;
                 let user = { session: 0, handle: 0};
                 user.role = "sdiout";
-                user.display = "sdioutput";
+                user.display = "sdiout";
+                user.id = Janus.randomString(10);
+                user.name = "sdiout";
                 this.setState({videoroom,user});
                 Janus.log("Plugin attached! (" + videoroom.getPlugin() + ", id=" + videoroom.getId() + ")");
                 Janus.log("  -- This is a publisher/manager");
 
                 if(roomid) {
-                    //let register = { "request": "join", "room": roomid, "ptype": "publisher", "display": "user_shidur" };
                     let register = { "request": "join", "room": roomid, "ptype": "publisher", "display": JSON.stringify(user) };
                     videoroom.send({"message": register});
                 } else {
-                    // Get list rooms
                     videoroom.send({"message": { "request":"list" },
                         success: (data) => {
                             Janus.log(" :: Got list of all rooms: ",data);
@@ -132,18 +133,20 @@ class SDIOutClient extends Component {
                     } else if(event !== undefined && event !== null) {
                         if(event === "attached") {
                             // Subscriber created and attached
-                            let {feeds} = this.state;
+                            let {feeds,users} = this.state;
                             for(let i=1;i<MAX_FEEDS;i++) {
                                 if(feeds[i] === undefined || feeds[i] === null) {
                                     remoteFeed.rfindex = i;
                                     remoteFeed.rfid = msg["id"];
                                     remoteFeed.rfuser = JSON.parse(msg["display"]);
+                                    remoteFeed.rfuser.rfid = msg["id"];
                                     remoteFeed.talk = talk;
                                     feeds[i] = remoteFeed;
+                                    users[remoteFeed.rfuser.id] = remoteFeed.rfuser;
                                     break;
                                 }
                             }
-                            this.setState(feeds);
+                            this.setState({feeds,users});
                             Janus.log("Successfully attached to feed " + remoteFeed.rfid + " (" + remoteFeed.rfuser + ") in room " + msg["room"]);
                         } else if(event === "event") {
                             // Check if we got an event on a simulcast-related event from this publisher

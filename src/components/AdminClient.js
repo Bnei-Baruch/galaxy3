@@ -30,6 +30,7 @@ class AdminClient extends Component {
         messages: [],
         visible: false,
         input_value: "",
+        users: {},
     };
 
     componentDidMount() {
@@ -99,10 +100,9 @@ class AdminClient extends Component {
                 let {user} = this.state;
                 user.role = "admin";
                 user.display = "admin";
-                user.name = "admin-"+Janus.randomString(4);
+                user.id = Janus.randomString(10);
+                user.name = "admin";
                 this.setState({videoroom, user});
-
-                //Janus.listDevices(this.initDevices, { audio: true, video: true });
 
                 if(roomid) {
                     this.listForward(roomid);
@@ -184,18 +184,20 @@ class AdminClient extends Component {
                     } else if(event !== undefined && event !== null) {
                         if(event === "attached") {
                             // Subscriber created and attached
-                            let {feeds} = this.state;
+                            let {feeds,users} = this.state;
                             for(let i=1;i<MAX_FEEDS;i++) {
                                 if(feeds[i] === undefined || feeds[i] === null) {
                                     remoteFeed.rfindex = i;
                                     remoteFeed.rfid = msg["id"];
                                     remoteFeed.rfuser = JSON.parse(msg["display"]);
+                                    remoteFeed.rfuser.rfid = msg["id"];
                                     remoteFeed.talk = talk;
                                     feeds[i] = remoteFeed;
+                                    users[remoteFeed.rfuser.id] = remoteFeed.rfuser;
                                     break;
                                 }
                             }
-                            this.setState(feeds);
+                            this.setState({feeds,users});
                             Janus.log("Successfully attached to feed " + remoteFeed.rfid + " (" + remoteFeed.rfuser + ") in room " + msg["room"]);
                         } else if(event === "event") {
                             // Check if we got an event on a simulcast-related event from this publisher
