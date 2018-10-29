@@ -860,7 +860,7 @@ class AdminClient extends Component {
       let users_grid = feeds.map((feed,i) => {
           if(feed) {
               return (
-                  <Table.Row active={this.state.feed_id} key={i} onClick={() => this.getUserInfo(feed.rfuser,feed.rfid)} >
+                  <Table.Row active={feed.rfid === this.state.feed_id} key={i} onClick={() => this.getUserInfo(feed.rfuser,feed.rfid)} >
                       <Table.Cell>{feed.rfuser.name}</Table.Cell>
                   </Table.Row>
               )
@@ -932,6 +932,16 @@ class AdminClient extends Component {
                           <input />
                           <Button positive onClick={this.createRoom}>Create</Button>
                       </Input>
+                  </Menu.Item>
+                  <Menu.Item>
+                      <video ref="switchVideo"
+                             id="switchVideo"
+                             width={width}
+                             height={height}
+                             autoPlay={autoPlay}
+                             controls={controls}
+                             muted={true}
+                             playsinline={true}/>
                   </Menu.Item>
               </Menu>
           </Segment>
@@ -1017,14 +1027,6 @@ class AdminClient extends Component {
 
                 </Sidebar.Pusher>
             </Sidebar.Pushable>
-            <video ref="switchVideo"
-                   id="switchVideo"
-                   width='640'
-                   height='360'
-                   autoPlay={autoPlay}
-                   controls={controls}
-                   muted={true}
-                   playsinline={true}/>
 
         </Segment>
 
