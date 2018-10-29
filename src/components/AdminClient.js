@@ -15,6 +15,8 @@ class AdminClient extends Component {
         janus: null,
         feeds: [],
         rooms: [],
+        feed_id: null,
+        feed_user: null,
         current_room: "",
         roomid: "",
         videoroom: null,
@@ -796,15 +798,34 @@ class AdminClient extends Component {
         }
     };
 
+    kickUser = (id) => {
+        const {current_room,videoroom,feed_id} = this.state;
+        let request = {
+            request: "kick",
+            room: current_room,
+            secret: `${SECRET}`,
+            id: feed_id,
+        };
+        videoroom.send({"message": request,
+            success: (data) => {
+                Janus.log(":: Kick callback: ", data);
+            },
+        });
+    };
+
     getUserInfo = (userinfo,id) => {
+        this.setState({feed_id: id, feed_user: userinfo});
         Janus.log(userinfo);
         this.switchFeed(id);
-        let {session,handle} = userinfo;
+    };
+
+    getFeedInfo = () => {
+        let {session,handle} = this.state.feed_user;
         getPublisherInfo(session,handle,json => {
-            Janus.log(json);
+                Janus.log(":: Publisher info", json);
             }
         )
-    };
+    }
 
     handleShowClick = () => this.setState({ visible: !this.state.visible })
 
@@ -839,7 +860,7 @@ class AdminClient extends Component {
       let users_grid = feeds.map((feed,i) => {
           if(feed) {
               return (
-                  <Table.Row key={i} onClick={() => this.getUserInfo(feed.rfuser,feed.rfid)} >
+                  <Table.Row active={this.state.feed_id} key={i} onClick={() => this.getUserInfo(feed.rfuser,feed.rfid)} >
                       <Table.Cell>{feed.rfuser.name}</Table.Cell>
                   </Table.Row>
               )
@@ -976,6 +997,14 @@ class AdminClient extends Component {
 
                         <Segment textAlign='center' className="group_list" raised>
                             <Table selectable compact='very' basic structured className="admin_table" unstackable>
+                                <Table.Header>
+                                    <Table.Row>
+                                        <Table.HeaderCell>
+                                            <Button positive icon='info' onClick={this.getFeedInfo} />
+                                            <Button negative icon='user x' onClick={this.kickUser} />
+                                        </Table.HeaderCell>
+                                    </Table.Row>
+                                </Table.Header>
                                 <Table.Body>
                                     {users_grid}
                                 </Table.Body>

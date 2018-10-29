@@ -100,12 +100,12 @@ const onProtocolData = (data) => {
         let whisper = json["whisper"];
         if (whisper === true) {
             // Private message
-            Janus.log("-:: It's private message: "+dateString+" : "+from+" : "+msg)
+            Janus.log("-:: It's protocol private message: "+dateString+" : "+from+" : "+msg)
         } else {
             // Public message
             let message = JSON.parse(msg);
             message.time = dateString;
-            Janus.log("-:: It's public message: "+message);
+            Janus.log("-- :: It's protocol public message: ", message);
         }
     } else if (what === "join") {
         // Somebody joined
@@ -126,8 +126,8 @@ const onProtocolData = (data) => {
     }
 };
 
-export const sendProtocolMessage = (protocol,user,text) => {
-    let msg = {user, text: text};
+export const sendProtocolMessage = (protocol,user,msg) => {
+    //let msg = {user, text: text};
     let message = {
         textroom: "message",
         transaction: Janus.randomString(12),

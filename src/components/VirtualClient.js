@@ -79,7 +79,7 @@ class VirtualClient extends Component {
                 this.initDevices(false);
             } else {
                 //Try to get audio fail reson
-                testDevices(true, false, steam => {});
+                testDevices(false, true, steam => {});
                 alert(" :: No input devices found ::");
                 //FIXME: What we going to do in this case?
                 this.setState({audio_device: null});
@@ -525,8 +525,9 @@ class VirtualClient extends Component {
     };
 
     handleQuestion = () => {
-        const { protocol, user} = this.state;
-        sendProtocolMessage(protocol, user, "Test Message" );
+        const { protocol, user, room} = this.state;
+        let msg = { type: "question", status: true, room, user};
+        sendProtocolMessage(protocol, user, msg );
     };
 
 
