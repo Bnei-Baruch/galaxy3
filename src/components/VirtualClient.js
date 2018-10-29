@@ -112,7 +112,7 @@ class VirtualClient extends Component {
         if (videoroom) {
             videoroom.send({message: {request: "list"},
                 success: (data) => {
-                    Janus.log(" :: Get Rooms List: ", data.list)
+                    Janus.debug(" :: Get Rooms List: ", data.list);
                     data.list.sort((a, b) => {
                         // if (a.num_participants > b.num_participants) return -1;
                         // if (a.num_participants < b.num_participants) return 1;
@@ -121,9 +121,27 @@ class VirtualClient extends Component {
                         return 0;
                     });
                     this.setState({rooms: data.list});
+                    this.getFeedsList(data.list)
                 }
             });
         }
+    };
+
+    //FIXME: tmp solution to show count without service users in room list
+    getFeedsList = (rooms) => {
+        let {videoroom} = this.state;
+        rooms.forEach((room,i) => {
+            if(room.num_participants > 0) {
+                videoroom.send({
+                    message: {request: "listparticipants", "room": room.room},
+                    success: (data) => {
+                        let count = data.participants.filter(p => JSON.parse(p.display).role === "user");
+                        rooms[i].num_participants = count.length;
+                        this.setState({rooms});
+                    }
+                });
+            }
+        })
     };
 
     initVideoRoom = () => {
@@ -141,7 +159,7 @@ class VirtualClient extends Component {
                 this.setState({videoroom, user});
                 this.initDevices(true);
                 // Get list rooms
-                this.getRoomList();
+                //this.getRoomList();
             },
             error: (error) => {
                 Janus.log("Error attaching plugin: " + error);
@@ -635,7 +653,7 @@ class VirtualClient extends Component {
                               onClick={this.getRoomList}
                               onChange={(e, {value}) => this.selectRoom(value)} />
                           :
-                          <Button disabled={mystream || !audio_device}
+                          <Button disabled={!selected_room || mystream || !audio_device}
                                   positive
                                   icon='add user'
                                   onClick={this.joinRoom} />
