@@ -5,8 +5,8 @@ import './App.css';
 // import AdminStreaming from "./components/AdminStreaming";
 // import ShidurClient from "./components/ShidurClient";
 // import AdminClient from "./components/AdminClient";
-import SDIOutClient from "./components/SDIOutClient";
-// import VirtualClient from "./components/VirtualClient";
+// import SDIOutClient from "./components/SDIOutClient";
+import VirtualClient from "./components/VirtualClient";
 // import VirtualStreaming from "./components/VirtualStreaming";
 
 class App extends Component {
@@ -19,10 +19,10 @@ class App extends Component {
             <Fragment>
                 {/*<Streaming />*/}
                 {/*<ShidurClient />*/}
-                <SDIOutClient />
+                {/*<SDIOutClient />*/}
                 {/*<SndmanClient />*/}
                 {/*<AdminClient />*/}
-                {/*<VirtualClient />*/}
+                <VirtualClient />
                 {/*<VirtualStreaming/>*/}
             </Fragment>
         );

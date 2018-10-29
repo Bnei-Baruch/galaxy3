@@ -47,7 +47,7 @@ class ChatClient extends Component {
 
     onKeyPressed = (e) => {
         if(e.code === "Enter")
-            this.sendDataMessage();
+            this.sendChatMessage();
     };
 
     exitRoom = (room) => {
@@ -117,7 +117,7 @@ class ChatClient extends Component {
         }
     };
 
-    sendDataMessage = () => {
+    sendChatMessage = () => {
         let {input_value, user} = this.state;
         let msg = {user, text: input_value};
         let message = {
@@ -170,7 +170,7 @@ class ChatClient extends Component {
                 <Input size='mini' fluid type='text' placeholder='Type your message' action value={this.state.input_value}
                        onChange={(v,{value}) => this.setState({input_value: value})}>
                     <input />
-                    <Button size='mini' positive onClick={this.sendDataMessage}>Send</Button>
+                    <Button size='mini' positive onClick={this.sendChatMessage}>Send</Button>
                 </Input>
 
             </Segment>

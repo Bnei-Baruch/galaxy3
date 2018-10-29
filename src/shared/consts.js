@@ -1,6 +1,7 @@
 
 export const MAX_FEEDS = 20;
 export const DATA_PORT = 5102;
+export const PROTOCOL_ROOM = 1000;
 export const DANTE_IN_IP = process.env.REACT_APP_DANTE_IN_IP;
 export const WFRP_STATE = process.env.REACT_APP_WFRP_STATE;
 export const WFDB_STATE = process.env.REACT_APP_WFDB_STATE;

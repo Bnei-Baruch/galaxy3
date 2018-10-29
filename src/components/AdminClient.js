@@ -136,6 +136,12 @@ class AdminClient extends Component {
             onremotestream: (stream) => {
                 // The publisher stream is sendonly, we don't expect anything here
             },
+            ondataopen: (data) => {
+                Janus.log("The DataChannel is available!(publisher)");
+            },
+            ondata: (data) => {
+                Janus.debug("We got data from the DataChannel! (publisher) " + data);
+            },
             oncleanup: () => {
                 Janus.log(" ::: Got a cleanup notification: we are unpublished now :::");
             }
@@ -271,6 +277,14 @@ class AdminClient extends Component {
                     //             $('#curres'+remoteFeed.rfindex).removeClass('hide').text(width+'x'+height).show();
                     //     }, 1000);
                     // }
+                },
+                ondataopen: (data) => {
+                    Janus.log("The DataChannel is available!(feed)");
+                },
+                ondata: (data) => {
+                    Janus.debug("We got data from the DataChannel! (feed) " + data);
+                    let msg = JSON.parse(data);
+                    Janus.log(" :: We got msg via DataChannel: ",msg)
                 },
                 oncleanup: () => {
                     Janus.log(" ::: Got a cleanup notification (remote feed " + id + ") :::");

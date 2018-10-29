@@ -7,6 +7,7 @@ import '../shared/VideoConteiner.scss'
 import {MAX_FEEDS} from "../shared/consts";
 import nowebcam from './nowebcam.jpeg';
 import ChatClient from "./ChatClient";
+import {initGxyProtocol, sendProtocolMessage} from "../shared/protocol";
 
 class VirtualClient extends Component {
 
@@ -31,6 +32,7 @@ class VirtualClient extends Component {
         muted: false,
         cammuted: false,
         shidur: false,
+        protocol: null,
         user: {},
         users: {},
         username_value: localStorage.getItem("username") || "",
@@ -463,7 +465,7 @@ class VirtualClient extends Component {
         }
     };
 
-    sendMessage = (key,value) => {
+    sendDataMessage = (key,value) => {
         let {videoroom,user} = this.state;
         user[key] = value;
         var message = JSON.stringify(user);
@@ -472,7 +474,7 @@ class VirtualClient extends Component {
     };
 
     joinRoom = () => {
-        let {videoroom, selected_room, user, username_value} = this.state;
+        let {janus, videoroom, selected_room, user, username_value} = this.state;
         localStorage.setItem("room", selected_room);
         //FIXME: will be id from keyclock
         user.id = Janus.randomString(10);
@@ -486,15 +488,19 @@ class VirtualClient extends Component {
         let register = { "request": "join", "room": selected_room, "ptype": "publisher", "display": JSON.stringify(user) };
         videoroom.send({"message": register});
         this.setState({user, muted: true, room: selected_room});
+        initGxyProtocol(janus, user, protocol => {
+            this.setState({protocol});
+        });
     };
 
     exitRoom = () => {
-        let {videoroom, room} = this.state;
+        let {videoroom, protocol, room} = this.state;
         let leave = {request : "leave"};
         Janus.log(room);
         videoroom.send({"message": leave});
         this.setState({muted: false, mystream: null, room: "", selected_room: "", i: "", feeds: []});
         this.initVideoRoom();
+        protocol.detach();
     };
 
     selectRoom = (i) => {
@@ -518,11 +524,17 @@ class VirtualClient extends Component {
         this.setState({room,name,user,i});
     };
 
+    handleQuestion = () => {
+        const { protocol, user} = this.state;
+        sendProtocolMessage(protocol, user, "Test Message" );
+    };
+
+
     camMute = () => {
         let {videoroom,cammuted} = this.state;
         cammuted ? videoroom.unmuteVideo() : videoroom.muteVideo();
         this.setState({cammuted: !cammuted});
-        this.sendMessage("camera", this.state.cammuted);
+        this.sendDataMessage("camera", this.state.cammuted);
     };
 
     micMute = () => {
@@ -636,10 +648,10 @@ class VirtualClient extends Component {
                               onChange={(v,{value}) => this.setState({username_value: value})} />
                       </Menu.Item>
                       <Menu.Item >
-                          <Button disabled={true}
+                          <Button disabled={!mystream}
                                   color='orange'
                                   icon='question'
-                                  onClick={() => this.sendMessage("question",true)} /> :::
+                                  onClick={this.handleQuestion} /> :::
                           <Button color='blue' disabled={this.state.shidur} onClick={this.showShidur} icon='tv' />
                           {this.state.shidur ?
                               <NewWindow
