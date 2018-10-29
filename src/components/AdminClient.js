@@ -79,6 +79,17 @@ class AdminClient extends Component {
         }
     };
 
+    getFeedsList = (roomid) => {
+        const {videoroom} = this.state;
+        if (videoroom) {
+            videoroom.send({message: {request: "listparticipants", "room": roomid},
+                success: (data) => {
+                    Janus.log(" :: Got Feeds List (room :"+roomid+"): ", data)
+                }
+            });
+        }
+    };
+
     listForward = (room) => {
         const {videoroom} = this.state;
         let req = {"request":"listforwarders", "room":room, "secret":`${SECRET}`}
@@ -640,6 +651,7 @@ class AdminClient extends Component {
     joinRoom = (data, i) => {
         const {feeds,rooms,chatroom,user} = this.state;
         let room = rooms[i].room;
+        this.getFeedsList(room);
         if (this.state.current_room === room)
             return;
         Janus.log(" :: Attaching to Preview: ", room);
