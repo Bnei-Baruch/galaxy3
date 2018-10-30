@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import { Janus } from "../lib/janus";
-import {Segment, Table} from "semantic-ui-react";
+import {Segment, Table, Icon} from "semantic-ui-react";
 import {getState, putData, initJanus} from "../shared/tools";
 import {MAX_FEEDS} from "../shared/consts";
 import '../shared/VideoConteiner.scss'
@@ -33,6 +33,7 @@ class ShidurClient extends Component {
             room: null,
             index: null
         },
+        quistions_queue: [],
         videoroom: null,
         remotefeed: null,
         myid: null,
@@ -62,6 +63,7 @@ class ShidurClient extends Component {
                 this.setState({protocol});
             }, ondata => {
                 Janus.log("-- :: It's protocol public message: ", ondata);
+                this.onProtocolData(ondata);
             });
 
             getState('state/galaxy/pr5', (pgm_state) => {
@@ -72,6 +74,23 @@ class ShidurClient extends Component {
         });
         setInterval(() => this.getRoomList(), 10000 );
 
+    };
+
+    onProtocolData = (data) => {
+        if(data.type === "question" && data.status) {
+            let {quistions_queue} = this.state;
+            quistions_queue.push(data);
+            this.setState({quistions_queue});
+        } else if(data.type === "question" && !data.status) {
+            let {quistions_queue} = this.state;
+            for(let i = 0; i < quistions_queue.length; i++){
+                if(quistions_queue[i].user.id === data.user.id) {
+                    quistions_queue.splice(i, 1);
+                    this.setState({quistions_queue});
+                    break
+                }
+            }
+        }
     };
 
     componentWillUnmount() {
@@ -561,15 +580,17 @@ class ShidurClient extends Component {
 
   render() {
       //Janus.log(" --- ::: RENDER ::: ---");
-      const { feeds,preview_room,preview_name,program_name,disabled_rooms,rooms,group,pgm_state } = this.state;
+      const { feeds,preview_room,preview_name,program_name,disabled_rooms,rooms,quistions_queue,pgm_state } = this.state;
       const width = "400";
       const height = "300";
       const autoPlay = true;
       const controls = false;
       const muted = true;
+      const q = (<Icon color='red' name='question circle' />);
 
       let rooms_list = rooms.map((data,i) => {
           const {room, num_participants, description} = data;
+          let chk = quistions_queue.filter(q => q.room === room);
           return (
               <Table.Row negative={program_name === description}
                          positive={preview_name === description}
@@ -579,6 +600,7 @@ class ShidurClient extends Component {
                          onContextMenu={(e) => this.disableRoom(e, data, i)} >
                   <Table.Cell width={5}>{description}</Table.Cell>
                   <Table.Cell width={1}>{num_participants}</Table.Cell>
+                  <Table.Cell width={1}>{chk.length > 0 ? q : ""}</Table.Cell>
               </Table.Row>
           )
       });
@@ -591,6 +613,7 @@ class ShidurClient extends Component {
                          onContextMenu={(e) => this.restoreRoom(e, data, i)} >
                   <Table.Cell width={5}>{description}</Table.Cell>
                   <Table.Cell width={1}>{num_participants}</Table.Cell>
+                  <Table.Cell width={1}></Table.Cell>
               </Table.Row>
           )
       });
