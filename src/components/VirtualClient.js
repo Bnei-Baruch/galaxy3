@@ -36,7 +36,8 @@ class VirtualClient extends Component {
         user: {},
         users: {},
         username_value: localStorage.getItem("username") || "",
-        visible: false
+        visible: false,
+        question: false,
     };
 
     componentDidMount() {
@@ -508,6 +509,8 @@ class VirtualClient extends Component {
         this.setState({user, muted: true, room: selected_room});
         initGxyProtocol(janus, user, protocol => {
             this.setState({protocol});
+        }, ondata => {
+            Janus.log("-- :: It's protocol public message: ", ondata);
         });
     };
 
@@ -543,9 +546,11 @@ class VirtualClient extends Component {
     };
 
     handleQuestion = () => {
-        const { protocol, user, room} = this.state;
-        let msg = { type: "question", status: true, room, user};
+        //TODO: only when shidur user is online will be avelable send question event, so we need to add check
+        const { protocol, user, room, question} = this.state;
+        let msg = { type: "question", status: !question, room, user};
         sendProtocolMessage(protocol, user, msg );
+        this.setState({question: !question});
     };
 
 
@@ -582,7 +587,7 @@ class VirtualClient extends Component {
 
   render() {
 
-      const { rooms,room,audio_devices,video_devices,video_device,audio_device,i,muted,cammuted,mystream,selected_room,count} = this.state;
+      const { rooms,room,audio_devices,video_devices,video_device,audio_device,i,muted,cammuted,mystream,selected_room,count,question} = this.state;
       const width = "134";
       const height = "100";
       const autoPlay = true;
@@ -668,7 +673,7 @@ class VirtualClient extends Component {
                       </Menu.Item>
                       <Menu.Item >
                           <Button disabled={!mystream}
-                                  color='orange'
+                                  color={question ? 'green' : 'orange'}
                                   icon='question'
                                   onClick={this.handleQuestion} /> :::
                           <Button color='blue' disabled={this.state.shidur} onClick={this.showShidur} icon='tv' />

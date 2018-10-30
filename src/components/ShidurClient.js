@@ -5,6 +5,7 @@ import {getState, putData, initJanus} from "../shared/tools";
 import {MAX_FEEDS} from "../shared/consts";
 import '../shared/VideoConteiner.scss'
 import nowebcam from './nowebcam.jpeg';
+import {initGxyProtocol} from "../shared/protocol";
 
 class ShidurClient extends Component {
 
@@ -26,6 +27,7 @@ class ShidurClient extends Component {
         group: null,
         preview: null,
         program: null,
+        protocol: null,
         pgm_state: {
             name: "",
             room: null,
@@ -38,7 +40,14 @@ class ShidurClient extends Component {
         mystream: null,
         audio: null,
         muted: true,
-        user: {},
+        user: {
+            session: 0,
+            handle: 0,
+            role: "shidur",
+            display: "shidur",
+            id: Janus.randomString(10),
+            name: "shidur"
+        },
         users: {},
     };
 
@@ -48,6 +57,13 @@ class ShidurClient extends Component {
             user.session = janus.getSessionId();
             this.setState({janus,user});
             this.initVideoRoom(null, "preview");
+
+            initGxyProtocol(janus, user, protocol => {
+                this.setState({protocol});
+            }, ondata => {
+                Janus.log("-- :: It's protocol public message: ", ondata);
+            });
+
             getState('state/galaxy/pr5', (pgm_state) => {
                 Janus.log(" :: Get State: ", pgm_state);
                 this.setState({program_room: pgm_state.room, program_name: pgm_state.name, pgm_state});
@@ -67,12 +83,6 @@ class ShidurClient extends Component {
         if (preview) {
             preview.send({message: {request: "list"},
                 success: (data) => {
-                    //Janus.log(" :: Get Rooms List: ", data.list)
-                    data.list.forEach((room, i) => {
-                        if (program_room === room.room || preview_room === room.room) {
-                            data.list[i].num_participants = room.num_participants - 1;
-                        }
-                    });
                     let usable_rooms = data.list.filter(room => room.num_participants > 0);
                     var newarray = usable_rooms.filter((room) => !disabled_rooms.find(droom => room.room === droom.room));
                     newarray.sort((a, b) => {
@@ -83,9 +93,27 @@ class ShidurClient extends Component {
                         return 0;
                     });
                     this.setState({rooms: newarray});
+                    this.getFeedsList(newarray)
                 }
             });
         }
+    };
+
+    //FIXME: tmp solution to show count without service users in room list
+    getFeedsList = (rooms) => {
+        let {preview} = this.state;
+        rooms.forEach((room,i) => {
+            if(room.num_participants > 0) {
+                preview.send({
+                    message: {request: "listparticipants", "room": room.room},
+                    success: (data) => {
+                        let count = data.participants.filter(p => JSON.parse(p.display).role === "user");
+                        rooms[i].num_participants = count.length;
+                        this.setState({rooms});
+                    }
+                });
+            }
+        })
     };
 
     initVideoRoom = (roomid, handle) => {
@@ -102,11 +130,7 @@ class ShidurClient extends Component {
                 this.setState({[handle]: hdl});
                 Janus.log("Plugin attached! (" + hdl.getPlugin() + ", id=" + hdl.getId() + ")");
                 Janus.log("  -- This is a publisher/manager");
-                let user = { session: 0, handle: 0};
-                user.role = "shidur";
-                user.display = "shidur";
-                user.id = Janus.randomString(10);
-                user.name = "shidur";
+                let {user} = this.state;
 
                 if(roomid) {
                     let register = { "request": "join", "room": roomid, "ptype": "publisher", "display": JSON.stringify(user) };

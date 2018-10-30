@@ -4,7 +4,6 @@ import {Segment, Menu, Select, Button, Input, Table, Grid, Message,Sidebar} from
 import {initJanus, initChatRoom, getDateString, joinChatRoom, getPublisherInfo} from "../shared/tools";
 import '../shared/VideoConteiner.scss'
 import {MAX_FEEDS, SECRET} from "../shared/consts";
-//import VolumeSlider from "./Slider";
 
 class AdminClient extends Component {
 
@@ -84,7 +83,9 @@ class AdminClient extends Component {
         if (videoroom) {
             videoroom.send({message: {request: "listparticipants", "room": roomid},
                 success: (data) => {
-                    Janus.log(" :: Got Feeds List (room :"+roomid+"): ", data)
+                    Janus.log(" :: Got Feeds List (room :"+roomid+"): ", data);
+                    let feeds = data.participants;
+                    console.log(feeds)
                 }
             });
         }
@@ -92,7 +93,7 @@ class AdminClient extends Component {
 
     listForward = (room) => {
         const {videoroom} = this.state;
-        let req = {"request":"listforwarders", "room":room, "secret":`${SECRET}`}
+        let req = {"request":"listforwarders", "room":room, "secret":`${SECRET}`};
         videoroom.send ({"message": req,
             success: (data) => {
                 Janus.log(" :: List forwarders: ", data);
@@ -175,7 +176,7 @@ class AdminClient extends Component {
                     Janus.log("Plugin attached! (" + remoteFeed.getPlugin() + ", id=" + remoteFeed.getId() + ")");
                     Janus.log("  -- This is a subscriber");
                     // We wait for the plugin to send us an offer
-                    let listen = { "request": "join", "room": this.state.current_room, "ptype": "subscriber", "feed": id, "private_id": this.state.mypvtid };
+                    let listen = { "request": "join", "room": this.state.current_room, "ptype": "subscriber", "feed": id };
                     // In case you don't want to receive audio, video or data, even if the
                     // publisher is sending them, set the 'offer_audio', 'offer_video' or
                     // 'offer_data' properties to false (they're true by default), e.g.:
@@ -317,7 +318,7 @@ class AdminClient extends Component {
                     Janus.log("Plugin attached! (" + switchFeed.getPlugin() + ", id=" + switchFeed.getId() + ")");
                     Janus.log("  -- This is a subscriber");
                     // We wait for the plugin to send us an offer
-                    let listen = { "request": "join", "room": this.state.current_room, "ptype": "subscriber", "feed": id, "private_id": this.state.mypvtid };
+                    let listen = { "request": "join", "room": this.state.current_room, "ptype": "subscriber", "feed": id };
                     switchFeed.send({"message": listen});
                     this.setState({switchFeed});
                 },
@@ -651,7 +652,6 @@ class AdminClient extends Component {
     joinRoom = (data, i) => {
         const {feeds,rooms,chatroom,user} = this.state;
         let room = rooms[i].room;
-        this.getFeedsList(room);
         if (this.state.current_room === room)
             return;
         Janus.log(" :: Attaching to Preview: ", room);

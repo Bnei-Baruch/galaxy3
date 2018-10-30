@@ -19,7 +19,7 @@ const attachGxyProtocol = (protocol, user) => {
     });
 };
 
-export const initGxyProtocol = (janus,user,callback) => {
+export const initGxyProtocol = (janus,user,callback,ondata) => {
     let protocol = null;
     janus.attach(
         {
@@ -71,7 +71,7 @@ export const initGxyProtocol = (janus,user,callback) => {
             },
             ondata: (data) => {
                 Janus.debug("We got data from the DataChannel! " + data);
-                onProtocolData(data);
+                onProtocolData(data,ondata);
             },
             oncleanup: () => {
                 Janus.log(" ::: Got a cleanup notification :::");
@@ -79,7 +79,7 @@ export const initGxyProtocol = (janus,user,callback) => {
         });
 };
 
-const onProtocolData = (data) => {
+const onProtocolData = (data,ondata) => {
     Janus.log(":: We got message from Data Channel: ",data);
     let json = JSON.parse(data);
     // var transaction = json["transaction"];
@@ -105,7 +105,7 @@ const onProtocolData = (data) => {
             // Public message
             let message = JSON.parse(msg);
             message.time = dateString;
-            Janus.log("-- :: It's protocol public message: ", message);
+            ondata(message)
         }
     } else if (what === "join") {
         // Somebody joined
