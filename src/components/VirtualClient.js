@@ -64,8 +64,11 @@ class VirtualClient extends Component {
                 let audio_devices = devices.filter(device => device.kind === "audioinput");
                 let video_devices = video ? devices.filter(device => device.kind === "videoinput") : [];
                 let {video_device,audio_device} = this.state;
-                let video_id = video ? (video_device !== "" ? video_device : video_devices[0].deviceId) : null;
-                let audio_id = audio_device !== "" ? audio_device : audio_devices[0].deviceId;
+                // Be sure device still exist
+                let achk = audio_devices.filter(a => a.deviceId === audio_device).length > 0;
+                let vchk = video_devices.filter(v => v.deviceId === video_device).length > 0;
+                let video_id = video ? (video_device !== "" && vchk ? video_device : video_devices[0].deviceId) : null;
+                let audio_id = audio_device !== "" && achk ? audio_device : audio_devices[0].deviceId;
                 Janus.log(" :: Got Video devices: ", video_devices);
                 Janus.log(" :: Got Audio devices: ", audio_devices);
                 this.setState({video_devices, audio_devices});
