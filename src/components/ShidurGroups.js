@@ -7,23 +7,17 @@ import '../shared/VideoConteiner.scss'
 import nowebcam from './nowebcam.jpeg';
 import {initGxyProtocol} from "../shared/protocol";
 
-class ShidurClient extends Component {
+class ShidurGroups extends Component {
 
     state = {
         janus: null,
-        feeds: {
-            preview: [],
-            program: [],
-        },
+        feeds: [],
         rooms: [],
+        gxyhandle: null,
         index: 0,
-        preview_room: null,
-        program_room: null,
-        preview_name: null,
-        program_name: null,
         room: "",
         name: "",
-        disabled_rooms: [],
+        disabled_groups: [],
         group: null,
         preview: null,
         program: null,
@@ -34,7 +28,6 @@ class ShidurClient extends Component {
             index: null
         },
         quistions_queue: [],
-        videoroom: null,
         remotefeed: null,
         myid: null,
         mypvtid: null,
@@ -66,14 +59,12 @@ class ShidurClient extends Component {
                 this.onProtocolData(ondata);
             });
 
-            getState('state/galaxy/pr5', (pgm_state) => {
+            getState('state/galaxy/pr1', (pgm_state) => {
                 Janus.log(" :: Get State: ", pgm_state);
                 this.setState({program_room: pgm_state.room, program_name: pgm_state.name, pgm_state});
                 this.initVideoRoom(pgm_state.room, "program");
             });
         });
-        setInterval(() => this.getRoomList(), 10000 );
-
     };
 
     onProtocolData = (data) => {
@@ -97,68 +88,18 @@ class ShidurClient extends Component {
         this.state.janus.destroy();
     };
 
-    getRoomList = () => {
-        const {preview, disabled_rooms, program_room, preview_room} = this.state;
-        if (preview) {
-            preview.send({message: {request: "list"},
-                success: (data) => {
-                    let usable_rooms = data.list.filter(room => room.num_participants > 0);
-                    var newarray = usable_rooms.filter((room) => !disabled_rooms.find(droom => room.room === droom.room));
-                    newarray.sort((a, b) => {
-                        // if (a.num_participants > b.num_participants) return -1;
-                        // if (a.num_participants < b.num_participants) return 1;
-                        if (a.description > b.description) return 1;
-                        if (a.description < b.description) return -1;
-                        return 0;
-                    });
-                    this.setState({rooms: newarray});
-                    this.getFeedsList(newarray)
-                }
-            });
-        }
-    };
-
-    //FIXME: tmp solution to show count without service users in room list
-    getFeedsList = (rooms) => {
-        let {preview} = this.state;
-        rooms.forEach((room,i) => {
-            if(room.num_participants > 0) {
-                preview.send({
-                    message: {request: "listparticipants", "room": room.room},
-                    success: (data) => {
-                        let count = data.participants.filter(p => JSON.parse(p.display).role === "user");
-                        rooms[i].num_participants = count.length;
-                        this.setState({rooms});
-                    }
-                });
-            }
-        })
-    };
-
-    initVideoRoom = (roomid, handle) => {
-        // if(!this.state.room)
-        //     return;
-        if(this.state[handle])
-            this.state[handle].detach();
+    initVideoRoom = () => {
         this.state.janus.attach({
             plugin: "janus.plugin.videoroom",
             opaqueId: "preview_shidur",
-            success: (hdl) => {
-                Janus.log(hdl);
-                hdl.room = roomid;
-                this.setState({[handle]: hdl});
-                Janus.log("Plugin attached! (" + hdl.getPlugin() + ", id=" + hdl.getId() + ")");
+            success: (gxyhandle) => {
+                Janus.log(gxyhandle);
+                this.setState({gxyhandle});
+                Janus.log("Plugin attached! (" + gxyhandle.getPlugin() + ", id=" + gxyhandle.getId() + ")");
                 Janus.log("  -- This is a publisher/manager");
                 let {user} = this.state;
-
-                if(roomid) {
-                    let register = { "request": "join", "room": roomid, "ptype": "publisher", "display": JSON.stringify(user) };
-                    hdl.send({"message": register});
-                } else {
-                    // Get list rooms
-                    this.getRoomList();
-                }
-
+                let register = { "request": "join", "room": 1234, "ptype": "publisher", "display": JSON.stringify(user) };
+                gxyhandle.send({"message": register});
             },
             error: (error) => {
                 Janus.log("Error attaching plugin: " + error);
@@ -173,7 +114,7 @@ class ShidurClient extends Component {
                 Janus.log("Janus says our WebRTC PeerConnection is " + (on ? "up" : "down") + " now");
             },
             onmessage: (msg, jsep) => {
-                this.onMessage(handle, msg, jsep, false);
+                this.onMessage(msg, jsep, false);
             },
             onlocalstream: (mystream) => {
                 // We don't going to show us yet
@@ -202,7 +143,7 @@ class ShidurClient extends Component {
                     Janus.log("Plugin attached! (" + remoteFeed.getPlugin() + ", id=" + remoteFeed.getId() + ")");
                     Janus.log("  -- This is a subscriber");
                     // We wait for the plugin to send us an offer
-                    let listen = { "request": "join", "room": this.state[handle].room, "ptype": "subscriber", "feed": id, "private_id": this.state.mypvtid };
+                    let listen = { "request": "join", "room": 1234, "ptype": "subscriber", "feed": id, "private_id": this.state.mypvtid };
                     remoteFeed.send({"message": listen});
                 },
                 error: (error) => {
@@ -220,13 +161,13 @@ class ShidurClient extends Component {
                             // Subscriber created and attached
                             let {feeds,users} = this.state;
                             for(let i=1;i<MAX_FEEDS;i++) {
-                                if(feeds[handle][i] === undefined || feeds[handle][i] === null) {
+                                if(feeds[i] === undefined || feeds[i] === null) {
                                     remoteFeed.rfindex = i;
                                     remoteFeed.rfid = msg["id"];
                                     remoteFeed.rfuser = JSON.parse(msg["display"]);
                                     remoteFeed.rfuser.rfid = msg["id"];
                                     remoteFeed.talk = talk;
-                                    feeds[handle][i] = remoteFeed;
+                                    feeds[i] = remoteFeed;
                                     users[remoteFeed.rfuser.id] = remoteFeed.rfuser;
                                     break;
                                 }
@@ -263,7 +204,7 @@ class ShidurClient extends Component {
                                 success: (jsep) => {
                                     Janus.debug("Got SDP!");
                                     Janus.debug(jsep);
-                                    let body = { "request": "start", "room": this.state[handle].room };
+                                    let body = { "request": "start", "room": 1234 };
                                     remoteFeed.send({"message": body, "jsep": jsep});
                                 },
                                 error: (error) => {
@@ -354,7 +295,8 @@ class ShidurClient extends Component {
             });
     };
 
-    onMessage = (handle, msg, jsep, initdata) => {
+    onMessage = (msg, jsep, initdata) => {
+        let {gxyhandle} = this.state;
         Janus.debug(" ::: Got a message (publisher) :::");
         Janus.debug(msg);
         let event = msg["videoroom"];
@@ -366,43 +308,42 @@ class ShidurClient extends Component {
                 let mypvtid = msg["private_id"];
                 this.setState({myid ,mypvtid});
                 Janus.log("Successfully joined room " + msg["room"] + " with ID " + myid);
-                //this.publishOwnFeed(true);
-                // Any new feed to attach to?
                 if(msg["publishers"] !== undefined && msg["publishers"] !== null) {
                     let list = msg["publishers"];
-                    let feeds_list = list.filter(feeder => JSON.parse(feeder.display).role === "user");
+                    //let feeds_list = list.filter(feeder => JSON.parse(feeder.display).role === "user");
                     Janus.debug("Got a list of available publishers/feeds:");
                     Janus.debug(list);
-                    for(let f in feeds_list) {
-                        let id = list[f]["id"];
-                        let display = JSON.parse(feeds_list[f]["display"]);
-                        let talk = list[f]["talking"];
-                        Janus.debug("  >> [" + id + "] " + display);
-                        this.newRemoteFeed(id, handle, talk);
-                    }
+                    this.setState({feeds: list});
+                    // for(let f in feeds_list) {
+                    //     let id = list[f]["id"];
+                    //     let display = JSON.parse(feeds_list[f]["display"]);
+                    //     let talk = list[f]["talking"];
+                    //     Janus.debug("  >> [" + id + "] " + display);
+                    //     this.newRemoteFeed(id, talk);
+                    // }
                 }
             } else if(event === "talking") {
-                let {feeds} = this.state;
-                let id = msg["id"];
-                //let room = msg["room"];
-                Janus.log("User: "+id+" - start talking");
-                for(let i=1; i<MAX_FEEDS; i++) {
-                    if(feeds[handle][i] !== null && feeds[handle][i] !== undefined && feeds[handle][i].rfid === id) {
-                        feeds[handle][i].talk = true;
-                    }
-                }
-                this.setState({feeds});
+                // let {feeds} = this.state;
+                // let id = msg["id"];
+                // //let room = msg["room"];
+                // Janus.log("User: "+id+" - start talking");
+                // for(let i=1; i<MAX_FEEDS; i++) {
+                //     if(feeds[i] !== null && feeds[i] !== undefined && feeds[i].rfid === id) {
+                //         feeds[i].talk = true;
+                //     }
+                // }
+                // this.setState({feeds});
             } else if(event === "stopped-talking") {
-                let {feeds} = this.state;
-                let id = msg["id"];
-                //let room = msg["room"];
-                Janus.log("User: "+id+" - stop talking");
-                for(let i=1; i<MAX_FEEDS; i++) {
-                    if(feeds[handle][i] !== null && feeds[handle][i] !== undefined && feeds[handle][i].rfid === id) {
-                        feeds[handle][i].talk = false;
-                    }
-                }
-                this.setState({feeds});
+                // let {feeds} = this.state;
+                // let id = msg["id"];
+                // //let room = msg["room"];
+                // Janus.log("User: "+id+" - stop talking");
+                // for(let i=1; i<MAX_FEEDS; i++) {
+                //     if(feeds[i] !== null && feeds[i] !== undefined && feeds[i].rfid === id) {
+                //         feeds[i].talk = false;
+                //     }
+                // }
+                // this.setState({feeds});
             } else if(event === "destroyed") {
                 // The room has been destroyed
                 Janus.warn("The room has been destroyed!");
@@ -412,13 +353,16 @@ class ShidurClient extends Component {
                     let list = msg["publishers"];
                     Janus.debug("Got a list of available publishers/feeds:");
                     Janus.debug(list);
-                    for(let f in list) {
-                        let id = list[f]["id"];
-                        let display = JSON.parse(list[f]["display"]);
-                        Janus.debug("  >> [" + id + "] " + display);
-                        if(display.role === "user")
-                            this.newRemoteFeed(id, handle, false);
-                    }
+                    let {feeds} = this.state;
+                    feeds.push(list);
+                    this.setState({feeds});
+                    // for(let f in list) {
+                    //     let id = list[f]["id"];
+                    //     let display = JSON.parse(list[f]["display"]);
+                    //     Janus.debug("  >> [" + id + "] " + display);
+                    //     if(display.role === "user")
+                    //         this.newRemoteFeed(id, false);
+                    // }
                 } else if(msg["leaving"] !== undefined && msg["leaving"] !== null) {
                     // One of the publishers has gone away?
                     let {feeds} = this.state;
@@ -426,16 +370,14 @@ class ShidurClient extends Component {
                     Janus.log("Publisher left: " + leaving);
                     var remoteFeed = null;
                     for(let i=1; i<MAX_FEEDS; i++) {
-                        if(feeds[handle][i] != null && feeds[handle][i] !== undefined && feeds[handle][i].rfid === leaving) {
-                            remoteFeed = feeds[handle][i];
+                        if(feeds[i] != null && feeds[i] !== undefined && feeds[i].rfid === leaving) {
+                            remoteFeed = feeds[i];
                             break;
                         }
                     }
                     if(remoteFeed !== null) {
                         Janus.debug("Feed " + remoteFeed.rfid + " (" + remoteFeed.rfuser + ") has left the room, detaching");
-                        // $('#remote'+remoteFeed.rfindex).empty().hide();
-                        // $('#videoremote'+remoteFeed.rfindex).empty();
-                        feeds[handle][remoteFeed.rfindex] = null;
+                        feeds[remoteFeed.rfindex] = null;
                         remoteFeed.detach();
                     }
                     this.setState({feeds});
@@ -446,13 +388,13 @@ class ShidurClient extends Component {
                     Janus.log("Publisher left: " + unpublished);
                     if(unpublished === 'ok') {
                         // That's us
-                        this.state[handle].hangup();
+                        this.state.gxyhandle.hangup();
                         return;
                     }
                     var remoteFeed = null;
                     for(let i=1; i<MAX_FEEDS; i++) {
-                        if(feeds[handle][i] !== null && feeds[handle][i] !== undefined && feeds[handle][i].rfid === unpublished) {
-                            remoteFeed = feeds[handle][i];
+                        if(feeds[i] !== null && feeds[i] !== undefined && feeds[i].rfid === unpublished) {
+                            remoteFeed = feeds[i];
                             break;
                         }
                     }
@@ -460,7 +402,7 @@ class ShidurClient extends Component {
                         Janus.debug("Feed " + remoteFeed.rfid + " (" + remoteFeed.rfuser + ") has left the room, detaching");
                         // $('#remote'+remoteFeed.rfindex).empty().hide();
                         // $('#videoremote'+remoteFeed.rfindex).empty();
-                        feeds[handle][remoteFeed.rfindex] = null;
+                        feeds[remoteFeed.rfindex] = null;
                         remoteFeed.detach();
                     }
                 } else if(msg["error"] !== undefined && msg["error"] !== null) {
@@ -475,26 +417,7 @@ class ShidurClient extends Component {
         if(jsep !== undefined && jsep !== null) {
             Janus.debug("Handling SDP as well...");
             Janus.debug(jsep);
-            this.state[handle].handleRemoteJsep({jsep: jsep});
-            // Check if any of the media we wanted to publish has
-            // been rejected (e.g., wrong or unsupported codec)
-            // var audio = msg["audio_codec"];
-            // if(mystream && mystream.getAudioTracks() && mystream.getAudioTracks().length > 0 && !audio) {
-            //     // Audio has been rejected
-            //     toastr.warning("Our audio stream has been rejected, viewers won't hear us");
-            // }
-            // var video = msg["video_codec"];
-            // if(mystream && mystream.getVideoTracks() && mystream.getVideoTracks().length > 0 && !video) {
-            //     // Video has been rejected
-            //     toastr.warning("Our video stream has been rejected, viewers won't see us");
-            //     // Hide the webcam video
-            //     $('#myvideo').hide();
-            //     $('#videolocal').append(
-            //         '<div class="no-video-container">' +
-            //         '<i class="fa fa-video-camera fa-5 no-video-icon" style="height: 100%;"></i>' +
-            //         '<span class="no-video-text" style="font-size: 16px;">Video rejected, no webcam</span>' +
-            //         '</div>');
-            // }
+            gxyhandle.handleRemoteJsep({jsep: jsep});
         }
     };
 
@@ -537,7 +460,7 @@ class ShidurClient extends Component {
         let pgm_state = { index: 0, room: preview_room, name: preview_name};
         this.setState({pgm_state});
         Janus.log(" :: Attaching to Program: ",preview_name,pgm_state);
-        putData(`state/galaxy/pr5`, pgm_state, (cb) => {
+        putData(`state/galaxy/pr1`, pgm_state, (cb) => {
             Janus.log(":: Save to state: ",cb);
         });
 
@@ -553,25 +476,23 @@ class ShidurClient extends Component {
         this.attachToPreview(group);
     };
 
-    disableRoom = (e, data, i) => {
+    disableGroup = (e, data, i) => {
         e.preventDefault();
         if (e.type === 'contextmenu') {
-            let {disabled_rooms} = this.state;
-            disabled_rooms.push(data);
-            this.setState({disabled_rooms});
-            this.getRoomList();
+            let {disabled_groups} = this.state;
+            disabled_groups.push(data);
+            this.setState({disabled_groups});
         }
     };
 
-    restoreRoom = (e, data, i) => {
+    restoreGroup = (e, data, i) => {
         e.preventDefault();
         if (e.type === 'contextmenu') {
-            let {disabled_rooms} = this.state;
-            for(let i = 0; i < disabled_rooms.length; i++){
-                if ( disabled_rooms[i].room === data.room) {
-                    disabled_rooms.splice(i, 1);
-                    this.setState({disabled_rooms});
-                    this.getRoomList();
+            let {disabled_groups} = this.state;
+            for(let i = 0; i < disabled_groups.length; i++){
+                if ( disabled_groups[i].room === data.room) {
+                    disabled_groups.splice(i, 1);
+                    this.setState({disabled_groups});
                 }
             }
         }
@@ -580,7 +501,7 @@ class ShidurClient extends Component {
 
   render() {
       //Janus.log(" --- ::: RENDER ::: ---");
-      const { feeds,preview_room,preview_name,program_name,disabled_rooms,rooms,quistions_queue,pgm_state } = this.state;
+      const { feeds,preview_room,preview_name,program_name,disabled_groups,rooms,quistions_queue,pgm_state } = this.state;
       const width = "400";
       const height = "300";
       const autoPlay = true;
@@ -597,7 +518,7 @@ class ShidurClient extends Component {
                          disabled={num_participants === 0}
                          className={preview_room === room ? 'active' : 'no'}
                          key={room} onClick={() => this.selectGroup(data, i)}
-                         onContextMenu={(e) => this.disableRoom(e, data, i)} >
+                         onContextMenu={(e) => this.disableGroup(e, data, i)} >
                   <Table.Cell width={5}>{description}</Table.Cell>
                   <Table.Cell width={1}>{num_participants}</Table.Cell>
                   <Table.Cell width={1}>{chk.length > 0 ? q : ""}</Table.Cell>
@@ -605,12 +526,12 @@ class ShidurClient extends Component {
           )
       });
 
-      let disabled_list = disabled_rooms.map((data,i) => {
+      let disabled_list = disabled_groups.map((data,i) => {
           const {room, num_participants, description} = data;
           return (
               <Table.Row key={room} warning
                          onClick={() => this.selectGroup(data, i)}
-                         onContextMenu={(e) => this.restoreRoom(e, data, i)} >
+                         onContextMenu={(e) => this.restoreGroup(e, data, i)} >
                   <Table.Cell width={5}>{description}</Table.Cell>
                   <Table.Cell width={1}>{num_participants}</Table.Cell>
                   <Table.Cell width={1}></Table.Cell>
@@ -711,4 +632,4 @@ class ShidurClient extends Component {
   }
 }
 
-export default ShidurClient;
+export default ShidurGroups;
