@@ -187,8 +187,8 @@ class VirtualClient extends Component {
                 // mystream.getAudioTracks()[0].enabled = false;
                 videoroom.muteAudio();
                 this.setState({mystream});
-                let myvideo = this.refs.localVideo;
-                Janus.attachMediaStream(myvideo, mystream);
+                //let myvideo = this.refs.localVideo;
+                //Janus.attachMediaStream(myvideo, mystream);
                 if(videoroom.webrtcStuff.pc.iceConnectionState !== "completed" &&
                     videoroom.webrtcStuff.pc.iceConnectionState !== "connected") {
                     Janus.debug("Publishing... ");
