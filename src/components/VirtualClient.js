@@ -16,8 +16,8 @@ class VirtualClient extends Component {
         audioContext: null,
         audio_devices: [],
         video_devices: [],
-        audio_device: "",
-        video_device: "",
+        audio_device: localStorage.getItem("audio_device") || "",
+        video_device: localStorage.getItem("video_device") || "",
         janus: null,
         feeds: [],
         rooms: [],
@@ -63,9 +63,9 @@ class VirtualClient extends Component {
             if (devices.length > 0) {
                 let audio_devices = devices.filter(device => device.kind === "audioinput");
                 let video_devices = video ? devices.filter(device => device.kind === "videoinput") : [];
-                //TODO: get last choice from localStorage
-                let video_id = video ? video_devices[0].deviceId : null;
-                let audio_id = audio_devices[0].deviceId;
+                let {video_device,audio_device} = this.state;
+                let video_id = video ? (video_device !== "" ? video_device : video_devices[0].deviceId) : null;
+                let audio_id = audio_device !== "" ? audio_device : audio_devices[0].deviceId;
                 Janus.log(" :: Got Video devices: ", video_devices);
                 Janus.log(" :: Got Audio devices: ", audio_devices);
                 this.setState({video_devices, audio_devices});
@@ -92,6 +92,8 @@ class VirtualClient extends Component {
         if(audio_device !== this.state.audio_device || video_device !== this.state.video_device) {
             this.setState({video_device,audio_device});
             if(this.state.audio_device !== "" || this.state.video_device !== "") {
+                localStorage.setItem("video_device", video_device);
+                localStorage.setItem("audio_device", audio_device);
                 Janus.log(" :: Going to check Devices: ");
                 getDevicesStream(audio_device,video_device,stream => {
                     Janus.log(" :: Check Devices: ", stream);
