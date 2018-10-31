@@ -16,8 +16,8 @@ class VirtualClient extends Component {
         audioContext: null,
         audio_devices: [],
         video_devices: [],
-        audio_device: localStorage.getItem("audio_device") || "",
-        video_device: localStorage.getItem("video_device") || "",
+        audio_device: "",
+        video_device: "",
         janus: null,
         feeds: [],
         rooms: [],
@@ -63,8 +63,9 @@ class VirtualClient extends Component {
             if (devices.length > 0) {
                 let audio_devices = devices.filter(device => device.kind === "audioinput");
                 let video_devices = video ? devices.filter(device => device.kind === "videoinput") : [];
-                let {video_device,audio_device} = this.state;
                 // Be sure device still exist
+                let video_device = localStorage.getItem("video_device");
+                let audio_device = localStorage.getItem("audio_device");
                 let achk = audio_devices.filter(a => a.deviceId === audio_device).length > 0;
                 let vchk = video_devices.filter(v => v.deviceId === video_device).length > 0;
                 let video_id = video ? (video_device !== "" && vchk ? video_device : video_devices[0].deviceId) : null;
