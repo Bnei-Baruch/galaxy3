@@ -1,13 +1,13 @@
 import React, { Component, Fragment } from 'react';
 import 'semantic-ui-css/semantic.min.css';
 import './App.css';
-import ShidurApp from "./components/ShidurApp";
+// import ShidurApp from "./components/ShidurApp";
 // import SndmanClient from "./components/SndmanClient";
 // import AdminStreaming from "./components/AdminStreaming";
 // import ShidurUsers from "./components/ShidurUsers";
 // import AdminClient from "./components/AdminClient";
 // import SDIOutClient from "./components/SDIOutClient";
-// import VirtualClient from "./components/VirtualClient";
+import VirtualClient from "./components/VirtualClient";
 // import VirtualStreaming from "./components/VirtualStreaming";
 
 class App extends Component {
@@ -23,9 +23,9 @@ class App extends Component {
                 {/*<SDIOutClient />*/}
                 {/*<SndmanClient />*/}
                 {/*<AdminClient />*/}
-                {/*<VirtualClient />*/}
+                <VirtualClient />
                 {/*<VirtualStreaming/>*/}
-                <ShidurApp/>
+                {/*<ShidurApp/>*/}
             </Fragment>
         );
     }
