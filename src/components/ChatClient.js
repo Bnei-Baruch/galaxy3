@@ -160,7 +160,7 @@ class ChatClient extends Component {
         });
 
         return (
-            <Segment fluid className="virtual_segment" >
+            <div className="chat-wrapper" >
 
                 <Message className='messages_list' size='mini'>
                     {list_msgs}
@@ -173,7 +173,7 @@ class ChatClient extends Component {
                     <Button size='mini' positive onClick={this.sendChatMessage}>Send</Button>
                 </Input>
 
-            </Segment>
+            </div>
         );
 
     }
