@@ -30,6 +30,34 @@ export const initJanus = (cb) => {
     })
 };
 
+export const initGXYJanus = (cb) => {
+    Janus.init({
+        debug: ["log","error"],
+        callback: () => {
+            let janus = new Janus({
+                server: "https://v4g.kbb1.com/janusgxy",
+                iceServers: [{urls: STUN_SERVER}],
+                success: () => {
+                    Janus.log(" :: Connected to JANUS");
+                    cb(janus);
+                },
+                error: (error) => {
+                    Janus.log(error + " -- reconnect after 10 sec");
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 10000);
+                },
+                destroyed: () => {
+                    Janus.log(" :: Janus destroyed -- reconnect after 10 sec :: ");
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 10000);
+                }
+            });
+        }
+    })
+};
+
 export const joinChatRoom = (textroom, roomid, user) => {
     let transaction = Janus.randomString(12);
     let register = {

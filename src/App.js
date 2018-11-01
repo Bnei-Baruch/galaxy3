@@ -2,6 +2,7 @@ import React, { Component, Fragment } from 'react';
 import 'semantic-ui-css/semantic.min.css';
 import './App.css';
 // import ShidurApp from "./components/ShidurApp";
+// import ShidurGroups from "./components/ShidurGroups";
 // import SndmanClient from "./components/SndmanClient";
 // import AdminStreaming from "./components/AdminStreaming";
 // import ShidurUsers from "./components/ShidurUsers";
@@ -25,6 +26,7 @@ class App extends Component {
                 {/*<AdminClient />*/}
                 <VirtualClient />
                 {/*<VirtualStreaming/>*/}
+                {/*<ShidurGroups/>*/}
                 {/*<ShidurApp/>*/}
             </Fragment>
         );

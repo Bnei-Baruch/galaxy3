@@ -1,10 +1,10 @@
 import React, { Component } from 'react';
 import { Janus } from "../lib/janus";
-import {Segment, Table, Icon} from "semantic-ui-react";
-import {getState, putData, initJanus} from "../shared/tools";
+import {Segment, Table, Icon, Dropdown, Grid} from "semantic-ui-react";
+import {getState, putData, initGXYJanus} from "../shared/tools";
 import {MAX_FEEDS} from "../shared/consts";
-import '../shared/VideoConteiner.scss'
-import nowebcam from './nowebcam.jpeg';
+//import '../shared/VideoConteiner.scss'
+//import nowebcam from './nowebcam.jpeg';
 import {initGxyProtocol} from "../shared/protocol";
 
 class ShidurGroups extends Component {
@@ -34,6 +34,7 @@ class ShidurGroups extends Component {
         mystream: null,
         audio: null,
         muted: true,
+        switchFeed: null,
         user: {
             session: 0,
             handle: 0,
@@ -46,24 +47,24 @@ class ShidurGroups extends Component {
     };
 
     componentDidMount() {
-        initJanus(janus => {
+        initGXYJanus(janus => {
             let {user} = this.state;
             user.session = janus.getSessionId();
             this.setState({janus,user});
             this.initVideoRoom(null, "preview");
 
-            initGxyProtocol(janus, user, protocol => {
-                this.setState({protocol});
-            }, ondata => {
-                Janus.log("-- :: It's protocol public message: ", ondata);
-                this.onProtocolData(ondata);
-            });
+            // initGxyProtocol(janus, user, protocol => {
+            //     this.setState({protocol});
+            // }, ondata => {
+            //     Janus.log("-- :: It's protocol public message: ", ondata);
+            //     this.onProtocolData(ondata);
+            // });
 
-            getState('state/galaxy/pr1', (pgm_state) => {
-                Janus.log(" :: Get State: ", pgm_state);
-                this.setState({program_room: pgm_state.room, program_name: pgm_state.name, pgm_state});
-                this.initVideoRoom(pgm_state.room, "program");
-            });
+            // getState('state/galaxy/pr1', (pgm_state) => {
+            //     Janus.log(" :: Get State: ", pgm_state);
+            //     this.setState({program_room: pgm_state.room, program_name: pgm_state.name, pgm_state});
+            //     this.initVideoRoom(pgm_state.room, "program");
+            // });
         });
     };
 
@@ -98,7 +99,8 @@ class ShidurGroups extends Component {
                 Janus.log("Plugin attached! (" + gxyhandle.getPlugin() + ", id=" + gxyhandle.getId() + ")");
                 Janus.log("  -- This is a publisher/manager");
                 let {user} = this.state;
-                let register = { "request": "join", "room": 1234, "ptype": "publisher", "display": JSON.stringify(user) };
+                // let register = { "request": "join", "room": 1234, "ptype": "publisher", "display": JSON.stringify(user) };
+                let register = { "request": "join", "room": 1234, "ptype": "publisher", "display": "shidur_admin" };
                 gxyhandle.send({"message": register});
             },
             error: (error) => {
@@ -117,11 +119,7 @@ class ShidurGroups extends Component {
                 this.onMessage(msg, jsep, false);
             },
             onlocalstream: (mystream) => {
-                // We don't going to show us yet
                 Janus.debug(" ::: Got a local stream :::", mystream);
-            },
-            onremotestream: (stream) => {
-                // The publisher stream is sendonly, we don't expect anything here
             },
             oncleanup: () => {
                 Janus.log(" ::: Got a cleanup notification: we are unpublished now :::");
@@ -421,6 +419,91 @@ class ShidurGroups extends Component {
         }
     };
 
+    newSwitchFeed = (id, talk) => {
+        this.state.janus.attach(
+            {
+                plugin: "janus.plugin.videoroom",
+                opaqueId: "switchfeed_user",
+                success: (pluginHandle) => {
+                    let switchFeed = pluginHandle;
+                    switchFeed.simulcastStarted = false;
+                    //this.setState({remotefeed});
+                    Janus.log("Plugin attached! (" + switchFeed.getPlugin() + ", id=" + switchFeed.getId() + ")");
+                    Janus.log("  -- This is a subscriber");
+                    // We wait for the plugin to send us an offer
+                    let listen = { "request": "join", "room": 1234, "ptype": "listener", "feed": id };
+                    switchFeed.send({"message": listen});
+                    this.setState({switchFeed});
+                },
+                error: (error) => {
+                    Janus.error("  -- Error attaching plugin...", error);
+                },
+                onmessage: (msg, jsep) => {
+                    Janus.debug(" ::: Got a message (subscriber) :::");
+                    Janus.debug(msg);
+                    let event = msg["videoroom"];
+                    Janus.debug("Event: " + event);
+                    if(msg["error"] !== undefined && msg["error"] !== null) {
+                        Janus.debug(":: Error msg: " + msg["error"]);
+                    } else if(event !== undefined && event !== null) {
+                        if(event === "attached") {
+                            // Subscriber created and attached
+                            Janus.log("Successfully attached to feed " + this.state.switchFeed.rfid + " (" + this.state.switchFeed.rfuser + ") in room " + msg["room"]);
+                        } else {
+                            // What has just happened?
+                        }
+                    }
+                    if(jsep !== undefined && jsep !== null) {
+                        Janus.debug("Handling SDP as well...");
+                        Janus.debug(jsep);
+                        // Answer and attach
+                        this.state.switchFeed.createAnswer(
+                            {
+                                jsep: jsep,
+                                media: { audioSend: false, videoSend: false },	// We want recvonly audio/video
+                                success: (jsep) => {
+                                    Janus.debug("Got SDP!");
+                                    Janus.debug(jsep);
+                                    let body = { "request": "start", "room": 1234 };
+                                    this.state.switchFeed.send({"message": body, "jsep": jsep});
+                                },
+                                error: (error) => {
+                                    Janus.error("WebRTC error:", error);
+                                }
+                            });
+                    }
+                },
+                webrtcState: (on) => {
+                    Janus.log("Janus says this WebRTC PeerConnection (feed #" + this.state.switchFeed.rfindex + ") is " + (on ? "up" : "down") + " now");
+                },
+                onlocalstream: (stream) => {
+                    // The subscriber stream is recvonly, we don't expect anything here
+                },
+                onremotestream: (stream) => {
+                    Janus.debug("Remote feed #" + this.state.switchFeed.rfindex);
+                    let switchvideo = this.refs.prevewVideo;
+                    Janus.attachMediaStream(switchvideo, stream);
+                    //var videoTracks = stream.getVideoTracks();
+                },
+                oncleanup: () => {
+                    Janus.log(" ::: Got a cleanup notification (remote feed " + id + ") :::");
+                }
+            });
+    };
+
+    switchFeed = (id, display) => {
+        if(!this.state.switchFeed) {
+            this.newSwitchFeed(id,false);
+        } else {
+            let switchfeed = {"request" : "switch", "feed" : id, "audio" : true, "video" : true, "data" : false};
+            this.state.switchFeed.send ({"message": switchfeed,
+                success: () => {
+                    Janus.log(" :: Switch Feed to: ", display);
+                }
+            })
+        }
+    };
+
     attachToPreview = (group, index) => {
         const {feeds} = this.state;
         Janus.log(" :: Attaching to Preview: ",group);
@@ -441,39 +524,40 @@ class ShidurGroups extends Component {
     };
 
     attachToProgram = () => {
-        const {feeds} = this.state;
-        let {preview_room, preview_name, group, rooms} = this.state;
-        if(!preview_name)
-            return;
-        feeds.program.forEach(feed => {
-            if(feed) {
-                Janus.log("-- :: Remove Feed: ", feed);
-                feed.detach();
-            }
-        });
-
-        feeds.program = [];
-        this.setState({program_room: preview_room, program_name: preview_name, feeds});
-        this.initVideoRoom(preview_room, "program");
-
-        // Save Program State
-        let pgm_state = { index: 0, room: preview_room, name: preview_name};
-        this.setState({pgm_state});
-        Janus.log(" :: Attaching to Program: ",preview_name,pgm_state);
-        putData(`state/galaxy/pr1`, pgm_state, (cb) => {
-            Janus.log(":: Save to state: ",cb);
-        });
-
-        // Select next group
-        let i = rooms.length-1 < group.index+1 ? 0 :  group.index+1;
-        this.selectGroup(rooms[i], i)
+        console.log("You clicked on preview :-|")
+        // const {feeds} = this.state;
+        // let {preview_room, preview_name, group, rooms} = this.state;
+        // if(!preview_name)
+        //     return;
+        // feeds.program.forEach(feed => {
+        //     if(feed) {
+        //         Janus.log("-- :: Remove Feed: ", feed);
+        //         feed.detach();
+        //     }
+        // });
+        //
+        // feeds.program = [];
+        // this.setState({program_room: preview_room, program_name: preview_name, feeds});
+        // this.initVideoRoom(preview_room, "program");
+        //
+        // // Save Program State
+        // let pgm_state = { index: 0, room: preview_room, name: preview_name};
+        // this.setState({pgm_state});
+        // Janus.log(" :: Attaching to Program: ",preview_name,pgm_state);
+        // putData(`state/galaxy/pr1`, pgm_state, (cb) => {
+        //     Janus.log(":: Save to state: ",cb);
+        // });
+        //
+        // // Select next group
+        // let i = rooms.length-1 < group.index+1 ? 0 :  group.index+1;
+        // this.selectGroup(rooms[i], i)
     };
 
     selectGroup = (group, i) => {
-        group.index = i;
-        this.setState({group});
+        // group.index = i;
+        // this.setState({group});
         Janus.log(group);
-        this.attachToPreview(group);
+        this.switchFeed(group.id, group.display);
     };
 
     disableGroup = (e, data, i) => {
@@ -502,28 +586,16 @@ class ShidurGroups extends Component {
   render() {
       //Janus.log(" --- ::: RENDER ::: ---");
       const { feeds,preview_room,preview_name,program_name,disabled_groups,rooms,quistions_queue,pgm_state } = this.state;
-      const width = "400";
-      const height = "300";
+      const width = "180";
+      const height = "90";
       const autoPlay = true;
-      const controls = false;
+      const controls = true;
       const muted = true;
       const q = (<Icon color='red' name='question circle' />);
 
-      let rooms_list = rooms.map((data,i) => {
-          const {room, num_participants, description} = data;
-          let chk = quistions_queue.filter(q => q.room === room);
-          return (
-              <Table.Row negative={program_name === description}
-                         positive={preview_name === description}
-                         disabled={num_participants === 0}
-                         className={preview_room === room ? 'active' : 'no'}
-                         key={room} onClick={() => this.selectGroup(data, i)}
-                         onContextMenu={(e) => this.disableGroup(e, data, i)} >
-                  <Table.Cell width={5}>{description}</Table.Cell>
-                  <Table.Cell width={1}>{num_participants}</Table.Cell>
-                  <Table.Cell width={1}>{chk.length > 0 ? q : ""}</Table.Cell>
-              </Table.Row>
-          )
+      let group_options = feeds.map((feed,i) => {
+          const {display} = feed;
+          return ({ key: i, value: feed, text: display })
       });
 
       let disabled_list = disabled_groups.map((data,i) => {
@@ -539,52 +611,28 @@ class ShidurGroups extends Component {
           )
       });
 
-      let program = feeds.program.map((feed) => {
-          if(feed) {
-              let id = feed.rfid;
-              let talk = feed.talk;
-              return (<div className="video"
-                           key={"prov" + id}
-                           ref={"provideo" + id}
-                           id={"provideo" + id}>
-                  <video className={talk ? "talk" : ""}
-                         key={id}
-                         ref={"programVideo" + id}
-                         id={"programVideo" + id}
-                         width={width}
-                         height={height}
-                         autoPlay={autoPlay}
-                         controls={controls}
-                         muted={muted}
-                         playsInline={true}/>
-              </div>);
-          }
-          return true;
-      });
-
-      let preview = feeds.preview.map((feed) => {
-          if(feed) {
-              let id = feed.rfid;
-              let talk = feed.talk;
-              return (<div className="video"
-                           key={"prev" + id}
-                           ref={"prevideo" + id}
-                           id={"prevideo" + id}>
-                  <video className={talk ? "talk" : ""}
-                         key={id}
-                         ref={"remoteVideo" + id}
-                         id={"remoteVideo" + id}
-                         poster={nowebcam}
-                         width={width}
-                         height={height}
-                         autoPlay={autoPlay}
-                         controls={controls}
-                         muted={muted}
-                         playsInline={true}/>
-              </div>);
-          }
-          return true;
-      });
+      // let program = feeds.map((feed) => {
+      //     if(feed) {
+      //         let id = feed.rfid;
+      //         let talk = feed.talk;
+      //         return (<div className="video"
+      //                      key={"prov" + id}
+      //                      ref={"provideo" + id}
+      //                      id={"provideo" + id}>
+      //             <video className={talk ? "talk" : ""}
+      //                    key={id}
+      //                    ref={"programVideo" + id}
+      //                    id={"programVideo" + id}
+      //                    width={width}
+      //                    height={height}
+      //                    autoPlay={autoPlay}
+      //                    controls={controls}
+      //                    muted={muted}
+      //                    playsInline={true}/>
+      //         </div>);
+      //     }
+      //     return true;
+      // });
 
     return (
 
@@ -593,29 +641,90 @@ class ShidurGroups extends Component {
           <Segment className="program_segment" color='red'>
               {/*<div className="shidur_overlay">{pgm_state.name}</div>*/}
               {/*{program}*/}
-              <div className="shidur_overlay"><span>{pgm_state.name}</span></div>
-              <div className="wrapper">
-                  <div className="videos">
-                      <div className="videos__wrapper">{program}</div>
-                  </div>
-              </div>
+              {/*<div className="shidur_overlay"><span>{pgm_state.name}</span></div>*/}
+              <Grid columns={2} stretched>
+                  <Grid.Row stretched>
+                      <Grid.Column>
+                          <video
+                              key={1}
+                              ref={"programVideo1"}
+                              id={"programVideo1"}
+                              width={width}
+                              height={height}
+                              autoPlay={autoPlay}
+                              controls={controls}
+                              muted={muted}
+                              playsInline={true}/>
+                      </Grid.Column>
+                      <Grid.Column>
+                          <video
+                              key={2}
+                              ref={"programVideo2"}
+                              id={"programVideo2"}
+                              width={width}
+                              height={height}
+                              autoPlay={autoPlay}
+                              controls={controls}
+                              muted={muted}
+                              playsinline={true}/>
+                      </Grid.Column>
+                  </Grid.Row>
+
+                  <Grid.Row stretched>
+                      <Grid.Column>
+                          <video
+                              key={3}
+                              ref={"programVideo3"}
+                              id={"programVideo3"}
+                              width={width}
+                              height={height}
+                              autoPlay={autoPlay}
+                              controls={controls}
+                              muted={muted}
+                              playsinline={true}/>
+                      </Grid.Column>
+                      <Grid.Column>
+                          <video
+                              key={4}
+                              ref={"programVideo4"}
+                              id={"programVideo4"}
+                              width={width}
+                              height={height}
+                              autoPlay={autoPlay}
+                              controls={controls}
+                              muted={muted}
+                              playsinline={true}/>
+                      </Grid.Column>
+                  </Grid.Row>
+              </Grid>
           </Segment>
 
           <Segment className="preview_segment" color='green' onClick={this.attachToProgram} >
               {/*<div className="shidur_overlay">{preview_name}</div>*/}
               {/*{preview}*/}
               <div className="shidur_overlay"><span>{preview_name}</span></div>
-              <div className="wrapper">
-                  <div className="videos">
-                      <div className="videos__wrapper">{preview}</div>
-                  </div>
-              </div>
+              <video
+                     ref={"prevewVideo"}
+                     id="prevewVideo"
+                     width="400"
+                     height="220"
+                     autoPlay={autoPlay}
+                     controls={controls}
+                     muted={muted}
+                     playsinline={true}/>
           </Segment>
+
+            <Dropdown
+                placeholder='Select Group'
+                fluid
+                search
+                selection
+                options={group_options}
+                onChange={(e,{value}) => this.selectGroup(value)} />
 
           <Segment textAlign='center' className="group_list" raised>
               <Table selectable compact='very' basic structured className="admin_table" unstackable>
                   <Table.Body>
-                      {rooms_list}
                   </Table.Body>
               </Table>
           </Segment>

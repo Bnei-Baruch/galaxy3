@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import {Grid} from "semantic-ui-react";
-import ShidurUsers from "./ShidurUsers";
+// import ShidurUsers from "./ShidurUsers";
 import ShidurGroups from "./ShidurGroups";
 
 
@@ -17,7 +17,7 @@ class ShidurApp extends Component {
                     <ShidurGroups/>
                 </Grid.Column>
                 <Grid.Column>
-                    <ShidurUsers/>
+                    {/*<ShidurUsers/>*/}
                 </Grid.Column>
             </Grid>
         );
