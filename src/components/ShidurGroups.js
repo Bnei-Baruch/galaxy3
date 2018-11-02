@@ -20,7 +20,12 @@ class ShidurGroups extends Component {
         disabled_groups: [],
         group: null,
         preview: null,
-        program: null,
+        program: {
+            col1: [null,null,null,null],
+            col2: [null,null,null,null],
+            col3: [null,null,null,null],
+        },
+        pr1: [],
         protocol: null,
         pgm_state: {
             name: "",
@@ -35,6 +40,7 @@ class ShidurGroups extends Component {
         audio: null,
         muted: true,
         switchFeed: null,
+        feeds_queue: 0,
         user: {
             session: 0,
             handle: 0,
@@ -366,19 +372,14 @@ class ShidurGroups extends Component {
                     let {feeds} = this.state;
                     let leaving = msg["leaving"];
                     Janus.log("Publisher left: " + leaving);
-                    var remoteFeed = null;
-                    for(let i=1; i<MAX_FEEDS; i++) {
-                        if(feeds[i] != null && feeds[i] !== undefined && feeds[i].rfid === leaving) {
-                            remoteFeed = feeds[i];
-                            break;
+                    for(let i=0; i<feeds.length; i++){
+                        if(feeds[i].id === leaving) {
+                            feeds.splice(i, 1);
+                            this.setState({feeds});
+                            //TODO : We need to check if feed in program and switch to next in queue
+                            break
                         }
                     }
-                    if(remoteFeed !== null) {
-                        Janus.debug("Feed " + remoteFeed.rfid + " (" + remoteFeed.rfuser + ") has left the room, detaching");
-                        feeds[remoteFeed.rfindex] = null;
-                        remoteFeed.detach();
-                    }
-                    this.setState({feeds});
                 } else if(msg["unpublished"] !== undefined && msg["unpublished"] !== null) {
                     // One of the publishers has unpublished?
                     let {feeds} = this.state;
@@ -389,19 +390,13 @@ class ShidurGroups extends Component {
                         this.state.gxyhandle.hangup();
                         return;
                     }
-                    var remoteFeed = null;
-                    for(let i=1; i<MAX_FEEDS; i++) {
-                        if(feeds[i] !== null && feeds[i] !== undefined && feeds[i].rfid === unpublished) {
-                            remoteFeed = feeds[i];
-                            break;
+                    for(let i=0; i<feeds.length; i++){
+                        if(feeds[i].id === unpublished) {
+                            feeds.splice(i, 1);
+                            this.setState({feeds});
+                            //TODO : We need to check if feed in program and switch to next in queue
+                            break
                         }
-                    }
-                    if(remoteFeed !== null) {
-                        Janus.debug("Feed " + remoteFeed.rfid + " (" + remoteFeed.rfuser + ") has left the room, detaching");
-                        // $('#remote'+remoteFeed.rfindex).empty().hide();
-                        // $('#videoremote'+remoteFeed.rfindex).empty();
-                        feeds[remoteFeed.rfindex] = null;
-                        remoteFeed.detach();
                     }
                 } else if(msg["error"] !== undefined && msg["error"] !== null) {
                     if(msg["error_code"] === 426) {
@@ -419,13 +414,14 @@ class ShidurGroups extends Component {
         }
     };
 
-    newSwitchFeed = (id, talk) => {
+    newSwitchFeed = (id, program, i) => {
+        let switchFeed = null;
         this.state.janus.attach(
             {
                 plugin: "janus.plugin.videoroom",
                 opaqueId: "switchfeed_user",
                 success: (pluginHandle) => {
-                    let switchFeed = pluginHandle;
+                    switchFeed = pluginHandle;
                     switchFeed.simulcastStarted = false;
                     //this.setState({remotefeed});
                     Janus.log("Plugin attached! (" + switchFeed.getPlugin() + ", id=" + switchFeed.getId() + ")");
@@ -433,7 +429,13 @@ class ShidurGroups extends Component {
                     // We wait for the plugin to send us an offer
                     let listen = { "request": "join", "room": 1234, "ptype": "listener", "feed": id };
                     switchFeed.send({"message": listen});
-                    this.setState({switchFeed});
+                    if(program) {
+                        let {pr1} = this.state;
+                        pr1.push(switchFeed);
+                        this.setState({pr1})
+                    } else {
+                        this.setState({switchFeed});
+                    }
                 },
                 error: (error) => {
                     Janus.error("  -- Error attaching plugin...", error);
@@ -448,7 +450,7 @@ class ShidurGroups extends Component {
                     } else if(event !== undefined && event !== null) {
                         if(event === "attached") {
                             // Subscriber created and attached
-                            Janus.log("Successfully attached to feed " + this.state.switchFeed.rfid + " (" + this.state.switchFeed.rfuser + ") in room " + msg["room"]);
+                            Janus.log("Successfully attached to feed " + switchFeed);
                         } else {
                             // What has just happened?
                         }
@@ -457,7 +459,7 @@ class ShidurGroups extends Component {
                         Janus.debug("Handling SDP as well...");
                         Janus.debug(jsep);
                         // Answer and attach
-                        this.state.switchFeed.createAnswer(
+                        switchFeed.createAnswer(
                             {
                                 jsep: jsep,
                                 media: { audioSend: false, videoSend: false },	// We want recvonly audio/video
@@ -465,7 +467,7 @@ class ShidurGroups extends Component {
                                     Janus.debug("Got SDP!");
                                     Janus.debug(jsep);
                                     let body = { "request": "start", "room": 1234 };
-                                    this.state.switchFeed.send({"message": body, "jsep": jsep});
+                                    switchFeed.send({"message": body, "jsep": jsep});
                                 },
                                 error: (error) => {
                                     Janus.error("WebRTC error:", error);
@@ -474,14 +476,14 @@ class ShidurGroups extends Component {
                     }
                 },
                 webrtcState: (on) => {
-                    Janus.log("Janus says this WebRTC PeerConnection (feed #" + this.state.switchFeed.rfindex + ") is " + (on ? "up" : "down") + " now");
+                    Janus.log("Janus says this WebRTC PeerConnection (feed #" + switchFeed + ") is " + (on ? "up" : "down") + " now");
                 },
                 onlocalstream: (stream) => {
                     // The subscriber stream is recvonly, we don't expect anything here
                 },
                 onremotestream: (stream) => {
-                    Janus.debug("Remote feed #" + this.state.switchFeed.rfindex);
-                    let switchvideo = this.refs.prevewVideo;
+                    Janus.debug("Remote feed #" + switchFeed);
+                    let switchvideo = program ? this.refs["programVideo" + i] : this.refs.prevewVideo;
                     Janus.attachMediaStream(switchvideo, stream);
                     //var videoTracks = stream.getVideoTracks();
                 },
@@ -491,16 +493,54 @@ class ShidurGroups extends Component {
             });
     };
 
-    switchFeed = (id, display) => {
+    switchPreview = (id, display) => {
         if(!this.state.switchFeed) {
             this.newSwitchFeed(id,false);
         } else {
-            let switchfeed = {"request" : "switch", "feed" : id, "audio" : true, "video" : true, "data" : false};
+            let switchfeed = {"request": "switch", "feed": id, "audio": true, "video": true, "data": false};
             this.state.switchFeed.send ({"message": switchfeed,
                 success: () => {
                     Janus.log(" :: Switch Feed to: ", display);
                 }
             })
+        }
+    };
+
+    switchProgram = (id, display) => {
+        if(!this.state.switchFeed) {
+            this.newSwitchFeed(id,false);
+        } else {
+            let switchfeed = {"request": "switch", "feed": id, "audio": true, "video": true, "data": false};
+            this.state.switchFeed.send ({"message": switchfeed,
+                success: () => {
+                    Janus.log(" :: Switch Feed to: ", display);
+                }
+            })
+        }
+    };
+
+    switchFour = () => {
+        let {feeds_queue,pr1,feeds} = this.state;
+        this.setState({feeds_queue: feeds_queue+4});
+        feeds = feeds.filter(f => !f.display.match(/^(_)$/));
+        for(let i=feeds_queue; i<feeds_queue+4; i++) {
+
+            if(i > feeds.length) {
+                feeds_queue = 0;
+            }
+
+            let feed_id = feeds[i].id;
+            let feed_display = feeds[i].display;
+            if(!pr1[i]) {
+                this.newSwitchFeed(feed_id,true,i);
+            } else {
+                let switchfeed = {"request": "switch", "feed": feed_id, "audio": true, "video": true, "data": false};
+                pr1[i].send ({"message": switchfeed,
+                    success: () => {
+                        Janus.log(" :: Switch Feed to: ", feed_display);
+                    }
+                })
+            }
         }
     };
 
@@ -557,7 +597,8 @@ class ShidurGroups extends Component {
         // group.index = i;
         // this.setState({group});
         Janus.log(group);
-        this.switchFeed(group.id, group.display);
+        this.switchPreview(group.id, group.display);
+        this.switchFour();
     };
 
     disableGroup = (e, data, i) => {
@@ -647,8 +688,8 @@ class ShidurGroups extends Component {
                       <Grid.Column>
                           <video
                               key={1}
-                              ref={"programVideo1"}
-                              id={"programVideo1"}
+                              ref={"programVideo0"}
+                              id={"programVideo0"}
                               width={width}
                               height={height}
                               autoPlay={autoPlay}
@@ -659,8 +700,8 @@ class ShidurGroups extends Component {
                       <Grid.Column>
                           <video
                               key={2}
-                              ref={"programVideo2"}
-                              id={"programVideo2"}
+                              ref={"programVideo1"}
+                              id={"programVideo1"}
                               width={width}
                               height={height}
                               autoPlay={autoPlay}
@@ -674,8 +715,8 @@ class ShidurGroups extends Component {
                       <Grid.Column>
                           <video
                               key={3}
-                              ref={"programVideo3"}
-                              id={"programVideo3"}
+                              ref={"programVideo2"}
+                              id={"programVideo2"}
                               width={width}
                               height={height}
                               autoPlay={autoPlay}
@@ -686,8 +727,8 @@ class ShidurGroups extends Component {
                       <Grid.Column>
                           <video
                               key={4}
-                              ref={"programVideo4"}
-                              id={"programVideo4"}
+                              ref={"programVideo3"}
+                              id={"programVideo3"}
                               width={width}
                               height={height}
                               autoPlay={autoPlay}
@@ -722,12 +763,12 @@ class ShidurGroups extends Component {
                 options={group_options}
                 onChange={(e,{value}) => this.selectGroup(value)} />
 
-          <Segment textAlign='center' className="group_list" raised>
-              <Table selectable compact='very' basic structured className="admin_table" unstackable>
-                  <Table.Body>
-                  </Table.Body>
-              </Table>
-          </Segment>
+          {/*<Segment textAlign='center' className="group_list" raised>*/}
+              {/*<Table selectable compact='very' basic structured className="admin_table" unstackable>*/}
+                  {/*<Table.Body>*/}
+                  {/*</Table.Body>*/}
+              {/*</Table>*/}
+          {/*</Segment>*/}
             <Segment textAlign='center' className="disabled_list" raised>
                 <Table selectable compact='very' basic structured className="admin_table" unstackable>
                     <Table.Body>
