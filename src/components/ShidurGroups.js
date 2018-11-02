@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import { Janus } from "../lib/janus";
-import {Segment, Table, Icon, Dropdown, Grid} from "semantic-ui-react";
+import {Segment, Table, Icon, Dropdown, Grid, Button} from "semantic-ui-react";
 import {getState, putData, initGXYJanus} from "../shared/tools";
 import {MAX_FEEDS} from "../shared/consts";
 //import '../shared/VideoConteiner.scss'
@@ -19,13 +19,9 @@ class ShidurGroups extends Component {
         name: "",
         disabled_groups: [],
         group: null,
-        preview: null,
-        program: {
-            col1: [null,null,null,null],
-            col2: [null,null,null,null],
-            col3: [null,null,null,null],
-        },
         pr1: [],
+        program: null,
+        preview: null,
         protocol: null,
         pgm_state: {
             name: "",
@@ -357,9 +353,9 @@ class ShidurGroups extends Component {
                 if(msg["publishers"] !== undefined && msg["publishers"] !== null) {
                     let list = msg["publishers"];
                     Janus.debug("Got a list of available publishers/feeds:");
-                    Janus.debug(list);
+                    Janus.debug(list[0]);
                     let {feeds} = this.state;
-                    feeds.push(list);
+                    feeds.push(list[0]);
                     this.setState({feeds});
                     // for(let f in list) {
                     //     let id = list[f]["id"];
@@ -501,23 +497,25 @@ class ShidurGroups extends Component {
             let switchfeed = {"request": "switch", "feed": id, "audio": true, "video": true, "data": false};
             this.state.switchFeed.send ({"message": switchfeed,
                 success: () => {
-                    Janus.log(" :: Switch Feed to: ", display);
+                    Janus.log(" :: Preview Switch Feed to: ", display);
                 }
             })
         }
     };
 
-    switchProgram = (id, display) => {
-        if(!this.state.switchFeed) {
-            this.newSwitchFeed(id,false);
-        } else {
-            let switchfeed = {"request": "switch", "feed": id, "audio": true, "video": true, "data": false};
-            this.state.switchFeed.send ({"message": switchfeed,
+    switchProgram = (i) => {
+        console.log(" :: Selected program Switch: ",i);
+        let {preview,pr1} = this.state;
+        if(preview) {
+            let switchfeed = {"request": "switch", "feed": preview.id, "audio": true, "video": true, "data": false};
+            pr1[i].send ({"message": switchfeed,
                 success: () => {
-                    Janus.log(" :: Switch Feed to: ", display);
+                    Janus.log(" :: Selected program Switch Feed to: ", preview.display);
+                    this.setState({program: preview});
                 }
             })
         }
+
     };
 
     switchFour = () => {
@@ -529,6 +527,7 @@ class ShidurGroups extends Component {
                 // End round here!
                 feeds_queue = 0;
                 this.setState({feeds_queue});
+                console.log(" -- ROUND END --");
             }
 
             console.log("---------- i: "+i+" queue: "+feeds_queue);
@@ -541,7 +540,7 @@ class ShidurGroups extends Component {
                 let switchfeed = {"request": "switch", "feed": feed_id, "audio": true, "video": true, "data": false};
                 pr1[i].send ({"message": switchfeed,
                     success: () => {
-                        Janus.log(" :: Switch Feed to: ", feed_display);
+                        Janus.log(" :: Program Switch Feed to: ", feed_display);
                     }
                 })
             }
@@ -602,12 +601,11 @@ class ShidurGroups extends Component {
         // this.selectGroup(rooms[i], i)
     };
 
-    selectGroup = (group, i) => {
+    selectGroup = (preview) => {
         // group.index = i;
-        // this.setState({group});
-        Janus.log(group);
-        this.switchPreview(group.id, group.display);
-        this.switchFour();
+        this.setState({preview});
+        Janus.log(preview);
+        this.switchPreview(preview.id, preview.display);
     };
 
     disableGroup = (e, data, i) => {
@@ -688,14 +686,14 @@ class ShidurGroups extends Component {
 
         <Segment className="segment_conteiner" raised>
           
-          <Segment className="program_segment" color='red'>
+          <Segment attached className="program_segment" color='red'>
               {/*<div className="shidur_overlay">{pgm_state.name}</div>*/}
               {/*{program}*/}
               {/*<div className="shidur_overlay"><span>{pgm_state.name}</span></div>*/}
               <Grid columns={2} stretched>
                   <Grid.Row stretched>
-                      <Grid.Column>
-                          <video
+                      <Grid.Column key={1}>
+                          <video onClick={() => this.switchProgram("0")}
                               key={1}
                               ref={"programVideo0"}
                               id={"programVideo0"}
@@ -706,8 +704,8 @@ class ShidurGroups extends Component {
                               muted={muted}
                               playsInline={true}/>
                       </Grid.Column>
-                      <Grid.Column>
-                          <video
+                      <Grid.Column key={2}>
+                          <video onClick={() => this.switchProgram("1")}
                               key={2}
                               ref={"programVideo1"}
                               id={"programVideo1"}
@@ -721,33 +719,35 @@ class ShidurGroups extends Component {
                   </Grid.Row>
 
                   <Grid.Row stretched>
-                      <Grid.Column>
-                          <video
-                              key={3}
-                              ref={"programVideo2"}
-                              id={"programVideo2"}
-                              width={width}
-                              height={height}
-                              autoPlay={autoPlay}
-                              controls={controls}
-                              muted={muted}
-                              playsInline={true}/>
+                      <Grid.Column key={4}>
+                          <video onClick={() => this.switchProgram("3")}
+                                 key={4}
+                                 ref={"programVideo3"}
+                                 id={"programVideo3"}
+                                 width={width}
+                                 height={height}
+                                 autoPlay={autoPlay}
+                                 controls={controls}
+                                 muted={muted}
+                                 playsinline={true}/>
                       </Grid.Column>
-                      <Grid.Column>
-                          <video
-                              key={4}
-                              ref={"programVideo3"}
-                              id={"programVideo3"}
-                              width={width}
-                              height={height}
-                              autoPlay={autoPlay}
-                              controls={controls}
-                              muted={muted}
-                              playsInline={true}/>
+                      <Grid.Column key={3}>
+                          <video onClick={() => this.switchProgram("2")}
+                                 key={3}
+                                 ref={"programVideo2"}
+                                 id={"programVideo2"}
+                                 width={width}
+                                 height={height}
+                                 autoPlay={autoPlay}
+                                 controls={controls}
+                                 muted={muted}
+                                 playsinline={true}/>
                       </Grid.Column>
                   </Grid.Row>
               </Grid>
           </Segment>
+
+            <Button attached='bottom' color='red' onClick={this.switchFour}>Next four</Button>
 
           <Segment className="preview_segment" color='green' onClick={this.attachToProgram} >
               {/*<div className="shidur_overlay">{preview_name}</div>*/}
