@@ -88,6 +88,13 @@ class ShidurGroups extends Component {
     };
 
     componentWillUnmount() {
+        //FIXME: If we don't detach remote handle, Janus still send UDP stream!
+        //this may happen because Janus in use for now is very old version
+        //Need to check if this shit happend on latest Janus version
+        this.state.pr1.forEach(feed => {
+            Janus.debug(" Detach feed: ",feed);
+            feed.detach();
+        });
         this.state.janus.destroy();
     };
 
