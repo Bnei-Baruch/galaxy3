@@ -317,7 +317,8 @@ class ShidurGroups extends Component {
                     //let feeds_list = list.filter(feeder => JSON.parse(feeder.display).role === "user");
                     Janus.debug("Got a list of available publishers/feeds:");
                     Janus.debug(list);
-                    this.setState({feeds: list});
+                    let feeds = list.filter(f => !/_/.test(f.display));
+                    this.setState({feeds});
                     // for(let f in feeds_list) {
                     //     let id = list[f]["id"];
                     //     let display = JSON.parse(feeds_list[f]["display"]);
@@ -521,16 +522,19 @@ class ShidurGroups extends Component {
 
     switchFour = () => {
         let {feeds_queue,pr1,feeds} = this.state;
-        this.setState({feeds_queue: feeds_queue+4});
-        feeds = feeds.filter(f => !f.display.match(/^(_)$/));
-        for(let i=feeds_queue; i<feeds_queue+4; i++) {
 
-            if(i > feeds.length) {
+        for(let i=0; i<4; i++) {
+
+            if(feeds_queue >= feeds.length) {
+                // End round here!
                 feeds_queue = 0;
+                this.setState({feeds_queue});
             }
 
-            let feed_id = feeds[i].id;
-            let feed_display = feeds[i].display;
+            console.log("---------- i: "+i+" queue: "+feeds_queue);
+            let feed_id = feeds[feeds_queue].id;
+            let feed_display = feeds[feeds_queue].display;
+
             if(!pr1[i]) {
                 this.newSwitchFeed(feed_id,true,i);
             } else {
@@ -541,7 +545,12 @@ class ShidurGroups extends Component {
                     }
                 })
             }
+
+            feeds_queue++;
         }
+
+        // Here current number in feeds queue
+        this.setState({feeds_queue});
     };
 
     attachToPreview = (group, index) => {
@@ -630,7 +639,7 @@ class ShidurGroups extends Component {
       const width = "180";
       const height = "90";
       const autoPlay = true;
-      const controls = true;
+      const controls = false;
       const muted = true;
       const q = (<Icon color='red' name='question circle' />);
 
@@ -707,7 +716,7 @@ class ShidurGroups extends Component {
                               autoPlay={autoPlay}
                               controls={controls}
                               muted={muted}
-                              playsinline={true}/>
+                              playsInline={true}/>
                       </Grid.Column>
                   </Grid.Row>
 
@@ -722,7 +731,7 @@ class ShidurGroups extends Component {
                               autoPlay={autoPlay}
                               controls={controls}
                               muted={muted}
-                              playsinline={true}/>
+                              playsInline={true}/>
                       </Grid.Column>
                       <Grid.Column>
                           <video
@@ -734,7 +743,7 @@ class ShidurGroups extends Component {
                               autoPlay={autoPlay}
                               controls={controls}
                               muted={muted}
-                              playsinline={true}/>
+                              playsInline={true}/>
                       </Grid.Column>
                   </Grid.Row>
               </Grid>
@@ -752,7 +761,7 @@ class ShidurGroups extends Component {
                      autoPlay={autoPlay}
                      controls={controls}
                      muted={muted}
-                     playsinline={true}/>
+                     playsInline={true}/>
           </Segment>
 
             <Dropdown
