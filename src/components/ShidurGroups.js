@@ -373,20 +373,21 @@ class ShidurGroups extends Component {
                     let {feeds,feeds_queue,pgm_state} = this.state;
                     let leaving = msg["leaving"];
                     Janus.log("Publisher left: " + leaving);
-                    for(let i=0; i<feeds.length; i++){
-                        if(feeds[i].id === leaving) {
-                            feeds.splice(i, 1);
-                            this.setState({feeds, feeds_queue: feeds_queue--});
-                            //Check if feed in program and switch to next in queue
-                            for(let i=0; i<4; i++) {
-                                if(pgm_state[i].id === leaving) {
-                                    this.switchNext(i);
-                                    break
-                                }
-                            }
-                            break
-                        }
-                    }
+                    this.removeFeed(leaving);
+                    // for(let i=0; i<feeds.length; i++){
+                    //     if(feeds[i].id === leaving) {
+                    //         feeds.splice(i, 1);
+                    //         this.setState({feeds, feeds_queue: feeds_queue--});
+                    //         //Check if feed in program and switch to next in queue
+                    //         for(let i=0; i<4; i++) {
+                    //             if(pgm_state[i].id === leaving) {
+                    //                 this.switchNext(i);
+                    //                 break
+                    //             }
+                    //         }
+                    //         break
+                    //     }
+                    // }
                 } else if(msg["unpublished"] !== undefined && msg["unpublished"] !== null) {
                     // One of the publishers has unpublished?
                     let {feeds,feeds_queue,pgm_state} = this.state;
@@ -397,20 +398,21 @@ class ShidurGroups extends Component {
                         this.state.gxyhandle.hangup();
                         return;
                     }
-                    for(let i=0; i<feeds.length; i++){
-                        if(feeds[i].id === unpublished) {
-                            feeds.splice(i, 1);
-                            this.setState({feeds, feeds_queue: feeds_queue--});
-                            //Check if feed in program and switch to next in queue
-                            for(let i=0; i<4; i++) {
-                                if(pgm_state[i].id === unpublished) {
-                                    this.switchNext(i);
-                                    break
-                                }
-                            }
-                            break
-                        }
-                    }
+                    this.removeFeed(unpublished);
+                    // for(let i=0; i<feeds.length; i++){
+                    //     if(feeds[i].id === unpublished) {
+                    //         feeds.splice(i, 1);
+                    //         this.setState({feeds, feeds_queue: feeds_queue--});
+                    //         //Check if feed in program and switch to next in queue
+                    //         for(let i=0; i<4; i++) {
+                    //             if(pgm_state[i].id === unpublished) {
+                    //                 this.switchNext(i);
+                    //                 break
+                    //             }
+                    //         }
+                    //         break
+                    //     }
+                    // }
                 } else if(msg["error"] !== undefined && msg["error"] !== null) {
                     if(msg["error_code"] === 426) {
                         Janus.log("This is a no such room");
@@ -444,7 +446,7 @@ class ShidurGroups extends Component {
                     pre.send({"message": listen});
                     if(program) {
                         let {pr1} = this.state;
-                        pr1.push(pre);
+                        pr1[i] = pre;
                         this.setState({pr1})
                     } else {
                         this.setState({pre});
@@ -581,7 +583,7 @@ class ShidurGroups extends Component {
             let switchfeed = {"request": "switch", "feed": next_feed.id, "audio": true, "video": true, "data": false};
             pr1[i].send ({"message": switchfeed,
                 success: () => {
-                    Janus.log(" :: Program Switch Feed to: ", next_feed.display);
+                    Janus.log(" :: Next Switch Feed to: ", next_feed.display);
                     pgm_state[i] = next_feed;
                 }
             })
