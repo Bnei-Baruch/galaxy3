@@ -652,11 +652,12 @@ class ShidurGroups extends Component {
         this.switchPreview(preview.id, preview.display);
     };
 
-    disableGroup = (e, data, i) => {
+    disableGroup = (e, i) => {
         e.preventDefault();
         if (e.type === 'contextmenu') {
-            let {disabled_groups} = this.state;
-            disabled_groups.push(data);
+            let {disabled_groups,pgm_state} = this.state;
+            let feed = pgm_state[i];
+            disabled_groups.push(feed);
             this.setState({disabled_groups});
         }
     };
@@ -666,7 +667,7 @@ class ShidurGroups extends Component {
         if (e.type === 'contextmenu') {
             let {disabled_groups} = this.state;
             for(let i = 0; i < disabled_groups.length; i++){
-                if ( disabled_groups[i].room === data.room) {
+                if ( disabled_groups[i].id === data.id) {
                     disabled_groups.splice(i, 1);
                     this.setState({disabled_groups});
                 }
@@ -691,14 +692,13 @@ class ShidurGroups extends Component {
       });
 
       let disabled_list = disabled_groups.map((data,i) => {
-          const {room, num_participants, description} = data;
+          const {id, display} = data;
           return (
-              <Table.Row key={room} warning
+              <Table.Row key={id} warning
                          onClick={() => this.selectGroup(data, i)}
                          onContextMenu={(e) => this.restoreGroup(e, data, i)} >
-                  <Table.Cell width={5}>{description}</Table.Cell>
-                  <Table.Cell width={1}>{num_participants}</Table.Cell>
-                  <Table.Cell width={1}></Table.Cell>
+                  <Table.Cell width={5}>{display}</Table.Cell>
+                  <Table.Cell width={1}>{id}</Table.Cell>
               </Table.Row>
           )
       });
@@ -737,7 +737,8 @@ class ShidurGroups extends Component {
               <Grid columns={2} stretched>
                   <Grid.Row stretched>
                       <Grid.Column>
-                          <video onClick={() => this.switchProgram("0")}
+                          <video onClick={() => this.switchProgram(0)}
+                                 onContextMenu={(e) => this.disableGroup(e, 0)}
                               ref={"programVideo0"}
                               id={"programVideo0"}
                               width={width}
@@ -748,7 +749,8 @@ class ShidurGroups extends Component {
                               playsInline={true}/>
                       </Grid.Column>
                       <Grid.Column>
-                          <video onClick={() => this.switchProgram("1")}
+                          <video onClick={() => this.switchProgram(1)}
+                                 onContextMenu={(e) => this.disableGroup(e, 1)}
                               ref={"programVideo1"}
                               id={"programVideo1"}
                               width={width}
@@ -762,7 +764,8 @@ class ShidurGroups extends Component {
 
                   <Grid.Row stretched>
                       <Grid.Column>
-                          <video onClick={() => this.switchProgram("2")}
+                          <video onClick={() => this.switchProgram(2)}
+                                 onContextMenu={(e) => this.disableGroup(e, 2)}
                                  ref={"programVideo2"}
                                  id={"programVideo2"}
                                  width={width}
@@ -773,7 +776,8 @@ class ShidurGroups extends Component {
                                  playsInline={true}/>
                       </Grid.Column>
                       <Grid.Column>
-                          <video onClick={() => this.switchProgram("3")}
+                          <video onClick={() => this.switchProgram(3)}
+                                 onContextMenu={(e) => this.disableGroup(e, 3)}
                                  ref={"programVideo3"}
                                  id={"programVideo3"}
                                  width={width}
@@ -812,6 +816,10 @@ class ShidurGroups extends Component {
                 options={group_options}
                 onChange={(e,{value}) => this.selectGroup(value)} />
 
+            <hr/>
+            <p>Current queue value: {this.state.feeds_queue}</p>
+            <p>Feeds sum: {this.state.feeds.length}</p>
+            <hr/>
           {/*<Segment textAlign='center' className="group_list" raised>*/}
               {/*<Table selectable compact='very' basic structured className="admin_table" unstackable>*/}
                   {/*<Table.Body>*/}
