@@ -24,11 +24,7 @@ class ShidurGroups extends Component {
         program: null,
         preview: null,
         protocol: null,
-        pgm_state: {
-            name: "",
-            room: null,
-            index: null
-        },
+        pgm_state: [],
         quistions_queue: [],
         remotefeed: null,
         myid: null,
@@ -515,13 +511,14 @@ class ShidurGroups extends Component {
 
     switchProgram = (i) => {
         console.log(" :: Selected program Switch: ",i);
-        let {preview,pr1} = this.state;
+        let {preview,pr1,pgm_state} = this.state;
         if(preview) {
             let switchfeed = {"request": "switch", "feed": preview.id, "audio": true, "video": true, "data": false};
             pr1[i].send ({"message": switchfeed,
                 success: () => {
                     Janus.log(" :: Selected program Switch Feed to: ", preview.display);
-                    this.setState({program: preview});
+                    pgm_state[i] = preview;
+                    this.setState({program: preview, pgm_state});
                 }
             })
         }
@@ -529,7 +526,7 @@ class ShidurGroups extends Component {
     };
 
     switchFour = () => {
-        let {feeds_queue,pr1,feeds} = this.state;
+        let {feeds_queue,pr1,feeds,pgm_state} = this.state;
 
         for(let i=0; i<4; i++) {
 
@@ -543,6 +540,7 @@ class ShidurGroups extends Component {
             console.log("---------- i: "+i+" queue: "+feeds_queue);
             let feed_id = feeds[feeds_queue].id;
             let feed_display = feeds[feeds_queue].display;
+            pgm_state[i] = feeds[feeds_queue];
 
             if(!pr1[i]) {
                 this.newSwitchFeed(feed_id,true,i);
@@ -558,8 +556,8 @@ class ShidurGroups extends Component {
             feeds_queue++;
         }
 
-        // Here current number in feeds queue
-        this.setState({feeds_queue});
+        // Here current number in feeds queue and program state
+        this.setState({feeds_queue, pgm_state});
     };
 
     switchNext = (i) => {
