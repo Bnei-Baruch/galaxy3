@@ -133,172 +133,6 @@ class ShidurGroups extends Component {
         });
     };
 
-    // newRemoteFeed = (id, handle, talk) => {
-    //     // A new feed has been published, create a new plugin handle and attach to it as a subscriber
-    //     var remoteFeed = null;
-    //     this.state.janus.attach(
-    //         {
-    //             plugin: "janus.plugin.videoroom",
-    //             opaqueId: "remotefeed_shidur",
-    //             success: (pluginHandle) => {
-    //                 remoteFeed = pluginHandle;
-    //                 remoteFeed.simulcastStarted = false;
-    //                 //this.setState({remotefeed});
-    //                 Janus.log("Plugin attached! (" + remoteFeed.getPlugin() + ", id=" + remoteFeed.getId() + ")");
-    //                 Janus.log("  -- This is a subscriber");
-    //                 // We wait for the plugin to send us an offer
-    //                 let listen = { "request": "join", "room": 1234, "ptype": "subscriber", "feed": id, "private_id": this.state.mypvtid };
-    //                 remoteFeed.send({"message": listen});
-    //             },
-    //             error: (error) => {
-    //                 Janus.error("  -- Error attaching plugin...", error);
-    //             },
-    //             onmessage: (msg, jsep) => {
-    //                 Janus.debug(" ::: Got a message (subscriber) :::");
-    //                 Janus.debug(msg);
-    //                 let event = msg["videoroom"];
-    //                 Janus.debug("Event: " + event);
-    //                 if(msg["error"] !== undefined && msg["error"] !== null) {
-    //                     Janus.debug(":: Error msg: " + msg["error"]);
-    //                 } else if(event !== undefined && event !== null) {
-    //                     if(event === "attached") {
-    //                         // Subscriber created and attached
-    //                         let {feeds,users} = this.state;
-    //                         for(let i=1;i<MAX_FEEDS;i++) {
-    //                             if(feeds[i] === undefined || feeds[i] === null) {
-    //                                 remoteFeed.rfindex = i;
-    //                                 remoteFeed.rfid = msg["id"];
-    //                                 remoteFeed.rfuser = JSON.parse(msg["display"]);
-    //                                 remoteFeed.rfuser.rfid = msg["id"];
-    //                                 remoteFeed.talk = talk;
-    //                                 feeds[i] = remoteFeed;
-    //                                 users[remoteFeed.rfuser.id] = remoteFeed.rfuser;
-    //                                 break;
-    //                             }
-    //                         }
-    //                         this.setState({feeds,users});
-    //                         Janus.log("Successfully attached to feed " + remoteFeed.rfid + " (" + remoteFeed.rfuser + ") in room " + msg["room"]);
-    //                     } else if(event === "event") {
-    //                         // Check if we got an event on a simulcast-related event from this publisher
-    //                         let substream = msg["substream"];
-    //                         let temporal = msg["temporal"];
-    //                         if((substream !== null && substream !== undefined) || (temporal !== null && temporal !== undefined)) {
-    //                             if(!remoteFeed.simulcastStarted) {
-    //                                 remoteFeed.simulcastStarted = true;
-    //                                 // Add some new buttons
-    //                                 //addSimulcastButtons(remoteFeed.rfindex, remoteFeed.videoCodec === "vp8");
-    //                             }
-    //                             // We just received notice that there's been a switch, update the buttons
-    //                             //updateSimulcastButtons(remoteFeed.rfindex, substream, temporal);
-    //                         }
-    //                     } else {
-    //                         // What has just happened?
-    //                     }
-    //                 }
-    //                 if(jsep !== undefined && jsep !== null) {
-    //                     Janus.debug("Handling SDP as well...");
-    //                     Janus.debug(jsep);
-    //                     // Answer and attach
-    //                     remoteFeed.createAnswer(
-    //                         {
-    //                             jsep: jsep,
-    //                             // Add data:true here if you want to subscribe to datachannels as well
-    //                             // (obviously only works if the publisher offered them in the first place)
-    //                             media: { audioSend: false, videoSend: false },	// We want recvonly audio/video
-    //                             success: (jsep) => {
-    //                                 Janus.debug("Got SDP!");
-    //                                 Janus.debug(jsep);
-    //                                 let body = { "request": "start", "room": 1234 };
-    //                                 remoteFeed.send({"message": body, "jsep": jsep});
-    //                             },
-    //                             error: (error) => {
-    //                                 Janus.error("WebRTC error:", error);
-    //                             }
-    //                         });
-    //                 }
-    //             },
-    //             webrtcState: (on) => {
-    //                 Janus.log("Janus says this WebRTC PeerConnection (feed #" + remoteFeed.rfindex + ") is " + (on ? "up" : "down") + " now");
-    //             },
-    //             onlocalstream: (stream) => {
-    //                 // The subscriber stream is recvonly, we don't expect anything here
-    //             },
-    //             onremotestream: (stream) => {
-    //                 Janus.debug("Remote feed #" + remoteFeed.rfindex, handle);
-    //                 let node = handle === "preview" ? "remoteVideo" : "programVideo";
-    //                 //let remotevideo = this.refs[node + remoteFeed.rfindex];
-    //                 let remotevideo = this.refs[node + remoteFeed.rfid];
-    //                 // if(remotevideo.length === 0) {
-    //                 //     // No remote video yet
-    //                 // }
-    //                 Janus.attachMediaStream(remotevideo, stream);
-    //                 var videoTracks = stream.getVideoTracks();
-    //                 if(videoTracks === null || videoTracks === undefined || videoTracks.length === 0) {
-    //                     // No remote video
-    //                 } else {
-    //                     // Yes remote video
-    //                 }
-    //                 // if(Janus.webRTCAdapter.browserDetails.browser === "chrome" || Janus.webRTCAdapter.browserDetails.browser === "firefox" ||
-    //                 //     Janus.webRTCAdapter.browserDetails.browser === "safari") {
-    //                 //     $('#curbitrate'+remoteFeed.rfindex).removeClass('hide').show();
-    //                 //     bitrateTimer[remoteFeed.rfindex] = setInterval(function() {
-    //                 //         // Display updated bitrate, if supported
-    //                 //         var bitrate = remoteFeed.getBitrate();
-    //                 //         $('#curbitrate'+remoteFeed.rfindex).text(bitrate);
-    //                 //         // Check if the resolution changed too
-    //                 //         var width = $("#remotevideo"+remoteFeed.rfindex).get(0).videoWidth;
-    //                 //         var height = $("#remotevideo"+remoteFeed.rfindex).get(0).videoHeight;
-    //                 //         if(width > 0 && height > 0)
-    //                 //             $('#curres'+remoteFeed.rfindex).removeClass('hide').text(width+'x'+height).show();
-    //                 //     }, 1000);
-    //                 // }
-    //             },
-    //             oncleanup: () => {
-    //                 Janus.log(" ::: Got a cleanup notification (remote feed " + id + ") :::");
-    //             }
-    //         });
-    // };
-
-    // publishOwnFeed = (useAudio) => {
-    //     // Publish our stream
-    //     let {videoroom} = this.state;
-    //
-    //     videoroom.createOffer(
-    //         {
-    //             // Add data:true here if you want to publish datachannels as well
-    //             //media: { audioRecv: false, videoRecv: false, audioSend: useAudio, videoSend: true, video: "lowres" },	// Publishers are sendonly
-    //             media: { audioRecv: false, videoRecv: false, audioSend: false, videoSend: false },	// Publishers are sendonly
-    //             // If you want to test simulcasting (Chrome and Firefox only), then
-    //             // pass a ?simulcast=true when opening this demo page: it will turn
-    //             // the following 'simulcast' property to pass to janus.js to true
-    //             simulcast: false,
-    //             success: (jsep) => {
-    //                 Janus.debug("Got publisher SDP!");
-    //                 Janus.debug(jsep);
-    //                 let publish = { "request": "configure", "audio": useAudio, "video": true };
-    //                 // You can force a specific codec to use when publishing by using the
-    //                 // audiocodec and videocodec properties, for instance:
-    //                 // 		publish["audiocodec"] = "opus"
-    //                 // to force Opus as the audio codec to use, or:
-    //                 // 		publish["videocodec"] = "vp9"
-    //                 // to force VP9 as the videocodec to use. In both case, though, forcing
-    //                 // a codec will only work if: (1) the codec is actually in the SDP (and
-    //                 // so the browser supports it), and (2) the codec is in the list of
-    //                 // allowed codecs in a room. With respect to the point (2) above,
-    //                 // refer to the text in janus.plugin.videoroom.cfg for more details
-    //                 videoroom.send({"message": publish, "jsep": jsep});
-    //             },
-    //             error: (error) => {
-    //                 Janus.error("WebRTC error:", error);
-    //                 if (useAudio) {
-    //                     this.publishOwnFeed(false);
-    //                 } else {
-    //                     Janus.error("WebRTC error... " + JSON.stringify(error));
-    //                 }
-    //             }
-    //         });
-    // };
-
     onMessage = (msg, jsep, initdata) => {
         let {gxyhandle} = this.state;
         Janus.debug(" ::: Got a message (publisher) :::");
@@ -591,54 +425,6 @@ class ShidurGroups extends Component {
         this.setState({pgm_state});
     };
 
-    // attachToPreview = (group, index) => {
-    //     const {feeds} = this.state;
-    //     Janus.log(" :: Attaching to Preview: ",group);
-    //     let room = group.room;
-    //     let name = group.description;
-    //     if(this.state.preview_room === room)
-    //         return;
-    //     feeds.preview.forEach(feed => {
-    //         if(feed) {
-    //             Janus.log("-- :: Remove Feed: ", feed);
-    //             feed.detach();
-    //         }
-    //     });
-    //
-    //     feeds.preview = [];
-    //     this.setState({index, preview_room: room, preview_name: name, feeds});
-    //     this.initVideoRoom(room, "preview");
-    // };
-
-    // attachToProgram = () => {
-    //     // const {feeds} = this.state;
-    //     // let {preview_room, preview_name, group, rooms} = this.state;
-    //     // if(!preview_name)
-    //     //     return;
-    //     // feeds.program.forEach(feed => {
-    //     //     if(feed) {
-    //     //         Janus.log("-- :: Remove Feed: ", feed);
-    //     //         feed.detach();
-    //     //     }
-    //     // });
-    //     //
-    //     // feeds.program = [];
-    //     // this.setState({program_room: preview_room, program_name: preview_name, feeds});
-    //     // this.initVideoRoom(preview_room, "program");
-    //     //
-    //     // // Save Program State
-    //     // let pgm_state = { index: 0, room: preview_room, name: preview_name};
-    //     // this.setState({pgm_state});
-    //     // Janus.log(" :: Attaching to Program: ",preview_name,pgm_state);
-    //     // putData(`state/galaxy/pr1`, pgm_state, (cb) => {
-    //     //     Janus.log(":: Save to state: ",cb);
-    //     // });
-    //     //
-    //     // // Select next group
-    //     // let i = rooms.length-1 < group.index+1 ? 0 :  group.index+1;
-    //     // this.selectGroup(rooms[i], i)
-    // };
-
     clickPreview = () => {
         Janus.log("You clicked on preview :-|");
     };
@@ -652,7 +438,7 @@ class ShidurGroups extends Component {
 
     removeFeed = (id) => {
         let {feeds,feeds_queue,pgm_state} = this.state;
-        Janus.log(" :: Disable feed: " + id);
+        Janus.log(" :: Remove Feed: " + id);
         for(let i=0; i<feeds.length; i++){
             if(feeds[i].id === id) {
                 feeds.splice(i, 1);
@@ -676,6 +462,7 @@ class ShidurGroups extends Component {
         if (e.type === 'contextmenu') {
             let {disabled_groups,pgm_state} = this.state;
             let feed = pgm_state[i];
+            Janus.log(" :: Disable Feed: " + feed.display);
             disabled_groups.push(feed);
             this.removeFeed(feed.id);
             this.setState({disabled_groups});
