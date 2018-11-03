@@ -370,21 +370,26 @@ class ShidurGroups extends Component {
                     // }
                 } else if(msg["leaving"] !== undefined && msg["leaving"] !== null) {
                     // One of the publishers has gone away?
-                    let {feeds,feeds_queue} = this.state;
+                    let {feeds,feeds_queue,pgm_state} = this.state;
                     let leaving = msg["leaving"];
                     Janus.log("Publisher left: " + leaving);
                     for(let i=0; i<feeds.length; i++){
                         if(feeds[i].id === leaving) {
                             feeds.splice(i, 1);
                             this.setState({feeds, feeds_queue: feeds_queue--});
-                            //let achk = audio_devices.filter(a => a.deviceId === audio_device).length > 0;
-                            //TODO : We need to check if feed in program and switch to next in queue
+                            //Check if feed in program and switch to next in queue
+                            for(let i=0; i<4; i++) {
+                                if(pgm_state[i].id === leaving) {
+                                    this.switchNext(i);
+                                    break
+                                }
+                            }
                             break
                         }
                     }
                 } else if(msg["unpublished"] !== undefined && msg["unpublished"] !== null) {
                     // One of the publishers has unpublished?
-                    let {feeds,feeds_queue} = this.state;
+                    let {feeds,feeds_queue,pgm_state} = this.state;
                     let unpublished = msg["unpublished"];
                     Janus.log("Publisher left: " + unpublished);
                     if(unpublished === 'ok') {
@@ -396,7 +401,13 @@ class ShidurGroups extends Component {
                         if(feeds[i].id === unpublished) {
                             feeds.splice(i, 1);
                             this.setState({feeds, feeds_queue: feeds_queue--});
-                            //TODO : We need to check if feed in program and switch to next in queue
+                            //Check if feed in program and switch to next in queue
+                            for(let i=0; i<4; i++) {
+                                if(pgm_state[i].id === unpublished) {
+                                    this.switchNext(i);
+                                    break
+                                }
+                            }
                             break
                         }
                     }
@@ -561,7 +572,7 @@ class ShidurGroups extends Component {
     };
 
     switchNext = (i) => {
-        let {feeds_queue,feeds,pr1} = this.state;
+        let {feeds_queue,feeds,pr1,pgm_state} = this.state;
         let next_feed = feeds[feeds_queue];
 
         if(!pr1[i]) {
@@ -571,14 +582,15 @@ class ShidurGroups extends Component {
             pr1[i].send ({"message": switchfeed,
                 success: () => {
                     Janus.log(" :: Program Switch Feed to: ", next_feed.display);
+                    pgm_state[i] = next_feed;
                 }
             })
         }
 
         feeds_queue++;
 
-    // Here current number in feeds queue
-    this.setState({feeds_queue});
+    // Here current number in feeds queue and program state
+    this.setState({feeds_queue, pgm_state});
     };
 
     // attachToPreview = (group, index) => {
