@@ -652,12 +652,32 @@ class ShidurGroups extends Component {
         this.switchPreview(preview.id, preview.display);
     };
 
+    removeFeed = (id) => {
+        let {feeds,feeds_queue,pgm_state} = this.state;
+        Janus.log(" xx Disabled feed: " + id);
+        for(let i=0; i<feeds.length; i++){
+            if(feeds[i].id === id) {
+                feeds.splice(i, 1);
+                this.setState({feeds, feeds_queue: feeds_queue--});
+                //Check if feed in program and switch to next in queue
+                for(let i=0; i<4; i++) {
+                    if(pgm_state[i].id === id) {
+                        this.switchNext(i);
+                        break
+                    }
+                }
+                break
+            }
+        }
+    };
+
     disableGroup = (e, i) => {
         e.preventDefault();
         if (e.type === 'contextmenu') {
             let {disabled_groups,pgm_state} = this.state;
             let feed = pgm_state[i];
             disabled_groups.push(feed);
+            this.removeFeed(feed.id);
             this.setState({disabled_groups});
         }
     };
@@ -665,11 +685,12 @@ class ShidurGroups extends Component {
     restoreGroup = (e, data, i) => {
         e.preventDefault();
         if (e.type === 'contextmenu') {
-            let {disabled_groups} = this.state;
+            let {disabled_groups,feeds} = this.state;
             for(let i = 0; i < disabled_groups.length; i++){
                 if ( disabled_groups[i].id === data.id) {
                     disabled_groups.splice(i, 1);
-                    this.setState({disabled_groups});
+                    feeds.push(data);
+                    this.setState({disabled_groups,feeds});
                 }
             }
         }
