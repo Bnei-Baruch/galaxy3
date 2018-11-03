@@ -2,20 +2,17 @@ import React, { Component } from 'react';
 import { Janus } from "../lib/janus";
 import {Segment, Table, Icon, Dropdown, Grid, Button} from "semantic-ui-react";
 import {getState, putData, initGXYJanus} from "../shared/tools";
-import {MAX_FEEDS} from "../shared/consts";
-//import '../shared/VideoConteiner.scss'
-//import nowebcam from './nowebcam.jpeg';
-import {initGxyProtocol} from "../shared/protocol";
+// import {MAX_FEEDS} from "../shared/consts";
+// import {initGxyProtocol} from "../shared/protocol";
+import './GroupsConteiner.scss'
 
 class ShidurGroups extends Component {
 
     state = {
         janus: null,
         feeds: [],
-        rooms: [],
         gxyhandle: null,
         index: 0,
-        room: "",
         name: "",
         disabled_groups: [],
         group: null,
@@ -410,8 +407,10 @@ class ShidurGroups extends Component {
     };
 
     switchNext = (i ,feed) => {
+        Janus.log(" :: switchNext params: ", i, feed);
+        if(!feed) return;
         let {pr1,pgm_state} = this.state;
-        if(!pr1[i] && feed.id) {
+        if(!pr1[i]) {
             this.newSwitchFeed(feed.id,true,i);
         } else {
             let switchfeed = {"request": "switch", "feed": feed.id, "audio": true, "video": true, "data": false};
@@ -486,9 +485,9 @@ class ShidurGroups extends Component {
 
   render() {
       //Janus.log(" --- ::: RENDER ::: ---");
-      const { feeds,preview_room,preview_name,program_name,disabled_groups,rooms,quistions_queue,pgm_state } = this.state;
-      const width = "180";
-      const height = "90";
+      const { feeds,preview,disabled_groups,quistions_queue,pgm_state } = this.state;
+      const width = "100%";
+      const height = "100%";
       const autoPlay = true;
       const controls = false;
       const muted = true;
@@ -511,100 +510,48 @@ class ShidurGroups extends Component {
           )
       });
 
-      // let program = feeds.map((feed) => {
-      //     if(feed) {
-      //         let id = feed.rfid;
-      //         let talk = feed.talk;
-      //         return (<div className="video"
-      //                      key={"prov" + id}
-      //                      ref={"provideo" + id}
-      //                      id={"provideo" + id}>
-      //             <video className={talk ? "talk" : ""}
-      //                    key={id}
-      //                    ref={"programVideo" + id}
-      //                    id={"programVideo" + id}
-      //                    width={width}
-      //                    height={height}
-      //                    autoPlay={autoPlay}
-      //                    controls={controls}
-      //                    muted={muted}
-      //                    playsInline={true}/>
-      //         </div>);
-      //     }
-      //     return true;
-      // });
+      let program = pgm_state.map((feed,i) => {
+          if(feed) {
+              let id = feed.rfid;
+              let talk = feed.talk;
+              return (<div className="video"
+                           key={"prov" + i}
+                           ref={"provideo" + i}
+                           id={"provideo" + i}>
+                  <div className="title"><span>{feed.display}</span></div>
+                  <video className={talk ? "talk" : ""}
+                         onClick={() => this.switchProgram(i)}
+                         onContextMenu={(e) => this.disableGroup(e, i)}
+                         key={id}
+                         ref={"programVideo" + i}
+                         id={"programVideo" + i}
+                         width={width}
+                         height={height}
+                         autoPlay={autoPlay}
+                         controls={controls}
+                         muted={muted}
+                         playsInline={true}/>
+              </div>);
+          }
+          return true;
+      });
 
     return (
 
         <Segment className="segment_conteiner" raised>
           
           <Segment attached className="program_segment" color='red'>
-              {/*<div className="shidur_overlay">{pgm_state.name}</div>*/}
-              {/*{program}*/}
-              {/*<div className="shidur_overlay"><span>{pgm_state.name}</span></div>*/}
-              <Grid columns={2} stretched>
-                  <Grid.Row stretched>
-                      <Grid.Column>
-                          <video onClick={() => this.switchProgram(0)}
-                                 onContextMenu={(e) => this.disableGroup(e, 0)}
-                              ref={"programVideo0"}
-                              id={"programVideo0"}
-                              width={width}
-                              height={height}
-                              autoPlay={autoPlay}
-                              controls={controls}
-                              muted={muted}
-                              playsInline={true}/>
-                      </Grid.Column>
-                      <Grid.Column>
-                          <video onClick={() => this.switchProgram(1)}
-                                 onContextMenu={(e) => this.disableGroup(e, 1)}
-                              ref={"programVideo1"}
-                              id={"programVideo1"}
-                              width={width}
-                              height={height}
-                              autoPlay={autoPlay}
-                              controls={controls}
-                              muted={muted}
-                              playsInline={true}/>
-                      </Grid.Column>
-                  </Grid.Row>
-
-                  <Grid.Row stretched>
-                      <Grid.Column>
-                          <video onClick={() => this.switchProgram(2)}
-                                 onContextMenu={(e) => this.disableGroup(e, 2)}
-                                 ref={"programVideo2"}
-                                 id={"programVideo2"}
-                                 width={width}
-                                 height={height}
-                                 autoPlay={autoPlay}
-                                 controls={controls}
-                                 muted={muted}
-                                 playsInline={true}/>
-                      </Grid.Column>
-                      <Grid.Column>
-                          <video onClick={() => this.switchProgram(3)}
-                                 onContextMenu={(e) => this.disableGroup(e, 3)}
-                                 ref={"programVideo3"}
-                                 id={"programVideo3"}
-                                 width={width}
-                                 height={height}
-                                 autoPlay={autoPlay}
-                                 controls={controls}
-                                 muted={muted}
-                                 playsInline={true}/>
-                      </Grid.Column>
-                  </Grid.Row>
-              </Grid>
+              <div className="videos">
+                  <div className="videos__wrapper">
+                      {program}
+                  </div>
+              </div>
           </Segment>
 
             <Button attached='bottom' color='red' size='mini' onClick={this.switchFour}>Next four</Button>
 
           <Segment className="preview_segment" color='green' onClick={this.clickPreview} >
-              {/*<div className="shidur_overlay">{preview_name}</div>*/}
-              {/*{preview}*/}
-              <div className="shidur_overlay"><span>{preview_name}</span></div>
+              <div className="shidur_overlay"><span>{preview ? preview.display : ""}</span></div>
               <video
                      ref={"prevewVideo"}
                      id="prevewVideo"
@@ -628,12 +575,6 @@ class ShidurGroups extends Component {
             <p>Current queue value: {this.state.feeds_queue}</p>
             <p>Feeds sum: {this.state.feeds.length}</p>
             <hr/>
-          {/*<Segment textAlign='center' className="group_list" raised>*/}
-              {/*<Table selectable compact='very' basic structured className="admin_table" unstackable>*/}
-                  {/*<Table.Body>*/}
-                  {/*</Table.Body>*/}
-              {/*</Table>*/}
-          {/*</Segment>*/}
             <Segment textAlign='center' className="disabled_list" raised>
                 <Table selectable compact='very' basic structured className="admin_table" unstackable>
                     <Table.Body>
