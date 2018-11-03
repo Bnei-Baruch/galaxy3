@@ -374,20 +374,21 @@ class ShidurGroups extends Component {
                     // }
                 } else if(msg["leaving"] !== undefined && msg["leaving"] !== null) {
                     // One of the publishers has gone away?
-                    let {feeds} = this.state;
+                    let {feeds,feeds_queue} = this.state;
                     let leaving = msg["leaving"];
                     Janus.log("Publisher left: " + leaving);
                     for(let i=0; i<feeds.length; i++){
                         if(feeds[i].id === leaving) {
                             feeds.splice(i, 1);
-                            this.setState({feeds});
+                            this.setState({feeds, feeds_queue: feeds_queue--});
+                            //let achk = audio_devices.filter(a => a.deviceId === audio_device).length > 0;
                             //TODO : We need to check if feed in program and switch to next in queue
                             break
                         }
                     }
                 } else if(msg["unpublished"] !== undefined && msg["unpublished"] !== null) {
                     // One of the publishers has unpublished?
-                    let {feeds} = this.state;
+                    let {feeds,feeds_queue} = this.state;
                     let unpublished = msg["unpublished"];
                     Janus.log("Publisher left: " + unpublished);
                     if(unpublished === 'ok') {
@@ -398,7 +399,7 @@ class ShidurGroups extends Component {
                     for(let i=0; i<feeds.length; i++){
                         if(feeds[i].id === unpublished) {
                             feeds.splice(i, 1);
-                            this.setState({feeds});
+                            this.setState({feeds, feeds_queue: feeds_queue--});
                             //TODO : We need to check if feed in program and switch to next in queue
                             break
                         }
