@@ -525,7 +525,7 @@ class ShidurGroups extends Component {
     };
 
     switchProgram = (i) => {
-        console.log(" :: Selected program Switch: ",i);
+        Janus.log(" :: Selected program Switch: ",i);
         let {preview,pr1,pgm_state} = this.state;
         if(preview) {
             let switchfeed = {"request": "switch", "feed": preview.id, "audio": true, "video": true, "data": false};
@@ -549,10 +549,10 @@ class ShidurGroups extends Component {
                 // End round here!
                 feeds_queue = 0;
                 this.setState({feeds_queue});
-                console.log(" -- ROUND END --");
+                Janus.log(" -- ROUND END --");
             }
 
-            console.log("---------- i: "+i+" queue: "+feeds_queue);
+            Janus.log("---------- i: "+i+" queue: "+feeds_queue);
             let feed_id = feeds[feeds_queue].id;
             let feed_display = feeds[feeds_queue].display;
             pgm_state[i] = feeds[feeds_queue];
@@ -575,26 +575,20 @@ class ShidurGroups extends Component {
         this.setState({feeds_queue, pgm_state});
     };
 
-    switchNext = (i) => {
-        let {feeds_queue,feeds,pr1,pgm_state} = this.state;
-        let next_feed = feeds[feeds_queue];
-
-        if(!pr1[i]) {
-            this.newSwitchFeed(next_feed.id,true,i);
+    switchNext = (i ,feed) => {
+        let {pr1,pgm_state} = this.state;
+        if(!pr1[i] && feed.id) {
+            this.newSwitchFeed(feed.id,true,i);
         } else {
-            let switchfeed = {"request": "switch", "feed": next_feed.id, "audio": true, "video": true, "data": false};
+            let switchfeed = {"request": "switch", "feed": feed.id, "audio": true, "video": true, "data": false};
             pr1[i].send ({"message": switchfeed,
                 success: () => {
-                    Janus.log(" :: Next Switch Feed to: ", next_feed.display);
-                    pgm_state[i] = next_feed;
+                    Janus.log(" :: Next Switch Feed to: ", feed.display);
+                    pgm_state[i] = feed;
                 }
             })
         }
-
-        feeds_queue++;
-
-    // Here current number in feeds queue and program state
-    this.setState({feeds_queue, pgm_state});
+        this.setState({pgm_state});
     };
 
     // attachToPreview = (group, index) => {
@@ -646,7 +640,7 @@ class ShidurGroups extends Component {
     // };
 
     clickPreview = () => {
-        console.log("You clicked on preview :-|");
+        Janus.log("You clicked on preview :-|");
     };
 
     selectGroup = (preview) => {
@@ -658,15 +652,17 @@ class ShidurGroups extends Component {
 
     removeFeed = (id) => {
         let {feeds,feeds_queue,pgm_state} = this.state;
-        Janus.log(" xx Disabled feed: " + id);
+        Janus.log(" :: Disable feed: " + id);
         for(let i=0; i<feeds.length; i++){
             if(feeds[i].id === id) {
                 feeds.splice(i, 1);
-                this.setState({feeds, feeds_queue: feeds_queue--});
+                this.setState({feeds});
                 //Check if feed in program and switch to next in queue
-                for(let i=0; i<4; i++) {
-                    if(pgm_state[i].id === id) {
-                        this.switchNext(i);
+                for(let a=0; a<4; a++) {
+                    if(pgm_state[a].id === id) {
+                        feeds_queue--;
+                        let feed = feeds[feeds_queue];
+                        this.switchNext(a, feed);
                         break
                     }
                 }
