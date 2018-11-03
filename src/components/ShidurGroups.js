@@ -358,9 +358,11 @@ class ShidurGroups extends Component {
                     let list = msg["publishers"];
                     Janus.debug("Got a list of available publishers/feeds:");
                     Janus.debug(list[0]);
-                    let {feeds} = this.state;
-                    feeds.push(list[0]);
-                    this.setState({feeds});
+                    if(!/_/.test(list[0].display)) {
+                        let {feeds} = this.state;
+                        feeds.push(list[0]);
+                        this.setState({feeds});
+                    }
                     // for(let f in list) {
                     //     let id = list[f]["id"];
                     //     let display = JSON.parse(list[f]["display"]);
