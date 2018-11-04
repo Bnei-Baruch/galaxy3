@@ -18,7 +18,7 @@ class ShidurGroups extends Component {
         pr1: [],
         pre: null,
         program: null,
-        preview: null,
+        pre_feed: null,
         protocol: null,
         pgm_state: [],
         quistions_queue: [],
@@ -356,16 +356,29 @@ class ShidurGroups extends Component {
 
     switchProgram = (i) => {
         Janus.log(" :: Selected program Switch: ",i);
-        let {preview,pr1,pgm_state} = this.state;
-        if(preview) {
-            let switchfeed = {"request": "switch", "feed": preview.id, "audio": true, "video": true, "data": false};
+        let {pre_feed,feeds,pr1,pgm_state,feeds_queue} = this.state;
+
+        //If someone in preview take him else take next in queue
+        if(pre_feed) {
+            let switchfeed = {"request": "switch", "feed": pre_feed.id, "audio": true, "video": true, "data": false};
             pr1[i].send ({"message": switchfeed,
                 success: () => {
-                    Janus.log(" :: Selected program Switch Feed to: ", preview.display);
-                    pgm_state[i] = preview;
-                    this.setState({program: preview, pgm_state});
+                    Janus.log(" :: Selected program Switch Feed to: ", pre_feed.display);
+                    pgm_state[i] = pre_feed;
+                    this.setState({program: pre_feed, pgm_state, pre_feed: null});
                 }
             })
+        } else {
+            let feed = feeds[feeds_queue];
+            pgm_state[i] = feed;
+            this.switchNext(i, feed);
+            feeds_queue++;
+            if(feeds_queue >= feeds.length) {
+                // End round here!
+                feeds_queue = 0;
+                Janus.log(" -- ROUND END --");
+            }
+            this.setState({feeds_queue, pgm_state, pre_feed: null});
         }
 
     };
@@ -427,11 +440,11 @@ class ShidurGroups extends Component {
         Janus.log("You clicked on preview :-|");
     };
 
-    selectGroup = (preview) => {
+    selectGroup = (pre_feed) => {
         // group.index = i;
-        this.setState({preview});
-        Janus.log(preview);
-        this.switchPreview(preview.id, preview.display);
+        this.setState({pre_feed});
+        Janus.log(pre_feed);
+        this.switchPreview(pre_feed.id, pre_feed.display);
     };
 
     removeFeed = (id) => {
@@ -484,7 +497,7 @@ class ShidurGroups extends Component {
 
   render() {
       //Janus.log(" --- ::: RENDER ::: ---");
-      const { feeds,preview,disabled_groups,quistions_queue,pgm_state } = this.state;
+      const { feeds,pre_feed,disabled_groups,quistions_queue,pgm_state } = this.state;
       const width = "100%";
       const height = "100%";
       const autoPlay = true;
@@ -508,6 +521,19 @@ class ShidurGroups extends Component {
               </Table.Row>
           )
       });
+
+      let preview = (<div className={pre_feed ? "" : "hidden"}>
+          <div className="video_title"><span>{pre_feed ? pre_feed.display : ""}</span></div>
+              <video ref = {"prevewVideo"}
+                     id = "prevewVideo"
+                     width = "400"
+                     height = "220"
+                     autoPlay = {autoPlay}
+                     controls = {controls}
+                     muted = {muted}
+                     playsInline = {true} />
+          </div>
+      );
 
       let program = pgm_state.map((feed,i) => {
           if(feed) {
@@ -548,16 +574,7 @@ class ShidurGroups extends Component {
             <Button attached='bottom' color='red' size='mini' onClick={this.switchFour}>Next four</Button>
 
           <Segment className="preview_segment" color='green' onClick={this.clickPreview} >
-              <div className="video_title"><span>{preview ? preview.display : ""}</span></div>
-              <video
-                     ref={"prevewVideo"}
-                     id="prevewVideo"
-                     width="400"
-                     height="220"
-                     autoPlay={autoPlay}
-                     controls={controls}
-                     muted={muted}
-                     playsInline={true}/>
+              {preview}
           </Segment>
 
             <Dropdown

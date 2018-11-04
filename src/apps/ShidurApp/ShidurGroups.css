@@ -76,3 +76,10 @@
     font-weight: normal!important;
     /*color: #2C662D;*/
 }
+
+.ui.selection.dropdown .menu {
+    max-height: 30rem;
+}
+.hidden {
+    display: none;
+}
