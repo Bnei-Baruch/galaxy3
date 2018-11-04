@@ -32,6 +32,14 @@
     float: right !important;
 }
 
+.ui.blue.button, .ui.blue.buttons .button {
+    color: red;
+}
+
+.ui.green.button, .ui.green.buttons .button {
+    color: red;
+}
+
 .close_button {
     position: absolute;
     left: 20px;
