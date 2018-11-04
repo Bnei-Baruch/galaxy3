@@ -301,6 +301,12 @@ class ShidurGroups extends Component {
         Janus.log(" :: Selected program Switch: ",i);
         let {pre_feed,feeds,pr1,pgm_state,feeds_queue} = this.state;
 
+        if(feeds_queue >= feeds.length) {
+            // End round here!
+            feeds_queue = 0;
+            Janus.log(" -- ROUND END --");
+        }
+
         //If someone in preview take him else take next in queue
         if(pre_feed) {
             let switchfeed = {"request": "switch", "feed": pre_feed.id, "audio": true, "video": true, "data": false};
@@ -316,11 +322,13 @@ class ShidurGroups extends Component {
             pgm_state[i] = feed;
             this.switchNext(i, feed);
             feeds_queue++;
+
             if(feeds_queue >= feeds.length) {
                 // End round here!
                 feeds_queue = 0;
                 Janus.log(" -- ROUND END --");
             }
+
             this.setState({feeds_queue, pgm_state, pre_feed: null});
         }
 
@@ -355,6 +363,12 @@ class ShidurGroups extends Component {
             }
 
             feeds_queue++;
+
+            if(feeds_queue >= feeds.length) {
+                // End round here!
+                feeds_queue = 0;
+                Janus.log(" -- ROUND END --");
+            }
         }
 
         // Here current number in feeds queue and program state
@@ -462,7 +476,6 @@ class ShidurGroups extends Component {
 
 
   render() {
-      //Janus.log(" --- ::: RENDER ::: ---");
       const { feeds,pre_feed,full_feed,disabled_groups,feeds_queue,quistions_queue,pgm_state,zoom,fullscr } = this.state;
       const width = "100%";
       const height = "100%";
@@ -562,7 +575,7 @@ class ShidurGroups extends Component {
               </div>
           </Segment>
 
-            <Button attached='bottom' color='red' size='mini' onClick={this.switchFour}>Next</Button>
+            <Button attached='bottom' color='blue' size='mini' onClick={this.switchFour}>Next</Button>
 
           <Segment className="preview_segment" color='green'>
               {preview}
@@ -577,9 +590,9 @@ class ShidurGroups extends Component {
                 onChange={(e,{value}) => this.selectGroup(value)} />
 
             <hr/>
-            <p>Current queue value: {feeds_queue}</p>
-            <p>Group in queue: {feeds.length > 0 ? feeds[feeds_queue].display : ""}</p>
-            <p>Feeds sum: {feeds.length}</p>
+            <p>Queue: {feeds.length - feeds_queue}</p>
+            <p>Next: {feeds[feeds_queue] ? feeds[feeds_queue].display : ""}</p>
+            <p>Online: {feeds.length}</p>
             <hr/>
             <Segment textAlign='center' className="disabled_groups" raised>
                 <Table selectable compact='very' basic structured className="admin_table" unstackable>
