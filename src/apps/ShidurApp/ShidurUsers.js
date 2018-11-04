@@ -3,7 +3,8 @@ import { Janus } from "../../lib/janus";
 import {Segment, Table, Icon} from "semantic-ui-react";
 import {getState, putData, initJanus} from "../../shared/tools";
 import {MAX_FEEDS} from "../../shared/consts";
-import '../VirtualApp/VideoConteiner.scss'
+import './ShidurUsers.css'
+import './VideoConteiner.scss'
 import nowebcam from './nowebcam.jpeg';
 import {initGxyProtocol} from "../../shared/protocol";
 
