@@ -572,7 +572,7 @@ class ShidurGroups extends Component {
             <p>Current queue value: {this.state.feeds_queue}</p>
             <p>Feeds sum: {this.state.feeds.length}</p>
             <hr/>
-            <Segment textAlign='center' className="disabled_list" raised>
+            <Segment textAlign='center' className="disabled_groups" raised>
                 <Table selectable compact='very' basic structured className="admin_table" unstackable>
                     <Table.Body>
                         {disabled_list}
