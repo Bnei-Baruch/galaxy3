@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import { Janus } from "../../lib/janus";
-import {Segment, Table, Icon, Dropdown, Grid, Button} from "semantic-ui-react";
+import {Segment, Table, Icon, Dropdown, Dimmer, Button} from "semantic-ui-react";
 import {getState, putData, initGXYJanus} from "../../shared/tools";
 // import {initGxyProtocol} from "../shared/protocol";
 import './ShidurGroups.css'
@@ -38,6 +38,7 @@ class ShidurGroups extends Component {
             name: "shidur"
         },
         users: {},
+        zoom: false,
     };
 
     componentDidMount() {
@@ -417,14 +418,17 @@ class ShidurGroups extends Component {
     zoominGroup = (e, i) => {
         e.preventDefault();
         if (e.type === 'contextmenu') {
-            let {disabled_groups,pgm_state} = this.state;
-            let feed = pgm_state[i];
-            Janus.log(" :: Zoomin Feed: " + feed.display);
-            // disabled_groups.push(feed);
-            // this.removeFeed(feed.id);
-            // this.setState({disabled_groups});
+            let {zoom} = this.state;
+            this.setState({zoom: !zoom},() => {
+                let switchvideo = this.refs["programVideo" + i];
+                let zoomvideo = this.refs.zoomVideo;
+                var stream = switchvideo.captureStream();
+                zoomvideo.srcObject = stream;
+            });
         }
     };
+
+    handleClose = () => this.setState({ zoom: false })
 
     restoreGroup = (e, data, i) => {
         e.preventDefault();
@@ -443,7 +447,7 @@ class ShidurGroups extends Component {
 
   render() {
       //Janus.log(" --- ::: RENDER ::: ---");
-      const { feeds,pre_feed,disabled_groups,feeds_queue,quistions_queue,pgm_state } = this.state;
+      const { feeds,pre_feed,disabled_groups,feeds_queue,quistions_queue,pgm_state,zoom } = this.state;
       const width = "100%";
       const height = "100%";
       const autoPlay = true;
@@ -552,6 +556,17 @@ class ShidurGroups extends Component {
                     </Table.Body>
                 </Table>
             </Segment>
+
+            <Dimmer active={zoom} onClickOutside={this.handleClose} page>
+                <video ref={"zoomVideo"}
+                       id={"zoomVideo"}
+                       width="1280"
+                       height="720"
+                       autoPlay={autoPlay}
+                       controls={false}
+                       muted={muted}
+                       playsInline={true}/>
+            </Dimmer>
 
         </Segment>
     );
