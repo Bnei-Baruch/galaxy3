@@ -543,7 +543,7 @@ class ShidurGroups extends Component {
                   <Button className='video_button'
                           size='mini'
                           color='green'
-                          icon='arrow right'
+                          icon='share'
                           onClick={() => this.switchProgram(i)} />
               </div></div>);
           }
@@ -575,7 +575,15 @@ class ShidurGroups extends Component {
               </div>
           </Segment>
 
-            <Button attached='bottom' color='blue' size='mini' onClick={this.switchFour}>Next</Button>
+            <Button
+                attached='bottom'
+                color='blue'
+                size='mini'
+                onClick={this.switchFour}>
+                <Icon name='share' />
+                <Icon name='th large' />
+                <Icon name='share' />
+            </Button>
 
           <Segment className="preview_segment" color='green'>
               {preview}
