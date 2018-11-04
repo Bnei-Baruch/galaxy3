@@ -19,6 +19,7 @@ class ShidurGroups extends Component {
         pre: null,
         program: null,
         pre_feed: null,
+        full_feed: null,
         protocol: null,
         pgm_state: [],
         quistions_queue: [],
@@ -445,9 +446,9 @@ class ShidurGroups extends Component {
         }
     };
 
-    fullScreenGroup = (i,feed) => {
-        Janus.log(":: Make Full Screen Group: ",feed.display)
-        this.setState({fullscr: !this.state.fullscr})
+    fullScreenGroup = (i,full_feed) => {
+        Janus.log(":: Make Full Screen Group: ",full_feed.display)
+        this.setState({fullscr: !this.state.fullscr,full_feed})
         let fourvideo = this.refs["programVideo" + i];
         let fullvideo = this.refs.fullscreenVideo;
         var stream = fourvideo.captureStream();
@@ -456,13 +457,13 @@ class ShidurGroups extends Component {
 
     toFourGroup = () => {
         Janus.log(":: Back to four: ")
-        this.setState({fullscr: !this.state.fullscr})
+        this.setState({fullscr: !this.state.fullscr, full_feed: null})
     };
 
 
   render() {
       //Janus.log(" --- ::: RENDER ::: ---");
-      const { feeds,pre_feed,disabled_groups,feeds_queue,quistions_queue,pgm_state,zoom,fullscr } = this.state;
+      const { feeds,pre_feed,full_feed,disabled_groups,feeds_queue,quistions_queue,pgm_state,zoom,fullscr } = this.state;
       const width = "100%";
       const height = "100%";
       const autoPlay = true;
@@ -537,14 +538,14 @@ class ShidurGroups extends Component {
       });
 
       let fullscreen = (<div className={fullscr ? "" : "hidden"}>
-              <div className="video_title"><span>{pre_feed ? pre_feed.display : ""}</span></div>
+              <div className="video_title"><span>{full_feed ? full_feed.display : ""}</span></div>
               <video ref = {"fullscreenVideo"}
                      onClick={() => this.toFourGroup()}
                      id = "fullscreenVideo"
                      width = "400"
                      height = "220"
                      autoPlay = {autoPlay}
-                     controls = {true}
+                     controls = {controls}
                      muted = {muted}
                      playsInline = {true} />
           </div>
