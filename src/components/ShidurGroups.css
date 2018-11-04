@@ -1,0 +1,27 @@
+.video_grid {
+    display: grid;
+    grid-template-columns: 201px 201px;
+    position:relative;
+}
+
+.video_box {
+    background-color: #444;
+    color: #fff;
+    font-size: 150%;
+    position:relative;
+}
+
+.video_title {
+    font-family: "Liberation Serif";
+    line-height: 1.1285em;
+    position: absolute;
+    right: 40px;
+    color: #FFF;
+    text-align: center;
+    font-size: 15px;
+    background-color: blue;
+    width: auto;
+    padding: 0px 10px;
+    z-index: 2147483647;
+    float: right !important;
+}

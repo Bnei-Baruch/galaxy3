@@ -2,9 +2,8 @@ import React, { Component } from 'react';
 import { Janus } from "../lib/janus";
 import {Segment, Table, Icon, Dropdown, Grid, Button} from "semantic-ui-react";
 import {getState, putData, initGXYJanus} from "../shared/tools";
-// import {MAX_FEEDS} from "../shared/consts";
 // import {initGxyProtocol} from "../shared/protocol";
-import './GroupsConteiner.scss'
+import './ShidurGroups.css'
 
 class ShidurGroups extends Component {
 
@@ -514,11 +513,11 @@ class ShidurGroups extends Component {
           if(feed) {
               let id = feed.rfid;
               let talk = feed.talk;
-              return (<div className="video"
+              return (<div className="video_box"
                            key={"prov" + i}
                            ref={"provideo" + i}
                            id={"provideo" + i}>
-                  <div className="title"><span>{feed.display}</span></div>
+                  <div className="video_title">{feed.display}</div>
                   <video className={talk ? "talk" : ""}
                          onClick={() => this.switchProgram(i)}
                          onContextMenu={(e) => this.disableGroup(e, i)}
@@ -541,17 +540,15 @@ class ShidurGroups extends Component {
         <Segment className="segment_conteiner" raised>
           
           <Segment attached className="program_segment" color='red'>
-              <div className="videos">
-                  <div className="videos__wrapper">
-                      {program}
-                  </div>
+              <div className="video_grid">
+                  {program}
               </div>
           </Segment>
 
             <Button attached='bottom' color='red' size='mini' onClick={this.switchFour}>Next four</Button>
 
           <Segment className="preview_segment" color='green' onClick={this.clickPreview} >
-              <div className="shidur_overlay"><span>{preview ? preview.display : ""}</span></div>
+              <div className="video_title"><span>{preview ? preview.display : ""}</span></div>
               <video
                      ref={"prevewVideo"}
                      id="prevewVideo"
