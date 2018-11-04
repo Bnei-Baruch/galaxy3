@@ -39,6 +39,7 @@ class ShidurGroups extends Component {
         },
         users: {},
         zoom: false,
+        fullscr: false,
     };
 
     componentDidMount() {
@@ -444,10 +445,24 @@ class ShidurGroups extends Component {
         }
     };
 
+    fullScreenGroup = (i,feed) => {
+        Janus.log(":: Make Full Screen Group: ",feed.display)
+        this.setState({fullscr: !this.state.fullscr})
+        let fourvideo = this.refs["programVideo" + i];
+        let fullvideo = this.refs.fullscreenVideo;
+        var stream = fourvideo.captureStream();
+        fullvideo.srcObject = stream;
+    };
+
+    toFourGroup = () => {
+        Janus.log(":: Back to four: ")
+        this.setState({fullscr: !this.state.fullscr})
+    };
+
 
   render() {
       //Janus.log(" --- ::: RENDER ::: ---");
-      const { feeds,pre_feed,disabled_groups,feeds_queue,quistions_queue,pgm_state,zoom } = this.state;
+      const { feeds,pre_feed,disabled_groups,feeds_queue,quistions_queue,pgm_state,zoom,fullscr } = this.state;
       const width = "100%";
       const height = "100%";
       const autoPlay = true;
@@ -494,12 +509,13 @@ class ShidurGroups extends Component {
           if(feed) {
               let id = feed.rfid;
               let talk = feed.talk;
-              return (<div className="video_box"
+              return (<div className={fullscr ? "hidden" : ""} key={"prf" + i}><div className="video_box"
                            key={"prov" + i}
                            ref={"provideo" + i}
                            id={"provideo" + i}>
                   <div className="video_title">{feed.display}</div>
                   <video className={talk ? "talk" : ""}
+                         onClick={() => this.fullScreenGroup(i,feed)}
                          onContextMenu={(e) => this.zoominGroup(e, i)}
                          key={id}
                          ref={"programVideo" + i}
@@ -515,10 +531,24 @@ class ShidurGroups extends Component {
                           color='green'
                           icon='arrow right'
                           onClick={() => this.switchProgram(i)} />
-              </div>);
+              </div></div>);
           }
           return true;
       });
+
+      let fullscreen = (<div className={fullscr ? "" : "hidden"}>
+              <div className="video_title"><span>{pre_feed ? pre_feed.display : ""}</span></div>
+              <video ref = {"fullscreenVideo"}
+                     onClick={() => this.toFourGroup()}
+                     id = "fullscreenVideo"
+                     width = "400"
+                     height = "220"
+                     autoPlay = {autoPlay}
+                     controls = {true}
+                     muted = {muted}
+                     playsInline = {true} />
+          </div>
+      );
 
     return (
 
@@ -527,6 +557,7 @@ class ShidurGroups extends Component {
           <Segment attached className="program_segment" color='red'>
               <div className="video_grid">
                   {program}
+                  {fullscreen}
               </div>
           </Segment>
 

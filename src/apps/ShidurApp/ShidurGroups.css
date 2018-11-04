@@ -41,7 +41,7 @@
 .disabled_groups {
     overflow-y:scroll;
     top:0px; left:0px;
-    width:100%; height:190px;
+    width:100%; height:160px;
 }
 
 .segment_conteiner {
@@ -52,14 +52,14 @@
 .program_segment {
     width: 430px;
     height: 250px;
-    background-color: silver!important;
+    cursor: pointer!important;
+    background-color: black!important;
 }
 
 .preview_segment {
     width: 430px;
     height: 250px;
-    cursor: pointer!important;
-    background-color: silver!important;
+    background-color: black!important;
 }
 
 .admin_table {
