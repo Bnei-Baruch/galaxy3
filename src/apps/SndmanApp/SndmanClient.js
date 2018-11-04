@@ -1,15 +1,17 @@
 import React, { Component } from 'react';
-import { Janus } from "../lib/janus";
-import {Segment} from "semantic-ui-react";
-import {getState, initJanus} from "../shared/tools";
-import './SDIOutClient.css';
-import '../shared/VideoConteiner.scss'
-import {MAX_FEEDS} from "../shared/consts";
+import { Janus } from "../../lib/janus";
+import {Button, Segment} from "semantic-ui-react";
+import {getState, initJanus} from "../../shared/tools";
+import '../SDIOutApp/SDIOutClient.css';
+import '../../shared/VideoConteiner.scss'
+import {DATA_PORT, JANUS_IP_EURND, JANUS_IP_EURUK, JANUS_IP_ISRPT, MAX_FEEDS, DANTE_IN_IP, SECRET} from "../../shared/consts";
 
-class SDIOutClient extends Component {
+class SndmanClient extends Component {
 
     state = {
+        onoff_but: true,
         devices: [],
+        forward: false,
         program: {room: null, name: ""},
         janus: null,
         feeds: [],
@@ -22,11 +24,15 @@ class SDIOutClient extends Component {
         mystream: null,
         audio: null,
         muted: true,
+        vglist: {},
+        data_forward: {},
         user: {},
         users: {},
     };
 
     componentDidMount() {
+        document.addEventListener("keydown", this.onKeyPressed);
+        //this.getVgList();
         initJanus(janus => {
             let {user} = this.state;
             user.session = janus.getSessionId();
@@ -43,8 +49,34 @@ class SDIOutClient extends Component {
     };
 
     componentWillUnmount() {
+        document.removeEventListener("keydown", this.onKeyPressed);
         this.state.janus.destroy();
     };
+
+    // getVgList = () => {
+    //     getSessions(cb => {
+    //         let {vglist} = this.state;
+    //         for(let i=0; i<cb.length; i++) {
+    //             let s = cb[i];
+    //             let cs = Object.values(vglist).filter(user => user.session === s);
+    //             if(cs.length > 0) continue;
+    //             getHandles(s,cb => {
+    //                 for(let i=0; i<cb.length; i++) {
+    //                     let h = cb[i];
+    //                     getHandleInfo(s,h,cb => {
+    //                         //let cur = {'name':cb , 'handle':h , 'session':s};
+    //                         cb.handle = h;
+    //                         cb.session = s;
+    //                         vglist[cb.name] = cb;
+    //                         this.setState({vglist});
+    //                         //Janus.log(" :: VGLIST: ", vglist[cb.name]);
+    //                         //vglist.push(cb);
+    //                     });
+    //                 }
+    //             });
+    //         }
+    //     });
+    // };
 
     initVideoRoom = (roomid) => {
         if(this.state.videoroom)
@@ -54,13 +86,13 @@ class SDIOutClient extends Component {
             opaqueId: "videoroom_sdiout",
             success: (videoroom) => {
                 Janus.log(videoroom);
-                //let {user} = this.state;
-                let user = { session: 0, handle: 0};
-                user.role = "sdiout";
-                user.display = "sdiout";
+                let {user} = this.state;
+                user.handle = videoroom.getId();
+                user.role = "sndman";
+                user.display = "soundman";
                 user.id = Janus.randomString(10);
-                user.name = "sdiout";
-                this.setState({videoroom,user});
+                user.name = "sndman";
+                this.setState({videoroom, user});
                 Janus.log("Plugin attached! (" + videoroom.getPlugin() + ", id=" + videoroom.getId() + ")");
                 Janus.log("  -- This is a publisher/manager");
 
@@ -87,6 +119,7 @@ class SDIOutClient extends Component {
             },
             webrtcState: (on) => {
                 Janus.log("Janus says our WebRTC PeerConnection is " + (on ? "up" : "down") + " now");
+                this.forwardOwnFeed(this.state.room);
             },
             onmessage: (msg, jsep) => {
                 this.onMessage(this.state.videoroom, msg, jsep, false);
@@ -185,6 +218,7 @@ class SDIOutClient extends Component {
                 },
                 webrtcState: (on) => {
                     Janus.log("Janus says this WebRTC PeerConnection (feed #" + remoteFeed.rfindex + ") is " + (on ? "up" : "down") + " now");
+                    //this.getVgList();
                 },
                 onlocalstream: (stream) => {
                     // The subscriber stream is recvonly, we don't expect anything here
@@ -212,17 +246,12 @@ class SDIOutClient extends Component {
 
         videoroom.createOffer(
             {
-                // Add data:true here if you want to publish datachannels as well
-                //media: { audioRecv: false, videoRecv: false, audioSend: useAudio, videoSend: true, video: "lowres" },	// Publishers are sendonly
-                media: { audioRecv: false, videoRecv: false, audioSend: useAudio, videoSend: true },	// Publishers are sendonly
-                // If you want to test simulcasting (Chrome and Firefox only), then
-                // pass a ?simulcast=true when opening this demo page: it will turn
-                // the following 'simulcast' property to pass to janus.js to true
+                media: {  audio: false, video: false, data: true },	// Publishers are sendonly
                 simulcast: false,
                 success: (jsep) => {
                     Janus.debug("Got publisher SDP!");
                     Janus.debug(jsep);
-                    let publish = { "request": "configure", "audio": useAudio, "video": true };
+                    let publish = { "request": "configure", "audio": false, "video": false, "data": true };
                     videoroom.send({"message": publish, "jsep": jsep});
                 },
                 error: (error) => {
@@ -234,6 +263,36 @@ class SDIOutClient extends Component {
                     }
                 }
             });
+    };
+
+    forwardOwnFeed = (room) => {
+        let {myid,videoroom,data_forward} = this.state;
+        let isrip = `${JANUS_IP_ISRPT}`;
+        let eurip = `${JANUS_IP_EURND}`;
+        let ukip = `${JANUS_IP_EURUK}`;
+        let dport = DATA_PORT;
+        let isrfwd = { "request": "rtp_forward","publisher_id":myid,"room":room,"secret":`${SECRET}`,"host":isrip,"data_port":dport};
+        let eurfwd = { "request": "rtp_forward","publisher_id":myid,"room":room,"secret":`${SECRET}`,"host":eurip,"data_port":dport};
+        let eukfwd = { "request": "rtp_forward","publisher_id":myid,"room":room,"secret":`${SECRET}`,"host":ukip,"data_port":dport};
+        videoroom.send({"message": isrfwd,
+            success: (data) => {
+                data_forward.isr = data["rtp_stream"]["data_stream_id"];
+                Janus.log(" :: ISR Data Forward: ", data);
+            },
+        });
+        videoroom.send({"message": eurfwd,
+            success: (data) => {
+                data_forward.eur = data["rtp_stream"]["data_stream_id"];
+                Janus.log(" :: EUR Data Forward: ", data);
+                this.setState({onoff_but: false});
+            },
+        });
+        videoroom.send({"message": eukfwd,
+            success: (data) => {
+                data_forward.euk = data["rtp_stream"]["data_stream_id"];
+                Janus.log(" :: EUK Data Forward: ", data);
+            },
+        });
     };
 
     onMessage = (videoroom, msg, jsep, initdata) => {
@@ -248,7 +307,7 @@ class SDIOutClient extends Component {
                 let mypvtid = msg["private_id"];
                 this.setState({myid ,mypvtid});
                 Janus.log("Successfully joined room " + msg["room"] + " with ID " + myid);
-                //this.publishOwnFeed(true);
+                this.publishOwnFeed();
                 // Any new feed to attach to?
                 if(msg["publishers"] !== undefined && msg["publishers"] !== null) {
                     let list = msg["publishers"];
@@ -262,7 +321,7 @@ class SDIOutClient extends Component {
                         let audio = list[f]["audio_codec"];
                         let video = list[f]["video_codec"];
                         Janus.debug("  >> [" + id + "] " + display + " (audio: " + audio + ", video: " + video + ")");
-                        if(display.role === "user" && video)
+                        if(display.role === "user")
                             this.newRemoteFeed(id, talk);
                     }
                 }
@@ -304,7 +363,7 @@ class SDIOutClient extends Component {
                         let audio = list[f]["audio_codec"];
                         let video = list[f]["video_codec"];
                         Janus.debug("  >> [" + id + "] " + display + " (audio: " + audio + ", video: " + video + ")");
-                        if(display.role === "user" && video)
+                        if(display.role === "user")
                             this.newRemoteFeed(id, false);
                     }
                 } else if(msg["leaving"] !== undefined && msg["leaving"] !== null) {
@@ -370,6 +429,100 @@ class SDIOutClient extends Component {
         }
     };
 
+    startForward = () => {
+        const {feeds, room, videoroom} = this.state;
+        Janus.log(" :: Start forward from room: ", room);
+        let port = 5630;
+        feeds.forEach((feed,i) => {
+            if (feed !== null && feed !== undefined) {
+                let forward = { "request": "rtp_forward","publisher_id":feed.rfid,"room":room,"secret":`${SECRET}`,"host":`${DANTE_IN_IP}`,"audio_port":port};
+                videoroom.send({"message": forward,
+                    success: (data) => {
+                    Janus.log(":: Forward callback: ", data);
+                        let streamid = data["rtp_stream"]["audio_stream_id"];
+                        feeds[i].streamid = streamid;
+                    },
+                });
+                port = port + 2;
+            }
+        });
+        this.setState({feeds, forward: true});
+    };
+
+     stopForward = () => {
+         const {feeds, room, videoroom} = this.state;
+         Janus.log(" :: Stop forward from room: ", room);
+         feeds.forEach((feed,i) => {
+             if (feed !== null && feed !== undefined) {
+                 let stopfw = { "request":"stop_rtp_forward","stream_id":feed.streamid,"publisher_id":feed.rfid,"room":room,"secret":`${SECRET}` };
+                 videoroom.send({"message": stopfw,
+                     success: (data) => {
+                         Janus.log(":: Forward callback: ", data);
+                         feeds[i].streamid = null;
+                     },
+                 });
+             }
+         });
+         this.setState({feeds, forward: false});
+    };
+
+     listForward = (room) => {
+         const {videoroom} = this.state;
+         let req = {"request":"listforwarders", "room":room, "secret":`${SECRET}`}
+         videoroom.send ({"message": req,
+             success: (data) => {
+                Janus.log(" :: List forwarders: ", data);
+            }
+         })
+     };
+
+    sendMessage = (user, talk) => {
+        let {videoroom,room} = this.state;
+        var message = `{"talk":${talk},"name":"${user.display}","ip":"${user.ip}","col":4,"room":${room}}`;
+        Janus.log(":: Sending message: ",message);
+        videoroom.data({ text: message })
+    };
+
+    forwardStream = () => {
+        const {feeds, room, videoroom, forward} = this.state;
+        // TODO: WE need solution for joining users to already forwarded room
+        if(forward) {
+            Janus.log(" :: Stop forward from room: ", room);
+            feeds.forEach((feed,i) => {
+                if (feed !== null && feed !== undefined) {
+                    // FIXME: if we change sources on client based on room id (not ip) we send message only once
+                    this.sendMessage(feed.rfuser, false);
+                    let stopfw = { "request":"stop_rtp_forward","stream_id":feed.streamid,"publisher_id":feed.rfid,"room":room,"secret":`${SECRET}` };
+                    videoroom.send({"message": stopfw,
+                        success: (data) => {
+                            Janus.log(":: Forward callback: ", data);
+                            feeds[i].streamid = null;
+                        },
+                    });
+                }
+            });
+            this.setState({feeds, forward: false});
+        } else {
+            Janus.log(" :: Start forward from room: ", room);
+            let port = 5630;
+            feeds.forEach((feed,i) => {
+                if (feed !== null && feed !== undefined) {
+                    this.sendMessage(feed.rfuser, true);
+                    let forward = { "request": "rtp_forward","publisher_id":feed.rfid,"room":room,"secret":`${SECRET}`,"host":"10.66.23.104","audio_port":port};
+                    videoroom.send({"message": forward,
+                        success: (data) => {
+                            Janus.log(":: Forward callback: ", data);
+                            let streamid = data["rtp_stream"]["audio_stream_id"];
+                            feeds[i].streamid = streamid;
+                        },
+                    });
+                    port = port + 2;
+                }
+            });
+            this.setState({feeds, forward: true});
+        }
+    };
+
     registerUsername = (room) => {
         const {videoroom} = this.state;
         let register = { "request": "join", "room": room, "ptype": "publisher", "display": "user_"+Janus.randomString(4) };
@@ -378,12 +531,24 @@ class SDIOutClient extends Component {
     };
 
     attachToPreview = (room) => {
-        const {feeds} = this.state;
+        const {feeds, videoroom} = this.state;
+        //this.listForward(room);
         if (this.state.room === room)
             return;
+        this.setState({onoff_but: true});
         Janus.log(" :: Attaching to Preview: ", room);
         feeds.forEach(feed => {
             if (feed !== null && feed !== undefined) {
+                this.sendMessage(feed.rfuser, false);
+                if(feed.streamid) {
+                    this.setState({forward: false});
+                    let stopfw = { "request":"stop_rtp_forward","stream_id":feed.streamid,"publisher_id":feed.rfid,"room":this.state.room,"secret":`${SECRET}` };
+                    videoroom.send({"message": stopfw,
+                        success: (data) => {
+                            Janus.log(":: Forward callback: ", data);
+                        },
+                    });
+                }
                 Janus.log("-- :: Remove Feed: ",feed);
                 feed.detach();
             }
@@ -392,10 +557,16 @@ class SDIOutClient extends Component {
         this.initVideoRoom(room);
     };
 
+    onKeyPressed = (e) => {
+        if(e.code === "Numpad4" && !this.state.onoff_but)
+            this.forwardStream();
+    };
+
 
   render() {
       //Janus.log(" --- ::: RENDER ::: ---");
       const { name } = this.state.program;
+      const { forward,onoff_but } = this.state;
       const width = "400";
       const height = "300";
       const autoPlay = true;
@@ -427,8 +598,8 @@ class SDIOutClient extends Component {
 
     return (
 
-        <Segment className="segment_sdi" color='blue' raised>
-            <Segment className="preview_sdi">
+        <Segment className="segment_snd" color='blue' raised>
+            <Segment className="preview_snd">
             <div className="wrapper">
                 <div className="title"><span>{name}</span></div>
                 <div className="videos">
@@ -436,9 +607,18 @@ class SDIOutClient extends Component {
                 </div>
             </div>
             </Segment>
+            <Button size='big' disabled={onoff_but}
+                    positive={!forward}
+                    negative={forward}
+                    onKeyDown={(e) => this.onKeyPressed(e)}
+                    onClick={this.forwardStream}>{forward ? "Stop " : "Start"} talk</Button>
+            {/*<Button size='big' positive={!muted}*/}
+                    {/*negative={muted}*/}
+                    {/*icon={muted ? "volume off" : "volume up"}*/}
+                    {/*onClick={this.stopForward}>Stop talk</Button>*/}
         </Segment>
     );
   }
 }
 
-export default SDIOutClient;
+export default SndmanClient;
