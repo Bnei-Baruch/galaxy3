@@ -1,8 +1,9 @@
 import React, { Component } from 'react';
 import { Janus } from "../../lib/janus";
 import { Segment, Menu, Select, Button, Grid } from 'semantic-ui-react';
-import VolumeSlider from "../../shared/VolumeSlider";
+import VolumeSlider from "../../components/VolumeSlider";
 import {servers_options, videos_options, audios_options} from "../../shared/consts";
+import './AdminStreaming.css';
 
 
 class AdminStreaming extends Component {

@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import { Janus } from "../lib/janus";
 import { Segment, Menu, Select, Button, Grid } from 'semantic-ui-react';
-import VolumeSlider from "../shared/VolumeSlider";
+import VolumeSlider from "./VolumeSlider";
 import {videos_options, audiog_options, gxycol, trllang} from "../shared/consts";
 import {geoInfo} from "../shared/tools";
 

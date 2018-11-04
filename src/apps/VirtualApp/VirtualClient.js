@@ -1,15 +1,16 @@
 import React, { Component } from 'react';
 import NewWindow from 'react-new-window';
-import { Janus } from "../lib/janus";
+import { Janus } from "../../lib/janus";
 import classNames from 'classnames';
 
 import {Segment, Menu, Select, Button,Sidebar,Input,Label,Icon,Popup} from "semantic-ui-react";
-import {geoInfo, initJanus, getDevicesStream, micLevel, checkNotification,testDevices} from "../shared/tools";
-import '../shared/VideoConteiner.scss'
-import {MAX_FEEDS} from "../shared/consts";
+import {geoInfo, initJanus, getDevicesStream, micLevel, checkNotification,testDevices} from "../../shared/tools";
+import './VirtualClient.css'
+import './VideoConteiner.scss'
+import {MAX_FEEDS} from "../../shared/consts";
 import nowebcam from './nowebcam.jpeg';
-import ChatClient from "./ChatClient";
-import {initGxyProtocol, sendProtocolMessage} from "../shared/protocol";
+import ChatClient from "../../components/ChatClient";
+import {initGxyProtocol, sendProtocolMessage} from "../../shared/protocol";
 
 class VirtualClient extends Component {
 
