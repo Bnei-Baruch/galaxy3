@@ -149,36 +149,13 @@ class ShidurGroups extends Component {
                     Janus.debug(list);
                     let feeds = list.filter(f => !/_/.test(f.display));
                     this.setState({feeds});
-                    // for(let f in feeds_list) {
-                    //     let id = list[f]["id"];
-                    //     let display = JSON.parse(feeds_list[f]["display"]);
-                    //     let talk = list[f]["talking"];
-                    //     Janus.debug("  >> [" + id + "] " + display);
-                    //     this.newRemoteFeed(id, talk);
-                    // }
                 }
             } else if(event === "talking") {
-                // let {feeds} = this.state;
-                // let id = msg["id"];
-                // //let room = msg["room"];
-                // Janus.log("User: "+id+" - start talking");
-                // for(let i=1; i<MAX_FEEDS; i++) {
-                //     if(feeds[i] !== null && feeds[i] !== undefined && feeds[i].rfid === id) {
-                //         feeds[i].talk = true;
-                //     }
-                // }
-                // this.setState({feeds});
+                let id = msg["id"];
+                Janus.log("User: "+id+" - start talking");
             } else if(event === "stopped-talking") {
-                // let {feeds} = this.state;
-                // let id = msg["id"];
-                // //let room = msg["room"];
-                // Janus.log("User: "+id+" - stop talking");
-                // for(let i=1; i<MAX_FEEDS; i++) {
-                //     if(feeds[i] !== null && feeds[i] !== undefined && feeds[i].rfid === id) {
-                //         feeds[i].talk = false;
-                //     }
-                // }
-                // this.setState({feeds});
+                let id = msg["id"];
+                Janus.log("User: "+id+" - stop talking");
             } else if(event === "destroyed") {
                 // The room has been destroyed
                 Janus.warn("The room has been destroyed!");
@@ -193,36 +170,13 @@ class ShidurGroups extends Component {
                         feeds.push(list[0]);
                         this.setState({feeds});
                     }
-                    // for(let f in list) {
-                    //     let id = list[f]["id"];
-                    //     let display = JSON.parse(list[f]["display"]);
-                    //     Janus.debug("  >> [" + id + "] " + display);
-                    //     if(display.role === "user")
-                    //         this.newRemoteFeed(id, false);
-                    // }
                 } else if(msg["leaving"] !== undefined && msg["leaving"] !== null) {
                     // One of the publishers has gone away?
-                    let {feeds,feeds_queue,pgm_state} = this.state;
                     let leaving = msg["leaving"];
                     Janus.log("Publisher left: " + leaving);
                     this.removeFeed(leaving);
-                    // for(let i=0; i<feeds.length; i++){
-                    //     if(feeds[i].id === leaving) {
-                    //         feeds.splice(i, 1);
-                    //         this.setState({feeds, feeds_queue: feeds_queue--});
-                    //         //Check if feed in program and switch to next in queue
-                    //         for(let i=0; i<4; i++) {
-                    //             if(pgm_state[i].id === leaving) {
-                    //                 this.switchNext(i);
-                    //                 break
-                    //             }
-                    //         }
-                    //         break
-                    //     }
-                    // }
                 } else if(msg["unpublished"] !== undefined && msg["unpublished"] !== null) {
                     // One of the publishers has unpublished?
-                    let {feeds,feeds_queue,pgm_state} = this.state;
                     let unpublished = msg["unpublished"];
                     Janus.log("Publisher left: " + unpublished);
                     if(unpublished === 'ok') {
@@ -231,20 +185,6 @@ class ShidurGroups extends Component {
                         return;
                     }
                     this.removeFeed(unpublished);
-                    // for(let i=0; i<feeds.length; i++){
-                    //     if(feeds[i].id === unpublished) {
-                    //         feeds.splice(i, 1);
-                    //         this.setState({feeds, feeds_queue: feeds_queue--});
-                    //         //Check if feed in program and switch to next in queue
-                    //         for(let i=0; i<4; i++) {
-                    //             if(pgm_state[i].id === unpublished) {
-                    //                 this.switchNext(i);
-                    //                 break
-                    //             }
-                    //         }
-                    //         break
-                    //     }
-                    // }
                 } else if(msg["error"] !== undefined && msg["error"] !== null) {
                     if(msg["error_code"] === 426) {
                         Janus.log("This is a no such room");
@@ -497,7 +437,7 @@ class ShidurGroups extends Component {
 
   render() {
       //Janus.log(" --- ::: RENDER ::: ---");
-      const { feeds,pre_feed,disabled_groups,quistions_queue,pgm_state } = this.state;
+      const { feeds,pre_feed,disabled_groups,feeds_queue,quistions_queue,pgm_state } = this.state;
       const width = "100%";
       const height = "100%";
       const autoPlay = true;
@@ -571,7 +511,7 @@ class ShidurGroups extends Component {
               </div>
           </Segment>
 
-            <Button attached='bottom' color='red' size='mini' onClick={this.switchFour}>Next four</Button>
+            <Button attached='bottom' color='red' size='mini' onClick={this.switchFour}>Next</Button>
 
           <Segment className="preview_segment" color='green' onClick={this.clickPreview} >
               {preview}
@@ -586,8 +526,9 @@ class ShidurGroups extends Component {
                 onChange={(e,{value}) => this.selectGroup(value)} />
 
             <hr/>
-            <p>Current queue value: {this.state.feeds_queue}</p>
-            <p>Feeds sum: {this.state.feeds.length}</p>
+            <p>Current queue value: {feeds_queue}</p>
+            <p>Group in queue: {feeds.length > 0 ? feeds[feeds_queue].display : ""}</p>
+            <p>Feeds sum: {feeds.length}</p>
             <hr/>
             <Segment textAlign='center' className="disabled_groups" raised>
                 <Table selectable compact='very' basic structured className="admin_table" unstackable>
