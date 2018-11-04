@@ -364,20 +364,18 @@ class ShidurGroups extends Component {
         let {pr1,pgm_state} = this.state;
         if(!pr1[i]) {
             this.newSwitchFeed(feed.id,true,i);
+            pgm_state[i] = feed;
+            this.setState({pgm_state});
         } else {
             let switchfeed = {"request": "switch", "feed": feed.id, "audio": true, "video": true, "data": false};
             pr1[i].send ({"message": switchfeed,
                 success: () => {
                     Janus.log(" :: Next Switch Feed to: ", feed.display);
                     pgm_state[i] = feed;
+                    this.setState({pgm_state});
                 }
             })
         }
-        this.setState({pgm_state});
-    };
-
-    clickPreview = () => {
-        Janus.log("You clicked on preview :-|");
     };
 
     selectGroup = (pre_feed) => {
@@ -408,15 +406,23 @@ class ShidurGroups extends Component {
         }
     };
 
-    disableGroup = (e, i) => {
+    disableGroup = () => {
+        let {pre_feed,disabled_groups} = this.state;
+        Janus.log(" :: Disable Feed: " + pre_feed.display);
+        disabled_groups.push(pre_feed);
+        this.removeFeed(pre_feed.id);
+        this.setState({disabled_groups,pre_feed: null});
+    };
+
+    zoominGroup = (e, i) => {
         e.preventDefault();
         if (e.type === 'contextmenu') {
             let {disabled_groups,pgm_state} = this.state;
             let feed = pgm_state[i];
-            Janus.log(" :: Disable Feed: " + feed.display);
-            disabled_groups.push(feed);
-            this.removeFeed(feed.id);
-            this.setState({disabled_groups});
+            Janus.log(" :: Zoomin Feed: " + feed.display);
+            // disabled_groups.push(feed);
+            // this.removeFeed(feed.id);
+            // this.setState({disabled_groups});
         }
     };
 
@@ -472,6 +478,11 @@ class ShidurGroups extends Component {
                      controls = {controls}
                      muted = {muted}
                      playsInline = {true} />
+              <Button className='close_button'
+                      size='mini'
+                      color='red'
+                      icon='close'
+                      onClick={() => this.disableGroup()} />
           </div>
       );
 
@@ -485,8 +496,7 @@ class ShidurGroups extends Component {
                            id={"provideo" + i}>
                   <div className="video_title">{feed.display}</div>
                   <video className={talk ? "talk" : ""}
-                         onClick={() => this.switchProgram(i)}
-                         onContextMenu={(e) => this.disableGroup(e, i)}
+                         onContextMenu={(e) => this.zoominGroup(e, i)}
                          key={id}
                          ref={"programVideo" + i}
                          id={"programVideo" + i}
@@ -496,6 +506,11 @@ class ShidurGroups extends Component {
                          controls={controls}
                          muted={muted}
                          playsInline={true}/>
+                  <Button className='video_button'
+                          size='mini'
+                          color='green'
+                          icon='arrow right'
+                          onClick={() => this.switchProgram(i)} />
               </div>);
           }
           return true;
@@ -513,7 +528,7 @@ class ShidurGroups extends Component {
 
             <Button attached='bottom' color='red' size='mini' onClick={this.switchFour}>Next</Button>
 
-          <Segment className="preview_segment" color='green' onClick={this.clickPreview} >
+          <Segment className="preview_segment" color='green'>
               {preview}
           </Segment>
 

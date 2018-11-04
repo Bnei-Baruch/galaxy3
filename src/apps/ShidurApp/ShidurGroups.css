@@ -22,8 +22,20 @@
     background-color: blue;
     width: auto;
     padding: 0px 10px;
-    z-index: 2147483647;
     float: right !important;
+}
+
+.video_button {
+    bottom: 0;
+    position: absolute;
+    right: 0px;
+    float: right !important;
+}
+
+.close_button {
+    position: absolute;
+    left: 20px;
+    float: left !important;
 }
 
 .disabled_groups {
