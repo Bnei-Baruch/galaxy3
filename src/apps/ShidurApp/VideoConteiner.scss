@@ -75,7 +75,7 @@ span {
     flex: 1 0 auto;
     position:relative;
 &__wrapper {
-     position:absolute;
+     //position:absolute;
      display: grid;
      grid-template-columns: repeat( 12,  1fr );
      grid-template-rows: repeat(6, percentage(1/6));
