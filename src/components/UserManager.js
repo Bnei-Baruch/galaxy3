@@ -9,7 +9,7 @@ oidclog.level  = 0;
 
 const userManagerConfig = {
     authority: AUTH_URL,
-    client_id: 'wf-admin',
+    client_id: 'galaxy',
     redirect_uri: `${BASE_URL}`,
     response_type: 'token id_token',
     scope: 'profile',

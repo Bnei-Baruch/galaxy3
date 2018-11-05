@@ -48,7 +48,7 @@ class LoginPage extends Component {
                 <br />
                 <Message size='massive'>
                     <Message.Header>
-                        {this.props.user === null ? "Galaxy Groups" : "Welcome, "+this.props.user.name}
+                        {this.props.user === null ? "Galaxy" : "Welcome, "+this.props.user.name}
                         {this.props.user === null ? "" : profile}
                     </Message.Header>
                     <p>The Group Today Is You Tomorrow</p>

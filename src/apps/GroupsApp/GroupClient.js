@@ -24,8 +24,7 @@ class GroupClient extends Component {
         janus: null,
         feeds: [],
         rooms: [],
-        room: "",
-        selected_room: 1234,
+        room: 1234,
         videoroom: null,
         remotefeed: null,
         myid: null,
@@ -460,8 +459,8 @@ class GroupClient extends Component {
     };
 
     joinRoom = () => {
-        let {janus, videoroom, selected_room, user, username_value} = this.state;
-        localStorage.setItem("room", selected_room);
+        let {janus, videoroom, room, user, username_value} = this.state;
+        localStorage.setItem("room", room);
         //FIXME: will be id from keyclock
         user.id = Janus.randomString(10);
         //FIXME: will be role from keyclock
@@ -471,9 +470,9 @@ class GroupClient extends Component {
         //This name will see other users
         user.display = username_value || user.name;
         localStorage.setItem("username", user.display);
-        let register = { "request": "join", "room": selected_room, "ptype": "publisher", "display": JSON.stringify(user) };
+        let register = { "request": "join", "room": room, "ptype": "publisher", "display": JSON.stringify(user) };
         videoroom.send({"message": register});
-        this.setState({user, muted: true, room: selected_room});
+        this.setState({user, muted: true, room: room});
         initGxyProtocol(janus, user, protocol => {
             this.setState({protocol});
         }, ondata => {
@@ -486,7 +485,7 @@ class GroupClient extends Component {
         let leave = {request : "leave"};
         Janus.log(room);
         videoroom.send({"message": leave});
-        this.setState({muted: false, mystream: null, room: "", selected_room: "", i: "", feeds: []});
+        this.setState({muted: false, mystream: null, i: "", feeds: []});
         this.initVideoRoom();
         protocol.detach();
     };
@@ -497,14 +496,6 @@ class GroupClient extends Component {
         let msg = { type: "question", status: !question, room, user};
         sendProtocolMessage(protocol, user, msg );
         this.setState({question: !question});
-    };
-
-
-    camMute = () => {
-        let {videoroom,cammuted} = this.state;
-        cammuted ? videoroom.unmuteVideo() : videoroom.muteVideo();
-        this.setState({cammuted: !cammuted});
-        this.sendDataMessage("camera", this.state.cammuted);
     };
 
     micMute = () => {
@@ -533,19 +524,12 @@ class GroupClient extends Component {
 
   render() {
 
-      const { rooms,room,audio_devices,video_devices,video_device,audio_device,i,muted,cammuted,mystream,selected_room,count,question} = this.state;
+      const { audio_devices,video_devices,video_device,audio_device,i,muted,mystream,room,count,question} = this.state;
       const width = "134";
       const height = "100";
       const autoPlay = true;
       const controls = false;
       //const vmuted = true;
-
-      let iOS = ['iPad', 'iPhone', 'iPod'].indexOf(navigator.platform) >= 0;
-
-      let rooms_list = rooms.map((data,i) => {
-          const {room, num_participants, description} = data;
-          return ({ key: room, text: description, value: i, description: num_participants.toString()})
-      });
 
       let adevices_list = audio_devices.map((device,i) => {
           const {label, deviceId} = device;
@@ -596,14 +580,14 @@ class GroupClient extends Component {
             {/*<Icon name='user circle' />*/}
             {/*<Select*/}
               {/*disabled={mystream}*/}
-              {/*error={!selected_room}*/}
+              {/*error={!room}*/}
 
               {/*placeholder="Select Room:"*/}
               {/*value={i}*/}
               {/*options={rooms_list}*/}
               {/*onClick={this.getRoomList}*/}
               {/*onChange={(e, {value}) => this.selectRoom(value)} />*/}
-              {mystream ? <Button primary icon='sign-out' onClick={this.exitRoom} />:""}
+              {mystream ? <Button color='orange' icon='sign-out' onClick={this.exitRoom} />:""}
               {!mystream ? <Button primary icon='sign-in' disabled={!audio_device} onClick={this.joinRoom} />:""}
             </Input>
             <Menu icon='labeled' secondary size="mini">
