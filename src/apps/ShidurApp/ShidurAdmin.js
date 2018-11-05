@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import { Janus } from "../../lib/janus";
-import {Segment, Menu, Select, Button, Input, Table, Grid, Message,Sidebar} from "semantic-ui-react";
-import {initJanus, initChatRoom, getDateString, joinChatRoom, getPublisherInfo} from "../../shared/tools";
+import {Segment, Menu, Button, Input, Table, Grid, Message} from "semantic-ui-react";
+import {initJanus, initChatRoom, getDateString, joinChatRoom, getPublisherInfo, initGXYJanus} from "../../shared/tools";
 import './ShidurAdmin.css';
 import './VideoConteiner.scss'
 import {MAX_FEEDS, SECRET} from "../../shared/consts";
@@ -463,8 +463,7 @@ class ShidurAdmin extends Component {
                 Janus.log("-:: It's public message: "+message);
                 messages.push(message);
                 this.setState({messages});
-                if(this.state.visible)
-                    this.scrollToBottom();
+                this.scrollToBottom();
             }
         } else if (what === "join") {
             // Somebody joined
@@ -880,11 +879,6 @@ class ShidurAdmin extends Component {
           }
       });
 
-      let devices_list = devices.map((device,i) => {
-          const {label, deviceId, kind} = device;
-          return ({ key: i, text: label, value: deviceId})
-      });
-
       let list_msgs = messages.map((msg,i) => {
           let {user,time,text} = msg;
           return (
@@ -924,15 +918,15 @@ class ShidurAdmin extends Component {
               <Segment textAlign='center' className="ingest_segment">
                   <Menu secondary >
                       <Menu.Item>
-                          <Button negative onClick={this.removeRoom}>Remove</Button>
-                          :::
-                          <Select
-                              error={roomid}
-                              scrolling
-                              placeholder="Select Room:"
-                              value={i}
-                              options={rooms_list}
-                              onChange={(e, {value}) => this.selectRoom(value)} />
+                          {/*<Button negative onClick={this.removeRoom}>Remove</Button>*/}
+                          {/*:::*/}
+                          {/*<Select*/}
+                              {/*error={roomid}*/}
+                              {/*scrolling*/}
+                              {/*placeholder="Select Room:"*/}
+                              {/*value={i}*/}
+                              {/*options={rooms_list}*/}
+                              {/*onChange={(e, {value}) => this.selectRoom(value)} />*/}
                       </Menu.Item>
                       <Menu.Item >
                           {/*<Button positive onClick={this.joinRoom}>Join</Button>*/}
@@ -940,11 +934,11 @@ class ShidurAdmin extends Component {
                           {/*<Button onClick={this.exitRoom}>exit</Button>*/}
                       </Menu.Item>
                       <Menu.Item>
-                          <Input type='text' placeholder='Room description...' action value={description}
-                                 onChange={(v,{value}) => this.setState({description: value})}>
-                              <input />
-                              <Button positive onClick={this.createRoom}>Create</Button>
-                          </Input>
+                          {/*<Input type='text' placeholder='Room description...' action value={description}*/}
+                                 {/*onChange={(v,{value}) => this.setState({description: value})}>*/}
+                              {/*<input />*/}
+                              {/*<Button positive onClick={this.createRoom}>Create</Button>*/}
+                          {/*</Input>*/}
                       </Menu.Item>
                       <Menu.Item>
                           {/*<video ref="switchVideo"*/}
@@ -965,8 +959,16 @@ class ShidurAdmin extends Component {
 
                           <Segment textAlign='center' className="group_list" raised>
                               <Table selectable compact='very' basic structured className="admin_table" unstackable>
+                                  <Table.Header>
+                                      <Table.Row>
+                                          <Table.HeaderCell>
+                                              <Button positive icon='info' onClick={this.getFeedInfo} />
+                                              <Button negative icon='user x' onClick={this.kickUser} />
+                                          </Table.HeaderCell>
+                                      </Table.Row>
+                                  </Table.Header>
                                   <Table.Body>
-                                      {rooms_grid}
+                                      {users_grid}
                                   </Table.Body>
                               </Table>
                           </Segment>
@@ -988,16 +990,13 @@ class ShidurAdmin extends Component {
 
                           <Segment textAlign='center' className="group_list" raised>
                               <Table selectable compact='very' basic structured className="admin_table" unstackable>
-                                  <Table.Header>
-                                      <Table.Row>
-                                          <Table.HeaderCell>
-                                              <Button positive icon='info' onClick={this.getFeedInfo} />
-                                              <Button negative icon='user x' onClick={this.kickUser} />
-                                          </Table.HeaderCell>
-                                      </Table.Row>
-                                  </Table.Header>
                                   <Table.Body>
-                                      {users_grid}
+                                      <Table.Row active={current_room === 1234}
+                                                 key={i} onClick={() => this.joinRoom("", i)}>
+                                          <Table.Cell width={5}>Galaxy</Table.Cell>
+                                          <Table.Cell width={1}>70</Table.Cell>
+                                      </Table.Row>
+                                      {rooms_grid}
                                   </Table.Body>
                               </Table>
                           </Segment>
