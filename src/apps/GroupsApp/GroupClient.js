@@ -1,12 +1,15 @@
 import React, { Component } from 'react';
 import NewWindow from 'react-new-window';
 import { Janus } from "../../lib/janus";
-import {Segment, Menu, Select, Button,Sidebar,Input,Label} from "semantic-ui-react";
+import classNames from 'classnames';
+
+import {Segment, Menu, Select, Button,Sidebar,Input,Label,Icon,Popup} from "semantic-ui-react";
 import {geoInfo, initJanus, getDevicesStream, micLevel, checkNotification,testDevices} from "../../shared/tools";
 import './GroupClient.css'
+import './VideoConteiner.scss'
 import {MAX_FEEDS} from "../../shared/consts";
 import nowebcam from './nowebcam.jpeg';
-import ChatClient from "./GroupChat";
+import GroupChat from "./GroupChat";
 import {initGxyProtocol, sendProtocolMessage} from "../../shared/protocol";
 
 class GroupClient extends Component {
@@ -22,7 +25,7 @@ class GroupClient extends Component {
         feeds: [],
         rooms: [],
         room: "",
-        selected_room: "",
+        selected_room: 1234,
         videoroom: null,
         remotefeed: null,
         myid: null,
@@ -114,43 +117,6 @@ class GroupClient extends Component {
         }
     };
 
-    getRoomList = () => {
-        const {videoroom} = this.state;
-        if (videoroom) {
-            videoroom.send({message: {request: "list"},
-                success: (data) => {
-                    Janus.debug(" :: Get Rooms List: ", data.list);
-                    data.list.sort((a, b) => {
-                        // if (a.num_participants > b.num_participants) return -1;
-                        // if (a.num_participants < b.num_participants) return 1;
-                        if (a.description > b.description) return 1;
-                        if (a.description < b.description) return -1;
-                        return 0;
-                    });
-                    this.setState({rooms: data.list});
-                    this.getFeedsList(data.list)
-                }
-            });
-        }
-    };
-
-    //FIXME: tmp solution to show count without service users in room list
-    getFeedsList = (rooms) => {
-        let {videoroom} = this.state;
-        rooms.forEach((room,i) => {
-            if(room.num_participants > 0) {
-                videoroom.send({
-                    message: {request: "listparticipants", "room": room.room},
-                    success: (data) => {
-                        let count = data.participants.filter(p => JSON.parse(p.display).role === "user");
-                        rooms[i].num_participants = count.length;
-                        this.setState({rooms});
-                    }
-                });
-            }
-        })
-    };
-
     initVideoRoom = () => {
         if(this.state.videoroom)
             this.state.videoroom.detach();
@@ -165,8 +131,6 @@ class GroupClient extends Component {
                 user.handle = videoroom.getId();
                 this.setState({videoroom, user});
                 this.initDevices(true);
-                // Get list rooms
-                //this.getRoomList();
             },
             error: (error) => {
                 Janus.log("Error attaching plugin: " + error);
@@ -221,107 +185,107 @@ class GroupClient extends Component {
         });
     };
 
-    newRemoteFeed = (id, talk) => {
-        // A new feed has been published, create a new plugin handle and attach to it as a subscriber
-        var remoteFeed = null;
-        this.state.janus.attach(
-            {
-                plugin: "janus.plugin.videoroom",
-                opaqueId: "remotefeed_user",
-                success: (pluginHandle) => {
-                    remoteFeed = pluginHandle;
-                    remoteFeed.simulcastStarted = false;
-                    Janus.log("Plugin attached! (" + remoteFeed.getPlugin() + ", id=" + remoteFeed.getId() + ")");
-                    Janus.log("  -- This is a subscriber");
-
-                    let listen = { "request": "join", "room": this.state.room, "ptype": "subscriber", "feed": id, "private_id": this.state.mypvtid };
-                    remoteFeed.send({"message": listen});
-                },
-                error: (error) => {
-                    Janus.error("  -- Error attaching plugin...", error);
-                },
-                onmessage: (msg, jsep) => {
-                    Janus.debug(" ::: Got a message (subscriber) :::");
-                    Janus.debug(msg);
-                    let event = msg["videoroom"];
-                    Janus.debug("Event: " + event);
-                    if(msg["error"] !== undefined && msg["error"] !== null) {
-                        Janus.debug(":: Error msg: " + msg["error"]);
-                    } else if(event !== undefined && event !== null) {
-                        if(event === "attached") {
-                            // Subscriber created and attached
-                            let {feeds,users} = this.state;
-                            for(let i=1;i<MAX_FEEDS;i++) {
-                                if(feeds[i] === undefined || feeds[i] === null) {
-                                    remoteFeed.rfindex = i;
-                                    remoteFeed.rfid = msg["id"];
-                                    remoteFeed.rfuser = JSON.parse(msg["display"]);
-                                    remoteFeed.rfuser.rfid = msg["id"];
-                                    remoteFeed.talk = talk;
-                                    feeds[i] = remoteFeed;
-                                    users[remoteFeed.rfuser.id] = remoteFeed.rfuser;
-                                    break;
-                                }
-                            }
-                            this.setState({feeds,users});
-                            Janus.log("Successfully attached to feed " + remoteFeed.rfid + " (" + remoteFeed.rfuser + ") in room " + msg["room"]);
-                        }
-                    }
-                    if(jsep !== undefined && jsep !== null) {
-                        Janus.debug("Handling SDP as well...");
-                        Janus.debug(jsep);
-                        // Answer and attach
-                        remoteFeed.createAnswer(
-                            {
-                                jsep: jsep,
-                                // Add data:true here if you want to subscribe to datachannels as well
-                                // (obviously only works if the publisher offered them in the first place)
-                                media: { audioSend: false, videoSend: false, data:true },	// We want recvonly audio/video
-                                success: (jsep) => {
-                                    Janus.debug("Got SDP!");
-                                    Janus.debug(jsep);
-                                    let body = { "request": "start", "room": this.state.room };
-                                    remoteFeed.send({"message": body, "jsep": jsep});
-                                },
-                                error: (error) => {
-                                    Janus.error("WebRTC error:", error);
-                                }
-                            });
-                    }
-                },
-                webrtcState: (on) => {
-                    Janus.log("Janus says this WebRTC PeerConnection (feed #" + remoteFeed.rfindex + ") is " + (on ? "up" : "down") + " now");
-                },
-                onlocalstream: (stream) => {
-                    // The subscriber stream is recvonly, we don't expect anything here
-                },
-                onremotestream: (stream) => {
-                    Janus.debug("Remote feed #" + remoteFeed.rfindex);
-                    let remotevideo = this.refs["remoteVideo" + remoteFeed.rfid];
-                    // if(remotevideo.length === 0) {
-                    //     // No remote video yet
-                    // }
-                    Janus.attachMediaStream(remotevideo, stream);
-                    var videoTracks = stream.getVideoTracks();
-                    if(videoTracks === null || videoTracks === undefined || videoTracks.length === 0) {
-                        // No remote video
-                    } else {
-                        // Yes remote video
-                    }
-                },
-                ondataopen: (data) => {
-                    Janus.log("The DataChannel is available!(feed)");
-                },
-                ondata: (data) => {
-                    Janus.debug("We got data from the DataChannel! (feed) " + data);
-                    let msg = JSON.parse(data);
-                    Janus.log(" :: We got msg via DataChannel: ",msg)
-                },
-                oncleanup: () => {
-                    Janus.log(" ::: Got a cleanup notification (remote feed " + id + ") :::");
-                }
-            });
-    };
+    // newRemoteFeed = (id, talk) => {
+    //     // A new feed has been published, create a new plugin handle and attach to it as a subscriber
+    //     var remoteFeed = null;
+    //     this.state.janus.attach(
+    //         {
+    //             plugin: "janus.plugin.videoroom",
+    //             opaqueId: "remotefeed_user",
+    //             success: (pluginHandle) => {
+    //                 remoteFeed = pluginHandle;
+    //                 remoteFeed.simulcastStarted = false;
+    //                 Janus.log("Plugin attached! (" + remoteFeed.getPlugin() + ", id=" + remoteFeed.getId() + ")");
+    //                 Janus.log("  -- This is a subscriber");
+    //
+    //                 let listen = { "request": "join", "room": this.state.room, "ptype": "subscriber", "feed": id, "private_id": this.state.mypvtid };
+    //                 remoteFeed.send({"message": listen});
+    //             },
+    //             error: (error) => {
+    //                 Janus.error("  -- Error attaching plugin...", error);
+    //             },
+    //             onmessage: (msg, jsep) => {
+    //                 Janus.debug(" ::: Got a message (subscriber) :::");
+    //                 Janus.debug(msg);
+    //                 let event = msg["videoroom"];
+    //                 Janus.debug("Event: " + event);
+    //                 if(msg["error"] !== undefined && msg["error"] !== null) {
+    //                     Janus.debug(":: Error msg: " + msg["error"]);
+    //                 } else if(event !== undefined && event !== null) {
+    //                     if(event === "attached") {
+    //                         // Subscriber created and attached
+    //                         let {feeds,users} = this.state;
+    //                         for(let i=1;i<MAX_FEEDS;i++) {
+    //                             if(feeds[i] === undefined || feeds[i] === null) {
+    //                                 remoteFeed.rfindex = i;
+    //                                 remoteFeed.rfid = msg["id"];
+    //                                 remoteFeed.rfuser = JSON.parse(msg["display"]);
+    //                                 remoteFeed.rfuser.rfid = msg["id"];
+    //                                 remoteFeed.talk = talk;
+    //                                 feeds[i] = remoteFeed;
+    //                                 users[remoteFeed.rfuser.id] = remoteFeed.rfuser;
+    //                                 break;
+    //                             }
+    //                         }
+    //                         this.setState({feeds,users});
+    //                         Janus.log("Successfully attached to feed " + remoteFeed.rfid + " (" + remoteFeed.rfuser + ") in room " + msg["room"]);
+    //                     }
+    //                 }
+    //                 if(jsep !== undefined && jsep !== null) {
+    //                     Janus.debug("Handling SDP as well...");
+    //                     Janus.debug(jsep);
+    //                     // Answer and attach
+    //                     remoteFeed.createAnswer(
+    //                         {
+    //                             jsep: jsep,
+    //                             // Add data:true here if you want to subscribe to datachannels as well
+    //                             // (obviously only works if the publisher offered them in the first place)
+    //                             media: { audioSend: false, videoSend: false, data:true },	// We want recvonly audio/video
+    //                             success: (jsep) => {
+    //                                 Janus.debug("Got SDP!");
+    //                                 Janus.debug(jsep);
+    //                                 let body = { "request": "start", "room": this.state.room };
+    //                                 remoteFeed.send({"message": body, "jsep": jsep});
+    //                             },
+    //                             error: (error) => {
+    //                                 Janus.error("WebRTC error:", error);
+    //                             }
+    //                         });
+    //                 }
+    //             },
+    //             webrtcState: (on) => {
+    //                 Janus.log("Janus says this WebRTC PeerConnection (feed #" + remoteFeed.rfindex + ") is " + (on ? "up" : "down") + " now");
+    //             },
+    //             onlocalstream: (stream) => {
+    //                 // The subscriber stream is recvonly, we don't expect anything here
+    //             },
+    //             onremotestream: (stream) => {
+    //                 Janus.debug("Remote feed #" + remoteFeed.rfindex);
+    //                 let remotevideo = this.refs["remoteVideo" + remoteFeed.rfid];
+    //                 // if(remotevideo.length === 0) {
+    //                 //     // No remote video yet
+    //                 // }
+    //                 Janus.attachMediaStream(remotevideo, stream);
+    //                 var videoTracks = stream.getVideoTracks();
+    //                 if(videoTracks === null || videoTracks === undefined || videoTracks.length === 0) {
+    //                     // No remote video
+    //                 } else {
+    //                     // Yes remote video
+    //                 }
+    //             },
+    //             ondataopen: (data) => {
+    //                 Janus.log("The DataChannel is available!(feed)");
+    //             },
+    //             ondata: (data) => {
+    //                 Janus.debug("We got data from the DataChannel! (feed) " + data);
+    //                 let msg = JSON.parse(data);
+    //                 Janus.log(" :: We got msg via DataChannel: ",msg)
+    //             },
+    //             oncleanup: () => {
+    //                 Janus.log(" ::: Got a cleanup notification (remote feed " + id + ") :::");
+    //             }
+    //         });
+    // };
 
     publishOwnFeed = (useVideo) => {
         // FIXME: Does we allow video only mode?
@@ -382,42 +346,38 @@ class GroupClient extends Component {
                     let list = msg["publishers"];
                     let feeds_list = list.filter(feeder => JSON.parse(feeder.display).role === "user");
                     Janus.log(":: Got Pulbishers list: ", feeds_list);
-                    if(feeds_list.length > 11) {
-                        alert("Max users in this room is reached");
-                        window.location.reload();
-                    }
                     Janus.debug("Got a list of available publishers/feeds:");
                     Janus.log(list);
-                    for(let f in feeds_list) {
-                        let id = feeds_list[f]["id"];
-                        let display = JSON.parse(feeds_list[f]["display"]);
-                        let talk = feeds_list[f]["talking"];
-                        Janus.debug("  >> [" + id + "] " + display);
-                        this.newRemoteFeed(id, talk);
-                    }
+                    // for(let f in feeds_list) {
+                    //     let id = feeds_list[f]["id"];
+                    //     let display = JSON.parse(feeds_list[f]["display"]);
+                    //     let talk = feeds_list[f]["talking"];
+                    //     Janus.debug("  >> [" + id + "] " + display);
+                    //     this.newRemoteFeed(id, talk);
+                    // }
                 }
             } else if(event === "talking") {
-                let {feeds} = this.state;
-                let id = msg["id"];
-                //let room = msg["room"];
-                Janus.log("User: "+id+" - start talking");
-                for(let i=1; i<MAX_FEEDS; i++) {
-                    if(feeds[i] !== null && feeds[i] !== undefined && feeds[i].rfid === id) {
-                        feeds[i].talk = true;
-                    }
-                }
-                this.setState({feeds});
+                // let {feeds} = this.state;
+                // let id = msg["id"];
+                // //let room = msg["room"];
+                // Janus.log("User: "+id+" - start talking");
+                // for(let i=1; i<MAX_FEEDS; i++) {
+                //     if(feeds[i] !== null && feeds[i] !== undefined && feeds[i].rfid === id) {
+                //         feeds[i].talk = true;
+                //     }
+                // }
+                // this.setState({feeds});
             } else if(event === "stopped-talking") {
-                let {feeds} = this.state;
-                let id = msg["id"];
-                //let room = msg["room"];
-                Janus.log("User: "+id+" - stop talking");
-                for(let i=1; i<MAX_FEEDS; i++) {
-                    if(feeds[i] !== null && feeds[i] !== undefined && feeds[i].rfid === id) {
-                        feeds[i].talk = false;
-                    }
-                }
-                this.setState({feeds});
+                // let {feeds} = this.state;
+                // let id = msg["id"];
+                // //let room = msg["room"];
+                // Janus.log("User: "+id+" - stop talking");
+                // for(let i=1; i<MAX_FEEDS; i++) {
+                //     if(feeds[i] !== null && feeds[i] !== undefined && feeds[i].rfid === id) {
+                //         feeds[i].talk = false;
+                //     }
+                // }
+                // this.setState({feeds});
             } else if(event === "destroyed") {
                 // The room has been destroyed
                 Janus.warn("The room has been destroyed!");
@@ -427,25 +387,25 @@ class GroupClient extends Component {
                     let list = msg["publishers"];
                     Janus.debug("Got a list of available publishers/feeds:");
                     Janus.debug(list);
-                    for(let f in list) {
-                        let id = list[f]["id"];
-                        let display = JSON.parse(list[f]["display"]);
-                        Janus.debug("  >> [" + id + "] " + display);
-                        if(display.role === "user")
-                            this.newRemoteFeed(id, false);
-                    }
+                    // for(let f in list) {
+                    //     let id = list[f]["id"];
+                    //     let display = JSON.parse(list[f]["display"]);
+                    //     Janus.debug("  >> [" + id + "] " + display);
+                    //     if(display.role === "user")
+                    //         this.newRemoteFeed(id, false);
+                    // }
                 } else if(msg["leaving"] !== undefined && msg["leaving"] !== null) {
                     // One of the publishers has gone away?
                     let {feeds} = this.state;
                     let leaving = msg["leaving"];
                     Janus.log("Publisher left: " + leaving);
                     let remoteFeed = null;
-                    for(let i=1; i<MAX_FEEDS; i++) {
-                        if(feeds[i] != null && feeds[i] !== undefined && feeds[i].rfid === leaving) {
-                            remoteFeed = feeds[i];
-                            break;
-                        }
-                    }
+                    // for(let i=1; i<MAX_FEEDS; i++) {
+                    //     if(feeds[i] != null && feeds[i] !== undefined && feeds[i].rfid === leaving) {
+                    //         remoteFeed = feeds[i];
+                    //         break;
+                    //     }
+                    // }
                     if(remoteFeed != null) {
                         Janus.debug("Feed " + remoteFeed.rfid + " (" + remoteFeed.rfuser + ") has left the room, detaching");
                         feeds[remoteFeed.rfindex] = null;
@@ -463,12 +423,12 @@ class GroupClient extends Component {
                         return;
                     }
                     let remoteFeed = null;
-                    for(let i=1; i<MAX_FEEDS; i++) {
-                        if(feeds[i] != null && feeds[i] !== undefined && feeds[i].rfid === unpublished) {
-                            remoteFeed = feeds[i];
-                            break;
-                        }
-                    }
+                    // for(let i=1; i<MAX_FEEDS; i++) {
+                    //     if(feeds[i] != null && feeds[i] !== undefined && feeds[i].rfid === unpublished) {
+                    //         remoteFeed = feeds[i];
+                    //         break;
+                    //     }
+                    // }
                     if(remoteFeed !== null) {
                         Janus.debug("Feed " + remoteFeed.rfid + " (" + remoteFeed.rfuser + ") has left the room, detaching");
                         feeds[remoteFeed.rfindex] = null;
@@ -528,27 +488,6 @@ class GroupClient extends Component {
         this.setState({muted: false, mystream: null, room: "", selected_room: "", i: "", feeds: []});
         this.initVideoRoom();
         protocol.detach();
-    };
-
-    selectRoom = (i) => {
-        const {rooms} = this.state;
-        let selected_room = rooms[i].room;
-        let name = rooms[i].description;
-        if (this.state.room === selected_room)
-            return;
-        this.setState({selected_room,name,i});
-    };
-
-    registerUsername = (i) => {
-        Janus.log(i);
-        let {videoroom, rooms, user} = this.state;
-        let room = rooms[i].room;
-        let name = rooms[i].description;
-        user.role = "user";
-        user.display = "user-"+Janus.randomString(4);
-        let register = { "request": "join", "room": room, "ptype": "publisher", "display": JSON.stringify(user) };
-        videoroom.send({"message": register});
-        this.setState({room,name,user,i});
     };
 
     handleQuestion = () => {
@@ -640,182 +579,117 @@ class GroupClient extends Component {
           return true;
       });
 
-      let l = (<Label key='Carbon' circular size='mini' color='red'>{count}</Label>);
+      let l = (<Label key='Carbon' floating size='mini' color='red'>{count}</Label>);
 
       return (
 
-          <Segment className="virtual_segment" color='blue' raised>
+        <div className={classNames('virtual_segment', { 'virtual_segment--chat-open': this.state.visible })} >
+          <div className="ingest_segment">
+            <Input>
+              {/*iconPosition='left'*/}
+              {/*placeholder="Type your name..."*/}
+              {/*value={this.state.username_value}*/}
+              {/*onChange={(v,{value}) => this.setState({username_value: value})}*/}
+            {/*action>*/}
+            {/*<input iconPosition='left' disabled={mystream}/>*/}
+            {/*<Icon name='user circle' />*/}
+            {/*<Select*/}
+              {/*disabled={mystream}*/}
+              {/*error={!selected_room}*/}
 
-              <Segment textAlign='center' className="ingest_segment">
-                  <Menu>
-                      <Menu.Item>
-                          <Menu.Item >
-                              <Button disabled={!mystream}
-                                      icon='user x'
-                                      onClick={this.exitRoom} />
-                          </Menu.Item>
-                          <Select
-                              disabled={mystream}
-                              error={!selected_room}
-                              scrolling
-                              placeholder="Select Room:"
-                              value={i}
-                              options={rooms_list}
-                              onClick={this.getRoomList}
-                              onChange={(e, {value}) => this.selectRoom(value)} />
-                          :
-                          <Button disabled={!selected_room || mystream || !audio_device}
-                                  positive
-                                  icon='add user'
-                                  onClick={this.joinRoom} />
-                      </Menu.Item>
-                      <Menu.Item>
-                          <Input className='name_selection'
-                              disabled={mystream}
-                              icon='user circle' fluid
-                              placeholder="Type your name..."
-                              value={this.state.username_value}
-                              onChange={(v,{value}) => this.setState({username_value: value})} />
-                      </Menu.Item>
-                      <Menu.Item >
-                          <Button disabled={!mystream}
-                                  color={question ? 'green' : 'orange'}
-                                  icon='question'
-                                  onClick={this.handleQuestion} /> :::
-                          <Button color='blue' disabled={this.state.shidur} onClick={this.showShidur} icon='tv' />
-                          {this.state.shidur ?
-                              <NewWindow
-                                  url='https://v4g.kbb1.com/gxystr'
-                                  features={{width:"725",height:"635",left:"200",top:"200",location:"no"}}
-                                  title='V4G' onUnload={this.onUnload} onBlock={this.onBlock}>
-                                  {/*<VirtualStreaming />*/}
-                              </NewWindow> :
-                              null
-                          }
-                      </Menu.Item>
-                  </Menu>
-                  <Menu secondary>
-                  <Menu.Item >
-                      <Select className='select_device'
-                              disabled={mystream}
-                              error={!video_device}
-                              placeholder="Select Device:"
-                              value={video_device}
-                              options={vdevices_list}
-                              onChange={(e, {value}) => this.setDevice(value,audio_device)} />
-                      :
-                      <Button disabled={!mystream}
-                              positive={!cammuted}
-                              negative={cammuted}
-                              icon={!cammuted ? "video camera" : "eye slash"}
-                              onClick={this.camMute}/>
-                  </Menu.Item>
-                  <Menu.Item >
-                      <Select className='select_device'
-                              disabled={mystream}
-                              error={!audio_device}
-                              placeholder="Select Device:"
-                              value={audio_device}
-                              options={adevices_list}
-                              onChange={(e, {value}) => this.setDevice(video_device,value)}/>
-                      :
-                      <Button disabled={!mystream}
-                              positive={!muted}
-                              negative={muted}
-                              icon={!muted ? "microphone" : "microphone slash"}
-                              onClick={this.micMute}/>
-                      <canvas className={muted ? 'hidden' : 'vumeter'} ref="canvas1" id="canvas1" width="15" height="35" />
-                  </Menu.Item>
-                  </Menu>
-              </Segment>
+              {/*placeholder="Select Room:"*/}
+              {/*value={i}*/}
+              {/*options={rooms_list}*/}
+              {/*onClick={this.getRoomList}*/}
+              {/*onChange={(e, {value}) => this.selectRoom(value)} />*/}
+              {mystream ? <Button primary icon='sign-out' onClick={this.exitRoom} />:""}
+              {!mystream ? <Button primary icon='sign-in' disabled={!audio_device} onClick={this.joinRoom} />:""}
+            </Input>
+            <Menu icon='labeled' secondary size="mini">
+              <Menu.Item disabled={!mystream} onClick={() => this.setState({ visible: !this.state.visible, count: 0 })}>
+                <Icon name="comments"/>
+                {this.state.visible ? "Close" : "Open"} Chat 
+                {count > 0 ? l : ""} 
+              </Menu.Item>
+              <Menu.Item disabled={!mystream} onClick={this.handleQuestion}>
+                <Icon color={question ? 'green' : ''} name='question'/>
+                Ask a Question
+              </Menu.Item>
+              <Menu.Item disabled={this.state.shidur} onClick={this.showShidur} >
+                <Icon name="tv"/>
+                Open Broadcast
+                {this.state.shidur ?
+                  <NewWindow
+                    url='https://v4g.kbb1.com/gxystr'
+                    features={{width:"725",height:"635",left:"200",top:"200",location:"no"}}
+                    title='V4G' onUnload={this.onUnload} onBlock={this.onBlock}>
+                  </NewWindow> :
+                  null
+                }
+              </Menu.Item>
+            </Menu>
+            <Menu icon='labeled' secondary size="mini">
+              <Menu.Item position='right' disabled={!mystream} onClick={this.micMute}>
+                <Icon color={muted ? "red" : ""} name={!muted ? "microphone" : "microphone slash"} />
+                {!muted ? "Mute" : "Unmute"}
+              </Menu.Item>
+                <canvas className={muted ? 'hidden' : 'vumeter'} ref="canvas1" id="canvas1" width="2" height="19" />
+              {/*<Menu.Item disabled={!mystream} onClick={this.camMute}>*/}
+                {/*<Icon color={cammuted ? "red" : ""} name={!cammuted ? "eye" : "eye slash"} />*/}
+                {/*{!cammuted ? "Stop Video" : "Start Video"}*/}
+              {/*</Menu.Item>*/}
+              <Popup
+                trigger={<Menu.Item icon="setting" name="Settings"/>}
+                on='click'
+                position='bottom right'
+              >
+                <Popup.Content>
+                <Select className='select_device'
+                  disabled={mystream}
+                  error={!audio_device}
+                  placeholder="Select Device:"
+                  value={audio_device}
+                  options={adevices_list}
+                  onChange={(e, {value}) => this.setDevice(video_device,value)}/>
+                <Select className='select_device'
+                  disabled={mystream}
+                  error={!video_device}
+                  placeholder="Select Device:"
+                  value={video_device}
+                  options={vdevices_list}
+                  onChange={(e, {value}) => this.setDevice(value,audio_device)} />
+                </Popup.Content>
+              </Popup>
+            </Menu>
+          </div>
+          <div basic className="videos_segment" onDoubleClick={() => this.setState({ visible: !this.state.visible })} >
+            <div className="video-wrapper">
 
-
-              {/*Semantic Sidebar crash iOS client*/}
-              {
-
-                  iOS
-
-                  ?
-
-                  <Segment attached className="videos_segment"
-                              onDoubleClick={() => this.setState({ visible: !this.state.visible })} >
-                  <div className="wrapper">
-                      {/*<div className="title"><span>{name}</span></div>*/}
-                      <div className="videos">
-                          <div className="videos__wrapper">
-                              <div className="video">
-                                  <video className='mirror' ref="localVideo"
-                                         id="localVideo"
-                                         poster={nowebcam}
-                                         width={width}
-                                         height={height}
-                                         autoPlay={autoPlay}
-                                         controls={controls}
-                                         muted={true}
-                                         playsInline={true}/>
-                              </div>
-                              {videos}
-                          </div>
-                      </div>
+              <div className="videos">
+                <div className="videos__wrapper">
+                  <div className="video">
+                    <video className='mirror' ref="localVideo"
+                      id="localVideo"
+                      poster={nowebcam}
+                      width={width}
+                      height={height}
+                      autoPlay={autoPlay}
+                      controls={controls}
+                      muted={true}
+                      playsInline={true}/>
                   </div>
-              </Segment>
-
-                      :
-
-                  <Sidebar.Pushable as={Segment}>
-
-                      <Sidebar
-                          as={Segment}
-                          direction='right'
-                          animation='overlay'
-                          // onHide={this.handleSidebarHide}
-                          vertical
-                          visible={this.state.visible}
-                          width='wide'
-                      >
-                          <ChatClient
-                              visible={this.state.visible}
-                              janus={this.state.janus}
-                              room={room}
-                              user={this.state.user}
-                              onNewMsg={this.onNewMsg} />
-                      </Sidebar>
-
-                      <Sidebar.Pusher>
-                          <Button attached='top' size='mini' toggle compact disabled={!mystream}
-                                  onClick={() => this.setState({ visible: !this.state.visible, count: 0 })}>
-                              {this.state.visible ? "Close" : "Open"} chat {count > 0 ? l : ""}</Button>
-                          <Segment attached className="videos_segment"
-                                   onDoubleClick={() => this.setState({ visible: !this.state.visible })} >
-                              <div className="wrapper">
-                                  {/*<div className="title"><span>{name}</span></div>*/}
-                                  <div className="videos">
-                                      <div className="videos__wrapper">
-                                          <div className="video">
-                                              <video className='mirror' ref="localVideo"
-                                                     id="localVideo"
-                                                     poster={nowebcam}
-                                                     width={width}
-                                                     height={height}
-                                                     autoPlay={autoPlay}
-                                                     controls={controls}
-                                                     muted={true}
-                                                     playsInline={true}/>
-                                          </div>
-                                          {videos}
-                                      </div>
-                                  </div>
-                              </div>
-                          </Segment>
-
-                      </Sidebar.Pusher>
-                  </Sidebar.Pushable>
-
-              }
-
-
-          </Segment>
-
+                  {videos}
+                </div>
+              </div>
+            </div>
+            <GroupChat
+              visible={this.state.visible}
+              janus={this.state.janus}
+              room={room}
+              user={this.state.user}
+              onNewMsg={this.onNewMsg} />
+          </div>
+        </div>
     );
   }
 }

@@ -1,19 +1,49 @@
 body {
-    margin: 10px;
+    /* margin: 10px;
     height: 90%;
-    font-family: Lato,'Helvetica Neue',Arial,Helvetica,sans-serif;
+    font-family: Lato,'Helvetica Neue',Arial,Helvetica,sans-serif; */
+}
+.virtual_segment {
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+.ingest_segment{
+    display: flex;
+    align-items: center;
+    padding: .8rem .5rem;
+    flex-wrap:wrap;
 }
 
-.room_selection {
-    margin-top: -30px;
+.ingest_segment > .menu,
+.ingest_segment >.input {
+    margin: .2rem .5rem !important;
+}
+.ingest_segment .menu:nth-child(2) {
+    flex: 1 0 auto;
+}
+.videos_segment {
+    flex: 1 0 auto;
+    display: flex;
 }
 
-.name_selection {
-    /*margin-top: 30px!important;*/
-    /*position: absolute!important;*/
-    /*top: 45px!important;*/
-    width: 196px!important;
-    /*right: 55px!important;*/
+.video-wrapper {
+    display: flex;
+    background: #000;
+    padding: 1.6em;
+    flex: 1 0 100%;
+    transition: .2s all linear;
+
+}
+.virtual_segment--chat-open .video-wrapper{
+    flex: 1 0 calc(100% - 400px);
+}
+.chat-wrapper {
+    flex: 0 0 400px;
+    padding: 0 10px 10px 10px;
+    display: flex;
+    flex-direction: column;
 }
 
 .ui.selection.dropdown .menu {
@@ -34,17 +64,17 @@ body {
 }
 
 /*.select_device {*/
-    /*min-width: 10em!important;*/
+/*min-width: 10em!important;*/
 /*}*/
 
 .vumeter {
-    width: 15px;
-    height: 35px;
+    width: 5px;
+    /*height: 35px;*/
     top: 150px;
     left: 45%;
     text-align: center;
     margin-left: 5px;
-    border: 1px solid #a5e4b5;
+    border: 1px solid #a2bba9;
 }
 
 .ui.massive.menu {
@@ -86,8 +116,10 @@ body {
 
 .messages_list {
     overflow-y:scroll;
-    top:0px; left:0px;
-    width:100%; height:400px;
+    flex: 1 0 auto;
+
+    /* top:0px; left:0px;
+    width:100%; height:400px; */
 }
 
 .disabled_list {
@@ -107,17 +139,6 @@ body {
     width: 430px;
     height: 250px;
     background-color: silver!important;
-}
-
-.videos_segment {
-    width: 100%;
-    height: 500px;
-    background-color: silver!important;
-}
-
-.virtual_segment {
-    width: 100%;
-    height: 100%;
 }
 
 .segment_conteiner {

@@ -1,6 +1,6 @@
 import React, { Component, Fragment } from 'react';
 import 'semantic-ui-css/semantic.min.css';
-import ShidurAdmin from "./apps/ShidurApp/ShidurAdmin";
+// import ShidurAdmin from "./apps/ShidurApp/ShidurAdmin";
 // import ShidurApp from "./apps/ShidurApp/ShidurApp";
 // import ShidurGroups from "./apps/ShidurApp/ShidurGroups";
 import GroupClient from "./apps/GroupsApp/GroupClient";
