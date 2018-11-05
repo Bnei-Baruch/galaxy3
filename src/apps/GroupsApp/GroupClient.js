@@ -7,7 +7,6 @@ import {Segment, Menu, Select, Button,Sidebar,Input,Label,Icon,Popup} from "sema
 import {geoInfo, initJanus, getDevicesStream, micLevel, checkNotification,testDevices} from "../../shared/tools";
 import './GroupClient.css'
 import './VideoConteiner.scss'
-import {MAX_FEEDS} from "../../shared/consts";
 import nowebcam from './nowebcam.jpeg';
 import GroupChat from "./GroupChat";
 import {initGxyProtocol, sendProtocolMessage} from "../../shared/protocol";
@@ -24,7 +23,8 @@ class GroupClient extends Component {
         janus: null,
         feeds: [],
         rooms: [],
-        room: 1234,
+        room: "",
+        selected_room: 1234,
         videoroom: null,
         remotefeed: null,
         myid: null,
@@ -43,7 +43,6 @@ class GroupClient extends Component {
     };
 
     componentDidMount() {
-        console.log(this.props.client);
         let {user} = this.state;
         checkNotification();
         geoInfo('https://v4g.kbb1.com/geo.php?action=get', data => {
@@ -184,108 +183,6 @@ class GroupClient extends Component {
             }
         });
     };
-
-    // newRemoteFeed = (id, talk) => {
-    //     // A new feed has been published, create a new plugin handle and attach to it as a subscriber
-    //     var remoteFeed = null;
-    //     this.state.janus.attach(
-    //         {
-    //             plugin: "janus.plugin.videoroom",
-    //             opaqueId: "remotefeed_user",
-    //             success: (pluginHandle) => {
-    //                 remoteFeed = pluginHandle;
-    //                 remoteFeed.simulcastStarted = false;
-    //                 Janus.log("Plugin attached! (" + remoteFeed.getPlugin() + ", id=" + remoteFeed.getId() + ")");
-    //                 Janus.log("  -- This is a subscriber");
-    //
-    //                 let listen = { "request": "join", "room": this.state.room, "ptype": "subscriber", "feed": id, "private_id": this.state.mypvtid };
-    //                 remoteFeed.send({"message": listen});
-    //             },
-    //             error: (error) => {
-    //                 Janus.error("  -- Error attaching plugin...", error);
-    //             },
-    //             onmessage: (msg, jsep) => {
-    //                 Janus.debug(" ::: Got a message (subscriber) :::");
-    //                 Janus.debug(msg);
-    //                 let event = msg["videoroom"];
-    //                 Janus.debug("Event: " + event);
-    //                 if(msg["error"] !== undefined && msg["error"] !== null) {
-    //                     Janus.debug(":: Error msg: " + msg["error"]);
-    //                 } else if(event !== undefined && event !== null) {
-    //                     if(event === "attached") {
-    //                         // Subscriber created and attached
-    //                         let {feeds,users} = this.state;
-    //                         for(let i=1;i<MAX_FEEDS;i++) {
-    //                             if(feeds[i] === undefined || feeds[i] === null) {
-    //                                 remoteFeed.rfindex = i;
-    //                                 remoteFeed.rfid = msg["id"];
-    //                                 remoteFeed.rfuser = JSON.parse(msg["display"]);
-    //                                 remoteFeed.rfuser.rfid = msg["id"];
-    //                                 remoteFeed.talk = talk;
-    //                                 feeds[i] = remoteFeed;
-    //                                 users[remoteFeed.rfuser.id] = remoteFeed.rfuser;
-    //                                 break;
-    //                             }
-    //                         }
-    //                         this.setState({feeds,users});
-    //                         Janus.log("Successfully attached to feed " + remoteFeed.rfid + " (" + remoteFeed.rfuser + ") in room " + msg["room"]);
-    //                     }
-    //                 }
-    //                 if(jsep !== undefined && jsep !== null) {
-    //                     Janus.debug("Handling SDP as well...");
-    //                     Janus.debug(jsep);
-    //                     // Answer and attach
-    //                     remoteFeed.createAnswer(
-    //                         {
-    //                             jsep: jsep,
-    //                             // Add data:true here if you want to subscribe to datachannels as well
-    //                             // (obviously only works if the publisher offered them in the first place)
-    //                             media: { audioSend: false, videoSend: false, data:true },	// We want recvonly audio/video
-    //                             success: (jsep) => {
-    //                                 Janus.debug("Got SDP!");
-    //                                 Janus.debug(jsep);
-    //                                 let body = { "request": "start", "room": this.state.room };
-    //                                 remoteFeed.send({"message": body, "jsep": jsep});
-    //                             },
-    //                             error: (error) => {
-    //                                 Janus.error("WebRTC error:", error);
-    //                             }
-    //                         });
-    //                 }
-    //             },
-    //             webrtcState: (on) => {
-    //                 Janus.log("Janus says this WebRTC PeerConnection (feed #" + remoteFeed.rfindex + ") is " + (on ? "up" : "down") + " now");
-    //             },
-    //             onlocalstream: (stream) => {
-    //                 // The subscriber stream is recvonly, we don't expect anything here
-    //             },
-    //             onremotestream: (stream) => {
-    //                 Janus.debug("Remote feed #" + remoteFeed.rfindex);
-    //                 let remotevideo = this.refs["remoteVideo" + remoteFeed.rfid];
-    //                 // if(remotevideo.length === 0) {
-    //                 //     // No remote video yet
-    //                 // }
-    //                 Janus.attachMediaStream(remotevideo, stream);
-    //                 var videoTracks = stream.getVideoTracks();
-    //                 if(videoTracks === null || videoTracks === undefined || videoTracks.length === 0) {
-    //                     // No remote video
-    //                 } else {
-    //                     // Yes remote video
-    //                 }
-    //             },
-    //             ondataopen: (data) => {
-    //                 Janus.log("The DataChannel is available!(feed)");
-    //             },
-    //             ondata: (data) => {
-    //                 Janus.debug("We got data from the DataChannel! (feed) " + data);
-    //                 let msg = JSON.parse(data);
-    //                 Janus.log(" :: We got msg via DataChannel: ",msg)
-    //             },
-    //             oncleanup: () => {
-    //                 Janus.log(" ::: Got a cleanup notification (remote feed " + id + ") :::");
-    //             }
-    //         });
-    // };
 
     publishOwnFeed = (useVideo) => {
         // FIXME: Does we allow video only mode?
@@ -459,8 +356,8 @@ class GroupClient extends Component {
     };
 
     joinRoom = () => {
-        let {janus, videoroom, room, user, username_value} = this.state;
-        localStorage.setItem("room", room);
+        let {janus, videoroom, selected_room, user, username_value} = this.state;
+        localStorage.setItem("room", selected_room);
         //FIXME: will be id from keyclock
         user.id = Janus.randomString(10);
         //FIXME: will be role from keyclock
@@ -470,9 +367,9 @@ class GroupClient extends Component {
         //This name will see other users
         user.display = username_value || user.name;
         localStorage.setItem("username", user.display);
-        let register = { "request": "join", "room": room, "ptype": "publisher", "display": JSON.stringify(user) };
+        let register = { "request": "join", "room": selected_room, "ptype": "publisher", "display": JSON.stringify(user) };
         videoroom.send({"message": register});
-        this.setState({user, muted: true, room: room});
+        this.setState({user, muted: true, room: selected_room});
         initGxyProtocol(janus, user, protocol => {
             this.setState({protocol});
         }, ondata => {
@@ -481,11 +378,10 @@ class GroupClient extends Component {
     };
 
     exitRoom = () => {
-        let {videoroom, protocol, room} = this.state;
+        let {videoroom, protocol} = this.state;
         let leave = {request : "leave"};
-        Janus.log(room);
         videoroom.send({"message": leave});
-        this.setState({muted: false, mystream: null, i: "", feeds: []});
+        this.setState({muted: false, mystream: null, room: "", i: "", feeds: []});
         this.initVideoRoom();
         protocol.detach();
     };
