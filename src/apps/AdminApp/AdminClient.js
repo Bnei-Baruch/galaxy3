@@ -917,133 +917,113 @@ class AdminClient extends Component {
           return true;
       });
 
-    return (
+      return (
 
-        <Segment className="virtual_segment" color='blue' raised>
+          <Segment className="virtual_segment" color='blue' raised>
 
-          <Segment textAlign='center' className="ingest_segment">
-              <Menu secondary >
-                  <Menu.Item>
-                      <Button negative onClick={this.removeRoom}>Remove</Button>
-                      :::
-                      <Select
-                          error={roomid}
-                          scrolling
-                          placeholder="Select Room:"
-                          value={i}
-                          options={rooms_list}
-                          onChange={(e, {value}) => this.selectRoom(value)} />
-                  </Menu.Item>
-                  <Menu.Item >
-                      {/*<Button positive onClick={this.joinRoom}>Join</Button>*/}
-                      :::
-                      {/*<Button onClick={this.exitRoom}>exit</Button>*/}
-                  </Menu.Item>
-                  <Menu.Item>
-                      <Input type='text' placeholder='Room description...' action value={description}
-                             onChange={(v,{value}) => this.setState({description: value})}>
-                          <input />
-                          <Button positive onClick={this.createRoom}>Create</Button>
-                      </Input>
-                  </Menu.Item>
-                  <Menu.Item>
-                      <video ref="switchVideo"
-                             id="switchVideo"
-                             width={width}
-                             height={height}
-                             autoPlay={autoPlay}
-                             controls={controls}
-                             muted={true}
-                             playsinline={true}/>
-                  </Menu.Item>
-              </Menu>
+              <Segment textAlign='center' className="ingest_segment">
+                  <Menu secondary >
+                      <Menu.Item>
+                          <Button negative onClick={this.removeRoom}>Remove</Button>
+                          :::
+                          <Select
+                              error={roomid}
+                              scrolling
+                              placeholder="Select Room:"
+                              value={i}
+                              options={rooms_list}
+                              onChange={(e, {value}) => this.selectRoom(value)} />
+                      </Menu.Item>
+                      <Menu.Item >
+                          {/*<Button positive onClick={this.joinRoom}>Join</Button>*/}
+                          :::
+                          {/*<Button onClick={this.exitRoom}>exit</Button>*/}
+                      </Menu.Item>
+                      <Menu.Item>
+                          <Input type='text' placeholder='Room description...' action value={description}
+                                 onChange={(v,{value}) => this.setState({description: value})}>
+                              <input />
+                              <Button positive onClick={this.createRoom}>Create</Button>
+                          </Input>
+                      </Menu.Item>
+                      <Menu.Item>
+                          {/*<video ref="switchVideo"*/}
+                          {/*id="switchVideo"*/}
+                          {/*width={width}*/}
+                          {/*height={height}*/}
+                          {/*autoPlay={autoPlay}*/}
+                          {/*controls={controls}*/}
+                          {/*muted={true}*/}
+                          {/*playsinline={true}/>*/}
+                      </Menu.Item>
+                  </Menu>
+              </Segment>
+
+              <Grid>
+                  <Grid.Row stretched>
+                      <Grid.Column width={3}>
+
+                          <Segment textAlign='center' className="group_list" raised>
+                              <Table selectable compact='very' basic structured className="admin_table" unstackable>
+                                  <Table.Body>
+                                      {rooms_grid}
+                                  </Table.Body>
+                              </Table>
+                          </Segment>
+
+                      </Grid.Column>
+                      <Grid.Column largeScreen={10}>
+                          <Segment className="videos_segment" onDoubleClick={this.handleShowClick}>
+                              <div className="wrapper">
+                                  <div className="videos">
+                                      <div className="videos__wrapper">
+                                          {videos}
+                                      </div>
+                                  </div>
+                              </div>
+                          </Segment>
+
+                      </Grid.Column>
+                      <Grid.Column width={3}>
+
+                          <Segment textAlign='center' className="group_list" raised>
+                              <Table selectable compact='very' basic structured className="admin_table" unstackable>
+                                  <Table.Header>
+                                      <Table.Row>
+                                          <Table.HeaderCell>
+                                              <Button positive icon='info' onClick={this.getFeedInfo} />
+                                              <Button negative icon='user x' onClick={this.kickUser} />
+                                          </Table.HeaderCell>
+                                      </Table.Row>
+                                  </Table.Header>
+                                  <Table.Body>
+                                      {users_grid}
+                                  </Table.Body>
+                              </Table>
+                          </Segment>
+
+                      </Grid.Column>
+                  </Grid.Row>
+              </Grid>
+
+              <Segment className='chat_segment'>
+
+                  <Message className='messages_list' size='mini'>
+                      {list_msgs}
+                      <div ref='end' />
+                  </Message>
+
+                  <Input size='mini' fluid type='text' placeholder='Type your message' action value={this.state.input_value}
+                         onChange={(v,{value}) => this.setState({input_value: value})}>
+                      <input />
+                      <Button size='mini' positive onClick={this.sendDataMessage}>Send</Button>
+                  </Input>
+
+              </Segment>
+
           </Segment>
 
-            <Sidebar.Pushable as={Segment}>
-
-                <Sidebar
-                    as={Segment}
-                    direction='right'
-                    animation='overlay'
-                    // onHide={this.handleSidebarHide}
-                    vertical
-                    visible={this.state.visible}
-                    width='wide'
-                >
-                    <Segment fluid className="virtual_segment" >
-
-                        <Message className='messages_list' size='mini'>
-                            {list_msgs}
-                            <div ref='end' />
-                        </Message>
-
-                        <Input size='mini' fluid type='text' placeholder='Type your message' action value={this.state.input_value}
-                               onChange={(v,{value}) => this.setState({input_value: value})}>
-                            <input />
-                            <Button size='mini' positive onClick={this.sendDataMessage}>Send</Button>
-                        </Input>
-
-                    </Segment>
-                </Sidebar>
-
-                <Sidebar.Pusher>
-
-            <Grid>
-                <Grid.Row stretched>
-                    <Grid.Column width={3}>
-
-            <Segment textAlign='center' className="group_list" raised>
-                <Table selectable compact='very' basic structured className="admin_table" unstackable>
-                    <Table.Body>
-                        {rooms_grid}
-                    </Table.Body>
-                </Table>
-            </Segment>
-
-                    </Grid.Column>
-                    <Grid.Column largeScreen={10}>
-                        <Button attached='top' size='mini' toggle compact
-                                onClick={() => this.setState({ visible: !this.state.visible })}>
-                            {this.state.visible ? ":: Close" : ":: Open"} chat ::</Button>
-          <Segment attached className="videos_segment" onDoubleClick={this.handleShowClick}>
-              <div className="wrapper">
-                  <div className="videos">
-                      <div className="videos__wrapper">
-                          {videos}
-                          </div>
-                  </div>
-              </div>
-          </Segment>
-
-                    </Grid.Column>
-                    <Grid.Column width={3}>
-
-                        <Segment textAlign='center' className="group_list" raised>
-                            <Table selectable compact='very' basic structured className="admin_table" unstackable>
-                                <Table.Header>
-                                    <Table.Row>
-                                        <Table.HeaderCell>
-                                            <Button positive icon='info' onClick={this.getFeedInfo} />
-                                            <Button negative icon='user x' onClick={this.kickUser} />
-                                        </Table.HeaderCell>
-                                    </Table.Row>
-                                </Table.Header>
-                                <Table.Body>
-                                    {users_grid}
-                                </Table.Body>
-                            </Table>
-                        </Segment>
-
-                    </Grid.Column>
-                </Grid.Row>
-            </Grid>
-
-                </Sidebar.Pusher>
-            </Sidebar.Pushable>
-
-        </Segment>
-
-    );
+      );
   }
 }
 
