@@ -14,6 +14,7 @@ class GroupsApp extends Component {
         gxy_shidur: true,
         gxy_sndman: true,
         gxy_sdiout: true,
+        gxy_temp: true,
     };
 
     componentDidMount() {
@@ -30,11 +31,14 @@ class GroupsApp extends Component {
         let gxy_shidur = user.roles.filter(role => role === 'gxy_shidur').length === 0;
         let gxy_sndman = user.roles.filter(role => role === 'gxy_sndman').length === 0;
         let gxy_sdiout = user.roles.filter(role => role === 'gxy_sdiout').length === 0;
+        let gxy_temp = user.roles.filter(role => role === 'offline_access').length === 0;
         if(!gxy_public) {
-            this.setState({user, gxy_public, gxy_user, gxy_group, gxy_admin, gxy_shidur, gxy_sndman, gxy_sdiout});
+            this.setState({user, gxy_public, gxy_user, gxy_group, gxy_admin, gxy_shidur, gxy_sndman, gxy_sdiout, gxy_temp});
         } else {
-            alert("Access denied!");
-            client.signoutRedirect();
+            // alert("Access denied!");
+            // client.signoutRedirect();
+            // FIXME: Tmp disable check permission
+            this.setState({user, gxy_public, gxy_user, gxy_group, gxy_admin, gxy_shidur, gxy_sndman, gxy_sdiout, gxy_temp});
         }
     };
 
