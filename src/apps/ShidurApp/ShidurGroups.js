@@ -57,11 +57,13 @@ class ShidurGroups extends Component {
             //     this.onProtocolData(ondata);
             // });
 
-            // getState('state/galaxy/pr1', (pgm_state) => {
-            //     Janus.log(" :: Get State: ", pgm_state);
-            //     this.setState({program_room: pgm_state.room, program_name: pgm_state.name, pgm_state});
-            //     this.initVideoRoom(pgm_state.room, "program");
-            // });
+            getState('state/galaxy/pr1', (pgm_state) => {
+                Janus.log(" :: Get State: ", pgm_state);
+                this.setState({pgm_state});
+                pgm_state.forEach((feed,i) => {
+                    this.newSwitchFeed(feed.id,true,i);
+                });
+            });
         });
     };
 
@@ -315,6 +317,9 @@ class ShidurGroups extends Component {
                     Janus.log(" :: Selected program Switch Feed to: ", pre_feed.display);
                     pgm_state[i] = pre_feed;
                     this.setState({program: pre_feed, pgm_state, pre_feed: null});
+                    putData(`state/galaxy/pr1`, pgm_state, (cb) => {
+                        Janus.log(":: Save to state: ",cb);
+                    });
                 }
             })
         } else {
@@ -330,6 +335,9 @@ class ShidurGroups extends Component {
             }
 
             this.setState({feeds_queue, pgm_state, pre_feed: null});
+            putData(`state/galaxy/pr1`, pgm_state, (cb) => {
+                Janus.log(":: Save to state: ",cb);
+            });
         }
 
     };
@@ -373,6 +381,10 @@ class ShidurGroups extends Component {
 
         // Here current number in feeds queue and program state
         this.setState({feeds_queue, pgm_state});
+
+        putData(`state/galaxy/pr1`, pgm_state, (cb) => {
+            Janus.log(":: Save to state: ",cb);
+        });
     };
 
     switchNext = (i ,feed) => {
@@ -390,6 +402,9 @@ class ShidurGroups extends Component {
                     Janus.log(" :: Next Switch Feed to: ", feed.display);
                     pgm_state[i] = feed;
                     this.setState({pgm_state});
+                    putData(`state/galaxy/pr1`, pgm_state, (cb) => {
+                        Janus.log(":: Save to state: ",cb);
+                    });
                 }
             })
         }
@@ -502,7 +517,7 @@ class ShidurGroups extends Component {
       });
 
       let preview = (<div className={pre_feed ? "" : "hidden"}>
-          <div className="video_title"><span>{pre_feed ? pre_feed.display : ""}</span></div>
+          <div className="fullscrvideo_title"><span>{pre_feed ? pre_feed.display : ""}</span></div>
               <video ref = {"prevewVideo"}
                      id = "prevewVideo"
                      width = "400"
@@ -551,7 +566,7 @@ class ShidurGroups extends Component {
       });
 
       let fullscreen = (<div className={fullscr ? "" : "hidden"}>
-              <div className="video_title"><span>{full_feed ? full_feed.display : ""}</span></div>
+              <div className="fullscrvideo_title"><span>{full_feed ? full_feed.display : ""}</span></div>
               <video ref = {"fullscreenVideo"}
                      onClick={() => this.toFourGroup()}
                      id = "fullscreenVideo"

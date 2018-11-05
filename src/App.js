@@ -2,7 +2,7 @@ import React, { Component, Fragment } from 'react';
 import 'semantic-ui-css/semantic.min.css';
 import ShidurAdmin from "./apps/ShidurApp/ShidurAdmin";
 // import ShidurApp from "./apps/ShidurApp/ShidurApp";
-// import ShidurGroups from "./apps/ShidurApp/ShidurGroups";
+import ShidurGroups from "./apps/ShidurApp/ShidurGroups";
 // import SndmanClient from "./apps/SndmanApp/SndmanClient";
 // import AdminStreaming from "./apps/AdminApp/AdminStreaming";
 // import ShidurUsers from "././apps/ShidurApp/ShidurUsers";
@@ -21,14 +21,14 @@ class App extends Component {
             <Fragment>
                 {/*<Streaming />*/}
                 {/*<ShidurUsers />*/}
-                <ShidurAdmin/>
+                {/*<ShidurAdmin/>*/}
                 {/*<SDIOutClient />*/}
                 {/*<SndmanClient />*/}
                 {/*<AdminStreaming/>*/}
                 {/*<AdminClient />*/}
                 {/*<VirtualClient />*/}
                 {/*<VirtualStreaming/>*/}
-                {/*<ShidurGroups/>*/}
+                <ShidurGroups/>
                 {/*<ShidurApp/>*/}
             </Fragment>
         );
