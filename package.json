@@ -5,7 +5,9 @@
   "homepage": ".",
   "dependencies": {
     "classnames": "^2.2.6",
+    "jsrsasign": "^8.0.12",
     "node-sass": "^4.9.4",
+    "oidc-client": "^1.5.4",
     "react": "^16.5.2",
     "react-dom": "^16.5.2",
     "react-new-window": "^0.0.9",
