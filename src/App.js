@@ -5,9 +5,9 @@ import 'semantic-ui-css/semantic.min.css';
 // import SndmanClient from "./apps/SndmanApp/SndmanClient";
 // import AdminStreaming from "./apps/AdminApp/AdminStreaming";
 // import ShidurUsers from "././apps/ShidurApp/ShidurUsers";
-import AdminClient from "./apps/AdminApp/AdminClient";
+// import AdminClient from "./apps/AdminApp/AdminClient";
 // import SDIOutClient from "./apps/SDIOutApp/SDIOutClient";
-// import VirtualClient from "./apps/VirtualApp/VirtualClient";
+import VirtualClient from "./apps/VirtualApp/VirtualClient";
 // import VirtualStreaming from "./components/VirtualStreaming";
 
 class App extends Component {
@@ -23,8 +23,8 @@ class App extends Component {
                 {/*<SDIOutClient />*/}
                 {/*<SndmanClient />*/}
                 {/*<AdminStreaming/>*/}
-                <AdminClient />
-                {/*<VirtualClient />*/}
+                {/*<AdminClient />*/}
+                <VirtualClient />
                 {/*<VirtualStreaming/>*/}
                 {/*<ShidurGroups/>*/}
                 {/*<ShidurApp/>*/}

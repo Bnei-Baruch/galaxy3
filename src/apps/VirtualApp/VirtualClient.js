@@ -9,7 +9,7 @@ import './VirtualClient.css'
 import './VideoConteiner.scss'
 import {MAX_FEEDS} from "../../shared/consts";
 import nowebcam from './nowebcam.jpeg';
-import ChatClient from "../../components/ChatClient";
+import VirtualChat from "./VirtualChat";
 import {initGxyProtocol, sendProtocolMessage} from "../../shared/protocol";
 
 class VirtualClient extends Component {
@@ -748,7 +748,7 @@ class VirtualClient extends Component {
                 </div>
               </div>
             </div>
-            <ChatClient
+            <VirtualChat
               visible={this.state.visible}
               janus={this.state.janus}
               room={room}
