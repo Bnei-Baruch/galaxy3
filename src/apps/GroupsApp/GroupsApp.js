@@ -1,5 +1,4 @@
 import React, { Component, Fragment } from 'react';
-import { Tab } from 'semantic-ui-react'
 import LoginPage from '../../components/LoginPage';
 import {client, getUser} from "../../components/UserManager";
 import GroupClient from "./GroupClient";
@@ -7,6 +6,7 @@ import GroupClient from "./GroupClient";
 class GroupsApp extends Component {
 
     state = {
+        pass: false,
         user: null,
         gxy_user: true,
         gxy_group: true,
@@ -38,22 +38,22 @@ class GroupsApp extends Component {
         }
     };
 
+    authPass = () => {
+        this.setState({pass: true})
+    };
+
     render() {
 
-        const {gxy_public,gxy_user,gxy_group,gxy_admin,gxy_shidur,gxy_sndman,gxy_sdiout,user} = this.state;
+        const {gxy_public,gxy_user,gxy_group,gxy_admin,gxy_shidur,gxy_sndman,gxy_sdiout,user, pass} = this.state;
 
-        let login = (<LoginPage user={user} />);
-
-        const panes = [
-            { menuItem: { key: 'Home', icon: 'home', content: 'Home', disabled: false },
-                render: () => <Tab.Pane attached={true} >{login}</Tab.Pane> },
-            { menuItem: { key: 'groups', icon: 'copyright', content: 'Groups', disabled: gxy_group },
-                render: () => <Tab.Pane attached={false} ><GroupClient user={user} /></Tab.Pane> },
-        ];
+        let login = (<LoginPage user={user} enter={this.authPass} />);
+        let enter = (<GroupClient user={user} client={client} />);
 
         return (
 
-            <Tab menu={{ secondary: true, pointing: true, color: "blue" }} panes={panes} />
+            <Fragment>
+                {pass ? enter: login}
+            </Fragment>
 
         );
     }

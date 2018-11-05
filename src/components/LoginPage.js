@@ -32,8 +32,8 @@ class LoginPage extends Component {
 
         const {disabled, loading} = this.state;
 
-        let login = (<Button size='massive' primary onClick={this.getUser} disabled={disabled} loading={loading}>Login</Button>);
-        let logout = (<Image src={logo} centered />);
+        let login = (<Button size='massive' primary onClick={this.getUser} disabled={disabled} loading={loading}>Login</Button>);;
+        let enter = (<Button size='massive' color='green' onClick={() => this.props.enter()} disabled={disabled} loading={loading}>Enter</Button>)
         let profile = (
             <Dropdown inline text=''>
                 <Dropdown.Menu>
@@ -45,13 +45,15 @@ class LoginPage extends Component {
 
         return (
             <Container textAlign='center' >
+                <br />
                 <Message size='massive'>
                     <Message.Header>
-                        {this.props.user === null ? "Archive WorkFlow" : "Welcome, "+this.props.user.name}
+                        {this.props.user === null ? "Galaxy Groups" : "Welcome, "+this.props.user.name}
                         {this.props.user === null ? "" : profile}
                     </Message.Header>
-                    <p>Archive WorkFlow Administrative Tools and Services</p>
-                    {this.props.user === null ? login : logout}
+                    <p>The Group Today Is You Tomorrow</p>
+                    {this.props.user === null ? login : enter}
+                    <Image src={logo} centered />
                 </Message>
             </Container>
         );

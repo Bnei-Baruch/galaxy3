@@ -44,6 +44,7 @@ class GroupClient extends Component {
     };
 
     componentDidMount() {
+        console.log(this.props.client);
         let {user} = this.state;
         checkNotification();
         geoInfo('https://v4g.kbb1.com/geo.php?action=get', data => {
