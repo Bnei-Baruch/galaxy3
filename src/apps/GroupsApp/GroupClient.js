@@ -5,7 +5,7 @@ import classNames from 'classnames';
 
 import {Segment, Menu, Select, Button,Sidebar,Input,Label,Icon,Popup} from "semantic-ui-react";
 import {geoInfo, initJanus, getDevicesStream, micLevel, checkNotification,testDevices} from "../../shared/tools";
-import './GroupClient.css'
+import './GroupClient.scss'
 import './VideoConteiner.scss'
 import nowebcam from './nowebcam.jpeg';
 import GroupChat from "./GroupChat";
@@ -464,8 +464,8 @@ class GroupClient extends Component {
 
       return (
 
-        <div className={classNames('virtual_segment', { 'virtual_segment--chat-open': this.state.visible })} >
-          <div className="ingest_segment">
+        <div className={classNames('gclient', { 'gclient--chat-open': this.state.visible })} >
+          <div className="gclient__toolbar">
             <Input>
               {/*iconPosition='left'*/}
               {/*placeholder="Type your name..."*/}
@@ -510,11 +510,11 @@ class GroupClient extends Component {
               </Menu.Item>
             </Menu>
             <Menu icon='labeled' secondary size="mini">
-              <Menu.Item position='right' disabled={!mystream} onClick={this.micMute}>
+              <Menu.Item position='right' disabled={!mystream} onClick={this.micMute} className="mute-button">
                 <Icon color={muted ? "red" : ""} name={!muted ? "microphone" : "microphone slash"} />
                 {!muted ? "Mute" : "Unmute"}
+                  <canvas className={muted ? 'hidden' : 'vumeter'} ref="canvas1" id="canvas1" width="15" height="35" />
               </Menu.Item>
-                <canvas className={muted ? 'hidden' : 'vumeter'} ref="canvas1" id="canvas1" width="2" height="19" />
               {/*<Menu.Item disabled={!mystream} onClick={this.camMute}>*/}
                 {/*<Icon color={cammuted ? "red" : ""} name={!cammuted ? "eye" : "eye slash"} />*/}
                 {/*{!cammuted ? "Stop Video" : "Start Video"}*/}
@@ -543,8 +543,8 @@ class GroupClient extends Component {
               </Popup>
             </Menu>
           </div>
-          <div basic className="videos_segment" onDoubleClick={() => this.setState({ visible: !this.state.visible })} >
-            <div className="video-wrapper">
+          <div basic className="gclient__main" onDoubleClick={() => this.setState({ visible: !this.state.visible })} >
+            <div className="videos-panel">
 
               <div className="videos">
                 <div className="videos__wrapper">
