@@ -1,24 +1,15 @@
 import React, { Component, Fragment } from 'react';
 import LoginPage from '../../components/LoginPage';
 import {client, getUser} from "../../components/UserManager";
-// import {micLevel} from "../../shared/tools";
-// import GroupClient from "./GroupClient";
-// import ShidurGroups from "../ShidurApp/ShidurGroups";
-// import ShidurAdmin from "../ShidurApp/ShidurAdmin";
+import GroupClient from "./GroupClient";
 
 class GroupsApp extends Component {
 
     state = {
         pass: false,
         user: null,
-        role: null,
-        roles: [],
-        gxy_user: true,
         gxy_group: true,
-        gxy_admin: true,
-        gxy_shidur: true,
-        gxy_sndman: true,
-        gxy_sdiout: true,
+        gxy_public: true,
     };
 
     componentDidMount() {
@@ -29,38 +20,29 @@ class GroupsApp extends Component {
 
     checkPermission = (user) => {
         let gxy_public = user.roles.filter(role => role === 'bb_user').length === 0;
-        let gxy_user = user.roles.filter(role => role === 'gxy_user').length === 0;
         let gxy_group = user.roles.filter(role => role === 'gxy_group').length === 0;
-        let gxy_admin = user.roles.filter(role => role === 'gxy_admin').length === 0;
-        let gxy_shidur = user.roles.filter(role => role === 'gxy_shidur').length === 0;
-        let gxy_sndman = user.roles.filter(role => role === 'gxy_sndman').length === 0;
-        let gxy_sdiout = user.roles.filter(role => role === 'gxy_sdiout').length === 0;
         if(!gxy_public) {
-            this.setState({user, gxy_public, gxy_user, gxy_group, gxy_admin, gxy_shidur, gxy_sndman, gxy_sdiout, roles: user.roles});
+            this.setState({user, gxy_public, gxy_group});
         } else {
             alert("Access denied!");
             client.signoutRedirect();
         }
     };
 
-    authPass = (role) => {
-        this.setState({pass: true, role})
+    authPass = () => {
+        this.setState({pass: true});
     };
 
     render() {
 
-        const {gxy_public,gxy_user,gxy_group,gxy_admin,gxy_shidur,gxy_sndman,gxy_sdiout,user, roles, role, pass} = this.state;
+        const {user, pass} = this.state;
 
-        let login = (<LoginPage user={user} roles={roles} enter={this.authPass} />);
-        //let enter = (<GroupClient user={user} />);
-        // let group = (<GroupClient user={user} />);
-        // let shidur = (<ShidurGroups user={user} />);
-        // let admin = (<ShidurAdmin user={user} />);
-
+        let login = (<LoginPage user={user} enter={this.authPass} />);
+        let enter = (<GroupClient user={user} />);
         return (
 
             <Fragment>
-                {pass ? role ? [role] : "" : login}
+                {pass ? enter : login}
             </Fragment>
 
         );
