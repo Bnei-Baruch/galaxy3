@@ -3,7 +3,7 @@ import NewWindow from 'react-new-window';
 import { Janus } from "../../lib/janus";
 import classNames from 'classnames';
 
-import {Segment, Menu, Select, Button,Sidebar,Input,Label,Icon,Popup} from "semantic-ui-react";
+import {Menu, Select, Button,Input,Label,Icon,Popup} from "semantic-ui-react";
 import {geoInfo, initJanus, getDevicesStream, micLevel, checkNotification,testDevices} from "../../shared/tools";
 import './GroupClient.scss'
 import './VideoConteiner.scss'
@@ -37,7 +37,6 @@ class GroupClient extends Component {
         protocol: null,
         user: {},
         users: {},
-        username_value: localStorage.getItem("username") || "",
         visible: false,
         question: false,
     };
@@ -356,16 +355,12 @@ class GroupClient extends Component {
     };
 
     joinRoom = () => {
-        let {janus, videoroom, selected_room, user, username_value} = this.state;
-        localStorage.setItem("room", selected_room);
-        //FIXME: will be id from keyclock
-        user.id = Janus.randomString(10);
-        //FIXME: will be role from keyclock
-        user.role = "user";
-        //FIXME: wiill be name from keyclock
-        user.name = "user-"+Janus.randomString(4);
-        //This name will see other users
-        user.display = username_value || user.name;
+        let {janus, videoroom, selected_room, user} = this.state;
+        let {sub, name, title} = this.props.user;
+        user.id = sub;
+        user.role = "gxy_group";
+        user.name = name;
+        user.display = title || user.name;
         localStorage.setItem("username", user.display);
         let register = { "request": "join", "room": selected_room, "ptype": "publisher", "display": JSON.stringify(user) };
         videoroom.send({"message": register});
@@ -420,7 +415,7 @@ class GroupClient extends Component {
 
   render() {
 
-      const { audio_devices,video_devices,video_device,audio_device,i,muted,mystream,room,count,question} = this.state;
+      const { audio_devices,video_devices,video_device,audio_device,muted,mystream,room,count,question} = this.state;
       const width = "134";
       const height = "100";
       const autoPlay = true;
@@ -467,22 +462,6 @@ class GroupClient extends Component {
         <div className={classNames('gclient', { 'gclient--chat-open': this.state.visible })} >
           <div className="gclient__toolbar">
             <Input>
-              {/*iconPosition='left'*/}
-              {/*placeholder="Type your name..."*/}
-              {/*value={this.state.username_value}*/}
-              {/*onChange={(v,{value}) => this.setState({username_value: value})}*/}
-            {/*action>*/}
-            {/*<input iconPosition='left' disabled={mystream}/>*/}
-            {/*<Icon name='user circle' />*/}
-            {/*<Select*/}
-              {/*disabled={mystream}*/}
-              {/*error={!room}*/}
-
-              {/*placeholder="Select Room:"*/}
-              {/*value={i}*/}
-              {/*options={rooms_list}*/}
-              {/*onClick={this.getRoomList}*/}
-              {/*onChange={(e, {value}) => this.selectRoom(value)} />*/}
               {mystream ? <Button color='orange' icon='sign-out' onClick={this.exitRoom} />:""}
               {!mystream ? <Button primary icon='sign-in' disabled={!audio_device} onClick={this.joinRoom} />:""}
             </Input>
@@ -501,7 +480,7 @@ class GroupClient extends Component {
                 Open Broadcast
                 {this.state.shidur ?
                   <NewWindow
-                    url='https://v4g.kbb1.com/gxystr'
+                    url='https://galaxy.kli.one/stream'
                     features={{width:"725",height:"635",left:"200",top:"200",location:"no"}}
                     title='V4G' onUnload={this.onUnload} onBlock={this.onBlock}>
                   </NewWindow> :
@@ -515,10 +494,6 @@ class GroupClient extends Component {
                 {!muted ? "Mute" : "Unmute"}
                   <canvas className={muted ? 'hidden' : 'vumeter'} ref="canvas1" id="canvas1" width="15" height="35" />
               </Menu.Item>
-              {/*<Menu.Item disabled={!mystream} onClick={this.camMute}>*/}
-                {/*<Icon color={cammuted ? "red" : ""} name={!cammuted ? "eye" : "eye slash"} />*/}
-                {/*{!cammuted ? "Stop Video" : "Start Video"}*/}
-              {/*</Menu.Item>*/}
               <Popup
                 trigger={<Menu.Item icon="setting" name="Settings"/>}
                 on='click'

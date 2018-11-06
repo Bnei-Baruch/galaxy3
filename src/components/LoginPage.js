@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import {client,BASE_URL} from './UserManager';
+import {client} from './UserManager';
 import { Container,Message,Button,Dropdown,Image } from 'semantic-ui-react';
 import logo from './logo.svg';
 
@@ -22,7 +22,7 @@ class LoginPage extends Component {
     getUser = () => {
         this.setState({disabled: true, loading: true});
         client.getUser().then(user => {
-            (user === null) ? client.signinRedirect({state: `${BASE_URL}`}) : console.log(":: What just happend?");
+            (user === null) ? client.signinRedirect({state: window.location.href}) : console.log(":: What just happend?");
         }).catch(error => {
             console.log("Error: ",error);
         });

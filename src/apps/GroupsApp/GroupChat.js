@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import { Janus } from "../../lib/janus";
-import {Segment, Message, Button, Input} from "semantic-ui-react";
+import {Message, Button, Input} from "semantic-ui-react";
 import {initChatRoom,getDateString,joinChatRoom} from "../../shared/tools";
 
 
