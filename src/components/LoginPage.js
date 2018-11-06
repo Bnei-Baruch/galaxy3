@@ -2,6 +2,9 @@ import React, { Component } from 'react';
 import {client,BASE_URL} from './UserManager';
 import { Container,Message,Button,Dropdown,Image } from 'semantic-ui-react';
 import logo from './logo.svg';
+import GroupClient from "../apps/GroupsApp/GroupClient";
+import ShidurGroups from "../apps/ShidurApp/ShidurGroups";
+import ShidurAdmin from "../apps/ShidurApp/ShidurAdmin";
 
 class LoginPage extends Component {
 
@@ -30,7 +33,7 @@ class LoginPage extends Component {
 
     render() {
 
-        const {disabled, loading} = this.state;
+        const {disabled, loading, user} = this.state;
 
         let login = (<Button size='massive' primary onClick={this.getUser} disabled={disabled} loading={loading}>Login</Button>);
         let enter = (<Button size='massive' color='green' onClick={() => this.props.enter()} disabled={disabled} loading={loading}>Enter</Button>);
@@ -43,6 +46,12 @@ class LoginPage extends Component {
                 </Dropdown.Menu>
             </Dropdown>);
 
+        let opt = this.props.roles.map((role,i) => {
+            if(role === "gxy_group") return (<Button key={i} size='massive' color='green' onClick={() => this.props.enter(<GroupClient user={this.props.user} />)} >Group</Button>);
+            if(role === "gxy_shidur") return (<Button key={i} size='massive' color='green' onClick={() => this.props.enter(<ShidurGroups user={this.props.user} />)} >Shidur</Button>);
+            if(role === "gxy_admin") return (<Button key={i} size='massive' color='green' onClick={() => this.props.enter(<ShidurAdmin user={this.props.user} />)} >Admin</Button>);
+        });
+
         return (
             <Container textAlign='center' >
                 <br />
@@ -52,7 +61,7 @@ class LoginPage extends Component {
                         {this.props.user === null ? "" : profile}
                     </Message.Header>
                     <p>The Group Today Is You Tomorrow</p>
-                    {this.props.user === null ? login : enter}
+                    {this.props.user === null ? login : opt}
                     <Image size='large' src={logo} centered />
                 </Message>
             </Container>

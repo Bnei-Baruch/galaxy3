@@ -75,15 +75,15 @@ body {
     /*min-width: 10em!important;*/
 /*}*/
 
-.vumeter {
-    width: 15px;
-    height: 35px;
-    top: 150px;
-    left: 45%;
-    text-align: center;
-    margin-left: 5px;
-    border: 1px solid #a5e4b5;
-}
+/*.vumeter {*/
+    /*width: 15px;*/
+    /*height: 35px;*/
+    /*top: 150px;*/
+    /*left: 45%;*/
+    /*text-align: center;*/
+    /*margin-left: 5px;*/
+    /*border: 1px solid #a5e4b5;*/
+/*}*/
 
 .ui.massive.menu {
     font-size: 1.28571429rem;
