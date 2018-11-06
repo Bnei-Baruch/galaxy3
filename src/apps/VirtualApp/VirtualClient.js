@@ -5,7 +5,7 @@ import classNames from 'classnames';
 
 import {Segment, Menu, Select, Button,Sidebar,Input,Label,Icon,Popup} from "semantic-ui-react";
 import {geoInfo, initJanus, getDevicesStream, micLevel, checkNotification,testDevices} from "../../shared/tools";
-import './VirtualClient.css'
+import './VirtualClient.scss'
 import './VideoConteiner.scss'
 import {MAX_FEEDS} from "../../shared/consts";
 import nowebcam from './nowebcam.jpeg';
@@ -647,8 +647,8 @@ class VirtualClient extends Component {
 
       return (
 
-        <div className={classNames('virtual_segment', { 'virtual_segment--chat-open': this.state.visible })} >
-          <div className="ingest_segment">
+        <div className={classNames('vclient', { 'vclient--chat-open': this.state.visible })} >
+          <div className="vclient__toolbar">
             <Input 
               iconPosition='left'
               placeholder="Type your name..."
@@ -695,8 +695,8 @@ class VirtualClient extends Component {
               </Menu.Item>
             </Menu>
             <Menu icon='labeled' secondary size="mini">
-              <Menu.Item disabled={!mystream} onClick={this.micMute}>
-                <canvas className={muted ? 'hidden' : 'vumeter'} ref="canvas1" id="canvas1" width="2" height="19" />
+              <Menu.Item disabled={!mystream} onClick={this.micMute} className="mute-button">
+                <canvas className={muted ? 'hidden' : 'vumeter'} ref="canvas1" id="canvas1" width="15" height="35" />
                 <Icon color={muted ? "red" : ""} name={!muted ? "microphone" : "microphone slash"} />
                 {!muted ? "Mute" : "Unmute"}
               </Menu.Item>
@@ -728,8 +728,8 @@ class VirtualClient extends Component {
               </Popup>
             </Menu>
           </div>
-          <div basic className="videos_segment" onDoubleClick={() => this.setState({ visible: !this.state.visible })} >
-            <div className="video-wrapper">
+          <div basic className="vclient__main" onDoubleClick={() => this.setState({ visible: !this.state.visible })} >
+            <div className="videos-panel">
 
               <div className="videos">
                 <div className="videos__wrapper">

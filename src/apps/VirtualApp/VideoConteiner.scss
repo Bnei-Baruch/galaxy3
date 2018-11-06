@@ -50,26 +50,20 @@ $exactly-selector: _build-quantity-selector($selector-append, $selector);
 *, *:before, *:after{
     box-sizing: border-box;
 }
-// .wrapper {
-//     display: flex;
-//     flex-direction: column;
-//     height: 100%;
-//     background: #000;
-//     padding: 1.6em;
-// }
+
 .title {
     font-family: "Liberation Serif";
     font-size: 45px;
     text-align: right;
-span {
-    display: inline-block;
-    background: blue;
-    line-height: 1.1em;
-    color: white;
-    padding: 0 .7em;
-}
     margin-bottom: .1em;
     margin-top: .2em;
+    span {
+        display: inline-block;
+        background: blue;
+        line-height: 1.1em;
+        color: white;
+        padding: 0 .7em;
+    }
 }
 .videos{
     flex: 1 0 auto;
