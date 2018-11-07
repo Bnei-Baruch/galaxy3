@@ -16,6 +16,7 @@ class VirtualClient extends Component {
 
     state = {
         count: 0,
+        quistions_queue: [],
         audioContext: null,
         audio_devices: [],
         video_devices: [],
@@ -493,6 +494,24 @@ class VirtualClient extends Component {
         }
     };
 
+    onProtocolData = (data) => {
+        let {room} = this.state;
+        if(data.type === "question" && data.status && data.room === room) {
+            let {quistions_queue} = this.state;
+            quistions_queue.push(data);
+            this.setState({quistions_queue});
+        } else if(data.type === "question" && !data.status && data.room === room) {
+            let {quistions_queue} = this.state;
+            for(let i = 0; i < quistions_queue.length; i++){
+                if(quistions_queue[i].user.id === data.user.id) {
+                    quistions_queue.splice(i, 1);
+                    this.setState({quistions_queue});
+                    break
+                }
+            }
+        }
+    };
+
     sendDataMessage = (key,value) => {
         let {videoroom,user} = this.state;
         user[key] = value;
@@ -520,6 +539,7 @@ class VirtualClient extends Component {
             this.setState({protocol});
         }, ondata => {
             Janus.log("-- :: It's protocol public message: ", ondata);
+            this.onProtocolData(ondata);
         });
     };
 
