@@ -112,8 +112,8 @@ class ShidurGroupsColumn extends Component {
         let {pre_feed} = this.state;
 
         // Don't switch if nobody in queue
-        // if(feeds_queue <= feeds.length && pr1.length >= 4 && feeds.length <= 4)
-        //     return;
+        if(feeds_queue <= feeds.length && pr1.length >= 4 && feeds.length <= 4)
+            return;
 
         if(feeds_queue >= feeds.length) {
             // End round here!
@@ -162,8 +162,8 @@ class ShidurGroupsColumn extends Component {
         for(let i=index; i<index+4; i++) {
 
             // Don't switch if nobody in queue
-            // if(feeds_queue <= feeds.length && pr1.length >= 4 && feeds.length <= 4)
-            //     return;
+            if(feeds_queue <= feeds.length && pr1.length >= 4 && feeds.length <= 4)
+                return;
 
             if(feeds_queue >= feeds.length) {
                 // End round here!
@@ -239,7 +239,7 @@ class ShidurGroupsColumn extends Component {
         this.switchPreview(pre_feed.id, pre_feed.display);
     };
 
-    removeFeed = (id) => {
+    removeFeed = (id,index) => {
         let {feeds,feeds_queue,pgm_state} = this.props;
         Janus.log(" :: Remove Feed: " + id);
         for(let i=0; i<feeds.length; i++){
@@ -248,26 +248,34 @@ class ShidurGroupsColumn extends Component {
                 //this.setState({feeds});
                 this.props.setProps({feeds});
                 //Check if feed in program and switch to next in queue
-                let {index} = this.props;
-                for(let a=index; a<index+4; a++) {
-                    if(pgm_state[a].id === id) {
-                        feeds_queue--;
-                        let feed = feeds[feeds_queue];
-                        this.switchNext(a, feed);
-                        break
-                    }
+                if(index) {
+                    feeds_queue--;
+                    let feed = feeds[feeds_queue];
+                    this.switchNext(index, feed);
                 }
+                // let {index} = this.props;
+                // for(let a=index; a<index+4; a++) {
+                //     if(pgm_state[a].id === id) {
+                //         feeds_queue--;
+                //         let feed = feeds[feeds_queue];
+                //         this.switchNext(a, feed);
+                //         //break
+                //     }
+                // }
                 break
             }
         }
     };
 
     disableGroup = () => {
-        let {pre_feed,disabled_groups} = this.state;
-        Janus.log(" :: Disable Feed: " + pre_feed.display);
+        let {disabled_groups,pgm_state} = this.props;
+        let {pre_feed} = this.state;
+        let index = pgm_state.findIndex(p => p.id === pre_feed.id) || false;
+        Janus.log(" :: Disable Feed: " + pre_feed.display, index);
         disabled_groups.push(pre_feed);
-        this.removeFeed(pre_feed.id);
-        this.setState({disabled_groups,pre_feed: null});
+        this.removeFeed(pre_feed.id,index);
+        this.setState({pre_feed: null});
+        this.props.setProps({disabled_groups});
     };
 
     zoominGroup = (e, i) => {
@@ -288,12 +296,12 @@ class ShidurGroupsColumn extends Component {
     restoreGroup = (e, data, i) => {
         e.preventDefault();
         if (e.type === 'contextmenu') {
-            let {disabled_groups,feeds} = this.state;
+            let {disabled_groups,feeds} = this.props;
             for(let i = 0; i < disabled_groups.length; i++){
                 if ( disabled_groups[i].id === data.id) {
                     disabled_groups.splice(i, 1);
                     feeds.push(data);
-                    this.setState({disabled_groups,feeds});
+                    this.props.setProps({disabled_groups,feeds});
                 }
             }
         }

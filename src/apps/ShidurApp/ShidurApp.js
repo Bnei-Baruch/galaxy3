@@ -210,7 +210,17 @@ class ShidurApp extends Component {
     };
 
     removeFeed = (id) => {
-        this.col1.removeFeed(id);
+        let {pgm_state} = this.state;
+        let index = pgm_state.findIndex(p => p.id === id);
+        if(index < 4) {
+            this.col1.removeFeed(id,index);
+        } else if(index < 8) {
+            this.col2.removeFeed(id,index);
+        } else if(index < 12) {
+            this.col3.removeFeed(id,index);
+        } else {
+            this.col1.removeFeed(id,false);
+        }
     };
 
 
@@ -227,7 +237,7 @@ class ShidurApp extends Component {
                     <ShidurGroupsColumn ref={col => {this.col1 = col;}} index={0} {...this.state} setProps={this.setProps} />
                 </Grid.Column>
                 <Grid.Column>
-                    <ShidurGroupsColumn ref={col => {this.col1 = col;}} index={4} {...this.state} setProps={this.setProps} />
+                    <ShidurGroupsColumn ref={col => {this.col2 = col;}} index={4} {...this.state} setProps={this.setProps} />
                 </Grid.Column>
                 <Grid.Column>
                     {/*<ShidurUsers/>*/}
