@@ -305,6 +305,10 @@ class ShidurGroups extends Component {
         Janus.log(" :: Selected program Switch: ",i);
         let {pre_feed,feeds,pr1,pgm_state,feeds_queue} = this.state;
 
+        // Don't switch if nobody in queue
+        if(feeds_queue <= feeds.length && feeds.length <= 4)
+            return;
+
         if(feeds_queue >= feeds.length) {
             // End round here!
             feeds_queue = 0;
@@ -348,6 +352,10 @@ class ShidurGroups extends Component {
         let {feeds_queue,pr1,feeds,pgm_state} = this.state;
 
         for(let i=0; i<4; i++) {
+
+            // Don't switch if nobody in queue
+            if(feeds_queue <= feeds.length && feeds.length <= 4)
+                return;
 
             if(feeds_queue >= feeds.length) {
                 // End round here!
