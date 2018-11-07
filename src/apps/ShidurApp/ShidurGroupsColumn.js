@@ -112,8 +112,8 @@ class ShidurGroupsColumn extends Component {
         let {pre_feed} = this.state;
 
         // Don't switch if nobody in queue
-        if(feeds_queue <= feeds.length && pr1.length >= 4 && feeds.length <= 4)
-            return;
+        // if(feeds_queue <= feeds.length && pr1.length >= 4 && feeds.length <= 4)
+        //     return;
 
         if(feeds_queue >= feeds.length) {
             // End round here!
@@ -148,10 +148,10 @@ class ShidurGroupsColumn extends Component {
             }
 
             //this.setState({feeds_queue, pgm_state, pre_feed: null});
-            this.props.setProps({feeds_queue, pgm_state, pre_feed: null});
-            putData(`state/galaxy/pr1`, pgm_state, (cb) => {
-                Janus.log(":: Save to state: ",cb);
-            });
+            this.props.setProps({feeds_queue, pre_feed: null});
+            // putData(`state/galaxy/pr1`, pgm_state, (cb) => {
+            //     Janus.log(":: Save to state: ",cb);
+            // });
         }
 
     };
@@ -161,10 +161,6 @@ class ShidurGroupsColumn extends Component {
 
         for(let i=index; i<index+4; i++) {
 
-            // Don't switch if nobody in queue
-            if(feeds_queue <= feeds.length && pr1.length >= 4 && feeds.length <= 4)
-                return;
-
             if(feeds_queue >= feeds.length) {
                 // End round here!
                 feeds_queue = 0;
@@ -172,6 +168,10 @@ class ShidurGroupsColumn extends Component {
                 this.props.setProps({feeds_queue});
                 Janus.log(" -- ROUND END --");
             }
+
+            // Don't switch if nobody in queue
+            if(i >= feeds.length && feeds_queue === 0)
+                return;
 
             Janus.log("---------- i: "+i+" queue: "+feeds_queue);
             let feed_id = feeds[feeds_queue].id;
