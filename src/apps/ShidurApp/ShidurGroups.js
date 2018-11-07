@@ -306,7 +306,7 @@ class ShidurGroups extends Component {
         let {pre_feed,feeds,pr1,pgm_state,feeds_queue} = this.state;
 
         // Don't switch if nobody in queue
-        if(feeds_queue <= feeds.length && feeds.length <= 4)
+        if(feeds_queue <= feeds.length && pr1.length >= 4 && feeds.length <= 4)
             return;
 
         if(feeds_queue >= feeds.length) {
@@ -354,7 +354,7 @@ class ShidurGroups extends Component {
         for(let i=0; i<4; i++) {
 
             // Don't switch if nobody in queue
-            if(feeds_queue <= feeds.length && feeds.length <= 4)
+            if(feeds_queue <= feeds.length && pr1.length >= 4 && feeds.length <= 4)
                 return;
 
             if(feeds_queue >= feeds.length) {
