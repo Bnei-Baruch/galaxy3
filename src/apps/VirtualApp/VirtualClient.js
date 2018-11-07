@@ -648,6 +648,10 @@ class VirtualClient extends Component {
           if(feed) {
               let id = feed.rfid;
               let talk = feed.talk;
+              // TODO: indicate question on video feed
+              //let qstn = feed.question;
+              // TODO: put name on video feed
+              //let name = feed.rfuser.display
               return (<div className="video"
                            key={"v" + id}
                            ref={"video" + id}
