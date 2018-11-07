@@ -16,7 +16,6 @@ class VirtualClient extends Component {
 
     state = {
         count: 0,
-        quistions_queue: [],
         audioContext: null,
         audio_devices: [],
         video_devices: [],
@@ -495,20 +494,25 @@ class VirtualClient extends Component {
     };
 
     onProtocolData = (data) => {
-        let {room} = this.state;
+        let {room,feeds,users} = this.state;
         if(data.type === "question" && data.status && data.room === room) {
-            let {quistions_queue} = this.state;
-            quistions_queue.push(data);
-            this.setState({quistions_queue});
-        } else if(data.type === "question" && !data.status && data.room === room) {
-            let {quistions_queue} = this.state;
-            for(let i = 0; i < quistions_queue.length; i++){
-                if(quistions_queue[i].user.id === data.user.id) {
-                    quistions_queue.splice(i, 1);
-                    this.setState({quistions_queue});
+            let rfid = users[data.user.id].rfid;
+            for(let i=1; i<feeds.length; i++) {
+                if(feeds[i] !== null && feeds[i] !== undefined && feeds[i].rfid === rfid) {
+                    feeds[i].question = true;
                     break
                 }
             }
+            this.setState({feeds});
+        } else if(data.type === "question" && !data.status && data.room === room) {
+            let rfid = users[data.user.id].rfid;
+            for(let i=1; i<feeds.length; i++) {
+                if(feeds[i] !== null && feeds[i] !== undefined && feeds[i].rfid === rfid) {
+                    feeds[i].question = false;
+                    break
+                }
+            }
+            this.setState({feeds});
         }
     };
 
