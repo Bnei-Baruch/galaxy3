@@ -57,13 +57,6 @@ class ShidurGroups extends Component {
             //     this.onProtocolData(ondata);
             // });
 
-            getState('state/galaxy/pr1', (pgm_state) => {
-                Janus.log(" :: Get State: ", pgm_state);
-                this.setState({pgm_state});
-                pgm_state.forEach((feed,i) => {
-                    this.newSwitchFeed(feed.id,true,i);
-                });
-            });
         });
     };
 
@@ -154,6 +147,15 @@ class ShidurGroups extends Component {
                     Janus.debug(list);
                     let feeds = list.filter(f => !/_/.test(f.display));
                     this.setState({feeds});
+                    getState('state/galaxy/pr1', (pgm_state) => {
+                        Janus.log(" :: Get State: ", pgm_state);
+                        this.setState({pgm_state});
+                        pgm_state.forEach((feed,i) => {
+                            let chk = feeds.filter(f => f.id === feed.id).length > 0;
+                            if(chk)
+                                this.newSwitchFeed(feed.id,true,i);
+                        });
+                    });
                 }
             } else if(event === "talking") {
                 let id = msg["id"];
