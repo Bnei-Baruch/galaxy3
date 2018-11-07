@@ -10,6 +10,8 @@ import './VideoConteiner.scss'
 import nowebcam from './nowebcam.jpeg';
 import GroupChat from "./GroupChat";
 import {initGxyProtocol, sendProtocolMessage} from "../../shared/protocol";
+import {client, getUser} from "../../components/UserManager";
+import LoginPage from "../../components/LoginPage";
 
 class GroupClient extends Component {
 
@@ -35,13 +37,32 @@ class GroupClient extends Component {
         cammuted: false,
         shidur: false,
         protocol: null,
-        user: {},
+        user: null,
         users: {},
         visible: false,
         question: false,
     };
 
     componentDidMount() {
+        getUser(user => {
+            if(user) {
+                this.setState({user});
+                let gxy_group = user.roles.filter(role => role === 'gxy_group').length > 0;
+                if (gxy_group) {
+                    this.initGalaxy();
+                } else {
+                    alert("Access denied!");
+                    client.signoutRedirect();
+                }
+            }
+        });
+    };
+
+    componentWillUnmount() {
+        this.state.janus.destroy();
+    };
+
+    initGalaxy = () => {
         let {user} = this.state;
         checkNotification();
         geoInfo('https://v4g.kbb1.com/geo.php?action=get', data => {
@@ -53,10 +74,6 @@ class GroupClient extends Component {
             this.setState({janus, user});
             this.initVideoRoom();
         });
-    };
-
-    componentWillUnmount() {
-        this.state.janus.destroy();
     };
 
     initDevices = (video) => {
@@ -356,7 +373,7 @@ class GroupClient extends Component {
 
     joinRoom = () => {
         let {janus, videoroom, selected_room, user} = this.state;
-        let {sub, name, title} = this.props.user;
+        let {sub, name, title} = user;
         user.id = sub;
         user.role = "gxy_group";
         user.name = name;
@@ -415,7 +432,7 @@ class GroupClient extends Component {
 
   render() {
 
-      const { audio_devices,video_devices,video_device,audio_device,muted,mystream,room,count,question} = this.state;
+      const {user,audio_devices,video_devices,video_device,audio_device,muted,mystream,room,count,question} = this.state;
       const width = "134";
       const height = "100";
       const autoPlay = true;
@@ -456,9 +473,8 @@ class GroupClient extends Component {
       });
 
       let l = (<Label key='Carbon' floating size='mini' color='red'>{count}</Label>);
-
-      return (
-
+      let login = (<LoginPage user={user} />);
+      let content =  (
         <div className={classNames('gclient', { 'gclient--chat-open': this.state.visible })} >
           <div className="gclient__toolbar">
             <Input>
@@ -546,7 +562,13 @@ class GroupClient extends Component {
               onNewMsg={this.onNewMsg} />
           </div>
         </div>
-    );
+    )
+
+      return (
+          <div>
+              {user ? content : login}
+          </div>
+      )
   }
 }
 
