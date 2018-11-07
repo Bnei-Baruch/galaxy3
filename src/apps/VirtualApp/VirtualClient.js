@@ -734,7 +734,8 @@ class VirtualClient extends Component {
               <div className="videos">
                 <div className="videos__wrapper">
                   <div className="video">
-                    <video className='mirror' ref="localVideo"
+                    <video className={cammuted ? 'hidden' : 'mirror'}
+                      ref="localVideo"
                       id="localVideo"
                       poster={nowebcam}
                       width={width}
