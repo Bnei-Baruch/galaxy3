@@ -1,15 +1,15 @@
 import React, { Component, Fragment } from 'react';
+import {Button} from "semantic-ui-react";
 import LoginPage from '../../components/LoginPage';
 import {client, getUser} from "../../components/UserManager";
-import GroupClient from "./GroupClient";
+//import GroupClient from "./GroupClient";
 
 class GroupsApp extends Component {
 
     state = {
         pass: false,
         user: null,
-        gxy_group: true,
-        gxy_public: true,
+        roles: [],
     };
 
     componentDidMount() {
@@ -20,29 +20,37 @@ class GroupsApp extends Component {
 
     checkPermission = (user) => {
         let gxy_public = user.roles.filter(role => role === 'bb_user').length === 0;
-        let gxy_group = user.roles.filter(role => role === 'gxy_group').length === 0;
         if(!gxy_public) {
-            this.setState({user, gxy_public, gxy_group});
+            this.setState({user, roles: user.roles});
         } else {
             alert("Access denied!");
             client.signoutRedirect();
         }
     };
 
-    authPass = () => {
-        this.setState({pass: true});
-    };
+    // authPass = () => {
+    //     this.setState({pass: true});
+    // };
 
     render() {
 
-        const {user, pass} = this.state;
+        const {user, roles} = this.state;
 
-        let login = (<LoginPage user={user} enter={this.authPass} />);
-        let enter = (<GroupClient user={user} />);
+        let opt = roles.map((role,i) => {
+            if(role === "bb_user") return (<Button key={i} size='massive' color='green' onClick={() => window.open("https://galaxy.kli.one/stream")} >Stream</Button>);
+            if(role === "gxy_group") return (<Button key={i} size='massive' color='green' onClick={() => window.open("https://galaxy.kli.one/group")} >Group</Button>);
+            if(role === "gxy_shidur") return (<Button key={i} size='massive' color='green' onClick={() => window.open("https://galaxy.kli.one/shidur")} >Shidur</Button>);
+            if(role === "gxy_admin") return (<Button key={i} size='massive' color='green' onClick={() => window.open("https://galaxy.kli.one/admin")} >Admin</Button>);
+            return false
+        });
+
+        //let login = (<LoginPage user={user} enter={opt} />);
+        //let enter = (<GroupClient user={user} />);
         return (
 
             <Fragment>
-                {pass ? enter : login}
+                <LoginPage user={user} enter={opt} />
+                {/*{pass ? opt : login}*/}
             </Fragment>
 
         );
