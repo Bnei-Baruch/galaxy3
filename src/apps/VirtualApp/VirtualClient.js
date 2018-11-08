@@ -757,6 +757,7 @@ class VirtualClient extends Component {
             </Menu>
           </div>
           <div basic className="vclient__main" onDoubleClick={() => this.setState({ visible: !this.state.visible })} >
+          <div className="vclient__main-wrapper">
             <div className="videos-panel">
 
               <div className="videos">
@@ -783,6 +784,7 @@ class VirtualClient extends Component {
               room={room}
               user={this.state.user}
               onNewMsg={this.onNewMsg} />
+          </div>
           </div>
         </div>
     );

@@ -1,3 +1,8 @@
+@mixin portrait {
+    @media only screen and (orientation: portrait) {
+      @content;
+    }
+  }
 .vclient {
     width: 100vw;
     height: 100vh;
@@ -23,7 +28,22 @@
     &__main {
         flex: 1 0 auto;
         display: flex;
+        position: relative;
+        // overflow: hidden;
     }
+    
+    &__main-wrapper {
+        position: absolute;
+        height: 100%;
+        width: 100%;
+        display: flex;
+        // border: 2px solid red;
+        @include portrait {
+            flex-direction: column;
+        }
+
+    }
+
 
     
 }
@@ -41,10 +61,22 @@
 
 .chat-panel {
     flex: 0 0 400px;
+    overflow: hidden;
     padding: 0 10px 10px 10px;
     display: flex;
     flex-direction: column;
+    @include portrait {
+        padding: 10px;
+    }
+    // @include portrait {
+    //     flex: 0 0 0;
+    //     .vclient--chat-open & {
+    //         flex: 0 0 400px;
+    //     }
+    // }
 }
+
+
 .messages_list {
     overflow-y:scroll;
     flex: 1 0 auto;
