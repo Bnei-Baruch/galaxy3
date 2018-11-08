@@ -214,18 +214,45 @@ class ShidurApp extends Component {
         }
     };
 
-    removeFeed = (id) => {
-        let {pgm_state} = this.state;
-        let index = pgm_state.findIndex(p => p.id === id);
-        if(index < 4 && index >=0) {
-            this.col1.removeFeed(id,index);
-        } else if(index < 8 && index >=0) {
-            this.col2.removeFeed(id,index);
-        } else if(index < 12 && index >=0) {
-            this.col3.removeFeed(id,index);
-        } else if(index !== -1){
-            this.col1.removeFeed(id,false);
+    removeFeed = (id,) => {
+        let {feeds} = this.state;
+        for(let i=0; i<feeds.length; i++){
+            if(feeds[i].id === id) {
+                Janus.log(" :: Remove Feed: " + id);
+                feeds.splice(i, 1);
+                this.setState({feeds});
+                this.checkProgram(id,feeds);
+                break
+            }
         }
+    };
+
+    checkProgram = (id,feeds) => {
+        let {pgm_state,pr1} = this.state;
+
+        pgm_state.forEach((pgm,i) => {
+            if(pgm.id === id) {
+                if(feeds.length < pgm_state.length) {
+                    pgm_state.splice(i, 1);
+                    pr1[i].detach()
+                } else {
+                 // switch next?
+                }
+            }
+        });
+
+        this.setState({pgm_state});
+
+        // let index = pgm_state.findIndex(p => p.id === id);
+        // if(index < 4 && index >=0) {
+        //     this.col1.removeFeed(id,index);
+        // } else if(index < 8 && index >=0) {
+        //     this.col2.removeFeed(id,index);
+        // } else if(index < 12 && index >=0) {
+        //     this.col3.removeFeed(id,index);
+        // } else if(index !== -1){
+        //     this.col1.removeFeed(id,false);
+        // }
     };
 
 
@@ -239,10 +266,10 @@ class ShidurApp extends Component {
 
             <Grid columns={2}>
                 <Grid.Column>
-                    <ShidurGroupsColumn ref={col => {this.col1 = col;}} index={0} {...this.state} setProps={this.setProps} />
+                    <ShidurGroupsColumn ref={col => {this.col1 = col;}} index={0} {...this.state} setProps={this.setProps} removeFeed={this.removeFeed} />
                 </Grid.Column>
                 <Grid.Column>
-                    <ShidurGroupsColumn ref={col => {this.col2 = col;}} index={4} {...this.state} setProps={this.setProps} />
+                    <ShidurGroupsColumn ref={col => {this.col2 = col;}} index={4} {...this.state} setProps={this.setProps} removeFeed={this.removeFeed} />
                 </Grid.Column>
                 <Grid.Column>
                     {/*<ShidurUsers/>*/}

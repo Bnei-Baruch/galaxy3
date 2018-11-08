@@ -137,7 +137,7 @@ class ShidurGroupsColumn extends Component {
             })
         } else {
             let feed = feeds[feeds_queue];
-            pgm_state[i] = feed;
+            //pgm_state[i] = feed;
             this.switchNext(i, feed);
             feeds_queue++;
 
@@ -178,16 +178,18 @@ class ShidurGroupsColumn extends Component {
             let feed_display = feeds[feeds_queue].display;
             pgm_state[i] = feeds[feeds_queue];
 
-            if(!pr1[i]) {
-                this.newSwitchFeed(feed_id,true,i);
-            } else {
-                let switchfeed = {"request": "switch", "feed": feed_id, "audio": true, "video": true, "data": false};
-                pr1[i].send ({"message": switchfeed,
-                    success: () => {
-                        Janus.log(" :: Program Switch Feed to: ", feed_display);
-                    }
-                })
-            }
+            // if(!pr1[i]) {
+            //     this.newSwitchFeed(feed_id,true,i);
+            // } else {
+            //     let switchfeed = {"request": "switch", "feed": feed_id, "audio": true, "video": true, "data": false};
+            //     pr1[i].send ({"message": switchfeed,
+            //         success: () => {
+            //             Janus.log(" :: Program Switch Feed to: ", feed_display);
+            //         }
+            //     })
+            // }
+
+            this.switchNext(i,feeds[feeds_queue]);
 
             feeds_queue++;
 
@@ -199,8 +201,8 @@ class ShidurGroupsColumn extends Component {
         }
 
         // Here current number in feeds queue and program state
-        //this.setState({feeds_queue, pgm_state});
-        this.props.setProps({feeds_queue, pgm_state});
+        //this.props.setProps({feeds_queue, pgm_state});
+        this.props.setProps({feeds_queue});
 
         // putData(`state/galaxy/pr1`, pgm_state, (cb) => {
         //     Janus.log(":: Save to state: ",cb);
@@ -208,9 +210,11 @@ class ShidurGroupsColumn extends Component {
     };
 
     switchNext = (i ,feed) => {
-        Janus.log(" :: switchNext params: ", i, feed);
+        Janus.log(" ---- switchNext params: ", i, feed);
         if(!feed) return;
         let {pr1,pgm_state} = this.props;
+        if(pgm_state[i].id === feed.id && pr1[i])
+            return
         if(!pr1[i]) {
             this.newSwitchFeed(feed.id,true,i);
             pgm_state[i] = feed;
@@ -239,35 +243,36 @@ class ShidurGroupsColumn extends Component {
         this.switchPreview(pre_feed.id, pre_feed.display);
     };
 
-    removeFeed = (id,index) => {
-        let {feeds,feeds_queue,pgm_state} = this.props;
-        Janus.log(" :: Remove Feed: " + id);
-        for(let i=0; i<feeds.length; i++){
-            if(feeds[i].id === id) {
-                feeds.splice(i, 1);
-                //this.setState({feeds});
-                this.props.setProps({feeds});
-                //Check if feed in program and switch to next in queue
-                if(index) {
-                    // pgm_state.splice(index, 1);
-                    // this.props.setProps({pgm_state});
-                    feeds_queue--;
-                    let feed = feeds[feeds_queue];
-                    this.switchNext(index, feed);
-                }
-                // let {index} = this.props;
-                // for(let a=index; a<index+4; a++) {
-                //     if(pgm_state[a].id === id) {
-                //         feeds_queue--;
-                //         let feed = feeds[feeds_queue];
-                //         this.switchNext(a, feed);
-                //         //break
-                //     }
-                // }
-                break
-            }
-        }
-    };
+    // removeFeed = (id,index) => {
+    //     let {feeds,pr1,feeds_queue,pgm_state} = this.props;
+    //     Janus.log(" :: Remove Feed: " + id);
+    //     for(let i=0; i<feeds.length; i++){
+    //         if(feeds[i].id === id) {
+    //             feeds.splice(i, 1);
+    //             //this.setState({feeds});
+    //             this.props.setProps({feeds});
+    //             //Check if feed in program and switch to next in queue
+    //             if(index) {
+    //                 // pgm_state.splice(index, 1);
+    //                 // this.props.setProps({pgm_state});
+    //                 feeds_queue--;
+    //                 let feed = feeds[feeds_queue];
+    //                 if(pr1.length !== feeds.length)
+    //                     this.switchNext(index, feed);
+    //             }
+    //             // let {index} = this.props;
+    //             // for(let a=index; a<index+4; a++) {
+    //             //     if(pgm_state[a].id === id) {
+    //             //         feeds_queue--;
+    //             //         let feed = feeds[feeds_queue];
+    //             //         this.switchNext(a, feed);
+    //             //         //break
+    //             //     }
+    //             // }
+    //             break
+    //         }
+    //     }
+    // };
 
     disableGroup = () => {
         let {disabled_groups,pgm_state} = this.props;
@@ -275,7 +280,8 @@ class ShidurGroupsColumn extends Component {
         let index = pgm_state.findIndex(p => p.id === pre_feed.id) || false;
         Janus.log(" :: Disable Feed: " + pre_feed.display, index);
         disabled_groups.push(pre_feed);
-        this.removeFeed(pre_feed.id,index);
+        //this.removeFeed(pre_feed.id,index);
+        this.props.removeFeed(pre_feed.id);
         this.setState({pre_feed: null});
         this.props.setProps({disabled_groups});
     };
