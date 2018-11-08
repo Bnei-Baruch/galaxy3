@@ -228,15 +228,22 @@ class ShidurApp extends Component {
     };
 
     checkProgram = (id,feeds) => {
-        let {pgm_state,pr1} = this.state;
+        let {feeds_queue,pgm_state,pr1} = this.state;
 
         pgm_state.forEach((pgm,i) => {
             if(pgm.id === id) {
                 if(feeds.length < pgm_state.length) {
                     pgm_state.splice(i, 1);
-                    pr1[i].detach()
+                    pr1[i].detach();
+                    pr1.splice(i, 1);
+                    //FIXME: We need reattach streams here or do NOT splice array and hide removed feed
                 } else {
-                 // switch next?
+                    let feed = feeds[feeds_queue];
+                    if(i < 4) {
+                        this.col1.switchNext(i,feed);
+                    } else if(i < 8) {
+                        this.col2.switchNext(i,feed);
+                    }
                 }
             }
         });
