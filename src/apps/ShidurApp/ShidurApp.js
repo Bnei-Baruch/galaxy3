@@ -182,6 +182,8 @@ class ShidurApp extends Component {
                             this.col1.switchFour()
                         } else if(pr1.length < 8) {
                             this.col2.switchFour()
+                        } else if(pr1.length < 12) {
+                            this.col3.switchFour()
                         }
                     }
                 } else if(msg["leaving"] !== undefined && msg["leaving"] !== null) {
@@ -232,12 +234,14 @@ class ShidurApp extends Component {
         let {feeds_queue,pgm_state,pr1} = this.state;
 
         pgm_state.forEach((pgm,i) => {
-            if(pgm.id === id) {
+            if(pgm_state[i] && pgm.id === id) {
                 if(feeds.length < pgm_state.length) {
-                    pgm_state.splice(i, 1);
+                    //pgm_state.splice(i, 1);
+                    //pr1.splice(i, 1);
+                    //FIXME: Look like it's work, need recheck this
                     pr1[i].detach();
-                    pr1.splice(i, 1);
-                    //FIXME: We need reattach streams here or do NOT splice array and hide removed feed
+                    pgm_state[i] = null;
+                    pr1[i] = null;
                 } else {
                     let feed = feeds[feeds_queue];
                     if(i < 4) {
@@ -252,17 +256,6 @@ class ShidurApp extends Component {
         });
 
         this.setState({pgm_state});
-
-        // let index = pgm_state.findIndex(p => p.id === id);
-        // if(index < 4 && index >=0) {
-        //     this.col1.removeFeed(id,index);
-        // } else if(index < 8 && index >=0) {
-        //     this.col2.removeFeed(id,index);
-        // } else if(index < 12 && index >=0) {
-        //     this.col3.removeFeed(id,index);
-        // } else if(index !== -1){
-        //     this.col1.removeFeed(id,false);
-        // }
     };
 
 

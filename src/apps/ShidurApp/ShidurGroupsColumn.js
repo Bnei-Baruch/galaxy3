@@ -138,7 +138,6 @@ class ShidurGroupsColumn extends Component {
             })
         } else {
             let feed = feeds[feeds_queue];
-            //pgm_state[i] = feed;
             this.switchNext(i, feed);
             feeds_queue++;
 
@@ -148,47 +147,29 @@ class ShidurGroupsColumn extends Component {
                 Janus.log(" -- ROUND END --");
             }
 
-            //this.setState({feeds_queue, pgm_state, pre_feed: null});
             this.props.setProps({feeds_queue, pre_feed: null});
-            // putData(`state/galaxy/pr1`, pgm_state, (cb) => {
-            //     Janus.log(":: Save to state: ",cb);
-            // });
         }
 
     };
 
     switchFour = () => {
-        let {feeds_queue,pr1,feeds,pgm_state,index} = this.props;
+        let {feeds_queue,feeds,pgm_state,index} = this.props;
 
         for(let i=index; i<index+4; i++) {
+
+            // Don't switch if nobody in queue
+            if(i >= feeds.length)
+                break;
 
             if(feeds_queue >= feeds.length) {
                 // End round here!
                 feeds_queue = 0;
-                //this.setState({feeds_queue});
                 this.props.setProps({feeds_queue});
                 Janus.log(" -- ROUND END --");
             }
 
-            // Don't switch if nobody in queue
-            if(i >= feeds.length)
-                return;
-
             Janus.log("---------- i: "+i+" queue: "+feeds_queue);
-            let feed_id = feeds[feeds_queue].id;
-            let feed_display = feeds[feeds_queue].display;
             pgm_state[i] = feeds[feeds_queue];
-
-            // if(!pr1[i]) {
-            //     this.newSwitchFeed(feed_id,true,i);
-            // } else {
-            //     let switchfeed = {"request": "switch", "feed": feed_id, "audio": true, "video": true, "data": false};
-            //     pr1[i].send ({"message": switchfeed,
-            //         success: () => {
-            //             Janus.log(" :: Program Switch Feed to: ", feed_display);
-            //         }
-            //     })
-            // }
 
             this.switchNext(i,feeds[feeds_queue]);
 
@@ -202,24 +183,18 @@ class ShidurGroupsColumn extends Component {
         }
 
         // Here current number in feeds queue and program state
-        //this.props.setProps({feeds_queue, pgm_state});
         this.props.setProps({feeds_queue});
-
-        // putData(`state/galaxy/pr1`, pgm_state, (cb) => {
-        //     Janus.log(":: Save to state: ",cb);
-        // });
     };
 
     switchNext = (i ,feed) => {
         Janus.log(" ---- switchNext params: ", i, feed);
         if(!feed) return;
         let {pr1,pgm_state} = this.props;
-        if(pgm_state[i].id === feed.id && pr1[i])
-            return
+        // if(pgm_state[i].id === feed.id && pr1[i])
+        //     return
         if(!pr1[i]) {
             this.newSwitchFeed(feed.id,true,i);
             pgm_state[i] = feed;
-            //this.setState({pgm_state});
             this.props.setProps({pgm_state});
         } else {
             let switchfeed = {"request": "switch", "feed": feed.id, "audio": true, "video": true, "data": false};
@@ -228,7 +203,6 @@ class ShidurGroupsColumn extends Component {
                     Janus.log(" :: Next Switch Feed to: ", feed.display);
                     pgm_state[i] = feed;
                     this.props.setProps({pgm_state});
-                    //this.setState({pgm_state});
                     putData(`state/galaxy/pr1`, pgm_state, (cb) => {
                         Janus.log(":: Save to state: ",cb);
                     });
@@ -238,50 +212,15 @@ class ShidurGroupsColumn extends Component {
     };
 
     selectGroup = (pre_feed) => {
-        // group.index = i;
         this.setState({pre_feed});
         Janus.log(pre_feed);
         this.switchPreview(pre_feed.id, pre_feed.display);
     };
 
-    // removeFeed = (id,index) => {
-    //     let {feeds,pr1,feeds_queue,pgm_state} = this.props;
-    //     Janus.log(" :: Remove Feed: " + id);
-    //     for(let i=0; i<feeds.length; i++){
-    //         if(feeds[i].id === id) {
-    //             feeds.splice(i, 1);
-    //             //this.setState({feeds});
-    //             this.props.setProps({feeds});
-    //             //Check if feed in program and switch to next in queue
-    //             if(index) {
-    //                 // pgm_state.splice(index, 1);
-    //                 // this.props.setProps({pgm_state});
-    //                 feeds_queue--;
-    //                 let feed = feeds[feeds_queue];
-    //                 if(pr1.length !== feeds.length)
-    //                     this.switchNext(index, feed);
-    //             }
-    //             // let {index} = this.props;
-    //             // for(let a=index; a<index+4; a++) {
-    //             //     if(pgm_state[a].id === id) {
-    //             //         feeds_queue--;
-    //             //         let feed = feeds[feeds_queue];
-    //             //         this.switchNext(a, feed);
-    //             //         //break
-    //             //     }
-    //             // }
-    //             break
-    //         }
-    //     }
-    // };
-
     disableGroup = () => {
-        let {disabled_groups,pgm_state} = this.props;
+        let {disabled_groups} = this.props;
         let {pre_feed} = this.state;
-        let index = pgm_state.findIndex(p => p.id === pre_feed.id) || false;
-        Janus.log(" :: Disable Feed: " + pre_feed.display, index);
         disabled_groups.push(pre_feed);
-        //this.removeFeed(pre_feed.id,index);
         this.props.removeFeed(pre_feed.id);
         this.setState({pre_feed: null});
         this.props.setProps({disabled_groups});
@@ -378,7 +317,10 @@ class ShidurGroupsColumn extends Component {
 
       let program = pgm_state.map((feed,i) => {
           if(feed && i >= index && i < index+4) {
-              let id = feed.rfid;
+              // Does it help here?
+              if(pgm_state[i] === null)
+                  return;
+              let id = feed.id;
               let talk = feed.talk;
               return (<div className={fullscr ? "hidden" : ""} key={"prf" + i}><div className="video_box"
                            key={"prov" + i}
@@ -388,7 +330,7 @@ class ShidurGroupsColumn extends Component {
                   <video className={talk ? "talk" : ""}
                          onClick={() => this.fullScreenGroup(i,feed)}
                          onContextMenu={(e) => this.zoominGroup(e, i)}
-                         key={id}
+                         key={i}
                          ref={"programVideo" + i}
                          id={"programVideo" + i}
                          width={width}
