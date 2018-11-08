@@ -174,9 +174,14 @@ class ShidurApp extends Component {
                     Janus.debug("Got a list of available publishers/feeds:");
                     Janus.debug(list[0]);
                     if(!/_/.test(list[0].display)) {
-                        let {feeds} = this.state;
+                        let {feeds,pr1} = this.state;
                         feeds.push(list[0]);
                         this.setState({feeds});
+                        if(pr1.length < 4) {
+                            this.col1.switchFour()
+                        } else if(pr1.length < 8) {
+                            this.col2.switchFour()
+                        }
                     }
                 } else if(msg["leaving"] !== undefined && msg["leaving"] !== null) {
                     // One of the publishers has gone away?
@@ -212,13 +217,13 @@ class ShidurApp extends Component {
     removeFeed = (id) => {
         let {pgm_state} = this.state;
         let index = pgm_state.findIndex(p => p.id === id);
-        if(index < 4) {
+        if(index < 4 && index >=0) {
             this.col1.removeFeed(id,index);
-        } else if(index < 8) {
+        } else if(index < 8 && index >=0) {
             this.col2.removeFeed(id,index);
-        } else if(index < 12) {
+        } else if(index < 12 && index >=0) {
             this.col3.removeFeed(id,index);
-        } else {
+        } else if(index !== -1){
             this.col1.removeFeed(id,false);
         }
     };

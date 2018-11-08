@@ -170,7 +170,7 @@ class ShidurGroupsColumn extends Component {
             }
 
             // Don't switch if nobody in queue
-            if(i >= feeds.length && feeds_queue === 0)
+            if(i >= feeds.length)
                 return;
 
             Janus.log("---------- i: "+i+" queue: "+feeds_queue);
@@ -249,6 +249,8 @@ class ShidurGroupsColumn extends Component {
                 this.props.setProps({feeds});
                 //Check if feed in program and switch to next in queue
                 if(index) {
+                    // pgm_state.splice(index, 1);
+                    // this.props.setProps({pgm_state});
                     feeds_queue--;
                     let feed = feeds[feeds_queue];
                     this.switchNext(index, feed);
