@@ -5,6 +5,7 @@ import {getState, putData, initGXYJanus} from "../../shared/tools";
 // import {initGxyProtocol} from "../shared/protocol";
 import './ShidurGroups.css'
 import ShidurGroupsColumn from "./ShidurGroupsColumn";
+import ShidurUsers from "./ShidurUsers";
 
 
 class ShidurApp extends Component {
@@ -240,9 +241,11 @@ class ShidurApp extends Component {
                 } else {
                     let feed = feeds[feeds_queue];
                     if(i < 4) {
-                        this.col1.switchNext(i,feed);
+                        this.col1.switchNext(i, feed);
                     } else if(i < 8) {
                         this.col2.switchNext(i,feed);
+                    } else if(i < 12) {
+                        this.col3.switchNext(i,feed);
                     }
                 }
             }
@@ -270,16 +273,30 @@ class ShidurApp extends Component {
     render() {
 
         return (
-
-            <Grid columns={2}>
+            <Grid columns={4}>
                 <Grid.Column>
-                    <ShidurGroupsColumn ref={col => {this.col1 = col;}} index={0} {...this.state} setProps={this.setProps} removeFeed={this.removeFeed} />
+                    <ShidurGroupsColumn
+                        index={0} {...this.state}
+                        ref={col => {this.col1 = col;}}
+                        setProps={this.setProps}
+                        removeFeed={this.removeFeed} />
                 </Grid.Column>
                 <Grid.Column>
-                    <ShidurGroupsColumn ref={col => {this.col2 = col;}} index={4} {...this.state} setProps={this.setProps} removeFeed={this.removeFeed} />
+                    <ShidurGroupsColumn
+                        index={4} {...this.state}
+                        ref={col => {this.col2 = col;}}
+                        setProps={this.setProps}
+                        removeFeed={this.removeFeed} />
                 </Grid.Column>
                 <Grid.Column>
-                    {/*<ShidurUsers/>*/}
+                    <ShidurGroupsColumn
+                        index={8} {...this.state}
+                        ref={col => {this.col3 = col;}}
+                        setProps={this.setProps}
+                        removeFeed={this.removeFeed} />
+                </Grid.Column>
+                <Grid.Column>
+                    <ShidurUsers/>
                 </Grid.Column>
             </Grid>
         );

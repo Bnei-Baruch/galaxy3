@@ -74,6 +74,8 @@ span {
 .videos{
     flex: 1 0 auto;
     position:relative;
+    height: 220px;
+    width: 400px;
 &__wrapper {
      //position:absolute;
      display: grid;

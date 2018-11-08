@@ -4,6 +4,7 @@ import {Segment, Table, Icon, Dropdown, Dimmer, Button} from "semantic-ui-react"
 import {getState, putData, initGXYJanus} from "../../shared/tools";
 // import {initGxyProtocol} from "../shared/protocol";
 import './ShidurGroups.css'
+import './VideoConteiner.scss'
 
 class ShidurGroupsColumn extends Component {
 
