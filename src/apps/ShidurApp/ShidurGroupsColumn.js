@@ -153,7 +153,7 @@ class ShidurGroupsColumn extends Component {
     };
 
     switchFour = () => {
-        let {feeds_queue,feeds,pgm_state,index} = this.props;
+        let {feeds_queue,feeds,index} = this.props;
 
         for(let i=index; i<index+4; i++) {
 
@@ -173,35 +173,21 @@ class ShidurGroupsColumn extends Component {
             Janus.log("---------- i: "+i+" queue: "+feeds_queue);
 
             // If program is not full avoid using feeds_queue
-            if(feeds.length < 12) {
-                pgm_state[i] = feeds[i];
+            if(feeds.length < 13) {
                 this.switchNext(i,feeds[i]);
             } else {
-                pgm_state[i] = feeds[feeds_queue];
                 this.switchNext(i,feeds[feeds_queue]);
                 feeds_queue++;
+                this.props.setProps({feeds_queue});
             }
 
-
-            // if(feeds_queue >= feeds.length) {
-            //     // End round here!
-            //     feeds_queue = 0;
-            //     Janus.log(" -- ROUND END --");
-            // }
         }
-
-        // Here current number in feeds queue and program state
-        this.props.setProps({feeds_queue});
     };
 
     switchNext = (i ,feed) => {
         Janus.log(" ---- switchNext params: ", i, feed);
         if(!feed) return;
         let {pr1,pgm_state} = this.props;
-        // if(pgm_state[i].id === feed.id && pr1[i]) {
-        //     console.log(" :: Already attached here: ",i,feed.display);
-        //     return;
-        // }
         if(!pr1[i]) {
             this.newSwitchFeed(feed.id,true,i);
             pgm_state[i] = feed;

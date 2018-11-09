@@ -241,21 +241,17 @@ class ShidurApp extends Component {
 
         pgm_state.forEach((pgm,i) => {
             if(pgm_state[i] && pgm.id === id) {
-                if(feeds.length < pgm_state.length) {
-                    // feeds_queue--;
-                    // this.setState({feeds_queue})
-                    //FIXME: Look like it's work, need recheck this
+                if(feeds.length < 13) {
+                    //FIXME: Need to check if its really necessary to detach here
                     pr1[i].detach();
                     pgm_state[i] = null;
-                    //pgm_state.splice(i, 1);
                     pr1[i] = null;
-                    //pr1.splice(i, 1);
                 } else {
-                    // feeds_queue--;
-                    // this.setState({feeds_queue})
+                    feeds_queue--;
+                    this.setState({feeds_queue});
                     let feed = feeds[feeds_queue];
                     if(i < 4) {
-                        this.col1.switchNext(i, feed);
+                        this.col1.switchNext(i,feed);
                     } else if(i < 8) {
                         this.col2.switchNext(i,feed);
                     } else if(i < 12) {
