@@ -175,14 +175,20 @@ class ShidurApp extends Component {
                     Janus.debug("Got a list of available publishers/feeds:");
                     Janus.debug(list[0]);
                     if(!/_/.test(list[0].display)) {
-                        let {feeds,pr1} = this.state;
+                        let {feeds,pr1,feeds_queue} = this.state;
                         feeds.push(list[0]);
                         this.setState({feeds});
-                        if(pr1.length < 4) {
+                        if(feeds.length < 4) {
+                            feeds_queue = feeds.length-1;
+                            this.setState({feeds_queue});
                             this.col1.switchFour()
-                        } else if(pr1.length < 8) {
+                        } else if(feeds.length < 8) {
+                            feeds_queue = feeds.length-1;
+                            this.setState({feeds_queue});
                             this.col2.switchFour()
-                        } else if(pr1.length < 12) {
+                        } else if(feeds.length < 12) {
+                            feeds_queue = feeds.length-1;
+                            this.setState({feeds_queue});
                             this.col3.switchFour()
                         }
                     }

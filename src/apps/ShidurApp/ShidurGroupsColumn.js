@@ -131,9 +131,9 @@ class ShidurGroupsColumn extends Component {
                     pgm_state[i] = pre_feed;
                     this.setState({pre_feed: null});
                     this.props.setProps({program: pre_feed, pgm_state, pre_feed: null});
-                    putData(`state/galaxy/pr1`, pgm_state, (cb) => {
-                        Janus.log(":: Save to state: ",cb);
-                    });
+                    // putData(`state/galaxy/pr1`, pgm_state, (cb) => {
+                    //     Janus.log(":: Save to state: ",cb);
+                    // });
                 }
             })
         } else {
@@ -203,9 +203,9 @@ class ShidurGroupsColumn extends Component {
                     Janus.log(" :: Next Switch Feed to: ", feed.display);
                     pgm_state[i] = feed;
                     this.props.setProps({pgm_state});
-                    putData(`state/galaxy/pr1`, pgm_state, (cb) => {
-                        Janus.log(":: Save to state: ",cb);
-                    });
+                    // putData(`state/galaxy/pr1`, pgm_state, (cb) => {
+                    //     Janus.log(":: Save to state: ",cb);
+                    // });
                 }
             })
         }
