@@ -243,6 +243,7 @@ class ShidurApp extends Component {
                     pgm_state[i] = null;
                     pr1[i] = null;
                 } else {
+                    feeds_queue--;
                     let feed = feeds[feeds_queue];
                     if(i < 4) {
                         this.col1.switchNext(i, feed);
