@@ -158,28 +158,36 @@ class ShidurGroupsColumn extends Component {
         for(let i=index; i<index+4; i++) {
 
             // Don't switch if nobody in queue
-            if(i >= feeds.length)
+            if(i === feeds.length) {
+                console.log("Queue is END")
                 break;
+            }
 
             if(feeds_queue >= feeds.length) {
                 // End round here!
+                Janus.log(" -- ROUND END --");
                 feeds_queue = 0;
                 this.props.setProps({feeds_queue});
-                Janus.log(" -- ROUND END --");
             }
 
             Janus.log("---------- i: "+i+" queue: "+feeds_queue);
-            pgm_state[i] = feeds[feeds_queue];
 
-            this.switchNext(i,feeds[feeds_queue]);
-
-            feeds_queue++;
-
-            if(feeds_queue >= feeds.length) {
-                // End round here!
-                feeds_queue = 0;
-                Janus.log(" -- ROUND END --");
+            // If program is not full avoid using feeds_queue
+            if(feeds.length < 12) {
+                pgm_state[i] = feeds[i];
+                this.switchNext(i,feeds[i]);
+            } else {
+                pgm_state[i] = feeds[feeds_queue];
+                this.switchNext(i,feeds[feeds_queue]);
+                feeds_queue++;
             }
+
+
+            // if(feeds_queue >= feeds.length) {
+            //     // End round here!
+            //     feeds_queue = 0;
+            //     Janus.log(" -- ROUND END --");
+            // }
         }
 
         // Here current number in feeds queue and program state
@@ -190,8 +198,10 @@ class ShidurGroupsColumn extends Component {
         Janus.log(" ---- switchNext params: ", i, feed);
         if(!feed) return;
         let {pr1,pgm_state} = this.props;
-        // if(pgm_state[i].id === feed.id && pr1[i])
-        //     return
+        // if(pgm_state[i].id === feed.id && pr1[i]) {
+        //     console.log(" :: Already attached here: ",i,feed.display);
+        //     return;
+        // }
         if(!pr1[i]) {
             this.newSwitchFeed(feed.id,true,i);
             pgm_state[i] = feed;

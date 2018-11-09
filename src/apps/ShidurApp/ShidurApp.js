@@ -178,15 +178,15 @@ class ShidurApp extends Component {
                         let {feeds,pr1,feeds_queue} = this.state;
                         feeds.push(list[0]);
                         this.setState({feeds});
-                        if(feeds.length < 4) {
+                        if(feeds.length < 5) {
                             feeds_queue = feeds.length-1;
                             this.setState({feeds_queue});
                             this.col1.switchFour()
-                        } else if(feeds.length < 8) {
+                        } else if(feeds.length < 9) {
                             feeds_queue = feeds.length-1;
                             this.setState({feeds_queue});
                             this.col2.switchFour()
-                        } else if(feeds.length < 12) {
+                        } else if(feeds.length < 13) {
                             feeds_queue = feeds.length-1;
                             this.setState({feeds_queue});
                             this.col3.switchFour()
@@ -242,14 +242,17 @@ class ShidurApp extends Component {
         pgm_state.forEach((pgm,i) => {
             if(pgm_state[i] && pgm.id === id) {
                 if(feeds.length < pgm_state.length) {
-                    //pgm_state.splice(i, 1);
-                    //pr1.splice(i, 1);
+                    // feeds_queue--;
+                    // this.setState({feeds_queue})
                     //FIXME: Look like it's work, need recheck this
                     pr1[i].detach();
                     pgm_state[i] = null;
+                    //pgm_state.splice(i, 1);
                     pr1[i] = null;
+                    //pr1.splice(i, 1);
                 } else {
-                    feeds_queue--;
+                    // feeds_queue--;
+                    // this.setState({feeds_queue})
                     let feed = feeds[feeds_queue];
                     if(i < 4) {
                         this.col1.switchNext(i, feed);
@@ -296,7 +299,7 @@ class ShidurApp extends Component {
                         removeFeed={this.removeFeed} />
                 </Grid.Column>
                 <Grid.Column>
-                    <ShidurUsers/>
+                    {/*<ShidurUsers/>*/}
                 </Grid.Column>
             </Grid>
         );
