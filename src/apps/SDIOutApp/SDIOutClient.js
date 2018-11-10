@@ -5,11 +5,14 @@ import {getState, initJanus} from "../../shared/tools";
 import './SDIOutClient.css';
 import './VideoConteiner.scss'
 import {MAX_FEEDS} from "../../shared/consts";
+import {initGxyProtocol} from "../../shared/protocol";
 
 class SDIOutClient extends Component {
 
     state = {
         devices: [],
+        quistions_queue: [],
+        protocol: null,
         program: {room: null, name: ""},
         janus: null,
         feeds: [],
@@ -22,7 +25,14 @@ class SDIOutClient extends Component {
         mystream: null,
         audio: null,
         muted: true,
-        user: {},
+        user: {
+            session: 0,
+            handle: 0,
+            role: "sdiout",
+            display: "sdiout",
+            id: Janus.randomString(10),
+            name: "sdiout"
+        },
         users: {},
     };
 
@@ -32,6 +42,14 @@ class SDIOutClient extends Component {
             user.session = janus.getSessionId();
             this.setState({janus,user});
             this.initVideoRoom();
+
+            initGxyProtocol(janus, user, protocol => {
+                this.setState({protocol});
+                //this.props.setProps({protocol});
+            }, ondata => {
+                Janus.log("-- :: It's protocol public message: ", ondata);
+                this.onProtocolData(ondata);
+            });
         });
         setInterval(() => getState('state/galaxy/pr5', (program) => {
             //Janus.log(" :: Get State: ", program);
@@ -46,6 +64,23 @@ class SDIOutClient extends Component {
         this.state.janus.destroy();
     };
 
+    onProtocolData = (data) => {
+        if(data.type === "question" && data.status) {
+            let {quistions_queue} = this.state;
+            quistions_queue.push(data);
+            this.setState({quistions_queue});
+        } else if(data.type === "question" && !data.status) {
+            let {quistions_queue} = this.state;
+            for(let i = 0; i < quistions_queue.length; i++){
+                if(quistions_queue[i].user.id === data.user.id) {
+                    quistions_queue.splice(i, 1);
+                    this.setState({quistions_queue});
+                    break
+                }
+            }
+        }
+    };
+
     initVideoRoom = (roomid) => {
         if(this.state.videoroom)
             this.state.videoroom.detach();
@@ -54,12 +89,7 @@ class SDIOutClient extends Component {
             opaqueId: "videoroom_sdiout",
             success: (videoroom) => {
                 Janus.log(videoroom);
-                //let {user} = this.state;
-                let user = { session: 0, handle: 0};
-                user.role = "sdiout";
-                user.display = "sdiout";
-                user.id = Janus.randomString(10);
-                user.name = "sdiout";
+                let {user} = this.state;
                 this.setState({videoroom,user});
                 Janus.log("Plugin attached! (" + videoroom.getPlugin() + ", id=" + videoroom.getId() + ")");
                 Janus.log("  -- This is a publisher/manager");
