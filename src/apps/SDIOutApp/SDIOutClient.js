@@ -97,6 +97,12 @@ class SDIOutClient extends Component {
             onremotestream: (stream) => {
                 // The publisher stream is sendonly, we don't expect anything here
             },
+            ondataopen: (data) => {
+                Janus.log("The DataChannel is available!(publisher)");
+            },
+            ondata: (data) => {
+                Janus.debug("We got data from the DataChannel! (publisher) " + data);
+            },
             oncleanup: () => {
                 Janus.log(" ::: Got a cleanup notification: we are unpublished now :::");
             }
@@ -170,7 +176,7 @@ class SDIOutClient extends Component {
                                 jsep: jsep,
                                 // Add data:true here if you want to subscribe to datachannels as well
                                 // (obviously only works if the publisher offered them in the first place)
-                                media: { audioSend: false, videoSend: false },	// We want recvonly audio/video
+                                media: { audioSend: false, videoSend: false, data: true },	// We want recvonly audio/video
                                 success: (jsep) => {
                                     Janus.debug("Got SDP!");
                                     Janus.debug(jsep);
@@ -200,10 +206,44 @@ class SDIOutClient extends Component {
                         // Yes remote video
                     }
                 },
+                ondataopen: (data) => {
+                    Janus.log("The DataChannel is available!(feed)");
+                },
+                ondata: (data) => {
+                    Janus.debug("We got data from the DataChannel! (feed) " + data);
+                    let msg = JSON.parse(data);
+                    this.onRoomData(msg);
+                },
                 oncleanup: () => {
                     Janus.log(" ::: Got a cleanup notification (remote feed " + id + ") :::");
                 }
             });
+    };
+
+    onRoomData = (data) => {
+        let {feeds,users} = this.state;
+        let rfid = users[data.id].rfid;
+        let camera = data.camera;
+        // let remotevideo = this.refs["video" + rfid];
+        // remotevideo.remove();
+        if(camera === false) {
+            for (let i = 1; i < feeds.length; i++) {
+                if (feeds[i] !== null && feeds[i] !== undefined && feeds[i].rfid === rfid) {
+                    let feed = feeds[i];
+                    feeds[i] = null;
+                    feed.detach();
+                    this.setState({feeds});
+                    break
+                }
+            }
+        }
+        // for(let i=1; i<feeds.length; i++) {
+        //     if(feeds[i] !== null && feeds[i] !== undefined && feeds[i].rfid === rfid) {
+        //         feeds[i].rfcam = camera;
+        //         this.setState({feeds});
+        //         break
+        //     }
+        // }
     };
 
     publishOwnFeed = (useAudio) => {
@@ -406,6 +446,7 @@ class SDIOutClient extends Component {
           if(feed) {
               let id = feed.rfid;
               let talk = feed.talk;
+              let rfcam = feed.rfcam;
               return (<div className="video"
                   key={"v" + id}
                   ref={"video" + id}

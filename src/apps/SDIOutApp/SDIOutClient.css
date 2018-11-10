@@ -10,6 +10,10 @@
     /*background-color: black!important;*/
 /*}*/
 
+.hidden {
+    display: none;
+}
+
 .preview_sdi {
     width: 714px;
     height: 444px;
