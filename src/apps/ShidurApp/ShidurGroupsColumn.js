@@ -116,11 +116,11 @@ class ShidurGroupsColumn extends Component {
         // if(feeds_queue <= feeds.length && pr1.length >= 4 && feeds.length <= 4)
         //     return;
 
-        if(feeds_queue >= feeds.length) {
-            // End round here!
-            feeds_queue = 0;
-            Janus.log(" -- ROUND END --");
-        }
+        // if(feeds_queue >= feeds.length) {
+        //     // End round here!
+        //     feeds_queue = 0;
+        //     Janus.log(" -- ROUND END --");
+        // }
 
         //If someone in preview take him else take next in queue
         if(pre_feed) {
@@ -159,7 +159,7 @@ class ShidurGroupsColumn extends Component {
 
             // Don't switch if nobody in queue
             if(i === feeds.length) {
-                console.log("Queue is END")
+                console.log("Queue is END");
                 break;
             }
 

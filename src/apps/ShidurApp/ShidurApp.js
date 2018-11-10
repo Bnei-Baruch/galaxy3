@@ -149,6 +149,9 @@ class ShidurApp extends Component {
                     Janus.debug(list);
                     let feeds = list.filter(f => !/_/.test(f.display));
                     this.setState({feeds});
+                    this.col1.switchFour();
+                    this.col2.switchFour();
+                    this.col3.switchFour();
                     // getState('state/galaxy/pr1', (pgm_state) => {
                     //     Janus.log(" :: Get State: ", pgm_state);
                     //     this.setState({pgm_state});
@@ -175,21 +178,18 @@ class ShidurApp extends Component {
                     Janus.debug("Got a list of available publishers/feeds:");
                     Janus.debug(list[0]);
                     if(!/_/.test(list[0].display)) {
-                        let {feeds,pr1,feeds_queue} = this.state;
+                        let {feeds} = this.state;
                         feeds.push(list[0]);
                         this.setState({feeds});
-                        if(feeds.length < 5) {
-                            feeds_queue = feeds.length-1;
-                            this.setState({feeds_queue});
-                            this.col1.switchFour()
-                        } else if(feeds.length < 9) {
-                            feeds_queue = feeds.length-1;
-                            this.setState({feeds_queue});
-                            this.col2.switchFour()
-                        } else if(feeds.length < 13) {
-                            feeds_queue = feeds.length-1;
-                            this.setState({feeds_queue});
-                            this.col3.switchFour()
+
+                        if(feeds.length < 13) {
+                            this.col1.switchFour();
+                            this.col2.switchFour();
+                            this.col3.switchFour();
+                        }
+
+                        if(feeds.length === 13) {
+                            this.setState({feeds_queue: 12});
                         }
                     }
                 } else if(msg["leaving"] !== undefined && msg["leaving"] !== null) {
@@ -247,8 +247,13 @@ class ShidurApp extends Component {
                     pgm_state[i] = null;
                     pr1[i] = null;
                 } else {
-                    feeds_queue--;
-                    this.setState({feeds_queue});
+                    if(feeds_queue === 0) {
+                        //FIXME: When it's happend?
+                         console.log(" -- Feed remove while feeds_queue was - 0");
+                    } else {
+                        feeds_queue--;
+                        this.setState({feeds_queue});
+                    }
                     let feed = feeds[feeds_queue];
                     if(i < 4) {
                         this.col1.switchNext(i,feed);
@@ -272,7 +277,7 @@ class ShidurApp extends Component {
     render() {
 
         return (
-            <Grid columns={4}>
+            <Grid columns={3}>
                 <Grid.Column>
                     <ShidurGroupsColumn
                         index={0} {...this.state}
