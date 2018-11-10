@@ -1,17 +1,29 @@
 import React, { Component } from 'react';
 import { Janus } from "../../lib/janus";
 import {Segment, Table, Icon, Dropdown, Dimmer, Button} from "semantic-ui-react";
-import {getState, putData, initGXYJanus} from "../../shared/tools";
+import {getState, putData, initGXYJanus, initJanus} from "../../shared/tools";
 // import {initGxyProtocol} from "../shared/protocol";
 import './ShidurGroups.css'
 import './VideoConteiner.scss'
+import {initGxyProtocol, sendProtocolMessage} from "../../shared/protocol";
 
 class ShidurGroupsColumn extends Component {
 
     state = {
+        col: null,
         disabled_groups: [],
     };
 
+    componentDidMount() {
+        const { index } = this.props;
+        if(index === 0) {
+            this.setState({col: 1});
+        } else if(index === 4) {
+            this.setState({col: 2});
+        } else if(index === 8) {
+            this.setState({col: 3});
+        }
+    };
 
     newSwitchFeed = (id, program, i) => {
         let pre = null;
@@ -184,6 +196,20 @@ class ShidurGroupsColumn extends Component {
         }
     };
 
+    sdiAction = (action, status, i, feed) => {
+        const { protocol, user, index } = this.props;
+        let col = null;
+        if(index === 0) {
+            col = 1;
+        } else if(index === 4) {
+            col = 2;
+        } else if(index === 8) {
+            col = 3;
+        }
+        let msg = { type: "sdi-"+action, status, room: 1234, col, i, feed};
+        sendProtocolMessage(protocol, user, msg );
+    };
+
     switchNext = (i ,feed) => {
         Janus.log(" ---- switchNext params: ", i, feed);
         if(!feed) return;
@@ -192,6 +218,7 @@ class ShidurGroupsColumn extends Component {
             this.newSwitchFeed(feed.id,true,i);
             pgm_state[i] = feed;
             this.props.setProps({pgm_state});
+            this.sdiAction("switch" , true, i, feed);
         } else {
             let switchfeed = {"request": "switch", "feed": feed.id, "audio": true, "video": true, "data": false};
             pr1[i].send ({"message": switchfeed,
@@ -199,6 +226,7 @@ class ShidurGroupsColumn extends Component {
                     Janus.log(" :: Next Switch Feed to: ", feed.display);
                     pgm_state[i] = feed;
                     this.props.setProps({pgm_state});
+                    this.sdiAction(i, feed)
                     // putData(`state/galaxy/pr1`, pgm_state, (cb) => {
                     //     Janus.log(":: Save to state: ",cb);
                     // });
@@ -258,11 +286,13 @@ class ShidurGroupsColumn extends Component {
         let fullvideo = this.refs.fullscreenVideo;
         var stream = fourvideo.captureStream();
         fullvideo.srcObject = stream;
+        this.sdiAction("fullscreen" , true, i, full_feed);
     };
 
     toFourGroup = () => {
-        Janus.log(":: Back to four: ")
-        this.setState({fullscr: !this.state.fullscr, full_feed: null})
+        Janus.log(":: Back to four: ");
+        this.sdiAction("fullscreen" , true, null, this.state.full_feed);
+        this.setState({fullscr: !this.state.fullscr, full_feed: null});
     };
 
 

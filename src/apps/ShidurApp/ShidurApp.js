@@ -62,23 +62,6 @@ class ShidurApp extends Component {
         });
     };
 
-    onProtocolData = (data) => {
-        if(data.type === "question" && data.status) {
-            let {quistions_queue} = this.state;
-            quistions_queue.push(data);
-            this.setState({quistions_queue});
-        } else if(data.type === "question" && !data.status) {
-            let {quistions_queue} = this.state;
-            for(let i = 0; i < quistions_queue.length; i++){
-                if(quistions_queue[i].user.id === data.user.id) {
-                    quistions_queue.splice(i, 1);
-                    this.setState({quistions_queue});
-                    break
-                }
-            }
-        }
-    };
-
     componentWillUnmount() {
         //FIXME: If we don't detach remote handle, Janus still send UDP stream!
         //this may happen because Janus in use for now is very old version
@@ -149,9 +132,11 @@ class ShidurApp extends Component {
                     Janus.debug(list);
                     let feeds = list.filter(f => !/_/.test(f.display));
                     this.setState({feeds});
-                    this.col1.switchFour();
-                    this.col2.switchFour();
-                    this.col3.switchFour();
+                    setTimeout(() => {
+                        this.col1.switchFour();
+                        this.col2.switchFour();
+                        this.col3.switchFour();
+                    }, 3000);
                     // getState('state/galaxy/pr1', (pgm_state) => {
                     //     Janus.log(" :: Get State: ", pgm_state);
                     //     this.setState({pgm_state});
@@ -223,6 +208,23 @@ class ShidurApp extends Component {
         }
     };
 
+    onProtocolData = (data) => {
+        if(data.type === "question" && data.status) {
+            let {quistions_queue} = this.state;
+            quistions_queue.push(data);
+            this.setState({quistions_queue});
+        } else if(data.type === "question" && !data.status) {
+            let {quistions_queue} = this.state;
+            for(let i = 0; i < quistions_queue.length; i++){
+                if(quistions_queue[i].user.id === data.user.id) {
+                    quistions_queue.splice(i, 1);
+                    this.setState({quistions_queue});
+                    break
+                }
+            }
+        }
+    };
+
     removeFeed = (id,) => {
         let {feeds} = this.state;
         for(let i=0; i<feeds.length; i++){
@@ -277,7 +279,7 @@ class ShidurApp extends Component {
     render() {
 
         return (
-            <Grid columns={3}>
+            <Grid columns={4}>
                 <Grid.Column>
                     <ShidurGroupsColumn
                         index={0} {...this.state}
@@ -300,7 +302,9 @@ class ShidurApp extends Component {
                         removeFeed={this.removeFeed} />
                 </Grid.Column>
                 <Grid.Column>
-                    {/*<ShidurUsers/>*/}
+                    <ShidurUsers
+                        ref={col => {this.col4 = col;}}
+                        setProps={this.setProps} />
                 </Grid.Column>
             </Grid>
         );

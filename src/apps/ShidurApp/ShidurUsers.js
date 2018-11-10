@@ -62,6 +62,7 @@ class ShidurUsers extends Component {
 
             initGxyProtocol(janus, user, protocol => {
                 this.setState({protocol});
+                this.props.setProps({protocol});
             }, ondata => {
                 Janus.log("-- :: It's protocol public message: ", ondata);
                 this.onProtocolData(ondata);
