@@ -3,11 +3,11 @@ import { Janus } from "../../lib/janus";
 import {Segment, Table, Icon, Dropdown, Dimmer, Button} from "semantic-ui-react";
 import {getState, putData, initGXYJanus, initJanus} from "../../shared/tools";
 // import {initGxyProtocol} from "../shared/protocol";
-import './ShidurGroups.css'
-import './VideoConteiner.scss'
+import './SDIOutGroups.css'
+//import './VideoConteiner.scss'
 import {initGxyProtocol, sendProtocolMessage} from "../../shared/protocol";
 
-class ShidurGroupsColumn extends Component {
+class SDIOutGroups extends Component {
 
     state = {
         col: null,
@@ -143,7 +143,6 @@ class ShidurGroupsColumn extends Component {
                     pgm_state[i] = pre_feed;
                     this.setState({pre_feed: null});
                     this.props.setProps({program: pre_feed, pgm_state, pre_feed: null});
-                    this.sdiAction("switch" , true, i, pre_feed);
                     // putData(`state/galaxy/pr1`, pgm_state, (cb) => {
                     //     Janus.log(":: Save to state: ",cb);
                     // });
@@ -197,20 +196,6 @@ class ShidurGroupsColumn extends Component {
         }
     };
 
-    sdiAction = (action, status, i, feed) => {
-        const { protocol, user, index } = this.props;
-        let col = null;
-        if(index === 0) {
-            col = 1;
-        } else if(index === 4) {
-            col = 2;
-        } else if(index === 8) {
-            col = 3;
-        }
-        let msg = { type: "sdi-"+action, status, room: 1234, col, i, feed};
-        sendProtocolMessage(protocol, user, msg );
-    };
-
     switchNext = (i ,feed) => {
         Janus.log(" ---- switchNext params: ", i, feed);
         if(!feed) return;
@@ -219,7 +204,6 @@ class ShidurGroupsColumn extends Component {
             this.newSwitchFeed(feed.id,true,i);
             pgm_state[i] = feed;
             this.props.setProps({pgm_state});
-            this.sdiAction("switch" , true, i, feed);
         } else {
             let switchfeed = {"request": "switch", "feed": feed.id, "audio": true, "video": true, "data": false};
             pr1[i].send ({"message": switchfeed,
@@ -227,7 +211,6 @@ class ShidurGroupsColumn extends Component {
                     Janus.log(" :: Next Switch Feed to: ", feed.display);
                     pgm_state[i] = feed;
                     this.props.setProps({pgm_state});
-                    this.sdiAction("switch", true, i, feed)
                     // putData(`state/galaxy/pr1`, pgm_state, (cb) => {
                     //     Janus.log(":: Save to state: ",cb);
                     // });
@@ -249,7 +232,6 @@ class ShidurGroupsColumn extends Component {
         this.props.removeFeed(pre_feed.id);
         this.setState({pre_feed: null});
         this.props.setProps({disabled_groups});
-        this.sdiAction("remove", true, null, pre_feed)
     };
 
     zoominGroup = (e, i) => {
@@ -288,12 +270,10 @@ class ShidurGroupsColumn extends Component {
         let fullvideo = this.refs.fullscreenVideo;
         var stream = fourvideo.captureStream();
         fullvideo.srcObject = stream;
-        this.sdiAction("fullscreen" , true, i, full_feed);
     };
 
     toFourGroup = () => {
         Janus.log(":: Back to four: ");
-        this.sdiAction("fullscreen" , false, null, this.state.full_feed);
         this.setState({fullscr: !this.state.fullscr, full_feed: null});
     };
 
@@ -367,11 +347,11 @@ class ShidurGroupsColumn extends Component {
                          controls={controls}
                          muted={muted}
                          playsInline={true}/>
-                  <Button className='video_button'
-                          size='mini'
-                          color='green'
-                          icon={pre_feed ? 'arrow up' : 'share'}
-                          onClick={() => this.switchProgram(i)} />
+                  {/*<Button className='video_button'*/}
+                          {/*size='mini'*/}
+                          {/*color='green'*/}
+                          {/*icon={pre_feed ? 'arrow up' : 'share'}*/}
+                          {/*onClick={() => this.switchProgram(i)} />*/}
               </div></div>);
           }
           return true;
@@ -402,55 +382,19 @@ class ShidurGroupsColumn extends Component {
               </div>
           </Segment>
 
-            <Button className='fours_button'
-                attached='bottom'
-                color='blue'
-                size='mini'
-                onClick={this.switchFour}>
-                <Icon name='share' />
-                <Icon name='th large' />
-                <Icon name='share' />
-            </Button>
-
-          <Segment className="preview_segment" color='green'>
-              {preview}
-          </Segment>
-
-            <Dropdown
-                placeholder='Select Group'
-                fluid
-                search
-                selection
-                options={group_options}
-                onChange={(e,{value}) => this.selectGroup(value)} />
-
-            <hr/>
-            <p>Queue: {feeds.length - feeds_queue}</p>
-            <p>Next: {feeds[feeds_queue] ? feeds[feeds_queue].display : ""}</p>
-            <p>Online: {feeds.length}</p>
-            <hr/>
-            <Segment textAlign='center' className="disabled_groups" raised>
-                <Table selectable compact='very' basic structured className="admin_table" unstackable>
-                    <Table.Body>
-                        {disabled_list}
-                    </Table.Body>
-                </Table>
-            </Segment>
-
-            <Dimmer active={zoom} onClickOutside={this.handleClose} page>
-                <video ref={"zoomVideo"}
-                       id={"zoomVideo"}
-                       width="1280"
-                       height="720"
-                       autoPlay={autoPlay}
-                       controls={false}
-                       muted={muted}
-                       playsInline={true}/>
-            </Dimmer>
+            {/*<Button className='fours_button'*/}
+                {/*attached='bottom'*/}
+                {/*color='blue'*/}
+                {/*size='mini'*/}
+                {/*onClick={this.switchFour}>*/}
+                {/*<Icon name='share' />*/}
+                {/*<Icon name='th large' />*/}
+                {/*<Icon name='share' />*/}
+            {/*</Button>*/}
 
         </Segment>
     );
   }
 }
 
-export default ShidurGroupsColumn;
+export default SDIOutGroups;

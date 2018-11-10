@@ -9,7 +9,8 @@ import 'semantic-ui-css/semantic.min.css';
 // import AdminStreaming from "./apps/AdminApp/AdminStreaming";
 // import ShidurUsers from "././apps/ShidurApp/ShidurUsers";
 // import AdminClient from "./apps/AdminApp/AdminClient";
-import SDIOutClient from "./apps/SDIOutApp/SDIOutClient";
+// import SDIOutClient from "./apps/SDIOutApp/SDIOutClient";
+import SDIOutApp from "./apps/SDIOutApp/SDIOutApp";
 // import VirtualClient from "./apps/VirtualApp/VirtualClient";
 // import VirtualStreaming from "./components/VirtualStreaming";
 
@@ -24,7 +25,8 @@ class App extends Component {
                 {/*<Streaming />*/}
                 {/*<ShidurUsers />*/}
                 {/*<ShidurAdmin/>*/}
-                <SDIOutClient />
+                {/*<SDIOutClient />*/}
+                <SDIOutApp/>
                 {/*<SndmanClient />*/}
                 {/*<AdminStreaming/>*/}
                 {/*<AdminClient />*/}

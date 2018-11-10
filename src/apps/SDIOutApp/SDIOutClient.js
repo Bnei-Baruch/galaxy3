@@ -78,6 +78,8 @@ class SDIOutClient extends Component {
                     break
                 }
             }
+        } else {
+            this.props.onProtocolData(data);
         }
     };
 
