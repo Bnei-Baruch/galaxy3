@@ -22,7 +22,7 @@ class GalaxyStream extends Component {
         muted: true,
         mixvolume: null,
         user: null,
-        interval: null,
+        talking: null,
     };
 
     componentDidMount() {
@@ -194,8 +194,8 @@ class GalaxyStream extends Component {
                 let audio = this.refs.trlAudio;
                 Janus.attachMediaStream(audio, stream);
                 this.state.trlstream.getVolume();
-                let interval = setInterval(this.ducerMixaudio, 200);
-                this.setState({interval});
+                let talking = setInterval(this.ducerMixaudio, 200);
+                this.setState({talking});
             },
             oncleanup: () => {
                 Janus.log("Got a cleanup notification");
@@ -234,7 +234,7 @@ class GalaxyStream extends Component {
     streamGalaxy = (talk,col,name) => {
         if(talk) {
             let mixvolume = this.refs.remoteAudio.volume;
-            this.setState({mixvolume});
+            this.setState({mixvolume, talking: true});
             let trlaudio = this.refs.trlAudio;
             trlaudio.volume = mixvolume;
             let body = { "request": "switch", "id": gxycol[col] };
@@ -246,15 +246,16 @@ class GalaxyStream extends Component {
                 this.initTranslationStream(trllang[localStorage.getItem("langtext")] || 303);
             }
             Janus.log("You now talking");
-        } else {
+        } else if(this.state.talking) {
             Janus.log("Stop talking");
-            clearInterval(this.state.interval);
+            clearInterval(this.state.talking);
             this.refs.remoteAudio.volume = this.state.mixvolume;
             let abody = { "request": "switch", "id": Number(localStorage.getItem("lang")) || 15};
             this.state.audiostream.send({"message": abody});
             let tbody = { "request": "stop" };
             this.state.trlstream.send({"message": tbody});
             this.state.trlstream.hangup();
+            this.setState({talking: null});
         }
     };
 
