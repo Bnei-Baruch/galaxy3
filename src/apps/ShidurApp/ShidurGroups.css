@@ -46,6 +46,10 @@
     float: right !important;
 }
 
+.select_group i.icon, i.icons {
+    float: right;
+}
+
 .ui.blue.button, .ui.blue.buttons .button {
     color: red;
 }

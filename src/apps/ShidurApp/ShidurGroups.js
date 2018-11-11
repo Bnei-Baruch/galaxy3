@@ -417,7 +417,8 @@ class ShidurGroups extends Component {
               {preview}
           </Segment>
 
-            <Dropdown
+            <Dropdown className='select_group' error={quistions_queue.length > 0}
+                icon={quistions_queue.length > 0 ? 'help' : 'dropdown'}
                 placeholder='Select Group'
                 fluid
                 search

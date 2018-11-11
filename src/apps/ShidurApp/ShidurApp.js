@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import { Janus } from "../../lib/janus";
 import {Grid} from "semantic-ui-react";
-import {getState, putData, initGXYJanus, initJanus} from "../../shared/tools";
+import {getState, putData, initJanus} from "../../shared/tools";
 import {initGxyProtocol} from "../../shared/protocol";
 import './ShidurGroups.css'
 import ShidurGroups from "./ShidurGroups";
