@@ -8,7 +8,7 @@ const attachGxyProtocol = (protocol, user) => {
         textroom: "join",
         transaction: transaction,
         room: PROTOCOL_ROOM,
-        username: user.id,
+        username: user.id || user.sub,
         display: user.display
     };
     protocol.data({

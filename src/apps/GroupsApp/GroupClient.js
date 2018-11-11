@@ -257,7 +257,7 @@ class GroupClient extends Component {
                 // Any new feed to attach to?
                 if(msg["publishers"] !== undefined && msg["publishers"] !== null) {
                     let list = msg["publishers"];
-                    let feeds_list = list.filter(feeder => JSON.parse(feeder.display).role === "user");
+                    let feeds_list = list.filter(feeder => JSON.parse(feeder.display).role === "gxy_group");
                     Janus.log(":: Got Pulbishers list: ", feeds_list);
                     Janus.debug("Got a list of available publishers/feeds:");
                     Janus.log(list);
