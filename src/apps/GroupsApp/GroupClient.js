@@ -46,10 +46,11 @@ class GroupClient extends Component {
     componentDidMount() {
         getUser(user => {
             if(user) {
-                this.setState({user});
                 let gxy_group = user.roles.filter(role => role === 'gxy_group').length > 0;
                 if (gxy_group) {
-                    this.initGalaxy();
+                    delete user.roles;
+                    user.role = "group";
+                    this.initGalaxy(user);
                 } else {
                     alert("Access denied!");
                     client.signoutRedirect();
@@ -62,8 +63,7 @@ class GroupClient extends Component {
         this.state.janus.destroy();
     };
 
-    initGalaxy = () => {
-        let {user} = this.state;
+    initGalaxy = (user) => {
         checkNotification();
         geoInfo('https://v4g.kbb1.com/geo.php?action=get', data => {
             Janus.log(data);
@@ -72,6 +72,7 @@ class GroupClient extends Component {
         initJanus(janus => {
             user.session = janus.getSessionId();
             this.setState({janus, user});
+            this.chat.initChat(janus);
             this.initVideoRoom();
         });
     };
@@ -257,7 +258,7 @@ class GroupClient extends Component {
                 // Any new feed to attach to?
                 if(msg["publishers"] !== undefined && msg["publishers"] !== null) {
                     let list = msg["publishers"];
-                    let feeds_list = list.filter(feeder => JSON.parse(feeder.display).role === "gxy_group");
+                    let feeds_list = list.filter(feeder => JSON.parse(feeder.display).role === "group");
                     Janus.log(":: Got Pulbishers list: ", feeds_list);
                     Janus.debug("Got a list of available publishers/feeds:");
                     Janus.log(list);
@@ -373,15 +374,16 @@ class GroupClient extends Component {
 
     joinRoom = () => {
         let {janus, videoroom, selected_room, user} = this.state;
-        let {sub, name, title} = user;
-        user.id = sub;
-        user.role = "gxy_group";
-        user.name = name;
-        user.display = title || user.name;
+        // let {sub, name, title} = user;
+        // user.id = sub;
+        // user.role = "gxy_group";
+        // user.name = name;
+        user.display = user.title || user.name;
         localStorage.setItem("username", user.display);
         let register = { "request": "join", "room": selected_room, "ptype": "publisher", "display": JSON.stringify(user) };
         videoroom.send({"message": register});
         this.setState({user, muted: true, room: selected_room});
+        this.chat.initChatRoom(user);
         initGxyProtocol(janus, user, protocol => {
             this.setState({protocol});
         }, ondata => {
@@ -394,6 +396,7 @@ class GroupClient extends Component {
         let leave = {request : "leave"};
         videoroom.send({"message": leave});
         this.setState({muted: false, mystream: null, room: "", i: "", feeds: []});
+        this.chat.exitChatRoom(1234);
         this.initVideoRoom();
         protocol.detach();
     };
@@ -555,6 +558,7 @@ class GroupClient extends Component {
               </div>
             </div>
             <GroupChat
+                ref={chat => {this.chat = chat;}}
               visible={this.state.visible}
               janus={this.state.janus}
               room={room}

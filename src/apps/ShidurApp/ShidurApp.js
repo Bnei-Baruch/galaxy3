@@ -43,10 +43,11 @@ class ShidurApp extends Component {
     componentDidMount() {
         getUser(user => {
             if(user) {
-                this.setState({user});
                 let gxy_group = user.roles.filter(role => role === 'gxy_shidur').length > 0;
                 if (gxy_group) {
-                    this.initGalaxy();
+                    delete user.roles;
+                    user.role = "shidur";
+                    this.initGalaxy(user);
                 } else {
                     alert("Access denied!");
                     client.signoutRedirect();
@@ -67,10 +68,8 @@ class ShidurApp extends Component {
         this.state.janus.destroy();
     };
 
-    initGalaxy = () => {
+    initGalaxy = (user) => {
         initJanus(janus => {
-            let {user} = this.state;
-            user.session = janus.getSessionId();
             this.setState({janus,user});
             this.initVideoRoom();
 
@@ -136,7 +135,7 @@ class ShidurApp extends Component {
                 Janus.log("Successfully joined room " + msg["room"] + " with ID " + myid);
                 if(msg["publishers"] !== undefined && msg["publishers"] !== null) {
                     let list = msg["publishers"];
-                    let feeds = list.filter(feeder => JSON.parse(feeder.display).role === "gxy_group");
+                    let feeds = list.filter(feeder => JSON.parse(feeder.display).role === "group");
                     Janus.debug("Got a list of available publishers/feeds:");
                     Janus.debug(list);
                     this.setState({feeds});
@@ -168,7 +167,7 @@ class ShidurApp extends Component {
                 // Any new feed to attach to?
                 if(msg["publishers"] !== undefined && msg["publishers"] !== null) {
                     let list = msg["publishers"];
-                    let feed = JSON.parse(list[0].display).role === "gxy_group";
+                    let feed = JSON.parse(list[0].display).role === "group";
                     Janus.debug("Got a list of available publishers/feeds:");
                     Janus.debug(list[0]);
                     if(feed) {
