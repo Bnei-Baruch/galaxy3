@@ -498,19 +498,16 @@ class SDIOutClient extends Component {
           return true;
       });
 
-    return (
-
-        <Segment className="segment_sdi" color='blue' raised>
-            <Segment className="preview_sdi">
-            <div className="wrapper">
-                <div className="title"><span>{name}</span></div>
-                <div className="videos">
-                    <div className="videos__wrapper">{preview}</div>
-                </div>
-            </div>
-            </Segment>
-        </Segment>
-    );
+      return (
+          <Segment className="preview_sdi" color='red'>
+              <div className="wrapper">
+                  <div className="title"><span>{name}</span></div>
+                  <div className="videos">
+                      <div className="videos__wrapper">{preview}</div>
+                  </div>
+              </div>
+          </Segment>
+      );
   }
 }
 

@@ -1,0 +1,9 @@
+.sdi_container {
+    width: 1400px;
+}
+
+.preview_sdi {
+    width: 670px!important;
+    height: 390px!important;
+    background-color: black!important;
+}

@@ -2,8 +2,8 @@ import React, { Component } from 'react';
 import { Janus } from "../../lib/janus";
 import {Grid} from "semantic-ui-react";
 import {getState, putData, initGXYJanus} from "../../shared/tools";
+import './SDIOutApp.css';
 // import {initGxyProtocol} from "../shared/protocol";
-//import './ShidurGroups.css'
 import SDIOutGroups from "./SDIOutGroups";
 import SDIOutClient from "./SDIOutClient";
 
@@ -282,7 +282,8 @@ class SDIOutApp extends Component {
     render() {
 
         return (
-            <Grid columns={2}>
+
+            <Grid columns={2} className="sdi_container">
                 <Grid.Row>
                 <Grid.Column>
                     <SDIOutGroups

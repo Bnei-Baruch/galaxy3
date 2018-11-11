@@ -281,8 +281,8 @@ class SDIOutGroups extends Component {
   render() {
       const { pre_feed,full_feed,zoom,fullscr } = this.state;
       const {index,feeds,pgm_state,feeds_queue,quistions_queue,disabled_groups} = this.props;
-      const width = "100%";
-      const height = "100%";
+      const width = "320";
+      const height = "180";
       const autoPlay = true;
       const controls = false;
       const muted = true;
@@ -309,8 +309,8 @@ class SDIOutGroups extends Component {
           <div className="fullscrvideo_title"><span>{pre_feed ? pre_feed.display : ""}</span></div>
               <video ref = {"prevewVideo"}
                      id = "prevewVideo"
-                     width = "400"
-                     height = "220"
+                     width = "640"
+                     height = "360"
                      autoPlay = {autoPlay}
                      controls = {controls}
                      muted = {muted}
@@ -347,11 +347,6 @@ class SDIOutGroups extends Component {
                          controls={controls}
                          muted={muted}
                          playsInline={true}/>
-                  {/*<Button className='video_button'*/}
-                          {/*size='mini'*/}
-                          {/*color='green'*/}
-                          {/*icon={pre_feed ? 'arrow up' : 'share'}*/}
-                          {/*onClick={() => this.switchProgram(i)} />*/}
               </div></div>);
           }
           return true;
@@ -362,8 +357,8 @@ class SDIOutGroups extends Component {
               <video ref = {"fullscreenVideo"}
                      onClick={() => this.toFourGroup()}
                      id = "fullscreenVideo"
-                     width = "400"
-                     height = "220"
+                     width = "640"
+                     height = "360"
                      autoPlay = {autoPlay}
                      controls = {controls}
                      muted = {muted}
@@ -371,29 +366,14 @@ class SDIOutGroups extends Component {
           </div>
       );
 
-    return (
-
-        <Segment className="segment_conteiner" raised>
-          
-          <Segment attached className="program_segment" color='red'>
+      return (
+          <Segment attached className="preview_sdi" color='red'>
               <div className="video_grid">
                   {program}
                   {fullscreen}
               </div>
           </Segment>
-
-            {/*<Button className='fours_button'*/}
-                {/*attached='bottom'*/}
-                {/*color='blue'*/}
-                {/*size='mini'*/}
-                {/*onClick={this.switchFour}>*/}
-                {/*<Icon name='share' />*/}
-                {/*<Icon name='th large' />*/}
-                {/*<Icon name='share' />*/}
-            {/*</Button>*/}
-
-        </Segment>
-    );
+      );
   }
 }
 
