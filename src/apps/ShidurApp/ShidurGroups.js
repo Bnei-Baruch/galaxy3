@@ -350,7 +350,8 @@ class ShidurGroups extends Component {
                   return;
               let id = feed.id;
               let talk = feed.talk;
-              return (<div className={fullscr ? "hidden" : ""} key={"prf" + i}><div className="video_box"
+              return (<div className={fullscr ? "hidden" : ""} key={"prf" + i}>
+                        <div className="video_box"
                            key={"prov" + i}
                            ref={"provideo" + i}
                            id={"provideo" + i}>

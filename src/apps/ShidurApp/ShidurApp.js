@@ -44,7 +44,7 @@ class ShidurApp extends Component {
         getUser(user => {
             if(user) {
                 this.setState({user});
-                let gxy_group = user.roles.filter(role => role === 'gxy_group').length > 0;
+                let gxy_group = user.roles.filter(role => role === 'gxy_shidur').length > 0;
                 if (gxy_group) {
                     this.initGalaxy();
                 } else {
@@ -95,7 +95,6 @@ class ShidurApp extends Component {
                 Janus.log("  -- This is a publisher/manager");
                 let {user} = this.state;
                 let register = { "request": "join", "room": 1234, "ptype": "publisher", "display": JSON.stringify(user) };
-                //let register = { "request": "join", "room": 1234, "ptype": "publisher", "display": "shidur_admin" };
                 gxyhandle.send({"message": register});
             },
             error: (error) => {
@@ -140,7 +139,6 @@ class ShidurApp extends Component {
                     let feeds = list.filter(feeder => JSON.parse(feeder.display).role === "gxy_group");
                     Janus.debug("Got a list of available publishers/feeds:");
                     Janus.debug(list);
-                    //let feeds = list.filter(f => !/_/.test(f.display));
                     this.setState({feeds});
                     setTimeout(() => {
                         this.col1.switchFour();
