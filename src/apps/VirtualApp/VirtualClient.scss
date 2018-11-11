@@ -49,8 +49,8 @@
 }
 .videos-panel {
     display: flex;
-    background: #000;
-    padding: 1.6em;
+    background: white;
+    // padding: 1.6em;
     flex: 1 0 100%;
     transition: .2s all linear;
     
@@ -68,12 +68,7 @@
     @include portrait {
         padding: 10px;
     }
-    // @include portrait {
-    //     flex: 0 0 0;
-    //     .vclient--chat-open & {
-    //         flex: 0 0 400px;
-    //     }
-    // }
+
 }
 
 

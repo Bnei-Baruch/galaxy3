@@ -651,11 +651,12 @@ class VirtualClient extends Component {
               // TODO: indicate question on video feed
               //let qstn = feed.question;
               // TODO: put name on video feed
-              //let name = feed.rfuser.display
+              let name = feed.rfuser.display
               return (<div className="video"
                            key={"v" + id}
                            ref={"video" + id}
                            id={"video" + id}>
+                           <div className="video__title">{name}</div>
                   <video className={talk ? "talk" : ""}
                          poster={nowebcam}
                          key={id}
