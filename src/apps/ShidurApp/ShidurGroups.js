@@ -309,7 +309,7 @@ class ShidurGroups extends Component {
       const q = (<Icon color='red' name='question circle' />);
 
       let group_options = feeds.map((feed,i) => {
-          const {display} = feed;
+          const {display} = JSON.parse(feed.display);
           return ({ key: i, value: feed, text: display })
       });
 
@@ -319,14 +319,14 @@ class ShidurGroups extends Component {
               <Table.Row key={id} warning
                          onClick={() => this.selectGroup(data, i)}
                          onContextMenu={(e) => this.restoreGroup(e, data, i)} >
-                  <Table.Cell width={5}>{display}</Table.Cell>
+                  <Table.Cell width={5}>{JSON.parse(display).display}</Table.Cell>
                   <Table.Cell width={1}>{id}</Table.Cell>
               </Table.Row>
           )
       });
 
       let preview = (<div className={pre_feed ? "" : "hidden"}>
-          <div className="fullscrvideo_title"><span>{pre_feed ? pre_feed.display : ""}</span></div>
+          <div className="fullscrvideo_title"><span>{pre_feed ? JSON.parse(pre_feed.display).display : ""}</span></div>
               <video ref = {"prevewVideo"}
                      id = "prevewVideo"
                      width = "400"
