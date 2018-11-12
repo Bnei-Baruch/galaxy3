@@ -237,13 +237,9 @@ class ShidurApp extends Component {
                 quistions_queue.push(data);
 
                 // Check if qfeed already in program
-                for(let i=0; i<pgm_state.length; i++) {
-                    if(pgm_state[i] !== null && pgm_state[i] !== undefined && pgm_state[i].id === data.rfid) {
-                        break;
-                    } else {
-                        qfeeds.push(q);
-                    }
-                }
+                let chk = pgm_state.filter(q => {return (q !== null && q !== undefined && q.id === data.rfid)});
+                if(chk.length === 0)
+                    qfeeds.push(q);
 
                 this.setState({quistions_queue, users, qfeeds});
             }
