@@ -244,12 +244,25 @@ class ShidurApp extends Component {
     };
 
     removeFeed = (id,) => {
-        let {feeds} = this.state;
+        let {feeds,users,quistions_queue} = this.state;
         for(let i=0; i<feeds.length; i++){
             if(feeds[i].id === id) {
-                Janus.log(" :: Remove Feed: " + id);
+
+                // Delete from users mapping object
+                let user = JSON.parse(feeds[i].display);
+                delete users[user.id];
+
+                // Delete from questions list
+                for(let i = 0; i < quistions_queue.length; i++){
+                    if(quistions_queue[i].user.id === user.id) {
+                        quistions_queue.splice(i, 1);
+                        break
+                    }
+                }
+
+                // Remove from general feeds list
                 feeds.splice(i, 1);
-                this.setState({feeds});
+                this.setState({feeds,users,quistions_queue});
                 this.checkProgram(id,feeds);
                 break
             }

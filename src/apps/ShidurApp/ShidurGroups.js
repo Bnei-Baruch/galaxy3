@@ -1,11 +1,11 @@
 import React, { Component } from 'react';
 import { Janus } from "../../lib/janus";
 import {Segment, Table, Icon, Dropdown, Dimmer, Button} from "semantic-ui-react";
-import {getState, putData, initGXYJanus, initJanus} from "../../shared/tools";
+import {getState, putData} from "../../shared/tools";
 // import {initGxyProtocol} from "../shared/protocol";
 import './ShidurGroups.css'
 import './VideoConteiner.scss'
-import {initGxyProtocol, sendProtocolMessage} from "../../shared/protocol";
+import {sendProtocolMessage} from "../../shared/protocol";
 
 class ShidurGroups extends Component {
 
@@ -282,8 +282,8 @@ class ShidurGroups extends Component {
     };
 
     fullScreenGroup = (i,full_feed) => {
-        Janus.log(":: Make Full Screen Group: ",full_feed.display)
-        this.setState({fullscr: !this.state.fullscr,full_feed})
+        Janus.log(":: Make Full Screen Group: ",JSON.parse(full_feed.display));
+        this.setState({fullscr: !this.state.fullscr,full_feed});
         let fourvideo = this.refs["programVideo" + i];
         let fullvideo = this.refs.fullscreenVideo;
         var stream = fourvideo.captureStream();
@@ -349,7 +349,7 @@ class ShidurGroups extends Component {
               if(pgm_state[i] === null)
                   return;
               let user = JSON.parse(feed.display);
-              let qst = users[user.id].question;
+              let qst = users[user.id] ? users[user.id].question : false;
               let talk = feed.talk;
               return (<div className={fullscr ? "hidden" : ""} key={"prf" + i}>
                         <div className="video_box"
@@ -382,6 +382,10 @@ class ShidurGroups extends Component {
 
       let fullscreen = (<div className={fullscr ? "" : "hidden"}>
               <div className="fullscrvideo_title"><span>{full_feed ? JSON.parse(full_feed.display).display : ""}</span></div>
+              <div className={
+                  //TODO: Fix this ugly shit!
+                  full_feed ? users[JSON.parse(full_feed.display).id] ? users[JSON.parse(full_feed.display).id].question ? 'qst_fullscreentitle' : 'hidden' : 'hidden' : 'hidden'
+              }>?</div>
               <video ref = {"fullscreenVideo"}
                      onClick={() => this.toFourGroup()}
                      id = "fullscreenVideo"
@@ -391,8 +395,6 @@ class ShidurGroups extends Component {
                      controls = {controls}
                      muted = {muted}
                      playsInline = {true} />
-              {/*{users[JSON.parse(full_feed.display).id].question ? <div className='qst_fullscreentitle'>?</div> : ""}*/}
-              <div className='qst_fullscreentitle'>?</div>
           </div>
       );
 
