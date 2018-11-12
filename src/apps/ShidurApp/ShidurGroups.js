@@ -356,6 +356,7 @@ class ShidurGroups extends Component {
                            ref={"provideo" + i}
                            id={"provideo" + i}>
                   <div className="video_title">{JSON.parse(feed.display).display}</div>
+                  <div className='qst_title'>?</div>
                   <video className={talk ? "talk" : ""}
                          onClick={() => this.fullScreenGroup(i,feed)}
                          onContextMenu={(e) => this.zoominGroup(e, i)}
@@ -368,7 +369,7 @@ class ShidurGroups extends Component {
                          controls={controls}
                          muted={muted}
                          playsInline={true}/>
-                  <Button className='video_button'
+                  <Button className='next_button'
                           size='mini'
                           color='green'
                           icon={pre_feed ? 'arrow up' : 'share'}
@@ -389,6 +390,7 @@ class ShidurGroups extends Component {
                      controls = {controls}
                      muted = {muted}
                      playsInline = {true} />
+              <div className='qst_fullscreentitle'>?</div>
           </div>
       );
 
