@@ -270,12 +270,14 @@ class ShidurGroups extends Component {
     restoreGroup = (e, data, i) => {
         e.preventDefault();
         if (e.type === 'contextmenu') {
-            let {disabled_groups,feeds} = this.props;
+            let {disabled_groups,feeds,users} = this.props;
             for(let i = 0; i < disabled_groups.length; i++){
-                if ( disabled_groups[i].id === data.id) {
+                if(JSON.parse(disabled_groups[i].display).id === JSON.parse(data.display).id) {
                     disabled_groups.splice(i, 1);
                     feeds.push(data);
-                    this.props.setProps({disabled_groups,feeds});
+                    let user = JSON.parse(data.display);
+                    users[user.id] = user;
+                    this.props.setProps({disabled_groups,feeds,users});
                 }
             }
         }

@@ -230,12 +230,14 @@ class ShidurApp extends Component {
     onProtocolData = (data) => {
         if(data.type === "question" && data.status) {
             let {quistions_queue,users,qfeeds} = this.state;
-            users[data.user.id].question = true;
-            data.rfid = users[data.user.id].rfid;
-            let q = { id: data.rfid, display: JSON.stringify(data.user)};
-            quistions_queue.push(data);
-            qfeeds.push(q);
-            this.setState({quistions_queue,users,qfeeds});
+            if(users[data.user.id]) {
+                users[data.user.id].question = true;
+                data.rfid = users[data.user.id].rfid;
+                let q = {id: data.rfid, display: JSON.stringify(data.user)};
+                quistions_queue.push(data);
+                qfeeds.push(q);
+                this.setState({quistions_queue, users, qfeeds});
+            }
         } else if(data.type === "question" && !data.status) {
             let {quistions_queue,users,qfeeds} = this.state;
             for(let i = 0; i < quistions_queue.length; i++){
