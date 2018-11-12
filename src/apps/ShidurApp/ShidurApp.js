@@ -8,6 +8,7 @@ import ShidurGroups from "./ShidurGroups";
 import ShidurUsers from "./ShidurUsers";
 import {client, getUser} from "../../components/UserManager";
 import LoginPage from "../../components/LoginPage";
+import {MAX_FEEDS} from "../../shared/consts";
 
 
 class ShidurApp extends Component {
@@ -135,10 +136,15 @@ class ShidurApp extends Component {
                 Janus.log("Successfully joined room " + msg["room"] + " with ID " + myid);
                 if(msg["publishers"] !== undefined && msg["publishers"] !== null) {
                     let list = msg["publishers"];
+                    let users = {};
                     let feeds = list.filter(feeder => JSON.parse(feeder.display).role === "group");
+                    for(let i=0;i<feeds.length;i++) {
+                        let user = JSON.parse(feeds[i].display);
+                            users[user.id] = user;
+                    }
                     Janus.debug("Got a list of available publishers/feeds:");
                     Janus.debug(list);
-                    this.setState({feeds});
+                    this.setState({feeds, users});
                     setTimeout(() => {
                         this.col1.switchFour();
                         this.col2.switchFour();
@@ -171,9 +177,11 @@ class ShidurApp extends Component {
                     Janus.debug("Got a list of available publishers/feeds:");
                     Janus.debug(list[0]);
                     if(feed) {
-                        let {feeds} = this.state;
+                        let {feeds,users} = this.state;
+                        let user = JSON.parse(list[0].display);
+                        users[user.id] = user;
                         feeds.push(list[0]);
-                        this.setState({feeds});
+                        this.setState({feeds,users});
 
                         if(feeds.length < 13) {
                             this.col1.switchFour();
@@ -218,15 +226,17 @@ class ShidurApp extends Component {
 
     onProtocolData = (data) => {
         if(data.type === "question" && data.status) {
-            let {quistions_queue} = this.state;
+            let {quistions_queue,users} = this.state;
+            users[data.user.id].question = true;
             quistions_queue.push(data);
-            this.setState({quistions_queue});
+            this.setState({quistions_queue,users});
         } else if(data.type === "question" && !data.status) {
-            let {quistions_queue} = this.state;
+            let {quistions_queue,users} = this.state;
             for(let i = 0; i < quistions_queue.length; i++){
                 if(quistions_queue[i].user.id === data.user.id) {
+                    users[data.user.id].question = false;
                     quistions_queue.splice(i, 1);
-                    this.setState({quistions_queue});
+                    this.setState({quistions_queue,users});
                     break
                 }
             }

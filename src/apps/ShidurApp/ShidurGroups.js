@@ -300,7 +300,7 @@ class ShidurGroups extends Component {
 
   render() {
       const { pre_feed,full_feed,zoom,fullscr } = this.state;
-      const {index,feeds,pgm_state,feeds_queue,quistions_queue,disabled_groups} = this.props;
+      const {index,feeds,pgm_state,feeds_queue,quistions_queue,disabled_groups,users} = this.props;
       const width = "100%";
       const height = "100%";
       const autoPlay = true;
@@ -348,7 +348,8 @@ class ShidurGroups extends Component {
               // Does it help here?
               if(pgm_state[i] === null)
                   return;
-              let id = feed.id;
+              let user = JSON.parse(feed.display);
+              let qst = users[user.id].question;
               let talk = feed.talk;
               return (<div className={fullscr ? "hidden" : ""} key={"prf" + i}>
                         <div className="video_box"
@@ -356,7 +357,7 @@ class ShidurGroups extends Component {
                            ref={"provideo" + i}
                            id={"provideo" + i}>
                   <div className="video_title">{JSON.parse(feed.display).display}</div>
-                  <div className='qst_title'>?</div>
+                            {qst ? <div className='qst_title'>?</div> : ""}
                   <video className={talk ? "talk" : ""}
                          onClick={() => this.fullScreenGroup(i,feed)}
                          onContextMenu={(e) => this.zoominGroup(e, i)}
@@ -390,6 +391,7 @@ class ShidurGroups extends Component {
                      controls = {controls}
                      muted = {muted}
                      playsInline = {true} />
+              {/*{users[JSON.parse(full_feed.display).id].question ? <div className='qst_fullscreentitle'>?</div> : ""}*/}
               <div className='qst_fullscreentitle'>?</div>
           </div>
       );
