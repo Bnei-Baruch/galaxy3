@@ -16,6 +16,7 @@ class ShidurApp extends Component {
     state = {
         janus: null,
         feeds: [],
+        qfeeds: [],
         gxyhandle: null,
         name: "",
         disabled_groups: [],
@@ -140,7 +141,8 @@ class ShidurApp extends Component {
                     let feeds = list.filter(feeder => JSON.parse(feeder.display).role === "group");
                     for(let i=0;i<feeds.length;i++) {
                         let user = JSON.parse(feeds[i].display);
-                            users[user.id] = user;
+                        user.rfid = feeds[i].id;
+                        users[user.id] = user;
                     }
                     Janus.debug("Got a list of available publishers/feeds:");
                     Janus.debug(list);
@@ -179,6 +181,7 @@ class ShidurApp extends Component {
                     if(feed) {
                         let {feeds,users} = this.state;
                         let user = JSON.parse(list[0].display);
+                        user.rfid = list[0].id
                         users[user.id] = user;
                         feeds.push(list[0]);
                         this.setState({feeds,users});
@@ -226,17 +229,28 @@ class ShidurApp extends Component {
 
     onProtocolData = (data) => {
         if(data.type === "question" && data.status) {
-            let {quistions_queue,users} = this.state;
+            let {quistions_queue,users,qfeeds} = this.state;
             users[data.user.id].question = true;
+            data.rfid = users[data.user.id].rfid;
+            let q = { id: data.rfid, display: JSON.stringify(data.user)};
             quistions_queue.push(data);
-            this.setState({quistions_queue,users});
+            qfeeds.push(q);
+            this.setState({quistions_queue,users,qfeeds});
         } else if(data.type === "question" && !data.status) {
-            let {quistions_queue,users} = this.state;
+            let {quistions_queue,users,qfeeds} = this.state;
             for(let i = 0; i < quistions_queue.length; i++){
                 if(quistions_queue[i].user.id === data.user.id) {
                     users[data.user.id].question = false;
                     quistions_queue.splice(i, 1);
+                    qfeeds.splice(i, 1);
                     this.setState({quistions_queue,users});
+                    break
+                }
+            }
+            for(let i = 0; i < qfeeds.length; i++){
+                if(JSON.parse(qfeeds[i].display).id === data.user.id) {
+                    qfeeds.splice(i, 1);
+                    this.setState({qfeeds});
                     break
                 }
             }
@@ -244,7 +258,7 @@ class ShidurApp extends Component {
     };
 
     removeFeed = (id,) => {
-        let {feeds,users,quistions_queue} = this.state;
+        let {feeds,users,quistions_queue,qfeeds} = this.state;
         for(let i=0; i<feeds.length; i++){
             if(feeds[i].id === id) {
 
@@ -256,6 +270,14 @@ class ShidurApp extends Component {
                 for(let i = 0; i < quistions_queue.length; i++){
                     if(quistions_queue[i].user.id === user.id) {
                         quistions_queue.splice(i, 1);
+                        break
+                    }
+                }
+
+                // Delete from qfeeds
+                for(let i = 0; i < qfeeds.length; i++){
+                    if(JSON.parse(qfeeds[i].display).id === user.id) {
+                        qfeeds.splice(i, 1);
                         break
                     }
                 }

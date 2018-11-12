@@ -300,13 +300,18 @@ class ShidurGroups extends Component {
 
   render() {
       const { pre_feed,full_feed,zoom,fullscr } = this.state;
-      const {index,feeds,pgm_state,feeds_queue,quistions_queue,disabled_groups,users} = this.props;
+      const {index,feeds,pgm_state,feeds_queue,quistions_queue,disabled_groups,users,qfeeds} = this.props;
       const width = "100%";
       const height = "100%";
       const autoPlay = true;
       const controls = false;
       const muted = true;
       const q = (<Icon color='red' name='question circle' />);
+
+      let queue_options = qfeeds.map((feed,i) => {
+          const {display} = JSON.parse(feed.display);
+          return ({ key: display.id, value: feed, text: display, icon: 'help'})
+      });
 
       let group_options = feeds.map((feed,i) => {
           const {display} = JSON.parse(feed.display);
@@ -429,7 +434,8 @@ class ShidurGroups extends Component {
                 fluid
                 search
                 selection
-                options={group_options}
+                options={queue_options.concat(group_options)}
+                //       options={group_options}
                 onChange={(e,{value}) => this.selectGroup(value)} />
 
             <hr/>
