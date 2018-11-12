@@ -214,7 +214,17 @@ class ShidurGroups extends Component {
     switchNext = (i ,feed) => {
         Janus.log(" ---- switchNext params: ", i, feed);
         if(!feed) return;
-        let {pr1,pgm_state} = this.props;
+        let {pr1,pgm_state,qfeeds} = this.props;
+
+        // Remove from group search list qfeed
+        for(let q=0; q<qfeeds.length; q++) {
+            if(qfeeds[q].id === feed.id) {
+                qfeeds.splice(i, 1);
+                this.props.setProps({qfeeds});
+                break
+            }
+        }
+
         if(!pr1[i]) {
             this.newSwitchFeed(feed.id,true,i);
             pgm_state[i] = feed;
@@ -276,6 +286,7 @@ class ShidurGroups extends Component {
                     disabled_groups.splice(i, 1);
                     feeds.push(data);
                     let user = JSON.parse(data.display);
+                    user.rfid = data.id;
                     users[user.id] = user;
                     this.props.setProps({disabled_groups,feeds,users});
                 }
@@ -430,14 +441,13 @@ class ShidurGroups extends Component {
               {preview}
           </Segment>
 
-            <Dropdown className='select_group' error={quistions_queue.length > 0}
-                icon={quistions_queue.length > 0 ? 'help' : 'dropdown'}
+            <Dropdown className='select_group' error={qfeeds.length > 0}
+                icon={qfeeds.length > 0 ? 'help' : 'dropdown'}
                 placeholder='Select Group'
                 fluid
                 search
                 selection
                 options={queue_options.concat(group_options)}
-                //       options={group_options}
                 onChange={(e,{value}) => this.selectGroup(value)} />
 
             <hr/>
