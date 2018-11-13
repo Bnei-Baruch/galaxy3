@@ -648,16 +648,20 @@ class VirtualClient extends Component {
           if(feed) {
               let id = feed.rfid;
               let talk = feed.talk;
+              let muted = feed.muted;
               // TODO: indicate question on video feed
               //let qstn = feed.question;
               // TODO: put name on video feed
               let name = feed.rfuser.display
               return (<div className="video"
-                           key={"v" + id}
-                           ref={"video" + id}
-                           id={"video" + id}>
-                           <div className="video__title">{name}</div>
-                  <video className={talk ? "talk" : ""}
+                        key={"v" + id}
+                        ref={"video" + id}
+                        id={"video" + id}>
+                        <div className={classNames('video__overlay', {'talk' : talk})}>
+                        
+                            <div className="video__title">{!talk ? <Icon name="microphone slash" size="small" color="red"/> : ''}{name}</div>
+                        </div>
+                  <video 
                          poster={nowebcam}
                          key={id}
                          ref={"remoteVideo" + id}
@@ -696,7 +700,7 @@ class VirtualClient extends Component {
               onClick={this.getRoomList}
               onChange={(e, {value}) => this.selectRoom(value)} />
               {mystream ? 
-                <Button primary icon='sign-out' onClick={this.exitRoom} />:""}
+                <Button negative icon='sign-out' onClick={this.exitRoom} />:""}
               {!mystream ?
                 <Button primary icon='sign-in' disabled={!selected_room||!audio_device} onClick={this.joinRoom} />:""}  
             </Input>
@@ -764,6 +768,11 @@ class VirtualClient extends Component {
               <div className="videos">
                 <div className="videos__wrapper">
                   <div className="video">
+                  <div className={classNames('video__overlay')}>
+                        
+                            <div className="video__title">{muted ? <Icon name="microphone slash" size="small" color="red"/> : ''}{this.state.username_value}</div>
+                        </div>
+                  
                     <video className={cammuted ? 'hidden' : 'mirror'}
                       ref="localVideo"
                       id="localVideo"
