@@ -397,8 +397,20 @@ class GroupClient extends Component {
         videoroom.send({"message": leave});
         this.setState({muted: false, mystream: null, room: "", i: "", feeds: []});
         this.chat.exitChatRoom(1234);
+        this.exitProtocol();
         this.initVideoRoom();
         protocol.detach();
+    };
+
+    exitProtocol = () => {
+        let {protocol} = this.state;
+        let chatreq = {textroom : "leave", transaction: Janus.randomString(12),"room": 1000};
+        protocol.data({text: JSON.stringify(chatreq),
+            success: () => {
+                Janus.log(":: Protocol leave callback: ");
+                this.setState({protocol: null});
+            }
+        });
     };
 
     handleQuestion = () => {
