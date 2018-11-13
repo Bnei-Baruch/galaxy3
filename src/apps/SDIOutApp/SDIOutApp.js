@@ -241,6 +241,8 @@ class SDIOutApp extends Component {
             disabled_groups.push(feed);
             this.removeFeed(feed.id);
             this.setState({disabled_groups});
+        } else if(data.type === "sdi-restart") {
+            window.location.reload();
         } else if(data.type === "sdi-restore") {
             let {col, feed, i} = data;
             console.log(" :: Git Shidur Action: ",data);

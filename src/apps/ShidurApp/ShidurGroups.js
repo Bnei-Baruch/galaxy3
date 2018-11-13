@@ -419,7 +419,7 @@ class ShidurGroups extends Component {
 
     return (
 
-        <Segment className="segment_conteiner" raised>
+        <Segment className="group_conteiner">
           
           <Segment attached className="program_segment" color='red'>
               <div className="video_grid">
@@ -438,7 +438,7 @@ class ShidurGroups extends Component {
                 <Icon name='share' />
             </Button>
 
-          <Segment className="preview_segment" color='green'>
+          <Segment className="group_segment" color='green'>
               {preview}
           </Segment>
 
@@ -451,11 +451,11 @@ class ShidurGroups extends Component {
                 options={queue_options.concat(group_options)}
                 onChange={(e,{value}) => this.selectGroup(value)} />
 
-            <hr/>
-            <p>Queue: {feeds.length - feeds_queue}</p>
-            <p>Next: {feeds[feeds_queue] ? JSON.parse(feeds[feeds_queue].display).display : ""}</p>
-            <p>Online: {feeds.length}</p>
-            <hr/>
+            {/*<hr/>*/}
+            {/*<p>Queue: {feeds.length - feeds_queue}</p>*/}
+            {/*<p>Next: {feeds[feeds_queue] ? JSON.parse(feeds[feeds_queue].display).display : ""}</p>*/}
+            {/*<p>Online: {feeds.length}</p>*/}
+            {/*<hr/>*/}
             <Segment textAlign='center' className="disabled_groups" raised>
                 <Table selectable compact='very' basic structured className="admin_table" unstackable>
                     <Table.Body>

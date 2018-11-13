@@ -1,14 +1,13 @@
-import React, { Component } from 'react';
-import { Janus } from "../../lib/janus";
-import {Grid} from "semantic-ui-react";
-import {getState, putData, initJanus} from "../../shared/tools";
+import React, {Component} from 'react';
+import {Janus} from "../../lib/janus";
+import {Grid, Label, Message, Segment} from "semantic-ui-react";
+import {initJanus} from "../../shared/tools";
 import {initGxyProtocol} from "../../shared/protocol";
 import './ShidurGroups.css'
 import ShidurGroups from "./ShidurGroups";
 import ShidurUsers from "./ShidurUsers";
 import {client, getUser} from "../../components/UserManager";
 import LoginPage from "../../components/LoginPage";
-import {MAX_FEEDS} from "../../shared/consts";
 
 
 class ShidurApp extends Component {
@@ -338,7 +337,7 @@ class ShidurApp extends Component {
 
     render() {
 
-        const {user} = this.state;
+        const {user,feeds,feeds_queue} = this.state;
 
         let login = (<LoginPage user={user} />);
         let content = (
@@ -356,6 +355,19 @@ class ShidurApp extends Component {
                         ref={col => {this.col2 = col;}}
                         setProps={this.setProps}
                         removeFeed={this.removeFeed} />
+                        <Message>
+                            <Grid columns={3}>
+                                <Grid.Column>
+                                    <u>Queue</u>:<Label>{feeds.length - feeds_queue}</Label>
+                                </Grid.Column>
+                                <Grid.Column>
+                                    <u>Next</u>:<Label>{feeds[feeds_queue] ? JSON.parse(feeds[feeds_queue].display).display : ""}</Label>
+                                </Grid.Column>
+                                <Grid.Column>
+                                    <u>Online</u>:<Label>{feeds.length}</Label>
+                                </Grid.Column>
+                            </Grid>
+                        </Message>
                 </Grid.Column>
                 <Grid.Column>
                     <ShidurGroups

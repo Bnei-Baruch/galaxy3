@@ -668,7 +668,7 @@ class ShidurUsers extends Component {
 
     return (
 
-        <Segment className="segment_conteiner" raised>
+        <Segment className="segment_conteiner">
           
           <Segment className="program_segment" color='red'>
               {/*<div className="shidur_overlay">{pgm_state.name}</div>*/}
