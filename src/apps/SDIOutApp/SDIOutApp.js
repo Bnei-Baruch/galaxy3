@@ -237,12 +237,24 @@ class SDIOutApp extends Component {
         } else if(data.type === "sdi-disable") {
             let {col, feed, i} = data;
             console.log(" :: Got Shidur Action: ",data);
-            this.col1.disableGroup();
+            let {disabled_groups} = this.state;
+            disabled_groups.push(feed);
             this.removeFeed(feed.id);
+            this.setState({disabled_groups});
         } else if(data.type === "sdi-restore") {
             let {col, feed, i} = data;
             console.log(" :: Git Shidur Action: ",data);
-            this.col1.restoreGroup(feed);
+            let {disabled_groups,feeds,users} = this.state;
+            for(let i = 0; i < disabled_groups.length; i++){
+                if(disabled_groups[i].id === data.feed.id) {
+                    disabled_groups.splice(i, 1);
+                    feeds.push(data.feed);
+                    let user = JSON.parse(data.feed.display);
+                    user.rfid = data.feed.id;
+                    users[user.id] = user;
+                    this.setState({disabled_groups,feeds,users});
+                }
+            }
         } else if(data.type === "question" && data.status) {
             let {quistions_queue,users} = this.state;
             if(users[data.user.id]) {
