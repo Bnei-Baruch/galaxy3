@@ -259,7 +259,7 @@ class ShidurGroups extends Component {
         this.props.removeFeed(pre_feed.id);
         this.setState({pre_feed: null});
         this.props.setProps({disabled_groups});
-        this.sdiAction("remove", true, null, pre_feed)
+        this.sdiAction("disable", true, null, pre_feed)
     };
 
     zoominGroup = (e, i) => {
@@ -289,6 +289,7 @@ class ShidurGroups extends Component {
                     user.rfid = data.id;
                     users[user.id] = user;
                     this.props.setProps({disabled_groups,feeds,users});
+                    this.sdiAction("restore", true, i, data);
                 }
             }
         }

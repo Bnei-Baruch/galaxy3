@@ -181,7 +181,7 @@ class ShidurApp extends Component {
                     if(feed) {
                         let {feeds,users} = this.state;
                         let user = JSON.parse(list[0].display);
-                        user.rfid = list[0].id
+                        user.rfid = list[0].id;
                         users[user.id] = user;
                         feeds.push(list[0]);
                         this.setState({feeds,users});

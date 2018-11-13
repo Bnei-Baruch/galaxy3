@@ -247,25 +247,25 @@ class SDIOutGroups extends Component {
         }
     };
 
-    handleClose = () => this.setState({ zoom: false })
+    handleClose = () => this.setState({ zoom: false });
 
-    restoreGroup = (e, data, i) => {
-        e.preventDefault();
-        if (e.type === 'contextmenu') {
-            let {disabled_groups,feeds} = this.props;
-            for(let i = 0; i < disabled_groups.length; i++){
-                if ( disabled_groups[i].id === data.id) {
-                    disabled_groups.splice(i, 1);
-                    feeds.push(data);
-                    this.props.setProps({disabled_groups,feeds});
-                }
+    restoreGroup = (data, i) => {
+        let {disabled_groups,feeds,users} = this.props;
+        for(let i = 0; i < disabled_groups.length; i++){
+            if(JSON.parse(disabled_groups[i].display).id === JSON.parse(data.display).id) {
+                disabled_groups.splice(i, 1);
+                feeds.push(data);
+                let user = JSON.parse(data.display);
+                user.rfid = data.id;
+                users[user.id] = user;
+                this.props.setProps({disabled_groups,feeds,users});
             }
         }
     };
 
     fullScreenGroup = (i,full_feed) => {
-        Janus.log(":: Make Full Screen Group: ",full_feed.display)
-        this.setState({fullscr: !this.state.fullscr,full_feed})
+        Janus.log(":: Make Full Screen Group: ",JSON.parse(full_feed.display));
+        this.setState({fullscr: !this.state.fullscr,full_feed});
         let fourvideo = this.refs["programVideo" + i];
         let fullvideo = this.refs.fullscreenVideo;
         var stream = fourvideo.captureStream();
@@ -280,7 +280,7 @@ class SDIOutGroups extends Component {
 
   render() {
       const { pre_feed,full_feed,zoom,fullscr } = this.state;
-      const {index,feeds,pgm_state,feeds_queue,quistions_queue,disabled_groups} = this.props;
+      const {users,index,feeds,pgm_state,feeds_queue,quistions_queue,disabled_groups} = this.props;
       const width = "320";
       const height = "180";
       const autoPlay = true;
@@ -328,13 +328,15 @@ class SDIOutGroups extends Component {
               // Does it help here?
               if(pgm_state[i] === null)
                   return;
-              let id = feed.id;
+              let user = JSON.parse(feed.display);
+              let qst = users[user.id] ? users[user.id].question : false;
               let talk = feed.talk;
               return (<div className={fullscr ? "hidden" : ""} key={"prf" + i}><div className="video_box"
                            key={"prov" + i}
                            ref={"provideo" + i}
                            id={"provideo" + i}>
-                  <div className="video_title">{feed.display}</div>
+                  <div className="video_title">{JSON.parse(feed.display).display}</div>
+                  {qst ? <div className='qst_title'>?</div> : ""}
                   <video className={talk ? "talk" : ""}
                          onClick={() => this.fullScreenGroup(i,feed)}
                          onContextMenu={(e) => this.zoominGroup(e, i)}
@@ -353,7 +355,11 @@ class SDIOutGroups extends Component {
       });
 
       let fullscreen = (<div className={fullscr ? "" : "hidden"}>
-              <div className="fullscrvideo_title"><span>{full_feed ? full_feed.display : ""}</span></div>
+              <div className="fullscrvideo_title"><span>{full_feed ? JSON.parse(full_feed.display).display : ""}</span></div>
+              <div className={
+                  //TODO: Fix this ugly shit!
+                  full_feed ? users[JSON.parse(full_feed.display).id] ? users[JSON.parse(full_feed.display).id].question ? 'qst_fullscreentitle' : 'hidden' : 'hidden' : 'hidden'
+              }>?</div>
               <video ref = {"fullscreenVideo"}
                      onClick={() => this.toFourGroup()}
                      id = "fullscreenVideo"
