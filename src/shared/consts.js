@@ -7,7 +7,7 @@ export const WFRP_STATE = process.env.REACT_APP_WFRP_STATE;
 export const WFDB_STATE = process.env.REACT_APP_WFDB_STATE;
 export const JANUS_SERVER = process.env.REACT_APP_JANUS_SERVER;
 export const JANUS_ADMIN = process.env.REACT_APP_JANUS_ADMIN;
-export const STUN_SERVER = process.env.REACT_APP_STUN_ISR_SRV;
+export const STUN_SERVER = process.env.REACT_APP_STUN_EUR_SRV;
 export const ADMIN_SECRET = process.env.REACT_APP_ADMIN_SECRET;
 export const SECRET = process.env.REACT_APP_SECRET;
 export const JANUS_SRV_ISRPT = process.env.REACT_APP_JANUS_SRV_ISRPT;
@@ -30,6 +30,13 @@ export const videos_options = [
     { key: 1, text: '600Kb/s', value: 1 },
     { key: 2, text: '300Kb/s', value: 11 },
     { key: 3, text: 'NoVideo', value: 3 },
+];
+
+export const admin_videos_options = [
+    { key: 1, text: '600Kb/s', value: 1 },
+    { key: 2, text: '300Kb/s', value: 11 },
+    { key: 3, text: 'RTCP', value: 103 },
+    { key: 4, text: 'NoVideo', value: 4 },
 ];
 
 export const audios_options = [
