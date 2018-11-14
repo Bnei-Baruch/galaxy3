@@ -3,7 +3,7 @@ import NewWindow from 'react-new-window';
 import { Janus } from "../../lib/janus";
 import classNames from 'classnames';
 
-import {Segment, Menu, Select, Button,Sidebar,Input,Label,Icon,Popup} from "semantic-ui-react";
+import {Menu, Select, Button,Input,Label,Icon,Popup} from "semantic-ui-react";
 import {geoInfo, initJanus, getDevicesStream, micLevel, checkNotification,testDevices} from "../../shared/tools";
 import './VirtualClient.scss'
 import './VideoConteiner.scss'
@@ -36,7 +36,13 @@ class VirtualClient extends Component {
         cammuted: false,
         shidur: false,
         protocol: null,
-        user: {},
+        user: {
+            email: null,
+            id: Janus.randomString(10),
+            role: "user",
+            name: "user-"+Janus.randomString(4),
+            username: null,
+        },
         users: {},
         username_value: localStorage.getItem("username") || "",
         visible: false,
@@ -494,28 +500,28 @@ class VirtualClient extends Component {
     };
 
     onProtocolData = (data) => {
+        //TODO: Need to add transaction handle (filter and acknowledge)
         let {room,feeds,users,user} = this.state;
-        if(user.id !== data.user.id) {
-            if (data.type === "question" && data.status && data.room === room) {
-                let rfid = users[data.user.id].rfid;
-                for (let i = 1; i < feeds.length; i++) {
-                    if (feeds[i] !== null && feeds[i] !== undefined && feeds[i].rfid === rfid) {
-                        feeds[i].question = true;
-                        break
-                    }
+        if (data.type === "question" && data.status && data.room === room && user.id !== data.user.id) {
+            let rfid = users[data.user.id].rfid;
+            for (let i = 1; i < feeds.length; i++) {
+                if (feeds[i] !== null && feeds[i] !== undefined && feeds[i].rfid === rfid) {
+                    feeds[i].question = true;
+                    break
                 }
-                this.setState({feeds});
-            } else if (data.type === "question" && !data.status && data.room === room) {
-                let rfid = users[data.user.id].rfid;
-                for (let i = 1; i < feeds.length; i++) {
-                    if (feeds[i] !== null && feeds[i] !== undefined && feeds[i].rfid === rfid) {
-                        feeds[i].question = false;
-                        break
-                    }
-                }
-                this.setState({feeds});
             }
+            this.setState({feeds});
+        } else if (data.type === "question" && !data.status && data.room === room && user.id !== data.user.id) {
+            let rfid = users[data.user.id].rfid;
+            for (let i = 1; i < feeds.length; i++) {
+                if (feeds[i] !== null && feeds[i] !== undefined && feeds[i].rfid === rfid) {
+                    feeds[i].question = false;
+                    break
+                }
+            }
+            this.setState({feeds});
         }
+
     };
 
     sendDataMessage = (key,value) => {
@@ -529,12 +535,6 @@ class VirtualClient extends Component {
     joinRoom = () => {
         let {janus, videoroom, selected_room, user, username_value} = this.state;
         localStorage.setItem("room", selected_room);
-        //FIXME: will be id from keyclock
-        user.id = Janus.randomString(10);
-        //FIXME: will be role from keyclock
-        user.role = "user";
-        //FIXME: wiill be name from keyclock
-        user.name = "user-"+Janus.randomString(4);
         //This name will see other users
         user.display = username_value || user.name;
         localStorage.setItem("username", user.display);
@@ -629,7 +629,7 @@ class VirtualClient extends Component {
       const controls = false;
       //const vmuted = true;
 
-      let iOS = ['iPad', 'iPhone', 'iPod'].indexOf(navigator.platform) >= 0;
+      //let iOS = ['iPad', 'iPhone', 'iPod'].indexOf(navigator.platform) >= 0;
 
       let rooms_list = rooms.map((data,i) => {
           const {room, num_participants, description} = data;
@@ -651,10 +651,7 @@ class VirtualClient extends Component {
               let id = feed.rfid;
               let talk = feed.talk;
               let question = feed.question;
-              // TODO: indicate question on video feed
-              //let qstn = feed.question;
-              // TODO: put name on video feed
-              let name = feed.rfuser.display
+              let name = feed.rfuser.display;
               return (<div className="video"
                         key={"v" + id}
                         ref={"video" + id}

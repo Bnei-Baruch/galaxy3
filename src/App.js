@@ -1,7 +1,7 @@
 import React, { Component, Fragment } from 'react';
 import 'semantic-ui-css/semantic.min.css';
 // import GalaxyStream from "./components/GalaxyStream";
-import ShidurAdmin from "./apps/ShidurApp/ShidurAdmin";
+// import ShidurAdmin from "./apps/ShidurApp/ShidurAdmin";
 // import ShidurApp from "./apps/ShidurApp/ShidurApp";
 // import ShidurGroups from "./apps/ShidurApp/ShidurGroups";
 // import GroupClient from "./apps/GroupsApp/GroupClient";
@@ -12,7 +12,7 @@ import ShidurAdmin from "./apps/ShidurApp/ShidurAdmin";
 // import AdminClient from "./apps/AdminApp/AdminClient";
 // import SDIOutClient from "./apps/SDIOutApp/SDIOutClient";
 // import SDIOutApp from "./apps/SDIOutApp/SDIOutApp";
-// import VirtualClient from "./apps/VirtualApp/VirtualClient";
+import VirtualClient from "./apps/VirtualApp/VirtualClient";
 // import VirtualStreaming from "./components/VirtualStreaming";
 
 class App extends Component {
@@ -26,13 +26,13 @@ class App extends Component {
                 {/*<GalaxyStream/>*/}
                 {/*<Streaming />*/}
                 {/*<ShidurUsers />*/}
-                 <ShidurAdmin/>
+                 {/*<ShidurAdmin/>*/}
                 {/*<SDIOutClient />*/}
                 {/*<SDIOutApp/>*/}
                 {/*<SndmanClient />*/}
                 {/*<AdminStreaming/>*/}
                 {/*<AdminClient />*/}
-                {/*<VirtualClient />*/}
+                <VirtualClient />
                 {/*<VirtualStreaming/>*/}
                 {/*<ShidurGroups/>*/}
                  {/*<ShidurApp/>*/}

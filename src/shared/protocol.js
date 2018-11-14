@@ -1,5 +1,5 @@
 import {Janus} from "../lib/janus";
-import {PROTOCOL_ROOM} from "./consts";
+import {PROTOCOL_ROOM,SHIDUR_ID} from "./consts";
 import {getDateString} from "./tools";
 
 const attachGxyProtocol = (protocol, user) => {
@@ -106,16 +106,35 @@ const onProtocolData = (data,ondata) => {
             message.time = dateString;
             ondata(message)
         }
+    } else if (what === "success") {
+        if(json.participants) {
+            Janus.log("--- Got Protocol Users: ", json);
+            let pcliens = json.participants.filter(c => c.username.match(SHIDUR_ID));
+            if (pcliens.length > 0) {
+                //TODO: Notify user
+                Janus.log(":: Support Online ::");
+            } else {
+                Janus.log(":: Support Offline ::");
+            }
+        }
     } else if (what === "join") {
         // Somebody joined
         let username = json["username"];
         let display = json["display"];
-        Janus.log("-:: Somebody joined - username: "+username+" : display: "+display)
+        Janus.log("- Somebody joined - username: "+username+" : display: "+display);
+        if (username.match(SHIDUR_ID)) {
+            //TODO: Notify user
+            Janus.log(":: Support Online ::");
+        }
     } else if (what === "leave") {
         // Somebody left
         let username = json["username"];
         //var when = new Date();
-        Janus.log("-:: Somebody left - username: "+username+" : Time: "+getDateString())
+        Janus.log("-:: Somebody left - username: "+username+" : Time: "+getDateString());
+        if (username.match(SHIDUR_ID)) {
+            //TODO: Notify user
+            Janus.log(":: Support Offline ::");
+        }
     } else if (what === "kicked") {
         // Somebody was kicked
         // var username = json["username"];
