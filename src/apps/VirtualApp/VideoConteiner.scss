@@ -95,6 +95,27 @@ $exactly-selector: _build-quantity-selector($selector-append, $selector);
             border:4px solid rgba(yellow,.6);
         }
     }
+    .question {
+        position: absolute;
+        left:50%;
+        top:50%;
+        transform: translate(-50%,-50%);
+       background: rgba(34, 34, 34, .5); 
+       border-radius: 50%;
+       animation: ani 1s ease-in-out infinite alternate;
+    //    animation-timing-function:;
+       padding:1rem;
+       .icon {
+           margin:0!important;
+        //    padding:0!important;
+        // text-shadow: 0 2px 1px rgba(0,0,0,.3);
+        color: rgba(255,255,255,1);
+           width:auto;
+           height:auto;
+           
+       }
+    }
+    
     &__title {
         position: absolute;
         bottom: 0;
@@ -221,3 +242,16 @@ video {
 &:nth-child(12){grid-area: 5 / 10 / 7 / 13;}
 }
 }
+
+@keyframes ani {
+    0% {
+      opacity: 0;
+    }
+    100% {
+      opacity: 1;
+    }
+    // 100% {
+    //   opacity: .5;
+    // }
+  }
+  

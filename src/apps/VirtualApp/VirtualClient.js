@@ -648,7 +648,7 @@ class VirtualClient extends Component {
           if(feed) {
               let id = feed.rfid;
               let talk = feed.talk;
-              let muted = feed.muted;
+              let question = feed.question;
               // TODO: indicate question on video feed
               //let qstn = feed.question;
               // TODO: put name on video feed
@@ -658,7 +658,7 @@ class VirtualClient extends Component {
                         ref={"video" + id}
                         id={"video" + id}>
                         <div className={classNames('video__overlay', {'talk' : talk})}>
-                        
+                            {question ? <div className="question"><Icon name="question circle" size="massive"/></div>:''}
                             <div className="video__title">{!talk ? <Icon name="microphone slash" size="small" color="red"/> : ''}{name}</div>
                         </div>
                   <video 
