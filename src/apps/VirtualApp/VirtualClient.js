@@ -494,25 +494,27 @@ class VirtualClient extends Component {
     };
 
     onProtocolData = (data) => {
-        let {room,feeds,users} = this.state;
-        if(data.type === "question" && data.status && data.room === room) {
-            let rfid = users[data.user.id].rfid;
-            for(let i=1; i<feeds.length; i++) {
-                if(feeds[i] !== null && feeds[i] !== undefined && feeds[i].rfid === rfid) {
-                    feeds[i].question = true;
-                    break
+        let {room,feeds,users,user} = this.state;
+        if(user.id !== data.user.id) {
+            if (data.type === "question" && data.status && data.room === room) {
+                let rfid = users[data.user.id].rfid;
+                for (let i = 1; i < feeds.length; i++) {
+                    if (feeds[i] !== null && feeds[i] !== undefined && feeds[i].rfid === rfid) {
+                        feeds[i].question = true;
+                        break
+                    }
                 }
-            }
-            this.setState({feeds});
-        } else if(data.type === "question" && !data.status && data.room === room) {
-            let rfid = users[data.user.id].rfid;
-            for(let i=1; i<feeds.length; i++) {
-                if(feeds[i] !== null && feeds[i] !== undefined && feeds[i].rfid === rfid) {
-                    feeds[i].question = false;
-                    break
+                this.setState({feeds});
+            } else if (data.type === "question" && !data.status && data.room === room) {
+                let rfid = users[data.user.id].rfid;
+                for (let i = 1; i < feeds.length; i++) {
+                    if (feeds[i] !== null && feeds[i] !== undefined && feeds[i].rfid === rfid) {
+                        feeds[i].question = false;
+                        break
+                    }
                 }
+                this.setState({feeds});
             }
-            this.setState({feeds});
         }
     };
 
