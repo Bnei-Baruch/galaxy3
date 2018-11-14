@@ -1,10 +1,11 @@
 import React, { Component } from 'react';
 import { Janus } from "../../lib/janus";
 import {Segment, Menu, Button, Input, Table, Grid, Message} from "semantic-ui-react";
-import {initJanus, initChatRoom, getDateString, joinChatRoom, getPublisherInfo, initGXYJanus} from "../../shared/tools";
+import {initJanus, initChatRoom, getDateString, joinChatRoom, getPublisherInfo} from "../../shared/tools";
 import './ShidurAdmin.css';
-import './VideoConteiner.scss'
+import './ShidurAdminVideo.scss'
 import {MAX_FEEDS, SECRET} from "../../shared/consts";
+import {initGxyProtocol} from "../../shared/protocol";
 
 class ShidurAdmin extends Component {
 
@@ -27,7 +28,14 @@ class ShidurAdmin extends Component {
         mystream: null,
         audio: null,
         muted: true,
-        user: {session: 0, handle: 0},
+        user: {
+            session: 0,
+            handle: 0,
+            role: "admin",
+            display: "admin",
+            id: Janus.randomString(10),
+            name: "admin",
+        },
         description: "",
         messages: [],
         visible: false,
@@ -40,11 +48,19 @@ class ShidurAdmin extends Component {
         initJanus(janus => {
             this.setState({janus});
             this.initVideoRoom();
+
             initChatRoom(janus, null, chatroom => {
                 Janus.log(":: Got Chat Handle: ",chatroom);
                 this.setState({chatroom});
             }, data => {
                 this.onData(data);
+            });
+
+            initGxyProtocol(janus, this.state.user, protocol => {
+                this.setState({protocol});
+            }, ondata => {
+                Janus.log("-- :: It's protocol public message: ", ondata);
+                this.onProtocolData(ondata);
             });
         });
         setInterval(() => this.getRoomList(), 10000 );
@@ -113,11 +129,7 @@ class ShidurAdmin extends Component {
                 Janus.log("Plugin attached! (" + videoroom.getPlugin() + ", id=" + videoroom.getId() + ")");
                 Janus.log("  -- This is a publisher/manager");
                 let {user} = this.state;
-                user.role = "admin";
-                user.display = "admin";
-                user.id = Janus.randomString(10);
-                user.name = "admin";
-                this.setState({videoroom, user});
+                this.setState({videoroom});
 
                 if(roomid) {
                     this.listForward(roomid);
@@ -178,18 +190,6 @@ class ShidurAdmin extends Component {
                     Janus.log("  -- This is a subscriber");
                     // We wait for the plugin to send us an offer
                     let listen = { "request": "join", "room": this.state.current_room, "ptype": "subscriber", "feed": id };
-                    // In case you don't want to receive audio, video or data, even if the
-                    // publisher is sending them, set the 'offer_audio', 'offer_video' or
-                    // 'offer_data' properties to false (they're true by default), e.g.:
-                    // 		listen["offer_video"] = false;
-                    // For example, if the publisher is VP8 and this is Safari, let's avoid video
-                    // if(video !== "h264" && Janus.webRTCAdapter.browserDetails.browser === "safari") {
-                    //     if(video)
-                    //         video = video.toUpperCase()
-                    //     toastr.warning("Publisher is using " + video + ", but Safari doesn't support it: disabling video");
-                    //     listen["offer_video"] = false;
-                    // }
-                    // remoteFeed.videoCodec = video;
                     remoteFeed.send({"message": listen});
                 },
                 error: (error) => {
@@ -399,26 +399,12 @@ class ShidurAdmin extends Component {
         videoroom.createOffer(
             {
                 // Add data:true here if you want to publish datachannels as well
-                media: { audioRecv: false, videoRecv: false, audioSend: useAudio, videoSend: true, video: "lowres" },	// Publishers are sendonly
-                //media: { audioRecv: false, videoRecv: false, audioSend: useAudio, videoSend: true },	// Publishers are sendonly
-                // If you want to test simulcasting (Chrome and Firefox only), then
-                // pass a ?simulcast=true when opening this demo page: it will turn
-                // the following 'simulcast' property to pass to janus.js to true
+                media: { audioRecv: false, videoRecv: false, audioSend: useAudio, videoSend: true, video: "lowres" },
                 simulcast: false,
                 success: (jsep) => {
                     Janus.debug("Got publisher SDP!");
                     Janus.debug(jsep);
                     let publish = { "request": "configure", "audio": useAudio, "video": true };
-                    // You can force a specific codec to use when publishing by using the
-                    // audiocodec and videocodec properties, for instance:
-                    // 		publish["audiocodec"] = "opus"
-                    // to force Opus as the audio codec to use, or:
-                    // 		publish["videocodec"] = "vp9"
-                    // to force VP9 as the videocodec to use. In both case, though, forcing
-                    // a codec will only work if: (1) the codec is actually in the SDP (and
-                    // so the browser supports it), and (2) the codec is in the list of
-                    // allowed codecs in a room. With respect to the point (2) above,
-                    // refer to the text in janus.plugin.videoroom.cfg for more details
                     videoroom.send({"message": publish, "jsep": jsep});
                 },
                 error: (error) => {
@@ -484,6 +470,23 @@ class ShidurAdmin extends Component {
         }
     };
 
+    onProtocolData = (data) => {
+        if(data.type === "question" && data.status) {
+            let {quistions_queue} = this.state;
+            quistions_queue.push(data);
+            this.setState({quistions_queue});
+        } else if(data.type === "question" && !data.status) {
+            let {quistions_queue} = this.state;
+            for(let i = 0; i < quistions_queue.length; i++){
+                if(quistions_queue[i].user.id === data.user.id) {
+                    quistions_queue.splice(i, 1);
+                    this.setState({quistions_queue});
+                    break
+                }
+            }
+        }
+    };
+
     sendDataMessage = () => {
         let {input_value,user} = this.state;
         let msg = {user, text: input_value};
@@ -528,10 +531,6 @@ class ShidurAdmin extends Component {
                 // Any new feed to attach to?
                 if(msg["publishers"] !== undefined && msg["publishers"] !== null) {
                     let list = msg["publishers"];
-                    if(list.length > MAX_FEEDS) {
-                        alert("Max users in this room is reached");
-                        window.location.reload();
-                    }
                     Janus.debug("Got a list of available publishers/feeds:");
                     Janus.log(list);
                     for(let f in list) {
@@ -542,7 +541,7 @@ class ShidurAdmin extends Component {
                         let audio = list[f]["audio_codec"];
                         let video = list[f]["video_codec"];
                         Janus.debug("  >> [" + id + "] " + display + " (audio: " + audio + ", video: " + video + ")");
-                        if(display.role === "user")
+                        if(display.role.match(/^(user|group)$/))
                             this.newRemoteFeed(id, talk);
                     }
                 }
@@ -584,7 +583,7 @@ class ShidurAdmin extends Component {
                         let audio = list[f]["audio_codec"];
                         let video = list[f]["video_codec"];
                         Janus.debug("  >> [" + id + "] " + display + " (audio: " + audio + ", video: " + video + ")");
-                        if(display.role === "user")
+                        if(display.match(/^(user|group)$/))
                             this.newRemoteFeed(id, false);
                     }
                 } else if(msg["leaving"] !== undefined && msg["leaving"] !== null) {
@@ -651,7 +650,7 @@ class ShidurAdmin extends Component {
 
     joinRoom = (data, i) => {
         const {feeds,rooms,chatroom,user} = this.state;
-        let room = rooms[i].room;
+        let room = data ? rooms[i].room : 1234;
         if (this.state.current_room === room)
             return;
         Janus.log(" :: Attaching to Preview: ", room);
@@ -669,17 +668,10 @@ class ShidurAdmin extends Component {
         this.initVideoRoom(room);
 
         joinChatRoom(chatroom,room,user)
-        // initChatRoom(this.state.janus, room, chatroom => {
-        //     Janus.log(":: Got Chat Handle: ",chatroom);
-        //     this.setState({chatroom});
-        // }, data => {
-        //     this.onData(data);
-        // });
     };
 
     exitRoom = (room) => {
         let {videoroom, chatroom} = this.state;
-        //let room = this.state.current_room;
         let videoreq = {request : "leave", "room": room};
         let chatreq = {textroom : "leave", transaction: Janus.randomString(12),"room": room};
         Janus.log(room);
@@ -691,11 +683,8 @@ class ShidurAdmin extends Component {
         chatroom.data({text: JSON.stringify(chatreq),
             success: () => {
                 Janus.log(":: Text room leave callback: ");
-                //this.getRoomList();
             }
         });
-        //this.setState({mystream: null, room: "", feeds: []});
-        //this.initVideoRoom();
     };
 
     getRoomID = () => {
@@ -828,7 +817,7 @@ class ShidurAdmin extends Component {
     getUserInfo = (userinfo,id) => {
         this.setState({feed_id: id, feed_user: userinfo});
         Janus.log(userinfo);
-        this.switchFeed(id);
+        //this.switchFeed(id);
     };
 
     getFeedInfo = () => {
@@ -849,7 +838,7 @@ class ShidurAdmin extends Component {
       const width = "134";
       const height = "100";
       const autoPlay = true;
-      const controls = true;
+      const controls = false;
       const vmuted = true;
 
       let rooms_list = rooms.map((data,i) => {
@@ -976,7 +965,7 @@ class ShidurAdmin extends Component {
                       </Grid.Column>
                       <Grid.Column largeScreen={10}>
                           <Segment className="videos_segment" onDoubleClick={this.handleShowClick}>
-                              <div className="wrapper">
+                              <div className="videos-panel">
                                   <div className="videos">
                                       <div className="videos__wrapper">
                                           {videos}
@@ -992,7 +981,7 @@ class ShidurAdmin extends Component {
                               <Table selectable compact='very' basic structured className="admin_table" unstackable>
                                   <Table.Body>
                                       <Table.Row active={current_room === 1234}
-                                                 key={i} onClick={() => this.joinRoom("", i)}>
+                                                 key={i} onClick={() => this.joinRoom(null, i)}>
                                           <Table.Cell width={5}>Galaxy</Table.Cell>
                                           <Table.Cell width={1}>70</Table.Cell>
                                       </Table.Row>
