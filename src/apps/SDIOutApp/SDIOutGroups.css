@@ -41,6 +41,38 @@
     float: right !important;
 }
 
+.qst_title {
+    font-family: "Liberation Serif";
+    font-weight: bolder;
+    line-height: 1.1285em;
+    position: absolute;
+    color: black;
+    text-align: center;
+    font-size: 30px;
+    background-color: white;
+    width: auto;
+    padding: 0px 10px;
+    float: left !important;
+    bottom: 0px;
+}
+
+.qst_fullscreentitle {
+    font-family: "Liberation Serif";
+    font-weight: bolder;
+    line-height: 1.1285em;
+    position: absolute;
+    color: black;
+    text-align: center;
+    font-size: 50px;
+    background-color: white;
+    width: auto;
+    padding: 0px 10px;
+    float: left !important;
+    bottom: 4px;
+    left: 5px;
+}
+
+
 .video_button {
     bottom: 0;
     position: absolute;

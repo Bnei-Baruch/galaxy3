@@ -1,9 +1,9 @@
 import React, { Component } from 'react';
 import { Janus } from "../../lib/janus";
 import {Grid} from "semantic-ui-react";
-import {getState, putData, initGXYJanus} from "../../shared/tools";
+import {getState, putData, initGXYJanus, initJanus} from "../../shared/tools";
 import './SDIOutApp.css';
-// import {initGxyProtocol} from "../shared/protocol";
+import {initGxyProtocol} from "../../shared/protocol";
 import SDIOutGroups from "./SDIOutGroups";
 import SDIOutClient from "./SDIOutClient";
 
@@ -46,18 +46,18 @@ class SDIOutApp extends Component {
     };
 
     componentDidMount() {
-        initGXYJanus(janus => {
+        initJanus(janus => {
             let {user} = this.state;
             user.session = janus.getSessionId();
             this.setState({janus,user});
             this.initVideoRoom();
 
-            // initGxyProtocol(janus, user, protocol => {
-            //     this.setState({protocol});
-            // }, ondata => {
-            //     Janus.log("-- :: It's protocol public message: ", ondata);
-            //     this.onProtocolData(ondata);
-            // });
+            initGxyProtocol(janus, user, protocol => {
+                this.setState({protocol});
+            }, ondata => {
+                Janus.log("-- :: It's protocol public message: ", ondata);
+                this.onProtocolData(ondata);
+            });
 
         });
     };
@@ -84,8 +84,8 @@ class SDIOutApp extends Component {
                 Janus.log("Plugin attached! (" + gxyhandle.getPlugin() + ", id=" + gxyhandle.getId() + ")");
                 Janus.log("  -- This is a publisher/manager");
                 let {user} = this.state;
-                // let register = { "request": "join", "room": 1234, "ptype": "publisher", "display": JSON.stringify(user) };
-                let register = { "request": "join", "room": 1234, "ptype": "publisher", "display": "sdi_out" };
+                let register = { "request": "join", "room": 1234, "ptype": "publisher", "display": JSON.stringify(user) };
+                //let register = { "request": "join", "room": 1234, "ptype": "publisher", "display": "sdi_out" };
                 gxyhandle.send({"message": register});
             },
             error: (error) => {
@@ -127,11 +127,16 @@ class SDIOutApp extends Component {
                 Janus.log("Successfully joined room " + msg["room"] + " with ID " + myid);
                 if(msg["publishers"] !== undefined && msg["publishers"] !== null) {
                     let list = msg["publishers"];
-                    //let feeds_list = list.filter(feeder => JSON.parse(feeder.display).role === "user");
+                    let users = {};
+                    let feeds = list.filter(feeder => JSON.parse(feeder.display).role === "group");
+                    for(let i=0;i<feeds.length;i++) {
+                        let user = JSON.parse(feeds[i].display);
+                        user.rfid = feeds[i].id;
+                        users[user.id] = user;
+                    }
                     Janus.debug("Got a list of available publishers/feeds:");
                     Janus.debug(list);
-                    let feeds = list.filter(f => !/_/.test(f.display));
-                    this.setState({feeds});
+                    this.setState({feeds,users});
                     // setTimeout(() => {
                     //     this.col1.switchFour();
                     //     this.col2.switchFour();
@@ -160,12 +165,16 @@ class SDIOutApp extends Component {
                 // Any new feed to attach to?
                 if(msg["publishers"] !== undefined && msg["publishers"] !== null) {
                     let list = msg["publishers"];
+                    let feed = JSON.parse(list[0].display).role === "group";
                     Janus.debug("Got a list of available publishers/feeds:");
                     Janus.debug(list[0]);
-                    if(!/_/.test(list[0].display)) {
-                        let {feeds} = this.state;
+                    if(feed) {
+                        let {feeds,users} = this.state;
+                        let user = JSON.parse(list[0].display);
+                        user.rfid = list[0].id;
+                        users[user.id] = user;
                         feeds.push(list[0]);
-                        this.setState({feeds});
+                        this.setState({feeds,users});
 
                         // if(feeds.length < 13) {
                         //     this.col1.switchFour();
@@ -211,30 +220,84 @@ class SDIOutApp extends Component {
     onProtocolData = (data) => {
         if(data.type === "sdi-switch") {
             let {col, feed, i} = data;
-            console.log(" :: Git Shidur Action: ",data);
+            console.log(" :: Got Shidur Action: ",data);
             this["col"+col].switchNext(i,feed);
         } else if(data.type === "sdi-fullscreen" && data.status) {
             let {col, feed, i} = data;
-            console.log(" :: Git Shidur Action: ",data);
+            console.log(" :: Got Shidur Action: ",data);
             this["col"+col].fullScreenGroup(i,feed);
         } else if(data.type === "sdi-fullscreen" && !data.status) {
             let {col, feed, i} = data;
-            console.log(" :: Git Shidur Action: ",data);
+            console.log(" :: Got Shidur Action: ",data);
             this["col"+col].toFourGroup(i,feed);
         } else if(data.type === "sdi-remove") {
             let {col, feed, i} = data;
             console.log(" :: Git Shidur Action: ",data);
             this.removeFeed(feed.id);
+        } else if(data.type === "sdi-disable") {
+            let {col, feed, i} = data;
+            console.log(" :: Got Shidur Action: ",data);
+            let {disabled_groups} = this.state;
+            disabled_groups.push(feed);
+            this.removeFeed(feed.id);
+            this.setState({disabled_groups});
+        } else if(data.type === "sdi-restart") {
+            window.location.reload();
+        } else if(data.type === "sdi-restore") {
+            let {col, feed, i} = data;
+            console.log(" :: Git Shidur Action: ",data);
+            let {disabled_groups,feeds,users} = this.state;
+            for(let i = 0; i < disabled_groups.length; i++){
+                if(disabled_groups[i].id === data.feed.id) {
+                    disabled_groups.splice(i, 1);
+                    feeds.push(data.feed);
+                    let user = JSON.parse(data.feed.display);
+                    user.rfid = data.feed.id;
+                    users[user.id] = user;
+                    this.setState({disabled_groups,feeds,users});
+                }
+            }
+        } else if(data.type === "question" && data.status) {
+            let {quistions_queue,users} = this.state;
+            if(users[data.user.id]) {
+                users[data.user.id].question = true;
+                data.rfid = users[data.user.id].rfid;
+                quistions_queue.push(data);
+                this.setState({quistions_queue, users});
+            }
+        } else if(data.type === "question" && !data.status) {
+            let {quistions_queue,users} = this.state;
+            for(let i = 0; i < quistions_queue.length; i++){
+                if(quistions_queue[i].user.id === data.user.id) {
+                    users[data.user.id].question = false;
+                    quistions_queue.splice(i, 1);
+                    this.setState({quistions_queue,users});
+                    break
+                }
+            }
         }
     };
 
     removeFeed = (id,) => {
-        let {feeds} = this.state;
+        let {feeds,users,quistions_queue} = this.state;
         for(let i=0; i<feeds.length; i++){
             if(feeds[i].id === id) {
                 Janus.log(" :: Remove Feed: " + id);
+
+                // Delete from users mapping object
+                let user = JSON.parse(feeds[i].display);
+                delete users[user.id];
+
+                // Delete from questions list
+                for(let i = 0; i < quistions_queue.length; i++){
+                    if(quistions_queue[i].user.id === user.id) {
+                        quistions_queue.splice(i, 1);
+                        break
+                    }
+                }
+
                 feeds.splice(i, 1);
-                this.setState({feeds});
+                this.setState({feeds,users,quistions_queue});
                 this.checkProgram(id,feeds);
                 break
             }

@@ -1,11 +1,13 @@
-import React, { Component } from 'react';
-import { Janus } from "../../lib/janus";
-import {Grid} from "semantic-ui-react";
-import {getState, putData, initGXYJanus} from "../../shared/tools";
-// import {initGxyProtocol} from "../shared/protocol";
+import React, {Component} from 'react';
+import {Janus} from "../../lib/janus";
+import {Grid, Label, Message, Segment} from "semantic-ui-react";
+import {initJanus} from "../../shared/tools";
+import {initGxyProtocol} from "../../shared/protocol";
 import './ShidurGroups.css'
-import ShidurGroupsColumn from "./ShidurGroupsColumn";
+import ShidurGroups from "./ShidurGroups";
 import ShidurUsers from "./ShidurUsers";
+import {client, getUser} from "../../components/UserManager";
+import LoginPage from "../../components/LoginPage";
 
 
 class ShidurApp extends Component {
@@ -13,6 +15,7 @@ class ShidurApp extends Component {
     state = {
         janus: null,
         feeds: [],
+        qfeeds: [],
         gxyhandle: null,
         name: "",
         disabled_groups: [],
@@ -32,33 +35,25 @@ class ShidurApp extends Component {
         audio: null,
         muted: true,
         feeds_queue: 0,
-        user: {
-            session: 0,
-            handle: 0,
-            role: "shidur",
-            display: "shidur",
-            id: Janus.randomString(10),
-            name: "shidur"
-        },
+        user: null,
         users: {},
         zoom: false,
         fullscr: false,
     };
 
     componentDidMount() {
-        initGXYJanus(janus => {
-            let {user} = this.state;
-            user.session = janus.getSessionId();
-            this.setState({janus,user});
-            this.initVideoRoom();
-
-            // initGxyProtocol(janus, user, protocol => {
-            //     this.setState({protocol});
-            // }, ondata => {
-            //     Janus.log("-- :: It's protocol public message: ", ondata);
-            //     this.onProtocolData(ondata);
-            // });
-
+        getUser(user => {
+            if(user) {
+                let gxy_group = user.roles.filter(role => role === 'gxy_shidur').length > 0;
+                if (gxy_group) {
+                    delete user.roles;
+                    user.role = "shidur";
+                    this.initGalaxy(user);
+                } else {
+                    alert("Access denied!");
+                    client.signoutRedirect();
+                }
+            }
         });
     };
 
@@ -74,6 +69,21 @@ class ShidurApp extends Component {
         this.state.janus.destroy();
     };
 
+    initGalaxy = (user) => {
+        initJanus(janus => {
+            this.setState({janus,user});
+            this.initVideoRoom();
+
+            initGxyProtocol(janus, user, protocol => {
+                this.setState({protocol});
+            }, ondata => {
+                Janus.log("-- :: It's protocol public message: ", ondata);
+                this.onProtocolData(ondata);
+            });
+
+        });
+    };
+
     initVideoRoom = () => {
         this.state.janus.attach({
             plugin: "janus.plugin.videoroom",
@@ -84,8 +94,7 @@ class ShidurApp extends Component {
                 Janus.log("Plugin attached! (" + gxyhandle.getPlugin() + ", id=" + gxyhandle.getId() + ")");
                 Janus.log("  -- This is a publisher/manager");
                 let {user} = this.state;
-                // let register = { "request": "join", "room": 1234, "ptype": "publisher", "display": JSON.stringify(user) };
-                let register = { "request": "join", "room": 1234, "ptype": "publisher", "display": "shidur_admin" };
+                let register = { "request": "join", "room": 1234, "ptype": "publisher", "display": JSON.stringify(user) };
                 gxyhandle.send({"message": register});
             },
             error: (error) => {
@@ -127,11 +136,16 @@ class ShidurApp extends Component {
                 Janus.log("Successfully joined room " + msg["room"] + " with ID " + myid);
                 if(msg["publishers"] !== undefined && msg["publishers"] !== null) {
                     let list = msg["publishers"];
-                    //let feeds_list = list.filter(feeder => JSON.parse(feeder.display).role === "user");
+                    let users = {};
+                    let feeds = list.filter(feeder => JSON.parse(feeder.display).role === "group");
+                    for(let i=0;i<feeds.length;i++) {
+                        let user = JSON.parse(feeds[i].display);
+                        user.rfid = feeds[i].id;
+                        users[user.id] = user;
+                    }
                     Janus.debug("Got a list of available publishers/feeds:");
                     Janus.debug(list);
-                    let feeds = list.filter(f => !/_/.test(f.display));
-                    this.setState({feeds});
+                    this.setState({feeds, users});
                     setTimeout(() => {
                         this.col1.switchFour();
                         this.col2.switchFour();
@@ -160,12 +174,16 @@ class ShidurApp extends Component {
                 // Any new feed to attach to?
                 if(msg["publishers"] !== undefined && msg["publishers"] !== null) {
                     let list = msg["publishers"];
+                    let feed = JSON.parse(list[0].display).role === "group";
                     Janus.debug("Got a list of available publishers/feeds:");
                     Janus.debug(list[0]);
-                    if(!/_/.test(list[0].display)) {
-                        let {feeds} = this.state;
+                    if(feed) {
+                        let {feeds,users} = this.state;
+                        let user = JSON.parse(list[0].display);
+                        user.rfid = list[0].id;
+                        users[user.id] = user;
                         feeds.push(list[0]);
-                        this.setState({feeds});
+                        this.setState({feeds,users});
 
                         if(feeds.length < 13) {
                             this.col1.switchFour();
@@ -210,15 +228,35 @@ class ShidurApp extends Component {
 
     onProtocolData = (data) => {
         if(data.type === "question" && data.status) {
-            let {quistions_queue} = this.state;
-            quistions_queue.push(data);
-            this.setState({quistions_queue});
+            let {quistions_queue,users,qfeeds,pgm_state} = this.state;
+            if(users[data.user.id]) {
+                users[data.user.id].question = true;
+                data.rfid = users[data.user.id].rfid;
+                let q = {id: data.rfid, display: JSON.stringify(data.user)};
+                quistions_queue.push(data);
+
+                // Check if qfeed already in program
+                let chk = pgm_state.filter(q => {return (q !== null && q !== undefined && q.id === data.rfid)});
+                if(chk.length === 0)
+                    qfeeds.push(q);
+
+                this.setState({quistions_queue, users, qfeeds});
+            }
         } else if(data.type === "question" && !data.status) {
-            let {quistions_queue} = this.state;
+            let {quistions_queue,users,qfeeds} = this.state;
             for(let i = 0; i < quistions_queue.length; i++){
                 if(quistions_queue[i].user.id === data.user.id) {
+                    users[data.user.id].question = false;
                     quistions_queue.splice(i, 1);
-                    this.setState({quistions_queue});
+                    qfeeds.splice(i, 1);
+                    this.setState({quistions_queue,users});
+                    break
+                }
+            }
+            for(let i = 0; i < qfeeds.length; i++) {
+                if(JSON.parse(qfeeds[i].display).id === data.user.id) {
+                    qfeeds.splice(i, 1);
+                    this.setState({qfeeds});
                     break
                 }
             }
@@ -226,12 +264,33 @@ class ShidurApp extends Component {
     };
 
     removeFeed = (id,) => {
-        let {feeds} = this.state;
+        let {feeds,users,quistions_queue,qfeeds} = this.state;
         for(let i=0; i<feeds.length; i++){
             if(feeds[i].id === id) {
-                Janus.log(" :: Remove Feed: " + id);
+
+                // Delete from users mapping object
+                let user = JSON.parse(feeds[i].display);
+                delete users[user.id];
+
+                // Delete from questions list
+                for(let i = 0; i < quistions_queue.length; i++){
+                    if(quistions_queue[i].user.id === user.id) {
+                        quistions_queue.splice(i, 1);
+                        break
+                    }
+                }
+
+                // Delete from qfeeds
+                for(let i = 0; i < qfeeds.length; i++){
+                    if(JSON.parse(qfeeds[i].display).id === user.id) {
+                        qfeeds.splice(i, 1);
+                        break
+                    }
+                }
+
+                // Remove from general feeds list
                 feeds.splice(i, 1);
-                this.setState({feeds});
+                this.setState({feeds,users,quistions_queue});
                 this.checkProgram(id,feeds);
                 break
             }
@@ -278,24 +337,40 @@ class ShidurApp extends Component {
 
     render() {
 
-        return (
+        const {user,feeds,feeds_queue} = this.state;
+
+        let login = (<LoginPage user={user} />);
+        let content = (
             <Grid columns={4}>
                 <Grid.Column>
-                    <ShidurGroupsColumn
+                    <ShidurGroups
                         index={0} {...this.state}
                         ref={col => {this.col1 = col;}}
                         setProps={this.setProps}
                         removeFeed={this.removeFeed} />
                 </Grid.Column>
                 <Grid.Column>
-                    <ShidurGroupsColumn
+                    <ShidurGroups
                         index={4} {...this.state}
                         ref={col => {this.col2 = col;}}
                         setProps={this.setProps}
                         removeFeed={this.removeFeed} />
+                        <Message>
+                            <Grid columns={3}>
+                                <Grid.Column>
+                                    <u>Queue</u>:<Label>{feeds.length - feeds_queue}</Label>
+                                </Grid.Column>
+                                <Grid.Column>
+                                    <u>Next</u>:<Label>{feeds[feeds_queue] ? JSON.parse(feeds[feeds_queue].display).display : ""}</Label>
+                                </Grid.Column>
+                                <Grid.Column>
+                                    <u>Online</u>:<Label>{feeds.length}</Label>
+                                </Grid.Column>
+                            </Grid>
+                        </Message>
                 </Grid.Column>
                 <Grid.Column>
-                    <ShidurGroupsColumn
+                    <ShidurGroups
                         index={8} {...this.state}
                         ref={col => {this.col3 = col;}}
                         setProps={this.setProps}
@@ -307,6 +382,12 @@ class ShidurApp extends Component {
                         setProps={this.setProps} />
                 </Grid.Column>
             </Grid>
+        );
+
+        return (
+            <div>
+                {user ? content : login}
+            </div>
         );
     }
 }

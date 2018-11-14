@@ -7,7 +7,7 @@ import {initChatRoom,getDateString,joinChatRoom} from "../../shared/tools";
 class GroupChat extends Component {
 
     state = {
-        ...this.props,
+        room: 1234,
         chatroom: null,
         input_value: "",
         messages: [],
@@ -22,27 +22,40 @@ class GroupChat extends Component {
     };
 
     componentDidUpdate(prevProps) {
-        //Janus.log(" -- componentDidUpdate -- ",prevProps)
-        if (prevProps.janus !== this.state.janus) {
-            this.setState({janus: prevProps.janus})
-            Janus.log(" -- Janus was updated");
-            initChatRoom(prevProps.janus, null, chatroom => {
-                Janus.log(":: Got Chat Handle: ", chatroom);
-                this.setState({chatroom});
-            }, data => {
-                this.onData(data);
-            });
-        }
-        if (prevProps.room !== this.state.room) {
-            Janus.log(" -- Room was updated");
-            let {user,chatroom,room} = this.state;
-            if(prevProps.room === "") {
-                this.exitRoom(room);
-            } else {
-                joinChatRoom(chatroom,prevProps.room,user)
-            }
-            this.setState({room: prevProps.room});
-        }
+        // Janus.log(" -- componentDidUpdate -- ",prevProps)
+        // if (prevProps.janus !== this.state.janus) {
+        //     this.setState({janus: prevProps.janus})
+        //     Janus.log(" -- Janus was updated");
+        //     initChatRoom(prevProps.janus, null, chatroom => {
+        //         Janus.log(":: Got Chat Handle: ", chatroom);
+        //         this.setState({chatroom});
+        //     }, data => {
+        //         this.onData(data);
+        //     });
+        // }
+        // if (prevProps.room !== this.state.room) {
+        //     Janus.log(" -- Room was updated");
+        //     let {user,chatroom,room} = this.state;
+        //     if(prevProps.room === "") {
+        //         this.exitRoom(room);
+        //     } else {
+        //         joinChatRoom(chatroom,prevProps.room,user)
+        //     }
+        //     this.setState({room: prevProps.room});
+        // }
+    };
+
+    initChat = (janus) => {
+        initChatRoom(janus, null, chatroom => {
+            Janus.log(":: Got Chat Handle: ", chatroom);
+            this.setState({chatroom});
+        }, data => {
+            this.onData(data);
+        });
+    };
+
+    initChatRoom = (user) => {
+        joinChatRoom(this.state.chatroom,1234,user);
     };
 
     onKeyPressed = (e) => {
@@ -50,7 +63,7 @@ class GroupChat extends Component {
             this.sendChatMessage();
     };
 
-    exitRoom = (room) => {
+    exitChatRoom = (room) => {
         let {chatroom} = this.state;
         let chatreq = {textroom : "leave", transaction: Janus.randomString(12),"room": room};
         chatroom.data({text: JSON.stringify(chatreq),
@@ -118,7 +131,8 @@ class GroupChat extends Component {
     };
 
     sendChatMessage = () => {
-        let {input_value, user} = this.state;
+        let {input_value} = this.state;
+        let {user} = this.props;
         let msg = {user, text: input_value};
         let message = {
             textroom: "message",

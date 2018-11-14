@@ -2,7 +2,6 @@ import React, { Component, Fragment } from 'react';
 import {Button} from "semantic-ui-react";
 import LoginPage from '../../components/LoginPage';
 import {client, getUser} from "../../components/UserManager";
-//import GroupClient from "./GroupClient";
 
 class GroupsApp extends Component {
 
@@ -28,10 +27,6 @@ class GroupsApp extends Component {
         }
     };
 
-    // authPass = () => {
-    //     this.setState({pass: true});
-    // };
-
     render() {
 
         const {user, roles} = this.state;
@@ -44,13 +39,10 @@ class GroupsApp extends Component {
             return false
         });
 
-        //let login = (<LoginPage user={user} enter={opt} />);
-        //let enter = (<GroupClient user={user} />);
         return (
 
             <Fragment>
                 <LoginPage user={user} enter={opt} />
-                {/*{pass ? opt : login}*/}
             </Fragment>
 
         );

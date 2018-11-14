@@ -8,7 +8,7 @@ const attachGxyProtocol = (protocol, user) => {
         textroom: "join",
         transaction: transaction,
         room: PROTOCOL_ROOM,
-        username: user.id,
+        username: user.id || user.sub,
         display: user.display
     };
     protocol.data({
@@ -80,7 +80,6 @@ export const initGxyProtocol = (janus,user,callback,ondata) => {
 };
 
 const onProtocolData = (data,ondata) => {
-    Janus.log(":: We got message from Data Channel: ",data);
     let json = JSON.parse(data);
     // var transaction = json["transaction"];
     // if (transactions[transaction]) {

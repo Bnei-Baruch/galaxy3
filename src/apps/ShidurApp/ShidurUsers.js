@@ -62,7 +62,6 @@ class ShidurUsers extends Component {
 
             initGxyProtocol(janus, user, protocol => {
                 this.setState({protocol});
-                this.props.setProps({protocol});
             }, ondata => {
                 Janus.log("-- :: It's protocol public message: ", ondata);
                 this.onProtocolData(ondata);
@@ -669,7 +668,7 @@ class ShidurUsers extends Component {
 
     return (
 
-        <Segment className="segment_conteiner" raised>
+        <Segment className="segment_conteiner">
           
           <Segment className="program_segment" color='red'>
               {/*<div className="shidur_overlay">{pgm_state.name}</div>*/}
