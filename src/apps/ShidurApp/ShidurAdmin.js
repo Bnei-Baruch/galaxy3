@@ -49,7 +49,7 @@ class ShidurAdmin extends Component {
                 let gxy_group = user.roles.filter(role => role === 'gxy_admin').length > 0;
                 let gxy_root = user.roles.filter(role => role === 'gxy_root').length > 0;
                 if (gxy_group) {
-                    this.setState({gxy_root});
+                    this.setState({root: gxy_root});
                     delete user.roles;
                     user.role = "admin";
                     this.initShidurAdmin(user);
