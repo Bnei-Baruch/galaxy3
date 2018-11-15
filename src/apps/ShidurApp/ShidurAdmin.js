@@ -6,6 +6,7 @@ import './ShidurAdmin.css';
 import './VideoConteiner.scss'
 import {MAX_FEEDS, SECRET} from "../../shared/consts";
 import {initGxyProtocol} from "../../shared/protocol";
+import classNames from "classnames";
 
 class ShidurAdmin extends Component {
 
@@ -377,12 +378,13 @@ class ShidurAdmin extends Component {
                 },
                 oncleanup: () => {
                     Janus.log(" ::: Got a cleanup notification (remote feed " + id + ") :::");
+                    this.setState({switchFeed: null});
                 }
             });
     };
 
     switchFeed = (id) => {
-        let {current_room, roomid, switchFeed} = this.state;
+        let {switchFeed} = this.state;
         if(!switchFeed) {
             this.newSwitchFeed(id,false);
         } else {
@@ -567,7 +569,7 @@ class ShidurAdmin extends Component {
                 let id = msg["id"];
                 let room = msg["room"];
                 Janus.log("User: "+id+" - start talking");
-                for(let i=1; i<MAX_FEEDS; i++) {
+                for(let i=0; i<MAX_FEEDS; i++) {
                     if(feeds[i] !== null && feeds[i] !== undefined && feeds[i].rfid === id) {
                         feeds[i].talk = true;
                     }
@@ -578,7 +580,7 @@ class ShidurAdmin extends Component {
                 let id = msg["id"];
                 let room = msg["room"];
                 Janus.log("User: "+id+" - stop talking");
-                for(let i=1; i<MAX_FEEDS; i++) {
+                for(let i=0; i<MAX_FEEDS; i++) {
                     if(feeds[i] !== null && feeds[i] !== undefined && feeds[i].rfid === id) {
                         feeds[i].talk = false;
                     }
@@ -914,8 +916,8 @@ class ShidurAdmin extends Component {
                            key={"v" + id}
                            ref={"video" + id}
                            id={"video" + id}>
-                  <video className={talk ? "talk" : ""}
-                         key={id}
+                  <div className={classNames('video__overlay', {'talk' : talk})} />
+                  <video key={id}
                          ref={"remoteVideo" + id}
                          id={"remoteVideo" + id}
                          width={width}
