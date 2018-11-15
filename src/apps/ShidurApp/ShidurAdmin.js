@@ -7,6 +7,8 @@ import './VideoConteiner.scss'
 import {MAX_FEEDS, SECRET} from "../../shared/consts";
 import {initGxyProtocol} from "../../shared/protocol";
 import classNames from "classnames";
+import {client, getUser} from "../../components/UserManager";
+import LoginPage from "../../components/LoginPage";
 
 class ShidurAdmin extends Component {
 
@@ -30,14 +32,7 @@ class ShidurAdmin extends Component {
         mystream: null,
         audio: null,
         muted: true,
-        user: {
-            session: 0,
-            handle: 0,
-            role: "admin",
-            display: "admin",
-            id: Janus.randomString(10),
-            name: "admin",
-        },
+        user: null,
         description: "",
         messages: [],
         visible: false,
@@ -48,8 +43,34 @@ class ShidurAdmin extends Component {
 
     componentDidMount() {
         document.addEventListener("keydown", this.onKeyPressed);
+        getUser(user => {
+            if(user) {
+                let gxy_group = user.roles.filter(role => role === 'gxy_admin').length > 0;
+                if (gxy_group) {
+                    delete user.roles;
+                    user.role = "admin";
+                    this.initShidurAdmin(user);
+                } else {
+                    alert("Access denied!");
+                    client.signoutRedirect();
+                }
+            }
+        });
+    };
+
+    componentWillUnmount() {
+        document.removeEventListener("keydown", this.onKeyPressed);
+        this.state.janus.destroy();
+    };
+
+    onKeyPressed = (e) => {
+        if(e.code === "Enter")
+            this.sendDataMessage();
+    };
+
+    initShidurAdmin = (user) => {
         initJanus(janus => {
-            this.setState({janus});
+            this.setState({janus,user});
             this.initVideoRoom();
 
             initChatRoom(janus, null, chatroom => {
@@ -67,16 +88,6 @@ class ShidurAdmin extends Component {
             });
         });
         setInterval(() => this.getRoomList(), 10000 );
-    };
-
-    componentWillUnmount() {
-        document.removeEventListener("keydown", this.onKeyPressed);
-        this.state.janus.destroy();
-    };
-
-    onKeyPressed = (e) => {
-        if(e.code === "Enter")
-            this.sendDataMessage();
     };
 
     getRoomList = () => {
@@ -863,8 +874,8 @@ class ShidurAdmin extends Component {
 
 
   render() {
-      //Janus.log(" --- ::: RENDER ::: ---");
-      const { rooms,current_room,switch_mode,description,feeds,i,roomid,messages } = this.state;
+
+      const { rooms,current_room,switch_mode,user,feeds,i,messages } = this.state;
       const width = "134";
       const height = "100";
       const autoPlay = true;
@@ -942,8 +953,8 @@ class ShidurAdmin extends Component {
                      playsInline = {true} />
           </div>);
 
-      return (
-
+      let login = (<LoginPage user={user} />);
+      let content = (
           <Segment className="virtual_segment" color='blue' raised>
 
               <Segment textAlign='center' className="ingest_segment">
@@ -952,23 +963,22 @@ class ShidurAdmin extends Component {
                           {/*<Button negative onClick={this.removeRoom}>Remove</Button>*/}
                           {/*:::*/}
                           {/*<Select*/}
-                              {/*error={roomid}*/}
-                              {/*scrolling*/}
-                              {/*placeholder="Select Room:"*/}
-                              {/*value={i}*/}
-                              {/*options={rooms_list}*/}
-                              {/*onChange={(e, {value}) => this.selectRoom(value)} />*/}
+                          {/*error={roomid}*/}
+                          {/*scrolling*/}
+                          {/*placeholder="Select Room:"*/}
+                          {/*value={i}*/}
+                          {/*options={rooms_list}*/}
+                          {/*onChange={(e, {value}) => this.selectRoom(value)} />*/}
                       </Menu.Item>
                       <Menu.Item >
                           {/*<Button positive onClick={this.joinRoom}>Join</Button>*/}
-                          :::
                           {/*<Button onClick={this.exitRoom}>exit</Button>*/}
                       </Menu.Item>
                       <Menu.Item>
                           {/*<Input type='text' placeholder='Room description...' action value={description}*/}
-                                 {/*onChange={(v,{value}) => this.setState({description: value})}>*/}
-                              {/*<input />*/}
-                              {/*<Button positive onClick={this.createRoom}>Create</Button>*/}
+                          {/*onChange={(v,{value}) => this.setState({description: value})}>*/}
+                          {/*<input />*/}
+                          {/*<Button positive onClick={this.createRoom}>Create</Button>*/}
                           {/*</Input>*/}
                       </Menu.Item>
                       <Menu.Item>
@@ -1007,16 +1017,16 @@ class ShidurAdmin extends Component {
                       </Grid.Column>
                       <Grid.Column largeScreen={10}>
                           {/*<Segment className="videos_segment" onDoubleClick={this.handleShowClick}>*/}
-                              <div className="videos-panel">
-                                  <div className="videos">
-                                      <div className="videos__wrapper">
-                                          {switch_mode ? "" : videos}
-                                          <Transition visible={switch_mode} animation='scale' duration={500}>
-                                              {switchvideo}
-                                          </Transition>
-                                      </div>
+                          <div className="videos-panel">
+                              <div className="videos">
+                                  <div className="videos__wrapper">
+                                      {switch_mode ? "" : videos}
+                                      <Transition visible={switch_mode} animation='scale' duration={500}>
+                                          {switchvideo}
+                                      </Transition>
                                   </div>
                               </div>
+                          </div>
                           {/*</Segment>*/}
 
                       </Grid.Column>
@@ -1055,6 +1065,13 @@ class ShidurAdmin extends Component {
               </Segment>
 
           </Segment>
+      );
+
+      return (
+
+          <div>
+              {user ? content : login}
+          </div>
 
       );
   }
