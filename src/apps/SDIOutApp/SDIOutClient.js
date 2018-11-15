@@ -1,17 +1,18 @@
 import React, { Component } from 'react';
 import { Janus } from "../../lib/janus";
-import {Segment} from "semantic-ui-react";
+import {Icon, Segment} from "semantic-ui-react";
 import {getState, initJanus} from "../../shared/tools";
 import './SDIOutClient.css';
 import './VideoConteiner.scss'
 import {MAX_FEEDS} from "../../shared/consts";
 import {initGxyProtocol} from "../../shared/protocol";
+import classNames from "classnames";
 
 class SDIOutClient extends Component {
 
     state = {
         devices: [],
-        quistions_queue: [],
+        questions: {},
         protocol: null,
         program: {room: null, name: ""},
         janus: null,
@@ -25,6 +26,7 @@ class SDIOutClient extends Component {
         mystream: null,
         audio: null,
         muted: true,
+        question: false,
         user: {
             session: 0,
             handle: 0,
@@ -65,20 +67,38 @@ class SDIOutClient extends Component {
     };
 
     onProtocolData = (data) => {
+        //TODO: Need to add transaction handle (filter and acknowledge)
+        let {room,feeds,users,user,questions} = this.state;
         if(data.type === "question" && data.status) {
-            let {quistions_queue} = this.state;
-            quistions_queue.push(data);
-            this.setState({quistions_queue});
+            questions[data.user.id] = data.user;
+            this.setState({questions});
         } else if(data.type === "question" && !data.status) {
-            let {quistions_queue} = this.state;
-            for(let i = 0; i < quistions_queue.length; i++){
-                if(quistions_queue[i].user.id === data.user.id) {
-                    quistions_queue.splice(i, 1);
-                    this.setState({quistions_queue});
+            let {questions} = this.state;
+            if(questions[data.user.id]) {
+                delete questions[data.user.id];
+                this.setState({questions});
+            }
+        }
+        if (data.type === "question" && data.status && data.room === room && user.id !== data.user.id) {
+            let rfid = users[data.user.id].rfid;
+            for (let i = 1; i < feeds.length; i++) {
+                if (feeds[i] !== null && feeds[i] !== undefined && feeds[i].rfid === rfid) {
+                    feeds[i].question = true;
                     break
                 }
             }
+            this.setState({feeds});
+        } else if (data.type === "question" && !data.status && data.room === room && user.id !== data.user.id) {
+            let rfid = users[data.user.id].rfid;
+            for (let i = 1; i < feeds.length; i++) {
+                if (feeds[i] !== null && feeds[i] !== undefined && feeds[i].rfid === rfid) {
+                    feeds[i].question = false;
+                    break
+                }
+            }
+            this.setState({feeds});
         }
+
     };
 
     initVideoRoom = (roomid) => {
@@ -169,13 +189,16 @@ class SDIOutClient extends Component {
                     } else if(event !== undefined && event !== null) {
                         if(event === "attached") {
                             // Subscriber created and attached
-                            let {feeds,users} = this.state;
+                            let {feeds,users,questions} = this.state;
                             for(let i=1;i<MAX_FEEDS;i++) {
                                 if(feeds[i] === undefined || feeds[i] === null) {
                                     remoteFeed.rfindex = i;
                                     remoteFeed.rfid = msg["id"];
                                     remoteFeed.rfuser = JSON.parse(msg["display"]);
                                     remoteFeed.rfuser.rfid = msg["id"];
+                                    if(questions[remoteFeed.rfuser.id]) {
+                                        remoteFeed.question = true;
+                                    }
                                     remoteFeed.talk = talk;
                                     feeds[i] = remoteFeed;
                                     users[remoteFeed.rfuser.id] = remoteFeed.rfuser;
@@ -477,10 +500,15 @@ class SDIOutClient extends Component {
               let id = feed.rfid;
               let talk = feed.talk;
               let rfcam = feed.rfcam;
+              let question = feed.question;
               return (<div className="video"
                   key={"v" + id}
                   ref={"video" + id}
                   id={"video" + id}>
+                  <div className={classNames('video__overlay', {'talk' : talk})}>
+                      {question ? <div className="question"><Icon name="question circle" size="massive"/></div>:''}
+                      {/*<div className="video__title">{!talk ? <Icon name="microphone slash" size="small" color="red"/> : ''}{name}</div>*/}
+                  </div>
                   <video className={talk ? "talk" : ""}
                          key={id}
                          ref={"remoteVideo" + id}
@@ -497,14 +525,18 @@ class SDIOutClient extends Component {
       });
 
       return (
+          <div>
+          {/*<Segment className="segment_sdi" color='blue' raised>*/}
           <Segment className="preview_sdi" color='red'>
-              <div className="wrapper">
+              <div className="videos-panel">
                   <div className="title"><span>{name}</span></div>
                   <div className="videos">
                       <div className="videos__wrapper">{preview}</div>
                   </div>
               </div>
           </Segment>
+            {/*</Segment>*/}
+          </div>
       );
   }
 }
