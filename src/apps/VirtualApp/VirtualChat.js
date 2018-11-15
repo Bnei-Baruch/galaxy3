@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import { Janus } from "../../lib/janus";
-import {Segment, Message, Button, Input} from "semantic-ui-react";
+import {Message, Button, Input} from "semantic-ui-react";
 import {initChatRoom,getDateString,joinChatRoom} from "../../shared/tools";
 
 
@@ -62,7 +62,6 @@ class VirtualChat extends Component {
     };
 
     onData = (data) => {
-        Janus.log(":: We got message from Data Channel: ",data);
         var json = JSON.parse(data);
         // var transaction = json["transaction"];
         // if (transactions[transaction]) {
