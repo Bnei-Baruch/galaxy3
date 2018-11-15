@@ -1,10 +1,8 @@
 import React, { Component } from 'react';
 import { Janus } from "../../lib/janus";
 import {Segment, Table, Icon, Dropdown, Dimmer, Button} from "semantic-ui-react";
-import {getState, putData} from "../../shared/tools";
-// import {initGxyProtocol} from "../shared/protocol";
+//import {getState, putData} from "../../shared/tools";
 import './ShidurGroups.css'
-import './VideoConteiner.scss'
 import {sendProtocolMessage} from "../../shared/protocol";
 
 class ShidurGroups extends Component {

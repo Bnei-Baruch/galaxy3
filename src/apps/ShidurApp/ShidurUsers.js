@@ -7,6 +7,7 @@ import './ShidurUsers.css'
 import './VideoConteiner.scss'
 import nowebcam from './nowebcam.jpeg';
 import {initGxyProtocol} from "../../shared/protocol";
+import classNames from "classnames";
 
 class ShidurUsers extends Component {
 
@@ -35,6 +36,7 @@ class ShidurUsers extends Component {
             index: null
         },
         quistions_queue: [],
+        questions: {},
         videoroom: null,
         remotefeed: null,
         myid: null,
@@ -78,12 +80,16 @@ class ShidurUsers extends Component {
     };
 
     onProtocolData = (data) => {
+        let {feeds,users,user,questions,quistions_queue,preview_room,program_room} = this.state;
         if(data.type === "question" && data.status) {
-            let {quistions_queue} = this.state;
+            questions[data.user.id] = data.user;
             quistions_queue.push(data);
-            this.setState({quistions_queue});
+            this.setState({quistions_queue,questions});
         } else if(data.type === "question" && !data.status) {
-            let {quistions_queue} = this.state;
+            if(questions[data.user.id]) {
+                delete questions[data.user.id];
+                this.setState({questions});
+            }
             for(let i = 0; i < quistions_queue.length; i++){
                 if(quistions_queue[i].user.id === data.user.id) {
                     quistions_queue.splice(i, 1);
@@ -91,6 +97,46 @@ class ShidurUsers extends Component {
                     break
                 }
             }
+        }
+
+        if (data.type === "question" && data.status && data.room === program_room && user.id !== data.user.id) {
+            let rfid = users[data.user.id].rfid;
+            for (let i = 1; i < feeds.program.length; i++) {
+                if (feeds.program[i] !== null && feeds.program[i] !== undefined && feeds.program[i].rfid === rfid) {
+                    feeds.program[i].question = true;
+                    break
+                }
+            }
+            this.setState({feeds});
+        } else if (data.type === "question" && !data.status && data.room === program_room && user.id !== data.user.id) {
+            let rfid = users[data.user.id].rfid;
+            for (let i = 1; i < feeds.program.length; i++) {
+                if (feeds.program[i] !== null && feeds.program[i] !== undefined && feeds.program[i].rfid === rfid) {
+                    feeds.program[i].question = false;
+                    break
+                }
+            }
+            this.setState({feeds});
+        }
+
+        if(data.type === "question" && data.status && data.room === preview_room && user.id !== data.user.id) {
+            let rfid = users[data.user.id].rfid;
+            for (let i = 1; i < feeds.preview.length; i++) {
+                if (feeds.preview[i] !== null && feeds.preview[i] !== undefined && feeds.preview[i].rfid === rfid) {
+                    feeds.preview[i].question = true;
+                    break
+                }
+            }
+           this.setState({feeds});
+        } else if(data.type === "question" && !data.status && data.room === preview_room && user.id !== data.user.id) {
+            let rfid = users[data.user.id].rfid;
+            for (let i = 1; i < feeds.preview.length; i++) {
+                if (feeds.preview[i] !== null && feeds.preview[i] !== undefined && feeds.preview[i].rfid === rfid) {
+                    feeds.preview[i].question = false;
+                    break
+                }
+            }
+            this.setState({feeds});
         }
     };
 
@@ -219,13 +265,16 @@ class ShidurUsers extends Component {
                     } else if(event !== undefined && event !== null) {
                         if(event === "attached") {
                             // Subscriber created and attached
-                            let {feeds,users} = this.state;
+                            let {feeds,users,questions} = this.state;
                             for(let i=1;i<MAX_FEEDS;i++) {
                                 if(feeds[handle][i] === undefined || feeds[handle][i] === null) {
                                     remoteFeed.rfindex = i;
                                     remoteFeed.rfid = msg["id"];
                                     remoteFeed.rfuser = JSON.parse(msg["display"]);
                                     remoteFeed.rfuser.rfid = msg["id"];
+                                    if(questions[remoteFeed.rfuser.id]) {
+                                        remoteFeed.question = true;
+                                    }
                                     remoteFeed.talk = talk;
                                     feeds[handle][i] = remoteFeed;
                                     users[remoteFeed.rfuser.id] = remoteFeed.rfuser;
@@ -623,10 +672,15 @@ class ShidurUsers extends Component {
           if(feed) {
               let id = feed.rfid;
               let talk = feed.talk;
+              let question = feed.question;
               return (<div className="video"
                            key={"prov" + id}
                            ref={"provideo" + id}
                            id={"provideo" + id}>
+                  <div className={classNames('video__overlay', {'talk' : talk})}>
+                      {question ? <div className="question"><Icon name="question circle" size="massive"/></div>:''}
+                      {/*<div className="video__title">{!talk ? <Icon name="microphone slash" size="small" color="red"/> : ''}{name}</div>*/}
+                  </div>
                   <video className={talk ? "talk" : ""}
                          key={id}
                          ref={"programVideo" + id}
@@ -646,10 +700,15 @@ class ShidurUsers extends Component {
           if(feed) {
               let id = feed.rfid;
               let talk = feed.talk;
+              let question = feed.question;
               return (<div className="video"
                            key={"prev" + id}
                            ref={"prevideo" + id}
                            id={"prevideo" + id}>
+                  <div className={classNames('video__overlay', {'talk' : talk})}>
+                      {question ? <div className="question"><Icon name="question circle" size="massive"/></div>:''}
+                      {/*<div className="video__title">{!talk ? <Icon name="microphone slash" size="small" color="red"/> : ''}{name}</div>*/}
+                  </div>
                   <video className={talk ? "talk" : ""}
                          key={id}
                          ref={"remoteVideo" + id}
@@ -674,7 +733,7 @@ class ShidurUsers extends Component {
               {/*<div className="shidur_overlay">{pgm_state.name}</div>*/}
               {/*{program}*/}
               <div className="shidur_overlay"><span>{pgm_state.name}</span></div>
-              <div className="wrapper">
+              <div className="videos-panel">
                   <div className="videos">
                       <div className="videos__wrapper">{program}</div>
                   </div>
@@ -685,7 +744,7 @@ class ShidurUsers extends Component {
               {/*<div className="shidur_overlay">{preview_name}</div>*/}
               {/*{preview}*/}
               <div className="shidur_overlay"><span>{preview_name}</span></div>
-              <div className="wrapper">
+              <div className="videos-panel">
                   <div className="videos">
                       <div className="videos__wrapper">{preview}</div>
                   </div>

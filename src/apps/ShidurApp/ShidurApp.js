@@ -1,9 +1,8 @@
 import React, {Component} from 'react';
 import {Janus} from "../../lib/janus";
-import {Grid, Label, Message, Segment} from "semantic-ui-react";
+import {Grid, Label, Message} from "semantic-ui-react";
 import {initJanus} from "../../shared/tools";
 import {initGxyProtocol} from "../../shared/protocol";
-import './ShidurGroups.css'
 import ShidurGroups from "./ShidurGroups";
 import ShidurUsers from "./ShidurUsers";
 import {client, getUser} from "../../components/UserManager";

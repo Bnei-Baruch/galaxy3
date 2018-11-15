@@ -391,7 +391,7 @@ class VirtualClient extends Component {
                     let list = msg["publishers"];
                     let feeds_list = list.filter(feeder => JSON.parse(feeder.display).role === "user");
                     Janus.log(":: Got Pulbishers list: ", feeds_list);
-                    if(feeds_list.length > 11) {
+                    if(feeds_list.length > 15) {
                         alert("Max users in this room is reached");
                         window.location.reload();
                     }
