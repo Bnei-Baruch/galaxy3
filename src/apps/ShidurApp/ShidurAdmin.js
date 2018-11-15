@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import { Janus } from "../../lib/janus";
-import {Segment, Menu, Button, Input, Table, Grid, Message, Transition} from "semantic-ui-react";
+import {Segment, Menu, Button, Input, Table, Grid, Message, Transition, Select} from "semantic-ui-react";
 import {initJanus, initChatRoom, getDateString, joinChatRoom, getPublisherInfo} from "../../shared/tools";
 import './ShidurAdmin.css';
 import './VideoConteiner.scss'
@@ -39,6 +39,7 @@ class ShidurAdmin extends Component {
         input_value: "",
         switch_mode: false,
         users: {},
+        root: false,
     };
 
     componentDidMount() {
@@ -46,7 +47,9 @@ class ShidurAdmin extends Component {
         getUser(user => {
             if(user) {
                 let gxy_group = user.roles.filter(role => role === 'gxy_admin').length > 0;
+                let gxy_root = user.roles.filter(role => role === 'gxy_root').length > 0;
                 if (gxy_group) {
+                    this.setState({gxy_root});
                     delete user.roles;
                     user.role = "admin";
                     this.initShidurAdmin(user);
@@ -875,7 +878,7 @@ class ShidurAdmin extends Component {
 
   render() {
 
-      const { rooms,current_room,switch_mode,user,feeds,i,messages } = this.state;
+      const { rooms,current_room,switch_mode,user,feeds,i,messages,description,roomid,root } = this.state;
       const width = "134";
       const height = "100";
       const autoPlay = true;
@@ -954,44 +957,40 @@ class ShidurAdmin extends Component {
           </div>);
 
       let login = (<LoginPage user={user} />);
+
+      let root_content = (
+          <Menu secondary >
+              <Menu.Item>
+                  <Button negative onClick={this.removeRoom}>Remove</Button>
+                  :::
+                  <Select
+                      error={roomid}
+                      scrolling
+                      placeholder="Select Room:"
+                      value={i}
+                      options={rooms_list}
+                      onChange={(e, {value}) => this.selectRoom(value)} />
+              </Menu.Item>
+              {/*<Menu.Item >*/}
+              {/*<Button positive onClick={this.joinRoom}>Join</Button>*/}
+              {/*:::*/}
+              {/*<Button onClick={this.exitRoom}>exit</Button>*/}
+              {/*</Menu.Item>*/}
+              <Menu.Item>
+                  <Input type='text' placeholder='Room description...' action value={description}
+                         onChange={(v,{value}) => this.setState({description: value})}>
+                      <input />
+                      <Button positive onClick={this.createRoom}>Create</Button>
+                  </Input>
+              </Menu.Item>
+          </Menu>
+      );
+
       let content = (
           <Segment className="virtual_segment" color='blue' raised>
 
               <Segment textAlign='center' className="ingest_segment">
-                  <Menu secondary >
-                      <Menu.Item>
-                          {/*<Button negative onClick={this.removeRoom}>Remove</Button>*/}
-                          {/*:::*/}
-                          {/*<Select*/}
-                          {/*error={roomid}*/}
-                          {/*scrolling*/}
-                          {/*placeholder="Select Room:"*/}
-                          {/*value={i}*/}
-                          {/*options={rooms_list}*/}
-                          {/*onChange={(e, {value}) => this.selectRoom(value)} />*/}
-                      </Menu.Item>
-                      <Menu.Item >
-                          {/*<Button positive onClick={this.joinRoom}>Join</Button>*/}
-                          {/*<Button onClick={this.exitRoom}>exit</Button>*/}
-                      </Menu.Item>
-                      <Menu.Item>
-                          {/*<Input type='text' placeholder='Room description...' action value={description}*/}
-                          {/*onChange={(v,{value}) => this.setState({description: value})}>*/}
-                          {/*<input />*/}
-                          {/*<Button positive onClick={this.createRoom}>Create</Button>*/}
-                          {/*</Input>*/}
-                      </Menu.Item>
-                      <Menu.Item>
-                          {/*<video ref="switchVideo"*/}
-                          {/*id="switchVideo"*/}
-                          {/*width={width}*/}
-                          {/*height={height}*/}
-                          {/*autoPlay={autoPlay}*/}
-                          {/*controls={controls}*/}
-                          {/*muted={true}*/}
-                          {/*playsinline={true}/>*/}
-                      </Menu.Item>
-                  </Menu>
+                  {root ? root_content : ""}
               </Segment>
 
               <Grid>
