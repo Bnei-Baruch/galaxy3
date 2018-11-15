@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import { Janus } from "../../lib/janus";
-import {Segment, Menu, Button, Input, Table, Grid, Message} from "semantic-ui-react";
+import {Segment, Menu, Button, Input, Table, Grid, Message, Transition} from "semantic-ui-react";
 import {initJanus, initChatRoom, getDateString, joinChatRoom, getPublisherInfo} from "../../shared/tools";
 import './ShidurAdmin.css';
 import './VideoConteiner.scss'
@@ -14,6 +14,7 @@ class ShidurAdmin extends Component {
         devices: [],
         device: "",
         janus: null,
+        quistions_queue: [],
         feeds: [],
         rooms: [],
         feed_id: null,
@@ -207,7 +208,7 @@ class ShidurAdmin extends Component {
                         if(event === "attached") {
                             // Subscriber created and attached
                             let {feeds,users} = this.state;
-                            for(let i=1;i<MAX_FEEDS;i++) {
+                            for(let i=0;i<MAX_FEEDS;i++) {
                                 if(feeds[i] === undefined || feeds[i] === null) {
                                     remoteFeed.rfindex = i;
                                     remoteFeed.rfid = msg["id"];
@@ -381,13 +382,14 @@ class ShidurAdmin extends Component {
     };
 
     switchFeed = (id) => {
-        if(!this.state.switchFeed) {
+        let {current_room, roomid, switchFeed} = this.state;
+        if(!switchFeed) {
             this.newSwitchFeed(id,false);
         } else {
             let switchfeed = {"request" : "switch", "feed" : id, "audio" : true, "video" : true, "data" : false};
             this.state.switchFeed.send ({"message": switchfeed,
-                success: (data) => {
-                    Janus.log(" :: Switch Feed: ", data);
+                success: () => {
+                    Janus.log(" :: Switch Feed: ", id);
                 }
             })
         }
@@ -535,6 +537,7 @@ class ShidurAdmin extends Component {
                     Janus.debug("Got a list of available publishers/feeds:");
                     Janus.log(list);
                     for(let f in list) {
+                        console.log(f)
                         let id = list[f]["id"];
                         //let display = list[f]["display"];
                         let display = JSON.parse(list[f]["display"]);
@@ -542,8 +545,21 @@ class ShidurAdmin extends Component {
                         let audio = list[f]["audio_codec"];
                         let video = list[f]["video_codec"];
                         Janus.debug("  >> [" + id + "] " + display + " (audio: " + audio + ", video: " + video + ")");
-                        if(display.role.match(/^(user|group)$/))
+                        if(display.role.match(/^(user)$/)) {
                             this.newRemoteFeed(id, talk);
+                        }
+
+                        if(display.role.match(/^(group)$/)) {
+                            let {feeds,users} = this.state;
+                            feeds.push(list[f])
+                            feeds[f].rfid = list[f].id;
+                            feeds[f].rfuser = display;
+                            feeds[f].rfuser.rfid = list[f].id;
+                            feeds[f].talk = talk;
+                            users[feeds[f].rfuser.id] = display;
+                            console.log(":: Group feed: ", feeds[f])
+                            this.setState({feeds,users});
+                        }
                     }
                 }
             } else if(event === "talking") {
@@ -577,6 +593,7 @@ class ShidurAdmin extends Component {
                     let list = msg["publishers"];
                     Janus.debug("Got a list of available publishers/feeds:");
                     Janus.debug(list);
+                    console.log(":: ---------- Group feed: ", list[0])
                     for(let f in list) {
                         let id = list[f]["id"];
                         //let display = list[f]["display"];
@@ -584,27 +601,34 @@ class ShidurAdmin extends Component {
                         let audio = list[f]["audio_codec"];
                         let video = list[f]["video_codec"];
                         Janus.debug("  >> [" + id + "] " + display + " (audio: " + audio + ", video: " + video + ")");
-                        if(display.match(/^(user|group)$/))
+                        if(display.role.match(/^(user)$/)) {
                             this.newRemoteFeed(id, false);
+                        }
+                        if(display.role.match(/^(group)$/)) {
+                            let {feeds,users} = this.state;
+                            let feed = list[f];
+                            feed.rfid = list[f].id;
+                            feed.rfuser = display;
+                            feed.rfuser.rfid = list[f].id;
+                            feed.talk = false;
+                            users[feed.rfuser.id] = display;
+                            console.log(":: Group feed: ", feed)
+                            feeds.push(feed);
+                            this.setState({feeds,users});
+                        }
                     }
                 } else if(msg["leaving"] !== undefined && msg["leaving"] !== null) {
                     // One of the publishers has gone away?
                     let {feeds} = this.state;
                     let leaving = msg["leaving"];
                     Janus.log("Publisher left: " + leaving);
-                    var remoteFeed = null;
-                    for(let i=1; i<MAX_FEEDS; i++) {
-                        if(feeds[i] != null && feeds[i] !== undefined && feeds[i].rfid === leaving) {
-                            remoteFeed = feeds[i];
+                    for(let i=0; i<feeds.length; i++) {
+                        if(feeds[i].rfid === leaving) {
+                            feeds.splice(i, 1);
+                            this.setState({feeds});
                             break;
                         }
                     }
-                    if(remoteFeed != null) {
-                        Janus.debug("Feed " + remoteFeed.rfid + " (" + remoteFeed.rfuser + ") has left the room, detaching");
-                        feeds[remoteFeed.rfindex] = null;
-                        remoteFeed.detach();
-                    }
-                    this.setState({feeds});
                 } else if(msg["unpublished"] !== undefined && msg["unpublished"] !== null) {
                     // One of the publishers has unpublished?
                     let {feeds} = this.state;
@@ -615,17 +639,12 @@ class ShidurAdmin extends Component {
                         videoroom.hangup();
                         return;
                     }
-                    var remoteFeed = null;
-                    for(let i=1; i<MAX_FEEDS; i++) {
-                        if(feeds[i] != null && feeds[i] !== undefined && feeds[i].rfid === unpublished) {
-                            remoteFeed = feeds[i];
+                    for(let i=0; i<feeds.length; i++) {
+                        if(feeds[i].rfid === unpublished) {
+                            feeds.splice(i, 1);
+                            this.setState({feeds});
                             break;
                         }
-                    }
-                    if(remoteFeed !== null) {
-                        Janus.debug("Feed " + remoteFeed.rfid + " (" + remoteFeed.rfuser + ") has left the room, detaching");
-                        feeds[remoteFeed.rfindex] = null;
-                        remoteFeed.detach();
                     }
                 } else if(msg["error"] !== undefined && msg["error"] !== null) {
                     if(msg["error_code"] === 426) {
@@ -650,17 +669,25 @@ class ShidurAdmin extends Component {
     };
 
     joinRoom = (data, i) => {
-        const {feeds,rooms,chatroom,user} = this.state;
+        Janus.log(" -- joinRoom: ", data, i);
+        const {feeds,rooms,chatroom,user,switchFeed} = this.state;
         let room = data ? rooms[i].room : 1234;
         if (this.state.current_room === room)
             return;
-        Janus.log(" :: Attaching to Preview: ", room);
-        feeds.forEach(feed => {
-            if (feed !== null && feed !== undefined) {
-                Janus.log("-- :: Remove Feed: ",feed);
-                feed.detach();
-            }
-        });
+        Janus.log(" :: Enter to room: ", room);
+        if(switchFeed) {
+            switchFeed.detach();
+            this.setState({switchFeed: null});
+        }
+
+        if(this.state.current_room !== 1234) {
+            feeds.forEach(feed => {
+                if (feed !== null && feed !== undefined) {
+                    Janus.log("-- :: Remove Feed: ",feed);
+                    feed.detach();
+                }
+            });
+        }
 
         if(this.state.current_room)
             this.exitRoom(this.state.current_room);
@@ -863,7 +890,7 @@ class ShidurAdmin extends Component {
           if(feed) {
               return (
                   <Table.Row active={feed.rfid === this.state.feed_id} key={i} onClick={() => this.getUserInfo(feed.rfuser,feed.rfid)} >
-                      <Table.Cell>{feed.rfuser.name}</Table.Cell>
+                      <Table.Cell>{feed.rfuser.display}</Table.Cell>
                   </Table.Row>
               )
           }
@@ -880,7 +907,7 @@ class ShidurAdmin extends Component {
       });
 
       let videos = this.state.feeds.map((feed) => {
-          if(feed) {
+          if(feed && current_room !== 1234) {
               let id = feed.rfid;
               let talk = feed.talk;
               return (<div className="video"
@@ -904,7 +931,6 @@ class ShidurAdmin extends Component {
       let switchvideo = (
           <div className="video">
               <video ref = {"switchVideo"}
-                     onClick={() => this.toFourGroup()}
                      id = "switchVideo"
                      width = {width}
                      height = {height}
@@ -982,7 +1008,10 @@ class ShidurAdmin extends Component {
                               <div className="videos-panel">
                                   <div className="videos">
                                       <div className="videos__wrapper">
-                                          {switch_mode ? switchvideo : videos}
+                                          {switch_mode ? "" : videos}
+                                          <Transition visible={switch_mode} animation='scale' duration={500}>
+                                              {switchvideo}
+                                          </Transition>
                                       </div>
                                   </div>
                               </div>
