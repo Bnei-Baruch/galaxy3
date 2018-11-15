@@ -3,7 +3,7 @@ import { Janus } from "../../lib/janus";
 import {Segment, Menu, Select, Button, Input, Table, Grid, Message,Sidebar} from "semantic-ui-react";
 import {initJanus, initChatRoom, getDateString, joinChatRoom, getPublisherInfo} from "../../shared/tools";
 import './AdminClient.css';
-import './VideoConteiner.scss'
+import '../SDIOutApp/VideoConteiner.scss'
 import {MAX_FEEDS, SECRET} from "../../shared/consts";
 
 class AdminClient extends Component {
@@ -973,15 +973,15 @@ class AdminClient extends Component {
 
                       </Grid.Column>
                       <Grid.Column largeScreen={10}>
-                          <Segment className="videos_segment" onDoubleClick={this.handleShowClick}>
-                              <div className="wrapper">
+                          {/*<Segment className="videos_segment" onDoubleClick={this.handleShowClick}>*/}
+                              <div className="videos-panel">
                                   <div className="videos">
                                       <div className="videos__wrapper">
                                           {videos}
                                       </div>
                                   </div>
                               </div>
-                          </Segment>
+                          {/*</Segment>*/}
 
                       </Grid.Column>
                       <Grid.Column width={3}>

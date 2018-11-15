@@ -3,7 +3,7 @@ import { Janus } from "../../lib/janus";
 import {Segment, Menu, Button, Input, Table, Grid, Message} from "semantic-ui-react";
 import {initJanus, initChatRoom, getDateString, joinChatRoom, getPublisherInfo} from "../../shared/tools";
 import './ShidurAdmin.css';
-import './ShidurAdminVideo.scss'
+import './VideoConteiner.scss'
 import {MAX_FEEDS, SECRET} from "../../shared/consts";
 import {initGxyProtocol} from "../../shared/protocol";
 
@@ -902,16 +902,17 @@ class ShidurAdmin extends Component {
       });
 
       let switchvideo = (
+          <div className="video">
               <video ref = {"switchVideo"}
                      onClick={() => this.toFourGroup()}
                      id = "switchVideo"
-                     width = "100%"
-                     height = "100%"
+                     width = {width}
+                     height = {height}
                      autoPlay = {autoPlay}
                      controls = {controls}
                      muted = {muted}
                      playsInline = {true} />
-      );
+          </div>);
 
       return (
 
@@ -977,7 +978,7 @@ class ShidurAdmin extends Component {
 
                       </Grid.Column>
                       <Grid.Column largeScreen={10}>
-                          <Segment className="videos_segment" onDoubleClick={this.handleShowClick}>
+                          {/*<Segment className="videos_segment" onDoubleClick={this.handleShowClick}>*/}
                               <div className="videos-panel">
                                   <div className="videos">
                                       <div className="videos__wrapper">
@@ -985,7 +986,7 @@ class ShidurAdmin extends Component {
                                       </div>
                                   </div>
                               </div>
-                          </Segment>
+                          {/*</Segment>*/}
 
                       </Grid.Column>
                       <Grid.Column width={3}>
