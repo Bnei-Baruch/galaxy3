@@ -40,6 +40,7 @@ class ShidurAdmin extends Component {
         messages: [],
         visible: false,
         input_value: "",
+        switch_mode: false,
         users: {},
     };
 
@@ -663,7 +664,7 @@ class ShidurAdmin extends Component {
 
         if(this.state.current_room)
             this.exitRoom(this.state.current_room);
-        this.setState({current_room: room,feeds: []});
+        this.setState({switch_mode: false, current_room: room,feeds: []});
 
         this.initVideoRoom(room);
 
@@ -815,9 +816,9 @@ class ShidurAdmin extends Component {
     };
 
     getUserInfo = (userinfo,id) => {
-        this.setState({feed_id: id, feed_user: userinfo});
-        Janus.log(userinfo);
-        //this.switchFeed(id);
+        this.setState({feed_id: id, feed_user: userinfo, switch_mode: true});
+        Janus.log(userinfo,userinfo.rfid);
+        this.switchFeed(userinfo.rfid);
     };
 
     getFeedInfo = () => {
@@ -834,12 +835,12 @@ class ShidurAdmin extends Component {
 
   render() {
       //Janus.log(" --- ::: RENDER ::: ---");
-      const { rooms,current_room,devices,description,feeds,i,roomid,messages } = this.state;
+      const { rooms,current_room,switch_mode,description,feeds,i,roomid,messages } = this.state;
       const width = "134";
       const height = "100";
       const autoPlay = true;
       const controls = false;
-      const vmuted = true;
+      const muted = true;
 
       let rooms_list = rooms.map((data,i) => {
           const {room, num_participants, description} = data;
@@ -899,6 +900,18 @@ class ShidurAdmin extends Component {
           }
           return true;
       });
+
+      let switchvideo = (
+              <video ref = {"switchVideo"}
+                     onClick={() => this.toFourGroup()}
+                     id = "switchVideo"
+                     width = "100%"
+                     height = "100%"
+                     autoPlay = {autoPlay}
+                     controls = {controls}
+                     muted = {muted}
+                     playsInline = {true} />
+      );
 
       return (
 
@@ -968,7 +981,7 @@ class ShidurAdmin extends Component {
                               <div className="videos-panel">
                                   <div className="videos">
                                       <div className="videos__wrapper">
-                                          {videos}
+                                          {switch_mode ? switchvideo : videos}
                                       </div>
                                   </div>
                               </div>
