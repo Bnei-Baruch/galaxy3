@@ -11,6 +11,7 @@ class SndmanGroups extends Component {
     state = {
         col: null,
         disabled_groups: [],
+        speak: false,
     };
 
     componentDidMount() {
@@ -276,9 +277,13 @@ class SndmanGroups extends Component {
         this.setState({fullscr: !this.state.fullscr, full_feed: null});
     };
 
+    toggleSpeak = () => {
+        this.setState({speak: !this.state.speak})
+    };
+
 
   render() {
-      const { pre_feed,full_feed,zoom,fullscr } = this.state;
+      const { pre_feed,full_feed,zoom,fullscr,speak } = this.state;
       const {users,index,feeds,pgm_state,feeds_queue,quistions_queue,disabled_groups} = this.props;
       const width = "100%";
       const height = "100%";
@@ -372,11 +377,20 @@ class SndmanGroups extends Component {
       );
 
       return (
+          <Segment className="sndman_segment">
           <Segment attached className="preview_sdi" color='red'>
               <div className="video_grid">
                   {program}
                   {fullscreen}
               </div>
+          </Segment>
+              <Button className='fours_button'
+                      attached='bottom'
+                      positive={!speak}
+                      negative={speak}
+                      onClick={this.toggleSpeak}>
+                  <Icon name={speak ? 'microphone' : 'microphone slash' } />
+              </Button>
           </Segment>
       );
   }

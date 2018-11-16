@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import { Janus } from "../../lib/janus";
-import {Icon, Segment} from "semantic-ui-react";
+import {Button, Icon, Segment} from "semantic-ui-react";
 import {getState, initJanus} from "../../shared/tools";
 import './SndmanUsers.css';
 import './SndmanVideoConteiner.scss'
@@ -36,6 +36,7 @@ class SndmanUsers extends Component {
             name: "sdiout"
         },
         users: {},
+        speak: false,
     };
 
     componentDidMount() {
@@ -485,10 +486,15 @@ class SndmanUsers extends Component {
         this.initVideoRoom(room);
     };
 
+    toggleSpeak = () => {
+        this.setState({speak: !this.state.speak})
+    };
+
 
   render() {
       //Janus.log(" --- ::: RENDER ::: ---");
       const { name } = this.state.program;
+      const { speak } = this.state;
       const width = "400";
       const height = "300";
       const autoPlay = true;
@@ -525,9 +531,9 @@ class SndmanUsers extends Component {
       });
 
       return (
-          <div>
+          <Segment className="sndman_segment">
           {/*<Segment className="segment_sdi" color='blue' raised>*/}
-          <Segment className="preview_sdi" color='red'>
+          <Segment attached className="preview_sdi" color='red'>
               <div className="videos-panel">
                   {/*<div className="title"><span>{name}</span></div>*/}
                   <div className="videos">
@@ -535,8 +541,15 @@ class SndmanUsers extends Component {
                   </div>
               </div>
           </Segment>
+              <Button className='fours_button'
+                      attached='bottom'
+                      positive={!speak}
+                      negative={speak}
+                      onClick={this.toggleSpeak}>
+                  <Icon name={speak ? 'microphone' : 'microphone slash' } />
+              </Button>
             {/*</Segment>*/}
-          </div>
+          </Segment>
       );
   }
 }
