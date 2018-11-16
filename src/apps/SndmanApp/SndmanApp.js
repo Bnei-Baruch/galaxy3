@@ -15,6 +15,7 @@ class SndmanApp extends Component {
         janus: null,
         feeds: [],
         gxyhandle: null,
+        data_forward: {},
         name: "",
         disabled_groups: [],
         group: null,
@@ -26,6 +27,7 @@ class SndmanApp extends Component {
         protocol: null,
         pgm_state: [],
         quistions_queue: [],
+        room: 1234,
         remotefeed: null,
         myid: null,
         mypvtid: null,
@@ -100,6 +102,7 @@ class SndmanApp extends Component {
             },
             webrtcState: (on) => {
                 Janus.log("Janus says our WebRTC PeerConnection is " + (on ? "up" : "down") + " now");
+                this.forwardOwnFeed(this.state.room);
             },
             onmessage: (msg, jsep) => {
                 this.onMessage(msg, jsep, false);
@@ -139,7 +142,7 @@ class SndmanApp extends Component {
     };
 
     forwardOwnFeed = (room) => {
-        let {myid,videoroom,data_forward} = this.state;
+        let {myid,gxyhandle,data_forward} = this.state;
         let isrip = `${JANUS_IP_ISRPT}`;
         let eurip = `${JANUS_IP_EURND}`;
         let ukip = `${JANUS_IP_EURUK}`;
@@ -147,72 +150,25 @@ class SndmanApp extends Component {
         let isrfwd = { "request": "rtp_forward","publisher_id":myid,"room":room,"secret":`${SECRET}`,"host":isrip,"data_port":dport};
         let eurfwd = { "request": "rtp_forward","publisher_id":myid,"room":room,"secret":`${SECRET}`,"host":eurip,"data_port":dport};
         let eukfwd = { "request": "rtp_forward","publisher_id":myid,"room":room,"secret":`${SECRET}`,"host":ukip,"data_port":dport};
-        videoroom.send({"message": isrfwd,
+        gxyhandle.send({"message": isrfwd,
             success: (data) => {
                 data_forward.isr = data["rtp_stream"]["data_stream_id"];
                 Janus.log(" :: ISR Data Forward: ", data);
             },
         });
-        videoroom.send({"message": eurfwd,
+        gxyhandle.send({"message": eurfwd,
             success: (data) => {
                 data_forward.eur = data["rtp_stream"]["data_stream_id"];
                 Janus.log(" :: EUR Data Forward: ", data);
                 this.setState({onoff_but: false});
             },
         });
-        videoroom.send({"message": eukfwd,
+        gxyhandle.send({"message": eukfwd,
             success: (data) => {
                 data_forward.euk = data["rtp_stream"]["data_stream_id"];
                 Janus.log(" :: EUK Data Forward: ", data);
             },
         });
-    };
-
-    sendMessage = (user, talk) => {
-        let {gxyhandle,room} = this.state;
-        var message = `{"talk":${talk},"name":"${user.display}","ip":"${user.ip}","col":4,"room":${room}}`;
-        Janus.log(":: Sending message: ",message);
-        gxyhandle.data({ text: message })
-    };
-
-    forwardStream = () => {
-        const {feeds, room, videoroom, forward} = this.state;
-        // TODO: WE need solution for joining users to already forwarded room
-        if(forward) {
-            Janus.log(" :: Stop forward from room: ", room);
-            feeds.forEach((feed,i) => {
-                if (feed !== null && feed !== undefined) {
-                    // FIXME: if we change sources on client based on room id (not ip) we send message only once
-                    this.sendMessage(feed.rfuser, false);
-                    let stopfw = { "request":"stop_rtp_forward","stream_id":feed.streamid,"publisher_id":feed.rfid,"room":room,"secret":`${SECRET}` };
-                    videoroom.send({"message": stopfw,
-                        success: (data) => {
-                            Janus.log(":: Forward callback: ", data);
-                            feeds[i].streamid = null;
-                        },
-                    });
-                }
-            });
-            this.setState({feeds, forward: false});
-        } else {
-            Janus.log(" :: Start forward from room: ", room);
-            let port = 5630;
-            feeds.forEach((feed,i) => {
-                if (feed !== null && feed !== undefined) {
-                    this.sendMessage(feed.rfuser, true);
-                    let forward = { "request": "rtp_forward","publisher_id":feed.rfid,"room":room,"secret":`${SECRET}`,"host":"10.66.23.104","audio_port":port};
-                    videoroom.send({"message": forward,
-                        success: (data) => {
-                            Janus.log(":: Forward callback: ", data);
-                            let streamid = data["rtp_stream"]["audio_stream_id"];
-                            feeds[i].streamid = streamid;
-                        },
-                    });
-                    port = port + 2;
-                }
-            });
-            this.setState({feeds, forward: true});
-        }
     };
 
     onMessage = (msg, jsep, initdata) => {

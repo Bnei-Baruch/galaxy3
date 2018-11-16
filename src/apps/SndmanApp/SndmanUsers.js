@@ -4,7 +4,15 @@ import {Button, Icon, Segment, Label} from "semantic-ui-react";
 import {getState, initJanus} from "../../shared/tools";
 import './SndmanUsers.css';
 import './SndmanVideoConteiner.scss'
-import {DATA_PORT, JANUS_IP_EURND, JANUS_IP_EURUK, JANUS_IP_ISRPT, MAX_FEEDS, SECRET} from "../../shared/consts";
+import {
+    DANTE_IN_IP,
+    DATA_PORT,
+    JANUS_IP_EURND,
+    JANUS_IP_EURUK,
+    JANUS_IP_ISRPT,
+    MAX_FEEDS,
+    SECRET
+} from "../../shared/consts";
 import {initGxyProtocol} from "../../shared/protocol";
 import classNames from "classnames";
 
@@ -559,7 +567,7 @@ class SndmanUsers extends Component {
             feeds.forEach((feed,i) => {
                 if (feed !== null && feed !== undefined) {
                     this.sendMessage(feed.rfuser, true);
-                    let forward = { "request": "rtp_forward","publisher_id":feed.rfid,"room":room,"secret":`${SECRET}`,"host":"10.66.23.104","audio_port":port};
+                    let forward = { "request": "rtp_forward","publisher_id":feed.rfid,"room":room,"secret":`${SECRET}`,"host":`${DANTE_IN_IP}`,"audio_port":port};
                     videoroom.send({"message": forward,
                         success: (data) => {
                             Janus.log(":: Forward callback: ", data);
