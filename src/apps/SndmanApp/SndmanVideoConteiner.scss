@@ -53,7 +53,7 @@ $exactly-selector: _build-quantity-selector($selector-append, $selector);
 
 .title {
     font-family: "Liberation Serif";
-    font-size: 45px;
+    font-size: 25px;
     text-align: right;
     margin-bottom: .1em;
     margin-top: .2em;
@@ -65,6 +65,7 @@ $exactly-selector: _build-quantity-selector($selector-append, $selector);
         padding: 0 .7em;
     }
 }
+
 .videos{
     flex: 1 0 auto;
     position:relative;

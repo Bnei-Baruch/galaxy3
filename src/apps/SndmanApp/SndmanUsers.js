@@ -1,17 +1,20 @@
 import React, { Component } from 'react';
 import { Janus } from "../../lib/janus";
-import {Button, Icon, Segment} from "semantic-ui-react";
+import {Button, Icon, Segment, Label} from "semantic-ui-react";
 import {getState, initJanus} from "../../shared/tools";
 import './SndmanUsers.css';
 import './SndmanVideoConteiner.scss'
-import {MAX_FEEDS} from "../../shared/consts";
+import {DATA_PORT, JANUS_IP_EURND, JANUS_IP_EURUK, JANUS_IP_ISRPT, MAX_FEEDS, SECRET} from "../../shared/consts";
 import {initGxyProtocol} from "../../shared/protocol";
 import classNames from "classnames";
 
 class SndmanUsers extends Component {
 
     state = {
-        devices: [],
+        col: 4,
+        onoff_but: true,
+        data_forward: {},
+        forward: false,
         questions: {},
         protocol: null,
         program: {room: null, name: ""},
@@ -36,10 +39,10 @@ class SndmanUsers extends Component {
             name: "sdiout"
         },
         users: {},
-        speak: false,
     };
 
     componentDidMount() {
+        document.addEventListener("keydown", this.onKeyPressed);
         initJanus(janus => {
             let {user} = this.state;
             user.session = janus.getSessionId();
@@ -64,6 +67,7 @@ class SndmanUsers extends Component {
     };
 
     componentWillUnmount() {
+        document.removeEventListener("keydown", this.onKeyPressed);
         this.state.janus.destroy();
     };
 
@@ -138,6 +142,7 @@ class SndmanUsers extends Component {
             },
             webrtcState: (on) => {
                 Janus.log("Janus says our WebRTC PeerConnection is " + (on ? "up" : "down") + " now");
+                this.forwardOwnFeed(this.state.room);
             },
             onmessage: (msg, jsep) => {
                 this.onMessage(this.state.videoroom, msg, jsep, false);
@@ -306,17 +311,12 @@ class SndmanUsers extends Component {
 
         videoroom.createOffer(
             {
-                // Add data:true here if you want to publish datachannels as well
-                //media: { audioRecv: false, videoRecv: false, audioSend: useAudio, videoSend: true, video: "lowres" },	// Publishers are sendonly
-                media: { audioRecv: false, videoRecv: false, audioSend: useAudio, videoSend: true },	// Publishers are sendonly
-                // If you want to test simulcasting (Chrome and Firefox only), then
-                // pass a ?simulcast=true when opening this demo page: it will turn
-                // the following 'simulcast' property to pass to janus.js to true
+                media: {  audio: false, video: false, data: true },	// Publishers are sendonly
                 simulcast: false,
                 success: (jsep) => {
                     Janus.debug("Got publisher SDP!");
                     Janus.debug(jsep);
-                    let publish = { "request": "configure", "audio": useAudio, "video": true };
+                    let publish = { "request": "configure", "audio": false, "video": false, "data": true };
                     videoroom.send({"message": publish, "jsep": jsep});
                 },
                 error: (error) => {
@@ -328,6 +328,36 @@ class SndmanUsers extends Component {
                     }
                 }
             });
+    };
+
+    forwardOwnFeed = (room) => {
+        let {myid,videoroom,data_forward} = this.state;
+        let isrip = `${JANUS_IP_ISRPT}`;
+        let eurip = `${JANUS_IP_EURND}`;
+        let ukip = `${JANUS_IP_EURUK}`;
+        let dport = DATA_PORT;
+        let isrfwd = { "request": "rtp_forward","publisher_id":myid,"room":room,"secret":`${SECRET}`,"host":isrip,"data_port":dport};
+        let eurfwd = { "request": "rtp_forward","publisher_id":myid,"room":room,"secret":`${SECRET}`,"host":eurip,"data_port":dport};
+        let eukfwd = { "request": "rtp_forward","publisher_id":myid,"room":room,"secret":`${SECRET}`,"host":ukip,"data_port":dport};
+        videoroom.send({"message": isrfwd,
+            success: (data) => {
+                data_forward.isr = data["rtp_stream"]["data_stream_id"];
+                Janus.log(" :: ISR Data Forward: ", data);
+            },
+        });
+        videoroom.send({"message": eurfwd,
+            success: (data) => {
+                data_forward.eur = data["rtp_stream"]["data_stream_id"];
+                Janus.log(" :: EUR Data Forward: ", data);
+                this.setState({onoff_but: false});
+            },
+        });
+        videoroom.send({"message": eukfwd,
+            success: (data) => {
+                data_forward.euk = data["rtp_stream"]["data_stream_id"];
+                Janus.log(" :: EUK Data Forward: ", data);
+            },
+        });
     };
 
     onMessage = (videoroom, msg, jsep, initdata) => {
@@ -342,7 +372,7 @@ class SndmanUsers extends Component {
                 let mypvtid = msg["private_id"];
                 this.setState({myid ,mypvtid});
                 Janus.log("Successfully joined room " + msg["room"] + " with ID " + myid);
-                //this.publishOwnFeed(true);
+                this.publishOwnFeed();
                 // Any new feed to attach to?
                 if(msg["publishers"] !== undefined && msg["publishers"] !== null) {
                     let list = msg["publishers"];
@@ -472,12 +502,23 @@ class SndmanUsers extends Component {
     };
 
     attachToPreview = (room) => {
-        const {feeds} = this.state;
+        const {feeds,videoroom} = this.state;
         if (this.state.room === room)
             return;
+        this.setState({onoff_but: true});
         Janus.log(" :: Attaching to Preview: ", room);
         feeds.forEach(feed => {
             if (feed !== null && feed !== undefined) {
+                this.sendMessage(feed.rfuser, false);
+                if(feed.streamid) {
+                    this.setState({forward: false});
+                    let stopfw = { "request":"stop_rtp_forward","stream_id":feed.streamid,"publisher_id":feed.rfid,"room":this.state.room,"secret":`${SECRET}` };
+                    videoroom.send({"message": stopfw,
+                        success: (data) => {
+                            Janus.log(":: Forward callback: ", data);
+                        },
+                    });
+                }
                 Janus.log("-- :: Remove Feed: ",feed);
                 feed.detach();
             }
@@ -486,15 +527,63 @@ class SndmanUsers extends Component {
         this.initVideoRoom(room);
     };
 
-    toggleSpeak = () => {
-        this.setState({speak: !this.state.speak})
+    sendMessage = (user, talk) => {
+        let {videoroom,room} = this.state;
+        var message = `{"talk":${talk},"name":"${user.display}","ip":"${user.ip}","col":4,"room":${room}}`;
+        Janus.log(":: Sending message: ",message);
+        videoroom.data({ text: message })
+    };
+
+    forwardStream = () => {
+        const {feeds, room, videoroom, forward} = this.state;
+        // TODO: WE need solution for joining users to already forwarded room
+        if(forward) {
+            Janus.log(" :: Stop forward from room: ", room);
+            feeds.forEach((feed,i) => {
+                if (feed !== null && feed !== undefined) {
+                    // FIXME: if we change sources on client based on room id (not ip) we send message only once
+                    this.sendMessage(feed.rfuser, false);
+                    let stopfw = { "request":"stop_rtp_forward","stream_id":feed.streamid,"publisher_id":feed.rfid,"room":room,"secret":`${SECRET}` };
+                    videoroom.send({"message": stopfw,
+                        success: (data) => {
+                            Janus.log(":: Forward callback: ", data);
+                            feeds[i].streamid = null;
+                        },
+                    });
+                }
+            });
+            this.setState({feeds, forward: false});
+        } else {
+            Janus.log(" :: Start forward from room: ", room);
+            let port = 5630;
+            feeds.forEach((feed,i) => {
+                if (feed !== null && feed !== undefined) {
+                    this.sendMessage(feed.rfuser, true);
+                    let forward = { "request": "rtp_forward","publisher_id":feed.rfid,"room":room,"secret":`${SECRET}`,"host":"10.66.23.104","audio_port":port};
+                    videoroom.send({"message": forward,
+                        success: (data) => {
+                            Janus.log(":: Forward callback: ", data);
+                            let streamid = data["rtp_stream"]["audio_stream_id"];
+                            feeds[i].streamid = streamid;
+                        },
+                    });
+                    port = port + 2;
+                }
+            });
+            this.setState({feeds, forward: true});
+        }
+    };
+
+    onKeyPressed = (e) => {
+        if(e.code === "Numpad4" && !this.state.onoff_but)
+            this.forwardStream();
     };
 
 
   render() {
       //Janus.log(" --- ::: RENDER ::: ---");
       const { name } = this.state.program;
-      const { speak } = this.state;
+      const { forward,onoff_but } = this.state;
       const width = "400";
       const height = "300";
       const autoPlay = true;
@@ -535,18 +624,21 @@ class SndmanUsers extends Component {
           {/*<Segment className="segment_sdi" color='blue' raised>*/}
           <Segment attached className="preview_sdi" color='red'>
               <div className="videos-panel">
-                  {/*<div className="title"><span>{name}</span></div>*/}
+                  <div className="title"><span>{name}</span></div>
                   <div className="videos">
                       <div className="videos__wrapper">{preview}</div>
                   </div>
               </div>
           </Segment>
               <Button className='fours_button'
+                      disabled={onoff_but}
                       attached='bottom'
-                      positive={!speak}
-                      negative={speak}
-                      onClick={this.toggleSpeak}>
-                  <Icon name={speak ? 'microphone' : 'microphone slash' } />
+                      positive={!forward}
+                      negative={forward}
+                      onKeyDown={(e) => this.onKeyPressed(e)}
+                      onClick={this.forwardStream}>
+                  <Icon size='large' name={forward ? 'microphone' : 'microphone slash' } />
+                  <Label attached='top left' color='grey'>{this.state.col}</Label>
               </Button>
             {/*</Segment>*/}
           </Segment>

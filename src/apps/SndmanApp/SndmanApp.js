@@ -47,7 +47,6 @@ class SndmanApp extends Component {
     };
 
     componentDidMount() {
-        document.addEventListener("keydown", this.onKeyPressed);
         initJanus(janus => {
             let {user} = this.state;
             user.session = janus.getSessionId();
@@ -65,7 +64,6 @@ class SndmanApp extends Component {
     };
 
     componentWillUnmount() {
-        document.removeEventListener("keydown", this.onKeyPressed);
         //FIXME: If we don't detach remote handle, Janus still send UDP stream!
         //this may happen because Janus in use for now is very old version
         //Need to check if this shit happend on latest Janus version
@@ -441,11 +439,6 @@ class SndmanApp extends Component {
         });
 
         this.setState({pgm_state});
-    };
-
-    onKeyPressed = (e) => {
-        if(e.code === "Numpad4" && !this.state.onoff_but)
-            this.forwardStream();
     };
 
     setProps = (props) => {

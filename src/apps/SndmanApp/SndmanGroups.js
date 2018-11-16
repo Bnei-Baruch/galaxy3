@@ -1,10 +1,8 @@
 import React, { Component } from 'react';
 import { Janus } from "../../lib/janus";
-import {Segment, Table, Icon, Dropdown, Dimmer, Button} from "semantic-ui-react";
-import {getState, putData, initGXYJanus, initJanus} from "../../shared/tools";
-// import {initGxyProtocol} from "../shared/protocol";
+import {Segment, Table, Icon, Button, Label} from "semantic-ui-react";
 import './SndmanGroups.css'
-import {initGxyProtocol, sendProtocolMessage} from "../../shared/protocol";
+import {DANTE_IN_IP, SECRET} from "../../shared/consts";
 
 class SndmanGroups extends Component {
 
@@ -15,6 +13,7 @@ class SndmanGroups extends Component {
     };
 
     componentDidMount() {
+        document.addEventListener("keydown", this.onKeyPressed);
         const { index } = this.props;
         if(index === 0) {
             this.setState({col: 1});
@@ -23,6 +22,10 @@ class SndmanGroups extends Component {
         } else if(index === 8) {
             this.setState({col: 3});
         }
+    };
+
+    componentWillUnmount() {
+        document.removeEventListener("keydown", this.onKeyPressed);
     };
 
     newSwitchFeed = (id, program, i) => {
@@ -281,6 +284,43 @@ class SndmanGroups extends Component {
         this.setState({speak: !this.state.speak})
     };
 
+    startForward = () => {
+        const {feeds, room, videoroom} = this.state;
+        Janus.log(" :: Start forward from room: ", room);
+        let port = 5630;
+        feeds.forEach((feed,i) => {
+            if (feed !== null && feed !== undefined) {
+                let forward = { "request": "rtp_forward","publisher_id":feed.rfid,"room":room,"secret":`${SECRET}`,"host":`${DANTE_IN_IP}`,"audio_port":port};
+                videoroom.send({"message": forward,
+                    success: (data) => {
+                        Janus.log(":: Forward callback: ", data);
+                        let streamid = data["rtp_stream"]["audio_stream_id"];
+                        feeds[i].streamid = streamid;
+                    },
+                });
+                port = port + 2;
+            }
+        });
+        this.setState({feeds, forward: true});
+    };
+
+    stopForward = () => {
+        const {feeds, room, videoroom} = this.state;
+        Janus.log(" :: Stop forward from room: ", room);
+        feeds.forEach((feed,i) => {
+            if (feed !== null && feed !== undefined) {
+                let stopfw = { "request":"stop_rtp_forward","stream_id":feed.streamid,"publisher_id":feed.rfid,"room":room,"secret":`${SECRET}` };
+                videoroom.send({"message": stopfw,
+                    success: (data) => {
+                        Janus.log(":: Forward callback: ", data);
+                        feeds[i].streamid = null;
+                    },
+                });
+            }
+        });
+        this.setState({feeds, forward: false});
+    };
+
 
   render() {
       const { pre_feed,full_feed,zoom,fullscr,speak } = this.state;
@@ -389,7 +429,8 @@ class SndmanGroups extends Component {
                       positive={!speak}
                       negative={speak}
                       onClick={this.toggleSpeak}>
-                  <Icon name={speak ? 'microphone' : 'microphone slash' } />
+                  <Icon size='large' name={speak ? 'microphone' : 'microphone slash' } />
+                  <Label attached='top left' color='grey'>{this.state.col}</Label>
               </Button>
           </Segment>
       );
