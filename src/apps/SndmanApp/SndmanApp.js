@@ -2,13 +2,13 @@ import React, { Component } from 'react';
 import { Janus } from "../../lib/janus";
 import {Grid} from "semantic-ui-react";
 import {getState, putData, initGXYJanus, initJanus} from "../../shared/tools";
-import './SDIOutApp.css';
+import './SndmanApp.css';
 import {initGxyProtocol} from "../../shared/protocol";
-import SDIOutGroups from "./SDIOutGroups";
-import SDIOutUsers from "./SDIOutUsers";
+import SndmanGroups from "./SndmanGroups";
+import SndmanUsers from "./SndmanUsers";
 
 
-class SDIOutApp extends Component {
+class SndmanApp extends Component {
 
     state = {
         janus: null,
@@ -349,14 +349,14 @@ class SDIOutApp extends Component {
             <Grid columns={2} className="sdi_container">
                 <Grid.Row>
                 <Grid.Column>
-                    <SDIOutGroups
+                    <SndmanGroups
                         index={0} {...this.state}
                         ref={col => {this.col1 = col;}}
                         setProps={this.setProps}
                         removeFeed={this.removeFeed} />
                 </Grid.Column>
                 <Grid.Column>
-                    <SDIOutGroups
+                    <SndmanGroups
                         index={4} {...this.state}
                         ref={col => {this.col2 = col;}}
                         setProps={this.setProps}
@@ -365,14 +365,14 @@ class SDIOutApp extends Component {
                 </Grid.Row>
                 <Grid.Row>
                 <Grid.Column>
-                    <SDIOutGroups
+                    <SndmanGroups
                         index={8} {...this.state}
                         ref={col => {this.col3 = col;}}
                         setProps={this.setProps}
                         removeFeed={this.removeFeed} />
                 </Grid.Column>
                 <Grid.Column>
-                    <SDIOutUsers
+                    <SndmanUsers
                         ref={col => {this.col4 = col;}}
                         setProps={this.setProps}
                         onProtocolData={this.onProtocolData} />
@@ -383,4 +383,4 @@ class SDIOutApp extends Component {
     }
 }
 
-export default SDIOutApp;
+export default SndmanApp;

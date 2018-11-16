@@ -2,13 +2,13 @@ import React, { Component } from 'react';
 import { Janus } from "../../lib/janus";
 import {Icon, Segment} from "semantic-ui-react";
 import {getState, initJanus} from "../../shared/tools";
-import './SDIOutClient.css';
+import './SDIOutUsers.css';
 import './VideoConteiner.scss'
 import {MAX_FEEDS} from "../../shared/consts";
 import {initGxyProtocol} from "../../shared/protocol";
 import classNames from "classnames";
 
-class SDIOutClient extends Component {
+class SDIOutUsers extends Component {
 
     state = {
         devices: [],
@@ -541,4 +541,4 @@ class SDIOutClient extends Component {
   }
 }
 
-export default SDIOutClient;
+export default SDIOutUsers;
