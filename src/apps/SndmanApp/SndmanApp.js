@@ -6,6 +6,7 @@ import './SndmanApp.css';
 import {initGxyProtocol} from "../../shared/protocol";
 import SndmanGroups from "./SndmanGroups";
 import SndmanUsers from "./SndmanUsers";
+import {DATA_PORT, JANUS_IP_EURND, JANUS_IP_EURUK, JANUS_IP_ISRPT, SECRET} from "../../shared/consts";
 
 
 class SndmanApp extends Component {
@@ -35,10 +36,10 @@ class SndmanApp extends Component {
         user: {
             session: 0,
             handle: 0,
-            role: "sdiout",
-            display: "sdiout",
+            role: "sndman",
+            display: "SoundMan",
             id: Janus.randomString(10),
-            name: "sdiout"
+            name: "sndman"
         },
         users: {},
         zoom: false,
@@ -46,6 +47,7 @@ class SndmanApp extends Component {
     };
 
     componentDidMount() {
+        document.addEventListener("keydown", this.onKeyPressed);
         initJanus(janus => {
             let {user} = this.state;
             user.session = janus.getSessionId();
@@ -63,6 +65,7 @@ class SndmanApp extends Component {
     };
 
     componentWillUnmount() {
+        document.removeEventListener("keydown", this.onKeyPressed);
         //FIXME: If we don't detach remote handle, Janus still send UDP stream!
         //this may happen because Janus in use for now is very old version
         //Need to check if this shit happend on latest Janus version
@@ -112,6 +115,108 @@ class SndmanApp extends Component {
         });
     };
 
+    publishOwnFeed = (useAudio) => {
+        // Publish our stream
+        let {gxyhandle} = this.state;
+
+        gxyhandle.createOffer(
+            {
+                media: {  audio: false, video: false, data: true },	// Publishers are sendonly
+                simulcast: false,
+                success: (jsep) => {
+                    Janus.debug("Got publisher SDP!");
+                    Janus.debug(jsep);
+                    let publish = { "request": "configure", "audio": false, "video": false, "data": true };
+                    gxyhandle.send({"message": publish, "jsep": jsep});
+                },
+                error: (error) => {
+                    Janus.error("WebRTC error:", error);
+                    if (useAudio) {
+                        this.publishOwnFeed(false);
+                    } else {
+                        Janus.error("WebRTC error... " + JSON.stringify(error));
+                    }
+                }
+            });
+    };
+
+    forwardOwnFeed = (room) => {
+        let {myid,videoroom,data_forward} = this.state;
+        let isrip = `${JANUS_IP_ISRPT}`;
+        let eurip = `${JANUS_IP_EURND}`;
+        let ukip = `${JANUS_IP_EURUK}`;
+        let dport = DATA_PORT;
+        let isrfwd = { "request": "rtp_forward","publisher_id":myid,"room":room,"secret":`${SECRET}`,"host":isrip,"data_port":dport};
+        let eurfwd = { "request": "rtp_forward","publisher_id":myid,"room":room,"secret":`${SECRET}`,"host":eurip,"data_port":dport};
+        let eukfwd = { "request": "rtp_forward","publisher_id":myid,"room":room,"secret":`${SECRET}`,"host":ukip,"data_port":dport};
+        videoroom.send({"message": isrfwd,
+            success: (data) => {
+                data_forward.isr = data["rtp_stream"]["data_stream_id"];
+                Janus.log(" :: ISR Data Forward: ", data);
+            },
+        });
+        videoroom.send({"message": eurfwd,
+            success: (data) => {
+                data_forward.eur = data["rtp_stream"]["data_stream_id"];
+                Janus.log(" :: EUR Data Forward: ", data);
+                this.setState({onoff_but: false});
+            },
+        });
+        videoroom.send({"message": eukfwd,
+            success: (data) => {
+                data_forward.euk = data["rtp_stream"]["data_stream_id"];
+                Janus.log(" :: EUK Data Forward: ", data);
+            },
+        });
+    };
+
+    sendMessage = (user, talk) => {
+        let {gxyhandle,room} = this.state;
+        var message = `{"talk":${talk},"name":"${user.display}","ip":"${user.ip}","col":4,"room":${room}}`;
+        Janus.log(":: Sending message: ",message);
+        gxyhandle.data({ text: message })
+    };
+
+    forwardStream = () => {
+        const {feeds, room, videoroom, forward} = this.state;
+        // TODO: WE need solution for joining users to already forwarded room
+        if(forward) {
+            Janus.log(" :: Stop forward from room: ", room);
+            feeds.forEach((feed,i) => {
+                if (feed !== null && feed !== undefined) {
+                    // FIXME: if we change sources on client based on room id (not ip) we send message only once
+                    this.sendMessage(feed.rfuser, false);
+                    let stopfw = { "request":"stop_rtp_forward","stream_id":feed.streamid,"publisher_id":feed.rfid,"room":room,"secret":`${SECRET}` };
+                    videoroom.send({"message": stopfw,
+                        success: (data) => {
+                            Janus.log(":: Forward callback: ", data);
+                            feeds[i].streamid = null;
+                        },
+                    });
+                }
+            });
+            this.setState({feeds, forward: false});
+        } else {
+            Janus.log(" :: Start forward from room: ", room);
+            let port = 5630;
+            feeds.forEach((feed,i) => {
+                if (feed !== null && feed !== undefined) {
+                    this.sendMessage(feed.rfuser, true);
+                    let forward = { "request": "rtp_forward","publisher_id":feed.rfid,"room":room,"secret":`${SECRET}`,"host":"10.66.23.104","audio_port":port};
+                    videoroom.send({"message": forward,
+                        success: (data) => {
+                            Janus.log(":: Forward callback: ", data);
+                            let streamid = data["rtp_stream"]["audio_stream_id"];
+                            feeds[i].streamid = streamid;
+                        },
+                    });
+                    port = port + 2;
+                }
+            });
+            this.setState({feeds, forward: true});
+        }
+    };
+
     onMessage = (msg, jsep, initdata) => {
         let {gxyhandle} = this.state;
         Janus.debug(" ::: Got a message (publisher) :::");
@@ -125,6 +230,7 @@ class SndmanApp extends Component {
                 let mypvtid = msg["private_id"];
                 this.setState({myid ,mypvtid});
                 Janus.log("Successfully joined room " + msg["room"] + " with ID " + myid);
+                this.publishOwnFeed();
                 if(msg["publishers"] !== undefined && msg["publishers"] !== null) {
                     let list = msg["publishers"];
                     let users = {};
@@ -337,6 +443,10 @@ class SndmanApp extends Component {
         this.setState({pgm_state});
     };
 
+    onKeyPressed = (e) => {
+        if(e.code === "Numpad4" && !this.state.onoff_but)
+            this.forwardStream();
+    };
 
     setProps = (props) => {
         this.setState({...props})
