@@ -280,8 +280,8 @@ class SndmanGroups extends Component {
   render() {
       const { pre_feed,full_feed,zoom,fullscr } = this.state;
       const {users,index,feeds,pgm_state,feeds_queue,quistions_queue,disabled_groups} = this.props;
-      const width = "320";
-      const height = "180";
+      const width = "100%";
+      const height = "100%";
       const autoPlay = true;
       const controls = false;
       const muted = true;
@@ -362,8 +362,8 @@ class SndmanGroups extends Component {
               <video ref = {"fullscreenVideo"}
                      onClick={() => this.toFourGroup()}
                      id = "fullscreenVideo"
-                     width = "640"
-                     height = "360"
+                     width = "360"
+                     height = "200"
                      autoPlay = {autoPlay}
                      controls = {controls}
                      muted = {muted}

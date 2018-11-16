@@ -529,7 +529,7 @@ class SndmanUsers extends Component {
           {/*<Segment className="segment_sdi" color='blue' raised>*/}
           <Segment className="preview_sdi" color='red'>
               <div className="videos-panel">
-                  <div className="title"><span>{name}</span></div>
+                  {/*<div className="title"><span>{name}</span></div>*/}
                   <div className="videos">
                       <div className="videos__wrapper">{preview}</div>
                   </div>

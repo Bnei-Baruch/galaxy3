@@ -1,9 +1,9 @@
 .video_grid {
     display: grid;
-    grid-template-columns: 320px 320px;
+    grid-template-columns: 180px 180px;
     position:relative;
-    width: 640px;
-    height: 360px;
+    width: 320px;
+    height: 180px;
 }
 
 .video_box {

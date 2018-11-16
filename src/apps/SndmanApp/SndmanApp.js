@@ -345,8 +345,7 @@ class SndmanApp extends Component {
     render() {
 
         return (
-
-            <Grid columns={2} className="sdi_container">
+            <Grid columns={2}>
                 <Grid.Row>
                 <Grid.Column>
                     <SndmanGroups
