@@ -1,12 +1,13 @@
 import React, {Component} from 'react';
 import {Janus} from "../../lib/janus";
-import {Grid, Label, Message, Segment, Table, Button, Icon} from "semantic-ui-react";
+import {Grid, Label, Message, Segment, Table, Icon} from "semantic-ui-react";
 import {initJanus} from "../../shared/tools";
 import {initGxyProtocol} from "../../shared/protocol";
 import ShidurGroups from "./ShidurGroups";
 import ShidurUsers from "./ShidurUsers";
 import {client, getUser} from "../../components/UserManager";
 import LoginPage from "../../components/LoginPage";
+import './ShidurApp.css';
 
 
 class ShidurApp extends Component {
@@ -398,7 +399,7 @@ class ShidurApp extends Component {
                             </Label>
                             <Label size='big' color='brown'>
                                 <Icon name='address card' />
-                                {feeds.length - feeds_queue}
+                                <b className='queue_counter'>{feeds.length - feeds_queue}</b>
                                 <Icon name='delete' onClick={this.resetQueue} />
                             </Label>
                         </Message>

@@ -163,6 +163,6 @@
     background-color: blue;
     width: auto;
     padding: 0px 10px;
-    z-index: 2147483647;
+    z-index: 1;
     float: right !important;
 }

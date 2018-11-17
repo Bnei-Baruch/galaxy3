@@ -1,7 +1,3 @@
-.info-panel {
-    text-align: center;
-}
-
 .video_grid {
     display: grid;
     grid-template-columns: 201px 201px;
