@@ -33,10 +33,11 @@ class GroupsApp extends Component {
 
         let opt = roles.map((role,i) => {
             // if(role === "bb_user") return (<Button key={i} size='massive' color='green' onClick={() => window.open("https://galaxy.kli.one/stream")} >Stream</Button>);
-            if(role === "gxy_group") return (<Button key={i} size='massive' color='green' onClick={() => window.open("https://galaxy.kli.one/group")} >Group</Button>);
-            if(role === "gxy_shidur") return (<Button key={i} size='massive' color='green' onClick={() => window.open("https://galaxy.kli.one/shidur")} >Shidur</Button>);
-            if(role === "gxy_admin") return (<Button key={i} size='massive' color='green' onClick={() => window.open("https://galaxy.kli.one/admin")} >Admin</Button>);
-            if(role === "gxy_root") return (<Button disabled key={i} size='massive' color='green' onClick={() => window.open("https://galaxy.kli.one/root")} >Root</Button>);
+            if(role === "gxy_group") return (<Button key={i} size='massive' color='green' onClick={() => window.open("https://galaxy.kli.one/group","_self")} >Group</Button>);
+            if(role === "gxy_shidur") return (<Button key={i} size='massive' color='green' onClick={() => window.open("https://galaxy.kli.one/shidur","_self")} >Shidur</Button>);
+            if(role === "gxy_sndman") return (<Button key={i} size='massive' color='green' onClick={() => window.open("https://galaxy.kli.one/sndman","_self")} >SoundMan</Button>);
+            if(role === "gxy_admin") return (<Button key={i} size='massive' color='green' onClick={() => window.open("https://galaxy.kli.one/admin","_self")} >Admin</Button>);
+            if(role === "gxy_root") return (<Button disabled key={i} size='massive' color='green' onClick={() => window.open("https://galaxy.kli.one/root","_self")} >Root</Button>);
             return false
         });
 
