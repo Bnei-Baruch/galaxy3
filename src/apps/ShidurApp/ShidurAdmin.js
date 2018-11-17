@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import { Janus } from "../../lib/janus";
-import {Segment, Menu, Button, Input, Table, Grid, Message, Transition, Select} from "semantic-ui-react";
+import {Segment, Menu, Button, Input, Table, Grid, Message, Transition, Select, Icon} from "semantic-ui-react";
 import {initJanus, initChatRoom, getDateString, joinChatRoom, getPublisherInfo} from "../../shared/tools";
 import './ShidurAdmin.css';
 import './VideoConteiner.scss'
@@ -14,8 +14,7 @@ class ShidurAdmin extends Component {
 
     state = {
         chatroom: null,
-        devices: [],
-        device: "",
+        forwarders: [],
         janus: null,
         quistions_queue: [],
         feeds: [],
@@ -94,7 +93,7 @@ class ShidurAdmin extends Component {
     };
 
     getRoomList = () => {
-        const {videoroom} = this.state;
+        const {videoroom,current_room} = this.state;
         if (videoroom) {
             videoroom.send({message: {request: "list"},
                 success: (data) => {
@@ -107,6 +106,9 @@ class ShidurAdmin extends Component {
                         return 0;
                     });
                     this.setState({rooms: data.list});
+                    if(current_room !== "") {
+                        this.listForward(current_room);
+                    }
                 }
             });
         }
@@ -126,14 +128,64 @@ class ShidurAdmin extends Component {
     };
 
     listForward = (room) => {
-        const {videoroom} = this.state;
+        let {videoroom} = this.state;
         let req = {"request":"listforwarders", "room":room, "secret":`${SECRET}`};
         videoroom.send ({"message": req,
             success: (data) => {
                 Janus.log(" :: List forwarders: ", data);
+                this.setState({forwarders: data.rtp_forwarders});
             }
         })
     };
+
+    stopForwardById = (id) => {
+        const {videoroom,current_room} = this.state;
+        let req = {"request":"listforwarders", "room":1234, "secret":"adminpwd"}
+        videoroom.send ({"message": req,
+            success: (data) => {
+                data.rtp_forwarders.forEach((pitem, p) => {
+                    if(pitem.publisher_id === id) {
+                        pitem.rtp_forwarder.forEach((item, i) => {
+                            if(item.audio_stream_id !== undefined) {
+                                console.log(i+" -- AUDIO ID: "+item.audio_stream_id );
+                                let audio_id = item.audio_stream_id;
+                                let stopfw_audio = { "request":"stop_rtp_forward","stream_id":audio_id,"publisher_id":id,"room":current_room,"secret":"adminpwd" };
+                                videoroom.send({"message": stopfw_audio});
+                            }
+                            if(item.video_stream_id !== undefined) {
+                                console.log(i+" -- VIDEO ID: "+item.video_stream_id );
+                                let video_id = item.video_stream_id;
+                                let stopfw_video = { "request":"stop_rtp_forward","stream_id":video_id,"publisher_id":id,"room":current_room,"secret":"adminpwd" };
+                                videoroom.send({"message": stopfw_video});
+                            }
+                        });
+                    }
+                });
+            }
+        });
+    };
+
+    stopForwardByRoom = () => {
+        const {videoroom,current_room} = this.state;
+        if(current_room === "")
+            return;
+        let req = {"request":"listforwarders", "room":current_room, "secret":"adminpwd"}
+        videoroom.send ({"message": req,
+            success: (data) => {
+                data.rtp_forwarders.forEach((pitem, p) => {
+                    let id = pitem.publisher_id;
+                    pitem.rtp_forwarder.forEach((item, i) => {
+                        if(item.audio_stream_id !== undefined) {
+                            console.log(i+" -- AUDIO ID: "+item.audio_stream_id );
+                            let audio_id = item.audio_stream_id;
+                            let stopfw_audio = { "request":"stop_rtp_forward","stream_id":audio_id,"publisher_id":id,"room":current_room,"secret":"adminpwd" };
+                            videoroom.send({"message": stopfw_audio});
+                        }
+                    });
+                });
+            }
+        });
+    }
 
     initVideoRoom = (roomid) => {
         if(this.state.videoroom)
@@ -872,12 +924,14 @@ class ShidurAdmin extends Component {
 
   render() {
 
-      const { rooms,current_room,switch_mode,user,feeds,i,messages,description,roomid,root } = this.state;
+      const { rooms,current_room,switch_mode,user,feeds,i,messages,description,roomid,root,forwarders } = this.state;
       const width = "134";
       const height = "100";
       const autoPlay = true;
       const controls = false;
       const muted = true;
+
+      let v = (<Icon name='volume up' />);
 
       let rooms_list = rooms.map((data,i) => {
           const {room, num_participants, description} = data;
@@ -898,9 +952,11 @@ class ShidurAdmin extends Component {
 
       let users_grid = feeds.map((feed,i) => {
           if(feed) {
+              let fw = forwarders.filter(f => f.publisher_id === feed.id).length > 0;
               return (
                   <Table.Row active={feed.rfid === this.state.feed_id} key={i} onClick={() => this.getUserInfo(feed.rfuser,feed.rfid)} >
-                      <Table.Cell>{feed.rfuser.display}</Table.Cell>
+                      <Table.Cell width={5}>{feed.rfuser.display}</Table.Cell>
+                      <Table.Cell width={1}>{fw ? v : ""}</Table.Cell>
                   </Table.Row>
               )
           }
@@ -955,6 +1011,12 @@ class ShidurAdmin extends Component {
       let root_content = (
           <Menu secondary >
               <Menu.Item>
+                  <Button color='orange' icon='volume up' labelPosition='right'
+                          content='Stop Forwarders' onClick={this.stopForwardByRoom} />
+              </Menu.Item>
+              <Menu.Item>
+              </Menu.Item>
+              <Menu.Item>
                   <Button negative onClick={this.removeRoom}>Remove</Button>
                   :::
                   <Select
@@ -965,11 +1027,6 @@ class ShidurAdmin extends Component {
                       options={rooms_list}
                       onChange={(e, {value}) => this.selectRoom(value)} />
               </Menu.Item>
-              {/*<Menu.Item >*/}
-              {/*<Button positive onClick={this.joinRoom}>Join</Button>*/}
-              {/*:::*/}
-              {/*<Button onClick={this.exitRoom}>exit</Button>*/}
-              {/*</Menu.Item>*/}
               <Menu.Item>
                   <Input type='text' placeholder='Room description...' action value={description}
                          onChange={(v,{value}) => this.setState({description: value})}>
@@ -995,7 +1052,7 @@ class ShidurAdmin extends Component {
                               <Table selectable compact='very' basic structured className="admin_table" unstackable>
                                   <Table.Header>
                                       <Table.Row>
-                                          <Table.HeaderCell>
+                                          <Table.HeaderCell colSpan='2'>
                                               <Button positive icon='info' onClick={this.getFeedInfo} />
                                               <Button negative icon='user x' onClick={this.kickUser} />
                                           </Table.HeaderCell>

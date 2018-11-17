@@ -3,7 +3,7 @@ import 'semantic-ui-css/semantic.min.css';
 // import GalaxyStream from "./components/GalaxyStream";
 // import ShidurAdmin from "./apps/ShidurApp/ShidurAdmin";
 // import SndmanApp from "./apps/SndmanApp/SndmanApp";
-import ShidurApp from "./apps/ShidurApp/ShidurApp";
+// import ShidurApp from "./apps/ShidurApp/ShidurApp";
 // import ShidurGroups from "./apps/ShidurApp/ShidurGroups";
 // import GroupClient from "./apps/GroupsApp/GroupClient";
 // import GroupsApp from "./apps/GroupsApp/GroupsApp";
@@ -13,7 +13,7 @@ import ShidurApp from "./apps/ShidurApp/ShidurApp";
 // import AdminClient from "./apps/AdminApp/AdminClient";
 // import SDIOutUsers from "./apps/SDIOutApp/SDIOutUsers";
 // import SDIOutApp from "./apps/SDIOutApp/SDIOutApp";
-// import VirtualClient from "./apps/VirtualApp/VirtualClient";
+import VirtualClient from "./apps/VirtualApp/VirtualClient";
 // import VirtualStreaming from "./components/VirtualStreaming";
 
 class App extends Component {
@@ -33,10 +33,10 @@ class App extends Component {
                 {/*<SndmanClient />*/}
                 {/*<AdminStreaming/>*/}
                 {/*<AdminClient />*/}
-                {/*<VirtualClient />*/}
+                <VirtualClient />
                 {/*<VirtualStreaming/>*/}
                 {/*<ShidurGroups/>*/}
-                 <ShidurApp/>
+                 {/*<ShidurApp/>*/}
                  {/*<GroupClient/>*/}
                  {/*<GroupsApp/>*/}
                  {/*<SndmanApp/>*/}
