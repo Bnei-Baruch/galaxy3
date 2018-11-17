@@ -7,6 +7,8 @@ import {initGxyProtocol} from "../../shared/protocol";
 import SndmanGroups from "./SndmanGroups";
 import SndmanUsers from "./SndmanUsers";
 import {DATA_PORT, JANUS_IP_EURND, JANUS_IP_EURUK, JANUS_IP_ISRPT, SECRET} from "../../shared/consts";
+import {client, getUser} from "../../components/UserManager";
+import LoginPage from "../../components/LoginPage";
 
 
 class SndmanApp extends Component {
@@ -35,33 +37,25 @@ class SndmanApp extends Component {
         audio: null,
         muted: true,
         feeds_queue: 0,
-        user: {
-            session: 0,
-            handle: 0,
-            role: "sndman",
-            display: "SoundMan",
-            id: Janus.randomString(10),
-            name: "sndman"
-        },
+        user: null,
         users: {},
         zoom: false,
         fullscr: false,
     };
 
     componentDidMount() {
-        initJanus(janus => {
-            let {user} = this.state;
-            user.session = janus.getSessionId();
-            this.setState({janus,user});
-            this.initVideoRoom();
-
-            initGxyProtocol(janus, user, protocol => {
-                this.setState({protocol});
-            }, ondata => {
-                Janus.log("-- :: It's protocol public message: ", ondata);
-                this.onProtocolData(ondata);
-            });
-
+        getUser(user => {
+            if(user) {
+                let gxy_group = user.roles.filter(role => role === 'gxy_sndman').length > 0;
+                if (gxy_group) {
+                    delete user.roles;
+                    user.role = "sndman";
+                    this.initApp(user);
+                } else {
+                    alert("Access denied!");
+                    client.signoutRedirect();
+                }
+            }
         });
     };
 
@@ -75,6 +69,22 @@ class SndmanApp extends Component {
             feed.detach();
         });
         this.state.janus.destroy();
+    };
+
+    initApp = (user) => {
+        initJanus(janus => {
+            user.session = janus.getSessionId();
+            this.setState({janus,user});
+            this.initVideoRoom();
+
+            initGxyProtocol(janus, user, protocol => {
+                this.setState({protocol});
+            }, ondata => {
+                Janus.log("-- :: It's protocol public message: ", ondata);
+                this.onProtocolData(ondata);
+            });
+
+        });
     };
 
     initVideoRoom = () => {
@@ -402,39 +412,47 @@ class SndmanApp extends Component {
     };
 
     render() {
+        const {user} = this.state;
 
-        return (
+        let login = (<LoginPage user={user} />);
+        let content = (
             <Grid columns={3}>
-                    <Grid.Column>
-                        <SndmanUsers
-                            ref={col => {this.col4 = col;}}
-                            setProps={this.setProps}
-                            onProtocolData={this.onProtocolData} />
-                    </Grid.Column>
+                <Grid.Column>
+                    <SndmanUsers
+                        ref={col => {this.col4 = col;}}
+                        setProps={this.setProps}
+                        onProtocolData={this.onProtocolData} />
+                </Grid.Column>
                 <Grid.Row>
-                <Grid.Column>
-                    <SndmanGroups
-                        index={0} {...this.state}
-                        ref={col => {this.col1 = col;}}
-                        setProps={this.setProps}
-                        removeFeed={this.removeFeed} />
-                </Grid.Column>
-                <Grid.Column>
-                    <SndmanGroups
-                        index={4} {...this.state}
-                        ref={col => {this.col2 = col;}}
-                        setProps={this.setProps}
-                        removeFeed={this.removeFeed} />
-                </Grid.Column>
-                <Grid.Column>
-                    <SndmanGroups
-                        index={8} {...this.state}
-                        ref={col => {this.col3 = col;}}
-                        setProps={this.setProps}
-                        removeFeed={this.removeFeed} />
-                </Grid.Column>
+                    <Grid.Column>
+                        <SndmanGroups
+                            index={0} {...this.state}
+                            ref={col => {this.col1 = col;}}
+                            setProps={this.setProps}
+                            removeFeed={this.removeFeed} />
+                    </Grid.Column>
+                    <Grid.Column>
+                        <SndmanGroups
+                            index={4} {...this.state}
+                            ref={col => {this.col2 = col;}}
+                            setProps={this.setProps}
+                            removeFeed={this.removeFeed} />
+                    </Grid.Column>
+                    <Grid.Column>
+                        <SndmanGroups
+                            index={8} {...this.state}
+                            ref={col => {this.col3 = col;}}
+                            setProps={this.setProps}
+                            removeFeed={this.removeFeed} />
+                    </Grid.Column>
                 </Grid.Row>
             </Grid>
+        );
+
+        return (
+            <div>
+                {user ? content : login}
+            </div>
         );
     }
 }
