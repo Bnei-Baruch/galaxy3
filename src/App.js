@@ -5,8 +5,8 @@ import 'semantic-ui-css/semantic.min.css';
 // import SndmanApp from "./apps/SndmanApp/SndmanApp";
 // import ShidurApp from "./apps/ShidurApp/ShidurApp";
 // import ShidurGroups from "./apps/ShidurApp/ShidurGroups";
-// import GroupClient from "./apps/GroupsApp/GroupClient";
-import GroupsApp from "./apps/GroupsApp/GroupsApp";
+import GroupClient from "./apps/GroupsApp/GroupClient";
+// import GroupsApp from "./apps/GroupsApp/GroupsApp";
 // import SndmanClient from "./apps/SndmanApp/SndmanClient";
 // import AdminStreaming from "./apps/AdminApp/AdminStreaming";
 // import ShidurUsers from "././apps/ShidurApp/ShidurUsers";
@@ -37,8 +37,8 @@ class App extends Component {
                 {/*<VirtualStreaming/>*/}
                 {/*<ShidurGroups/>*/}
                  {/*<ShidurApp/>*/}
-                 {/*<GroupClient/>*/}
-                 <GroupsApp/>
+                 <GroupClient/>
+                 {/*<GroupsApp/>*/}
                  {/*<SndmanApp/>*/}
             </Fragment>
         );

@@ -171,7 +171,7 @@ class GroupClient extends Component {
                 Janus.log(mystream);
                 // Janus.log(" -- GOT AUDIO TRACK: ", mystream.getAudioTracks()[0])
                 // mystream.getAudioTracks()[0].enabled = false;
-                videoroom.muteAudio();
+                //videoroom.muteAudio();
                 this.setState({mystream});
                 //let myvideo = this.refs.localVideo;
                 //Janus.attachMediaStream(myvideo, mystream);
@@ -382,7 +382,7 @@ class GroupClient extends Component {
         localStorage.setItem("username", user.display);
         let register = { "request": "join", "room": selected_room, "ptype": "publisher", "display": JSON.stringify(user) };
         videoroom.send({"message": register});
-        this.setState({user, muted: true, room: selected_room});
+        this.setState({user, muted: false, room: selected_room});
         this.chat.initChatRoom(user);
         initGxyProtocol(janus, user, protocol => {
             this.setState({protocol});
@@ -520,7 +520,7 @@ class GroupClient extends Component {
               </Menu.Item>
             </Menu>
             <Menu icon='labeled' secondary size="mini">
-              <Menu.Item position='right' disabled={!mystream} onClick={this.micMute} className="mute-button">
+              <Menu.Item position='right' disabled onClick={this.micMute} className="mute-button">
                 <Icon color={muted ? "red" : ""} name={!muted ? "microphone" : "microphone slash"} />
                 {!muted ? "Mute" : "Unmute"}
                   <canvas className={muted ? 'hidden' : 'vumeter'} ref="canvas1" id="canvas1" width="15" height="35" />
