@@ -198,6 +198,15 @@ class ShidurApp extends Component {
                     // One of the publishers has gone away?
                     let leaving = msg["leaving"];
                     Janus.log("Publisher left: " + leaving);
+                    let {disabled_groups} = this.state;
+                    // Delete from disabled_groups
+                    for(let i = 0; i < disabled_groups.length; i++){
+                        if(disabled_groups[i].id === leaving) {
+                            disabled_groups.splice(i, 1);
+                            this.setState({disabled_groups});
+                            break
+                        }
+                    }
                     this.removeFeed(leaving);
                 } else if(msg["unpublished"] !== undefined && msg["unpublished"] !== null) {
                     // One of the publishers has unpublished?
@@ -207,6 +216,15 @@ class ShidurApp extends Component {
                         // That's us
                         this.state.gxyhandle.hangup();
                         return;
+                    }
+                    let {disabled_groups} = this.state;
+                    // Delete from disabled_groups
+                    for(let i = 0; i < disabled_groups.length; i++){
+                        if(disabled_groups[i].id === unpublished) {
+                            disabled_groups.splice(i, 1);
+                            this.setState({disabled_groups});
+                            break
+                        }
                     }
                     this.removeFeed(unpublished);
                 } else if(msg["error"] !== undefined && msg["error"] !== null) {
