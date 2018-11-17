@@ -952,7 +952,7 @@ class ShidurAdmin extends Component {
 
       let users_grid = feeds.map((feed,i) => {
           if(feed) {
-              let fw = forwarders.filter(f => f.publisher_id === feed.id).length > 0;
+              let fw = forwarders.filter(f => f.publisher_id === (current_room === 1234 ? feed.id : feed.rfid)).length > 0;
               return (
                   <Table.Row active={feed.rfid === this.state.feed_id} key={i} onClick={() => this.getUserInfo(feed.rfuser,feed.rfid)} >
                       <Table.Cell width={5}>{feed.rfuser.display}</Table.Cell>
