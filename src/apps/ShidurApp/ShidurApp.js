@@ -352,6 +352,11 @@ class ShidurApp extends Component {
         this.setState({...props})
     };
 
+    resetQueue = () => {
+        console.log("-- Reset Queue --");
+        this.setState({feeds_queue: 0});
+    };
+
     render() {
 
         const {user,feeds,feeds_queue,disabled_groups} = this.state;
@@ -394,6 +399,7 @@ class ShidurApp extends Component {
                             <Label size='big' color='brown'>
                                 <Icon name='address card' />
                                 {feeds.length - feeds_queue}
+                                <Icon name='delete' onClick={this.resetQueue} />
                             </Label>
                         </Message>
                 </Grid.Column>
