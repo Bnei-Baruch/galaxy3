@@ -281,8 +281,9 @@ class SndmanGroups extends Component {
     };
 
     toFourGroup = () => {
-        //FIXME: Does we need autostop forward here?
         Janus.log(":: Back to four: ");
+        this.forwardStream();
+        //FIXME: Does we need setState on forwardStream callback?
         this.setState({fullscr: !this.state.fullscr, full_feed: null});
     };
 
@@ -325,7 +326,7 @@ class SndmanGroups extends Component {
     };
 
     onKeyPressed = (e) => {
-        if(e.code === "Numpad"+this.state.col)
+        if(e.code === "Numpad"+this.state.col && this.state.fullscr)
             this.forwardStream();
     };
 
