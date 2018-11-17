@@ -68,6 +68,12 @@
     float: left !important;
 }
 
+.hide_button {
+    position: absolute;
+    left: 49px;
+    float: left !important;
+}
+
 .qst_title {
     font-family: "Liberation Serif";
     font-weight: bolder;

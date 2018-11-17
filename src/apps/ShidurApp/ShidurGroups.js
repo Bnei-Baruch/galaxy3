@@ -260,6 +260,10 @@ class ShidurGroups extends Component {
         this.sdiAction("disable", true, null, pre_feed)
     };
 
+    hideGroup = () => {
+        this.setState({pre_feed: null});
+    };
+
     zoominGroup = (e, i) => {
         e.preventDefault();
         if (e.type === 'contextmenu') {
@@ -357,6 +361,11 @@ class ShidurGroups extends Component {
                       color='red'
                       icon='close'
                       onClick={() => this.disableGroup()} />
+              <Button className='hide_button'
+                      size='mini'
+                      color='orange'
+                      icon='window minimize'
+                      onClick={() => this.hideGroup()} />
           </div>
       );
 

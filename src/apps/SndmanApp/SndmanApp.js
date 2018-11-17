@@ -404,7 +404,13 @@ class SndmanApp extends Component {
     render() {
 
         return (
-            <Grid columns={2}>
+            <Grid columns={3}>
+                    <Grid.Column>
+                        <SndmanUsers
+                            ref={col => {this.col4 = col;}}
+                            setProps={this.setProps}
+                            onProtocolData={this.onProtocolData} />
+                    </Grid.Column>
                 <Grid.Row>
                 <Grid.Column>
                     <SndmanGroups
@@ -420,20 +426,12 @@ class SndmanApp extends Component {
                         setProps={this.setProps}
                         removeFeed={this.removeFeed} />
                 </Grid.Column>
-                </Grid.Row>
-                <Grid.Row>
                 <Grid.Column>
                     <SndmanGroups
                         index={8} {...this.state}
                         ref={col => {this.col3 = col;}}
                         setProps={this.setProps}
                         removeFeed={this.removeFeed} />
-                </Grid.Column>
-                <Grid.Column>
-                    <SndmanUsers
-                        ref={col => {this.col4 = col;}}
-                        setProps={this.setProps}
-                        onProtocolData={this.onProtocolData} />
                 </Grid.Column>
                 </Grid.Row>
             </Grid>
