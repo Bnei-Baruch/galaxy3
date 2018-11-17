@@ -542,6 +542,7 @@ class ShidurAdmin extends Component {
         if(event !== undefined && event !== null) {
             if(event === "joined") {
                 // Publisher/manager created, negotiate WebRTC and attach to existing feeds, if any
+                const {current_room} = this.state;
                 let myid = msg["id"];
                 let mypvtid = msg["private_id"];
                 this.setState({myid ,mypvtid});
@@ -552,29 +553,23 @@ class ShidurAdmin extends Component {
                     let list = msg["publishers"];
                     Janus.debug("Got a list of available publishers/feeds:");
                     Janus.log(list);
-                    for(let f in list) {
-                        console.log(f)
-                        let id = list[f]["id"];
-                        //let display = list[f]["display"];
-                        let display = JSON.parse(list[f]["display"]);
-                        let talk = list[f]["talking"];
-                        let audio = list[f]["audio_codec"];
-                        let video = list[f]["video_codec"];
-                        Janus.debug("  >> [" + id + "] " + display + " (audio: " + audio + ", video: " + video + ")");
-                        if(display.role.match(/^(user)$/)) {
-                            this.newRemoteFeed(id, talk);
+                    if(current_room === 1234) {
+                        let users = {};
+                        let feeds = list.filter(feeder => JSON.parse(feeder.display).role === "group");
+                        for(let i=0;i<feeds.length;i++) {
+                            let user = JSON.parse(feeds[i].display);
+                            feeds[i].rfuser = user;
+                            feeds[i].rfid = feeds[i].id;
+                            user.rfid = feeds[i].id;
+                            users[user.id] = user;
                         }
-
-                        if(display.role.match(/^(group)$/)) {
-                            let {feeds,users} = this.state;
-                            feeds.push(list[f])
-                            feeds[f].rfid = list[f].id;
-                            feeds[f].rfuser = display;
-                            feeds[f].rfuser.rfid = list[f].id;
-                            feeds[f].talk = talk;
-                            users[feeds[f].rfuser.id] = display;
-                            console.log(":: Group feed: ", feeds[f])
-                            this.setState({feeds,users});
+                        this.setState({feeds, users});
+                    } else {
+                        let feeds = list.filter(feeder => JSON.parse(feeder.display).role === "user");
+                        for(let i=0;i<feeds.length;i++) {
+                            let id = list[i]["id"];
+                            let talk = list[i]["talking"];
+                            this.newRemoteFeed(id, talk);
                         }
                     }
                 }
@@ -612,7 +607,6 @@ class ShidurAdmin extends Component {
                     console.log(":: ---------- Group feed: ", list[0])
                     for(let f in list) {
                         let id = list[f]["id"];
-                        //let display = list[f]["display"];
                         let display = JSON.parse(list[f]["display"]);
                         let audio = list[f]["audio_codec"];
                         let video = list[f]["video_codec"];
