@@ -454,13 +454,13 @@ class ShidurGroups extends Component {
             {/*<p>Next: {feeds[feeds_queue] ? JSON.parse(feeds[feeds_queue].display).display : ""}</p>*/}
             {/*<p>Online: {feeds.length}</p>*/}
             {/*<hr/>*/}
-            <Segment textAlign='center' className="disabled_groups" raised>
-                <Table selectable compact='very' basic structured className="admin_table" unstackable>
-                    <Table.Body>
-                        {disabled_list}
-                    </Table.Body>
-                </Table>
-            </Segment>
+            {/*<Segment textAlign='center' className="disabled_groups" raised>*/}
+                {/*<Table selectable compact='very' basic structured className="admin_table" unstackable>*/}
+                    {/*<Table.Body>*/}
+                        {/*{disabled_list}*/}
+                    {/*</Table.Body>*/}
+                {/*</Table>*/}
+            {/*</Segment>*/}
 
             <Dimmer active={zoom} onClickOutside={this.handleClose} page>
                 <video ref={"zoomVideo"}

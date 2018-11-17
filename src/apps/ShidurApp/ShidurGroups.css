@@ -1,3 +1,7 @@
+.info-panel {
+    text-align: center;
+}
+
 .video_grid {
     display: grid;
     grid-template-columns: 201px 201px;
@@ -103,7 +107,7 @@
 
 .group_conteiner {
     width: 460px;
-    height: 800px;
+    height: 630px;
 }
 
 .info_segment {

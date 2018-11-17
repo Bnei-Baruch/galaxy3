@@ -1,6 +1,6 @@
 import React, {Component} from 'react';
 import {Janus} from "../../lib/janus";
-import {Grid, Label, Message} from "semantic-ui-react";
+import {Grid, Label, Message, Segment, Table, Button, Icon} from "semantic-ui-react";
 import {initJanus} from "../../shared/tools";
 import {initGxyProtocol} from "../../shared/protocol";
 import ShidurGroups from "./ShidurGroups";
@@ -336,7 +336,19 @@ class ShidurApp extends Component {
 
     render() {
 
-        const {user,feeds,feeds_queue} = this.state;
+        const {user,feeds,feeds_queue,disabled_groups} = this.state;
+
+        let disabled_list = disabled_groups.map((data,i) => {
+            const {id, display} = data;
+            return (
+                <Table.Row key={id} warning
+                           onClick={() => this.col3.selectGroup(data, i)}
+                           onContextMenu={(e) => this.col3.restoreGroup(e, data, i)} >
+                    <Table.Cell width={5}>{JSON.parse(display).display}</Table.Cell>
+                    <Table.Cell width={1}>{id}</Table.Cell>
+                </Table.Row>
+            )
+        });
 
         let login = (<LoginPage user={user} />);
         let content = (
@@ -354,18 +366,17 @@ class ShidurApp extends Component {
                         ref={col => {this.col2 = col;}}
                         setProps={this.setProps}
                         removeFeed={this.removeFeed} />
-                        <Message>
-                            <Grid columns={3}>
-                                <Grid.Column>
-                                    <u>Queue</u>:<Label>{feeds.length - feeds_queue}</Label>
-                                </Grid.Column>
-                                <Grid.Column>
-                                    <u>Next</u>:<Label>{feeds[feeds_queue] ? JSON.parse(feeds[feeds_queue].display).display : ""}</Label>
-                                </Grid.Column>
-                                <Grid.Column>
-                                    <u>Online</u>:<Label>{feeds.length}</Label>
-                                </Grid.Column>
-                            </Grid>
+                        <Message className='info-panel' color='grey'>
+                            <Label attached='top right' color='grey'>
+                                Online: {feeds.length}
+                            </Label>
+                            <Label attached='top left' color='grey'>
+                                Next: {feeds[feeds_queue] ? JSON.parse(feeds[feeds_queue].display).display : ""}
+                            </Label>
+                            <Label size='big' color='brown'>
+                                <Icon name='address card' />
+                                {feeds.length - feeds_queue}
+                            </Label>
                         </Message>
                 </Grid.Column>
                 <Grid.Column>
@@ -374,6 +385,13 @@ class ShidurApp extends Component {
                         ref={col => {this.col3 = col;}}
                         setProps={this.setProps}
                         removeFeed={this.removeFeed} />
+                    <Segment textAlign='center' className="disabled_groups" raised>
+                        <Table selectable compact='very' basic structured className="admin_table" unstackable>
+                            <Table.Body>
+                                {disabled_list}
+                            </Table.Body>
+                        </Table>
+                    </Segment>
                 </Grid.Column>
                 <Grid.Column>
                     <ShidurUsers
