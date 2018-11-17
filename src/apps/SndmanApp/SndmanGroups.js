@@ -282,7 +282,8 @@ class SndmanGroups extends Component {
 
     toFourGroup = () => {
         Janus.log(":: Back to four: ");
-        this.forwardStream();
+        if(this.state.forward)
+            this.forwardStream();
         //FIXME: Does we need setState on forwardStream callback?
         this.setState({fullscr: !this.state.fullscr, full_feed: null});
     };
