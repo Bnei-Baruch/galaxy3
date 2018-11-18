@@ -21,6 +21,7 @@ class ShidurAdmin extends Component {
         rooms: [],
         feed_id: null,
         feed_user: null,
+        feed_talk: false,
         current_room: "",
         roomid: "",
         videoroom: null,
@@ -948,10 +949,11 @@ class ShidurAdmin extends Component {
         });
     };
 
-    getUserInfo = (userinfo,id) => {
-        this.setState({feed_id: id, feed_user: userinfo, switch_mode: true});
-        Janus.log(userinfo,userinfo.rfid);
-        this.switchFeed(userinfo.rfid);
+    getUserInfo = (feed) => {
+        let {rfuser,rfid,talking} = feed;
+        this.setState({feed_id: rfid, feed_user: rfuser, feed_talk: talking, switch_mode: true});
+        Janus.log(rfuser,rfid,talking);
+        this.switchFeed(rfid);
     };
 
     getFeedInfo = () => {
@@ -968,7 +970,7 @@ class ShidurAdmin extends Component {
 
   render() {
 
-      const { rooms,current_room,switch_mode,user,feeds,i,messages,description,roomid,root,forwarders,feed_user } = this.state;
+      const { rooms,current_room,switch_mode,user,feeds,i,messages,description,roomid,root,forwarders,feed_user,feed_talk } = this.state;
       const width = "134";
       const height = "100";
       const autoPlay = true;
@@ -998,7 +1000,7 @@ class ShidurAdmin extends Component {
           if(feed) {
               let fw = forwarders.filter(f => f.publisher_id === (current_room === 1234 ? feed.id : feed.rfid)).length > 0;
               return (
-                  <Table.Row active={feed.rfid === this.state.feed_id} key={i} onClick={() => this.getUserInfo(feed.rfuser,feed.rfid)} >
+                  <Table.Row active={feed.rfid === this.state.feed_id} key={i} onClick={() => this.getUserInfo(feed)} >
                       <Table.Cell width={5}>{feed.rfuser.display}</Table.Cell>
                       <Table.Cell width={1}>{fw ? v : ""}</Table.Cell>
                   </Table.Row>
@@ -1041,6 +1043,7 @@ class ShidurAdmin extends Component {
 
       let switchvideo = (
           <div className="video">
+              <div className={classNames('video__overlay', {'talk' : feed_talk})} />
               <video ref = {"switchVideo"}
                      id = "switchVideo"
                      width = {width}
@@ -1133,7 +1136,7 @@ class ShidurAdmin extends Component {
                                       <Table.Row active={current_room === 1234}
                                                  key={i} onClick={() => this.joinRoom(null, i)}>
                                           <Table.Cell width={5}>Galaxy</Table.Cell>
-                                          <Table.Cell width={1}>70</Table.Cell>
+                                          <Table.Cell width={1}>{current_room === 1234 ? feeds.length : 0}</Table.Cell>
                                       </Table.Row>
                                       {rooms_grid}
                                   </Table.Body>
