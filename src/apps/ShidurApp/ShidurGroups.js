@@ -298,6 +298,8 @@ class ShidurGroups extends Component {
     };
 
     fullScreenGroup = (i,full_feed) => {
+        if(this.props.feeds.length < 13)
+            return;
         Janus.log(":: Make Full Screen Group: ",JSON.parse(full_feed.display));
         this.setState({fullscr: !this.state.fullscr,full_feed});
         let fourvideo = this.refs["programVideo" + i];
@@ -397,6 +399,7 @@ class ShidurGroups extends Component {
                          muted={muted}
                          playsInline={true}/>
                   <Button className='next_button'
+                          disabled={feeds.length < 13}
                           size='mini'
                           color='green'
                           icon={pre_feed ? 'arrow up' : 'share'}
@@ -436,6 +439,7 @@ class ShidurGroups extends Component {
           </Segment>
 
             <Button className='fours_button'
+                disabled={feeds.length < 13}
                 attached='bottom'
                 color='blue'
                 size='mini'
