@@ -15,12 +15,12 @@
 
 .video_title {
     font-family: "Liberation Serif";
-    line-height: 1.1285em;
+    line-height: 1.3285em;
     position: absolute;
     right: 40px;
     color: #FFF;
     text-align: center;
-    font-size: 15px;
+    font-size: 30px;
     background-color: blue;
     width: auto;
     padding: 0px 10px;
@@ -29,7 +29,7 @@
 
 .fullscrvideo_title {
     font-family: "Liberation Serif";
-    line-height: 1.1285em;
+    line-height: 1.2285em;
     position: absolute;
     right: 40px;
     color: #FFF;
@@ -48,7 +48,7 @@
     position: absolute;
     color: black;
     text-align: center;
-    font-size: 30px;
+    font-size: 70px;
     background-color: white;
     width: auto;
     padding: 0px 10px;
@@ -63,7 +63,7 @@
     position: absolute;
     color: black;
     text-align: center;
-    font-size: 50px;
+    font-size: 120px;
     background-color: white;
     width: auto;
     padding: 0px 10px;
