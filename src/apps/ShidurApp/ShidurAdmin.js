@@ -67,7 +67,7 @@ class ShidurAdmin extends Component {
 
     onKeyPressed = (e) => {
         if(e.code === "Enter")
-            this.sendDataMessage();
+            this.sendPrivateMessage();
     };
 
     initShidurAdmin = (user) => {
@@ -511,6 +511,14 @@ class ShidurAdmin extends Component {
             if (whisper === true) {
                 // Private message
                 Janus.log("-:: It's private message: "+dateString+" : from: "+from+" : "+msg)
+                let {messages} = this.state;
+                //let message = dateString+" : "+from+" : "+msg;
+                let message = JSON.parse(msg);
+                message.time = dateString;
+                Janus.log("-:: It's public message: "+message);
+                messages.push(message);
+                this.setState({messages});
+                this.scrollToBottom();
             } else {
                 // Public message
                 let {messages} = this.state;
@@ -578,6 +586,42 @@ class ShidurAdmin extends Component {
             success: () => {
                 Janus.log(":: Message sent ::");
                 this.setState({input_value: ""});
+            }
+        });
+    };
+
+    sendPrivateMessage = () => {
+        let {input_value,user,feed_user} = this.state;
+        if(!feed_user) {
+            alert("Choose user");
+            return
+        };
+        let msg = {user, text: input_value};
+        let message = {
+            textroom: "message",
+            transaction: Janus.randomString(12),
+            room: this.state.current_room,
+            to: feed_user.id,
+            text: JSON.stringify(msg),
+        };
+        // Note: messages are always acknowledged by default. This means that you'll
+        // always receive a confirmation back that the message has been received by the
+        // server and forwarded to the recipients. If you do not want this to happen,
+        // just add an ack:false property to the message above, and server won't send
+        // you a response (meaning you just have to hope it succeeded).
+        this.state.chatroom.data({
+            text: JSON.stringify(message),
+            error: (reason) => { alert(reason); },
+            success: () => {
+                Janus.log(":: Message sent ::");
+                //FIXME: it's directly put to message box
+                let {messages} = this.state;
+                msg.time = getDateString();
+                msg.to = feed_user.username;
+                Janus.log("-:: It's public message: "+msg);
+                messages.push(msg);
+                this.setState({messages, input_value: ""});
+                this.scrollToBottom();
             }
         });
     };
@@ -753,7 +797,7 @@ class ShidurAdmin extends Component {
 
         if(this.state.current_room)
             this.exitRoom(this.state.current_room);
-        this.setState({switch_mode: false, current_room: room,feeds: []});
+        this.setState({switch_mode: false, current_room: room,feeds: [], feed_user: null, feed_id: null});
 
         this.initVideoRoom(room);
 
@@ -924,7 +968,7 @@ class ShidurAdmin extends Component {
 
   render() {
 
-      const { rooms,current_room,switch_mode,user,feeds,i,messages,description,roomid,root,forwarders } = this.state;
+      const { rooms,current_room,switch_mode,user,feeds,i,messages,description,roomid,root,forwarders,feed_user } = this.state;
       const width = "134";
       const height = "100";
       const autoPlay = true;
@@ -963,11 +1007,12 @@ class ShidurAdmin extends Component {
       });
 
       let list_msgs = messages.map((msg,i) => {
-          let {user,time,text} = msg;
+          let {user,time,text,to} = msg;
           return (
               <div key={i}><p>
                   <i style={{color: 'grey'}}>{time}</i> -
-                  <b style={{color: user.role === "admin" ? 'red' : 'blue'}}>{user.name}</b>:
+                  <b style={{color: user.role === "admin" ? 'red' : 'blue'}}>{user.username}</b>
+                  {to ? <b style={{color: 'blue'}}>-> {to} :</b> : ""}
               </p>{text}</div>
           );
       });
@@ -1101,15 +1146,15 @@ class ShidurAdmin extends Component {
 
               <Segment className='chat_segment'>
 
-                  <Message className='messages_list' size='mini'>
+                  <Message className='messages_list'>
                       {list_msgs}
                       <div ref='end' />
                   </Message>
 
-                  <Input size='mini' fluid type='text' placeholder='Type your message' action value={this.state.input_value}
+                  <Input fluid type='text' placeholder='Type your message' action value={this.state.input_value}
                          onChange={(v,{value}) => this.setState({input_value: value})}>
                       <input />
-                      <Button size='mini' positive onClick={this.sendDataMessage}>Send</Button>
+                      <Button positive onClick={this.sendPrivateMessage}>Send</Button>
                   </Input>
 
               </Segment>

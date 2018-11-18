@@ -145,8 +145,8 @@ class GroupChat extends Component {
                 msg.time = getDateString();
                 Janus.log("-:: It's public message: "+msg);
                 messages.push(msg);
-                this.scrollToBottom();
                 this.setState({messages, input_value: ""});
+                this.scrollToBottom();
             }
         });
     };
