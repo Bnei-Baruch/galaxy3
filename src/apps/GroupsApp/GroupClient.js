@@ -493,7 +493,7 @@ class GroupClient extends Component {
         <div className={classNames('gclient', { 'gclient--chat-open': this.state.visible })} >
           <div className="gclient__toolbar">
             <Input>
-              {mystream ? <Button color='orange' icon='sign-out' onClick={this.exitRoom} />:""}
+              {mystream ? <Button color='red' icon='sign-out' onClick={this.exitRoom} />:""}
               {!mystream ? <Button primary icon='sign-in' disabled={!audio_device} onClick={this.joinRoom} />:""}
             </Input>
             <Menu icon='labeled' secondary size="mini">

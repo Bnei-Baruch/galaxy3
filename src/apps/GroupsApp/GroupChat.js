@@ -173,7 +173,7 @@ class GroupChat extends Component {
         return (
             <div className="chat-panel" >
                 {/* <div className="chat" > */}
-                <Message className='messages_list' size='mini'>
+                <Message className='messages_list'>
                     <div className="messages-wrapper">
                         {list_msgs}
                         <div ref='end' />
@@ -181,10 +181,10 @@ class GroupChat extends Component {
 
                 </Message>
 
-                <Input size='mini' fluid type='text' placeholder='Type your message' action value={this.state.input_value}
+                <Input fluid type='text' placeholder='Type your message' action value={this.state.input_value}
                        onChange={(v,{value}) => this.setState({input_value: value})}>
                     <input />
-                    <Button size='mini' positive onClick={this.sendChatMessage}>Send</Button>
+                    <Button positive onClick={this.sendChatMessage}>Send</Button>
                 </Input>
                 {/* </div> */}
             </div>
