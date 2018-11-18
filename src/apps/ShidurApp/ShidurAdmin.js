@@ -1162,10 +1162,16 @@ class ShidurAdmin extends Component {
                           <Segment textAlign='center' className="group_list" raised>
                               <Table selectable compact='very' basic structured className="admin_table" unstackable>
                                   <Table.Body>
+                                      <Table.Row disabled positive>
+                                          <Table.Cell colSpan={2} textAlign='center'>Groups:</Table.Cell>
+                                      </Table.Row>
                                       <Table.Row active={current_room === 1234}
                                                  key={i} onClick={() => this.joinRoom(null, i)}>
                                           <Table.Cell width={5}>Galaxy</Table.Cell>
                                           <Table.Cell width={1}>{current_room === 1234 ? feeds.length : 0}</Table.Cell>
+                                      </Table.Row>
+                                      <Table.Row disabled positive>
+                                          <Table.Cell colSpan={2} textAlign='center'>Users:</Table.Cell>
                                       </Table.Row>
                                       {rooms_grid}
                                   </Table.Body>
