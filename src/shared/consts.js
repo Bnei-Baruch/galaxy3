@@ -117,6 +117,9 @@ export const audiog_options = [
     { key: 'ua', value: 55, flag: 'ua', text: 'Ukrainian' },
     { key: 'nl', value: 56, flag: 'nl', text: 'Dutch' },
     { key: 'cn', value: 57, flag: 'cn', text: 'Chinese' },
+    { key: 99, value: 99, text: 'Special', disabled: true, icon: "tags", selected: true},
+    { key: 'heru', value: 10, text: 'Heb-Rus' },
+    { key: 'heen', value: 17, text: 'Heb-Eng' },
 ];
 
 export const gxycol = [0, 201, 203, 202, 204];

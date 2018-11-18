@@ -213,12 +213,12 @@ class GalaxyStream extends Component {
             handle.createAnswer({
                 jsep: jsep,
                 media: { audioSend: false, videoSend: false, data: initdata },
-                success: function(jsep) {
+                success: (jsep) => {
                     Janus.log("Got SDP!", jsep);
                     let body = { request: "start" };
                     handle.send({message: body, jsep: jsep});
                 },
-                error: function(error) {
+                error: (error) => {
                     Janus.log("WebRTC error: " + error);
                 }
             });
