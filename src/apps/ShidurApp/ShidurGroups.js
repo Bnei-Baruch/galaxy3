@@ -100,6 +100,8 @@ class ShidurGroups extends Component {
                 },
                 oncleanup: () => {
                     Janus.log(" ::: Got a cleanup notification (remote feed " + id + ") :::");
+                    if(!program)
+                        this.setState({pre: null});
                 }
             });
     };
@@ -298,8 +300,6 @@ class ShidurGroups extends Component {
     };
 
     fullScreenGroup = (i,full_feed) => {
-        if(this.props.feeds.length < 13)
-            return;
         Janus.log(":: Make Full Screen Group: ",JSON.parse(full_feed.display));
         this.setState({fullscr: !this.state.fullscr,full_feed});
         let fourvideo = this.refs["programVideo" + i];
