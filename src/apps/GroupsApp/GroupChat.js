@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import { Janus } from "../../lib/janus";
 import {Message, Button, Input} from "semantic-ui-react";
 import {initChatRoom,getDateString,joinChatRoom} from "../../shared/tools";
+import {SHIDUR_ID} from "../../shared/consts";
 
 
 class GroupChat extends Component {
@@ -19,30 +20,6 @@ class GroupChat extends Component {
 
     componentWillUnmount() {
         document.removeEventListener("keydown", this.onKeyPressed);
-    };
-
-    componentDidUpdate(prevProps) {
-        // Janus.log(" -- componentDidUpdate -- ",prevProps)
-        // if (prevProps.janus !== this.state.janus) {
-        //     this.setState({janus: prevProps.janus})
-        //     Janus.log(" -- Janus was updated");
-        //     initChatRoom(prevProps.janus, null, chatroom => {
-        //         Janus.log(":: Got Chat Handle: ", chatroom);
-        //         this.setState({chatroom});
-        //     }, data => {
-        //         this.onData(data);
-        //     });
-        // }
-        // if (prevProps.room !== this.state.room) {
-        //     Janus.log(" -- Room was updated");
-        //     let {user,chatroom,room} = this.state;
-        //     if(prevProps.room === "") {
-        //         this.exitRoom(room);
-        //     } else {
-        //         joinChatRoom(chatroom,prevProps.room,user)
-        //     }
-        //     this.setState({room: prevProps.room});
-        // }
     };
 
     initChat = (janus) => {
@@ -96,6 +73,18 @@ class GroupChat extends Component {
             if (whisper === true) {
                 // Private message
                 Janus.log("-:: It's private message: "+dateString+" : "+from+" : "+msg)
+                let {messages} = this.state;
+                //let message = dateString+" : "+from+" : "+msg;
+                let message = JSON.parse(msg);
+                message.time = dateString;
+                Janus.log("-:: It's public message: "+message);
+                messages.push(message);
+                this.setState({messages});
+                if(this.props.visible) {
+                    this.scrollToBottom();
+                } else {
+                    this.props.onNewMsg();
+                }
             } else {
                 // Public message
                 let {messages} = this.state;
@@ -138,6 +127,7 @@ class GroupChat extends Component {
             textroom: "message",
             transaction: Janus.randomString(12),
             room: this.state.room,
+            to: `${SHIDUR_ID}`,
             text: JSON.stringify(msg),
         };
         // Note: messages are always acknowledged by default. This means that you'll
@@ -150,7 +140,13 @@ class GroupChat extends Component {
             error: (reason) => { alert(reason); },
             success: () => {
                 Janus.log(":: Message sent ::");
-                this.setState({input_value: ""});
+                //FIXME: it's directly put to message box
+                let {messages} = this.state;
+                msg.time = getDateString();
+                Janus.log("-:: It's public message: "+msg);
+                messages.push(msg);
+                this.scrollToBottom();
+                this.setState({messages, input_value: ""});
             }
         });
     };
@@ -165,10 +161,11 @@ class GroupChat extends Component {
 
         let list_msgs = messages.map((msg,i) => {
             let {user,time,text} = msg;
+            let name = user.display || user.username;
             return (
                 <div key={i}><p>
                     <i style={{color: 'grey'}}>{time}</i> -
-                    <b style={{color: user.role === "admin" ? 'red' : 'blue'}}>{user.display}</b>:
+                    <b style={{color: user.role === "admin" ? 'red' : 'blue'}}>{name}</b>:
                 </p>{text}</div>
             );
         });
