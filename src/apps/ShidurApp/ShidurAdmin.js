@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import { Janus } from "../../lib/janus";
-import {Segment, Menu, Button, Input, Table, Grid, Message, Transition, Select, Icon} from "semantic-ui-react";
+import {Segment, Menu, Button, Input, Table, Grid, Message, Transition, Select, Icon, Popup, List} from "semantic-ui-react";
 import {initJanus, initChatRoom, getDateString, joinChatRoom, getPublisherInfo} from "../../shared/tools";
 import './ShidurAdmin.css';
 import './VideoConteiner.scss'
@@ -22,6 +22,7 @@ class ShidurAdmin extends Component {
         feed_id: null,
         feed_user: null,
         feed_talk: false,
+        feed_rtcp: {},
         current_room: "",
         roomid: "",
         videoroom: null,
@@ -960,6 +961,7 @@ class ShidurAdmin extends Component {
         let {session,handle} = this.state.feed_user;
         getPublisherInfo(session,handle,json => {
                 Janus.log(":: Publisher info", json);
+                this.setState({feed_rtcp: json.info.streams[0].rtcp_stats});
             }
         )
     }
@@ -970,7 +972,7 @@ class ShidurAdmin extends Component {
 
   render() {
 
-      const { rooms,current_room,switch_mode,user,feeds,i,messages,description,roomid,root,forwarders,feed_user,feed_talk } = this.state;
+      const { rooms,current_room,switch_mode,user,feeds,i,messages,description,roomid,root,forwarders,feed_rtcp,feed_talk } = this.state;
       const width = "134";
       const height = "100";
       const autoPlay = true;
@@ -1049,7 +1051,7 @@ class ShidurAdmin extends Component {
                      width = {width}
                      height = {height}
                      autoPlay = {autoPlay}
-                     controls = {controls}
+                     controls
                      muted = {muted}
                      playsInline = {true} />
           </div>);
@@ -1101,7 +1103,34 @@ class ShidurAdmin extends Component {
                                   <Table.Header>
                                       <Table.Row>
                                           <Table.HeaderCell colSpan='2'>
-                                              <Button positive icon='info' onClick={this.getFeedInfo} />
+                                              <Popup
+                                                  trigger={<Button positive icon='info' onClick={this.getFeedInfo} />}
+                                                  position='bottom right'
+                                                  content={
+                                                      <List as='ul'>
+                                                          <List.Item as='li'>Video
+                                                              <List.List as='ul'>
+                                                                  <List.Item as='li'>in-link-quality: {feed_rtcp.video ? feed_rtcp.video["in-link-quality"] : ""}</List.Item>
+                                                                  <List.Item as='li'>in-media-link-quality: {feed_rtcp.video ? feed_rtcp.video["in-media-link-quality"] : ""}</List.Item>
+                                                                  <List.Item as='li'>jitter-local: {feed_rtcp.video ? feed_rtcp.video["jitter-local"] : ""}</List.Item>
+                                                                  <List.Item as='li'>jitter-remote: {feed_rtcp.video ? feed_rtcp.video["jitter-remote"] : ""}</List.Item>
+                                                                  <List.Item as='li'>lost: {feed_rtcp.video ? feed_rtcp.video["lost"] : ""}</List.Item>
+                                                              </List.List>
+                                                          </List.Item>
+                                                          <List.Item as='li'>Audio
+                                                              <List.List as='ul'>
+                                                                  <List.Item as='li'>in-link-quality: {feed_rtcp.audio ? feed_rtcp.audio["in-link-quality"] : ""}</List.Item>
+                                                                  <List.Item as='li'>in-media-link-quality: {feed_rtcp.audio ? feed_rtcp.audio["in-media-link-quality"] : ""}</List.Item>
+                                                                  <List.Item as='li'>jitter-local: {feed_rtcp.audio ? feed_rtcp.audio["jitter-local"] : ""}</List.Item>
+                                                                  <List.Item as='li'>jitter-remote: {feed_rtcp.audio ? feed_rtcp.audio["jitter-remote"] : ""}</List.Item>
+                                                                  <List.Item as='li'>lost: {feed_rtcp.audio ? feed_rtcp.audio["lost"] : ""}</List.Item>
+                                                              </List.List>
+                                                          </List.Item>
+                                                      </List>
+                                                  }
+                                                  on='click'
+                                                  hideOnScroll
+                                              />
                                               <Button negative icon='user x' onClick={this.kickUser} />
                                           </Table.HeaderCell>
                                       </Table.Row>
