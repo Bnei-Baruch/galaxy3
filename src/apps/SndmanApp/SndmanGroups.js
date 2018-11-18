@@ -392,8 +392,8 @@ class SndmanGroups extends Component {
                   <div className="video_title">{JSON.parse(feed.display).display}</div>
                   {qst ? <div className='qst_title'>?</div> : ""}
                   <video className={talk ? "talk" : ""}
-                         onClick={() => this.fullScreenGroup(i,feed)}
-                         onContextMenu={(e) => this.zoominGroup(e, i)}
+                         // onClick={() => this.fullScreenGroup(i,feed)}
+                         // onContextMenu={(e) => this.zoominGroup(e, i)}
                          key={i}
                          ref={"programVideo" + i}
                          id={"programVideo" + i}
@@ -415,7 +415,7 @@ class SndmanGroups extends Component {
                   full_feed ? users[JSON.parse(full_feed.display).id] ? users[JSON.parse(full_feed.display).id].question ? 'qst_fullscreentitle' : 'hidden' : 'hidden' : 'hidden'
               }>?</div>
               <video ref = {"fullscreenVideo"}
-                     onClick={() => this.toFourGroup()}
+                     // onClick={() => this.toFourGroup()}
                      id = "fullscreenVideo"
                      width = "360"
                      height = "200"

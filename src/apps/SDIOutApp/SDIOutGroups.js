@@ -1,11 +1,10 @@
 import React, { Component } from 'react';
 import { Janus } from "../../lib/janus";
-import {Segment, Table, Icon, Dropdown, Dimmer, Button} from "semantic-ui-react";
-import {getState, putData, initGXYJanus, initJanus} from "../../shared/tools";
+import {Segment, Table, Icon, Button} from "semantic-ui-react";
+// import {getState, putData, initGXYJanus, initJanus} from "../../shared/tools";
 // import {initGxyProtocol} from "../shared/protocol";
 import './SDIOutGroups.css'
 //import './VideoConteiner.scss'
-import {initGxyProtocol, sendProtocolMessage} from "../../shared/protocol";
 
 class SDIOutGroups extends Component {
 
