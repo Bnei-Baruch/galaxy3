@@ -122,7 +122,7 @@ class ShidurGroups extends Component {
 
     switchProgram = (i) => {
         Janus.log(" :: Selected program Switch: ",i);
-        let {feeds,pr1,pgm_state,feeds_queue} = this.props;
+        let {feeds,pr1,pgm_state,feeds_queue,round} = this.props;
         let {pre_feed} = this.state;
 
         // Don't switch if nobody in queue
@@ -158,16 +158,17 @@ class ShidurGroups extends Component {
             if(feeds_queue >= feeds.length) {
                 // End round here!
                 feeds_queue = 0;
+                round++;
                 Janus.log(" -- ROUND END --");
             }
 
-            this.props.setProps({feeds_queue, pre_feed: null});
+            this.props.setProps({feeds_queue,round,pre_feed: null});
         }
 
     };
 
     switchFour = () => {
-        let {feeds_queue,feeds,index} = this.props;
+        let {feeds_queue,feeds,index,round} = this.props;
 
         for(let i=index; i<index+4; i++) {
 
@@ -181,7 +182,8 @@ class ShidurGroups extends Component {
                 // End round here!
                 Janus.log(" -- ROUND END --");
                 feeds_queue = 0;
-                this.props.setProps({feeds_queue});
+                round++;
+                this.props.setProps({feeds_queue,round});
             }
 
             Janus.log("---------- i: "+i+" queue: "+feeds_queue);

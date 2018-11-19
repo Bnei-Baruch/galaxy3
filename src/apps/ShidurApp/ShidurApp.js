@@ -39,6 +39,7 @@ class ShidurApp extends Component {
         users: {},
         zoom: false,
         fullscr: false,
+        round: 0,
     };
 
     componentDidMount() {
@@ -366,7 +367,7 @@ class ShidurApp extends Component {
 
     render() {
 
-        const {user,feeds,feeds_queue,disabled_groups} = this.state;
+        const {user,feeds,feeds_queue,disabled_groups,round} = this.state;
 
         let disabled_list = disabled_groups.map((data,i) => {
             const {id, display} = data;
@@ -413,6 +414,9 @@ class ShidurApp extends Component {
                                 <Icon name='address card' />
                                 <b className='queue_counter'>{feeds.length - feeds_queue}</b>
                                 <Icon name='delete' onClick={this.resetQueue} />
+                            </Label>
+                            <Label attached='bottom left' color='blue'>
+                                Round: {round}
                             </Label>
                         </Message>
                 </Grid.Column>
