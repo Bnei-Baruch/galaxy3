@@ -555,7 +555,7 @@ class GroupClient extends Component {
               <div className="videos">
                 <div className="videos__wrapper">
                   <div className="video">
-                    <video className='mirror' ref="localVideo"
+                    <video ref="localVideo"
                       id="localVideo"
                       poster={nowebcam}
                       width={width}

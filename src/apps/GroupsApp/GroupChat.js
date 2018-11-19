@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import { Janus } from "../../lib/janus";
 import {Message, Button, Input} from "semantic-ui-react";
-import {initChatRoom,getDateString,joinChatRoom} from "../../shared/tools";
+import {initChatRoom,getDateString,joinChatRoom,notifyMe} from "../../shared/tools";
 import {SHIDUR_ID} from "../../shared/consts";
 
 
@@ -83,6 +83,7 @@ class GroupChat extends Component {
                 if(this.props.visible) {
                     this.scrollToBottom();
                 } else {
+                    notifyMe("Shidur",message.text);
                     this.props.onNewMsg();
                 }
             } else {

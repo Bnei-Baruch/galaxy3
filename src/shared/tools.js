@@ -1,5 +1,6 @@
 import {Janus} from "../lib/janus";
 import {JANUS_ADMIN, JANUS_SERVER, ADMIN_SECRET, STUN_SERVER, WFDB_STATE, WFRP_STATE} from "./consts";
+import nlogo from './nlogo.png';
 
 
 export const initJanus = (cb) => {
@@ -191,7 +192,7 @@ export const notifyMe = (title, message, tout) => {
         Notification.requestPermission();
     else {
         var notification = new Notification(title+":", {
-            icon: 'nlogo.png',
+            icon: {nlogo},
             body: message,
             requireInteraction: tout
         });
