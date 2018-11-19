@@ -281,7 +281,7 @@ class ShidurApp extends Component {
         }
     };
 
-    removeFeed = (id,) => {
+    removeFeed = (id) => {
         let {feeds,users,quistions_queue,qfeeds} = this.state;
         for(let i=0; i<feeds.length; i++){
             if(feeds[i].id === id) {
@@ -333,6 +333,8 @@ class ShidurApp extends Component {
                         feeds_queue--;
                         this.setState({feeds_queue});
                     }
+                    pgm_state[i] = null;
+                    pr1[i] = null;
                     let feed = feeds[feeds_queue];
                     if(i < 4) {
                         this.col1.switchNext(i,feed);

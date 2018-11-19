@@ -99,9 +99,10 @@ class ShidurGroups extends Component {
                     //var videoTracks = stream.getVideoTracks();
                 },
                 oncleanup: () => {
-                    Janus.log(" ::: Got a cleanup notification (remote feed " + id + ") :::");
-                    if(!program)
+                    Janus.log(" ::: Got a cleanup notification (remote feed "+id+" : "+i+") :::");
+                    if(!program) {
                         this.setState({pre: null});
+                    }
                 }
             });
     };

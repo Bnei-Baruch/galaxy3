@@ -1052,7 +1052,7 @@ class ShidurAdmin extends Component {
                      height = {height}
                      autoPlay = {autoPlay}
                      controls
-                     muted = {muted}
+                     muted = {false}
                      playsInline = {true} />
           </div>);
 
