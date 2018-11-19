@@ -392,6 +392,8 @@ class SndmanApp extends Component {
                         feeds_queue--;
                         this.setState({feeds_queue});
                     }
+                    pgm_state[i] = null;
+                    pr1[i] = null;
                     let feed = feeds[feeds_queue];
                     if(i < 4) {
                         this.col1.switchNext(i,feed);
