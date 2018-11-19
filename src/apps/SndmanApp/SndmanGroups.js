@@ -236,6 +236,9 @@ class SndmanGroups extends Component {
     disableGroup = () => {
         let {disabled_groups} = this.props;
         let {pre_feed} = this.state;
+        let chk = disabled_groups.find(g => g.id === pre_feed.id);
+        if(chk)
+            return;
         disabled_groups.push(pre_feed);
         this.props.removeFeed(pre_feed.id);
         this.setState({pre_feed: null});

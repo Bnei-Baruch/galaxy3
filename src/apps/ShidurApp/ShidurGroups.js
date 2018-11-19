@@ -258,6 +258,9 @@ class ShidurGroups extends Component {
     disableGroup = () => {
         let {disabled_groups} = this.props;
         let {pre_feed} = this.state;
+        let chk = disabled_groups.find(g => g.id === pre_feed.id);
+        if(chk)
+            return;
         disabled_groups.push(pre_feed);
         this.props.removeFeed(pre_feed.id);
         this.setState({pre_feed: null});
@@ -402,7 +405,7 @@ class ShidurGroups extends Component {
                          muted={muted}
                          playsInline={true}/>
                   <Button className='next_button'
-                          disabled={feeds.length < 13}
+                          // disabled={feeds.length < 13}
                           size='mini'
                           color='green'
                           icon={pre_feed ? 'arrow up' : 'share'}
