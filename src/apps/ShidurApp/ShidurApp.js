@@ -1,6 +1,6 @@
 import React, {Component} from 'react';
 import {Janus} from "../../lib/janus";
-import {Grid, Label, Message, Segment, Table, Icon} from "semantic-ui-react";
+import {Grid, Label, Message, Segment, Table, Icon, Popup, Button} from "semantic-ui-react";
 import {initJanus} from "../../shared/tools";
 import {initGxyProtocol} from "../../shared/protocol";
 import ShidurGroups from "./ShidurGroups";
@@ -360,6 +360,10 @@ class ShidurApp extends Component {
         this.setState({feeds_queue: 0});
     };
 
+    reloadPage = () => {
+        this.col1.sdiAction("restart");
+    };
+
     render() {
 
         const {user,feeds,feeds_queue,disabled_groups} = this.state;
@@ -393,9 +397,15 @@ class ShidurApp extends Component {
                         setProps={this.setProps}
                         removeFeed={this.removeFeed} />
                         <Message className='info-panel' color='grey'>
-                            <Label attached='top right' color='grey'>
-                                Online: {feeds.length}
-                            </Label>
+                            <Popup on='click'
+                                trigger={<Label attached='top right' color='grey'>
+                                            Online: {feeds.length}
+                                        </Label>}
+                                flowing
+                                position='bottom center'
+                                hoverable>
+                                <Button negative content='Reload' onClick={this.reloadPage}/>
+                            </Popup>
                             <Label attached='top left' color='grey'>
                                 Next: {feeds[feeds_queue] ? JSON.parse(feeds[feeds_queue].display).display : ""}
                             </Label>
