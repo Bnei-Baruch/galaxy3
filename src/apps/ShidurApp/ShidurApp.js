@@ -200,6 +200,7 @@ class ShidurApp extends Component {
                     // One of the publishers has gone away?
                     let leaving = msg["leaving"];
                     Janus.log("Publisher left: " + leaving);
+                    console.log("Publisher left: " + leaving);
                     let {disabled_groups} = this.state;
                     // Delete from disabled_groups
                     for(let i = 0; i < disabled_groups.length; i++){
@@ -214,6 +215,7 @@ class ShidurApp extends Component {
                     // One of the publishers has unpublished?
                     let unpublished = msg["unpublished"];
                     Janus.log("Publisher left: " + unpublished);
+                    console.log("Publisher left: " + unpublished);
                     if(unpublished === 'ok') {
                         // That's us
                         this.state.gxyhandle.hangup();
@@ -286,9 +288,9 @@ class ShidurApp extends Component {
         let {feeds,users,quistions_queue,qfeeds} = this.state;
         for(let i=0; i<feeds.length; i++){
             if(feeds[i].id === id) {
-
                 // Delete from users mapping object
                 let user = JSON.parse(feeds[i].display);
+                console.log(" :: Remove feed: " + id + " - Name: " + user.username);
                 delete users[user.id];
 
                 // Delete from questions list
@@ -321,6 +323,7 @@ class ShidurApp extends Component {
 
         pgm_state.forEach((pgm,i) => {
             if(pgm_state[i] && pgm.id === id) {
+                console.log(" :: Feed in program! - " + id);
                 if(feeds.length < 0) {
                     //FIXME: Need to check if its really necessary to detach here
                     pr1[i].detach();

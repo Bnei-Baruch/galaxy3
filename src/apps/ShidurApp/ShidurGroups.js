@@ -100,6 +100,7 @@ class ShidurGroups extends Component {
                 },
                 oncleanup: () => {
                     Janus.log(" ::: Got a cleanup notification (remote feed "+id+" : "+i+") :::");
+                    console.log(" :: Cleanup handle! - " + id + " - index: " + i);
                     if(!program) {
                         this.setState({pre: null});
                     }
@@ -229,11 +230,13 @@ class ShidurGroups extends Component {
         }
 
         if(!pr1[i]) {
+            console.log(" :: New handle! - " + feed.id);
             this.newSwitchFeed(feed.id,true,i);
             pgm_state[i] = feed;
             this.props.setProps({pgm_state});
             this.sdiAction("switch" , true, i, feed);
         } else {
+            console.log(" :: Switch handle! - " + feed.id);
             let switchfeed = {"request": "switch", "feed": feed.id, "audio": true, "video": true, "data": false};
             pr1[i].send ({"message": switchfeed,
                 success: () => {
