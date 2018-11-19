@@ -241,7 +241,7 @@ class GalaxyStream extends Component {
             this.state.audiostream.send({"message": body});
             //attachStreamGalaxy(gxycol[json.col],gxyaudio);
             if(name.match(/^(newyork|toronto|chicago)$/)) {
-                this.initTranslationStream(303);
+                //this.initTranslationStream(303);
             } else {
                 this.initTranslationStream(trllang[localStorage.getItem("langtext")] || 303);
             }
