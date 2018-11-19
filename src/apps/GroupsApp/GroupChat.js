@@ -88,18 +88,18 @@ class GroupChat extends Component {
                 }
             } else {
                 // Public message
-                let {messages} = this.state;
-                //let message = dateString+" : "+from+" : "+msg;
-                let message = JSON.parse(msg);
-                message.time = dateString;
-                Janus.log("-:: It's public message: "+message);
-                messages.push(message);
-                this.setState({messages});
-                if(this.props.visible) {
-                    this.scrollToBottom();
-                } else {
-                    this.props.onNewMsg();
-                }
+                // let {messages} = this.state;
+                // //let message = dateString+" : "+from+" : "+msg;
+                // let message = JSON.parse(msg);
+                // message.time = dateString;
+                // Janus.log("-:: It's public message: "+message);
+                // messages.push(message);
+                // this.setState({messages});
+                // if(this.props.visible) {
+                //     this.scrollToBottom();
+                // } else {
+                //     this.props.onNewMsg();
+                // }
             }
         } else if (what === "join") {
             // Somebody joined
@@ -128,7 +128,7 @@ class GroupChat extends Component {
             textroom: "message",
             transaction: Janus.randomString(12),
             room: this.state.room,
-            to: `${SHIDUR_ID}`,
+            //to: `${SHIDUR_ID}`,
             text: JSON.stringify(msg),
         };
         // Note: messages are always acknowledged by default. This means that you'll
