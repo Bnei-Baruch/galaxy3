@@ -321,7 +321,7 @@ class ShidurApp extends Component {
 
         pgm_state.forEach((pgm,i) => {
             if(pgm_state[i] && pgm.id === id) {
-                if(feeds.length < 13) {
+                if(feeds.length < 0) {
                     //FIXME: Need to check if its really necessary to detach here
                     pr1[i].detach();
                     pgm_state[i] = null;
@@ -359,6 +359,11 @@ class ShidurApp extends Component {
     resetQueue = () => {
         console.log("-- Reset Queue --");
         this.setState({feeds_queue: 0});
+        setTimeout(() => {
+            this.col1.switchFour();
+            this.col2.switchFour();
+            this.col3.switchFour();
+        }, 1000);
     };
 
     reloadPage = () => {

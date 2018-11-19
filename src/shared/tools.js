@@ -5,7 +5,7 @@ import nlogo from './nlogo.png';
 
 export const initJanus = (cb) => {
     Janus.init({
-        debug: ["log","error"],
+        debug: ["error"],
         callback: () => {
             let janus = new Janus({
                 server: JANUS_SERVER,
