@@ -368,6 +368,10 @@ class ShidurGroups extends Component {
 
       let preview = (<div className={pre_feed ? "" : "hidden"}>
           <div className="fullscrvideo_title"><span>{pre_feed ? JSON.parse(pre_feed.display).display : ""}</span></div>
+              <div className={
+                  //TODO: Fix this ugly shit!
+                  pre_feed ? users[JSON.parse(pre_feed.display).id] ? users[JSON.parse(pre_feed.display).id].question ? 'qst_fullscreentitle' : 'hidden' : 'hidden' : 'hidden'
+              }>?</div>
               <video ref = {"prevewVideo"}
                      id = "prevewVideo"
                      width = "400"
