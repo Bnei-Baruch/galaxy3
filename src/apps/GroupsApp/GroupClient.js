@@ -501,7 +501,7 @@ class GroupClient extends Component {
             <Menu icon='labeled' secondary size="mini">
                 <Menu.Item disabled={!video_device} onClick={this.initConnection}>
                     <Icon color={mystream ? 'green' : 'red'} name='power off'/>
-                    {!mystream ? "Connect" : "Disconnect"}
+                    {!mystream ? "Disconnected" : "Connected"}
                 </Menu.Item>
               <Menu.Item disabled={!mystream} onClick={() => this.setState({ visible: !this.state.visible, count: 0 })}>
                 <Icon name="comments"/>
