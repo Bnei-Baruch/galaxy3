@@ -341,11 +341,11 @@ class ShidurApp extends Component {
                     pr1[i] = null;
                     let feed = feeds[feeds_queue];
                     if(i < 4) {
-                        this.col1.switchNext(i,feed);
+                        this.col1.switchNext(i,feed,"remove");
                     } else if(i < 8) {
-                        this.col2.switchNext(i,feed);
+                        this.col2.switchNext(i,feed,"remove");
                     } else if(i < 12) {
-                        this.col3.switchNext(i,feed);
+                        this.col3.switchNext(i,feed,"remove");
                     }
                 }
             }

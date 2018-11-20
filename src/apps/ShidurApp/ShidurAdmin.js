@@ -732,8 +732,8 @@ class ShidurAdmin extends Component {
                             console.log(":: Feed join: ", feed)
                             feeds.push(feed);
                             feeds.sort((a, b) => {
-                                if (a.rfuser.username > b.rfuser.username) return 1;
-                                if (a.rfuser.username < b.rfuser.username) return -1;
+                                if (JSON.parse(a.display).username > JSON.parse(b.display).username) return 1;
+                                if (JSON.parse(a.display).username < JSON.parse(b.display).username) return -1;
                                 return 0;
                             });
                             this.setState({feeds,users});
