@@ -375,7 +375,7 @@ class ShidurApp extends Component {
 
     render() {
 
-        const {user,feeds,feeds_queue,disabled_groups,round} = this.state;
+        const {user,feeds,feeds_queue,disabled_groups,round,quistions_queue} = this.state;
 
         let disabled_list = disabled_groups.map((data,i) => {
             const {id, display} = data;
@@ -425,6 +425,9 @@ class ShidurApp extends Component {
                             </Label>
                             <Label attached='bottom left' color='blue'>
                                 Round: {round}
+                            </Label>
+                            <Label attached='bottom right' color={quistions_queue.length > 0 ? 'red' : 'grey'}>
+                                Questions: {quistions_queue.length}
                             </Label>
                         </Message>
                 </Grid.Column>

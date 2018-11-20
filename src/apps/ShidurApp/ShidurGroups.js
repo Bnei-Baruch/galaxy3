@@ -138,19 +138,25 @@ class ShidurGroups extends Component {
 
         //If someone in preview take him else take next in queue
         if(pre_feed) {
-            let switchfeed = {"request": "switch", "feed": pre_feed.id, "audio": true, "video": true, "data": false};
-            pr1[i].send ({"message": switchfeed,
-                success: () => {
-                    Janus.log(" :: Selected program Switch Feed to: ", pre_feed.display);
-                    pgm_state[i] = pre_feed;
-                    this.setState({pre_feed: null});
-                    this.props.setProps({program: pre_feed, pgm_state, pre_feed: null});
-                    this.sdiAction("switch" , true, i, pre_feed);
-                    // putData(`state/galaxy/pr1`, pgm_state, (cb) => {
-                    //     Janus.log(":: Save to state: ",cb);
-                    // });
-                }
-            })
+            // let switchfeed = {"request": "switch", "feed": pre_feed.id, "audio": true, "video": true, "data": false};
+            // pr1[i].send ({"message": switchfeed,
+            //     success: () => {
+            //         Janus.log(" :: Selected program Switch Feed to: ", pre_feed.display);
+            //         pgm_state[i] = pre_feed;
+            //         this.setState({pre_feed: null});
+            //         this.props.setProps({program: pre_feed, pgm_state, pre_feed: null});
+            //         this.sdiAction("switch" , true, i, pre_feed);
+            //         // putData(`state/galaxy/pr1`, pgm_state, (cb) => {
+            //         //     Janus.log(":: Save to state: ",cb);
+            //         // });
+            //     }
+            // })
+
+            Janus.log(" :: Selected program Switch Feed to: ", pre_feed.display);
+            this.switchNext(i, pre_feed);
+            this.setState({pre_feed: null});
+            this.props.setProps({program: pre_feed, pre_feed: null});
+
         } else {
             let feed = feeds[feeds_queue];
             this.switchNext(i, feed);
@@ -223,7 +229,8 @@ class ShidurGroups extends Component {
         // Remove from group search list qfeed
         for(let q=0; q<qfeeds.length; q++) {
             if(qfeeds[q].id === feed.id) {
-                qfeeds.splice(i, 1);
+                console.log(" - Remove QFEED: ",qfeeds[q])
+                qfeeds.splice(q, 1);
                 this.props.setProps({qfeeds});
                 break
             }
@@ -339,7 +346,7 @@ class ShidurGroups extends Component {
 
       let queue_options = qfeeds.map((feed,i) => {
           const {display} = JSON.parse(feed.display);
-          return ({ key: display.id, value: feed, text: display, icon: 'help'})
+          return ({ key: feed.id+i, value: feed, text: display, icon: 'help'})
       });
 
       let group_options = feeds.map((feed,i) => {
@@ -465,7 +472,7 @@ class ShidurGroups extends Component {
           </Segment>
 
             <Dropdown className='select_group' error={qfeeds.length > 0}
-                icon={qfeeds.length > 0 ? 'help' : 'dropdown'}
+                // icon={qfeeds.length > 0 ? 'help' : 'dropdown'}
                 placeholder='Select Group'
                 fluid
                 search
