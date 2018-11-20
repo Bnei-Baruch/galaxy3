@@ -444,6 +444,11 @@ class GroupClient extends Component {
         this.setState({count: this.state.count + 1});
     };
 
+    initConnection = () => {
+        const {mystream} = this.state;
+        mystream ? this.exitRoom() : this.joinRoom();
+    };
+
 
   render() {
 
@@ -452,6 +457,7 @@ class GroupClient extends Component {
       const height = "100";
       const autoPlay = true;
       const controls = false;
+      const talk = false;
       //const vmuted = true;
 
       let adevices_list = audio_devices.map((device,i) => {
@@ -492,11 +498,11 @@ class GroupClient extends Component {
       let content =  (
         <div className={classNames('gclient', { 'gclient--chat-open': this.state.visible })} >
           <div className="gclient__toolbar">
-            <Input>
-              {mystream ? <Button color='red' icon='sign-out' onClick={this.exitRoom} />:""}
-              {!mystream ? <Button primary icon='sign-in' disabled={!audio_device} onClick={this.joinRoom} />:""}
-            </Input>
             <Menu icon='labeled' secondary size="mini">
+                <Menu.Item disabled={!video_device} onClick={this.initConnection}>
+                    <Icon color={mystream ? 'green' : 'red'} name='power off'/>
+                    {!mystream ? "Connect" : "Disconnect"}
+                </Menu.Item>
               <Menu.Item disabled={!mystream} onClick={() => this.setState({ visible: !this.state.visible, count: 0 })}>
                 <Icon name="comments"/>
                 {this.state.visible ? "Close" : "Open"} Chat 
@@ -555,6 +561,10 @@ class GroupClient extends Component {
               <div className="videos">
                 <div className="videos__wrapper">
                   <div className="video">
+                      <div className={classNames('video__overlay', {'talk' : talk})}>
+                          {question ? <div className="question"><Icon name="question circle" size="massive"/></div>:''}
+                          {/*<div className="video__title">{!talk ? <Icon name="microphone slash" size="small" color="red"/> : ''}{name}</div>*/}
+                      </div>
                     <video ref="localVideo"
                       id="localVideo"
                       poster={nowebcam}
