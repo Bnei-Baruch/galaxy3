@@ -654,6 +654,12 @@ class ShidurAdmin extends Component {
                     if(current_room === 1234) {
                         let users = {};
                         let feeds = list.filter(feeder => JSON.parse(feeder.display).role === "group");
+                        console.log(feeds);
+                        feeds.sort((a, b) => {
+                            if (JSON.parse(a.display).username > JSON.parse(b.display).username) return 1;
+                            if (JSON.parse(a.display).username < JSON.parse(b.display).username) return -1;
+                            return 0;
+                        });
                         for(let i=0;i<feeds.length;i++) {
                             let user = JSON.parse(feeds[i].display);
                             feeds[i].rfuser = user;
@@ -722,6 +728,11 @@ class ShidurAdmin extends Component {
                             users[feed.rfuser.id] = display;
                             console.log(":: Group feed: ", feed)
                             feeds.push(feed);
+                            feeds.sort((a, b) => {
+                                if (a.rfuser.username > b.rfuser.username) return 1;
+                                if (a.rfuser.username < b.rfuser.username) return -1;
+                                return 0;
+                            });
                             this.setState({feeds,users});
                         }
                     }

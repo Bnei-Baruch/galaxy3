@@ -1,7 +1,7 @@
 import React, { Component, Fragment } from 'react';
 import 'semantic-ui-css/semantic.min.css';
-import GalaxyStream from "./components/GalaxyStream";
-// import ShidurAdmin from "./apps/ShidurApp/ShidurAdmin";
+// import GalaxyStream from "./components/GalaxyStream";
+import ShidurAdmin from "./apps/ShidurApp/ShidurAdmin";
 // import SndmanApp from "./apps/SndmanApp/SndmanApp";
 // import ShidurApp from "./apps/ShidurApp/ShidurApp";
 // import ShidurGroups from "./apps/ShidurApp/ShidurGroups";
@@ -24,10 +24,10 @@ class App extends Component {
     render() {
         return (
             <Fragment>
-                <GalaxyStream/>
+                {/*<GalaxyStream/>*/}
                 {/*<Streaming />*/}
                 {/*<ShidurUsers />*/}
-                 {/*<ShidurAdmin/>*/}
+                 <ShidurAdmin/>
                 {/*<SDIOutUsers />*/}
                 {/*<SDIOutApp/>*/}
                 {/*<SndmanClient />*/}

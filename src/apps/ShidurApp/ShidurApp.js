@@ -324,7 +324,7 @@ class ShidurApp extends Component {
         pgm_state.forEach((pgm,i) => {
             if(pgm_state[i] && pgm.id === id) {
                 console.log(" :: Feed in program! - " + id);
-                if(feeds.length < 0) {
+                if(feeds.length < 13) {
                     //FIXME: Need to check if its really necessary to detach here
                     pr1[i].detach();
                     pgm_state[i] = null;
