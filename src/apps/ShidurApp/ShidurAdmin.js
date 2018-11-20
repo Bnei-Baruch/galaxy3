@@ -91,7 +91,11 @@ class ShidurAdmin extends Component {
                 this.onProtocolData(ondata);
             });
         });
-        setInterval(() => this.getRoomList(), 10000 );
+        setInterval(() => {
+            this.getRoomList();
+            if(this.state.feed_user)
+                this.getFeedInfo()
+        }, 10000 );
     };
 
     getRoomList = () => {
@@ -708,7 +712,6 @@ class ShidurAdmin extends Component {
                     let list = msg["publishers"];
                     Janus.debug("Got a list of available publishers/feeds:");
                     Janus.debug(list);
-                    console.log(":: ---------- Group feed: ", list[0])
                     for(let f in list) {
                         let id = list[f]["id"];
                         let display = JSON.parse(list[f]["display"]);
@@ -726,7 +729,7 @@ class ShidurAdmin extends Component {
                             feed.rfuser.rfid = list[f].id;
                             feed.talk = false;
                             users[feed.rfuser.id] = display;
-                            console.log(":: Group feed: ", feed)
+                            console.log(":: Feed join: ", feed)
                             feeds.push(feed);
                             feeds.sort((a, b) => {
                                 if (a.rfuser.username > b.rfuser.username) return 1;
