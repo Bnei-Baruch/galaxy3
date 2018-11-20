@@ -83,7 +83,7 @@ class GroupChat extends Component {
                 if(this.props.visible) {
                     this.scrollToBottom();
                 } else {
-                    notifyMe("Shidur",message.text);
+                    notifyMe("Shidur",message.text,true);
                     this.props.onNewMsg();
                 }
             } else {

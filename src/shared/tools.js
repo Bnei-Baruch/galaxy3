@@ -192,13 +192,17 @@ export const notifyMe = (title, message, tout) => {
         Notification.requestPermission();
     else {
         var notification = new Notification(title+":", {
-            icon: {nlogo},
+            icon: './nlogo.png',
             body: message,
             requireInteraction: tout
         });
         notification.onclick = function () {
             window.focus();
-        }
+        };
+        notification.onshow = function () {
+            var audio = new Audio('./plucky.mp3');
+            audio.play();
+        };
     }
 };
 
