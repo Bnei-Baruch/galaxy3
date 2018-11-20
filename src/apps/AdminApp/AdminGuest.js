@@ -1,11 +1,10 @@
 import React, { Component } from 'react';
 import { Janus } from "../../lib/janus";
-import {Segment, Menu, Button, Input, Table, Grid, Message, Transition, Select, Icon, Popup, List} from "semantic-ui-react";
-import {initJanus, initChatRoom, getDateString, joinChatRoom, getPublisherInfo} from "../../shared/tools";
+import {Segment, Table, Grid, Transition} from "semantic-ui-react";
+import {initJanus} from "../../shared/tools";
 import './AdminGuest.css';
 import './AdminGuestVideo.scss'
-import {MAX_FEEDS, SECRET} from "../../shared/consts";
-import {initGxyProtocol} from "../../shared/protocol";
+import {MAX_FEEDS} from "../../shared/consts";
 import classNames from "classnames";
 import {client, getUser} from "../../components/UserManager";
 import LoginPage from "../../components/LoginPage";
@@ -40,20 +39,17 @@ class AdminGuest extends Component {
         input_value: "",
         switch_mode: false,
         users: {},
-        root: false,
     };
 
     componentDidMount() {
         document.addEventListener("keydown", this.onKeyPressed);
         getUser(user => {
             if(user) {
-                let gxy_group = user.roles.filter(role => role === 'gxy_admin').length > 0;
-                let gxy_root = user.roles.filter(role => role === 'gxy_root').length > 0;
+                let gxy_group = user.roles.filter(role => role === 'gxy_guest').length > 0;
                 if (gxy_group) {
-                    this.setState({root: gxy_root});
                     delete user.roles;
-                    user.role = "admin";
-                    this.initShidurAdmin(user);
+                    user.role = "guest";
+                    this.initGuestAdmin(user);
                 } else {
                     alert("Access denied!");
                     client.signoutRedirect();
@@ -72,29 +68,14 @@ class AdminGuest extends Component {
             this.sendPrivateMessage();
     };
 
-    initShidurAdmin = (user) => {
+    initGuestAdmin = (user) => {
         initJanus(janus => {
             this.setState({janus,user});
             this.initVideoRoom();
 
-            initChatRoom(janus, null, chatroom => {
-                Janus.log(":: Got Chat Handle: ",chatroom);
-                this.setState({chatroom});
-            }, data => {
-                this.onData(data);
-            });
-
-            initGxyProtocol(janus, this.state.user, protocol => {
-                this.setState({protocol});
-            }, ondata => {
-                Janus.log("-- :: It's protocol public message: ", ondata);
-                this.onProtocolData(ondata);
-            });
         });
         setInterval(() => {
             this.getRoomList();
-            if(this.state.feed_user)
-                this.getFeedInfo()
         }, 10000 );
     };
 
@@ -112,86 +93,10 @@ class AdminGuest extends Component {
                         return 0;
                     });
                     this.setState({rooms: data.list});
-                    if(current_room !== "") {
-                        this.listForward(current_room);
-                    }
                 }
             });
         }
     };
-
-    getFeedsList = (roomid) => {
-        const {videoroom} = this.state;
-        if (videoroom) {
-            videoroom.send({message: {request: "listparticipants", "room": roomid},
-                success: (data) => {
-                    Janus.log(" :: Got Feeds List (room :"+roomid+"): ", data);
-                    let feeds = data.participants;
-                    console.log(feeds)
-                }
-            });
-        }
-    };
-
-    listForward = (room) => {
-        let {videoroom} = this.state;
-        let req = {"request":"listforwarders", "room":room, "secret":`${SECRET}`};
-        videoroom.send ({"message": req,
-            success: (data) => {
-                Janus.log(" :: List forwarders: ", data);
-                this.setState({forwarders: data.rtp_forwarders});
-            }
-        })
-    };
-
-    stopForwardById = (id) => {
-        const {videoroom,current_room} = this.state;
-        let req = {"request":"listforwarders", "room":1234, "secret":"adminpwd"}
-        videoroom.send ({"message": req,
-            success: (data) => {
-                data.rtp_forwarders.forEach((pitem, p) => {
-                    if(pitem.publisher_id === id) {
-                        pitem.rtp_forwarder.forEach((item, i) => {
-                            if(item.audio_stream_id !== undefined) {
-                                console.log(i+" -- AUDIO ID: "+item.audio_stream_id );
-                                let audio_id = item.audio_stream_id;
-                                let stopfw_audio = { "request":"stop_rtp_forward","stream_id":audio_id,"publisher_id":id,"room":current_room,"secret":"adminpwd" };
-                                videoroom.send({"message": stopfw_audio});
-                            }
-                            if(item.video_stream_id !== undefined) {
-                                console.log(i+" -- VIDEO ID: "+item.video_stream_id );
-                                let video_id = item.video_stream_id;
-                                let stopfw_video = { "request":"stop_rtp_forward","stream_id":video_id,"publisher_id":id,"room":current_room,"secret":"adminpwd" };
-                                videoroom.send({"message": stopfw_video});
-                            }
-                        });
-                    }
-                });
-            }
-        });
-    };
-
-    stopForwardByRoom = () => {
-        const {videoroom,current_room} = this.state;
-        if(current_room === "")
-            return;
-        let req = {"request":"listforwarders", "room":current_room, "secret":"adminpwd"}
-        videoroom.send ({"message": req,
-            success: (data) => {
-                data.rtp_forwarders.forEach((pitem, p) => {
-                    let id = pitem.publisher_id;
-                    pitem.rtp_forwarder.forEach((item, i) => {
-                        if(item.audio_stream_id !== undefined) {
-                            console.log(i+" -- AUDIO ID: "+item.audio_stream_id );
-                            let audio_id = item.audio_stream_id;
-                            let stopfw_audio = { "request":"stop_rtp_forward","stream_id":audio_id,"publisher_id":id,"room":current_room,"secret":"adminpwd" };
-                            videoroom.send({"message": stopfw_audio});
-                        }
-                    });
-                });
-            }
-        });
-    }
 
     initVideoRoom = (roomid) => {
         if(this.state.videoroom)
@@ -207,7 +112,6 @@ class AdminGuest extends Component {
                 this.setState({videoroom});
 
                 if(roomid) {
-                    this.listForward(roomid);
                     let register = { "request": "join", "room": roomid, "ptype": "publisher", "display": JSON.stringify(user) };
                     videoroom.send({"message": register});
                 } else {
@@ -495,147 +399,6 @@ class AdminGuest extends Component {
             });
     };
 
-    onData = (data) => {
-        Janus.log(":: We got message from Data Channel: ",data);
-        var json = JSON.parse(data);
-        // var transaction = json["transaction"];
-        // if (transactions[transaction]) {
-        //     // Someone was waiting for this
-        //     transactions[transaction](json);
-        //     delete transactions[transaction];
-        //     return;
-        // }
-        var what = json["textroom"];
-        if (what === "message") {
-            // Incoming message: public or private?
-            var msg = json["text"];
-            msg = msg.replace(new RegExp('<', 'g'), '&lt');
-            msg = msg.replace(new RegExp('>', 'g'), '&gt');
-            var from = json["from"];
-            var dateString = getDateString(json["date"]);
-            var whisper = json["whisper"];
-            if (whisper === true) {
-                // Private message
-                Janus.log("-:: It's private message: "+dateString+" : from: "+from+" : "+msg)
-                let {messages} = this.state;
-                //let message = dateString+" : "+from+" : "+msg;
-                let message = JSON.parse(msg);
-                message.time = dateString;
-                Janus.log("-:: It's public message: "+message);
-                messages.push(message);
-                this.setState({messages});
-                this.scrollToBottom();
-            } else {
-                // Public message
-                let {messages} = this.state;
-                //let message = dateString+" : "+from+" : "+msg;
-                let message = JSON.parse(msg);
-                message.time = dateString;
-                Janus.log("-:: It's public message: "+message);
-                messages.push(message);
-                this.setState({messages});
-                this.scrollToBottom();
-            }
-        } else if (what === "join") {
-            // Somebody joined
-            var username = json["username"];
-            var display = json["display"];
-            Janus.log("-:: Somebody joined - username: "+username+" : display: "+display)
-        } else if (what === "leave") {
-            // Somebody left
-            var username = json["username"];
-            var when = new Date();
-            Janus.log("-:: Somebody left - username: "+username+" : Time: "+getDateString())
-        } else if (what === "kicked") {
-            // Somebody was kicked
-            // var username = json["username"];
-        } else if (what === "destroyed") {
-            let room = json["room"];
-            Janus.log("The room: "+room+" has been destroyed")
-        }
-    };
-
-    onProtocolData = (data) => {
-        if(data.type === "question" && data.status) {
-            let {quistions_queue} = this.state;
-            quistions_queue.push(data);
-            this.setState({quistions_queue});
-        } else if(data.type === "question" && !data.status) {
-            let {quistions_queue} = this.state;
-            for(let i = 0; i < quistions_queue.length; i++){
-                if(quistions_queue[i].user.id === data.user.id) {
-                    quistions_queue.splice(i, 1);
-                    this.setState({quistions_queue});
-                    break
-                }
-            }
-        }
-    };
-
-    sendDataMessage = () => {
-        let {input_value,user} = this.state;
-        let msg = {user, text: input_value};
-        let message = {
-            textroom: "message",
-            transaction: Janus.randomString(12),
-            room: this.state.current_room,
-            text: JSON.stringify(msg),
-        };
-        // Note: messages are always acknowledged by default. This means that you'll
-        // always receive a confirmation back that the message has been received by the
-        // server and forwarded to the recipients. If you do not want this to happen,
-        // just add an ack:false property to the message above, and server won't send
-        // you a response (meaning you just have to hope it succeeded).
-        this.state.chatroom.data({
-            text: JSON.stringify(message),
-            error: (reason) => { alert(reason); },
-            success: () => {
-                Janus.log(":: Message sent ::");
-                this.setState({input_value: ""});
-            }
-        });
-    };
-
-    sendPrivateMessage = () => {
-        let {input_value,user,feed_user} = this.state;
-        if(!feed_user) {
-            alert("Choose user");
-            return
-        };
-        let msg = {user, text: input_value};
-        let message = {
-            textroom: "message",
-            transaction: Janus.randomString(12),
-            room: this.state.current_room,
-            to: feed_user.id,
-            text: JSON.stringify(msg),
-        };
-        // Note: messages are always acknowledged by default. This means that you'll
-        // always receive a confirmation back that the message has been received by the
-        // server and forwarded to the recipients. If you do not want this to happen,
-        // just add an ack:false property to the message above, and server won't send
-        // you a response (meaning you just have to hope it succeeded).
-        this.state.chatroom.data({
-            text: JSON.stringify(message),
-            error: (reason) => { alert(reason); },
-            success: () => {
-                Janus.log(":: Message sent ::");
-                //FIXME: it's directly put to message box
-                let {messages} = this.state;
-                msg.time = getDateString();
-                msg.to = feed_user.username;
-                Janus.log("-:: It's public message: "+msg);
-                messages.push(msg);
-                this.setState({messages, input_value: ""});
-                this.scrollToBottom();
-            }
-        });
-    };
-
-    scrollToBottom = () => {
-        this.refs.end.scrollIntoView({ behavior: 'smooth' })
-    };
-
     onMessage = (videoroom, msg, jsep, initdata) => {
         Janus.debug(" ::: Got a message (publisher) :::");
         Janus.debug(msg);
@@ -784,15 +547,9 @@ class AdminGuest extends Component {
         }
     };
 
-    selectRoom = (i) => {
-        const {rooms} = this.state;
-        let roomid = rooms[i].room;
-        this.setState({roomid});
-    };
-
     joinRoom = (data, i) => {
         Janus.log(" -- joinRoom: ", data, i);
-        const {feeds,rooms,chatroom,user,switchFeed} = this.state;
+        const {feeds,rooms,switchFeed} = this.state;
         let room = data ? rooms[i].room : 1234;
         if (this.state.current_room === room)
             return;
@@ -816,152 +573,17 @@ class AdminGuest extends Component {
         this.setState({switch_mode: false, current_room: room,feeds: [], feed_user: null, feed_id: null});
 
         this.initVideoRoom(room);
-
-        joinChatRoom(chatroom,room,user)
     };
 
     exitRoom = (room) => {
-        let {videoroom, chatroom} = this.state;
+        let {videoroom} = this.state;
         let videoreq = {request : "leave", "room": room};
-        let chatreq = {textroom : "leave", transaction: Janus.randomString(12),"room": room};
         Janus.log(room);
         videoroom.send({"message": videoreq,
             success: () => {
                 Janus.log(":: Video room leave callback: ");
                 //this.getRoomList();
             }});
-        chatroom.data({text: JSON.stringify(chatreq),
-            success: () => {
-                Janus.log(":: Text room leave callback: ");
-            }
-        });
-    };
-
-    getRoomID = () => {
-        const {rooms} = this.state;
-        let id = 1028;
-        for(let i=id; i<1100; i++) {
-            let roomid = rooms.filter(room => room.room === i);
-            if (roomid.length === 0) {
-                return i;
-            }
-        }
-    };
-
-    createChatRoom = (id,description) => {
-        const {chatroom} = this.state;
-        let req = {
-            textroom : "create",
-            room : id,
-            transaction: Janus.randomString(12),
-            secret: `${SECRET}`,
-            description : description,
-            is_private : false,
-            permanent : true
-        };
-        chatroom.data({text: JSON.stringify(req),
-            success: () => {
-                Janus.log(":: Successfuly created room: ",id);
-            },
-            error: (reason) => {
-                Janus.log(reason);
-            }
-        });
-    };
-
-    removeChatRoom = (id) => {
-        const {chatroom} = this.state;
-        let req = {
-            textroom: "destroy",
-            room: id,
-            transaction: Janus.randomString(12),
-            secret: `${SECRET}`,
-            permanent: true,
-        };
-        chatroom.data({text: JSON.stringify(req),
-            success: () => {
-                Janus.log(":: Successfuly removed room: ", id);
-            },
-            error: (reason) => {
-                Janus.log(reason);
-            }
-        });
-    };
-
-    createRoom = () => {
-        let {description,videoroom} = this.state;
-        let roomid = this.getRoomID();
-        let janus_room = {
-            request : "create",
-            room: roomid,
-            description: description,
-            secret: `${SECRET}`,
-            publishers: 20,
-            bitrate: 150000,
-            fir_freq: 10,
-            audiocodec: "opus",
-            videocodec: "h264",
-            audiolevel_event: true,
-            audio_level_average: 100,
-            audio_active_packets: 25,
-            record: false,
-            is_private: false,
-            permanent: true,
-        };
-        Janus.log(description);
-        videoroom.send({"message": janus_room,
-            success: (data) => {
-                Janus.log(":: Create callback: ", data);
-                this.getRoomList();
-                alert("Room: "+description+" created!")
-                this.createChatRoom(roomid,description);
-            },
-        });
-        this.setState({description: ""});
-    };
-
-    removeRoom = () => {
-        const {roomid,videoroom} = this.state;
-        let janus_room = {
-            request: "destroy",
-            room: roomid,
-            secret: `${SECRET}`,
-            permanent: true,
-        };
-        videoroom.send({"message": janus_room,
-            success: (data) => {
-                Janus.log(":: Remove callback: ", data);
-                this.getRoomList();
-                alert("Room ID: "+roomid+" removed!");
-                this.removeChatRoom(roomid);
-            },
-        });
-    };
-
-    disableRoom = (e, data, i) => {
-        e.preventDefault();
-        if (e.type === 'contextmenu') {
-            Janus.log(data)
-            // let {disabled_rooms} = this.state;
-            // disabled_rooms.push(data);
-            // this.setState({disabled_rooms});
-            // this.getRoomList();
-        }
-    };
-
-    kickUser = (id) => {
-        const {current_room,videoroom,feed_id} = this.state;
-        let request = {
-            request: "kick",
-            room: current_room,
-            secret: `${SECRET}`,
-            id: feed_id,
-        };
-        videoroom.send({"message": request,
-            success: (data) => {
-                Janus.log(":: Kick callback: ", data);
-            },
-        });
     };
 
     getUserInfo = (feed) => {
@@ -971,41 +593,21 @@ class AdminGuest extends Component {
         this.switchFeed(rfid);
     };
 
-    getFeedInfo = () => {
-        let {session,handle} = this.state.feed_user;
-        getPublisherInfo(session,handle,json => {
-                Janus.log(":: Publisher info", json);
-                this.setState({feed_rtcp: json.info.streams[0].rtcp_stats});
-            }
-        )
-    }
-
-    handleShowClick = () => this.setState({ visible: !this.state.visible })
-
-
 
   render() {
 
-      const { rooms,current_room,switch_mode,user,feeds,i,messages,description,roomid,root,forwarders,feed_rtcp,feed_talk } = this.state;
+      const { rooms,current_room,switch_mode,user,feeds,i,feed_talk } = this.state;
       const width = "134";
       const height = "100";
       const autoPlay = true;
       const controls = false;
       const muted = true;
 
-      let v = (<Icon name='volume up' />);
-
-      let rooms_list = rooms.map((data,i) => {
-          const {room, num_participants, description} = data;
-          return ({ key: room, text: description, value: i, description: num_participants.toString()})
-      });
-
       let rooms_grid = rooms.map((data,i) => {
           const {room, num_participants, description} = data;
           return (
               <Table.Row active={current_room === room}
-                         key={i} onClick={() => this.joinRoom(data, i)}
-                         onContextMenu={(e) => this.disableRoom(e, data, i)} >
+                         key={i} onClick={() => this.joinRoom(data, i)} >
                   <Table.Cell width={5}>{description}</Table.Cell>
                   <Table.Cell width={1}>{num_participants}</Table.Cell>
               </Table.Row>
@@ -1014,25 +616,13 @@ class AdminGuest extends Component {
 
       let users_grid = feeds.map((feed,i) => {
           if(feed) {
-              let fw = forwarders.filter(f => f.publisher_id === (current_room === 1234 ? feed.id : feed.rfid)).length > 0;
               return (
                   <Table.Row active={feed.rfid === this.state.feed_id} key={i} onClick={() => this.getUserInfo(feed)} >
                       <Table.Cell width={5}>{feed.rfuser.display}</Table.Cell>
-                      <Table.Cell width={1}>{fw ? v : ""}</Table.Cell>
+                      <Table.Cell width={1}></Table.Cell>
                   </Table.Row>
               )
           }
-      });
-
-      let list_msgs = messages.map((msg,i) => {
-          let {user,time,text,to} = msg;
-          return (
-              <div key={i}><p>
-                  <i style={{color: 'grey'}}>{time}</i> -
-                  <b style={{color: user.role === "admin" ? 'red' : 'blue'}}>{user.username}</b>
-                  {to ? <b style={{color: 'blue'}}>-> {to} :</b> : ""}
-              </p>{text}</div>
-          );
       });
 
       let videos = this.state.feeds.map((feed) => {
@@ -1065,47 +655,18 @@ class AdminGuest extends Component {
                      width = {width}
                      height = {height}
                      autoPlay = {autoPlay}
-                     controls
-                     muted = {false}
+                     controls = {controls}
+                     muted = {true}
                      playsInline = {true} />
           </div>);
 
       let login = (<LoginPage user={user} />);
 
-      let root_content = (
-          <Menu secondary >
-              <Menu.Item>
-                  <Button color='orange' icon='volume up' labelPosition='right'
-                          content='Stop Forwarders' onClick={this.stopForwardByRoom} />
-              </Menu.Item>
-              <Menu.Item>
-              </Menu.Item>
-              <Menu.Item>
-                  <Button negative onClick={this.removeRoom}>Remove</Button>
-                  :::
-                  <Select
-                      error={roomid}
-                      scrolling
-                      placeholder="Select Room:"
-                      value={i}
-                      options={rooms_list}
-                      onChange={(e, {value}) => this.selectRoom(value)} />
-              </Menu.Item>
-              <Menu.Item>
-                  <Input type='text' placeholder='Room description...' action value={description}
-                         onChange={(v,{value}) => this.setState({description: value})}>
-                      <input />
-                      <Button positive onClick={this.createRoom}>Create</Button>
-                  </Input>
-              </Menu.Item>
-          </Menu>
-      );
-
       let content = (
           <Segment className="virtual_segment" color='blue' raised>
 
               <Segment textAlign='center' className="ingest_segment">
-                  {root ? root_content : ""}
+
               </Segment>
 
               <Grid>
@@ -1115,37 +676,8 @@ class AdminGuest extends Component {
                           <Segment textAlign='center' className="group_list" raised>
                               <Table selectable compact='very' basic structured className="admin_table" unstackable>
                                   <Table.Header>
-                                      <Table.Row>
+                                      <Table.Row disabled positive>
                                           <Table.HeaderCell colSpan='2'>
-                                              <Popup
-                                                  trigger={<Button positive icon='info' onClick={this.getFeedInfo} />}
-                                                  position='bottom right'
-                                                  content={
-                                                      <List as='ul'>
-                                                          <List.Item as='li'>Video
-                                                              <List.List as='ul'>
-                                                                  <List.Item as='li'>in-link-quality: {feed_rtcp.video ? feed_rtcp.video["in-link-quality"] : ""}</List.Item>
-                                                                  <List.Item as='li'>in-media-link-quality: {feed_rtcp.video ? feed_rtcp.video["in-media-link-quality"] : ""}</List.Item>
-                                                                  <List.Item as='li'>jitter-local: {feed_rtcp.video ? feed_rtcp.video["jitter-local"] : ""}</List.Item>
-                                                                  <List.Item as='li'>jitter-remote: {feed_rtcp.video ? feed_rtcp.video["jitter-remote"] : ""}</List.Item>
-                                                                  <List.Item as='li'>lost: {feed_rtcp.video ? feed_rtcp.video["lost"] : ""}</List.Item>
-                                                              </List.List>
-                                                          </List.Item>
-                                                          <List.Item as='li'>Audio
-                                                              <List.List as='ul'>
-                                                                  <List.Item as='li'>in-link-quality: {feed_rtcp.audio ? feed_rtcp.audio["in-link-quality"] : ""}</List.Item>
-                                                                  <List.Item as='li'>in-media-link-quality: {feed_rtcp.audio ? feed_rtcp.audio["in-media-link-quality"] : ""}</List.Item>
-                                                                  <List.Item as='li'>jitter-local: {feed_rtcp.audio ? feed_rtcp.audio["jitter-local"] : ""}</List.Item>
-                                                                  <List.Item as='li'>jitter-remote: {feed_rtcp.audio ? feed_rtcp.audio["jitter-remote"] : ""}</List.Item>
-                                                                  <List.Item as='li'>lost: {feed_rtcp.audio ? feed_rtcp.audio["lost"] : ""}</List.Item>
-                                                              </List.List>
-                                                          </List.Item>
-                                                      </List>
-                                                  }
-                                                  on='click'
-                                                  hideOnScroll
-                                              />
-                                              <Button negative icon='user x' onClick={this.kickUser} />
                                           </Table.HeaderCell>
                                       </Table.Row>
                                   </Table.Header>
@@ -1195,21 +727,6 @@ class AdminGuest extends Component {
                       </Grid.Column>
                   </Grid.Row>
               </Grid>
-
-              <Segment className='chat_segment'>
-
-                  <Message className='messages_list'>
-                      {list_msgs}
-                      <div ref='end' />
-                  </Message>
-
-                  <Input fluid type='text' placeholder='Type your message' action value={this.state.input_value}
-                         onChange={(v,{value}) => this.setState({input_value: value})}>
-                      <input />
-                      <Button positive onClick={this.sendPrivateMessage}>Send</Button>
-                  </Input>
-
-              </Segment>
 
           </Segment>
       );

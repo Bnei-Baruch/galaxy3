@@ -1,11 +1,12 @@
 import React, { Component, Fragment } from 'react';
 import 'semantic-ui-css/semantic.min.css';
+import AdminGuest from "./apps/AdminApp/AdminGuest";
 // import GalaxyStream from "./components/GalaxyStream";
 // import ShidurAdmin from "./apps/ShidurApp/ShidurAdmin";
 // import SndmanApp from "./apps/SndmanApp/SndmanApp";
 // import ShidurApp from "./apps/ShidurApp/ShidurApp";
 // import ShidurGroups from "./apps/ShidurApp/ShidurGroups";
-import GroupClient from "./apps/GroupsApp/GroupClient";
+// import GroupClient from "./apps/GroupsApp/GroupClient";
 // import GroupsApp from "./apps/GroupsApp/GroupsApp";
 // import SndmanClient from "./apps/SndmanApp/SndmanClient";
 // import AdminStreaming from "./apps/AdminApp/AdminStreaming";
@@ -37,9 +38,10 @@ class App extends Component {
                 {/*<VirtualStreaming/>*/}
                 {/*<ShidurGroups/>*/}
                  {/*<ShidurApp/>*/}
-                 <GroupClient/>
+                 {/*<GroupClient/>*/}
                  {/*<GroupsApp/>*/}
                  {/*<SndmanApp/>*/}
+                 <AdminGuest/>
             </Fragment>
         );
     }
