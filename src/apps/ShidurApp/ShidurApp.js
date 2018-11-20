@@ -288,6 +288,7 @@ class ShidurApp extends Component {
         let {feeds,users,quistions_queue,qfeeds} = this.state;
         for(let i=0; i<feeds.length; i++){
             if(feeds[i].id === id) {
+
                 // Delete from users mapping object
                 let user = JSON.parse(feeds[i].display);
                 console.log(" :: Remove feed: " + id + " - Name: " + user.username);

@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import { Janus } from "../../lib/janus";
-import {Segment, Table, Icon, Dropdown, Dimmer, Button} from "semantic-ui-react";
+import {Segment, Icon, Dropdown, Dimmer, Button} from "semantic-ui-react";
 //import {getState, putData} from "../../shared/tools";
 import './ShidurGroups.css'
 import {sendProtocolMessage} from "../../shared/protocol";
@@ -32,7 +32,6 @@ class ShidurGroups extends Component {
                 success: (pluginHandle) => {
                     pre = pluginHandle;
                     pre.simulcastStarted = false;
-                    //this.setState({remotefeed});
                     Janus.log("Plugin attached! (" + pre.getPlugin() + ", id=" + pre.getId() + ")");
                     Janus.log("  -- This is a subscriber");
                     // We wait for the plugin to send us an offer
@@ -41,7 +40,6 @@ class ShidurGroups extends Component {
                     if(program) {
                         let {pr1} = this.props;
                         pr1[i] = pre;
-                        //this.setState({pr1})
                         this.props.setProps({pr1});
                     } else {
                         this.setState({pre});
@@ -123,35 +121,11 @@ class ShidurGroups extends Component {
 
     switchProgram = (i) => {
         Janus.log(" :: Selected program Switch: ",i);
-        let {feeds,pr1,pgm_state,feeds_queue,round} = this.props;
+        let {feeds,feeds_queue,round} = this.props;
         let {pre_feed} = this.state;
-
-        // Don't switch if nobody in queue
-        // if(feeds_queue <= feeds.length && pr1.length >= 4 && feeds.length <= 4)
-        //     return;
-
-        // if(feeds_queue >= feeds.length) {
-        //     // End round here!
-        //     feeds_queue = 0;
-        //     Janus.log(" -- ROUND END --");
-        // }
 
         //If someone in preview take him else take next in queue
         if(pre_feed) {
-            // let switchfeed = {"request": "switch", "feed": pre_feed.id, "audio": true, "video": true, "data": false};
-            // pr1[i].send ({"message": switchfeed,
-            //     success: () => {
-            //         Janus.log(" :: Selected program Switch Feed to: ", pre_feed.display);
-            //         pgm_state[i] = pre_feed;
-            //         this.setState({pre_feed: null});
-            //         this.props.setProps({program: pre_feed, pgm_state, pre_feed: null});
-            //         this.sdiAction("switch" , true, i, pre_feed);
-            //         // putData(`state/galaxy/pr1`, pgm_state, (cb) => {
-            //         //     Janus.log(":: Save to state: ",cb);
-            //         // });
-            //     }
-            // })
-
             Janus.log(" :: Selected program Switch Feed to: ", pre_feed.display);
             this.switchNext(i, pre_feed);
             this.setState({pre_feed: null});
@@ -193,8 +167,6 @@ class ShidurGroups extends Component {
                 this.props.setProps({feeds_queue,round});
             }
 
-            Janus.log("---------- i: "+i+" queue: "+feeds_queue);
-
             // If program is not full avoid using feeds_queue
             if(feeds.length < 13) {
                 this.switchNext(i,feeds[i]);
@@ -222,7 +194,6 @@ class ShidurGroups extends Component {
     };
 
     switchNext = (i ,feed, r) => {
-        Janus.log(" ---- switchNext params: ", i, feed);
         if(!feed) return;
         let {pr1,pgm_state,qfeeds,quistions_queue} = this.props;
 
@@ -354,7 +325,7 @@ class ShidurGroups extends Component {
 
   render() {
       const { pre_feed,full_feed,zoom,fullscr } = this.state;
-      const {index,feeds,pgm_state,feeds_queue,quistions_queue,disabled_groups,users,qfeeds} = this.props;
+      const {index,feeds,pgm_state,users,qfeeds} = this.props;
       const width = "100%";
       const height = "100%";
       const autoPlay = true;
@@ -370,18 +341,6 @@ class ShidurGroups extends Component {
       let group_options = feeds.map((feed,i) => {
           const {display} = JSON.parse(feed.display);
           return ({ key: i, value: feed, text: display })
-      });
-
-      let disabled_list = disabled_groups.map((data,i) => {
-          const {id, display} = data;
-          return (
-              <Table.Row key={id} warning
-                         onClick={() => this.selectGroup(data, i)}
-                         onContextMenu={(e) => this.restoreGroup(e, data, i)} >
-                  <Table.Cell width={5}>{JSON.parse(display).display}</Table.Cell>
-                  <Table.Cell width={1}>{id}</Table.Cell>
-              </Table.Row>
-          )
       });
 
       let preview = (<div className={pre_feed ? "" : "hidden"}>
@@ -439,7 +398,7 @@ class ShidurGroups extends Component {
                          muted={muted}
                          playsInline={true}/>
                   <Button className='next_button'
-                          // disabled={feeds.length < 13}
+                          disabled={feeds.length < 13}
                           size='mini'
                           color='green'
                           icon={pre_feed ? 'arrow up' : 'share'}
@@ -479,7 +438,7 @@ class ShidurGroups extends Component {
           </Segment>
 
             <Button className='fours_button'
-                // disabled={feeds.length < 13}
+                disabled={feeds.length < 13}
                 attached='bottom'
                 color='blue'
                 size='mini'
@@ -494,26 +453,12 @@ class ShidurGroups extends Component {
           </Segment>
 
             <Dropdown className='select_group' error={qfeeds.length > 0}
-                // icon={qfeeds.length > 0 ? 'help' : 'dropdown'}
                 placeholder='Select Group'
                 fluid
                 search
                 selection
                 options={queue_options.concat(group_options)}
                 onChange={(e,{value}) => this.selectGroup(value)} />
-
-            {/*<hr/>*/}
-            {/*<p>Queue: {feeds.length - feeds_queue}</p>*/}
-            {/*<p>Next: {feeds[feeds_queue] ? JSON.parse(feeds[feeds_queue].display).display : ""}</p>*/}
-            {/*<p>Online: {feeds.length}</p>*/}
-            {/*<hr/>*/}
-            {/*<Segment textAlign='center' className="disabled_groups" raised>*/}
-                {/*<Table selectable compact='very' basic structured className="admin_table" unstackable>*/}
-                    {/*<Table.Body>*/}
-                        {/*{disabled_list}*/}
-                    {/*</Table.Body>*/}
-                {/*</Table>*/}
-            {/*</Segment>*/}
 
             <Dimmer active={zoom} onClickOutside={this.handleClose} page>
                 <video ref={"zoomVideo"}
