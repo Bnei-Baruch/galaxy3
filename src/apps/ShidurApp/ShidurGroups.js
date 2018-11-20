@@ -224,12 +224,30 @@ class ShidurGroups extends Component {
     switchNext = (i ,feed, r) => {
         Janus.log(" ---- switchNext params: ", i, feed);
         if(!feed) return;
-        let {pr1,pgm_state,qfeeds} = this.props;
+        let {pr1,pgm_state,qfeeds,quistions_queue} = this.props;
 
-        // Remove from group search list qfeed
-        for(let q=0; q<qfeeds.length; q++) {
-            if(qfeeds[q].id === feed.id) {
-                console.log(" - Remove QFEED: ",qfeeds[q])
+        // Add to group search if removed from program with question status
+        if(pgm_state[i]) {
+            let cur_feed = pgm_state[i];
+            let chk = pgm_state.filter(p => {
+                return (p !== null && p !== undefined && p.id === cur_feed.id)
+            });
+            let qf_chk = qfeeds.filter(qf => qf.rfid === cur_feed.id).length === 0;
+            if (qf_chk) {
+                let qq_chk = quistions_queue.filter(qs => qs.rfid === cur_feed.id).length > 0;
+                if (qq_chk) {
+                    if (chk.length < 2) {
+                        qfeeds.push(cur_feed);
+                        this.props.setProps({qfeeds});
+                    }
+                }
+            }
+        }
+
+        // Remove question status from group search list if add to program
+        for (let q = 0; q < qfeeds.length; q++) {
+            if (qfeeds[q].id === feed.id) {
+                console.log(" - Remove QFEED: ", qfeeds[q]);
                 qfeeds.splice(q, 1);
                 this.props.setProps({qfeeds});
                 break
@@ -421,7 +439,7 @@ class ShidurGroups extends Component {
                          muted={muted}
                          playsInline={true}/>
                   <Button className='next_button'
-                          disabled={feeds.length < 13}
+                          // disabled={feeds.length < 13}
                           size='mini'
                           color='green'
                           icon={pre_feed ? 'arrow up' : 'share'}
@@ -461,7 +479,7 @@ class ShidurGroups extends Component {
           </Segment>
 
             <Button className='fours_button'
-                disabled={feeds.length < 13}
+                // disabled={feeds.length < 13}
                 attached='bottom'
                 color='blue'
                 size='mini'
