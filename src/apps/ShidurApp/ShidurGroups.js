@@ -225,6 +225,11 @@ class ShidurGroups extends Component {
             }
         }
 
+        // Tmp fix
+        if(r === "fix") {
+            this.sdiAction("fix", true, i, feed)
+        }
+
         if(!pr1[i]) {
             console.log(" :: New handle! - " + feed.id);
             this.newSwitchFeed(feed.id,true,i);

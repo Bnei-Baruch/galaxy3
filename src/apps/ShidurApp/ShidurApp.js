@@ -1,6 +1,6 @@
 import React, {Component} from 'react';
 import {Janus} from "../../lib/janus";
-import {Grid, Label, Message, Segment, Table, Icon, Popup, Button} from "semantic-ui-react";
+import {Grid, Label, Message, Segment, Table, Icon, Popup, Button, Input} from "semantic-ui-react";
 import {initJanus} from "../../shared/tools";
 import {initGxyProtocol} from "../../shared/protocol";
 import ShidurGroups from "./ShidurGroups";
@@ -20,6 +20,7 @@ class ShidurApp extends Component {
         name: "",
         disabled_groups: [],
         group: null,
+        pri: null,
         pr1: [],
         pre: null,
         program: null,
@@ -371,13 +372,27 @@ class ShidurApp extends Component {
         }, 1000);
     };
 
+    fixProgram = () => {
+        let {feeds,pr1} = this.state;
+        let i = this.state.pri;
+        let feed = feeds[i];
+        pr1[i] = null;
+        if(i < 4) {
+            this.col1.switchNext(i,feed,"fix");
+        } else if(i < 8) {
+            this.col2.switchNext(i,feed,"fix");
+        } else if(i < 12) {
+            this.col3.switchNext(i,feed,"fix");
+        }
+    };
+
     reloadPage = () => {
         this.col1.sdiAction("restart");
     };
 
     render() {
 
-        const {user,feeds,feeds_queue,disabled_groups,round,qfeeds} = this.state;
+        const {user,feeds,feeds_queue,disabled_groups,round,qfeeds,pri} = this.state;
 
         let disabled_list = disabled_groups.map((data,i) => {
             const {id, display} = data;
@@ -417,9 +432,19 @@ class ShidurApp extends Component {
                                 hoverable>
                                 <Button negative content='Reload' onClick={this.reloadPage}/>
                             </Popup>
-                            <Label attached='top left' color='grey'>
-                                Next: {feeds[feeds_queue] ? JSON.parse(feeds[feeds_queue].display).display : ""}
-                            </Label>
+                            <Popup on='click'
+                                   trigger={<Label attached='top left' color='grey'>
+                                            Next: {feeds[feeds_queue] ? JSON.parse(feeds[feeds_queue].display).display : ""}
+                                            </Label>}
+                                   flowing
+                                   position='bottom center'
+                                   hoverable>
+                                <Input type='text' placeholder='' action value={pri}
+                                       onChange={(v,{value}) => this.setState({pri: value})}>
+                                    <input />
+                                    <Button positive onClick={this.fixProgram}>Fix</Button>
+                                </Input>
+                            </Popup>
                             <Label size='big' color='brown'>
                                 <Icon name='address card' />
                                 <b className='queue_counter'>{feeds.length - feeds_queue}</b>

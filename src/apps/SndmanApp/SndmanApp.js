@@ -313,6 +313,10 @@ class SndmanApp extends Component {
             this.setState({disabled_groups});
         } else if(data.type === "sdi-restart") {
             window.location.reload();
+        } else if(data.type === "sdi-fix") {
+            let {col, feed, i} = data;
+            let {pr1} = this.state;
+            pr1[i] = null;
         } else if(data.type === "sdi-restore") {
             let {col, feed, i} = data;
             console.log(" :: Git Shidur Action: ",data);
