@@ -338,7 +338,8 @@ class ShidurApp extends Component {
                         feeds_queue--;
                         this.setState({feeds_queue});
                     }
-                    pgm_state[i] = null;
+                    // if program is full we does not remove video element
+                    //pgm_state[i] = null;
                     pr1[i] = null;
                     let feed = feeds[feeds_queue];
                     if(i < 4) {
