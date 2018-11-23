@@ -35,7 +35,7 @@ class ShidurGroups extends Component {
                     Janus.log("Plugin attached! (" + pre.getPlugin() + ", id=" + pre.getId() + ")");
                     Janus.log("  -- This is a subscriber");
                     // We wait for the plugin to send us an offer
-                    let listen = { "request": "join", "room": 1234, "ptype": "subscriber", "feed": id };
+                    let listen = { "request": "join", "room": 1234, "ptype": "subscriber", "feed": id, "close_pc": false };
                     pre.send({"message": listen});
                     if(program) {
                         let {pr1} = this.props;
