@@ -153,7 +153,7 @@ class GroupClient extends Component {
                 this.initDevices(true);
                 if(reconnect) {
                     setTimeout(() => {
-                        this.initConnection();
+                        this.joinRoom();
                     }, 5000);
                 }
             },
