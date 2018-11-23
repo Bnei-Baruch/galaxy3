@@ -3,7 +3,7 @@ import NewWindow from 'react-new-window';
 import { Janus } from "../../lib/janus";
 import classNames from 'classnames';
 
-import {Menu, Select, Button,Input,Label,Icon,Popup} from "semantic-ui-react";
+import {Menu, Select,Label,Icon,Popup} from "semantic-ui-react";
 import {geoInfo, initJanus, getDevicesStream, micLevel, checkNotification,testDevices} from "../../shared/tools";
 import './GroupClient.scss'
 import './VideoConteiner.scss'
@@ -63,7 +63,7 @@ class GroupClient extends Component {
         this.state.janus.destroy();
     };
 
-    initGalaxy = (user) => {
+    initGalaxy = (user,error) => {
         checkNotification();
         geoInfo('https://v4g.kbb1.com/geo.php?action=get', data => {
             Janus.log(data);
@@ -73,7 +73,11 @@ class GroupClient extends Component {
             user.session = janus.getSessionId();
             this.setState({janus, user});
             this.chat.initChat(janus);
-            this.initVideoRoom();
+            this.initVideoRoom(error);
+        }, er => {
+            setTimeout(() => {
+                this.initGalaxy(user,er);
+            }, 5000);
         });
     };
 
@@ -133,7 +137,7 @@ class GroupClient extends Component {
         }
     };
 
-    initVideoRoom = () => {
+    initVideoRoom = (reconnect) => {
         if(this.state.videoroom)
             this.state.videoroom.detach();
         this.state.janus.attach({
@@ -147,6 +151,11 @@ class GroupClient extends Component {
                 user.handle = videoroom.getId();
                 this.setState({videoroom, user});
                 this.initDevices(true);
+                if(reconnect) {
+                    setTimeout(() => {
+                        this.initConnection();
+                    }, 5000);
+                }
             },
             error: (error) => {
                 Janus.log("Error attaching plugin: " + error);
