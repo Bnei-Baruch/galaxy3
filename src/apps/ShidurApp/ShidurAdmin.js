@@ -394,7 +394,7 @@ class ShidurAdmin extends Component {
                     Janus.log("Plugin attached! (" + switchFeed.getPlugin() + ", id=" + switchFeed.getId() + ")");
                     Janus.log("  -- This is a subscriber");
                     // We wait for the plugin to send us an offer
-                    let listen = { "request": "join", "room": this.state.current_room, "ptype": "subscriber", "feed": id };
+                    let listen = { "request": "join", "room": this.state.current_room, "ptype": "subscriber", "feed": id, "close_pc": false };
                     switchFeed.send({"message": listen});
                     this.setState({switchFeed});
                 },
