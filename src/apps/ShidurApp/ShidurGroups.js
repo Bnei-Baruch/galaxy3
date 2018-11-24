@@ -123,12 +123,8 @@ class ShidurGroups extends Component {
 
     switchProgram = (i) => {
         Janus.log(" :: Selected program Switch: ",i);
-        let {feeds,feeds_queue,round,pr1} = this.props;
+        let {feeds,feeds_queue,round} = this.props;
         let {pre_feed} = this.state;
-
-        //Detch previous feed
-        if(pr1[i])
-            pr1[i].detach();
 
         //If someone in preview take him else take next in queue
         if(pre_feed) {
@@ -155,7 +151,7 @@ class ShidurGroups extends Component {
     };
 
     switchFour = () => {
-        let {feeds_queue,feeds,index,round,pr1} = this.props;
+        let {feeds_queue,feeds,index,round} = this.props;
 
         for(let i=index; i<index+4; i++) {
 
@@ -172,10 +168,6 @@ class ShidurGroups extends Component {
                 round++;
                 this.props.setProps({feeds_queue,round});
             }
-
-            //Detch previous feed
-            if(pr1[i])
-                pr1[i].detach();
 
             // If program is not full avoid using feeds_queue
             if(feeds.length < 13) {
@@ -205,7 +197,7 @@ class ShidurGroups extends Component {
 
     switchNext = (i ,feed, r) => {
         if(!feed) return;
-        let {pgm_state,qfeeds,quistions_queue} = this.props;
+        let {pr1,pgm_state,qfeeds,quistions_queue} = this.props;
 
         // Add to group search if removed from program with question status
         if(pgm_state[i]) {
@@ -239,6 +231,10 @@ class ShidurGroups extends Component {
         if(r === "fix") {
             this.sdiAction("fix", true, i, feed)
         }
+
+        //Detch previous feed
+        if(pr1[i])
+            pr1[i].detach();
 
         console.log(" :: New handle! - " + feed.id);
         this.newSwitchFeed(feed.id,true,i);

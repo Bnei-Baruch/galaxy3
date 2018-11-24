@@ -120,12 +120,8 @@ class SDIOutGroups extends Component {
 
     switchProgram = (i) => {
         Janus.log(" :: Selected program Switch: ",i);
-        let {feeds,feeds_queue,round,pr1} = this.props;
+        let {feeds,feeds_queue,round} = this.props;
         let {pre_feed} = this.state;
-
-        //Detch previous feed
-        if(pr1[i])
-            pr1[i].detach();
 
         //If someone in preview take him else take next in queue
         if(pre_feed) {
@@ -151,7 +147,7 @@ class SDIOutGroups extends Component {
     };
 
     switchFour = () => {
-        let {feeds_queue,feeds,index,pr1} = this.props;
+        let {feeds_queue,feeds,index} = this.props;
 
         for(let i=index; i<index+4; i++) {
 
@@ -167,10 +163,6 @@ class SDIOutGroups extends Component {
                 feeds_queue = 0;
                 this.props.setProps({feeds_queue});
             }
-
-            //Detch previous feed
-            if(pr1[i])
-                pr1[i].detach();
 
             // If program is not full avoid using feeds_queue
             if(feeds.length < 13) {
@@ -188,6 +180,9 @@ class SDIOutGroups extends Component {
         Janus.log(" ---- switchNext params: ", i, feed);
         if(!feed) return;
         let {pr1,pgm_state} = this.props;
+        //Detch previous feed
+        if(pr1[i])
+            pr1[i].detach();
         this.newSwitchFeed(feed.id,true,i);
         pgm_state[i] = feed;
         this.props.setProps({pgm_state});

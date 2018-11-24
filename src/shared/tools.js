@@ -1,6 +1,5 @@
 import {Janus} from "../lib/janus";
 import {JANUS_ADMIN, JANUS_SERVER, ADMIN_SECRET, STUN_SERVER, WFDB_STATE, WFRP_STATE} from "./consts";
-import nlogo from './nlogo.png';
 
 
 export const initJanus = (cb) => {
