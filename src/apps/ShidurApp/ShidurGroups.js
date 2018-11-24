@@ -35,7 +35,7 @@ class ShidurGroups extends Component {
                     Janus.log("Plugin attached! (" + pre.getPlugin() + ", id=" + pre.getId() + ")");
                     Janus.log("  -- This is a subscriber");
                     // We wait for the plugin to send us an offer
-                    let listen = { "request": "join", "room": 1234, "ptype": "subscriber", "feed": id, "close_pc": false };
+                    let listen = { "request": "join", "room": 1234, "ptype": "subscriber", "feed": id };
                     pre.send({"message": listen});
                     if(program) {
                         let {pr1} = this.props;
@@ -99,9 +99,6 @@ class ShidurGroups extends Component {
                 oncleanup: () => {
                     Janus.log(" ::: Got a cleanup notification (remote feed "+id+" : "+i+") :::");
                     console.log(" :: Cleanup handle! - " + id + " - index: " + i);
-                    if(!program) {
-                        this.setState({pre: null});
-                    }
                 }
             });
     };

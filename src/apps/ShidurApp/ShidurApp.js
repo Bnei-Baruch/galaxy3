@@ -188,9 +188,21 @@ class ShidurApp extends Component {
                         this.setState({feeds,users});
 
                         if(feeds.length < 13) {
-                            this.col1.switchFour();
-                            this.col2.switchFour();
-                            this.col3.switchFour();
+                            for(let i=0; i<13; i++) {
+                                if(!this.state.pr1[i]) {
+                                    if(i < 4) {
+                                        this.col1.switchNext(i,list[0],"fix");
+                                    } else if(i < 8) {
+                                        this.col2.switchNext(i,list[0],"fix");
+                                    } else if(i < 12) {
+                                        this.col3.switchNext(i,list[0],"fix");
+                                    }
+                                    break
+                                }
+                            }
+                            // this.col1.switchFour();
+                            // this.col2.switchFour();
+                            // this.col3.switchFour();
                         }
 
                         if(feeds.length === 13) {
@@ -372,9 +384,9 @@ class ShidurApp extends Component {
         }, 1000);
     };
 
-    fixProgram = () => {
+    fixProgram = (index) => {
         let {feeds,pr1} = this.state;
-        let i = this.state.pri;
+        let i = this.state.pri || index;
         let feed = feeds[i];
         pr1[i] = null;
         if(i < 4) {
