@@ -46,7 +46,7 @@ class SndmanGroups extends Component {
                     Janus.log("Plugin attached! (" + pre.getPlugin() + ", id=" + pre.getId() + ")");
                     Janus.log("  -- This is a subscriber");
                     // We wait for the plugin to send us an offer
-                    let listen = { "request": "join", "room": 1234, "ptype": "listener", "feed": id };
+                    let listen = { "request": "join", "room": 1234, "ptype": "subscriber", "feed": id, "close_pc": false };
                     pre.send({"message": listen});
                     if(program) {
                         let {pr1} = this.props;
@@ -236,6 +236,9 @@ class SndmanGroups extends Component {
     disableGroup = () => {
         let {disabled_groups} = this.props;
         let {pre_feed} = this.state;
+        let chk = disabled_groups.find(g => g.id === pre_feed.id);
+        if(chk)
+            return;
         disabled_groups.push(pre_feed);
         this.props.removeFeed(pre_feed.id);
         this.setState({pre_feed: null});
@@ -392,8 +395,8 @@ class SndmanGroups extends Component {
                   <div className="video_title">{JSON.parse(feed.display).display}</div>
                   {qst ? <div className='qst_title'>?</div> : ""}
                   <video className={talk ? "talk" : ""}
-                         onClick={() => this.fullScreenGroup(i,feed)}
-                         onContextMenu={(e) => this.zoominGroup(e, i)}
+                         // onClick={() => this.fullScreenGroup(i,feed)}
+                         // onContextMenu={(e) => this.zoominGroup(e, i)}
                          key={i}
                          ref={"programVideo" + i}
                          id={"programVideo" + i}
@@ -415,7 +418,7 @@ class SndmanGroups extends Component {
                   full_feed ? users[JSON.parse(full_feed.display).id] ? users[JSON.parse(full_feed.display).id].question ? 'qst_fullscreentitle' : 'hidden' : 'hidden' : 'hidden'
               }>?</div>
               <video ref = {"fullscreenVideo"}
-                     onClick={() => this.toFourGroup()}
+                     // onClick={() => this.toFourGroup()}
                      id = "fullscreenVideo"
                      width = "360"
                      height = "200"

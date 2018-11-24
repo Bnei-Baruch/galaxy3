@@ -1,11 +1,10 @@
 import React, { Component } from 'react';
 import { Janus } from "../../lib/janus";
-import {Segment, Table, Icon, Dropdown, Dimmer, Button} from "semantic-ui-react";
-import {getState, putData, initGXYJanus, initJanus} from "../../shared/tools";
+import {Segment, Table, Icon, Button} from "semantic-ui-react";
+// import {getState, putData, initGXYJanus, initJanus} from "../../shared/tools";
 // import {initGxyProtocol} from "../shared/protocol";
 import './SDIOutGroups.css'
 //import './VideoConteiner.scss'
-import {initGxyProtocol, sendProtocolMessage} from "../../shared/protocol";
 
 class SDIOutGroups extends Component {
 
@@ -38,7 +37,7 @@ class SDIOutGroups extends Component {
                     Janus.log("Plugin attached! (" + pre.getPlugin() + ", id=" + pre.getId() + ")");
                     Janus.log("  -- This is a subscriber");
                     // We wait for the plugin to send us an offer
-                    let listen = { "request": "join", "room": 1234, "ptype": "listener", "feed": id };
+                    let listen = { "request": "join", "room": 1234, "ptype": "subscriber", "feed": id, "close_pc": false };
                     pre.send({"message": listen});
                     if(program) {
                         let {pr1} = this.props;
@@ -228,6 +227,9 @@ class SDIOutGroups extends Component {
     disableGroup = () => {
         let {disabled_groups} = this.props;
         let {pre_feed} = this.state;
+        let chk = disabled_groups.find(g => g.id === pre_feed.id);
+        if(chk)
+            return;
         disabled_groups.push(pre_feed);
         this.props.removeFeed(pre_feed.id);
         this.setState({pre_feed: null});

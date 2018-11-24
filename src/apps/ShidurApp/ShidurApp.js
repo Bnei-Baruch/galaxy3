@@ -1,6 +1,6 @@
 import React, {Component} from 'react';
 import {Janus} from "../../lib/janus";
-import {Grid, Label, Message, Segment, Table, Icon} from "semantic-ui-react";
+import {Grid, Label, Message, Segment, Table, Icon, Popup, Button} from "semantic-ui-react";
 import {initJanus} from "../../shared/tools";
 import {initGxyProtocol} from "../../shared/protocol";
 import ShidurGroups from "./ShidurGroups";
@@ -39,6 +39,7 @@ class ShidurApp extends Component {
         users: {},
         zoom: false,
         fullscr: false,
+        round: 0,
     };
 
     componentDidMount() {
@@ -199,6 +200,7 @@ class ShidurApp extends Component {
                     // One of the publishers has gone away?
                     let leaving = msg["leaving"];
                     Janus.log("Publisher left: " + leaving);
+                    console.log("Publisher left: " + leaving);
                     let {disabled_groups} = this.state;
                     // Delete from disabled_groups
                     for(let i = 0; i < disabled_groups.length; i++){
@@ -213,6 +215,7 @@ class ShidurApp extends Component {
                     // One of the publishers has unpublished?
                     let unpublished = msg["unpublished"];
                     Janus.log("Publisher left: " + unpublished);
+                    console.log("Publisher left: " + unpublished);
                     if(unpublished === 'ok') {
                         // That's us
                         this.state.gxyhandle.hangup();
@@ -281,13 +284,14 @@ class ShidurApp extends Component {
         }
     };
 
-    removeFeed = (id,) => {
+    removeFeed = (id) => {
         let {feeds,users,quistions_queue,qfeeds} = this.state;
         for(let i=0; i<feeds.length; i++){
             if(feeds[i].id === id) {
 
                 // Delete from users mapping object
                 let user = JSON.parse(feeds[i].display);
+                console.log(" :: Remove feed: " + id + " - Name: " + user.username);
                 delete users[user.id];
 
                 // Delete from questions list
@@ -320,6 +324,7 @@ class ShidurApp extends Component {
 
         pgm_state.forEach((pgm,i) => {
             if(pgm_state[i] && pgm.id === id) {
+                console.log(" :: Feed in program! - " + id);
                 if(feeds.length < 13) {
                     //FIXME: Need to check if its really necessary to detach here
                     pr1[i].detach();
@@ -333,13 +338,16 @@ class ShidurApp extends Component {
                         feeds_queue--;
                         this.setState({feeds_queue});
                     }
+                    // if program is full we does not remove video element
+                    //pgm_state[i] = null;
+                    pr1[i] = null;
                     let feed = feeds[feeds_queue];
                     if(i < 4) {
-                        this.col1.switchNext(i,feed);
+                        this.col1.switchNext(i,feed,"remove");
                     } else if(i < 8) {
-                        this.col2.switchNext(i,feed);
+                        this.col2.switchNext(i,feed,"remove");
                     } else if(i < 12) {
-                        this.col3.switchNext(i,feed);
+                        this.col3.switchNext(i,feed,"remove");
                     }
                 }
             }
@@ -356,11 +364,20 @@ class ShidurApp extends Component {
     resetQueue = () => {
         console.log("-- Reset Queue --");
         this.setState({feeds_queue: 0});
+        setTimeout(() => {
+            this.col1.switchFour();
+            this.col2.switchFour();
+            this.col3.switchFour();
+        }, 1000);
+    };
+
+    reloadPage = () => {
+        this.col1.sdiAction("restart");
     };
 
     render() {
 
-        const {user,feeds,feeds_queue,disabled_groups} = this.state;
+        const {user,feeds,feeds_queue,disabled_groups,round,qfeeds} = this.state;
 
         let disabled_list = disabled_groups.map((data,i) => {
             const {id, display} = data;
@@ -391,9 +408,15 @@ class ShidurApp extends Component {
                         setProps={this.setProps}
                         removeFeed={this.removeFeed} />
                         <Message className='info-panel' color='grey'>
-                            <Label attached='top right' color='grey'>
-                                Online: {feeds.length}
-                            </Label>
+                            <Popup on='click'
+                                trigger={<Label attached='top right' color='grey'>
+                                            Online: {feeds.length}
+                                        </Label>}
+                                flowing
+                                position='bottom center'
+                                hoverable>
+                                <Button negative content='Reload' onClick={this.reloadPage}/>
+                            </Popup>
                             <Label attached='top left' color='grey'>
                                 Next: {feeds[feeds_queue] ? JSON.parse(feeds[feeds_queue].display).display : ""}
                             </Label>
@@ -401,6 +424,12 @@ class ShidurApp extends Component {
                                 <Icon name='address card' />
                                 <b className='queue_counter'>{feeds.length - feeds_queue}</b>
                                 <Icon name='delete' onClick={this.resetQueue} />
+                            </Label>
+                            <Label attached='bottom left' color='blue'>
+                                Round: {round}
+                            </Label>
+                            <Label attached='bottom right' color={qfeeds.length > 0 ? 'red' : 'grey'}>
+                                Questions: {qfeeds.length}
                             </Label>
                         </Message>
                 </Grid.Column>

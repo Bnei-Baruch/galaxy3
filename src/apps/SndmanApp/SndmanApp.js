@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import { Janus } from "../../lib/janus";
 import {Grid} from "semantic-ui-react";
-import {getState, putData, initGXYJanus, initJanus} from "../../shared/tools";
+import {initJanus} from "../../shared/tools";
 import './SndmanApp.css';
 import {initGxyProtocol} from "../../shared/protocol";
 import SndmanGroups from "./SndmanGroups";
@@ -392,6 +392,8 @@ class SndmanApp extends Component {
                         feeds_queue--;
                         this.setState({feeds_queue});
                     }
+                    //pgm_state[i] = null;
+                    pr1[i] = null;
                     let feed = feeds[feeds_queue];
                     if(i < 4) {
                         this.col1.switchNext(i,feed);

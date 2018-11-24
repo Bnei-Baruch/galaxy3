@@ -1,10 +1,11 @@
 import {Janus} from "../lib/janus";
 import {JANUS_ADMIN, JANUS_SERVER, ADMIN_SECRET, STUN_SERVER, WFDB_STATE, WFRP_STATE} from "./consts";
+import nlogo from './nlogo.png';
 
 
 export const initJanus = (cb) => {
     Janus.init({
-        debug: ["log","error"],
+        debug: ["error"],
         callback: () => {
             let janus = new Janus({
                 server: JANUS_SERVER,
@@ -191,13 +192,17 @@ export const notifyMe = (title, message, tout) => {
         Notification.requestPermission();
     else {
         var notification = new Notification(title+":", {
-            icon: 'nlogo.png',
+            icon: './nlogo.png',
             body: message,
             requireInteraction: tout
         });
         notification.onclick = function () {
             window.focus();
-        }
+        };
+        notification.onshow = function () {
+            var audio = new Audio('./plucky.mp3');
+            audio.play();
+        };
     }
 };
 

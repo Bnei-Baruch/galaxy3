@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import { Janus } from "../../lib/janus";
 import {Message, Button, Input} from "semantic-ui-react";
-import {initChatRoom,getDateString,joinChatRoom} from "../../shared/tools";
+import {initChatRoom,getDateString,joinChatRoom,notifyMe} from "../../shared/tools";
 import {SHIDUR_ID} from "../../shared/consts";
 
 
@@ -83,22 +83,23 @@ class GroupChat extends Component {
                 if(this.props.visible) {
                     this.scrollToBottom();
                 } else {
+                    notifyMe("Shidur",message.text,true);
                     this.props.onNewMsg();
                 }
             } else {
                 // Public message
-                let {messages} = this.state;
-                //let message = dateString+" : "+from+" : "+msg;
-                let message = JSON.parse(msg);
-                message.time = dateString;
-                Janus.log("-:: It's public message: "+message);
-                messages.push(message);
-                this.setState({messages});
-                if(this.props.visible) {
-                    this.scrollToBottom();
-                } else {
-                    this.props.onNewMsg();
-                }
+                // let {messages} = this.state;
+                // //let message = dateString+" : "+from+" : "+msg;
+                // let message = JSON.parse(msg);
+                // message.time = dateString;
+                // Janus.log("-:: It's public message: "+message);
+                // messages.push(message);
+                // this.setState({messages});
+                // if(this.props.visible) {
+                //     this.scrollToBottom();
+                // } else {
+                //     this.props.onNewMsg();
+                // }
             }
         } else if (what === "join") {
             // Somebody joined
@@ -127,7 +128,7 @@ class GroupChat extends Component {
             textroom: "message",
             transaction: Janus.randomString(12),
             room: this.state.room,
-            to: `${SHIDUR_ID}`,
+            //to: `${SHIDUR_ID}`,
             text: JSON.stringify(msg),
         };
         // Note: messages are always acknowledged by default. This means that you'll
@@ -173,7 +174,7 @@ class GroupChat extends Component {
         return (
             <div className="chat-panel" >
                 {/* <div className="chat" > */}
-                <Message className='messages_list' size='mini'>
+                <Message className='messages_list'>
                     <div className="messages-wrapper">
                         {list_msgs}
                         <div ref='end' />
@@ -181,10 +182,10 @@ class GroupChat extends Component {
 
                 </Message>
 
-                <Input size='mini' fluid type='text' placeholder='Type your message' action value={this.state.input_value}
+                <Input fluid type='text' placeholder='Type your message' action value={this.state.input_value}
                        onChange={(v,{value}) => this.setState({input_value: value})}>
                     <input />
-                    <Button size='mini' positive onClick={this.sendChatMessage}>Send</Button>
+                    <Button positive onClick={this.sendChatMessage}>Send</Button>
                 </Input>
                 {/* </div> */}
             </div>

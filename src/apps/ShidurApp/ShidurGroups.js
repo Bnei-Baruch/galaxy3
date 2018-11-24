@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import { Janus } from "../../lib/janus";
-import {Segment, Table, Icon, Dropdown, Dimmer, Button} from "semantic-ui-react";
+import {Segment, Icon, Dropdown, Dimmer, Button} from "semantic-ui-react";
 //import {getState, putData} from "../../shared/tools";
 import './ShidurGroups.css'
 import {sendProtocolMessage} from "../../shared/protocol";
@@ -32,16 +32,14 @@ class ShidurGroups extends Component {
                 success: (pluginHandle) => {
                     pre = pluginHandle;
                     pre.simulcastStarted = false;
-                    //this.setState({remotefeed});
                     Janus.log("Plugin attached! (" + pre.getPlugin() + ", id=" + pre.getId() + ")");
                     Janus.log("  -- This is a subscriber");
                     // We wait for the plugin to send us an offer
-                    let listen = { "request": "join", "room": 1234, "ptype": "subscriber", "feed": id };
+                    let listen = { "request": "join", "room": 1234, "ptype": "subscriber", "feed": id, "close_pc": !program };
                     pre.send({"message": listen});
                     if(program) {
                         let {pr1} = this.props;
                         pr1[i] = pre;
-                        //this.setState({pr1})
                         this.props.setProps({pr1});
                     } else {
                         this.setState({pre});
@@ -99,7 +97,11 @@ class ShidurGroups extends Component {
                     //var videoTracks = stream.getVideoTracks();
                 },
                 oncleanup: () => {
-                    Janus.log(" ::: Got a cleanup notification (remote feed " + id + ") :::");
+                    Janus.log(" ::: Got a cleanup notification (remote feed "+id+" : "+i+") :::");
+                    console.log(" :: Cleanup handle! - " + id + " - index: " + i);
+                    if(!program) {
+                        this.setState({pre: null});
+                    }
                 }
             });
     };
@@ -119,34 +121,16 @@ class ShidurGroups extends Component {
 
     switchProgram = (i) => {
         Janus.log(" :: Selected program Switch: ",i);
-        let {feeds,pr1,pgm_state,feeds_queue} = this.props;
+        let {feeds,feeds_queue,round} = this.props;
         let {pre_feed} = this.state;
-
-        // Don't switch if nobody in queue
-        // if(feeds_queue <= feeds.length && pr1.length >= 4 && feeds.length <= 4)
-        //     return;
-
-        // if(feeds_queue >= feeds.length) {
-        //     // End round here!
-        //     feeds_queue = 0;
-        //     Janus.log(" -- ROUND END --");
-        // }
 
         //If someone in preview take him else take next in queue
         if(pre_feed) {
-            let switchfeed = {"request": "switch", "feed": pre_feed.id, "audio": true, "video": true, "data": false};
-            pr1[i].send ({"message": switchfeed,
-                success: () => {
-                    Janus.log(" :: Selected program Switch Feed to: ", pre_feed.display);
-                    pgm_state[i] = pre_feed;
-                    this.setState({pre_feed: null});
-                    this.props.setProps({program: pre_feed, pgm_state, pre_feed: null});
-                    this.sdiAction("switch" , true, i, pre_feed);
-                    // putData(`state/galaxy/pr1`, pgm_state, (cb) => {
-                    //     Janus.log(":: Save to state: ",cb);
-                    // });
-                }
-            })
+            Janus.log(" :: Selected program Switch Feed to: ", pre_feed.display);
+            this.switchNext(i, pre_feed);
+            this.setState({pre_feed: null});
+            this.props.setProps({program: pre_feed, pre_feed: null});
+
         } else {
             let feed = feeds[feeds_queue];
             this.switchNext(i, feed);
@@ -155,16 +139,17 @@ class ShidurGroups extends Component {
             if(feeds_queue >= feeds.length) {
                 // End round here!
                 feeds_queue = 0;
+                round++;
                 Janus.log(" -- ROUND END --");
             }
 
-            this.props.setProps({feeds_queue, pre_feed: null});
+            this.props.setProps({feeds_queue,round,pre_feed: null});
         }
 
     };
 
     switchFour = () => {
-        let {feeds_queue,feeds,index} = this.props;
+        let {feeds_queue,feeds,index,round} = this.props;
 
         for(let i=index; i<index+4; i++) {
 
@@ -178,10 +163,9 @@ class ShidurGroups extends Component {
                 // End round here!
                 Janus.log(" -- ROUND END --");
                 feeds_queue = 0;
-                this.props.setProps({feeds_queue});
+                round++;
+                this.props.setProps({feeds_queue,round});
             }
-
-            Janus.log("---------- i: "+i+" queue: "+feeds_queue);
 
             // If program is not full avoid using feeds_queue
             if(feeds.length < 13) {
@@ -209,33 +193,55 @@ class ShidurGroups extends Component {
         sendProtocolMessage(protocol, user, msg );
     };
 
-    switchNext = (i ,feed) => {
-        Janus.log(" ---- switchNext params: ", i, feed);
+    switchNext = (i ,feed, r) => {
         if(!feed) return;
-        let {pr1,pgm_state,qfeeds} = this.props;
+        let {pr1,pgm_state,qfeeds,quistions_queue} = this.props;
 
-        // Remove from group search list qfeed
-        for(let q=0; q<qfeeds.length; q++) {
-            if(qfeeds[q].id === feed.id) {
-                qfeeds.splice(i, 1);
+        // Add to group search if removed from program with question status
+        if(pgm_state[i]) {
+            let cur_feed = pgm_state[i];
+            let chk = pgm_state.filter(p => {
+                return (p !== null && p !== undefined && p.id === cur_feed.id)
+            });
+            let qf_chk = qfeeds.filter(qf => qf.rfid === cur_feed.id).length === 0;
+            if (qf_chk) {
+                let qq_chk = quistions_queue.filter(qs => qs.rfid === cur_feed.id).length > 0;
+                if (qq_chk) {
+                    if (chk.length < 2) {
+                        qfeeds.push(cur_feed);
+                        this.props.setProps({qfeeds});
+                    }
+                }
+            }
+        }
+
+        // Remove question status from group search list if add to program
+        for (let q = 0; q < qfeeds.length; q++) {
+            if (qfeeds[q].id === feed.id) {
+                console.log(" - Remove QFEED: ", qfeeds[q]);
+                qfeeds.splice(q, 1);
                 this.props.setProps({qfeeds});
                 break
             }
         }
 
         if(!pr1[i]) {
+            console.log(" :: New handle! - " + feed.id);
             this.newSwitchFeed(feed.id,true,i);
             pgm_state[i] = feed;
             this.props.setProps({pgm_state});
-            this.sdiAction("switch" , true, i, feed);
+            if(r !== "remove")
+                this.sdiAction("switch" , true, i, feed);
         } else {
+            console.log(" :: Switch handle! - " + feed.id);
             let switchfeed = {"request": "switch", "feed": feed.id, "audio": true, "video": true, "data": false};
             pr1[i].send ({"message": switchfeed,
                 success: () => {
                     Janus.log(" :: Next Switch Feed to: ", feed.display);
                     pgm_state[i] = feed;
                     this.props.setProps({pgm_state});
-                    this.sdiAction("switch", true, i, feed)
+                    if(r !== "remove")
+                        this.sdiAction("switch", true, i, feed)
                     // putData(`state/galaxy/pr1`, pgm_state, (cb) => {
                     //     Janus.log(":: Save to state: ",cb);
                     // });
@@ -253,11 +259,14 @@ class ShidurGroups extends Component {
     disableGroup = () => {
         let {disabled_groups} = this.props;
         let {pre_feed} = this.state;
+        let chk = disabled_groups.find(g => g.id === pre_feed.id);
+        if(chk)
+            return;
+        this.sdiAction("disable", true, null, pre_feed)
         disabled_groups.push(pre_feed);
         this.props.removeFeed(pre_feed.id);
         this.setState({pre_feed: null});
         this.props.setProps({disabled_groups});
-        this.sdiAction("disable", true, null, pre_feed)
     };
 
     hideGroup = () => {
@@ -316,7 +325,7 @@ class ShidurGroups extends Component {
 
   render() {
       const { pre_feed,full_feed,zoom,fullscr } = this.state;
-      const {index,feeds,pgm_state,feeds_queue,quistions_queue,disabled_groups,users,qfeeds} = this.props;
+      const {index,feeds,pgm_state,users,qfeeds} = this.props;
       const width = "100%";
       const height = "100%";
       const autoPlay = true;
@@ -326,7 +335,7 @@ class ShidurGroups extends Component {
 
       let queue_options = qfeeds.map((feed,i) => {
           const {display} = JSON.parse(feed.display);
-          return ({ key: display.id, value: feed, text: display, icon: 'help'})
+          return ({ key: feed.id+i, value: feed, text: display, icon: 'help'})
       });
 
       let group_options = feeds.map((feed,i) => {
@@ -334,20 +343,12 @@ class ShidurGroups extends Component {
           return ({ key: i, value: feed, text: display })
       });
 
-      let disabled_list = disabled_groups.map((data,i) => {
-          const {id, display} = data;
-          return (
-              <Table.Row key={id} warning
-                         onClick={() => this.selectGroup(data, i)}
-                         onContextMenu={(e) => this.restoreGroup(e, data, i)} >
-                  <Table.Cell width={5}>{JSON.parse(display).display}</Table.Cell>
-                  <Table.Cell width={1}>{id}</Table.Cell>
-              </Table.Row>
-          )
-      });
-
       let preview = (<div className={pre_feed ? "" : "hidden"}>
           <div className="fullscrvideo_title"><span>{pre_feed ? JSON.parse(pre_feed.display).display : ""}</span></div>
+              <div className={
+                  //TODO: Fix this ugly shit!
+                  pre_feed ? users[JSON.parse(pre_feed.display).id] ? users[JSON.parse(pre_feed.display).id].question ? 'qst_fullscreentitle' : 'hidden' : 'hidden' : 'hidden'
+              }>?</div>
               <video ref = {"prevewVideo"}
                      id = "prevewVideo"
                      width = "400"
@@ -397,6 +398,7 @@ class ShidurGroups extends Component {
                          muted={muted}
                          playsInline={true}/>
                   <Button className='next_button'
+                          disabled={feeds.length < 13}
                           size='mini'
                           color='green'
                           icon={pre_feed ? 'arrow up' : 'share'}
@@ -436,6 +438,7 @@ class ShidurGroups extends Component {
           </Segment>
 
             <Button className='fours_button'
+                disabled={feeds.length < 13}
                 attached='bottom'
                 color='blue'
                 size='mini'
@@ -450,26 +453,12 @@ class ShidurGroups extends Component {
           </Segment>
 
             <Dropdown className='select_group' error={qfeeds.length > 0}
-                icon={qfeeds.length > 0 ? 'help' : 'dropdown'}
                 placeholder='Select Group'
                 fluid
                 search
                 selection
                 options={queue_options.concat(group_options)}
                 onChange={(e,{value}) => this.selectGroup(value)} />
-
-            {/*<hr/>*/}
-            {/*<p>Queue: {feeds.length - feeds_queue}</p>*/}
-            {/*<p>Next: {feeds[feeds_queue] ? JSON.parse(feeds[feeds_queue].display).display : ""}</p>*/}
-            {/*<p>Online: {feeds.length}</p>*/}
-            {/*<hr/>*/}
-            {/*<Segment textAlign='center' className="disabled_groups" raised>*/}
-                {/*<Table selectable compact='very' basic structured className="admin_table" unstackable>*/}
-                    {/*<Table.Body>*/}
-                        {/*{disabled_list}*/}
-                    {/*</Table.Body>*/}
-                {/*</Table>*/}
-            {/*</Segment>*/}
 
             <Dimmer active={zoom} onClickOutside={this.handleClose} page>
                 <video ref={"zoomVideo"}

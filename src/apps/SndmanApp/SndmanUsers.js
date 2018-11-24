@@ -41,10 +41,10 @@ class SndmanUsers extends Component {
         user: {
             session: 0,
             handle: 0,
-            role: "sdiout",
-            display: "sdiout",
+            role: "sndman",
+            display: "sndman",
             id: Janus.randomString(10),
-            name: "sdiout"
+            name: "sndman"
         },
         users: {},
     };

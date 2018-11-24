@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import { Janus } from "../../lib/janus";
-import {Segment, Menu, Button, Input, Table, Grid, Message, Transition, Select, Icon} from "semantic-ui-react";
+import {Segment, Menu, Button, Input, Table, Grid, Message, Transition, Select, Icon, Popup, List} from "semantic-ui-react";
 import {initJanus, initChatRoom, getDateString, joinChatRoom, getPublisherInfo} from "../../shared/tools";
 import './ShidurAdmin.css';
 import './VideoConteiner.scss'
@@ -21,6 +21,8 @@ class ShidurAdmin extends Component {
         rooms: [],
         feed_id: null,
         feed_user: null,
+        feed_talk: false,
+        feed_rtcp: {},
         current_room: "",
         roomid: "",
         videoroom: null,
@@ -89,7 +91,11 @@ class ShidurAdmin extends Component {
                 this.onProtocolData(ondata);
             });
         });
-        setInterval(() => this.getRoomList(), 10000 );
+        setInterval(() => {
+            this.getRoomList();
+            if(this.state.feed_user)
+                this.getFeedInfo()
+        }, 10000 );
     };
 
     getRoomList = () => {
@@ -388,7 +394,7 @@ class ShidurAdmin extends Component {
                     Janus.log("Plugin attached! (" + switchFeed.getPlugin() + ", id=" + switchFeed.getId() + ")");
                     Janus.log("  -- This is a subscriber");
                     // We wait for the plugin to send us an offer
-                    let listen = { "request": "join", "room": this.state.current_room, "ptype": "subscriber", "feed": id };
+                    let listen = { "request": "join", "room": this.state.current_room, "ptype": "subscriber", "feed": id, "close_pc": false };
                     switchFeed.send({"message": listen});
                     this.setState({switchFeed});
                 },
@@ -652,6 +658,12 @@ class ShidurAdmin extends Component {
                     if(current_room === 1234) {
                         let users = {};
                         let feeds = list.filter(feeder => JSON.parse(feeder.display).role === "group");
+                        console.log(feeds);
+                        feeds.sort((a, b) => {
+                            if (JSON.parse(a.display).username > JSON.parse(b.display).username) return 1;
+                            if (JSON.parse(a.display).username < JSON.parse(b.display).username) return -1;
+                            return 0;
+                        });
                         for(let i=0;i<feeds.length;i++) {
                             let user = JSON.parse(feeds[i].display);
                             feeds[i].rfuser = user;
@@ -700,7 +712,6 @@ class ShidurAdmin extends Component {
                     let list = msg["publishers"];
                     Janus.debug("Got a list of available publishers/feeds:");
                     Janus.debug(list);
-                    console.log(":: ---------- Group feed: ", list[0])
                     for(let f in list) {
                         let id = list[f]["id"];
                         let display = JSON.parse(list[f]["display"]);
@@ -718,8 +729,13 @@ class ShidurAdmin extends Component {
                             feed.rfuser.rfid = list[f].id;
                             feed.talk = false;
                             users[feed.rfuser.id] = display;
-                            console.log(":: Group feed: ", feed)
+                            console.log(":: Feed join: ", feed)
                             feeds.push(feed);
+                            feeds.sort((a, b) => {
+                                if (JSON.parse(a.display).username > JSON.parse(b.display).username) return 1;
+                                if (JSON.parse(a.display).username < JSON.parse(b.display).username) return -1;
+                                return 0;
+                            });
                             this.setState({feeds,users});
                         }
                     }
@@ -948,16 +964,18 @@ class ShidurAdmin extends Component {
         });
     };
 
-    getUserInfo = (userinfo,id) => {
-        this.setState({feed_id: id, feed_user: userinfo, switch_mode: true});
-        Janus.log(userinfo,userinfo.rfid);
-        this.switchFeed(userinfo.rfid);
+    getUserInfo = (feed) => {
+        let {rfuser,rfid,talking} = feed;
+        this.setState({feed_id: rfid, feed_user: rfuser, feed_talk: talking, switch_mode: true});
+        Janus.log(rfuser,rfid,talking);
+        this.switchFeed(rfid);
     };
 
     getFeedInfo = () => {
         let {session,handle} = this.state.feed_user;
         getPublisherInfo(session,handle,json => {
                 Janus.log(":: Publisher info", json);
+                this.setState({feed_rtcp: json.info.streams[0].rtcp_stats});
             }
         )
     }
@@ -968,7 +986,7 @@ class ShidurAdmin extends Component {
 
   render() {
 
-      const { rooms,current_room,switch_mode,user,feeds,i,messages,description,roomid,root,forwarders,feed_user } = this.state;
+      const { rooms,current_room,switch_mode,user,feeds,i,messages,description,roomid,root,forwarders,feed_rtcp,feed_talk } = this.state;
       const width = "134";
       const height = "100";
       const autoPlay = true;
@@ -998,7 +1016,7 @@ class ShidurAdmin extends Component {
           if(feed) {
               let fw = forwarders.filter(f => f.publisher_id === (current_room === 1234 ? feed.id : feed.rfid)).length > 0;
               return (
-                  <Table.Row active={feed.rfid === this.state.feed_id} key={i} onClick={() => this.getUserInfo(feed.rfuser,feed.rfid)} >
+                  <Table.Row active={feed.rfid === this.state.feed_id} key={i} onClick={() => this.getUserInfo(feed)} >
                       <Table.Cell width={5}>{feed.rfuser.display}</Table.Cell>
                       <Table.Cell width={1}>{fw ? v : ""}</Table.Cell>
                   </Table.Row>
@@ -1041,13 +1059,14 @@ class ShidurAdmin extends Component {
 
       let switchvideo = (
           <div className="video">
+              <div className={classNames('video__overlay', {'talk' : feed_talk})} />
               <video ref = {"switchVideo"}
                      id = "switchVideo"
                      width = {width}
                      height = {height}
                      autoPlay = {autoPlay}
-                     controls = {controls}
-                     muted = {muted}
+                     controls
+                     muted = {false}
                      playsInline = {true} />
           </div>);
 
@@ -1098,7 +1117,34 @@ class ShidurAdmin extends Component {
                                   <Table.Header>
                                       <Table.Row>
                                           <Table.HeaderCell colSpan='2'>
-                                              <Button positive icon='info' onClick={this.getFeedInfo} />
+                                              <Popup
+                                                  trigger={<Button positive icon='info' onClick={this.getFeedInfo} />}
+                                                  position='bottom right'
+                                                  content={
+                                                      <List as='ul'>
+                                                          <List.Item as='li'>Video
+                                                              <List.List as='ul'>
+                                                                  <List.Item as='li'>in-link-quality: {feed_rtcp.video ? feed_rtcp.video["in-link-quality"] : ""}</List.Item>
+                                                                  <List.Item as='li'>in-media-link-quality: {feed_rtcp.video ? feed_rtcp.video["in-media-link-quality"] : ""}</List.Item>
+                                                                  <List.Item as='li'>jitter-local: {feed_rtcp.video ? feed_rtcp.video["jitter-local"] : ""}</List.Item>
+                                                                  <List.Item as='li'>jitter-remote: {feed_rtcp.video ? feed_rtcp.video["jitter-remote"] : ""}</List.Item>
+                                                                  <List.Item as='li'>lost: {feed_rtcp.video ? feed_rtcp.video["lost"] : ""}</List.Item>
+                                                              </List.List>
+                                                          </List.Item>
+                                                          <List.Item as='li'>Audio
+                                                              <List.List as='ul'>
+                                                                  <List.Item as='li'>in-link-quality: {feed_rtcp.audio ? feed_rtcp.audio["in-link-quality"] : ""}</List.Item>
+                                                                  <List.Item as='li'>in-media-link-quality: {feed_rtcp.audio ? feed_rtcp.audio["in-media-link-quality"] : ""}</List.Item>
+                                                                  <List.Item as='li'>jitter-local: {feed_rtcp.audio ? feed_rtcp.audio["jitter-local"] : ""}</List.Item>
+                                                                  <List.Item as='li'>jitter-remote: {feed_rtcp.audio ? feed_rtcp.audio["jitter-remote"] : ""}</List.Item>
+                                                                  <List.Item as='li'>lost: {feed_rtcp.audio ? feed_rtcp.audio["lost"] : ""}</List.Item>
+                                                              </List.List>
+                                                          </List.Item>
+                                                      </List>
+                                                  }
+                                                  on='click'
+                                                  hideOnScroll
+                                              />
                                               <Button negative icon='user x' onClick={this.kickUser} />
                                           </Table.HeaderCell>
                                       </Table.Row>
@@ -1130,10 +1176,16 @@ class ShidurAdmin extends Component {
                           <Segment textAlign='center' className="group_list" raised>
                               <Table selectable compact='very' basic structured className="admin_table" unstackable>
                                   <Table.Body>
+                                      <Table.Row disabled positive>
+                                          <Table.Cell colSpan={2} textAlign='center'>Groups:</Table.Cell>
+                                      </Table.Row>
                                       <Table.Row active={current_room === 1234}
                                                  key={i} onClick={() => this.joinRoom(null, i)}>
                                           <Table.Cell width={5}>Galaxy</Table.Cell>
-                                          <Table.Cell width={1}>70</Table.Cell>
+                                          <Table.Cell width={1}>{current_room === 1234 ? feeds.length : 0}</Table.Cell>
+                                      </Table.Row>
+                                      <Table.Row disabled positive>
+                                          <Table.Cell colSpan={2} textAlign='center'>Users:</Table.Cell>
                                       </Table.Row>
                                       {rooms_grid}
                                   </Table.Body>

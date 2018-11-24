@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import { Janus } from "../../lib/janus";
 import {Grid} from "semantic-ui-react";
-import {getState, putData, initGXYJanus, initJanus} from "../../shared/tools";
+import {initJanus} from "../../shared/tools";
 import './SDIOutApp.css';
 import {initGxyProtocol} from "../../shared/protocol";
 import SDIOutGroups from "./SDIOutGroups";
@@ -322,6 +322,8 @@ class SDIOutApp extends Component {
                         feeds_queue--;
                         this.setState({feeds_queue});
                     }
+                    //pgm_state[i] = null;
+                    pr1[i] = null;
                     let feed = feeds[feeds_queue];
                     if(i < 4) {
                         this.col1.switchNext(i,feed);

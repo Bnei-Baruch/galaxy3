@@ -86,6 +86,59 @@ span {
 }
 
 .video {
+    position: relative;
+    // margin: 1px;
+    background: rgba(34, 34, 34, 1);
+    border: 2px solid #000;
+    overflow:hidden;
+    &__overlay {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        z-index: 1;
+        &.talk{
+            border:4px solid rgba(yellow,.6);
+        }
+    }
+    .question {
+        position: absolute;
+        left:80%;
+        top:20%;
+        transform: translate(-50%,-50%);
+        background: rgba(34, 34, 34, .5);
+        border-radius: 50%;
+        animation: ani 1s ease-in-out infinite alternate;
+        //    animation-timing-function:;
+        padding:1rem;
+        .icon {
+            margin:0!important;
+            //    padding:0!important;
+            // text-shadow: 0 2px 1px rgba(0,0,0,.3);
+            color: rgba(255,255,255,1);
+            width:auto;
+            height:auto;
+
+        }
+    }
+
+    &__title {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        padding: .7rem 1rem;
+        background:rgba(34, 34, 34, .9);
+        font-size: 1.4rem;
+        color:white;
+        // border-radius: 4px;
+        line-height: 1;
+        text-shadow: 0 2px 1px rgba(0,0,0,.7);
+        .icon{
+            margin-right:1rem;
+            position: relative;
+            top: -.09rem;
+        }
+        // color:yellow;
+    }
 video {
     object-fit: contain;
     width: 100%;
