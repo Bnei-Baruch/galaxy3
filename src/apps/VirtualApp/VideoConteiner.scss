@@ -96,24 +96,27 @@ $exactly-selector: _build-quantity-selector($selector-append, $selector);
         }
     }
     .question {
+        &:before {
+            display: block;
+            content: "";
+            padding-top: 100%;
+        }
         position: absolute;
-        left:50%;
-        top:50%;
-        transform: translate(-50%,-50%);
-       background: rgba(34, 34, 34, .5); 
-       border-radius: 50%;
-       animation: ani 1s ease-in-out infinite alternate;
-    //    animation-timing-function:;
-       padding:1rem;
-       .icon {
-           margin:0!important;
-        //    padding:0!important;
-        // text-shadow: 0 2px 1px rgba(0,0,0,.3);
-        color: rgba(255,255,255,1);
-           width:auto;
-           height:auto;
-           
-       }
+        top:0;
+        right:0;
+        max-width: 25%;
+        width: 200px;
+        min-width: 60px;
+        background:rgba(34, 34, 34, .9);
+        font-family: Icons;
+        svg{
+            position: absolute;
+            top:0;
+            left:0;
+            font-size: 2.5rem;
+            fill:white;
+        }
+
     }
     
     &__title {
