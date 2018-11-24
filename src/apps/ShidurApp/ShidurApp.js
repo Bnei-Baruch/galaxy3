@@ -165,10 +165,10 @@ class ShidurApp extends Component {
                 }
             } else if(event === "talking") {
                 let id = msg["id"];
-                Janus.log("User: "+id+" - start talking");
+                //Janus.log("User: "+id+" - start talking");
             } else if(event === "stopped-talking") {
                 let id = msg["id"];
-                Janus.log("User: "+id+" - stop talking");
+                //Janus.log("User: "+id+" - stop talking");
             } else if(event === "destroyed") {
                 // The room has been destroyed
                 Janus.warn("The room has been destroyed!");
@@ -327,7 +327,6 @@ class ShidurApp extends Component {
             if(pgm_state[i] && pgm.id === id) {
                 console.log(" :: Feed in program! - " + id);
                 if(feeds.length < 13) {
-                    //FIXME: Need to check if its really necessary to detach here
                     pr1[i].detach();
                     pgm_state[i] = null;
                     pr1[i] = null;
@@ -341,6 +340,7 @@ class ShidurApp extends Component {
                     }
                     // if program is full we does not remove video element
                     //pgm_state[i] = null;
+                    pr1[i].detach();
                     pr1[i] = null;
                     let feed = feeds[feeds_queue];
                     if(i < 4) {
