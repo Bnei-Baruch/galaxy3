@@ -620,190 +620,196 @@ class VirtualClient extends Component {
     };
 
 
-  render() {
+    render() {
 
-      const { rooms,room,audio_devices,video_devices,video_device,audio_device,i,muted,cammuted,mystream,selected_room,count,question} = this.state;
-      const width = "134";
-      const height = "100";
-      const autoPlay = true;
-      const controls = false;
-      //const vmuted = true;
+        const { rooms,room,audio_devices,video_devices,video_device,audio_device,i,muted,cammuted,mystream,selected_room,count,question} = this.state;
+        const width = "134";
+        const height = "100";
+        const autoPlay = true;
+        const controls = false;
+        //const vmuted = true;
 
-      //let iOS = ['iPad', 'iPhone', 'iPod'].indexOf(navigator.platform) >= 0;
+        //let iOS = ['iPad', 'iPhone', 'iPod'].indexOf(navigator.platform) >= 0;
 
-      let rooms_list = rooms.map((data,i) => {
-          const {room, num_participants, description} = data;
-          return ({ key: room, text: description, value: i, description: num_participants.toString()})
-      });
+        let rooms_list = rooms.map((data,i) => {
+            const {room, num_participants, description} = data;
+            return ({ key: room, text: description, value: i, description: num_participants.toString()})
+        });
 
-      let adevices_list = audio_devices.map((device,i) => {
-          const {label, deviceId} = device;
-          return ({ key: i, text: label, value: deviceId})
-      });
+        let adevices_list = audio_devices.map((device,i) => {
+            const {label, deviceId} = device;
+            return ({ key: i, text: label, value: deviceId})
+        });
 
-      let vdevices_list = video_devices.map((device,i) => {
-          const {label, deviceId} = device;
-          return ({ key: i, text: label, value: deviceId})
-      });
+        let vdevices_list = video_devices.map((device,i) => {
+            const {label, deviceId} = device;
+            return ({ key: i, text: label, value: deviceId})
+        });
 
-      let videos = this.state.feeds.map((feed) => {
-          if(feed) {
-              let id = feed.rfid;
-              let talk = feed.talk;
-              let question = feed.question;
-              let name = feed.rfuser.display;
-              return (<div className="video"
-                        key={"v" + id}
-                        ref={"video" + id}
-                        id={"video" + id}>
-                        <div className={classNames('video__overlay', {'talk' : talk})}>
-                            {question ? <div className="question">
-
-<svg viewBox="0 0 50 50">
-<text x="25" y="25" text-anchor="middle" alignment-baseline="central">&#xF128;</text>
-</svg>
-
-</div>:''}
-                            <div className="video__title">{!talk ? <Icon name="microphone slash" size="small" color="red"/> : ''}{name}</div>
-                        </div>
-                  <video 
-                         poster={nowebcam}
-                         key={id}
-                         ref={"remoteVideo" + id}
-                         id={"remoteVideo" + id}
-                         width={width}
-                         height={height}
-                         autoPlay={autoPlay}
-                         controls={controls}
-                         playsInline={true}/>
-              </div>);
-          }
-          return true;
-      });
-
-      let l = (<Label key='Carbon' floating size='mini' color='red'>{count}</Label>);
-
-      return (
-
-        <div className={classNames('vclient', { 'vclient--chat-open': this.state.visible })} >
-          <div className="vclient__toolbar">
-            <Input 
-              iconPosition='left'
-              placeholder="Type your name..."
-              value={this.state.username_value}
-              onChange={(v,{value}) => this.setState({username_value: value})}
-            action>
-            <input iconPosition='left' disabled={mystream}/>
-            <Icon name='user circle' />
-            <Select
-              disabled={mystream}
-              error={!selected_room}
-              
-              placeholder="Select Room:"
-              value={i}
-              options={rooms_list}
-              onClick={this.getRoomList}
-              onChange={(e, {value}) => this.selectRoom(value)} />
-              {mystream ? 
-                <Button negative icon='sign-out' onClick={this.exitRoom} />:""}
-              {!mystream ?
-                <Button primary icon='sign-in' disabled={!selected_room||!audio_device} onClick={this.joinRoom} />:""}  
-            </Input>
-            <Menu icon='labeled' secondary size="mini">
-              <Menu.Item disabled={!mystream} onClick={() => this.setState({ visible: !this.state.visible, count: 0 })}>
-                <Icon name="comments"/>
-                {this.state.visible ? "Close" : "Open"} Chat 
-                {count > 0 ? l : ""} 
-              </Menu.Item>
-              <Menu.Item disabled={!mystream} onClick={this.handleQuestion}>
-                <Icon color={question ? 'green' : ''} name='question'/>
-                Ask a Question
-              </Menu.Item>
-              <Menu.Item disabled={this.state.shidur} onClick={this.showShidur} >
-                <Icon name="tv"/>
-                Open Broadcast
-                {this.state.shidur ?
-                  <NewWindow
-                    url='https://v4g.kbb1.com/gxystr'
-                    features={{width:"725",height:"635",left:"200",top:"200",location:"no"}}
-                    title='V4G' onUnload={this.onUnload} onBlock={this.onBlock}>
-                  </NewWindow> :
-                  null
-                }
-              </Menu.Item>
-            </Menu>
-            <Menu icon='labeled' secondary size="mini">
-              <Menu.Item disabled={!mystream} onClick={this.micMute} className="mute-button">
-                <canvas className={muted ? 'hidden' : 'vumeter'} ref="canvas1" id="canvas1" width="15" height="35" />
-                <Icon color={muted ? "red" : ""} name={!muted ? "microphone" : "microphone slash"} />
-                {!muted ? "Mute" : "Unmute"}
-              </Menu.Item>
-              <Menu.Item disabled={!mystream} onClick={this.camMute}>
-                <Icon color={cammuted ? "red" : ""} name={!cammuted ? "eye" : "eye slash"} />
-                {!cammuted ? "Stop Video" : "Start Video"}
-              </Menu.Item>
-              <Popup
-                trigger={<Menu.Item icon="setting" name="Settings"/>}
-                on='click'
-                position='bottom right'
-              >
-                <Popup.Content>
-                <Select className='select_device'
-                  disabled={mystream}
-                  error={!audio_device}
-                  placeholder="Select Device:"
-                  value={audio_device}
-                  options={adevices_list}
-                  onChange={(e, {value}) => this.setDevice(video_device,value)}/>
-                <Select className='select_device'
-                  disabled={mystream}
-                  error={!video_device}
-                  placeholder="Select Device:"
-                  value={video_device}
-                  options={vdevices_list}
-                  onChange={(e, {value}) => this.setDevice(value,audio_device)} />
-                </Popup.Content>
-              </Popup>
-            </Menu>
-          </div>
-          <div basic className="vclient__main" onDoubleClick={() => this.setState({ visible: !this.state.visible })} >
-          <div className="vclient__main-wrapper">
-            <div className="videos-panel">
-
-              <div className="videos">
-                <div className="videos__wrapper">
-                  <div className="video">
-                  <div className={classNames('video__overlay')}>
-                        
-                            <div className="video__title">{muted ? <Icon name="microphone slash" size="small" color="red"/> : ''}{this.state.username_value}</div>
-                        </div>
-                  
-                    <video className={cammuted ? 'hidden' : 'mirror'}
-                      ref="localVideo"
-                      id="localVideo"
-                      poster={nowebcam}
-                      width={width}
-                      height={height}
-                      autoPlay={autoPlay}
-                      controls={controls}
-                      muted={true}
-                      playsInline={true}/>
-                  </div>
-                  {videos}
+        let videos = this.state.feeds.map((feed) => {
+            if(feed) {
+                let id = feed.rfid;
+                let talk = feed.talk;
+                let question = feed.question;
+                let name = feed.rfuser.display;
+                return (<div className="video"
+                key={"v" + id}
+                ref={"video" + id}
+                id={"video" + id}>
+                <div className={classNames('video__overlay', {'talk' : talk})}>
+                    {question ? <div className="question">
+                        <svg viewBox="0 0 50 50">
+                            <text x="25" y="25" text-anchor="middle" alignment-baseline="central">&#xF128;</text>
+                        </svg>
+                    </div>:''}
+                    <div className="video__title">{!talk ? <Icon name="microphone slash" size="small" color="red"/> : ''}{name}</div>
                 </div>
-              </div>
+                <video 
+                key={id}
+                ref={"remoteVideo" + id}
+                id={"remoteVideo" + id}
+                width={width}
+                height={height}
+                autoPlay={autoPlay}
+                controls={controls}
+                playsInline={true}/>
+                </div>);
+            }
+            return true;
+        });
+
+        let l = (<Label key='Carbon' floating size='mini' color='red'>{count}</Label>);
+
+        return (
+
+            <div className={classNames('vclient', { 'vclient--chat-open': this.state.visible })} >
+                <div className="vclient__toolbar">
+                    <Input 
+                    iconPosition='left'
+                    placeholder="Type your name..."
+                    value={this.state.username_value}
+                    onChange={(v,{value}) => this.setState({username_value: value})}
+                    action>
+                    <input iconPosition='left' disabled={mystream}/>
+                    <Icon name='user circle' />
+                    <Select
+                    disabled={mystream}
+                    error={!selected_room}
+                    
+                    placeholder="Select Room:"
+                    value={i}
+                    options={rooms_list}
+                    onClick={this.getRoomList}
+                    onChange={(e, {value}) => this.selectRoom(value)} />
+                    {mystream ? <Button negative icon='sign-out' onClick={this.exitRoom} />:""}
+                    {!mystream ? <Button primary icon='sign-in' disabled={!selected_room||!audio_device} onClick={this.joinRoom} />:""}
+                    </Input>
+                    <Menu icon='labeled' secondary size="mini">
+                        <Menu.Item disabled={!mystream} onClick={() => this.setState({ visible: !this.state.visible, count: 0 })}>
+                            <Icon name="comments"/>
+                            {this.state.visible ? "Close" : "Open"} Chat 
+                            {count > 0 ? l : ""} 
+                        </Menu.Item>
+                        <Menu.Item disabled={!mystream} onClick={this.handleQuestion}>
+                            <Icon color={question ? 'green' : ''} name='question'/>
+                            Ask a Question
+                        </Menu.Item>
+                        <Menu.Item disabled={this.state.shidur} onClick={this.showShidur} >
+                            <Icon name="tv"/>
+                            Open Broadcast
+                            {this.state.shidur ?
+                                <NewWindow
+                                url='https://v4g.kbb1.com/gxystr'
+                                features={{width:"725",height:"635",left:"200",top:"200",location:"no"}}
+                                title='V4G' onUnload={this.onUnload} onBlock={this.onBlock}>
+                                </NewWindow> :
+                                null
+                            }
+                        </Menu.Item>
+                    </Menu>
+                    <Menu icon='labeled' secondary size="mini">
+                        <Menu.Item disabled={!mystream} onClick={this.micMute} className="mute-button">
+                            <canvas className={muted ? 'hidden' : 'vumeter'} ref="canvas1" id="canvas1" width="15" height="35" />
+                            <Icon color={muted ? "red" : ""} name={!muted ? "microphone" : "microphone slash"} />
+                            {!muted ? "Mute" : "Unmute"}
+                        </Menu.Item>
+                        <Menu.Item disabled={!mystream} onClick={this.camMute}>
+                            <Icon color={cammuted ? "red" : ""} name={!cammuted ? "eye" : "eye slash"} />
+                            {!cammuted ? "Stop Video" : "Start Video"}
+                        </Menu.Item>
+                        <Menu.Item>
+                            <Icon name="life ring outline"/>Support online
+                        </Menu.Item>
+                        <Popup
+                            trigger={<Menu.Item icon="setting" name="Settings"/>}
+                            on='click'
+                            position='bottom right'
+                        >
+                            <Popup.Content>
+                                <Select className='select_device'
+                                disabled={mystream}
+                                error={!audio_device}
+                                placeholder="Select Device:"
+                                value={audio_device}
+                                options={adevices_list}
+                                onChange={(e, {value}) => this.setDevice(video_device,value)}/>
+                                <Select className='select_device'
+                                disabled={mystream}
+                                error={!video_device}
+                                placeholder="Select Device:"
+                                value={video_device}
+                                options={vdevices_list}
+                                onChange={(e, {value}) => this.setDevice(value,audio_device)} />
+                            </Popup.Content>
+                        </Popup>
+                    </Menu>
+                </div>
+                <div basic className="vclient__main" onDoubleClick={() => this.setState({ visible: !this.state.visible })} >
+                    <div className="vclient__main-wrapper">
+                        <div className="videos-panel">
+                            <div className="videos">
+                                <div className="videos__wrapper">
+                                    <div className="video">
+                                        <div className={classNames('video__overlay')}>
+                                            {question ?
+                                                <div className="question">
+                                                    <svg viewBox="0 0 50 50"><text x="25" y="25" text-anchor="middle" alignment-baseline="central">&#xF128;</text></svg>
+                                                </div>
+                                            :
+                                                ''
+                                            }
+                                            <div className="video__title">
+                                                {muted ? <Icon name="microphone slash" size="small" color="red"/> : ''}{this.state.username_value}
+                                            </div>
+                                        </div>
+                                        <svg className={classNames('nowebcam',{'hidden':!cammuted})} viewBox="0 0 32 18" preserveAspectRatio="xMidYMid meet" ><text x="16" y="9" text-anchor="middle" alignment-baseline="central" dominant-baseline="central">&#xf2bd;</text></svg>
+                                        <video
+                                        className={classNames('mirror',{'hidden':cammuted})}
+                                        ref="localVideo"
+                                        id="localVideo"
+                                        width={width}
+                                        height={height}
+                                        autoPlay={autoPlay}
+                                        controls={controls}
+                                        muted={true}
+                                        playsInline={true}/>
+                                    
+                                    </div>
+                                    {videos}
+                                </div>
+                            </div>
+                        </div>
+                        <VirtualChat
+                        visible={this.state.visible}
+                        janus={this.state.janus}
+                        room={room}
+                        user={this.state.user}
+                        onNewMsg={this.onNewMsg} />
+                    </div>
+                </div>
             </div>
-            <VirtualChat
-              visible={this.state.visible}
-              janus={this.state.janus}
-              room={room}
-              user={this.state.user}
-              onNewMsg={this.onNewMsg} />
-          </div>
-          </div>
-        </div>
-    );
-  }
+        );
+    }
 }
 
 export default VirtualClient;
