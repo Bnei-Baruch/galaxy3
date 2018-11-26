@@ -353,6 +353,10 @@ class VirtualClient extends Component {
                 // Add data:true here if you want to publish datachannels as well
                 media: {
                     audioRecv: false, videoRecv: false, audioSend: true, videoSend: useVideo, audio: {
+                        autoGainControl: false,
+                        echoCancellation: false,
+                        highpassFilter: false,
+                        noiseSuppression: false,
                         deviceId: {
                             exact: audio_device
                         }
