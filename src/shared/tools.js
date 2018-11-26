@@ -1,6 +1,6 @@
 import {Janus} from "../lib/janus";
 import {JANUS_ADMIN, JANUS_SERVER, ADMIN_SECRET, STUN_SERVER, WFDB_STATE, WFRP_STATE} from "./consts";
-import nlogo from './nlogo.png';
+//import nlogo from './nlogo.png';
 
 
 export const initJanus = (cb,er) => {
@@ -17,34 +17,6 @@ export const initJanus = (cb,er) => {
                 error: (error) => {
                     Janus.log(error + " -- reconnect after 10 sec");
                     er(true);
-                },
-                destroyed: () => {
-                    Janus.log(" :: Janus destroyed -- reconnect after 10 sec :: ");
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 10000);
-                }
-            });
-        }
-    })
-};
-
-export const initGXYJanus = (cb) => {
-    Janus.init({
-        debug: ["log","error"],
-        callback: () => {
-            let janus = new Janus({
-                server: "https://v4g.kbb1.com/janusgxy",
-                iceServers: [{urls: STUN_SERVER}],
-                success: () => {
-                    Janus.log(" :: Connected to JANUS");
-                    cb(janus);
-                },
-                error: (error) => {
-                    Janus.log(error + " -- reconnect after 10 sec");
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 10000);
                 },
                 destroyed: () => {
                     Janus.log(" :: Janus destroyed -- reconnect after 10 sec :: ");

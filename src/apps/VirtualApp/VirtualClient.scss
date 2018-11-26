@@ -31,7 +31,7 @@
         position: relative;
         // overflow: hidden;
     }
-    
+
     &__main-wrapper {
         position: absolute;
         height: 100%;
@@ -45,7 +45,7 @@
     }
 
 
-    
+
 }
 .videos-panel {
     display: flex;
@@ -53,7 +53,7 @@
     padding: 1.6em;
     flex: 1 0 100%;
     transition: .2s all linear;
-    
+
     .vclient--chat-open & {
         flex: 1 0 calc(100% - 400px);
     }

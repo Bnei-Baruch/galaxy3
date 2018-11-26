@@ -8,7 +8,6 @@ import {geoInfo, initJanus, getDevicesStream, micLevel, checkNotification,testDe
 import './VirtualClient.scss'
 import './VideoConteiner.scss'
 import {MAX_FEEDS} from "../../shared/consts";
-import nowebcam from './nowebcam.jpeg';
 import VirtualChat from "./VirtualChat";
 import {initGxyProtocol, sendProtocolMessage} from "../../shared/protocol";
 
