@@ -51,6 +51,14 @@ class VirtualClient extends Component {
 
     componentDidMount() {
         let {user} = this.state;
+        this.initClient(user);
+    };
+
+    componentWillUnmount() {
+        this.state.janus.destroy();
+    };
+
+    initClient = (user,error) => {
         checkNotification();
         geoInfo('https://v4g.kbb1.com/geo.php?action=get', data => {
             Janus.log(data);
@@ -59,12 +67,12 @@ class VirtualClient extends Component {
         initJanus(janus => {
             user.session = janus.getSessionId();
             this.setState({janus, user});
-            this.initVideoRoom();
+            this.initVideoRoom(error);
+        }, er => {
+            setTimeout(() => {
+                this.initClient(user,er);
+            }, 5000);
         });
-    };
-
-    componentWillUnmount() {
-        this.state.janus.destroy();
     };
 
     initDevices = (video) => {
@@ -160,7 +168,7 @@ class VirtualClient extends Component {
         })
     };
 
-    initVideoRoom = () => {
+    initVideoRoom = (reconnect) => {
         if(this.state.videoroom)
             this.state.videoroom.detach();
         this.state.janus.attach({
@@ -174,6 +182,11 @@ class VirtualClient extends Component {
                 user.handle = videoroom.getId();
                 this.setState({videoroom, user});
                 this.initDevices(true);
+                if(reconnect) {
+                    setTimeout(() => {
+                        this.joinRoom();
+                    }, 5000);
+                }
                 // Get list rooms
                 //this.getRoomList();
             },

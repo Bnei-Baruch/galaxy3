@@ -3,7 +3,7 @@ import {JANUS_ADMIN, JANUS_SERVER, ADMIN_SECRET, STUN_SERVER, WFDB_STATE, WFRP_S
 import nlogo from './nlogo.png';
 
 
-export const initJanus = (cb) => {
+export const initJanus = (cb,er) => {
     Janus.init({
         debug: ["error"],
         callback: () => {
@@ -16,9 +16,7 @@ export const initJanus = (cb) => {
                 },
                 error: (error) => {
                     Janus.log(error + " -- reconnect after 10 sec");
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 10000);
+                    er(true);
                 },
                 destroyed: () => {
                     Janus.log(" :: Janus destroyed -- reconnect after 10 sec :: ");
