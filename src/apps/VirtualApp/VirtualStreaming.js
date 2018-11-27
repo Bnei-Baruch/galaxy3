@@ -1,9 +1,9 @@
 import React, { Component } from 'react';
-import { Janus } from "../lib/janus";
+import { Janus } from "../../lib/janus";
 import { Segment, Menu, Select, Button, Grid } from 'semantic-ui-react';
-import VolumeSlider from "./VolumeSlider";
-import {videos_options, audiog_options, gxycol, trllang} from "../shared/consts";
-import {geoInfo} from "../shared/tools";
+import VolumeSlider from "../../components/VolumeSlider";
+import {videos_options, audiog_options, gxycol, trllang} from "../../shared/consts";
+import {geoInfo} from "../../shared/tools";
 
 
 class VirtualStreaming extends Component {

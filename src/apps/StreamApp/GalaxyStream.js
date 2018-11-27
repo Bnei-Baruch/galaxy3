@@ -1,11 +1,11 @@
 import React, { Component } from 'react';
-import { Janus } from "../lib/janus";
-import {client, getUser} from "./UserManager";
+import { Janus } from "./lib/janus";
+import {client, getUser} from "../../components/UserManager";
 import { Segment, Menu, Select, Button, Grid } from 'semantic-ui-react';
-import VolumeSlider from "./VolumeSlider";
-import {videos_options, audiog_options, gxycol, trllang} from "../shared/consts";
-import {geoInfo} from "../shared/tools";
-import LoginPage from "./LoginPage";
+import VolumeSlider from "../../components/VolumeSlider";
+import {videos_options, audiog_options, gxycol, trllang} from "../../shared/consts";
+import {geoInfo} from "../../shared/tools";
+import LoginPage from "../../components/LoginPage";
 
 
 class GalaxyStream extends Component {
