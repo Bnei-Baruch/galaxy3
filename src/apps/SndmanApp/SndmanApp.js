@@ -224,10 +224,10 @@ class SndmanApp extends Component {
                 }
             } else if(event === "talking") {
                 let id = msg["id"];
-                Janus.log("User: "+id+" - start talking");
+                Janus.debug("User: "+id+" - start talking");
             } else if(event === "stopped-talking") {
                 let id = msg["id"];
-                Janus.log("User: "+id+" - stop talking");
+                Janus.debug("User: "+id+" - stop talking");
             } else if(event === "destroyed") {
                 // The room has been destroyed
                 Janus.warn("The room has been destroyed!");
