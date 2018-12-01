@@ -240,7 +240,7 @@ class GalaxyStream extends Component {
             let body = { "request": "switch", "id": gxycol[col] };
             this.state.audiostream.send({"message": body});
             //attachStreamGalaxy(gxycol[json.col],gxyaudio);
-            if(name.match(/^(newyork|toronto|chicago)$/)) {
+            if(name.match(/^(New York|Toronto)$/)) {
                 //this.initTranslationStream(303);
             } else {
                 this.initTranslationStream(trllang[localStorage.getItem("langtext")] || 303);
@@ -252,9 +252,11 @@ class GalaxyStream extends Component {
             this.refs.remoteAudio.volume = this.state.mixvolume;
             let abody = { "request": "switch", "id": Number(localStorage.getItem("lang")) || 15};
             this.state.audiostream.send({"message": abody});
-            let tbody = { "request": "stop" };
-            this.state.trlstream.send({"message": tbody});
-            this.state.trlstream.hangup();
+            if(this.state.trlstream) {
+                let tbody = { "request": "stop" };
+                this.state.trlstream.send({"message": tbody});
+                this.state.trlstream.hangup();
+            }
             this.setState({talking: null});
         }
     };
