@@ -1,6 +1,6 @@
 import React, {Component} from 'react';
 import {Janus} from "../../lib/janus";
-import {Grid, Label, Message, Segment, Table, Icon, Popup, Button} from "semantic-ui-react";
+import {Grid, Label, Message, Segment, Table, Icon, Popup, Button, Input} from "semantic-ui-react";
 import {initJanus} from "../../shared/tools";
 import {initGxyProtocol} from "../../shared/protocol";
 import ShidurGroups from "./ShidurGroups";
@@ -20,6 +20,7 @@ class ShidurApp extends Component {
         name: "",
         disabled_groups: [],
         group: null,
+        pri: null,
         pr1: [],
         pre: null,
         program: null,
@@ -164,10 +165,10 @@ class ShidurApp extends Component {
                 }
             } else if(event === "talking") {
                 let id = msg["id"];
-                Janus.log("User: "+id+" - start talking");
+                //Janus.log("User: "+id+" - start talking");
             } else if(event === "stopped-talking") {
                 let id = msg["id"];
-                Janus.log("User: "+id+" - stop talking");
+                //Janus.log("User: "+id+" - stop talking");
             } else if(event === "destroyed") {
                 // The room has been destroyed
                 Janus.warn("The room has been destroyed!");
@@ -187,9 +188,21 @@ class ShidurApp extends Component {
                         this.setState({feeds,users});
 
                         if(feeds.length < 13) {
-                            this.col1.switchFour();
-                            this.col2.switchFour();
-                            this.col3.switchFour();
+                            for(let i=0; i<13; i++) {
+                                if(!this.state.pr1[i]) {
+                                    if(i < 4) {
+                                        this.col1.switchNext(i,list[0],"fix");
+                                    } else if(i < 8) {
+                                        this.col2.switchNext(i,list[0],"fix");
+                                    } else if(i < 12) {
+                                        this.col3.switchNext(i,list[0],"fix");
+                                    }
+                                    break
+                                }
+                            }
+                            // this.col1.switchFour();
+                            // this.col2.switchFour();
+                            // this.col3.switchFour();
                         }
 
                         if(feeds.length === 13) {
@@ -326,7 +339,6 @@ class ShidurApp extends Component {
             if(pgm_state[i] && pgm.id === id) {
                 console.log(" :: Feed in program! - " + id);
                 if(feeds.length < 13) {
-                    //FIXME: Need to check if its really necessary to detach here
                     pr1[i].detach();
                     pgm_state[i] = null;
                     pr1[i] = null;
@@ -340,6 +352,7 @@ class ShidurApp extends Component {
                     }
                     // if program is full we does not remove video element
                     //pgm_state[i] = null;
+                    pr1[i].detach();
                     pr1[i] = null;
                     let feed = feeds[feeds_queue];
                     if(i < 4) {
@@ -371,13 +384,27 @@ class ShidurApp extends Component {
         }, 1000);
     };
 
+    fixProgram = (index) => {
+        let {feeds,pr1} = this.state;
+        let i = this.state.pri || index;
+        let feed = feeds[i];
+        pr1[i] = null;
+        if(i < 4) {
+            this.col1.switchNext(i,feed,"fix");
+        } else if(i < 8) {
+            this.col2.switchNext(i,feed,"fix");
+        } else if(i < 12) {
+            this.col3.switchNext(i,feed,"fix");
+        }
+    };
+
     reloadPage = () => {
         this.col1.sdiAction("restart");
     };
 
     render() {
 
-        const {user,feeds,feeds_queue,disabled_groups,round,qfeeds} = this.state;
+        const {user,feeds,feeds_queue,disabled_groups,round,qfeeds,pri} = this.state;
 
         let disabled_list = disabled_groups.map((data,i) => {
             const {id, display} = data;
@@ -417,9 +444,19 @@ class ShidurApp extends Component {
                                 hoverable>
                                 <Button negative content='Reload' onClick={this.reloadPage}/>
                             </Popup>
-                            <Label attached='top left' color='grey'>
-                                Next: {feeds[feeds_queue] ? JSON.parse(feeds[feeds_queue].display).display : ""}
-                            </Label>
+                            <Popup on='click'
+                                   trigger={<Label attached='top left' color='grey'>
+                                            Next: {feeds[feeds_queue] ? JSON.parse(feeds[feeds_queue].display).display : ""}
+                                            </Label>}
+                                   flowing
+                                   position='bottom center'
+                                   hoverable>
+                                <Input type='text' placeholder='' action value={pri}
+                                       onChange={(v,{value}) => this.setState({pri: value})}>
+                                    <input />
+                                    <Button positive onClick={this.fixProgram}>Fix</Button>
+                                </Input>
+                            </Popup>
                             <Label size='big' color='brown'>
                                 <Icon name='address card' />
                                 <b className='queue_counter'>{feeds.length - feeds_queue}</b>
