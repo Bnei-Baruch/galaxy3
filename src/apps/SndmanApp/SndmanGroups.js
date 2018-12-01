@@ -292,33 +292,36 @@ class SndmanGroups extends Component {
     };
 
     forwardStream = () => {
-        const {full_feed,fullscr,forward_feed, room, forward, port} = this.state;
+        const {full_feed,fullscr,forward_feed,room,forward,port} = this.state;
         const {gxyhandle} = this.props;
-        if (!full_feed) {
+        if (!fullscr) {
             return;
         }
         if(forward) {
             Janus.log(" :: Stop forward from room: ", room);
-            this.sendMessage(JSON.parse(full_feed.display), false);
-            let stopfw = { "request":"stop_rtp_forward","stream_id":forward_feed.streamid,"publisher_id":full_feed.id,"room":room,"secret":`${SECRET}` };
+            this.setState({forward: false});
+            this.sendMessage(JSON.parse(forward_feed.display), false);
+            let stopfw = { "request":"stop_rtp_forward","stream_id":forward_feed.streamid,"publisher_id":forward_feed.id,"room":room,"secret":`${SECRET}` };
             gxyhandle.send({"message": stopfw,
                 success: (data) => {
                     Janus.log(":: Forward callback: ", data);
-                    forward_feed.streamid = null;
+                    this.setState({forward_feed: {}});
                 },
             });
-            this.setState({forward_feed, forward: false});
         } else {
             Janus.log(" :: Start forward from room: ", room);
+            this.setState({forward: true});
             this.sendMessage(JSON.parse(full_feed.display), true);
             let forward = { "request": "rtp_forward","publisher_id":full_feed.id,"room":room,"secret":`${SECRET}`,"host":`${DANTE_IN_IP}`,"audio_port":port};
             gxyhandle.send({"message": forward,
                 success: (data) => {
                     Janus.log(":: Forward callback: ", data);
                     forward_feed.streamid = data["rtp_stream"]["audio_stream_id"];
+                    forward_feed.id = full_feed.id;
+                    forward_feed.display = full_feed.display;
+                    this.setState({forward_feed});
                 },
             });
-            this.setState({forward_feed, forward: true});
         }
     };
 
