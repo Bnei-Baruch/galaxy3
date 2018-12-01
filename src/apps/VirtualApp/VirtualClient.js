@@ -675,7 +675,7 @@ class VirtualClient extends Component {
                 <div className={classNames('video__overlay', {'talk' : talk})}>
                     {question ? <div className="question">
                         <svg viewBox="0 0 50 50">
-                            <text x="25" y="25" text-anchor="middle" alignment-baseline="central">&#xF128;</text>
+                            <text x="25" y="25" text-anchor="middle" alignment-baseline="central" dominant-baseline="central">&#xF128;</text>
                         </svg>
                     </div>:''}
                     <div className="video__title">{!talk ? <Icon name="microphone slash" size="small" color="red"/> : ''}{name}</div>
@@ -789,7 +789,7 @@ class VirtualClient extends Component {
                                         <div className={classNames('video__overlay')}>
                                             {question ?
                                                 <div className="question">
-                                                    <svg viewBox="0 0 50 50"><text x="25" y="25" text-anchor="middle" alignment-baseline="central">&#xF128;</text></svg>
+                                                    <svg viewBox="0 0 50 50"><text x="25" y="25" text-anchor="middle" alignment-baseline="central" dominant-baseline="central">&#xF128;</text></svg>
                                                 </div>
                                             :
                                                 ''
