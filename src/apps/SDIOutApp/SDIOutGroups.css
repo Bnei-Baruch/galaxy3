@@ -17,7 +17,7 @@
     font-family: "Liberation Serif";
     line-height: 1.3285em;
     position: absolute;
-    right: 40px;
+    right: 55px;
     color: #FFF;
     text-align: center;
     font-size: 30px;
@@ -31,7 +31,7 @@
     font-family: "Liberation Serif";
     line-height: 1.2285em;
     position: absolute;
-    right: 40px;
+    right: 62px;
     color: #FFF;
     text-align: center;
     font-size: 45px;
@@ -42,34 +42,37 @@
 }
 
 .qst_title {
-    font-family: "Liberation Serif";
+    font-family: Icons;
     font-weight: bolder;
-    line-height: 1.1285em;
+    line-height: 0.9em;
     position: absolute;
     color: black;
     text-align: center;
-    font-size: 70px;
+    font-size: 45px;
     background-color: white;
+    /*background:rgba(34, 34, 34, .9);*/
     width: auto;
     padding: 0px 10px;
-    float: left !important;
-    bottom: 0px;
+    float: right!important;
+    right: 7px;
+    top: 0px
 }
 
 .qst_fullscreentitle {
-    font-family: "Liberation Serif";
+    font-family: Icons;
     font-weight: bolder;
-    line-height: 1.1285em;
+    line-height: 0.92em;
     position: absolute;
     color: black;
     text-align: center;
-    font-size: 120px;
+    font-size: 60px;
     background-color: white;
+    /*background:rgba(34, 34, 34, .9);*/
     width: auto;
     padding: 0px 10px;
     float: left !important;
-    bottom: 4px;
-    left: 5px;
+    right: 5px;
+    top: 0px;
 }
 
 
