@@ -46,7 +46,7 @@ class SndmanGroups extends Component {
                     Janus.log("Plugin attached! (" + pre.getPlugin() + ", id=" + pre.getId() + ")");
                     Janus.log("  -- This is a subscriber");
                     // We wait for the plugin to send us an offer
-                    let listen = { "request": "join", "room": 1234, "ptype": "subscriber", "feed": id, "close_pc": false };
+                    let listen = { "request": "join", "room": 1234, "ptype": "subscriber", "feed": id };
                     pre.send({"message": listen});
                     if(program) {
                         let {pr1} = this.props;
@@ -129,33 +129,16 @@ class SndmanGroups extends Component {
 
     switchProgram = (i) => {
         Janus.log(" :: Selected program Switch: ",i);
-        let {feeds,pr1,pgm_state,feeds_queue} = this.props;
+        let {feeds,feeds_queue,round} = this.props;
         let {pre_feed} = this.state;
-
-        // Don't switch if nobody in queue
-        // if(feeds_queue <= feeds.length && pr1.length >= 4 && feeds.length <= 4)
-        //     return;
-
-        // if(feeds_queue >= feeds.length) {
-        //     // End round here!
-        //     feeds_queue = 0;
-        //     Janus.log(" -- ROUND END --");
-        // }
 
         //If someone in preview take him else take next in queue
         if(pre_feed) {
-            let switchfeed = {"request": "switch", "feed": pre_feed.id, "audio": true, "video": true, "data": false};
-            pr1[i].send ({"message": switchfeed,
-                success: () => {
-                    Janus.log(" :: Selected program Switch Feed to: ", pre_feed.display);
-                    pgm_state[i] = pre_feed;
-                    this.setState({pre_feed: null});
-                    this.props.setProps({program: pre_feed, pgm_state, pre_feed: null});
-                    // putData(`state/galaxy/pr1`, pgm_state, (cb) => {
-                    //     Janus.log(":: Save to state: ",cb);
-                    // });
-                }
-            })
+            Janus.log(" :: Selected program Switch Feed to: ", pre_feed.display);
+            this.switchNext(i, pre_feed);
+            this.setState({pre_feed: null});
+            this.props.setProps({program: pre_feed, pre_feed: null});
+
         } else {
             let feed = feeds[feeds_queue];
             this.switchNext(i, feed);
@@ -164,12 +147,12 @@ class SndmanGroups extends Component {
             if(feeds_queue >= feeds.length) {
                 // End round here!
                 feeds_queue = 0;
+                round++;
                 Janus.log(" -- ROUND END --");
             }
 
-            this.props.setProps({feeds_queue, pre_feed: null});
+            this.props.setProps({feeds_queue,round,pre_feed: null});
         }
-
     };
 
     switchFour = () => {
@@ -190,8 +173,6 @@ class SndmanGroups extends Component {
                 this.props.setProps({feeds_queue});
             }
 
-            Janus.log("---------- i: "+i+" queue: "+feeds_queue);
-
             // If program is not full avoid using feeds_queue
             if(feeds.length < 13) {
                 this.switchNext(i,feeds[i]);
@@ -208,23 +189,29 @@ class SndmanGroups extends Component {
         Janus.log(" ---- switchNext params: ", i, feed);
         if(!feed) return;
         let {pr1,pgm_state} = this.props;
-        if(!pr1[i]) {
-            this.newSwitchFeed(feed.id,true,i);
-            pgm_state[i] = feed;
-            this.props.setProps({pgm_state});
-        } else {
-            let switchfeed = {"request": "switch", "feed": feed.id, "audio": true, "video": true, "data": false};
-            pr1[i].send ({"message": switchfeed,
-                success: () => {
-                    Janus.log(" :: Next Switch Feed to: ", feed.display);
-                    pgm_state[i] = feed;
-                    this.props.setProps({pgm_state});
-                    // putData(`state/galaxy/pr1`, pgm_state, (cb) => {
-                    //     Janus.log(":: Save to state: ",cb);
-                    // });
-                }
-            })
-        }
+        //Detch previous feed
+        if(pr1[i])
+            pr1[i].detach();
+        this.newSwitchFeed(feed.id,true,i);
+        pgm_state[i] = feed;
+        this.props.setProps({pgm_state});
+        // if(!pr1[i]) {
+        //     this.newSwitchFeed(feed.id,true,i);
+        //     pgm_state[i] = feed;
+        //     this.props.setProps({pgm_state});
+        // } else {
+        //     let switchfeed = {"request": "switch", "feed": feed.id, "audio": true, "video": true, "data": false};
+        //     pr1[i].send ({"message": switchfeed,
+        //         success: () => {
+        //             Janus.log(" :: Next Switch Feed to: ", feed.display);
+        //             pgm_state[i] = feed;
+        //             this.props.setProps({pgm_state});
+        //             // putData(`state/galaxy/pr1`, pgm_state, (cb) => {
+        //             //     Janus.log(":: Save to state: ",cb);
+        //             // });
+        //         }
+        //     })
+        // }
     };
 
     selectGroup = (pre_feed) => {
@@ -292,33 +279,36 @@ class SndmanGroups extends Component {
     };
 
     forwardStream = () => {
-        const {full_feed,fullscr,forward_feed, room, forward, port} = this.state;
+        const {full_feed,fullscr,forward_feed,room,forward,port} = this.state;
         const {gxyhandle} = this.props;
-        if (!full_feed) {
+        if (!fullscr) {
             return;
         }
         if(forward) {
             Janus.log(" :: Stop forward from room: ", room);
-            this.sendMessage(JSON.parse(full_feed.display), false);
-            let stopfw = { "request":"stop_rtp_forward","stream_id":forward_feed.streamid,"publisher_id":full_feed.id,"room":room,"secret":`${SECRET}` };
+            this.setState({forward: false});
+            this.sendMessage(JSON.parse(forward_feed.display), false);
+            let stopfw = { "request":"stop_rtp_forward","stream_id":forward_feed.streamid,"publisher_id":forward_feed.id,"room":room,"secret":`${SECRET}` };
             gxyhandle.send({"message": stopfw,
                 success: (data) => {
                     Janus.log(":: Forward callback: ", data);
-                    forward_feed.streamid = null;
+                    this.setState({forward_feed: {}});
                 },
             });
-            this.setState({forward_feed, forward: false});
         } else {
             Janus.log(" :: Start forward from room: ", room);
+            this.setState({forward: true});
             this.sendMessage(JSON.parse(full_feed.display), true);
             let forward = { "request": "rtp_forward","publisher_id":full_feed.id,"room":room,"secret":`${SECRET}`,"host":`${DANTE_IN_IP}`,"audio_port":port};
             gxyhandle.send({"message": forward,
                 success: (data) => {
                     Janus.log(":: Forward callback: ", data);
                     forward_feed.streamid = data["rtp_stream"]["audio_stream_id"];
+                    forward_feed.id = full_feed.id;
+                    forward_feed.display = full_feed.display;
+                    this.setState({forward_feed});
                 },
             });
-            this.setState({forward_feed, forward: true});
         }
     };
 

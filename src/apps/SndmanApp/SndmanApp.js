@@ -224,10 +224,10 @@ class SndmanApp extends Component {
                 }
             } else if(event === "talking") {
                 let id = msg["id"];
-                Janus.log("User: "+id+" - start talking");
+                Janus.debug("User: "+id+" - start talking");
             } else if(event === "stopped-talking") {
                 let id = msg["id"];
-                Janus.log("User: "+id+" - stop talking");
+                Janus.debug("User: "+id+" - stop talking");
             } else if(event === "destroyed") {
                 // The room has been destroyed
                 Janus.warn("The room has been destroyed!");
@@ -313,6 +313,10 @@ class SndmanApp extends Component {
             this.setState({disabled_groups});
         } else if(data.type === "sdi-restart") {
             window.location.reload();
+        } else if(data.type === "sdi-fix") {
+            let {col, feed, i} = data;
+            let {pr1} = this.state;
+            pr1[i] = null;
         } else if(data.type === "sdi-restore") {
             let {col, feed, i} = data;
             console.log(" :: Git Shidur Action: ",data);
@@ -393,6 +397,7 @@ class SndmanApp extends Component {
                         this.setState({feeds_queue});
                     }
                     //pgm_state[i] = null;
+                    pr1[i].detach();
                     pr1[i] = null;
                     let feed = feeds[feeds_queue];
                     if(i < 4) {

@@ -128,7 +128,7 @@ $exactly-selector: _build-quantity-selector($selector-append, $selector);
         }
 
     }
-
+    
     &__title {
         position: absolute;
         bottom: 0;
@@ -224,9 +224,9 @@ $exactly-selector: _build-quantity-selector($selector-append, $selector);
     @include exactly(16){
         grid-column-end: span 6;
         grid-row-end: span 3;
-        
 
-    }
+
+}
 }
 
 @keyframes ani {
@@ -240,3 +240,4 @@ $exactly-selector: _build-quantity-selector($selector-append, $selector);
     //   opacity: .5;
     // }
   }
+  
