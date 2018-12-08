@@ -611,10 +611,13 @@ class VirtualClient extends Component {
 
 
     camMute = () => {
-        let {videoroom,cammuted} = this.state;
+        let {videoroom,cammuted,protocol,user,room} = this.state;
         cammuted ? videoroom.unmuteVideo() : videoroom.muteVideo();
         this.setState({cammuted: !cammuted});
         this.sendDataMessage("camera", this.state.cammuted);
+        // Send to protocol camera status event
+        let msg = { type: "camera", status: cammuted, room, user};
+        sendProtocolMessage(protocol, user, msg );
     };
 
     micMute = () => {

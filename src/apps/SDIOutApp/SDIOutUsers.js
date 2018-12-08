@@ -13,6 +13,7 @@ class SDIOutUsers extends Component {
     state = {
         devices: [],
         questions: {},
+        cammuteds: {},
         protocol: null,
         program: {room: null, name: ""},
         janus: null,
@@ -68,7 +69,20 @@ class SDIOutUsers extends Component {
 
     onProtocolData = (data) => {
         //TODO: Need to add transaction handle (filter and acknowledge)
-        let {room,feeds,users,user,questions} = this.state;
+        let {room,feeds,users,user,cammuteds,questions} = this.state;
+        if(data.type === "camera" && !data.status) {
+            cammuteds[data.user.id] = data.user;
+            this.setState({cammuteds});
+        } else if(data.type === "camera" && data.status) {
+            let {cammuteds} = this.state;
+            if(cammuteds[data.user.id]) {
+                delete cammuteds[data.user.id];
+                this.setState({cammuteds});
+            }
+            if(room === data.room && users[data.user.id]) {
+                this.newRemoteFeed(users[data.user.id].rfid, false);
+            }
+        }
         if(data.type === "question" && data.status) {
             questions[data.user.id] = data.user;
             this.setState({questions});
@@ -339,6 +353,7 @@ class SDIOutUsers extends Component {
                 // Publisher/manager created, negotiate WebRTC and attach to existing feeds, if any
                 let myid = msg["id"];
                 let mypvtid = msg["private_id"];
+                const {cammuteds} = this.state;
                 this.setState({myid ,mypvtid});
                 Janus.log("Successfully joined room " + msg["room"] + " with ID " + myid);
                 //this.publishOwnFeed(true);
@@ -355,7 +370,7 @@ class SDIOutUsers extends Component {
                         let audio = list[f]["audio_codec"];
                         let video = list[f]["video_codec"];
                         Janus.debug("  >> [" + id + "] " + display + " (audio: " + audio + ", video: " + video + ")");
-                        if(display.role === "user" && video)
+                        if(display.role === "user" && video && !cammuteds[display.id])
                             this.newRemoteFeed(id, talk);
                     }
                 }
