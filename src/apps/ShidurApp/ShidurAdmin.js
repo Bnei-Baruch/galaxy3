@@ -640,7 +640,7 @@ class ShidurAdmin extends Component {
         Janus.debug(" ::: Got a message (publisher) :::");
         Janus.debug(msg);
         let event = msg["videoroom"];
-        Janus.debug("Event: " + event);
+        Janus.log("Event: " + event);
         if(event !== undefined && event !== null) {
             if(event === "joined") {
                 // Publisher/manager created, negotiate WebRTC and attach to existing feeds, if any

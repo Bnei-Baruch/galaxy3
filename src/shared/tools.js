@@ -4,7 +4,7 @@ import {JANUS_ADMIN, JANUS_SERVER, ADMIN_SECRET, STUN_SERVER, WFDB_STATE, WFRP_S
 
 export const initJanus = (cb,er) => {
     Janus.init({
-        debug: ["error"],
+        debug: ["log","error"],
         callback: () => {
             let janus = new Janus({
                 server: JANUS_SERVER,

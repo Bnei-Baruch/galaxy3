@@ -319,16 +319,7 @@ class VirtualClient extends Component {
                 onremotestream: (stream) => {
                     Janus.debug("Remote feed #" + remoteFeed.rfindex);
                     let remotevideo = this.refs["remoteVideo" + remoteFeed.rfid];
-                    // if(remotevideo.length === 0) {
-                    //     // No remote video yet
-                    // }
                     Janus.attachMediaStream(remotevideo, stream);
-                    var videoTracks = stream.getVideoTracks();
-                    if(videoTracks === null || videoTracks === undefined || videoTracks.length === 0) {
-                        // No remote video
-                    } else {
-                        // Yes remote video
-                    }
                 },
                 ondataopen: (data) => {
                     Janus.log("The DataChannel is available!(feed)");
@@ -336,12 +327,26 @@ class VirtualClient extends Component {
                 ondata: (data) => {
                     Janus.debug("We got data from the DataChannel! (feed) " + data);
                     let msg = JSON.parse(data);
+                    this.onRoomData(msg);
                     Janus.log(" :: We got msg via DataChannel: ",msg)
                 },
                 oncleanup: () => {
                     Janus.log(" ::: Got a cleanup notification (remote feed " + id + ") :::");
                 }
             });
+    };
+
+    onRoomData = (data) => {
+        let {feeds,users} = this.state;
+        let rfid = users[data.id].rfid;
+        let camera = data.camera;
+        for (let i = 1; i < feeds.length; i++) {
+            if (feeds[i] !== null && feeds[i] !== undefined && feeds[i].rfid === rfid) {
+                feeds[i].cammute = !camera;
+                this.setState({feeds});
+                break
+            }
+        }
     };
 
     publishOwnFeed = (useVideo) => {
@@ -667,6 +672,7 @@ class VirtualClient extends Component {
                 let id = feed.rfid;
                 let talk = feed.talk;
                 let question = feed.question;
+                let cammute = feed.cammute;
                 let name = feed.rfuser.display;
                 return (<div className="video"
                 key={"v" + id}
@@ -680,7 +686,8 @@ class VirtualClient extends Component {
                     </div>:''}
                     <div className="video__title">{!talk ? <Icon name="microphone slash" size="small" color="red"/> : ''}{name}</div>
                 </div>
-                <video 
+                    <svg className={classNames('nowebcam',{'hidden':!cammute})} viewBox="0 0 32 18" preserveAspectRatio="xMidYMid meet" ><text x="16" y="9" text-anchor="middle" alignment-baseline="central" dominant-baseline="central">&#xf2bd;</text></svg>
+                <video
                 key={id}
                 ref={"remoteVideo" + id}
                 id={"remoteVideo" + id}
