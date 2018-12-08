@@ -279,7 +279,7 @@ class SndmanUsers extends Component {
                 ondata: (data) => {
                     Janus.debug("We got data from the DataChannel! (feed) " + data);
                     let msg = JSON.parse(data);
-                    this.onRoomData(msg);
+                    //this.onRoomData(msg);
                 },
                 oncleanup: () => {
                     Janus.log(" ::: Got a cleanup notification (remote feed " + id + ") :::");
