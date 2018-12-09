@@ -99,32 +99,34 @@ class ShidurGroups extends Component {
                 oncleanup: () => {
                     Janus.log(" ::: Got a cleanup notification (remote feed "+id+" : "+i+") :::");
                     console.log(" :: Cleanup handle! - " + id + " - index: " + i);
+                    if(!program) {
+                        this.setState({pre: null});
+                    }
                 }
             });
     };
 
     switchPreview = (id, display) => {
-        if(this.state.pre) {
-            this.state.pre.detach();
-        };
-        this.newSwitchFeed(id,false);
-        // console.log("-- Switch prevew", display)
-        // if(!this.state.pre) {
-        //     this.newSwitchFeed(id,false);
-        // } else {
-        //     let switchfeed = {"request": "switch", "feed": id, "audio": true, "video": true, "data": false};
-        //     this.state.pre.send ({"message": switchfeed,
-        //         success: () => {
-        //             Janus.log(" :: Preview Switch Feed to: ", display);
-        //         }
-        //     })
-        // }
+        console.log("-- Switch prevew", display)
+        if(!this.state.pre) {
+            this.newSwitchFeed(id,false);
+        } else {
+            let switchfeed = {"request": "switch", "feed": id, "audio": true, "video": true, "data": false};
+            this.state.pre.send ({"message": switchfeed,
+                success: () => {
+                    Janus.log(" :: Preview Switch Feed to: ", display);
+                }
+            })
+        }
     };
 
     switchProgram = (i) => {
         Janus.log(" :: Selected program Switch: ",i);
-        let {feeds,feeds_queue,round} = this.props;
+        let {feeds,feeds_queue,round,pr1} = this.props;
         let {pre_feed} = this.state;
+
+        // Make new handle
+        pr1[i] = null;
 
         //If someone in preview take him else take next in queue
         if(pre_feed) {
@@ -171,9 +173,9 @@ class ShidurGroups extends Component {
 
             // If program is not full avoid using feeds_queue
             if(feeds.length < 13) {
-                this.switchNext(i,feeds[i]);
+                this.switchNext(i,feeds[i],true);
             } else {
-                this.switchNext(i,feeds[feeds_queue]);
+                this.switchNext(i,feeds[feeds_queue],true);
                 feeds_queue++;
                 this.props.setProps({feeds_queue});
             }
@@ -233,39 +235,31 @@ class ShidurGroups extends Component {
         }
 
         //Detch previous feed
-        if(pr1[i])
+        if(pr1[i] && r !== true) {
             pr1[i].detach();
+        }
 
-        console.log(" :: New handle! - " + feed.id);
-        this.newSwitchFeed(feed.id,true,i);
-        pgm_state[i] = feed;
-        this.props.setProps({pgm_state});
-        if(r !== "remove")
-            this.sdiAction("switch" , true, i, feed);
-
-        // if(!pr1[i]) {
-           //     console.log(" :: New handle! - " + feed.id);
-        //     this.newSwitchFeed(feed.id,true,i);
-        //     pgm_state[i] = feed;
-        //     this.props.setProps({pgm_state});
-        //     if(r !== "remove")
-        //         this.sdiAction("switch" , true, i, feed);
-        // } else {
-        //     console.log(" :: Switch handle! - " + feed.id);
-        //     let switchfeed = {"request": "switch", "feed": feed.id, "audio": true, "video": true, "data": false};
-        //     pr1[i].send ({"message": switchfeed,
-        //         success: () => {
-        //             Janus.log(" :: Next Switch Feed to: ", feed.display);
-        //             pgm_state[i] = feed;
-        //             this.props.setProps({pgm_state});
-        //             if(r !== "remove")
-        //                 this.sdiAction("switch", true, i, feed)
-        //             putData(`state/galaxy/pr1`, pgm_state, (cb) => {
-        //                 Janus.log(":: Save to state: ",cb);
-        //             });
-        //         }
-            // })
-        // }
+        if(!pr1[i]) {
+            console.log(" :: New handle! - " + feed.id);
+            this.newSwitchFeed(feed.id,true,i);
+            pgm_state[i] = feed;
+            this.props.setProps({pgm_state});
+            this.sdiAction("switch" , false, i, feed);
+        } else {
+            console.log(" :: Switch handle! - " + feed.id);
+            let switchfeed = {"request": "switch", "feed": feed.id, "audio": true, "video": true, "data": false};
+            pr1[i].send ({"message": switchfeed,
+                success: () => {
+                    Janus.log(" :: Next Switch Feed to: ", feed.display);
+                    pgm_state[i] = feed;
+                    this.props.setProps({pgm_state});
+                    this.sdiAction("switch", true, i, feed)
+                    // putData(`state/galaxy/pr1`, pgm_state, (cb) => {
+                    //     Janus.log(":: Save to state: ",cb);
+                    // });
+                }
+            })
+        }
     };
 
     selectGroup = (pre_feed) => {

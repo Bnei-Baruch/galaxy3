@@ -185,33 +185,33 @@ class SndmanGroups extends Component {
         }
     };
 
-    switchNext = (i ,feed) => {
+    switchNext = (i ,feed, r) => {
         Janus.log(" ---- switchNext params: ", i, feed);
         if(!feed) return;
         let {pr1,pgm_state} = this.props;
+
         //Detch previous feed
-        if(pr1[i])
+        if(pr1[i] && r !== true) {
             pr1[i].detach();
-        this.newSwitchFeed(feed.id,true,i);
-        pgm_state[i] = feed;
-        this.props.setProps({pgm_state});
-        // if(!pr1[i]) {
-        //     this.newSwitchFeed(feed.id,true,i);
-        //     pgm_state[i] = feed;
-        //     this.props.setProps({pgm_state});
-        // } else {
-        //     let switchfeed = {"request": "switch", "feed": feed.id, "audio": true, "video": true, "data": false};
-        //     pr1[i].send ({"message": switchfeed,
-        //         success: () => {
-        //             Janus.log(" :: Next Switch Feed to: ", feed.display);
-        //             pgm_state[i] = feed;
-        //             this.props.setProps({pgm_state});
-        //             // putData(`state/galaxy/pr1`, pgm_state, (cb) => {
-        //             //     Janus.log(":: Save to state: ",cb);
-        //             // });
-        //         }
-        //     })
-        // }
+        }
+
+        if(!pr1[i]) {
+            this.newSwitchFeed(feed.id,true,i);
+            pgm_state[i] = feed;
+            this.props.setProps({pgm_state});
+        } else {
+            let switchfeed = {"request": "switch", "feed": feed.id, "audio": true, "video": true, "data": false};
+            pr1[i].send ({"message": switchfeed,
+                success: () => {
+                    Janus.log(" :: Next Switch Feed to: ", feed.display);
+                    pgm_state[i] = feed;
+                    this.props.setProps({pgm_state});
+                    // putData(`state/galaxy/pr1`, pgm_state, (cb) => {
+                    //     Janus.log(":: Save to state: ",cb);
+                    // });
+                }
+            })
+        }
     };
 
     selectGroup = (pre_feed) => {

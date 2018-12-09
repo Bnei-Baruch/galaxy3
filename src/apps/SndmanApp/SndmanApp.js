@@ -307,9 +307,9 @@ class SndmanApp extends Component {
 
     onProtocolData = (data) => {
         if(data.type === "sdi-switch") {
-            let {col, feed, i} = data;
+            let {col, feed, i, status} = data;
             console.log(" :: Got Shidur Action: ",data);
-            this["col"+col].switchNext(i,feed);
+            this["col"+col].switchNext(i,feed,status);
         } else if(data.type === "sdi-fullscreen" && data.status) {
             let {col, feed, i} = data;
             console.log(" :: Got Shidur Action: ",data);
