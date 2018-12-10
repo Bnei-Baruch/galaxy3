@@ -184,6 +184,7 @@ class SDIOutGroups extends Component {
         //Detch previous feed
         if(pr1[i] && r !== true) {
             pr1[i].detach();
+            pr1[i] = null;
         }
 
         if(!pr1[i]) {
