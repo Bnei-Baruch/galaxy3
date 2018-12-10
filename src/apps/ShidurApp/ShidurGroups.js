@@ -278,11 +278,13 @@ class ShidurGroups extends Component {
         disabled_groups.push(pre_feed);
         this.props.removeFeed(pre_feed.id);
         this.setState({pre_feed: null});
+        this.state.pre.detach();
         this.props.setProps({disabled_groups});
     };
 
     hideGroup = () => {
         this.setState({pre_feed: null});
+        this.state.pre.detach();
     };
 
     zoominGroup = (e, i) => {
