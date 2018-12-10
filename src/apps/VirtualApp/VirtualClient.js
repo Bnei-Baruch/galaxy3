@@ -15,6 +15,7 @@ class VirtualClient extends Component {
 
     state = {
         count: 0,
+        delay: false,
         audioContext: null,
         audio_devices: [],
         video_devices: [],
@@ -575,7 +576,7 @@ class VirtualClient extends Component {
         let leave = {request : "leave"};
         Janus.log(room);
         videoroom.send({"message": leave});
-        this.setState({muted: false, mystream: null, room: "", selected_room: "", i: "", feeds: []});
+        this.setState({muted: false, cammuted: false, mystream: null, room: "", selected_room: "", i: "", feeds: []});
         this.initVideoRoom();
         protocol.detach();
     };
@@ -613,7 +614,10 @@ class VirtualClient extends Component {
     camMute = () => {
         let {videoroom,cammuted,protocol,user,room} = this.state;
         cammuted ? videoroom.unmuteVideo() : videoroom.muteVideo();
-        this.setState({cammuted: !cammuted});
+        this.setState({cammuted: !cammuted, delay: true});
+        setTimeout(() => {
+            this.setState({delay: false});
+        }, 3000);
         this.sendDataMessage("camera", this.state.cammuted);
         // Send to protocol camera status event
         let msg = { type: "camera", status: cammuted, room, user};
@@ -646,7 +650,7 @@ class VirtualClient extends Component {
 
     render() {
 
-        const { rooms,room,audio_devices,video_devices,video_device,audio_device,i,muted,cammuted,mystream,selected_room,count,question} = this.state;
+        const { rooms,room,audio_devices,video_devices,video_device,audio_device,i,muted,cammuted,delay,mystream,selected_room,count,question} = this.state;
         const width = "134";
         const height = "100";
         const autoPlay = true;
@@ -759,7 +763,7 @@ class VirtualClient extends Component {
                             <Icon color={muted ? "red" : ""} name={!muted ? "microphone" : "microphone slash"} />
                             {!muted ? "Mute" : "Unmute"}
                         </Menu.Item>
-                        <Menu.Item disabled={!mystream} onClick={this.camMute}>
+                        <Menu.Item disabled={!mystream || delay} onClick={this.camMute}>
                             <Icon color={cammuted ? "red" : ""} name={!cammuted ? "eye" : "eye slash"} />
                             {!cammuted ? "Stop Video" : "Start Video"}
                         </Menu.Item>
