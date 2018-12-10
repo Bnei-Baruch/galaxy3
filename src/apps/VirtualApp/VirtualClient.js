@@ -136,16 +136,17 @@ class VirtualClient extends Component {
         if (videoroom) {
             videoroom.send({message: {request: "list"},
                 success: (data) => {
-                    Janus.debug(" :: Get Rooms List: ", data.list);
-                    data.list.sort((a, b) => {
+                    Janus.log(" :: Get Rooms List: ", data.list);
+                    let filter = data.list.filter(r => !r.description.match("W."));
+                    filter.sort((a, b) => {
                         // if (a.num_participants > b.num_participants) return -1;
                         // if (a.num_participants < b.num_participants) return 1;
                         if (a.description > b.description) return 1;
                         if (a.description < b.description) return -1;
                         return 0;
                     });
-                    this.setState({rooms: data.list});
-                    this.getFeedsList(data.list)
+                    this.setState({rooms: filter});
+                    this.getFeedsList(filter)
                 }
             });
         }
