@@ -64,7 +64,7 @@ class SndmanUsers extends Component {
                 Janus.log("-- :: It's protocol public message: ", ondata);
                 this.onProtocolData(ondata);
             });
-        });
+        },er => {});
         setInterval(() => getState('state/galaxy/pr5', (program) => {
             //Janus.log(" :: Get State: ", program);
             if(JSON.stringify(program) !== JSON.stringify(this.state.program)) {

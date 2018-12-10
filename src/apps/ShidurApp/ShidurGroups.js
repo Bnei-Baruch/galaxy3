@@ -35,7 +35,7 @@ class ShidurGroups extends Component {
                     Janus.log("Plugin attached! (" + pre.getPlugin() + ", id=" + pre.getId() + ")");
                     Janus.log("  -- This is a subscriber");
                     // We wait for the plugin to send us an offer
-                    let listen = { "request": "join", "room": 1234, "ptype": "subscriber", "feed": id, "close_pc": false };
+                    let listen = { "request": "join", "room": 1234, "ptype": "subscriber", "feed": id };
                     pre.send({"message": listen});
                     if(program) {
                         let {pr1} = this.props;
@@ -122,11 +122,8 @@ class ShidurGroups extends Component {
 
     switchProgram = (i) => {
         Janus.log(" :: Selected program Switch: ",i);
-        let {feeds,feeds_queue,round,pr1} = this.props;
+        let {feeds,feeds_queue,round} = this.props;
         let {pre_feed} = this.state;
-
-        // Make new handle
-        pr1[i] = null;
 
         //If someone in preview take him else take next in queue
         if(pre_feed) {
@@ -237,6 +234,7 @@ class ShidurGroups extends Component {
         //Detch previous feed
         if(pr1[i] && r !== true) {
             pr1[i].detach();
+            pr1[i] = null;
         }
 
         if(!pr1[i]) {

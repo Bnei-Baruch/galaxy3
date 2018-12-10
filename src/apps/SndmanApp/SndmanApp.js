@@ -84,6 +84,10 @@ class SndmanApp extends Component {
                 this.onProtocolData(ondata);
             });
 
+        },er => {
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
         });
     };
 
@@ -417,14 +421,14 @@ class SndmanApp extends Component {
                     //pgm_state[i] = null;
                     pr1[i].detach();
                     pr1[i] = null;
-                    let feed = feeds[feeds_queue];
-                    if(i < 4) {
-                        this.col1.switchNext(i,feed);
-                    } else if(i < 8) {
-                        this.col2.switchNext(i,feed);
-                    } else if(i < 12) {
-                        this.col3.switchNext(i,feed);
-                    }
+                    // let feed = feeds[feeds_queue];
+                    // if(i < 4) {
+                    //     this.col1.switchNext(i,feed);
+                    // } else if(i < 8) {
+                    //     this.col2.switchNext(i,feed);
+                    // } else if(i < 12) {
+                    //     this.col3.switchNext(i,feed);
+                    // }
                 }
             }
         });

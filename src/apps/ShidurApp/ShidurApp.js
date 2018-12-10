@@ -83,6 +83,10 @@ class ShidurApp extends Component {
                 this.onProtocolData(ondata);
             });
 
+        },er => {
+            setTimeout(() => {
+                window.location.reload();
+            }, 3000);
         });
     };
 
