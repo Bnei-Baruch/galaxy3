@@ -87,7 +87,7 @@ class SndmanApp extends Component {
         },er => {
             setTimeout(() => {
                 window.location.reload();
-            }, 3000);
+            }, 1000);
         });
     };
 
