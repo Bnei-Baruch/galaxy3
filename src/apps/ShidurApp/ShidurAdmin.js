@@ -13,6 +13,7 @@ import LoginPage from "../../components/LoginPage";
 class ShidurAdmin extends Component {
 
     state = {
+        bitrate: 150000,
         chatroom: null,
         forwarders: [],
         janus: null,
@@ -888,8 +889,12 @@ class ShidurAdmin extends Component {
         });
     };
 
+    setBitrate = (bitrate) => {
+        this.setState({bitrate});
+    };
+
     createRoom = () => {
-        let {description,videoroom} = this.state;
+        let {bitrate,description,videoroom} = this.state;
         let roomid = this.getRoomID();
         let janus_room = {
             request : "create",
@@ -897,7 +902,7 @@ class ShidurAdmin extends Component {
             description: description,
             secret: `${SECRET}`,
             publishers: 20,
-            bitrate: 150000,
+            bitrate: bitrate,
             fir_freq: 10,
             audiocodec: "opus",
             videocodec: "h264",
@@ -986,7 +991,7 @@ class ShidurAdmin extends Component {
 
   render() {
 
-      const { rooms,current_room,switch_mode,user,feeds,i,messages,description,roomid,root,forwarders,feed_rtcp,feed_talk } = this.state;
+      const { bitrate,rooms,current_room,switch_mode,user,feeds,i,messages,description,roomid,root,forwarders,feed_rtcp,feed_talk } = this.state;
       const width = "134";
       const height = "100";
       const autoPlay = true;
@@ -994,6 +999,12 @@ class ShidurAdmin extends Component {
       const muted = true;
 
       let v = (<Icon name='volume up' />);
+
+      const bitrate_options = [
+          { key: 1, text: '150Kb/s', value: 150000 },
+          { key: 2, text: '300Kb/s', value: 300000 },
+          { key: 3, text: '600Kb/s', value: 600000 },
+      ];
 
       let rooms_list = rooms.map((data,i) => {
           const {room, num_participants, description} = data;
@@ -1095,6 +1106,13 @@ class ShidurAdmin extends Component {
                   <Input type='text' placeholder='Room description...' action value={description}
                          onChange={(v,{value}) => this.setState({description: value})}>
                       <input />
+                      <Select
+                          compact={true}
+                          scrolling={false}
+                          placeholder="Room Bitrate:"
+                          value={bitrate}
+                          options={bitrate_options}
+                          onChange={(e, {value}) => this.setBitrate(value)}/>
                       <Button positive onClick={this.createRoom}>Create</Button>
                   </Input>
               </Menu.Item>
