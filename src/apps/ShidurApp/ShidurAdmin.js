@@ -227,8 +227,6 @@ class ShidurAdmin extends Component {
             },
             webrtcState: (on) => {
                 Janus.log("Janus says our WebRTC PeerConnection is " + (on ? "up" : "down") + " now");
-                    //sfutest.send({"message": { "request": "configure", "bitrate": bitrate }});
-                    //return false;
             },
             onmessage: (msg, jsep) => {
                 this.onMessage(this.state.videoroom, msg, jsep, false);
@@ -303,11 +301,7 @@ class ShidurAdmin extends Component {
                             if((substream !== null && substream !== undefined) || (temporal !== null && temporal !== undefined)) {
                                 if(!remoteFeed.simulcastStarted) {
                                     remoteFeed.simulcastStarted = true;
-                                    // Add some new buttons
-                                    //addSimulcastButtons(remoteFeed.rfindex, remoteFeed.videoCodec === "vp8");
                                 }
-                                // We just received notice that there's been a switch, update the buttons
-                                //updateSimulcastButtons(remoteFeed.rfindex, substream, temporal);
                             }
                         } else {
                             // What has just happened?
@@ -344,30 +338,7 @@ class ShidurAdmin extends Component {
                 onremotestream: (stream) => {
                     Janus.debug("Remote feed #" + remoteFeed.rfindex);
                     let remotevideo = this.refs["remoteVideo" + remoteFeed.rfid];
-                    // if(remotevideo.length === 0) {
-                    //     // No remote video yet
-                    // }
                     Janus.attachMediaStream(remotevideo, stream);
-                    var videoTracks = stream.getVideoTracks();
-                    if(videoTracks === null || videoTracks === undefined || videoTracks.length === 0) {
-                        // No remote video
-                    } else {
-                        // Yes remote video
-                    }
-                    // if(Janus.webRTCAdapter.browserDetails.browser === "chrome" || Janus.webRTCAdapter.browserDetails.browser === "firefox" ||
-                    //     Janus.webRTCAdapter.browserDetails.browser === "safari") {
-                    //     $('#curbitrate'+remoteFeed.rfindex).removeClass('hide').show();
-                    //     bitrateTimer[remoteFeed.rfindex] = setInterval(function() {
-                    //         // Display updated bitrate, if supported
-                    //         var bitrate = remoteFeed.getBitrate();
-                    //         $('#curbitrate'+remoteFeed.rfindex).text(bitrate);
-                    //         // Check if the resolution changed too
-                    //         var width = $("#remotevideo"+remoteFeed.rfindex).get(0).videoWidth;
-                    //         var height = $("#remotevideo"+remoteFeed.rfindex).get(0).videoHeight;
-                    //         if(width > 0 && height > 0)
-                    //             $('#curres'+remoteFeed.rfindex).removeClass('hide').text(width+'x'+height).show();
-                    //     }, 1000);
-                    // }
                 },
                 ondataopen: (data) => {
                     Janus.log("The DataChannel is available!(feed)");
