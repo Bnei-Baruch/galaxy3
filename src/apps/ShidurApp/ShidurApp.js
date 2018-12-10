@@ -266,7 +266,7 @@ class ShidurApp extends Component {
 
     onProtocolData = (data) => {
         if(data.type === "question" && data.status) {
-            let {quistions_queue,users,qfeeds,pgm_state} = this.state;
+            let {quistions_queue,users,qfeeds,pgm_state,pr1} = this.state;
             if(users[data.user.id]) {
                 users[data.user.id].question = true;
                 data.rfid = users[data.user.id].rfid;
@@ -275,8 +275,28 @@ class ShidurApp extends Component {
 
                 // Check if qfeed already in program
                 let chk = pgm_state.filter(q => {return (q !== null && q !== undefined && q.id === data.rfid)});
-                if(chk.length === 0)
+
+                if(chk.length === 0) {
                     qfeeds.push(q);
+                } else {
+                    for(let i = 0; i < pgm_state.length; i++){
+                        let c = 0;
+                        if(pgm_state[i].id === chk[c].id) {
+                            pr1[i].detach();
+                            pr1[i] = null;
+                            if(i < 4) {
+                                this.col1.switchNext(i,chk[0]);
+                            } else if(i < 8) {
+                                this.col2.switchNext(i,chk[0]);
+                            } else if(i < 12) {
+                                this.col3.switchNext(i,chk[0]);
+                            }
+                            if(chk.length > 1) {
+                                c++
+                            }
+                        }
+                    }
+                }
 
                 this.setState({quistions_queue, users, qfeeds});
             }
