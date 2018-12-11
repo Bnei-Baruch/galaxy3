@@ -137,7 +137,7 @@ class VirtualClient extends Component {
             videoroom.send({message: {request: "list"},
                 success: (data) => {
                     Janus.log(" :: Get Rooms List: ", data.list);
-                    let filter = data.list.filter(r => !r.description.match("W."));
+                    let filter = data.list.filter(r => !/W\./i.test(r.description));
                     filter.sort((a, b) => {
                         // if (a.num_participants > b.num_participants) return -1;
                         // if (a.num_participants < b.num_participants) return 1;
