@@ -34,7 +34,6 @@ class ShidurGroups extends Component {
                     pre.simulcastStarted = false;
                     Janus.log("Plugin attached! (" + pre.getPlugin() + ", id=" + pre.getId() + ")");
                     Janus.log("  -- This is a subscriber");
-                    // We wait for the plugin to send us an offer
                     let listen = { "request": "join", "room": 1234, "ptype": "subscriber", "feed": id };
                     pre.send({"message": listen});
                     if(program) {
@@ -94,7 +93,6 @@ class ShidurGroups extends Component {
                     let switchvideo = program ? this.refs["programVideo" + i] : this.refs.prevewVideo;
                     Janus.log(" Attach remote stream on video: "+i);
                     Janus.attachMediaStream(switchvideo, stream);
-                    //var videoTracks = stream.getVideoTracks();
                 },
                 oncleanup: () => {
                     Janus.log(" ::: Got a cleanup notification (remote feed "+id+" : "+i+") :::");
@@ -107,7 +105,6 @@ class ShidurGroups extends Component {
     };
 
     switchPreview = (id, display) => {
-        console.log("-- Switch prevew", display)
         if(!this.state.pre) {
             this.newSwitchFeed(id,false);
         } else {
@@ -131,7 +128,6 @@ class ShidurGroups extends Component {
             this.switchNext(i, pre_feed);
             this.setState({pre_feed: null});
             this.props.setProps({program: pre_feed, pre_feed: null});
-
         } else {
             let feed = feeds[feeds_queue];
             this.switchNext(i, feed);
@@ -146,7 +142,6 @@ class ShidurGroups extends Component {
 
             this.props.setProps({feeds_queue,round,pre_feed: null});
         }
-
     };
 
     switchFour = () => {
@@ -272,7 +267,7 @@ class ShidurGroups extends Component {
         let chk = disabled_groups.find(g => g.id === pre_feed.id);
         if(chk)
             return;
-        this.sdiAction("disable", true, null, pre_feed)
+        this.sdiAction("disable", true, null, pre_feed);
         disabled_groups.push(pre_feed);
         this.props.removeFeed(pre_feed.id);
         this.setState({pre_feed: null});
@@ -285,12 +280,12 @@ class ShidurGroups extends Component {
         this.state.pre.detach();
     };
 
-    zoominGroup = (e, i) => {
+    zoominGroup = (e, i ,s) => {
         e.preventDefault();
         if (e.type === 'contextmenu') {
             let {zoom} = this.state;
             this.setState({zoom: !zoom},() => {
-                let switchvideo = this.refs["programVideo" + i];
+                let switchvideo = (s === "pro") ? this.refs["programVideo" + i] : this.refs.prevewVideo;
                 let zoomvideo = this.refs.zoomVideo;
                 var stream = switchvideo.captureStream();
                 zoomvideo.srcObject = stream;
@@ -298,13 +293,13 @@ class ShidurGroups extends Component {
         }
     };
 
-    handleClose = () => this.setState({ zoom: false })
+    handleClose = () => this.setState({ zoom: false });
 
     restoreGroup = (e, data, i) => {
         e.preventDefault();
         if (e.type === 'contextmenu') {
             let {disabled_groups,feeds,users} = this.props;
-            for(let i = 0; i < disabled_groups.length; i++){
+            for(let i = 0; i < disabled_groups.length; i++) {
                 if(JSON.parse(disabled_groups[i].display).id === JSON.parse(data.display).id) {
                     disabled_groups.splice(i, 1);
                     feeds.push(data);
@@ -361,7 +356,9 @@ class ShidurGroups extends Component {
                   //TODO: Fix this ugly shit!
                   pre_feed ? users[JSON.parse(pre_feed.display).id] ? users[JSON.parse(pre_feed.display).id].question ? 'qst_fullscreentitle' : 'hidden' : 'hidden' : 'hidden'
               }>?</div>
-              <video ref = {"prevewVideo"}
+              <video
+                  onContextMenu={(e) => this.zoominGroup(e, null, "pre")}
+                     ref = {"prevewVideo"}
                      id = "prevewVideo"
                      width = "400"
                      height = "220"
@@ -384,7 +381,6 @@ class ShidurGroups extends Component {
 
       let program = pgm_state.map((feed,i) => {
           if(feed && i >= index && i < index+4) {
-              // Does it help here?
               if(pgm_state[i] === null)
                   return;
               let user = JSON.parse(feed.display);
@@ -399,7 +395,7 @@ class ShidurGroups extends Component {
                             {qst ? <div className='qst_title'>?</div> : ""}
                   <video className={talk ? "talk" : ""}
                          onClick={() => this.fullScreenGroup(i,feed)}
-                         onContextMenu={(e) => this.zoominGroup(e, i)}
+                         onContextMenu={(e) => this.zoominGroup(e, i, "pro")}
                          key={i}
                          ref={"programVideo" + i}
                          id={"programVideo" + i}
@@ -438,52 +434,45 @@ class ShidurGroups extends Component {
           </div>
       );
 
-    return (
-
-        <Segment className="group_conteiner">
-          
-          <Segment attached className="program_segment" color='red'>
-              <div className="video_grid">
-                  {program}
-                  {fullscreen}
-              </div>
+      return (
+          <Segment className="group_conteiner">
+              <Segment attached className="program_segment" color='red'>
+                  <div className="video_grid">
+                      {program}
+                      {fullscreen}
+                  </div>
+              </Segment>
+              <Button className='fours_button'
+                      disabled={feeds.length < 13}
+                      attached='bottom'
+                      color='blue'
+                      size='mini'
+                      onClick={this.switchFour}>
+                  <Icon name='share' />
+                  <Icon name='th large' />
+                  <Icon name='share' />
+              </Button>
+              <Segment className="group_segment" color='green'>
+                  {preview}
+              </Segment>
+              <Dropdown className='select_group' error={qfeeds.length > 0}
+                        placeholder='Select Group'
+                        fluid
+                        search
+                        selection
+                        options={queue_options.concat(group_options)}
+                        onChange={(e,{value}) => this.selectGroup(value)} />
+              <Dimmer active={zoom} onClickOutside={this.handleClose} page>
+                  <video ref={"zoomVideo"}
+                         id={"zoomVideo"}
+                         width="1280"
+                         height="720"
+                         autoPlay={autoPlay}
+                         controls={false}
+                         muted={muted}
+                         playsInline={true}/>
+              </Dimmer>
           </Segment>
-
-            <Button className='fours_button'
-                disabled={feeds.length < 13}
-                attached='bottom'
-                color='blue'
-                size='mini'
-                onClick={this.switchFour}>
-                <Icon name='share' />
-                <Icon name='th large' />
-                <Icon name='share' />
-            </Button>
-
-          <Segment className="group_segment" color='green'>
-              {preview}
-          </Segment>
-
-            <Dropdown className='select_group' error={qfeeds.length > 0}
-                placeholder='Select Group'
-                fluid
-                search
-                selection
-                options={queue_options.concat(group_options)}
-                onChange={(e,{value}) => this.selectGroup(value)} />
-
-            <Dimmer active={zoom} onClickOutside={this.handleClose} page>
-                <video ref={"zoomVideo"}
-                       id={"zoomVideo"}
-                       width="1280"
-                       height="720"
-                       autoPlay={autoPlay}
-                       controls={false}
-                       muted={muted}
-                       playsInline={true}/>
-            </Dimmer>
-
-        </Segment>
     );
   }
 }
