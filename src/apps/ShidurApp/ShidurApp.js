@@ -322,7 +322,7 @@ class ShidurApp extends Component {
     };
 
     removeFeed = (id) => {
-        let {feeds,users,quistions_queue,qfeeds} = this.state;
+        let {feeds,users,quistions_queue,qfeeds,feeds_queue} = this.state;
         for(let i=0; i<feeds.length; i++){
             if(feeds[i].id === id) {
 
@@ -349,15 +349,22 @@ class ShidurApp extends Component {
 
                 // Remove from general feeds list
                 feeds.splice(i, 1);
+
+                // Fix feeds_queue if equal to last index
+                if(feeds_queue >= feeds.length - 1) {
+                    feeds_queue = feeds.length - 1;
+                    this.setState({feeds_queue});
+                }
+
                 this.setState({feeds,users,quistions_queue});
-                this.checkProgram(id,feeds);
+                this.checkProgram(id,feeds,feeds_queue);
                 break
             }
         }
     };
 
-    checkProgram = (id,feeds) => {
-        let {feeds_queue,pgm_state,pr1} = this.state;
+    checkProgram = (id,feeds,feeds_queue) => {
+        let {pgm_state,pr1,round} = this.state;
 
         pgm_state.forEach((pgm,i) => {
             if(pgm_state[i] && pgm.id === id) {
@@ -367,18 +374,18 @@ class ShidurApp extends Component {
                     pgm_state[i] = null;
                     pr1[i] = null;
                 } else {
-                    if(feeds_queue === 0) {
-                        //FIXME: When it's happend?
-                         console.log(" -- Feed remove while feeds_queue was - 0");
-                    } else {
-                        feeds_queue--;
-                        this.setState({feeds_queue});
-                    }
-                    // if program is full we does not remove video element
-                    //pgm_state[i] = null;
                     pr1[i].detach();
                     pr1[i] = null;
                     let feed = feeds[feeds_queue];
+                    feeds_queue++;
+                    if(feeds_queue >= feeds.length) {
+                        // End round here!
+                        feeds_queue = 0;
+                        round++;
+                        Janus.log(" -- ROUND END --");
+                    }
+                    this.setState({feeds_queue,round});
+
                     if(i < 4) {
                         this.col1.switchNext(i,feed,"remove");
                     } else if(i < 8) {
