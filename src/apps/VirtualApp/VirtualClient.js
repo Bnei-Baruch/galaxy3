@@ -46,7 +46,7 @@ class VirtualClient extends Component {
         users: {},
         username_value: localStorage.getItem("username") || "",
         visible: false,
-        question: false,
+        question: localStorage.getItem("question") || false,
     };
 
     componentDidMount() {
@@ -556,7 +556,7 @@ class VirtualClient extends Component {
     };
 
     joinRoom = () => {
-        let {janus, videoroom, selected_room, user, username_value} = this.state;
+        let {janus, videoroom, selected_room, user, username_value, question} = this.state;
         localStorage.setItem("room", selected_room);
         //This name will see other users
         user.display = username_value || user.name;
@@ -566,6 +566,13 @@ class VirtualClient extends Component {
         this.setState({user, muted: true, room: selected_room});
         initGxyProtocol(janus, user, protocol => {
             this.setState({protocol});
+            // Send question event if before join it was true
+            if(question) {
+                let msg = { type: "question", status: true, room: selected_room, user};
+                setTimeout(() => {
+                    sendProtocolMessage(protocol, user, msg );
+                }, 10000);
+            }
         }, ondata => {
             Janus.log("-- :: It's protocol public message: ", ondata);
             this.onProtocolData(ondata);
@@ -606,6 +613,7 @@ class VirtualClient extends Component {
     handleQuestion = () => {
         //TODO: only when shidur user is online will be avelable send question event, so we need to add check
         const { protocol, user, room, question} = this.state;
+        localStorage.setItem("question", !question);
         let msg = { type: "question", status: !question, room, user};
         sendProtocolMessage(protocol, user, msg );
         this.setState({question: !question});
