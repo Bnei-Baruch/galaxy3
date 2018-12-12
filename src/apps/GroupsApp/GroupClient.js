@@ -40,7 +40,7 @@ class GroupClient extends Component {
         user: null,
         users: {},
         visible: false,
-        question: localStorage.getItem("question") || false,
+        question: JSON.parse(localStorage.getItem("question")) || false,
     };
 
     componentDidMount() {

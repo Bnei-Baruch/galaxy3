@@ -46,7 +46,7 @@ class VirtualClient extends Component {
         users: {},
         username_value: localStorage.getItem("username") || "",
         visible: false,
-        question: localStorage.getItem("question") || false,
+        question: JSON.parse(localStorage.getItem("question")) || false,
     };
 
     componentDidMount() {
