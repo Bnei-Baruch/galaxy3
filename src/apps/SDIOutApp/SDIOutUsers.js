@@ -80,7 +80,11 @@ class SDIOutUsers extends Component {
                 this.setState({cammuteds});
             }
             if(room === data.room && users[data.user.id]) {
-                this.newRemoteFeed(users[data.user.id].rfid, false);
+                let chk = feeds.filter(f => {
+                    return (f !== null && f !== undefined && f.rfid === users[data.user.id].rfid)
+                });
+                if(chk.length === 0)
+                    this.newRemoteFeed(users[data.user.id].rfid, false);
             }
         }
         if(data.type === "question" && data.status) {
