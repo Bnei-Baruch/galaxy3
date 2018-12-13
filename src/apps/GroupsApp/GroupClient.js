@@ -40,7 +40,7 @@ class GroupClient extends Component {
         user: null,
         users: {},
         visible: false,
-        question: JSON.parse(localStorage.getItem("question")) || false,
+        question: false,
     };
 
     componentDidMount() {
@@ -153,7 +153,7 @@ class GroupClient extends Component {
                 this.initDevices(true);
                 if(reconnect) {
                     setTimeout(() => {
-                        this.joinRoom();
+                        this.joinRoom(reconnect);
                     }, 5000);
                 }
             },
@@ -385,8 +385,8 @@ class GroupClient extends Component {
         videoroom.data({ text: message })
     };
 
-    joinRoom = () => {
-        let {janus, videoroom, selected_room, user, question} = this.state;
+    joinRoom = (reconnect) => {
+        let {janus, videoroom, selected_room, user} = this.state;
         // let {sub, name, title} = user;
         // user.id = sub;
         // user.role = "gxy_group";
@@ -399,12 +399,11 @@ class GroupClient extends Component {
         this.chat.initChatRoom(user);
         initGxyProtocol(janus, user, protocol => {
             this.setState({protocol});
-            if(question) {
+            if(reconnect && JSON.parse(localStorage.getItem("question"))) {
                 // Send question event if before join it was true
-                let msg = { type: "question", status: true, room: selected_room, user};
                 setTimeout(() => {
-                    sendProtocolMessage(protocol, user, msg );
-                }, 10000);
+                    this.handleQuestion();
+                }, 5000);
             }
         }, ondata => {
             Janus.log("-- :: It's protocol public message: ", ondata);

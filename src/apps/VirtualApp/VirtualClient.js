@@ -46,7 +46,7 @@ class VirtualClient extends Component {
         users: {},
         username_value: localStorage.getItem("username") || "",
         visible: false,
-        question: JSON.parse(localStorage.getItem("question")) || false,
+        question: false,
     };
 
     componentDidMount() {
@@ -185,7 +185,7 @@ class VirtualClient extends Component {
                 this.initDevices(true);
                 if(reconnect) {
                     setTimeout(() => {
-                        this.joinRoom();
+                        this.joinRoom(reconnect);
                     }, 5000);
                 }
                 // Get list rooms
@@ -555,8 +555,8 @@ class VirtualClient extends Component {
         videoroom.data({ text: message })
     };
 
-    joinRoom = () => {
-        let {janus, videoroom, selected_room, user, username_value, question} = this.state;
+    joinRoom = (reconnect) => {
+        let {janus, videoroom, selected_room, user, username_value} = this.state;
         localStorage.setItem("room", selected_room);
         //This name will see other users
         user.display = username_value || user.name;
@@ -567,11 +567,10 @@ class VirtualClient extends Component {
         initGxyProtocol(janus, user, protocol => {
             this.setState({protocol});
             // Send question event if before join it was true
-            if(question) {
-                let msg = { type: "question", status: true, room: selected_room, user};
+            if(reconnect && JSON.parse(localStorage.getItem("question"))) {
                 setTimeout(() => {
-                    sendProtocolMessage(protocol, user, msg );
-                }, 10000);
+                    this.handleQuestion();
+                }, 5000);
             }
         }, ondata => {
             Janus.log("-- :: It's protocol public message: ", ondata);
