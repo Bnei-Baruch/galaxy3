@@ -568,8 +568,9 @@ class VirtualClient extends Component {
             this.setState({protocol});
             // Send question event if before join it was true
             if(reconnect && JSON.parse(localStorage.getItem("question"))) {
+                let msg = { type: "question", status: true, room: selected_room, user};
                 setTimeout(() => {
-                    this.handleQuestion();
+                    sendProtocolMessage(protocol, user, msg );
                 }, 5000);
             }
         }, ondata => {

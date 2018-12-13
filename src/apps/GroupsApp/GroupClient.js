@@ -401,8 +401,9 @@ class GroupClient extends Component {
             this.setState({protocol});
             if(reconnect && JSON.parse(localStorage.getItem("question"))) {
                 // Send question event if before join it was true
+                let msg = { type: "question", status: true, room: selected_room, user};
                 setTimeout(() => {
-                    this.handleQuestion();
+                    sendProtocolMessage(protocol, user, msg );
                 }, 5000);
             }
         }, ondata => {
