@@ -58,11 +58,13 @@ $exactly-selector: _build-quantity-selector($selector-append, $selector);
     margin-bottom: .1em;
     margin-top: .2em;
     span {
+      position: relative;
         display: inline-block;
         background: blue;
         line-height: 1.1em;
         color: white;
-        padding: 0 .7em;
+        padding: 0 .2em;
+        right: 50px;
     }
 }
 .videos{

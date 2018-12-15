@@ -514,6 +514,8 @@ class SDIOutUsers extends Component {
       const controls = false;
       const muted = true;
 
+      let qst = this.state.feeds.find(q => q !== null && q !== undefined && q.question);
+
       let preview = this.state.feeds.map((feed) => {
           if(feed) {
               let id = feed.rfid;
@@ -525,7 +527,7 @@ class SDIOutUsers extends Component {
                   ref={"video" + id}
                   id={"video" + id}>
                   <div className={classNames('video__overlay', {'talk' : talk})}>
-                      {question ? <div className="question"><Icon name="question circle" size="massive"/></div>:''}
+                      {/*{question ? <div className="question"><Icon name="question circle" size="massive"/></div>:''}*/}
                       {/*<div className="video__title">{!talk ? <Icon name="microphone slash" size="small" color="red"/> : ''}{name}</div>*/}
                   </div>
                   <video className={talk ? "talk" : ""}
@@ -549,6 +551,7 @@ class SDIOutUsers extends Component {
           <Segment className="preview_sdi" color='red'>
               <div className="videos-panel">
                   <div className="title"><span>{name}</span></div>
+                  {qst ? <div className='qst_users'>?</div> : ""}
                   <div className="videos">
                       <div className="videos__wrapper">{preview}</div>
                   </div>
