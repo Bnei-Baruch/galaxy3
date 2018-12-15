@@ -625,7 +625,7 @@ class ShidurAdmin extends Component {
                 // Any new feed to attach to?
                 if(msg["publishers"] !== undefined && msg["publishers"] !== null) {
                     let list = msg["publishers"];
-                    Janus.debug("Got a list of available publishers/feeds:");
+                    Janus.log("Got a list of available publishers/feeds:");
                     Janus.log(list);
                     if(current_room === 1234) {
                         let users = {};
@@ -645,11 +645,12 @@ class ShidurAdmin extends Component {
                         }
                         this.setState({feeds, users});
                     } else {
-                        let feeds = list.filter(feeder => JSON.parse(feeder.display).role === "user");
-                        for(let i=0;i<feeds.length;i++) {
+                        for(let i=0;i<list.length;i++) {
                             let id = list[i]["id"];
                             let talk = list[i]["talking"];
-                            this.newRemoteFeed(id, talk);
+                            let user = JSON.parse(list[i].display);
+                            if(user.role === "user")
+                                this.newRemoteFeed(id, talk);
                         }
                     }
                 }
