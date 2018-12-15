@@ -18,6 +18,7 @@ export const JANUS_SRV_ISRLC = process.env.REACT_APP_JANUS_SRV_ISRLC;
 export const JANUS_IP_ISRPT = process.env.REACT_APP_JANUS_IP_ISRPT;
 export const JANUS_IP_EURND = process.env.REACT_APP_JANUS_IP_EURND;
 export const JANUS_IP_EURUK = process.env.REACT_APP_JANUS_IP_EURUK;
+export const JANUS_IP_LOCAL = process.env.REACT_APP_JANUS_IP_LOCAL;
 
 
 export const servers_options = [
