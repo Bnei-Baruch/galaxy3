@@ -4,7 +4,7 @@ import { Janus } from "../../lib/janus";
 import classNames from 'classnames';
 
 import {Menu, Select,Label,Icon,Popup} from "semantic-ui-react";
-import {geoInfo, initJanus, getDevicesStream, micLevel, checkNotification,testDevices} from "../../shared/tools";
+import {geoInfo, initJanus, getDevicesStream, micLevel, checkNotification,testDevices,handleAction} from "../../shared/tools";
 import './GroupClient.scss'
 import './VideoConteiner.scss'
 import nowebcam from './nowebcam.jpeg';
@@ -41,6 +41,7 @@ class GroupClient extends Component {
         users: {},
         visible: false,
         question: false,
+        selftest: false,
     };
 
     componentDidMount() {
@@ -130,11 +131,19 @@ class GroupClient extends Component {
                         this.state.audioContext.close();
                     }
                     micLevel(stream ,this.refs.canvas1,audioContext => {
-                        this.setState({audioContext});
+                        this.setState({audioContext, stream});
                     });
                 })
             }
         }
+    };
+
+    selfTest = () => {
+        this.setState({selftest: true});
+        setTimeout(() => {
+            this.setState({selftest: false});
+        }, 3000);
+        handleAction(this.state.stream)
     };
 
     initVideoRoom = (reconnect) => {
@@ -473,7 +482,7 @@ class GroupClient extends Component {
 
   render() {
 
-      const {user,audio_devices,video_devices,video_device,audio_device,muted,mystream,room,count,question} = this.state;
+      const {user,audio_devices,video_devices,video_device,audio_device,muted,mystream,room,count,question,selftest} = this.state;
       const width = "134";
       const height = "100";
       const autoPlay = true;
@@ -547,6 +556,10 @@ class GroupClient extends Component {
               </Menu.Item>
             </Menu>
             <Menu icon='labeled' secondary size="mini">
+                <Menu.Item position='right' disabled={selftest} onClick={this.selfTest} className="mute-button">
+                    <Icon color='green' name={!muted ? "microphone" : "microphone slash"} />
+                    Self Check
+                </Menu.Item>
               <Menu.Item position='right' disabled onClick={this.micMute} className="mute-button">
                 <Icon color={muted ? "red" : ""} name={!muted ? "microphone" : "microphone slash"} />
                 {!muted ? "Mute" : "Unmute"}
