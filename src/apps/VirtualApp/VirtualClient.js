@@ -4,7 +4,7 @@ import { Janus } from "../../lib/janus";
 import classNames from 'classnames';
 
 import {Menu, Select, Button,Input,Label,Icon,Popup} from "semantic-ui-react";
-import {geoInfo, initJanus, getDevicesStream, micLevel, checkNotification,testDevices} from "../../shared/tools";
+import {geoInfo, initJanus, getDevicesStream, micLevel, checkNotification,testDevices,testMic} from "../../shared/tools";
 import './VirtualClient.scss'
 import './VideoConteiner.scss'
 import {MAX_FEEDS} from "../../shared/consts";
@@ -47,6 +47,8 @@ class VirtualClient extends Component {
         username_value: localStorage.getItem("username") || "",
         visible: false,
         question: false,
+        selftest: "Self Audio Test",
+        tested: false,
     };
 
     componentDidMount() {
@@ -124,11 +126,34 @@ class VirtualClient extends Component {
                         this.state.audioContext.close();
                     }
                     micLevel(stream ,this.refs.canvas1,audioContext => {
-                        this.setState({audioContext});
+                        this.setState({audioContext, stream});
                     });
                 })
             }
         }
+    };
+
+    selfTest = () => {
+        this.setState({selftest: "Recording... 9"});
+        testMic(this.state.stream);
+
+        let rect = 9;
+        let rec = setInterval(() => {
+            rect--;
+            this.setState({selftest: "Recording... " + rect});
+            if(rect <= 0) {
+                clearInterval(rec);
+                let playt = 11;
+                let play = setInterval(() => {
+                    playt--;
+                    this.setState({selftest: "Playing... " + playt});
+                    if(playt <= 0) {
+                        clearInterval(play);
+                        this.setState({selftest: "Self Audio Test", tested: true});
+                    }
+                },1000);
+            }
+        },1000);
     };
 
     getRoomList = () => {
@@ -659,7 +684,7 @@ class VirtualClient extends Component {
 
     render() {
 
-        const { rooms,room,audio_devices,video_devices,video_device,audio_device,i,muted,cammuted,delay,mystream,selected_room,count,question} = this.state;
+        const { rooms,room,audio_devices,video_devices,video_device,audio_device,i,muted,cammuted,delay,mystream,selected_room,count,question,selftest,tested} = this.state;
         const width = "134";
         const height = "100";
         const autoPlay = true;
@@ -767,6 +792,10 @@ class VirtualClient extends Component {
                         </Menu.Item>
                     </Menu>
                     <Menu icon='labeled' secondary size="mini">
+                        <Menu.Item position='right' disabled={selftest !== "Self Audio Test" || mystream} onClick={this.selfTest}>
+                            <Icon color={tested ? 'green' : 'red'} name="sound" />
+                            {selftest}
+                        </Menu.Item>
                         <Menu.Item disabled={!mystream} onClick={this.micMute} className="mute-button">
                             <canvas className={muted ? 'hidden' : 'vumeter'} ref="canvas1" id="canvas1" width="15" height="35" />
                             <Icon color={muted ? "red" : ""} name={!muted ? "microphone" : "microphone slash"} />

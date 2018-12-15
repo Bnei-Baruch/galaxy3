@@ -4,7 +4,7 @@ import { Janus } from "../../lib/janus";
 import classNames from 'classnames';
 
 import {Menu, Select,Label,Icon,Popup} from "semantic-ui-react";
-import {geoInfo, initJanus, getDevicesStream, micLevel, checkNotification,testDevices,handleAction} from "../../shared/tools";
+import {geoInfo, initJanus, getDevicesStream, micLevel, checkNotification,testDevices,testMic} from "../../shared/tools";
 import './GroupClient.scss'
 import './VideoConteiner.scss'
 import nowebcam from './nowebcam.jpeg';
@@ -41,7 +41,8 @@ class GroupClient extends Component {
         users: {},
         visible: false,
         question: false,
-        selftest: false,
+        selftest: "Self Audio Test",
+        tested: false,
     };
 
     componentDidMount() {
@@ -139,11 +140,26 @@ class GroupClient extends Component {
     };
 
     selfTest = () => {
-        this.setState({selftest: true});
-        setTimeout(() => {
-            this.setState({selftest: false});
-        }, 3000);
-        handleAction(this.state.stream)
+        this.setState({selftest: "Recording... 9"});
+        testMic(this.state.stream);
+
+        let rect = 9;
+        let rec = setInterval(() => {
+            rect--;
+            this.setState({selftest: "Recording... " + rect});
+            if(rect <= 0) {
+                clearInterval(rec);
+                let playt = 11;
+                let play = setInterval(() => {
+                    playt--;
+                    this.setState({selftest: "Playing... " + playt});
+                    if(playt <= 0) {
+                        clearInterval(play);
+                        this.setState({selftest: "Self Audio Test", tested: true});
+                    }
+                },1000);
+            }
+        },1000);
     };
 
     initVideoRoom = (reconnect) => {
@@ -482,7 +498,7 @@ class GroupClient extends Component {
 
   render() {
 
-      const {user,audio_devices,video_devices,video_device,audio_device,muted,mystream,room,count,question,selftest} = this.state;
+      const {user,audio_devices,video_devices,video_device,audio_device,muted,mystream,room,count,question,selftest,tested} = this.state;
       const width = "134";
       const height = "100";
       const autoPlay = true;
@@ -556,9 +572,9 @@ class GroupClient extends Component {
               </Menu.Item>
             </Menu>
             <Menu icon='labeled' secondary size="mini">
-                <Menu.Item position='right' disabled={selftest} onClick={this.selfTest} className="mute-button">
-                    <Icon color='green' name={!muted ? "microphone" : "microphone slash"} />
-                    Self Check
+                <Menu.Item position='right' disabled={selftest !== "Self Audio Test" || mystream} onClick={this.selfTest}>
+                    <Icon color={tested ? 'green' : 'red'} name="sound" />
+                    {selftest}
                 </Menu.Item>
               <Menu.Item position='right' disabled onClick={this.micMute} className="mute-button">
                 <Icon color={muted ? "red" : ""} name={!muted ? "microphone" : "microphone slash"} />
