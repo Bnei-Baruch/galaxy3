@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import { Janus } from "../../lib/janus";
 import {Message, Button, Input} from "semantic-ui-react";
-import {initChatRoom,getDateString,joinChatRoom} from "../../shared/tools";
+import {initChatRoom, getDateString, joinChatRoom, notifyMe} from "../../shared/tools";
 
 
 class VirtualChat extends Component {
@@ -11,6 +11,8 @@ class VirtualChat extends Component {
         chatroom: null,
         input_value: "",
         messages: [],
+        support_msgs: [],
+        room_chat: true,
     };
 
     componentDidMount() {
@@ -82,6 +84,19 @@ class VirtualChat extends Component {
             if (whisper === true) {
                 // Private message
                 Janus.log("-:: It's private message: "+dateString+" : "+from+" : "+msg)
+                let {support_msgs} = this.state;
+                let message = JSON.parse(msg);
+                message.time = dateString;
+                Janus.log("-:: It's public message: "+message);
+                support_msgs.push(message);
+                this.setState({support_msgs});
+                if(this.props.visible) {
+                    this.scrollToBottom();
+                } else {
+                    notifyMe("Shidur",message.text,true);
+                    this.props.onNewMsg(true);
+                }
+                Janus.log("-:: It's private message: "+dateString+" : "+from+" : "+msg)
             } else {
                 // Public message
                 let {messages} = this.state;
@@ -144,11 +159,25 @@ class VirtualChat extends Component {
         this.refs.end.scrollIntoView({ behavior: 'smooth' })
     };
 
+    tooggleChat = (room_chat) => {
+        this.setState({room_chat});
+    };
+
     render() {
 
-        const {messages} = this.state;
+        const {messages,support_msgs,room_chat} = this.state;
 
-        let list_msgs = messages.map((msg,i) => {
+        let room_msgs = messages.map((msg,i) => {
+            let {user,time,text} = msg;
+            return (
+                <div key={i}><p>
+                    <i style={{color: 'grey'}}>{time}</i> -
+                    <b style={{color: user.role === "admin" ? 'red' : 'blue'}}>{user.display}</b>:
+                </p>{text}</div>
+            );
+        });
+
+        let admin_msgs = support_msgs.map((msg,i) => {
             let {user,time,text} = msg;
             return (
                 <div key={i}><p>
@@ -161,9 +190,13 @@ class VirtualChat extends Component {
         return (
             <div className="chat-panel" >
                 {/* <div className="chat" > */}
-                    <Message className='messages_list' size='mini'>
+                <Button.Group attached='top'>
+                    <Button onClick={() => this.tooggleChat(true)}>Room chat</Button>
+                    <Button onClick={() => this.tooggleChat(false)}>Support chat</Button>
+                </Button.Group>
+                    <Message attached className='messages_list' size='mini'>
                         <div className="messages-wrapper">
-                            {list_msgs}
+                            {room_chat ? room_msgs : admin_msgs}
                             <div ref='end' />
                         </div>
                         

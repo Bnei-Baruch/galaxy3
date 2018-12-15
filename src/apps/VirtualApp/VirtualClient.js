@@ -49,6 +49,7 @@ class VirtualClient extends Component {
         question: false,
         selftest: "Self Audio Test",
         tested: false,
+        support: false,
     };
 
     componentDidMount() {
@@ -644,7 +645,6 @@ class VirtualClient extends Component {
         this.setState({question: !question});
     };
 
-
     camMute = () => {
         let {videoroom,cammuted,protocol,user,room} = this.state;
         cammuted ? videoroom.unmuteVideo() : videoroom.muteVideo();
@@ -677,14 +677,14 @@ class VirtualClient extends Component {
         alert("You browser is block our popup! You need allow it")
     };
 
-    onNewMsg = () => {
+    onNewMsg = (private_message) => {
         this.setState({count: this.state.count + 1});
     };
 
 
     render() {
 
-        const { rooms,room,audio_devices,video_devices,video_device,audio_device,i,muted,cammuted,delay,mystream,selected_room,count,question,selftest,tested} = this.state;
+        const { rooms,room,audio_devices,video_devices,video_device,audio_device,i,muted,cammuted,delay,mystream,selected_room,count,question,selftest,tested,support,support_count} = this.state;
         const width = "134";
         const height = "100";
         const autoPlay = true;
@@ -743,6 +743,7 @@ class VirtualClient extends Component {
         });
 
         let l = (<Label key='Carbon' floating size='mini' color='red'>{count}</Label>);
+        let s = (<Label key='Carbon' floating size='mini' color='red'>{support_count}</Label>);
 
         return (
 
@@ -804,9 +805,6 @@ class VirtualClient extends Component {
                         <Menu.Item disabled={!mystream || delay} onClick={this.camMute}>
                             <Icon color={cammuted ? "red" : ""} name={!cammuted ? "eye" : "eye slash"} />
                             {!cammuted ? "Stop Video" : "Start Video"}
-                        </Menu.Item>
-                        <Menu.Item>
-                            <Icon name="life ring outline"/>Support online
                         </Menu.Item>
                         <Popup
                             trigger={<Menu.Item icon="setting" name="Settings"/>}
