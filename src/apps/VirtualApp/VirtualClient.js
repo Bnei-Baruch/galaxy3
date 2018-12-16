@@ -684,7 +684,7 @@ class VirtualClient extends Component {
 
     render() {
 
-        const { rooms,room,audio_devices,video_devices,video_device,audio_device,i,muted,cammuted,delay,mystream,selected_room,count,question,selftest,tested,support,support_count} = this.state;
+        const { rooms,room,audio_devices,video_devices,video_device,audio_device,i,muted,cammuted,delay,mystream,selected_room,count,question,selftest,tested} = this.state;
         const width = "134";
         const height = "100";
         const autoPlay = true;
@@ -743,7 +743,6 @@ class VirtualClient extends Component {
         });
 
         let l = (<Label key='Carbon' floating size='mini' color='red'>{count}</Label>);
-        let s = (<Label key='Carbon' floating size='mini' color='red'>{support_count}</Label>);
 
         return (
 
@@ -784,7 +783,7 @@ class VirtualClient extends Component {
                             Open Broadcast
                             {this.state.shidur ?
                                 <NewWindow
-                                url='https://v4g.kbb1.com/gxystr'
+                                url='https://galaxy.kli.one/gxystr'
                                 features={{width:"725",height:"635",left:"200",top:"200",location:"no"}}
                                 title='V4G' onUnload={this.onUnload} onBlock={this.onBlock}>
                                 </NewWindow> :
