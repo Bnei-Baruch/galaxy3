@@ -469,7 +469,7 @@ class ShidurAdmin extends Component {
 
     onData = (data) => {
         Janus.log(":: We got message from Data Channel: ",data);
-        var json = JSON.parse(data);
+        let json = JSON.parse(data);
         // var transaction = json["transaction"];
         // if (transactions[transaction]) {
         //     // Someone was waiting for this
@@ -477,46 +477,45 @@ class ShidurAdmin extends Component {
         //     delete transactions[transaction];
         //     return;
         // }
-        var what = json["textroom"];
+        let what = json["textroom"];
         if (what === "message") {
             // Incoming message: public or private?
-            var msg = json["text"];
+            let msg = json["text"];
+            let room = json["room"];
             msg = msg.replace(new RegExp('<', 'g'), '&lt');
             msg = msg.replace(new RegExp('>', 'g'), '&gt');
-            var from = json["from"];
-            var dateString = getDateString(json["date"]);
-            var whisper = json["whisper"];
+            let from = json["from"];
+            let dateString = getDateString(json["date"]);
+            let whisper = json["whisper"];
             if (whisper === true) {
                 // Private message
-                Janus.log("-:: It's private message: "+dateString+" : from: "+from+" : "+msg)
                 let {messages} = this.state;
-                //let message = dateString+" : "+from+" : "+msg;
                 let message = JSON.parse(msg);
+                message.user.username = message.user.display;
                 message.time = dateString;
-                Janus.log("-:: It's public message: "+message);
+                Janus.log("-:: It's private message: ", message, from);
                 messages.push(message);
                 this.setState({messages});
                 this.scrollToBottom();
-            } else {
+            } else if(room === 1234){
                 // Public message
                 let {messages} = this.state;
-                //let message = dateString+" : "+from+" : "+msg;
                 let message = JSON.parse(msg);
                 message.time = dateString;
-                Janus.log("-:: It's public message: "+message);
+                Janus.log("-:: It's public message: ", message);
                 messages.push(message);
                 this.setState({messages});
                 this.scrollToBottom();
             }
         } else if (what === "join") {
             // Somebody joined
-            var username = json["username"];
-            var display = json["display"];
+            let username = json["username"];
+            let display = json["display"];
             Janus.log("-:: Somebody joined - username: "+username+" : display: "+display)
         } else if (what === "leave") {
             // Somebody left
-            var username = json["username"];
-            var when = new Date();
+            let username = json["username"];
+            let when = new Date();
             Janus.log("-:: Somebody left - username: "+username+" : Time: "+getDateString())
         } else if (what === "kicked") {
             // Somebody was kicked
@@ -569,7 +568,7 @@ class ShidurAdmin extends Component {
     };
 
     sendPrivateMessage = () => {
-        let {input_value,user,feed_user} = this.state;
+        let {input_value,user,feed_user,current_room} = this.state;
         if(!feed_user) {
             alert("Choose user");
             return
@@ -595,7 +594,7 @@ class ShidurAdmin extends Component {
                 //FIXME: it's directly put to message box
                 let {messages} = this.state;
                 msg.time = getDateString();
-                msg.to = feed_user.username;
+                msg.to = current_room === 1234 ? feed_user.username : feed_user.display;
                 Janus.log("-:: It's public message: "+msg);
                 messages.push(msg);
                 this.setState({messages, input_value: ""});
