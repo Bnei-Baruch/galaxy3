@@ -96,6 +96,7 @@ class VirtualChat extends Component {
                     this.scrollToBottom();
                 } else {
                     notifyMe("Shidur",message.text,true);
+                    this.setState({room_chat: false});
                     this.props.onNewMsg(true);
                 }
             } else {
@@ -189,7 +190,7 @@ class VirtualChat extends Component {
             return (
                 <div key={i}><p>
                     <i style={{color: 'grey'}}>{time}</i> -
-                    <b style={{color: user.role === "admin" ? 'red' : 'blue'}}>{user.role === "admin" ? user.name : user.display}</b>:
+                    <b style={{color: user.role === "admin" ? 'red' : 'blue'}}>{user.role === "admin" ? user.username : user.display}</b>:
                 </p>{text}</div>
             );
         });
