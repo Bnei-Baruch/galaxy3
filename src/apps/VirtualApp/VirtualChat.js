@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import { Janus } from "../../lib/janus";
 import {Message, Button, Input} from "semantic-ui-react";
 import {initChatRoom, getDateString, joinChatRoom, notifyMe} from "../../shared/tools";
+import {SHIDUR_ID} from "../../shared/consts";
 
 
 class VirtualChat extends Component {
@@ -13,6 +14,7 @@ class VirtualChat extends Component {
         messages: [],
         support_msgs: [],
         room_chat: true,
+        from: null,
     };
 
     componentDidMount() {
@@ -64,6 +66,7 @@ class VirtualChat extends Component {
     };
 
     onData = (data) => {
+        Janus.log(":: We got message from Data Channel: ",data);
         var json = JSON.parse(data);
         // var transaction = json["transaction"];
         // if (transactions[transaction]) {
@@ -87,16 +90,14 @@ class VirtualChat extends Component {
                 let {support_msgs} = this.state;
                 let message = JSON.parse(msg);
                 message.time = dateString;
-                Janus.log("-:: It's public message: "+message);
                 support_msgs.push(message);
-                this.setState({support_msgs});
+                this.setState({support_msgs, from});
                 if(this.props.visible) {
                     this.scrollToBottom();
                 } else {
                     notifyMe("Shidur",message.text,true);
                     this.props.onNewMsg(true);
                 }
-                Janus.log("-:: It's private message: "+dateString+" : "+from+" : "+msg)
             } else {
                 // Public message
                 let {messages} = this.state;
@@ -132,12 +133,14 @@ class VirtualChat extends Component {
     };
 
     sendChatMessage = () => {
-        let {input_value, user} = this.state;
+        let {input_value, user, from, room_chat, support_msgs} = this.state;
         let msg = {user, text: input_value};
+        let pvt = room_chat ? "" : from ? {"to": from} : {"to": `${SHIDUR_ID}`};
         let message = {
             textroom: "message",
             transaction: Janus.randomString(12),
             room: this.state.room,
+            ...pvt,
             text: JSON.stringify(msg),
         };
         // Note: messages are always acknowledged by default. This means that you'll
@@ -151,6 +154,9 @@ class VirtualChat extends Component {
             success: () => {
                 Janus.log(":: Message sent ::");
                 this.setState({input_value: ""});
+                if(!room_chat) {
+                    support_msgs.push(msg);
+                }
             }
         });
     };
@@ -182,7 +188,7 @@ class VirtualChat extends Component {
             return (
                 <div key={i}><p>
                     <i style={{color: 'grey'}}>{time}</i> -
-                    <b style={{color: user.role === "admin" ? 'red' : 'blue'}}>{user.display}</b>:
+                    <b style={{color: user.role === "admin" ? 'red' : 'blue'}}>{user.role === "admin" ? user.name : user.display}</b>:
                 </p>{text}</div>
             );
         });
@@ -191,10 +197,10 @@ class VirtualChat extends Component {
             <div className="chat-panel" >
                 {/* <div className="chat" > */}
                 <Button.Group attached='top'>
-                    <Button onClick={() => this.tooggleChat(true)}>Room chat</Button>
-                    <Button onClick={() => this.tooggleChat(false)}>Support chat</Button>
+                    <Button disabled={room_chat} color='blue' onClick={() => this.tooggleChat(true)}>Room chat</Button>
+                    <Button disabled={!room_chat} color='blue' onClick={() => this.tooggleChat(false)}>Support chat</Button>
                 </Button.Group>
-                    <Message attached className='messages_list' size='mini'>
+                    <Message attached className='messages_list'>
                         <div className="messages-wrapper">
                             {room_chat ? room_msgs : admin_msgs}
                             <div ref='end' />
@@ -202,7 +208,7 @@ class VirtualChat extends Component {
                         
                     </Message>
 
-                    <Input size='mini' fluid type='text' placeholder='Type your message' action value={this.state.input_value}
+                    <Input fluid type='text' placeholder='Type your message' action value={this.state.input_value}
                         onChange={(v,{value}) => this.setState({input_value: value})}>
                         <input />
                         <Button size='mini' positive onClick={this.sendChatMessage}>Send</Button>
