@@ -156,6 +156,7 @@ class VirtualChat extends Component {
                 this.setState({input_value: ""});
                 if(!room_chat) {
                     support_msgs.push(msg);
+                    this.setState({support_msgs});
                 }
             }
         });
