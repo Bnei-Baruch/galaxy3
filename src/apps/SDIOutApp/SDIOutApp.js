@@ -6,6 +6,7 @@ import './SDIOutApp.css';
 import {initGxyProtocol} from "../../shared/protocol";
 import SDIOutGroups from "./SDIOutGroups";
 import SDIOutUsers from "./SDIOutUsers";
+import {SDIOUT_ID} from "../../shared/consts";
 
 
 class SDIOutApp extends Component {
@@ -37,7 +38,7 @@ class SDIOutApp extends Component {
             handle: 0,
             role: "sdiout",
             display: "sdiout",
-            id: Janus.randomString(10),
+            id: SDIOUT_ID,
             name: "sdiout"
         },
         users: {},
