@@ -318,6 +318,9 @@ class ShidurApp extends Component {
                     break
                 }
             }
+        } else if(data.type === "event") {
+            delete data.type;
+            this.setState({...data});
         }
     };
 
