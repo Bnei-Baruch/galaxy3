@@ -41,6 +41,8 @@ class ShidurApp extends Component {
         zoom: false,
         fullscr: false,
         round: 0,
+        sdiout: false,
+        sndman: false,
     };
 
     componentDidMount() {
@@ -438,7 +440,7 @@ class ShidurApp extends Component {
 
     render() {
 
-        const {user,feeds,feeds_queue,disabled_groups,round,qfeeds,pri} = this.state;
+        const {user,feeds,feeds_queue,disabled_groups,round,qfeeds,pri,sdiout,sndman} = this.state;
 
         let disabled_list = disabled_groups.map((data,i) => {
             const {id, display} = data;
@@ -468,7 +470,7 @@ class ShidurApp extends Component {
                         ref={col => {this.col2 = col;}}
                         setProps={this.setProps}
                         removeFeed={this.removeFeed} />
-                        <Message className='info-panel' color='grey'>
+                        <Message attached className='info-panel' color='grey'>
                             <Popup on='click'
                                 trigger={<Label attached='top right' color='grey'>
                                             Online: {feeds.length}
@@ -503,6 +505,10 @@ class ShidurApp extends Component {
                                 Questions: {qfeeds.length}
                             </Label>
                         </Message>
+                    <Button.Group attached='bottom'>
+                        <Button color={sndman ? "green" : "red"} disabled>SndMan</Button>
+                        <Button color={sdiout ? "green" : "red"} disabled>SdiOut</Button>
+                    </Button.Group>
                 </Grid.Column>
                 <Grid.Column>
                     <ShidurGroups
