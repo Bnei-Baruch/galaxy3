@@ -264,7 +264,7 @@ class SDIOutApp extends Component {
             disabled_groups.push(feed);
             this.removeFeed(feed.id);
             this.setState({disabled_groups});
-        } else if(data.type === "sdi-restart") {
+        } else if(data.type === "sdi-restart" && data.feed.sdiout) {
             window.location.reload();
         } else if(data.type === "sdi-fix") {
             let {col, feed, i} = data;
@@ -302,6 +302,17 @@ class SDIOutApp extends Component {
                     break
                 }
             }
+        } else if(data.type === "sdi-state" && data.feed.sdiout) {
+            this.setState({pgm_state: data.status});
+            data.status.forEach((pgm,i) => {
+                if(i < 4) {
+                    this.col1.switchNext(i,pgm);
+                } else if(i < 8) {
+                    this.col2.switchNext(i,pgm);
+                } else if(i < 12) {
+                    this.col3.switchNext(i,pgm);
+                }
+            })
         }
     };
 

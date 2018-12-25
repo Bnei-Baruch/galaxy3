@@ -323,6 +323,9 @@ class ShidurApp extends Component {
         } else if(data.type === "event") {
             delete data.type;
             this.setState({...data});
+            if(data.sdiout || data.sndman) {
+                this.col1.sdiAction("state",this.state.pgm_state,1, data);
+            }
         }
     };
 
@@ -471,15 +474,9 @@ class ShidurApp extends Component {
                         setProps={this.setProps}
                         removeFeed={this.removeFeed} />
                         <Message attached className='info-panel' color='grey'>
-                            <Popup on='click'
-                                trigger={<Label attached='top right' color='grey'>
-                                            Online: {feeds.length}
-                                        </Label>}
-                                flowing
-                                position='bottom center'
-                                hoverable>
-                                <Button negative content='Reload' onClick={this.reloadPage}/>
-                            </Popup>
+                            <Label attached='top right' color='grey'>
+                                Online: {feeds.length}
+                            </Label>
                             <Popup on='click'
                                    trigger={<Label attached='top left' color='grey'>
                                             Next: {feeds[feeds_queue] ? JSON.parse(feeds[feeds_queue].display).display : ""}
@@ -506,8 +503,16 @@ class ShidurApp extends Component {
                             </Label>
                         </Message>
                     <Button.Group attached='bottom'>
-                        <Button color={sndman ? "green" : "red"} disabled>SndMan</Button>
-                        <Button color={sdiout ? "green" : "red"} disabled>SdiOut</Button>
+                        <Button
+                            color={sndman ? "green" : "red"}
+                            disabled={!sndman}
+                            onClick={() => this.col1.sdiAction("restart", false, 1, {sndman: true})}>
+                            SndMan</Button>
+                        <Button
+                            color={sdiout ? "green" : "red"}
+                            disabled={!sdiout}
+                            onClick={() => this.col1.sdiAction("restart", false, 1, {sdiout: true})}>
+                            SdiOut</Button>
                     </Button.Group>
                 </Grid.Column>
                 <Grid.Column>
