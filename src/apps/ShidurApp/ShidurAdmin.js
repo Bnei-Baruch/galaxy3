@@ -527,11 +527,12 @@ class ShidurAdmin extends Component {
     };
 
     onProtocolData = (data) => {
-        if(data.type === "question" && data.status) {
-            let {quistions_queue} = this.state;
+        if(data.type === "question" && data.status && data.room === 1234) {
+            let {quistions_queue,users} = this.state;
+            data.user.rfid = users[data.user.id].rfid;
             quistions_queue.push(data);
             this.setState({quistions_queue});
-        } else if(data.type === "question" && !data.status) {
+        } else if(data.type === "question" && !data.status && data.room === 1234) {
             let {quistions_queue} = this.state;
             for(let i = 0; i < quistions_queue.length; i++){
                 if(quistions_queue[i].user.id === data.user.id) {
@@ -713,7 +714,7 @@ class ShidurAdmin extends Component {
                     }
                 } else if(msg["leaving"] !== undefined && msg["leaving"] !== null) {
                     // One of the publishers has gone away?
-                    let {feeds} = this.state;
+                    let {feeds,quistions_queue} = this.state;
                     let leaving = msg["leaving"];
                     Janus.log("Publisher left: " + leaving);
                     for(let i=0; i<feeds.length; i++) {
@@ -723,9 +724,16 @@ class ShidurAdmin extends Component {
                             break;
                         }
                     }
+                    // Delete from questions list
+                    for(let i = 0; i < quistions_queue.length; i++){
+                        if(quistions_queue[i].user.rfid === leaving) {
+                            quistions_queue.splice(i, 1);
+                            break
+                        }
+                    }
                 } else if(msg["unpublished"] !== undefined && msg["unpublished"] !== null) {
                     // One of the publishers has unpublished?
-                    let {feeds} = this.state;
+                    let {feeds,quistions_queue} = this.state;
                     let unpublished = msg["unpublished"];
                     Janus.log("Publisher left: " + unpublished);
                     if(unpublished === 'ok') {
@@ -738,6 +746,13 @@ class ShidurAdmin extends Component {
                             feeds.splice(i, 1);
                             this.setState({feeds});
                             break;
+                        }
+                    }
+                    // Delete from questions list
+                    for(let i = 0; i < quistions_queue.length; i++){
+                        if(quistions_queue[i].user.rfid === unpublished) {
+                            quistions_queue.splice(i, 1);
+                            break
                         }
                     }
                 } else if(msg["error"] !== undefined && msg["error"] !== null) {
@@ -962,7 +977,7 @@ class ShidurAdmin extends Component {
 
   render() {
 
-      const { bitrate,rooms,current_room,switch_mode,user,feeds,i,messages,description,roomid,root,forwarders,feed_rtcp,feed_talk } = this.state;
+      const { bitrate,rooms,current_room,switch_mode,user,feeds,i,messages,description,roomid,root,forwarders,feed_rtcp,feed_talk,quistions_queue } = this.state;
       const width = "134";
       const height = "100";
       const autoPlay = true;
@@ -970,6 +985,7 @@ class ShidurAdmin extends Component {
       const muted = true;
 
       let v = (<Icon name='volume up' />);
+      let q = (<Icon color='red' name='help' />);
 
       const bitrate_options = [
           { key: 1, text: '150Kb/s', value: 150000 },
@@ -997,9 +1013,10 @@ class ShidurAdmin extends Component {
       let users_grid = feeds.map((feed,i) => {
           if(feed) {
               let fw = forwarders.filter(f => f.publisher_id === (current_room === 1234 ? feed.id : feed.rfid)).length > 0;
+              let qt = quistions_queue.find(f => f.user.id === feed.rfuser.id);
               return (
                   <Table.Row active={feed.rfid === this.state.feed_id} key={i} onClick={() => this.getUserInfo(feed)} >
-                      <Table.Cell width={5}>{feed.rfuser.display}</Table.Cell>
+                      <Table.Cell width={5}>{qt ? q : ""}{feed.rfuser.display}</Table.Cell>
                       <Table.Cell width={1}>{fw ? v : ""}</Table.Cell>
                   </Table.Row>
               )
