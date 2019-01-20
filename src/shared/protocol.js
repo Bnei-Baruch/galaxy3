@@ -1,5 +1,5 @@
 import {Janus} from "../lib/janus";
-import {PROTOCOL_ROOM,SHIDUR_ID} from "./consts";
+import {PROTOCOL_ROOM, SDIOUT_ID, SHIDUR_ID, SNDMAN_ID, STORAN_ID} from "./consts";
 import {getDateString} from "./tools";
 
 const attachGxyProtocol = (protocol, user) => {
@@ -71,7 +71,7 @@ export const initGxyProtocol = (janus,user,callback,ondata) => {
             },
             ondata: (data) => {
                 Janus.debug("We got data from the DataChannel! " + data);
-                onProtocolData(data,ondata);
+                onProtocolData(data,user,ondata);
             },
             oncleanup: () => {
                 Janus.log(" ::: Got a cleanup notification :::");
@@ -79,7 +79,7 @@ export const initGxyProtocol = (janus,user,callback,ondata) => {
         });
 };
 
-const onProtocolData = (data,ondata) => {
+const onProtocolData = (data,user,ondata) => {
     let json = JSON.parse(data);
     // var transaction = json["transaction"];
     // if (transactions[transaction]) {
@@ -108,13 +108,25 @@ const onProtocolData = (data,ondata) => {
         }
     } else if (what === "success") {
         if(json.participants) {
-            Janus.log("--- Got Protocol Users: ", json);
-            let pcliens = json.participants.filter(c => c.username.match(SHIDUR_ID));
-            if (pcliens.length > 0) {
-                //TODO: Notify user
+            Janus.log("--- Got Protocol Users: ", json, user);
+            let shidur = json.participants.find(c => c.username === SHIDUR_ID);
+            let sndman = json.participants.find(c => c.username === SNDMAN_ID);
+            let sdiout = json.participants.find(c => c.username === SDIOUT_ID);
+
+            if (shidur) {
                 Janus.log(":: Support Online ::");
             } else {
                 Janus.log(":: Support Offline ::");
+            }
+
+            if (sndman && user.id === STORAN_ID) {
+                Janus.log(":: SoundMan " + (sndman ? "Online" : "Offline") + " ::");
+                ondata({type: "event", sndman: sndman.username === SNDMAN_ID})
+            }
+
+            if (sdiout && user.id === STORAN_ID) {
+                Janus.log(":: SdiOut " + (sdiout ? "Online" : "Offline") + "  ::");
+                ondata({type: "event", sdiout: sdiout.username === SDIOUT_ID})
             }
         }
     } else if (what === "join") {
@@ -122,18 +134,36 @@ const onProtocolData = (data,ondata) => {
         let username = json["username"];
         let display = json["display"];
         Janus.log("- Somebody joined - username: "+username+" : display: "+display);
-        if (username.match(SHIDUR_ID)) {
-            //TODO: Notify user
-            Janus.log(":: Support Online ::");
+        if (username === SHIDUR_ID) {
+            Janus.log(":: Support Enter ::");
+        }
+
+        if (username === SNDMAN_ID && user.id === STORAN_ID) {
+            Janus.log(":: SoundMan Enter ::");
+            ondata({type: "event", sndman: true})
+        }
+
+        if (username === SDIOUT_ID && user.id === STORAN_ID) {
+            Janus.log(":: SdiOut Enter ::");
+            ondata({type: "event", sdiout: true})
         }
     } else if (what === "leave") {
         // Somebody left
         let username = json["username"];
         //var when = new Date();
         Janus.log("-:: Somebody left - username: "+username+" : Time: "+getDateString());
-        if (username.match(SHIDUR_ID)) {
-            //TODO: Notify user
-            Janus.log(":: Support Offline ::");
+        if (username === SHIDUR_ID) {
+            Janus.log(":: Support Left ::");
+        }
+
+        if (username === SNDMAN_ID && user.id === STORAN_ID) {
+            Janus.log(":: SoundMan Left ::");
+            ondata({type: "event", sndman: false})
+        }
+
+        if (username === SDIOUT_ID && user.id === STORAN_ID) {
+            Janus.log(":: SdiOut Left ::");
+            ondata({type: "event", sdiout: false})
         }
     } else if (what === "kicked") {
         // Somebody was kicked

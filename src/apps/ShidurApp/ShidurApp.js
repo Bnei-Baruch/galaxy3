@@ -41,6 +41,8 @@ class ShidurApp extends Component {
         zoom: false,
         fullscr: false,
         round: 0,
+        sdiout: false,
+        sndman: false,
     };
 
     componentDidMount() {
@@ -83,6 +85,10 @@ class ShidurApp extends Component {
                 this.onProtocolData(ondata);
             });
 
+        },er => {
+            setTimeout(() => {
+                window.location.reload();
+            }, 3000);
         });
     };
 
@@ -262,7 +268,7 @@ class ShidurApp extends Component {
 
     onProtocolData = (data) => {
         if(data.type === "question" && data.status) {
-            let {quistions_queue,users,qfeeds,pgm_state} = this.state;
+            let {quistions_queue,users,qfeeds,pgm_state,pr1} = this.state;
             if(users[data.user.id]) {
                 users[data.user.id].question = true;
                 data.rfid = users[data.user.id].rfid;
@@ -271,8 +277,28 @@ class ShidurApp extends Component {
 
                 // Check if qfeed already in program
                 let chk = pgm_state.filter(q => {return (q !== null && q !== undefined && q.id === data.rfid)});
-                if(chk.length === 0)
+
+                if(chk.length === 0) {
                     qfeeds.push(q);
+                } else {
+                    for(let i = 0; i < pgm_state.length; i++){
+                        let c = 0;
+                        if(pgm_state[i].id === chk[c].id) {
+                            pr1[i].detach();
+                            pr1[i] = null;
+                            if(i < 4) {
+                                this.col1.switchNext(i,chk[0]);
+                            } else if(i < 8) {
+                                this.col2.switchNext(i,chk[0]);
+                            } else if(i < 12) {
+                                this.col3.switchNext(i,chk[0]);
+                            }
+                            if(chk.length > 1) {
+                                c++
+                            }
+                        }
+                    }
+                }
 
                 this.setState({quistions_queue, users, qfeeds});
             }
@@ -294,11 +320,17 @@ class ShidurApp extends Component {
                     break
                 }
             }
+        } else if(data.type === "event") {
+            delete data.type;
+            this.setState({...data});
+            if(data.sdiout || data.sndman) {
+                this.col1.sdiAction("state",this.state.pgm_state,1, data);
+            }
         }
     };
 
     removeFeed = (id) => {
-        let {feeds,users,quistions_queue,qfeeds} = this.state;
+        let {feeds,users,quistions_queue,qfeeds,feeds_queue} = this.state;
         for(let i=0; i<feeds.length; i++){
             if(feeds[i].id === id) {
 
@@ -325,15 +357,22 @@ class ShidurApp extends Component {
 
                 // Remove from general feeds list
                 feeds.splice(i, 1);
+
+                // Fix feeds_queue if equal to last index
+                if(feeds_queue >= feeds.length - 1) {
+                    feeds_queue = feeds.length - 1;
+                    this.setState({feeds_queue});
+                }
+
                 this.setState({feeds,users,quistions_queue});
-                this.checkProgram(id,feeds);
+                this.checkProgram(id,feeds,feeds_queue);
                 break
             }
         }
     };
 
-    checkProgram = (id,feeds) => {
-        let {feeds_queue,pgm_state,pr1} = this.state;
+    checkProgram = (id,feeds,feeds_queue) => {
+        let {pgm_state,pr1,round} = this.state;
 
         pgm_state.forEach((pgm,i) => {
             if(pgm_state[i] && pgm.id === id) {
@@ -343,18 +382,18 @@ class ShidurApp extends Component {
                     pgm_state[i] = null;
                     pr1[i] = null;
                 } else {
-                    if(feeds_queue === 0) {
-                        //FIXME: When it's happend?
-                         console.log(" -- Feed remove while feeds_queue was - 0");
-                    } else {
-                        feeds_queue--;
-                        this.setState({feeds_queue});
-                    }
-                    // if program is full we does not remove video element
-                    //pgm_state[i] = null;
                     pr1[i].detach();
                     pr1[i] = null;
                     let feed = feeds[feeds_queue];
+                    feeds_queue++;
+                    if(feeds_queue >= feeds.length) {
+                        // End round here!
+                        feeds_queue = 0;
+                        round++;
+                        Janus.log(" -- ROUND END --");
+                    }
+                    this.setState({feeds_queue,round});
+
                     if(i < 4) {
                         this.col1.switchNext(i,feed,"remove");
                     } else if(i < 8) {
@@ -404,7 +443,7 @@ class ShidurApp extends Component {
 
     render() {
 
-        const {user,feeds,feeds_queue,disabled_groups,round,qfeeds,pri} = this.state;
+        const {user,feeds,feeds_queue,disabled_groups,round,qfeeds,pri,sdiout,sndman} = this.state;
 
         let disabled_list = disabled_groups.map((data,i) => {
             const {id, display} = data;
@@ -434,16 +473,10 @@ class ShidurApp extends Component {
                         ref={col => {this.col2 = col;}}
                         setProps={this.setProps}
                         removeFeed={this.removeFeed} />
-                        <Message className='info-panel' color='grey'>
-                            <Popup on='click'
-                                trigger={<Label attached='top right' color='grey'>
-                                            Online: {feeds.length}
-                                        </Label>}
-                                flowing
-                                position='bottom center'
-                                hoverable>
-                                <Button negative content='Reload' onClick={this.reloadPage}/>
-                            </Popup>
+                        <Message attached className='info-panel' color='grey'>
+                            <Label attached='top right' color='grey'>
+                                Online: {feeds.length}
+                            </Label>
                             <Popup on='click'
                                    trigger={<Label attached='top left' color='grey'>
                                             Next: {feeds[feeds_queue] ? JSON.parse(feeds[feeds_queue].display).display : ""}
@@ -469,6 +502,18 @@ class ShidurApp extends Component {
                                 Questions: {qfeeds.length}
                             </Label>
                         </Message>
+                    <Button.Group attached='bottom'>
+                        <Button
+                            color={sndman ? "green" : "red"}
+                            disabled={!sndman}
+                            onClick={() => this.col1.sdiAction("restart", false, 1, {sndman: true})}>
+                            SndMan</Button>
+                        <Button
+                            color={sdiout ? "green" : "red"}
+                            disabled={!sdiout}
+                            onClick={() => this.col1.sdiAction("restart", false, 1, {sdiout: true})}>
+                            SdiOut</Button>
+                    </Button.Group>
                 </Grid.Column>
                 <Grid.Column>
                     <ShidurGroups

@@ -14,6 +14,23 @@
     display: none;
 }
 
+.qst_users {
+    font-family: Icons;
+    font-weight: bolder;
+    line-height: 0.9em;
+    position: absolute;
+    color: black;
+    text-align: center;
+    font-size: 45px;
+    background-color: white;
+    /*background:rgba(34, 34, 34, .9);*/
+    width: auto;
+    padding: 4.5px 10px;
+    float: right!important;
+    right: 40px;
+    top: 45px;
+}
+
 .videos-panel {
     width: 100%;
     height: 100%;

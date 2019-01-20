@@ -6,6 +6,7 @@ import './SDIOutApp.css';
 import {initGxyProtocol} from "../../shared/protocol";
 import SDIOutGroups from "./SDIOutGroups";
 import SDIOutUsers from "./SDIOutUsers";
+import {SDIOUT_ID} from "../../shared/consts";
 
 
 class SDIOutApp extends Component {
@@ -37,7 +38,7 @@ class SDIOutApp extends Component {
             handle: 0,
             role: "sdiout",
             display: "sdiout",
-            id: Janus.randomString(10),
+            id: SDIOUT_ID,
             name: "sdiout"
         },
         users: {},
@@ -59,6 +60,10 @@ class SDIOutApp extends Component {
                 this.onProtocolData(ondata);
             });
 
+        }, er => {
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
         });
     };
 
@@ -190,6 +195,15 @@ class SDIOutApp extends Component {
                     // One of the publishers has gone away?
                     let leaving = msg["leaving"];
                     Janus.log("Publisher left: " + leaving);
+                    let {disabled_groups} = this.state;
+                    // Delete from disabled_groups
+                    for(let i = 0; i < disabled_groups.length; i++){
+                        if(disabled_groups[i].id === leaving) {
+                            disabled_groups.splice(i, 1);
+                            this.setState({disabled_groups});
+                            break
+                        }
+                    }
                     this.removeFeed(leaving);
                 } else if(msg["unpublished"] !== undefined && msg["unpublished"] !== null) {
                     // One of the publishers has unpublished?
@@ -199,6 +213,15 @@ class SDIOutApp extends Component {
                         // That's us
                         this.state.gxyhandle.hangup();
                         return;
+                    }
+                    let {disabled_groups} = this.state;
+                    // Delete from disabled_groups
+                    for(let i = 0; i < disabled_groups.length; i++){
+                        if(disabled_groups[i].id === unpublished) {
+                            disabled_groups.splice(i, 1);
+                            this.setState({disabled_groups});
+                            break
+                        }
                     }
                     this.removeFeed(unpublished);
                 } else if(msg["error"] !== undefined && msg["error"] !== null) {
@@ -219,9 +242,9 @@ class SDIOutApp extends Component {
 
     onProtocolData = (data) => {
         if(data.type === "sdi-switch") {
-            let {col, feed, i} = data;
+            let {col, feed, i, status} = data;
             console.log(" :: Got Shidur Action: ",data);
-            this["col"+col].switchNext(i,feed);
+            this["col"+col].switchNext(i,feed,status);
         } else if(data.type === "sdi-fullscreen" && data.status) {
             let {col, feed, i} = data;
             console.log(" :: Got Shidur Action: ",data);
@@ -241,7 +264,7 @@ class SDIOutApp extends Component {
             disabled_groups.push(feed);
             this.removeFeed(feed.id);
             this.setState({disabled_groups});
-        } else if(data.type === "sdi-restart") {
+        } else if(data.type === "sdi-restart" && data.feed.sdiout) {
             window.location.reload();
         } else if(data.type === "sdi-fix") {
             let {col, feed, i} = data;
@@ -279,6 +302,17 @@ class SDIOutApp extends Component {
                     break
                 }
             }
+        } else if(data.type === "sdi-state" && data.feed.sdiout) {
+            this.setState({pgm_state: data.status});
+            data.status.forEach((pgm,i) => {
+                if(i < 4) {
+                    this.col1.switchNext(i,pgm);
+                } else if(i < 8) {
+                    this.col2.switchNext(i,pgm);
+                } else if(i < 12) {
+                    this.col3.switchNext(i,pgm);
+                }
+            })
         }
     };
 
@@ -329,14 +363,14 @@ class SDIOutApp extends Component {
                     //pgm_state[i] = null;
                     pr1[i].detach();
                     pr1[i] = null;
-                    let feed = feeds[feeds_queue];
-                    if(i < 4) {
-                        this.col1.switchNext(i,feed);
-                    } else if(i < 8) {
-                        this.col2.switchNext(i,feed);
-                    } else if(i < 12) {
-                        this.col3.switchNext(i,feed);
-                    }
+                    // let feed = feeds[feeds_queue];
+                    // if(i < 4) {
+                    //     this.col1.switchNext(i,feed);
+                    // } else if(i < 8) {
+                    //     this.col2.switchNext(i,feed);
+                    // } else if(i < 12) {
+                    //     this.col3.switchNext(i,feed);
+                    // }
                 }
             }
         });

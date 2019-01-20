@@ -4,7 +4,7 @@ import { Janus } from "../../lib/janus";
 import classNames from 'classnames';
 
 import {Menu, Select, Button,Input,Label,Icon,Popup} from "semantic-ui-react";
-import {geoInfo, initJanus, getDevicesStream, micLevel, checkNotification,testDevices} from "../../shared/tools";
+import {geoInfo, initJanus, getDevicesStream, micLevel, checkNotification,testDevices,testMic} from "../../shared/tools";
 import './VirtualClient.scss'
 import './VideoConteiner.scss'
 import {MAX_FEEDS} from "../../shared/consts";
@@ -15,6 +15,7 @@ class VirtualClient extends Component {
 
     state = {
         count: 0,
+        delay: false,
         audioContext: null,
         audio_devices: [],
         video_devices: [],
@@ -46,6 +47,9 @@ class VirtualClient extends Component {
         username_value: localStorage.getItem("username") || "",
         visible: false,
         question: false,
+        selftest: "Self Audio Test",
+        tested: false,
+        support: false,
     };
 
     componentDidMount() {
@@ -123,11 +127,34 @@ class VirtualClient extends Component {
                         this.state.audioContext.close();
                     }
                     micLevel(stream ,this.refs.canvas1,audioContext => {
-                        this.setState({audioContext});
+                        this.setState({audioContext, stream});
                     });
                 })
             }
         }
+    };
+
+    selfTest = () => {
+        this.setState({selftest: "Recording... 9"});
+        testMic(this.state.stream);
+
+        let rect = 9;
+        let rec = setInterval(() => {
+            rect--;
+            this.setState({selftest: "Recording... " + rect});
+            if(rect <= 0) {
+                clearInterval(rec);
+                let playt = 11;
+                let play = setInterval(() => {
+                    playt--;
+                    this.setState({selftest: "Playing... " + playt});
+                    if(playt <= 0) {
+                        clearInterval(play);
+                        this.setState({selftest: "Self Audio Test", tested: true});
+                    }
+                },1000);
+            }
+        },1000);
     };
 
     getRoomList = () => {
@@ -135,16 +162,17 @@ class VirtualClient extends Component {
         if (videoroom) {
             videoroom.send({message: {request: "list"},
                 success: (data) => {
-                    Janus.debug(" :: Get Rooms List: ", data.list);
-                    data.list.sort((a, b) => {
+                    Janus.log(" :: Get Rooms List: ", data.list);
+                    let filter = data.list.filter(r => !/W\./i.test(r.description));
+                    filter.sort((a, b) => {
                         // if (a.num_participants > b.num_participants) return -1;
                         // if (a.num_participants < b.num_participants) return 1;
                         if (a.description > b.description) return 1;
                         if (a.description < b.description) return -1;
                         return 0;
                     });
-                    this.setState({rooms: data.list});
-                    this.getFeedsList(data.list)
+                    this.setState({rooms: filter});
+                    this.getFeedsList(filter)
                 }
             });
         }
@@ -183,7 +211,7 @@ class VirtualClient extends Component {
                 this.initDevices(true);
                 if(reconnect) {
                     setTimeout(() => {
-                        this.joinRoom();
+                        this.joinRoom(reconnect);
                     }, 5000);
                 }
                 // Get list rooms
@@ -319,16 +347,7 @@ class VirtualClient extends Component {
                 onremotestream: (stream) => {
                     Janus.debug("Remote feed #" + remoteFeed.rfindex);
                     let remotevideo = this.refs["remoteVideo" + remoteFeed.rfid];
-                    // if(remotevideo.length === 0) {
-                    //     // No remote video yet
-                    // }
                     Janus.attachMediaStream(remotevideo, stream);
-                    var videoTracks = stream.getVideoTracks();
-                    if(videoTracks === null || videoTracks === undefined || videoTracks.length === 0) {
-                        // No remote video
-                    } else {
-                        // Yes remote video
-                    }
                 },
                 ondataopen: (data) => {
                     Janus.log("The DataChannel is available!(feed)");
@@ -336,12 +355,26 @@ class VirtualClient extends Component {
                 ondata: (data) => {
                     Janus.debug("We got data from the DataChannel! (feed) " + data);
                     let msg = JSON.parse(data);
+                    this.onRoomData(msg);
                     Janus.log(" :: We got msg via DataChannel: ",msg)
                 },
                 oncleanup: () => {
                     Janus.log(" ::: Got a cleanup notification (remote feed " + id + ") :::");
                 }
             });
+    };
+
+    onRoomData = (data) => {
+        let {feeds,users} = this.state;
+        let rfid = users[data.id].rfid;
+        let camera = data.camera;
+        for (let i = 1; i < feeds.length; i++) {
+            if (feeds[i] !== null && feeds[i] !== undefined && feeds[i].rfid === rfid) {
+                feeds[i].cammute = !camera;
+                this.setState({feeds});
+                break
+            }
+        }
     };
 
     publishOwnFeed = (useVideo) => {
@@ -548,7 +581,7 @@ class VirtualClient extends Component {
         videoroom.data({ text: message })
     };
 
-    joinRoom = () => {
+    joinRoom = (reconnect) => {
         let {janus, videoroom, selected_room, user, username_value} = this.state;
         localStorage.setItem("room", selected_room);
         //This name will see other users
@@ -559,6 +592,13 @@ class VirtualClient extends Component {
         this.setState({user, muted: true, room: selected_room});
         initGxyProtocol(janus, user, protocol => {
             this.setState({protocol});
+            // Send question event if before join it was true
+            if(reconnect && JSON.parse(localStorage.getItem("question"))) {
+                let msg = { type: "question", status: true, room: selected_room, user};
+                setTimeout(() => {
+                    sendProtocolMessage(protocol, user, msg );
+                }, 5000);
+            }
         }, ondata => {
             Janus.log("-- :: It's protocol public message: ", ondata);
             this.onProtocolData(ondata);
@@ -570,7 +610,7 @@ class VirtualClient extends Component {
         let leave = {request : "leave"};
         Janus.log(room);
         videoroom.send({"message": leave});
-        this.setState({muted: false, mystream: null, room: "", selected_room: "", i: "", feeds: []});
+        this.setState({muted: false, cammuted: false, mystream: null, room: "", selected_room: "", i: "", feeds: []});
         this.initVideoRoom();
         protocol.detach();
     };
@@ -599,17 +639,23 @@ class VirtualClient extends Component {
     handleQuestion = () => {
         //TODO: only when shidur user is online will be avelable send question event, so we need to add check
         const { protocol, user, room, question} = this.state;
+        localStorage.setItem("question", !question);
         let msg = { type: "question", status: !question, room, user};
         sendProtocolMessage(protocol, user, msg );
         this.setState({question: !question});
     };
 
-
     camMute = () => {
-        let {videoroom,cammuted} = this.state;
+        let {videoroom,cammuted,protocol,user,room} = this.state;
         cammuted ? videoroom.unmuteVideo() : videoroom.muteVideo();
-        this.setState({cammuted: !cammuted});
+        this.setState({cammuted: !cammuted, delay: true});
+        setTimeout(() => {
+            this.setState({delay: false});
+        }, 3000);
         this.sendDataMessage("camera", this.state.cammuted);
+        // Send to protocol camera status event
+        let msg = { type: "camera", status: cammuted, room, user};
+        sendProtocolMessage(protocol, user, msg );
     };
 
     micMute = () => {
@@ -631,14 +677,14 @@ class VirtualClient extends Component {
         alert("You browser is block our popup! You need allow it")
     };
 
-    onNewMsg = () => {
+    onNewMsg = (private_message) => {
         this.setState({count: this.state.count + 1});
     };
 
 
     render() {
 
-        const { rooms,room,audio_devices,video_devices,video_device,audio_device,i,muted,cammuted,mystream,selected_room,count,question} = this.state;
+        const { rooms,room,audio_devices,video_devices,video_device,audio_device,i,muted,cammuted,delay,mystream,selected_room,count,question,selftest,tested} = this.state;
         const width = "134";
         const height = "100";
         const autoPlay = true;
@@ -667,6 +713,7 @@ class VirtualClient extends Component {
                 let id = feed.rfid;
                 let talk = feed.talk;
                 let question = feed.question;
+                let cammute = feed.cammute;
                 let name = feed.rfuser.display;
                 return (<div className="video"
                 key={"v" + id}
@@ -680,7 +727,8 @@ class VirtualClient extends Component {
                     </div>:''}
                     <div className="video__title">{!talk ? <Icon name="microphone slash" size="small" color="red"/> : ''}{name}</div>
                 </div>
-                <video 
+                    <svg className={classNames('nowebcam',{'hidden':!cammute})} viewBox="0 0 32 18" preserveAspectRatio="xMidYMid meet" ><text x="16" y="9" text-anchor="middle" alignment-baseline="central" dominant-baseline="central">&#xf2bd;</text></svg>
+                <video
                 key={id}
                 ref={"remoteVideo" + id}
                 id={"remoteVideo" + id}
@@ -735,7 +783,7 @@ class VirtualClient extends Component {
                             Open Broadcast
                             {this.state.shidur ?
                                 <NewWindow
-                                url='https://v4g.kbb1.com/gxystr'
+                                url='https://galaxy.kli.one/gxystr'
                                 features={{width:"725",height:"635",left:"200",top:"200",location:"no"}}
                                 title='V4G' onUnload={this.onUnload} onBlock={this.onBlock}>
                                 </NewWindow> :
@@ -744,17 +792,18 @@ class VirtualClient extends Component {
                         </Menu.Item>
                     </Menu>
                     <Menu icon='labeled' secondary size="mini">
+                        <Menu.Item position='right' disabled={selftest !== "Self Audio Test" || mystream} onClick={this.selfTest}>
+                            <Icon color={tested ? 'green' : 'red'} name="sound" />
+                            {selftest}
+                        </Menu.Item>
                         <Menu.Item disabled={!mystream} onClick={this.micMute} className="mute-button">
                             <canvas className={muted ? 'hidden' : 'vumeter'} ref="canvas1" id="canvas1" width="15" height="35" />
                             <Icon color={muted ? "red" : ""} name={!muted ? "microphone" : "microphone slash"} />
                             {!muted ? "Mute" : "Unmute"}
                         </Menu.Item>
-                        <Menu.Item disabled={!mystream} onClick={this.camMute}>
+                        <Menu.Item disabled={!mystream || delay} onClick={this.camMute}>
                             <Icon color={cammuted ? "red" : ""} name={!cammuted ? "eye" : "eye slash"} />
                             {!cammuted ? "Stop Video" : "Start Video"}
-                        </Menu.Item>
-                        <Menu.Item>
-                            <Icon name="life ring outline"/>Support online
                         </Menu.Item>
                         <Popup
                             trigger={<Menu.Item icon="setting" name="Settings"/>}

@@ -13,6 +13,7 @@ import LoginPage from "../../components/LoginPage";
 class ShidurAdmin extends Component {
 
     state = {
+        bitrate: 150000,
         chatroom: null,
         forwarders: [],
         janus: null,
@@ -226,8 +227,6 @@ class ShidurAdmin extends Component {
             },
             webrtcState: (on) => {
                 Janus.log("Janus says our WebRTC PeerConnection is " + (on ? "up" : "down") + " now");
-                    //sfutest.send({"message": { "request": "configure", "bitrate": bitrate }});
-                    //return false;
             },
             onmessage: (msg, jsep) => {
                 this.onMessage(this.state.videoroom, msg, jsep, false);
@@ -302,11 +301,7 @@ class ShidurAdmin extends Component {
                             if((substream !== null && substream !== undefined) || (temporal !== null && temporal !== undefined)) {
                                 if(!remoteFeed.simulcastStarted) {
                                     remoteFeed.simulcastStarted = true;
-                                    // Add some new buttons
-                                    //addSimulcastButtons(remoteFeed.rfindex, remoteFeed.videoCodec === "vp8");
                                 }
-                                // We just received notice that there's been a switch, update the buttons
-                                //updateSimulcastButtons(remoteFeed.rfindex, substream, temporal);
                             }
                         } else {
                             // What has just happened?
@@ -343,30 +338,7 @@ class ShidurAdmin extends Component {
                 onremotestream: (stream) => {
                     Janus.debug("Remote feed #" + remoteFeed.rfindex);
                     let remotevideo = this.refs["remoteVideo" + remoteFeed.rfid];
-                    // if(remotevideo.length === 0) {
-                    //     // No remote video yet
-                    // }
                     Janus.attachMediaStream(remotevideo, stream);
-                    var videoTracks = stream.getVideoTracks();
-                    if(videoTracks === null || videoTracks === undefined || videoTracks.length === 0) {
-                        // No remote video
-                    } else {
-                        // Yes remote video
-                    }
-                    // if(Janus.webRTCAdapter.browserDetails.browser === "chrome" || Janus.webRTCAdapter.browserDetails.browser === "firefox" ||
-                    //     Janus.webRTCAdapter.browserDetails.browser === "safari") {
-                    //     $('#curbitrate'+remoteFeed.rfindex).removeClass('hide').show();
-                    //     bitrateTimer[remoteFeed.rfindex] = setInterval(function() {
-                    //         // Display updated bitrate, if supported
-                    //         var bitrate = remoteFeed.getBitrate();
-                    //         $('#curbitrate'+remoteFeed.rfindex).text(bitrate);
-                    //         // Check if the resolution changed too
-                    //         var width = $("#remotevideo"+remoteFeed.rfindex).get(0).videoWidth;
-                    //         var height = $("#remotevideo"+remoteFeed.rfindex).get(0).videoHeight;
-                    //         if(width > 0 && height > 0)
-                    //             $('#curres'+remoteFeed.rfindex).removeClass('hide').text(width+'x'+height).show();
-                    //     }, 1000);
-                    // }
                 },
                 ondataopen: (data) => {
                     Janus.log("The DataChannel is available!(feed)");
@@ -394,7 +366,7 @@ class ShidurAdmin extends Component {
                     Janus.log("Plugin attached! (" + switchFeed.getPlugin() + ", id=" + switchFeed.getId() + ")");
                     Janus.log("  -- This is a subscriber");
                     // We wait for the plugin to send us an offer
-                    let listen = { "request": "join", "room": this.state.current_room, "ptype": "subscriber", "feed": id, "close_pc": false };
+                    let listen = { "request": "join", "room": this.state.current_room, "ptype": "subscriber", "feed": id };
                     switchFeed.send({"message": listen});
                     this.setState({switchFeed});
                 },
@@ -497,7 +469,7 @@ class ShidurAdmin extends Component {
 
     onData = (data) => {
         Janus.log(":: We got message from Data Channel: ",data);
-        var json = JSON.parse(data);
+        let json = JSON.parse(data);
         // var transaction = json["transaction"];
         // if (transactions[transaction]) {
         //     // Someone was waiting for this
@@ -505,46 +477,45 @@ class ShidurAdmin extends Component {
         //     delete transactions[transaction];
         //     return;
         // }
-        var what = json["textroom"];
+        let what = json["textroom"];
         if (what === "message") {
             // Incoming message: public or private?
-            var msg = json["text"];
+            let msg = json["text"];
+            let room = json["room"];
             msg = msg.replace(new RegExp('<', 'g'), '&lt');
             msg = msg.replace(new RegExp('>', 'g'), '&gt');
-            var from = json["from"];
-            var dateString = getDateString(json["date"]);
-            var whisper = json["whisper"];
+            let from = json["from"];
+            let dateString = getDateString(json["date"]);
+            let whisper = json["whisper"];
             if (whisper === true) {
                 // Private message
-                Janus.log("-:: It's private message: "+dateString+" : from: "+from+" : "+msg)
                 let {messages} = this.state;
-                //let message = dateString+" : "+from+" : "+msg;
                 let message = JSON.parse(msg);
+                message.user.username = message.user.display;
                 message.time = dateString;
-                Janus.log("-:: It's public message: "+message);
+                Janus.log("-:: It's private message: ", message, from);
                 messages.push(message);
                 this.setState({messages});
                 this.scrollToBottom();
-            } else {
+            } else if(room === 1234){
                 // Public message
                 let {messages} = this.state;
-                //let message = dateString+" : "+from+" : "+msg;
                 let message = JSON.parse(msg);
                 message.time = dateString;
-                Janus.log("-:: It's public message: "+message);
+                Janus.log("-:: It's public message: ", message);
                 messages.push(message);
                 this.setState({messages});
                 this.scrollToBottom();
             }
         } else if (what === "join") {
             // Somebody joined
-            var username = json["username"];
-            var display = json["display"];
+            let username = json["username"];
+            let display = json["display"];
             Janus.log("-:: Somebody joined - username: "+username+" : display: "+display)
         } else if (what === "leave") {
             // Somebody left
-            var username = json["username"];
-            var when = new Date();
+            let username = json["username"];
+            let when = new Date();
             Janus.log("-:: Somebody left - username: "+username+" : Time: "+getDateString())
         } else if (what === "kicked") {
             // Somebody was kicked
@@ -556,11 +527,12 @@ class ShidurAdmin extends Component {
     };
 
     onProtocolData = (data) => {
-        if(data.type === "question" && data.status) {
-            let {quistions_queue} = this.state;
+        if(data.type === "question" && data.status && data.room === 1234) {
+            let {quistions_queue,users} = this.state;
+            data.user.rfid = users[data.user.id].rfid;
             quistions_queue.push(data);
             this.setState({quistions_queue});
-        } else if(data.type === "question" && !data.status) {
+        } else if(data.type === "question" && !data.status && data.room === 1234) {
             let {quistions_queue} = this.state;
             for(let i = 0; i < quistions_queue.length; i++){
                 if(quistions_queue[i].user.id === data.user.id) {
@@ -597,7 +569,7 @@ class ShidurAdmin extends Component {
     };
 
     sendPrivateMessage = () => {
-        let {input_value,user,feed_user} = this.state;
+        let {input_value,user,feed_user,current_room} = this.state;
         if(!feed_user) {
             alert("Choose user");
             return
@@ -623,7 +595,7 @@ class ShidurAdmin extends Component {
                 //FIXME: it's directly put to message box
                 let {messages} = this.state;
                 msg.time = getDateString();
-                msg.to = feed_user.username;
+                msg.to = current_room === 1234 ? feed_user.username : feed_user.display;
                 Janus.log("-:: It's public message: "+msg);
                 messages.push(msg);
                 this.setState({messages, input_value: ""});
@@ -640,7 +612,7 @@ class ShidurAdmin extends Component {
         Janus.debug(" ::: Got a message (publisher) :::");
         Janus.debug(msg);
         let event = msg["videoroom"];
-        Janus.debug("Event: " + event);
+        Janus.log("Event: " + event);
         if(event !== undefined && event !== null) {
             if(event === "joined") {
                 // Publisher/manager created, negotiate WebRTC and attach to existing feeds, if any
@@ -653,7 +625,7 @@ class ShidurAdmin extends Component {
                 // Any new feed to attach to?
                 if(msg["publishers"] !== undefined && msg["publishers"] !== null) {
                     let list = msg["publishers"];
-                    Janus.debug("Got a list of available publishers/feeds:");
+                    Janus.log("Got a list of available publishers/feeds:");
                     Janus.log(list);
                     if(current_room === 1234) {
                         let users = {};
@@ -673,11 +645,12 @@ class ShidurAdmin extends Component {
                         }
                         this.setState({feeds, users});
                     } else {
-                        let feeds = list.filter(feeder => JSON.parse(feeder.display).role === "user");
-                        for(let i=0;i<feeds.length;i++) {
+                        for(let i=0;i<list.length;i++) {
                             let id = list[i]["id"];
                             let talk = list[i]["talking"];
-                            this.newRemoteFeed(id, talk);
+                            let user = JSON.parse(list[i].display);
+                            if(user.role === "user")
+                                this.newRemoteFeed(id, talk);
                         }
                     }
                 }
@@ -741,7 +714,7 @@ class ShidurAdmin extends Component {
                     }
                 } else if(msg["leaving"] !== undefined && msg["leaving"] !== null) {
                     // One of the publishers has gone away?
-                    let {feeds} = this.state;
+                    let {feeds,quistions_queue} = this.state;
                     let leaving = msg["leaving"];
                     Janus.log("Publisher left: " + leaving);
                     for(let i=0; i<feeds.length; i++) {
@@ -751,9 +724,16 @@ class ShidurAdmin extends Component {
                             break;
                         }
                     }
+                    // Delete from questions list
+                    for(let i = 0; i < quistions_queue.length; i++){
+                        if(quistions_queue[i].user.rfid === leaving) {
+                            quistions_queue.splice(i, 1);
+                            break
+                        }
+                    }
                 } else if(msg["unpublished"] !== undefined && msg["unpublished"] !== null) {
                     // One of the publishers has unpublished?
-                    let {feeds} = this.state;
+                    let {feeds,quistions_queue} = this.state;
                     let unpublished = msg["unpublished"];
                     Janus.log("Publisher left: " + unpublished);
                     if(unpublished === 'ok') {
@@ -766,6 +746,13 @@ class ShidurAdmin extends Component {
                             feeds.splice(i, 1);
                             this.setState({feeds});
                             break;
+                        }
+                    }
+                    // Delete from questions list
+                    for(let i = 0; i < quistions_queue.length; i++){
+                        if(quistions_queue[i].user.rfid === unpublished) {
+                            quistions_queue.splice(i, 1);
+                            break
                         }
                     }
                 } else if(msg["error"] !== undefined && msg["error"] !== null) {
@@ -888,8 +875,12 @@ class ShidurAdmin extends Component {
         });
     };
 
+    setBitrate = (bitrate) => {
+        this.setState({bitrate});
+    };
+
     createRoom = () => {
-        let {description,videoroom} = this.state;
+        let {bitrate,description,videoroom} = this.state;
         let roomid = this.getRoomID();
         let janus_room = {
             request : "create",
@@ -897,7 +888,7 @@ class ShidurAdmin extends Component {
             description: description,
             secret: `${SECRET}`,
             publishers: 20,
-            bitrate: 150000,
+            bitrate: bitrate,
             fir_freq: 10,
             audiocodec: "opus",
             videocodec: "h264",
@@ -986,7 +977,7 @@ class ShidurAdmin extends Component {
 
   render() {
 
-      const { rooms,current_room,switch_mode,user,feeds,i,messages,description,roomid,root,forwarders,feed_rtcp,feed_talk } = this.state;
+      const { bitrate,rooms,current_room,switch_mode,user,feeds,i,messages,description,roomid,root,forwarders,feed_rtcp,feed_talk,quistions_queue } = this.state;
       const width = "134";
       const height = "100";
       const autoPlay = true;
@@ -994,6 +985,13 @@ class ShidurAdmin extends Component {
       const muted = true;
 
       let v = (<Icon name='volume up' />);
+      let q = (<Icon color='red' name='help' />);
+
+      const bitrate_options = [
+          { key: 1, text: '150Kb/s', value: 150000 },
+          { key: 2, text: '300Kb/s', value: 300000 },
+          { key: 3, text: '600Kb/s', value: 600000 },
+      ];
 
       let rooms_list = rooms.map((data,i) => {
           const {room, num_participants, description} = data;
@@ -1015,9 +1013,10 @@ class ShidurAdmin extends Component {
       let users_grid = feeds.map((feed,i) => {
           if(feed) {
               let fw = forwarders.filter(f => f.publisher_id === (current_room === 1234 ? feed.id : feed.rfid)).length > 0;
+              let qt = quistions_queue.find(f => f.user.id === feed.rfuser.id);
               return (
                   <Table.Row active={feed.rfid === this.state.feed_id} key={i} onClick={() => this.getUserInfo(feed)} >
-                      <Table.Cell width={5}>{feed.rfuser.display}</Table.Cell>
+                      <Table.Cell width={5}>{qt ? q : ""}{feed.rfuser.display}</Table.Cell>
                       <Table.Cell width={1}>{fw ? v : ""}</Table.Cell>
                   </Table.Row>
               )
@@ -1095,6 +1094,13 @@ class ShidurAdmin extends Component {
                   <Input type='text' placeholder='Room description...' action value={description}
                          onChange={(v,{value}) => this.setState({description: value})}>
                       <input />
+                      <Select
+                          compact={true}
+                          scrolling={false}
+                          placeholder="Room Bitrate:"
+                          value={bitrate}
+                          options={bitrate_options}
+                          onChange={(e, {value}) => this.setBitrate(value)}/>
                       <Button positive onClick={this.createRoom}>Create</Button>
                   </Input>
               </Menu.Item>

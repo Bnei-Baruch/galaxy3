@@ -74,7 +74,7 @@ class ShidurUsers extends Component {
                 this.setState({program_room: pgm_state.room, program_name: pgm_state.name, pgm_state});
                 this.initVideoRoom(pgm_state.room, "program");
             });
-        });
+        },er => {});
         setInterval(() => this.getRoomList(), 10000 );
 
     };

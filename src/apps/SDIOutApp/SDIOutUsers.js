@@ -13,6 +13,7 @@ class SDIOutUsers extends Component {
     state = {
         devices: [],
         questions: {},
+        cammuteds: {},
         protocol: null,
         program: {room: null, name: ""},
         janus: null,
@@ -52,7 +53,7 @@ class SDIOutUsers extends Component {
                 Janus.log("-- :: It's protocol public message: ", ondata);
                 this.onProtocolData(ondata);
             });
-        });
+        }, er => {});
         setInterval(() => getState('state/galaxy/pr5', (program) => {
             //Janus.log(" :: Get State: ", program);
             if(JSON.stringify(program) !== JSON.stringify(this.state.program)) {
@@ -68,7 +69,24 @@ class SDIOutUsers extends Component {
 
     onProtocolData = (data) => {
         //TODO: Need to add transaction handle (filter and acknowledge)
-        let {room,feeds,users,user,questions} = this.state;
+        let {room,feeds,users,user,cammuteds,questions} = this.state;
+        if(data.type === "camera" && !data.status) {
+            cammuteds[data.user.id] = data.user;
+            this.setState({cammuteds});
+        } else if(data.type === "camera" && data.status) {
+            let {cammuteds} = this.state;
+            if(cammuteds[data.user.id]) {
+                delete cammuteds[data.user.id];
+                this.setState({cammuteds});
+            }
+            if(room === data.room && users[data.user.id]) {
+                let chk = feeds.filter(f => {
+                    return (f !== null && f !== undefined && f.rfid === users[data.user.id].rfid)
+                });
+                if(chk.length === 0)
+                    this.newRemoteFeed(users[data.user.id].rfid, false);
+            }
+        }
         if(data.type === "question" && data.status) {
             questions[data.user.id] = data.user;
             this.setState({questions});
@@ -339,6 +357,7 @@ class SDIOutUsers extends Component {
                 // Publisher/manager created, negotiate WebRTC and attach to existing feeds, if any
                 let myid = msg["id"];
                 let mypvtid = msg["private_id"];
+                const {cammuteds} = this.state;
                 this.setState({myid ,mypvtid});
                 Janus.log("Successfully joined room " + msg["room"] + " with ID " + myid);
                 //this.publishOwnFeed(true);
@@ -355,7 +374,7 @@ class SDIOutUsers extends Component {
                         let audio = list[f]["audio_codec"];
                         let video = list[f]["video_codec"];
                         Janus.debug("  >> [" + id + "] " + display + " (audio: " + audio + ", video: " + video + ")");
-                        if(display.role === "user" && video)
+                        if(display.role === "user" && video && !cammuteds[display.id])
                             this.newRemoteFeed(id, talk);
                     }
                 }
@@ -495,6 +514,8 @@ class SDIOutUsers extends Component {
       const controls = false;
       const muted = true;
 
+      let qst = this.state.feeds.find(q => q !== null && q !== undefined && q.question);
+
       let preview = this.state.feeds.map((feed) => {
           if(feed) {
               let id = feed.rfid;
@@ -506,7 +527,7 @@ class SDIOutUsers extends Component {
                   ref={"video" + id}
                   id={"video" + id}>
                   <div className={classNames('video__overlay', {'talk' : talk})}>
-                      {question ? <div className="question"><Icon name="question circle" size="massive"/></div>:''}
+                      {/*{question ? <div className="question"><Icon name="question circle" size="massive"/></div>:''}*/}
                       {/*<div className="video__title">{!talk ? <Icon name="microphone slash" size="small" color="red"/> : ''}{name}</div>*/}
                   </div>
                   <video className={talk ? "talk" : ""}
@@ -530,6 +551,7 @@ class SDIOutUsers extends Component {
           <Segment className="preview_sdi" color='red'>
               <div className="videos-panel">
                   <div className="title"><span>{name}</span></div>
+                  {qst ? <div className='qst_users'>?</div> : ""}
                   <div className="videos">
                       <div className="videos__wrapper">{preview}</div>
                   </div>

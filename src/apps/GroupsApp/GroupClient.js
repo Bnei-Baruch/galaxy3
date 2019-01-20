@@ -4,7 +4,7 @@ import { Janus } from "../../lib/janus";
 import classNames from 'classnames';
 
 import {Menu, Select,Label,Icon,Popup} from "semantic-ui-react";
-import {geoInfo, initJanus, getDevicesStream, micLevel, checkNotification,testDevices} from "../../shared/tools";
+import {geoInfo, initJanus, getDevicesStream, micLevel, checkNotification,testDevices,testMic} from "../../shared/tools";
 import './GroupClient.scss'
 import './VideoConteiner.scss'
 import nowebcam from './nowebcam.jpeg';
@@ -41,6 +41,8 @@ class GroupClient extends Component {
         users: {},
         visible: false,
         question: false,
+        selftest: "Self Audio Test",
+        tested: false,
     };
 
     componentDidMount() {
@@ -130,11 +132,34 @@ class GroupClient extends Component {
                         this.state.audioContext.close();
                     }
                     micLevel(stream ,this.refs.canvas1,audioContext => {
-                        this.setState({audioContext});
+                        this.setState({audioContext, stream});
                     });
                 })
             }
         }
+    };
+
+    selfTest = () => {
+        this.setState({selftest: "Recording... 9"});
+        testMic(this.state.stream);
+
+        let rect = 9;
+        let rec = setInterval(() => {
+            rect--;
+            this.setState({selftest: "Recording... " + rect});
+            if(rect <= 0) {
+                clearInterval(rec);
+                let playt = 11;
+                let play = setInterval(() => {
+                    playt--;
+                    this.setState({selftest: "Playing... " + playt});
+                    if(playt <= 0) {
+                        clearInterval(play);
+                        this.setState({selftest: "Self Audio Test", tested: true});
+                    }
+                },1000);
+            }
+        },1000);
     };
 
     initVideoRoom = (reconnect) => {
@@ -153,7 +178,7 @@ class GroupClient extends Component {
                 this.initDevices(true);
                 if(reconnect) {
                     setTimeout(() => {
-                        this.joinRoom();
+                        this.joinRoom(reconnect);
                     }, 5000);
                 }
             },
@@ -385,7 +410,7 @@ class GroupClient extends Component {
         videoroom.data({ text: message })
     };
 
-    joinRoom = () => {
+    joinRoom = (reconnect) => {
         let {janus, videoroom, selected_room, user} = this.state;
         // let {sub, name, title} = user;
         // user.id = sub;
@@ -399,6 +424,13 @@ class GroupClient extends Component {
         this.chat.initChatRoom(user);
         initGxyProtocol(janus, user, protocol => {
             this.setState({protocol});
+            if(reconnect && JSON.parse(localStorage.getItem("question"))) {
+                // Send question event if before join it was true
+                let msg = { type: "question", status: true, room: selected_room, user};
+                setTimeout(() => {
+                    sendProtocolMessage(protocol, user, msg );
+                }, 5000);
+            }
         }, ondata => {
             Janus.log("-- :: It's protocol public message: ", ondata);
         });
@@ -429,6 +461,7 @@ class GroupClient extends Component {
     handleQuestion = () => {
         //TODO: only when shidur user is online will be avelable send question event, so we need to add check
         const { protocol, user, room, question} = this.state;
+        localStorage.setItem("question", !question);
         let msg = { type: "question", status: !question, room, user};
         sendProtocolMessage(protocol, user, msg );
         this.setState({question: !question});
@@ -465,7 +498,7 @@ class GroupClient extends Component {
 
   render() {
 
-      const {user,audio_devices,video_devices,video_device,audio_device,muted,mystream,room,count,question} = this.state;
+      const {user,audio_devices,video_devices,video_device,audio_device,muted,mystream,room,count,question,selftest,tested} = this.state;
       const width = "134";
       const height = "100";
       const autoPlay = true;
@@ -539,6 +572,10 @@ class GroupClient extends Component {
               </Menu.Item>
             </Menu>
             <Menu icon='labeled' secondary size="mini">
+                <Menu.Item position='right' disabled={selftest !== "Self Audio Test" || mystream} onClick={this.selfTest}>
+                    <Icon color={tested ? 'green' : 'red'} name="sound" />
+                    {selftest}
+                </Menu.Item>
               <Menu.Item position='right' disabled onClick={this.micMute} className="mute-button">
                 <Icon color={muted ? "red" : ""} name={!muted ? "microphone" : "microphone slash"} />
                 {!muted ? "Mute" : "Unmute"}

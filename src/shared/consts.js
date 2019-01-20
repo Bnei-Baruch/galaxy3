@@ -3,12 +3,15 @@ export const MAX_FEEDS = 20;
 export const DATA_PORT = 5102;
 export const PROTOCOL_ROOM = 1000;
 export const SHIDUR_ID = "ce332655-d702-40d0-83eb-a6b950976984";
+export const SNDMAN_ID = "90966d26-0777-4179-9773-d7cd5456a5ed";
+export const SDIOUT_ID = "91966d26-0777-4179-9773-d7cd5456a5ed";
+export const STORAN_ID = "e97c7b89-bd3a-46b5-87f2-7b64559561d4";
 export const DANTE_IN_IP = process.env.REACT_APP_DANTE_IN_IP;
 export const WFRP_STATE = process.env.REACT_APP_WFRP_STATE;
 export const WFDB_STATE = process.env.REACT_APP_WFDB_STATE;
 export const JANUS_SERVER = process.env.REACT_APP_JANUS_SERVER;
 export const JANUS_ADMIN = process.env.REACT_APP_JANUS_ADMIN;
-export const STUN_SERVER = process.env.REACT_APP_STUN_EUR_SRV;
+export const STUN_SERVER = process.env.REACT_APP_STUN_SERVER;
 export const ADMIN_SECRET = process.env.REACT_APP_ADMIN_SECRET;
 export const SECRET = process.env.REACT_APP_SECRET;
 export const JANUS_SRV_ISRPT = process.env.REACT_APP_JANUS_SRV_ISRPT;
@@ -18,6 +21,7 @@ export const JANUS_SRV_ISRLC = process.env.REACT_APP_JANUS_SRV_ISRLC;
 export const JANUS_IP_ISRPT = process.env.REACT_APP_JANUS_IP_ISRPT;
 export const JANUS_IP_EURND = process.env.REACT_APP_JANUS_IP_EURND;
 export const JANUS_IP_EURUK = process.env.REACT_APP_JANUS_IP_EURUK;
+export const JANUS_IP_LOCAL = process.env.REACT_APP_JANUS_IP_LOCAL;
 
 
 export const servers_options = [
