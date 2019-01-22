@@ -363,7 +363,7 @@ class SDIOutGroups extends Component {
       );
 
       return (
-          <Segment attached className="preview_sdi" color='red'>
+          <Segment attached className="preview_sdi">
               <div className="video_grid">
                   {program}
                   {fullscreen}

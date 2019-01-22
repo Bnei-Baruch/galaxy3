@@ -547,8 +547,7 @@ class SDIOutUsers extends Component {
 
       return (
           <div>
-          {/*<Segment className="segment_sdi" color='blue' raised>*/}
-          <Segment className="preview_sdi" color='red'>
+          <Segment className="preview_sdi">
               <div className="videos-panel">
                   <div className="title"><span>{name}</span></div>
                   {qst ? <div className='qst_users'>?</div> : ""}
@@ -557,7 +556,6 @@ class SDIOutUsers extends Component {
                   </div>
               </div>
           </Segment>
-            {/*</Segment>*/}
           </div>
       );
   }
