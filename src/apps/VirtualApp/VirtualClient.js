@@ -7,6 +7,7 @@ import {Menu, Select, Button,Input,Label,Icon,Popup} from "semantic-ui-react";
 import {geoInfo, initJanus, getDevicesStream, micLevel, checkNotification,testDevices,testMic} from "../../shared/tools";
 import './VirtualClient.scss'
 import './VideoConteiner.scss'
+import 'eqcss'
 import {MAX_FEEDS} from "../../shared/consts";
 import VirtualChat from "./VirtualChat";
 import {initGxyProtocol, sendProtocolMessage} from "../../shared/protocol";

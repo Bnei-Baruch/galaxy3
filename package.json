@@ -5,6 +5,7 @@
   "homepage": ".",
   "dependencies": {
     "classnames": "^2.2.6",
+    "eqcss": "^1.9.1",
     "jsrsasign": "^8.0.12",
     "node-sass": "^4.9.4",
     "oidc-client": "^1.5.4",

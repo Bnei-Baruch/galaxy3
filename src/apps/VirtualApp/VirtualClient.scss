@@ -52,7 +52,7 @@
     background:#000;
     padding: 1.6em;
     flex: 1 0 100%;
-    transition: .2s all linear;
+    // transition: .2s all linear;
 
     .vclient--chat-open & {
         flex: 1 0 calc(100% - 400px);
