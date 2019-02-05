@@ -25,28 +25,18 @@ class VirtualChat extends Component {
         document.removeEventListener("keydown", this.onKeyPressed);
     };
 
-    componentDidUpdate(prevProps) {
-        //Janus.log(" -- componentDidUpdate -- ",prevProps)
-        if (prevProps.janus !== this.state.janus) {
-            this.setState({janus: prevProps.janus})
-            Janus.log(" -- Janus was updated");
-            initChatRoom(prevProps.janus, null, chatroom => {
-                Janus.log(":: Got Chat Handle: ", chatroom);
-                this.setState({chatroom});
-            }, data => {
-                this.onData(data);
-            });
-        }
-        if (prevProps.room !== this.state.room) {
-            Janus.log(" -- Room was updated");
-            let {user,chatroom,room} = this.state;
-            if(prevProps.room === "") {
-                this.exitRoom(room);
-            } else {
-                joinChatRoom(chatroom,prevProps.room,user)
-            }
-            this.setState({room: prevProps.room});
-        }
+    initChat = (janus) => {
+        initChatRoom(janus, null, chatroom => {
+            Janus.log(":: Got Chat Handle: ", chatroom);
+            this.setState({chatroom});
+        }, data => {
+            this.onData(data);
+        });
+    };
+
+    initChatRoom = (user, room) => {
+        joinChatRoom(this.state.chatroom,room,user);
+        this.setState({room});
     };
 
     onKeyPressed = (e) => {
@@ -54,7 +44,7 @@ class VirtualChat extends Component {
             this.sendChatMessage();
     };
 
-    exitRoom = (room) => {
+    exitChatRoom = (room) => {
         let {chatroom} = this.state;
         let chatreq = {textroom : "leave", transaction: Janus.randomString(12),"room": room};
         chatroom.data({text: JSON.stringify(chatreq),

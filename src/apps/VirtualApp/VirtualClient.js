@@ -71,6 +71,7 @@ class VirtualClient extends Component {
         initJanus(janus => {
             user.session = janus.getSessionId();
             this.setState({janus, user});
+            this.chat.initChat(janus);
             this.initVideoRoom(error);
         }, er => {
             setTimeout(() => {
@@ -588,9 +589,7 @@ class VirtualClient extends Component {
         //This name will see other users
         user.display = username_value || user.name;
         localStorage.setItem("username", user.display);
-        let register = { "request": "join", "room": selected_room, "ptype": "publisher", "display": JSON.stringify(user) };
-        videoroom.send({"message": register});
-        this.setState({user, muted: true, room: selected_room});
+
         initGxyProtocol(janus, user, protocol => {
             this.setState({protocol});
             // Send question event if before join it was true
@@ -602,6 +601,15 @@ class VirtualClient extends Component {
             }
         }, ondata => {
             Janus.log("-- :: It's protocol public message: ", ondata);
+            if(ondata.type === "error" && ondata.error_code === 420) {
+                alert(ondata.error);
+                this.state.protocol.hangup();
+            } else if(ondata.type === "joined") {
+                let register = { "request": "join", "room": selected_room, "ptype": "publisher", "display": JSON.stringify(user) };
+                videoroom.send({"message": register});
+                this.setState({user, muted: true, room: selected_room});
+                this.chat.initChatRoom(user,selected_room);
+            }
             this.onProtocolData(ondata);
         });
     };
@@ -609,8 +617,8 @@ class VirtualClient extends Component {
     exitRoom = () => {
         let {videoroom, protocol, room} = this.state;
         let leave = {request : "leave"};
-        Janus.log(room);
         videoroom.send({"message": leave});
+        this.chat.exitChatRoom(room);
         this.setState({muted: false, cammuted: false, mystream: null, room: "", selected_room: "", i: "", feeds: []});
         this.initVideoRoom();
         protocol.detach();
@@ -866,11 +874,12 @@ class VirtualClient extends Component {
                             </div>
                         </div>
                         <VirtualChat
-                        visible={this.state.visible}
-                        janus={this.state.janus}
-                        room={room}
-                        user={this.state.user}
-                        onNewMsg={this.onNewMsg} />
+                            ref={chat => {this.chat = chat;}}
+                            visible={this.state.visible}
+                            janus={this.state.janus}
+                            room={room}
+                            user={this.state.user}
+                            onNewMsg={this.onNewMsg} />
                     </div>
                 </div>
             </div>
