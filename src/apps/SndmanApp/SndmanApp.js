@@ -82,12 +82,17 @@ class SndmanApp extends Component {
         initJanus(janus => {
             user.session = janus.getSessionId();
             this.setState({janus,user});
-            this.initVideoRoom();
 
             initGxyProtocol(janus, user, protocol => {
                 this.setState({protocol});
             }, ondata => {
                 Janus.log("-- :: It's protocol public message: ", ondata);
+                if(ondata.type === "error" && ondata.error_code === 420) {
+                    alert(ondata.error);
+                    this.state.protocol.hangup();
+                } else if(ondata.type === "joined") {
+                    this.initVideoRoom();
+                }
                 this.onProtocolData(ondata);
             });
 

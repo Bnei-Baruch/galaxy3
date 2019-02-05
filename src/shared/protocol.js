@@ -80,6 +80,7 @@ export const initGxyProtocol = (janus,user,callback,ondata) => {
 };
 
 const onProtocolData = (data,user,ondata) => {
+    Janus.log(":: -- Protocol message from Data Channel: ",data);
     let json = JSON.parse(data);
     // var transaction = json["transaction"];
     // if (transactions[transaction]) {
@@ -147,6 +148,11 @@ const onProtocolData = (data,user,ondata) => {
             Janus.log(":: SdiOut Enter ::");
             ondata({type: "event", sdiout: true})
         }
+
+        if (username === user.id) {
+            Janus.log(":: IT's me ::");
+            ondata({type: "joined"})
+        }
     } else if (what === "leave") {
         // Somebody left
         let username = json["username"];
@@ -171,6 +177,11 @@ const onProtocolData = (data,user,ondata) => {
     } else if (what === "destroyed") {
         let room = json["room"];
         Janus.log("The room: "+room+" has been destroyed")
+    } else if (what === "error") {
+        let error = json["error"];
+        let error_code = json["error_code"];
+        Janus.error("Protocol error : " + error)
+        ondata({type: "error", error, error_code})
     }
 };
 

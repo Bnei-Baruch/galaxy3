@@ -412,16 +412,8 @@ class GroupClient extends Component {
 
     joinRoom = (reconnect) => {
         let {janus, videoroom, selected_room, user} = this.state;
-        // let {sub, name, title} = user;
-        // user.id = sub;
-        // user.role = "gxy_group";
-        // user.name = name;
         user.display = user.title || user.name;
         localStorage.setItem("username", user.display);
-        let register = { "request": "join", "room": selected_room, "ptype": "publisher", "display": JSON.stringify(user) };
-        videoroom.send({"message": register});
-        this.setState({user, muted: false, room: selected_room});
-        this.chat.initChatRoom(user);
         initGxyProtocol(janus, user, protocol => {
             this.setState({protocol});
             if(reconnect && JSON.parse(localStorage.getItem("question"))) {
@@ -433,6 +425,15 @@ class GroupClient extends Component {
             }
         }, ondata => {
             Janus.log("-- :: It's protocol public message: ", ondata);
+            if(ondata.type === "error" && ondata.error_code === 420) {
+                alert(ondata.error);
+                this.state.protocol.hangup();
+            } else if(ondata.type === "joined") {
+                let register = { "request": "join", "room": selected_room, "ptype": "publisher", "display": JSON.stringify(user) };
+                videoroom.send({"message": register});
+                this.setState({user, muted: false, room: selected_room});
+                this.chat.initChatRoom(user);
+            }
         });
     };
 
