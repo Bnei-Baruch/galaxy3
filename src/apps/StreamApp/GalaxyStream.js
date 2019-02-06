@@ -6,6 +6,7 @@ import VolumeSlider from "../../components/VolumeSlider";
 import {videos_options, audiog_options, gxycol, trllang} from "../../shared/consts";
 import {geoInfo} from "../../shared/tools";
 import LoginPage from "../../components/LoginPage";
+import './GalaxyStream.css'
 
 
 class GalaxyStream extends Component {
@@ -309,7 +310,7 @@ class GalaxyStream extends Component {
 
     render() {
 
-        const {videos, audios, muted, user} = this.state;
+        const {videos, audios, muted, user, talking} = this.state;
 
         let login = (<LoginPage user={user} />);
         let content = (
@@ -339,7 +340,8 @@ class GalaxyStream extends Component {
                     </Menu>
                 </Segment>
                 <Segment>
-                    <video ref="remoteVideo"
+                    <video className={talking ? 'talk_border' : ''}
+                           ref="remoteVideo"
                            id="remoteVideo"
                            width="640"
                            height="360"
