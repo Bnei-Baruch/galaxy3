@@ -57,8 +57,11 @@ class SDIOutApp extends Component {
             }, ondata => {
                 Janus.log("-- :: It's protocol public message: ", ondata);
                 if(ondata.type === "error" && ondata.error_code === 420) {
-                    alert(ondata.error);
+                    console.log(ondata.error + " - Reload after 10 seconds");
                     this.state.protocol.hangup();
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 10000);
                 } else if(ondata.type === "joined") {
                     this.initVideoRoom();
                 }
