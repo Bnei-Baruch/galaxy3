@@ -9,8 +9,10 @@ export const STORAN_ID = "e97c7b89-bd3a-46b5-87f2-7b64559561d4";
 export const DANTE_IN_IP = process.env.REACT_APP_DANTE_IN_IP;
 export const WFRP_STATE = process.env.REACT_APP_WFRP_STATE;
 export const WFDB_STATE = process.env.REACT_APP_WFDB_STATE;
-export const JANUS_SERVER = process.env.REACT_APP_JANUS_SERVER;
-export const JANUS_ADMIN = process.env.REACT_APP_JANUS_ADMIN;
+//export const JANUS_SERVER = process.env.REACT_APP_JANUS_SERVER;
+export const JANUS_SERVER = "https://jnsgxy.kbb1.com/janusgxy";
+//export const JANUS_ADMIN = process.env.REACT_APP_JANUS_ADMIN;
+export const JANUS_ADMIN = "https://jnsgxy.kbb1.com/admingxy";
 export const STUN_SERVER = process.env.REACT_APP_STUN_SERVER;
 export const ADMIN_SECRET = process.env.REACT_APP_ADMIN_SECRET;
 export const SECRET = process.env.REACT_APP_SECRET;
@@ -22,7 +24,6 @@ export const JANUS_IP_ISRPT = process.env.REACT_APP_JANUS_IP_ISRPT;
 export const JANUS_IP_EURND = process.env.REACT_APP_JANUS_IP_EURND;
 export const JANUS_IP_EURUK = process.env.REACT_APP_JANUS_IP_EURUK;
 export const JANUS_IP_LOCAL = process.env.REACT_APP_JANUS_IP_LOCAL;
-
 
 export const servers_options = [
     { key: 1, text: 'Israel (PT)', value: `${JANUS_SRV_ISRPT}` },
