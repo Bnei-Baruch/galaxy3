@@ -487,10 +487,10 @@ class VirtualClient extends Component {
     };
 
     onMessage = (videoroom, msg, jsep, initdata) => {
-        Janus.debug(" ::: Got a message (publisher) :::");
-        Janus.debug(msg);
+        Janus.log(" ::: Got a message (publisher) :::");
+        Janus.log(msg);
         let event = msg["videoroom"];
-        Janus.debug("Event: " + event);
+        Janus.log("Event: " + event);
         if(event !== undefined && event !== null) {
             if(event === "joined") {
                 // Publisher/manager created, negotiate WebRTC and attach to existing feeds, if any
@@ -776,10 +776,10 @@ class VirtualClient extends Component {
                         " packets on this PeerConnection (remote feed, " + nacks + " NACKs/s " + (uplink ? "received" : "sent") + ")");
                 },
                 onmessage: (msg, jsep) => {
-                    Janus.debug(" ::: Got a message (subscriber) :::");
-                    Janus.debug(msg);
+                    Janus.log(" ::: Got a message (subscriber) :::");
+                    Janus.log(msg);
                     let event = msg["videoroom"];
-                    Janus.debug("Event: " + event);
+                    Janus.log("Event: " + event);
                     if(msg["error"] !== undefined && msg["error"] !== null) {
                         Janus.debug("-- ERROR: " + msg["error"]);
                     } else if(event != undefined && event != null) {
@@ -835,7 +835,7 @@ class VirtualClient extends Component {
                                 success: (jsep) => {
                                     Janus.debug("Got SDP!");
                                     Janus.debug(jsep);
-                                    var body = { request: "start", room: this.state.room };
+                                    let body = { request: "start", room: this.state.room };
                                     remoteFeed.send({ message: body, jsep: jsep });
                                 },
                                 error: (error) => {
@@ -849,8 +849,8 @@ class VirtualClient extends Component {
                     // The subscriber stream is recvonly, we don't expect anything here
                 },
                 onremotetrack: (track, mid, on) => {
-                    Janus.debug(" ::: Got a remote track event ::: (remote feed)");
-                    Janus.debug("Remote track (mid=" + mid + ") " + (on ? "added" : "removed") + ":", track);
+                    Janus.log(" ::: Got a remote track event ::: (remote feed)");
+                    Janus.log("Remote track (mid=" + mid + ") " + (on ? "added" : "removed") + ":", track);
                     // Which publisher are we getting on this mid?
                     let {subStreams,slots,mids} = this.state;
                     var sub = subStreams[mid];
@@ -898,8 +898,8 @@ class VirtualClient extends Component {
                         // Janus.attachMediaStream($('#remotevideo' + slot + '-' + mid).get(0), stream);
 
                         Janus.debug("Remote feed #" + slot);
-                        let remotevideo = this.refs["remoteVideo" + slot];
-                        Janus.attachMediaStream(remotevideo, stream);
+                        let remoteaudio = this.refs["remoteAudio" + feed.id];
+                        Janus.attachMediaStream(remoteaudio, stream);
 
                         if(feed.remoteVideos === 0) {
                             // No video, at least for now: show a placeholder
@@ -1093,7 +1093,7 @@ class VirtualClient extends Component {
         const width = "134";
         const height = "100";
         const autoPlay = true;
-        const controls = false;
+        const controls = true;
         //const vmuted = true;
 
         //let iOS = ['iPad', 'iPhone', 'iPod'].indexOf(navigator.platform) >= 0;
@@ -1147,6 +1147,13 @@ class VirtualClient extends Component {
                 autoPlay={autoPlay}
                 controls={controls}
                 playsInline={true}/>
+                    <audio
+                        key={id}
+                        ref={"remoteAudio" + id}
+                        id={"remoteAudio" + id}
+                        autoPlay={autoPlay}
+                        controls={controls}
+                        playsinline={true}/>
                 </div>);
             }
             return true;
