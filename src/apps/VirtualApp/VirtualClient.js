@@ -30,7 +30,7 @@ class VirtualClient extends Component {
         room: "",
         selected_room: "",
         videoroom: null,
-        remotefeed: null,
+        remoteFeed: null,
         myid: null,
         mypvtid: null,
         mystream: null,
@@ -725,6 +725,7 @@ class VirtualClient extends Component {
                     remoteFeed = pluginHandle;
                     Janus.log("Plugin attached! (" + remoteFeed.getPlugin() + ", id=" + remoteFeed.getId() + ")");
                     Janus.log("  -- This is a multistream subscriber");
+                    this.setState({remoteFeed});
                     // Prepare the streams to subscribe to, as an array: we have the list of
                     // streams the feed is publishing, so we can choose what to pick or skip
                     let subscription = [];
@@ -910,7 +911,7 @@ class VirtualClient extends Component {
                         stream.addTrack(track.clone());
                         remoteTracks[mid] = stream;
                         Janus.log("Created remote video stream:", stream);
-                        let remotevideo = this.refs["remoteVideo" + slot];
+                        let remotevideo = this.refs["remoteVideo" + feed.id];
                         Janus.attachMediaStream(remotevideo, stream);
                     }
                 },
@@ -1114,12 +1115,16 @@ class VirtualClient extends Component {
 
         let videos = this.state.feeds.map((feed) => {
             if(feed) {
-                let id = feed.rfid;
-                let talk = feed.talk;
-                let question = feed.question;
-                let cammute = feed.cammute;
-                debugger
-                let name = feed.rfuser.display;
+                // let id = feed.rfid;
+                // let talk = feed.talk;
+                // let question = feed.question;
+                // let cammute = feed.cammute;
+                // let name = feed.rfuser.display;
+                let id = feed;
+                let talk = false;
+                let question = false;
+                let cammute = false;
+                let name = "test";
                 return (<div className="video"
                 key={"v" + id}
                 ref={"video" + id}
