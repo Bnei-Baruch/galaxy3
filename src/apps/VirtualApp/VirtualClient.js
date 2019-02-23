@@ -487,52 +487,39 @@ class VirtualClient extends Component {
     };
 
     onMessage = (videoroom, msg, jsep, initdata) => {
-        Janus.log(" ::: Got a message (publisher) :::");
-        Janus.log(msg);
+        console.log(" ::: Got a message (publisher) :::");
+        console.log(msg);
         let event = msg["videoroom"];
-        Janus.log("Event: " + event);
         if(event !== undefined && event !== null) {
             if(event === "joined") {
                 // Publisher/manager created, negotiate WebRTC and attach to existing feeds, if any
                 let myid = msg["id"];
                 let mypvtid = msg["private_id"];
-                let {feedStreams} = this.state;
                 this.setState({myid ,mypvtid});
                 Janus.log("Successfully joined room " + msg["room"] + " with ID " + myid);
                 this.publishOwnFeed(true);
                 // Any new feed to attach to?
                 if(msg["publishers"] !== undefined && msg["publishers"] !== null) {
                     let list = msg["publishers"];
-                    let feeds_list = list.filter(feeder => JSON.parse(feeder.display).role === "user");
-                    Janus.log(":: Got Pulbishers list: ", feeds_list);
-                    if(feeds_list.length > 15) {
+                    let feeds = list.filter(feeder => JSON.parse(feeder.display).role === "user");
+                    console.log(":: Got Pulbishers list: ", feeds);
+                    if(feeds.length > 15) {
                         alert("Max users in this room is reached");
                         window.location.reload();
                     }
                     Janus.debug("Got a list of available publishers/feeds:");
-                    Janus.log(list);
+                    console.log(list);
                     let sources = null;
-                    for(let f in feeds_list) {
-                        let id = feeds_list[f]["id"];
-                        let display = JSON.parse(feeds_list[f]["display"]);
-                        let streams = feeds_list[f]["streams"];
-                        for(let i in streams) {
-                            let stream = streams[i];
-                            stream["id"] = id;
-                            stream["display"] = display;
-                        }
-                        feedStreams[id] = {id: id, display: display, streams: streams};
-                        Janus.debug("  >> [" + id + "] " + display + ":", streams);
-                        if(sources === null)
-                            sources = [];
-                        sources.push(streams);
-                        this.setState({sources,feedStreams});
-                        let talk = feeds_list[f]["talking"];
-                        Janus.debug("  >> [" + id + "] " + display);
+                    for(let f in feeds) {
+                        let id = feeds[f]["id"];
+                        feeds[f].display = JSON.parse(feeds[f]["display"]);
+                        let talk = feeds[f]["talking"];
                         //this.newRemoteFeed(id, talk);
                     }
-                    if(sources)
-                        this.subscribeTo(sources);
+                    console.log(feeds);
+                    this.setState({feeds});
+                    // if(sources)
+                    //     this.subscribeTo(sources);
                 }
             } else if(event === "talking") {
                 let {feeds} = this.state;
@@ -572,80 +559,28 @@ class VirtualClient extends Component {
                     feedStreams[myid] = {id: myid, display: user, streams: streams};
                     this.setState({feedStreams})
                 } else if(msg["publishers"] !== undefined && msg["publishers"] !== null) {
-                    let feeds_list = msg["publishers"];
+                    let feed = msg["publishers"];
+                    let {feeds} = this.state;
                     Janus.debug("Got a list of available publishers/feeds:");
-                    Janus.debug(feeds_list);
-                    let sources = null;
-
-                    for(let f in feeds_list) {
-                        let id = feeds_list[f]["id"];
-                        let display = JSON.parse(feeds_list[f]["display"]);
-                        if(display.role !== "user")
-                            continue;
-                        let streams = feeds_list[f]["streams"];
-                        for(let i in streams) {
-                            let stream = streams[i];
-                            stream["id"] = id;
-                            stream["display"] = display;
-                        }
-                        feedStreams[id] = {id: id, display: display, streams: streams};
-                        Janus.debug("  >> [" + id + "] " + display + ":", streams);
-                        if(sources === null)
-                            sources = [];
-                        sources.push(streams);
-                        this.setState({sources,feedStreams});
-                        let talk = feeds_list[f]["talking"];
-                        Janus.debug("  >> [" + id + "] " + display);
+                    console.log(feed);
+                    for(let f in feed) {
+                        let id = feed[f]["id"];
+                        feed[f].display = JSON.parse(feed[f]["display"]);
+                        if(feed[f].display.role !== "user")
+                            return;
+                        let talk = feed[f]["talking"];
                     }
-                    if(sources)
-                        this.subscribeTo(sources);
+                    feeds.push(feed[0]);
+                    this.setState({feeds})
+                    // if(sources)
+                    //     this.subscribeTo(sources);
                 } else if(msg["leaving"] !== undefined && msg["leaving"] !== null) {
-                    // // One of the publishers has gone away?
-                    // let {feeds} = this.state;
-                    // let leaving = msg["leaving"];
-                    // Janus.log("Publisher left: " + leaving);
-                    // let remoteFeed = null;
-                    // for(let i=1; i<MAX_FEEDS; i++) {
-                    //     if(feeds[i] != null && feeds[i] !== undefined && feeds[i].rfid === leaving) {
-                    //         remoteFeed = feeds[i];
-                    //         break;
-                    //     }
-                    // }
-                    // if(remoteFeed != null) {
-                    //     Janus.debug("Feed " + remoteFeed.rfid + " (" + remoteFeed.rfuser + ") has left the room, detaching");
-                    //     feeds[remoteFeed.rfindex] = null;
-                    //     remoteFeed.detach();
-                    // }
-                    // this.setState({feeds});
-
                     // One of the publishers has gone away?
                     var leaving = msg["leaving"];
                     Janus.log("Publisher left: " + leaving);
                     this.unsubscribeFrom(leaving);
 
                 } else if(msg["unpublished"] !== undefined && msg["unpublished"] !== null) {
-                    // One of the publishers has unpublished?
-                    // let {feeds} = this.state;
-                    // let unpublished = msg["unpublished"];
-                    // Janus.log("Publisher left: " + unpublished);
-                    // if(unpublished === 'ok') {
-                    //     // That's us
-                    //     videoroom.hangup();
-                    //     return;
-                    // }
-                    // let remoteFeed = null;
-                    // for(let i=1; i<MAX_FEEDS; i++) {
-                    //     if(feeds[i] != null && feeds[i] !== undefined && feeds[i].rfid === unpublished) {
-                    //         remoteFeed = feeds[i];
-                    //         break;
-                    //     }
-                    // }
-                    // if(remoteFeed !== null) {
-                    //     Janus.debug("Feed " + remoteFeed.rfid + " (" + remoteFeed.rfuser + ") has left the room, detaching");
-                    //     feeds[remoteFeed.rfindex] = null;
-                    //     remoteFeed.detach();
-                    // }
-
                     let unpublished = msg["unpublished"];
                     Janus.log("Publisher left: " + unpublished);
                     if(unpublished === 'ok') {
