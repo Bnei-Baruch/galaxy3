@@ -38,9 +38,7 @@ class VirtualClient extends Component {
         localVideos: 0,
         remoteTracks: {},
         sources: null,
-        subStreams: {},
-        slots: {},
-        mids: {},
+        mids: [],
         audio: null,
         muted: false,
         cammuted: false,
@@ -253,71 +251,63 @@ class VirtualClient extends Component {
                 Janus.log("Local track " + (on ? "added" : "removed") + ":", track);
                 let {videoroom,localTracks,localVideos} = this.state;
                 videoroom.muteAudio();
+                this.setState({mystream: track});
                 // We use the track ID as name of the element, but it may contain invalid characters
-                let trackId = track.id.replace(/[{}]/g, "");
-                if(!on) {
-                    // Track removed, get rid of the stream and the rendering
-                    let stream = localTracks[trackId];
-                    if(stream) {
-                        try {
-                            let tracks = stream.getTracks();
-                            for(let i in tracks) {
-                                let mst = tracks[i];
-                                if(mst !== null && mst !== undefined)
-                                    mst.stop();
-                            }
-                        } catch(e) {}
-                    }
-                    if(track.kind === "video") {
-                        //$('#myvideo' + trackId).remove();
-                        localVideos--;
-                        if(localVideos === 0) {
-                            // No video, at least for now: show a placeholder
-                            Janus.log("No webcam");
-                        }
-                    }
-                    delete localTracks[trackId];
-                    this.setState({localTracks,localVideos});
-                    return;
-                }
-                // If we're here, a new track was added
-                let stream = localTracks[trackId];
-                if(stream) {
-                    // We've been here already
-                    return;
-                }
-                // $('#videos').removeClass('hide').show();
-                // if($('#mute').length === 0) {
-                //     // Add a 'mute' button
-                //     $('#videolocal').append('<button class="btn btn-warning btn-xs" id="mute" style="position: absolute; bottom: 0px; left: 0px; margin: 15px;">Mute</button>');
-                //     $('#mute').click(toggleMute);
-                //     // Add an 'unpublish' button
-                //     $('#videolocal').append('<button class="btn btn-warning btn-xs" id="unpublish" style="position: absolute; bottom: 0px; right: 0px; margin: 15px;">Unpublish</button>');
-                //     $('#unpublish').click(unpublishOwnFeed);
+                // let trackId = track.id.replace(/[{}]/g, "");
+                // if(!on) {
+                //     // Track removed, get rid of the stream and the rendering
+                //     let stream = localTracks[trackId];
+                //     if(stream && track.kind !== "data") {
+                //         try {
+                //             let tracks = stream.getTracks();
+                //             for(let i in tracks) {
+                //                 let mst = tracks[i];
+                //                 if(mst !== null && mst !== undefined)
+                //                     mst.stop();
+                //             }
+                //         } catch(e) {}
+                //     }
+                //     if(track.kind === "video") {
+                //         localVideos--;
+                //         if(localVideos === 0) {
+                //             // No video, at least for now: show a placeholder
+                //             Janus.log("No webcam");
+                //         }
+                //     }
+                //     delete localTracks[trackId];
+                //     this.setState({localTracks,localVideos});
+                //     return;
                 // }
-                if(track.kind === "audio") {
-                    // We ignore local audio tracks, they'd generate echo anyway
-                    if(localVideos === 0) {
-                        // No video, at least for now: show a placeholder
-                        Janus.log("No webcam");
-                    }
-                } else {
-                    // New video track: create a stream out of it
-                    localVideos++;
-                    stream = new MediaStream();
-                    stream.addTrack(track.clone());
-                    localTracks[trackId] = stream;
-                    Janus.log(":: Created local stream:", stream);
-                    Janus.log(stream.getTracks());
-                    Janus.log(stream.getVideoTracks());
-                    //$('#videolocal').append('<video class="rounded centered" id="myvideo' + trackId + '" width=320 height=240 autoplay playsinline muted="muted"/>');
-                    //Janus.attachMediaStream($('#myvideo' + trackId).get(0), stream);
-                    this.setState({localTracks,localVideos,mystream: stream});
-                }
-                if(videoroom.webrtcStuff.pc.iceConnectionState !== "completed" &&
-                    videoroom.webrtcStuff.pc.iceConnectionState !== "connected") {
-                    Janus.debug("Publishing... ");
-                }
+                // // If we're here, a new track was added
+                // let stream = localTracks[trackId];
+                // if(stream) {
+                //     // We've been here already
+                //     return;
+                // }
+                // if(track.kind === "audio") {
+                //     // We ignore local audio tracks, they'd generate echo anyway
+                //     if(localVideos === 0) {
+                //         // No video, at least for now: show a placeholder
+                //         Janus.log("No webcam");
+                //     }
+                // } else if(track.kind === "video") {
+                //     // New video track: create a stream out of it
+                //     localVideos++;
+                //     stream = new MediaStream();
+                //     stream.addTrack(track.clone());
+                //     localTracks[trackId] = stream;
+                //     Janus.log(":: Created local stream:", stream);
+                //     Janus.log(stream.getTracks());
+                //     Janus.log(stream.getVideoTracks());
+                //     //Janus.attachMediaStream($('#myvideo' + trackId).get(0), stream);
+                //     this.setState({localTracks,localVideos,mystream: stream});
+                // } else {
+                //     Janus.log(":: Created local data channel:");
+                // }
+                // if(videoroom.webrtcStuff.pc.iceConnectionState !== "completed" &&
+                //     videoroom.webrtcStuff.pc.iceConnectionState !== "connected") {
+                //     Janus.debug("Publishing... ");
+                // }
             },
             onremotestream: (stream) => {
                 // The publisher stream is sendonly, we don't expect anything here
@@ -465,14 +455,14 @@ class VirtualClient extends Component {
                             exact: video_device
                         }
                     },
-                    data: true
+                    data: false
                 },
                 //media: { audioRecv: false, videoRecv: false, audioSend: useAudio, videoSend: true },	// Publishers are sendonly
                 simulcast: false,
                 success: (jsep) => {
                     Janus.debug("Got publisher SDP!");
                     Janus.debug(jsep);
-                    let publish = { "request": "configure", "audio": true, "video": useVideo, "data": true };
+                    let publish = { "request": "configure", "audio": true, "video": useVideo, "data": false };
                     videoroom.send({"message": publish, "jsep": jsep});
                 },
                 error: (error) => {
@@ -568,17 +558,22 @@ class VirtualClient extends Component {
                     let {feeds} = this.state;
                     Janus.debug("Got a list of available publishers/feeds:");
                     console.log(feed);
+                    let subscription = [];
                     for(let f in feed) {
                         let id = feed[f]["id"];
                         feed[f].display = JSON.parse(feed[f]["display"]);
                         if(feed[f].display.role !== "user")
                             return;
                         let talk = feed[f]["talking"];
+                        subscription.push({
+                            feed: id,	// This is mandatory
+                            //mid: stream.mid		// This is optional (all streams, if missing)
+                        });
                     }
                     feeds.push(feed[0]);
-                    this.setState({feeds})
-                    // if(sources)
-                    //     this.subscribeTo(sources);
+                    this.setState({feeds});
+                    if(subscription.length > 0)
+                        this.subscribeTo(subscription);
                 } else if(msg["leaving"] !== undefined && msg["leaving"] !== null) {
                     // One of the publishers has gone away?
                     var leaving = msg["leaving"];
@@ -656,16 +651,15 @@ class VirtualClient extends Component {
             return;
         }
         this.setState({creatingFeed: true});
-        let remoteTracks = {};
         this.state.janus.attach(
             {
                 plugin: "janus.plugin.videoroom",
                 opaqueId: "remotefeed_user",
                 success: (pluginHandle) => {
-                    remoteFeed = pluginHandle;
+                    let remoteFeed = pluginHandle;
                     Janus.log("Plugin attached! (" + remoteFeed.getPlugin() + ", id=" + remoteFeed.getId() + ")");
                     Janus.log("  -- This is a multistream subscriber");
-                    this.setState({remoteFeed});
+                    this.setState({remoteFeed, creatingFeed: false});
                     // Prepare the streams to subscribe to, as an array: we have the list of
                     // streams the feed is publishing, so we can choose what to pick or skip
                     // let subscription = [];
@@ -720,6 +714,7 @@ class VirtualClient extends Component {
                     Janus.log(msg);
                     let event = msg["videoroom"];
                     Janus.log("Event: " + event);
+                    let {remoteFeed} = this.state;
                     if(msg["error"] !== undefined && msg["error"] !== null) {
                         Janus.debug("-- ERROR: " + msg["error"]);
                     } else if(event !== undefined && event !== null) {
@@ -750,17 +745,13 @@ class VirtualClient extends Component {
                     }
                     if(msg["streams"]) {
                         // Update map of subscriptions by mid
-                        let {subStreams,slots,mids} = this.state;
+                        let {mids} = this.state;
                         for(let i in msg["streams"]) {
-                            let mid = msg["streams"][i]["mid"];
-                            subStreams[mid] = msg["streams"][i];
-                            let feed = feedStreams[msg["streams"][i]["feed_id"]];
-                            if(feed && feed.slot) {
-                                slots[mid] = feed.slot;
-                                mids[feed.slot] = mid;
-                            }
+                            let mindex = msg["streams"][i]["mid"];
+                            //let feed_id = msg["streams"][i]["feed_id"];
+                            mids[mindex] = msg["streams"][i];
                         }
-                        this.setState({subStreams,slots,mids});
+                        this.setState({mids});
                     }
                     if(jsep !== undefined && jsep !== null) {
                         Janus.debug("Handling SDP as well...");
@@ -792,98 +783,82 @@ class VirtualClient extends Component {
                     Janus.log(" ::: Got a remote track event ::: (remote feed)");
                     Janus.log("Remote track (mid=" + mid + ") " + (on ? "added" : "removed") + ":", track);
                     // Which publisher are we getting on this mid?
-                    let {subStreams,slots,mids} = this.state;
-                    var sub = subStreams[mid];
-                    var slot = slots[mid];
-                    var feed = feedStreams[sub.feed_id];
-                    Janus.log(" >> This track is coming from feed " + sub.feed_id + ":", feed);
+                    let {mids} = this.state;
+                    let feed = mids[mid].feed_id;
+                    Janus.log(" >> This track is coming from feed " + feed + ":", mid);
                     if(!on) {
                         // Track removed, get rid of the stream and the rendering
-                        var stream = remoteTracks[mid];
-                        if(stream) {
-                            try {
-                                var tracks = stream.getTracks();
-                                for(var i in tracks) {
-                                    var mst = tracks[i];
-                                    if(mst !== null && mst !== undefined)
-                                        mst.stop();
-                                }
-                            } catch(e) {}
-                        }
-                        if(track.kind === "video" && feed) {
-                            feed.remoteVideos--;
-                            if(feed.remoteVideos === 0) {
-                                // No video, at least for now: show a placeholder
-                            }
-                        }
-                        delete remoteTracks[mid];
-                        delete slots[mid];
-                        delete mids[slot];
-                        return;
+                        //var stream = remoteTracks[mid];
+                        // if(stream) {
+                        //     try {
+                        //         var tracks = stream.getTracks();
+                        //         for(var i in tracks) {
+                        //             var mst = tracks[i];
+                        //             if(mst !== null && mst !== undefined)
+                        //                 mst.stop();
+                        //         }
+                        //     } catch(e) {}
+                        // }
+                        // if(track.kind === "video" && feed) {
+                        //     feed.remoteVideos--;
+                        //     if(feed.remoteVideos === 0) {
+                        //         // No video, at least for now: show a placeholder
+                        //     }
+                        // }
+                        // delete remoteTracks[mid];
+                        // return;
                     }
                     // If we're here, a new track was added
-                    if(feed.spinner !== undefined && feed.spinner !== null) {
-                        feed.spinner.stop();
-                        feed.spinner = null;
-                    }
-                    // if($('#remotevideo' + slot + '-' + mid).length > 0)
-                    //     return;
                     if(track.kind === "audio") {
                         // New audio track: create a stream out of it, and use a hidden <audio> element
-                        stream = new MediaStream();
+                        let stream = new MediaStream();
                         stream.addTrack(track.clone());
-                        remoteTracks[mid] = stream;
                         Janus.log("Created remote audio stream:", stream);
                         // $('#videoremote' + slot).append('<audio class="hide" id="remotevideo' + slot + '-' + mid + '" autoplay playsinline/>');
                         // Janus.attachMediaStream($('#remotevideo' + slot + '-' + mid).get(0), stream);
 
-                        Janus.debug("Remote feed #" + slot);
-                        let remoteaudio = this.refs["remoteAudio" + feed.id];
+                        let remoteaudio = this.refs["remoteAudio" + feed];
                         Janus.attachMediaStream(remoteaudio, stream);
 
                         if(feed.remoteVideos === 0) {
                             // No video, at least for now: show a placeholder
                         }
-                    } else {
+                    } else if(track.kind === "video"){
                         // New video track: create a stream out of it
-                        feed.remoteVideos++;
-                        stream = new MediaStream();
+                        let stream = new MediaStream();
                         stream.addTrack(track.clone());
-                        remoteTracks[mid] = stream;
                         Janus.log("Created remote video stream:", stream);
-                        let remotevideo = this.refs["remoteVideo" + feed.id];
+                        let remotevideo = this.refs["remoteVideo" + feed];
                         Janus.attachMediaStream(remotevideo, stream);
+                    } else {
+                        Janus.log("Created remote data channel");
                     }
                 },
                 oncleanup: () => {
                     Janus.log(" ::: Got a cleanup notification (remote feed) :::");
-                    for(let i=1;i<16;i++) {
-                        feedStreams[i].simulcastStarted = false;
-                        feedStreams[i].remoteVideos = 0;
-                    }
-                    remoteTracks = {};
                 }
             });
     };
 
     unsubscribeFrom = (id) => {
         // Unsubscribe from this publisher
-        let {feedStreams,feeds,remoteFeed} = this.state;
-        let feed = feedStreams[id];
-        if(!feed)
-            return;
-        Janus.log("Feed " + id + " (" + feed.display + ") has left the room, detaching");
-        delete feeds[feed.slot];
-        feeds.slot = 0;
-        delete feedStreams[id];
-        // Send an unsubscribe request
-        let unsubscribe = {
-            request: "unsubscribe",
-            streams: [{ feed: id }]
-        };
-        if(remoteFeed !== null)
-            remoteFeed.send({ message: unsubscribe });
-        this.setState({feeds,feedStreams});
+        let {mids,feeds,remoteFeed} = this.state;
+        for (let i=0; i<feeds.length; i++) {
+            if (feeds[i].id === id) {
+                console.log(" - Remove FEED: ", feeds[i]);
+                Janus.log("Feed " + feeds[i] + " (" + id + ") has left the room, detaching");
+                feeds.splice(i, 1);
+                // Send an unsubscribe request
+                let unsubscribe = {
+                    request: "unsubscribe",
+                    streams: [{ feed: id }]
+                };
+                if(remoteFeed !== null)
+                    remoteFeed.send({ message: unsubscribe });
+                this.setState({feeds});
+                break
+            }
+        }
     };
 
     onProtocolData = (data) => {
@@ -1060,7 +1035,7 @@ class VirtualClient extends Component {
                 // let question = feed.question;
                 // let cammute = feed.cammute;
                 // let name = feed.rfuser.display;
-                let id = feed;
+                let id = feed.id;
                 let talk = false;
                 let question = false;
                 let cammute = false;
@@ -1079,7 +1054,7 @@ class VirtualClient extends Component {
                 </div>
                     <svg className={classNames('nowebcam',{'hidden':!cammute})} viewBox="0 0 32 18" preserveAspectRatio="xMidYMid meet" ><text x="16" y="9" text-anchor="middle" alignment-baseline="central" dominant-baseline="central">&#xf2bd;</text></svg>
                 <video
-                key={id}
+                key={"v"+id}
                 ref={"remoteVideo" + id}
                 id={"remoteVideo" + id}
                 width={width}
@@ -1088,7 +1063,7 @@ class VirtualClient extends Component {
                 controls={controls}
                 playsInline={true}/>
                     <audio
-                        key={id}
+                        key={"a"+id}
                         ref={"remoteAudio" + id}
                         id={"remoteAudio" + id}
                         autoPlay={autoPlay}
