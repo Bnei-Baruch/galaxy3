@@ -787,6 +787,11 @@ class VirtualClient extends Component {
                     let feed = mids[mid].feed_id;
                     Janus.log(" >> This track is coming from feed " + feed + ":", mid);
                     if(!on) {
+                        Janus.log(" :: Going to stop track :: " + feed + ":", mid);
+                        //FIXME: Remove callback for audio track does not come
+                        track.stop()
+                        //FIXME: does we really need to stop all track for feed id?
+
                         // Track removed, get rid of the stream and the rendering
                         //var stream = remoteTracks[mid];
                         // if(stream) {
@@ -806,7 +811,7 @@ class VirtualClient extends Component {
                         //     }
                         // }
                         // delete remoteTracks[mid];
-                        // return;
+                        return;
                     }
                     // If we're here, a new track was added
                     if(track.kind === "audio") {
@@ -926,11 +931,12 @@ class VirtualClient extends Component {
     };
 
     exitRoom = () => {
-        let {videoroom, protocol, room} = this.state;
+        let {videoroom, remoteFeed, protocol, room} = this.state;
         let leave = {request : "leave"};
+        remoteFeed.send({"message": leave});
         videoroom.send({"message": leave});
         this.chat.exitChatRoom(room);
-        this.setState({muted: false, cammuted: false, mystream: null, room: "", selected_room: "", i: "", feeds: []});
+        this.setState({muted: false, cammuted: false, mystream: null, room: "", selected_room: "", i: "", feeds: [], mids: [], remoteFeed: null});
         this.initVideoRoom();
         protocol.detach();
     };
