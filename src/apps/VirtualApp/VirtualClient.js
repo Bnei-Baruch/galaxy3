@@ -492,6 +492,7 @@ class VirtualClient extends Component {
                 if(msg["publishers"] !== undefined && msg["publishers"] !== null) {
                     let list = msg["publishers"];
                     let feeds = list.filter(feeder => JSON.parse(feeder.display).role === "user");
+                    let {feedStreams,users} = this.state;
                     console.log(":: Got Pulbishers list: ", feeds);
                     if(feeds.length > 15) {
                         alert("Max users in this room is reached");
@@ -502,17 +503,26 @@ class VirtualClient extends Component {
                     let subscription = [];
                     for(let f in feeds) {
                         let id = feeds[f]["id"];
-                        feeds[f].display = JSON.parse(feeds[f]["display"]);
+                        let display = JSON.parse(feeds[f]["display"]);
                         let talk = feeds[f]["talking"];
+                        let streams = feeds[f]["streams"];
+                        feeds[f].display = display;
+                        for (let i in streams) {
+                            let stream = streams[i];
+                            stream["id"] = id;
+                            stream["display"] = display;
+                        }
+                        feedStreams[id] = {id, display, streams};
+                        users[display.id] = display;
+                        users[display.id].rfid = id;
                         subscription.push({
                             feed: id,	// This is mandatory
                             //mid: stream.mid		// This is optional (all streams, if missing)
                         });
                         //this.newRemoteFeed(id, talk);
                     }
-                    console.log(feeds);
-                    this.setState({feeds});
-                    console.log(" :: SUBS: ",subscription)
+                    this.setState({feeds,feedStreams,users});
+                    console.log(" :: SUBS: ",subscription);
                     if(subscription.length > 0)
                         this.subscribeTo(subscription);
                 }
@@ -555,23 +565,33 @@ class VirtualClient extends Component {
                     this.setState({feedStreams})
                 } else if(msg["publishers"] !== undefined && msg["publishers"] !== null) {
                     let feed = msg["publishers"];
-                    let {feeds} = this.state;
+                    let {feeds,feedStreams,users} = this.state;
                     Janus.debug("Got a list of available publishers/feeds:");
                     console.log(feed);
                     let subscription = [];
                     for(let f in feed) {
                         let id = feed[f]["id"];
-                        feed[f].display = JSON.parse(feed[f]["display"]);
-                        if(feed[f].display.role !== "user")
+                        let display = JSON.parse(feed[f]["display"]);
+                        if(display.role !== "user")
                             return;
                         let talk = feed[f]["talking"];
+                        let streams = feed[f]["streams"];
+                        feed[f].display = display;
+                        for (let i in streams) {
+                            let stream = streams[i];
+                            stream["id"] = id;
+                            stream["display"] = display;
+                        }
+                        feedStreams[id] = {id, display, streams};
+                        users[display.id] = display;
+                        users[display.id].rfid = id;
                         subscription.push({
                             feed: id,	// This is mandatory
                             //mid: stream.mid		// This is optional (all streams, if missing)
                         });
                     }
                     feeds.push(feed[0]);
-                    this.setState({feeds});
+                    this.setState({feeds,feedStreams,users});
                     if(subscription.length > 0)
                         this.subscribeTo(subscription);
                 } else if(msg["leaving"] !== undefined && msg["leaving"] !== null) {
@@ -847,11 +867,14 @@ class VirtualClient extends Component {
 
     unsubscribeFrom = (id) => {
         // Unsubscribe from this publisher
-        let {mids,feeds,remoteFeed} = this.state;
+        let {mids,feeds,remoteFeed,users,feedStreams} = this.state;
         for (let i=0; i<feeds.length; i++) {
             if (feeds[i].id === id) {
                 console.log(" - Remove FEED: ", feeds[i]);
                 Janus.log("Feed " + feeds[i] + " (" + id + ") has left the room, detaching");
+                //TODO: remove mids
+                delete users[feeds[i].display.id];
+                delete feedStreams[id];
                 feeds.splice(i, 1);
                 // Send an unsubscribe request
                 let unsubscribe = {
@@ -860,7 +883,7 @@ class VirtualClient extends Component {
                 };
                 if(remoteFeed !== null)
                     remoteFeed.send({ message: unsubscribe });
-                this.setState({feeds});
+                this.setState({feeds,users,feedStreams});
                 break
             }
         }
