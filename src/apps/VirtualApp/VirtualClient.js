@@ -509,17 +509,22 @@ class VirtualClient extends Component {
                     }
                     Janus.debug("Got a list of available publishers/feeds:");
                     console.log(list);
-                    let sources = null;
+                    let subscription = [];
                     for(let f in feeds) {
                         let id = feeds[f]["id"];
                         feeds[f].display = JSON.parse(feeds[f]["display"]);
                         let talk = feeds[f]["talking"];
+                        subscription.push({
+                            feed: id,	// This is mandatory
+                            //mid: stream.mid		// This is optional (all streams, if missing)
+                        });
                         //this.newRemoteFeed(id, talk);
                     }
                     console.log(feeds);
                     this.setState({feeds});
-                    // if(sources)
-                    //     this.subscribeTo(sources);
+                    console.log(" :: SUBS: ",subscription)
+                    if(subscription.length > 0)
+                        this.subscribeTo(subscription);
                 }
             } else if(event === "talking") {
                 let {feeds} = this.state;
@@ -606,36 +611,36 @@ class VirtualClient extends Component {
         }
     };
 
-    subscribeTo = (sources) => {
+    subscribeTo = (subscription) => {
         // New feeds are available, do we need create a new plugin handle first?
         let {remoteFeed,feeds,feedStreams} = this.state;
         if(remoteFeed !== null) {
             // Prepare the streams to subscribe to, as an array: we have the list of
             // streams the feeds are publishing, so we can choose what to pick or skip
-            let subscription = [];
-            for(let s in sources) {
-                let streams = sources[s];
-                for(let i in streams) {
-                    let stream = streams[i];
-                    // Find an empty slot in the UI for each new source
-                    if(!feedStreams[stream.id].slot) {
-                        let slot;
-                        for(let i=1;i<16;i++) {
-                            if(feeds[i] === undefined || feeds[i] === null) {
-                                slot = i;
-                                feeds[slot] = stream.id;
-                                feedStreams[stream.id].slot = slot;
-                                feedStreams[stream.id].remoteVideos = 0;
-                                break;
-                            }
-                        }
-                    }
-                    subscription.push({
-                        feed: stream.id,	// This is mandatory
-                        mid: stream.mid		// This is optional (all streams, if missing)
-                    });
-                }
-            }
+            // let subscription = [];
+            // for(let s in sources) {
+            //     let streams = sources[s];
+            //     for(let i in streams) {
+            //         let stream = streams[i];
+            //         // Find an empty slot in the UI for each new source
+            //         if(!feedStreams[stream.id].slot) {
+            //             let slot;
+            //             for(let i=1;i<16;i++) {
+            //                 if(feeds[i] === undefined || feeds[i] === null) {
+            //                     slot = i;
+            //                     feeds[slot] = stream.id;
+            //                     feedStreams[stream.id].slot = slot;
+            //                     feedStreams[stream.id].remoteVideos = 0;
+            //                     break;
+            //                 }
+            //             }
+            //         }
+            //         subscription.push({
+            //             feed: stream.id,	// This is mandatory
+            //             mid: stream.mid		// This is optional (all streams, if missing)
+            //         });
+            //     }
+            // }
             remoteFeed.send({ message: {
                     request: "subscribe",
                     streams: subscription
@@ -646,7 +651,7 @@ class VirtualClient extends Component {
         if(this.state.creatingFeed) {
             // Still working on the handle
             setTimeout(() =>  {
-                this.subscribeTo(sources);
+                this.subscribeTo(subscription);
             }, 500);
             return;
         }
@@ -663,30 +668,30 @@ class VirtualClient extends Component {
                     this.setState({remoteFeed});
                     // Prepare the streams to subscribe to, as an array: we have the list of
                     // streams the feed is publishing, so we can choose what to pick or skip
-                    let subscription = [];
-                    for(let s in sources) {
-                        let streams = sources[s];
-                        for(let i in streams) {
-                            let stream = streams[i];
-                            // Find an empty slot in the UI for each new source
-                            if(!feedStreams[stream.id].slot) {
-                                let slot;
-                                for(let i=1;i<16;i++) {
-                                    if(feeds[i] === undefined || feeds[i] === null) {
-                                        slot = i;
-                                        feeds[slot] = stream.id;
-                                        feedStreams[stream.id].slot = slot;
-                                        feedStreams[stream.id].remoteVideos = 0;
-                                        break;
-                                    }
-                                }
-                            }
-                            subscription.push({
-                                feed: stream.id,	// This is mandatory
-                                mid: stream.mid		// This is optional (all streams, if missing)
-                            });
-                        }
-                    }
+                    // let subscription = [];
+                    // for(let s in sources) {
+                    //     let streams = sources[s];
+                    //     for(let i in streams) {
+                    //         let stream = streams[i];
+                    //         // Find an empty slot in the UI for each new source
+                    //         if(!feedStreams[stream.id].slot) {
+                    //             let slot;
+                    //             for(let i=1;i<16;i++) {
+                    //                 if(feeds[i] === undefined || feeds[i] === null) {
+                    //                     slot = i;
+                    //                     feeds[slot] = stream.id;
+                    //                     feedStreams[stream.id].slot = slot;
+                    //                     feedStreams[stream.id].remoteVideos = 0;
+                    //                     break;
+                    //                 }
+                    //             }
+                    //         }
+                    //         subscription.push({
+                    //             feed: stream.id,	// This is mandatory
+                    //             mid: stream.mid		// This is optional (all streams, if missing)
+                    //         });
+                    //     }
+                    // }
                     // We wait for the plugin to send us an offer
                     let subscribe = {
                         request: "join",
@@ -717,7 +722,7 @@ class VirtualClient extends Component {
                     Janus.log("Event: " + event);
                     if(msg["error"] !== undefined && msg["error"] !== null) {
                         Janus.debug("-- ERROR: " + msg["error"]);
-                    } else if(event != undefined && event != null) {
+                    } else if(event !== undefined && event !== null) {
                         if(event === "attached") {
                             this.setState({creatingFeed: false});
                             Janus.log("Successfully attached to feed in room " + msg["room"]);
@@ -791,7 +796,7 @@ class VirtualClient extends Component {
                     var sub = subStreams[mid];
                     var slot = slots[mid];
                     var feed = feedStreams[sub.feed_id];
-                    Janus.debug(" >> This track is coming from feed " + sub.feed_id + ":", feed);
+                    Janus.log(" >> This track is coming from feed " + sub.feed_id + ":", feed);
                     if(!on) {
                         // Track removed, get rid of the stream and the rendering
                         var stream = remoteTracks[mid];
