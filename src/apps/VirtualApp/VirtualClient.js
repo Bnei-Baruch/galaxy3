@@ -471,23 +471,7 @@ class VirtualClient extends Component {
         }
     };
 
-    subscribeTo = (subscription) => {
-        // New feeds are available, do we need create a new plugin handle first?
-        if(this.state.remoteFeed) {
-            this.state.remoteFeed.send({message:
-                    {request: "subscribe", streams: subscription}
-            });
-            return;
-        }
-        // We don't have a handle yet, but we may be creating one already
-        if(this.state.creatingFeed) {
-            // Still working on the handle
-            setTimeout(() =>  {
-                this.subscribeTo(subscription);
-            }, 500);
-            return;
-        }
-        this.setState({creatingFeed: true});
+    newRemoteFeed = (subscription) => {
         this.state.janus.attach(
             {
                 plugin: "janus.plugin.videoroom",
@@ -614,6 +598,27 @@ class VirtualClient extends Component {
                     Janus.log(" ::: Got a cleanup notification (remote feed) :::");
                 }
             });
+    };
+
+    subscribeTo = (subscription) => {
+        // New feeds are available, do we need create a new plugin handle first?
+        if (this.state.remoteFeed) {
+            this.state.remoteFeed.send({message:
+                    {request: "subscribe", streams: subscription}
+            });
+            return;
+        }
+        // We don't have a handle yet, but we may be creating one already
+        if (this.state.creatingFeed) {
+            // Still working on the handle
+            setTimeout(() => {
+                this.subscribeTo(subscription);
+            }, 500);
+        } else {
+            // We don't creating, so let's do it
+            this.setState({creatingFeed: true});
+            this.newRemoteFeed(subscription);
+        }
     };
 
     unsubscribeFrom = (id) => {
@@ -788,7 +793,7 @@ class VirtualClient extends Component {
         const width = "134";
         const height = "100";
         const autoPlay = true;
-        const controls = true;
+        const controls = false;
         //const vmuted = true;
 
         //let iOS = ['iPad', 'iPhone', 'iPod'].indexOf(navigator.platform) >= 0;
@@ -833,22 +838,23 @@ class VirtualClient extends Component {
                     <div className="video__title">{!talk ? <Icon name="microphone slash" size="small" color="red"/> : ''}{name}</div>
                 </div>
                     <svg className={classNames('nowebcam',{'hidden':!cammute})} viewBox="0 0 32 18" preserveAspectRatio="xMidYMid meet" ><text x="16" y="9" text-anchor="middle" alignment-baseline="central" dominant-baseline="central">&#xf2bd;</text></svg>
-                <video
-                key={"v"+id}
-                ref={"remoteVideo" + id}
-                id={"remoteVideo" + id}
-                width={width}
-                height={height}
-                autoPlay={autoPlay}
-                controls={controls}
-                playsInline={true}/>
+                    <video
+                        key={"v"+id}
+                        ref={"remoteVideo" + id}
+                        id={"remoteVideo" + id}
+                        width={width}
+                        height={height}
+                        autoPlay={autoPlay}
+                        controls={controls}
+                        muted={true}
+                        playsInline={true}/>
                     <audio
                         key={"a"+id}
                         ref={"remoteAudio" + id}
                         id={"remoteAudio" + id}
                         autoPlay={autoPlay}
                         controls={controls}
-                        playsinline={true}/>
+                        playsInline={true}/>
                 </div>);
             }
             return true;
