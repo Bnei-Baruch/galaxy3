@@ -479,7 +479,7 @@ class VirtualClient extends Component {
                 success: (pluginHandle) => {
                     let remoteFeed = pluginHandle;
                     Janus.log("Plugin attached! (" + remoteFeed.getPlugin() + ", id=" + remoteFeed.getId() + ")");
-                    Janus.log("  -- This is a multistream subscriber");
+                    Janus.log("  -- This is a multistream subscriber",remoteFeed);
                     this.setState({remoteFeed, creatingFeed: false});
                     // We wait for the plugin to send us an offer
                     let subscribe = {request: "join", room: this.state.room, ptype: "subscriber", streams: subscription};
@@ -650,8 +650,8 @@ class VirtualClient extends Component {
         let {room,feeds,users,user} = this.state;
         if (data.type === "question" && data.status && data.room === room && user.id !== data.user.id) {
             let rfid = users[data.user.id].rfid;
-            for (let i = 1; i < feeds.length; i++) {
-                if (feeds[i] !== null && feeds[i] !== undefined && feeds[i].rfid === rfid) {
+            for (let i = 0; i < feeds.length; i++) {
+                if (feeds[i] !== null && feeds[i] !== undefined && feeds[i].id === rfid) {
                     feeds[i].question = true;
                     break
                 }
@@ -659,8 +659,8 @@ class VirtualClient extends Component {
             this.setState({feeds});
         } else if (data.type === "question" && !data.status && data.room === room && user.id !== data.user.id) {
             let rfid = users[data.user.id].rfid;
-            for (let i = 1; i < feeds.length; i++) {
-                if (feeds[i] !== null && feeds[i] !== undefined && feeds[i].rfid === rfid) {
+            for (let i = 0; i < feeds.length; i++) {
+                if (feeds[i] !== null && feeds[i] !== undefined && feeds[i].id === rfid) {
                     feeds[i].question = false;
                     break
                 }
@@ -817,12 +817,12 @@ class VirtualClient extends Component {
             if(feed) {
                 // let id = feed.rfid;
                 // let talk = feed.talk;
-                // let question = feed.question;
+                let question = feed.question;
                 // let cammute = feed.cammute;
                 // let name = feed.rfuser.display;
                 let id = feed.id;
                 let talk = false;
-                let question = false;
+                //let question = false;
                 let cammute = false;
                 let name = "test";
                 return (<div className="video"
