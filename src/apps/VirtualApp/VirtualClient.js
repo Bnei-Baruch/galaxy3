@@ -203,6 +203,8 @@ class VirtualClient extends Component {
     initVideoRoom = (reconnect) => {
         if(this.state.videoroom)
             this.state.videoroom.detach();
+        if(this.state.remoteFeed)
+            this.state.remoteFeed.detach();
         this.state.janus.attach({
             plugin: "janus.plugin.videoroom",
             opaqueId: "videoroom_user",
@@ -212,7 +214,7 @@ class VirtualClient extends Component {
                 Janus.log("  -- This is a publisher/manager");
                 let {user} = this.state;
                 user.handle = videoroom.getId();
-                this.setState({videoroom, user});
+                this.setState({videoroom, user, remoteFeed: null});
                 this.initDevices(true);
                 if(reconnect) {
                     setTimeout(() => {
@@ -679,6 +681,10 @@ class VirtualClient extends Component {
     };
 
     joinRoom = (reconnect) => {
+        this.setState({delay: true});
+        setTimeout(() => {
+            this.setState({delay: false});
+        }, 3000);
         let {janus, videoroom, selected_room, user, username_value} = this.state;
         localStorage.setItem("room", selected_room);
         //This name will see other users
@@ -712,7 +718,8 @@ class VirtualClient extends Component {
     exitRoom = () => {
         let {videoroom, remoteFeed, protocol, room} = this.state;
         let leave = {request : "leave"};
-        remoteFeed.send({"message": leave});
+        if(remoteFeed)
+            remoteFeed.send({"message": leave});
         videoroom.send({"message": leave});
         this.chat.exitChatRoom(room);
         this.setState({muted: false, cammuted: false, mystream: null, room: "", selected_room: "", i: "", feeds: [], mids: [], remoteFeed: null});
@@ -880,7 +887,7 @@ class VirtualClient extends Component {
                     onClick={this.getRoomList}
                     onChange={(e, {value}) => this.selectRoom(value)} />
                     {mystream ? <Button negative icon='sign-out' onClick={this.exitRoom} />:""}
-                    {!mystream ? <Button primary icon='sign-in' disabled={!selected_room||!audio_device} onClick={this.joinRoom} />:""}
+                    {!mystream ? <Button primary icon='sign-in' disabled={delay||!selected_room||!audio_device} onClick={this.joinRoom} />:""}
                     </Input>
                     <Menu icon='labeled' secondary size="mini">
                         <Menu.Item disabled={!mystream} onClick={() => this.setState({ visible: !this.state.visible, count: 0 })}>
