@@ -256,7 +256,7 @@ class VirtualClient extends Component {
                 Janus.log("The DataChannel is available!(publisher)");
             },
             ondata: (data) => {
-                Janus.debug("We got data from the DataChannel! (publisher) " + data);
+                Janus.log("We got data from the DataChannel! (publisher) " + data);
             },
             oncleanup: () => {
                 Janus.log(" ::: Got a cleanup notification: we are unpublished now :::");
@@ -268,8 +268,8 @@ class VirtualClient extends Component {
         let {feeds,users} = this.state;
         let rfid = users[data.id].rfid;
         let camera = data.camera;
-        for (let i = 1; i < feeds.length; i++) {
-            if (feeds[i] !== null && feeds[i] !== undefined && feeds[i].rfid === rfid) {
+        for (let i = 0; i < feeds.length; i++) {
+            if (feeds[i] !== null && feeds[i] !== undefined && feeds[i].id === rfid) {
                 feeds[i].cammute = !camera;
                 this.setState({feeds});
                 break
@@ -301,14 +301,14 @@ class VirtualClient extends Component {
                             exact: video_device
                         }
                     },
-                    data: false
+                    data: true
                 },
                 //media: { audioRecv: false, videoRecv: false, audioSend: useAudio, videoSend: true },	// Publishers are sendonly
                 simulcast: false,
                 success: (jsep) => {
                     Janus.debug("Got publisher SDP!");
                     Janus.debug(jsep);
-                    let publish = { "request": "configure", "audio": true, "video": useVideo, "data": false };
+                    let publish = { "request": "configure", "audio": true, "video": useVideo, "data": true };
                     videoroom.send({"message": publish, "jsep": jsep});
                 },
                 error: (error) => {
@@ -535,7 +535,7 @@ class VirtualClient extends Component {
                                 jsep: jsep,
                                 // Add data:true here if you want to subscribe to datachannels as well
                                 // (obviously only works if the publisher offered them in the first place)
-                                media: { audioSend: false, videoSend: false },	// We want recvonly audio/video
+                                media: { audioSend: false, videoSend: false, data:true },	// We want recvonly audio/video
                                 success: (jsep) => {
                                     Janus.debug("Got SDP!");
                                     Janus.debug(jsep);
@@ -815,16 +815,12 @@ class VirtualClient extends Component {
 
         let videos = this.state.feeds.map((feed) => {
             if(feed) {
-                // let id = feed.rfid;
+                let id = feed.id;
                 // let talk = feed.talk;
                 let question = feed.question;
-                // let cammute = feed.cammute;
-                // let name = feed.rfuser.display;
-                let id = feed.id;
+                let cammute = feed.cammute;
+                let name = feed.display.name;
                 let talk = false;
-                //let question = false;
-                let cammute = false;
-                let name = "test";
                 return (<div className="video"
                 key={"v" + id}
                 ref={"video" + id}
