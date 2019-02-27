@@ -80,7 +80,7 @@ class VirtualClient extends Component {
             setTimeout(() => {
                 this.initClient(user,er);
             }, 5000);
-        });
+        }, true);
     };
 
     initDevices = (video) => {
@@ -305,7 +305,7 @@ class VirtualClient extends Component {
                     },
                     data: true
                 },
-                //media: { audioRecv: false, videoRecv: false, audioSend: useAudio, videoSend: true },	// Publishers are sendonly
+                //media: { audioRecv: false, videoRecv: false, audioSend: useAudio, videoSend: true, data: true },	// Publishers are sendonly
                 simulcast: false,
                 success: (jsep) => {
                     Janus.debug("Got publisher SDP!");
