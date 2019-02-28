@@ -1,11 +1,12 @@
 import {Janus} from "../lib/janus";
-import {JANUS_ADMIN, JANUS_SERVER, ADMIN_SECRET, STUN_SERVER, WFDB_STATE, WFRP_STATE} from "./consts";
+import {JANUS_ADMIN_GXY, JANUS_ADMIN_VRT, JANUS_SRV_GXY, JANUS_SRV_VRT, ADMIN_SECRET, STUN_SERVER, WFDB_STATE, WFRP_STATE} from "./consts";
 
 
-export const initJanus = (cb,er) => {
+export const initJanus = (cb,er,mlt) => {
     Janus.init({
-        debug: ["error"],
+        debug: ["log","error"],
         callback: () => {
+            let JANUS_SERVER = mlt ? JANUS_SRV_GXY : JANUS_SRV_VRT;
             let janus = new Janus({
                 server: JANUS_SERVER,
                 iceServers: [{urls: STUN_SERVER}],
@@ -327,42 +328,43 @@ export const geoInfo = (url,cb) => fetch(`${url}`)
 })
     .catch(ex => Janus.log(`get geoInfo`, ex));
 
-export const getSessions = (cb) => {
-    let request = { "janus": "list_sessions", "transaction": Janus.randomString(12), "admin_secret": ADMIN_SECRET };
-    getData(JANUS_ADMIN,request,(json) => {
-        let sessions = json["sessions"];
-        cb(sessions);
-    })
-};
+// export const getSessions = (cb) => {
+//     let request = { "janus": "list_sessions", "transaction": Janus.randomString(12), "admin_secret": ADMIN_SECRET };
+//     getData(JANUS_ADMIN,request,(json) => {
+//         let sessions = json["sessions"];
+//         cb(sessions);
+//     })
+// };
+//
+// export const getHandles = (session,cb) => {
+//     if(session === null || session === undefined)
+//         return;
+//     let request = { "janus": "list_handles", "transaction": Janus.randomString(12), "admin_secret": ADMIN_SECRET };
+//     getData(`${JANUS_ADMIN}/${session}`,request,(json) => {
+//         let handles = json["handles"];
+//         cb(handles);
+//     })
+// };
+//
+// export const getHandleInfo = (session, handle,cb) => {
+//     if(handle === null || handle === undefined)
+//         return;
+//     let request = { "janus": "handle_info", "transaction": Janus.randomString(12), "admin_secret": ADMIN_SECRET };
+//     getData(`${JANUS_ADMIN}/${session}/${handle}`,request,(json) => {
+//         let handleInfo = json["info"];
+//         if(handleInfo.opaque_id === "videoroom_user" && handleInfo["plugin_specific"]["type"] === "publisher") {
+//             let g = handleInfo["plugin_specific"]["display"];
+//             let ip = handleInfo.streams["0"].components["0"]["selected-pair"].split(" ")[3].split(":")[0];
+//             let json = {name: g, ip: ip};
+//             cb(json);
+//         }
+//     })
+// };
 
-export const getHandles = (session,cb) => {
-    if(session === null || session === undefined)
-        return;
-    let request = { "janus": "list_handles", "transaction": Janus.randomString(12), "admin_secret": ADMIN_SECRET };
-    getData(`${JANUS_ADMIN}/${session}`,request,(json) => {
-        let handles = json["handles"];
-        cb(handles);
-    })
-};
-
-export const getHandleInfo = (session, handle,cb) => {
+export const getPublisherInfo = (session, handle,cb,mlt) => {
     if(handle === null || handle === undefined)
         return;
-    let request = { "janus": "handle_info", "transaction": Janus.randomString(12), "admin_secret": ADMIN_SECRET };
-    getData(`${JANUS_ADMIN}/${session}/${handle}`,request,(json) => {
-        let handleInfo = json["info"];
-        if(handleInfo.opaque_id === "videoroom_user" && handleInfo["plugin_specific"]["type"] === "publisher") {
-            let g = handleInfo["plugin_specific"]["display"];
-            let ip = handleInfo.streams["0"].components["0"]["selected-pair"].split(" ")[3].split(":")[0];
-            let json = {name: g, ip: ip};
-            cb(json);
-        }
-    })
-};
-
-export const getPublisherInfo = (session, handle,cb) => {
-    if(handle === null || handle === undefined)
-        return;
+    let JANUS_ADMIN = mlt ? JANUS_ADMIN_GXY : JANUS_ADMIN_VRT;
     let request = { "janus": "handle_info", "transaction": Janus.randomString(12), "admin_secret": ADMIN_SECRET };
     getData(`${JANUS_ADMIN}/${session}/${handle}`,request,(json) => {
         cb(json);
