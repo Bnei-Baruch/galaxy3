@@ -659,7 +659,7 @@ class ShidurUsers extends Component {
                     // One of the publishers has gone away?
                     var leaving = msg["leaving"];
                     Janus.log("Publisher left: " + leaving);
-                    this.unsubscribeFrom(leaving);
+                    this.unsubscribeFrom(h, leaving);
 
                 } else if(msg["unpublished"] !== undefined && msg["unpublished"] !== null) {
                     let unpublished = msg["unpublished"];
