@@ -243,11 +243,11 @@ class ShidurUsers extends Component {
                                 jsep: jsep,
                                 // Add data:true here if you want to subscribe to datachannels as well
                                 // (obviously only works if the publisher offered them in the first place)
-                                media: { audioSend: false, videoSend: false, data:true },	// We want recvonly audio/video
+                                media: { audioSend: false, videoSend: false },	// We want recvonly audio/video
                                 success: (jsep) => {
                                     Janus.debug("Got SDP!");
                                     Janus.debug(jsep);
-                                    let body = { request: "start", room: this.state.room };
+                                    let body = { request: "start", room: this.state[h].room };
                                     this.state[h].remoteFeed.send({ message: body, jsep: jsep });
                                 },
                                 error: (error) => {
@@ -356,17 +356,17 @@ class ShidurUsers extends Component {
     };
 
     initVideoRoom = (roomid, h) => {
-        // if(!this.state.room)
-        //     return;
         if(this.state[h] && this.state[h].videoroom)
             this.state[h].videoroom.detach();
+        if(this.state[h] && this.state[h].remoteFeed)
+            this.state[h].remoteFeed.detach();
         this.state.janus.attach({
             plugin: "janus.plugin.videoroom",
             opaqueId: "preview_shidur",
             success: (videoroom) => {
                 Janus.log(videoroom,this.state[h]);
                 // hdl.room = roomid;
-                this.setState({[h]: {...this.state[h], videoroom}});
+                this.setState({[h]: {...this.state[h], videoroom, remoteFeed: null}});
                 Janus.log("Plugin attached! (" + videoroom.getPlugin() + ", id=" + videoroom.getId() + ")", this.state[h]);
                 Janus.log("  -- This is a publisher/manager");
                 let {user} = this.state;
@@ -832,74 +832,26 @@ class ShidurUsers extends Component {
     // };
 
     attachToPreview = (group, index) => {
-        const {videoroom,remoteFeed} = this.state.preview;
         let room = group.room;
         let name = group.description;
         let h = "preview";
         if(this.state.preview.room === room)
             return;
         Janus.log(" :: Attaching to Preview: ",group);
-        if(this.state.preview.room !== "") {
-            let leave = {request : "leave"};
-            if(remoteFeed)
-                remoteFeed.send({"message": leave});
-            videoroom.send({"message": leave});
-        };
-        this.setState({[h]:{...this.state[h], room, name, index}});
-        Janus.log("-- :: Preview join to room: ", room);
-        let register = { "request": "join", "room": room, "ptype": "publisher", "display": JSON.stringify(this.state.user) };
-        videoroom.send({"message": register});
-
-        // feeds.preview.forEach(feed => {
-        //     if(feed) {
-        //         Janus.log("-- :: Remove Feed: ", feed);
-        //         feed.detach();
-        //     }
-        // });
-
-        // feeds.preview = [];
-        // this.setState({index, preview_room: room, preview_name: name, feeds});
-        //this.initVideoRoom(room, "preview");
+        this.setState({[h]:{...this.state[h], feeds: [], room, name, index}});
+        this.initVideoRoom(room, "preview");
     };
 
     attachToProgram = () => {
-        // let {feeds, room, name, group, rooms} = this.state.program;
-        // if(!name)
-        //     return;
-        // feeds.program.forEach(feed => {
-        //     if(feed) {
-        //         Janus.log("-- :: Remove Feed: ", feed);
-        //         feed.detach();
-        //     }
-        // });
-        //
-        // feeds.program = [];
-        // this.setState({program_room: preview_room, program_name: preview_name, feeds});
-        // this.initVideoRoom(preview_room, "program");
-        //
-        // // Save Program State
-        // let pgm_state = { index: 0, room: preview_room, name: preview_name};
-        // this.setState({pgm_state});
-        // Janus.log(" :: Attaching to Program: ",preview_name,pgm_state);
-
-        let {videoroom,remoteFeed} = this.state.program;
         const {room, name, index} = this.state.preview;
         let h = "program";
         if(this.state.program.room === room)
             return;
-        //Janus.log(" :: Attaching to Program: ",group);
-        if(this.state.program.room !== "") {
-            let leave = {request : "leave"};
-            if(remoteFeed)
-                remoteFeed.send({"message": leave});
-            videoroom.send({"message": leave});
-        };
-        this.setState({[h]:{...this.state[h], room, name}});
-        Janus.log("-- :: Preview join to room: ", room);
-        let register = { "request": "join", "room": room, "ptype": "publisher", "display": JSON.stringify(this.state.user) };
-        videoroom.send({"message": register});
-
         let state = {room, name, index};
+        this.setState({[h]:{...this.state[h], room, name, state}});
+        this.initVideoRoom(room, "program");
+
+        // Save state
         putData(`state/galaxy/pr4`, state, (cb) => {
             Janus.log(":: Save to state: ",cb);
         });
@@ -914,7 +866,7 @@ class ShidurUsers extends Component {
         group.index = i;
         this.setState({group});
         Janus.log(group);
-        this.attachToPreview(group);
+        this.attachToPreview(group, i);
     };
 
     disableRoom = (e, data, i) => {
@@ -1027,7 +979,6 @@ class ShidurUsers extends Component {
                          key={id}
                          ref={"remoteVideo" + id}
                          id={"remoteVideo" + id}
-                         poster={nowebcam}
                          width={width}
                          height={height}
                          autoPlay={autoPlay}
