@@ -27,8 +27,22 @@ class ShidurUsers extends Component {
         name: "",
         disabled_rooms: [],
         group: null,
-        preview: null,
-        program: null,
+        preview: {
+            feeds: [],
+            feedStreams: {},
+            mids: [],
+            name: "",
+            room: "",
+            users: {}
+            },
+        program: {
+            feeds: [],
+            feedStreams: {},
+            mids: [],
+            name: "",
+            room: "",
+            users: {}
+            },
         protocol: null,
         pgm_state: {
             name: "",
@@ -146,9 +160,9 @@ class ShidurUsers extends Component {
     };
 
     getRoomList = () => {
-        const {preview, disabled_rooms, program_room, preview_room} = this.state;
-        if (preview) {
-            preview.send({message: {request: "list"},
+        const {preview, disabled_rooms} = this.state;
+        if (preview && preview.videoroom) {
+            preview.videoroom.send({message: {request: "list"},
                 success: (data) => {
                     let usable_rooms = data.list.filter(room => room.num_participants > 0);
                     var newarray = usable_rooms.filter((room) => !disabled_rooms.find(droom => room.room === droom.room));
@@ -168,10 +182,9 @@ class ShidurUsers extends Component {
 
     //FIXME: tmp solution to show count without service users in room list
     getFeedsList = (rooms) => {
-        let {preview} = this.state;
         rooms.forEach((room,i) => {
             if(room.num_participants > 0) {
-                preview.send({
+                this.state.preview.videoroom.send({
                     message: {request: "listparticipants", "room": room.room},
                     success: (data) => {
                         Janus.log("Feeds: ", data.participants);
@@ -184,7 +197,7 @@ class ShidurUsers extends Component {
         })
     };
 
-    newRemoteFeed = (subscription) => {
+    newRemoteFeed = (h, subscription) => {
         this.state.janus.attach(
             {
                 plugin: "janus.plugin.videoroom",
@@ -193,9 +206,9 @@ class ShidurUsers extends Component {
                     let remoteFeed = pluginHandle;
                     Janus.log("Plugin attached! (" + remoteFeed.getPlugin() + ", id=" + remoteFeed.getId() + ")");
                     Janus.log("  -- This is a multistream subscriber",remoteFeed);
-                    this.setState({remoteFeed, creatingFeed: false});
+                    this.setState({ [h]:{...this.state[h], remoteFeed, creatingFeed: false}});
                     // We wait for the plugin to send us an offer
-                    let subscribe = {request: "join", room: this.state.room, ptype: "subscriber", streams: subscription};
+                    let subscribe = {request: "join", room: this.state[h].room, ptype: "subscriber", streams: subscription};
                     remoteFeed.send({ message: subscribe });
                 },
                 error: (error) => {
@@ -221,7 +234,7 @@ class ShidurUsers extends Component {
                         Janus.debug("-- ERROR: " + msg["error"]);
                     } else if(event !== undefined && event !== null) {
                         if(event === "attached") {
-                            this.setState({creatingFeed: false});
+                            //this.setState({creatingFeed: false});
                             Janus.log("Successfully attached to feed in room " + msg["room"]);
                         } else if(event === "event") {
                             // Check if we got an event on a simulcast-related event from this publisher
@@ -231,19 +244,19 @@ class ShidurUsers extends Component {
                     }
                     if(msg["streams"]) {
                         // Update map of subscriptions by mid
-                        let {mids} = this.state;
+                        let {mids} = this.state[h];
                         for(let i in msg["streams"]) {
                             let mindex = msg["streams"][i]["mid"];
                             //let feed_id = msg["streams"][i]["feed_id"];
                             mids[mindex] = msg["streams"][i];
                         }
-                        this.setState({mids});
+                        this.setState({[h]: {...this.state[h], mids}});
                     }
                     if(jsep !== undefined && jsep !== null) {
                         Janus.debug("Handling SDP as well...");
                         Janus.debug(jsep);
                         // Answer and attach
-                        remoteFeed.createAnswer(
+                        this.state[h].remoteFeed.createAnswer(
                             {
                                 jsep: jsep,
                                 // Add data:true here if you want to subscribe to datachannels as well
@@ -253,7 +266,7 @@ class ShidurUsers extends Component {
                                     Janus.debug("Got SDP!");
                                     Janus.debug(jsep);
                                     let body = { request: "start", room: this.state.room };
-                                    remoteFeed.send({ message: body, jsep: jsep });
+                                    this.state[h].remoteFeed.send({ message: body, jsep: jsep });
                                 },
                                 error: (error) => {
                                     Janus.error("WebRTC error:", error);
@@ -269,7 +282,7 @@ class ShidurUsers extends Component {
                     Janus.log(" ::: Got a remote track event ::: (remote feed)");
                     Janus.log("Remote track (mid=" + mid + ") " + (on ? "added" : "removed") + ":", track);
                     // Which publisher are we getting on this mid?
-                    let {mids} = this.state;
+                    let {mids} = this.state[h];
                     let feed = mids[mid].feed_id;
                     Janus.log(" >> This track is coming from feed " + feed + ":", mid);
                     if(!on) {
@@ -282,17 +295,18 @@ class ShidurUsers extends Component {
                     // If we're here, a new track was added
                     if(track.kind === "audio") {
                         // New audio track: create a stream out of it, and use a hidden <audio> element
-                        let stream = new MediaStream();
-                        stream.addTrack(track.clone());
-                        Janus.log("Created remote audio stream:", stream);
-                        let remoteaudio = this.refs["remoteAudio" + feed];
-                        Janus.attachMediaStream(remoteaudio, stream);
+                        // let stream = new MediaStream();
+                        // stream.addTrack(track.clone());
+                        // Janus.log("Created remote audio stream:", stream);
+                        // let remoteaudio = this.refs["remoteAudio" + feed];
+                        // Janus.attachMediaStream(remoteaudio, stream);
                     } else if(track.kind === "video") {
                         // New video track: create a stream out of it
                         let stream = new MediaStream();
                         stream.addTrack(track.clone());
                         Janus.log("Created remote video stream:", stream);
-                        let remotevideo = this.refs["remoteVideo" + feed];
+                        let node = h === "preview" ? "remoteVideo" : "programVideo";
+                        let remotevideo = this.refs[node + feed];
                         Janus.attachMediaStream(remotevideo, stream);
                     } else {
                         Janus.log("Created remote data channel");
@@ -313,31 +327,31 @@ class ShidurUsers extends Component {
             });
     };
 
-    subscribeTo = (subscription) => {
+    subscribeTo = (h, subscription) => {
         // New feeds are available, do we need create a new plugin handle first?
-        if (this.state.remoteFeed) {
-            this.state.remoteFeed.send({message:
+        if (this.state[h].remoteFeed) {
+            this.state[h].remoteFeed.send({message:
                     {request: "subscribe", streams: subscription}
             });
             return;
         }
         // We don't have a handle yet, but we may be creating one already
-        if (this.state.creatingFeed) {
+        if (this.state[h].creatingFeed) {
             // Still working on the handle
             setTimeout(() => {
-                this.subscribeTo(subscription);
+                this.subscribeTo(h, subscription);
             }, 500);
         } else {
             // We don't creating, so let's do it
-            this.setState({creatingFeed: true});
-            this.newRemoteFeed(subscription);
+            this.setState({[h]: {...this.state[h], creatingFeed: true}});
+            this.newRemoteFeed(h, subscription);
         }
     };
 
-    unsubscribeFrom = (handle, id) => {
+    unsubscribeFrom = (h, id) => {
         // Unsubscribe from this publisher
         let {mids,feeds,users,feedStreams} = this.state;
-        let {remoteFeed} = this.state[handle];
+        let {remoteFeed} = this.state[h];
         for (let i=0; i<feeds.length; i++) {
             if (feeds[i].id === id) {
                 console.log(" - Remove FEED: ", feeds[i]);
@@ -353,31 +367,31 @@ class ShidurUsers extends Component {
                 };
                 if(remoteFeed !== null)
                     remoteFeed.send({ message: unsubscribe });
-                this.setState({feeds,users,feedStreams});
+                this.setState({[h]:{...this.state[h], feeds,users,feedStreams}});
                 break
             }
         }
     };
 
-    initVideoRoom = (roomid, handle) => {
+    initVideoRoom = (roomid, h) => {
         // if(!this.state.room)
         //     return;
-        if(this.state[handle])
-            this.state[handle].detach();
+        if(this.state[h] && this.state[h].videoroom)
+            this.state[h].videoroom.detach();
         this.state.janus.attach({
             plugin: "janus.plugin.videoroom",
             opaqueId: "preview_shidur",
-            success: (hdl) => {
-                Janus.log(hdl);
-                hdl.room = roomid;
-                this.setState({[handle]: hdl});
-                Janus.log("Plugin attached! (" + hdl.getPlugin() + ", id=" + hdl.getId() + ")");
+            success: (videoroom) => {
+                Janus.log(videoroom,this.state[h]);
+                // hdl.room = roomid;
+                this.setState({[h]: {...this.state[h], videoroom}});
+                Janus.log("Plugin attached! (" + videoroom.getPlugin() + ", id=" + videoroom.getId() + ")", this.state[h]);
                 Janus.log("  -- This is a publisher/manager");
                 let {user} = this.state;
 
                 if(roomid) {
                     let register = { "request": "join", "room": roomid, "ptype": "publisher", "display": JSON.stringify(user) };
-                    hdl.send({"message": register});
+                    videoroom.send({"message": register});
                 } else {
                     // Get list rooms
                     this.getRoomList();
@@ -397,7 +411,7 @@ class ShidurUsers extends Component {
                 Janus.log("Janus says our WebRTC PeerConnection is " + (on ? "up" : "down") + " now");
             },
             onmessage: (msg, jsep) => {
-                this.onMessage(handle, msg, jsep, false);
+                this.onMessage(h, msg, jsep, false);
             },
             onlocalstream: (mystream) => {
                 // We don't going to show us yet
@@ -541,47 +555,7 @@ class ShidurUsers extends Component {
     //         });
     // };
 
-    publishOwnFeed = (useAudio) => {
-        // Publish our stream
-        let {videoroom} = this.state;
-
-        videoroom.createOffer(
-            {
-                // Add data:true here if you want to publish datachannels as well
-                //media: { audioRecv: false, videoRecv: false, audioSend: useAudio, videoSend: true, video: "lowres" },	// Publishers are sendonly
-                media: { audioRecv: false, videoRecv: false, audioSend: false, videoSend: false },	// Publishers are sendonly
-                // If you want to test simulcasting (Chrome and Firefox only), then
-                // pass a ?simulcast=true when opening this demo page: it will turn
-                // the following 'simulcast' property to pass to janus.js to true
-                simulcast: false,
-                success: (jsep) => {
-                    Janus.debug("Got publisher SDP!");
-                    Janus.debug(jsep);
-                    let publish = { "request": "configure", "audio": useAudio, "video": true };
-                    // You can force a specific codec to use when publishing by using the
-                    // audiocodec and videocodec properties, for instance:
-                    // 		publish["audiocodec"] = "opus"
-                    // to force Opus as the audio codec to use, or:
-                    // 		publish["videocodec"] = "vp9"
-                    // to force VP9 as the videocodec to use. In both case, though, forcing
-                    // a codec will only work if: (1) the codec is actually in the SDP (and
-                    // so the browser supports it), and (2) the codec is in the list of
-                    // allowed codecs in a room. With respect to the point (2) above,
-                    // refer to the text in janus.plugin.videoroom.cfg for more details
-                    videoroom.send({"message": publish, "jsep": jsep});
-                },
-                error: (error) => {
-                    Janus.error("WebRTC error:", error);
-                    if (useAudio) {
-                        this.publishOwnFeed(false);
-                    } else {
-                        Janus.error("WebRTC error... " + JSON.stringify(error));
-                    }
-                }
-            });
-    };
-
-    onMessage = (handle, msg, jsep, initdata) => {
+    onMessage = (h, msg, jsep, initdata) => {
         console.log(" ::: Got a message (publisher) :::");
         console.log(msg);
         let event = msg["videoroom"];
@@ -592,12 +566,11 @@ class ShidurUsers extends Component {
                 let mypvtid = msg["private_id"];
                 this.setState({myid ,mypvtid});
                 Janus.log("Successfully joined room " + msg["room"] + " with ID " + myid);
-                this.publishOwnFeed(true);
                 // Any new feed to attach to?
                 if(msg["publishers"] !== undefined && msg["publishers"] !== null) {
                     let list = msg["publishers"];
                     let feeds = list.filter(feeder => JSON.parse(feeder.display).role === "user");
-                    let {feedStreams,users} = this.state;
+                    let {feedStreams,users} = this.state[h];
                     console.log(":: Got Pulbishers list: ", feeds);
                     if(feeds.length > 15) {
                         alert("Max users in this room is reached");
@@ -625,10 +598,10 @@ class ShidurUsers extends Component {
                             //mid: stream.mid		// This is optional (all streams, if missing)
                         });
                     }
-                    this.setState({feeds,feedStreams,users});
+                    this.setState({[h]:{...this.state[h], feeds,feedStreams,users}});
                     console.log(" :: SUBS: ",subscription);
                     if(subscription.length > 0)
-                        this.subscribeTo(subscription);
+                        this.subscribeTo(h, subscription);
                 }
             } else if(event === "talking") {
                 let {feeds} = this.state;
@@ -669,7 +642,7 @@ class ShidurUsers extends Component {
                     this.setState({feedStreams})
                 } else if(msg["publishers"] !== undefined && msg["publishers"] !== null) {
                     let feed = msg["publishers"];
-                    let {feeds,feedStreams,users} = this.state;
+                    let {feeds,feedStreams,users} = this.state[h];
                     Janus.debug("Got a list of available publishers/feeds:");
                     console.log(feed);
                     let subscription = [];
@@ -695,9 +668,9 @@ class ShidurUsers extends Component {
                         });
                     }
                     feeds.push(feed[0]);
-                    this.setState({feeds,feedStreams,users});
+                    this.setState({ [h]:{...this.state[h], feeds,feedStreams,users}});
                     if(subscription.length > 0)
-                        this.subscribeTo(subscription);
+                        this.subscribeTo(h, subscription);
                 } else if(msg["leaving"] !== undefined && msg["leaving"] !== null) {
                     // One of the publishers has gone away?
                     var leaving = msg["leaving"];
@@ -709,10 +682,10 @@ class ShidurUsers extends Component {
                     Janus.log("Publisher left: " + unpublished);
                     if(unpublished === 'ok') {
                         // That's us
-                        this.state[handle].hangup();
+                        this.state[h].videoroom.hangup();
                         return;
                     }
-                    this.unsubscribeFrom(handle, unpublished);
+                    this.unsubscribeFrom(h, unpublished);
 
                 } else if(msg["error"] !== undefined && msg["error"] !== null) {
                     if(msg["error_code"] === 426) {
@@ -726,7 +699,7 @@ class ShidurUsers extends Component {
         if(jsep !== undefined && jsep !== null) {
             Janus.debug("Handling SDP as well...");
             Janus.debug(jsep);
-            this.state[handle].handleRemoteJsep({jsep: jsep});
+            this.state[h].videoroom.handleRemoteJsep({jsep: jsep});
         }
     };
 
@@ -879,17 +852,17 @@ class ShidurUsers extends Component {
         Janus.log(" :: Attaching to Preview: ",group);
         let room = group.room;
         let name = group.description;
-        if(this.state.preview_room === room)
+        if(this.state.preview.room === room)
             return;
-        feeds.preview.forEach(feed => {
-            if(feed) {
-                Janus.log("-- :: Remove Feed: ", feed);
-                feed.detach();
-            }
-        });
+        // feeds.preview.forEach(feed => {
+        //     if(feed) {
+        //         Janus.log("-- :: Remove Feed: ", feed);
+        //         feed.detach();
+        //     }
+        // });
 
-        feeds.preview = [];
-        this.setState({index, preview_room: room, preview_name: name, feeds});
+        // feeds.preview = [];
+        // this.setState({index, preview_room: room, preview_name: name, feeds});
         this.initVideoRoom(room, "preview");
     };
 
@@ -956,7 +929,7 @@ class ShidurUsers extends Component {
 
   render() {
       //Janus.log(" --- ::: RENDER ::: ---");
-      const { feeds,preview_room,preview_name,program_name,disabled_rooms,rooms,quistions_queue,pgm_state } = this.state;
+      const { feeds,program,preview,preview_room,preview_name,program_name,disabled_rooms,rooms,quistions_queue,pgm_state } = this.state;
       const width = "400";
       const height = "300";
       const autoPlay = true;
@@ -994,11 +967,11 @@ class ShidurUsers extends Component {
           )
       });
 
-      let program = feeds.program.map((feed) => {
+      let program_feeds = program.feeds.map((feed) => {
           if(feed) {
-              let id = feed.rfid;
-              let talk = feed.talk;
-              let question = feed.question;
+              let id = feed.id;
+              let talk = false;
+              let question = false;
               return (<div className="video"
                            key={"prov" + id}
                            ref={"provideo" + id}
@@ -1022,9 +995,9 @@ class ShidurUsers extends Component {
           return true;
       });
 
-      let preview = feeds.preview.map((feed) => {
+      let preview_feeds = preview.feeds.map((feed) => {
           if(feed) {
-              let id = feed.rfid;
+              let id = feed.id;
               let talk = feed.talk;
               let question = feed.question;
               return (<div className="video"
@@ -1058,10 +1031,10 @@ class ShidurUsers extends Component {
           <Segment className="program_segment" color='red'>
               {/*<div className="shidur_overlay">{pgm_state.name}</div>*/}
               {/*{program}*/}
-              <div className="shidur_overlay"><span>{pgm_state.name}</span></div>
+              <div className="shidur_overlay"><span>{program.name}</span></div>
               <div className="videos-panel">
                   <div className="videos">
-                      <div className="videos__wrapper">{program}</div>
+                      <div className="videos__wrapper">{program_feeds}</div>
                   </div>
               </div>
           </Segment>
@@ -1069,10 +1042,10 @@ class ShidurUsers extends Component {
           <Segment className="preview_segment" color='green' onClick={this.attachToProgram} >
               {/*<div className="shidur_overlay">{preview_name}</div>*/}
               {/*{preview}*/}
-              <div className="shidur_overlay"><span>{preview_name}</span></div>
+              <div className="shidur_overlay"><span>{program.name}</span></div>
               <div className="videos-panel">
                   <div className="videos">
-                      <div className="videos__wrapper">{preview}</div>
+                      <div className="videos__wrapper">{preview_feeds}</div>
                   </div>
               </div>
           </Segment>
