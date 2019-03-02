@@ -13,18 +13,8 @@ class ShidurUsers extends Component {
 
     state = {
         janus: null,
-        feeds: {
-            preview: [],
-            program: [],
-        },
         rooms: [],
         index: 0,
-        preview_room: null,
-        program_room: null,
-        preview_name: null,
-        program_name: null,
-        room: "",
-        name: "",
         disabled_rooms: [],
         group: null,
         preview: {
@@ -51,8 +41,6 @@ class ShidurUsers extends Component {
         },
         quistions_queue: [],
         questions: {},
-        videoroom: null,
-        remotefeed: null,
         myid: null,
         mypvtid: null,
         mystream: null,
@@ -229,7 +217,6 @@ class ShidurUsers extends Component {
                     Janus.log(msg);
                     let event = msg["videoroom"];
                     Janus.log("Event: " + event);
-                    let {remoteFeed} = this.state;
                     if(msg["error"] !== undefined && msg["error"] !== null) {
                         Janus.debug("-- ERROR: " + msg["error"]);
                     } else if(event !== undefined && event !== null) {
@@ -350,7 +337,7 @@ class ShidurUsers extends Component {
 
     unsubscribeFrom = (h, id) => {
         // Unsubscribe from this publisher
-        let {mids,feeds,users,feedStreams} = this.state;
+        let {mids,feeds,users,feedStreams} = this.state[h];
         let {remoteFeed} = this.state[h];
         for (let i=0; i<feeds.length; i++) {
             if (feeds[i].id === id) {
@@ -593,6 +580,7 @@ class ShidurUsers extends Component {
                         feedStreams[id] = {id, display, streams};
                         users[display.id] = display;
                         users[display.id].rfid = id;
+                        //TODO: select only video mid here
                         subscription.push({
                             feed: id,	// This is mandatory
                             //mid: stream.mid		// This is optional (all streams, if missing)
@@ -662,6 +650,7 @@ class ShidurUsers extends Component {
                         feedStreams[id] = {id, display, streams};
                         users[display.id] = display;
                         users[display.id].rfid = id;
+                        //TODO: select only video mid here
                         subscription.push({
                             feed: id,	// This is mandatory
                             //mid: stream.mid		// This is optional (all streams, if missing)
@@ -848,12 +837,24 @@ class ShidurUsers extends Component {
     // };
 
     attachToPreview = (group, index) => {
-        const {feeds} = this.state;
+        const {videoroom,remoteFeed} = this.state.preview;
         Janus.log(" :: Attaching to Preview: ",group);
         let room = group.room;
         let name = group.description;
+        let h = "preview";
         if(this.state.preview.room === room)
             return;
+        if(this.state.preview.room !== "") {
+            let leave = {request : "leave"};
+            if(remoteFeed)
+                remoteFeed.send({"message": leave});
+            videoroom.send({"message": leave});
+        };
+        this.setState({[h]:{...this.state[h], room, name}});
+        Janus.log("-- :: Preview join to room: ", room);
+        let register = { "request": "join", "room": room, "ptype": "publisher", "display": JSON.stringify(this.state.user) };
+        videoroom.send({"message": register});
+
         // feeds.preview.forEach(feed => {
         //     if(feed) {
         //         Janus.log("-- :: Remove Feed: ", feed);
@@ -863,7 +864,7 @@ class ShidurUsers extends Component {
 
         // feeds.preview = [];
         // this.setState({index, preview_room: room, preview_name: name, feeds});
-        this.initVideoRoom(room, "preview");
+        //this.initVideoRoom(room, "preview");
     };
 
     attachToProgram = () => {
@@ -1042,7 +1043,7 @@ class ShidurUsers extends Component {
           <Segment className="preview_segment" color='green' onClick={this.attachToProgram} >
               {/*<div className="shidur_overlay">{preview_name}</div>*/}
               {/*{preview}*/}
-              <div className="shidur_overlay"><span>{program.name}</span></div>
+              <div className="shidur_overlay"><span>{preview.name}</span></div>
               <div className="videos-panel">
                   <div className="videos">
                       <div className="videos__wrapper">{preview_feeds}</div>
