@@ -63,6 +63,7 @@ class VirtualClient extends Component {
     };
 
     initClient = (user,error) => {
+        localStorage.setItem("question", false);
         checkNotification();
         geoInfo('https://v4g.kbb1.com/geo.php?action=get', data => {
             Janus.log(data);
@@ -584,6 +585,10 @@ class VirtualClient extends Component {
     };
 
     joinRoom = (reconnect) => {
+        this.setState({delay: true});
+        setTimeout(() => {
+            this.setState({delay: false});
+        }, 3000);
         let {janus, videoroom, selected_room, user, username_value} = this.state;
         localStorage.setItem("room", selected_room);
         //This name will see other users
@@ -775,7 +780,7 @@ class VirtualClient extends Component {
                     onClick={this.getRoomList}
                     onChange={(e, {value}) => this.selectRoom(value)} />
                     {mystream ? <Button negative icon='sign-out' onClick={this.exitRoom} />:""}
-                    {!mystream ? <Button primary icon='sign-in' disabled={!selected_room||!audio_device} onClick={this.joinRoom} />:""}
+                    {!mystream ? <Button primary icon='sign-in' disabled={delay||!selected_room||!audio_device} onClick={this.joinRoom} />:""}
                     </Input>
                     <Menu icon='labeled' secondary size="mini">
                         <Menu.Item disabled={!mystream} onClick={() => this.setState({ visible: !this.state.visible, count: 0 })}>
