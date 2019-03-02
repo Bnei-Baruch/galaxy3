@@ -34,11 +34,6 @@ class ShidurUsers extends Component {
             users: {}
             },
         protocol: null,
-        pgm_state: {
-            name: "",
-            room: null,
-            index: null
-        },
         quistions_queue: [],
         questions: {},
         myid: null,
@@ -838,19 +833,19 @@ class ShidurUsers extends Component {
 
     attachToPreview = (group, index) => {
         const {videoroom,remoteFeed} = this.state.preview;
-        Janus.log(" :: Attaching to Preview: ",group);
         let room = group.room;
         let name = group.description;
         let h = "preview";
         if(this.state.preview.room === room)
             return;
+        Janus.log(" :: Attaching to Preview: ",group);
         if(this.state.preview.room !== "") {
             let leave = {request : "leave"};
             if(remoteFeed)
                 remoteFeed.send({"message": leave});
             videoroom.send({"message": leave});
         };
-        this.setState({[h]:{...this.state[h], room, name}});
+        this.setState({[h]:{...this.state[h], room, name, index}});
         Janus.log("-- :: Preview join to room: ", room);
         let register = { "request": "join", "room": room, "ptype": "publisher", "display": JSON.stringify(this.state.user) };
         videoroom.send({"message": register});
@@ -868,30 +863,49 @@ class ShidurUsers extends Component {
     };
 
     attachToProgram = () => {
-        const {feeds} = this.state;
-        let {preview_room, preview_name, group, rooms} = this.state;
-        if(!preview_name)
+        // let {feeds, room, name, group, rooms} = this.state.program;
+        // if(!name)
+        //     return;
+        // feeds.program.forEach(feed => {
+        //     if(feed) {
+        //         Janus.log("-- :: Remove Feed: ", feed);
+        //         feed.detach();
+        //     }
+        // });
+        //
+        // feeds.program = [];
+        // this.setState({program_room: preview_room, program_name: preview_name, feeds});
+        // this.initVideoRoom(preview_room, "program");
+        //
+        // // Save Program State
+        // let pgm_state = { index: 0, room: preview_room, name: preview_name};
+        // this.setState({pgm_state});
+        // Janus.log(" :: Attaching to Program: ",preview_name,pgm_state);
+
+        let {videoroom,remoteFeed} = this.state.program;
+        const {room, name, index} = this.state.preview;
+        let h = "program";
+        if(this.state.program.room === room)
             return;
-        feeds.program.forEach(feed => {
-            if(feed) {
-                Janus.log("-- :: Remove Feed: ", feed);
-                feed.detach();
-            }
-        });
+        //Janus.log(" :: Attaching to Program: ",group);
+        if(this.state.program.room !== "") {
+            let leave = {request : "leave"};
+            if(remoteFeed)
+                remoteFeed.send({"message": leave});
+            videoroom.send({"message": leave});
+        };
+        this.setState({[h]:{...this.state[h], room, name}});
+        Janus.log("-- :: Preview join to room: ", room);
+        let register = { "request": "join", "room": room, "ptype": "publisher", "display": JSON.stringify(this.state.user) };
+        videoroom.send({"message": register});
 
-        feeds.program = [];
-        this.setState({program_room: preview_room, program_name: preview_name, feeds});
-        this.initVideoRoom(preview_room, "program");
-
-        // Save Program State
-        let pgm_state = { index: 0, room: preview_room, name: preview_name};
-        this.setState({pgm_state});
-        Janus.log(" :: Attaching to Program: ",preview_name,pgm_state);
-        putData(`state/galaxy/pr4`, pgm_state, (cb) => {
+        let state = {room, name, index};
+        putData(`state/galaxy/pr4`, state, (cb) => {
             Janus.log(":: Save to state: ",cb);
         });
 
         // Select next group
+        let {rooms,group} = this.state;
         let i = rooms.length-1 < group.index+1 ? 0 :  group.index+1;
         this.selectGroup(rooms[i], i)
     };
