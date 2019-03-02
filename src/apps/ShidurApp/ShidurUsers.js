@@ -78,7 +78,7 @@ class ShidurUsers extends Component {
     };
 
     onProtocolData = (data) => {
-        let {feeds,users,user,questions,quistions_queue,preview_room,program_room} = this.state;
+        let {questions,quistions_queue} = this.state;
         if(data.type === "question" && data.status) {
             questions[data.user.id] = data.user;
             quistions_queue.push(data);
@@ -97,44 +97,28 @@ class ShidurUsers extends Component {
             }
         }
 
-        if (data.type === "question" && data.status && data.room === program_room && user.id !== data.user.id) {
-            let rfid = users[data.user.id].rfid;
-            for (let i = 1; i < feeds.program.length; i++) {
-                if (feeds.program[i] !== null && feeds.program[i] !== undefined && feeds.program[i].rfid === rfid) {
-                    feeds.program[i].question = true;
+        let {preview,program} = this.state;
+        if (data.type === "question" && data.room === preview.room) {
+            let rfid = preview.users[data.user.id].rfid;
+            for (let i = 0; i < preview.feeds.length; i++) {
+                if (preview.feeds[i].id === rfid) {
+                    preview.feeds[i].question = data.status;
+                    this.setState({preview: {...preview}});
                     break
                 }
             }
-            this.setState({feeds});
-        } else if (data.type === "question" && !data.status && data.room === program_room && user.id !== data.user.id) {
-            let rfid = users[data.user.id].rfid;
-            for (let i = 1; i < feeds.program.length; i++) {
-                if (feeds.program[i] !== null && feeds.program[i] !== undefined && feeds.program[i].rfid === rfid) {
-                    feeds.program[i].question = false;
-                    break
-                }
-            }
-            this.setState({feeds});
         }
 
-        if(data.type === "question" && data.status && data.room === preview_room && user.id !== data.user.id) {
-            let rfid = users[data.user.id].rfid;
-            for (let i = 1; i < feeds.preview.length; i++) {
-                if (feeds.preview[i] !== null && feeds.preview[i] !== undefined && feeds.preview[i].rfid === rfid) {
-                    feeds.preview[i].question = true;
+        if (data.type === "question" && data.room === program.room) {
+            let rfid = program.users[data.user.id].rfid;
+            for (let i = 0; i < program.feeds.length; i++) {
+                if (program.feeds[i].id === rfid) {
+                    program.feeds[i].question = data.status;
+                    this.setState({program: {...program}});
                     break
                 }
             }
-           this.setState({feeds});
-        } else if(data.type === "question" && !data.status && data.room === preview_room && user.id !== data.user.id) {
-            let rfid = users[data.user.id].rfid;
-            for (let i = 1; i < feeds.preview.length; i++) {
-                if (feeds.preview[i] !== null && feeds.preview[i] !== undefined && feeds.preview[i].rfid === rfid) {
-                    feeds.preview[i].question = false;
-                    break
-                }
-            }
-            this.setState({feeds});
+
         }
     };
 
@@ -352,6 +336,7 @@ class ShidurUsers extends Component {
                 this.setState({[h]:{...this.state[h], feeds,users,feedStreams}});
                 break
             }
+            //TODO: Remove from questions
         }
     };
 
@@ -567,6 +552,7 @@ class ShidurUsers extends Component {
                         let talk = feeds[f]["talking"];
                         let streams = feeds[f]["streams"];
                         feeds[f].display = display;
+                        feeds[f].question = this.state.questions[display.id] !== undefined;
                         for (let i in streams) {
                             let stream = streams[i];
                             stream["id"] = id;
@@ -895,8 +881,7 @@ class ShidurUsers extends Component {
 
 
   render() {
-      //Janus.log(" --- ::: RENDER ::: ---");
-      const { feeds,program,preview,preview_room,preview_name,program_name,disabled_rooms,rooms,quistions_queue,pgm_state } = this.state;
+      const {program,preview,disabled_rooms,rooms,quistions_queue} = this.state;
       const width = "400";
       const height = "300";
       const autoPlay = true;
@@ -908,10 +893,10 @@ class ShidurUsers extends Component {
           const {room, num_participants, description} = data;
           let chk = quistions_queue.filter(q => q.room === room);
           return (
-              <Table.Row negative={program_name === description}
-                         positive={preview_name === description}
+              <Table.Row negative={program.name === description}
+                         positive={preview.name === description}
                          disabled={num_participants === 0}
-                         className={preview_room === room ? 'active' : 'no'}
+                         className={preview.room === room ? 'active' : 'no'}
                          key={room} onClick={() => this.selectGroup(data, i)}
                          onContextMenu={(e) => this.disableRoom(e, data, i)} >
                   <Table.Cell width={5}>{description}</Table.Cell>
@@ -995,8 +980,6 @@ class ShidurUsers extends Component {
         <Segment className="segment_conteiner">
           
           <Segment className="program_segment" color='red'>
-              {/*<div className="shidur_overlay">{pgm_state.name}</div>*/}
-              {/*{program}*/}
               <div className="shidur_overlay"><span>{program.name}</span></div>
               <div className="videos-panel">
                   <div className="videos">
@@ -1006,8 +989,6 @@ class ShidurUsers extends Component {
           </Segment>
 
           <Segment className="preview_segment" color='green' onClick={this.attachToProgram} >
-              {/*<div className="shidur_overlay">{preview_name}</div>*/}
-              {/*{preview}*/}
               <div className="shidur_overlay"><span>{preview.name}</span></div>
               <div className="videos-panel">
                   <div className="videos">
