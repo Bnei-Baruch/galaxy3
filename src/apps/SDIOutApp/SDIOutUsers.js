@@ -93,7 +93,8 @@ class SDIOutUsers extends Component {
             let {cammuteds,feedStreams} = this.state;
             // User is turn on his camera we can show him
             if(room === data.room && users[data.user.id]) {
-                feeds.push(cammuteds[data.user.id].feed);
+                let feed = cammuteds[data.user.id].feed;
+                feeds.push(feed);
                 let rfid = users[data.user.id].rfid;
                 this.setState({feeds},() => {
                     let remotevideo = this.refs["remoteVideo" + rfid];
@@ -476,9 +477,9 @@ class SDIOutUsers extends Component {
                 },
                 ondata: (data) => {
                     Janus.debug("We got data from the DataChannel! (feed) " + data);
-                    let msg = JSON.parse(data);
-                    this.onRoomData(msg);
-                    Janus.log(" :: We got msg via DataChannel: ",msg)
+                    // let msg = JSON.parse(data);
+                    // this.onRoomData(msg);
+                    // Janus.log(" :: We got msg via DataChannel: ",msg)
                 },
                 oncleanup: () => {
                     Janus.log(" ::: Got a cleanup notification (remote feed) :::");
@@ -637,7 +638,8 @@ class SDIOutUsers extends Component {
                     let list = msg["publishers"];
 
                     // Filter service and camera muted feeds
-                    let feeds = list.filter(feeder => JSON.parse(feeder.display).role === "user" && !cammuteds.hasOwnProperty(JSON.parse(feeder.display).id));
+                    let feeds = list.filter(feeder => JSON.parse(feeder.display).role === "user");
+                    //let feeds = list.filter(feeder => JSON.parse(feeder.display).role === "user" && !cammuteds.hasOwnProperty(JSON.parse(feeder.display).id));
 
                     console.log(":: Got Pulbishers list: ", feeds);
                     Janus.debug("Got a list of available publishers/feeds:");
@@ -650,19 +652,27 @@ class SDIOutUsers extends Component {
                         let streams = feeds[f]["streams"];
                         feeds[f].display = display;
                         feeds[f].question = questions[display.id] !== undefined;
+                        let subst = {feed: id};
                         for (let i in streams) {
                             let stream = streams[i];
                             stream["id"] = id;
                             stream["display"] = display;
+                            if(stream.type === "video") {
+                                subst.mid = stream.mid;
+                            }
                         }
                         feedStreams[id] = {id, display, streams};
                         users[display.id] = display;
                         users[display.id].rfid = id;
-                        //TODO: select only video mid here
-                        subscription.push({
-                            feed: id,	// This is mandatory
-                            //mid: stream.mid		// This is optional (all streams, if missing)
-                        });
+                        subscription.push(subst);
+                        if(cammuteds.hasOwnProperty(display.id)) {
+                            cammuteds[display.id].feed = feeds[f];
+                            setTimeout(() => {
+                                feeds.splice(f, 1);
+                                this.setState({feeds});
+                            }, 1000);
+                            this.setState({cammuteds});
+                        }
                     }
                     this.setState({feeds,feedStreams,users});
                     console.log(" :: SUBS: ",subscription);
@@ -720,19 +730,19 @@ class SDIOutUsers extends Component {
                         let talk = feed[f]["talking"];
                         let streams = feed[f]["streams"];
                         feed[f].display = display;
+                        let subst = {feed: id};
                         for (let i in streams) {
                             let stream = streams[i];
                             stream["id"] = id;
                             stream["display"] = display;
+                            if(stream.type === "video") {
+                                subst.mid = stream.mid;
+                            }
                         }
                         feedStreams[id] = {id, display, streams};
                         users[display.id] = display;
                         users[display.id].rfid = id;
-                        //TODO: select only video mid here
-                        subscription.push({
-                            feed: id,	// This is mandatory
-                            //mid: stream.mid		// This is optional (all streams, if missing)
-                        });
+                        subscription.push(subst);
                     }
                     feeds.push(feed[0]);
                     this.setState({feeds,feedStreams,users});
