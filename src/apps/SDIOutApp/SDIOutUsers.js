@@ -70,7 +70,9 @@ class SDIOutUsers extends Component {
 
     onProtocolData = (data) => {
         //TODO: Need to add transaction handle (filter and acknowledge)
-        let {room,feeds,users,user,cammuteds,questions} = this.state;
+        let {room,feeds,users,cammuteds,questions} = this.state;
+
+        // List users by user id with muted camera
         if(data.type === "camera" && !data.status) {
             cammuteds[data.user.id] = data.user;
             this.setState({cammuteds});
@@ -80,14 +82,17 @@ class SDIOutUsers extends Component {
                 delete cammuteds[data.user.id];
                 this.setState({cammuteds});
             }
+            //TODO: user is turn on his camera we can show him
             if(room === data.room && users[data.user.id]) {
-                let chk = feeds.filter(f => {
-                    return (f !== null && f !== undefined && f.rfid === users[data.user.id].rfid)
-                });
-                if(chk.length === 0)
-                    this.newRemoteFeed(users[data.user.id].rfid, false);
+                // let chk = feeds.filter(f => {
+                //     return (f !== null && f !== undefined && f.rfid === users[data.user.id].rfid)
+                // });
+                // if(chk.length === 0)
+                //     this.newRemoteFeed(users[data.user.id].rfid, false);
             }
         }
+
+        // List users by user id send question
         if(data.type === "question" && data.status) {
             questions[data.user.id] = data.user;
             this.setState({questions});
@@ -98,26 +103,18 @@ class SDIOutUsers extends Component {
                 this.setState({questions});
             }
         }
-        if (data.type === "question" && data.status && data.room === room && user.id !== data.user.id) {
-            let rfid = users[data.user.id].rfid;
-            for (let i = 1; i < feeds.length; i++) {
-                if (feeds[i] !== null && feeds[i] !== undefined && feeds[i].rfid === rfid) {
-                    feeds[i].question = true;
-                    break
-                }
-            }
-            this.setState({feeds});
-        } else if (data.type === "question" && !data.status && data.room === room && user.id !== data.user.id) {
-            let rfid = users[data.user.id].rfid;
-            for (let i = 1; i < feeds.length; i++) {
-                if (feeds[i] !== null && feeds[i] !== undefined && feeds[i].rfid === rfid) {
-                    feeds[i].question = false;
-                    break
-                }
-            }
-            this.setState({feeds});
-        }
 
+        // Put question state in feeds list
+        if (data.type === "question" && data.room === room) {
+            let rfid = users[data.user.id].rfid;
+            for (let i = 0; i < feeds.length; i++) {
+                if (feeds[i] && feeds[i].id === rfid) {
+                    feeds[i].question = data.status;
+                    this.setState({feeds});
+                    break
+                }
+            }
+        }
     };
 
     // initVideoRoom = (roomid) => {
@@ -601,14 +598,13 @@ class SDIOutUsers extends Component {
                 Janus.log("Successfully joined room " + msg["room"] + " with ID " + myid);
                 // Any new feed to attach to?
                 if(msg["publishers"] !== undefined && msg["publishers"] !== null) {
+                    let {feedStreams,users,questions,cammuteds} = this.state;
                     let list = msg["publishers"];
-                    let feeds = list.filter(feeder => JSON.parse(feeder.display).role === "user");
-                    let {feedStreams,users} = this.state;
+
+                    // Filter service and camera muted feeds
+                    let feeds = list.filter(feeder => JSON.parse(feeder.display).role === "user" && !cammuteds.hasOwnProperty(JSON.parse(feeder.display).id));
+
                     console.log(":: Got Pulbishers list: ", feeds);
-                    // if(feeds.length > 15) {
-                    //     alert("Max users in this room is reached");
-                    //     window.location.reload();
-                    // }
                     Janus.debug("Got a list of available publishers/feeds:");
                     console.log(list);
                     let subscription = [];
@@ -618,7 +614,7 @@ class SDIOutUsers extends Component {
                         let talk = feeds[f]["talking"];
                         let streams = feeds[f]["streams"];
                         feeds[f].display = display;
-                        feeds[f].question = this.state.questions[display.id] !== undefined;
+                        feeds[f].question = questions[display.id] !== undefined;
                         for (let i in streams) {
                             let stream = streams[i];
                             stream["id"] = id;
