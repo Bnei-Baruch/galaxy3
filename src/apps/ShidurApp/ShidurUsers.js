@@ -77,51 +77,6 @@ class ShidurUsers extends Component {
 
     };
 
-    onProtocolData = (data) => {
-        let {questions,quistions_queue} = this.state;
-        if(data.type === "question" && data.status) {
-            questions[data.user.id] = data.user;
-            quistions_queue.push(data);
-            this.setState({quistions_queue,questions});
-        } else if(data.type === "question" && !data.status) {
-            if(questions[data.user.id]) {
-                delete questions[data.user.id];
-                this.setState({questions});
-            }
-            for(let i = 0; i < quistions_queue.length; i++){
-                if(quistions_queue[i].user.id === data.user.id) {
-                    quistions_queue.splice(i, 1);
-                    this.setState({quistions_queue});
-                    break
-                }
-            }
-        }
-
-        let {preview,program} = this.state;
-        if (data.type === "question" && data.room === preview.room) {
-            let rfid = preview.users[data.user.id].rfid;
-            for (let i = 0; i < preview.feeds.length; i++) {
-                if (preview.feeds[i].id === rfid) {
-                    preview.feeds[i].question = data.status;
-                    this.setState({preview: {...preview}});
-                    break
-                }
-            }
-        }
-
-        if (data.type === "question" && data.room === program.room) {
-            let rfid = program.users[data.user.id].rfid;
-            for (let i = 0; i < program.feeds.length; i++) {
-                if (program.feeds[i].id === rfid) {
-                    program.feeds[i].question = data.status;
-                    this.setState({program: {...program}});
-                    break
-                }
-            }
-
-        }
-    };
-
     componentWillUnmount() {
         this.state.janus.destroy();
     };
@@ -317,6 +272,7 @@ class ShidurUsers extends Component {
     unsubscribeFrom = (h, id) => {
         // Unsubscribe from this publisher
         let {mids,feeds,users,feedStreams} = this.state[h];
+        let {questions,quistions_queue} = this.state;
         let {remoteFeed} = this.state[h];
         for (let i=0; i<feeds.length; i++) {
             if (feeds[i].id === id) {
@@ -325,6 +281,17 @@ class ShidurUsers extends Component {
                 //TODO: remove mids
                 delete users[feeds[i].display.id];
                 delete feedStreams[id];
+                if(questions[feeds[i].display.id]) {
+                    delete questions[feeds[i].display.id];
+                    this.setState({questions});
+                    for(let q = 0; q < quistions_queue.length; q++){
+                        if(quistions_queue[q].user.id === feeds[i].display.id) {
+                            quistions_queue.splice(q, 1);
+                            this.setState({quistions_queue});
+                            break
+                        }
+                    }
+                }
                 feeds.splice(i, 1);
                 // Send an unsubscribe request
                 let unsubscribe = {
@@ -336,7 +303,51 @@ class ShidurUsers extends Component {
                 this.setState({[h]:{...this.state[h], feeds,users,feedStreams}});
                 break
             }
-            //TODO: Remove from questions
+        }
+    };
+
+    onProtocolData = (data) => {
+        let {questions,quistions_queue} = this.state;
+        if(data.type === "question" && data.status) {
+            questions[data.user.id] = data.user;
+            quistions_queue.push(data);
+            this.setState({quistions_queue,questions});
+        } else if(data.type === "question" && !data.status) {
+            if(questions[data.user.id]) {
+                delete questions[data.user.id];
+                this.setState({questions});
+            }
+            for(let i = 0; i < quistions_queue.length; i++){
+                if(quistions_queue[i].user.id === data.user.id) {
+                    quistions_queue.splice(i, 1);
+                    this.setState({quistions_queue});
+                    break
+                }
+            }
+        }
+
+        let {preview,program} = this.state;
+        if (data.type === "question" && data.room === preview.room) {
+            let rfid = preview.users[data.user.id].rfid;
+            for (let i = 0; i < preview.feeds.length; i++) {
+                if (preview.feeds[i].id === rfid) {
+                    preview.feeds[i].question = data.status;
+                    this.setState({preview: {...preview}});
+                    break
+                }
+            }
+        }
+
+        if (data.type === "question" && data.room === program.room) {
+            let rfid = program.users[data.user.id].rfid;
+            for (let i = 0; i < program.feeds.length; i++) {
+                if (program.feeds[i].id === rfid) {
+                    program.feeds[i].question = data.status;
+                    this.setState({program: {...program}});
+                    break
+                }
+            }
+
         }
     };
 
@@ -392,135 +403,6 @@ class ShidurUsers extends Component {
             }
         });
     };
-
-    // newRemoteFeed = (id, handle, talk) => {
-    //     // A new feed has been published, create a new plugin handle and attach to it as a subscriber
-    //     var remoteFeed = null;
-    //     this.state.janus.attach(
-    //         {
-    //             plugin: "janus.plugin.videoroom",
-    //             opaqueId: "remotefeed_shidur",
-    //             success: (pluginHandle) => {
-    //                 remoteFeed = pluginHandle;
-    //                 remoteFeed.simulcastStarted = false;
-    //                 //this.setState({remotefeed});
-    //                 Janus.log("Plugin attached! (" + remoteFeed.getPlugin() + ", id=" + remoteFeed.getId() + ")");
-    //                 Janus.log("  -- This is a subscriber");
-    //                 // We wait for the plugin to send us an offer
-    //                 let listen = { "request": "join", "room": this.state[handle].room, "ptype": "subscriber", "feed": id, "private_id": this.state.mypvtid };
-    //                 remoteFeed.send({"message": listen});
-    //             },
-    //             error: (error) => {
-    //                 Janus.error("  -- Error attaching plugin...", error);
-    //             },
-    //             onmessage: (msg, jsep) => {
-    //                 Janus.debug(" ::: Got a message (subscriber) :::");
-    //                 Janus.debug(msg);
-    //                 let event = msg["videoroom"];
-    //                 Janus.debug("Event: " + event);
-    //                 if(msg["error"] !== undefined && msg["error"] !== null) {
-    //                     Janus.debug(":: Error msg: " + msg["error"]);
-    //                 } else if(event !== undefined && event !== null) {
-    //                     if(event === "attached") {
-    //                         // Subscriber created and attached
-    //                         let {feeds,users,questions} = this.state;
-    //                         for(let i=1;i<MAX_FEEDS;i++) {
-    //                             if(feeds[handle][i] === undefined || feeds[handle][i] === null) {
-    //                                 remoteFeed.rfindex = i;
-    //                                 remoteFeed.rfid = msg["id"];
-    //                                 remoteFeed.rfuser = JSON.parse(msg["display"]);
-    //                                 remoteFeed.rfuser.rfid = msg["id"];
-    //                                 if(questions[remoteFeed.rfuser.id]) {
-    //                                     remoteFeed.question = true;
-    //                                 }
-    //                                 remoteFeed.talk = talk;
-    //                                 feeds[handle][i] = remoteFeed;
-    //                                 users[remoteFeed.rfuser.id] = remoteFeed.rfuser;
-    //                                 break;
-    //                             }
-    //                         }
-    //                         this.setState({feeds,users});
-    //                         Janus.log("Successfully attached to feed " + remoteFeed.rfid + " (" + remoteFeed.rfuser + ") in room " + msg["room"]);
-    //                     } else if(event === "event") {
-    //                         // Check if we got an event on a simulcast-related event from this publisher
-    //                         let substream = msg["substream"];
-    //                         let temporal = msg["temporal"];
-    //                         if((substream !== null && substream !== undefined) || (temporal !== null && temporal !== undefined)) {
-    //                             if(!remoteFeed.simulcastStarted) {
-    //                                 remoteFeed.simulcastStarted = true;
-    //                                 // Add some new buttons
-    //                                 //addSimulcastButtons(remoteFeed.rfindex, remoteFeed.videoCodec === "vp8");
-    //                             }
-    //                             // We just received notice that there's been a switch, update the buttons
-    //                             //updateSimulcastButtons(remoteFeed.rfindex, substream, temporal);
-    //                         }
-    //                     } else {
-    //                         // What has just happened?
-    //                     }
-    //                 }
-    //                 if(jsep !== undefined && jsep !== null) {
-    //                     Janus.debug("Handling SDP as well...");
-    //                     Janus.debug(jsep);
-    //                     // Answer and attach
-    //                     remoteFeed.createAnswer(
-    //                         {
-    //                             jsep: jsep,
-    //                             // Add data:true here if you want to subscribe to datachannels as well
-    //                             // (obviously only works if the publisher offered them in the first place)
-    //                             media: { audioSend: false, videoSend: false },	// We want recvonly audio/video
-    //                             success: (jsep) => {
-    //                                 Janus.debug("Got SDP!");
-    //                                 Janus.debug(jsep);
-    //                                 let body = { "request": "start", "room": this.state[handle].room };
-    //                                 remoteFeed.send({"message": body, "jsep": jsep});
-    //                             },
-    //                             error: (error) => {
-    //                                 Janus.error("WebRTC error:", error);
-    //                             }
-    //                         });
-    //                 }
-    //             },
-    //             webrtcState: (on) => {
-    //                 Janus.log("Janus says this WebRTC PeerConnection (feed #" + remoteFeed.rfindex + ") is " + (on ? "up" : "down") + " now");
-    //             },
-    //             onlocalstream: (stream) => {
-    //                 // The subscriber stream is recvonly, we don't expect anything here
-    //             },
-    //             onremotestream: (stream) => {
-    //                 Janus.debug("Remote feed #" + remoteFeed.rfindex, handle);
-    //                 let node = handle === "preview" ? "remoteVideo" : "programVideo";
-    //                 //let remotevideo = this.refs[node + remoteFeed.rfindex];
-    //                 let remotevideo = this.refs[node + remoteFeed.rfid];
-    //                 // if(remotevideo.length === 0) {
-    //                 //     // No remote video yet
-    //                 // }
-    //                 Janus.attachMediaStream(remotevideo, stream);
-    //                 var videoTracks = stream.getVideoTracks();
-    //                 if(videoTracks === null || videoTracks === undefined || videoTracks.length === 0) {
-    //                     // No remote video
-    //                 } else {
-    //                     // Yes remote video
-    //                 }
-    //                 // if(Janus.webRTCAdapter.browserDetails.browser === "chrome" || Janus.webRTCAdapter.browserDetails.browser === "firefox" ||
-    //                 //     Janus.webRTCAdapter.browserDetails.browser === "safari") {
-    //                 //     $('#curbitrate'+remoteFeed.rfindex).removeClass('hide').show();
-    //                 //     bitrateTimer[remoteFeed.rfindex] = setInterval(function() {
-    //                 //         // Display updated bitrate, if supported
-    //                 //         var bitrate = remoteFeed.getBitrate();
-    //                 //         $('#curbitrate'+remoteFeed.rfindex).text(bitrate);
-    //                 //         // Check if the resolution changed too
-    //                 //         var width = $("#remotevideo"+remoteFeed.rfindex).get(0).videoWidth;
-    //                 //         var height = $("#remotevideo"+remoteFeed.rfindex).get(0).videoHeight;
-    //                 //         if(width > 0 && height > 0)
-    //                 //             $('#curres'+remoteFeed.rfindex).removeClass('hide').text(width+'x'+height).show();
-    //                 //     }, 1000);
-    //                 // }
-    //             },
-    //             oncleanup: () => {
-    //                 Janus.log(" ::: Got a cleanup notification (remote feed " + id + ") :::");
-    //             }
-    //         });
-    // };
 
     onMessage = (h, msg, jsep, initdata) => {
         console.log(" ::: Got a message (publisher) :::");
@@ -672,150 +554,6 @@ class ShidurUsers extends Component {
             this.state[h].videoroom.handleRemoteJsep({jsep: jsep});
         }
     };
-
-    // onMessage = (handle, msg, jsep, initdata) => {
-    //     Janus.debug(" ::: Got a message (publisher) :::");
-    //     Janus.debug(msg);
-    //     let event = msg["videoroom"];
-    //     Janus.debug("Event: " + event);
-    //     if(event !== undefined && event !== null) {
-    //         if(event === "joined") {
-    //             // Publisher/manager created, negotiate WebRTC and attach to existing feeds, if any
-    //             let myid = msg["id"];
-    //             let mypvtid = msg["private_id"];
-    //             this.setState({myid ,mypvtid});
-    //             Janus.log("Successfully joined room " + msg["room"] + " with ID " + myid);
-    //             //this.publishOwnFeed(true);
-    //             // Any new feed to attach to?
-    //             if(msg["publishers"] !== undefined && msg["publishers"] !== null) {
-    //                 let list = msg["publishers"];
-    //                 let feeds_list = list.filter(feeder => JSON.parse(feeder.display).role === "user");
-    //                 Janus.debug("Got a list of available publishers/feeds:");
-    //                 Janus.debug(list);
-    //                 for(let f in feeds_list) {
-    //                     let id = list[f]["id"];
-    //                     let display = JSON.parse(feeds_list[f]["display"]);
-    //                     let talk = list[f]["talking"];
-    //                     Janus.debug("  >> [" + id + "] " + display);
-    //                     this.newRemoteFeed(id, handle, talk);
-    //                 }
-    //             }
-    //         } else if(event === "talking") {
-    //             let {feeds} = this.state;
-    //             let id = msg["id"];
-    //             //let room = msg["room"];
-    //             Janus.log("User: "+id+" - start talking");
-    //             for(let i=1; i<MAX_FEEDS; i++) {
-    //                 if(feeds[handle][i] !== null && feeds[handle][i] !== undefined && feeds[handle][i].rfid === id) {
-    //                     feeds[handle][i].talk = true;
-    //                 }
-    //             }
-    //             this.setState({feeds});
-    //         } else if(event === "stopped-talking") {
-    //             let {feeds} = this.state;
-    //             let id = msg["id"];
-    //             //let room = msg["room"];
-    //             Janus.log("User: "+id+" - stop talking");
-    //             for(let i=1; i<MAX_FEEDS; i++) {
-    //                 if(feeds[handle][i] !== null && feeds[handle][i] !== undefined && feeds[handle][i].rfid === id) {
-    //                     feeds[handle][i].talk = false;
-    //                 }
-    //             }
-    //             this.setState({feeds});
-    //         } else if(event === "destroyed") {
-    //             // The room has been destroyed
-    //             Janus.warn("The room has been destroyed!");
-    //         } else if(event === "event") {
-    //             // Any new feed to attach to?
-    //             if(msg["publishers"] !== undefined && msg["publishers"] !== null) {
-    //                 let list = msg["publishers"];
-    //                 Janus.debug("Got a list of available publishers/feeds:");
-    //                 Janus.debug(list);
-    //                 for(let f in list) {
-    //                     let id = list[f]["id"];
-    //                     let display = JSON.parse(list[f]["display"]);
-    //                     Janus.debug("  >> [" + id + "] " + display);
-    //                     if(display.role === "user")
-    //                         this.newRemoteFeed(id, handle, false);
-    //                 }
-    //             } else if(msg["leaving"] !== undefined && msg["leaving"] !== null) {
-    //                 // One of the publishers has gone away?
-    //                 let {feeds} = this.state;
-    //                 let leaving = msg["leaving"];
-    //                 Janus.log("Publisher left: " + leaving);
-    //                 var remoteFeed = null;
-    //                 for(let i=1; i<MAX_FEEDS; i++) {
-    //                     if(feeds[handle][i] != null && feeds[handle][i] !== undefined && feeds[handle][i].rfid === leaving) {
-    //                         remoteFeed = feeds[handle][i];
-    //                         break;
-    //                     }
-    //                 }
-    //                 if(remoteFeed !== null) {
-    //                     Janus.debug("Feed " + remoteFeed.rfid + " (" + remoteFeed.rfuser + ") has left the room, detaching");
-    //                     // $('#remote'+remoteFeed.rfindex).empty().hide();
-    //                     // $('#videoremote'+remoteFeed.rfindex).empty();
-    //                     feeds[handle][remoteFeed.rfindex] = null;
-    //                     remoteFeed.detach();
-    //                 }
-    //                 this.setState({feeds});
-    //             } else if(msg["unpublished"] !== undefined && msg["unpublished"] !== null) {
-    //                 // One of the publishers has unpublished?
-    //                 let {feeds} = this.state;
-    //                 let unpublished = msg["unpublished"];
-    //                 Janus.log("Publisher left: " + unpublished);
-    //                 if(unpublished === 'ok') {
-    //                     // That's us
-    //                     this.state[handle].hangup();
-    //                     return;
-    //                 }
-    //                 var remoteFeed = null;
-    //                 for(let i=1; i<MAX_FEEDS; i++) {
-    //                     if(feeds[handle][i] !== null && feeds[handle][i] !== undefined && feeds[handle][i].rfid === unpublished) {
-    //                         remoteFeed = feeds[handle][i];
-    //                         break;
-    //                     }
-    //                 }
-    //                 if(remoteFeed !== null) {
-    //                     Janus.debug("Feed " + remoteFeed.rfid + " (" + remoteFeed.rfuser + ") has left the room, detaching");
-    //                     // $('#remote'+remoteFeed.rfindex).empty().hide();
-    //                     // $('#videoremote'+remoteFeed.rfindex).empty();
-    //                     feeds[handle][remoteFeed.rfindex] = null;
-    //                     remoteFeed.detach();
-    //                 }
-    //             } else if(msg["error"] !== undefined && msg["error"] !== null) {
-    //                 if(msg["error_code"] === 426) {
-    //                     Janus.log("This is a no such room");
-    //                 } else {
-    //                     Janus.log(msg["error"]);
-    //                 }
-    //             }
-    //         }
-    //     }
-    //     if(jsep !== undefined && jsep !== null) {
-    //         Janus.debug("Handling SDP as well...");
-    //         Janus.debug(jsep);
-    //         this.state[handle].handleRemoteJsep({jsep: jsep});
-    //         // Check if any of the media we wanted to publish has
-    //         // been rejected (e.g., wrong or unsupported codec)
-    //         // var audio = msg["audio_codec"];
-    //         // if(mystream && mystream.getAudioTracks() && mystream.getAudioTracks().length > 0 && !audio) {
-    //         //     // Audio has been rejected
-    //         //     toastr.warning("Our audio stream has been rejected, viewers won't hear us");
-    //         // }
-    //         // var video = msg["video_codec"];
-    //         // if(mystream && mystream.getVideoTracks() && mystream.getVideoTracks().length > 0 && !video) {
-    //         //     // Video has been rejected
-    //         //     toastr.warning("Our video stream has been rejected, viewers won't see us");
-    //         //     // Hide the webcam video
-    //         //     $('#myvideo').hide();
-    //         //     $('#videolocal').append(
-    //         //         '<div class="no-video-container">' +
-    //         //         '<i class="fa fa-video-camera fa-5 no-video-icon" style="height: 100%;"></i>' +
-    //         //         '<span class="no-video-text" style="font-size: 16px;">Video rejected, no webcam</span>' +
-    //         //         '</div>');
-    //         // }
-    //     }
-    // };
 
     attachToPreview = (group, index) => {
         let room = group.room;
