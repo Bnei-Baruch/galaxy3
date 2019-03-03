@@ -47,32 +47,32 @@ class SDIOutApp extends Component {
     };
 
     componentDidMount() {
-        initJanus(janus => {
-            let {user} = this.state;
-            user.session = janus.getSessionId();
-            this.setState({janus,user});
-
-            initGxyProtocol(janus, user, protocol => {
-                this.setState({protocol});
-            }, ondata => {
-                Janus.log("-- :: It's protocol public message: ", ondata);
-                if(ondata.type === "error" && ondata.error_code === 420) {
-                    console.log(ondata.error + " - Reload after 10 seconds");
-                    this.state.protocol.hangup();
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 10000);
-                } else if(ondata.type === "joined") {
-                    this.initVideoRoom();
-                }
-                this.onProtocolData(ondata);
-            });
-
-        }, er => {
-            setTimeout(() => {
-                window.location.reload();
-            }, 1000);
-        });
+        // initJanus(janus => {
+        //     let {user} = this.state;
+        //     user.session = janus.getSessionId();
+        //     this.setState({janus,user});
+        //
+        //     initGxyProtocol(janus, user, protocol => {
+        //         this.setState({protocol});
+        //     }, ondata => {
+        //         Janus.log("-- :: It's protocol public message: ", ondata);
+        //         if(ondata.type === "error" && ondata.error_code === 420) {
+        //             console.log(ondata.error + " - Reload after 10 seconds");
+        //             this.state.protocol.hangup();
+        //             setTimeout(() => {
+        //                 window.location.reload();
+        //             }, 10000);
+        //         } else if(ondata.type === "joined") {
+        //             this.initVideoRoom();
+        //         }
+        //         this.onProtocolData(ondata);
+        //     });
+        //
+        // }, er => {
+        //     setTimeout(() => {
+        //         window.location.reload();
+        //     }, 1000);
+        // });
     };
 
     componentWillUnmount() {
@@ -398,27 +398,27 @@ class SDIOutApp extends Component {
             <Grid columns={2} className="sdi_container">
                 <Grid.Row>
                 <Grid.Column>
-                    <SDIOutGroups
-                        index={0} {...this.state}
-                        ref={col => {this.col1 = col;}}
-                        setProps={this.setProps}
-                        removeFeed={this.removeFeed} />
+                    {/*<SDIOutGroups*/}
+                        {/*index={0} {...this.state}*/}
+                        {/*ref={col => {this.col1 = col;}}*/}
+                        {/*setProps={this.setProps}*/}
+                        {/*removeFeed={this.removeFeed} />*/}
                 </Grid.Column>
                 <Grid.Column>
-                    <SDIOutGroups
-                        index={4} {...this.state}
-                        ref={col => {this.col2 = col;}}
-                        setProps={this.setProps}
-                        removeFeed={this.removeFeed} />
+                    {/*<SDIOutGroups*/}
+                        {/*index={4} {...this.state}*/}
+                        {/*ref={col => {this.col2 = col;}}*/}
+                        {/*setProps={this.setProps}*/}
+                        {/*removeFeed={this.removeFeed} />*/}
                 </Grid.Column>
                 </Grid.Row>
                 <Grid.Row>
                 <Grid.Column>
-                    <SDIOutGroups
-                        index={8} {...this.state}
-                        ref={col => {this.col3 = col;}}
-                        setProps={this.setProps}
-                        removeFeed={this.removeFeed} />
+                    {/*<SDIOutGroups*/}
+                        {/*index={8} {...this.state}*/}
+                        {/*ref={col => {this.col3 = col;}}*/}
+                        {/*setProps={this.setProps}*/}
+                        {/*removeFeed={this.removeFeed} />*/}
                 </Grid.Column>
                 <Grid.Column>
                     <SDIOutUsers
