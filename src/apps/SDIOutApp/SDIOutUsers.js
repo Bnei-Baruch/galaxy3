@@ -76,19 +76,33 @@ class SDIOutUsers extends Component {
         if(data.type === "camera" && !data.status) {
             cammuteds[data.user.id] = data.user;
             this.setState({cammuteds});
+            // Don't show feed with black video
+            if(room === data.room && users[data.user.id]) {
+                let rfid = users[data.user.id].rfid;
+                for (let i=0; i<feeds.length; i++) {
+                    if (feeds[i].id === rfid) {
+                        // Save feed in camera muted list
+                        cammuteds[data.user.id].feed = feeds[i];
+                        feeds.splice(i, 1);
+                        this.setState({feeds});
+                        break
+                    }
+                }
+            }
         } else if(data.type === "camera" && data.status) {
-            let {cammuteds} = this.state;
+            let {cammuteds,feedStreams} = this.state;
+            // User is turn on his camera we can show him
+            if(room === data.room && users[data.user.id]) {
+                feeds.push(cammuteds[data.user.id].feed);
+                let rfid = users[data.user.id].rfid;
+                this.setState({feeds},() => {
+                    let remotevideo = this.refs["remoteVideo" + rfid];
+                    Janus.attachMediaStream(remotevideo, feedStreams[rfid].stream);
+                });
+            }
             if(cammuteds[data.user.id]) {
                 delete cammuteds[data.user.id];
                 this.setState({cammuteds});
-            }
-            //TODO: user is turn on his camera we can show him
-            if(room === data.room && users[data.user.id]) {
-                // let chk = feeds.filter(f => {
-                //     return (f !== null && f !== undefined && f.rfid === users[data.user.id].rfid)
-                // });
-                // if(chk.length === 0)
-                //     this.newRemoteFeed(users[data.user.id].rfid, false);
             }
         }
 
@@ -426,7 +440,7 @@ class SDIOutUsers extends Component {
                     Janus.log(" ::: Got a remote track event ::: (remote feed)");
                     Janus.log("Remote track (mid=" + mid + ") " + (on ? "added" : "removed") + ":", track);
                     // Which publisher are we getting on this mid?
-                    let {mids} = this.state;
+                    let {mids,feedStreams} = this.state;
                     let feed = mids[mid].feed_id;
                     Janus.log(" >> This track is coming from feed " + feed + ":", mid);
                     if(!on) {
@@ -451,6 +465,8 @@ class SDIOutUsers extends Component {
                         Janus.log("Created remote video stream:", stream);
                         let remotevideo = this.refs["remoteVideo" + feed];
                         Janus.attachMediaStream(remotevideo, stream);
+                        feedStreams[feed].stream = stream;
+                        this.setState({feedStreams});
                     } else {
                         Janus.log("Created remote data channel");
                     }
@@ -494,8 +510,7 @@ class SDIOutUsers extends Component {
 
     unsubscribeFrom = (id) => {
         // Unsubscribe from this publisher
-        let {mids,feeds,users,feedStreams} = this.state;
-        let {questions,quistions_queue} = this.state;
+        let {mids,questions,quistions_queue,cammuteds,feeds,users,feedStreams} = this.state;
         let {remoteFeed} = this.state;
         for (let i=0; i<feeds.length; i++) {
             if (feeds[i].id === id) {
@@ -525,6 +540,26 @@ class SDIOutUsers extends Component {
                     remoteFeed.send({ message: unsubscribe });
                 this.setState({feeds,users,feedStreams});
                 break
+            }
+        }
+        // In case feed exit with camera muted
+        if(feedStreams[id]) {
+            if(cammuteds[feedStreams[id].display.id]) {
+                delete cammuteds[feedStreams[id].display.id];
+                delete users[feedStreams[id].display.id];
+                if(questions[feedStreams[id].display.id]) {
+                    delete questions[feedStreams[id].display.id];
+                    this.setState({questions});
+                    for(let q = 0; q < quistions_queue.length; q++){
+                        if(quistions_queue[q].user.id === feedStreams[id].display.id) {
+                            quistions_queue.splice(q, 1);
+                            this.setState({quistions_queue});
+                            break
+                        }
+                    }
+                }
+                delete feedStreams[id];
+                this.setState({cammuteds,users,feedStreams});
             }
         }
     };
