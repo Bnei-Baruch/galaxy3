@@ -203,9 +203,13 @@ class ShidurUsers extends Component {
                     Janus.log(" ::: Got a remote track event ::: (remote feed)");
                     Janus.log("Remote track (mid=" + mid + ") " + (on ? "added" : "removed") + ":", track);
                     // Which publisher are we getting on this mid?
-                    let {mids} = this.state[h];
+                    let {mids,feedStreams} = this.state[h];
                     let feed = mids[mid].feed_id;
                     Janus.log(" >> This track is coming from feed " + feed + ":", mid);
+                    if(feedStreams[feed].stream) {
+                        console.log(" -- Already got steam --");
+                        return
+                    }
                     if(!on) {
                         Janus.log(" :: Going to stop track :: " + feed + ":", mid);
                         //FIXME: Remove callback for audio track does not come
@@ -226,6 +230,8 @@ class ShidurUsers extends Component {
                         let stream = new MediaStream();
                         stream.addTrack(track.clone());
                         Janus.log("Created remote video stream:", stream);
+                        feedStreams[feed].stream = stream;
+                        this.setState({[h]:{...this.state[h], feedStreams}});
                         let node = h === "preview" ? "remoteVideo" : "programVideo";
                         let remotevideo = this.refs[node + feed];
                         Janus.attachMediaStream(remotevideo, stream);
@@ -431,23 +437,23 @@ class ShidurUsers extends Component {
                     for(let f in feeds) {
                         let id = feeds[f]["id"];
                         let display = JSON.parse(feeds[f]["display"]);
-                        let talk = feeds[f]["talking"];
+                        //let talk = feeds[f]["talking"];
                         let streams = feeds[f]["streams"];
                         feeds[f].display = display;
                         feeds[f].question = this.state.questions[display.id] !== undefined;
+                        let subst = {feed: id};
                         for (let i in streams) {
                             let stream = streams[i];
                             stream["id"] = id;
                             stream["display"] = display;
+                            if(stream.type === "video") {
+                                subst.mid = stream.mid;
+                            }
                         }
                         feedStreams[id] = {id, display, streams};
                         users[display.id] = display;
                         users[display.id].rfid = id;
-                        //TODO: select only video mid here
-                        subscription.push({
-                            feed: id,	// This is mandatory
-                            //mid: stream.mid		// This is optional (all streams, if missing)
-                        });
+                        subscription.push(subst);
                     }
                     this.setState({[h]:{...this.state[h], feeds,feedStreams,users}});
                     console.log(" :: SUBS: ",subscription);
@@ -455,27 +461,27 @@ class ShidurUsers extends Component {
                         this.subscribeTo(h, subscription);
                 }
             } else if(event === "talking") {
-                let {feeds} = this.state;
-                let id = msg["id"];
-                //let room = msg["room"];
-                Janus.log("User: "+id+" - start talking");
-                for(let i=1; i<MAX_FEEDS; i++) {
-                    if(feeds[i] !== null && feeds[i] !== undefined && feeds[i].rfid === id) {
-                        feeds[i].talk = true;
-                    }
-                }
-                this.setState({feeds});
+                // let {feeds} = this.state;
+                // let id = msg["id"];
+                // //let room = msg["room"];
+                // Janus.log("User: "+id+" - start talking");
+                // for(let i=1; i<MAX_FEEDS; i++) {
+                //     if(feeds[i] !== null && feeds[i] !== undefined && feeds[i].rfid === id) {
+                //         feeds[i].talk = true;
+                //     }
+                // }
+                // this.setState({feeds});
             } else if(event === "stopped-talking") {
-                let {feeds} = this.state;
-                let id = msg["id"];
-                //let room = msg["room"];
-                Janus.log("User: "+id+" - stop talking");
-                for(let i=1; i<MAX_FEEDS; i++) {
-                    if(feeds[i] !== null && feeds[i] !== undefined && feeds[i].rfid === id) {
-                        feeds[i].talk = false;
-                    }
-                }
-                this.setState({feeds});
+                // let {feeds} = this.state;
+                // let id = msg["id"];
+                // //let room = msg["room"];
+                // Janus.log("User: "+id+" - stop talking");
+                // for(let i=1; i<MAX_FEEDS; i++) {
+                //     if(feeds[i] !== null && feeds[i] !== undefined && feeds[i].rfid === id) {
+                //         feeds[i].talk = false;
+                //     }
+                // }
+                // this.setState({feeds});
             } else if(event === "destroyed") {
                 // The room has been destroyed
                 Janus.warn("The room has been destroyed!");
@@ -502,22 +508,22 @@ class ShidurUsers extends Component {
                         let display = JSON.parse(feed[f]["display"]);
                         if(display.role !== "user")
                             return;
-                        let talk = feed[f]["talking"];
+                        //let talk = feed[f]["talking"];
                         let streams = feed[f]["streams"];
                         feed[f].display = display;
+                        let subst = {feed: id};
                         for (let i in streams) {
                             let stream = streams[i];
                             stream["id"] = id;
                             stream["display"] = display;
+                            if(stream.type === "video") {
+                                subst.mid = stream.mid;
+                            }
                         }
                         feedStreams[id] = {id, display, streams};
                         users[display.id] = display;
                         users[display.id].rfid = id;
-                        //TODO: select only video mid here
-                        subscription.push({
-                            feed: id,	// This is mandatory
-                            //mid: stream.mid		// This is optional (all streams, if missing)
-                        });
+                        subscription.push(subst);
                     }
                     feeds.push(feed[0]);
                     this.setState({ [h]:{...this.state[h], feeds,feedStreams,users}});
