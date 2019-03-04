@@ -21,7 +21,7 @@ class AdminStreaming extends Component {
     };
 
     componentDidMount() {
-        Janus.init({debug: true, callback: this.initJanus});
+        Janus.init({debug: ["log","error"], callback: this.initJanus});
     };
 
     componentWillUnmount() {
