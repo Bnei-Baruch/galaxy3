@@ -820,7 +820,8 @@ class VirtualClient extends Component {
                 let talk = feed.talk;
                 let question = feed.question;
                 let cammute = feed.cammute;
-                let name = feed.display.name;
+                //let name = feed.display.name;
+                let display_name = feed.display.display;
                 return (<div className="video"
                 key={"v" + id}
                 ref={"video" + id}
@@ -831,7 +832,7 @@ class VirtualClient extends Component {
                             <text x="25" y="25" text-anchor="middle" alignment-baseline="central" dominant-baseline="central">&#xF128;</text>
                         </svg>
                     </div>:''}
-                    <div className="video__title">{!talk ? <Icon name="microphone slash" size="small" color="red"/> : ''}{name}</div>
+                    <div className="video__title">{!talk ? <Icon name="microphone slash" size="small" color="red"/> : ''}{display_name}</div>
                 </div>
                     <svg className={classNames('nowebcam',{'hidden':!cammute})} viewBox="0 0 32 18" preserveAspectRatio="xMidYMid meet" ><text x="16" y="9" text-anchor="middle" alignment-baseline="central" dominant-baseline="central">&#xf2bd;</text></svg>
                     <video
@@ -958,7 +959,7 @@ class VirtualClient extends Component {
                                                 ''
                                             }
                                             <div className="video__title">
-                                                {muted ? <Icon name="microphone slash" size="small" color="red"/> : ''}{this.state.username_value}
+                                                {muted ? <Icon name="microphone slash" size="small" color="red"/> : ''}{this.state.username_value || this.state.user.name}
                                             </div>
                                         </div>
                                         <svg className={classNames('nowebcam',{'hidden':!cammuted})} viewBox="0 0 32 18" preserveAspectRatio="xMidYMid meet" ><text x="16" y="9" text-anchor="middle" alignment-baseline="central" dominant-baseline="central">&#xf2bd;</text></svg>
