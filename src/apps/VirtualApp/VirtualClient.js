@@ -8,7 +8,6 @@ import {geoInfo, initJanus, getDevicesStream, micLevel, checkNotification,testDe
 import './VirtualClient.scss'
 import './VideoConteiner.scss'
 import 'eqcss'
-import {MAX_FEEDS} from "../../shared/consts";
 import VirtualChat from "./VirtualChat";
 import {initGxyProtocol, sendProtocolMessage} from "../../shared/protocol";
 
@@ -66,6 +65,7 @@ class VirtualClient extends Component {
     };
 
     initClient = (user,error) => {
+        localStorage.setItem("question", false);
         checkNotification();
         geoInfo('https://v4g.kbb1.com/geo.php?action=get', data => {
             Janus.log(data);
@@ -271,7 +271,7 @@ class VirtualClient extends Component {
         let rfid = users[data.id].rfid;
         let camera = data.camera;
         for (let i = 0; i < feeds.length; i++) {
-            if (feeds[i] !== null && feeds[i] !== undefined && feeds[i].id === rfid) {
+            if (feeds[i] && feeds[i].id === rfid) {
                 feeds[i].cammute = !camera;
                 this.setState({feeds});
                 break
@@ -355,6 +355,7 @@ class VirtualClient extends Component {
                         let talk = feeds[f]["talking"];
                         let streams = feeds[f]["streams"];
                         feeds[f].display = display;
+                        feeds[f].talk = talk;
                         for (let i in streams) {
                             let stream = streams[i];
                             stream["id"] = id;
@@ -376,10 +377,9 @@ class VirtualClient extends Component {
             } else if(event === "talking") {
                 let {feeds} = this.state;
                 let id = msg["id"];
-                //let room = msg["room"];
                 Janus.log("User: "+id+" - start talking");
-                for(let i=1; i<MAX_FEEDS; i++) {
-                    if(feeds[i] !== null && feeds[i] !== undefined && feeds[i].rfid === id) {
+                for(let i=0; i<feeds.length; i++) {
+                    if(feeds[i] && feeds[i].id === id) {
                         feeds[i].talk = true;
                     }
                 }
@@ -387,10 +387,9 @@ class VirtualClient extends Component {
             } else if(event === "stopped-talking") {
                 let {feeds} = this.state;
                 let id = msg["id"];
-                //let room = msg["room"];
                 Janus.log("User: "+id+" - stop talking");
-                for(let i=1; i<MAX_FEEDS; i++) {
-                    if(feeds[i] !== null && feeds[i] !== undefined && feeds[i].rfid === id) {
+                for(let i=0; i<feeds.length; i++) {
+                    if(feeds[i] && feeds[i].id === id) {
                         feeds[i].talk = false;
                     }
                 }
@@ -421,7 +420,6 @@ class VirtualClient extends Component {
                         let display = JSON.parse(feed[f]["display"]);
                         if(display.role !== "user")
                             return;
-                        let talk = feed[f]["talking"];
                         let streams = feed[f]["streams"];
                         feed[f].display = display;
                         for (let i in streams) {
@@ -558,7 +556,7 @@ class VirtualClient extends Component {
                     Janus.log(" ::: Got a remote track event ::: (remote feed)");
                     Janus.log("Remote track (mid=" + mid + ") " + (on ? "added" : "removed") + ":", track);
                     // Which publisher are we getting on this mid?
-                    let {mids} = this.state;
+                    let {mids,feedStreams} = this.state;
                     let feed = mids[mid].feed_id;
                     Janus.log(" >> This track is coming from feed " + feed + ":", mid);
                     if(!on) {
@@ -569,22 +567,28 @@ class VirtualClient extends Component {
                         return;
                     }
                     // If we're here, a new track was added
-                    if(track.kind === "audio") {
+                    if(track.kind === "audio" && !feedStreams[feed].audio_stream) {
                         // New audio track: create a stream out of it, and use a hidden <audio> element
                         let stream = new MediaStream();
                         stream.addTrack(track.clone());
                         Janus.log("Created remote audio stream:", stream);
+                        feedStreams[feed].audio_stream = stream;
+                        this.setState({feedStreams});
                         let remoteaudio = this.refs["remoteAudio" + feed];
                         Janus.attachMediaStream(remoteaudio, stream);
-                    } else if(track.kind === "video") {
+                    } else if(track.kind === "video" && !feedStreams[feed].video_stream) {
                         // New video track: create a stream out of it
                         let stream = new MediaStream();
                         stream.addTrack(track.clone());
                         Janus.log("Created remote video stream:", stream);
+                        feedStreams[feed].video_stream = stream;
+                        this.setState({feedStreams});
                         let remotevideo = this.refs["remoteVideo" + feed];
                         Janus.attachMediaStream(remotevideo, stream);
-                    } else {
+                    } else if(track.kind === "data") {
                         Janus.log("Created remote data channel");
+                    } else {
+                        Janus.log("-- Already active stream --");
                     }
                 },
                 ondataopen: (data) => {
@@ -610,22 +614,24 @@ class VirtualClient extends Component {
             });
             return;
         }
+
         // We don't have a handle yet, but we may be creating one already
         if (this.state.creatingFeed) {
             // Still working on the handle
             setTimeout(() => {
                 this.subscribeTo(subscription);
             }, 500);
-        } else {
-            // We don't creating, so let's do it
-            this.setState({creatingFeed: true});
-            this.newRemoteFeed(subscription);
+            return;
         }
+
+        // We don't creating, so let's do it
+        this.setState({creatingFeed: true});
+        this.newRemoteFeed(subscription);
     };
 
     unsubscribeFrom = (id) => {
         // Unsubscribe from this publisher
-        let {mids,feeds,remoteFeed,users,feedStreams} = this.state;
+        let {feeds,remoteFeed,users,feedStreams} = this.state;
         for (let i=0; i<feeds.length; i++) {
             if (feeds[i].id === id) {
                 console.log(" - Remove FEED: ", feeds[i]);
@@ -736,18 +742,6 @@ class VirtualClient extends Component {
         this.setState({selected_room,name,i});
     };
 
-    registerUsername = (i) => {
-        Janus.log(i);
-        let {videoroom, rooms, user} = this.state;
-        let room = rooms[i].room;
-        let name = rooms[i].description;
-        user.role = "user";
-        user.display = "user-"+Janus.randomString(4);
-        let register = { "request": "join", "room": room, "ptype": "publisher", "display": JSON.stringify(user) };
-        videoroom.send({"message": register});
-        this.setState({room,name,user,i});
-    };
-
     handleQuestion = () => {
         //TODO: only when shidur user is online will be avelable send question event, so we need to add check
         const { protocol, user, room, question} = this.state;
@@ -823,11 +817,10 @@ class VirtualClient extends Component {
         let videos = this.state.feeds.map((feed) => {
             if(feed) {
                 let id = feed.id;
-                // let talk = feed.talk;
+                let talk = feed.talk;
                 let question = feed.question;
                 let cammute = feed.cammute;
                 let name = feed.display.name;
-                let talk = false;
                 return (<div className="video"
                 key={"v" + id}
                 ref={"video" + id}
