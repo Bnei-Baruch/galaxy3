@@ -666,14 +666,18 @@ class ShidurUsers extends Component {
       let program_feeds = program.feeds.map((feed) => {
           if(feed) {
               let id = feed.id;
-              let talk = false;
-              let question = false;
+              let talk = feed.talk;
+              let question = feed.question;
               return (<div className="video"
                            key={"prov" + id}
                            ref={"provideo" + id}
                            id={"provideo" + id}>
                   <div className={classNames('video__overlay', {'talk' : talk})}>
-                      {question ? <div className="question"><Icon name="question circle" size="massive"/></div>:''}
+                      {question ? <div className="question">
+                          <svg viewBox="0 0 50 50">
+                              <text x="25" y="25" text-anchor="middle" alignment-baseline="central" dominant-baseline="central">&#xF128;</text>
+                          </svg>
+                      </div>:''}
                       {/*<div className="video__title">{!talk ? <Icon name="microphone slash" size="small" color="red"/> : ''}{name}</div>*/}
                   </div>
                   <video className={talk ? "talk" : ""}
@@ -701,7 +705,11 @@ class ShidurUsers extends Component {
                            ref={"prevideo" + id}
                            id={"prevideo" + id}>
                   <div className={classNames('video__overlay', {'talk' : talk})}>
-                      {question ? <div className="question"><Icon name="question circle" size="massive"/></div>:''}
+                      {question ? <div className="question">
+                          <svg viewBox="0 0 50 50">
+                              <text x="25" y="25" text-anchor="middle" alignment-baseline="central" dominant-baseline="central">&#xF128;</text>
+                          </svg>
+                      </div>:''}
                       {/*<div className="video__title">{!talk ? <Icon name="microphone slash" size="small" color="red"/> : ''}{name}</div>*/}
                   </div>
                   <video className={talk ? "talk" : ""}
