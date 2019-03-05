@@ -123,7 +123,7 @@ class SndmanUsers extends Component {
             success: (videoroom) => {
                 Janus.log(videoroom);
                 let {user} = this.state;
-                this.setState({videoroom});
+                this.setState({videoroom,remoteFeed: null});
                 Janus.log("Plugin attached! (" + videoroom.getPlugin() + ", id=" + videoroom.getId() + ")");
                 Janus.log("  -- This is a publisher/manager");
 
@@ -643,7 +643,7 @@ class SndmanUsers extends Component {
                     });
                 }
                 Janus.log("-- :: Remove Feed: ",feed);
-                feed.detach();
+                //feed.detach();
             }
         });
         this.setState({room, feeds: []});

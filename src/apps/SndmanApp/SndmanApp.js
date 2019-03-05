@@ -57,8 +57,7 @@ class SndmanApp extends Component {
                 if (gxy_group) {
                     delete user.roles;
                     user.role = "sndman";
-                    this.setState({user});
-                    //this.initApp(user);
+                    this.initApp(user);
                 } else {
                     alert("Access denied!");
                     client.signoutRedirect();
@@ -485,27 +484,27 @@ class SndmanApp extends Component {
                         onProtocolData={this.onProtocolData} />
                 </Grid.Column>
                 <Grid.Row>
-                    {/*<Grid.Column>*/}
-                        {/*<SndmanGroups*/}
-                            {/*index={0} {...this.state}*/}
-                            {/*ref={col => {this.col1 = col;}}*/}
-                            {/*setProps={this.setProps}*/}
-                            {/*removeFeed={this.removeFeed} />*/}
-                    {/*</Grid.Column>*/}
-                    {/*<Grid.Column>*/}
-                        {/*<SndmanGroups*/}
-                            {/*index={4} {...this.state}*/}
-                            {/*ref={col => {this.col2 = col;}}*/}
-                            {/*setProps={this.setProps}*/}
-                            {/*removeFeed={this.removeFeed} />*/}
-                    {/*</Grid.Column>*/}
-                    {/*<Grid.Column>*/}
-                        {/*<SndmanGroups*/}
-                            {/*index={8} {...this.state}*/}
-                            {/*ref={col => {this.col3 = col;}}*/}
-                            {/*setProps={this.setProps}*/}
-                            {/*removeFeed={this.removeFeed} />*/}
-                    {/*</Grid.Column>*/}
+                    <Grid.Column>
+                        <SndmanGroups
+                            index={0} {...this.state}
+                            ref={col => {this.col1 = col;}}
+                            setProps={this.setProps}
+                            removeFeed={this.removeFeed} />
+                    </Grid.Column>
+                    <Grid.Column>
+                        <SndmanGroups
+                            index={4} {...this.state}
+                            ref={col => {this.col2 = col;}}
+                            setProps={this.setProps}
+                            removeFeed={this.removeFeed} />
+                    </Grid.Column>
+                    <Grid.Column>
+                        <SndmanGroups
+                            index={8} {...this.state}
+                            ref={col => {this.col3 = col;}}
+                            setProps={this.setProps}
+                            removeFeed={this.removeFeed} />
+                    </Grid.Column>
                 </Grid.Row>
             </Grid>
         );
