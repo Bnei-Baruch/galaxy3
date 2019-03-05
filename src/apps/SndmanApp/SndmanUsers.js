@@ -632,10 +632,10 @@ class SndmanUsers extends Component {
         Janus.log(" :: Attaching to Preview: ", room);
         feeds.forEach(feed => {
             if (feed !== null && feed !== undefined) {
-                this.sendMessage(feed.rfuser, false);
+                this.sendMessage(feed.display, false);
                 if(feed.streamid) {
                     this.setState({forward: false});
-                    let stopfw = { "request":"stop_rtp_forward","stream_id":feed.streamid,"publisher_id":feed.rfid,"room":this.state.room,"secret":`${SECRET}` };
+                    let stopfw = { "request":"stop_rtp_forward","stream_id":feed.streamid,"publisher_id":feed.id,"room":this.state.room,"secret":`${SECRET}` };
                     videoroom.send({"message": stopfw,
                         success: (data) => {
                             Janus.log(":: Forward callback: ", data);
@@ -665,8 +665,8 @@ class SndmanUsers extends Component {
             feeds.forEach((feed,i) => {
                 if (feed !== null && feed !== undefined) {
                     // FIXME: if we change sources on client based on room id (not ip) we send message only once
-                    this.sendMessage(feed.rfuser, false);
-                    let stopfw = { "request":"stop_rtp_forward","stream_id":feed.streamid,"publisher_id":feed.rfid,"room":room,"secret":`${SECRET}` };
+                    this.sendMessage(feed.display, false);
+                    let stopfw = { "request":"stop_rtp_forward","stream_id":feed.streamid,"publisher_id":feed.id,"room":room,"secret":`${SECRET}` };
                     videoroom.send({"message": stopfw,
                         success: (data) => {
                             Janus.log(":: Forward callback: ", data);
@@ -681,8 +681,8 @@ class SndmanUsers extends Component {
             let port = 5630;
             feeds.forEach((feed,i) => {
                 if (feed !== null && feed !== undefined) {
-                    this.sendMessage(feed.rfuser, true);
-                    let forward = { "request": "rtp_forward","publisher_id":feed.rfid,"room":room,"secret":`${SECRET}`,"host":`${DANTE_IN_IP}`,"audio_port":port};
+                    this.sendMessage(feed.display, true);
+                    let forward = { "request": "rtp_forward","publisher_id":feed.id,"room":room,"secret":`${SECRET}`,"host":`${DANTE_IN_IP}`,"audio_port":port};
                     videoroom.send({"message": forward,
                         success: (data) => {
                             Janus.log(":: Forward callback: ", data);
