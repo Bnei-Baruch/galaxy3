@@ -275,7 +275,6 @@ class SDIOutUsers extends Component {
                     let {mids,feedStreams} = this.state;
                     let feed = mids[mid].feed_id;
                     if(feedStreams[feed].stream) {
-                        console.log(" -- Already got steam --");
                         return
                     }
                     Janus.log(" >> This track is coming from feed " + feed + ":", mid);
@@ -351,7 +350,6 @@ class SDIOutUsers extends Component {
         let {remoteFeed} = this.state;
         for (let i=0; i<feeds.length; i++) {
             if (feeds[i].id === id) {
-                console.log(" - Remove FEED: ", feeds[i]);
                 Janus.log("Feed " + feeds[i] + " (" + id + ") has left the room, detaching");
                 //TODO: remove mids
                 delete users[feeds[i].display.id];
@@ -458,8 +456,8 @@ class SDIOutUsers extends Component {
     };
 
     onMessage = (videoroom, msg, jsep, initdata) => {
-        console.log(" ::: Got a message (publisher) :::");
-        console.log(msg);
+        Janus.log(" ::: Got a message (publisher) :::");
+        Janus.log(msg);
         let event = msg["videoroom"];
         if(event !== undefined && event !== null) {
             if(event === "joined") {
@@ -477,9 +475,9 @@ class SDIOutUsers extends Component {
                     let feeds = list.filter(feeder => JSON.parse(feeder.display).role === "user");
                     //let feeds = list.filter(feeder => JSON.parse(feeder.display).role === "user" && !cammuteds.hasOwnProperty(JSON.parse(feeder.display).id));
 
-                    console.log(":: Got Pulbishers list: ", feeds);
+                    Janus.log(":: Got Pulbishers list: ", feeds);
                     Janus.debug("Got a list of available publishers/feeds:");
-                    console.log(list);
+                    Janus.log(list);
                     let subscription = [];
                     for(let f in feeds) {
                         let id = feeds[f]["id"];
@@ -507,7 +505,6 @@ class SDIOutUsers extends Component {
                         subscription.push(subst);
                     }
                     this.setState({feeds,feedStreams,users,cammuteds});
-                    console.log(" :: SUBS: ",subscription);
                     if(subscription.length > 0)
                         this.subscribeTo(subscription);
                 }
@@ -552,7 +549,7 @@ class SDIOutUsers extends Component {
                     let feed = msg["publishers"];
                     let {feeds,feedStreams,users} = this.state;
                     Janus.debug("Got a list of available publishers/feeds:");
-                    console.log(feed);
+                    Janus.log(feed);
                     let subscription = [];
                     for(let f in feed) {
                         let id = feed[f]["id"];
