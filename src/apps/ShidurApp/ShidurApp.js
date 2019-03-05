@@ -53,7 +53,7 @@ class ShidurApp extends Component {
                     delete user.roles;
                     user.role = "shidur";
                     this.setState({user});
-                    //this.initGalaxy(user);
+                    this.initGalaxy(user);
                 } else {
                     alert("Access denied!");
                     client.signoutRedirect();
@@ -466,75 +466,75 @@ class ShidurApp extends Component {
         let login = (<LoginPage user={user} />);
         let content = (
             <Grid columns={4}>
-                {/*<Grid.Column>*/}
-                    {/*<ShidurGroups*/}
-                        {/*index={0} {...this.state}*/}
-                        {/*ref={col => {this.col1 = col;}}*/}
-                        {/*setProps={this.setProps}*/}
-                        {/*removeFeed={this.removeFeed} />*/}
-                {/*</Grid.Column>*/}
-                {/*<Grid.Column>*/}
-                    {/*<ShidurGroups*/}
-                        {/*index={4} {...this.state}*/}
-                        {/*ref={col => {this.col2 = col;}}*/}
-                        {/*setProps={this.setProps}*/}
-                        {/*removeFeed={this.removeFeed} />*/}
-                        {/*<Message attached className='info-panel' color='grey'>*/}
-                            {/*<Label attached='top right' color='grey'>*/}
-                                {/*Online: {feeds.length}*/}
-                            {/*</Label>*/}
-                            {/*<Popup on='click'*/}
-                                   {/*trigger={<Label attached='top left' color='grey'>*/}
-                                            {/*Next: {feeds[feeds_queue] ? JSON.parse(feeds[feeds_queue].display).display : ""}*/}
-                                            {/*</Label>}*/}
-                                   {/*flowing*/}
-                                   {/*position='bottom center'*/}
-                                   {/*hoverable>*/}
-                                {/*<Input type='text' placeholder='' action value={pri}*/}
-                                       {/*onChange={(v,{value}) => this.setState({pri: value})}>*/}
-                                    {/*<input />*/}
-                                    {/*<Button positive onClick={this.fixProgram}>Fix</Button>*/}
-                                {/*</Input>*/}
-                            {/*</Popup>*/}
-                            {/*<Label size='big' color='brown'>*/}
-                                {/*<Icon name='address card' />*/}
-                                {/*<b className='queue_counter'>{feeds.length - feeds_queue}</b>*/}
-                                {/*<Icon name='delete' onClick={this.resetQueue} />*/}
-                            {/*</Label>*/}
-                            {/*<Label attached='bottom left' color='blue'>*/}
-                                {/*Round: {round}*/}
-                            {/*</Label>*/}
-                            {/*<Label attached='bottom right' color={qfeeds.length > 0 ? 'red' : 'grey'}>*/}
-                                {/*Questions: {qfeeds.length}*/}
-                            {/*</Label>*/}
-                        {/*</Message>*/}
-                    {/*<Button.Group attached='bottom'>*/}
-                        {/*<Button*/}
-                            {/*color={sndman ? "green" : "red"}*/}
-                            {/*disabled={!sndman}*/}
-                            {/*onClick={() => this.col1.sdiAction("restart", false, 1, {sndman: true})}>*/}
-                            {/*SndMan</Button>*/}
-                        {/*<Button*/}
-                            {/*color={sdiout ? "green" : "red"}*/}
-                            {/*disabled={!sdiout}*/}
-                            {/*onClick={() => this.col1.sdiAction("restart", false, 1, {sdiout: true})}>*/}
-                            {/*SdiOut</Button>*/}
-                    {/*</Button.Group>*/}
-                {/*</Grid.Column>*/}
-                {/*<Grid.Column>*/}
-                    {/*<ShidurGroups*/}
-                        {/*index={8} {...this.state}*/}
-                        {/*ref={col => {this.col3 = col;}}*/}
-                        {/*setProps={this.setProps}*/}
-                        {/*removeFeed={this.removeFeed} />*/}
-                    {/*<Segment textAlign='center' className="disabled_groups" raised>*/}
-                        {/*<Table selectable compact='very' basic structured className="admin_table" unstackable>*/}
-                            {/*<Table.Body>*/}
-                                {/*{disabled_list}*/}
-                            {/*</Table.Body>*/}
-                        {/*</Table>*/}
-                    {/*</Segment>*/}
-                {/*</Grid.Column>*/}
+                <Grid.Column>
+                    <ShidurGroups
+                        index={0} {...this.state}
+                        ref={col => {this.col1 = col;}}
+                        setProps={this.setProps}
+                        removeFeed={this.removeFeed} />
+                </Grid.Column>
+                <Grid.Column>
+                    <ShidurGroups
+                        index={4} {...this.state}
+                        ref={col => {this.col2 = col;}}
+                        setProps={this.setProps}
+                        removeFeed={this.removeFeed} />
+                        <Message attached className='info-panel' color='grey'>
+                            <Label attached='top right' color='grey'>
+                                Online: {feeds.length}
+                            </Label>
+                            <Popup on='click'
+                                   trigger={<Label attached='top left' color='grey'>
+                                            Next: {feeds[feeds_queue] ? JSON.parse(feeds[feeds_queue].display).display : ""}
+                                            </Label>}
+                                   flowing
+                                   position='bottom center'
+                                   hoverable>
+                                <Input type='text' placeholder='' action value={pri}
+                                       onChange={(v,{value}) => this.setState({pri: value})}>
+                                    <input />
+                                    <Button positive onClick={this.fixProgram}>Fix</Button>
+                                </Input>
+                            </Popup>
+                            <Label size='big' color='brown'>
+                                <Icon name='address card' />
+                                <b className='queue_counter'>{feeds.length - feeds_queue}</b>
+                                <Icon name='delete' onClick={this.resetQueue} />
+                            </Label>
+                            <Label attached='bottom left' color='blue'>
+                                Round: {round}
+                            </Label>
+                            <Label attached='bottom right' color={qfeeds.length > 0 ? 'red' : 'grey'}>
+                                Questions: {qfeeds.length}
+                            </Label>
+                        </Message>
+                    <Button.Group attached='bottom'>
+                        <Button
+                            color={sndman ? "green" : "red"}
+                            disabled={!sndman}
+                            onClick={() => this.col1.sdiAction("restart", false, 1, {sndman: true})}>
+                            SndMan</Button>
+                        <Button
+                            color={sdiout ? "green" : "red"}
+                            disabled={!sdiout}
+                            onClick={() => this.col1.sdiAction("restart", false, 1, {sdiout: true})}>
+                            SdiOut</Button>
+                    </Button.Group>
+                </Grid.Column>
+                <Grid.Column>
+                    <ShidurGroups
+                        index={8} {...this.state}
+                        ref={col => {this.col3 = col;}}
+                        setProps={this.setProps}
+                        removeFeed={this.removeFeed} />
+                    <Segment textAlign='center' className="disabled_groups" raised>
+                        <Table selectable compact='very' basic structured className="admin_table" unstackable>
+                            <Table.Body>
+                                {disabled_list}
+                            </Table.Body>
+                        </Table>
+                    </Segment>
+                </Grid.Column>
                 <Grid.Column>
                     <ShidurUsers
                         ref={col => {this.col4 = col;}}

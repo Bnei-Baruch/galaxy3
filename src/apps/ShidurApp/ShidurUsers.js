@@ -207,7 +207,6 @@ class ShidurUsers extends Component {
                     let feed = mids[mid].feed_id;
                     Janus.log(" >> This track is coming from feed " + feed + ":", mid);
                     if(feedStreams[feed].stream) {
-                        console.log(" -- Already got steam --");
                         return
                     }
                     if(!on) {
@@ -282,7 +281,6 @@ class ShidurUsers extends Component {
         let {remoteFeed} = this.state[h];
         for (let i=0; i<feeds.length; i++) {
             if (feeds[i].id === id) {
-                console.log(" - Remove FEED: ", feeds[i]);
                 Janus.log("Feed " + feeds[i] + " (" + id + ") has left the room, detaching");
                 //TODO: remove mids
                 delete users[feeds[i].display.id];
@@ -411,8 +409,8 @@ class ShidurUsers extends Component {
     };
 
     onMessage = (h, msg, jsep, initdata) => {
-        console.log(" ::: Got a message (publisher) :::");
-        console.log(msg);
+        Janus.log(" ::: Got a message (publisher) :::");
+        Janus.log(msg);
         let event = msg["videoroom"];
         if(event !== undefined && event !== null) {
             if(event === "joined") {
@@ -426,13 +424,12 @@ class ShidurUsers extends Component {
                     let list = msg["publishers"];
                     let feeds = list.filter(feeder => JSON.parse(feeder.display).role === "user");
                     let {feedStreams,users} = this.state[h];
-                    console.log(":: Got Pulbishers list: ", feeds);
+                    Janus.log(":: Got Pulbishers list: ", feeds);
                     if(feeds.length > 15) {
                         alert("Max users in this room is reached");
                         window.location.reload();
                     }
                     Janus.debug("Got a list of available publishers/feeds:");
-                    console.log(list);
                     let subscription = [];
                     for(let f in feeds) {
                         let id = feeds[f]["id"];
@@ -456,7 +453,6 @@ class ShidurUsers extends Component {
                         subscription.push(subst);
                     }
                     this.setState({[h]:{...this.state[h], feeds,feedStreams,users}});
-                    console.log(" :: SUBS: ",subscription);
                     if(subscription.length > 0)
                         this.subscribeTo(h, subscription);
                 }
@@ -501,7 +497,6 @@ class ShidurUsers extends Component {
                     let feed = msg["publishers"];
                     let {feeds,feedStreams,users} = this.state[h];
                     Janus.debug("Got a list of available publishers/feeds:");
-                    console.log(feed);
                     let subscription = [];
                     for(let f in feed) {
                         let id = feed[f]["id"];
