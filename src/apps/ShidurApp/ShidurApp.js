@@ -52,7 +52,6 @@ class ShidurApp extends Component {
                 if (gxy_group) {
                     delete user.roles;
                     user.role = "shidur";
-                    this.setState({user});
                     this.initGalaxy(user);
                 } else {
                     alert("Access denied!");
