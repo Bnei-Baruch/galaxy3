@@ -473,7 +473,6 @@ class SDIOutUsers extends Component {
 
                     // Filter service and camera muted feeds
                     let feeds = list.filter(feeder => JSON.parse(feeder.display).role === "user");
-                    //let feeds = list.filter(feeder => JSON.parse(feeder.display).role === "user" && !cammuteds.hasOwnProperty(JSON.parse(feeder.display).id));
 
                     Janus.log(":: Got Pulbishers list: ", feeds);
                     Janus.debug("Got a list of available publishers/feeds:");
@@ -482,7 +481,7 @@ class SDIOutUsers extends Component {
                     for(let f in feeds) {
                         let id = feeds[f]["id"];
                         let display = JSON.parse(feeds[f]["display"]);
-                        let talk = feeds[f]["talking"];
+                        //let talk = feeds[f]["talking"];
                         let streams = feeds[f]["streams"];
                         feeds[f].display = display;
                         feeds[f].question = questions[display.id] !== undefined;
@@ -509,27 +508,25 @@ class SDIOutUsers extends Component {
                         this.subscribeTo(subscription);
                 }
             } else if(event === "talking") {
-                let {feeds} = this.state;
-                let id = msg["id"];
-                //let room = msg["room"];
-                Janus.log("User: "+id+" - start talking");
-                for(let i=1; i<MAX_FEEDS; i++) {
-                    if(feeds[i] !== null && feeds[i] !== undefined && feeds[i].rfid === id) {
-                        feeds[i].talk = true;
-                    }
-                }
-                this.setState({feeds});
+                // let {feeds} = this.state;
+                // let id = msg["id"];
+                // Janus.log("User: "+id+" - start talking");
+                // for(let i=0; i<feeds.length; i++) {
+                //     if(feeds[i] && feeds[i].id === id) {
+                //         feeds[i].talk = true;
+                //     }
+                // }
+                // this.setState({feeds});
             } else if(event === "stopped-talking") {
-                let {feeds} = this.state;
-                let id = msg["id"];
-                //let room = msg["room"];
-                Janus.log("User: "+id+" - stop talking");
-                for(let i=1; i<MAX_FEEDS; i++) {
-                    if(feeds[i] !== null && feeds[i] !== undefined && feeds[i].rfid === id) {
-                        feeds[i].talk = false;
-                    }
-                }
-                this.setState({feeds});
+                // let {feeds} = this.state;
+                // let id = msg["id"];
+                // Janus.log("User: "+id+" - stop talking");
+                // for(let i=0; i<feeds.length; i++) {
+                //     if(feeds[i] && feeds[i].id === id) {
+                //         feeds[i].talk = false;
+                //     }
+                // }
+                // this.setState({feeds});
             } else if(event === "destroyed") {
                 // The room has been destroyed
                 Janus.warn("The room has been destroyed!");
