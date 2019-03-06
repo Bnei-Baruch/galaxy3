@@ -481,9 +481,10 @@ class SDIOutUsers extends Component {
                     for(let f in feeds) {
                         let id = feeds[f]["id"];
                         let display = JSON.parse(feeds[f]["display"]);
-                        //let talk = feeds[f]["talking"];
+                        let talk = feeds[f]["talking"];
                         let streams = feeds[f]["streams"];
                         feeds[f].display = display;
+                        feeds[f].talk = talk;
                         feeds[f].question = questions[display.id] !== undefined;
                         let subst = {feed: id};
                         for (let i in streams) {
@@ -508,25 +509,25 @@ class SDIOutUsers extends Component {
                         this.subscribeTo(subscription);
                 }
             } else if(event === "talking") {
-                // let {feeds} = this.state;
-                // let id = msg["id"];
-                // Janus.log("User: "+id+" - start talking");
-                // for(let i=0; i<feeds.length; i++) {
-                //     if(feeds[i] && feeds[i].id === id) {
-                //         feeds[i].talk = true;
-                //     }
-                // }
-                // this.setState({feeds});
+                let {feeds} = this.state;
+                let id = msg["id"];
+                Janus.log("User: "+id+" - start talking");
+                for(let i=0; i<feeds.length; i++) {
+                    if(feeds[i] && feeds[i].id === id) {
+                        feeds[i].talk = true;
+                        this.setState({feeds});
+                    }
+                }
             } else if(event === "stopped-talking") {
-                // let {feeds} = this.state;
-                // let id = msg["id"];
-                // Janus.log("User: "+id+" - stop talking");
-                // for(let i=0; i<feeds.length; i++) {
-                //     if(feeds[i] && feeds[i].id === id) {
-                //         feeds[i].talk = false;
-                //     }
-                // }
-                // this.setState({feeds});
+                let {feeds} = this.state;
+                let id = msg["id"];
+                Janus.log("User: "+id+" - stop talking");
+                for(let i=0; i<feeds.length; i++) {
+                    if(feeds[i] && feeds[i].id === id) {
+                        feeds[i].talk = false;
+                        this.setState({feeds});
+                    }
+                }
             } else if(event === "destroyed") {
                 // The room has been destroyed
                 Janus.warn("The room has been destroyed!");
