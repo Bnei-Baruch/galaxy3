@@ -88,10 +88,9 @@ class ShidurGroups extends Component {
                 onlocalstream: (stream) => {
                     // The subscriber stream is recvonly, we don't expect anything here
                 },
-                onremotetrack: (track) => {
-                    if(track.kind !== "video")
-                        return;
-                    if(!track.muted)
+                onremotetrack: (track,mid,on) => {
+                    Janus.debug(" - Remote track "+mid+" is: "+on,track);
+                    if(mid !== "video" || !on || !track.muted)
                         return;
                     let stream = new MediaStream();
                     stream.addTrack(track.clone());
