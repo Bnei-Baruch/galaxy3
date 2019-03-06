@@ -325,8 +325,8 @@ class VirtualClient extends Component {
     };
 
     onMessage = (videoroom, msg, jsep, initdata) => {
-        console.log(" ::: Got a message (publisher) :::");
-        console.log(msg);
+        Janus.log(" ::: Got a message (publisher) :::");
+        Janus.log(msg);
         let event = msg["videoroom"];
         if(event !== undefined && event !== null) {
             if(event === "joined") {
@@ -341,13 +341,13 @@ class VirtualClient extends Component {
                     let list = msg["publishers"];
                     let feeds = list.filter(feeder => JSON.parse(feeder.display).role === "user");
                     let {feedStreams,users} = this.state;
-                    console.log(":: Got Pulbishers list: ", feeds);
+                    Janus.log(":: Got Pulbishers list: ", feeds);
                     if(feeds.length > 15) {
                         alert("Max users in this room is reached");
                         window.location.reload();
                     }
                     Janus.debug("Got a list of available publishers/feeds:");
-                    console.log(list);
+                    Janus.log(list);
                     let subscription = [];
                     for(let f in feeds) {
                         let id = feeds[f]["id"];
@@ -370,7 +370,6 @@ class VirtualClient extends Component {
                         });
                     }
                     this.setState({feeds,feedStreams,users});
-                    console.log(" :: SUBS: ",subscription);
                     if(subscription.length > 0)
                         this.subscribeTo(subscription);
                 }
@@ -413,7 +412,7 @@ class VirtualClient extends Component {
                     let feed = msg["publishers"];
                     let {feeds,feedStreams,users} = this.state;
                     Janus.debug("Got a list of available publishers/feeds:");
-                    console.log(feed);
+                    Janus.log(feed);
                     let subscription = [];
                     for(let f in feed) {
                         let id = feed[f]["id"];
@@ -634,7 +633,6 @@ class VirtualClient extends Component {
         let {feeds,remoteFeed,users,feedStreams} = this.state;
         for (let i=0; i<feeds.length; i++) {
             if (feeds[i].id === id) {
-                console.log(" - Remove FEED: ", feeds[i]);
                 Janus.log("Feed " + feeds[i] + " (" + id + ") has left the room, detaching");
                 //TODO: remove mids
                 delete users[feeds[i].display.id];
@@ -656,26 +654,16 @@ class VirtualClient extends Component {
     onProtocolData = (data) => {
         //TODO: Need to add transaction handle (filter and acknowledge)
         let {room,feeds,users,user} = this.state;
-        if (data.type === "question" && data.status && data.room === room && user.id !== data.user.id) {
+        if (data.type === "question" && data.room === room && user.id !== data.user.id) {
             let rfid = users[data.user.id].rfid;
             for (let i = 0; i < feeds.length; i++) {
-                if (feeds[i] !== null && feeds[i] !== undefined && feeds[i].id === rfid) {
-                    feeds[i].question = true;
-                    break
-                }
-            }
-            this.setState({feeds});
-        } else if (data.type === "question" && !data.status && data.room === room && user.id !== data.user.id) {
-            let rfid = users[data.user.id].rfid;
-            for (let i = 0; i < feeds.length; i++) {
-                if (feeds[i] !== null && feeds[i] !== undefined && feeds[i].id === rfid) {
-                    feeds[i].question = false;
+                if (feeds[i] && feeds[i].id === rfid) {
+                    feeds[i].question = data.status;
                     break
                 }
             }
             this.setState({feeds});
         }
-
     };
 
     sendDataMessage = (key,value) => {
