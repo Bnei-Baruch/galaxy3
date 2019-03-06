@@ -425,10 +425,6 @@ class ShidurUsers extends Component {
                     let feeds = list.filter(feeder => JSON.parse(feeder.display).role === "user");
                     let {feedStreams,users} = this.state[h];
                     Janus.log(":: Got Pulbishers list: ", feeds);
-                    if(feeds.length > 15) {
-                        alert("Max users in this room is reached");
-                        window.location.reload();
-                    }
                     Janus.debug("Got a list of available publishers/feeds:");
                     let subscription = [];
                     for(let f in feeds) {
