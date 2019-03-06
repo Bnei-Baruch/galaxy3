@@ -13,7 +13,7 @@ import {
 
 export const initJanus = (cb,er,mlt) => {
     Janus.init({
-        debug: ["error"],
+        debug: ["log","error"],
         callback: () => {
             let janus = new Janus({
                 server: mlt ? JANUS_SRV_GXY : JANUS_SRV_VRT,
@@ -369,7 +369,7 @@ export const geoInfo = (url,cb) => fetch(`${url}`)
 //     })
 // };
 
-export const getPublisherInfo = (session, handle,cb,mlt) => {
+export const getPublisherInfo = (session,handle,cb,mlt) => {
     if(handle === null || handle === undefined)
         return;
     let JANUS_ADMIN = mlt ? JANUS_ADMIN_GXY : JANUS_ADMIN_VRT;
