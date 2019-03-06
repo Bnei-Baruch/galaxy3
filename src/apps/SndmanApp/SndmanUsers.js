@@ -492,7 +492,6 @@ class SndmanUsers extends Component {
 
                     // Filter service and camera muted feeds
                     let feeds = list.filter(feeder => JSON.parse(feeder.display).role === "user");
-                    //let feeds = list.filter(feeder => JSON.parse(feeder.display).role === "user" && !cammuteds.hasOwnProperty(JSON.parse(feeder.display).id));
 
                     Janus.log(":: Got Pulbishers list: ", feeds);
                     Janus.debug("Got a list of available publishers/feeds:");
@@ -504,6 +503,7 @@ class SndmanUsers extends Component {
                         let talk = feeds[f]["talking"];
                         let streams = feeds[f]["streams"];
                         feeds[f].display = display;
+                        feeds[f].talk = talk;
                         feeds[f].question = questions[display.id] !== undefined;
                         let subst = {feed: id};
                         for (let i in streams) {
@@ -526,10 +526,9 @@ class SndmanUsers extends Component {
             } else if(event === "talking") {
                 let {feeds} = this.state;
                 let id = msg["id"];
-                //let room = msg["room"];
                 Janus.log("User: "+id+" - start talking");
-                for(let i=1; i<MAX_FEEDS; i++) {
-                    if(feeds[i] !== null && feeds[i] !== undefined && feeds[i].rfid === id) {
+                for(let i=0; i<feeds.length; i++) {
+                    if(feeds[i] && feeds[i].id === id) {
                         feeds[i].talk = true;
                     }
                 }
@@ -537,10 +536,9 @@ class SndmanUsers extends Component {
             } else if(event === "stopped-talking") {
                 let {feeds} = this.state;
                 let id = msg["id"];
-                //let room = msg["room"];
                 Janus.log("User: "+id+" - stop talking");
-                for(let i=1; i<MAX_FEEDS; i++) {
-                    if(feeds[i] !== null && feeds[i] !== undefined && feeds[i].rfid === id) {
+                for(let i=0; i<feeds.length; i++) {
+                    if(feeds[i] && feeds[i].id === id) {
                         feeds[i].talk = false;
                     }
                 }
