@@ -1348,12 +1348,14 @@ class ShidurAdmin extends Component {
 
     getUserInfo = (feed) => {
         let {display,id,talking} = feed;
-        this.setState({feed_id: id, feed_user: display, feed_talk: talking, switch_mode: true});
+        //this.setState({feed_id: id, feed_user: display, feed_talk: talking, switch_mode: true});
+        this.setState({feed_id: id, feed_user: display, feed_talk: talking});
         Janus.log(display,id,talking);
         //this.switchFeed(id);
     };
 
     getFeedInfo = () => {
+        return;
         let {session,handle} = this.state.feed_user;
         getPublisherInfo(session,handle,json => {
                 Janus.log(":: Publisher info", json);
@@ -1407,7 +1409,7 @@ class ShidurAdmin extends Component {
               let qt = quistions_queue.find(f => f.user.id === feed.display.id);
               return (
                   <Table.Row active={feed.id === this.state.feed_id} key={i} onClick={() => this.getUserInfo(feed)} >
-                      <Table.Cell width={5}>{qt ? q : ""}{feed.display.name}</Table.Cell>
+                      <Table.Cell width={5}>{qt ? q : ""}{feed.display.display}</Table.Cell>
                       <Table.Cell width={1}>{fw ? v : ""}</Table.Cell>
                   </Table.Row>
               )

@@ -91,16 +91,17 @@ class SDIOutUsers extends Component {
             }
         } else if(data.type === "camera" && data.status) {
             let {cammuteds,feedStreams} = this.state;
+            if(cammuteds[data.user.id]) {
+                delete cammuteds[data.user.id];
+                this.setState({cammuteds});
+            }
             // User is turn on his camera we can show him
             if(room === data.room && users[data.user.id]) {
                 let rfid = users[data.user.id].rfid;
                 for (let i=0; i<feeds.length; i++) {
                     if (feeds[i].id === rfid) {
-                        if(cammuteds[data.user.id]) {
-                            delete cammuteds[data.user.id];
-                        }
                         feeds[i].camera = true;
-                        this.setState({feeds,cammuteds},() => {
+                        this.setState({feeds},() => {
                             let remotevideo = this.refs["remoteVideo" + rfid];
                             Janus.attachMediaStream(remotevideo, feedStreams[rfid].stream);
                         });
