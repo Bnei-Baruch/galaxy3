@@ -259,9 +259,6 @@ class SndmanUsers extends Component {
                     // Which publisher are we getting on this mid?
                     let {mids,feedStreams} = this.state;
                     let feed = mids[mid].feed_id;
-                    if(feedStreams[feed].stream) {
-                        return
-                    }
                     Janus.log(" >> This track is coming from feed " + feed + ":", mid);
                     if(!on) {
                         Janus.log(" :: Going to stop track :: " + feed + ":", mid);
@@ -269,6 +266,9 @@ class SndmanUsers extends Component {
                         track.stop();
                         //FIXME: does we really need to stop all track for feed id?
                         return;
+                    }
+                    if(feedStreams[feed].stream) {
+                        return
                     }
                     // If we're here, a new track was added
                     if(track.kind === "audio") {
