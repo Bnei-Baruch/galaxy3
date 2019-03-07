@@ -80,7 +80,7 @@ class GroupClient extends Component {
             setTimeout(() => {
                 this.initGalaxy(user,er);
             }, 5000);
-        });
+        }, true);
     };
 
     initDevices = (video) => {
@@ -199,25 +199,18 @@ class GroupClient extends Component {
             onmessage: (msg, jsep) => {
                 this.onMessage(this.state.videoroom, msg, jsep, false);
             },
-            onlocalstream: (mystream) => {
+            onlocaltrack: (track, on) => {
                 Janus.debug(" ::: Got a local stream :::");
-                let {videoroom} = this.state;
-                Janus.log(mystream);
-                // Janus.log(" -- GOT AUDIO TRACK: ", mystream.getAudioTracks()[0])
-                // mystream.getAudioTracks()[0].enabled = false;
-                //videoroom.muteAudio();
-                this.setState({mystream});
-                //let myvideo = this.refs.localVideo;
-                //Janus.attachMediaStream(myvideo, mystream);
-                if(videoroom.webrtcStuff.pc.iceConnectionState !== "completed" &&
-                    videoroom.webrtcStuff.pc.iceConnectionState !== "connected") {
-                    Janus.debug("Publishing... ");
-                }
-                let videoTracks = mystream.getVideoTracks();
-                if(videoTracks === null || videoTracks === undefined || videoTracks.length === 0) {
-                    Janus.debug("No webcam");
-                } else {
-                    Janus.debug("Yes webcam");
+                if(on) {
+                    let {videoroom} = this.state;
+                    let mystream = new MediaStream();
+                    mystream.addTrack(track.clone());
+                    Janus.log(mystream);
+                    this.setState({mystream});
+                    if(videoroom.webrtcStuff.pc.iceConnectionState !== "completed" &&
+                        videoroom.webrtcStuff.pc.iceConnectionState !== "connected") {
+                        Janus.debug("Publishing... ");
+                    }
                 }
             },
             onremotestream: (stream) => {
