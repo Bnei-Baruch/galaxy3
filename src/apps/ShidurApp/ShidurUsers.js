@@ -206,15 +206,15 @@ class ShidurUsers extends Component {
                     let {mids,feedStreams} = this.state[h];
                     let feed = mids[mid].feed_id;
                     Janus.log(" >> This track is coming from feed " + feed + ":", mid);
-                    if(feedStreams[feed].stream) {
-                        return
-                    }
                     if(!on) {
                         Janus.log(" :: Going to stop track :: " + feed + ":", mid);
                         //FIXME: Remove callback for audio track does not come
                         track.stop();
                         //FIXME: does we really need to stop all track for feed id?
                         return;
+                    }
+                    if(feedStreams[feed].stream) {
+                        return
                     }
                     // If we're here, a new track was added
                     if(track.kind === "audio") {

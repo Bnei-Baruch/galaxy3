@@ -13,7 +13,7 @@ import {
 
 export const initJanus = (cb,er,mlt) => {
     Janus.init({
-        debug: ["log","error"],
+        debug: ["error"],
         callback: () => {
             let janus = new Janus({
                 server: mlt ? JANUS_SRV_GXY : JANUS_SRV_VRT,

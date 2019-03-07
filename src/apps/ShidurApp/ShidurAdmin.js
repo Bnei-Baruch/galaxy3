@@ -292,9 +292,6 @@ class ShidurAdmin extends Component {
                             let stream = streams[i];
                             stream["id"] = id;
                             stream["display"] = display;
-                            if(stream.type === "video") {
-                                subst.mid = stream.mid;
-                            }
                         }
                         feedStreams[id] = {id, display, streams};
                         users[display.id] = display;
@@ -359,9 +356,6 @@ class ShidurAdmin extends Component {
                             let stream = streams[i];
                             stream["id"] = id;
                             stream["display"] = display;
-                            if(stream.type === "video") {
-                                subst.mid = stream.mid;
-                            }
                         }
                         feedStreams[id] = {id, display, streams};
                         users[display.id] = display;
@@ -486,40 +480,41 @@ class ShidurAdmin extends Component {
                 },
                 onremotetrack: (track, mid, on) => {
                     Janus.log(" ::: Got a remote track event ::: (remote feed)");
-                    Janus.log("Remote track (mid=" + mid + ") " + (on ? "added" : "removed") + ":", track);
+                    console.log("Remote track (mid=" + mid + ") " + (on ? "added" : "removed") + ":", track);
                     // Which publisher are we getting on this mid?
                     let {mids,feedStreams} = this.state;
                     let feed = mids[mid].feed_id;
-                    if(feedStreams[feed].stream) {
-                        return
-                    }
                     Janus.log(" >> This track is coming from feed " + feed + ":", mid);
                     if(!on) {
-                        Janus.log(" :: Going to stop track :: " + feed + ":", mid);
+                        console.log(" :: Going to stop track :: " + feed + ":", mid);
                         //FIXME: Remove callback for audio track does not come
                         track.stop();
                         //FIXME: does we really need to stop all track for feed id?
                         return;
                     }
                     // If we're here, a new track was added
-                    if(track.kind === "audio") {
+                    if(track.kind === "audio" && !feedStreams[feed].audio_stream) {
                         // New audio track: create a stream out of it, and use a hidden <audio> element
                         let stream = new MediaStream();
                         stream.addTrack(track.clone());
-                        Janus.log("Created remote audio stream:", stream);
+                        console.log("Created remote audio stream:", stream);
+                        feedStreams[feed].audio_stream = stream;
+                        this.setState({feedStreams});
                         let remoteaudio = this.refs["remoteAudio" + feed];
                         Janus.attachMediaStream(remoteaudio, stream);
-                    } else if(track.kind === "video") {
+                    } else if(track.kind === "video" && !feedStreams[feed].video_stream) {
                         // New video track: create a stream out of it
                         let stream = new MediaStream();
                         stream.addTrack(track.clone());
-                        Janus.log("Created remote video stream:", stream);
-                        feedStreams[feed].stream = stream;
+                        console.log("Created remote video stream:", stream);
+                        feedStreams[feed].video_stream = stream;
                         this.setState({feedStreams});
                         let remotevideo = this.refs["remoteVideo" + feed];
                         Janus.attachMediaStream(remotevideo, stream);
+                    } else if(track.kind === "data") {
+                        console.log("Its data channel");
                     } else {
-                        Janus.log("Created remote data channel");
+                        console.log(" :: Track already attached: ",track);
                     }
                 },
                 ondataopen: (data) => {
@@ -976,12 +971,12 @@ class ShidurAdmin extends Component {
         videoroom.createOffer(
             {
                 // Add data:true here if you want to publish datachannels as well
-                media: { audioRecv: false, videoRecv: false, audioSend: useAudio, videoSend: true, video: "lowres" },
+                media: { audio: false, video: false, data: true },
                 simulcast: false,
                 success: (jsep) => {
                     Janus.debug("Got publisher SDP!");
                     Janus.debug(jsep);
-                    let publish = { "request": "configure", "audio": useAudio, "video": true };
+                    let publish = { "request": "configure", "audio": false, "video": false, "data": true };
                     videoroom.send({"message": publish, "jsep": jsep});
                 },
                 error: (error) => {
