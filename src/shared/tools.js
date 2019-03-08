@@ -1,14 +1,23 @@
 import {Janus} from "../lib/janus";
-import {JANUS_ADMIN_GXY, JANUS_ADMIN_VRT, JANUS_SRV_GXY, JANUS_SRV_VRT, ADMIN_SECRET, STUN_SERVER, WFDB_STATE, WFRP_STATE} from "./consts";
+import {
+    JANUS_ADMIN_GXY,
+    JANUS_ADMIN_VRT,
+    JANUS_SRV_VRT,
+    JANUS_SRV_GXY,
+    ADMIN_SECRET,
+    STUN_SERVER,
+    WFDB_STATE,
+    WFRP_STATE
+} from "./consts";
 
 
 export const initJanus = (cb,er,mlt) => {
     Janus.init({
-        debug: ["log","error"],
+        debug: ["error"],
         callback: () => {
             let JANUS_SERVER = mlt ? JANUS_SRV_GXY : JANUS_SRV_VRT;
             let janus = new Janus({
-                server: JANUS_SERVER,
+                server: mlt ? JANUS_SRV_GXY : JANUS_SRV_VRT,
                 iceServers: [{urls: STUN_SERVER}],
                 success: () => {
                     Janus.log(" :: Connected to JANUS");
@@ -361,7 +370,7 @@ export const geoInfo = (url,cb) => fetch(`${url}`)
 //     })
 // };
 
-export const getPublisherInfo = (session, handle,cb,mlt) => {
+export const getPublisherInfo = (session,handle,cb,mlt) => {
     if(handle === null || handle === undefined)
         return;
     let JANUS_ADMIN = mlt ? JANUS_ADMIN_GXY : JANUS_ADMIN_VRT;

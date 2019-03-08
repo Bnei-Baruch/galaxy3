@@ -88,7 +88,12 @@ class ShidurGroups extends Component {
                 onlocalstream: (stream) => {
                     // The subscriber stream is recvonly, we don't expect anything here
                 },
-                onremotestream: (stream) => {
+                onremotetrack: (track,mid,on) => {
+                    Janus.debug(" - Remote track "+mid+" is: "+on,track);
+                    if(mid !== "video" || !on || !track.muted)
+                        return;
+                    let stream = new MediaStream();
+                    stream.addTrack(track.clone());
                     Janus.debug("Remote feed #" + pre);
                     let switchvideo = program ? this.refs["programVideo" + i] : this.refs.prevewVideo;
                     Janus.log(" Attach remote stream on video: "+i);

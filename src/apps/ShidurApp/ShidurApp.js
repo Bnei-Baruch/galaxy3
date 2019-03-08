@@ -94,7 +94,7 @@ class ShidurApp extends Component {
             setTimeout(() => {
                 window.location.reload();
             }, 3000);
-        });
+        }, true);
     };
 
     initVideoRoom = () => {
