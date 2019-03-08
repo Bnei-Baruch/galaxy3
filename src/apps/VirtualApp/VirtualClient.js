@@ -53,6 +53,7 @@ class VirtualClient extends Component {
         selftest: "Self Audio Test",
         tested: false,
         support: false,
+        women: window.location.pathname === "/women/"
     };
 
     componentDidMount() {
@@ -163,12 +164,12 @@ class VirtualClient extends Component {
     };
 
     getRoomList = () => {
-        const {videoroom} = this.state;
+        const {videoroom, women} = this.state;
         if (videoroom) {
             videoroom.send({message: {request: "list"},
                 success: (data) => {
                     Janus.log(" :: Get Rooms List: ", data.list);
-                    let filter = data.list.filter(r => !/W\./i.test(r.description));
+                    let filter = data.list.filter(r => /W\./i.test(r.description) === women);
                     filter.sort((a, b) => {
                         // if (a.num_participants > b.num_participants) return -1;
                         // if (a.num_participants < b.num_participants) return 1;
@@ -247,8 +248,8 @@ class VirtualClient extends Component {
             onlocaltrack: (track, on) => {
                 Janus.log(" ::: Got a local track event :::");
                 Janus.log("Local track " + (on ? "added" : "removed") + ":", track);
-                let {videoroom,} = this.state;
-                videoroom.muteAudio();
+                let {videoroom,women} = this.state;
+                if(!women) videoroom.muteAudio();
                 this.setState({mystream: track});
             },
             onremotestream: (stream) => {
@@ -679,7 +680,7 @@ class VirtualClient extends Component {
         setTimeout(() => {
             this.setState({delay: false});
         }, 3000);
-        let {janus, videoroom, selected_room, user, username_value} = this.state;
+        let {janus, videoroom, selected_room, user, username_value, women} = this.state;
         localStorage.setItem("room", selected_room);
         //This name will see other users
         user.display = username_value || user.name;
@@ -702,7 +703,7 @@ class VirtualClient extends Component {
             } else if(ondata.type === "joined") {
                 let register = { "request": "join", "room": selected_room, "ptype": "publisher", "display": JSON.stringify(user) };
                 videoroom.send({"message": register});
-                this.setState({user, muted: true, room: selected_room});
+                this.setState({user, muted: !women, room: selected_room});
                 this.chat.initChatRoom(user,selected_room);
             }
             this.onProtocolData(ondata);
@@ -779,7 +780,7 @@ class VirtualClient extends Component {
 
     render() {
 
-        const { rooms,room,audio_devices,video_devices,video_device,audio_device,i,muted,cammuted,delay,mystream,selected_room,count,question,selftest,tested} = this.state;
+        const { rooms,room,audio_devices,video_devices,video_device,audio_device,i,muted,cammuted,delay,mystream,selected_room,count,question,selftest,tested,women} = this.state;
         const width = "134";
         const height = "100";
         const autoPlay = true;
@@ -900,7 +901,7 @@ class VirtualClient extends Component {
                             <Icon color={tested ? 'green' : 'red'} name="sound" />
                             {selftest}
                         </Menu.Item>
-                        <Menu.Item disabled={!mystream} onClick={this.micMute} className="mute-button">
+                        <Menu.Item disabled={women || !mystream} onClick={this.micMute} className="mute-button">
                             <canvas className={muted ? 'hidden' : 'vumeter'} ref="canvas1" id="canvas1" width="15" height="35" />
                             <Icon color={muted ? "red" : ""} name={!muted ? "microphone" : "microphone slash"} />
                             {!muted ? "Mute" : "Unmute"}

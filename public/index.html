@@ -19,9 +19,16 @@
       work correctly both with client-side routing and a non-root public URL.
       Learn how to configure a non-root public URL by running `npm run build`.
     -->
-    <title>Shidur Admin</title>
-    <!--<script>if(window.location.protocol === "http:") window.location = "https://v4g.kbb1.com/gxy";</script>-->
-    <!--<script>if(window.location.protocol === "http:") window.location = "https://galaxy.kli.one/stream";</script>-->
+    <title>Galaxy</title>
+    <script>
+      if(window.location.pathname === "/women/") document.title = "Women TEN";
+      if(window.location.pathname === "/group/") document.title = "Galaxy Group";
+      if(window.location.pathname === "/user/") document.title = "Virtual TEN";
+      if(window.location.pathname === "/sndman/") document.title = "Galaxy SoundMan";
+      if(window.location.pathname === "/sdiout/") document.title = "Galaxy SDI Out";
+      if(window.location.pathname === "/shidur/") document.title = "Galaxy Shidur";
+      if(window.location.pathname === "/admin/") document.title = "Galaxy Admin";
+    </script>
   </head>
   <body>
     <noscript>
