@@ -16,6 +16,7 @@ class ShidurAdmin extends Component {
         bitrate: 150000,
         chatroom: null,
         forwarders: [],
+        groups: [],
         janus: null,
         questions: {},
         quistions_queue: [],
@@ -273,7 +274,12 @@ class ShidurAdmin extends Component {
                     let list = msg["publishers"];
 
                     // Filter service and camera muted feeds
-                    let feeds = list.filter(feeder => JSON.parse(feeder.display).role === "user");
+                    let fr = this.state.current_room === 1234 ? "group" : "user";
+                    let feeds = list.filter(feeder => JSON.parse(feeder.display).role === fr);
+                    feeds.sort((a, b) => {
+                        if (JSON.parse(a.display).username > JSON.parse(b.display).username) return 1;
+                        if (JSON.parse(a.display).username < JSON.parse(b.display).username) return -1;
+                    });
 
                     Janus.log(":: Got Pulbishers list: ", feeds);
                     Janus.debug("Got a list of available publishers/feeds:");
@@ -299,7 +305,7 @@ class ShidurAdmin extends Component {
                         subscription.push(subst);
                     }
                     this.setState({feeds,feedStreams,users});
-                    if(subscription.length > 0)
+                    if(subscription.length > 0 && fr === "user")
                         this.subscribeTo(subscription);
                 }
             } else if(event === "talking") {
@@ -343,10 +349,11 @@ class ShidurAdmin extends Component {
                     Janus.debug("Got a list of available publishers/feeds:");
                     Janus.log(feed);
                     let subscription = [];
+                    let fr = this.state.current_room === 1234 ? "group" : "user";
                     for(let f in feed) {
                         let id = feed[f]["id"];
                         let display = JSON.parse(feed[f]["display"]);
-                        if(display.role !== "user")
+                        if(display.role !== fr)
                             return;
                         let talk = feed[f]["talking"];
                         let streams = feed[f]["streams"];
@@ -364,7 +371,7 @@ class ShidurAdmin extends Component {
                     }
                     feeds.push(feed[0]);
                     this.setState({feeds,feedStreams,users});
-                    if(subscription.length > 0)
+                    if(subscription.length > 0 && fr === "user")
                         this.subscribeTo(subscription);
                 } else if(msg["leaving"] !== undefined && msg["leaving"] !== null) {
                     // One of the publishers has gone away?
@@ -493,7 +500,7 @@ class ShidurAdmin extends Component {
                         return;
                     }
                     // If we're here, a new track was added
-                    if(track.kind === "audio" && !feedStreams[feed].audio_stream) {
+                    if(track.kind === "audio") {
                         // New audio track: create a stream out of it, and use a hidden <audio> element
                         let stream = new MediaStream();
                         stream.addTrack(track.clone());
@@ -502,7 +509,7 @@ class ShidurAdmin extends Component {
                         this.setState({feedStreams});
                         let remoteaudio = this.refs["remoteAudio" + feed];
                         Janus.attachMediaStream(remoteaudio, stream);
-                    } else if(track.kind === "video" && !feedStreams[feed].video_stream) {
+                    } else if(track.kind === "video") {
                         // New video track: create a stream out of it
                         let stream = new MediaStream();
                         stream.addTrack(track.clone());
@@ -950,18 +957,29 @@ class ShidurAdmin extends Component {
     //     }
     // };
 
+    // switchFeed = (id) => {
+    //     let {switchFeed} = this.state;
+    //     if(!switchFeed) {
+    //         this.newSwitchFeed(id,false);
+    //     } else {
+    //         let switchfeed = {"request" : "switch", "feed" : id, "audio" : true, "video" : true, "data" : false};
+    //         this.state.switchFeed.send ({"message": switchfeed,
+    //             success: () => {
+    //                 Janus.log(" :: Switch Feed: ", id);
+    //             }
+    //         })
+    //     }
+    // };
+
     switchFeed = (id) => {
-        let {switchFeed} = this.state;
-        if(!switchFeed) {
-            this.newSwitchFeed(id,false);
-        } else {
-            let switchfeed = {"request" : "switch", "feed" : id, "audio" : true, "video" : true, "data" : false};
-            this.state.switchFeed.send ({"message": switchfeed,
-                success: () => {
-                    Janus.log(" :: Switch Feed: ", id);
-                }
-            })
-        }
+        let {remoteFeed} = this.state;
+        let streams = [{feed: id, mid: "1", sub_mid: "1"}]
+        let switchfeed = {"request" : "switch", streams};
+        remoteFeed.send ({"message": switchfeed,
+            success: (cb) => {
+                Janus.log(" :: Switch Feed: ", id, cb);
+            }
+        })
     };
 
     publishOwnFeed = (useAudio) => {
@@ -1342,11 +1360,25 @@ class ShidurAdmin extends Component {
     };
 
     getUserInfo = (feed) => {
+        Janus.log(" :: Selected feed: ",feed);
         let {display,id,talking} = feed;
+        let {remoteFeed} =  this.state;
         //this.setState({feed_id: id, feed_user: display, feed_talk: talking, switch_mode: true});
         this.setState({feed_id: id, feed_user: display, feed_talk: talking});
         Janus.log(display,id,talking);
-        //this.switchFeed(id);
+
+        if(this.state.groups.length > 0) {
+            let pre_feed =  this.state.groups[0].id;
+            let unsubscribe = {request: "unsubscribe", streams: [{ feed: pre_feed }]};
+            if(remoteFeed !== null)
+                remoteFeed.send({ message: unsubscribe });
+        }
+
+        let groups = [];
+        groups.push(feed);
+        this.setState({groups});
+        let subscription = [{feed: id}];
+        this.subscribeTo(subscription);
     };
 
     getFeedInfo = () => {
@@ -1422,8 +1454,10 @@ class ShidurAdmin extends Component {
           );
       });
 
-      let videos = this.state.feeds.map((feed) => {
-          if(feed && current_room !== 1234) {
+      let view = current_room !== 1234 ? "feeds" : "groups";
+
+      let videos = this.state[view].map((feed) => {
+          if(feed) {
               let id = feed.id;
               let talk = feed.talk;
               return (<div className="video"
