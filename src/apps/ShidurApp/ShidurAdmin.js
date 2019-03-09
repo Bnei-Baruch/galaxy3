@@ -454,8 +454,11 @@ class ShidurAdmin extends Component {
                         let {mids} = this.state;
                         for(let i in msg["streams"]) {
                             let mindex = msg["streams"][i]["mid"];
-                            //let feed_id = msg["streams"][i]["feed_id"];
                             mids[mindex] = msg["streams"][i];
+                            if(msg["streams"][i]["feed_display"]) {
+                                let display = JSON.parse(msg["streams"][i]["feed_display"]);
+                                mids[mindex].feed_user = display;
+                            }
                         }
                         this.setState({mids});
                     }
@@ -973,7 +976,11 @@ class ShidurAdmin extends Component {
 
     switchFeed = (id) => {
         let {remoteFeed} = this.state;
-        let streams = [{feed: id, mid: "1", sub_mid: "1"}]
+        let streams = [
+            {feed: id, mid: "0", sub_mid: "0"},
+            {feed: id, mid: "1", sub_mid: "1"},
+            {feed: id, mid: "2", sub_mid: "2"},
+            ]
         let switchfeed = {"request" : "switch", streams};
         remoteFeed.send ({"message": switchfeed,
             success: (cb) => {
@@ -1367,18 +1374,29 @@ class ShidurAdmin extends Component {
         this.setState({feed_id: id, feed_user: display, feed_talk: talking});
         Janus.log(display,id,talking);
 
-        if(this.state.groups.length > 0) {
-            let pre_feed =  this.state.groups[0].id;
-            let unsubscribe = {request: "unsubscribe", streams: [{ feed: pre_feed }]};
-            if(remoteFeed !== null)
-                remoteFeed.send({ message: unsubscribe });
+        if(this.state.groups.length === 0) {
+            let groups = [];
+            groups.push(feed);
+            this.setState({groups});
+            let subscription = [{feed: id}];
+            this.subscribeTo(subscription);
+        } else {
+            this.switchFeed(id);
         }
 
-        let groups = [];
-        groups.push(feed);
-        this.setState({groups});
-        let subscription = [{feed: id}];
-        this.subscribeTo(subscription);
+        // if(this.state.groups.length > 0) {
+        //     let pre_feed =  this.state.groups[0].id;
+        //     let unsubscribe = {request: "unsubscribe", streams: [{ feed: pre_feed }]};
+        //     if(remoteFeed !== null) {
+        //         remoteFeed.send({ message: unsubscribe });
+        //     }
+        // }
+        //
+        // let groups = [];
+        // groups.push(feed);
+        // this.setState({groups});
+        // let subscription = [{feed: id}];
+        // this.subscribeTo(subscription);
     };
 
     getFeedInfo = () => {
