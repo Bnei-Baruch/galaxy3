@@ -34,7 +34,7 @@ class ShidurGroups extends Component {
                     pre.simulcastStarted = false;
                     Janus.log("Plugin attached! (" + pre.getPlugin() + ", id=" + pre.getId() + ")");
                     Janus.log("  -- This is a subscriber");
-                    let listen = { "request": "join", "room": 1234, "ptype": "subscriber", "feed": id };
+                    let listen = { "request": "join", "room": 1234, "ptype": "subscriber", streams: [{feed: id, mid: "1"}] };
                     pre.send({"message": listen});
                     if(program) {
                         let {pr1} = this.props;
@@ -90,7 +90,14 @@ class ShidurGroups extends Component {
                 },
                 onremotetrack: (track,mid,on) => {
                     Janus.debug(" - Remote track "+mid+" is: "+on,track);
-                    if(mid !== "video" || !on || !track.muted)
+                    if(!on) {
+                        console.log(" :: Going to stop track :: " + track + ":", mid);
+                        //FIXME: Remove callback for audio track does not come
+                        track.stop();
+                        //FIXME: does we really need to stop all track for feed id?
+                        return;
+                    }
+                    if(track.kind !== "video" || !on || !track.muted)
                         return;
                     let stream = new MediaStream();
                     stream.addTrack(track.clone());
@@ -113,7 +120,11 @@ class ShidurGroups extends Component {
         if(!this.state.pre) {
             this.newSwitchFeed(id,false);
         } else {
-            let switchfeed = {"request": "switch", "feed": id, "audio": true, "video": true, "data": false};
+            //let switchfeed = {"request": "switch", "feed": id, "audio": true, "video": true, "data": false};
+            let streams = [
+                {feed: id, mid: "1", sub_mid: "0"},
+            ];
+            let switchfeed = {"request": "switch", streams};
             this.state.pre.send ({"message": switchfeed,
                 success: () => {
                     Janus.log(" :: Preview Switch Feed to: ", display);
@@ -245,7 +256,11 @@ class ShidurGroups extends Component {
             this.sdiAction("switch" , false, i, feed);
         } else {
             console.log(" :: Switch handle! - " + feed.id);
-            let switchfeed = {"request": "switch", "feed": feed.id, "audio": true, "video": true, "data": false};
+            //let switchfeed = {"request": "switch", "feed": feed.id, "audio": true, "video": true, "data": false};
+            let streams = [
+                {feed: feed.id, mid: "1", sub_mid: "0"},
+            ];
+            let switchfeed = {"request": "switch", streams};
             pr1[i].send ({"message": switchfeed,
                 success: () => {
                     Janus.log(" :: Next Switch Feed to: ", feed.display);
@@ -411,7 +426,7 @@ class ShidurGroups extends Component {
                          muted={muted}
                          playsInline={true}/>
                   <Button className='next_button'
-                          disabled={feeds.length < 13}
+                          disabled={feeds.length < 0}
                           size='mini'
                           color='green'
                           icon={pre_feed ? 'arrow up' : 'share'}
@@ -448,7 +463,7 @@ class ShidurGroups extends Component {
                   </div>
               </Segment>
               <Button className='fours_button'
-                      disabled={feeds.length < 13}
+                      disabled={feeds.length < 0}
                       attached='bottom'
                       color='blue'
                       size='mini'

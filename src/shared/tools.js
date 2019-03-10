@@ -15,7 +15,6 @@ export const initJanus = (cb,er,mlt) => {
     Janus.init({
         debug: ["log","error"],
         callback: () => {
-            let JANUS_SERVER = mlt ? JANUS_SRV_GXY : JANUS_SRV_VRT;
             let janus = new Janus({
                 server: mlt ? JANUS_SRV_GXY : JANUS_SRV_VRT,
                 iceServers: [{urls: STUN_SERVER}],
