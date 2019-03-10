@@ -212,7 +212,7 @@ class ShidurAdmin extends Component {
                 Janus.log("Plugin attached! (" + videoroom.getPlugin() + ", id=" + videoroom.getId() + ")");
                 Janus.log("  -- This is a publisher/manager");
                 let {user} = this.state;
-                this.setState({videoroom, remoteFeed: null});
+                this.setState({videoroom, remoteFeed: null, groups: []});
 
                 if(roomid) {
                     this.listForward(roomid);
@@ -471,11 +471,11 @@ class ShidurAdmin extends Component {
                                 jsep: jsep,
                                 // Add data:true here if you want to subscribe to datachannels as well
                                 // (obviously only works if the publisher offered them in the first place)
-                                media: { audioSend: false, videoSend: false },	// We want recvonly audio/video
+                                media: { audioSend: false, videoSend: false, data: false},	// We want recvonly audio/video
                                 success: (jsep) => {
                                     Janus.debug("Got SDP!");
                                     Janus.debug(jsep);
-                                    let body = { request: "start", room: this.state.current_room };
+                                    let body = { request: "start", room: this.state.current_room, data: false };
                                     this.state.remoteFeed.send({ message: body, jsep: jsep });
                                 },
                                 error: (error) => {
@@ -996,12 +996,12 @@ class ShidurAdmin extends Component {
         videoroom.createOffer(
             {
                 // Add data:true here if you want to publish datachannels as well
-                media: { audio: false, video: false, data: true },
+                media: { audio: false, video: false, data: false },
                 simulcast: false,
                 success: (jsep) => {
                     Janus.debug("Got publisher SDP!");
                     Janus.debug(jsep);
-                    let publish = { "request": "configure", "audio": false, "video": false, "data": true };
+                    let publish = { "request": "configure", "audio": false, "video": false, "data": false };
                     videoroom.send({"message": publish, "jsep": jsep});
                 },
                 error: (error) => {
@@ -1378,7 +1378,7 @@ class ShidurAdmin extends Component {
             let groups = [];
             groups.push(feed);
             this.setState({groups});
-            let subscription = [{feed: id}];
+            let subscription = [{feed: id, mid: "0"},{feed: id, mid: "1"}];
             this.subscribeTo(subscription);
         } else {
             this.switchFeed(id);
