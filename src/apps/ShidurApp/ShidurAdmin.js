@@ -1014,10 +1014,13 @@ class ShidurAdmin extends Component {
     getUserInfo = (feed) => {
         Janus.log(" :: Selected feed: ",feed);
         let {display,id,talking} = feed;
-        let {remoteFeed} =  this.state;
+        let {current_room} =  this.state;
         //this.setState({feed_id: id, feed_user: display, feed_talk: talking, switch_mode: true});
         this.setState({feed_id: id, feed_user: display, feed_talk: talking});
         Janus.log(display,id,talking);
+
+        if(current_room !== 1234)
+            return;
 
         if(this.state.groups.length === 0) {
             let groups = [];
@@ -1063,7 +1066,7 @@ class ShidurAdmin extends Component {
 
   render() {
 
-      const { bitrate,rooms,current_room,switch_mode,user,feeds,i,messages,description,roomid,root,forwarders,feed_rtcp,feed_talk,quistions_queue } = this.state;
+      const { bitrate,rooms,current_room,switch_mode,user,feeds,feed_id,i,messages,description,roomid,root,forwarders,feed_rtcp,feed_talk,quistions_queue } = this.state;
       const width = "134";
       const height = "100";
       const autoPlay = true;
@@ -1126,11 +1129,12 @@ class ShidurAdmin extends Component {
           if(feed) {
               let id = feed.id;
               let talk = feed.talk;
+              let selected = id === feed_id && current_room !== 1234;
               return (<div className="video"
                            key={"v" + id}
                            ref={"video" + id}
                            id={"video" + id}>
-                  <div className={classNames('video__overlay', {'talk' : talk})} />
+                  <div className={classNames('video__overlay', {'talk' : talk}, {'selected' : selected})} />
                   <video key={id}
                          ref={"remoteVideo" + id}
                          id={"remoteVideo" + id}
@@ -1145,7 +1149,7 @@ class ShidurAdmin extends Component {
                       id={"remoteAudio" + id}
                       autoPlay={autoPlay}
                       controls={controls}
-                      playsinline={true}/>
+                      playsInline={true}/>
               </div>);
           }
           return true;

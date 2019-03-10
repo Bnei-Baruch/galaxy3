@@ -94,6 +94,9 @@ $exactly-selector: _build-quantity-selector($selector-append, $selector);
         &.talk{
             border:4px solid rgba(yellow,.6);
         }
+        &.selected{
+            border:4px solid rgba(red,.6);
+        }
     }
   .question {
     &:before {
