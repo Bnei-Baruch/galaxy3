@@ -100,7 +100,7 @@ class SndmanApp extends Component {
             setTimeout(() => {
                 window.location.reload();
             }, 1000);
-        });
+        }, true);
     };
 
     initVideoRoom = () => {

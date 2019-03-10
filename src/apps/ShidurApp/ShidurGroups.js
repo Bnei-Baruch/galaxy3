@@ -315,6 +315,7 @@ class ShidurGroups extends Component {
             let {disabled_groups,feeds,users} = this.props;
             for(let i = 0; i < disabled_groups.length; i++) {
                 if(JSON.parse(disabled_groups[i].display).id === JSON.parse(data.display).id) {
+                    //TODO: check if we got question while feed was disable
                     disabled_groups.splice(i, 1);
                     feeds.push(data);
                     let user = JSON.parse(data.display);

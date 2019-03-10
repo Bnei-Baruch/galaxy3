@@ -72,7 +72,7 @@ class SDIOutApp extends Component {
             setTimeout(() => {
                 window.location.reload();
             }, 1000);
-        });
+        }, true);
     };
 
     componentWillUnmount() {
