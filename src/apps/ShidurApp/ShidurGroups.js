@@ -120,10 +120,7 @@ class ShidurGroups extends Component {
         if(!this.state.pre) {
             this.newSwitchFeed(id,false);
         } else {
-            //let switchfeed = {"request": "switch", "feed": id, "audio": true, "video": true, "data": false};
-            let streams = [
-                {feed: id, mid: "1", sub_mid: "0"},
-            ];
+            let streams = [{feed: id, mid: "1", sub_mid: "0"}];
             let switchfeed = {"request": "switch", streams};
             this.state.pre.send ({"message": switchfeed,
                 success: () => {
@@ -256,10 +253,7 @@ class ShidurGroups extends Component {
             this.sdiAction("switch" , false, i, feed);
         } else {
             console.log(" :: Switch handle! - " + feed.id);
-            //let switchfeed = {"request": "switch", "feed": feed.id, "audio": true, "video": true, "data": false};
-            let streams = [
-                {feed: feed.id, mid: "1", sub_mid: "0"},
-            ];
+            let streams = [{feed: feed.id, mid: "1", sub_mid: "0"}];
             let switchfeed = {"request": "switch", streams};
             pr1[i].send ({"message": switchfeed,
                 success: () => {
