@@ -1045,13 +1045,16 @@ class ShidurAdmin extends Component {
     };
 
     getFeedInfo = () => {
-        return;
         let {session,handle} = this.state.feed_user;
-        getPublisherInfo(session,handle,json => {
-                Janus.log(":: Publisher info", json);
-                this.setState({feed_rtcp: json.webrtc.media[1].rtcp.main});
-            }, true
-        )
+        if(handle) {
+            getPublisherInfo(session, handle, json => {
+                    Janus.log(":: Publisher info", json);
+                    let video = json.info.webrtc.media[1].rtcp.main;
+                    let audio = json.info.webrtc.media[0].rtcp.main;
+                    this.setState({feed_rtcp: {video, audio}});
+                }, true
+            )
+        }
     };
 
     handleShowClick = () => this.setState({ visible: !this.state.visible })
