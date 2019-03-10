@@ -746,21 +746,21 @@ class ShidurAdmin extends Component {
             }
         }
 
-        if(data.type === "question" && data.status && data.room === 1234) {
-            let {quistions_queue,users} = this.state;
-            data.user.rfid = users[data.user.id].rfid;
-            quistions_queue.push(data);
-            this.setState({quistions_queue});
-        } else if(data.type === "question" && !data.status && data.room === 1234) {
-            let {quistions_queue} = this.state;
-            for(let i = 0; i < quistions_queue.length; i++){
-                if(quistions_queue[i].user.id === data.user.id) {
-                    quistions_queue.splice(i, 1);
-                    this.setState({quistions_queue});
-                    break
-                }
-            }
-        }
+        // if(data.type === "question" && data.status && data.room === 1234) {
+        //     let {quistions_queue,users} = this.state;
+        //     data.user.rfid = users[data.user.id].rfid;
+        //     quistions_queue.push(data);
+        //     this.setState({quistions_queue});
+        // } else if(data.type === "question" && !data.status && data.room === 1234) {
+        //     let {quistions_queue} = this.state;
+        //     for(let i = 0; i < quistions_queue.length; i++){
+        //         if(quistions_queue[i].user.id === data.user.id) {
+        //             quistions_queue.splice(i, 1);
+        //             this.setState({quistions_queue});
+        //             break
+        //         }
+        //     }
+        // }
     };
 
     sendDataMessage = () => {
@@ -1066,7 +1066,7 @@ class ShidurAdmin extends Component {
 
   render() {
 
-      const { bitrate,rooms,current_room,switch_mode,user,feeds,feed_id,i,messages,description,roomid,root,forwarders,feed_rtcp,feed_talk,quistions_queue } = this.state;
+      const { bitrate,rooms,current_room,switch_mode,user,feeds,feed_id,i,messages,description,roomid,root,forwarders,feed_rtcp,feed_talk,quistions_queue,questions } = this.state;
       const width = "134";
       const height = "100";
       const autoPlay = true;
@@ -1102,7 +1102,7 @@ class ShidurAdmin extends Component {
       let users_grid = feeds.map((feed,i) => {
           if(feed) {
               let fw = forwarders.filter(f => f.publisher_id === (current_room === 1234 ? feed.id : feed.rfid)).length > 0;
-              let qt = quistions_queue.find(f => f.user.id === feed.display.id);
+              let qt = questions[feed.display.id] !== undefined;
               return (
                   <Table.Row active={feed.id === this.state.feed_id} key={i} onClick={() => this.getUserInfo(feed)} >
                       <Table.Cell width={5}>{qt ? q : ""}{feed.display.display}</Table.Cell>
