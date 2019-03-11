@@ -4,7 +4,7 @@ import {Segment, Menu, Button, Input, Table, Grid, Message, Transition, Select, 
 import {initJanus, initChatRoom, getDateString, joinChatRoom, getPublisherInfo} from "../../shared/tools";
 import './ShidurAdmin.css';
 import './VideoConteiner.scss'
-import {MAX_FEEDS, SECRET} from "../../shared/consts";
+import {SECRET} from "../../shared/consts";
 import {initGxyProtocol} from "../../shared/protocol";
 import classNames from "classnames";
 import {client, getUser} from "../../components/UserManager";
@@ -140,61 +140,56 @@ class ShidurAdmin extends Component {
 
     listForward = (room) => {
         let {videoroom} = this.state;
-        let req = {"request":"listforwarders", "room":room, "secret":`${SECRET}`};
+        let req = {request:"listforwarders",room,"secret":`${SECRET}`};
         videoroom.send ({"message": req,
             success: (data) => {
                 Janus.log(" :: List forwarders: ", data);
-                if(data.rtp_forwarders)
-                    this.setState({forwarders: data.rtp_forwarders});
+                if(!data.publishers)
+                    return;
+                //let forwarders = data.publishers.filter(f => f.forwarders);
+                let forwarders = [];
+                for(let i=0; i<data.publishers.length; i++) {
+                    if(data.publishers[i].forwarders) {
+                        let user = data.publishers[i].display;
+                        data.publishers[i].display = JSON.parse(user);
+                        let role = data.publishers[i].display.role;
+                        if(role === "user" || role === "group")
+                            forwarders.push(data.publishers[i])
+                    }
+                }
+                this.setState({forwarders});
             }
         })
     };
 
-    stopForwardById = (id) => {
-        const {videoroom,current_room} = this.state;
-        let req = {"request":"listforwarders", "room":1234, "secret":"adminpwd"}
-        videoroom.send ({"message": req,
-            success: (data) => {
-                data.rtp_forwarders.forEach((pitem, p) => {
-                    if(pitem.publisher_id === id) {
-                        pitem.rtp_forwarder.forEach((item, i) => {
-                            if(item.audio_stream_id !== undefined) {
-                                console.log(i+" -- AUDIO ID: "+item.audio_stream_id );
-                                let audio_id = item.audio_stream_id;
-                                let stopfw_audio = { "request":"stop_rtp_forward","stream_id":audio_id,"publisher_id":id,"room":current_room,"secret":"adminpwd" };
-                                videoroom.send({"message": stopfw_audio});
-                            }
-                            if(item.video_stream_id !== undefined) {
-                                console.log(i+" -- VIDEO ID: "+item.video_stream_id );
-                                let video_id = item.video_stream_id;
-                                let stopfw_video = { "request":"stop_rtp_forward","stream_id":video_id,"publisher_id":id,"room":current_room,"secret":"adminpwd" };
-                                videoroom.send({"message": stopfw_video});
-                            }
-                        });
-                    }
-                });
-            }
-        });
-    };
-
-    stopForwardByRoom = () => {
+    stopForward = (id) => {
         const {videoroom,current_room} = this.state;
         if(current_room === "")
             return;
-        let req = {"request":"listforwarders", "room":current_room, "secret":"adminpwd"}
+        let req = {request:"listforwarders",room:current_room,secret:`${SECRET}`};
         videoroom.send ({"message": req,
             success: (data) => {
-                data.rtp_forwarders.forEach((pitem, p) => {
-                    let id = pitem.publisher_id;
-                    pitem.rtp_forwarder.forEach((item, i) => {
-                        if(item.audio_stream_id !== undefined) {
-                            console.log(i+" -- AUDIO ID: "+item.audio_stream_id );
-                            let audio_id = item.audio_stream_id;
-                            let stopfw_audio = { "request":"stop_rtp_forward","stream_id":audio_id,"publisher_id":id,"room":current_room,"secret":"adminpwd" };
-                            videoroom.send({"message": stopfw_audio});
+                for(let i=0; i<data.publishers.length; i++) {
+                    if(data.publishers[i].forwarders) {
+                        let user = data.publishers[i].display;
+                        data.publishers[i].display = JSON.parse(user);
+                        let role = data.publishers[i].display.role;
+                        let publisher_id = data.publishers[i].publisher_id;
+                        if(id && id === publisher_id) {
+                            for(let f=0; f<data.publishers[i].forwarders.length; f++) {
+                                let stream_id = data.publishers[i].forwarders[f].stream_id;
+                                let stop_forward = {request:"stop_rtp_forward",stream_id,publisher_id,"room":current_room,"secret":`${SECRET}`};
+                                videoroom.send({"message": stop_forward});
+                            }
+                        } else if(role === "user" || role === "group") {
+                            for(let f=0; f<data.publishers[i].forwarders.length; f++) {
+                                let stream_id = data.publishers[i].forwarders[f].stream_id;
+                                let stop_forward = {request:"stop_rtp_forward",stream_id,publisher_id,"room":current_room,"secret":`${SECRET}`};
+                                videoroom.send({"message": stop_forward});
+                            }
                         }
-                    });
-                });
+                    }
+                }
             }
         });
     };
@@ -489,12 +484,12 @@ class ShidurAdmin extends Component {
                     // The subscriber stream is recvonly, we don't expect anything here
                 },
                 onremotetrack: (track, mid, on) => {
-                    Janus.log(" ::: Got a remote track event ::: (remote feed)");
-                    console.log("Remote track (mid=" + mid + ") " + (on ? "added" : "removed") + ":", track);
+                    Janus.debug(" ::: Got a remote track event ::: (remote feed)");
+                    Janus.debug("Remote track (mid=" + mid + ") " + (on ? "added" : "removed") + ":", track);
                     // Which publisher are we getting on this mid?
                     let {mids,feedStreams} = this.state;
                     let feed = mids[mid].feed_id;
-                    Janus.log(" >> This track is coming from feed " + feed + ":", mid);
+                    Janus.debug(" >> This track is coming from feed " + feed + ":", mid);
                     if(!on) {
                         console.log(" :: Going to stop track :: " + feed + ":", mid);
                         //FIXME: Remove callback for audio track does not come
@@ -507,7 +502,7 @@ class ShidurAdmin extends Component {
                         // New audio track: create a stream out of it, and use a hidden <audio> element
                         let stream = new MediaStream();
                         stream.addTrack(track.clone());
-                        console.log("Created remote audio stream:", stream);
+                        Janus.log("Created remote audio stream:", stream);
                         feedStreams[feed].audio_stream = stream;
                         this.setState({feedStreams});
                         let remoteaudio = this.refs["remoteAudio" + feed];
@@ -516,15 +511,15 @@ class ShidurAdmin extends Component {
                         // New video track: create a stream out of it
                         let stream = new MediaStream();
                         stream.addTrack(track.clone());
-                        console.log("Created remote video stream:", stream);
+                        Janus.log("Created remote video stream:", stream);
                         feedStreams[feed].video_stream = stream;
                         this.setState({feedStreams});
                         let remotevideo = this.refs["remoteVideo" + feed];
                         Janus.attachMediaStream(remotevideo, stream);
                     } else if(track.kind === "data") {
-                        console.log("Its data channel");
+                        Janus.debug("Its data channel");
                     } else {
-                        console.log(" :: Track already attached: ",track);
+                        Janus.debug(" :: Track already attached: ",track);
                     }
                 },
                 ondataopen: (data) => {
@@ -1066,7 +1061,7 @@ class ShidurAdmin extends Component {
 
   render() {
 
-      const { bitrate,rooms,current_room,switch_mode,user,feeds,feed_id,i,messages,description,roomid,root,forwarders,feed_rtcp,feed_talk,quistions_queue,questions } = this.state;
+      const { bitrate,rooms,current_room,switch_mode,user,feeds,feed_id,i,messages,description,roomid,root,forwarders,feed_rtcp,feed_talk,questions } = this.state;
       const width = "134";
       const height = "100";
       const autoPlay = true;
@@ -1101,7 +1096,7 @@ class ShidurAdmin extends Component {
 
       let users_grid = feeds.map((feed,i) => {
           if(feed) {
-              let fw = forwarders.filter(f => f.publisher_id === (current_room === 1234 ? feed.id : feed.rfid)).length > 0;
+              let fw = forwarders.find(f => f.publisher_id === feed.id);
               let qt = questions[feed.display.id] !== undefined;
               return (
                   <Table.Row active={feed.id === this.state.feed_id} key={i} onClick={() => this.getUserInfo(feed)} >
@@ -1174,7 +1169,7 @@ class ShidurAdmin extends Component {
           <Menu secondary >
               <Menu.Item>
                   <Button color='orange' icon='volume up' labelPosition='right'
-                          content='Stop Forwarders' onClick={this.stopForwardByRoom} />
+                          content='Stop Forwarders' onClick={this.stopForward} />
               </Menu.Item>
               <Menu.Item>
               </Menu.Item>
