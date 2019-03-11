@@ -29,7 +29,8 @@ class ShidurAdmin extends Component {
         feed_talk: false,
         feed_rtcp: {},
         current_room: "",
-        roomid: "",
+        room_id: "",
+        room_name: "Forward",
         videoroom: null,
         remotefeed: null,
         switchFeed: null,
@@ -125,12 +126,12 @@ class ShidurAdmin extends Component {
         }
     };
 
-    getFeedsList = (roomid) => {
+    getFeedsList = (room_id) => {
         const {videoroom} = this.state;
         if (videoroom) {
-            videoroom.send({message: {request: "listparticipants", "room": roomid},
+            videoroom.send({message: {request: "listparticipants", "room": room_id},
                 success: (data) => {
-                    Janus.log(" :: Got Feeds List (room :"+roomid+"): ", data);
+                    Janus.log(" :: Got Feeds List (room :"+room_id+"): ", data);
                     let feeds = data.participants;
                     console.log(feeds)
                 }
@@ -194,7 +195,7 @@ class ShidurAdmin extends Component {
         });
     };
 
-    initVideoRoom = (roomid) => {
+    initVideoRoom = (room_id) => {
         if(this.state.videoroom)
             this.state.videoroom.detach();
         if(this.state.remoteFeed)
@@ -209,9 +210,9 @@ class ShidurAdmin extends Component {
                 let {user} = this.state;
                 this.setState({videoroom, remoteFeed: null, groups: []});
 
-                if(roomid) {
-                    this.listForward(roomid);
-                    let register = { "request": "join", "room": roomid, "ptype": "publisher", "display": JSON.stringify(user) };
+                if(room_id) {
+                    this.listForward(room_id);
+                    let register = { "request": "join", "room": room_id, "ptype": "publisher", "display": JSON.stringify(user) };
                     videoroom.send({"message": register});
                 } else {
                     // Get list rooms
@@ -561,7 +562,7 @@ class ShidurAdmin extends Component {
 
     unsubscribeFrom = (id) => {
         // Unsubscribe from this publisher
-        let {mids,questions,quistions_queue,cammuteds,feeds,users,feedStreams} = this.state;
+        let {mids,questions,quistions_queue,cammuteds,feeds,users,feedStreams,feed_id} = this.state;
         let {remoteFeed} = this.state;
         for (let i=0; i<feeds.length; i++) {
             if (feeds[i].id === id) {
@@ -588,6 +589,12 @@ class ShidurAdmin extends Component {
                 };
                 if(remoteFeed !== null)
                     remoteFeed.send({ message: unsubscribe });
+
+                // Detach selected feed
+                if(feed_id === id) {
+                    remoteFeed.detach();
+                    this.setState({remoteFeed: null, groups: []});
+                }
                 this.setState({feeds,users,feedStreams});
                 break
             }
@@ -824,14 +831,15 @@ class ShidurAdmin extends Component {
 
     selectRoom = (i) => {
         const {rooms} = this.state;
-        let roomid = rooms[i].room;
-        this.setState({roomid});
+        let room_id = rooms[i].room;
+        this.setState({room_id});
     };
 
     joinRoom = (data, i) => {
         Janus.log(" -- joinRoom: ", data, i);
-        const {feeds,rooms,chatroom,user,switchFeed} = this.state;
+        const {rooms,chatroom,user,switchFeed} = this.state;
         let room = data ? rooms[i].room : 1234;
+        let room_name = data ? rooms[i].description : "Galaxy";
         if (this.state.current_room === room)
             return;
         Janus.log(" :: Enter to room: ", room);
@@ -840,18 +848,9 @@ class ShidurAdmin extends Component {
             this.setState({switchFeed: null});
         }
 
-        // if(this.state.current_room !== 1234) {
-        //     feeds.forEach(feed => {
-        //         if (feed !== null && feed !== undefined) {
-        //             Janus.log("-- :: Remove Feed: ",feed);
-        //             feed.detach();
-        //         }
-        //     });
-        // }
-
         if(this.state.current_room)
             this.exitRoom(this.state.current_room);
-        this.setState({switch_mode: false, current_room: room,feeds: [], feed_user: null, feed_id: null});
+        this.setState({switch_mode: false, current_room: room, room_name,feeds: [], feed_user: null, feed_id: null});
 
         this.initVideoRoom(room);
 
@@ -879,8 +878,8 @@ class ShidurAdmin extends Component {
         const {rooms} = this.state;
         let id = 1028;
         for(let i=id; i<1100; i++) {
-            let roomid = rooms.filter(room => room.room === i);
-            if (roomid.length === 0) {
+            let room_id = rooms.filter(room => room.room === i);
+            if (room_id.length === 0) {
                 return i;
             }
         }
@@ -932,10 +931,10 @@ class ShidurAdmin extends Component {
 
     createRoom = () => {
         let {bitrate,description,videoroom} = this.state;
-        let roomid = this.getRoomID();
+        let room_id = this.getRoomID();
         let janus_room = {
             request : "create",
-            room: roomid,
+            room: room_id,
             description: description,
             secret: `${SECRET}`,
             publishers: 20,
@@ -956,17 +955,17 @@ class ShidurAdmin extends Component {
                 Janus.log(":: Create callback: ", data);
                 this.getRoomList();
                 alert("Room: "+description+" created!")
-                this.createChatRoom(roomid,description);
+                this.createChatRoom(room_id,description);
             },
         });
         this.setState({description: ""});
     };
 
     removeRoom = () => {
-        const {roomid,videoroom} = this.state;
+        const {room_id,videoroom} = this.state;
         let janus_room = {
             request: "destroy",
-            room: roomid,
+            room: room_id,
             secret: `${SECRET}`,
             permanent: true,
         };
@@ -974,8 +973,8 @@ class ShidurAdmin extends Component {
             success: (data) => {
                 Janus.log(":: Remove callback: ", data);
                 this.getRoomList();
-                alert("Room ID: "+roomid+" removed!");
-                this.removeChatRoom(roomid);
+                alert("Room ID: "+room_id+" removed!");
+                this.removeChatRoom(room_id);
             },
         });
     };
@@ -1030,8 +1029,8 @@ class ShidurAdmin extends Component {
         // if(this.state.groups.length > 0) {
         //     let pre_feed =  this.state.groups[0].id;
         //     let unsubscribe = {request: "unsubscribe", streams: [{ feed: pre_feed }]};
-        //     if(remoteFeed !== null) {
-        //         remoteFeed.send({ message: unsubscribe });
+        //     if(this.state.remoteFeed !== null) {
+        //         this.state.remoteFeed.send({ message: unsubscribe });
         //     }
         // }
         //
@@ -1061,7 +1060,7 @@ class ShidurAdmin extends Component {
 
   render() {
 
-      const { bitrate,rooms,current_room,switch_mode,user,feeds,feed_id,i,messages,description,roomid,root,forwarders,feed_rtcp,feed_talk,questions } = this.state;
+      const { bitrate,rooms,current_room,switch_mode,user,feeds,feed_id,i,messages,description,room_id,room_name,root,forwarders,feed_rtcp,feed_talk,questions } = this.state;
       const width = "134";
       const height = "100";
       const autoPlay = true;
@@ -1168,8 +1167,8 @@ class ShidurAdmin extends Component {
       let root_content = (
           <Menu secondary >
               <Menu.Item>
-                  <Button color='orange' icon='volume up' labelPosition='right'
-                          content='Stop Forwarders' onClick={this.stopForward} />
+                  <Button color='orange' icon='bell slash' labelPosition='right'
+                          content={room_name} onClick={this.stopForward} />
               </Menu.Item>
               <Menu.Item>
               </Menu.Item>
@@ -1177,7 +1176,7 @@ class ShidurAdmin extends Component {
                   <Button negative onClick={this.removeRoom}>Remove</Button>
                   :::
                   <Select
-                      error={roomid}
+                      error={room_id}
                       scrolling
                       placeholder="Select Room:"
                       value={i}
@@ -1245,6 +1244,7 @@ class ShidurAdmin extends Component {
                                                   on='click'
                                                   hideOnScroll
                                               />
+                                              <Button color="orange" icon='bell slash' onClick={() => this.stopForward(feed_id)} />
                                               <Button negative icon='user x' onClick={this.kickUser} />
                                           </Table.HeaderCell>
                                       </Table.Row>
