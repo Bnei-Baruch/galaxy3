@@ -288,6 +288,7 @@ class ShidurApp extends Component {
                 } else {
                     for(let i = 0; i < pgm_state.length; i++){
                         let c = 0;
+                        // FIXME: Array with null will do crash here!
                         if(pgm_state[i].id === chk[c].id) {
                             pr1[i].detach();
                             pr1[i] = null;
@@ -336,6 +337,12 @@ class ShidurApp extends Component {
 
     removeFeed = (id) => {
         let {feeds,users,quistions_queue,qfeeds,feeds_queue} = this.state;
+
+        // Clean preview
+        this.col1.checkPreview(id);
+        this.col2.checkPreview(id);
+        this.col3.checkPreview(id);
+
         for(let i=0; i<feeds.length; i++){
             if(feeds[i].id === id) {
 

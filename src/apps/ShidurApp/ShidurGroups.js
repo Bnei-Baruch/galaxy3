@@ -109,11 +109,15 @@ class ShidurGroups extends Component {
                 oncleanup: () => {
                     Janus.log(" ::: Got a cleanup notification (remote feed "+id+" : "+i+") :::");
                     console.log(" :: Cleanup handle! - " + id + " - index: " + i);
-                    if(!program) {
-                        this.setState({pre: null});
-                    }
                 }
             });
+    };
+
+    checkPreview = (id) => {
+        let {pre_feed} = this.state;
+        if(pre_feed && pre_feed.id === id) {
+            this.hidePreview()
+        }
     };
 
     switchPreview = (id, display) => {
@@ -139,7 +143,7 @@ class ShidurGroups extends Component {
         if(pre_feed) {
             Janus.log(" :: Selected program Switch Feed to: ", pre_feed.display);
             this.switchNext(i, pre_feed);
-            this.setState({pre_feed: null});
+            this.hidePreview();
             this.props.setProps({program: pre_feed, pre_feed: null});
         } else {
             let feed = feeds[feeds_queue];
@@ -284,14 +288,13 @@ class ShidurGroups extends Component {
         this.sdiAction("disable", true, null, pre_feed);
         disabled_groups.push(pre_feed);
         this.props.removeFeed(pre_feed.id);
-        this.setState({pre_feed: null});
-        this.state.pre.detach();
+        this.hidePreview();
         this.props.setProps({disabled_groups});
     };
 
-    hideGroup = () => {
-        this.setState({pre_feed: null});
+    hidePreview = () => {
         this.state.pre.detach();
+        this.setState({pre_feed: null, pre: null});
     };
 
     zoominGroup = (e, i ,s) => {
@@ -390,7 +393,7 @@ class ShidurGroups extends Component {
                       size='mini'
                       color='orange'
                       icon='window minimize'
-                      onClick={() => this.hideGroup()} />
+                      onClick={() => this.hidePreview()} />
           </div>
       );
 
