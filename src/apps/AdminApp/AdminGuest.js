@@ -1,10 +1,9 @@
 import React, { Component } from 'react';
 import { Janus } from "../../lib/janus";
-import {Segment, Table, Grid, Transition} from "semantic-ui-react";
+import {Segment, Table, Grid} from "semantic-ui-react";
 import {initJanus} from "../../shared/tools";
 import './AdminGuest.css';
 import './AdminGuestVideo.scss'
-import {MAX_FEEDS} from "../../shared/consts";
 import classNames from "classnames";
 import {client, getUser} from "../../components/UserManager";
 import LoginPage from "../../components/LoginPage";
@@ -16,6 +15,8 @@ class AdminGuest extends Component {
         forwarders: [],
         janus: null,
         quistions_queue: [],
+        feedStreams: {},
+        mids: [],
         feeds: [],
         rooms: [],
         feed_id: null,
@@ -73,7 +74,7 @@ class AdminGuest extends Component {
             this.setState({janus,user});
             this.initVideoRoom();
 
-        });
+        }, er => {}, true);
         setInterval(() => {
             this.getRoomList();
         }, 10000 );
@@ -101,6 +102,8 @@ class AdminGuest extends Component {
     initVideoRoom = (roomid) => {
         if(this.state.videoroom)
             this.state.videoroom.detach();
+        if(this.state.remoteFeed)
+            this.state.remoteFeed.detach();
         this.state.janus.attach({
             plugin: "janus.plugin.videoroom",
             opaqueId: "videoroom_user",
@@ -109,7 +112,7 @@ class AdminGuest extends Component {
                 Janus.log("Plugin attached! (" + videoroom.getPlugin() + ", id=" + videoroom.getId() + ")");
                 Janus.log("  -- This is a publisher/manager");
                 let {user} = this.state;
-                this.setState({videoroom});
+                this.setState({videoroom, remoteFeed: null, groups: []});
 
                 if(roomid) {
                     let register = { "request": "join", "room": roomid, "ptype": "publisher", "display": JSON.stringify(user) };
@@ -154,369 +157,112 @@ class AdminGuest extends Component {
         });
     };
 
-    newRemoteFeed = (id, talk) => {
-        // A new feed has been published, create a new plugin handle and attach to it as a subscriber
-        var remoteFeed = null;
-        this.state.janus.attach(
-            {
-                plugin: "janus.plugin.videoroom",
-                opaqueId: "remotefeed_user",
-                success: (pluginHandle) => {
-                    remoteFeed = pluginHandle;
-                    remoteFeed.simulcastStarted = false;
-                    //this.setState({remotefeed});
-                    Janus.log("Plugin attached! (" + remoteFeed.getPlugin() + ", id=" + remoteFeed.getId() + ")");
-                    Janus.log("  -- This is a subscriber");
-                    // We wait for the plugin to send us an offer
-                    let listen = { "request": "join", "room": this.state.current_room, "ptype": "subscriber", "feed": id };
-                    remoteFeed.send({"message": listen});
-                },
-                error: (error) => {
-                    Janus.error("  -- Error attaching plugin...", error);
-                },
-                onmessage: (msg, jsep) => {
-                    Janus.debug(" ::: Got a message (subscriber) :::");
-                    Janus.debug(msg);
-                    let event = msg["videoroom"];
-                    Janus.debug("Event: " + event);
-                    if(msg["error"] !== undefined && msg["error"] !== null) {
-                        Janus.debug(":: Error msg: " + msg["error"]);
-                    } else if(event !== undefined && event !== null) {
-                        if(event === "attached") {
-                            // Subscriber created and attached
-                            let {feeds,users} = this.state;
-                            for(let i=0;i<MAX_FEEDS;i++) {
-                                if(feeds[i] === undefined || feeds[i] === null) {
-                                    remoteFeed.rfindex = i;
-                                    remoteFeed.rfid = msg["id"];
-                                    remoteFeed.rfuser = JSON.parse(msg["display"]);
-                                    remoteFeed.rfuser.rfid = msg["id"];
-                                    remoteFeed.talk = talk;
-                                    feeds[i] = remoteFeed;
-                                    users[remoteFeed.rfuser.id] = remoteFeed.rfuser;
-                                    break;
-                                }
-                            }
-                            this.setState({feeds,users});
-                            Janus.log("Successfully attached to feed " + remoteFeed.rfid + " (" + remoteFeed.rfuser + ") in room " + msg["room"]);
-                        } else if(event === "event") {
-                            // Check if we got an event on a simulcast-related event from this publisher
-                            let substream = msg["substream"];
-                            let temporal = msg["temporal"];
-                            if((substream !== null && substream !== undefined) || (temporal !== null && temporal !== undefined)) {
-                                if(!remoteFeed.simulcastStarted) {
-                                    remoteFeed.simulcastStarted = true;
-                                    // Add some new buttons
-                                    //addSimulcastButtons(remoteFeed.rfindex, remoteFeed.videoCodec === "vp8");
-                                }
-                                // We just received notice that there's been a switch, update the buttons
-                                //updateSimulcastButtons(remoteFeed.rfindex, substream, temporal);
-                            }
-                        } else {
-                            // What has just happened?
-                        }
-                    }
-                    if(jsep !== undefined && jsep !== null) {
-                        Janus.debug("Handling SDP as well...");
-                        Janus.debug(jsep);
-                        // Answer and attach
-                        remoteFeed.createAnswer(
-                            {
-                                jsep: jsep,
-                                // Add data:true here if you want to subscribe to datachannels as well
-                                // (obviously only works if the publisher offered them in the first place)
-                                media: { audioSend: false, videoSend: false },	// We want recvonly audio/video
-                                success: (jsep) => {
-                                    Janus.debug("Got SDP!");
-                                    Janus.debug(jsep);
-                                    let body = { "request": "start", "room": this.state.current_room };
-                                    remoteFeed.send({"message": body, "jsep": jsep});
-                                },
-                                error: (error) => {
-                                    Janus.error("WebRTC error:", error);
-                                }
-                            });
-                    }
-                },
-                webrtcState: (on) => {
-                    Janus.log("Janus says this WebRTC PeerConnection (feed #" + remoteFeed.rfindex + ") is " + (on ? "up" : "down") + " now");
-                },
-                onlocalstream: (stream) => {
-                    // The subscriber stream is recvonly, we don't expect anything here
-                },
-                onremotestream: (stream) => {
-                    Janus.debug("Remote feed #" + remoteFeed.rfindex);
-                    let remotevideo = this.refs["remoteVideo" + remoteFeed.rfid];
-                    // if(remotevideo.length === 0) {
-                    //     // No remote video yet
-                    // }
-                    Janus.attachMediaStream(remotevideo, stream);
-                    var videoTracks = stream.getVideoTracks();
-                    if(videoTracks === null || videoTracks === undefined || videoTracks.length === 0) {
-                        // No remote video
-                    } else {
-                        // Yes remote video
-                    }
-                    // if(Janus.webRTCAdapter.browserDetails.browser === "chrome" || Janus.webRTCAdapter.browserDetails.browser === "firefox" ||
-                    //     Janus.webRTCAdapter.browserDetails.browser === "safari") {
-                    //     $('#curbitrate'+remoteFeed.rfindex).removeClass('hide').show();
-                    //     bitrateTimer[remoteFeed.rfindex] = setInterval(function() {
-                    //         // Display updated bitrate, if supported
-                    //         var bitrate = remoteFeed.getBitrate();
-                    //         $('#curbitrate'+remoteFeed.rfindex).text(bitrate);
-                    //         // Check if the resolution changed too
-                    //         var width = $("#remotevideo"+remoteFeed.rfindex).get(0).videoWidth;
-                    //         var height = $("#remotevideo"+remoteFeed.rfindex).get(0).videoHeight;
-                    //         if(width > 0 && height > 0)
-                    //             $('#curres'+remoteFeed.rfindex).removeClass('hide').text(width+'x'+height).show();
-                    //     }, 1000);
-                    // }
-                },
-                ondataopen: (data) => {
-                    Janus.log("The DataChannel is available!(feed)");
-                },
-                ondata: (data) => {
-                    Janus.debug("We got data from the DataChannel! (feed) " + data);
-                    let msg = JSON.parse(data);
-                    Janus.log(" :: We got msg via DataChannel: ",msg)
-                },
-                oncleanup: () => {
-                    Janus.log(" ::: Got a cleanup notification (remote feed " + id + ") :::");
-                }
-            });
-    };
-
-    newSwitchFeed = (id, talk) => {
-        this.state.janus.attach(
-            {
-                plugin: "janus.plugin.videoroom",
-                opaqueId: "switchfeed_user",
-                success: (pluginHandle) => {
-                    let switchFeed = pluginHandle;
-                    switchFeed.simulcastStarted = false;
-                    //this.setState({remotefeed});
-                    Janus.log("Plugin attached! (" + switchFeed.getPlugin() + ", id=" + switchFeed.getId() + ")");
-                    Janus.log("  -- This is a subscriber");
-                    // We wait for the plugin to send us an offer
-                    let listen = { "request": "join", "room": this.state.current_room, "ptype": "subscriber", "feed": id };
-                    switchFeed.send({"message": listen});
-                    this.setState({switchFeed});
-                },
-                error: (error) => {
-                    Janus.error("  -- Error attaching plugin...", error);
-                },
-                onmessage: (msg, jsep) => {
-                    Janus.debug(" ::: Got a message (subscriber) :::");
-                    Janus.debug(msg);
-                    let event = msg["videoroom"];
-                    Janus.debug("Event: " + event);
-                    if(msg["error"] !== undefined && msg["error"] !== null) {
-                        Janus.debug(":: Error msg: " + msg["error"]);
-                    } else if(event !== undefined && event !== null) {
-                        if(event === "attached") {
-                            // Subscriber created and attached
-                            Janus.log("Successfully attached to feed " + this.state.switchFeed.rfid + " (" + this.state.switchFeed.rfuser + ") in room " + msg["room"]);
-                        } else {
-                            // What has just happened?
-                        }
-                    }
-                    if(jsep !== undefined && jsep !== null) {
-                        Janus.debug("Handling SDP as well...");
-                        Janus.debug(jsep);
-                        // Answer and attach
-                        this.state.switchFeed.createAnswer(
-                            {
-                                jsep: jsep,
-                                media: { audioSend: false, videoSend: false },	// We want recvonly audio/video
-                                success: (jsep) => {
-                                    Janus.debug("Got SDP!");
-                                    Janus.debug(jsep);
-                                    let body = { "request": "start", "room": this.state.current_room };
-                                    this.state.switchFeed.send({"message": body, "jsep": jsep});
-                                },
-                                error: (error) => {
-                                    Janus.error("WebRTC error:", error);
-                                }
-                            });
-                    }
-                },
-                webrtcState: (on) => {
-                    Janus.log("Janus says this WebRTC PeerConnection (feed #" + this.state.switchFeed.rfindex + ") is " + (on ? "up" : "down") + " now");
-                },
-                onlocalstream: (stream) => {
-                    // The subscriber stream is recvonly, we don't expect anything here
-                },
-                onremotestream: (stream) => {
-                    Janus.debug("Remote feed #" + this.state.switchFeed.rfindex);
-                    let switchvideo = this.refs.switchVideo;
-                    Janus.attachMediaStream(switchvideo, stream);
-                    //var videoTracks = stream.getVideoTracks();
-                },
-                oncleanup: () => {
-                    Janus.log(" ::: Got a cleanup notification (remote feed " + id + ") :::");
-                    this.setState({switchFeed: null});
-                }
-            });
-    };
-
-    switchFeed = (id) => {
-        let {switchFeed} = this.state;
-        if(!switchFeed) {
-            this.newSwitchFeed(id,false);
-        } else {
-            let switchfeed = {"request" : "switch", "feed" : id, "audio" : true, "video" : true, "data" : false};
-            this.state.switchFeed.send ({"message": switchfeed,
-                success: () => {
-                    Janus.log(" :: Switch Feed: ", id);
-                }
-            })
-        }
-    };
-
-    publishOwnFeed = (useAudio) => {
-        // Publish our stream
-        let {videoroom} = this.state;
-
-        videoroom.createOffer(
-            {
-                // Add data:true here if you want to publish datachannels as well
-                media: { audioRecv: false, videoRecv: false, audioSend: useAudio, videoSend: true, video: "lowres" },
-                simulcast: false,
-                success: (jsep) => {
-                    Janus.debug("Got publisher SDP!");
-                    Janus.debug(jsep);
-                    let publish = { "request": "configure", "audio": useAudio, "video": true };
-                    videoroom.send({"message": publish, "jsep": jsep});
-                },
-                error: (error) => {
-                    Janus.error("WebRTC error:", error);
-                    if (useAudio) {
-                        this.publishOwnFeed(false);
-                    } else {
-                        Janus.error("WebRTC error... " + JSON.stringify(error));
-                    }
-                }
-            });
-    };
-
     onMessage = (videoroom, msg, jsep, initdata) => {
-        Janus.debug(" ::: Got a message (publisher) :::");
-        Janus.debug(msg);
+        Janus.log(" ::: Got a message (publisher) :::");
+        Janus.log(msg);
         let event = msg["videoroom"];
-        Janus.debug("Event: " + event);
         if(event !== undefined && event !== null) {
             if(event === "joined") {
                 // Publisher/manager created, negotiate WebRTC and attach to existing feeds, if any
-                const {current_room} = this.state;
                 let myid = msg["id"];
                 let mypvtid = msg["private_id"];
                 this.setState({myid ,mypvtid});
                 Janus.log("Successfully joined room " + msg["room"] + " with ID " + myid);
-                //this.publishOwnFeed(true);
+                //this.publishOwnFeed();
                 // Any new feed to attach to?
                 if(msg["publishers"] !== undefined && msg["publishers"] !== null) {
+                    let {feedStreams,users} = this.state;
                     let list = msg["publishers"];
+
+                    // Filter service and camera muted feeds
+                    let fr = this.state.current_room === 1234 ? "group" : "user";
+                    let feeds = list.filter(feeder => JSON.parse(feeder.display).role === fr);
+                    feeds.sort((a, b) => {
+                        if (JSON.parse(a.display).username > JSON.parse(b.display).username) return 1;
+                        if (JSON.parse(a.display).username < JSON.parse(b.display).username) return -1;
+                    });
+
+                    Janus.log(":: Got Pulbishers list: ", feeds);
                     Janus.debug("Got a list of available publishers/feeds:");
                     Janus.log(list);
-                    if(current_room === 1234) {
-                        let users = {};
-                        let feeds = list.filter(feeder => JSON.parse(feeder.display).role === "group");
-                        console.log(feeds);
-                        feeds.sort((a, b) => {
-                            if (JSON.parse(a.display).username > JSON.parse(b.display).username) return 1;
-                            if (JSON.parse(a.display).username < JSON.parse(b.display).username) return -1;
-                            return 0;
-                        });
-                        for(let i=0;i<feeds.length;i++) {
-                            let user = JSON.parse(feeds[i].display);
-                            feeds[i].rfuser = user;
-                            feeds[i].rfid = feeds[i].id;
-                            user.rfid = feeds[i].id;
-                            users[user.id] = user;
+                    let subscription = [];
+                    for(let f in feeds) {
+                        let id = feeds[f]["id"];
+                        let display = JSON.parse(feeds[f]["display"]);
+                        let streams = feeds[f]["streams"];
+                        feeds[f].display = display;
+                        let subst = {feed: id};
+                        for (let i in streams) {
+                            let stream = streams[i];
+                            stream["id"] = id;
+                            stream["display"] = display;
+                            if(stream.type === "video") {
+                                subst.mid = stream.mid;
+                            }
                         }
-                        this.setState({feeds, users});
-                    } else {
-                        let feeds = list.filter(feeder => JSON.parse(feeder.display).role === "user");
-                        for(let i=0;i<feeds.length;i++) {
-                            let id = list[i]["id"];
-                            let talk = list[i]["talking"];
-                            this.newRemoteFeed(id, talk);
-                        }
+                        feedStreams[id] = {id, display, streams};
+                        users[display.id] = display;
+                        users[display.id].rfid = id;
+                        subscription.push(subst);
                     }
+                    this.setState({feeds,feedStreams,users});
+                    if(subscription.length > 0 && fr === "user")
+                        this.subscribeTo(subscription);
                 }
-            } else if(event === "talking") {
-                let {feeds} = this.state;
-                let id = msg["id"];
-                let room = msg["room"];
-                Janus.log("User: "+id+" - start talking");
-                for(let i=0; i<MAX_FEEDS; i++) {
-                    if(feeds[i] !== null && feeds[i] !== undefined && feeds[i].rfid === id) {
-                        feeds[i].talk = true;
-                    }
-                }
-                this.setState({feeds});
-            } else if(event === "stopped-talking") {
-                let {feeds} = this.state;
-                let id = msg["id"];
-                let room = msg["room"];
-                Janus.log("User: "+id+" - stop talking");
-                for(let i=0; i<MAX_FEEDS; i++) {
-                    if(feeds[i] !== null && feeds[i] !== undefined && feeds[i].rfid === id) {
-                        feeds[i].talk = false;
-                    }
-                }
-                this.setState({feeds});
             } else if(event === "destroyed") {
                 // The room has been destroyed
                 Janus.warn("The room has been destroyed!");
             } else if(event === "event") {
-                // Any new feed to attach to?
-                if(msg["publishers"] !== undefined && msg["publishers"] !== null) {
-                    let list = msg["publishers"];
-                    Janus.debug("Got a list of available publishers/feeds:");
-                    Janus.debug(list);
-                    for(let f in list) {
-                        let id = list[f]["id"];
-                        let display = JSON.parse(list[f]["display"]);
-                        let audio = list[f]["audio_codec"];
-                        let video = list[f]["video_codec"];
-                        Janus.debug("  >> [" + id + "] " + display + " (audio: " + audio + ", video: " + video + ")");
-                        if(display.role.match(/^(user)$/)) {
-                            this.newRemoteFeed(id, false);
-                        }
-                        if(display.role.match(/^(group)$/)) {
-                            let {feeds,users} = this.state;
-                            let feed = list[f];
-                            feed.rfid = list[f].id;
-                            feed.rfuser = display;
-                            feed.rfuser.rfid = list[f].id;
-                            feed.talk = false;
-                            users[feed.rfuser.id] = display;
-                            console.log(":: Feed join: ", feed)
-                            feeds.push(feed);
-                            feeds.sort((a, b) => {
-                                if (JSON.parse(a.display).username > JSON.parse(b.display).username) return 1;
-                                if (JSON.parse(a.display).username < JSON.parse(b.display).username) return -1;
-                                return 0;
-                            });
-                            this.setState({feeds,users});
-                        }
+                // Any info on our streams or a new feed to attach to?
+                let {feedStreams,user,myid} = this.state;
+                if(msg["streams"] !== undefined && msg["streams"] !== null) {
+                    let streams = msg["streams"];
+                    for (let i in streams) {
+                        let stream = streams[i];
+                        stream["id"] = myid;
+                        stream["display"] = user;
                     }
+                    feedStreams[myid] = {id: myid, display: user, streams: streams};
+                    this.setState({feedStreams})
+                } else if(msg["publishers"] !== undefined && msg["publishers"] !== null) {
+                    let feed = msg["publishers"];
+                    let {feeds,feedStreams,users} = this.state;
+                    Janus.debug("Got a list of available publishers/feeds:");
+                    Janus.log(feed);
+                    let subscription = [];
+                    let fr = this.state.current_room === 1234 ? "group" : "user";
+                    for(let f in feed) {
+                        let id = feed[f]["id"];
+                        let display = JSON.parse(feed[f]["display"]);
+                        if(display.role !== fr)
+                            return;
+                        let streams = feed[f]["streams"];
+                        feed[f].display = display;
+                        let subst = {feed: id};
+                        for (let i in streams) {
+                            let stream = streams[i];
+                            stream["id"] = id;
+                            stream["display"] = display;
+                            if(stream.type === "video") {
+                                subst.mid = stream.mid;
+                            }
+                        }
+                        feedStreams[id] = {id, display, streams};
+                        users[display.id] = display;
+                        users[display.id].rfid = id;
+                        subscription.push(subst);
+                    }
+                    feeds.push(feed[0]);
+                    this.setState({feeds,feedStreams,users});
+                    if(subscription.length > 0 && fr === "user")
+                        this.subscribeTo(subscription);
                 } else if(msg["leaving"] !== undefined && msg["leaving"] !== null) {
                     // One of the publishers has gone away?
-                    let {feeds} = this.state;
-                    let leaving = msg["leaving"];
+                    var leaving = msg["leaving"];
                     Janus.log("Publisher left: " + leaving);
-                    for(let i=0; i<feeds.length; i++) {
-                        if(feeds[i].rfid === leaving) {
-                            feeds.splice(i, 1);
-                            this.setState({feeds});
-                            break;
-                        }
-                    }
+                    this.unsubscribeFrom(leaving);
+
                 } else if(msg["unpublished"] !== undefined && msg["unpublished"] !== null) {
-                    // One of the publishers has unpublished?
-                    let {feeds} = this.state;
                     let unpublished = msg["unpublished"];
                     Janus.log("Publisher left: " + unpublished);
                     if(unpublished === 'ok') {
@@ -524,13 +270,8 @@ class AdminGuest extends Component {
                         videoroom.hangup();
                         return;
                     }
-                    for(let i=0; i<feeds.length; i++) {
-                        if(feeds[i].rfid === unpublished) {
-                            feeds.splice(i, 1);
-                            this.setState({feeds});
-                            break;
-                        }
-                    }
+                    this.unsubscribeFrom(unpublished);
+
                 } else if(msg["error"] !== undefined && msg["error"] !== null) {
                     if(msg["error_code"] === 426) {
                         Janus.log("This is a no such room");
@@ -547,10 +288,202 @@ class AdminGuest extends Component {
         }
     };
 
+    newRemoteFeed = (subscription) => {
+        this.state.janus.attach(
+            {
+                plugin: "janus.plugin.videoroom",
+                opaqueId: "remotefeed_user",
+                success: (pluginHandle) => {
+                    let remoteFeed = pluginHandle;
+                    Janus.log("Plugin attached! (" + remoteFeed.getPlugin() + ", id=" + remoteFeed.getId() + ")");
+                    Janus.log("  -- This is a multistream subscriber",remoteFeed);
+                    this.setState({remoteFeed, creatingFeed: false});
+                    // We wait for the plugin to send us an offer
+                    let subscribe = {request: "join", room: this.state.current_room, ptype: "subscriber", streams: subscription};
+                    remoteFeed.send({ message: subscribe });
+                },
+                error: (error) => {
+                    Janus.error("  -- Error attaching plugin...", error);
+                },
+                iceState: (state) => {
+                    Janus.log("ICE state (remote feed) changed to " + state);
+                },
+                webrtcState: (on) => {
+                    Janus.log("Janus says this WebRTC PeerConnection (remote feed) is " + (on ? "up" : "down") + " now");
+                },
+                slowLink: (uplink, nacks) => {
+                    Janus.warn("Janus reports problems " + (uplink ? "sending" : "receiving") +
+                        " packets on this PeerConnection (remote feed, " + nacks + " NACKs/s " + (uplink ? "received" : "sent") + ")");
+                },
+                onmessage: (msg, jsep) => {
+                    Janus.log(" ::: Got a message (subscriber) :::");
+                    Janus.log(msg);
+                    let event = msg["videoroom"];
+                    Janus.log("Event: " + event);
+                    if(msg["error"] !== undefined && msg["error"] !== null) {
+                        Janus.debug("-- ERROR: " + msg["error"]);
+                    } else if(event !== undefined && event !== null) {
+                        if(event === "attached") {
+                            //this.setState({creatingFeed: false});
+                            Janus.log("Successfully attached to feed in room " + msg["room"]);
+                        } else if(event === "event") {
+                            // Check if we got an event on a simulcast-related event from this publisher
+                        } else {
+                            // What has just happened?
+                        }
+                    }
+                    if(msg["streams"]) {
+                        // Update map of subscriptions by mid
+                        let {mids} = this.state;
+                        for(let i in msg["streams"]) {
+                            let mindex = msg["streams"][i]["mid"];
+                            mids[mindex] = msg["streams"][i];
+                            if(msg["streams"][i]["feed_display"]) {
+                                let display = JSON.parse(msg["streams"][i]["feed_display"]);
+                                mids[mindex].feed_user = display;
+                            }
+                        }
+                        this.setState({mids});
+                    }
+                    if(jsep !== undefined && jsep !== null) {
+                        Janus.debug("Handling SDP as well...");
+                        Janus.debug(jsep);
+                        // Answer and attach
+                        this.state.remoteFeed.createAnswer(
+                            {
+                                jsep: jsep,
+                                // Add data:true here if you want to subscribe to datachannels as well
+                                // (obviously only works if the publisher offered them in the first place)
+                                media: { audioSend: false, videoSend: false, data: false},	// We want recvonly audio/video
+                                success: (jsep) => {
+                                    Janus.debug("Got SDP!");
+                                    Janus.debug(jsep);
+                                    let body = { request: "start", room: this.state.current_room, data: false };
+                                    this.state.remoteFeed.send({ message: body, jsep: jsep });
+                                },
+                                error: (error) => {
+                                    Janus.error("WebRTC error:", error);
+                                    Janus.debug("WebRTC error... " + JSON.stringify(error));
+                                }
+                            });
+                    }
+                },
+                onlocaltrack: (track, on) => {
+                    // The subscriber stream is recvonly, we don't expect anything here
+                },
+                onremotetrack: (track, mid, on) => {
+                    Janus.debug(" ::: Got a remote track event ::: (remote feed)");
+                    Janus.debug("Remote track (mid=" + mid + ") " + (on ? "added" : "removed") + ":", track);
+                    // Which publisher are we getting on this mid?
+                    let {mids,feedStreams} = this.state;
+                    let feed = mids[mid].feed_id;
+                    Janus.debug(" >> This track is coming from feed " + feed + ":", mid);
+                    if(!on) {
+                        //FIXME: Remove callback for audio track does not come
+                        track.stop();
+                        //FIXME: does we really need to stop all track for feed id?
+                        return;
+                    }
+                    // If we're here, a new track was added
+                    if(track.kind === "video") {
+                        // New video track: create a stream out of it
+                        let stream = new MediaStream();
+                        stream.addTrack(track.clone());
+                        Janus.log("Created remote video stream:", stream);
+                        feedStreams[feed].stream = stream;
+                        this.setState({feedStreams});
+                        let remotevideo = this.refs["remoteVideo" + feed];
+                        Janus.attachMediaStream(remotevideo, stream);
+                    } else if(track.kind === "data") {
+                        Janus.debug("Its data channel");
+                    } else {
+                        Janus.debug(" :: Track already attached: ",track);
+                    }
+                },
+                ondataopen: (data) => {
+                    Janus.log("The DataChannel is available!(feed)");
+                },
+                ondata: (data) => {
+                    Janus.debug("We got data from the DataChannel! (feed) " + data);
+                    // let msg = JSON.parse(data);
+                    // this.onRoomData(msg);
+                    // Janus.log(" :: We got msg via DataChannel: ",msg)
+                },
+                oncleanup: () => {
+                    Janus.log(" ::: Got a cleanup notification (remote feed) :::");
+                }
+            });
+    };
+
+    subscribeTo = (subscription) => {
+        // New feeds are available, do we need create a new plugin handle first?
+        if (this.state.remoteFeed) {
+            this.state.remoteFeed.send({message:
+                    {request: "subscribe", streams: subscription}
+            });
+            return;
+        }
+        // We don't have a handle yet, but we may be creating one already
+        if (this.state.creatingFeed) {
+            // Still working on the handle
+            setTimeout(() => {
+                this.subscribeTo(subscription);
+            }, 500);
+            return
+        }
+
+        // We don't creating, so let's do it
+        this.setState({creatingFeed: true});
+        this.newRemoteFeed(subscription);
+    };
+
+    unsubscribeFrom = (id) => {
+        // Unsubscribe from this publisher
+        let {feeds,users,feedStreams,feed_id} = this.state;
+        let {remoteFeed} = this.state;
+        for (let i=0; i<feeds.length; i++) {
+            if (feeds[i].id === id) {
+                Janus.log("Feed " + feeds[i] + " (" + id + ") has left the room, detaching");
+                //TODO: remove mids
+                delete users[feeds[i].display.id];
+                delete feedStreams[id];
+
+                feeds.splice(i, 1);
+                // Send an unsubscribe request
+                let unsubscribe = {
+                    request: "unsubscribe",
+                    streams: [{ feed: id }]
+                };
+                if(remoteFeed !== null)
+                    remoteFeed.send({ message: unsubscribe });
+
+                // Detach selected feed
+                if(feed_id === id) {
+                    remoteFeed.detach();
+                    this.setState({remoteFeed: null, groups: []});
+                }
+                this.setState({feeds,users,feedStreams});
+                break
+            }
+        }
+    };
+
+    switchFeed = (id) => {
+        let {remoteFeed} = this.state;
+        let streams = [{feed: id, mid: "1", sub_mid: "1"}];
+        let switchfeed = {"request" : "switch", streams};
+        remoteFeed.send ({"message": switchfeed,
+            success: (cb) => {
+                Janus.log(" :: Switch Feed: ", id, cb);
+            }
+        })
+    };
+
     joinRoom = (data, i) => {
         Janus.log(" -- joinRoom: ", data, i);
-        const {feeds,rooms,switchFeed} = this.state;
+        const {rooms,user,switchFeed} = this.state;
         let room = data ? rooms[i].room : 1234;
+        let room_name = data ? rooms[i].description : "Galaxy";
         if (this.state.current_room === room)
             return;
         Janus.log(" :: Enter to room: ", room);
@@ -559,18 +492,9 @@ class AdminGuest extends Component {
             this.setState({switchFeed: null});
         }
 
-        if(this.state.current_room !== 1234) {
-            feeds.forEach(feed => {
-                if (feed !== null && feed !== undefined) {
-                    Janus.log("-- :: Remove Feed: ",feed);
-                    feed.detach();
-                }
-            });
-        }
-
         if(this.state.current_room)
             this.exitRoom(this.state.current_room);
-        this.setState({switch_mode: false, current_room: room,feeds: [], feed_user: null, feed_id: null});
+        this.setState({switch_mode: false, current_room: room, room_name,feeds: [], feed_user: null, feed_id: null});
 
         this.initVideoRoom(room);
     };
@@ -587,21 +511,34 @@ class AdminGuest extends Component {
     };
 
     getUserInfo = (feed) => {
-        let {rfuser,rfid,talking} = feed;
-        this.setState({feed_id: rfid, feed_user: rfuser, feed_talk: talking, switch_mode: true});
-        Janus.log(rfuser,rfid,talking);
-        this.switchFeed(rfid);
+        let {display,id,talking} = feed;
+        let {current_room} =  this.state;
+        this.setState({feed_id: id, feed_user: display, feed_talk: talking});
+        Janus.log(display,id,talking);
+
+        if(current_room !== 1234)
+            return;
+
+        if(this.state.groups.length === 0) {
+            let groups = [];
+            groups.push(feed);
+            this.setState({groups});
+            let subscription = [{feed: id, mid: "0"},{feed: id, mid: "1"}];
+            this.subscribeTo(subscription);
+        } else {
+            this.switchFeed(id);
+        }
     };
 
 
   render() {
 
-      const { rooms,current_room,switch_mode,user,feeds,i,feed_talk } = this.state;
+      const { rooms,current_room,user,feeds,i,feed_id } = this.state;
       const width = "134";
       const height = "100";
       const autoPlay = true;
       const controls = false;
-      const muted = true;
+      //const muted = true;
 
       let rooms_grid = rooms.map((data,i) => {
           const {room, num_participants, description} = data;
@@ -617,23 +554,26 @@ class AdminGuest extends Component {
       let users_grid = feeds.map((feed,i) => {
           if(feed) {
               return (
-                  <Table.Row active={feed.rfid === this.state.feed_id} key={i} onClick={() => this.getUserInfo(feed)} >
-                      <Table.Cell width={5}>{feed.rfuser.display}</Table.Cell>
+                  <Table.Row active={feed.id === this.state.feed_id} key={i} onClick={() => this.getUserInfo(feed)} >
+                      <Table.Cell width={5}>{feed.display.display}</Table.Cell>
                       <Table.Cell width={1}></Table.Cell>
                   </Table.Row>
               )
           }
       });
 
-      let videos = this.state.feeds.map((feed) => {
-          if(feed && current_room !== 1234) {
-              let id = feed.rfid;
+      let view = current_room !== 1234 ? "feeds" : "groups";
+
+      let videos = this.state[view].map((feed) => {
+          if(feed) {
+              let id = feed.id;
               let talk = feed.talk;
+              let selected = id === feed_id && current_room !== 1234;
               return (<div className="video"
                            key={"v" + id}
                            ref={"video" + id}
                            id={"video" + id}>
-                  <div className={classNames('video__overlay', {'talk' : talk})} />
+                  <div className={classNames('video__overlay', {'talk' : talk}, {'selected' : selected})} />
                   <video key={id}
                          ref={"remoteVideo" + id}
                          id={"remoteVideo" + id}
@@ -646,19 +586,6 @@ class AdminGuest extends Component {
           }
           return true;
       });
-
-      let switchvideo = (
-          <div className="video">
-              <div className={classNames('video__overlay', {'talk' : feed_talk})} />
-              <video ref = {"switchVideo"}
-                     id = "switchVideo"
-                     width = {width}
-                     height = {height}
-                     autoPlay = {autoPlay}
-                     controls = {controls}
-                     muted = {true}
-                     playsInline = {true} />
-          </div>);
 
       let login = (<LoginPage user={user} />);
 
@@ -689,19 +616,13 @@ class AdminGuest extends Component {
 
                       </Grid.Column>
                       <Grid.Column largeScreen={10}>
-                          {/*<Segment className="videos_segment" onDoubleClick={this.handleShowClick}>*/}
                           <div className="videos-panel">
                               <div className="videos">
                                   <div className="videos__wrapper">
-                                      {switch_mode ? "" : videos}
-                                      <Transition visible={switch_mode} animation='scale' duration={500}>
-                                          {switchvideo}
-                                      </Transition>
+                                      {videos}
                                   </div>
                               </div>
                           </div>
-                          {/*</Segment>*/}
-
                       </Grid.Column>
                       <Grid.Column width={3}>
 
