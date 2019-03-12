@@ -470,7 +470,7 @@ class AdminGuest extends Component {
 
     switchFeed = (id) => {
         let {remoteFeed} = this.state;
-        let streams = [{feed: id, mid: "1", sub_mid: "1"}];
+        let streams = [{feed: id, mid: "1", sub_mid: "0"}];
         let switchfeed = {"request" : "switch", streams};
         remoteFeed.send ({"message": switchfeed,
             success: (cb) => {
@@ -523,7 +523,7 @@ class AdminGuest extends Component {
             let groups = [];
             groups.push(feed);
             this.setState({groups});
-            let subscription = [{feed: id, mid: "0"},{feed: id, mid: "1"}];
+            let subscription = [{feed: id, mid: "1"}];
             this.subscribeTo(subscription);
         } else {
             this.switchFeed(id);
