@@ -23,6 +23,29 @@ class ShidurGroups extends Component {
         }
     };
 
+    subscribeTo = (subscription) => {
+        // New feeds are available, do we need create a new plugin handle first?
+        if (this.props.remoteFeed) {
+            this.props.remoteFeed.send({message:
+                    {request: "subscribe", streams: subscription}
+            });
+            return;
+        }
+
+        // We don't have a handle yet, but we may be creating one already
+        if (this.props.creatingFeed) {
+            // Still working on the handle
+            setTimeout(() => {
+                this.subscribeTo(subscription);
+            }, 500);
+            return;
+        }
+
+        // We don't creating, so let's do it
+        this.props.setProps({creatingFeed: true});
+        this.props.newRemoteFeed(subscription);
+    };
+
     newSwitchFeed = (id, program, i) => {
         let pre = null;
         this.props.janus.attach(
@@ -61,6 +84,17 @@ class ShidurGroups extends Component {
                         } else {
                             // What has just happened?
                         }
+                    }
+                    if(msg["streams"]) {
+                        // Update map of subscriptions by mid
+                        Janus.log(" :: Streams updated! : ",msg["streams"]);
+                        let {mids} = this.state;
+                        for(let i in msg["streams"]) {
+                            let mindex = msg["streams"][i]["mid"];
+                            //let feed_id = msg["streams"][i]["feed_id"];
+                            mids[mindex] = msg["streams"][i];
+                        }
+                        this.setState({mids});
                     }
                     if(jsep !== undefined && jsep !== null) {
                         Janus.debug("Handling SDP as well...");

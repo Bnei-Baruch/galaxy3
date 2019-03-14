@@ -271,6 +271,119 @@ class ShidurApp extends Component {
         }
     };
 
+    newRemoteFeed = (subscription) => {
+        this.props.janus.attach(
+            {
+                plugin: "janus.plugin.videoroom",
+                opaqueId: "switchfeed_user",
+                success: (pluginHandle) => {
+                    let remoteFeed = pluginHandle;
+                    Janus.log("Plugin attached! (" + remoteFeed.getPlugin() + ", id=" + remoteFeed.getId() + ")");
+                    Janus.log("  -- This is a multistream subscriber",remoteFeed);
+                    this.setState({remoteFeed, creatingFeed: false});
+                    let subscribe = { "request": "join", "room": 1234, "ptype": "subscriber", streams: subscription };
+                    remoteFeed.send({"message": subscribe});
+                },
+                error: (error) => {
+                    Janus.error("  -- Error attaching plugin...", error);
+                },
+                iceState: (state) => {
+                    Janus.log("ICE state (remote feed) changed to " + state);
+                },
+                webrtcState: (on) => {
+                    Janus.log("Janus says this WebRTC PeerConnection (remote feed) is " + (on ? "up" : "down") + " now");
+                },
+                slowLink: (uplink, nacks) => {
+                    Janus.warn("Janus reports problems " + (uplink ? "sending" : "receiving") +
+                        " packets on this PeerConnection (remote feed, " + nacks + " NACKs/s " + (uplink ? "received" : "sent") + ")");
+                },
+                onmessage: (msg, jsep) => {
+                    Janus.debug(" ::: Got a message (subscriber) :::");
+                    Janus.debug(msg);
+                    let event = msg["videoroom"];
+                    Janus.debug("Event: " + event);
+                    if(msg["error"] !== undefined && msg["error"] !== null) {
+                        Janus.debug(":: Error msg: " + msg["error"]);
+                    } else if(event !== undefined && event !== null) {
+                        if(event === "attached") {
+                            // Subscriber created and attached
+                            Janus.log("Successfully attached to feed in room " + msg["room"]);
+                        } else {
+                            // What has just happened?
+                        }
+                    }
+                    if(msg["streams"]) {
+                        // Update map of subscriptions by mid
+                        Janus.log(" :: Streams updated! : ",msg["streams"]);
+                        let {mids} = this.state;
+                        for(let i in msg["streams"]) {
+                            let mindex = msg["streams"][i]["mid"];
+                            //let feed_id = msg["streams"][i]["feed_id"];
+                            mids[mindex] = msg["streams"][i];
+                        }
+                        this.setState({mids});
+                    }
+                    if(jsep !== undefined && jsep !== null) {
+                        Janus.debug("Handling SDP as well...");
+                        Janus.debug(jsep);
+                        let {remoteFeed} = this.state;
+                        // Answer and attach
+                        remoteFeed.createAnswer(
+                            {
+                                jsep: jsep,
+                                media: { audioSend: false, videoSend: false },	// We want recvonly audio/video
+                                success: (jsep) => {
+                                    Janus.debug("Got SDP!");
+                                    Janus.debug(jsep);
+                                    let body = { "request": "start", "room": 1234 };
+                                    remoteFeed.send({"message": body, "jsep": jsep});
+                                },
+                                error: (error) => {
+                                    Janus.error("WebRTC error:", error);
+                                }
+                            });
+                    }
+                },
+                onlocalstream: (stream) => {
+                    // The subscriber stream is recvonly, we don't expect anything here
+                },
+                onremotetrack: (track,mid,on) => {
+                    Janus.log(" ::: Got a remote track event ::: (remote feed)");
+                    Janus.log("Remote track (mid=" + mid + ") " + (on ? "added" : "removed") + ":", track);
+                    // Which publisher are we getting on this mid?
+                    let {mids,feedStreams} = this.state;
+                    let feed = mids[mid].feed_id;
+                    Janus.log(" >> This track is coming from feed " + feed + ":", mid);
+                    if(!on) {
+                        Janus.log(" :: Going to stop track :: " + feed + ":", mid);
+                        //FIXME: Remove callback for audio track does not come
+                        track.stop();
+                        //FIXME: does we really need to stop all track for feed id?
+                        return;
+                    }
+                    if(!on) {
+                        console.log(" :: Going to stop track :: " + track + ":", mid);
+                        //FIXME: Remove callback for audio track does not come
+                        track.stop();
+                        //FIXME: does we really need to stop all track for feed id?
+                        return;
+                    }
+                    if(track.kind !== "video" || !on || !track.muted)
+                        return;
+                    let stream = new MediaStream();
+                    stream.addTrack(track.clone());
+                    feedStreams[feed].stream = stream;
+                    this.setState({feedStreams});
+                    let video = this.refs["programVideo" + mid];
+                    Janus.log(" Attach remote stream on video: "+mid);
+                    Janus.attachMediaStream(video, stream);
+                },
+                oncleanup: () => {
+                    Janus.log(" ::: Got a cleanup notification (remote feed) :::");
+                }
+            });
+    };
+
     onProtocolData = (data) => {
         if(data.type === "question" && data.status) {
             let {quistions_queue,users,qfeeds,pgm_state,pr1} = this.state;
@@ -335,8 +448,31 @@ class ShidurApp extends Component {
         }
     };
 
+    unsubscribeFrom = (id) => {
+        // Unsubscribe from this publisher
+        let {feeds,remoteFeed,users,feedStreams} = this.state;
+        for (let i=0; i<feeds.length; i++) {
+            if (feeds[i].id === id) {
+                Janus.log("Feed " + feeds[i] + " (" + id + ") has left the room, detaching");
+                //TODO: remove mids
+                delete users[feeds[i].display.id];
+                delete feedStreams[id];
+                feeds.splice(i, 1);
+                // Send an unsubscribe request
+                let unsubscribe = {
+                    request: "unsubscribe",
+                    streams: [{ feed: id }]
+                };
+                if(remoteFeed !== null)
+                    remoteFeed.send({ message: unsubscribe });
+                this.setState({feeds,users,feedStreams});
+                break
+            }
+        }
+    };
+
     removeFeed = (id) => {
-        let {feeds,users,quistions_queue,qfeeds,feeds_queue} = this.state;
+        let {feeds,users,quistions_queue,qfeeds,feeds_queue,feedStreams,remoteFeed} = this.state;
 
         // Clean preview
         this.col1.checkPreview(id);
@@ -350,6 +486,7 @@ class ShidurApp extends Component {
                 let user = JSON.parse(feeds[i].display);
                 console.log(" :: Remove feed: " + id + " - Name: " + user.username);
                 delete users[user.id];
+                delete feedStreams[id];
 
                 // Delete from questions list
                 for(let i = 0; i < quistions_queue.length; i++){
@@ -376,7 +513,12 @@ class ShidurApp extends Component {
                     this.setState({feeds_queue});
                 }
 
-                this.setState({feeds,users,quistions_queue});
+                // Send an unsubscribe request
+                let unsubscribe = {request: "unsubscribe", streams: [{ feed: id }]};
+                if(remoteFeed !== null)
+                    remoteFeed.send({ message: unsubscribe });
+
+                this.setState({feeds,users,quistions_queue,feedStreams});
                 this.checkProgram(id,feeds,feeds_queue);
                 break
             }
@@ -478,6 +620,7 @@ class ShidurApp extends Component {
                         index={0} {...this.state}
                         ref={col => {this.col1 = col;}}
                         setProps={this.setProps}
+                        newRemoteFeed={this.newRemoteFeed}
                         removeFeed={this.removeFeed} />
                     <Message attached className='info-panel' color='grey'>
                         <Label attached='top right' size='massive' color={qfeeds.length > 0 ? 'red' : 'grey'}>
@@ -526,6 +669,7 @@ class ShidurApp extends Component {
                         index={4} {...this.state}
                         ref={col => {this.col2 = col;}}
                         setProps={this.setProps}
+                        newRemoteFeed={this.newRemoteFeed}
                         removeFeed={this.removeFeed} />
                 </Grid.Column>
                 <Grid.Column>
@@ -533,6 +677,7 @@ class ShidurApp extends Component {
                         index={8} {...this.state}
                         ref={col => {this.col3 = col;}}
                         setProps={this.setProps}
+                        newRemoteFeed={this.newRemoteFeed}
                         removeFeed={this.removeFeed} />
                     <Segment textAlign='center' className="disabled_groups" raised>
                         <Table selectable compact='very' basic structured className="admin_table" unstackable>
