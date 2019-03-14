@@ -15,6 +15,8 @@ class ShidurApp extends Component {
     state = {
         janus: null,
         feeds: [],
+        feedStreams: {},
+        mids: [],
         qfeeds: [],
         gxyhandle: null,
         name: "",
@@ -65,11 +67,11 @@ class ShidurApp extends Component {
         //FIXME: If we don't detach remote handle, Janus still send UDP stream!
         //this may happen because Janus in use for now is very old version
         //Need to check if this shit happend on latest Janus version
-        this.state.pre.detach();
-        this.state.pr1.forEach(feed => {
-            Janus.debug(" Detach feed: ",feed);
-            feed.detach();
-        });
+        // this.state.pre.detach();
+        // this.state.pr1.forEach(feed => {
+        //     Janus.debug(" Detach feed: ",feed);
+        //     feed.detach();
+        // });
         this.state.janus.destroy();
     };
 
@@ -149,21 +151,36 @@ class ShidurApp extends Component {
                 Janus.log("Successfully joined room " + msg["room"] + " with ID " + myid);
                 if(msg["publishers"] !== undefined && msg["publishers"] !== null) {
                     let list = msg["publishers"];
-                    let users = {};
+                    let {feedStreams,users} = this.state;
                     let feeds = list.filter(feeder => JSON.parse(feeder.display).role === "group");
-                    for(let i=0;i<feeds.length;i++) {
-                        let user = JSON.parse(feeds[i].display);
-                        user.rfid = feeds[i].id;
-                        users[user.id] = user;
+
+                    let subscription = [];
+                    for(let f in feeds) {
+                        let id = feeds[f]["id"];
+                        let display = JSON.parse(feeds[f]["display"]);
+                        let talk = feeds[f]["talking"];
+                        let streams = feeds[f]["streams"];
+                        feeds[f].display = display;
+                        feeds[f].talk = talk;
+                        let subst = {feed: id};
+                        for (let i in streams) {
+                            let stream = streams[i];
+                            stream["id"] = id;
+                            stream["display"] = display;
+                            if(stream.type === "video") {
+                                subst.mid = stream.mid;
+                            }
+                        }
+                        feedStreams[id] = {id, display, streams};
+                        users[display.id] = display;
+                        users[display.id].rfid = id;
+                        if(subscription.length < 13)
+                            subscription.push(subst);
                     }
-                    Janus.debug("Got a list of available publishers/feeds:");
-                    Janus.debug(list);
-                    this.setState({feeds, users});
-                    setTimeout(() => {
-                        this.col1.switchFour();
-                        this.col2.switchFour();
-                        this.col3.switchFour();
-                    }, 3000);
+                    this.setState({feeds,feedStreams,users});
+                    if(subscription.length > 0)
+                        this.subscribeTo(subscription);
+
                     // getState('state/galaxy/pr1', (pgm_state) => {
                     //     Janus.log(" :: Get State: ", pgm_state);
                     //     this.setState({pgm_state});
@@ -186,40 +203,37 @@ class ShidurApp extends Component {
             } else if(event === "event") {
                 // Any new feed to attach to?
                 if(msg["publishers"] !== undefined && msg["publishers"] !== null) {
-                    let list = msg["publishers"];
-                    let feed = JSON.parse(list[0].display).role === "group";
+                    let feed = msg["publishers"];
+                    let {feeds,feedStreams,users} = this.state;
                     Janus.debug("Got a list of available publishers/feeds:");
-                    Janus.debug(list[0]);
-                    if(feed) {
-                        let {feeds,users} = this.state;
-                        let user = JSON.parse(list[0].display);
-                        user.rfid = list[0].id;
-                        users[user.id] = user;
-                        feeds.push(list[0]);
-                        this.setState({feeds,users});
-
-                        if(feeds.length < 13) {
-                            for(let i=0; i<13; i++) {
-                                if(!this.state.pr1[i]) {
-                                    if(i < 4) {
-                                        this.col1.switchNext(i,list[0],"fix");
-                                    } else if(i < 8) {
-                                        this.col2.switchNext(i,list[0],"fix");
-                                    } else if(i < 12) {
-                                        this.col3.switchNext(i,list[0],"fix");
-                                    }
-                                    break
-                                }
+                    Janus.log(feed);
+                    let subscription = [];
+                    for(let f in feed) {
+                        let id = feed[f]["id"];
+                        let display = JSON.parse(feed[f]["display"]);
+                        if(display.role !== "user")
+                            return;
+                        let talk = feed[f]["talking"];
+                        let streams = feed[f]["streams"];
+                        feed[f].display = display;
+                        let subst = {feed: id};
+                        for (let i in streams) {
+                            let stream = streams[i];
+                            stream["id"] = id;
+                            stream["display"] = display;
+                            if(stream.type === "video") {
+                                subst.mid = stream.mid;
                             }
-                            // this.col1.switchFour();
-                            // this.col2.switchFour();
-                            // this.col3.switchFour();
                         }
-
-                        if(feeds.length === 13) {
-                            this.setState({feeds_queue: 12});
-                        }
+                        feedStreams[id] = {id, display, streams};
+                        users[display.id] = display;
+                        users[display.id].rfid = id;
+                        subscription.push(subst);
                     }
+                    feeds.push(feed[0]);
+                    this.setState({feeds,feedStreams,users});
+                    if(feeds.length < 13)
+                        this.subscribeTo(subscription);
                 } else if(msg["leaving"] !== undefined && msg["leaving"] !== null) {
                     // One of the publishers has gone away?
                     let leaving = msg["leaving"];
@@ -272,7 +286,7 @@ class ShidurApp extends Component {
     };
 
     newRemoteFeed = (subscription) => {
-        this.props.janus.attach(
+        this.state.janus.attach(
             {
                 plugin: "janus.plugin.videoroom",
                 opaqueId: "switchfeed_user",
@@ -355,13 +369,6 @@ class ShidurApp extends Component {
                     let feed = mids[mid].feed_id;
                     Janus.log(" >> This track is coming from feed " + feed + ":", mid);
                     if(!on) {
-                        Janus.log(" :: Going to stop track :: " + feed + ":", mid);
-                        //FIXME: Remove callback for audio track does not come
-                        track.stop();
-                        //FIXME: does we really need to stop all track for feed id?
-                        return;
-                    }
-                    if(!on) {
                         console.log(" :: Going to stop track :: " + track + ":", mid);
                         //FIXME: Remove callback for audio track does not come
                         track.stop();
@@ -374,7 +381,8 @@ class ShidurApp extends Component {
                     stream.addTrack(track.clone());
                     feedStreams[feed].stream = stream;
                     this.setState({feedStreams});
-                    let video = this.refs["programVideo" + mid];
+                    let col = "col" + (mid < 4 ? 1 : mid < 8 ? 2 : mid < 12 ? 3 : 4);
+                    let video = this[col].refs["programVideo" + mid];
                     Janus.log(" Attach remote stream on video: "+mid);
                     Janus.attachMediaStream(video, stream);
                 },
@@ -382,6 +390,29 @@ class ShidurApp extends Component {
                     Janus.log(" ::: Got a cleanup notification (remote feed) :::");
                 }
             });
+    };
+
+    subscribeTo = (subscription) => {
+        // New feeds are available, do we need create a new plugin handle first?
+        if (this.state.remoteFeed) {
+            this.state.remoteFeed.send({message:
+                    {request: "subscribe", streams: subscription}
+            });
+            return;
+        }
+
+        // We don't have a handle yet, but we may be creating one already
+        if (this.state.creatingFeed) {
+            // Still working on the handle
+            setTimeout(() => {
+                this.subscribeTo(subscription);
+            }, 500);
+            return;
+        }
+
+        // We don't creating, so let's do it
+        this.setState({creatingFeed: true});
+        this.newRemoteFeed(subscription);
     };
 
     onProtocolData = (data) => {
@@ -620,25 +651,24 @@ class ShidurApp extends Component {
                         index={0} {...this.state}
                         ref={col => {this.col1 = col;}}
                         setProps={this.setProps}
-                        newRemoteFeed={this.newRemoteFeed}
                         removeFeed={this.removeFeed} />
                     <Message attached className='info-panel' color='grey'>
                         <Label attached='top right' size='massive' color={qfeeds.length > 0 ? 'red' : 'grey'}>
                             Questions: {qfeeds.length}
                         </Label>
-                        <Popup on='click'
-                               trigger={<Label attached='top left' color='grey' size='massive'>
-                                   Next: {feeds[feeds_queue] ? JSON.parse(feeds[feeds_queue].display).display : ""}
-                               </Label>}
-                               flowing
-                               position='bottom center'
-                               hoverable>
-                            <Input type='text' placeholder='' action value={pri}
-                                   onChange={(v,{value}) => this.setState({pri: value})}>
-                                <input />
-                                <Button positive onClick={this.fixProgram}>Fix</Button>
-                            </Input>
-                        </Popup>
+                        {/*<Popup on='click'*/}
+                               {/*trigger={<Label attached='top left' color='grey' size='massive'>*/}
+                                   {/*Next: {feeds[feeds_queue] ? feeds[feeds_queue].display : ""}*/}
+                               {/*</Label>}*/}
+                               {/*flowing*/}
+                               {/*position='bottom center'*/}
+                               {/*hoverable>*/}
+                            {/*<Input type='text' placeholder='' action value={pri}*/}
+                                   {/*onChange={(v,{value}) => this.setState({pri: value})}>*/}
+                                {/*<input />*/}
+                                {/*<Button positive onClick={this.fixProgram}>Fix</Button>*/}
+                            {/*</Input>*/}
+                        {/*</Popup>*/}
                         <Label size='massive' color='brown'>
                             <Icon size='big' name='address card' />
                             <b className='queue_counter'>{feeds.length - feeds_queue}</b>
@@ -669,7 +699,6 @@ class ShidurApp extends Component {
                         index={4} {...this.state}
                         ref={col => {this.col2 = col;}}
                         setProps={this.setProps}
-                        newRemoteFeed={this.newRemoteFeed}
                         removeFeed={this.removeFeed} />
                 </Grid.Column>
                 <Grid.Column>
@@ -677,7 +706,6 @@ class ShidurApp extends Component {
                         index={8} {...this.state}
                         ref={col => {this.col3 = col;}}
                         setProps={this.setProps}
-                        newRemoteFeed={this.newRemoteFeed}
                         removeFeed={this.removeFeed} />
                     <Segment textAlign='center' className="disabled_groups" raised>
                         <Table selectable compact='very' basic structured className="admin_table" unstackable>
@@ -688,9 +716,9 @@ class ShidurApp extends Component {
                     </Segment>
                 </Grid.Column>
                 <Grid.Column>
-                    <ShidurUsers
-                        ref={col => {this.col4 = col;}}
-                        setProps={this.setProps} />
+                    {/*<ShidurUsers*/}
+                        {/*ref={col => {this.col4 = col;}}*/}
+                        {/*setProps={this.setProps} />*/}
                 </Grid.Column>
             </Grid>
         );

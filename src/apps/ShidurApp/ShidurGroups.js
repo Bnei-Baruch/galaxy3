@@ -400,7 +400,7 @@ class ShidurGroups extends Component {
       });
 
       let group_options = feeds.map((feed,i) => {
-          const {display} = JSON.parse(feed.display);
+          const display = feed.display.display;
           return ({ key: i, value: feed, text: display })
       });
 
@@ -433,11 +433,11 @@ class ShidurGroups extends Component {
           </div>
       );
 
-      let program = pgm_state.map((feed,i) => {
+      let program = this.props.mids.map((feed,i) => {
           if(feed && i >= index && i < index+4) {
-              if(pgm_state[i] === null)
-                  return;
-              let user = JSON.parse(feed.display);
+              // if(this.props.mids[i] === null)
+              //     return;
+              let user = JSON.parse(feed.feed_display);
               let qst = users[user.id] ? users[user.id].question : false;
               let talk = feed.talk;
               return (<div className={fullscr ? "hidden" : ""} key={"prf" + i}>
@@ -445,7 +445,7 @@ class ShidurGroups extends Component {
                            key={"prov" + i}
                            ref={"provideo" + i}
                            id={"provideo" + i}>
-                  <div className="video_title">{JSON.parse(feed.display).display}</div>
+                  <div className="video_title">{JSON.parse(feed.feed_display).display}</div>
                             {qst ? <div className='qst_title'>?</div> : ""}
                   <video className={talk ? "talk" : ""}
                          onClick={() => this.fullScreenGroup(i,feed)}
