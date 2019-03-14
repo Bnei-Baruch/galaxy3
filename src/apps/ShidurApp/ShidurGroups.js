@@ -193,6 +193,8 @@ class ShidurGroups extends Component {
     };
 
     sdiAction = (action, status, i, feed) => {
+        //FIXME: Must be removed in production mode
+        return;
         const { protocol, user, index } = this.props;
         let col = null;
         if(index === 0) {

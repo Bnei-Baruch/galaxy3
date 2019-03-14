@@ -1,8 +1,21 @@
 .info-panel {
     text-align: center;
+    min-width: 935px;
+    min-height: 17em!important;
+}
+
+.info-buttons {
+    text-align: center;
+    min-width: 935px;
 }
 
 .queue_counter {
     font-size: 1.5em;
     color: powderblue;
+}
+
+.disabled_groups {
+    overflow-y:scroll;
+    top:0px; left:0px;
+    width:102%; height:275px;
 }
