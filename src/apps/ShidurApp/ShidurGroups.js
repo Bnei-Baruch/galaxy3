@@ -312,11 +312,16 @@ class ShidurGroups extends Component {
     selectGroup = (pre_feed) => {
         this.setState({pre_feed});
         Janus.log(pre_feed);
-        let {stream} = this.props.feedStreams[pre_feed.id];
-        let video = this.refs.prevewVideo;
-        Janus.log(" Attach mid to preview: "+pre_feed.id);
-        Janus.attachMediaStream(video, stream);
-        //this.switchPreview(pre_feed.id, pre_feed.display);
+        // We can show in preview feed stream object
+        if(this.props.feedStreams[pre_feed.id]) {
+            let {stream} = this.props.feedStreams[pre_feed.id];
+            let video = this.refs.prevewVideo;
+            Janus.log(" Attach mid to preview: "+pre_feed.id);
+            Janus.attachMediaStream(video, stream);
+        } else {
+            //TODO: Make new remoteFeed
+            //this.switchPreview(pre_feed.id, pre_feed.display);
+        }
     };
 
     disableGroup = () => {
@@ -333,7 +338,7 @@ class ShidurGroups extends Component {
     };
 
     hidePreview = () => {
-        this.state.pre.detach();
+        //this.state.pre.detach();
         this.setState({pre_feed: null, pre: null});
     };
 
