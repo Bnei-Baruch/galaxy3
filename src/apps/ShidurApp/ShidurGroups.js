@@ -312,6 +312,10 @@ class ShidurGroups extends Component {
     selectGroup = (pre_feed) => {
         this.setState({pre_feed});
         Janus.log(pre_feed);
+        let {stream} = this.props.feedStreams[pre_feed.id];
+        let video = this.refs.prevewVideo;
+        Janus.log(" Attach mid to preview: "+pre_feed.id);
+        Janus.attachMediaStream(video, stream);
         //this.switchPreview(pre_feed.id, pre_feed.display);
     };
 
