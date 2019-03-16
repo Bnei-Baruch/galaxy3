@@ -211,7 +211,7 @@ class ShidurApp extends Component {
                     for(let f in feed) {
                         let id = feed[f]["id"];
                         let display = JSON.parse(feed[f]["display"]);
-                        if(display.role !== "user")
+                        if(display.role !== "group")
                             return;
                         let talk = feed[f]["talking"];
                         let streams = feed[f]["streams"];
@@ -239,15 +239,6 @@ class ShidurApp extends Component {
                     let leaving = msg["leaving"];
                     Janus.log("Publisher left: " + leaving);
                     console.log("Publisher left: " + leaving);
-                    let {disabled_groups} = this.state;
-                    // Delete from disabled_groups
-                    for(let i = 0; i < disabled_groups.length; i++){
-                        if(disabled_groups[i].id === leaving) {
-                            disabled_groups.splice(i, 1);
-                            this.setState({disabled_groups});
-                            break
-                        }
-                    }
                     this.removeFeed(leaving);
                 } else if(msg["unpublished"] !== undefined && msg["unpublished"] !== null) {
                     // One of the publishers has unpublished?
@@ -258,15 +249,6 @@ class ShidurApp extends Component {
                         // That's us
                         this.state.gxyhandle.hangup();
                         return;
-                    }
-                    let {disabled_groups} = this.state;
-                    // Delete from disabled_groups
-                    for(let i = 0; i < disabled_groups.length; i++){
-                        if(disabled_groups[i].id === unpublished) {
-                            disabled_groups.splice(i, 1);
-                            this.setState({disabled_groups});
-                            break
-                        }
                     }
                     this.removeFeed(unpublished);
                 } else if(msg["error"] !== undefined && msg["error"] !== null) {
@@ -394,6 +376,7 @@ class ShidurApp extends Component {
 
     subscribeTo = (subscription) => {
         // New feeds are available, do we need create a new plugin handle first?
+        Janus.log(" -- Going to subscribe: ",subscription);
         if (this.state.remoteFeed) {
             this.state.remoteFeed.send({message:
                     {request: "subscribe", streams: subscription}
@@ -503,7 +486,7 @@ class ShidurApp extends Component {
     };
 
     removeFeed = (id) => {
-        let {feeds,users,quistions_queue,qfeeds,feeds_queue,feedStreams,remoteFeed} = this.state;
+        let {feeds,users,quistions_queue,qfeeds,feeds_queue,feedStreams,remoteFeed,disabled_groups} = this.state;
 
         // Clean preview
         this.col1.checkPreview(id);
@@ -514,7 +497,7 @@ class ShidurApp extends Component {
             if(feeds[i].id === id) {
 
                 // Delete from users mapping object
-                let user = JSON.parse(feeds[i].display);
+                let user = feeds[i].display;
                 console.log(" :: Remove feed: " + id + " - Name: " + user.username);
                 delete users[user.id];
                 delete feedStreams[id];
@@ -523,6 +506,15 @@ class ShidurApp extends Component {
                 for(let i = 0; i < quistions_queue.length; i++){
                     if(quistions_queue[i].user.id === user.id) {
                         quistions_queue.splice(i, 1);
+                        break
+                    }
+                }
+
+                // Delete from disabled_groups
+                for(let i = 0; i < disabled_groups.length; i++){
+                    if(disabled_groups[i].id === id) {
+                        disabled_groups.splice(i, 1);
+                        this.setState({disabled_groups});
                         break
                     }
                 }
@@ -550,7 +542,7 @@ class ShidurApp extends Component {
                     remoteFeed.send({ message: unsubscribe });
 
                 this.setState({feeds,users,quistions_queue,feedStreams});
-                this.checkProgram(id,feeds,feeds_queue);
+                //this.checkProgram(id,feeds,feeds_queue);
                 break
             }
         }
@@ -645,7 +637,7 @@ class ShidurApp extends Component {
         let login = (<LoginPage user={user} />);
 
         let content = (
-            <Grid columns={4} padded>
+            <Grid columns={3} padded>
                 <Grid.Column>
                     <ShidurGroups
                         index={0} {...this.state}
@@ -715,11 +707,11 @@ class ShidurApp extends Component {
                         </Table>
                     </Segment>
                 </Grid.Column>
-                <Grid.Column>
+                {/*<Grid.Column>*/}
                     {/*<ShidurUsers*/}
                         {/*ref={col => {this.col4 = col;}}*/}
                         {/*setProps={this.setProps} />*/}
-                </Grid.Column>
+                {/*</Grid.Column>*/}
             </Grid>
         );
 

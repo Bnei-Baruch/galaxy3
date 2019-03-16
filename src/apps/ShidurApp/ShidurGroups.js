@@ -312,7 +312,7 @@ class ShidurGroups extends Component {
     selectGroup = (pre_feed) => {
         this.setState({pre_feed});
         Janus.log(pre_feed);
-        this.switchPreview(pre_feed.id, pre_feed.display);
+        //this.switchPreview(pre_feed.id, pre_feed.display);
     };
 
     disableGroup = () => {
@@ -405,10 +405,10 @@ class ShidurGroups extends Component {
       });
 
       let preview = (<div className={pre_feed ? "" : "hidden"}>
-          <div className="fullscrvideo_title"><span>{pre_feed ? JSON.parse(pre_feed.display).display : ""}</span></div>
+          <div className="fullscrvideo_title"><span>{pre_feed ? pre_feed.display.display : ""}</span></div>
               <div className={
                   //TODO: Fix this ugly shit!
-                  pre_feed ? users[JSON.parse(pre_feed.display).id] ? users[JSON.parse(pre_feed.display).id].question ? 'qst_fullscreentitle' : 'hidden' : 'hidden' : 'hidden'
+                  pre_feed ? users[pre_feed.display.id] ? users[pre_feed.display.id].question ? 'qst_fullscreentitle' : 'hidden' : 'hidden' : 'hidden'
               }>?</div>
               <video
                   onContextMenu={(e) => this.zoominGroup(e, null, "pre")}
@@ -434,7 +434,7 @@ class ShidurGroups extends Component {
       );
 
       let program = this.props.mids.map((feed,i) => {
-          if(feed && i >= index && i < index+4) {
+          if(feed && i >= index && i < index+4 && feed.active) {
               // if(this.props.mids[i] === null)
               //     return;
               let user = JSON.parse(feed.feed_display);
@@ -445,7 +445,7 @@ class ShidurGroups extends Component {
                            key={"prov" + i}
                            ref={"provideo" + i}
                            id={"provideo" + i}>
-                  <div className="video_title">{JSON.parse(feed.feed_display).display}</div>
+                  <div className="video_title">{user.display}</div>
                             {qst ? <div className='qst_title'>?</div> : ""}
                   <video className={talk ? "talk" : ""}
                          onClick={() => this.fullScreenGroup(i,feed)}
@@ -471,10 +471,10 @@ class ShidurGroups extends Component {
       });
 
       let fullscreen = (<div className={fullscr ? "" : "hidden"}>
-              <div className="fullscrvideo_title"><span>{full_feed ? JSON.parse(full_feed.display).display : ""}</span></div>
+              <div className="fullscrvideo_title"><span>{full_feed ? full_feed.display.display : ""}</span></div>
               <div className={
                   //TODO: Fix this ugly shit!
-                  full_feed ? users[JSON.parse(full_feed.display).id] ? users[JSON.parse(full_feed.display).id].question ? 'qst_fullscreentitle' : 'hidden' : 'hidden' : 'hidden'
+                  full_feed ? users[full_feed.display.id] ? users[full_feed.display.id].question ? 'qst_fullscreentitle' : 'hidden' : 'hidden' : 'hidden'
               }>?</div>
               <video ref = {"fullscreenVideo"}
                      onClick={() => this.toFourGroup()}
