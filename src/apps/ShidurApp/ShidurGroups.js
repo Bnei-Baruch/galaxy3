@@ -396,7 +396,7 @@ class ShidurGroups extends Component {
 
 
   render() {
-      const { pre_feed,full_feed,zoom,fullscr } = this.state;
+      const { pre_feed,full_feed,zoom,fullscr,col } = this.state;
       const {index,feeds,pgm_state,users,qfeeds} = this.props;
       const width = "100%";
       const height = "100%";
@@ -445,7 +445,8 @@ class ShidurGroups extends Component {
       );
 
       let program = this.props.mids.map((feed,i) => {
-          if(feed && i >= index && i < index+4 && feed.active) {
+          if(feed && this.props.qam[i] === col && feed.active) {
+          //if(feed && i >= index && i < index+4 && feed.active) {
               // if(this.props.mids[i] === null)
               //     return;
               let user = JSON.parse(feed.feed_display);

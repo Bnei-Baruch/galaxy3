@@ -13,6 +13,7 @@ import './ShidurApp.css';
 class ShidurApp extends Component {
 
     state = {
+        qam: {0:1,1:2,2:3,3:1,4:2,5:3,6:1,7:2,8:3,9:1,10:2,11:3},
         janus: null,
         feeds: [],
         feedStreams: {},
@@ -347,7 +348,7 @@ class ShidurApp extends Component {
                     Janus.log(" ::: Got a remote track event ::: (remote feed)");
                     Janus.log("Remote track (mid=" + mid + ") " + (on ? "added" : "removed") + ":", track);
                     // Which publisher are we getting on this mid?
-                    let {mids,feedStreams} = this.state;
+                    let {mids,feedStreams,qam} = this.state;
                     let feed = mids[mid].feed_id;
                     Janus.log(" >> This track is coming from feed " + feed + ":", mid);
                     if(!on) {
@@ -363,7 +364,8 @@ class ShidurApp extends Component {
                     stream.addTrack(track.clone());
                     feedStreams[feed].stream = stream;
                     this.setState({feedStreams});
-                    let col = "col" + (mid < 4 ? 1 : mid < 8 ? 2 : mid < 12 ? 3 : 4);
+                    //let col = "col" + (mid < 4 ? 1 : mid < 8 ? 2 : mid < 12 ? 3 : 4);
+                    let col = "col" + qam[mid];
                     let video = this[col].refs["programVideo" + mid];
                     Janus.log(" Attach remote stream on video: "+mid);
                     Janus.attachMediaStream(video, stream);
