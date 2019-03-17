@@ -344,6 +344,7 @@ class ShidurGroups extends Component {
 
     zoominGroup = (e, i ,s) => {
         e.preventDefault();
+        console.log(i,s)
         if (e.type === 'contextmenu') {
             let {zoom} = this.state;
             this.setState({zoom: !zoom},() => {
@@ -377,7 +378,8 @@ class ShidurGroups extends Component {
     };
 
     fullScreenGroup = (i,full_feed) => {
-        Janus.log(":: Make Full Screen Group: ",JSON.parse(full_feed.display));
+        Janus.log(":: Make Full Screen Group: ",full_feed);
+        full_feed.display = JSON.parse(full_feed.feed_display);
         this.setState({fullscr: !this.state.fullscr,full_feed});
         let fourvideo = this.refs["programVideo" + i];
         let fullvideo = this.refs.fullscreenVideo;
@@ -482,7 +484,6 @@ class ShidurGroups extends Component {
       let fullscreen = (<div className={fullscr ? "" : "hidden"}>
               <div className="fullscrvideo_title"><span>{full_feed ? full_feed.display.display : ""}</span></div>
               <div className={
-                  //TODO: Fix this ugly shit!
                   full_feed ? users[full_feed.display.id] ? users[full_feed.display.id].question ? 'qst_fullscreentitle' : 'hidden' : 'hidden' : 'hidden'
               }>?</div>
               <video ref = {"fullscreenVideo"}

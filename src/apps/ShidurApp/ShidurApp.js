@@ -637,7 +637,7 @@ class ShidurApp extends Component {
         let login = (<LoginPage user={user} />);
 
         let content = (
-            <Grid columns={3} padded>
+            <Grid columns={4} padded>
                 <Grid.Column>
                     <ShidurGroups
                         index={0} {...this.state}
@@ -648,19 +648,19 @@ class ShidurApp extends Component {
                         <Label attached='top right' size='massive' color={qfeeds.length > 0 ? 'red' : 'grey'}>
                             Questions: {qfeeds.length}
                         </Label>
-                        {/*<Popup on='click'*/}
-                               {/*trigger={<Label attached='top left' color='grey' size='massive'>*/}
-                                   {/*Next: {feeds[feeds_queue] ? feeds[feeds_queue].display : ""}*/}
-                               {/*</Label>}*/}
-                               {/*flowing*/}
-                               {/*position='bottom center'*/}
-                               {/*hoverable>*/}
-                            {/*<Input type='text' placeholder='' action value={pri}*/}
-                                   {/*onChange={(v,{value}) => this.setState({pri: value})}>*/}
-                                {/*<input />*/}
-                                {/*<Button positive onClick={this.fixProgram}>Fix</Button>*/}
-                            {/*</Input>*/}
-                        {/*</Popup>*/}
+                        <Popup on='click'
+                               trigger={<Label attached='top left' color='grey' size='massive'>
+                                   Next: {feeds[feeds_queue] ? feeds[feeds_queue].display.display : ""}
+                               </Label>}
+                               flowing
+                               position='bottom center'
+                               hoverable>
+                            <Input type='text' placeholder='' action value={pri}
+                                   onChange={(v,{value}) => this.setState({pri: value})}>
+                                <input />
+                                <Button positive onClick={this.fixProgram}>Fix</Button>
+                            </Input>
+                        </Popup>
                         <Label size='massive' color='brown'>
                             <Icon size='big' name='address card' />
                             <b className='queue_counter'>{feeds.length - feeds_queue}</b>
@@ -707,11 +707,11 @@ class ShidurApp extends Component {
                         </Table>
                     </Segment>
                 </Grid.Column>
-                {/*<Grid.Column>*/}
+                <Grid.Column>
                     {/*<ShidurUsers*/}
                         {/*ref={col => {this.col4 = col;}}*/}
                         {/*setProps={this.setProps} />*/}
-                {/*</Grid.Column>*/}
+                </Grid.Column>
             </Grid>
         );
 
