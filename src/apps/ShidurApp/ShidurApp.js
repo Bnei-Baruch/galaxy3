@@ -241,6 +241,15 @@ class ShidurApp extends Component {
                     Janus.log("Publisher left: " + leaving);
                     console.log("Publisher left: " + leaving);
                     this.removeFeed(leaving);
+                    // Delete from disabled_groups
+                    let {disabled_groups} = this.state;
+                    for(let i = 0; i < disabled_groups.length; i++){
+                        if(disabled_groups[i].id === leaving) {
+                            disabled_groups.splice(i, 1);
+                            this.setState({disabled_groups});
+                            break
+                        }
+                    }
                 } else if(msg["unpublished"] !== undefined && msg["unpublished"] !== null) {
                     // One of the publishers has unpublished?
                     let unpublished = msg["unpublished"];
@@ -252,6 +261,15 @@ class ShidurApp extends Component {
                         return;
                     }
                     this.removeFeed(unpublished);
+                    // Delete from disabled_groups
+                    let {disabled_groups} = this.state;
+                    for(let i = 0; i < disabled_groups.length; i++){
+                        if(disabled_groups[i].id === unpublished) {
+                            disabled_groups.splice(i, 1);
+                            this.setState({disabled_groups});
+                            break
+                        }
+                    }
                 } else if(msg["error"] !== undefined && msg["error"] !== null) {
                     if(msg["error_code"] === 426) {
                         Janus.log("This is a no such room");
@@ -501,15 +519,6 @@ class ShidurApp extends Component {
                     }
                 }
 
-                // Delete from disabled_groups
-                for(let i = 0; i < disabled_groups.length; i++){
-                    if(disabled_groups[i].id === id) {
-                        disabled_groups.splice(i, 1);
-                        this.setState({disabled_groups});
-                        break
-                    }
-                }
-
                 // Delete from qfeeds
                 for(let i = 0; i < qfeeds.length; i++){
                     if(JSON.parse(qfeeds[i].display).id === user.id) {
@@ -652,11 +661,11 @@ class ShidurApp extends Component {
         if (e.type === 'contextmenu') {
             let {disabled_groups,feeds,users} = this.state;
             for(let i = 0; i < disabled_groups.length; i++) {
-                if(JSON.parse(disabled_groups[i].display).id === JSON.parse(data.display).id) {
+                if(disabled_groups[i].display.id === data.display.id) {
                     //TODO: check if we got question while feed was disable
                     disabled_groups.splice(i, 1);
                     feeds.push(data);
-                    let user = JSON.parse(data.display);
+                    let user = data.display;
                     user.rfid = data.id;
                     users[user.id] = user;
                     this.setState({disabled_groups,feeds,users});
