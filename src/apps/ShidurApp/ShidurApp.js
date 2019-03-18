@@ -494,7 +494,7 @@ class ShidurApp extends Component {
 
         if(sub_mid) {
             //unsub.sub_mid = sub_mid;
-            streams.push({sub_mid: sub_mid.toString()});
+            streams.push({sub_mid});
         }
 
         //streams.push(unsub);

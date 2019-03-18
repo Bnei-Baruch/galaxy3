@@ -281,15 +281,14 @@ class ShidurGroups extends Component {
         // }
 
         // Unsubscribe from previous mid
-        this.props.unsubscribeFrom(mids[i].feed_id, i);
+        this.props.unsubscribeFrom(mids[i].feed_id, mids[i].mid);
 
         // Subscribe to new feed
         let streams = [{feed: feed.id, mid: "1"}];
-        this.props.subscribeTo(streams);
-
-        // setTimeout(() => {
-        //     this.props.subscribeTo(streams);
-        // }, 1000);
+        //FIXME: Let's see if it's fix for sure reuse empty m-line
+        setTimeout(() => {
+            this.props.subscribeTo(streams);
+        }, 500);
 
         // Send sdi action
         //this.sdiAction("switch" , false, i, feed);
@@ -462,10 +461,27 @@ class ShidurGroups extends Component {
       // );
 
       let program = this.props.mids.map((feed,i) => {
-          if(feed && this.props.qam[i] === col && feed.active) {
-          //if(feed && i >= index && i < index+4 && feed.active) {
-              // if(this.props.mids[i] === null)
-              //     return;
+          if(feed && this.props.qam[i] === col) {
+          //if(feed && i >= index && i < index+4) {
+              if(!feed.active) {
+                  return (<div className={fullscr ? "hidden" : ""} key={"prf" + i}>
+                      <div className="video_box"
+                           key={"prov" + i}
+                           ref={"provideo" + i}
+                           id={"provideo" + i}>
+                          <div className="video_title"></div>
+                          <video
+                                 key={i}
+                                 ref={"programVideo" + i}
+                                 id={"programVideo" + i}
+                                 width={width}
+                                 height={height}
+                                 autoPlay={autoPlay}
+                                 controls={controls}
+                                 muted={muted}
+                                 playsInline={true}/>
+                      </div></div>);
+              }
               let user = JSON.parse(feed.feed_display);
               let qst = users[user.id] ? users[user.id].question : false;
               let talk = feed.talk;
