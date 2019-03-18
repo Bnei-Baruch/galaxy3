@@ -170,8 +170,7 @@ class ShidurGroups extends Component {
 
     switchProgram = (i) => {
         Janus.log(" :: Selected program Switch: ",i);
-        let {feeds,feeds_queue,round} = this.props;
-        let {pre_feed} = this.state;
+        let {feeds,feeds_queue,round,pre_feed} = this.props;
 
         //If someone in preview take him else take next in queue
         if(pre_feed) {

@@ -616,19 +616,135 @@ class ShidurApp extends Component {
         this.col1.sdiAction("restart");
     };
 
+    newSwitchFeed = (id, program, i) => {
+        let pre = null;
+        this.state.janus.attach(
+            {
+                plugin: "janus.plugin.videoroom",
+                opaqueId: "switchfeed_user",
+                success: (pluginHandle) => {
+                    pre = pluginHandle;
+                    pre.simulcastStarted = false;
+                    Janus.log("Plugin attached! (" + pre.getPlugin() + ", id=" + pre.getId() + ")");
+                    Janus.log("  -- This is a subscriber");
+                    let listen = { "request": "join", "room": 1234, "ptype": "subscriber", streams: [{feed: id, mid: "1"}] };
+                    pre.send({"message": listen});
+                    this.setState({pre});
+                },
+                error: (error) => {
+                    Janus.error("  -- Error attaching plugin...", error);
+                },
+                onmessage: (msg, jsep) => {
+                    Janus.debug(" ::: Got a message (subscriber) :::");
+                    Janus.debug(msg);
+                    let event = msg["videoroom"];
+                    Janus.debug("Event: " + event);
+                    if(msg["error"] !== undefined && msg["error"] !== null) {
+                        Janus.debug(":: Error msg: " + msg["error"]);
+                    } else if(event !== undefined && event !== null) {
+                        if(event === "attached") {
+                            // Subscriber created and attached
+                            Janus.log("Successfully attached to feed " + pre);
+                        } else {
+                            // What has just happened?
+                        }
+                    }
+                    if(msg["streams"]) {
+                        // Update map of subscriptions by mid
+                        Janus.log(" :: Streams updated! : ",msg["streams"]);
+                        // let {mids} = this.state;
+                        // for(let i in msg["streams"]) {
+                        //     let mindex = msg["streams"][i]["mid"];
+                        //     //let feed_id = msg["streams"][i]["feed_id"];
+                        //     mids[mindex] = msg["streams"][i];
+                        // }
+                        // this.setState({mids});
+                    }
+                    if(jsep !== undefined && jsep !== null) {
+                        Janus.debug("Handling SDP as well...");
+                        Janus.debug(jsep);
+                        // Answer and attach
+                        pre.createAnswer(
+                            {
+                                jsep: jsep,
+                                media: { audioSend: false, videoSend: false },	// We want recvonly audio/video
+                                success: (jsep) => {
+                                    Janus.debug("Got SDP!");
+                                    Janus.debug(jsep);
+                                    let body = { "request": "start", "room": 1234 };
+                                    pre.send({"message": body, "jsep": jsep});
+                                },
+                                error: (error) => {
+                                    Janus.error("WebRTC error:", error);
+                                }
+                            });
+                    }
+                },
+                webrtcState: (on) => {
+                    Janus.log("Janus says this WebRTC PeerConnection (feed #" + pre + ") is " + (on ? "up" : "down") + " now");
+                },
+                onlocalstream: (stream) => {
+                    // The subscriber stream is recvonly, we don't expect anything here
+                },
+                onremotetrack: (track,mid,on) => {
+                    Janus.debug(" - Remote track "+mid+" is: "+on,track);
+                    if(!on) {
+                        console.log(" :: Going to stop track :: " + track + ":", mid);
+                        //FIXME: Remove callback for audio track does not come
+                        track.stop();
+                        //FIXME: does we really need to stop all track for feed id?
+                        return;
+                    }
+                    if(track.kind !== "video" || !on || !track.muted)
+                        return;
+                    let stream = new MediaStream();
+                    stream.addTrack(track.clone());
+                    Janus.debug("Remote feed #" + pre);
+                    let switchvideo = this.refs.prevewVideo;
+                    Janus.log(" Attach remote stream on video: "+i);
+                    Janus.attachMediaStream(switchvideo, stream);
+                },
+                oncleanup: () => {
+                    Janus.log(" ::: Got a cleanup notification (remote feed "+id+" : "+i+") :::");
+                    console.log(" :: Cleanup handle! - " + id + " - index: " + i);
+                }
+            });
+    };
+
+    checkPreview = (id) => {
+        let {pre_feed} = this.state;
+        if(pre_feed && pre_feed.id === id) {
+            this.hidePreview()
+        }
+    };
+
+    switchPreview = (id, display) => {
+        if(!this.state.pre) {
+            this.newSwitchFeed(id,false);
+        } else {
+            let streams = [{feed: id, mid: "1", sub_mid: "0"}];
+            let switchfeed = {"request": "switch", streams};
+            this.state.pre.send ({"message": switchfeed,
+                success: () => {
+                    Janus.log(" :: Preview Switch Feed to: ", display);
+                }
+            })
+        }
+    };
+
     selectGroup = (pre_feed) => {
         this.setState({pre_feed});
         Janus.log(pre_feed);
+        this.switchPreview(pre_feed.id, pre_feed.display);
         // We can show in preview feed stream object
-        if(this.state.feedStreams[pre_feed.id]) {
-            let {stream} = this.state.feedStreams[pre_feed.id];
-            let video = this.refs.prevewVideo;
-            Janus.log(" Attach mid to preview: "+pre_feed.id);
-            Janus.attachMediaStream(video, stream);
-        } else {
-            //TODO: Make new remoteFeed
-            //this.switchPreview(pre_feed.id, pre_feed.display);
-        }
+        // if(this.state.feedStreams[pre_feed.id]) {
+        //     let {stream} = this.state.feedStreams[pre_feed.id];
+        //     let video = this.refs.prevewVideo;
+        //     Janus.log(" Attach mid to preview: "+pre_feed.id);
+        //     Janus.attachMediaStream(video, stream);
+        // } else {
+        //     this.switchPreview(pre_feed.id, pre_feed.display);
+        // }
     };
 
     disableGroup = (pre_feed) => {
