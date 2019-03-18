@@ -309,38 +309,38 @@ class ShidurGroups extends Component {
         }
     };
 
-    selectGroup = (pre_feed) => {
-        this.setState({pre_feed});
-        Janus.log(pre_feed);
-        // We can show in preview feed stream object
-        if(this.props.feedStreams[pre_feed.id]) {
-            let {stream} = this.props.feedStreams[pre_feed.id];
-            let video = this.refs.prevewVideo;
-            Janus.log(" Attach mid to preview: "+pre_feed.id);
-            Janus.attachMediaStream(video, stream);
-        } else {
-            //TODO: Make new remoteFeed
-            //this.switchPreview(pre_feed.id, pre_feed.display);
-        }
-    };
+    // selectGroup = (pre_feed) => {
+    //     this.setState({pre_feed});
+    //     Janus.log(pre_feed);
+    //     // We can show in preview feed stream object
+    //     if(this.props.feedStreams[pre_feed.id]) {
+    //         let {stream} = this.props.feedStreams[pre_feed.id];
+    //         let video = this.refs.prevewVideo;
+    //         Janus.log(" Attach mid to preview: "+pre_feed.id);
+    //         Janus.attachMediaStream(video, stream);
+    //     } else {
+    //         //TODO: Make new remoteFeed
+    //         //this.switchPreview(pre_feed.id, pre_feed.display);
+    //     }
+    // };
 
-    disableGroup = () => {
-        let {disabled_groups} = this.props;
-        let {pre_feed} = this.state;
-        let chk = disabled_groups.find(g => g.id === pre_feed.id);
-        if(chk)
-            return;
-        this.sdiAction("disable", true, null, pre_feed);
-        disabled_groups.push(pre_feed);
-        this.props.removeFeed(pre_feed.id);
-        this.hidePreview();
-        this.props.setProps({disabled_groups});
-    };
+    // disableGroup = () => {
+    //     let {disabled_groups} = this.props;
+    //     let {pre_feed} = this.state;
+    //     let chk = disabled_groups.find(g => g.id === pre_feed.id);
+    //     if(chk)
+    //         return;
+    //     this.sdiAction("disable", true, null, pre_feed);
+    //     disabled_groups.push(pre_feed);
+    //     this.props.removeFeed(pre_feed.id);
+    //     this.hidePreview();
+    //     this.props.setProps({disabled_groups});
+    // };
 
-    hidePreview = () => {
-        //this.state.pre.detach();
-        this.setState({pre_feed: null, pre: null});
-    };
+    // hidePreview = () => {
+    //     //this.state.pre.detach();
+    //     this.setState({pre_feed: null, pre: null});
+    // };
 
     zoominGroup = (e, i ,s) => {
         e.preventDefault();
@@ -358,24 +358,24 @@ class ShidurGroups extends Component {
 
     handleClose = () => this.setState({ zoom: false });
 
-    restoreGroup = (e, data, i) => {
-        e.preventDefault();
-        if (e.type === 'contextmenu') {
-            let {disabled_groups,feeds,users} = this.props;
-            for(let i = 0; i < disabled_groups.length; i++) {
-                if(JSON.parse(disabled_groups[i].display).id === JSON.parse(data.display).id) {
-                    //TODO: check if we got question while feed was disable
-                    disabled_groups.splice(i, 1);
-                    feeds.push(data);
-                    let user = JSON.parse(data.display);
-                    user.rfid = data.id;
-                    users[user.id] = user;
-                    this.props.setProps({disabled_groups,feeds,users});
-                    this.sdiAction("restore", true, i, data);
-                }
-            }
-        }
-    };
+    // restoreGroup = (e, data, i) => {
+    //     e.preventDefault();
+    //     if (e.type === 'contextmenu') {
+    //         let {disabled_groups,feeds,users} = this.props;
+    //         for(let i = 0; i < disabled_groups.length; i++) {
+    //             if(JSON.parse(disabled_groups[i].display).id === JSON.parse(data.display).id) {
+    //                 //TODO: check if we got question while feed was disable
+    //                 disabled_groups.splice(i, 1);
+    //                 feeds.push(data);
+    //                 let user = JSON.parse(data.display);
+    //                 user.rfid = data.id;
+    //                 users[user.id] = user;
+    //                 this.props.setProps({disabled_groups,feeds,users});
+    //                 this.sdiAction("restore", true, i, data);
+    //             }
+    //         }
+    //     }
+    // };
 
     fullScreenGroup = (i,full_feed) => {
         Janus.log(":: Make Full Screen Group: ",full_feed);
@@ -405,10 +405,10 @@ class ShidurGroups extends Component {
       const muted = true;
       const q = (<Icon color='red' name='question circle' />);
 
-      let queue_options = qfeeds.map((feed,i) => {
-          const {display} = JSON.parse(feed.display);
-          return ({ key: feed.id+i, value: feed, text: display, icon: 'help'})
-      });
+      // let queue_options = qfeeds.map((feed,i) => {
+      //     const {display} = JSON.parse(feed.display);
+      //     return ({ key: feed.id+i, value: feed, text: display, icon: 'help'})
+      // });
 
       // let group_options = feeds.map((feed,i) => {
       //     const display = feed.display.display;

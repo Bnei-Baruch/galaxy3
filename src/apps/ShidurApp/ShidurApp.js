@@ -2,7 +2,7 @@ import React, {Component} from 'react';
 import {Janus} from "../../lib/janus";
 import {Grid, Label, Message, Segment, Table, Icon, Popup, Button, Input, Dropdown, Dimmer} from "semantic-ui-react";
 import {initJanus} from "../../shared/tools";
-import {initGxyProtocol} from "../../shared/protocol";
+import {initGxyProtocol, sendProtocolMessage} from "../../shared/protocol";
 import ShidurGroups from "./ShidurGroups";
 import ShidurUsers from "./ShidurUsers";
 import {client, getUser} from "../../components/UserManager";
@@ -483,9 +483,7 @@ class ShidurApp extends Component {
         let {feeds,pre_feed,users,quistions_queue,qfeeds,feeds_queue,disabled_groups} = this.state;
 
         // Clean preview
-        // this.col1.checkPreview(id);
-        // this.col2.checkPreview(id);
-        // this.col3.checkPreview(id);
+        this.checkPreview(id);
 
         for(let i=0; i<feeds.length; i++){
             if(feeds[i].id === id) {
@@ -624,9 +622,9 @@ class ShidurApp extends Component {
         }
     };
 
-    disableGroup = () => {
-        let {disabled_groups} = this.props;
-        let {pre_feed} = this.state;
+    disableGroup = (pre_feed) => {
+        let {disabled_groups} = this.state;
+        Janus.log(" :: Put to disabled: ", pre_feed);
         let chk = disabled_groups.find(g => g.id === pre_feed.id);
         if(chk)
             return;
@@ -640,6 +638,48 @@ class ShidurApp extends Component {
     hidePreview = () => {
         //this.state.pre.detach();
         this.setState({pre_feed: null, pre: null});
+    };
+
+    checkPreview = (id) => {
+        let {pre_feed} = this.state;
+        if(pre_feed && pre_feed.id === id) {
+            this.hidePreview()
+        }
+    };
+
+    restoreGroup = (e, data, i) => {
+        e.preventDefault();
+        if (e.type === 'contextmenu') {
+            let {disabled_groups,feeds,users} = this.state;
+            for(let i = 0; i < disabled_groups.length; i++) {
+                if(JSON.parse(disabled_groups[i].display).id === JSON.parse(data.display).id) {
+                    //TODO: check if we got question while feed was disable
+                    disabled_groups.splice(i, 1);
+                    feeds.push(data);
+                    let user = JSON.parse(data.display);
+                    user.rfid = data.id;
+                    users[user.id] = user;
+                    this.setState({disabled_groups,feeds,users});
+                    this.sdiAction("restore", true, i, data);
+                }
+            }
+        }
+    };
+
+    sdiAction = (action, status, i, feed) => {
+        //FIXME: Must be removed in production mode
+        return;
+        const { protocol, user, index } = this.props;
+        let col = null;
+        if(index === 0) {
+            col = 1;
+        } else if(index === 4) {
+            col = 2;
+        } else if(index === 8) {
+            col = 3;
+        }
+        let msg = { type: "sdi-"+action, status, room: 1234, col, i, feed};
+        sendProtocolMessage(protocol, user, msg );
     };
 
     render() {
@@ -683,7 +723,7 @@ class ShidurApp extends Component {
                         size='mini'
                         color='red'
                         icon='close'
-                        onClick={() => this.disableGroup()} />
+                        onClick={() => this.disableGroup(pre_feed)} />
                 <Button className='hide_button'
                         size='mini'
                         color='orange'
@@ -696,9 +736,9 @@ class ShidurApp extends Component {
             const {id, display} = data;
             return (
                 <Table.Row key={id} warning
-                           onClick={() => this.col3.selectGroup(data, i)}
-                           onContextMenu={(e) => this.col3.restoreGroup(e, data, i)} >
-                    <Table.Cell width={5}>{JSON.parse(display).display}</Table.Cell>
+                           onClick={() => this.selectGroup(data, i)}
+                           onContextMenu={(e) => this.restoreGroup(e, data, i)} >
+                    <Table.Cell width={5}>{display.display}</Table.Cell>
                     <Table.Cell width={1}>{id}</Table.Cell>
                 </Table.Row>
             )
@@ -819,7 +859,7 @@ class ShidurApp extends Component {
                         {preview}
                     </Segment>
                     </Segment>
-                    <Segment textAlign='center' className="disabled_groups" raised>
+                    <Segment textAlign='center' className="disabled_groups">
                         <Table selectable compact='very' basic structured className="admin_table" unstackable>
                             <Table.Body>
                                 {disabled_list}
