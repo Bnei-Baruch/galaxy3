@@ -396,8 +396,8 @@ class ShidurGroups extends Component {
 
 
   render() {
-      const { pre_feed,full_feed,zoom,fullscr,col } = this.state;
-      const {index,feeds,pgm_state,users,qfeeds} = this.props;
+      const { full_feed,zoom,fullscr,col } = this.state;
+      const {index,feeds,pre_feed,pgm_state,users,qfeeds} = this.props;
       const width = "100%";
       const height = "100%";
       const autoPlay = true;
@@ -410,39 +410,39 @@ class ShidurGroups extends Component {
           return ({ key: feed.id+i, value: feed, text: display, icon: 'help'})
       });
 
-      let group_options = feeds.map((feed,i) => {
-          const display = feed.display.display;
-          return ({ key: i, value: feed, text: display })
-      });
+      // let group_options = feeds.map((feed,i) => {
+      //     const display = feed.display.display;
+      //     return ({ key: i, value: feed, text: display })
+      // });
 
-      let preview = (<div className={pre_feed ? "" : "hidden"}>
-          <div className="fullscrvideo_title"><span>{pre_feed ? pre_feed.display.display : ""}</span></div>
-              <div className={
-                  //TODO: Fix this ugly shit!
-                  pre_feed ? users[pre_feed.display.id] ? users[pre_feed.display.id].question ? 'qst_fullscreentitle' : 'hidden' : 'hidden' : 'hidden'
-              }>?</div>
-              <video
-                  onContextMenu={(e) => this.zoominGroup(e, null, "pre")}
-                     ref = {"prevewVideo"}
-                     id = "prevewVideo"
-                     width = "400"
-                     height = "220"
-                     autoPlay = {autoPlay}
-                     controls = {controls}
-                     muted = {muted}
-                     playsInline = {true} />
-              <Button className='close_button'
-                      size='mini'
-                      color='red'
-                      icon='close'
-                      onClick={() => this.disableGroup()} />
-              <Button className='hide_button'
-                      size='mini'
-                      color='orange'
-                      icon='window minimize'
-                      onClick={() => this.hidePreview()} />
-          </div>
-      );
+      // let preview = (<div className={pre_feed ? "" : "hidden"}>
+      //     <div className="fullscrvideo_title"><span>{pre_feed ? pre_feed.display.display : ""}</span></div>
+      //         <div className={
+      //             //TODO: Fix this ugly shit!
+      //             pre_feed ? users[pre_feed.display.id] ? users[pre_feed.display.id].question ? 'qst_fullscreentitle' : 'hidden' : 'hidden' : 'hidden'
+      //         }>?</div>
+      //         <video
+      //             onContextMenu={(e) => this.zoominGroup(e, null, "pre")}
+      //                ref = {"prevewVideo"}
+      //                id = "prevewVideo"
+      //                width = "400"
+      //                height = "220"
+      //                autoPlay = {autoPlay}
+      //                controls = {controls}
+      //                muted = {muted}
+      //                playsInline = {true} />
+      //         <Button className='close_button'
+      //                 size='mini'
+      //                 color='red'
+      //                 icon='close'
+      //                 onClick={() => this.disableGroup()} />
+      //         <Button className='hide_button'
+      //                 size='mini'
+      //                 color='orange'
+      //                 icon='window minimize'
+      //                 onClick={() => this.hidePreview()} />
+      //     </div>
+      // );
 
       let program = this.props.mids.map((feed,i) => {
           if(feed && this.props.qam[i] === col && feed.active) {
@@ -517,16 +517,16 @@ class ShidurGroups extends Component {
                   <Icon name='th large' />
                   <Icon name='share' />
               </Button>
-              <Segment className="group_segment" color='green'>
-                  {preview}
-              </Segment>
-              <Dropdown className='select_group' error={qfeeds.length > 0}
-                        placeholder='Select Group'
-                        fluid
-                        search
-                        selection
-                        options={queue_options.concat(group_options)}
-                        onChange={(e,{value}) => this.selectGroup(value)} />
+              {/*<Segment className="group_segment" color='green'>*/}
+                  {/*{preview}*/}
+              {/*</Segment>*/}
+              {/*<Dropdown className='select_group' error={qfeeds.length > 0}*/}
+                        {/*placeholder='Select Group'*/}
+                        {/*fluid*/}
+                        {/*search*/}
+                        {/*selection*/}
+                        {/*options={queue_options.concat(group_options)}*/}
+                        {/*onChange={(e,{value}) => this.selectGroup(value)} />*/}
               <Dimmer active={zoom} onClickOutside={this.handleClose} page>
                   <video ref={"zoomVideo"}
                          id={"zoomVideo"}

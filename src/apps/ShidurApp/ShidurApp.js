@@ -1,6 +1,6 @@
 import React, {Component} from 'react';
 import {Janus} from "../../lib/janus";
-import {Grid, Label, Message, Segment, Table, Icon, Popup, Button, Input} from "semantic-ui-react";
+import {Grid, Label, Message, Segment, Table, Icon, Popup, Button, Input, Dropdown, Dimmer} from "semantic-ui-react";
 import {initJanus} from "../../shared/tools";
 import {initGxyProtocol} from "../../shared/protocol";
 import ShidurGroups from "./ShidurGroups";
@@ -466,34 +466,26 @@ class ShidurApp extends Component {
 
     unsubscribeFrom = (id) => {
         // Unsubscribe from this publisher
-        let {feeds,remoteFeed,users,feedStreams} = this.state;
-        for (let i=0; i<feeds.length; i++) {
-            if (feeds[i].id === id) {
-                Janus.log("Feed " + feeds[i] + " (" + id + ") has left the room, detaching");
-                //TODO: remove mids
-                delete users[feeds[i].display.id];
-                delete feedStreams[id];
-                feeds.splice(i, 1);
-                // Send an unsubscribe request
-                let unsubscribe = {
-                    request: "unsubscribe",
-                    streams: [{ feed: id }]
-                };
-                if(remoteFeed !== null)
-                    remoteFeed.send({ message: unsubscribe });
-                this.setState({feeds,users,feedStreams});
-                break
-            }
-        }
+        let {remoteFeed,feedStreams} = this.state;
+
+        delete feedStreams[id];
+
+        let unsubscribe = {
+            request: "unsubscribe",
+            streams: [{ feed: id }]
+        };
+        if(remoteFeed !== null)
+            remoteFeed.send({ message: unsubscribe });
+        this.setState({feedStreams});
     };
 
     removeFeed = (id) => {
-        let {feeds,users,quistions_queue,qfeeds,feeds_queue,feedStreams,remoteFeed,disabled_groups} = this.state;
+        let {feeds,pre_feed,users,quistions_queue,qfeeds,feeds_queue,disabled_groups} = this.state;
 
         // Clean preview
-        this.col1.checkPreview(id);
-        this.col2.checkPreview(id);
-        this.col3.checkPreview(id);
+        // this.col1.checkPreview(id);
+        // this.col2.checkPreview(id);
+        // this.col3.checkPreview(id);
 
         for(let i=0; i<feeds.length; i++){
             if(feeds[i].id === id) {
@@ -502,7 +494,6 @@ class ShidurApp extends Component {
                 let user = feeds[i].display;
                 console.log(" :: Remove feed: " + id + " - Name: " + user.username);
                 delete users[user.id];
-                delete feedStreams[id];
 
                 // Delete from questions list
                 for(let i = 0; i < quistions_queue.length; i++){
@@ -539,11 +530,9 @@ class ShidurApp extends Component {
                 }
 
                 // Send an unsubscribe request
-                let unsubscribe = {request: "unsubscribe", streams: [{ feed: id }]};
-                if(remoteFeed !== null)
-                    remoteFeed.send({ message: unsubscribe });
+                this.unsubscribeFrom(id);
 
-                this.setState({feeds,users,quistions_queue,feedStreams});
+                this.setState({feeds,users,quistions_queue});
                 //this.checkProgram(id,feeds,feeds_queue);
                 break
             }
@@ -620,9 +609,88 @@ class ShidurApp extends Component {
         this.col1.sdiAction("restart");
     };
 
+    selectGroup = (pre_feed) => {
+        this.setState({pre_feed});
+        Janus.log(pre_feed);
+        // We can show in preview feed stream object
+        if(this.state.feedStreams[pre_feed.id]) {
+            let {stream} = this.state.feedStreams[pre_feed.id];
+            let video = this.refs.prevewVideo;
+            Janus.log(" Attach mid to preview: "+pre_feed.id);
+            Janus.attachMediaStream(video, stream);
+        } else {
+            //TODO: Make new remoteFeed
+            //this.switchPreview(pre_feed.id, pre_feed.display);
+        }
+    };
+
+    disableGroup = () => {
+        let {disabled_groups} = this.props;
+        let {pre_feed} = this.state;
+        let chk = disabled_groups.find(g => g.id === pre_feed.id);
+        if(chk)
+            return;
+        this.sdiAction("disable", true, null, pre_feed);
+        disabled_groups.push(pre_feed);
+        this.removeFeed(pre_feed.id);
+        this.hidePreview();
+        this.setState({disabled_groups});
+    };
+
+    hidePreview = () => {
+        //this.state.pre.detach();
+        this.setState({pre_feed: null, pre: null});
+    };
+
     render() {
 
-        const {user,feeds,feeds_queue,disabled_groups,round,qfeeds,pri,sdiout,sndman} = this.state;
+        const {user,users,feeds,pre_feed,feeds_queue,disabled_groups,round,qfeeds,pri,sdiout,sndman} = this.state;
+
+        const width = "100%";
+        const height = "100%";
+        const autoPlay = true;
+        const controls = false;
+        const muted = true;
+        const q = (<Icon color='red' name='question circle' />);
+
+        let group_options = feeds.map((feed,i) => {
+            const display = feed.display.display;
+            return ({ key: i, value: feed, text: display })
+        });
+
+        let queue_options = qfeeds.map((feed,i) => {
+            const {display} = JSON.parse(feed.display);
+            return ({ key: feed.id+i, value: feed, text: display, icon: 'help'})
+        });
+
+        let preview = (<div className={pre_feed ? "" : "hidden"}>
+                <div className="fullscrvideo_title"><span>{pre_feed ? pre_feed.display.display : ""}</span></div>
+                <div className={
+                    //TODO: Fix this ugly shit!
+                    pre_feed ? users[pre_feed.display.id] ? users[pre_feed.display.id].question ? 'qst_fullscreentitle' : 'hidden' : 'hidden' : 'hidden'
+                }>?</div>
+                <video
+                    onContextMenu={(e) => this.zoominGroup(e, null, "pre")}
+                    ref = {"prevewVideo"}
+                    id = "prevewVideo"
+                    width = "400"
+                    height = "220"
+                    autoPlay = {autoPlay}
+                    controls = {controls}
+                    muted = {muted}
+                    playsInline = {true} />
+                <Button className='close_button'
+                        size='mini'
+                        color='red'
+                        icon='close'
+                        onClick={() => this.disableGroup()} />
+                <Button className='hide_button'
+                        size='mini'
+                        color='orange'
+                        icon='window minimize'
+                        onClick={() => this.hidePreview()} />
+            </div>
+        );
 
         let disabled_list = disabled_groups.map((data,i) => {
             const {id, display} = data;
@@ -632,6 +700,23 @@ class ShidurApp extends Component {
                            onContextMenu={(e) => this.col3.restoreGroup(e, data, i)} >
                     <Table.Cell width={5}>{JSON.parse(display).display}</Table.Cell>
                     <Table.Cell width={1}>{id}</Table.Cell>
+                </Table.Row>
+            )
+        });
+
+        let groups_list = feeds.map((feed,i) => {
+            const {id, display} = feed;
+            //let chk = quistions_queue.filter(q => q.room === room);
+            return (
+                <Table.Row
+
+
+                           className={pre_feed && id === pre_feed.id ? 'active' : 'no'}
+                           key={i} onClick={() => this.selectGroup(feed)}
+                           onContextMenu={(e) => this.disableRoom(e, feed, i)} >
+                    <Table.Cell width={5}>{display.display}</Table.Cell>
+                    <Table.Cell width={1}>{0}</Table.Cell>
+                    <Table.Cell width={1}>{0}</Table.Cell>
                 </Table.Row>
             )
         });
@@ -646,12 +731,14 @@ class ShidurApp extends Component {
                         ref={col => {this.col1 = col;}}
                         setProps={this.setProps}
                         removeFeed={this.removeFeed} />
+                    <Segment className="preview_conteiner">
+                    <Segment className="group_segment" color='green'>
+
+                    </Segment>
+                    </Segment>
                     <Message attached className='info-panel' color='grey'>
-                        <Label attached='top right' size='massive' color={qfeeds.length > 0 ? 'red' : 'grey'}>
-                            Questions: {qfeeds.length}
-                        </Label>
                         <Popup on='click'
-                               trigger={<Label attached='top left' color='grey' size='massive'>
+                               trigger={<Label attached='top left' color='grey'>
                                    Next: {feeds[feeds_queue] ? feeds[feeds_queue].display.display : ""}
                                </Label>}
                                flowing
@@ -663,19 +750,16 @@ class ShidurApp extends Component {
                                 <Button positive onClick={this.fixProgram}>Fix</Button>
                             </Input>
                         </Popup>
-                        <Label size='massive' color='brown'>
+                        <Label color='brown'>
                             <Icon size='big' name='address card' />
                             <b className='queue_counter'>{feeds.length - feeds_queue}</b>
                             <Icon name='delete' onClick={this.resetQueue} />
                         </Label>
-                        <Label attached='bottom left' color='blue' size='massive'>
+                        <Label attached='top right' color='blue' >
                             Round: {round}
                         </Label>
-                        <Label attached='bottom right' color='grey' size='massive'>
-                            Online: {feeds.length}
-                        </Label>
                     </Message>
-                    <Button.Group attached='bottom' className='info-buttons'>
+                    <Button.Group attached='bottom' >
                         <Button
                             color={sndman ? "green" : "red"}
                             disabled={!sndman}
@@ -694,6 +778,35 @@ class ShidurApp extends Component {
                         ref={col => {this.col2 = col;}}
                         setProps={this.setProps}
                         removeFeed={this.removeFeed} />
+                    <Dropdown className='select_group'
+                              placeholder='Search..'
+                              fluid
+                              search
+                              selection
+                              options={group_options}
+                              onChange={(e,{value}) => this.selectGroup(value)} />
+                    <Segment textAlign='center' className="group_list" raised >
+                        <Label attached='top right' color='grey'>
+                            Online: {feeds.length}
+                        </Label>
+                        <Table selectable compact='very' basic structured className="admin_table" unstackable>
+                            <Table.Body>
+                                {groups_list}
+                            </Table.Body>
+                        </Table>
+                    </Segment>
+                    <Segment textAlign='center' >
+                    <Label attached='top right' color={qfeeds.length > 0 ? 'red' : 'grey'}>
+                        Questions: {qfeeds.length}
+                    </Label>
+                    <Dropdown className='select_group' error={qfeeds.length > 0}
+                              placeholder='Questions'
+                              fluid
+                              search
+                              selection
+                              options={queue_options}
+                              onChange={(e,{value}) => this.selectGroup(value)} />
+                    </Segment>
                 </Grid.Column>
                 <Grid.Column>
                     <ShidurGroups
@@ -701,6 +814,11 @@ class ShidurApp extends Component {
                         ref={col => {this.col3 = col;}}
                         setProps={this.setProps}
                         removeFeed={this.removeFeed} />
+                    <Segment className="preview_conteiner">
+                    <Segment className="group_segment" color='green'>
+                        {preview}
+                    </Segment>
+                    </Segment>
                     <Segment textAlign='center' className="disabled_groups" raised>
                         <Table selectable compact='very' basic structured className="admin_table" unstackable>
                             <Table.Body>

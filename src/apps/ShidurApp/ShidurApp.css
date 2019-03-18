@@ -1,7 +1,7 @@
 .info-panel {
     text-align: center;
-    min-width: 935px;
-    min-height: 17em!important;
+    /*min-width: 935px;*/
+    /*min-height: 17em!important;*/
 }
 
 .info-buttons {
@@ -18,4 +18,9 @@
     overflow-y:scroll;
     top:0px; left:0px;
     width:102%; height:275px;
+}
+
+.preview_conteiner {
+    width: 460px;
+    height: 290px;
 }
