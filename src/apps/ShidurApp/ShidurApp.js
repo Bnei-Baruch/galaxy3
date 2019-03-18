@@ -482,16 +482,23 @@ class ShidurApp extends Component {
         }
     };
 
-    unsubscribeFrom = (id) => {
+    unsubscribeFrom = (id, sub_mid) => {
         // Unsubscribe from this publisher
         let {remoteFeed,feedStreams} = this.state;
 
         delete feedStreams[id];
 
-        let unsubscribe = {
-            request: "unsubscribe",
-            streams: [{ feed: id }]
-        };
+        let streams = [];
+        let unsub = {feed: id};
+
+        if(sub_mid) {
+            unsub.sub_mid = sub_mid;
+        }
+
+        streams.push(unsub);
+        this.checkPreview(id);
+
+        let unsubscribe = {request: "unsubscribe", streams};
         if(remoteFeed !== null)
             remoteFeed.send({ message: unsubscribe });
         this.setState({feedStreams});
@@ -711,13 +718,6 @@ class ShidurApp extends Component {
             });
     };
 
-    checkPreview = (id) => {
-        let {pre_feed} = this.state;
-        if(pre_feed && pre_feed.id === id) {
-            this.hidePreview()
-        }
-    };
-
     switchPreview = (id, display) => {
         if(!this.state.pre) {
             this.newSwitchFeed(id,false);
@@ -895,6 +895,8 @@ class ShidurApp extends Component {
                         index={0} {...this.state}
                         ref={col => {this.col1 = col;}}
                         setProps={this.setProps}
+                        unsubscribeFrom={this.unsubscribeFrom}
+                        subscribeTo={this.subscribeTo}
                         removeFeed={this.removeFeed} />
                     <Segment className="preview_conteiner">
                     <Segment className="group_segment" color='green'>
@@ -942,6 +944,8 @@ class ShidurApp extends Component {
                         index={4} {...this.state}
                         ref={col => {this.col2 = col;}}
                         setProps={this.setProps}
+                        unsubscribeFrom={this.unsubscribeFrom}
+                        subscribeTo={this.subscribeTo}
                         removeFeed={this.removeFeed} />
                     <Dropdown className='select_group'
                               placeholder='Search..'
@@ -978,6 +982,8 @@ class ShidurApp extends Component {
                         index={8} {...this.state}
                         ref={col => {this.col3 = col;}}
                         setProps={this.setProps}
+                        unsubscribeFrom={this.unsubscribeFrom}
+                        subscribeTo={this.subscribeTo}
                         removeFeed={this.removeFeed} />
                     <Segment className="preview_conteiner">
                     <Segment className="group_segment" color='green'>
