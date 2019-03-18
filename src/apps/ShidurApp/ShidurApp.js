@@ -376,8 +376,9 @@ class ShidurApp extends Component {
                         //FIXME: does we really need to stop all track for feed id?
                         return;
                     }
-                    if(track.kind !== "video" || !on || !track.muted)
+                    if(track.kind !== "video" || !on) {
                         return;
+                    }
                     let stream = new MediaStream();
                     stream.addTrack(track.clone());
                     feedStreams[feed].stream = stream;
@@ -483,29 +484,29 @@ class ShidurApp extends Component {
     };
 
     unsubscribeFrom = (id, sub_mid) => {
+        Janus.log(" -- GOT SBUMID: ",sub_mid,id)
         // Unsubscribe from this publisher
-        let {remoteFeed,feedStreams} = this.state;
+        let {remoteFeed} = this.state;
 
-        delete feedStreams[id];
-
+        //let streams = [{feed: id}];
         let streams = [];
-        let unsub = {feed: id};
+        //let unsub = {feed: id};
 
         if(sub_mid) {
-            unsub.sub_mid = sub_mid;
+            //unsub.sub_mid = sub_mid;
+            streams.push({sub_mid: sub_mid.toString()});
         }
 
-        streams.push(unsub);
+        //streams.push(unsub);
         this.checkPreview(id);
-
+        Janus.log(" -- GOING UNSUB",streams)
         let unsubscribe = {request: "unsubscribe", streams};
         if(remoteFeed !== null)
             remoteFeed.send({ message: unsubscribe });
-        this.setState({feedStreams});
     };
 
     removeFeed = (id) => {
-        let {feeds,pre_feed,users,quistions_queue,qfeeds,feeds_queue,disabled_groups} = this.state;
+        let {feeds,feedStreams,pre_feed,users,quistions_queue,qfeeds,feeds_queue,disabled_groups} = this.state;
 
         // Clean preview
         this.checkPreview(id);
@@ -517,6 +518,7 @@ class ShidurApp extends Component {
                 let user = feeds[i].display;
                 console.log(" :: Remove feed: " + id + " - Name: " + user.username);
                 delete users[user.id];
+                //delete feedStreams[id];
 
                 // Delete from questions list
                 for(let i = 0; i < quistions_queue.length; i++){
@@ -546,7 +548,7 @@ class ShidurApp extends Component {
                 // Send an unsubscribe request
                 this.unsubscribeFrom(id);
 
-                this.setState({feeds,users,quistions_queue});
+                this.setState({feeds,users,feedStreams,quistions_queue});
                 //this.checkProgram(id,feeds,feeds_queue);
                 break
             }

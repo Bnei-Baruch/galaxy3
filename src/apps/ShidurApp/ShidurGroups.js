@@ -174,10 +174,10 @@ class ShidurGroups extends Component {
 
         //If someone in preview take him else take next in queue
         if(pre_feed) {
-            Janus.log(" :: Selected program Switch Feed to: ", pre_feed.display);
+            Janus.log(" :: Selected program Switch Feed to: ", pre_feed);
             this.switchNext(i, pre_feed);
             //this.hidePreview();
-            this.props.setProps({program: pre_feed, pre_feed: null});
+            //this.props.setProps({program: pre_feed, pre_feed: null});
         } else {
             let feed = feeds[feeds_queue];
             this.switchNext(i, feed);
@@ -242,22 +242,23 @@ class ShidurGroups extends Component {
     };
 
     switchNext = (i ,feed, r) => {
+        Janus.log(" -- GOT NEXT: ", feed)
         if(!feed) return;
         let {pr1,pgm_state,mids,qam,qfeeds,quistions_queue,feedStreams} = this.props;
-        let mid = qam[i];
+        //let mid = qam[i];
         // Add to group search if removed from program with question status
         if(mids[i]) {
             // let cur_feed = pgm_state[i];
             // let chk = pgm_state.filter(p => {
             //     return (p !== null && p !== undefined && p.id === cur_feed.id)
             // });
-            let chk = mids.filter(g => g.active && g.feed_id === mids[mid].feed_id);
-            let qf_chk = qfeeds.filter(qf => qf.rfid === mids[mid].feed_id).length === 0;
+            let chk = mids.filter(g => g.active && g.feed_id === mids[i].feed_id);
+            let qf_chk = qfeeds.filter(qf => qf.rfid === mids[i].feed_id).length === 0;
             if (qf_chk) {
-                let qq_chk = quistions_queue.filter(qs => qs.rfid === mids[mid].feed_id).length > 0;
+                let qq_chk = quistions_queue.filter(qs => qs.rfid === mids[i].feed_id).length > 0;
                 if (qq_chk) {
                     if (chk.length < 2) {
-                        qfeeds.push(feedStreams[mids[mid].id]);
+                        qfeeds.push(feedStreams[mids[i].id]);
                         this.props.setProps({qfeeds});
                     }
                 }
@@ -280,10 +281,15 @@ class ShidurGroups extends Component {
         // }
 
         // Unsubscribe from previous mid
-        this.props.unsubscribeFrom(mids[mid].feed_id, mid);
+        this.props.unsubscribeFrom(mids[i].feed_id, i);
 
         // Subscribe to new feed
-        this.props.subscribeTo(feed.id);
+        let streams = [{feed: feed.id, mid: "1"}];
+        this.props.subscribeTo(streams);
+
+        // setTimeout(() => {
+        //     this.props.subscribeTo(streams);
+        // }, 1000);
 
         // Send sdi action
         //this.sdiAction("switch" , false, i, feed);
@@ -406,6 +412,7 @@ class ShidurGroups extends Component {
 
 
   render() {
+      console.log(" --- RENDER ---")
       const { full_feed,zoom,fullscr,col } = this.state;
       const {index,feeds,pre_feed,pgm_state,users,qfeeds} = this.props;
       const width = "100%";
@@ -462,6 +469,7 @@ class ShidurGroups extends Component {
               let user = JSON.parse(feed.feed_display);
               let qst = users[user.id] ? users[user.id].question : false;
               let talk = feed.talk;
+              let id = feed.feed_id;
               return (<div className={fullscr ? "hidden" : ""} key={"prf" + i}>
                         <div className="video_box"
                            key={"prov" + i}
