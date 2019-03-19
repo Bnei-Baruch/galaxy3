@@ -258,7 +258,7 @@ class ShidurGroups extends Component {
                 let qq_chk = quistions_queue.filter(qs => qs.rfid === mids[i].feed_id).length > 0;
                 if (qq_chk) {
                     if (chk.length < 2) {
-                        qfeeds.push(feedStreams[mids[i].id]);
+                        qfeeds.push({id: mids[i].feed_id, display: JSON.parse(mids[i].feed_display)});
                         this.props.setProps({qfeeds});
                     }
                 }
