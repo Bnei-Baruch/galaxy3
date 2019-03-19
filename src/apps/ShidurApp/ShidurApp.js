@@ -478,24 +478,14 @@ class ShidurApp extends Component {
         }
     };
 
-    unsubscribeFrom = (id, sub_mid) => {
-        Janus.log(" -- GOT SBUMID: ",sub_mid,id)
-        // Unsubscribe from this publisher
+    unsubscribeFrom = (streams, id) => {
+        Janus.log(" :: Going to unsubscribe: ",streams);
         let {remoteFeed} = this.state;
 
-        //let streams = [{feed: id}];
-        let streams = [];
-        if(id && !sub_mid) {
-            streams.push({feed: id});
-        }
+        // Remove feed from preview
+        if(id) this.pre.checkPreview(id);
 
-        if(sub_mid) {
-            streams.push({sub_mid});
-        }
-
-        //streams.push(unsub);
-        this.pre.checkPreview(id);
-        Janus.log(" -- GOING UNSUB",streams)
+        Janus.debug(" -- Sending request with data: ",streams);
         let unsubscribe = {request: "unsubscribe", streams};
         if(remoteFeed !== null)
             remoteFeed.send({ message: unsubscribe });
@@ -541,7 +531,8 @@ class ShidurApp extends Component {
                 }
 
                 // Send an unsubscribe request
-                this.unsubscribeFrom(id);
+                let streams = [{ feed: id }];
+                this.unsubscribeFrom(streams, id);
 
                 // Check if we need atoswitch feeds in program
                 setTimeout(() => {

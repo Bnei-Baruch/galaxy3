@@ -126,13 +126,14 @@ class ShidurGroups extends Component {
         }
 
         // Unsubscribe from previous mid
-        this.props.unsubscribeFrom(mids[i].feed_id, mids[i].mid);
+        let streams = [{ sub_mid: mids[i].mid }];
+        this.props.unsubscribeFrom(streams, mids[i].feed_id);
 
         // Subscribe to new feed
-        let streams = [{feed: feed.id, mid: "1"}];
+        let sub_streams = [{feed: feed.id, mid: "1"}];
         //FIXME: Let's see if it's fix for sure reuse empty m-line
         setTimeout(() => {
-            this.props.subscribeTo(streams);
+            this.props.subscribeTo(sub_streams);
         }, 500);
 
         // Send sdi action
