@@ -188,7 +188,8 @@ class ShidurToran extends Component {
         // }
     };
 
-    disableGroup = (pre_feed) => {
+    disableGroup = (e, pre_feed) => {
+        if(e) e.preventDefault();
         let {disabled_groups} = this.state;
         Janus.log(" :: Put to disabled: ", pre_feed);
         let chk = disabled_groups.find(g => g.id === pre_feed.id);
@@ -292,7 +293,7 @@ class ShidurToran extends Component {
                         size='mini'
                         color='red'
                         icon='close'
-                        onClick={() => this.disableGroup(pre_feed)} />
+                        onClick={() => this.disableGroup(null, pre_feed)} />
                 <Button className='hide_button'
                         size='mini'
                         color='orange'
@@ -318,7 +319,7 @@ class ShidurToran extends Component {
             return (
                 <Table.Row className={pre_feed && id === pre_feed.id ? 'active' : 'no'}
                            key={i} onClick={() => this.selectGroup(feed)}
-                           onContextMenu={(e) => this.disableRoom(e, feed, i)} >
+                           onContextMenu={(e) => this.disableGroup(e, feed, i)} >
                     <Table.Cell width={5}>{display.display}</Table.Cell>
                     <Table.Cell width={1}>{0}</Table.Cell>
                     <Table.Cell width={1}>{0}</Table.Cell>
