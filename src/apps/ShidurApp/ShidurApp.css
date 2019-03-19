@@ -14,10 +14,16 @@
     color: powderblue;
 }
 
-.disabled_groups {
+.group_list {
     overflow-y:scroll;
     top:0px; left:0px;
     width:102%; height:275px;
+}
+
+.disabled_groups {
+    overflow-y:scroll;
+    top:0px; left:0px;
+    width:102%; height:135px;
 }
 
 .preview_conteiner {

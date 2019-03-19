@@ -882,115 +882,129 @@ class ShidurApp extends Component {
         let login = (<LoginPage user={user} />);
 
         let content = (
-            <Grid columns={4} padded>
-                <Grid.Column>
-                    <ShidurGroups
-                        index={0} {...this.state}
-                        ref={col => {this.col1 = col;}}
-                        setProps={this.setProps}
-                        unsubscribeFrom={this.unsubscribeFrom}
-                        subscribeTo={this.subscribeTo}
-                        removeFeed={this.removeFeed} />
-                    <Segment className="preview_conteiner">
-                    <Segment className="group_segment" color='green'>
+            <Grid columns={2} padded>
+                <Grid.Column width={12}>
+                    <Grid columns={3}>
+                        <Grid.Row>
+                            <Grid.Column>
+                                <ShidurGroups
+                                    index={0} {...this.state}
+                                    ref={col => {this.col1 = col;}}
+                                    setProps={this.setProps}
+                                    unsubscribeFrom={this.unsubscribeFrom}
+                                    subscribeTo={this.subscribeTo}
+                                    removeFeed={this.removeFeed} />
+                            </Grid.Column>
+                            <Grid.Column>
+                                <ShidurGroups
+                                    index={4} {...this.state}
+                                    ref={col => {this.col2 = col;}}
+                                    setProps={this.setProps}
+                                    unsubscribeFrom={this.unsubscribeFrom}
+                                    subscribeTo={this.subscribeTo}
+                                    removeFeed={this.removeFeed} />
+                            </Grid.Column>
+                            <Grid.Column>
+                                <ShidurGroups
+                                    index={8} {...this.state}
+                                    ref={col => {this.col3 = col;}}
+                                    setProps={this.setProps}
+                                    unsubscribeFrom={this.unsubscribeFrom}
+                                    subscribeTo={this.subscribeTo}
+                                    removeFeed={this.removeFeed} />
+                            </Grid.Column>
+                        </Grid.Row>
+                        <Grid.Row>
+                            <Grid.Column>
+                                <Segment className="preview_conteiner">
+                                    <Segment className="group_segment" color='green'>
 
-                    </Segment>
-                    </Segment>
-                    <Message attached className='info-panel' color='grey'>
-                        <Popup on='click'
-                               trigger={<Label attached='top left' color='grey'>
-                                   Next: {feeds[feeds_queue] ? feeds[feeds_queue].display.display : ""}
-                               </Label>}
-                               flowing
-                               position='bottom center'
-                               hoverable>
-                            <Input type='text' placeholder='' action value={pri}
-                                   onChange={(v,{value}) => this.setState({pri: value})}>
-                                <input />
-                                <Button positive onClick={this.fixProgram}>Fix</Button>
-                            </Input>
-                        </Popup>
-                        <Label color='brown'>
-                            <Icon size='big' name='address card' />
-                            <b className='queue_counter'>{feeds.length - feeds_queue}</b>
-                            <Icon name='delete' onClick={this.resetQueue} />
-                        </Label>
-                        <Label attached='top right' color='blue' >
-                            Round: {round}
-                        </Label>
-                    </Message>
-                    <Button.Group attached='bottom' >
-                        <Button
-                            color={sndman ? "green" : "red"}
-                            disabled={!sndman}
-                            onClick={() => this.col1.sdiAction("restart", false, 1, {sndman: true})}>
-                            SndMan</Button>
-                        <Button
-                            color={sdiout ? "green" : "red"}
-                            disabled={!sdiout}
-                            onClick={() => this.col1.sdiAction("restart", false, 1, {sdiout: true})}>
-                            SdiOut</Button>
-                    </Button.Group>
+                                    </Segment>
+                                </Segment>
+                                <Message attached className='info-panel' color='grey'>
+                                    <Popup on='click'
+                                           trigger={<Label attached='top left' color='grey'>
+                                               Next: {feeds[feeds_queue] ? feeds[feeds_queue].display.display : ""}
+                                           </Label>}
+                                           flowing
+                                           position='bottom center'
+                                           hoverable>
+                                        <Input type='text' placeholder='' action value={pri}
+                                               onChange={(v,{value}) => this.setState({pri: value})}>
+                                            <input />
+                                            <Button positive onClick={this.fixProgram}>Fix</Button>
+                                        </Input>
+                                    </Popup>
+                                    <Label color='brown'>
+                                        <Icon size='big' name='address card' />
+                                        <b className='queue_counter'>{feeds.length - feeds_queue}</b>
+                                        <Icon name='delete' onClick={this.resetQueue} />
+                                    </Label>
+                                    <Label attached='top right' color='blue' >
+                                        Round: {round}
+                                    </Label>
+                                </Message>
+                                <Button.Group attached='bottom' >
+                                    <Button
+                                        color={sndman ? "green" : "red"}
+                                        disabled={!sndman}
+                                        onClick={() => this.col1.sdiAction("restart", false, 1, {sndman: true})}>
+                                        SndMan</Button>
+                                    <Button
+                                        color={sdiout ? "green" : "red"}
+                                        disabled={!sdiout}
+                                        onClick={() => this.col1.sdiAction("restart", false, 1, {sdiout: true})}>
+                                        SdiOut</Button>
+                                </Button.Group>
+                            </Grid.Column>
+                            <Grid.Column>
+                                <Dropdown className='select_group'
+                                          placeholder='Search..'
+                                          fluid
+                                          search
+                                          selection
+                                          options={group_options}
+                                          onChange={(e,{value}) => this.selectGroup(value)} />
+                                <Segment textAlign='center' className="group_list" raised >
+                                    <Label attached='top right' color='grey'>
+                                        Online: {feeds.length}
+                                    </Label>
+                                    <Table selectable compact='very' basic structured className="admin_table" unstackable>
+                                        <Table.Body>
+                                            {groups_list}
+                                        </Table.Body>
+                                    </Table>
+                                </Segment>
+                                <Segment textAlign='center' >
+                                    <Label attached='top right' color={qfeeds.length > 0 ? 'red' : 'grey'}>
+                                        Questions: {qfeeds.length}
+                                    </Label>
+                                    <Dropdown className='select_group' error={qfeeds.length > 0}
+                                              placeholder='Questions'
+                                              fluid
+                                              selection
+                                              options={queue_options}
+                                              onChange={(e,{value}) => this.selectGroup(value)} />
+                                </Segment>
+                            </Grid.Column>
+                            <Grid.Column>
+                                <Segment className="preview_conteiner">
+                                    <Segment className="group_segment" color='green'>
+                                        {preview}
+                                    </Segment>
+                                </Segment>
+                                <Segment textAlign='center' className="disabled_groups">
+                                    <Table selectable compact='very' basic structured className="admin_table" unstackable>
+                                        <Table.Body>
+                                            {disabled_list}
+                                        </Table.Body>
+                                    </Table>
+                                </Segment>
+                            </Grid.Column>
+                        </Grid.Row>
+                    </Grid>
                 </Grid.Column>
-                <Grid.Column>
-                    <ShidurGroups
-                        index={4} {...this.state}
-                        ref={col => {this.col2 = col;}}
-                        setProps={this.setProps}
-                        unsubscribeFrom={this.unsubscribeFrom}
-                        subscribeTo={this.subscribeTo}
-                        removeFeed={this.removeFeed} />
-                    <Dropdown className='select_group'
-                              placeholder='Search..'
-                              fluid
-                              search
-                              selection
-                              options={group_options}
-                              onChange={(e,{value}) => this.selectGroup(value)} />
-                    <Segment textAlign='center' className="group_list" raised >
-                        <Label attached='top right' color='grey'>
-                            Online: {feeds.length}
-                        </Label>
-                        <Table selectable compact='very' basic structured className="admin_table" unstackable>
-                            <Table.Body>
-                                {groups_list}
-                            </Table.Body>
-                        </Table>
-                    </Segment>
-                    <Segment textAlign='center' >
-                    <Label attached='top right' color={qfeeds.length > 0 ? 'red' : 'grey'}>
-                        Questions: {qfeeds.length}
-                    </Label>
-                    <Dropdown className='select_group' error={qfeeds.length > 0}
-                              placeholder='Questions'
-                              fluid
-                              selection
-                              options={queue_options}
-                              onChange={(e,{value}) => this.selectGroup(value)} />
-                    </Segment>
-                </Grid.Column>
-                <Grid.Column>
-                    <ShidurGroups
-                        index={8} {...this.state}
-                        ref={col => {this.col3 = col;}}
-                        setProps={this.setProps}
-                        unsubscribeFrom={this.unsubscribeFrom}
-                        subscribeTo={this.subscribeTo}
-                        removeFeed={this.removeFeed} />
-                    <Segment className="preview_conteiner">
-                    <Segment className="group_segment" color='green'>
-                        {preview}
-                    </Segment>
-                    </Segment>
-                    <Segment textAlign='center' className="disabled_groups">
-                        <Table selectable compact='very' basic structured className="admin_table" unstackable>
-                            <Table.Body>
-                                {disabled_list}
-                            </Table.Body>
-                        </Table>
-                    </Segment>
-                </Grid.Column>
-                <Grid.Column>
+                <Grid.Column width={4}>
                     {/*<ShidurUsers*/}
                         {/*ref={col => {this.col4 = col;}}*/}
                         {/*setProps={this.setProps} />*/}
