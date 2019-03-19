@@ -1,6 +1,6 @@
 import React, {Component} from 'react';
 import {Janus} from "../../lib/janus";
-import {Grid, Label, Message, Segment, Table, Icon, Popup, Button, Input, Dropdown, Dimmer} from "semantic-ui-react";
+import {Grid, Label, Message, Segment, Table, Icon, Popup, Button, Input, Dropdown} from "semantic-ui-react";
 import {initJanus} from "../../shared/tools";
 import {initGxyProtocol, sendProtocolMessage} from "../../shared/protocol";
 import ShidurGroups from "./ShidurGroups";
@@ -65,14 +65,6 @@ class ShidurApp extends Component {
     };
 
     componentWillUnmount() {
-        //FIXME: If we don't detach remote handle, Janus still send UDP stream!
-        //this may happen because Janus in use for now is very old version
-        //Need to check if this shit happend on latest Janus version
-        // this.state.pre.detach();
-        // this.state.pr1.forEach(feed => {
-        //     Janus.debug(" Detach feed: ",feed);
-        //     feed.detach();
-        // });
         this.state.janus.destroy();
     };
 
@@ -508,7 +500,7 @@ class ShidurApp extends Component {
     };
 
     removeFeed = (id) => {
-        let {feeds,feedStreams,pre_feed,users,quistions_queue,qfeeds,feeds_queue,disabled_groups} = this.state;
+        let {feeds,users,quistions_queue,qfeeds,feeds_queue} = this.state;
 
         // Clean preview
         this.checkPreview(id);
@@ -520,7 +512,6 @@ class ShidurApp extends Component {
                 let user = feeds[i].display;
                 console.log(" :: Remove feed: " + id + " - Name: " + user.username);
                 delete users[user.id];
-                //delete feedStreams[id];
 
                 // Delete from questions list
                 for(let i = 0; i < quistions_queue.length; i++){
@@ -550,7 +541,7 @@ class ShidurApp extends Component {
                 // Send an unsubscribe request
                 this.unsubscribeFrom(id);
 
-                this.setState({feeds,users,feedStreams,quistions_queue});
+                this.setState({feeds,users,quistions_queue});
                 //this.checkProgram(id,feeds,feeds_queue);
                 break
             }
@@ -877,12 +868,8 @@ class ShidurApp extends Component {
 
         let groups_list = feeds.map((feed,i) => {
             const {id, display} = feed;
-            //let chk = quistions_queue.filter(q => q.room === room);
             return (
-                <Table.Row
-
-
-                           className={pre_feed && id === pre_feed.id ? 'active' : 'no'}
+                <Table.Row className={pre_feed && id === pre_feed.id ? 'active' : 'no'}
                            key={i} onClick={() => this.selectGroup(feed)}
                            onContextMenu={(e) => this.disableRoom(e, feed, i)} >
                     <Table.Cell width={5}>{display.display}</Table.Cell>

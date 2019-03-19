@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import { Janus } from "../../lib/janus";
-import {Segment, Icon, Dropdown, Dimmer, Button} from "semantic-ui-react";
+import {Segment, Icon, Dimmer, Button} from "semantic-ui-react";
 //import {getState, putData} from "../../shared/tools";
 import './ShidurGroups.css'
 import {sendProtocolMessage} from "../../shared/protocol";
@@ -9,7 +9,6 @@ class ShidurGroups extends Component {
 
     state = {
         col: null,
-        disabled_groups: [],
     };
 
     componentDidMount() {
@@ -20,151 +19,6 @@ class ShidurGroups extends Component {
             this.setState({col: 2});
         } else if(index === 8) {
             this.setState({col: 3});
-        }
-    };
-
-    // subscribeTo = (subscription) => {
-    //     // New feeds are available, do we need create a new plugin handle first?
-    //     if (this.props.remoteFeed) {
-    //         this.props.remoteFeed.send({message:
-    //                 {request: "subscribe", streams: subscription}
-    //         });
-    //         return;
-    //     }
-    //
-    //     // We don't have a handle yet, but we may be creating one already
-    //     if (this.props.creatingFeed) {
-    //         // Still working on the handle
-    //         setTimeout(() => {
-    //             this.subscribeTo(subscription);
-    //         }, 500);
-    //         return;
-    //     }
-    //
-    //     // We don't creating, so let's do it
-    //     this.props.setProps({creatingFeed: true});
-    //     this.props.newRemoteFeed(subscription);
-    // };
-
-    // newSwitchFeed = (id, program, i) => {
-    //     let pre = null;
-    //     this.props.janus.attach(
-    //         {
-    //             plugin: "janus.plugin.videoroom",
-    //             opaqueId: "switchfeed_user",
-    //             success: (pluginHandle) => {
-    //                 pre = pluginHandle;
-    //                 pre.simulcastStarted = false;
-    //                 Janus.log("Plugin attached! (" + pre.getPlugin() + ", id=" + pre.getId() + ")");
-    //                 Janus.log("  -- This is a subscriber");
-    //                 let listen = { "request": "join", "room": 1234, "ptype": "subscriber", streams: [{feed: id, mid: "1"}] };
-    //                 pre.send({"message": listen});
-    //                 if(program) {
-    //                     let {pr1} = this.props;
-    //                     pr1[i] = pre;
-    //                     this.props.setProps({pr1});
-    //                 } else {
-    //                     this.setState({pre});
-    //                 }
-    //             },
-    //             error: (error) => {
-    //                 Janus.error("  -- Error attaching plugin...", error);
-    //             },
-    //             onmessage: (msg, jsep) => {
-    //                 Janus.debug(" ::: Got a message (subscriber) :::");
-    //                 Janus.debug(msg);
-    //                 let event = msg["videoroom"];
-    //                 Janus.debug("Event: " + event);
-    //                 if(msg["error"] !== undefined && msg["error"] !== null) {
-    //                     Janus.debug(":: Error msg: " + msg["error"]);
-    //                 } else if(event !== undefined && event !== null) {
-    //                     if(event === "attached") {
-    //                         // Subscriber created and attached
-    //                         Janus.log("Successfully attached to feed " + pre);
-    //                     } else {
-    //                         // What has just happened?
-    //                     }
-    //                 }
-    //                 if(msg["streams"]) {
-    //                     // Update map of subscriptions by mid
-    //                     Janus.log(" :: Streams updated! : ",msg["streams"]);
-    //                     let {mids} = this.state;
-    //                     for(let i in msg["streams"]) {
-    //                         let mindex = msg["streams"][i]["mid"];
-    //                         //let feed_id = msg["streams"][i]["feed_id"];
-    //                         mids[mindex] = msg["streams"][i];
-    //                     }
-    //                     this.setState({mids});
-    //                 }
-    //                 if(jsep !== undefined && jsep !== null) {
-    //                     Janus.debug("Handling SDP as well...");
-    //                     Janus.debug(jsep);
-    //                     // Answer and attach
-    //                     pre.createAnswer(
-    //                         {
-    //                             jsep: jsep,
-    //                             media: { audioSend: false, videoSend: false },	// We want recvonly audio/video
-    //                             success: (jsep) => {
-    //                                 Janus.debug("Got SDP!");
-    //                                 Janus.debug(jsep);
-    //                                 let body = { "request": "start", "room": 1234 };
-    //                                 pre.send({"message": body, "jsep": jsep});
-    //                             },
-    //                             error: (error) => {
-    //                                 Janus.error("WebRTC error:", error);
-    //                             }
-    //                         });
-    //                 }
-    //             },
-    //             webrtcState: (on) => {
-    //                 Janus.log("Janus says this WebRTC PeerConnection (feed #" + pre + ") is " + (on ? "up" : "down") + " now");
-    //             },
-    //             onlocalstream: (stream) => {
-    //                 // The subscriber stream is recvonly, we don't expect anything here
-    //             },
-    //             onremotetrack: (track,mid,on) => {
-    //                 Janus.debug(" - Remote track "+mid+" is: "+on,track);
-    //                 if(!on) {
-    //                     console.log(" :: Going to stop track :: " + track + ":", mid);
-    //                     //FIXME: Remove callback for audio track does not come
-    //                     track.stop();
-    //                     //FIXME: does we really need to stop all track for feed id?
-    //                     return;
-    //                 }
-    //                 if(track.kind !== "video" || !on || !track.muted)
-    //                     return;
-    //                 let stream = new MediaStream();
-    //                 stream.addTrack(track.clone());
-    //                 Janus.debug("Remote feed #" + pre);
-    //                 let switchvideo = program ? this.refs["programVideo" + i] : this.refs.prevewVideo;
-    //                 Janus.log(" Attach remote stream on video: "+i);
-    //                 Janus.attachMediaStream(switchvideo, stream);
-    //             },
-    //             oncleanup: () => {
-    //                 Janus.log(" ::: Got a cleanup notification (remote feed "+id+" : "+i+") :::");
-    //                 console.log(" :: Cleanup handle! - " + id + " - index: " + i);
-    //             }
-    //         });
-    // };
-
-    checkPreview = (id) => {
-        let {pre_feed} = this.state;
-        if(pre_feed && pre_feed.id === id) {
-            this.hidePreview()
-        }
-    };
-
-    switchPreview = (id, display) => {
-        if(!this.state.pre) {
-            this.newSwitchFeed(id,false);
-        } else {
-            let streams = [{feed: id, mid: "1", sub_mid: "0"}];
-            let switchfeed = {"request": "switch", streams};
-            this.state.pre.send ({"message": switchfeed,
-                success: () => {
-                    Janus.log(" :: Preview Switch Feed to: ", display);
-                }
-            })
         }
     };
 
@@ -244,14 +98,10 @@ class ShidurGroups extends Component {
     switchNext = (i ,feed, r) => {
         Janus.log(" -- GOT NEXT: ", feed)
         if(!feed) return;
-        let {pr1,pgm_state,mids,qam,qfeeds,quistions_queue,feedStreams} = this.props;
-        //let mid = qam[i];
+        let {mids,qfeeds,quistions_queue} = this.props;
+
         // Add to group search if removed from program with question status
         if(mids[i]) {
-            // let cur_feed = pgm_state[i];
-            // let chk = pgm_state.filter(p => {
-            //     return (p !== null && p !== undefined && p.id === cur_feed.id)
-            // });
             let chk = mids.filter(g => g.active && g.feed_id === mids[i].feed_id);
             let qf_chk = qfeeds.filter(qf => qf.rfid === mids[i].feed_id).length === 0;
             if (qf_chk) {
@@ -275,11 +125,6 @@ class ShidurGroups extends Component {
             }
         }
 
-        // Tmp fix
-        // if(r === "fix") {
-        //     this.sdiAction("fix", true, i, feed)
-        // }
-
         // Unsubscribe from previous mid
         this.props.unsubscribeFrom(mids[i].feed_id, mids[i].mid);
 
@@ -292,70 +137,7 @@ class ShidurGroups extends Component {
 
         // Send sdi action
         //this.sdiAction("switch" , false, i, feed);
-
-        // DEPRICATED
-        //Detch previous feed
-        // if(pr1[i] && r !== true) {
-        //     pr1[i].detach();
-        //     pr1[i] = null;
-        // }
-
-        // if(!pr1[i]) {
-        //     console.log(" :: New handle! - " + feed.id);
-        //     this.newSwitchFeed(feed.id,true,i);
-        //     pgm_state[i] = feed;
-        //     this.props.setProps({pgm_state});
-        //     this.sdiAction("switch" , false, i, feed);
-        // } else {
-        //     console.log(" :: Switch handle! - " + feed.id);
-        //     let streams = [{feed: feed.id, mid: "1", sub_mid: "0"}];
-        //     let switchfeed = {"request": "switch", streams};
-        //     pr1[i].send ({"message": switchfeed,
-        //         success: () => {
-        //             Janus.log(" :: Next Switch Feed to: ", feed.display);
-        //             pgm_state[i] = feed;
-        //             this.props.setProps({pgm_state});
-        //             this.sdiAction("switch", true, i, feed)
-        //             // putData(`state/galaxy/pr1`, pgm_state, (cb) => {
-        //             //     Janus.log(":: Save to state: ",cb);
-        //             // });
-        //         }
-        //     })
-        // }
     };
-
-    // selectGroup = (pre_feed) => {
-    //     this.setState({pre_feed});
-    //     Janus.log(pre_feed);
-    //     // We can show in preview feed stream object
-    //     if(this.props.feedStreams[pre_feed.id]) {
-    //         let {stream} = this.props.feedStreams[pre_feed.id];
-    //         let video = this.refs.prevewVideo;
-    //         Janus.log(" Attach mid to preview: "+pre_feed.id);
-    //         Janus.attachMediaStream(video, stream);
-    //     } else {
-    //         //TODO: Make new remoteFeed
-    //         //this.switchPreview(pre_feed.id, pre_feed.display);
-    //     }
-    // };
-
-    // disableGroup = () => {
-    //     let {disabled_groups} = this.props;
-    //     let {pre_feed} = this.state;
-    //     let chk = disabled_groups.find(g => g.id === pre_feed.id);
-    //     if(chk)
-    //         return;
-    //     this.sdiAction("disable", true, null, pre_feed);
-    //     disabled_groups.push(pre_feed);
-    //     this.props.removeFeed(pre_feed.id);
-    //     this.hidePreview();
-    //     this.props.setProps({disabled_groups});
-    // };
-
-    // hidePreview = () => {
-    //     //this.state.pre.detach();
-    //     this.setState({pre_feed: null, pre: null});
-    // };
 
     zoominGroup = (e, i ,s) => {
         e.preventDefault();
@@ -372,25 +154,6 @@ class ShidurGroups extends Component {
     };
 
     handleClose = () => this.setState({ zoom: false });
-
-    // restoreGroup = (e, data, i) => {
-    //     e.preventDefault();
-    //     if (e.type === 'contextmenu') {
-    //         let {disabled_groups,feeds,users} = this.props;
-    //         for(let i = 0; i < disabled_groups.length; i++) {
-    //             if(JSON.parse(disabled_groups[i].display).id === JSON.parse(data.display).id) {
-    //                 //TODO: check if we got question while feed was disable
-    //                 disabled_groups.splice(i, 1);
-    //                 feeds.push(data);
-    //                 let user = JSON.parse(data.display);
-    //                 user.rfid = data.id;
-    //                 users[user.id] = user;
-    //                 this.props.setProps({disabled_groups,feeds,users});
-    //                 this.sdiAction("restore", true, i, data);
-    //             }
-    //         }
-    //     }
-    // };
 
     fullScreenGroup = (i,full_feed) => {
         Janus.log(":: Make Full Screen Group: ",full_feed);
@@ -413,7 +176,7 @@ class ShidurGroups extends Component {
   render() {
       console.log(" --- RENDER ---")
       const { full_feed,zoom,fullscr,col } = this.state;
-      const {index,feeds,pre_feed,pgm_state,users,qfeeds} = this.props;
+      const {feeds,pre_feed,users} = this.props;
       const width = "100%";
       const height = "100%";
       const autoPlay = true;
@@ -421,48 +184,8 @@ class ShidurGroups extends Component {
       const muted = true;
       const q = (<Icon color='red' name='question circle' />);
 
-      // let queue_options = qfeeds.map((feed,i) => {
-      //     const {display} = JSON.parse(feed.display);
-      //     return ({ key: feed.id+i, value: feed, text: display, icon: 'help'})
-      // });
-
-      // let group_options = feeds.map((feed,i) => {
-      //     const display = feed.display.display;
-      //     return ({ key: i, value: feed, text: display })
-      // });
-
-      // let preview = (<div className={pre_feed ? "" : "hidden"}>
-      //     <div className="fullscrvideo_title"><span>{pre_feed ? pre_feed.display.display : ""}</span></div>
-      //         <div className={
-      //             //TODO: Fix this ugly shit!
-      //             pre_feed ? users[pre_feed.display.id] ? users[pre_feed.display.id].question ? 'qst_fullscreentitle' : 'hidden' : 'hidden' : 'hidden'
-      //         }>?</div>
-      //         <video
-      //             onContextMenu={(e) => this.zoominGroup(e, null, "pre")}
-      //                ref = {"prevewVideo"}
-      //                id = "prevewVideo"
-      //                width = "400"
-      //                height = "220"
-      //                autoPlay = {autoPlay}
-      //                controls = {controls}
-      //                muted = {muted}
-      //                playsInline = {true} />
-      //         <Button className='close_button'
-      //                 size='mini'
-      //                 color='red'
-      //                 icon='close'
-      //                 onClick={() => this.disableGroup()} />
-      //         <Button className='hide_button'
-      //                 size='mini'
-      //                 color='orange'
-      //                 icon='window minimize'
-      //                 onClick={() => this.hidePreview()} />
-      //     </div>
-      // );
-
       let program = this.props.mids.map((feed,i) => {
           if(feed && this.props.qam[i] === col) {
-          //if(feed && i >= index && i < index+4) {
               if(!feed.active) {
                   return (this.props.mids.length > 12 ?
                       <div className={fullscr ? "hidden" : ""} key={"prf" + i}>
@@ -552,16 +275,6 @@ class ShidurGroups extends Component {
                   <Icon name='th large' />
                   <Icon name='share' />
               </Button>
-              {/*<Segment className="group_segment" color='green'>*/}
-                  {/*{preview}*/}
-              {/*</Segment>*/}
-              {/*<Dropdown className='select_group' error={qfeeds.length > 0}*/}
-                        {/*placeholder='Select Group'*/}
-                        {/*fluid*/}
-                        {/*search*/}
-                        {/*selection*/}
-                        {/*options={queue_options.concat(group_options)}*/}
-                        {/*onChange={(e,{value}) => this.selectGroup(value)} />*/}
               <Dimmer active={zoom} onClickOutside={this.handleClose} page>
                   <video ref={"zoomVideo"}
                          id={"zoomVideo"}
