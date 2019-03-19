@@ -560,7 +560,7 @@ class ShidurApp extends Component {
         let {round,mids} = this.state;
 
         // Switch to next feed if program full
-        if(feeds.length > 13) {
+        if(feeds.length > 12) {
             Janus.log(" :: Let's check mids - ", mids);
             mids.forEach((mid,i) => {
                 Janus.debug(" :: mids iteration - ", i, mid);

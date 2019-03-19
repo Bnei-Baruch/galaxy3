@@ -371,17 +371,19 @@ class ShidurToran extends Component {
                     </Button.Group>
                 </Grid.Column>
                 <Grid.Column>
-                    <Dropdown className='select_group'
-                              placeholder='Search..'
-                              fluid
-                              search
-                              selection
-                              options={group_options}
-                              onChange={(e,{value}) => this.selectGroup(value)} />
-                    <Segment textAlign='center' className="group_list" raised >
-                        <Label attached='top right' color='grey'>
+                    <Segment textAlign='center' >
+                        <Label attached='top right' color={feeds.length > 12 ? 'green' : 'grey'}>
                             Online: {feeds.length}
                         </Label>
+                        <Dropdown className='select_group'
+                                  placeholder='Search..'
+                                  fluid
+                                  search
+                                  selection
+                                  options={group_options}
+                                  onChange={(e,{value}) => this.selectGroup(value)} />
+                    </Segment>
+                    <Segment textAlign='center' className="group_list" raised >
                         <Table selectable compact='very' basic structured className="admin_table" unstackable>
                             <Table.Body>
                                 {groups_list}
