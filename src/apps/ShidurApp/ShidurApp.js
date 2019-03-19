@@ -543,8 +543,14 @@ class ShidurApp extends Component {
                 // Send an unsubscribe request
                 this.unsubscribeFrom(id);
 
+                // Check if we need atoswitch feeds in program
+                setTimeout(() => {
+                    //FIXME: Here we must be sure
+                    // we get mids updated event after unsubscribing event
+                    this.autofillProgram(id,feeds,feeds_queue);
+                }, 500);
+
                 this.setState({feeds,users,quistions_queue});
-                this.autofillProgram(id,feeds,feeds_queue);
                 break
             }
         }
@@ -553,15 +559,13 @@ class ShidurApp extends Component {
     autofillProgram = (id,feeds,feeds_queue) => {
         let {round,mids} = this.state;
 
-
-        for (let i = 0; i < mids.length; i++) {
-            if (mids[i] && mids[i].active && mids[i].feed_id === id) {
-                console.log(" :: Feed in program! - " + id);
-
-                // Switch to next feed if program full
-                if(feeds.length < 13) {
-                    Janus.log("Program not full - ingoring");
-                } else {
+        // Switch to next feed if program full
+        if(feeds.length > 13) {
+            Janus.log(" :: Let's check mids - ", mids);
+            mids.forEach((mid,i) => {
+                Janus.debug(" :: mids iteration - ", i, mid);
+                if (mid && !mid.active) {
+                    Janus.log(" :: Found empty slot in program! - ", mids[i]);
                     let feed = feeds[feeds_queue];
                     feeds_queue++;
                     if(feeds_queue >= feeds.length) {
@@ -575,41 +579,10 @@ class ShidurApp extends Component {
                     let streams = [{feed: feed.id, mid: "1"}];
                     this.subscribeTo(streams);
                 }
-            }
+            })
+        } else {
+            Janus.log(" :: Program not full - ignoring");
         }
-
-        // pgm_state.forEach((pgm,i) => {
-        //     if(pgm_state[i] && pgm.id === id) {
-        //         console.log(" :: Feed in program! - " + id);
-        //         if(feeds.length < 13) {
-        //             pr1[i].detach();
-        //             pgm_state[i] = null;
-        //             pr1[i] = null;
-        //         } else {
-        //             pr1[i].detach();
-        //             pr1[i] = null;
-        //             let feed = feeds[feeds_queue];
-        //             feeds_queue++;
-        //             if(feeds_queue >= feeds.length) {
-        //                 // End round here!
-        //                 feeds_queue = 0;
-        //                 round++;
-        //                 Janus.log(" -- ROUND END --");
-        //             }
-        //             this.setState({feeds_queue,round});
-        //
-        //             if(i < 4) {
-        //                 this.col1.switchNext(i,feed,"remove");
-        //             } else if(i < 8) {
-        //                 this.col2.switchNext(i,feed,"remove");
-        //             } else if(i < 12) {
-        //                 this.col3.switchNext(i,feed,"remove");
-        //             }
-        //         }
-        //     }
-        // });
-        //
-        // this.setState({pgm_state});
     };
 
     setProps = (props) => {
