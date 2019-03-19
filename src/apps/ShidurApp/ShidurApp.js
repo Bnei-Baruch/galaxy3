@@ -152,10 +152,10 @@ class ShidurApp extends Component {
                     for(let f in feeds) {
                         let id = feeds[f]["id"];
                         let display = JSON.parse(feeds[f]["display"]);
-                        let talk = feeds[f]["talking"];
+                        //let talk = feeds[f]["talking"];
                         let streams = feeds[f]["streams"];
                         feeds[f].display = display;
-                        feeds[f].talk = talk;
+                        //feeds[f].talk = talk;
                         let subst = {feed: id};
                         for (let i in streams) {
                             let stream = streams[i];
@@ -207,7 +207,7 @@ class ShidurApp extends Component {
                         let display = JSON.parse(feed[f]["display"]);
                         if(display.role !== "group")
                             return;
-                        let talk = feed[f]["talking"];
+                        //let talk = feed[f]["talking"];
                         let streams = feed[f]["streams"];
                         feed[f].display = display;
                         let subst = {feed: id};
@@ -414,7 +414,7 @@ class ShidurApp extends Component {
 
     onProtocolData = (data) => {
         if(data.type === "question" && data.status) {
-            let {quistions_queue,users,qfeeds,pgm_state,pr1,mids} = this.state;
+            let {quistions_queue,users,qfeeds,mids} = this.state;
             if(users[data.user.id]) {
                 users[data.user.id].question = true;
                 data.rfid = users[data.user.id].rfid;
@@ -422,30 +422,31 @@ class ShidurApp extends Component {
                 quistions_queue.push(data);
 
                 // Check if qfeed already in program
-                //let chk = pgm_state.filter(q => {return (q !== null && q !== undefined && q.id === data.rfid)});
                 let chk = mids.find(q => q.feed_id === data.rfid);
 
                 if(!chk) {
                     qfeeds.push(q);
                 } else {
-                    for(let i = 0; i < pgm_state.length; i++){
-                        let c = 0;
-                        // FIXME: Array with null will do crash here!
-                        if(pgm_state[i].id === chk[c].id) {
-                            pr1[i].detach();
-                            pr1[i] = null;
-                            if(i < 4) {
-                                this.col1.switchNext(i,chk[0]);
-                            } else if(i < 8) {
-                                this.col2.switchNext(i,chk[0]);
-                            } else if(i < 12) {
-                                this.col3.switchNext(i,chk[0]);
-                            }
-                            if(chk.length > 1) {
-                                c++
-                            }
-                        }
-                    }
+                    //TODO: Here we reattach same feed to fix delay after many switch requests
+                    //
+                    // for(let i = 0; i < pgm_state.length; i++){
+                    //     let c = 0;
+                    //     // FIXME: Array with null will do crash here!
+                    //     if(pgm_state[i].id === chk[c].id) {
+                    //         pr1[i].detach();
+                    //         pr1[i] = null;
+                    //         if(i < 4) {
+                    //             this.col1.switchNext(i,chk[0]);
+                    //         } else if(i < 8) {
+                    //             this.col2.switchNext(i,chk[0]);
+                    //         } else if(i < 12) {
+                    //             this.col3.switchNext(i,chk[0]);
+                    //         }
+                    //         if(chk.length > 1) {
+                    //             c++
+                    //         }
+                    //     }
+                    // }
                 }
 
                 this.setState({quistions_queue, users, qfeeds});
@@ -462,7 +463,7 @@ class ShidurApp extends Component {
                 }
             }
             for(let i = 0; i < qfeeds.length; i++) {
-                if(JSON.parse(qfeeds[i].display).id === data.user.id) {
+                if(qfeeds[i].display.id === data.user.id) {
                     qfeeds.splice(i, 1);
                     this.setState({qfeeds});
                     break
@@ -543,25 +544,24 @@ class ShidurApp extends Component {
                 this.unsubscribeFrom(id);
 
                 this.setState({feeds,users,quistions_queue});
-                //this.checkProgram(id,feeds,feeds_queue);
+                this.autofillProgram(id,feeds,feeds_queue);
                 break
             }
         }
     };
 
-    checkProgram = (id,feeds,feeds_queue) => {
-        let {pgm_state,pr1,round} = this.state;
+    autofillProgram = (id,feeds,feeds_queue) => {
+        let {round,mids} = this.state;
 
-        pgm_state.forEach((pgm,i) => {
-            if(pgm_state[i] && pgm.id === id) {
+
+        for (let i = 0; i < mids.length; i++) {
+            if (mids[i] && mids[i].active && mids[i].feed_id === id) {
                 console.log(" :: Feed in program! - " + id);
+
+                // Switch to next feed if program full
                 if(feeds.length < 13) {
-                    pr1[i].detach();
-                    pgm_state[i] = null;
-                    pr1[i] = null;
+                    Janus.log("Program not full - ingoring");
                 } else {
-                    pr1[i].detach();
-                    pr1[i] = null;
                     let feed = feeds[feeds_queue];
                     feeds_queue++;
                     if(feeds_queue >= feeds.length) {
@@ -571,19 +571,45 @@ class ShidurApp extends Component {
                         Janus.log(" -- ROUND END --");
                     }
                     this.setState({feeds_queue,round});
-
-                    if(i < 4) {
-                        this.col1.switchNext(i,feed,"remove");
-                    } else if(i < 8) {
-                        this.col2.switchNext(i,feed,"remove");
-                    } else if(i < 12) {
-                        this.col3.switchNext(i,feed,"remove");
-                    }
+                    Janus.log(":: Auto switch program to: ", feed);
+                    let streams = [{feed: feed.id, mid: "1"}];
+                    this.subscribeTo(streams);
                 }
             }
-        });
+        }
 
-        this.setState({pgm_state});
+        // pgm_state.forEach((pgm,i) => {
+        //     if(pgm_state[i] && pgm.id === id) {
+        //         console.log(" :: Feed in program! - " + id);
+        //         if(feeds.length < 13) {
+        //             pr1[i].detach();
+        //             pgm_state[i] = null;
+        //             pr1[i] = null;
+        //         } else {
+        //             pr1[i].detach();
+        //             pr1[i] = null;
+        //             let feed = feeds[feeds_queue];
+        //             feeds_queue++;
+        //             if(feeds_queue >= feeds.length) {
+        //                 // End round here!
+        //                 feeds_queue = 0;
+        //                 round++;
+        //                 Janus.log(" -- ROUND END --");
+        //             }
+        //             this.setState({feeds_queue,round});
+        //
+        //             if(i < 4) {
+        //                 this.col1.switchNext(i,feed,"remove");
+        //             } else if(i < 8) {
+        //                 this.col2.switchNext(i,feed,"remove");
+        //             } else if(i < 12) {
+        //                 this.col3.switchNext(i,feed,"remove");
+        //             }
+        //         }
+        //     }
+        // });
+        //
+        // this.setState({pgm_state});
     };
 
     setProps = (props) => {
