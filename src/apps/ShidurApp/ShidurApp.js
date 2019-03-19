@@ -338,7 +338,7 @@ class ShidurApp extends Component {
                         remoteFeed.createAnswer(
                             {
                                 jsep: jsep,
-                                media: { audioSend: false, videoSend: false },	// We want recvonly audio/video
+                                media: { audio: false, videoSend: false },	// We want recvonly audio/video
                                 success: (jsep) => {
                                     Janus.debug("Got SDP!");
                                     Janus.debug(jsep);
@@ -669,7 +669,7 @@ class ShidurApp extends Component {
                         pre.createAnswer(
                             {
                                 jsep: jsep,
-                                media: { audioSend: false, videoSend: false },	// We want recvonly audio/video
+                                media: { audio: false, videoSend: false },	// We want recvonly audio/video
                                 success: (jsep) => {
                                     Janus.debug("Got SDP!");
                                     Janus.debug(jsep);
