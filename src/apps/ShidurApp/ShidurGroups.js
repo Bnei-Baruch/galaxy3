@@ -9,6 +9,11 @@ class ShidurGroups extends Component {
 
     state = {
         col: null,
+        quad: [
+            "0","3","6","9",
+            "1","4","7","10",
+            "2","5","8","11"
+        ],
     };
 
     componentDidMount() {
@@ -50,6 +55,8 @@ class ShidurGroups extends Component {
 
     switchFour = () => {
         let {feeds_queue,feeds,index,round} = this.props;
+        let {quad} = this.state;
+        let streams = [];
 
         for(let i=index; i<index+4; i++) {
 
@@ -69,14 +76,28 @@ class ShidurGroups extends Component {
 
             // If program is not full avoid using feeds_queue
             if(feeds.length < 13) {
-                this.switchNext(i,feeds[i],true);
+                //this.switchNext(i,feeds[i],true);
+                let sub_mid = quad[i];
+                let feed = feeds[i].id;
+                streams.push({feed, mid: "1", sub_mid});
             } else {
-                this.switchNext(i,feeds[feeds_queue],true);
+                //this.switchNext(i,feeds[feeds_queue],true);
+                let sub_mid = quad[i];
+                let feed = feeds[feeds_queue].id;
+                streams.push({feed, mid: "1", sub_mid});
                 feeds_queue++;
                 this.props.setProps({feeds_queue});
             }
 
         }
+
+        Janus.log(" :: Going to switch four: ", streams);
+        let switch_four = {request: "switch", streams};
+        this.props.remoteFeed.send ({"message": switch_four,
+            success: () => {
+                Janus.debug(" -- Switch success: ");
+            }
+        })
     };
 
     sdiAction = (action, status, i, feed) => {
@@ -267,7 +288,7 @@ class ShidurGroups extends Component {
                   </div>
               </Segment>
               <Button className='fours_button'
-                      disabled={feeds.length < 13}
+                      disabled={feeds.length < 1}
                       attached='bottom'
                       color='blue'
                       size='mini'
