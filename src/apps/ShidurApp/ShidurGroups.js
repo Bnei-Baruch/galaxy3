@@ -177,7 +177,7 @@ class ShidurGroups extends Component {
             Janus.log(" :: Selected program Switch Feed to: ", pre_feed);
             this.switchNext(i, pre_feed);
             //this.hidePreview();
-            //this.props.setProps({program: pre_feed, pre_feed: null});
+            this.props.setProps({program: pre_feed, pre_feed: null});
         } else {
             let feed = feeds[feeds_queue];
             this.switchNext(i, feed);
@@ -267,7 +267,7 @@ class ShidurGroups extends Component {
 
         // Remove question status from group search list if add to program
         for (let q = 0; q < qfeeds.length; q++) {
-            if (qfeeds[q].id === feed.id) {
+            if (qfeeds[q] && qfeeds[q].id === feed.id) {
                 console.log(" - Remove QFEED: ", qfeeds[q]);
                 qfeeds.splice(q, 1);
                 this.props.setProps({qfeeds});
@@ -464,7 +464,8 @@ class ShidurGroups extends Component {
           if(feed && this.props.qam[i] === col) {
           //if(feed && i >= index && i < index+4) {
               if(!feed.active) {
-                  return (<div className={fullscr ? "hidden" : ""} key={"prf" + i}>
+                  return (this.props.mids.length > 12 ?
+                      <div className={fullscr ? "hidden" : ""} key={"prf" + i}>
                       <div className="video_box"
                            key={"prov" + i}
                            ref={"provideo" + i}
@@ -480,7 +481,7 @@ class ShidurGroups extends Component {
                                  controls={controls}
                                  muted={muted}
                                  playsInline={true}/>
-                      </div></div>);
+                      </div></div> : false)
               }
               let user = JSON.parse(feed.feed_display);
               let qst = users[user.id] ? users[user.id].question : false;

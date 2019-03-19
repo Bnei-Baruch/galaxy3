@@ -421,17 +421,18 @@ class ShidurApp extends Component {
 
     onProtocolData = (data) => {
         if(data.type === "question" && data.status) {
-            let {quistions_queue,users,qfeeds,pgm_state,pr1} = this.state;
+            let {quistions_queue,users,qfeeds,pgm_state,pr1,mids} = this.state;
             if(users[data.user.id]) {
                 users[data.user.id].question = true;
                 data.rfid = users[data.user.id].rfid;
-                let q = {id: data.rfid, display: JSON.stringify(data.user)};
+                let q = {id: data.rfid, display: data.user};
                 quistions_queue.push(data);
 
                 // Check if qfeed already in program
-                let chk = pgm_state.filter(q => {return (q !== null && q !== undefined && q.id === data.rfid)});
+                //let chk = pgm_state.filter(q => {return (q !== null && q !== undefined && q.id === data.rfid)});
+                let chk = mids.find(q => q.feed_id === data.rfid);
 
-                if(chk.length === 0) {
+                if(!chk) {
                     qfeeds.push(q);
                 } else {
                     for(let i = 0; i < pgm_state.length; i++){
@@ -490,10 +491,11 @@ class ShidurApp extends Component {
 
         //let streams = [{feed: id}];
         let streams = [];
-        //let unsub = {feed: id};
+        if(id && !sub_mid) {
+            streams.push({feed: id});
+        }
 
         if(sub_mid) {
-            //unsub.sub_mid = sub_mid;
             streams.push({sub_mid});
         }
 
@@ -826,8 +828,10 @@ class ShidurApp extends Component {
         });
 
         let queue_options = qfeeds.map((feed,i) => {
-            const {display} = JSON.parse(feed.display);
-            return ({ key: feed.id+i, value: feed, text: display, icon: 'help'})
+            if(feed) {
+                const {display} = feed.display;
+                return ({ key: i, value: feed, text: display, icon: 'help'});
+            }
         });
 
         let preview = (<div className={pre_feed ? "" : "hidden"}>
@@ -973,7 +977,6 @@ class ShidurApp extends Component {
                     <Dropdown className='select_group' error={qfeeds.length > 0}
                               placeholder='Questions'
                               fluid
-                              search
                               selection
                               options={queue_options}
                               onChange={(e,{value}) => this.selectGroup(value)} />
