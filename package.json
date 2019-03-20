@@ -10,6 +10,7 @@
     "node-sass": "^4.9.4",
     "oidc-client": "^1.5.4",
     "react": "^16.5.2",
+    "react-device-detect": "^1.6.2",
     "react-dom": "^16.5.2",
     "react-new-window": "^0.0.9",
     "react-rangeslider": "^2.2.0",

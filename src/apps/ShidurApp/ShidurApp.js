@@ -76,7 +76,7 @@ class ShidurApp extends Component {
             initGxyProtocol(janus, user, protocol => {
                 this.setState({protocol});
             }, ondata => {
-                Janus.log("-- :: It's protocol public message: ", ondata);
+                Janus.debug("-- :: It's protocol public message: ", ondata);
                 if(ondata.type === "error" && ondata.error_code === 420) {
                     alert(ondata.error);
                     this.state.protocol.hangup();
@@ -168,7 +168,7 @@ class ShidurApp extends Component {
                         feedStreams[id] = {id, display, streams};
                         users[display.id] = display;
                         users[display.id].rfid = id;
-                        if(subscription.length < 13)
+                        if(subscription.length < 12)
                             subscription.push(subst);
                     }
                     this.setState({feeds,feedStreams,users});

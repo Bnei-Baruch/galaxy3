@@ -80,7 +80,7 @@ export const initGxyProtocol = (janus,user,callback,ondata) => {
 };
 
 const onProtocolData = (data,user,ondata) => {
-    Janus.log(":: -- Protocol message from Data Channel: ",data);
+    Janus.debug(":: -- Protocol message from Data Channel: ",data);
     let json = JSON.parse(data);
     // var transaction = json["transaction"];
     // if (transactions[transaction]) {

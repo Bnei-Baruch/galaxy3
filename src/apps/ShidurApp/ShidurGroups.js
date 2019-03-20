@@ -208,7 +208,7 @@ class ShidurGroups extends Component {
       let program = this.props.mids.map((feed,i) => {
           if(feed && this.props.qam[i] === col) {
               if(!feed.active) {
-                  return (this.props.mids.length > 12 ?
+                  return (this.props.mids.length > 11 ?
                       <div className={fullscr ? "hidden" : ""} key={"prf" + i}>
                       <div className="video_box"
                            key={"prov" + i}
