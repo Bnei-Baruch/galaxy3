@@ -365,10 +365,12 @@ class MobileClient extends Component {
                         feedStreams[id] = {id, display, streams};
                         users[display.id] = display;
                         users[display.id].rfid = id;
-                        subscription.push({
-                            feed: id,	// This is mandatory
-                            //mid: stream.mid		// This is optional (all streams, if missing)
-                        });
+                        if(subscription.length < 4) {
+                            subscription.push({
+                                feed: id,	// This is mandatory
+                                //mid: stream.mid		// This is optional (all streams, if missing)
+                            });
+                        }
                     }
                     this.setState({feeds,feedStreams,users});
                     if(subscription.length > 0)
@@ -437,7 +439,7 @@ class MobileClient extends Component {
                     }
                     feeds.push(feed[0]);
                     this.setState({feeds,feedStreams,users});
-                    if(subscription.length > 0)
+                    if(feeds.length < 5)
                         this.subscribeTo(subscription);
                 } else if(msg["leaving"] !== undefined && msg["leaving"] !== null) {
                     // One of the publishers has gone away?
@@ -804,8 +806,8 @@ class MobileClient extends Component {
             return ({ key: i, text: label, value: deviceId})
         });
 
-        let videos = this.state.feeds.map((feed) => {
-            if(feed) {
+        let videos = this.state.feeds.map((feed,i) => {
+            if(feed && i < 4) {
                 let id = feed.id;
                 let talk = feed.talk;
                 let question = feed.question;
@@ -939,6 +941,7 @@ class MobileClient extends Component {
                         <div className="videos-panel">
                             <div className="videos">
                                 <div className="videos__wrapper">
+                                    {mystream ? "" :
                                     <div className="video">
                                         <div className={classNames('video__overlay')}>
                                             {question ?
@@ -964,7 +967,7 @@ class MobileClient extends Component {
                                         muted={true}
                                         playsInline={true}/>
                                     
-                                    </div>
+                                    </div>}
                                     {videos}
                                 </div>
                             </div>
