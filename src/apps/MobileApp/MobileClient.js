@@ -15,6 +15,7 @@ class MobileClient extends Component {
 
     state = {
         count: 0,
+        index: 4,
         creatingFeed: false,
         delay: false,
         audioContext: null,
@@ -651,6 +652,41 @@ class MobileClient extends Component {
                 break
             }
         }
+    };
+
+    switchFour = () => {
+        let {feeds_queue,feeds,index,mids} = this.state;
+        let streams = [];
+
+        for(let i=index; i<index+4; i++) {
+
+            // Don't switch if nobody in queue
+            if(i === feeds.length) {
+                console.log("Queue is END");
+                break;
+            }
+
+            if(feeds_queue >= feeds.length) {
+                // End round here!
+                Janus.log(" -- ROUND END --");
+                index = 0;
+            }
+
+            let sub_mid = mids[i].mid;
+            let feed = feeds[i].id;
+            streams.push({feed, mid: "1", sub_mid});
+            index++;
+            this.setState({index});
+
+        }
+
+        Janus.log(" :: Going to switch four: ", streams);
+        let switch_four = {request: "switch", streams};
+        this.state.remoteFeed.send ({"message": switch_four,
+            success: () => {
+                Janus.debug(" -- Switch success: ");
+            }
+        })
     };
 
     onProtocolData = (data) => {
