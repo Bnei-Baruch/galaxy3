@@ -357,21 +357,19 @@ class MobileClient extends Component {
                         let streams = feeds[f]["streams"];
                         feeds[f].display = display;
                         feeds[f].talk = talk;
+                        let subst = {feed: id};
                         for (let i in streams) {
                             let stream = streams[i];
                             stream["id"] = id;
                             stream["display"] = display;
+                            if(subscription.length > 3) {
+                                subst.mid = "0";
+                            }
                         }
                         feedStreams[id] = {id, display, streams};
                         users[display.id] = display;
                         users[display.id].rfid = id;
-                        //TODO: Feed with audio must be passed
-                        if(subscription.length < 4) {
-                            subscription.push({
-                                feed: id,	// This is mandatory
-                                //mid: stream.mid		// This is optional (all streams, if missing)
-                            });
-                        }
+                        subscription.push(subst);
                     }
                     this.setState({feeds,feedStreams,users});
                     if(subscription.length > 0)
@@ -425,24 +423,23 @@ class MobileClient extends Component {
                             return;
                         let streams = feed[f]["streams"];
                         feed[f].display = display;
+                        let subst = {feed: id};
                         for (let i in streams) {
                             let stream = streams[i];
                             stream["id"] = id;
                             stream["display"] = display;
+                            if(feeds.length > 4) {
+                                subst.mid = "0";
+                            }
                         }
                         feedStreams[id] = {id, display, streams};
                         users[display.id] = display;
                         users[display.id].rfid = id;
-                        subscription.push({
-                            feed: id,	// This is mandatory
-                            //mid: stream.mid		// This is optional (all streams, if missing)
-                        });
+                        subscription.push(subst);
                     }
                     feeds.push(feed[0]);
                     this.setState({feeds,feedStreams,users});
-                    //TODO: Feed with audio must be passed
-                    if(feeds.length < 5)
-                        this.subscribeTo(subscription);
+                    this.subscribeTo(subscription);
                 } else if(msg["leaving"] !== undefined && msg["leaving"] !== null) {
                     // One of the publishers has gone away?
                     var leaving = msg["leaving"];
