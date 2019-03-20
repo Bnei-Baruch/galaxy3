@@ -28,6 +28,7 @@ class ShidurToran extends Component {
         round: 0,
         sdiout: false,
         sndman: false,
+        sorted_feeds: [],
     };
 
     componentDidMount() {
@@ -173,6 +174,16 @@ class ShidurToran extends Component {
         }
     };
 
+    sortGroups = () => {
+        let sorted_feeds = this.props.feeds.slice();
+        sorted_feeds.sort((a, b) => {
+            if (a.display.display > b.display.display) return 1;
+            if (a.display.display < b.display.display) return -1;
+            return 0;
+        });
+        this.setState({sorted_feeds});
+    };
+
     selectGroup = (pre_feed) => {
         this.props.setProps({pre_feed});
         Janus.log(pre_feed);
@@ -261,7 +272,7 @@ class ShidurToran extends Component {
         const muted = true;
         const q = (<Icon color='red' name='question circle' />);
 
-        let group_options = feeds.map((feed,i) => {
+        let group_options = this.state.sorted_feeds.map((feed,i) => {
             const display = feed.display.display;
             return ({ key: i, value: feed, text: display })
         });
@@ -382,6 +393,7 @@ class ShidurToran extends Component {
                                   search
                                   selection
                                   options={group_options}
+                                  onClick={this.sortGroups}
                                   onChange={(e,{value}) => this.selectGroup(value)} />
                     </Segment>
                     <Segment textAlign='center' className="group_list" raised >
