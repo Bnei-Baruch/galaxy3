@@ -655,27 +655,28 @@ class MobileClient extends Component {
     };
 
     switchFour = () => {
-        let {feeds_queue,feeds,index,mids} = this.state;
+        let {feeds,index,mids} = this.state;
+
+        if(feeds.length < 5)
+            return;
+
         let streams = [];
+        let mid = 0;
 
         for(let i=index; i<index+4; i++) {
 
-            // Don't switch if nobody in queue
             if(i === feeds.length) {
-                console.log("Queue is END");
+                // End round here!
+                Janus.log(" -- ROUND END --");
+                this.setState({index: 4});
                 break;
             }
 
-            if(feeds_queue >= feeds.length) {
-                // End round here!
-                Janus.log(" -- ROUND END --");
-                index = 0;
-            }
-
-            let sub_mid = mids[i].mid;
+            let sub_mid = mids[mid].mid;
             let feed = feeds[i].id;
             streams.push({feed, mid: "1", sub_mid});
             index++;
+            mid++;
             this.setState({index});
 
         }
@@ -978,7 +979,7 @@ class MobileClient extends Component {
                         </Popup>
                     </Menu>
                 </div>
-                <div basic className="vclient__main" onDoubleClick={() => this.setState({ visible: !this.state.visible })} >
+                <div basic className="vclient__main" onClick={this.switchFour} >
                     <div className="vclient__main-wrapper">
                         <div className="videos-panel">
                             <div className="videos">
