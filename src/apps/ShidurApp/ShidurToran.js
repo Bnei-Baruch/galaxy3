@@ -37,16 +37,6 @@ class ShidurToran extends Component {
     componentWillUnmount() {
     };
 
-    resetQueue = () => {
-        console.log("-- Reset Queue --");
-        this.setState({feeds_queue: 0});
-        setTimeout(() => {
-            this.col1.switchFour();
-            this.col2.switchFour();
-            this.col3.switchFour();
-        }, 1000);
-    };
-
     fixProgram = (index) => {
         let {feeds,pr1} = this.state;
         let i = this.state.pri || index;
@@ -59,10 +49,6 @@ class ShidurToran extends Component {
         } else if(i < 12) {
             this.col3.switchNext(i,feed,"fix");
         }
-    };
-
-    reloadPage = () => {
-        this.col1.sdiAction("restart");
     };
 
     newSwitchFeed = (id, program, i) => {
@@ -263,14 +249,11 @@ class ShidurToran extends Component {
 
     render() {
 
-        const {user,users,feeds,pre_feed,feeds_queue,disabled_groups,round,qfeeds,pri,sdiout,sndman} = this.props;
+        const {users,feeds,pre_feed,feeds_queue,disabled_groups,round,qfeeds,pri,sdiout,sndman} = this.props;
 
-        const width = "100%";
-        const height = "100%";
         const autoPlay = true;
         const controls = false;
         const muted = true;
-        const q = (<Icon color='red' name='question circle' />);
 
         let group_options = this.state.sorted_feeds.map((feed,i) => {
             const display = feed.display.display;
@@ -363,7 +346,7 @@ class ShidurToran extends Component {
                         <Label color='brown'>
                             <Icon size='big' name='address card' />
                             <b className='queue_counter'>{feeds.length - feeds_queue}</b>
-                            <Icon name='delete' onClick={this.resetQueue} />
+                            <Icon name='delete' onClick={this.props.resetQueue} />
                         </Label>
                         <Label attached='top right' color='blue' >
                             Round: {round}

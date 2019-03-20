@@ -580,6 +580,16 @@ class ShidurApp extends Component {
         this.setState({...props})
     };
 
+    resetQueue = () => {
+        console.log("-- Reset Queue --");
+        this.setState({feeds_queue: 0});
+        setTimeout(() => {
+            this.col1.switchFour();
+            this.col2.switchFour();
+            this.col3.switchFour();
+        }, 1000);
+    };
+
     sdiAction = (action, status, i, feed) => {
         //FIXME: Must be removed in production mode
         return;
@@ -638,6 +648,7 @@ class ShidurApp extends Component {
                         <ShidurToran
                             {...this.state}
                             ref={pre => {this.pre = pre;}}
+                            resetQueue={this.resetQueue}
                             setProps={this.setProps}
                             unsubscribeFrom={this.unsubscribeFrom}
                             subscribeTo={this.subscribeTo}
