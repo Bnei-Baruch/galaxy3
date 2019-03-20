@@ -196,7 +196,6 @@ class ShidurGroups extends Component {
 
 
   render() {
-      console.log(" --- RENDER ---")
       const { full_feed,zoom,fullscr,col } = this.state;
       const {feeds,pre_feed,users} = this.props;
       const width = "100%";
@@ -252,7 +251,7 @@ class ShidurGroups extends Component {
                          muted={muted}
                          playsInline={true}/>
                   <Button className='next_button'
-                          disabled={feeds.length < 1}
+                          disabled={feeds.length < 2}
                           size='mini'
                           color='green'
                           icon={pre_feed ? 'arrow up' : 'share'}
@@ -288,7 +287,7 @@ class ShidurGroups extends Component {
                   </div>
               </Segment>
               <Button className='fours_button'
-                      disabled={feeds.length < 1}
+                      disabled={feeds.length < 13}
                       attached='bottom'
                       color='blue'
                       size='mini'

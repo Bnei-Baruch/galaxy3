@@ -581,13 +581,15 @@ class ShidurApp extends Component {
     };
 
     resetQueue = () => {
-        console.log("-- Reset Queue --");
-        this.setState({feeds_queue: 0});
-        setTimeout(() => {
-            this.col1.switchFour();
-            this.col2.switchFour();
-            this.col3.switchFour();
-        }, 1000);
+        if(this.state.feeds.length > 12) {
+            console.log("-- Reset Queue --");
+            this.setState({feeds_queue: 0});
+            setTimeout(() => {
+                this.col1.switchFour();
+                this.col2.switchFour();
+                this.col3.switchFour();
+            }, 1000);
+        }
     };
 
     sdiAction = (action, status, i, feed) => {

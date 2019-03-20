@@ -1,6 +1,6 @@
 import React, {Component} from 'react';
 import {Janus} from "../../lib/janus";
-import {Grid, Label, Message, Segment, Table, Icon, Popup, Button, Input, Dropdown} from "semantic-ui-react";
+import {Grid, Label, Message, Segment, Table, Icon, Button, Dropdown} from "semantic-ui-react";
 import {sendProtocolMessage} from "../../shared/protocol";
 import './ShidurApp.css';
 
@@ -37,19 +37,19 @@ class ShidurToran extends Component {
     componentWillUnmount() {
     };
 
-    fixProgram = (index) => {
-        let {feeds,pr1} = this.state;
-        let i = this.state.pri || index;
-        let feed = feeds[i];
-        pr1[i] = null;
-        if(i < 4) {
-            this.col1.switchNext(i,feed,"fix");
-        } else if(i < 8) {
-            this.col2.switchNext(i,feed,"fix");
-        } else if(i < 12) {
-            this.col3.switchNext(i,feed,"fix");
-        }
-    };
+    // fixProgram = (index) => {
+    //     let {feeds,pr1} = this.state;
+    //     let i = this.state.pri || index;
+    //     let feed = feeds[i];
+    //     pr1[i] = null;
+    //     if(i < 4) {
+    //         this.col1.switchNext(i,feed,"fix");
+    //     } else if(i < 8) {
+    //         this.col2.switchNext(i,feed,"fix");
+    //     } else if(i < 12) {
+    //         this.col3.switchNext(i,feed,"fix");
+    //     }
+    // };
 
     newSwitchFeed = (id, program, i) => {
         let pre = null;
@@ -330,19 +330,9 @@ class ShidurToran extends Component {
                         </Segment>
                     </Segment>
                     <Message attached className='info-panel' color='grey'>
-                        <Popup on='click'
-                               trigger={<Label attached='top left' color='grey'>
-                                   Next: {feeds[feeds_queue] ? feeds[feeds_queue].display.display : ""}
-                               </Label>}
-                               flowing
-                               position='bottom center'
-                               hoverable>
-                            <Input type='text' placeholder='' action value={pri}
-                                   onChange={(v,{value}) => this.setState({pri: value})}>
-                                <input />
-                                <Button positive onClick={this.fixProgram}>Fix</Button>
-                            </Input>
-                        </Popup>
+                        <Label attached='top left' color='grey'>
+                            Next: {feeds[feeds_queue] ? feeds[feeds_queue].display.display : ""}
+                        </Label>
                         <Label color='brown'>
                             <Icon size='big' name='address card' />
                             <b className='queue_counter'>{feeds.length - feeds_queue}</b>
