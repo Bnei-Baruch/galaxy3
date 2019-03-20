@@ -75,7 +75,7 @@ class MobileClient extends Component {
         initJanus(janus => {
             user.session = janus.getSessionId();
             this.setState({janus, user});
-            this.chat.initChat(janus);
+            //this.chat.initChat(janus);
             this.initVideoRoom(error);
         }, er => {
             setTimeout(() => {
@@ -704,7 +704,7 @@ class MobileClient extends Component {
                 let register = { "request": "join", "room": selected_room, "ptype": "publisher", "display": JSON.stringify(user) };
                 videoroom.send({"message": register});
                 this.setState({user, muted: !women, room: selected_room});
-                this.chat.initChatRoom(user,selected_room);
+                //this.chat.initChatRoom(user,selected_room);
             }
             this.onProtocolData(ondata);
         });
@@ -716,7 +716,7 @@ class MobileClient extends Component {
         if(remoteFeed)
             remoteFeed.send({"message": leave});
         videoroom.send({"message": leave});
-        this.chat.exitChatRoom(room);
+        //this.chat.exitChatRoom(room);
         localStorage.setItem("question", false);
         this.setState({muted: false, cammuted: false, mystream: null, room: "", selected_room: "", i: "", feeds: [], mids: [], remoteFeed: null, question: false});
         this.initVideoRoom();
@@ -870,37 +870,37 @@ class MobileClient extends Component {
                     options={rooms_list}
                     onClick={this.getRoomList}
                     onChange={(e, {value}) => this.selectRoom(value)} />
-                    {mystream ? <Button negative icon='sign-out' onClick={this.exitRoom} />:""}
-                    {!mystream ? <Button primary icon='sign-in' disabled={delay||!selected_room||!audio_device} onClick={this.joinRoom} />:""}
+                    {mystream ? <Button size='massive' negative icon='sign-out' onClick={this.exitRoom} />:""}
+                    {!mystream ? <Button size='massive' primary icon='sign-in' disabled={delay||!selected_room||!audio_device} onClick={this.joinRoom} />:""}
                     </Input>
                     <Menu icon='labeled' secondary size="mini">
-                        <Menu.Item disabled={!mystream} onClick={() => this.setState({ visible: !this.state.visible, count: 0 })}>
-                            <Icon name="comments"/>
-                            {this.state.visible ? "Close" : "Open"} Chat 
-                            {count > 0 ? l : ""} 
-                        </Menu.Item>
+                        {/*<Menu.Item disabled={!mystream} onClick={() => this.setState({ visible: !this.state.visible, count: 0 })}>*/}
+                            {/*<Icon name="comments"/>*/}
+                            {/*{this.state.visible ? "Close" : "Open"} Chat */}
+                            {/*{count > 0 ? l : ""} */}
+                        {/*</Menu.Item>*/}
                         <Menu.Item disabled={!mystream} onClick={this.handleQuestion}>
                             <Icon color={question ? 'green' : ''} name='question'/>
                             Ask a Question
                         </Menu.Item>
-                        <Menu.Item disabled={this.state.shidur} onClick={this.showShidur} >
-                            <Icon name="tv"/>
-                            Open Broadcast
-                            {this.state.shidur ?
-                                <NewWindow
-                                url='https://galaxy.kli.one/gxystr'
-                                features={{width:"725",height:"635",left:"200",top:"200",location:"no"}}
-                                title='V4G' onUnload={this.onUnload} onBlock={this.onBlock}>
-                                </NewWindow> :
-                                null
-                            }
-                        </Menu.Item>
+                        {/*<Menu.Item disabled={this.state.shidur} onClick={this.showShidur} >*/}
+                            {/*<Icon name="tv"/>*/}
+                            {/*Open Broadcast*/}
+                            {/*{this.state.shidur ?*/}
+                                {/*<NewWindow*/}
+                                {/*url='https://galaxy.kli.one/gxystr'*/}
+                                {/*features={{width:"725",height:"635",left:"200",top:"200",location:"no"}}*/}
+                                {/*title='V4G' onUnload={this.onUnload} onBlock={this.onBlock}>*/}
+                                {/*</NewWindow> :*/}
+                                {/*null*/}
+                            {/*}*/}
+                        {/*</Menu.Item>*/}
                     </Menu>
                     <Menu icon='labeled' secondary size="mini">
-                        <Menu.Item position='right' disabled={selftest !== "Self Audio Test" || mystream} onClick={this.selfTest}>
-                            <Icon color={tested ? 'green' : 'red'} name="sound" />
-                            {selftest}
-                        </Menu.Item>
+                        {/*<Menu.Item position='right' disabled={selftest !== "Self Audio Test" || mystream} onClick={this.selfTest}>*/}
+                            {/*<Icon color={tested ? 'green' : 'red'} name="sound" />*/}
+                            {/*{selftest}*/}
+                        {/*</Menu.Item>*/}
                         <Menu.Item disabled={women || !mystream} onClick={this.micMute} className="mute-button">
                             <canvas className={muted ? 'hidden' : 'vumeter'} ref="canvas1" id="canvas1" width="15" height="35" />
                             <Icon color={muted ? "red" : ""} name={!muted ? "microphone" : "microphone slash"} />
@@ -969,13 +969,13 @@ class MobileClient extends Component {
                                 </div>
                             </div>
                         </div>
-                        <MobileChat
-                            ref={chat => {this.chat = chat;}}
-                            visible={this.state.visible}
-                            janus={this.state.janus}
-                            room={room}
-                            user={this.state.user}
-                            onNewMsg={this.onNewMsg} />
+                        {/*<MobileChat*/}
+                            {/*ref={chat => {this.chat = chat;}}*/}
+                            {/*visible={this.state.visible}*/}
+                            {/*janus={this.state.janus}*/}
+                            {/*room={room}*/}
+                            {/*user={this.state.user}*/}
+                            {/*onNewMsg={this.onNewMsg} />*/}
                     </div>
                 </div>
             </div>

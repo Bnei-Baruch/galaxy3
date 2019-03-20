@@ -12,6 +12,7 @@
     &__toolbar {
         display: flex;
         align-items: center;
+        font-size: 31px;
         padding: .8rem .5rem;
         flex-wrap:wrap;
 
@@ -47,6 +48,19 @@
 
 
 }
+
+.ui.selection.dropdown .menu>.item {
+    font-size: 50px;
+}
+
+.ui.mini.menu {
+    font-size: 30px;
+}
+
+.ui.bottom.right.popup {
+    font-size: 50px;
+}
+
 .videos-panel {
     display: flex;
     background:#000;
@@ -108,8 +122,8 @@
     overflow:hidden;
 }
 .vumeter {
-    width: 70px;
-    height: 56px;
+    width: 170px;
+    height: 136px;
     top: 0;
     left: 0;
     text-align: center;
