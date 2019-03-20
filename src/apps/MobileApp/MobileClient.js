@@ -365,6 +365,7 @@ class MobileClient extends Component {
                         feedStreams[id] = {id, display, streams};
                         users[display.id] = display;
                         users[display.id].rfid = id;
+                        //TODO: Feed with audio must be passed
                         if(subscription.length < 4) {
                             subscription.push({
                                 feed: id,	// This is mandatory
@@ -439,6 +440,7 @@ class MobileClient extends Component {
                     }
                     feeds.push(feed[0]);
                     this.setState({feeds,feedStreams,users});
+                    //TODO: Feed with audio must be passed
                     if(feeds.length < 5)
                         this.subscribeTo(subscription);
                 } else if(msg["leaving"] !== undefined && msg["leaving"] !== null) {
@@ -837,14 +839,21 @@ class MobileClient extends Component {
                         controls={controls}
                         muted={true}
                         playsInline={true}/>
-                    <audio
+                </div>);
+            }
+            return true;
+        });
+
+        let audios = this.state.feeds.map((feed) => {
+            if(feed) {
+                let id = feed.id;
+                return (<audio
                         key={"a"+id}
                         ref={"remoteAudio" + id}
                         id={"remoteAudio" + id}
                         autoPlay={autoPlay}
                         controls={controls}
-                        playsInline={true}/>
-                </div>);
+                        playsInline={true}/>);
             }
             return true;
         });
@@ -972,6 +981,7 @@ class MobileClient extends Component {
                                 </div>
                             </div>
                         </div>
+                        {audios}
                         {/*<MobileChat*/}
                             {/*ref={chat => {this.chat = chat;}}*/}
                             {/*visible={this.state.visible}*/}
