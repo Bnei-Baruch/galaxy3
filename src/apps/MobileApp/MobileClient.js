@@ -663,6 +663,13 @@ class MobileClient extends Component {
             }
         }
         //TODO: Here we need check if feed already attach to quad and replace with next active video or remove slot from quad
+        // for (let i=0; i<video_mids.length; i++) {
+        //     if(video_mids[i].feed_id === id) {
+        //         video_mids.splice(i, 1);
+        //         this.setState({video_mids});
+        //         break
+        //     }
+        // }
     };
 
     switchFour = () => {
@@ -867,8 +874,8 @@ class MobileClient extends Component {
         });
 
         let videos = this.state.video_mids.map((mid,i) => {
-            if(mid && i < 4) {
-                let feed = this.state.feeds.find(f => f.id === mid.feed_id);
+            let feed = this.state.feeds.find(f => f.id === mid.feed_id);
+            if(mid && feed && mid.active && i < 4) {
                 let id = feed.id;
                 let talk = feed.talk;
                 let question = feed.question;
