@@ -672,16 +672,27 @@ class MobileClient extends Component {
         if(feeds.length < 5)
             return;
 
+        if(index === feeds.length) {
+            // End round here!
+            Janus.log(" -- ROUND END --");
+            this.setState({index: 0});
+            index = 0;
+        }
+
         let streams = [];
         let m = 0;
         //let video_mids = mids.filter(mid => mid.type === "video")
 
-        for(let i=index; i<index+4; i++) {
+        for(let i=index; i<feeds.length && m<4; i++) {
 
-            if(i === feeds.length) {
+            Janus.log(" :: ITer: ", i ,feeds[i])
+
+            if(i > feeds.length) {
                 // End round here!
                 Janus.log(" -- ROUND END --");
-                this.setState({index: 4});
+                this.setState({index: 0});
+                index = 0;
+                m = 0;
                 break;
             }
 
@@ -690,9 +701,9 @@ class MobileClient extends Component {
             streams.push({feed, mid: "1", sub_mid});
             index++;
             m++;
-            this.setState({index});
-
         }
+
+        this.setState({index});
 
         Janus.log(" :: Going to switch four: ", streams);
         let switch_four = {request: "switch", streams};
