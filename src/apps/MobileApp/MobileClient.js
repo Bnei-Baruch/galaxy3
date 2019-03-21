@@ -430,7 +430,7 @@ class MobileClient extends Component {
                             let stream = streams[i];
                             stream["id"] = id;
                             stream["display"] = display;
-                            if(feeds.length > 4) {
+                            if(feeds.length > 3) {
                                 subst.mid = "0";
                             }
                         }
@@ -619,6 +619,7 @@ class MobileClient extends Component {
 
     subscribeTo = (subscription) => {
         // New feeds are available, do we need create a new plugin handle first?
+        Janus.log(" :: Got subscribtion: ", subscription);
         if (this.state.remoteFeed) {
             this.state.remoteFeed.send({message:
                     {request: "subscribe", streams: subscription}
@@ -642,7 +643,7 @@ class MobileClient extends Component {
 
     unsubscribeFrom = (id) => {
         // Unsubscribe from this publisher
-        let {feeds,remoteFeed,users,feedStreams} = this.state;
+        let {feeds,remoteFeed,users,feedStreams,video_mids} = this.state;
         for (let i=0; i<feeds.length; i++) {
             if (feeds[i].id === id) {
                 Janus.log("Feed " + feeds[i] + " (" + id + ") has left the room, detaching");
@@ -661,6 +662,7 @@ class MobileClient extends Component {
                 break
             }
         }
+        //TODO: Here we need check if feed already attach to quad and replace with next active video or remove slot from quad
     };
 
     switchFour = () => {
