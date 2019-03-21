@@ -855,14 +855,11 @@ class MobileClient extends Component {
 
         let videos = this.state.video_mids.map((mid,i) => {
             if(mid && i < 4) {
-                let feed = feedStreams[mid.feed_id];
-                let id = mid.feed_id;
-                //let talk = feed.talk;
-                let talk = false
-                //let question = feed.question  ;
-                let question = false
+                let feed = this.state.feeds.find(f => f.id === mid.feed_id);
+                let id = feed.id;
+                let talk = feed.talk;
+                let question = feed.question;
                 let cammute = feed.cammute;
-                //let name = feed.display.name;
                 let display_name = feed.display.display;
                 return (<div className="video"
                 key={"vk" + i}
