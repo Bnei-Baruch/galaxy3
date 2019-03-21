@@ -35,6 +35,7 @@ class MobileClient extends Component {
         mypvtid: null,
         mystream: null,
         mids: [],
+        video_mids: [],
         audio: null,
         muted: false,
         cammuted: false,
@@ -520,13 +521,19 @@ class MobileClient extends Component {
                     }
                     if(msg["streams"]) {
                         // Update map of subscriptions by mid
-                        let {mids} = this.state;
+                        let {mids,video_mids} = this.state;
+                        let m = 0;
                         for(let i in msg["streams"]) {
+                            let sub_mid = msg["streams"][i];
                             let mindex = msg["streams"][i]["mid"];
                             //let feed_id = msg["streams"][i]["feed_id"];
                             mids[mindex] = msg["streams"][i];
+                            if(sub_mid.active && sub_mid.type === "video") {
+                                video_mids[m] = sub_mid;
+                                m++
+                            }
                         }
-                        this.setState({mids});
+                        this.setState({mids,video_mids});
                     }
                     if(jsep !== undefined && jsep !== null) {
                         Janus.debug("Handling SDP as well...");
@@ -569,7 +576,7 @@ class MobileClient extends Component {
                         return;
                     }
                     // If we're here, a new track was added
-                    if(track.kind === "audio" && !feedStreams[feed].audio_stream) {
+                    if(track.kind === "audio") {
                         // New audio track: create a stream out of it, and use a hidden <audio> element
                         let stream = new MediaStream();
                         stream.addTrack(track.clone());
@@ -578,13 +585,14 @@ class MobileClient extends Component {
                         this.setState({feedStreams});
                         let remoteaudio = this.refs["remoteAudio" + feed];
                         Janus.attachMediaStream(remoteaudio, stream);
-                    } else if(track.kind === "video" && !feedStreams[feed].video_stream) {
+                    } else if(track.kind === "video") {
                         // New video track: create a stream out of it
                         let stream = new MediaStream();
                         stream.addTrack(track.clone());
                         Janus.log("Created remote video stream:", stream);
                         feedStreams[feed].video_stream = stream;
                         this.setState({feedStreams});
+                        //FIXME: this must be based on video mids
                         let remotevideo = this.refs["remoteVideo" + feed];
                         Janus.attachMediaStream(remotevideo, stream);
                     } else if(track.kind === "data") {
@@ -655,13 +663,15 @@ class MobileClient extends Component {
     };
 
     switchFour = () => {
-        let {feeds,index,mids} = this.state;
+        Janus.log(" :: Switch");
+        let {feeds,index,mids,video_mids} = this.state;
 
         if(feeds.length < 5)
             return;
 
         let streams = [];
-        let mid = 0;
+        let m = 0;
+        //let video_mids = mids.filter(mid => mid.type === "video")
 
         for(let i=index; i<index+4; i++) {
 
@@ -672,11 +682,11 @@ class MobileClient extends Component {
                 break;
             }
 
-            let sub_mid = mids[mid].mid;
+            let sub_mid = video_mids[m].mid;
             let feed = feeds[i].id;
             streams.push({feed, mid: "1", sub_mid});
             index++;
-            mid++;
+            m++;
             this.setState({index});
 
         }
@@ -818,7 +828,7 @@ class MobileClient extends Component {
 
     render() {
 
-        const { rooms,room,audio_devices,video_devices,video_device,audio_device,i,muted,cammuted,delay,mystream,selected_room,count,question,selftest,tested,women} = this.state;
+        const { rooms,room,audio_devices,video_devices,video_device,audio_device,i,muted,cammuted,delay,mystream,selected_room,count,question,selftest,tested,women,feedStreams} = this.state;
         const width = "134";
         const height = "100";
         const autoPlay = true;
@@ -842,9 +852,10 @@ class MobileClient extends Component {
             return ({ key: i, text: label, value: deviceId})
         });
 
-        let videos = this.state.feeds.map((feed,i) => {
-            if(feed && i < 4) {
-                let id = feed.id;
+        let videos = this.state.video_mids.map((mid,i) => {
+            if(mid && i < 4) {
+                let feed = feedStreams[mid.feed_id];
+                let id = mid.feed_id;
                 let talk = feed.talk;
                 let question = feed.question;
                 let cammute = feed.cammute;
@@ -979,10 +990,10 @@ class MobileClient extends Component {
                         </Popup>
                     </Menu>
                 </div>
-                <div basic className="vclient__main" onClick={this.switchFour} >
+                <div basic className="vclient__main">
                     <div className="vclient__main-wrapper">
                         <div className="videos-panel">
-                            <div className="videos">
+                            <div className="videos" onClick={this.switchFour}>
                                 <div className="videos__wrapper">
                                     {mystream ? "" :
                                     <div className="video">
