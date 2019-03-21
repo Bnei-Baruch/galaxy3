@@ -521,7 +521,7 @@ class MobileClient extends Component {
                     }
                     if(msg["streams"]) {
                         // Update map of subscriptions by mid
-                        let {mids,video_mids} = this.state;
+                        let {mids,video_mids,feedStreams} = this.state;
                         let m = 0;
                         for(let i in msg["streams"]) {
                             let sub_mid = msg["streams"][i];
@@ -530,10 +530,11 @@ class MobileClient extends Component {
                             mids[mindex] = msg["streams"][i];
                             if(sub_mid.active && sub_mid.type === "video") {
                                 video_mids[m] = sub_mid;
+                                feedStreams[sub_mid.feed_id].slot = m;
                                 m++
                             }
                         }
-                        this.setState({mids,video_mids});
+                        this.setState({mids,video_mids,feedStreams});
                     }
                     if(jsep !== undefined && jsep !== null) {
                         Janus.debug("Handling SDP as well...");
@@ -593,7 +594,7 @@ class MobileClient extends Component {
                         feedStreams[feed].video_stream = stream;
                         this.setState({feedStreams});
                         //FIXME: this must be based on video mids
-                        let remotevideo = this.refs["remoteVideo" + feed];
+                        let remotevideo = this.refs["remoteVideo" + feedStreams[feed].slot];
                         Janus.attachMediaStream(remotevideo, stream);
                     } else if(track.kind === "data") {
                         Janus.log("Created remote data channel");
@@ -856,15 +857,17 @@ class MobileClient extends Component {
             if(mid && i < 4) {
                 let feed = feedStreams[mid.feed_id];
                 let id = mid.feed_id;
-                let talk = feed.talk;
-                let question = feed.question;
+                //let talk = feed.talk;
+                let talk = false
+                //let question = feed.question  ;
+                let question = false
                 let cammute = feed.cammute;
                 //let name = feed.display.name;
                 let display_name = feed.display.display;
                 return (<div className="video"
-                key={"v" + id}
-                ref={"video" + id}
-                id={"video" + id}>
+                key={"vk" + i}
+                ref={"video" + i}
+                id={"video" + i}>
                 <div className={classNames('video__overlay', {'talk' : talk})}>
                     {question ? <div className="question">
                         <svg viewBox="0 0 50 50">
@@ -875,9 +878,9 @@ class MobileClient extends Component {
                 </div>
                     <svg className={classNames('nowebcam',{'hidden':!cammute})} viewBox="0 0 32 18" preserveAspectRatio="xMidYMid meet" ><text x="16" y="9" text-anchor="middle" alignment-baseline="central" dominant-baseline="central">&#xf2bd;</text></svg>
                     <video
-                        key={"v"+id}
-                        ref={"remoteVideo" + id}
-                        id={"remoteVideo" + id}
+                        key={"v"+i}
+                        ref={"remoteVideo" + i}
+                        id={"remoteVideo" + i}
                         width={width}
                         height={height}
                         autoPlay={autoPlay}
