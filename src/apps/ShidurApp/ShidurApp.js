@@ -156,20 +156,19 @@ class ShidurApp extends Component {
                         let streams = feeds[f]["streams"];
                         feeds[f].display = display;
                         //feeds[f].talk = talk;
-                        let subst = {feed: id};
                         for (let i in streams) {
                             let stream = streams[i];
-                            stream["id"] = id;
-                            stream["display"] = display;
-                            if(stream.type === "video") {
+                            if(stream.type === "video" && subscription.length < 12) {
+                                let subst = {feed: id};
+                                stream["id"] = id;
+                                stream["display"] = display;
                                 subst.mid = stream.mid;
+                                subscription.push(subst);
                             }
                         }
                         feedStreams[id] = {id, display, streams};
                         users[display.id] = display;
                         users[display.id].rfid = id;
-                        if(subscription.length < 12)
-                            subscription.push(subst);
                     }
                     this.setState({feeds,feedStreams,users});
                     if(subscription.length > 0)
@@ -210,23 +209,23 @@ class ShidurApp extends Component {
                         //let talk = feed[f]["talking"];
                         let streams = feed[f]["streams"];
                         feed[f].display = display;
-                        let subst = {feed: id};
                         for (let i in streams) {
                             let stream = streams[i];
-                            stream["id"] = id;
-                            stream["display"] = display;
                             if(stream.type === "video") {
+                                let subst = {feed: id};
+                                stream["id"] = id;
+                                stream["display"] = display;
                                 subst.mid = stream.mid;
+                                subscription.push(subst);
                             }
                         }
                         feedStreams[id] = {id, display, streams};
                         users[display.id] = display;
                         users[display.id].rfid = id;
-                        subscription.push(subst);
                     }
                     feeds.push(feed[0]);
                     this.setState({feeds,feedStreams,users});
-                    if(feeds.length < 13)
+                    if(feeds.length < 13 && subscription.length > 0)
                         this.subscribeTo(subscription);
                 } else if(msg["leaving"] !== undefined && msg["leaving"] !== null) {
                     // One of the publishers has gone away?
