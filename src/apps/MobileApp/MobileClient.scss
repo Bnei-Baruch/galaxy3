@@ -44,13 +44,16 @@
         }
 
     }
+}
 
+/* TESTING */
 
-
+.ui.selection.dropdown .menu {
+    min-width: calc(203% + 3px);
 }
 
 .ui.selection.dropdown .menu>.item {
-    font-size: 50px;
+    font-size: 70px;
 }
 
 .ui.mini.menu {
@@ -58,8 +61,22 @@
 }
 
 .ui.bottom.right.popup {
-    font-size: 50px;
+    font-size: 30px;
 }
+
+//i.icon, i.icons {
+//    float: right;
+//}
+
+.ui.input>input {
+    width: 360px;
+}
+
+.ui.action.input>.button, .ui.action.input>.buttons>.button {
+    width: 100px;
+}
+
+/* TESTING */
 
 .videos-panel {
     display: flex;

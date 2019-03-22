@@ -891,7 +891,7 @@ class MobileClient extends Component {
 
     render() {
 
-        const { rooms,room,audio_devices,video_devices,video_device,audio_device,i,muted,cammuted,delay,mystream,selected_room,count,question,selftest,tested,women,feedStreams} = this.state;
+        const { rooms,name,audio_devices,video_devices,video_device,audio_device,i,muted,cammuted,delay,mystream,selected_room,count,question,selftest,tested,women,feedStreams} = this.state;
         const width = "134";
         const height = "100";
         const autoPlay = true;
@@ -989,6 +989,16 @@ class MobileClient extends Component {
 
             <div className={classNames('vclient', { 'vclient--chat-open': this.state.visible })} >
                 <div className="vclient__toolbar">
+                    <Select
+                        disabled={mystream}
+                        error={!selected_room}
+                        placeholder=" Select Room: "
+                        value={i}
+                        text={name ? name + ' : ( ' + this.state.feeds.length + ' ) ': ""}
+                        icon={name ? 'users' : ''}
+                        options={rooms_list}
+                        onClick={this.getRoomList}
+                        onChange={(e, {value}) => this.selectRoom(value)} />
                     <Input 
                     iconPosition='left'
                     placeholder="Type your name..."
@@ -997,15 +1007,6 @@ class MobileClient extends Component {
                     action>
                     <input iconPosition='left' disabled={mystream}/>
                     <Icon name='user circle' />
-                    <Select
-                    disabled={mystream}
-                    error={!selected_room}
-                    
-                    placeholder="Select Room:"
-                    value={i}
-                    options={rooms_list}
-                    onClick={this.getRoomList}
-                    onChange={(e, {value}) => this.selectRoom(value)} />
                     {mystream ? <Button size='massive' negative icon='sign-out' onClick={this.exitRoom} />:""}
                     {!mystream ? <Button size='massive' primary icon='sign-in' disabled={delay||!selected_room||!audio_device} onClick={this.joinRoom} />:""}
                     </Input>
