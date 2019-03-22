@@ -528,9 +528,10 @@ class MobileClient extends Component {
                             let mindex = msg["streams"][i]["mid"];
                             //let feed_id = msg["streams"][i]["feed_id"];
                             mids[mindex] = msg["streams"][i];
-                            if(sub_mid.active && sub_mid.type === "video") {
+                            if(sub_mid.type === "video") {
                                 video_mids[m] = sub_mid;
-                                feedStreams[sub_mid.feed_id].slot = m;
+                                if(feedStreams[sub_mid.feed_id])
+                                    feedStreams[sub_mid.feed_id].slot = m;
                                 m++
                             }
                         }
@@ -643,14 +644,21 @@ class MobileClient extends Component {
 
     unsubscribeFrom = (id) => {
         // Unsubscribe from this publisher
-        let {feeds,remoteFeed,users,feedStreams,video_mids} = this.state;
+        let {feeds,remoteFeed,users,feedStreams,index} = this.state;
         for (let i=0; i<feeds.length; i++) {
             if (feeds[i].id === id) {
                 Janus.log("Feed " + feeds[i] + " (" + id + ") has left the room, detaching");
                 //TODO: remove mids
                 delete users[feeds[i].display.id];
-                delete feedStreams[id];
+                //delete feedStreams[id];
                 feeds.splice(i, 1);
+
+                // Fix index if equal to last index
+                if(index >= feeds.length - 1) {
+                    index = feeds.length - 1;
+                    this.setState({index});
+                }
+
                 // Send an unsubscribe request
                 let unsubscribe = {
                     request: "unsubscribe",
@@ -658,23 +666,58 @@ class MobileClient extends Component {
                 };
                 if(remoteFeed !== null)
                     remoteFeed.send({ message: unsubscribe });
+
+                // Check if we need atoswitch feeds in program
+                setTimeout(() => {
+                    //FIXME: Here we must be sure
+                    // we get mids updated event after unsubscribing event
+                    this.fillQuad(id,feeds,index);
+                }, 500);
+
                 this.setState({feeds,users,feedStreams});
                 break
             }
         }
-        //TODO: Here we need check if feed already attach to quad and replace with next active video or remove slot from quad
-        // for (let i=0; i<video_mids.length; i++) {
-        //     if(video_mids[i].feed_id === id) {
-        //         video_mids.splice(i, 1);
-        //         this.setState({video_mids});
-        //         break
-        //     }
-        // }
+    };
+
+    fillQuad = (id,feeds,index) => {
+        let {round,video_mids} = this.state;
+
+        // Switch to next feed if Quad full
+        if(feeds.length >= 4) {
+            Janus.log(" :: Let's check mids - ", video_mids);
+            video_mids.forEach((mid,i) => {
+                Janus.debug(" :: mids iteration - ", i, mid);
+                if (mid && !mid.active) {
+                    Janus.log(" :: Found empty slot in Quad! - ", video_mids[i]);
+                    let feed = feeds[index];
+                    index++;
+                    if(index >= feeds.length) {
+                        // End round here!
+                        index = 0;
+                        round++;
+                        Janus.log(" -- ROUND END --");
+                    }
+                    this.setState({index,round});
+                    Janus.log(":: Auto switch program to: ", feed);
+                    let streams = [{feed: feed.id, mid: "1"}];
+                    this.subscribeTo(streams);
+                }
+            })
+        } else if(feeds.length < 4) {
+            Janus.log(" :: Clean up Quad");
+            for (let i=0; i<video_mids.length; i++) {
+                if(!video_mids[i].active) {
+                    video_mids[i] = null;
+                    this.setState({video_mids});
+                }
+            }
+        }
     };
 
     switchFour = () => {
         Janus.log(" :: Switch");
-        let {feeds,index,mids,video_mids} = this.state;
+        let {feeds,index,video_mids} = this.state;
 
         if(feeds.length < 5)
             return;
@@ -688,11 +731,10 @@ class MobileClient extends Component {
 
         let streams = [];
         let m = 0;
-        //let video_mids = mids.filter(mid => mid.type === "video")
 
         for(let i=index; i<feeds.length && m<4; i++) {
 
-            Janus.log(" :: ITer: ", i ,feeds[i])
+            Janus.log(" :: ITer: ", i ,feeds[i]);
 
             if(i > feeds.length) {
                 // End round here!
@@ -874,13 +916,31 @@ class MobileClient extends Component {
         });
 
         let videos = this.state.video_mids.map((mid,i) => {
-            let feed = this.state.feeds.find(f => f.id === mid.feed_id);
-            if(mid && feed && mid.active && i < 4) {
-                let id = feed.id;
-                let talk = feed.talk;
-                let question = feed.question;
-                let cammute = feed.cammute;
-                let display_name = feed.display.display;
+            if(mid && i < 4) {
+                let feed = this.state.feeds.find(f => f.id === mid.feed_id);
+                if(!mid.active) {
+                    return (this.state.video_mids.length > 3 ? <div className="video"
+                                 key={"vk" + i}
+                                 ref={"video" + i}
+                                 id={"video" + i}>
+                        <div><div className="video__title"></div></div>
+                        <video
+                            key={"v"+i}
+                            ref={"remoteVideo" + i}
+                            id={"remoteVideo" + i}
+                            width={width}
+                            height={height}
+                            autoPlay={autoPlay}
+                            controls={controls}
+                            muted={true}
+                            playsInline={true}/>
+                    </div> : false);
+                }
+                //let id = feed.id;
+                let talk = feed ? feed.talk : false;
+                let question = feed ? feed.question : false;
+                let cammute = feed ? feed.cammute : false;
+                let display_name = feed ? feed.display.display : "";
                 return (<div className="video"
                 key={"vk" + i}
                 ref={"video" + i}
