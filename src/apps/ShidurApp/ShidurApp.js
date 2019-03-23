@@ -421,6 +421,7 @@ class ShidurApp extends Component {
                 data.rfid = users[data.user.id].rfid;
                 let q = {id: data.rfid, display: data.user};
                 quistions_queue.push(data);
+                // TODO: We need to check disabled list as well
 
                 // Check if qfeed already in program
                 let chk = mids.find(q => q.feed_id === data.rfid);
@@ -453,6 +454,7 @@ class ShidurApp extends Component {
                 this.setState({quistions_queue, users, qfeeds});
             }
         } else if(data.type === "question" && !data.status) {
+            // TODO: We need to check disabled list as well
             let {quistions_queue,users,qfeeds} = this.state;
             for(let i = 0; i < quistions_queue.length; i++){
                 if(quistions_queue[i].user.id === data.user.id) {

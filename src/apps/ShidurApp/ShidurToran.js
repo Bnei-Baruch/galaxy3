@@ -218,7 +218,14 @@ class ShidurToran extends Component {
             let {disabled_groups,feeds,users} = this.props;
             for(let i = 0; i < disabled_groups.length; i++) {
                 if(disabled_groups[i].display.id === data.display.id) {
-                    //TODO: check if we got question while feed was disable
+                    if(disabled_groups[i].display.question) {
+                        let {quistions_queue,qfeeds} = this.props;
+                        let qq = {rfid: disabled_groups[i].id, user: disabled_groups[i].display};
+                        let qs = {id: disabled_groups[i].id, display: disabled_groups[i].display};
+                        qfeeds.push(qs);
+                        quistions_queue.push(qq);
+                        this.props.setProps({quistions_queue, qfeeds});
+                    }
                     disabled_groups.splice(i, 1);
                     feeds.push(data);
                     let user = data.display;
