@@ -74,7 +74,7 @@ class ShidurGroups extends Component {
                 this.props.setProps({feeds_queue,round});
             }
 
-            // TODO: Test this
+            // FIXME: does not work as expect
             // Add to qfeeds if removed from program with question status
             if(mids[i]) {
                 let chk = mids.filter(g => g.active && g.feed_id === mids[i].feed_id);
@@ -87,6 +87,16 @@ class ShidurGroups extends Component {
                             this.props.setProps({qfeeds});
                         }
                     }
+                }
+            }
+
+            // Remove question status from group search list if add to program
+            for (let q = 0; q < qfeeds.length; q++) {
+                if (qfeeds[q] && qfeeds[q].id === feeds[feeds_queue].id) {
+                    console.log(" - Remove QFEED: ", qfeeds[q]);
+                    qfeeds.splice(q, 1);
+                    this.props.setProps({qfeeds});
+                    break
                 }
             }
 
