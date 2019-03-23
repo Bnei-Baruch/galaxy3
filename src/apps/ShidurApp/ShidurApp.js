@@ -322,11 +322,13 @@ class ShidurApp extends Component {
                     if(msg["streams"]) {
                         // Update map of subscriptions by mid
                         Janus.log(" :: Streams updated! : ",msg["streams"]);
-                        let {mids} = this.state;
+                        let {mids,users} = this.state;
                         for(let i in msg["streams"]) {
                             let mindex = msg["streams"][i]["mid"];
-                            //let feed_id = msg["streams"][i]["feed_id"];
                             mids[mindex] = msg["streams"][i];
+                            if(mids[mindex].active) {
+                                mids[mindex].user = JSON.parse(msg["streams"][i]["feed_display"]);
+                            }
                         }
                         this.setState({mids});
                     }

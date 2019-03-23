@@ -53,8 +53,29 @@ class ShidurGroups extends Component {
         }
     };
 
+    questionStatus = () => {
+        let {mids,qfeeds,quistions_queue} = this.props;
+        for(let i = 0; i < quistions_queue.length; i++) {
+            let qp_count = mids.filter(qp => qp.active && qp.feed_id === quistions_queue[i].rfid).length;
+            let qf_chk = qfeeds.find(qf => qf.id === quistions_queue[i].rfid);
+            if(qp_count > 0 && qf_chk) {
+                for (let q = 0; q < qfeeds.length; q++) {
+                    if (qfeeds[q] && qfeeds[q].id === quistions_queue[i].rfid) {
+                        console.log(" - Remove QFEED: ", qfeeds[q]);
+                        qfeeds.splice(q, 1);
+                        this.props.setProps({qfeeds});
+                        break
+                    }
+                }
+            } else if(qp_count === 0 && !qf_chk) {
+                qfeeds.push({id: quistions_queue[i].rfid, display: quistions_queue[i].user});
+                this.props.setProps({qfeeds});
+            }
+        }
+    };
+
     switchFour = () => {
-        let {feeds_queue,feeds,index,round,mids,qfeeds,quistions_queue} = this.props;
+        let {feeds_queue,feeds,index,round} = this.props;
         let {quad} = this.state;
         let streams = [];
 
@@ -74,40 +95,12 @@ class ShidurGroups extends Component {
                 this.props.setProps({feeds_queue,round});
             }
 
-            // FIXME: does not work as expect
-            // Add to qfeeds if removed from program with question status
-            if(mids[i]) {
-                let chk = mids.filter(g => g.active && g.feed_id === mids[i].feed_id);
-                let qf_chk = qfeeds.filter(qf => qf.rfid === mids[i].feed_id).length === 0;
-                if (qf_chk) {
-                    let qq_chk = quistions_queue.filter(qs => qs.rfid === mids[i].feed_id).length > 0;
-                    if (qq_chk) {
-                        if (chk.length < 2) {
-                            qfeeds.push({id: mids[i].feed_id, display: JSON.parse(mids[i].feed_display)});
-                            this.props.setProps({qfeeds});
-                        }
-                    }
-                }
-            }
-
-            // Remove question status from group search list if add to program
-            for (let q = 0; q < qfeeds.length; q++) {
-                if (qfeeds[q] && qfeeds[q].id === feeds[feeds_queue].id) {
-                    console.log(" - Remove QFEED: ", qfeeds[q]);
-                    qfeeds.splice(q, 1);
-                    this.props.setProps({qfeeds});
-                    break
-                }
-            }
-
             // If program is not full avoid using feeds_queue
             if(feeds.length < 13) {
-                //this.switchNext(i,feeds[i],true);
                 let sub_mid = quad[i];
                 let feed = feeds[i].id;
                 streams.push({feed, mid: "1", sub_mid});
             } else {
-                //this.switchNext(i,feeds[feeds_queue],true);
                 let sub_mid = quad[i];
                 let feed = feeds[feeds_queue].id;
                 streams.push({feed, mid: "1", sub_mid});
@@ -122,6 +115,10 @@ class ShidurGroups extends Component {
         this.props.remoteFeed.send ({"message": switch_four,
             success: () => {
                 Janus.debug(" -- Switch success: ");
+                // Add to qfeeds if removed from program with question status
+                setTimeout(() => {
+                    this.questionStatus();
+                }, 1000);
             }
         })
     };
@@ -143,34 +140,9 @@ class ShidurGroups extends Component {
     };
 
     switchNext = (i ,feed, r) => {
-        Janus.log(" -- GOT NEXT: ", feed)
+        Janus.log(" -- GOT NEXT: ", feed);
         if(!feed) return;
-        let {mids,qfeeds,quistions_queue} = this.props;
-
-        // Add to qfeeds if removed from program with question status
-        if(mids[i]) {
-            let chk = mids.filter(g => g.active && g.feed_id === mids[i].feed_id);
-            let qf_chk = qfeeds.filter(qf => qf.rfid === mids[i].feed_id).length === 0;
-            if (qf_chk) {
-                let qq_chk = quistions_queue.filter(qs => qs.rfid === mids[i].feed_id).length > 0;
-                if (qq_chk) {
-                    if (chk.length < 2) {
-                        qfeeds.push({id: mids[i].feed_id, display: JSON.parse(mids[i].feed_display)});
-                        this.props.setProps({qfeeds});
-                    }
-                }
-            }
-        }
-
-        // Remove question status from group search list if add to program
-        for (let q = 0; q < qfeeds.length; q++) {
-            if (qfeeds[q] && qfeeds[q].id === feed.id) {
-                console.log(" - Remove QFEED: ", qfeeds[q]);
-                qfeeds.splice(q, 1);
-                this.props.setProps({qfeeds});
-                break
-            }
-        }
+        let {mids} = this.props;
 
         // Unsubscribe from previous mid
         let streams = [{ sub_mid: mids[i].mid }];
@@ -183,13 +155,16 @@ class ShidurGroups extends Component {
             this.props.subscribeTo(sub_streams);
         }, 500);
 
+        setTimeout(() => {
+            this.questionStatus();
+        }, 1000);
+
         // Send sdi action
         //this.sdiAction("switch" , false, i, feed);
     };
 
     zoominGroup = (e, i ,s) => {
         e.preventDefault();
-        console.log(i,s)
         if (e.type === 'contextmenu') {
             let {zoom} = this.state;
             this.setState({zoom: !zoom},() => {
@@ -313,7 +288,7 @@ class ShidurGroups extends Component {
                   </div>
               </Segment>
               <Button className='fours_button'
-                      disabled={feeds.length < 13}
+                      disabled={feeds.length < 3}
                       attached='bottom'
                       color='blue'
                       size='mini'
