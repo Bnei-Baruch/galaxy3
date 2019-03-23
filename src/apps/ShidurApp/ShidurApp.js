@@ -496,7 +496,7 @@ class ShidurApp extends Component {
         // Clean preview
         this.pre.checkPreview(id);
 
-        for(let i=0; i<feeds.length; i++){
+        for(let i=0; i<feeds.length; i++) {
             if(feeds[i].id === id) {
 
                 // Delete from users mapping object
@@ -505,7 +505,7 @@ class ShidurApp extends Component {
                 delete users[user.id];
 
                 // Delete from questions list
-                for(let i = 0; i < quistions_queue.length; i++){
+                for(let i = 0; i < quistions_queue.length; i++) {
                     if(quistions_queue[i].user.id === user.id) {
                         quistions_queue.splice(i, 1);
                         break
@@ -514,7 +514,7 @@ class ShidurApp extends Component {
 
                 // Delete from qfeeds
                 for(let i = 0; i < qfeeds.length; i++){
-                    if(JSON.parse(qfeeds[i].display).id === user.id) {
+                    if(qfeeds[i].display.id === user.id) {
                         qfeeds.splice(i, 1);
                         break
                     }

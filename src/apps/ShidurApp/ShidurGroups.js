@@ -54,7 +54,7 @@ class ShidurGroups extends Component {
     };
 
     switchFour = () => {
-        let {feeds_queue,feeds,index,round} = this.props;
+        let {feeds_queue,feeds,index,round,mids,qfeeds,quistions_queue} = this.props;
         let {quad} = this.state;
         let streams = [];
 
@@ -72,6 +72,22 @@ class ShidurGroups extends Component {
                 feeds_queue = 0;
                 round++;
                 this.props.setProps({feeds_queue,round});
+            }
+
+            // TODO: Test this
+            // Add to qfeeds if removed from program with question status
+            if(mids[i]) {
+                let chk = mids.filter(g => g.active && g.feed_id === mids[i].feed_id);
+                let qf_chk = qfeeds.filter(qf => qf.rfid === mids[i].feed_id).length === 0;
+                if (qf_chk) {
+                    let qq_chk = quistions_queue.filter(qs => qs.rfid === mids[i].feed_id).length > 0;
+                    if (qq_chk) {
+                        if (chk.length < 2) {
+                            qfeeds.push({id: mids[i].feed_id, display: JSON.parse(mids[i].feed_display)});
+                            this.props.setProps({qfeeds});
+                        }
+                    }
+                }
             }
 
             // If program is not full avoid using feeds_queue
@@ -121,7 +137,7 @@ class ShidurGroups extends Component {
         if(!feed) return;
         let {mids,qfeeds,quistions_queue} = this.props;
 
-        // Add to group search if removed from program with question status
+        // Add to qfeeds if removed from program with question status
         if(mids[i]) {
             let chk = mids.filter(g => g.active && g.feed_id === mids[i].feed_id);
             let qf_chk = qfeeds.filter(qf => qf.rfid === mids[i].feed_id).length === 0;
