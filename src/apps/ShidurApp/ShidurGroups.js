@@ -105,11 +105,11 @@ class ShidurGroups extends Component {
                 let feed = feeds[feeds_queue].id;
                 streams.push({feed, mid: "1", sub_mid});
                 feeds_queue++;
-                this.props.setProps({feeds_queue});
             }
 
         }
 
+        this.props.setProps({feeds_queue});
         Janus.log(" :: Going to switch four: ", streams);
         let switch_four = {request: "switch", streams};
         this.props.remoteFeed.send ({"message": switch_four,
@@ -288,7 +288,7 @@ class ShidurGroups extends Component {
                   </div>
               </Segment>
               <Button className='fours_button'
-                      disabled={feeds.length < 3}
+                      disabled={feeds.length < 13}
                       attached='bottom'
                       color='blue'
                       size='mini'

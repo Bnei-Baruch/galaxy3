@@ -14,6 +14,7 @@ class ShidurToran extends Component {
         disabled_groups: [],
         group: null,
         mids: [],
+        feeds_queue: 0,
         pr1: [],
         pre: null,
         preview: null,
@@ -36,6 +37,16 @@ class ShidurToran extends Component {
 
     componentWillUnmount() {
     };
+
+    componentDidUpdate(prevProps, prevState, snapshot) {
+        if(this.props.feeds_queue !== this.state.feeds_queue) {
+            console.log(" --::: DidUpdate: ",this.props.feeds_queue, this.state.feeds_queue)
+            this.setState({feeds_queue: this.props.feeds_queue});
+            setTimeout(() => {
+                this.selectNext();
+            }, 500);
+        }
+    }
 
     newSwitchFeed = (id, preview, i) => {
         let pre = null;
@@ -162,7 +173,7 @@ class ShidurToran extends Component {
         this.switchPreview(pre_feed.id, true);
     };
 
-    selectNext = () => {
+    selectNext = (next) => {
         const {feeds,feeds_queue} = this.props;
         let next_feed = feeds[feeds_queue];
         if(next_feed) {
@@ -184,6 +195,7 @@ class ShidurToran extends Component {
         this.props.removeFeed(pre_feed.id);
         this.hidePreview();
         this.props.setProps({disabled_groups});
+        this.selectNext();
     };
 
     hidePreview = () => {
@@ -196,6 +208,34 @@ class ShidurToran extends Component {
         let {pre_feed} = this.props;
         if(pre_feed && pre_feed.id === id) {
             this.hidePreview()
+        }
+    };
+
+    zoominGroup = (e, i ,s) => {
+        return
+        e.preventDefault();
+        if (e.type === 'contextmenu') {
+            let {zoom} = this.state;
+            this.setState({zoom: !zoom},() => {
+                let switchvideo = (s === "pro") ? this.refs["programVideo" + i] : this.refs.prevewVideo;
+                let zoomvideo = this.refs.zoomVideo;
+                var stream = switchvideo.captureStream();
+                zoomvideo.srcObject = stream;
+            });
+        }
+    };
+
+    raiseNext = () => {
+        let {feeds_queue,feeds,round} = this.props;
+        feeds_queue++;
+        if(feeds_queue >= feeds.length) {
+            // End round here!
+            Janus.log(" -- ROUND END --");
+            feeds_queue = 0;
+            round++;
+            this.props.setProps({feeds_queue,round});
+        } else {
+            this.props.setProps({feeds_queue});
         }
     };
 
@@ -312,9 +352,9 @@ class ShidurToran extends Component {
                         onClick={() => this.disableGroup(null, next_feed)} />
                 <Button className='hide_button'
                         size='mini'
-                        color='orange'
-                        icon='window minimize'
-                        onClick={() => this.hidePreview()} />
+                        color='green'
+                        icon='share'
+                        onClick={this.raiseNext} />
             </div>
         );
 
