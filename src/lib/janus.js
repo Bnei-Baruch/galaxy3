@@ -1698,7 +1698,7 @@ export function Janus(gatewayCallbacks) {
 		if(isDataEnabled(media) && !config.dataChannel) {
 			Janus.log("Creating data channel");
 			var onDataChannelMessage = function(event) {
-				Janus.log('Received message on data channel: ' + event.data);
+				Janus.debug('Received message on data channel: ' + event.data);
 				pluginHandle.ondata(event.data);	// FIXME
 			}
 			var onDataChannelStateChange = function() {

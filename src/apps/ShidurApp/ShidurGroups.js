@@ -216,16 +216,16 @@ class ShidurGroups extends Component {
                            ref={"provideo" + i}
                            id={"provideo" + i}>
                           <div className="video_title"></div>
-                          <video
-                                 key={i}
-                                 ref={"programVideo" + i}
-                                 id={"programVideo" + i}
-                                 width={width}
-                                 height={height}
-                                 autoPlay={autoPlay}
-                                 controls={controls}
-                                 muted={muted}
-                                 playsInline={true}/>
+                          {/*<video*/}
+                                 {/*key={i}*/}
+                                 {/*ref={"programVideo" + i}*/}
+                                 {/*id={"programVideo" + i}*/}
+                                 {/*width={width}*/}
+                                 {/*height={height}*/}
+                                 {/*autoPlay={autoPlay}*/}
+                                 {/*controls={controls}*/}
+                                 {/*muted={muted}*/}
+                                 {/*playsInline={true}/>*/}
                       </div></div> : false)
               }
               let user = JSON.parse(feed.feed_display);

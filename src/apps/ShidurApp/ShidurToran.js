@@ -387,7 +387,7 @@ class ShidurToran extends Component {
             <Grid.Row>
                 <Grid.Column>
                     <Segment className="preview_conteiner">
-                        <Segment className="group_segment" color='green'>
+                        <Segment className="group_segment" color='blue'>
                             {nextfeed}
                         </Segment>
                     </Segment>
