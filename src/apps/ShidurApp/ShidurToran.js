@@ -13,10 +13,10 @@ class ShidurToran extends Component {
         name: "",
         disabled_groups: [],
         group: null,
-        pri: null,
+        mids: [],
         pr1: [],
         pre: null,
-        program: null,
+        preview: null,
         pre_feed: null,
         full_feed: null,
         protocol: null,
@@ -37,21 +37,7 @@ class ShidurToran extends Component {
     componentWillUnmount() {
     };
 
-    // fixProgram = (index) => {
-    //     let {feeds,pr1} = this.state;
-    //     let i = this.state.pri || index;
-    //     let feed = feeds[i];
-    //     pr1[i] = null;
-    //     if(i < 4) {
-    //         this.col1.switchNext(i,feed,"fix");
-    //     } else if(i < 8) {
-    //         this.col2.switchNext(i,feed,"fix");
-    //     } else if(i < 12) {
-    //         this.col3.switchNext(i,feed,"fix");
-    //     }
-    // };
-
-    newSwitchFeed = (id, program, i) => {
+    newSwitchFeed = (id, preview, i) => {
         let pre = null;
         this.props.janus.attach(
             {
@@ -62,7 +48,7 @@ class ShidurToran extends Component {
                     pre.simulcastStarted = false;
                     Janus.log("Plugin attached! (" + pre.getPlugin() + ", id=" + pre.getId() + ")");
                     Janus.log("  -- This is a subscriber");
-                    let listen = { "request": "join", "room": 1234, "ptype": "subscriber", streams: [{feed: id, mid: "1"}] };
+                    let listen = { "request": "join", "room": 1234, "ptype": "subscriber", streams: [{feed: id, mid: "1"},{feed: id, mid: "1"}] };
                     pre.send({"message": listen});
                     this.setState({pre});
                 },
@@ -87,13 +73,13 @@ class ShidurToran extends Component {
                     if(msg["streams"]) {
                         // Update map of subscriptions by mid
                         Janus.log(" :: Streams updated! : ",msg["streams"]);
-                        // let {mids} = this.state;
-                        // for(let i in msg["streams"]) {
-                        //     let mindex = msg["streams"][i]["mid"];
-                        //     //let feed_id = msg["streams"][i]["feed_id"];
-                        //     mids[mindex] = msg["streams"][i];
-                        // }
-                        // this.setState({mids});
+                        let {mids} = this.state;
+                        for(let i in msg["streams"]) {
+                            let mindex = msg["streams"][i]["mid"];
+                            //let feed_id = msg["streams"][i]["feed_id"];
+                            mids[mindex] = msg["streams"][i];
+                        }
+                        this.setState({mids});
                     }
                     if(jsep !== undefined && jsep !== null) {
                         Janus.debug("Handling SDP as well...");
@@ -122,7 +108,7 @@ class ShidurToran extends Component {
                     // The subscriber stream is recvonly, we don't expect anything here
                 },
                 onremotetrack: (track,mid,on) => {
-                    Janus.debug(" - Remote track "+mid+" is: "+on,track);
+                    Janus.log(" - Remote track "+mid+" is: "+on,track);
                     if(!on) {
                         console.log(" :: Going to stop track :: " + track + ":", mid);
                         //FIXME: Remove callback for audio track does not come
@@ -135,7 +121,7 @@ class ShidurToran extends Component {
                     let stream = new MediaStream();
                     stream.addTrack(track.clone());
                     Janus.debug("Remote feed #" + pre);
-                    let switchvideo = this.refs.prevewVideo;
+                    let switchvideo = mid === "0" ? this.refs.prevewVideo : this.refs.nextVideo;
                     Janus.log(" Attach remote stream on video: "+i);
                     Janus.attachMediaStream(switchvideo, stream);
                 },
@@ -146,15 +132,15 @@ class ShidurToran extends Component {
             });
     };
 
-    switchPreview = (id, display) => {
+    switchPreview = (id, preview) => {
         if(!this.state.pre) {
-            this.newSwitchFeed(id,false);
+            this.newSwitchFeed(id, preview);
         } else {
-            let streams = [{feed: id, mid: "1", sub_mid: "0"}];
+            let streams = [{feed: id, mid: "1", sub_mid: (preview ? "0" : "1")}];
             let switchfeed = {"request": "switch", streams};
             this.state.pre.send ({"message": switchfeed,
                 success: () => {
-                    Janus.log(" :: Preview Switch Feed to: ", display);
+                    Janus.log(" :: Preview Switch Feed to: ", id);
                 }
             })
         }
@@ -173,16 +159,17 @@ class ShidurToran extends Component {
     selectGroup = (pre_feed) => {
         this.props.setProps({pre_feed});
         Janus.log(pre_feed);
-        this.switchPreview(pre_feed.id, pre_feed.display);
-        // We can show in preview feed stream object
-        // if(this.state.feedStreams[pre_feed.id]) {
-        //     let {stream} = this.state.feedStreams[pre_feed.id];
-        //     let video = this.refs.prevewVideo;
-        //     Janus.log(" Attach mid to preview: "+pre_feed.id);
-        //     Janus.attachMediaStream(video, stream);
-        // } else {
-        //     this.switchPreview(pre_feed.id, pre_feed.display);
-        // }
+        this.switchPreview(pre_feed.id, true);
+    };
+
+    selectNext = () => {
+        const {feeds,feeds_queue} = this.props;
+        let next_feed = feeds[feeds_queue];
+        if(next_feed) {
+            this.setState({next_feed});
+            Janus.log(" :: Select next feed: ", next_feed);
+            this.switchPreview(next_feed.id, false);
+        }
     };
 
     disableGroup = (e, pre_feed) => {
@@ -256,7 +243,8 @@ class ShidurToran extends Component {
 
     render() {
 
-        const {users,feeds,pre_feed,feeds_queue,disabled_groups,round,qfeeds,pri,sdiout,sndman} = this.props;
+        const {users,feeds,pre_feed,feeds_queue,disabled_groups,round,qfeeds,sdiout,sndman} = this.props;
+        const {next_feed} = this.state;
 
         const autoPlay = true;
         const controls = false;
@@ -277,7 +265,6 @@ class ShidurToran extends Component {
         let preview = (<div className={pre_feed ? "" : "hidden"}>
                 <div className="fullscrvideo_title"><span>{pre_feed ? pre_feed.display.display : ""}</span></div>
                 <div className={
-                    //TODO: Fix this ugly shit!
                     pre_feed ? users[pre_feed.display.id] ? users[pre_feed.display.id].question ? 'qst_fullscreentitle' : 'hidden' : 'hidden' : 'hidden'
                 }>?</div>
                 <video
@@ -295,6 +282,34 @@ class ShidurToran extends Component {
                         color='red'
                         icon='close'
                         onClick={() => this.disableGroup(null, pre_feed)} />
+                <Button className='hide_button'
+                        size='mini'
+                        color='orange'
+                        icon='window minimize'
+                        onClick={() => this.hidePreview()} />
+            </div>
+        );
+
+        let nextfeed = (<div className={next_feed ? "" : "hidden"}>
+                <div className="fullscrvideo_title"><span>{next_feed ? next_feed.display.display : ""}</span></div>
+                <div className={
+                    next_feed ? users[next_feed.display.id] ? users[next_feed.display.id].question ? 'qst_fullscreentitle' : 'hidden' : 'hidden' : 'hidden'
+                }>?</div>
+                <video
+                    onContextMenu={(e) => this.zoominGroup(e, null, "pre")}
+                    ref = {"nextVideo"}
+                    id = "nextVideo"
+                    width = "400"
+                    height = "220"
+                    autoPlay = {autoPlay}
+                    controls = {controls}
+                    muted = {muted}
+                    playsInline = {true} />
+                <Button className='close_button'
+                        size='mini'
+                        color='red'
+                        icon='close'
+                        onClick={() => this.disableGroup(null, next_feed)} />
                 <Button className='hide_button'
                         size='mini'
                         color='orange'
@@ -333,11 +348,11 @@ class ShidurToran extends Component {
                 <Grid.Column>
                     <Segment className="preview_conteiner">
                         <Segment className="group_segment" color='green'>
-
+                            {nextfeed}
                         </Segment>
                     </Segment>
                     <Message attached className='info-panel' color='grey'>
-                        <Label attached='top left' color='grey'>
+                        <Label attached='top left' color='grey' onClick={this.selectNext}>
                             Next: {feeds[feeds_queue] ? feeds[feeds_queue].display.display : ""}
                         </Label>
                         <Label color='brown'>
