@@ -36,7 +36,7 @@ class AdminStreaming extends Component {
         Janus.log(" -- Going to connect to: " + servers);
         let janus = new Janus({
             server: servers,
-            iceServers: [{urls: "stun:jnsuk.kbb1.com:3478"}],
+            iceServers: [{urls: "stun:stream.kli.one:3478"}],
             success: () => {
                 Janus.log(" :: Connected to JANUS");
                 this.initVideoStream();

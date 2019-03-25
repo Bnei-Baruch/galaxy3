@@ -19,10 +19,12 @@ export const JANUS_ADMIN_GXY = process.env.REACT_APP_ADMIN_SRV_GXY;
 export const JANUS_SRV_ISRPT = process.env.REACT_APP_JANUS_SRV_ISRPT;
 export const JANUS_SRV_EURND = process.env.REACT_APP_JANUS_SRV_EURND;
 export const JANUS_SRV_EURUK = process.env.REACT_APP_JANUS_SRV_EURUK;
+export const JANUS_SRV_EURFR = process.env.REACT_APP_JANUS_SRV_EURFR;
 export const JANUS_SRV_ISRLC = process.env.REACT_APP_JANUS_SRV_ISRLC;
 export const JANUS_IP_ISRPT = process.env.REACT_APP_JANUS_IP_ISRPT;
 export const JANUS_IP_EURND = process.env.REACT_APP_JANUS_IP_EURND;
 export const JANUS_IP_EURUK = process.env.REACT_APP_JANUS_IP_EURUK;
+export const JANUS_IP_EURFR = process.env.REACT_APP_JANUS_IP_EURFR;
 export const JANUS_IP_LOCAL = process.env.REACT_APP_JANUS_IP_LOCAL;
 
 
@@ -30,20 +32,23 @@ export const servers_options = [
     { key: 1, text: 'Israel (PT)', value: `${JANUS_SRV_ISRPT}` },
     { key: 2, text: 'Europe (ND)', value: `${JANUS_SRV_EURND}` },
     { key: 3, text: 'Europe (UK)', value: `${JANUS_SRV_EURUK}` },
-    { key: 4, text: 'Merkaz (PT)', value: `${JANUS_SRV_ISRLC}` },
+    { key: 4, text: 'Europe (FR)', value: `${JANUS_SRV_EURFR}` },
+    { key: 5, text: 'Merkaz (PT)', value: `${JANUS_SRV_ISRLC}` },
 ];
 
 export const videos_options = [
-    { key: 1, text: '600Kb/s', value: 1 },
-    { key: 2, text: '300Kb/s', value: 11 },
+    { key: 1, text: '240p', value: 11 },
+    { key: 2, text: '360p', value: 1 },
     { key: 3, text: 'NoVideo', value: 3 },
 ];
 
 export const admin_videos_options = [
-    { key: 1, text: '600Kb/s', value: 1 },
-    { key: 2, text: '300Kb/s', value: 11 },
-    { key: 3, text: 'RTCP', value: 103 },
-    { key: 4, text: 'NoVideo', value: 4 },
+    { key: 1, text: '240p', value: 11 },
+    { key: 2, text: '360p', value: 1 },
+    { key: 3, text: '480p', value: 66 },
+    { key: 4, text: '720p', value: 77 },
+    { key: 5, text: 'RTCP', value: 103 },
+    { key: 6, text: 'NoVideo', value: 4 },
 ];
 
 export const audios_options = [
