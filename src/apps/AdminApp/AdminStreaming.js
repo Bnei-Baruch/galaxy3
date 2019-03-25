@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { Janus } from "../../lib/janus";
+import { Janus } from "../StreamApp/lib/janus";
 import { Segment, Menu, Select, Button, Grid } from 'semantic-ui-react';
 import VolumeSlider from "../../components/VolumeSlider";
 import {servers_options, admin_videos_options, audios_options} from "../../shared/consts";
