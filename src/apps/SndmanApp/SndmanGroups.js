@@ -284,43 +284,42 @@ class SndmanGroups extends Component {
         fullvideo.srcObject = stream;
     };
 
-    toFourGroup = () => {
+    toFourGroup = (i,full_feed) => {
         Janus.log(":: Back to four: ");
+        this.setState({fullscr: !this.state.fullscr});
         if(this.state.forward)
-            this.forwardStream();
-        //FIXME: Does we need setState on forwardStream callback?
-        this.setState({fullscr: !this.state.fullscr, full_feed: null});
+            this.forwardStream(full_feed);
     };
 
-    forwardStream = () => {
-        const {full_feed,fullscr,forward_feed,room,forward,port} = this.state;
+    forwardStream = (feed) => {
+        const {fullscr,forward_feed,room,forward,port} = this.state;
         const {gxyhandle} = this.props;
-        if (!fullscr) {
-            return;
-        }
+        //FIXME: This is really problem place we call start forward from one place and stop from two placed
+        // and we depend on callback from request and fullscreen state and feed info.
+        // fix1: we take now feed info from state only in render and pass as param to needed functions
+        // fix2: don't limit stop forward with fullscreen state it's will be limit only for start forward
+        // fix3: set forward state after success request callback (send message to client must be here as well)
         if(forward) {
             Janus.log(" :: Stop forward from room: ", room);
-            this.setState({forward: false});
-            this.sendMessage(JSON.parse(forward_feed.display), false);
             let stopfw = { "request":"stop_rtp_forward","stream_id":forward_feed.streamid,"publisher_id":forward_feed.id,"room":room,"secret":`${SECRET}` };
             gxyhandle.send({"message": stopfw,
                 success: (data) => {
                     Janus.log(":: Forward callback: ", data);
-                    this.setState({forward_feed: {}});
+                    this.sendMessage(JSON.parse(forward_feed.display), false);
+                    this.setState({forward_feed: {}, forward: false});
                 },
             });
-        } else {
+        } else if(fullscr) {
             Janus.log(" :: Start forward from room: ", room);
-            this.setState({forward: true});
-            this.sendMessage(JSON.parse(full_feed.display), true);
-            let forward = { "request": "rtp_forward","publisher_id":full_feed.id,"room":room,"secret":`${SECRET}`,"host":`${DANTE_IN_IP}`,"audio_port":port};
+            let forward = { "request": "rtp_forward","publisher_id":feed.id,"room":room,"secret":`${SECRET}`,"host":`${DANTE_IN_IP}`,"audio_port":port};
             gxyhandle.send({"message": forward,
                 success: (data) => {
                     Janus.log(":: Forward callback: ", data);
                     forward_feed.streamid = data["rtp_stream"]["audio_stream_id"];
-                    forward_feed.id = full_feed.id;
-                    forward_feed.display = full_feed.display;
-                    this.setState({forward_feed});
+                    forward_feed.id = feed.id;
+                    forward_feed.display = feed.display;
+                    this.sendMessage(JSON.parse(feed.display), true);
+                    this.setState({forward_feed, forward: true});
                 },
             });
         }
@@ -333,9 +332,9 @@ class SndmanGroups extends Component {
         this.props.gxyhandle.data({ text: message });
     };
 
-    onKeyPressed = (e) => {
+    onKeyPressed = (e,full_feed) => {
         if(e.code === "Numpad"+this.state.col && this.state.fullscr)
-            this.forwardStream();
+            this.forwardStream(full_feed);
     };
 
 
@@ -446,8 +445,8 @@ class SndmanGroups extends Component {
                       attached='bottom'
                       positive={!forward}
                       negative={forward}
-                      onKeyDown={(e) => this.onKeyPressed(e)}
-                      onClick={this.forwardStream}>
+                      onKeyDown={(e) => this.onKeyPressed(e,full_feed)}
+                      onClick={() => this.forwardStream(full_feed)}>
                   <Icon size='large' name={forward ? 'microphone' : 'microphone slash' } />
                   <Label attached='top left' color='grey'>{this.state.col}</Label>
               </Button>

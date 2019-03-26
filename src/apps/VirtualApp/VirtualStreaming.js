@@ -38,7 +38,7 @@ class VirtualStreaming extends Component {
                 // }
                 this.initJanus(server);
             });
-            Janus.init({debug: ["log"], callback: this.initJanus});
+            Janus.init({debug: false, callback: this.initJanus});
         }
     };
 
