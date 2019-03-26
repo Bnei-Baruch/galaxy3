@@ -11,6 +11,7 @@ class SndmanGroups extends Component {
         disabled_groups: [],
         forward: false,
         forward_feed: {},
+        forward_request: false,
         full_feed: null,
         fullscr: false,
         room: 1234,
@@ -299,18 +300,21 @@ class SndmanGroups extends Component {
         // fix1: we take now feed info from state only in render and pass as param to needed functions
         // fix2: don't limit stop forward with fullscreen state it's will be limit only for start forward
         // fix3: set forward state after success request callback (send message to client must be here as well)
+        // fix4: add start forward request progress state
         if(forward) {
             Janus.log(" :: Stop forward from room: ", room);
+            this.setState({forward_request: true});
             let stopfw = { "request":"stop_rtp_forward","stream_id":forward_feed.streamid,"publisher_id":forward_feed.id,"room":room,"secret":`${SECRET}` };
             gxyhandle.send({"message": stopfw,
                 success: (data) => {
                     Janus.log(":: Forward callback: ", data);
                     this.sendMessage(JSON.parse(forward_feed.display), false);
-                    this.setState({forward_feed: {}, forward: false});
+                    this.setState({forward_feed: {}, forward: false, forward_request: false});
                 },
             });
         } else if(fullscr) {
             Janus.log(" :: Start forward from room: ", room);
+            this.setState({forward_request: true});
             let forward = { "request": "rtp_forward","publisher_id":feed.id,"room":room,"secret":`${SECRET}`,"host":`${DANTE_IN_IP}`,"audio_port":port};
             gxyhandle.send({"message": forward,
                 success: (data) => {
@@ -319,7 +323,7 @@ class SndmanGroups extends Component {
                     forward_feed.id = feed.id;
                     forward_feed.display = feed.display;
                     this.sendMessage(JSON.parse(feed.display), true);
-                    this.setState({forward_feed, forward: true});
+                    this.setState({forward_feed, forward: true, forward_request: false});
                 },
             });
         }
@@ -333,13 +337,14 @@ class SndmanGroups extends Component {
     };
 
     onKeyPressed = (e,full_feed) => {
-        if(e.code === "Numpad"+this.state.col && this.state.fullscr)
+        const {fullscr, starting_forward} = this.state;
+        if(e.code === "Numpad"+this.state.col && fullscr && !starting_forward)
             this.forwardStream(full_feed);
     };
 
 
   render() {
-      const { pre_feed,full_feed,zoom,fullscr,forward } = this.state;
+      const { pre_feed,full_feed,zoom,fullscr,forward,forward_request } = this.state;
       const {users,index,feeds,pgm_state,feeds_queue,quistions_queue,disabled_groups} = this.props;
       const width = "100%";
       const height = "100%";
@@ -441,7 +446,7 @@ class SndmanGroups extends Component {
               </div>
           </Segment>
               <Button className='fours_button'
-                      disabled={!fullscr}
+                      disabled={!fullscr || forward_request}
                       attached='bottom'
                       positive={!forward}
                       negative={forward}
