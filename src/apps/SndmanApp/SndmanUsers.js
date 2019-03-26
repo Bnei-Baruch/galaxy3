@@ -660,6 +660,7 @@ class SndmanUsers extends Component {
         // TODO: WE need solution for joining users to already forwarded room
         if(forward) {
             Janus.log(" :: Stop forward from room: ", room);
+            this.setDelay();
             feeds.forEach((feed,i) => {
                 if (feed !== null && feed !== undefined) {
                     // FIXME: if we change sources on client based on room id (not ip) we send message only once
@@ -676,6 +677,7 @@ class SndmanUsers extends Component {
             this.setState({feeds, forward: false});
         } else {
             Janus.log(" :: Start forward from room: ", room);
+            this.setDelay();
             let port = 5630;
             feeds.forEach((feed,i) => {
                 if (feed !== null && feed !== undefined) {
@@ -693,6 +695,13 @@ class SndmanUsers extends Component {
             });
             this.setState({feeds, forward: true});
         }
+    };
+
+    setDelay = () => {
+        this.setState({onoff_but: true});
+        setTimeout(() => {
+            this.setState({onoff_but: false});
+        }, 1000);
     };
 
     onKeyPressed = (e) => {
