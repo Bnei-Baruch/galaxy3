@@ -197,9 +197,9 @@ class AdminStreaming extends Component {
 
     return (
 
-      <Segment compact>
+      <Segment compact color='brown' raised>
 
-          <Segment textAlign='center' className="ingest_segment" raised>
+          <Segment textAlign='center' className="ingest_segment" raised secondary>
               <Menu secondary>
                   <Menu.Item>
                       <Select
