@@ -10,7 +10,7 @@ import {
     JANUS_IP_EURND,
     JANUS_IP_EURUK,
     JANUS_IP_ISRPT,
-    JANUS_IP_LOCAL,
+    JANUS_IP_EURFR,
     MAX_FEEDS,
     SECRET
 } from "../../shared/consts";
@@ -440,12 +440,12 @@ class SndmanUsers extends Component {
         let isrip = `${JANUS_IP_ISRPT}`;
         let eurip = `${JANUS_IP_EURND}`;
         let ukip = `${JANUS_IP_EURUK}`;
-        let lclip = `${JANUS_IP_LOCAL}`;
+        let frip = `${JANUS_IP_EURFR}`;
         let dport = DATA_PORT;
         let isrfwd = { "request": "rtp_forward","publisher_id":myid,"room":room,"secret":`${SECRET}`,"host":isrip,"data_port":dport};
         let eurfwd = { "request": "rtp_forward","publisher_id":myid,"room":room,"secret":`${SECRET}`,"host":eurip,"data_port":dport};
         let eukfwd = { "request": "rtp_forward","publisher_id":myid,"room":room,"secret":`${SECRET}`,"host":ukip,"data_port":dport};
-        let lclfwd = { "request": "rtp_forward","publisher_id":myid,"room":room,"secret":`${SECRET}`,"host":lclip,"data_port":dport};
+        let efrfwd = { "request": "rtp_forward","publisher_id":myid,"room":room,"secret":`${SECRET}`,"host":frip,"data_port":dport};
         videoroom.send({"message": isrfwd,
             success: (data) => {
                 data_forward.isr = data["rtp_stream"]["data_stream_id"];
@@ -456,7 +456,6 @@ class SndmanUsers extends Component {
             success: (data) => {
                 data_forward.eur = data["rtp_stream"]["data_stream_id"];
                 Janus.log(" :: EUR Data Forward: ", data);
-                this.setState({onoff_but: false});
             },
         });
         videoroom.send({"message": eukfwd,
@@ -465,10 +464,11 @@ class SndmanUsers extends Component {
                 Janus.log(" :: EUK Data Forward: ", data);
             },
         });
-        videoroom.send({"message": lclfwd,
+        videoroom.send({"message": efrfwd,
             success: (data) => {
-                data_forward.lcl = data["rtp_stream"]["data_stream_id"];
-                Janus.log(" :: LCL Data Forward: ", data);
+                data_forward.efr = data["rtp_stream"]["data_stream_id"];
+                Janus.log(" :: EFR Data Forward: ", data);
+                this.setState({onoff_but: false});
             },
         });
     };

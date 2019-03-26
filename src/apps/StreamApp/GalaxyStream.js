@@ -3,7 +3,7 @@ import { Janus } from "./lib/janus";
 import {client, getUser} from "../../components/UserManager";
 import { Segment, Menu, Select, Button, Grid } from 'semantic-ui-react';
 import VolumeSlider from "../../components/VolumeSlider";
-import {videos_options, audiog_options, gxycol, trllang} from "../../shared/consts";
+import {videos_options, audiog_options, gxycol, trllang, JANUS_SRV_EURFR, STUN_SRV_STR} from "../../shared/consts";
 import {geoInfo} from "../../shared/tools";
 import LoginPage from "../../components/LoginPage";
 import './GalaxyStream.css'
@@ -51,12 +51,12 @@ class GalaxyStream extends Component {
             let {user} = this.state;
             this.setState({user: {...info,...user}});
             localStorage.setItem("extip", info.external_ip);
-            let server = "";
-            if (info.country_code === "IL") {
-                server = 'https://v4g.kbb1.com/janustrl';
-            } else {
-                server = (info.sessions > 400) ? 'https://jnsuk.kbb1.com/janustrl' : 'https://jnseur.kbb1.com/janustrl';
-            }
+            let server = `${JANUS_SRV_EURFR}`;
+            // if (info.country_code === "IL") {
+            //     server = 'https://v4g.kbb1.com/janustrl';
+            // } else {
+            //     server = (info.sessions > 400) ? 'https://jnsuk.kbb1.com/janustrl' : 'https://jnseur.kbb1.com/janustrl';
+            // }
             this.initJanus(server);
         });
         Janus.init({debug: false, callback: this.initJanus});
@@ -70,7 +70,7 @@ class GalaxyStream extends Component {
         Janus.log(" -- Going to connect to: " + servers);
         let janus = new Janus({
             server: servers,
-            iceServers: [{urls: "stun:jnsuk.kbb1.com:3478"}],
+            iceServers: [{urls: `${STUN_SRV_STR}`}],
             success: () => {
                 Janus.log(" :: Connected to JANUS");
                 this.initVideoStream();

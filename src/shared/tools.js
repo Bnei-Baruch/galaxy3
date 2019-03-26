@@ -5,7 +5,7 @@ import {
     JANUS_SRV_VRT,
     JANUS_SRV_GXY,
     ADMIN_SECRET,
-    STUN_SERVER,
+    STUN_SRV_GXY,
     WFDB_STATE,
     WFRP_STATE
 } from "./consts";
@@ -17,7 +17,7 @@ export const initJanus = (cb,er,mlt) => {
         callback: () => {
             let janus = new Janus({
                 server: mlt ? JANUS_SRV_GXY : JANUS_SRV_VRT,
-                iceServers: [{urls: STUN_SERVER}],
+                iceServers: [{urls: STUN_SRV_GXY}],
                 success: () => {
                     Janus.log(" :: Connected to JANUS");
                     cb(janus);

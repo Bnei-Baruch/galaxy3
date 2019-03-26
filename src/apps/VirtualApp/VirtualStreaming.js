@@ -1,8 +1,8 @@
 import React, { Component } from 'react';
-import { Janus } from "../../lib/janus";
+import { Janus } from "../StreamApp/lib/janus";
 import { Segment, Menu, Select, Button, Grid } from 'semantic-ui-react';
 import VolumeSlider from "../../components/VolumeSlider";
-import {videos_options, audiog_options, gxycol, trllang} from "../../shared/consts";
+import {videos_options, audiog_options, gxycol, trllang, STUN_SRV_STR, JANUS_SRV_EURFR} from "../../shared/consts";
 import {geoInfo} from "../../shared/tools";
 
 
@@ -29,12 +29,12 @@ class VirtualStreaming extends Component {
                 Janus.log(user);
                 this.setState({user});
                 localStorage.setItem("extip", user.external_ip);
-                let server = "";
-                if (user.country_code === "IL") {
-                    server = 'https://v4g.kbb1.com/janustrl';
-                } else {
-                    server = (user.sessions > 400) ? 'https://jnsuk.kbb1.com/janustrl' : 'https://jnseur.kbb1.com/janustrl';
-                }
+                let server = `${JANUS_SRV_EURFR}`;
+                // if (user.country_code === "IL") {
+                //     server = 'https://v4g.kbb1.com/janustrl';
+                // } else {
+                //     server = (user.sessions > 400) ? 'https://jnsuk.kbb1.com/janustrl' : 'https://jnseur.kbb1.com/janustrl';
+                // }
                 this.initJanus(server);
             });
             Janus.init({debug: ["log"], callback: this.initJanus});
@@ -53,7 +53,7 @@ class VirtualStreaming extends Component {
         Janus.log(" -- Going to connect to: " + servers);
         let janus = new Janus({
             server: servers,
-            iceServers: [{urls: "stun:jnsuk.kbb1.com:3478"}],
+            iceServers: [{urls: `${STUN_SRV_STR}`}],
             success: () => {
                 Janus.log(" :: Connected to JANUS");
                 this.initVideoStream();
