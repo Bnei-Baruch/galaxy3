@@ -287,9 +287,15 @@ class SndmanGroups extends Component {
 
     toFourGroup = (i,full_feed) => {
         Janus.log(":: Back to four: ");
+        const {forward,forward_request} = this.state;
         this.setState({fullscr: !this.state.fullscr});
-        if(this.state.forward)
+        if(forward_request) {
+            setTimeout(() => {
+                this.forwardStream(full_feed);
+            }, 1000);
+        } else if(forward) {
             this.forwardStream(full_feed);
+        }
     };
 
     forwardStream = (feed) => {
@@ -301,7 +307,8 @@ class SndmanGroups extends Component {
         // fix2: don't limit stop forward with fullscreen state it's will be limit only for start forward
         // fix3: set forward state after success request callback (send message to client must be here as well)
         // fix4: add start forward request progress state
-        // fix5: put delay between start/stop request switch
+        // fix5: put delay between start/stop request switch (It's still hacky we actually need callback from sendMessage)
+        // fix6: put delay on stop request from shidur if start forward request still in progress
         if(forward) {
             Janus.log(" :: Stop forward from room: ", room);
             this.setDelay();
