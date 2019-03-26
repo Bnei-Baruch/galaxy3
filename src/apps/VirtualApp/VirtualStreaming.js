@@ -4,6 +4,7 @@ import { Segment, Menu, Select, Button, Grid } from 'semantic-ui-react';
 import VolumeSlider from "../../components/VolumeSlider";
 import {videos_options, audiog_options, gxycol, trllang, STUN_SRV_STR, JANUS_SRV_EURFR} from "../../shared/consts";
 import {geoInfo} from "../../shared/tools";
+import '../StreamApp/GalaxyStream.css'
 
 
 class VirtualStreaming extends Component {
@@ -291,7 +292,7 @@ class VirtualStreaming extends Component {
 
     render() {
 
-        const {videos, audios, muted} = this.state;
+        const {videos, audios, muted, talking} = this.state;
 
         if(!this.state.room) {
 
@@ -301,7 +302,7 @@ class VirtualStreaming extends Component {
 
             return (
 
-                <Segment compact>
+                <Segment compact secondary>
                     <Segment textAlign='center' className="ingest_segment" raised>
                         <Menu secondary>
                             <Menu.Item>
@@ -327,7 +328,8 @@ class VirtualStreaming extends Component {
                         </Menu>
                     </Segment>
                     <Segment>
-                        <video ref="remoteVideo"
+                        <video className={talking ? 'talk_border' : ''}
+                               ref="remoteVideo"
                                id="remoteVideo"
                                width="640"
                                height="360"

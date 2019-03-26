@@ -314,7 +314,7 @@ class GalaxyStream extends Component {
 
         let login = (<LoginPage user={user} />);
         let content = (
-            <Segment compact>
+            <Segment compact secondary>
                 <Segment textAlign='center' className="ingest_segment" raised>
                     <Menu secondary>
                         <Menu.Item>
