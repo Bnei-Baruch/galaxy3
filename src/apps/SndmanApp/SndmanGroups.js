@@ -301,20 +301,21 @@ class SndmanGroups extends Component {
         // fix2: don't limit stop forward with fullscreen state it's will be limit only for start forward
         // fix3: set forward state after success request callback (send message to client must be here as well)
         // fix4: add start forward request progress state
+        // fix5: put delay between start/stop request switch
         if(forward) {
             Janus.log(" :: Stop forward from room: ", room);
-            this.setState({forward_request: true});
+            this.setDelay();
             let stopfw = { "request":"stop_rtp_forward","stream_id":forward_feed.streamid,"publisher_id":forward_feed.id,"room":room,"secret":`${SECRET}` };
             gxyhandle.send({"message": stopfw,
                 success: (data) => {
                     Janus.log(":: Forward callback: ", data);
                     this.sendMessage(JSON.parse(forward_feed.display), false);
-                    this.setState({forward_feed: {}, forward: false, forward_request: false});
+                    this.setState({forward_feed: {}, forward: false});
                 },
             });
         } else if(fullscr) {
             Janus.log(" :: Start forward from room: ", room);
-            this.setState({forward_request: true});
+            this.setDelay();
             let forward = { "request": "rtp_forward","publisher_id":feed.id,"room":room,"secret":`${SECRET}`,"host":`${DANTE_IN_IP}`,"audio_port":port};
             gxyhandle.send({"message": forward,
                 success: (data) => {
@@ -323,10 +324,17 @@ class SndmanGroups extends Component {
                     forward_feed.id = feed.id;
                     forward_feed.display = feed.display;
                     this.sendMessage(JSON.parse(feed.display), true);
-                    this.setState({forward_feed, forward: true, forward_request: false});
+                    this.setState({forward_feed, forward: true});
                 },
             });
         }
+    };
+
+    setDelay = () => {
+        this.setState({forward_request: true});
+        setTimeout(() => {
+            this.setState({forward_request: false});
+        }, 1000);
     };
 
     sendMessage = (user, talk) => {
@@ -336,10 +344,11 @@ class SndmanGroups extends Component {
         this.props.gxyhandle.data({ text: message });
     };
 
-    onKeyPressed = (e,full_feed) => {
-        const {fullscr, starting_forward} = this.state;
-        if(e.code === "Numpad"+this.state.col && fullscr && !starting_forward)
+    onKeyPressed = (e) => {
+        const {fullscr, forward_request,full_feed} = this.state;
+        if(e.code === "Numpad"+this.state.col && fullscr && full_feed && !forward_request) {
             this.forwardStream(full_feed);
+        }
     };
 
 
@@ -450,7 +459,7 @@ class SndmanGroups extends Component {
                       attached='bottom'
                       positive={!forward}
                       negative={forward}
-                      onKeyDown={(e) => this.onKeyPressed(e,full_feed)}
+                      onKeyDown={(e) => this.onKeyPressed(e)}
                       onClick={() => this.forwardStream(full_feed)}>
                   <Icon size='large' name={forward ? 'microphone' : 'microphone slash' } />
                   <Label attached='top left' color='grey'>{this.state.col}</Label>
