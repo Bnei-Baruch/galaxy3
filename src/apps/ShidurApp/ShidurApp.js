@@ -599,14 +599,7 @@ class ShidurApp extends Component {
         //FIXME: Must be removed in production mode
         return;
         const { protocol, user, index } = this.props;
-        let col = null;
-        if(index === 0) {
-            col = 1;
-        } else if(index === 4) {
-            col = 2;
-        } else if(index === 8) {
-            col = 3;
-        }
+        let col = index === 0 ? 1 : index === 4 ? 2 : index === 8 ? 3 : null;
         let msg = { type: "sdi-"+action, status, room: 1234, col, i, feed};
         sendProtocolMessage(protocol, user, msg );
     };

@@ -17,14 +17,9 @@ class ShidurGroups extends Component {
     };
 
     componentDidMount() {
-        const { index } = this.props;
-        if(index === 0) {
-            this.setState({col: 1});
-        } else if(index === 4) {
-            this.setState({col: 2});
-        } else if(index === 8) {
-            this.setState({col: 3});
-        }
+        let { index } = this.props;
+        let col = index === 0 ? 1 : index === 4 ? 2 : index === 8 ? 3 : null;
+        this.setState({col});
     };
 
     switchProgram = (i) => {
@@ -127,14 +122,7 @@ class ShidurGroups extends Component {
         //FIXME: Must be removed in production mode
         return;
         const { protocol, user, index } = this.props;
-        let col = null;
-        if(index === 0) {
-            col = 1;
-        } else if(index === 4) {
-            col = 2;
-        } else if(index === 8) {
-            col = 3;
-        }
+        let col = index === 0 ? 1 : index === 4 ? 2 : index === 8 ? 3 : null;
         let msg = { type: "sdi-"+action, status, room: 1234, col, i, feed};
         sendProtocolMessage(protocol, user, msg );
     };
@@ -204,7 +192,8 @@ class ShidurGroups extends Component {
       const autoPlay = true;
       const controls = false;
       const muted = true;
-      const q = (<Icon color='red' name='question circle' />);
+      const full_question = full_feed && users[full_feed.display.id] ? users[full_feed.display.id].question : null;
+      //const q = (<Icon color='red' name='question circle' />);
 
       let program = this.props.mids.map((feed,i) => {
           if(feed && this.props.qam[i] === col) {
@@ -263,10 +252,10 @@ class ShidurGroups extends Component {
       });
 
       let fullscreen = (<div className={fullscr ? "" : "hidden"}>
-              <div className="fullscrvideo_title"><span>{full_feed ? full_feed.display.display : ""}</span></div>
-              <div className={
-                  full_feed ? users[full_feed.display.id] ? users[full_feed.display.id].question ? 'qst_fullscreentitle' : 'hidden' : 'hidden' : 'hidden'
-              }>?</div>
+              <div className="fullscrvideo_title">
+                  <span>{full_feed ? full_feed.display.display : ""}</span>
+              </div>
+              <div className={full_question ? 'qst_fullscreentitle' : 'hidden'}>?</div>
               <video ref = {"fullscreenVideo"}
                      onClick={() => this.toFourGroup()}
                      id = "fullscreenVideo"
