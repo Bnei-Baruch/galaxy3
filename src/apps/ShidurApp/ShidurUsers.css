@@ -114,7 +114,7 @@
     /*color: #2C662D;*/
 }
 
-.group_list {
+.users_list {
     overflow-y:scroll;
     top:0px; left:0px;
     width:100%; height:270px;
@@ -128,7 +128,7 @@
     width:100%; height:400px; */
 }
 
-.disabled_list {
+.disabled_users {
     overflow-y:scroll;
     top:0px; left:0px;
     width:100%; height:70px;

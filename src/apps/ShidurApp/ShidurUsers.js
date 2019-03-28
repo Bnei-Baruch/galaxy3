@@ -740,14 +740,14 @@ class ShidurUsers extends Component {
               </div>
           </Segment>
 
-          <Segment textAlign='center' className="group_list" raised>
+          <Segment textAlign='center' className="users_list" raised>
               <Table selectable compact='very' basic structured className="admin_table" unstackable>
                   <Table.Body>
                       {rooms_list}
                   </Table.Body>
               </Table>
           </Segment>
-            <Segment textAlign='center' className="disabled_list" raised>
+            <Segment textAlign='center' className="disabled_users">
                 <Table selectable compact='very' basic structured className="admin_table" unstackable>
                     <Table.Body>
                         {disabled_list}

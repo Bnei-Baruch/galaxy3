@@ -667,9 +667,9 @@ class ShidurApp extends Component {
                     </Grid>
                 </Grid.Column>
                 <Grid.Column width={4}>
-                    {/*<ShidurUsers*/}
-                        {/*ref={col => {this.col4 = col;}}*/}
-                        {/*setProps={this.setProps} />*/}
+                    <ShidurUsers
+                        ref={col => {this.col4 = col;}}
+                        setProps={this.setProps} />
                 </Grid.Column>
             </Grid>
         );
