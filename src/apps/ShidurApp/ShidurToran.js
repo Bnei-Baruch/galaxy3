@@ -39,8 +39,9 @@ class ShidurToran extends Component {
     };
 
     componentDidUpdate(prevProps, prevState, snapshot) {
+        this.scrollToBottom();
         if(this.props.feeds_queue !== this.state.feeds_queue) {
-            console.log(" --::: DidUpdate: ",this.props.feeds_queue, this.state.feeds_queue)
+            console.log(" --::: DidUpdate: ",this.props.feeds_queue, this.state.feeds_queue);
             this.setState({feeds_queue: this.props.feeds_queue});
             setTimeout(() => {
                 this.selectNext();
@@ -192,7 +193,7 @@ class ShidurToran extends Component {
             return;
         this.sdiAction("disable", true, null, pre_feed);
         disabled_groups.push(pre_feed);
-        this.props.removeFeed(pre_feed.id);
+        this.props.removeFeed(pre_feed.id, true);
         this.hidePreview();
         this.props.setProps({disabled_groups});
         this.selectNext();
@@ -281,9 +282,13 @@ class ShidurToran extends Component {
         sendProtocolMessage(protocol, user, msg );
     };
 
+    scrollToBottom = () => {
+        this.refs.end.scrollIntoView({ behavior: 'smooth' })
+    };
+
     render() {
 
-        const {users,feeds,pre_feed,feeds_queue,disabled_groups,round,qfeeds,sdiout,sndman} = this.props;
+        const {users,feeds,pre_feed,feeds_queue,disabled_groups,round,qfeeds,sdiout,sndman,log_list} = this.props;
         const {next_feed} = this.state;
 
         const autoPlay = true;
@@ -383,6 +388,16 @@ class ShidurToran extends Component {
             )
         });
 
+        let action_log = log_list.map((msg,i) => {
+            let {user,time,text} = msg;
+            return (
+                <div key={i}><p>
+                    <i style={{color: 'grey'}}>{time}</i>&nbsp;&nbsp;--&nbsp;&nbsp;
+                    <i style={{color: 'blue'}}>{user.display} &nbsp;--&nbsp;&nbsp; {text}</i>
+                </p></div>
+            );
+        });
+
         return (
             <Grid.Row>
                 <Grid.Column>
@@ -390,19 +405,18 @@ class ShidurToran extends Component {
                         <Segment className="group_segment" color='blue'>
                             {nextfeed}
                         </Segment>
-                    </Segment>
-                    <Message attached className='info-panel' color='grey'>
-                        <Label attached='top left' color='grey' onClick={this.selectNext}>
-                            Next: {feeds[feeds_queue] ? feeds[feeds_queue].display.display : ""}
-                        </Label>
-                        <Label color='brown'>
-                            <Icon size='big' name='address card' />
-                            <b className='queue_counter'>{feeds.length - feeds_queue}</b>
+                        <Label color='brown' attached='bottom left'>
+                            <Icon name='address card' />
+                                {feeds.length - feeds_queue}
                             <Icon name='delete' onClick={this.props.resetQueue} />
                         </Label>
-                        <Label attached='top right' color='blue' >
+                        <Label attached='bottom right' color='blue' >
                             Round: {round}
                         </Label>
+                    </Segment>
+                    <Message attached className='info-panel' color='grey'>
+                        {action_log}
+                        <div ref='end' />
                     </Message>
                     <Button.Group attached='bottom' >
                         <Button
@@ -430,6 +444,9 @@ class ShidurToran extends Component {
                                   options={group_options}
                                   onClick={this.sortGroups}
                                   onChange={(e,{value}) => this.selectGroup(value)} />
+                        <Label attached='top left' color='grey' onClick={this.selectNext}>
+                            Next: {feeds[feeds_queue] ? feeds[feeds_queue].display.display : ""}
+                        </Label>
                     </Segment>
                     <Segment textAlign='center' className="group_list" raised >
                         <Table selectable compact='very' basic structured className="admin_table" unstackable>
@@ -445,6 +462,7 @@ class ShidurToran extends Component {
                         <Dropdown className='select_group' error={qfeeds.length > 0}
                                   placeholder='Questions'
                                   fluid
+                                  upward
                                   selection
                                   options={queue_options}
                                   onChange={(e,{value}) => this.selectGroup(value)} />

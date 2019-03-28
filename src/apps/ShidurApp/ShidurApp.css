@@ -1,5 +1,8 @@
 .info-panel {
-    text-align: center;
+    text-align: left;
+    height:230px;
+    overflow-y:scroll;
+    flex: 1 0 auto;
     /*min-width: 935px;*/
     /*min-height: 17em!important;*/
 }
@@ -17,13 +20,13 @@
 .group_list {
     overflow-y:scroll;
     top:0px; left:0px;
-    width:102%; height:275px;
+    width:102%; height:350px;
 }
 
 .disabled_groups {
     overflow-y:scroll;
     top:0px; left:0px;
-    width:102%; height:135px;
+    width:102%; height:270px;
 }
 
 .preview_conteiner {

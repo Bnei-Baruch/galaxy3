@@ -1,7 +1,7 @@
 import React, {Component} from 'react';
 import {Janus} from "../../lib/janus";
 import {Grid} from "semantic-ui-react";
-import {initJanus} from "../../shared/tools";
+import {getDateString, initJanus} from "../../shared/tools";
 import {initGxyProtocol, sendProtocolMessage} from "../../shared/protocol";
 import ShidurGroups from "./ShidurGroups";
 import ShidurUsers from "./ShidurUsers";
@@ -20,6 +20,7 @@ class ShidurApp extends Component {
         feedStreams: {},
         mids: [],
         qfeeds: [],
+        log_list: [],
         gxyhandle: null,
         name: "",
         disabled_groups: [],
@@ -225,8 +226,10 @@ class ShidurApp extends Component {
                     }
                     feeds.push(feed[0]);
                     this.setState({feeds,feedStreams,users});
-                    if(feeds.length < 13 && subscription.length > 0)
+                    if(feeds.length < 13 && subscription.length > 0) {
                         this.subscribeTo(subscription);
+                        this.actionLog(feed[0].display, "enter");
+                    }
                 } else if(msg["leaving"] !== undefined && msg["leaving"] !== null) {
                     // One of the publishers has gone away?
                     let leaving = msg["leaving"];
@@ -276,6 +279,14 @@ class ShidurApp extends Component {
             Janus.debug(jsep);
             gxyhandle.handleRemoteJsep({jsep: jsep});
         }
+    };
+
+    actionLog = (user, text) => {
+        let {log_list} = this.state;
+        let time = getDateString();
+        let log = {time, user, text};
+        log_list.push(log);
+        this.setState({log_list});
     };
 
     newRemoteFeed = (subscription) => {
@@ -494,7 +505,7 @@ class ShidurApp extends Component {
             remoteFeed.send({ message: unsubscribe });
     };
 
-    removeFeed = (id) => {
+    removeFeed = (id, disable) => {
         let {feeds,users,quistions_queue,qfeeds,feeds_queue} = this.state;
 
         // Clean preview
@@ -502,9 +513,11 @@ class ShidurApp extends Component {
 
         for(let i=0; i<feeds.length; i++) {
             if(feeds[i].id === id) {
-
                 // Delete from users mapping object
                 let user = feeds[i].display;
+                // Write to log
+                if(!disable)
+                    this.actionLog(user, "leave");
                 console.log(" :: Remove feed: " + id + " - Name: " + user.username);
                 delete users[user.id];
 
