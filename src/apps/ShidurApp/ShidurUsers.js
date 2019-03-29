@@ -2,10 +2,10 @@ import React, { Component } from 'react';
 import { Janus } from "../../lib/janus";
 import {Segment, Table, Icon} from "semantic-ui-react";
 import {getState, putData, initJanus} from "../../shared/tools";
-import {MAX_FEEDS} from "../../shared/consts";
+//import {MAX_FEEDS} from "../../shared/consts";
 import './ShidurUsers.css'
 import './VideoConteiner.scss'
-import nowebcam from './nowebcam.jpeg';
+//import nowebcam from './nowebcam.jpeg';
 import {initGxyProtocol} from "../../shared/protocol";
 import classNames from "classnames";
 
@@ -276,7 +276,7 @@ class ShidurUsers extends Component {
 
     unsubscribeFrom = (h, id) => {
         // Unsubscribe from this publisher
-        let {mids,feeds,users,feedStreams} = this.state[h];
+        let {feeds,users,feedStreams} = this.state[h];
         let {questions,quistions_queue} = this.state;
         let {remoteFeed} = this.state[h];
         for (let i=0; i<feeds.length; i++) {

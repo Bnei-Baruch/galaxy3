@@ -305,6 +305,7 @@ class ShidurToran extends Component {
                 const {display} = feed.display;
                 return ({ key: i, value: feed, text: display, icon: 'help'});
             }
+            return true;
         });
 
         let preview = (<div className={pre_feed ? "" : "hidden"}>

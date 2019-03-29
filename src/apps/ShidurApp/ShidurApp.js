@@ -4,7 +4,7 @@ import {Grid} from "semantic-ui-react";
 import {getDateString, initJanus} from "../../shared/tools";
 import {initGxyProtocol, sendProtocolMessage} from "../../shared/protocol";
 import ShidurGroups from "./ShidurGroups";
-import ShidurUsers from "./ShidurUsers";
+//import ShidurUsers from "./ShidurUsers";
 import {client, getUser} from "../../components/UserManager";
 import LoginPage from "../../components/LoginPage";
 import './ShidurApp.css';
@@ -186,10 +186,10 @@ class ShidurApp extends Component {
                     // });
                 }
             } else if(event === "talking") {
-                let id = msg["id"];
+                //let id = msg["id"];
                 //Janus.log("User: "+id+" - start talking");
             } else if(event === "stopped-talking") {
-                let id = msg["id"];
+                //let id = msg["id"];
                 //Janus.log("User: "+id+" - stop talking");
             } else if(event === "destroyed") {
                 // The room has been destroyed
@@ -333,7 +333,7 @@ class ShidurApp extends Component {
                     if(msg["streams"]) {
                         // Update map of subscriptions by mid
                         Janus.log(" :: Streams updated! : ",msg["streams"]);
-                        let {mids,users} = this.state;
+                        let {mids} = this.state;
                         for(let i in msg["streams"]) {
                             let mindex = msg["streams"][i]["mid"];
                             mids[mindex] = msg["streams"][i];
@@ -667,9 +667,9 @@ class ShidurApp extends Component {
                     </Grid>
                 </Grid.Column>
                 <Grid.Column width={4}>
-                    <ShidurUsers
-                        ref={col => {this.col4 = col;}}
-                        setProps={this.setProps} />
+                    {/*<ShidurUsers*/}
+                    {/*    ref={col => {this.col4 = col;}}*/}
+                    {/*    setProps={this.setProps} />*/}
                 </Grid.Column>
             </Grid>
         );

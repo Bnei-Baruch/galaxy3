@@ -220,7 +220,7 @@ class ShidurGroups extends Component {
               let user = JSON.parse(feed.feed_display);
               let qst = users[user.id] ? users[user.id].question : false;
               let talk = feed.talk;
-              let id = feed.feed_id;
+              //let id = feed.feed_id;
               return (<div className={fullscr ? "hidden" : ""} key={"prf" + i}>
                         <div className="video_box"
                            key={"prov" + i}
