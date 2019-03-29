@@ -24,28 +24,19 @@ class ShidurGroups extends Component {
 
     switchProgram = (i) => {
         Janus.log(" :: Selected program Switch: ",i);
-        let {feeds,feeds_queue,round,pre_feed} = this.props;
+        this.props.setProps({program: i});
+        let {mids} = this.props;
 
-        //If someone in preview take him else take next in queue
-        if(pre_feed) {
-            Janus.log(" :: Selected program Switch Feed to: ", pre_feed);
-            this.switchNext(i, pre_feed);
-            //this.hidePreview();
-            this.props.setProps({program: pre_feed, pre_feed: null});
-        } else {
-            let feed = feeds[feeds_queue];
-            this.switchNext(i, feed);
-            feeds_queue++;
+        // Unsubscribe from previous mid
+        let streams = [{ sub_mid: mids[i].mid }];
+        this.props.unsubscribeFrom(streams, mids[i].feed_id);
 
-            if(feeds_queue >= feeds.length) {
-                // End round here!
-                feeds_queue = 0;
-                round++;
-                Janus.log(" -- ROUND END --");
-            }
+        setTimeout(() => {
+            this.questionStatus();
+        }, 1000);
 
-            this.props.setProps({feeds_queue,round,pre_feed: null});
-        }
+        // Send sdi action
+        //this.sdiAction("switch" , false, i, feed);
     };
 
     questionStatus = () => {
@@ -127,30 +118,6 @@ class ShidurGroups extends Component {
         sendProtocolMessage(protocol, user, msg );
     };
 
-    switchNext = (i ,feed, r) => {
-        Janus.log(" -- GOT NEXT: ", feed);
-        if(!feed) return;
-        let {mids} = this.props;
-
-        // Unsubscribe from previous mid
-        let streams = [{ sub_mid: mids[i].mid }];
-        this.props.unsubscribeFrom(streams, mids[i].feed_id);
-
-        // Subscribe to new feed
-        let sub_streams = [{feed: feed.id, mid: "1"}];
-        //FIXME: Let's see if it's fix for sure reuse empty m-line
-        setTimeout(() => {
-            this.props.subscribeTo(sub_streams);
-        }, 500);
-
-        setTimeout(() => {
-            this.questionStatus();
-        }, 1000);
-
-        // Send sdi action
-        //this.sdiAction("switch" , false, i, feed);
-    };
-
     zoominGroup = (e, i ,s) => {
         e.preventDefault();
         if (e.type === 'contextmenu') {
@@ -204,7 +171,7 @@ class ShidurGroups extends Component {
                            key={"prov" + i}
                            ref={"provideo" + i}
                            id={"provideo" + i}>
-                          <div className="video_title"></div>
+                          <div className="video_title" />
                           {/*<video*/}
                                  {/*key={i}*/}
                                  {/*ref={"programVideo" + i}*/}
@@ -277,7 +244,7 @@ class ShidurGroups extends Component {
                   </div>
               </Segment>
               <Button className='fours_button'
-                      disabled={feeds.length < 13}
+                      disabled={feeds.length < 16}
                       attached='bottom'
                       color='blue'
                       size='mini'

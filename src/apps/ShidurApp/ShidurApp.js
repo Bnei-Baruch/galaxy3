@@ -333,7 +333,7 @@ class ShidurApp extends Component {
                     if(msg["streams"]) {
                         // Update map of subscriptions by mid
                         Janus.log(" :: Streams updated! : ",msg["streams"]);
-                        let {mids} = this.state;
+                        let {mids,pre_feed,program} = this.state;
                         for(let i in msg["streams"]) {
                             let mindex = msg["streams"][i]["mid"];
                             mids[mindex] = msg["streams"][i];
@@ -341,7 +341,9 @@ class ShidurApp extends Component {
                                 mids[mindex].user = JSON.parse(msg["streams"][i]["feed_display"]);
                             }
                         }
-                        this.setState({mids});
+                        this.setState({mids, pre_feed: null}, () => {
+                            this.fillProgram(pre_feed,program);
+                        });
                     }
                     if(jsep !== undefined && jsep !== null) {
                         Janus.debug("Handling SDP as well...");
@@ -546,34 +548,27 @@ class ShidurApp extends Component {
                     this.setState({feeds_queue});
                 }
 
-                // Send an unsubscribe request
-                let streams = [{ feed: id }];
-                this.unsubscribeFrom(streams, id);
-
-                // Check if we need atoswitch feeds in program
-                setTimeout(() => {
-                    //FIXME: Here we must be sure
-                    // we get mids updated event after unsubscribing event
-                    this.autofillProgram(id,feeds,feeds_queue);
-                }, 500);
-
-                this.setState({feeds,users,quistions_queue});
+                this.setState({feeds,users,quistions_queue}, () => {
+                    // Send an unsubscribe request
+                    let streams = [{ feed: id }];
+                    this.unsubscribeFrom(streams, id);
+                });
                 break
             }
         }
     };
 
-    autofillProgram = (id,feeds,feeds_queue) => {
-        let {round,mids} = this.state;
+    fillProgram = (pre_feed, manual) => {
+        let {round,mids,feeds,feeds_queue} = this.state;
 
         // Switch to next feed if program full
-        if(feeds.length > 12) {
-            Janus.log(" :: Let's check mids - ", mids);
+        if(feeds.length > 12 && manual === null) {
+            Janus.log(" :: Auto Switch mids - ", mids);
             mids.forEach((mid,i) => {
                 Janus.debug(" :: mids iteration - ", i, mid);
                 if (mid && !mid.active) {
                     Janus.log(" :: Found empty slot in program! - ", mids[i]);
-                    let feed = feeds[feeds_queue];
+                    let feed =  feeds[feeds_queue];
                     feeds_queue++;
                     if(feeds_queue >= feeds.length) {
                         // End round here!
@@ -582,13 +577,39 @@ class ShidurApp extends Component {
                         Janus.log(" -- ROUND END --");
                     }
                     this.setState({feeds_queue,round});
-                    Janus.log(":: Auto switch program to: ", feed);
+                    Janus.log(":: Switch program to: ", feed);
                     let streams = [{feed: feed.id, mid: "1"}];
                     this.subscribeTo(streams);
                 }
             })
+        } else if(manual !== null) {
+            Janus.log(" :: Manual Switch mids - ", mids);
+            for(let i=0; i<mids.length; i++) {
+                let mid = mids[i];
+                Janus.debug(" :: mids iteration - ", i, mid);
+                if (mid && !mid.active) {
+                    Janus.log(" :: Found empty slot in program! - ", mids[i]);
+                    // If feed was in preview take him else take next in queue
+                    let feed = pre_feed ? pre_feed : feeds[feeds_queue];
+                    if(!pre_feed) {
+                        feeds_queue++;
+                        if(feeds_queue >= feeds.length) {
+                            // End round here!
+                            feeds_queue = 0;
+                            round++;
+                            Janus.log(" -- ROUND END --");
+                        }
+                        this.setState({feeds_queue,round});
+                    }
+                    this.setState({program: null});
+                    Janus.log(":: Switch program to: ", feed);
+                    let streams = [{feed: feed.id, mid: "1"}];
+                    this.subscribeTo(streams);
+                    break
+                }
+            }
         } else {
-            Janus.log(" :: Program not full - ignoring");
+            Janus.log(":: Auto Switch was triggered but program is not full :: ");
         }
     };
 
