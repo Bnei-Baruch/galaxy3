@@ -350,7 +350,7 @@ class ShidurApp extends Component {
                                 mids[mindex].user = JSON.parse(msg["streams"][i]["feed_display"]);
                             }
                         }
-                        this.setState({mids, pre_feed: null}, () => {
+                        this.setState({mids}, () => {
                             this.fillProgram(pre_feed,program);
                         });
                     }
@@ -603,7 +603,10 @@ class ShidurApp extends Component {
                     Janus.log(" :: Found empty slot in program! - ", mids[i]);
                     // If feed was in preview take him else take next in queue
                     let feed = pre_feed ? pre_feed : feeds[feeds_queue];
-                    if(!pre_feed) {
+                    if(pre_feed) {
+                        // Hide preview
+                        this.setState({pre_feed: null});
+                    } else {
                         this.nextInQueue();
                     }
                     this.setState({program: null});
