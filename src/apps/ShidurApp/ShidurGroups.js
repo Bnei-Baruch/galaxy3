@@ -154,8 +154,8 @@ class ShidurGroups extends Component {
   render() {
       const { full_feed,zoom,fullscr,col } = this.state;
       const {feeds,pre_feed,users} = this.props;
-      const width = "100%";
-      const height = "100%";
+      const width = "201px";
+      const height = "113px";
       const autoPlay = true;
       const controls = false;
       const muted = true;
@@ -165,24 +165,10 @@ class ShidurGroups extends Component {
       let program = this.props.mids.map((feed,i) => {
           if(feed && this.props.qam[i] === col) {
               if(!feed.active) {
-                  return (this.props.mids.length > 11 ?
-                      <div className={fullscr ? "hidden" : ""} key={"prf" + i}>
-                      <div className="video_box"
-                           key={"prov" + i}
-                           ref={"provideo" + i}
-                           id={"provideo" + i}>
+                  return (<div className={fullscr ? "hidden" : ""} key={"prf" + i}>
+                      <div className="video_box" key={"prov" + i}>
                           <div className="video_title" />
-                          {/*<video*/}
-                                 {/*key={i}*/}
-                                 {/*ref={"programVideo" + i}*/}
-                                 {/*id={"programVideo" + i}*/}
-                                 {/*width={width}*/}
-                                 {/*height={height}*/}
-                                 {/*autoPlay={autoPlay}*/}
-                                 {/*controls={controls}*/}
-                                 {/*muted={muted}*/}
-                                 {/*playsInline={true}/>*/}
-                      </div></div> : false)
+                      </div></div>)
               }
               let user = JSON.parse(feed.feed_display);
               let qst = users[user.id] ? users[user.id].question : false;
