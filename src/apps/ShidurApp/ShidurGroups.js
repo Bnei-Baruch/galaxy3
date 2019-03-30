@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import { Janus } from "../../lib/janus";
-import {Segment, Icon, Dimmer, Button} from "semantic-ui-react";
+import {Segment, Icon, Button} from "semantic-ui-react";
 //import {getState, putData} from "../../shared/tools";
 import './ShidurGroups.css'
 import {sendProtocolMessage} from "../../shared/protocol";
@@ -118,20 +118,6 @@ class ShidurGroups extends Component {
         sendProtocolMessage(protocol, user, msg );
     };
 
-    zoomIn = (e, i) => {
-        e.preventDefault();
-        if (e.type === 'contextmenu') {
-            let {zoom} = this.state;
-            this.setState({zoom: !zoom},() => {
-                let video = this.refs["programVideo" + i];
-                let zoom_video = this.refs.zoomVideo;
-                zoom_video.srcObject = video.captureStream();
-            });
-        }
-    };
-
-    zoomOut = () => this.setState({ zoom: false });
-
     fullScreenGroup = (i,full_feed) => {
         Janus.log(":: Make Full Screen Group: ",full_feed);
         full_feed.display = JSON.parse(full_feed.feed_display);
@@ -150,7 +136,7 @@ class ShidurGroups extends Component {
 
 
   render() {
-      const { full_feed,zoom,fullscr,col } = this.state;
+      const { full_feed,fullscr,col } = this.state;
       const {feeds,pre_feed,users} = this.props;
       const width = "201px";
       const height = "113px";
@@ -181,7 +167,6 @@ class ShidurGroups extends Component {
                             {qst ? <div className='qst_title'>?</div> : ""}
                   <video className={talk ? "talk" : ""}
                          onClick={() => this.fullScreenGroup(i,feed)}
-                         onContextMenu={(e) => this.zoomIn(e, i)}
                          key={i}
                          ref={"programVideo" + i}
                          id={"programVideo" + i}
@@ -237,16 +222,6 @@ class ShidurGroups extends Component {
                   <Icon name='th large' />
                   <Icon name='share' />
               </Button>
-              <Dimmer active={zoom} onClickOutside={this.zoomOut} page>
-                  <video ref={"zoomVideo"}
-                         id={"zoomVideo"}
-                         width="1280"
-                         height="720"
-                         autoPlay={autoPlay}
-                         controls={false}
-                         muted={muted}
-                         playsInline={true}/>
-              </Dimmer>
           </Segment>
     );
   }

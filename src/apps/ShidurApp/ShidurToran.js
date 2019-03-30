@@ -286,16 +286,13 @@ class ShidurToran extends Component {
         this.refs.end.scrollIntoView({ behavior: 'smooth' })
     };
 
-    zoomIn = (e, pre) => {
-        e.preventDefault();
-        if (e.type === 'contextmenu') {
-            let {zoom} = this.state;
-            this.setState({zoom: !zoom},() => {
-                let video = pre ? this.refs.prevewVideo : this.refs.nextVideo;
-                let zoom_video = this.refs.zoomVideo;
-                zoom_video.srcObject = video.captureStream();
-            });
-        }
+    zoomIn = (pre) => {
+        let {zoom} = this.state;
+        this.setState({zoom: !zoom},() => {
+            let video = pre ? this.refs.prevewVideo : this.refs.nextVideo;
+            let zoom_video = this.refs.zoomVideo;
+            zoom_video.srcObject = video.captureStream();
+        });
     };
 
     zoomOut = () => this.setState({ zoom: false });
@@ -328,7 +325,7 @@ class ShidurToran extends Component {
                     pre_feed ? users[pre_feed.display.id] ? users[pre_feed.display.id].question ? 'qst_fullscreentitle' : 'hidden' : 'hidden' : 'hidden'
                 }>?</div>
                 <video
-                    onContextMenu={(e) => this.zoomIn(e,true)}
+                    onClick={() => this.zoomIn(true)}
                     ref = {"prevewVideo"}
                     id = "prevewVideo"
                     width = "400"
@@ -356,7 +353,7 @@ class ShidurToran extends Component {
                     next_feed ? users[next_feed.display.id] ? users[next_feed.display.id].question ? 'qst_fullscreentitle' : 'hidden' : 'hidden' : 'hidden'
                 }>?</div>
                 <video
-                    onContextMenu={(e) => this.zoomIn(e,false)}
+                    onClick={() => this.zoomIn(false)}
                     ref = {"nextVideo"}
                     id = "nextVideo"
                     width = "400"

@@ -30,6 +30,7 @@
 }
 
 .preview_conteiner {
+    cursor: pointer!important;
     width: 460px;
     height: 290px;
 }
