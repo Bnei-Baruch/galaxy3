@@ -201,7 +201,7 @@ class ShidurToran extends Component {
 
     hidePreview = () => {
         //this.state.pre.detach();
-        this.setState({pre: null});
+        //this.setState({pre: null});
         this.props.setProps({pre_feed: null});
     };
 
