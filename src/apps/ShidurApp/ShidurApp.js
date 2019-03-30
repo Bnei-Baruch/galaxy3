@@ -503,12 +503,19 @@ class ShidurApp extends Component {
         }
     };
 
+    checkPreview = (id) => {
+        let {pre_feed} = this.state;
+        if(pre_feed && pre_feed.id === id) {
+            this.setState({pre_feed: null});
+        }
+    };
+
     unsubscribeFrom = (streams, id) => {
         Janus.log(" :: Going to unsubscribe: ",streams);
         let {remoteFeed} = this.state;
 
         // Remove feed from preview
-        if(id) this.pre.checkPreview(id);
+        if(id) this.checkPreview(id);
 
         Janus.debug(" -- Sending request with data: ",streams);
         let unsubscribe = {request: "unsubscribe", streams};
@@ -520,7 +527,7 @@ class ShidurApp extends Component {
         let {feeds,users,quistions_queue,qfeeds,feeds_queue} = this.state;
 
         // Clean preview
-        this.pre.checkPreview(id);
+        this.checkPreview(id);
 
         for(let i=0; i<feeds.length; i++) {
             if(feeds[i].id === id) {

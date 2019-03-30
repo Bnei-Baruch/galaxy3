@@ -32,16 +32,10 @@ class ShidurToran extends Component {
         sorted_feeds: [],
     };
 
-    componentDidMount() {
-    };
-
-    componentWillUnmount() {
-    };
-
-    componentDidUpdate(prevProps, prevState, snapshot) {
+    componentDidUpdate() {
         this.scrollToBottom();
         if(this.props.feeds_queue !== this.state.feeds_queue) {
-            console.log(" --::: DidUpdate: ",this.props.feeds_queue, this.state.feeds_queue);
+            Janus.log(" --::: DidUpdate: ",this.props.feeds_queue, this.state.feeds_queue);
             this.setState({feeds_queue: this.props.feeds_queue});
             setTimeout(() => {
                 this.selectNext();
@@ -170,7 +164,7 @@ class ShidurToran extends Component {
 
     selectGroup = (pre_feed) => {
         this.props.setProps({pre_feed});
-        Janus.log(pre_feed);
+        Janus.log(" :: Select feed to preview: ", pre_feed);
         this.switchPreview(pre_feed.id, true);
     };
 
@@ -194,22 +188,8 @@ class ShidurToran extends Component {
         this.sdiAction("disable", true, null, pre_feed);
         disabled_groups.push(pre_feed);
         this.props.removeFeed(pre_feed.id, true);
-        this.hidePreview();
         this.props.setProps({disabled_groups});
         this.selectNext();
-    };
-
-    hidePreview = () => {
-        //this.state.pre.detach();
-        //this.setState({pre: null});
-        this.props.setProps({pre_feed: null});
-    };
-
-    checkPreview = (id) => {
-        let {pre_feed} = this.props;
-        if(pre_feed && pre_feed.id === id) {
-            this.hidePreview()
-        }
     };
 
     restoreGroup = (e, data, i) => {
@@ -242,14 +222,7 @@ class ShidurToran extends Component {
         //FIXME: Must be removed in production mode
         return;
         const { protocol, user, index } = this.props;
-        let col = null;
-        if(index === 0) {
-            col = 1;
-        } else if(index === 4) {
-            col = 2;
-        } else if(index === 8) {
-            col = 3;
-        }
+        let col = index === 0 ? 1 : index === 4 ? 2 : index === 8 ? 3 : null;
         let msg = { type: "sdi-"+action, status, room: 1234, col, i, feed};
         sendProtocolMessage(protocol, user, msg );
     };
@@ -277,6 +250,8 @@ class ShidurToran extends Component {
         const autoPlay = true;
         const controls = false;
         const muted = true;
+        const pre_question = pre_feed && users[pre_feed.display.id] ? users[pre_feed.display.id].question : null;
+        const next_question = next_feed && users[next_feed.display.id] ? users[next_feed.display.id].question : null;
 
         let group_options = this.state.sorted_feeds.map((feed,i) => {
             const display = feed.display.display;
@@ -293,9 +268,7 @@ class ShidurToran extends Component {
 
         let preview = (<div className={pre_feed ? "" : "hidden"}>
                 <div className="fullscrvideo_title"><span>{pre_feed ? pre_feed.display.display : ""}</span></div>
-                <div className={
-                    pre_feed ? users[pre_feed.display.id] ? users[pre_feed.display.id].question ? 'qst_fullscreentitle' : 'hidden' : 'hidden' : 'hidden'
-                }>?</div>
+                <div className={pre_question ? 'qst_fullscreentitle' : 'hidden'}>?</div>
                 <video
                     onClick={() => this.zoomIn(true)}
                     ref = {"prevewVideo"}
@@ -315,17 +288,14 @@ class ShidurToran extends Component {
                         size='mini'
                         color='orange'
                         icon='window minimize'
-                        onClick={() => this.hidePreview()} />
+                        onClick={() => this.props.setProps({pre_feed: null})} />
             </div>
         );
 
         let nextfeed = (<div className={next_feed ? "" : "hidden"}>
                 <div className="fullscrvideo_title"><span>{next_feed ? next_feed.display.display : ""}</span></div>
-                <div className={
-                    next_feed ? users[next_feed.display.id] ? users[next_feed.display.id].question ? 'qst_fullscreentitle' : 'hidden' : 'hidden' : 'hidden'
-                }>?</div>
-                <video
-                    onClick={() => this.zoomIn(false)}
+                <div className={next_question ? 'qst_fullscreentitle' : 'hidden'}>?</div>
+                <video onClick={() => this.zoomIn(false)}
                     ref = {"nextVideo"}
                     id = "nextVideo"
                     width = "400"
