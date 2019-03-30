@@ -212,34 +212,6 @@ class ShidurToran extends Component {
         }
     };
 
-    zoominGroup = (e, i ,s) => {
-        return
-        e.preventDefault();
-        if (e.type === 'contextmenu') {
-            let {zoom} = this.state;
-            this.setState({zoom: !zoom},() => {
-                let switchvideo = (s === "pro") ? this.refs["programVideo" + i] : this.refs.prevewVideo;
-                let zoomvideo = this.refs.zoomVideo;
-                var stream = switchvideo.captureStream();
-                zoomvideo.srcObject = stream;
-            });
-        }
-    };
-
-    raiseNext = () => {
-        let {feeds_queue,feeds,round} = this.props;
-        feeds_queue++;
-        if(feeds_queue >= feeds.length) {
-            // End round here!
-            Janus.log(" -- ROUND END --");
-            feeds_queue = 0;
-            round++;
-            this.props.setProps({feeds_queue,round});
-        } else {
-            this.props.setProps({feeds_queue});
-        }
-    };
-
     restoreGroup = (e, data, i) => {
         e.preventDefault();
         if (e.type === 'contextmenu') {
@@ -371,7 +343,7 @@ class ShidurToran extends Component {
                         size='mini'
                         color='green'
                         icon='share'
-                        onClick={this.raiseNext} />
+                        onClick={this.props.nextInQueue} />
             </div>
         );
 

@@ -1374,7 +1374,7 @@ export function Janus(gatewayCallbacks) {
 		}
 		var config = pluginHandle.webrtcStuff;
 		var onDataChannelMessage = function(event) {
-			Janus.log('Received message on data channel:', event);
+			Janus.debug('Received message on data channel:', event);
 			var label = event.target.label;
 			pluginHandle.ondata(event.data, label);
 		}

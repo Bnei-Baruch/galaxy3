@@ -570,7 +570,7 @@ class ShidurApp extends Component {
     fillProgram = (pre_feed, manual) => {
         let {round,mids,feeds,feeds_queue} = this.state;
 
-        // Switch to next feed if program full
+        // Make sure there is no empty space in program
         if(feeds.length > 12 && manual === null) {
             Janus.log(" :: Auto Switch mids - ", mids);
             mids.forEach((mid,i) => {
@@ -581,16 +581,19 @@ class ShidurApp extends Component {
                     feeds_queue++;
                     if(feeds_queue >= feeds.length) {
                         // End round here!
+                        Janus.log(" -- ROUND END --");
                         feeds_queue = 0;
                         round++;
-                        Janus.log(" -- ROUND END --");
+                        this.setState({feeds_queue,round});
+                    } else {
+                        this.setState({feeds_queue});
                     }
-                    this.setState({feeds_queue,round});
                     Janus.log(":: Switch program to: ", feed);
                     let streams = [{feed: feed.id, mid: "1"}];
                     this.subscribeTo(streams);
                 }
             })
+        // Slot in program changed manually
         } else if(manual !== null) {
             Janus.log(" :: Manual Switch mids - ", mids);
             for(let i=0; i<mids.length; i++) {
@@ -601,14 +604,7 @@ class ShidurApp extends Component {
                     // If feed was in preview take him else take next in queue
                     let feed = pre_feed ? pre_feed : feeds[feeds_queue];
                     if(!pre_feed) {
-                        feeds_queue++;
-                        if(feeds_queue >= feeds.length) {
-                            // End round here!
-                            feeds_queue = 0;
-                            round++;
-                            Janus.log(" -- ROUND END --");
-                        }
-                        this.setState({feeds_queue,round});
+                        this.nextInQueue();
                     }
                     this.setState({program: null});
                     Janus.log(":: Switch program to: ", feed);
@@ -619,6 +615,20 @@ class ShidurApp extends Component {
             }
         } else {
             Janus.log(":: Auto Switch was triggered but program is not full :: ");
+        }
+    };
+
+    nextInQueue = () => {
+        let {feeds_queue,feeds,round} = this.state;
+        feeds_queue++;
+        if(feeds_queue >= feeds.length) {
+            // End round here!
+            Janus.log(" -- ROUND END --");
+            feeds_queue = 0;
+            round++;
+            this.setState({feeds_queue,round});
+        } else {
+            this.setState({feeds_queue});
         }
     };
 
@@ -691,6 +701,7 @@ class ShidurApp extends Component {
                             ref={pre => {this.pre = pre;}}
                             resetQueue={this.resetQueue}
                             setProps={this.setProps}
+                            nextInQueue={this.nextInQueue}
                             unsubscribeFrom={this.unsubscribeFrom}
                             subscribeTo={this.subscribeTo}
                             removeFeed={this.removeFeed} />
