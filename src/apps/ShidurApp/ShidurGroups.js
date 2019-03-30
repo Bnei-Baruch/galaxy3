@@ -118,20 +118,19 @@ class ShidurGroups extends Component {
         sendProtocolMessage(protocol, user, msg );
     };
 
-    zoominGroup = (e, i ,s) => {
+    zoomIn = (e, i) => {
         e.preventDefault();
         if (e.type === 'contextmenu') {
             let {zoom} = this.state;
             this.setState({zoom: !zoom},() => {
-                let switchvideo = (s === "pro") ? this.refs["programVideo" + i] : this.refs.prevewVideo;
-                let zoomvideo = this.refs.zoomVideo;
-                var stream = switchvideo.captureStream();
-                zoomvideo.srcObject = stream;
+                let video = this.refs["programVideo" + i];
+                let zoom_video = this.refs.zoomVideo;
+                zoom_video.srcObject = video.captureStream();
             });
         }
     };
 
-    handleClose = () => this.setState({ zoom: false });
+    zoomOut = () => this.setState({ zoom: false });
 
     fullScreenGroup = (i,full_feed) => {
         Janus.log(":: Make Full Screen Group: ",full_feed);
@@ -139,8 +138,7 @@ class ShidurGroups extends Component {
         this.setState({fullscr: !this.state.fullscr,full_feed});
         let fourvideo = this.refs["programVideo" + i];
         let fullvideo = this.refs.fullscreenVideo;
-        var stream = fourvideo.captureStream();
-        fullvideo.srcObject = stream;
+        fullvideo.srcObject = fourvideo.captureStream();
         this.sdiAction("fullscreen" , true, i, full_feed);
     };
 
@@ -183,7 +181,7 @@ class ShidurGroups extends Component {
                             {qst ? <div className='qst_title'>?</div> : ""}
                   <video className={talk ? "talk" : ""}
                          onClick={() => this.fullScreenGroup(i,feed)}
-                         onContextMenu={(e) => this.zoominGroup(e, i, "pro")}
+                         onContextMenu={(e) => this.zoomIn(e, i)}
                          key={i}
                          ref={"programVideo" + i}
                          id={"programVideo" + i}
@@ -239,7 +237,7 @@ class ShidurGroups extends Component {
                   <Icon name='th large' />
                   <Icon name='share' />
               </Button>
-              <Dimmer active={zoom} onClickOutside={this.handleClose} page>
+              <Dimmer active={zoom} onClickOutside={this.zoomOut} page>
                   <video ref={"zoomVideo"}
                          id={"zoomVideo"}
                          width="1280"

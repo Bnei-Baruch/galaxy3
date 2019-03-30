@@ -1,6 +1,6 @@
 import React, {Component} from 'react';
 import {Janus} from "../../lib/janus";
-import {Grid, Label, Message, Segment, Table, Icon, Button, Dropdown} from "semantic-ui-react";
+import {Grid, Label, Message, Segment, Table, Icon, Button, Dropdown, Dimmer} from "semantic-ui-react";
 import {sendProtocolMessage} from "../../shared/protocol";
 import './ShidurApp.css';
 
@@ -286,10 +286,24 @@ class ShidurToran extends Component {
         this.refs.end.scrollIntoView({ behavior: 'smooth' })
     };
 
+    zoomIn = (e, pre) => {
+        e.preventDefault();
+        if (e.type === 'contextmenu') {
+            let {zoom} = this.state;
+            this.setState({zoom: !zoom},() => {
+                let video = pre ? this.refs.prevewVideo : this.refs.nextVideo;
+                let zoom_video = this.refs.zoomVideo;
+                zoom_video.srcObject = video.captureStream();
+            });
+        }
+    };
+
+    zoomOut = () => this.setState({ zoom: false });
+
     render() {
 
         const {users,feeds,pre_feed,feeds_queue,disabled_groups,round,qfeeds,sdiout,sndman,log_list} = this.props;
-        const {next_feed} = this.state;
+        const {next_feed,zoom} = this.state;
 
         const autoPlay = true;
         const controls = false;
@@ -314,7 +328,7 @@ class ShidurToran extends Component {
                     pre_feed ? users[pre_feed.display.id] ? users[pre_feed.display.id].question ? 'qst_fullscreentitle' : 'hidden' : 'hidden' : 'hidden'
                 }>?</div>
                 <video
-                    onContextMenu={(e) => this.zoominGroup(e, null, "pre")}
+                    onContextMenu={(e) => this.zoomIn(e,true)}
                     ref = {"prevewVideo"}
                     id = "prevewVideo"
                     width = "400"
@@ -342,7 +356,7 @@ class ShidurToran extends Component {
                     next_feed ? users[next_feed.display.id] ? users[next_feed.display.id].question ? 'qst_fullscreentitle' : 'hidden' : 'hidden' : 'hidden'
                 }>?</div>
                 <video
-                    onContextMenu={(e) => this.zoominGroup(e, null, "pre")}
+                    onContextMenu={(e) => this.zoomIn(e,false)}
                     ref = {"nextVideo"}
                     id = "nextVideo"
                     width = "400"
@@ -483,6 +497,16 @@ class ShidurToran extends Component {
                         </Table>
                     </Segment>
                 </Grid.Column>
+                <Dimmer active={zoom} onClickOutside={this.zoomOut} page>
+                    <video ref={"zoomVideo"}
+                           id={"zoomVideo"}
+                           width="1280"
+                           height="720"
+                           autoPlay={autoPlay}
+                           controls={false}
+                           muted={muted}
+                           playsInline={true}/>
+                </Dimmer>
             </Grid.Row>
         );
     }
