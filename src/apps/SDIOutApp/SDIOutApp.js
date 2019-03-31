@@ -164,8 +164,8 @@ class SDIOutApp extends Component {
                     if(feeds.length > 12) {
                         this.setState({feeds_queue: 12});
                     }
-                    // if(subscription.length > 0)
-                    //     this.subscribeTo(subscription);
+                    if(subscription.length > 0)
+                        this.subscribeTo(subscription);
 
                     // getState('state/galaxy/pr1', (pgm_state) => {
                     //     Janus.log(" :: Get State: ", pgm_state);
@@ -222,10 +222,10 @@ class SDIOutApp extends Component {
                     if(feeds.length === 13) {
                         this.setState({feeds_queue: 12});
                     }
-                    // // Subscribe until program full
-                    // if(feeds.length < 13 && subscription.length > 0) {
-                    //     this.subscribeTo(subscription);
-                    // }
+                    // Subscribe until program full
+                    if(feeds.length < 13 && subscription.length > 0) {
+                        this.subscribeTo(subscription);
+                    }
                 } else if(msg["leaving"] !== undefined && msg["leaving"] !== null) {
                     // One of the publishers has gone away?
                     let leaving = msg["leaving"];
@@ -458,6 +458,7 @@ class SDIOutApp extends Component {
         } else if(data.type === "sdi-next_inqueue") {
             let {col, feed, i, status} = data;
             console.log(" :: Got Shidur Action: ", data);
+            this.nextInQueue();
             //this["col"+col].switchNext(i,feed,status);
         } else if(data.type === "sdi-fullscr_group" && data.status) {
             let {col, feed, i} = data;
@@ -518,9 +519,14 @@ class SDIOutApp extends Component {
             }
         } else if(data.type === "sdi-state_shidur" && data.feed.sdiout) {
             console.log(" :: Got Shidur Action: ",data);
-            const {feeds,users} = data.feed;
-            this.setState({feeds,users});
-            this.makeSubscribtion(feeds);
+            // const {feeds,users} = data.feed;
+            // if(feeds.length === 0) {
+            //     //window.location.reload();
+            // } else {
+            //     this.setState({feeds,users});
+            //     this.makeSubscribtion(feeds);
+            // }
+
             // data.status.forEach((pgm,i) => {
             //     if(i < 4) {
             //         this.col1.switchNext(i,pgm);

@@ -178,8 +178,8 @@ class SDIOutGroups extends Component {
               <video ref = {"fullscreenVideo"}
                      onClick={() => this.toFourGroup()}
                      id = "fullscreenVideo"
-                     width = "400"
-                     height = "220"
+                     width = "640"
+                     height = "360"
                      autoPlay = {autoPlay}
                      controls = {controls}
                      muted = {muted}
