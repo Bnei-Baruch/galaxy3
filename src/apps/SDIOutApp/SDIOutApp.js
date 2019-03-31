@@ -162,7 +162,7 @@ class SDIOutApp extends Component {
                     this.setState({feeds,feedStreams,users});
                     // Set next feed in queue first after program is full
                     if(feeds.length > 12) {
-                        this.setState({feeds_queue: 13});
+                        this.setState({feeds_queue: 12});
                     }
                     // if(subscription.length > 0)
                     //     this.subscribeTo(subscription);
@@ -220,7 +220,7 @@ class SDIOutApp extends Component {
                     this.setState({feeds,feedStreams,users});
                     // Set next feed in queue first after program is full
                     if(feeds.length === 13) {
-                        this.setState({feeds_queue: 13});
+                        this.setState({feeds_queue: 12});
                     }
                     // // Subscribe until program full
                     // if(feeds.length < 13 && subscription.length > 0) {
