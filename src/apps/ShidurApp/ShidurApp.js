@@ -499,7 +499,7 @@ class ShidurApp extends Component {
             this.setState({...data});
             if(data.sdiout || data.sndman) {
                 const {mids,feeds} = this.state;
-                this.sdiAction("state", mids,1, feeds);
+                this.pre.sdiAction("state", mids,1, feeds);
             }
         }
     };
@@ -615,16 +615,7 @@ class ShidurApp extends Component {
                         // Hide preview
                         this.setState({pre_feed: null});
                     } else {
-                        feeds_queue++;
-                        if(feeds_queue >= feeds.length) {
-                            // End round here!
-                            Janus.log(" -- ROUND END --");
-                            feeds_queue = 0;
-                            round++;
-                            this.setState({feeds_queue,round});
-                        } else {
-                            this.setState({feeds_queue});
-                        }
+                        this.nextInQueue();
                     }
                     this.setState({program: null});
                     Janus.log(":: Switch program to: ", feed);
@@ -650,9 +641,6 @@ class ShidurApp extends Component {
         } else {
             this.setState({feeds_queue});
         }
-
-        // Send sdi action
-        this.sdiAction("raise_queue", true, null, null);
     };
 
     setProps = (props) => {
@@ -669,15 +657,6 @@ class ShidurApp extends Component {
                 this.col3.switchFour();
             }, 1000);
         }
-    };
-
-    sdiAction = (action, status, i, feed) => {
-        //FIXME: Must be removed in production mode
-        return;
-        const { protocol, user, index } = this.props;
-        let col = index === 0 ? 1 : index === 4 ? 2 : index === 8 ? 3 : null;
-        let msg = { type: "sdi-"+action, status, room: 1234, col, i, feed};
-        sendProtocolMessage(protocol, user, msg );
     };
 
     render() {
