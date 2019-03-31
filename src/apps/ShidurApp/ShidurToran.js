@@ -219,8 +219,6 @@ class ShidurToran extends Component {
     };
 
     sdiAction = (action, status, i, feed) => {
-        //FIXME: Must be removed in production mode
-        return;
         const { protocol, user, index } = this.props;
         let col = index === 0 ? 1 : index === 4 ? 2 : index === 8 ? 3 : null;
         let msg = { type: "sdi-"+action, status, room: 1234, col, i, feed};

@@ -2,7 +2,7 @@ import React, {Component} from 'react';
 import {Janus} from "../../lib/janus";
 import {Grid} from "semantic-ui-react";
 import {getDateString, initJanus} from "../../shared/tools";
-import {initGxyProtocol, sendProtocolMessage} from "../../shared/protocol";
+import {initGxyProtocol} from "../../shared/protocol";
 import ShidurGroups from "./ShidurGroups";
 //import ShidurUsers from "./ShidurUsers";
 import {client, getUser} from "../../components/UserManager";
