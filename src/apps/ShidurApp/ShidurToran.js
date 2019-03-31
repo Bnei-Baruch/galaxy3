@@ -185,7 +185,7 @@ class ShidurToran extends Component {
         let chk = disabled_groups.find(g => g.id === pre_feed.id);
         if(chk)
             return;
-        this.sdiAction("disable", true, null, pre_feed);
+        this.sdiAction("disable_group", true, null, pre_feed);
         disabled_groups.push(pre_feed);
         this.props.removeFeed(pre_feed.id, true);
         this.props.setProps({disabled_groups});
@@ -212,7 +212,7 @@ class ShidurToran extends Component {
                     user.rfid = data.id;
                     users[user.id] = user;
                     this.props.setProps({disabled_groups,feeds,users});
-                    this.sdiAction("restore", true, i, data);
+                    this.sdiAction("restore_group", true, i, data);
                 }
             }
         }
@@ -377,12 +377,12 @@ class ShidurToran extends Component {
                         <Button
                             color={sndman ? "green" : "red"}
                             disabled={!sndman}
-                            onClick={() => this.sdiAction("restart", false, 1, {sndman: true})}>
+                            onClick={() => this.sdiAction("restart_sndman", false, 1, {sndman: true})}>
                             SndMan</Button>
                         <Button
                             color={sdiout ? "green" : "red"}
                             disabled={!sdiout}
-                            onClick={() => this.sdiAction("restart", false, 1, {sdiout: true})}>
+                            onClick={() => this.sdiAction("restart_sdiout", false, 1, {sdiout: true})}>
                             SdiOut</Button>
                     </Button.Group>
                 </Grid.Column>

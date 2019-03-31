@@ -499,7 +499,7 @@ class ShidurApp extends Component {
             this.setState({...data});
             if(data.sdiout || data.sndman) {
                 const {mids,feeds} = this.state;
-                this.pre.sdiAction("state", mids,1, feeds);
+                this.pre.sdiAction("state_shidur", mids,1, feeds);
             }
         }
     };

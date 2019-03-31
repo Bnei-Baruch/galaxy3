@@ -130,12 +130,12 @@ class ShidurGroups extends Component {
         let fourvideo = this.refs["programVideo" + i];
         let fullvideo = this.refs.fullscreenVideo;
         fullvideo.srcObject = fourvideo.captureStream();
-        this.sdiAction("fullscreen" , true, i, full_feed);
+        this.sdiAction("fullscr_group" , true, i, full_feed);
     };
 
     toFourGroup = () => {
         Janus.log(":: Back to four: ");
-        this.sdiAction("fullscreen" , false, null, this.state.full_feed);
+        this.sdiAction("fullscr_group" , false, null, this.state.full_feed);
         this.setState({fullscr: !this.state.fullscr, full_feed: null});
     };
 
