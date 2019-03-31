@@ -324,7 +324,8 @@ class ShidurToran extends Component {
                            onClick={() => this.selectGroup(data, i)}
                            onContextMenu={(e) => this.restoreGroup(e, data, i)} >
                     <Table.Cell width={5}>{display.display}</Table.Cell>
-                    <Table.Cell width={1}>{id}</Table.Cell>
+                    <Table.Cell width={1}>{0}</Table.Cell>
+                    <Table.Cell width={1}>{0}</Table.Cell>
                 </Table.Row>
             )
         });
@@ -376,12 +377,12 @@ class ShidurToran extends Component {
                         <Button
                             color={sndman ? "green" : "red"}
                             disabled={!sndman}
-                            onClick={() => this.col1.sdiAction("restart", false, 1, {sndman: true})}>
+                            onClick={() => this.sdiAction("restart", false, 1, {sndman: true})}>
                             SndMan</Button>
                         <Button
                             color={sdiout ? "green" : "red"}
                             disabled={!sdiout}
-                            onClick={() => this.col1.sdiAction("restart", false, 1, {sdiout: true})}>
+                            onClick={() => this.sdiAction("restart", false, 1, {sdiout: true})}>
                             SdiOut</Button>
                     </Button.Group>
                 </Grid.Column>

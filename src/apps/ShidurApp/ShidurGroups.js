@@ -36,7 +36,9 @@ class ShidurGroups extends Component {
         }, 1000);
 
         // Send sdi action
-        //this.sdiAction("switch" , false, i, feed);
+        const {pre_feed,feeds,feeds_queue} = this.props;
+        let feed = pre_feed ? pre_feed : feeds[feeds_queue];
+        this.sdiAction("switch_program" , false, i, feed);
     };
 
     questionStatus = () => {
@@ -106,7 +108,10 @@ class ShidurGroups extends Component {
                     this.questionStatus();
                 }, 1000);
             }
-        })
+        });
+
+        // Send sdi action
+        this.sdiAction("switch_four" , false, null, streams);
     };
 
     sdiAction = (action, status, i, feed) => {
