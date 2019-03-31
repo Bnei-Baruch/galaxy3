@@ -450,7 +450,7 @@ class SDIOutApp extends Component {
         if(data.type === "sdi-switch_program") {
             let {col, feed, i, status} = data;
             console.log(" :: Got Shidur Action: ", data);
-            this["col"+col].switchProgram(i);
+            this["col"+col].switchProgram(i, feed);
         } else if(data.type === "sdi-switch_four") {
             let {col, feed, i, status} = data;
             console.log(" :: Got Shidur Action: ", data);
@@ -493,7 +493,7 @@ class SDIOutApp extends Component {
                 if(disabled_groups[i].id === data.feed.id) {
                     disabled_groups.splice(i, 1);
                     feeds.push(data.feed);
-                    let user = JSON.parse(data.feed.display);
+                    let user = data.feed.display;
                     user.rfid = data.feed.id;
                     users[user.id] = user;
                     this.setState({disabled_groups,feeds,users});

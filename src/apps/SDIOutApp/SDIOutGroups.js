@@ -20,9 +20,11 @@ class SDIOutGroups extends Component {
         this.setState({col});
     };
 
-    switchProgram = (i) => {
+    switchProgram = (i, pre_feed) => {
         Janus.log(" :: Selected program Switch: ",i);
         this.props.setProps({program: i});
+        if(pre_feed)
+            this.props.setProps({pre_feed});
         let {mids} = this.props;
 
         // Unsubscribe from previous mid
