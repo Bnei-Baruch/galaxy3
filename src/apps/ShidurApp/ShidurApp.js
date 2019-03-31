@@ -498,8 +498,7 @@ class ShidurApp extends Component {
             delete data.type;
             this.setState({...data});
             if(data.sdiout || data.sndman) {
-                const {mids,feeds} = this.state;
-                this.pre.sdiAction("state_shidur", mids,1, feeds);
+                this.pre.sdiAction("state_shidur", null,1, this.state);
             }
         }
     };
@@ -615,7 +614,16 @@ class ShidurApp extends Component {
                         // Hide preview
                         this.setState({pre_feed: null});
                     } else {
-                        this.nextInQueue();
+                        feeds_queue++;
+                        if(feeds_queue >= feeds.length) {
+                            // End round here!
+                            Janus.log(" -- ROUND END --");
+                            feeds_queue = 0;
+                            round++;
+                            this.setState({feeds_queue,round});
+                        } else {
+                            this.setState({feeds_queue});
+                        }
                     }
                     this.setState({program: null});
                     Janus.log(":: Switch program to: ", feed);
@@ -630,6 +638,7 @@ class ShidurApp extends Component {
     };
 
     nextInQueue = () => {
+        this.pre.sdiAction("next_inqueue", null,1, null);
         let {feeds_queue,feeds,round} = this.state;
         feeds_queue++;
         if(feeds_queue >= feeds.length) {

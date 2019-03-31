@@ -36,8 +36,7 @@ class ShidurGroups extends Component {
         }, 1000);
 
         // Send sdi action
-        const {pre_feed,feeds,feeds_queue} = this.props;
-        let feed = pre_feed ? pre_feed : feeds[feeds_queue];
+        let feed = this.props.pre_feed || null;
         this.sdiAction("switch_program" , false, i, feed);
     };
 
