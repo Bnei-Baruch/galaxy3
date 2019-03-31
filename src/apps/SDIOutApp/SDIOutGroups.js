@@ -122,8 +122,8 @@ class SDIOutGroups extends Component {
   render() {
       const { full_feed,fullscr,col } = this.state;
       const {feeds,pre_feed,users} = this.props;
-      const width = "201px";
-      const height = "113px";
+      const width = "320px";
+      const height = "180px";
       const autoPlay = true;
       const controls = false;
       const muted = true;

@@ -414,11 +414,43 @@ class SDIOutApp extends Component {
         this.newRemoteFeed(subscription);
     };
 
+    makeSubscribtion = (feeds) => {
+        let {feedStreams,users} = this.state;
+        let subscription = [];
+        for(let f in feeds) {
+            let id = feeds[f]["id"];
+            let display = feeds[f].display;
+            //let talk = feeds[f]["talking"];
+            let streams = feeds[f]["streams"];
+            //feeds[f].talk = talk;
+            for (let i in streams) {
+                let stream = streams[i];
+                if(stream.type === "video" && subscription.length < 12) {
+                    let subst = {feed: id};
+                    stream["id"] = id;
+                    stream["display"] = display;
+                    subst.mid = stream.mid;
+                    subscription.push(subst);
+                }
+            }
+            feedStreams[id] = {id, display, streams};
+            users[display.id] = display;
+            users[display.id].rfid = id;
+        }
+        this.setState({feeds,feedStreams,users});
+        // Set next feed in queue first after program is full
+        if(feeds.length > 12) {
+            this.setState({feeds_queue: 12});
+        }
+        if(subscription.length > 0)
+            this.subscribeTo(subscription);
+    };
+
     onProtocolData = (data) => {
         if(data.type === "sdi-switch_program") {
             let {col, feed, i, status} = data;
             console.log(" :: Got Shidur Action: ", data);
-            //this["col"+col].switchNext(i,feed,status);
+            this["col"+col].switchProgram(i);
         } else if(data.type === "sdi-switch_four") {
             let {col, feed, i, status} = data;
             console.log(" :: Got Shidur Action: ", data);
@@ -486,7 +518,9 @@ class SDIOutApp extends Component {
             }
         } else if(data.type === "sdi-state_shidur" && data.feed.sdiout) {
             console.log(" :: Got Shidur Action: ",data);
-            // this.setState({pgm_state: data.status});
+            const {feeds,users} = data.feed;
+            this.setState({feeds,users});
+            this.makeSubscribtion(feeds);
             // data.status.forEach((pgm,i) => {
             //     if(i < 4) {
             //         this.col1.switchNext(i,pgm);
@@ -516,7 +550,7 @@ class SDIOutApp extends Component {
         let {feeds,users,quistions_queue,qfeeds,feeds_queue} = this.state;
 
         // Clean preview
-        this.checkPreview(id);
+        //this.checkPreview(id);
 
         for(let i=0; i<feeds.length; i++) {
             if(feeds[i].id === id) {
@@ -600,7 +634,16 @@ class SDIOutApp extends Component {
                         // Hide preview
                         this.setState({pre_feed: null});
                     } else {
-                        this.nextInQueue();
+                        feeds_queue++;
+                        if(feeds_queue >= feeds.length) {
+                            // End round here!
+                            Janus.log(" -- ROUND END --");
+                            feeds_queue = 0;
+                            round++;
+                            this.setState({feeds_queue,round});
+                        } else {
+                            this.setState({feeds_queue});
+                        }
                     }
                     this.setState({program: null});
                     Janus.log(":: Switch program to: ", feed);
@@ -680,10 +723,10 @@ class SDIOutApp extends Component {
                         removeFeed={this.removeFeed} />
                 </Grid.Column>
                 <Grid.Column>
-                    <SDIOutUsers
-                        ref={col => {this.col4 = col;}}
-                        setProps={this.setProps}
-                        onProtocolData={this.onProtocolData} />
+                    {/*<SDIOutUsers*/}
+                    {/*    ref={col => {this.col4 = col;}}*/}
+                    {/*    setProps={this.setProps}*/}
+                    {/*    onProtocolData={this.onProtocolData} />*/}
                 </Grid.Column>
                 </Grid.Row>
             </Grid>
