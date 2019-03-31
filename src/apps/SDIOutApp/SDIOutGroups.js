@@ -29,31 +29,31 @@ class SDIOutGroups extends Component {
         let streams = [{ sub_mid: mids[i].mid }];
         this.props.unsubscribeFrom(streams, mids[i].feed_id);
 
-        setTimeout(() => {
-            this.questionStatus();
-        }, 1000);
+        // setTimeout(() => {
+        //     this.questionStatus();
+        // }, 1000);
     };
 
-    questionStatus = () => {
-        let {mids,qfeeds,quistions_queue} = this.props;
-        for(let i = 0; i < quistions_queue.length; i++) {
-            let qp_count = mids.filter(qp => qp.active && qp.feed_id === quistions_queue[i].rfid).length;
-            let qf_chk = qfeeds.find(qf => qf.id === quistions_queue[i].rfid);
-            if(qp_count > 0 && qf_chk) {
-                for (let q = 0; q < qfeeds.length; q++) {
-                    if (qfeeds[q] && qfeeds[q].id === quistions_queue[i].rfid) {
-                        console.log(" - Remove QFEED: ", qfeeds[q]);
-                        qfeeds.splice(q, 1);
-                        this.props.setProps({qfeeds});
-                        break
-                    }
-                }
-            } else if(qp_count === 0 && !qf_chk) {
-                qfeeds.push({id: quistions_queue[i].rfid, display: quistions_queue[i].user});
-                this.props.setProps({qfeeds});
-            }
-        }
-    };
+    // questionStatus = () => {
+    //     let {mids,qfeeds,quistions_queue} = this.props;
+    //     for(let i = 0; i < quistions_queue.length; i++) {
+    //         let qp_count = mids.filter(qp => qp.active && qp.feed_id === quistions_queue[i].rfid).length;
+    //         let qf_chk = qfeeds.find(qf => qf.id === quistions_queue[i].rfid);
+    //         if(qp_count > 0 && qf_chk) {
+    //             for (let q = 0; q < qfeeds.length; q++) {
+    //                 if (qfeeds[q] && qfeeds[q].id === quistions_queue[i].rfid) {
+    //                     console.log(" - Remove QFEED: ", qfeeds[q]);
+    //                     qfeeds.splice(q, 1);
+    //                     this.props.setProps({qfeeds});
+    //                     break
+    //                 }
+    //             }
+    //         } else if(qp_count === 0 && !qf_chk) {
+    //             qfeeds.push({id: quistions_queue[i].rfid, display: quistions_queue[i].user});
+    //             this.props.setProps({qfeeds});
+    //         }
+    //     }
+    // };
 
     switchFour = () => {
         let {feeds_queue,feeds,index,round} = this.props;
@@ -97,9 +97,9 @@ class SDIOutGroups extends Component {
             success: () => {
                 Janus.debug(" -- Switch success: ");
                 // Add to qfeeds if removed from program with question status
-                setTimeout(() => {
-                    this.questionStatus();
-                }, 1000);
+                // setTimeout(() => {
+                //     this.questionStatus();
+                // }, 1000);
             }
         });
     };
@@ -159,12 +159,12 @@ class SDIOutGroups extends Component {
                              controls={controls}
                              muted={muted}
                              playsInline={true}/>
-                      <Button className='next_button'
-                              disabled={feeds.length < 2}
-                              size='mini'
-                              color='green'
-                              icon={pre_feed ? 'arrow up' : 'share'}
-                              onClick={() => this.switchProgram(i)} />
+                      {/*<Button className='next_button'*/}
+                      {/*        disabled={feeds.length < 2}*/}
+                      {/*        size='mini'*/}
+                      {/*        color='green'*/}
+                      {/*        icon={pre_feed ? 'arrow up' : 'share'}*/}
+                      {/*        onClick={() => this.switchProgram(i)} />*/}
                   </div></div>);
           }
           return true;

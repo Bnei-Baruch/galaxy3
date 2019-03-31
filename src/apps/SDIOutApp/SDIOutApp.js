@@ -415,15 +415,23 @@ class SDIOutApp extends Component {
     };
 
     onProtocolData = (data) => {
-        if(data.type === "sdi-switch") {
+        if(data.type === "sdi-switch_program") {
             let {col, feed, i, status} = data;
-            console.log(" :: Got Shidur Action: ",data);
-            this["col"+col].switchNext(i,feed,status);
-        } else if(data.type === "sdi-fullscreen" && data.status) {
+            console.log(" :: Got Shidur Action: ", data);
+            //this["col"+col].switchNext(i,feed,status);
+        } else if(data.type === "sdi-switch_four") {
+            let {col, feed, i, status} = data;
+            console.log(" :: Got Shidur Action: ", data);
+            //this["col"+col].switchNext(i,feed,status);
+        } else if(data.type === "sdi-next_inqueue") {
+            let {col, feed, i, status} = data;
+            console.log(" :: Got Shidur Action: ", data);
+            //this["col"+col].switchNext(i,feed,status);
+        } else if(data.type === "sdi-fullscr_group" && data.status) {
             let {col, feed, i} = data;
             console.log(" :: Got Shidur Action: ",data);
             this["col"+col].fullScreenGroup(i,feed);
-        } else if(data.type === "sdi-fullscreen" && !data.status) {
+        } else if(data.type === "sdi-fullscr_group" && !data.status) {
             let {col, feed, i} = data;
             console.log(" :: Got Shidur Action: ",data);
             this["col"+col].toFourGroup(i,feed);
@@ -431,20 +439,20 @@ class SDIOutApp extends Component {
             let {col, feed, i} = data;
             console.log(" :: Git Shidur Action: ",data);
             this.removeFeed(feed.id);
-        } else if(data.type === "sdi-disable") {
+        } else if(data.type === "sdi-disable_group") {
             let {col, feed, i} = data;
             console.log(" :: Got Shidur Action: ",data);
             let {disabled_groups} = this.state;
             disabled_groups.push(feed);
             this.removeFeed(feed.id);
             this.setState({disabled_groups});
-        } else if(data.type === "sdi-restart" && data.feed.sdiout) {
+        } else if(data.type === "sdi-restart_sdiout" && data.feed.sdiout) {
             window.location.reload();
         } else if(data.type === "sdi-fix") {
             let {col, feed, i} = data;
             let {pr1} = this.state;
             pr1[i] = null;
-        } else if(data.type === "sdi-restore") {
+        } else if(data.type === "sdi-restore_group") {
             let {col, feed, i} = data;
             console.log(" :: Git Shidur Action: ",data);
             let {disabled_groups,feeds,users} = this.state;
@@ -476,17 +484,18 @@ class SDIOutApp extends Component {
                     break
                 }
             }
-        } else if(data.type === "sdi-state" && data.feed.sdiout) {
-            this.setState({pgm_state: data.status});
-            data.status.forEach((pgm,i) => {
-                if(i < 4) {
-                    this.col1.switchNext(i,pgm);
-                } else if(i < 8) {
-                    this.col2.switchNext(i,pgm);
-                } else if(i < 12) {
-                    this.col3.switchNext(i,pgm);
-                }
-            })
+        } else if(data.type === "sdi-state_shidur" && data.feed.sdiout) {
+            console.log(" :: Got Shidur Action: ",data);
+            // this.setState({pgm_state: data.status});
+            // data.status.forEach((pgm,i) => {
+            //     if(i < 4) {
+            //         this.col1.switchNext(i,pgm);
+            //     } else if(i < 8) {
+            //         this.col2.switchNext(i,pgm);
+            //     } else if(i < 12) {
+            //         this.col3.switchNext(i,pgm);
+            //     }
+            // })
         }
     };
 
@@ -495,7 +504,7 @@ class SDIOutApp extends Component {
         let {remoteFeed} = this.state;
 
         // Remove feed from preview
-        if(id) this.checkPreview(id);
+        //if(id) this.checkPreview(id);
 
         Janus.debug(" -- Sending request with data: ",streams);
         let unsubscribe = {request: "unsubscribe", streams};
@@ -513,9 +522,6 @@ class SDIOutApp extends Component {
             if(feeds[i].id === id) {
                 // Delete from users mapping object
                 let user = feeds[i].display;
-                // Write to log
-                if(!disable)
-                    this.actionLog(user, "leave");
                 console.log(" :: Remove feed: " + id + " - Name: " + user.username);
                 delete users[user.id];
 
@@ -528,12 +534,12 @@ class SDIOutApp extends Component {
                 }
 
                 // Delete from qfeeds
-                for(let i = 0; i < qfeeds.length; i++){
-                    if(qfeeds[i].display.id === user.id) {
-                        qfeeds.splice(i, 1);
-                        break
-                    }
-                }
+                // for(let i = 0; i < qfeeds.length; i++){
+                //     if(qfeeds[i].display.id === user.id) {
+                //         qfeeds.splice(i, 1);
+                //         break
+                //     }
+                // }
 
                 // Remove from general feeds list
                 feeds.splice(i, 1);
