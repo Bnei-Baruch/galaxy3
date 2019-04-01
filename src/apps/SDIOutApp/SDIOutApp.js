@@ -693,10 +693,10 @@ class SDIOutApp extends Component {
                         removeFeed={this.removeFeed} />
                 </Grid.Column>
                 <Grid.Column>
-                    {/*<SDIOutUsers*/}
-                    {/*    ref={col => {this.col4 = col;}}*/}
-                    {/*    setProps={this.setProps}*/}
-                    {/*    onProtocolData={this.onProtocolData} />*/}
+                    <SDIOutUsers
+                        ref={col => {this.col4 = col;}}
+                        setProps={this.setProps}
+                        onProtocolData={this.onProtocolData} />
                 </Grid.Column>
                 </Grid.Row>
             </Grid>
