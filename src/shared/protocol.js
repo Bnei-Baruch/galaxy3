@@ -111,6 +111,7 @@ const onProtocolData = (data,user,ondata) => {
         if(json.participants) {
             Janus.log("--- Got Protocol Users: ", json, user);
             let shidur = json.participants.find(c => c.username === SHIDUR_ID);
+            let storan = json.participants.find(c => c.username === STORAN_ID);
             let sndman = json.participants.find(c => c.username === SNDMAN_ID);
             let sdiout = json.participants.find(c => c.username === SDIOUT_ID);
 
@@ -118,6 +119,11 @@ const onProtocolData = (data,user,ondata) => {
                 Janus.log(":: Support Online ::");
             } else {
                 Janus.log(":: Support Offline ::");
+            }
+
+            if (storan && (user.id === SDIOUT_ID || user.id === SNDMAN_ID)) {
+                Janus.log(":: Shidur " + (sndman ? "Online" : "Offline") + " ::");
+                ondata({type: "event", shidur: storan.username === STORAN_ID})
             }
 
             if (sndman && user.id === STORAN_ID) {
