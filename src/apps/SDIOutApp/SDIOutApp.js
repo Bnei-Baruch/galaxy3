@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import { Janus } from "../../lib/janus";
 import {Grid} from "semantic-ui-react";
-import {initJanus} from "../../shared/tools";
+import {getState, initJanus} from "../../shared/tools";
 import './SDIOutApp.css';
 import {initGxyProtocol} from "../../shared/protocol";
 import SDIOutGroups from "./SDIOutGroups";
@@ -166,16 +166,6 @@ class SDIOutApp extends Component {
                     // }
                     // if(subscription.length > 0)
                     //     this.subscribeTo(subscription);
-
-                    // getState('state/galaxy/pr1', (pgm_state) => {
-                    //     Janus.log(" :: Get State: ", pgm_state);
-                    //     this.setState({pgm_state});
-                    //     pgm_state.forEach((feed,i) => {
-                    //         let chk = feeds.filter(f => f.id === feed.id).length > 0;
-                    //         if(chk)
-                    //             this.newSwitchFeed(feed.id,true,i);
-                    //     });
-                    // });
                 }
             } else if(event === "talking") {
                 //let id = msg["id"];
@@ -516,12 +506,32 @@ class SDIOutApp extends Component {
             const {feeds,users,quistions_queue,disabled_groups,feeds_queue,feedStreams,mids} = data.feed;
             if(feeds.length === 0) {
                 Janus.log(" :: Shidur page was reloaded or all groups is Offline :: ");
-                //window.location.reload();
+                this.recoverState();
             } else {
                 this.setState({feeds,users,quistions_queue,disabled_groups,feeds_queue,feedStreams});
                 this.programState(mids);
             }
         }
+    };
+
+    recoverState = () => {
+        getState('state/galaxy/shidur', (state) => {
+            Janus.log(" :: Get State: ", state);
+            if(JSON.stringify(state) === "{}") {
+                Janus.log(" :: Got empty state - nothing to recover :(");
+                return;
+            }
+            const {feeds,users,quistions_queue,disabled_groups,feeds_queue,feedStreams,mids} = state;
+            this.setState({feeds,users,quistions_queue,disabled_groups,feeds_queue,feedStreams});
+            let subscription = [];
+            mids.forEach((mid,i) => {
+                Janus.debug(" :: mids iteration - ", i, mid);
+                if (mid && mid.active) {
+                    subscription.push({feed: mid.feed_id, mid: "1"})
+                }
+            });
+            this.subscribeTo(subscription);
+        });
     };
 
     unsubscribeFrom = (streams, id) => {
