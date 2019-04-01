@@ -363,7 +363,7 @@ class ShidurToran extends Component {
                                 {feeds.length - feeds_queue}
                             <Icon name='delete' onClick={this.props.resetQueue} />
                         </Label>
-                        <Label attached='bottom right' color='blue' >
+                        <Label attached='bottom right' color='brown' >
                             Round: {round}
                         </Label>
                     </Segment>
@@ -379,14 +379,14 @@ class ShidurToran extends Component {
                             SndMan</Button>
                         <Button
                             color={sdiout ? "green" : "red"}
-                            disabled={!sdiout}
+                            disabled={!sdiout || feeds.length < 13}
                             onClick={() => this.sdiAction("restart_sdiout", false, 1, {sdiout: true})}>
                             SdiOut</Button>
                     </Button.Group>
                 </Grid.Column>
                 <Grid.Column>
                     <Segment textAlign='center' >
-                        <Label attached='top right' color={feeds.length > 12 ? 'green' : 'grey'}>
+                        <Label attached='top right' color={feeds.length > 13 ? 'green' : 'grey'}>
                             Online: {feeds.length}
                         </Label>
                         <Dropdown className='select_group'
@@ -397,7 +397,7 @@ class ShidurToran extends Component {
                                   options={group_options}
                                   onClick={this.sortGroups}
                                   onChange={(e,{value}) => this.selectGroup(value)} />
-                        <Label attached='top left' color='grey' onClick={this.selectNext}>
+                        <Label attached='top left' color={feeds.length > 13 ? 'blue' : 'grey'} onClick={this.selectNext}>
                             Next: {feeds[feeds_queue] ? feeds[feeds_queue].display.display : ""}
                         </Label>
                     </Segment>

@@ -5,8 +5,8 @@ import 'semantic-ui-css/semantic.min.css';
 // import AdminStreaming from "./apps/AdminApp/AdminStreaming";
 // import VirtualClient from "./apps/VirtualApp/VirtualClient";
 // import ShidurAdmin from "./apps/ShidurApp/ShidurAdmin";
-import SDIOutApp from "./apps/SDIOutApp/SDIOutApp";
-// import ShidurApp from "./apps/ShidurApp/ShidurApp";
+// import SDIOutApp from "./apps/SDIOutApp/SDIOutApp";
+import ShidurApp from "./apps/ShidurApp/ShidurApp";
 // import MobileClient from "./apps/MobileApp/MobileClient";
 // import SndmanApp from "./apps/SndmanApp/SndmanApp";
 // import GroupClient from "./apps/GroupsApp/GroupClient";
@@ -20,8 +20,8 @@ class App extends Component {
             <Fragment>
                 {/*<VirtualClient/>*/}
                  {/*<ShidurAdmin/>*/}
-                <SDIOutApp/>
-                 {/*<ShidurApp/>*/}
+                {/*<SDIOutApp/>*/}
+                 <ShidurApp/>
                  {/*<SndmanApp/>*/}
                 {/*<GroupClient/>*/}
                  {/*<GalaxyStream/>*/}

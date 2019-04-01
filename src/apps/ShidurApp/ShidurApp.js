@@ -4,7 +4,7 @@ import {Grid} from "semantic-ui-react";
 import {getDateString, initJanus, getState} from "../../shared/tools";
 import {initGxyProtocol} from "../../shared/protocol";
 import ShidurGroups from "./ShidurGroups";
-//import ShidurUsers from "./ShidurUsers";
+import ShidurUsers from "./ShidurUsers";
 import {client, getUser} from "../../components/UserManager";
 import LoginPage from "../../components/LoginPage";
 import './ShidurApp.css';
@@ -725,9 +725,9 @@ class ShidurApp extends Component {
                     </Grid>
                 </Grid.Column>
                 <Grid.Column width={4}>
-                    {/*<ShidurUsers*/}
-                    {/*    ref={col => {this.col4 = col;}}*/}
-                    {/*    setProps={this.setProps} />*/}
+                    <ShidurUsers
+                        ref={col => {this.col4 = col;}}
+                        setProps={this.setProps} />
                 </Grid.Column>
             </Grid>
         );
