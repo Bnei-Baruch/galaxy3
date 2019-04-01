@@ -479,7 +479,9 @@ class SDIOutApp extends Component {
             const {feeds,users,quistions_queue,disabled_groups,feeds_queue,feedStreams,mids} = data.feed;
             if(feeds.length === 0) {
                 Janus.log(" :: Shidur page was reloaded or all groups is Offline :: ");
-                //window.location.reload();
+                setTimeout(() => {
+                    window.location.reload();
+                }, 2000);
                 //this.recoverState();
             } else {
                 this.setState({feeds,users,quistions_queue,disabled_groups,feeds_queue,feedStreams});
