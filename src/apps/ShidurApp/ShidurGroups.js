@@ -59,7 +59,7 @@ class ShidurGroups extends Component {
                 this.props.setProps({qfeeds});
             }
         }
-        this.saveState();
+        //this.saveState();
     };
 
     saveState = () => {
