@@ -1,10 +1,9 @@
 import React, { Component } from 'react';
 import { Janus } from "../../lib/janus";
-import {Icon, Segment} from "semantic-ui-react";
+import {Segment} from "semantic-ui-react";
 import {getState, initJanus} from "../../shared/tools";
 import './SDIOutUsers.css';
 import './VideoConteiner.scss'
-import {MAX_FEEDS} from "../../shared/consts";
 import {initGxyProtocol} from "../../shared/protocol";
 import classNames from "classnames";
 
@@ -347,7 +346,7 @@ class SDIOutUsers extends Component {
 
     unsubscribeFrom = (id) => {
         // Unsubscribe from this publisher
-        let {mids,questions,quistions_queue,cammuteds,feeds,users,feedStreams} = this.state;
+        let {questions,quistions_queue,cammuteds,feeds,users,feedStreams} = this.state;
         let {remoteFeed} = this.state;
         for (let i=0; i<feeds.length; i++) {
             if (feeds[i].id === id) {
@@ -404,8 +403,6 @@ class SDIOutUsers extends Component {
         let {feeds,users} = this.state;
         let rfid = users[data.id].rfid;
         let camera = data.camera;
-        // let remotevideo = this.refs["video" + rfid];
-        // remotevideo.remove();
         if(camera === false) {
             for (let i = 1; i < feeds.length; i++) {
                 if (feeds[i] !== null && feeds[i] !== undefined && feeds[i].rfid === rfid) {
@@ -417,13 +414,6 @@ class SDIOutUsers extends Component {
                 }
             }
         }
-        // for(let i=1; i<feeds.length; i++) {
-        //     if(feeds[i] !== null && feeds[i] !== undefined && feeds[i].rfid === rfid) {
-        //         feeds[i].rfcam = camera;
-        //         this.setState({feeds});
-        //         break
-        //     }
-        // }
     };
 
     publishOwnFeed = (useAudio) => {
@@ -555,9 +545,10 @@ class SDIOutUsers extends Component {
                         let display = JSON.parse(feed[f]["display"]);
                         if(display.role !== "user")
                             return;
-                        let talk = feed[f]["talking"];
+                        //let talk = feed[f]["talking"];
                         let streams = feed[f]["streams"];
                         feed[f].display = display;
+                        //feeds[f].talk = talk;
                         let subst = {feed: id};
                         for (let i in streams) {
                             let stream = streams[i];
@@ -608,13 +599,6 @@ class SDIOutUsers extends Component {
         }
     };
 
-    registerUsername = (room) => {
-        const {videoroom} = this.state;
-        let register = { "request": "join", "room": room, "ptype": "publisher", "display": "user_"+Janus.randomString(4) };
-        videoroom.send({"message": register});
-        this.setState({room});
-    };
-
     attachToPreview = (room) => {
         if(this.state.room === room)
             return;
@@ -637,8 +621,8 @@ class SDIOutUsers extends Component {
           if(feed && feed.camera !== false) {
               let id = feed.id;
               let talk = feed.talk;
-              let rfcam = feed.rfcam;
-              let question = feed.question;
+              //let rfcam = feed.rfcam;
+              //let question = feed.question;
               return (<div className="video"
                   key={"v" + id}
                   ref={"video" + id}

@@ -447,47 +447,31 @@ class SDIOutApp extends Component {
     };
 
     onProtocolData = (data) => {
+        Janus.log(" :: Got Shidur Action: ", data);
+        let {col, feed, i, status} = data;
         if(data.type === "sdi-switch_program") {
-            let {col, feed, i, status} = data;
-            console.log(" :: Got Shidur Action: ", data);
             this["col"+col].switchProgram(i, feed);
         } else if(data.type === "sdi-switch_four") {
-            let {col, feed, i, status} = data;
-            console.log(" :: Got Shidur Action: ", data);
-            //this["col"+col].switchNext(i,feed,status);
+            this["col"+col].switchFour();
         } else if(data.type === "sdi-next_inqueue") {
-            let {col, feed, i, status} = data;
-            console.log(" :: Got Shidur Action: ", data);
             this.nextInQueue();
-            //this["col"+col].switchNext(i,feed,status);
-        } else if(data.type === "sdi-fullscr_group" && data.status) {
-            let {col, feed, i} = data;
-            console.log(" :: Got Shidur Action: ",data);
+        } else if(data.type === "sdi-fullscr_group" && status) {
             this["col"+col].fullScreenGroup(i,feed);
-        } else if(data.type === "sdi-fullscr_group" && !data.status) {
+        } else if(data.type === "sdi-fullscr_group" && !status) {
             let {col, feed, i} = data;
-            console.log(" :: Got Shidur Action: ",data);
             this["col"+col].toFourGroup(i,feed);
         } else if(data.type === "sdi-remove") {
-            let {col, feed, i} = data;
-            console.log(" :: Git Shidur Action: ",data);
             this.removeFeed(feed.id);
         } else if(data.type === "sdi-disable_group") {
-            let {col, feed, i} = data;
-            console.log(" :: Got Shidur Action: ",data);
             let {disabled_groups} = this.state;
             disabled_groups.push(feed);
             this.removeFeed(feed.id);
             this.setState({disabled_groups});
         } else if(data.type === "sdi-restart_sdiout" && data.feed.sdiout) {
             window.location.reload();
-        } else if(data.type === "sdi-fix") {
-            let {col, feed, i} = data;
-            let {pr1} = this.state;
-            pr1[i] = null;
+        } else if(data.type === "sdi-reset_queue") {
+            this.resetQueue();
         } else if(data.type === "sdi-restore_group") {
-            let {col, feed, i} = data;
-            console.log(" :: Git Shidur Action: ",data);
             let {disabled_groups,feeds,users} = this.state;
             for(let i = 0; i < disabled_groups.length; i++){
                 if(disabled_groups[i].id === data.feed.id) {
@@ -518,7 +502,6 @@ class SDIOutApp extends Component {
                 }
             }
         } else if(data.type === "sdi-state_shidur" && data.feed.sdiout) {
-            console.log(" :: Got Shidur Action: ",data);
             // const {feeds,users} = data.feed;
             // if(feeds.length === 0) {
             //     //window.location.reload();
@@ -526,25 +509,12 @@ class SDIOutApp extends Component {
             //     this.setState({feeds,users});
             //     this.makeSubscribtion(feeds);
             // }
-
-            // data.status.forEach((pgm,i) => {
-            //     if(i < 4) {
-            //         this.col1.switchNext(i,pgm);
-            //     } else if(i < 8) {
-            //         this.col2.switchNext(i,pgm);
-            //     } else if(i < 12) {
-            //         this.col3.switchNext(i,pgm);
-            //     }
-            // })
         }
     };
 
     unsubscribeFrom = (streams, id) => {
         Janus.log(" :: Going to unsubscribe: ",streams);
         let {remoteFeed} = this.state;
-
-        // Remove feed from preview
-        //if(id) this.checkPreview(id);
 
         Janus.debug(" -- Sending request with data: ",streams);
         let unsubscribe = {request: "unsubscribe", streams};
@@ -553,10 +523,7 @@ class SDIOutApp extends Component {
     };
 
     removeFeed = (id, disable) => {
-        let {feeds,users,quistions_queue,qfeeds,feeds_queue} = this.state;
-
-        // Clean preview
-        //this.checkPreview(id);
+        let {feeds,users,quistions_queue,feeds_queue} = this.state;
 
         for(let i=0; i<feeds.length; i++) {
             if(feeds[i].id === id) {
@@ -572,14 +539,6 @@ class SDIOutApp extends Component {
                         break
                     }
                 }
-
-                // Delete from qfeeds
-                // for(let i = 0; i < qfeeds.length; i++){
-                //     if(qfeeds[i].display.id === user.id) {
-                //         qfeeds.splice(i, 1);
-                //         break
-                //     }
-                // }
 
                 // Remove from general feeds list
                 feeds.splice(i, 1);
@@ -683,7 +642,7 @@ class SDIOutApp extends Component {
 
     resetQueue = () => {
         if(this.state.feeds.length > 12) {
-            console.log("-- Reset Queue --");
+            Janus.log("-- Reset Queue --");
             this.setState({feeds_queue: 0});
             setTimeout(() => {
                 this.col1.switchFour();
