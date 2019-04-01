@@ -133,39 +133,39 @@ class SDIOutApp extends Component {
                 this.setState({myid ,mypvtid});
                 Janus.log("Successfully joined room " + msg["room"] + " with ID " + myid);
                 if(msg["publishers"] !== undefined && msg["publishers"] !== null) {
-                    let list = msg["publishers"];
-                    let {feedStreams,users} = this.state;
-                    let feeds = list.filter(feeder => JSON.parse(feeder.display).role === "group");
-
-                    let subscription = [];
-                    for(let f in feeds) {
-                        let id = feeds[f]["id"];
-                        let display = JSON.parse(feeds[f]["display"]);
-                        //let talk = feeds[f]["talking"];
-                        let streams = feeds[f]["streams"];
-                        feeds[f].display = display;
-                        //feeds[f].talk = talk;
-                        for (let i in streams) {
-                            let stream = streams[i];
-                            if(stream.type === "video" && subscription.length < 12) {
-                                let subst = {feed: id};
-                                stream["id"] = id;
-                                stream["display"] = display;
-                                subst.mid = stream.mid;
-                                subscription.push(subst);
-                            }
-                        }
-                        feedStreams[id] = {id, display, streams};
-                        users[display.id] = display;
-                        users[display.id].rfid = id;
-                    }
-                    this.setState({feeds,feedStreams,users});
-                    // Set next feed in queue first after program is full
-                    if(feeds.length > 12) {
-                        this.setState({feeds_queue: 12});
-                    }
-                    if(subscription.length > 0)
-                        this.subscribeTo(subscription);
+                    ///let list = msg["publishers"];
+                    // let {feedStreams,users} = this.state;
+                    // let feeds = list.filter(feeder => JSON.parse(feeder.display).role === "group");
+                    //
+                    // let subscription = [];
+                    // for(let f in feeds) {
+                    //     let id = feeds[f]["id"];
+                    //     let display = JSON.parse(feeds[f]["display"]);
+                    //     //let talk = feeds[f]["talking"];
+                    //     let streams = feeds[f]["streams"];
+                    //     feeds[f].display = display;
+                    //     //feeds[f].talk = talk;
+                    //     for (let i in streams) {
+                    //         let stream = streams[i];
+                    //         if(stream.type === "video" && subscription.length < 12) {
+                    //             let subst = {feed: id};
+                    //             stream["id"] = id;
+                    //             stream["display"] = display;
+                    //             subst.mid = stream.mid;
+                    //             subscription.push(subst);
+                    //         }
+                    //     }
+                    //     feedStreams[id] = {id, display, streams};
+                    //     users[display.id] = display;
+                    //     users[display.id].rfid = id;
+                    // }
+                    // this.setState({feeds,feedStreams,users});
+                    // // Set next feed in queue first after program is full
+                    // if(feeds.length > 12) {
+                    //     this.setState({feeds_queue: 12});
+                    // }
+                    // if(subscription.length > 0)
+                    //     this.subscribeTo(subscription);
 
                     // getState('state/galaxy/pr1', (pgm_state) => {
                     //     Janus.log(" :: Get State: ", pgm_state);
@@ -446,6 +446,17 @@ class SDIOutApp extends Component {
             this.subscribeTo(subscription);
     };
 
+    programState = (mids) => {
+        let subscription = [];
+        mids.forEach((mid,i) => {
+            Janus.debug(" :: mids iteration - ", i, mid);
+            if (mid && mid.active) {
+                subscription.push({feed: mid.feed_id, mid: "1"})
+            }
+        });
+        this.subscribeTo(subscription);
+    };
+
     onProtocolData = (data) => {
         Janus.log(" :: Got Shidur Action: ", data);
         let {col, feed, i, status} = data;
@@ -502,13 +513,14 @@ class SDIOutApp extends Component {
                 }
             }
         } else if(data.type === "sdi-state_shidur" && data.feed.sdiout) {
-            // const {feeds,users} = data.feed;
-            // if(feeds.length === 0) {
-            //     //window.location.reload();
-            // } else {
-            //     this.setState({feeds,users});
-            //     this.makeSubscribtion(feeds);
-            // }
+            const {feeds,users,quistions_queue,disabled_groups,feeds_queue,feedStreams,mids} = data.feed;
+            if(feeds.length === 0) {
+                Janus.log(" :: Shidur page was reloaded or all groups is Offline :: ");
+                //window.location.reload();
+            } else {
+                this.setState({feeds,users,quistions_queue,disabled_groups,feeds_queue,feedStreams});
+                this.programState(mids);
+            }
         }
     };
 
