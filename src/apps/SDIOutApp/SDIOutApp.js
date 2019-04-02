@@ -409,7 +409,7 @@ class SDIOutApp extends Component {
             this.subscribeTo(subscription);
     };
 
-    programState = (mids) => {
+    programSubscribtion = (mids) => {
         let subscription = [];
         mids.forEach((mid,i) => {
             Janus.debug(" :: mids iteration - ", i, mid);
@@ -418,6 +418,22 @@ class SDIOutApp extends Component {
             }
         });
         this.subscribeTo(subscription);
+    };
+
+    programState = (mids) => {
+        let streams = [];
+        mids.forEach((m,i) => {
+            Janus.debug(" :: mids iteration - ", i, m.mid);
+            if (m && m.active) {
+                streams.push({feed: m.feed_id, mid: "1", sub_mid: m.mid});
+            }
+        });
+        let switch_sync = {request: "switch", streams};
+        this.state.remoteFeed.send ({"message": switch_sync,
+            success: () => {
+                Janus.debug(" -- Switch success: ");
+            }
+        });
     };
 
     onProtocolData = (data) => {
@@ -442,7 +458,10 @@ class SDIOutApp extends Component {
             this.removeFeed(feed.id);
             this.setState({disabled_groups});
         } else if(data.type === "sdi-restart_sdiout" && data.feed.sdiout) {
-            window.location.reload();
+            const {feeds,users,quistions_queue,disabled_groups,feeds_queue,feedStreams,mids,pre_feed,program} = data.feed;
+            this.setState({feeds,users,quistions_queue,disabled_groups,feeds_queue,feedStreams,pre_feed,program});
+            this.programState(mids);
+            //window.location.reload();
         } else if(data.type === "sdi-reset_queue") {
             this.resetQueue();
         } else if(data.type === "sdi-restore_group") {
@@ -485,7 +504,7 @@ class SDIOutApp extends Component {
                 //this.recoverState();
             } else {
                 this.setState({feeds,users,quistions_queue,disabled_groups,feeds_queue,feedStreams,pre_feed,program});
-                this.programState(mids);
+                this.programSubscribtion(mids);
             }
         } else if(data.type === "event") {
             delete data.type;
