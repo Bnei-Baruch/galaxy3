@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import { Janus } from "../../lib/janus";
 import {Segment, Icon, Button} from "semantic-ui-react";
 import {putData} from "../../shared/tools";
-import './ShidurGroups.css'
+import './ShidurGroups.scss'
 import {sendProtocolMessage} from "../../shared/protocol";
 
 class ShidurGroups extends Component {
@@ -162,7 +162,11 @@ class ShidurGroups extends Component {
       const controls = false;
       const muted = true;
       const full_question = full_feed && users[full_feed.display.id] ? users[full_feed.display.id].question : null;
-      //const q = (<Icon color='red' name='question circle' />);
+      const q = (<div className="question">
+          <svg viewBox="0 0 50 50">
+              <text x="25" y="25" textAnchor="middle" alignmentBaseline="central" dominantBaseline="central">&#xF128;</text>
+          </svg>
+      </div>);
 
       let program = this.props.mids.map((feed,i) => {
           if(feed && this.props.qam[i] === col) {
@@ -182,7 +186,7 @@ class ShidurGroups extends Component {
                            ref={"provideo" + i}
                            id={"provideo" + i}>
                   <div className="video_title">{user.display}</div>
-                            {qst ? <div className='qst_title'>?</div> : ""}
+                            {qst ? q : ""}
                   <video className={talk ? "talk" : ""}
                          onClick={() => this.fullScreenGroup(i,feed)}
                          key={i}
@@ -206,10 +210,8 @@ class ShidurGroups extends Component {
       });
 
       let fullscreen = (<div className={fullscr ? "" : "hidden"}>
-              <div className="fullscrvideo_title">
-                  <span>{full_feed ? full_feed.display.display : ""}</span>
-              </div>
-              <div className={full_question ? 'qst_fullscreentitle' : 'hidden'}>?</div>
+              <div className="fullscrvideo_title">{full_feed ? full_feed.display.display : ""}</div>
+              {full_question ? q : ''}
               <video ref = {"fullscreenVideo"}
                      onClick={() => this.toFourGroup()}
                      id = "fullscreenVideo"

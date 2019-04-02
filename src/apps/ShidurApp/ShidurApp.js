@@ -7,7 +7,6 @@ import ShidurGroups from "./ShidurGroups";
 import ShidurUsers from "./ShidurUsers";
 import {client, getUser} from "../../components/UserManager";
 import LoginPage from "../../components/LoginPage";
-import './ShidurApp.css';
 import ShidurToran from "./ShidurToran";
 
 

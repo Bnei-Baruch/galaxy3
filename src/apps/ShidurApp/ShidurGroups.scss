@@ -70,6 +70,29 @@
     float: left !important;
 }
 
+.question {
+    &:before {
+        display: block;
+        content: "";
+        padding-top: 100%;
+    }
+    position: absolute;
+    top: 0;
+    left: 0;
+    max-width: 20%;
+    width: 200px;
+    min-width: 30px;
+    background: rgba(34, 34, 34, .9);
+    font-family: Icons;
+    svg {
+        position: absolute;
+        top: 0;
+        left: 0;
+        font-size: 2.5rem;
+        fill: white;
+    }
+}
+
 .qst_title {
     font-family: "Liberation Serif";
     font-weight: bolder;
