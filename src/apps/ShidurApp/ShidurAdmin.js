@@ -626,8 +626,7 @@ class ShidurAdmin extends Component {
         let streams = [
             {feed: id, mid: "0", sub_mid: "0"},
             {feed: id, mid: "1", sub_mid: "1"},
-            {feed: id, mid: "2", sub_mid: "2"},
-            ]
+            ];
         let switchfeed = {"request" : "switch", streams};
         remoteFeed.send ({"message": switchfeed,
             success: (cb) => {
@@ -1025,20 +1024,6 @@ class ShidurAdmin extends Component {
         } else {
             this.switchFeed(id);
         }
-
-        // if(this.state.groups.length > 0) {
-        //     let pre_feed =  this.state.groups[0].id;
-        //     let unsubscribe = {request: "unsubscribe", streams: [{ feed: pre_feed }]};
-        //     if(this.state.remoteFeed !== null) {
-        //         this.state.remoteFeed.send({ message: unsubscribe });
-        //     }
-        // }
-        //
-        // let groups = [];
-        // groups.push(feed);
-        // this.setState({groups});
-        // let subscription = [{feed: id}];
-        // this.subscribeTo(subscription);
     };
 
     getFeedInfo = () => {
@@ -1053,9 +1038,6 @@ class ShidurAdmin extends Component {
             )
         }
     };
-
-    handleShowClick = () => this.setState({ visible: !this.state.visible })
-
 
 
   render() {
@@ -1136,6 +1118,7 @@ class ShidurAdmin extends Component {
                          height={height}
                          autoPlay={autoPlay}
                          controls={controls}
+                         muted={muted}
                          playsInline={true}/>
                   <audio
                       key={"a" + id}
@@ -1257,7 +1240,6 @@ class ShidurAdmin extends Component {
 
                       </Grid.Column>
                       <Grid.Column largeScreen={10}>
-                          {/*<Segment className="videos_segment" onDoubleClick={this.handleShowClick}>*/}
                           <div className="videos-panel">
                               <div className="videos">
                                   <div className="videos__wrapper">
@@ -1268,8 +1250,6 @@ class ShidurAdmin extends Component {
                                   </div>
                               </div>
                           </div>
-                          {/*</Segment>*/}
-
                       </Grid.Column>
                       <Grid.Column width={3}>
 
