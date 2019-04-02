@@ -539,7 +539,7 @@ class SndmanApp extends Component {
             disabled_groups.push(feed);
             this.removeFeed(feed.id);
             this.setState({disabled_groups});
-        } else if(data.type === "sdi-restart_sndman" && data.feed.sndman) {
+        } else if(data.type === "sdi-restart_sndman" && data.status.sndman) {
             const {feeds,users,quistions_queue,disabled_groups,feeds_queue,feedStreams,mids,pre_feed,program} = data.feed;
             this.setState({feeds,users,quistions_queue,disabled_groups,feeds_queue,feedStreams,pre_feed,program});
             this.programState(mids);
@@ -576,7 +576,7 @@ class SndmanApp extends Component {
                     break
                 }
             }
-        } else if(data.type === "sdi-state_shidur" && data.feed.sndman) {
+        } else if(data.type === "sdi-state_shidur" && data.status.sndman) {
             const {feeds,users,quistions_queue,disabled_groups,feeds_queue,feedStreams,mids,pre_feed,program} = data.feed;
             if(feeds.length === 0) {
                 Janus.log(" :: Shidur page was reloaded or all groups is Offline :: ");

@@ -505,7 +505,8 @@ class ShidurApp extends Component {
             delete data.type;
             this.setState({...data});
             if(data.sdiout || data.sndman) {
-                this.pre.sdiAction("state_shidur", null,1, this.state);
+                let status = data.sndman ?  {sndman: true} : {sdiout: true};
+                this.pre.sdiAction("state_shidur", status,1, this.state);
             }
         }
     };
