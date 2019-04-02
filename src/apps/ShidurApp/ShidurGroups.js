@@ -215,8 +215,8 @@ class ShidurGroups extends Component {
               <video ref = {"fullscreenVideo"}
                      onClick={() => this.toFourGroup()}
                      id = "fullscreenVideo"
-                     width = "400"
-                     height = "220"
+                     width = "402"
+                     height = "224"
                      autoPlay = {autoPlay}
                      controls = {controls}
                      muted = {muted}
