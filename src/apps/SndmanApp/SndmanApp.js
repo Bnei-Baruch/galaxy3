@@ -558,7 +558,7 @@ class SndmanApp extends Component {
                 }
             }
         } else if(data.type === "sdi-state_shidur" && data.feed.sndman) {
-            const {feeds,users,quistions_queue,disabled_groups,feeds_queue,feedStreams,mids} = data.feed;
+            const {feeds,users,quistions_queue,disabled_groups,feeds_queue,feedStreams,mids,pre_feed,program} = data.feed;
             if(feeds.length === 0) {
                 Janus.log(" :: Shidur page was reloaded or all groups is Offline :: ");
                 setTimeout(() => {
@@ -566,7 +566,7 @@ class SndmanApp extends Component {
                 }, 2000);
                 //this.recoverState();
             } else {
-                this.setState({feeds,users,quistions_queue,disabled_groups,feeds_queue,feedStreams});
+                this.setState({feeds,users,quistions_queue,disabled_groups,feeds_queue,feedStreams,pre_feed,program});
                 this.programState(mids);
             }
         } else if(data.type === "event") {
