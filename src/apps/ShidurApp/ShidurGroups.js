@@ -24,8 +24,9 @@ class ShidurGroups extends Component {
 
     switchProgram = (i) => {
         Janus.log(" :: Selected program Switch: ",i);
+        this.setDelay();
+        const {mids,pre_feed} = this.props;
         this.props.setProps({program: i});
-        let {mids} = this.props;
 
         // Unsubscribe from previous mid
         let streams = [{ sub_mid: mids[i].mid }];
@@ -36,8 +37,7 @@ class ShidurGroups extends Component {
         }, 1000);
 
         // Send sdi action
-        let feed = this.props.pre_feed || null;
-        this.sdiAction("switch_program" , false, i, feed);
+        this.sdiAction("switch_program" , false, i, pre_feed);
     };
 
     questionStatus = () => {
@@ -145,10 +145,17 @@ class ShidurGroups extends Component {
         this.setState({fullscr: !this.state.fullscr, full_feed: null});
     };
 
+    setDelay = () => {
+        this.props.setProps({next_button: true});
+        setTimeout(() => {
+            this.props.setProps({next_button: false});
+        }, 2000);
+    };
+
 
   render() {
       const { full_feed,fullscr,col } = this.state;
-      const {feeds,pre_feed,users} = this.props;
+      const {feeds,pre_feed,users,next_button} = this.props;
       const width = "201px";
       const height = "113px";
       const autoPlay = true;
@@ -188,7 +195,7 @@ class ShidurGroups extends Component {
                          muted={muted}
                          playsInline={true}/>
                   <Button className='next_button'
-                          disabled={feeds.length < 2}
+                          disabled={feeds.length < 2 || next_button}
                           size='mini'
                           color='green'
                           icon={pre_feed ? 'arrow up' : 'share'}
