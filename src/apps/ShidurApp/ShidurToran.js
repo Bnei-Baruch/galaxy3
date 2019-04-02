@@ -374,7 +374,7 @@ class ShidurToran extends Component {
                     <Button.Group attached='bottom' >
                         <Button
                             color={sndman ? "green" : "red"}
-                            disabled={!sndman}
+                            disabled={!sndman || feeds.length < 13}
                             onClick={() => this.sdiAction("restart_sndman", false, 1, {sndman: true})}>
                             SndMan</Button>
                         <Button

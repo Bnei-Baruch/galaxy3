@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import { Janus } from "../../lib/janus";
-import {Segment, Table, Icon, Button, Label} from "semantic-ui-react";
+import {Segment, Icon, Button, Label} from "semantic-ui-react";
 import './SndmanGroups.css'
 import {DANTE_IN_IP, SECRET} from "../../shared/consts";
 
@@ -8,6 +8,11 @@ class SndmanGroups extends Component {
 
     state = {
         col: null,
+        quad: [
+            "0","3","6","9",
+            "1","4","7","10",
+            "2","5","8","11"
+        ],
         disabled_groups: [],
         forward: false,
         forward_feed: {},
@@ -21,155 +26,31 @@ class SndmanGroups extends Component {
     componentDidMount() {
         document.addEventListener("keydown", this.onKeyPressed);
         const { index } = this.props;
-        if(index === 0) {
-            this.setState({col: 1, port: 5102});
-        } else if(index === 4) {
-            this.setState({col: 2, port: 5103});
-        } else if(index === 8) {
-            this.setState({col: 3, port: 5104});
-        }
+        let col = index === 0 ? 1 : index === 4 ? 2 : index === 8 ? 3 : null;
+        let port = index === 0 ? 5102 : index === 4 ? 5103 : index === 8 ? 5104 : null;
+        this.setState({col,port});
     };
 
     componentWillUnmount() {
         document.removeEventListener("keydown", this.onKeyPressed);
     };
 
-    newSwitchFeed = (id, program, i) => {
-        let pre = null;
-        this.props.janus.attach(
-            {
-                plugin: "janus.plugin.videoroom",
-                opaqueId: "switchfeed_user",
-                success: (pluginHandle) => {
-                    pre = pluginHandle;
-                    pre.simulcastStarted = false;
-                    //this.setState({remotefeed});
-                    Janus.log("Plugin attached! (" + pre.getPlugin() + ", id=" + pre.getId() + ")");
-                    Janus.log("  -- This is a subscriber");
-                    // We wait for the plugin to send us an offer
-                    let listen = { "request": "join", "room": 1234, "ptype": "subscriber", streams: [{feed: id, mid: "1"}] };
-                    pre.send({"message": listen});
-                    if(program) {
-                        let {pr1} = this.props;
-                        pr1[i] = pre;
-                        //this.setState({pr1})
-                        this.props.setProps({pr1});
-                    } else {
-                        this.setState({pre});
-                    }
-                },
-                error: (error) => {
-                    Janus.error("  -- Error attaching plugin...", error);
-                },
-                onmessage: (msg, jsep) => {
-                    Janus.debug(" ::: Got a message (subscriber) :::");
-                    Janus.debug(msg);
-                    let event = msg["videoroom"];
-                    Janus.debug("Event: " + event);
-                    if(msg["error"] !== undefined && msg["error"] !== null) {
-                        Janus.debug(":: Error msg: " + msg["error"]);
-                    } else if(event !== undefined && event !== null) {
-                        if(event === "attached") {
-                            // Subscriber created and attached
-                            Janus.log("Successfully attached to feed " + pre);
-                        } else {
-                            // What has just happened?
-                        }
-                    }
-                    if(jsep !== undefined && jsep !== null) {
-                        Janus.debug("Handling SDP as well...");
-                        Janus.debug(jsep);
-                        // Answer and attach
-                        pre.createAnswer(
-                            {
-                                jsep: jsep,
-                                media: { audioSend: false, videoSend: false },	// We want recvonly audio/video
-                                success: (jsep) => {
-                                    Janus.debug("Got SDP!");
-                                    Janus.debug(jsep);
-                                    let body = { "request": "start", "room": 1234 };
-                                    pre.send({"message": body, "jsep": jsep});
-                                },
-                                error: (error) => {
-                                    Janus.error("WebRTC error:", error);
-                                }
-                            });
-                    }
-                },
-                webrtcState: (on) => {
-                    Janus.log("Janus says this WebRTC PeerConnection (feed #" + pre + ") is " + (on ? "up" : "down") + " now");
-                },
-                onlocalstream: (stream) => {
-                    // The subscriber stream is recvonly, we don't expect anything here
-                },
-                onremotetrack: (track,mid,on) => {
-                    Janus.debug(" - Remote track "+mid+" is: "+on,track);
-                    if(!on) {
-                        console.log(" :: Going to stop track :: " + track + ":", mid);
-                        //FIXME: Remove callback for audio track does not come
-                        track.stop();
-                        //FIXME: does we really need to stop all track for feed id?
-                        return;
-                    }
-                    if(track.kind !== "video" || !on || !track.muted)
-                        return;
-                    let stream = new MediaStream();
-                    stream.addTrack(track.clone());
-                    Janus.debug("Remote feed #" + pre);
-                    let switchvideo = program ? this.refs["programVideo" + i] : this.refs.prevewVideo;
-                    Janus.log(" Attach remote stream on video: "+i);
-                    Janus.attachMediaStream(switchvideo, stream);
-                },
-                oncleanup: () => {
-                    Janus.log(" ::: Got a cleanup notification (remote feed " + id + ") :::");
-                }
-            });
-    };
-
-    switchPreview = (id, display) => {
-        if(!this.state.pre) {
-            this.newSwitchFeed(id,false);
-        } else {
-            let streams = [{feed: id, mid: "1", sub_mid: "0"}];
-            let switchfeed = {"request": "switch", streams};
-            this.state.pre.send ({"message": switchfeed,
-                success: () => {
-                    Janus.log(" :: Preview Switch Feed to: ", display);
-                }
-            })
-        }
-    };
-
-    switchProgram = (i) => {
+    switchProgram = (i, pre_feed) => {
         Janus.log(" :: Selected program Switch: ",i);
-        let {feeds,feeds_queue,round} = this.props;
-        let {pre_feed} = this.state;
+        this.props.setProps({program: i});
+        if(pre_feed)
+            this.props.setProps({pre_feed});
+        let {mids} = this.props;
 
-        //If someone in preview take him else take next in queue
-        if(pre_feed) {
-            Janus.log(" :: Selected program Switch Feed to: ", pre_feed.display);
-            this.switchNext(i, pre_feed);
-            this.setState({pre_feed: null});
-            this.props.setProps({program: pre_feed, pre_feed: null});
-
-        } else {
-            let feed = feeds[feeds_queue];
-            this.switchNext(i, feed);
-            feeds_queue++;
-
-            if(feeds_queue >= feeds.length) {
-                // End round here!
-                feeds_queue = 0;
-                round++;
-                Janus.log(" -- ROUND END --");
-            }
-
-            this.props.setProps({feeds_queue,round,pre_feed: null});
-        }
+        // Unsubscribe from previous mid
+        let streams = [{ sub_mid: mids[i].mid }];
+        this.props.unsubscribeFrom(streams, mids[i].feed_id);
     };
 
     switchFour = () => {
-        let {feeds_queue,feeds,index} = this.props;
+        let {feeds_queue,feeds,index,round} = this.props;
+        let {quad} = this.state;
+        let streams = [];
 
         for(let i=index; i<index+4; i++) {
 
@@ -183,106 +64,41 @@ class SndmanGroups extends Component {
                 // End round here!
                 Janus.log(" -- ROUND END --");
                 feeds_queue = 0;
-                this.props.setProps({feeds_queue});
+                round++;
+                this.props.setProps({feeds_queue,round});
             }
 
             // If program is not full avoid using feeds_queue
             if(feeds.length < 13) {
-                this.switchNext(i,feeds[i]);
+                let sub_mid = quad[i];
+                let feed = feeds[i].id;
+                streams.push({feed, mid: "1", sub_mid});
             } else {
-                this.switchNext(i,feeds[feeds_queue]);
+                let sub_mid = quad[i];
+                let feed = feeds[feeds_queue].id;
+                streams.push({feed, mid: "1", sub_mid});
                 feeds_queue++;
-                this.props.setProps({feeds_queue});
             }
 
         }
-    };
 
-    switchNext = (i ,feed, r) => {
-        Janus.log(" ---- switchNext params: ", i, feed);
-        if(!feed) return;
-        let {pr1,pgm_state} = this.props;
-
-        //Detch previous feed
-        if(pr1[i] && r !== true) {
-            pr1[i].detach();
-            pr1[i] = null;
-        }
-
-        if(!pr1[i]) {
-            this.newSwitchFeed(feed.id,true,i);
-            pgm_state[i] = feed;
-            this.props.setProps({pgm_state});
-        } else {
-            let streams = [{feed: feed.id, mid: "1", sub_mid: "0"}];
-            let switchfeed = {"request": "switch", streams};
-            pr1[i].send ({"message": switchfeed,
-                success: () => {
-                    Janus.log(" :: Next Switch Feed to: ", feed.display);
-                    pgm_state[i] = feed;
-                    this.props.setProps({pgm_state});
-                    // putData(`state/galaxy/pr1`, pgm_state, (cb) => {
-                    //     Janus.log(":: Save to state: ",cb);
-                    // });
-                }
-            })
-        }
-    };
-
-    selectGroup = (pre_feed) => {
-        this.setState({pre_feed});
-        Janus.log(pre_feed);
-        this.switchPreview(pre_feed.id, pre_feed.display);
-    };
-
-    disableGroup = () => {
-        let {disabled_groups} = this.props;
-        let {pre_feed} = this.state;
-        let chk = disabled_groups.find(g => g.id === pre_feed.id);
-        if(chk)
-            return;
-        disabled_groups.push(pre_feed);
-        this.props.removeFeed(pre_feed.id);
-        this.setState({pre_feed: null});
-        this.props.setProps({disabled_groups});
-    };
-
-    zoominGroup = (e, i) => {
-        e.preventDefault();
-        if (e.type === 'contextmenu') {
-            let {zoom} = this.state;
-            this.setState({zoom: !zoom},() => {
-                let switchvideo = this.refs["programVideo" + i];
-                let zoomvideo = this.refs.zoomVideo;
-                var stream = switchvideo.captureStream();
-                zoomvideo.srcObject = stream;
-            });
-        }
-    };
-
-    handleClose = () => this.setState({ zoom: false });
-
-    restoreGroup = (data, i) => {
-        let {disabled_groups,feeds,users} = this.props;
-        for(let i = 0; i < disabled_groups.length; i++){
-            if(JSON.parse(disabled_groups[i].display).id === JSON.parse(data.display).id) {
-                disabled_groups.splice(i, 1);
-                feeds.push(data);
-                let user = JSON.parse(data.display);
-                user.rfid = data.id;
-                users[user.id] = user;
-                this.props.setProps({disabled_groups,feeds,users});
+        this.props.setProps({feeds_queue});
+        Janus.log(" :: Going to switch four: ", streams);
+        let switch_four = {request: "switch", streams};
+        this.props.remoteFeed.send ({"message": switch_four,
+            success: () => {
+                Janus.debug(" -- Switch success: ");
             }
-        }
+        });
     };
 
     fullScreenGroup = (i,full_feed) => {
-        Janus.log(":: Make Full Screen Group: ",JSON.parse(full_feed.display));
+        Janus.log(":: Make Full Screen Group: ",full_feed);
+        full_feed.display = JSON.parse(full_feed.feed_display);
         this.setState({fullscr: !this.state.fullscr,full_feed});
         let fourvideo = this.refs["programVideo" + i];
         let fullvideo = this.refs.fullscreenVideo;
-        var stream = fourvideo.captureStream();
-        fullvideo.srcObject = stream;
+        fullvideo.srcObject = fourvideo.captureStream();
     };
 
     toFourGroup = (i,full_feed) => {
@@ -316,21 +132,21 @@ class SndmanGroups extends Component {
             gxyhandle.send({"message": stopfw,
                 success: (data) => {
                     Janus.log(":: Forward callback: ", data);
-                    this.sendMessage(JSON.parse(forward_feed.display), false);
+                    this.sendMessage(forward_feed.display, false);
                     this.setState({forward_feed: {}, forward: false});
                 },
             });
         } else if(fullscr) {
             Janus.log(" :: Start forward from room: ", room);
             this.setDelay();
-            let forward = { "request": "rtp_forward","publisher_id":feed.id,"room":room,"secret":`${SECRET}`,"host":`${DANTE_IN_IP}`,"audio_port":port};
+            let forward = { "request": "rtp_forward","publisher_id":feed.feed_id,"room":room,"secret":`${SECRET}`,"host":`${DANTE_IN_IP}`,"audio_port":port};
             gxyhandle.send({"message": forward,
                 success: (data) => {
                     Janus.log(":: Forward callback: ", data);
                     forward_feed.streamid = data["rtp_stream"]["audio_stream_id"];
-                    forward_feed.id = feed.id;
+                    forward_feed.id = feed.feed_id;
                     forward_feed.display = feed.display;
-                    this.sendMessage(JSON.parse(feed.display), true);
+                    this.sendMessage(feed.display, true);
                     this.setState({forward_feed, forward: true});
                 },
             });
@@ -360,89 +176,57 @@ class SndmanGroups extends Component {
 
 
   render() {
-      const { pre_feed,full_feed,zoom,fullscr,forward,forward_request } = this.state;
-      const {users,index,feeds,pgm_state,feeds_queue,quistions_queue,disabled_groups} = this.props;
+      const {users} = this.props;
+      const { full_feed,fullscr,col,forward,forward_request } = this.state;
       const width = "100%";
       const height = "100%";
       const autoPlay = true;
       const controls = false;
       const muted = true;
-      const q = (<Icon color='red' name='question circle' />);
+      const full_question = full_feed && users[full_feed.display.id] ? users[full_feed.display.id].question : null;
 
-      let group_options = feeds.map((feed,i) => {
-          const {display} = feed;
-          return ({ key: i, value: feed, text: display })
-      });
-
-      let disabled_list = disabled_groups.map((data,i) => {
-          const {id, display} = data;
-          return (
-              <Table.Row key={id} warning
-                         onClick={() => this.selectGroup(data, i)}
-                         onContextMenu={(e) => this.restoreGroup(e, data, i)} >
-                  <Table.Cell width={5}>{display}</Table.Cell>
-                  <Table.Cell width={1}>{id}</Table.Cell>
-              </Table.Row>
-          )
-      });
-
-      let preview = (<div className={pre_feed ? "" : "hidden"}>
-          <div className="fullscrvideo_title"><span>{pre_feed ? pre_feed.display : ""}</span></div>
-              <video ref = {"prevewVideo"}
-                     id = "prevewVideo"
-                     width = "640"
-                     height = "360"
-                     autoPlay = {autoPlay}
-                     controls = {controls}
-                     muted = {muted}
-                     playsInline = {true} />
-              <Button className='close_button'
-                      size='mini'
-                      color='red'
-                      icon='close'
-                      onClick={() => this.disableGroup()} />
-          </div>
-      );
-
-      let program = pgm_state.map((feed,i) => {
-          if(feed && i >= index && i < index+4) {
-              // Does it help here?
-              if(pgm_state[i] === null)
-                  return;
-              let user = JSON.parse(feed.display);
+      let program = this.props.mids.map((feed,i) => {
+          if(feed && this.props.qam[i] === col) {
+              if(!feed.active) {
+                  return (<div className={fullscr ? "hidden" : ""} key={"prf" + i}>
+                      <div className="video_box" key={"prov" + i}>
+                          <div className="video_title" />
+                      </div></div>)
+              }
+              let user = JSON.parse(feed.feed_display);
               let qst = users[user.id] ? users[user.id].question : false;
               let talk = feed.talk;
-              return (<div className={fullscr ? "hidden" : ""} key={"prf" + i}><div className="video_box"
-                           key={"prov" + i}
-                           ref={"provideo" + i}
-                           id={"provideo" + i}>
-                  <div className="video_title">{JSON.parse(feed.display).display}</div>
-                  {qst ? <div className='qst_title'>?</div> : ""}
-                  <video className={talk ? "talk" : ""}
-                         // onClick={() => this.fullScreenGroup(i,feed)}
-                         // onContextMenu={(e) => this.zoominGroup(e, i)}
-                         key={i}
-                         ref={"programVideo" + i}
-                         id={"programVideo" + i}
-                         width={width}
-                         height={height}
-                         autoPlay={autoPlay}
-                         controls={controls}
-                         muted={muted}
-                         playsInline={true}/>
-              </div></div>);
+              //let id = feed.feed_id;
+              return (<div className={fullscr ? "hidden" : ""} key={"prf" + i}>
+                  <div className="video_box"
+                       key={"prov" + i}
+                       ref={"provideo" + i}
+                       id={"provideo" + i}>
+                      <div className="video_title">{user.display}</div>
+                      {qst ? <div className='qst_title'>?</div> : ""}
+                      <video className={talk ? "talk" : ""}
+                             onClick={() => this.fullScreenGroup(i,feed)}
+                             key={i}
+                             ref={"programVideo" + i}
+                             id={"programVideo" + i}
+                             width={width}
+                             height={height}
+                             autoPlay={autoPlay}
+                             controls={controls}
+                             muted={muted}
+                             playsInline={true}/>
+                  </div></div>);
           }
           return true;
       });
 
       let fullscreen = (<div className={fullscr ? "" : "hidden"}>
-              <div className="fullscrvideo_title"><span>{full_feed ? JSON.parse(full_feed.display).display : ""}</span></div>
-              <div className={
-                  //TODO: Fix this ugly shit!
-                  full_feed ? users[JSON.parse(full_feed.display).id] ? users[JSON.parse(full_feed.display).id].question ? 'qst_fullscreentitle' : 'hidden' : 'hidden' : 'hidden'
-              }>?</div>
+              <div className="fullscrvideo_title">
+                  <span>{full_feed ? full_feed.display.display : ""}</span>
+              </div>
+              <div className={full_question ? 'qst_fullscreentitle' : 'hidden'}>?</div>
               <video ref = {"fullscreenVideo"}
-                     // onClick={() => this.toFourGroup()}
+                     onClick={() => this.toFourGroup()}
                      id = "fullscreenVideo"
                      width = "360"
                      height = "200"
@@ -469,7 +253,7 @@ class SndmanGroups extends Component {
                       onKeyDown={(e) => this.onKeyPressed(e)}
                       onClick={() => this.forwardStream(full_feed)}>
                   <Icon size='large' name={forward ? 'microphone' : 'microphone slash' } />
-                  <Label attached='top left' color='grey'>{this.state.col}</Label>
+                  <Label attached='top left' color='grey'>{col}</Label>
               </Button>
           </Segment>
       );

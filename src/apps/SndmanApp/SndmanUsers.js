@@ -7,11 +7,10 @@ import './SndmanVideoConteiner.scss'
 import {
     DANTE_IN_IP,
     DATA_PORT,
-    JANUS_IP_EURND,
-    JANUS_IP_EURUK,
+    // JANUS_IP_EURND,
+    // JANUS_IP_EURUK,
     JANUS_IP_ISRPT,
     JANUS_IP_EURFR,
-    MAX_FEEDS,
     SECRET
 } from "../../shared/consts";
 import {initGxyProtocol} from "../../shared/protocol";
@@ -331,12 +330,11 @@ class SndmanUsers extends Component {
 
     unsubscribeFrom = (id) => {
         // Unsubscribe from this publisher
-        let {mids,questions,quistions_queue,cammuteds,feeds,users,feedStreams} = this.state;
+        let {questions,quistions_queue,cammuteds,feeds,users,feedStreams} = this.state;
         let {remoteFeed} = this.state;
         for (let i=0; i<feeds.length; i++) {
             if (feeds[i].id === id) {
                 Janus.log("Feed " + feeds[i] + " (" + id + ") has left the room, detaching");
-                //TODO: remove mids
                 delete users[feeds[i].display.id];
                 delete feedStreams[id];
                 if(questions[feeds[i].display.id]) {
@@ -438,13 +436,13 @@ class SndmanUsers extends Component {
     forwardOwnFeed = (room) => {
         let {myid,videoroom,data_forward} = this.state;
         let isrip = `${JANUS_IP_ISRPT}`;
-        let eurip = `${JANUS_IP_EURND}`;
-        let ukip = `${JANUS_IP_EURUK}`;
+        // let eurip = `${JANUS_IP_EURND}`;
+        // let ukip = `${JANUS_IP_EURUK}`;
         let frip = `${JANUS_IP_EURFR}`;
         let dport = DATA_PORT;
         let isrfwd = { "request": "rtp_forward","publisher_id":myid,"room":room,"secret":`${SECRET}`,"host":isrip,"data_port":dport};
-        let eurfwd = { "request": "rtp_forward","publisher_id":myid,"room":room,"secret":`${SECRET}`,"host":eurip,"data_port":dport};
-        let eukfwd = { "request": "rtp_forward","publisher_id":myid,"room":room,"secret":`${SECRET}`,"host":ukip,"data_port":dport};
+        // let eurfwd = { "request": "rtp_forward","publisher_id":myid,"room":room,"secret":`${SECRET}`,"host":eurip,"data_port":dport};
+        // let eukfwd = { "request": "rtp_forward","publisher_id":myid,"room":room,"secret":`${SECRET}`,"host":ukip,"data_port":dport};
         let efrfwd = { "request": "rtp_forward","publisher_id":myid,"room":room,"secret":`${SECRET}`,"host":frip,"data_port":dport};
         videoroom.send({"message": isrfwd,
             success: (data) => {
@@ -452,18 +450,18 @@ class SndmanUsers extends Component {
                 Janus.log(" :: ISR Data Forward: ", data);
             },
         });
-        videoroom.send({"message": eurfwd,
-            success: (data) => {
-                data_forward.eur = data["rtp_stream"]["data_stream_id"];
-                Janus.log(" :: EUR Data Forward: ", data);
-            },
-        });
-        videoroom.send({"message": eukfwd,
-            success: (data) => {
-                data_forward.euk = data["rtp_stream"]["data_stream_id"];
-                Janus.log(" :: EUK Data Forward: ", data);
-            },
-        });
+        // videoroom.send({"message": eurfwd,
+        //     success: (data) => {
+        //         data_forward.eur = data["rtp_stream"]["data_stream_id"];
+        //         Janus.log(" :: EUR Data Forward: ", data);
+        //     },
+        // });
+        // videoroom.send({"message": eukfwd,
+        //     success: (data) => {
+        //         data_forward.euk = data["rtp_stream"]["data_stream_id"];
+        //         Janus.log(" :: EUK Data Forward: ", data);
+        //     },
+        // });
         videoroom.send({"message": efrfwd,
             success: (data) => {
                 data_forward.efr = data["rtp_stream"]["data_stream_id"];
@@ -569,7 +567,7 @@ class SndmanUsers extends Component {
                         let display = JSON.parse(feed[f]["display"]);
                         if(display.role !== "user")
                             return;
-                        let talk = feed[f]["talking"];
+                        //let talk = feed[f]["talking"];
                         let streams = feed[f]["streams"];
                         feed[f].display = display;
                         let subst = {feed: id};
@@ -711,7 +709,6 @@ class SndmanUsers extends Component {
 
 
   render() {
-      //Janus.log(" --- ::: RENDER ::: ---");
       const { name } = this.state.program;
       const { forward,onoff_but } = this.state;
       const width = "400";
@@ -724,7 +721,7 @@ class SndmanUsers extends Component {
           if(feed) {
               let id = feed.id;
               let talk = feed.talk;
-              let rfcam = feed.rfcam;
+              //let rfcam = feed.rfcam;
               let question = feed.question;
               return (<div className="video"
                   key={"v" + id}
