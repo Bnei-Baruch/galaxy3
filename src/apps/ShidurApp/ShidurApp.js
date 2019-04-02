@@ -664,6 +664,7 @@ class ShidurApp extends Component {
     };
 
     resetQueue = () => {
+        this.pre.sdiAction("reset_queue", null,1, null);
         if(this.state.feeds.length > 12) {
             console.log("-- Reset Queue --");
             this.setState({feeds_queue: 0});

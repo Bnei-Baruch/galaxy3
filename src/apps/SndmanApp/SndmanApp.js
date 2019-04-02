@@ -732,11 +732,6 @@ class SndmanApp extends Component {
         if(this.state.feeds.length > 12) {
             Janus.log("-- Reset Queue --");
             this.setState({feeds_queue: 0});
-            setTimeout(() => {
-                this.col1.switchFour();
-                this.col2.switchFour();
-                this.col3.switchFour();
-            }, 1000);
         }
     };
 
