@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import { Janus } from "../../lib/janus";
 import {Message, Button, Input} from "semantic-ui-react";
 import {initChatRoom,getDateString,joinChatRoom,notifyMe} from "../../shared/tools";
-import {SHIDUR_ID} from "../../shared/consts";
+//import {SHIDUR_ID} from "../../shared/consts";
 
 
 class GroupChat extends Component {

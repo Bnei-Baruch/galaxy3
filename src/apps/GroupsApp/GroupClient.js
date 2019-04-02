@@ -37,6 +37,7 @@ class GroupClient extends Component {
         cammuted: false,
         shidur: false,
         protocol: null,
+        progress: false,
         user: null,
         users: {},
         visible: false,
@@ -66,6 +67,7 @@ class GroupClient extends Component {
     };
 
     initGalaxy = (user,error) => {
+        localStorage.setItem("question", false);
         checkNotification();
         geoInfo('https://v4g.kbb1.com/geo.php?action=get', data => {
             Janus.log(data);
@@ -193,8 +195,6 @@ class GroupClient extends Component {
             },
             webrtcState: (on) => {
                 Janus.log("Janus says our WebRTC PeerConnection is " + (on ? "up" : "down") + " now");
-                    //sfutest.send({"message": { "request": "configure", "bitrate": bitrate }});
-                    //return false;
             },
             onmessage: (msg, jsep) => {
                 this.onMessage(this.state.videoroom, msg, jsep, false);
@@ -293,36 +293,7 @@ class GroupClient extends Component {
                     Janus.log(":: Got Pulbishers list: ", feeds_list);
                     Janus.debug("Got a list of available publishers/feeds:");
                     Janus.log(list);
-                    // for(let f in feeds_list) {
-                    //     let id = feeds_list[f]["id"];
-                    //     let display = JSON.parse(feeds_list[f]["display"]);
-                    //     let talk = feeds_list[f]["talking"];
-                    //     Janus.debug("  >> [" + id + "] " + display);
-                    //     this.newRemoteFeed(id, talk);
-                    // }
                 }
-            } else if(event === "talking") {
-                // let {feeds} = this.state;
-                // let id = msg["id"];
-                // //let room = msg["room"];
-                // Janus.log("User: "+id+" - start talking");
-                // for(let i=1; i<MAX_FEEDS; i++) {
-                //     if(feeds[i] !== null && feeds[i] !== undefined && feeds[i].rfid === id) {
-                //         feeds[i].talk = true;
-                //     }
-                // }
-                // this.setState({feeds});
-            } else if(event === "stopped-talking") {
-                // let {feeds} = this.state;
-                // let id = msg["id"];
-                // //let room = msg["room"];
-                // Janus.log("User: "+id+" - stop talking");
-                // for(let i=1; i<MAX_FEEDS; i++) {
-                //     if(feeds[i] !== null && feeds[i] !== undefined && feeds[i].rfid === id) {
-                //         feeds[i].talk = false;
-                //     }
-                // }
-                // this.setState({feeds});
             } else if(event === "destroyed") {
                 // The room has been destroyed
                 Janus.warn("The room has been destroyed!");
@@ -332,25 +303,12 @@ class GroupClient extends Component {
                     let list = msg["publishers"];
                     Janus.debug("Got a list of available publishers/feeds:");
                     Janus.debug(list);
-                    // for(let f in list) {
-                    //     let id = list[f]["id"];
-                    //     let display = JSON.parse(list[f]["display"]);
-                    //     Janus.debug("  >> [" + id + "] " + display);
-                    //     if(display.role === "user")
-                    //         this.newRemoteFeed(id, false);
-                    // }
                 } else if(msg["leaving"] !== undefined && msg["leaving"] !== null) {
                     // One of the publishers has gone away?
                     let {feeds} = this.state;
                     let leaving = msg["leaving"];
                     Janus.log("Publisher left: " + leaving);
                     let remoteFeed = null;
-                    // for(let i=1; i<MAX_FEEDS; i++) {
-                    //     if(feeds[i] != null && feeds[i] !== undefined && feeds[i].rfid === leaving) {
-                    //         remoteFeed = feeds[i];
-                    //         break;
-                    //     }
-                    // }
                     if(remoteFeed != null) {
                         Janus.debug("Feed " + remoteFeed.rfid + " (" + remoteFeed.rfuser + ") has left the room, detaching");
                         feeds[remoteFeed.rfindex] = null;
@@ -368,12 +326,6 @@ class GroupClient extends Component {
                         return;
                     }
                     let remoteFeed = null;
-                    // for(let i=1; i<MAX_FEEDS; i++) {
-                    //     if(feeds[i] != null && feeds[i] !== undefined && feeds[i].rfid === unpublished) {
-                    //         remoteFeed = feeds[i];
-                    //         break;
-                    //     }
-                    // }
                     if(remoteFeed !== null) {
                         Janus.debug("Feed " + remoteFeed.rfid + " (" + remoteFeed.rfuser + ") has left the room, detaching");
                         feeds[remoteFeed.rfindex] = null;
@@ -434,7 +386,8 @@ class GroupClient extends Component {
         let {videoroom, protocol} = this.state;
         let leave = {request : "leave"};
         videoroom.send({"message": leave});
-        this.setState({muted: false, mystream: null, room: "", i: "", feeds: []});
+        localStorage.setItem("question", false);
+        this.setState({muted: false, mystream: null, room: "", i: "", feeds: [], question: false});
         this.chat.exitChatRoom(1234);
         this.exitProtocol();
         this.initVideoRoom();
@@ -485,14 +438,22 @@ class GroupClient extends Component {
     };
 
     initConnection = () => {
+        this.setDelay();
         const {mystream} = this.state;
         mystream ? this.exitRoom() : this.joinRoom();
+    };
+
+    setDelay = () => {
+        this.setState({progress: true});
+        setTimeout(() => {
+            this.setState({progress: false});
+        }, 2000);
     };
 
 
   render() {
 
-      const {user,audio_devices,video_devices,video_device,audio_device,muted,mystream,room,count,question,selftest,tested} = this.state;
+      const {user,audio_devices,video_devices,video_device,audio_device,muted,mystream,room,count,question,selftest,tested,progress} = this.state;
       const width = "134";
       const height = "100";
       const autoPlay = true;
@@ -539,7 +500,7 @@ class GroupClient extends Component {
         <div className={classNames('gclient', { 'gclient--chat-open': this.state.visible })} >
           <div className="gclient__toolbar">
             <Menu icon='labeled' secondary size="mini">
-                <Menu.Item disabled={!video_device} onClick={this.initConnection}>
+                <Menu.Item disabled={!video_device || progress} onClick={this.initConnection}>
                     <Icon color={mystream ? 'green' : 'red'} name='power off'/>
                     {!mystream ? "Disconnected" : "Connected"}
                 </Menu.Item>
@@ -607,7 +568,7 @@ class GroupClient extends Component {
                   <div className="video">
                       <div className={classNames('video__overlay', {'talk' : talk})}>
                           {question ? <div className="question">
-                              <svg viewBox="0 0 50 50"><text x="25" y="25" text-anchor="middle" alignment-baseline="central">&#xF128;</text></svg>
+                              <svg viewBox="0 0 50 50"><text x="25" y="25" textAnchor="middle" alignmentBaseline="central">&#xF128;</text></svg>
                           </div> : ''}
                           {/*<div className="video__title">{!talk ? <Icon name="microphone slash" size="small" color="red"/> : ''}{name}</div>*/}
                       </div>
