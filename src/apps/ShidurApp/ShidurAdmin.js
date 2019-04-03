@@ -5,7 +5,7 @@ import {initJanus, initChatRoom, getDateString, joinChatRoom, getPublisherInfo} 
 import './ShidurAdmin.css';
 import './VideoConteiner.scss'
 import {SECRET} from "../../shared/consts";
-import {initGxyProtocol} from "../../shared/protocol";
+import {initGxyProtocol,sendProtocolMessage} from "../../shared/protocol";
 import classNames from "classnames";
 import {client, getUser} from "../../components/UserManager";
 import LoginPage from "../../components/LoginPage";
@@ -37,6 +37,7 @@ class ShidurAdmin extends Component {
         myid: null,
         mypvtid: null,
         mystream: null,
+        msg_type: "private",
         audio: null,
         muted: true,
         user: null,
@@ -824,6 +825,23 @@ class ShidurAdmin extends Component {
         });
     };
 
+    sendBroadcastMessage = () => {
+        const { protocol, current_room, input_value, messages, user } = this.state;
+        let msg = { type: "chat-broadcast", room: current_room, user, text: input_value};
+        sendProtocolMessage(protocol, null, msg );
+        msg.time = getDateString();
+        msg.to = "ALL";
+        Janus.log("-:: It's broadcast message: "+msg);
+        messages.push(msg);
+        this.setState({messages, input_value: ""});
+        this.scrollToBottom();
+    };
+
+    sendMessage = () => {
+        const {msg_type} = this.state;
+        msg_type === "private" ? this.sendPrivateMessage() : this.sendBroadcastMessage();
+    };
+
     scrollToBottom = () => {
         this.refs.end.scrollIntoView({ behavior: 'smooth' })
     };
@@ -1058,6 +1076,11 @@ class ShidurAdmin extends Component {
           { key: 3, text: '600Kb/s', value: 600000 },
       ];
 
+      const send_options = [
+          { key: 'all', text: 'All', value: 'all' },
+          { key: 'private', text: 'Private', value: 'private' },
+      ];
+
       let rooms_list = rooms.map((data,i) => {
           const {room, num_participants, description} = data;
           return ({ key: room, text: description, value: i, description: num_participants.toString()})
@@ -1286,7 +1309,8 @@ class ShidurAdmin extends Component {
                   <Input fluid type='text' placeholder='Type your message' action value={this.state.input_value}
                          onChange={(v,{value}) => this.setState({input_value: value})}>
                       <input />
-                      <Button positive onClick={this.sendPrivateMessage}>Send</Button>
+                      <Select options={send_options} defaultValue='private' onChange={(e,{value}) => this.setState({msg_type: value})} />
+                      <Button positive onClick={this.sendMessage}>Send</Button>
                   </Input>
 
               </Segment>
