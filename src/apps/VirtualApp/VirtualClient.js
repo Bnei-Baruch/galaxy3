@@ -703,20 +703,33 @@ class VirtualClient extends Component {
             }
         }, ondata => {
             Janus.log("-- :: It's protocol public message: ", ondata);
-            if(ondata.type === "error" && ondata.error_code === 420) {
+            const {type,error_code,id,room} = ondata;
+            if(type === "error" && error_code === 420) {
                 alert(ondata.error);
                 this.state.protocol.hangup();
-            } else if(ondata.type === "joined") {
+            } else if(type === "joined") {
                 let register = { "request": "join", "room": selected_room, "ptype": "publisher", "display": JSON.stringify(user) };
                 videoroom.send({"message": register});
                 this.setState({user, muted: !women, room: selected_room});
                 this.chat.initChatRoom(user,selected_room);
+            } else if(type === "chat-broadcast" && room === selected_room) {
+                this.chat.showSupportMessage(ondata);
+            } else if(type === "client-reconnect" && user.id === id) {
+                this.exitRoom(true);
+            } else if(type === "client-reload" && user.id === id) {
+                window.location.reload();
+            } else if(type === "client-disconnect" && user.id === id) {
+                this.exitRoom();
+            } else if(type === "client-question" && user.id === id) {
+                this.handleQuestion();
+            } else if(type === "client-mute" && user.id === id) {
+                this.micMute();
             }
             this.onProtocolData(ondata);
         });
     };
 
-    exitRoom = () => {
+    exitRoom = (reconnect) => {
         let {videoroom, remoteFeed, protocol, room} = this.state;
         let leave = {request : "leave"};
         if(remoteFeed)
@@ -725,7 +738,7 @@ class VirtualClient extends Component {
         this.chat.exitChatRoom(room);
         localStorage.setItem("question", false);
         this.setState({muted: false, cammuted: false, mystream: null, room: "", selected_room: "", i: "", feeds: [], mids: [], remoteFeed: null, question: false});
-        this.initVideoRoom();
+        this.initVideoRoom(reconnect);
         protocol.detach();
     };
 
@@ -825,12 +838,14 @@ class VirtualClient extends Component {
                 <div className={classNames('video__overlay', {'talk' : talk})}>
                     {question ? <div className="question">
                         <svg viewBox="0 0 50 50">
-                            <text x="25" y="25" text-anchor="middle" alignment-baseline="central" dominant-baseline="central">&#xF128;</text>
+                            <text x="25" y="25" textAnchor="middle" alignmentBaseline="central" dominantBaseline="central">&#xF128;</text>
                         </svg>
                     </div>:''}
                     <div className="video__title">{!talk ? <Icon name="microphone slash" size="small" color="red"/> : ''}{display_name}</div>
                 </div>
-                    <svg className={classNames('nowebcam',{'hidden':!cammute})} viewBox="0 0 32 18" preserveAspectRatio="xMidYMid meet" ><text x="16" y="9" text-anchor="middle" alignment-baseline="central" dominant-baseline="central">&#xf2bd;</text></svg>
+                    <svg className={classNames('nowebcam',{'hidden':!cammute})} viewBox="0 0 32 18" preserveAspectRatio="xMidYMid meet" >
+                        <text x="16" y="9" textAnchor="middle" alignmentBaseline="central" dominantBaseline="central">&#xf2bd;</text>
+                    </svg>
                     <video
                         key={"v"+id}
                         ref={"remoteVideo" + id}
@@ -952,9 +967,9 @@ class VirtualClient extends Component {
                                         {question ?
                                             <div className="question">
                                                 <svg viewBox="0 0 50 50">
-                                                    <text x="25" y="25" text-anchor="middle"
-                                                          alignment-baseline="central"
-                                                          dominant-baseline="central">&#xF128;</text>
+                                                    <text x="25" y="25" textAnchor="middle"
+                                                          alignmentBaseline="central"
+                                                          dominantBaseline="central">&#xF128;</text>
                                                 </svg>
                                             </div>
                                             :
@@ -967,8 +982,8 @@ class VirtualClient extends Component {
                                     </div>
                                     <svg className={classNames('nowebcam', {'hidden': !cammuted})} viewBox="0 0 32 18"
                                          preserveAspectRatio="xMidYMid meet">
-                                        <text x="16" y="9" text-anchor="middle" alignment-baseline="central"
-                                              dominant-baseline="central">&#xf2bd;</text>
+                                        <text x="16" y="9" textAnchor="middle" alignmentBaseline="central"
+                                              dominantBaseline="central">&#xf2bd;</text>
                                     </svg>
                                     <video
                                         className={classNames('mirror', {'hidden': cammuted})}
@@ -987,9 +1002,7 @@ class VirtualClient extends Component {
                         </div>
                     </div>
                     <VirtualChat
-                        ref={chat => {
-                            this.chat = chat;
-                        }}
+                        ref={chat => {this.chat = chat;}}
                         visible={this.state.visible}
                         janus={this.state.janus}
                         room={room}

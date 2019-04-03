@@ -92,7 +92,6 @@ class VirtualChat extends Component {
             } else {
                 // Public message
                 let {messages} = this.state;
-                //let message = dateString+" : "+from+" : "+msg;
                 let message = JSON.parse(msg);
                 message.time = dateString;
                 Janus.log("-:: It's public message: "+message);
@@ -120,6 +119,20 @@ class VirtualChat extends Component {
         } else if (what === "destroyed") {
             let room = json["room"];
             Janus.log("The room: "+room+" has been destroyed")
+        }
+    };
+
+    showSupportMessage = (message) => {
+        let {support_msgs} = this.state;
+        message.time = getDateString();
+        support_msgs.push(message);
+        this.setState({support_msgs, from: "Admin"});
+        if(this.props.visible) {
+            this.scrollToBottom();
+        } else {
+            notifyMe("Shidur",message.text,true);
+            this.setState({room_chat: false});
+            this.props.onNewMsg(true);
         }
     };
 

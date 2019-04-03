@@ -370,7 +370,7 @@ class GroupClient extends Component {
             }
         }, ondata => {
             Janus.log("-- :: It's protocol public message: ", ondata);
-            const {type,error_code,id} = ondata;
+            const {type,error_code,id,room} = ondata;
             if(type === "error" && error_code === 420) {
                 alert(ondata.error);
                 this.state.protocol.hangup();
@@ -379,7 +379,7 @@ class GroupClient extends Component {
                 videoroom.send({"message": register});
                 this.setState({user, muted: false, room: selected_room});
                 this.chat.initChatRoom(user);
-            } else if(type === "chat-broadcast" && user.id === id) {
+            } else if(type === "chat-broadcast" && room === 1234) {
                 this.chat.showMessage(ondata);
             } else if(type === "client-reconnect" && user.id === id) {
                 this.exitRoom(true);
