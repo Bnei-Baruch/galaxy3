@@ -833,7 +833,7 @@ class ShidurAdmin extends Component {
         msg.to = "ALL";
         Janus.log("-:: It's broadcast message: "+msg);
         messages.push(msg);
-        this.setState({messages, input_value: ""});
+        this.setState({messages, input_value: "", msg_type: "private"});
         this.scrollToBottom();
     };
 
@@ -1060,7 +1060,7 @@ class ShidurAdmin extends Component {
 
   render() {
 
-      const { bitrate,rooms,current_room,switch_mode,user,feeds,feed_id,i,messages,description,room_id,room_name,root,forwarders,feed_rtcp,feed_talk,questions } = this.state;
+      const { bitrate,rooms,current_room,switch_mode,user,feeds,feed_id,i,messages,description,room_id,room_name,root,forwarders,feed_rtcp,feed_talk,questions,msg_type } = this.state;
       const width = "134";
       const height = "100";
       const autoPlay = true;
@@ -1309,8 +1309,11 @@ class ShidurAdmin extends Component {
                   <Input fluid type='text' placeholder='Type your message' action value={this.state.input_value}
                          onChange={(v,{value}) => this.setState({input_value: value})}>
                       <input />
-                      <Select options={send_options} defaultValue='private' onChange={(e,{value}) => this.setState({msg_type: value})} />
-                      <Button positive onClick={this.sendMessage}>Send</Button>
+                      <Select options={send_options}
+                              value={msg_type}
+                              error={msg_type === "all"}
+                              onChange={(e,{value}) => this.setState({msg_type: value})} />
+                      <Button positive negative={msg_type === "all"} onClick={this.sendMessage}>Send</Button>
                   </Input>
 
               </Segment>
