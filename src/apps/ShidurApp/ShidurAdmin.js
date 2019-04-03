@@ -837,6 +837,14 @@ class ShidurAdmin extends Component {
         this.scrollToBottom();
     };
 
+    sendRemoteCommand = (command_type) => {
+        const { protocol,feed_user,user } = this.state;
+        if(feed_user) {
+            let msg = { type: command_type, id: feed_user.id};
+            sendProtocolMessage(protocol, user, msg);
+        }
+    };
+
     sendMessage = () => {
         const {msg_type} = this.state;
         msg_type === "private" ? this.sendPrivateMessage() : this.sendBroadcastMessage();
@@ -1045,15 +1053,17 @@ class ShidurAdmin extends Component {
     };
 
     getFeedInfo = () => {
-        let {session,handle} = this.state.feed_user;
-        if(handle) {
-            getPublisherInfo(session, handle, json => {
-                    Janus.log(":: Publisher info", json);
-                    let video = json.info.webrtc.media[1].rtcp.main;
-                    let audio = json.info.webrtc.media[0].rtcp.main;
-                    this.setState({feed_rtcp: {video, audio}});
-                }, true
-            )
+        if(this.state.feed_user) {
+            let {session,handle} = this.state.feed_user;
+            if(session && handle) {
+                getPublisherInfo(session, handle, json => {
+                        Janus.log(":: Publisher info", json);
+                        let video = json.info.webrtc.media[1].rtcp.main;
+                        let audio = json.info.webrtc.media[0].rtcp.main;
+                        this.setState({feed_rtcp: {video, audio}});
+                    }, true
+                )
+            }
         }
     };
 
@@ -1210,57 +1220,60 @@ class ShidurAdmin extends Component {
           <Segment className="virtual_segment" color='blue' raised>
 
               <Segment textAlign='center' className="ingest_segment">
+                  <Popup
+                      trigger={<Button positive icon='info' onClick={this.getFeedInfo} />}
+                      position='bottom right'
+                      content={
+                          <List as='ul'>
+                              <List.Item as='li'>Video
+                                  <List.List as='ul'>
+                                      <List.Item as='li'>in-link-quality: {feed_rtcp.video ? feed_rtcp.video["in-link-quality"] : ""}</List.Item>
+                                      <List.Item as='li'>in-media-link-quality: {feed_rtcp.video ? feed_rtcp.video["in-media-link-quality"] : ""}</List.Item>
+                                      <List.Item as='li'>jitter-local: {feed_rtcp.video ? feed_rtcp.video["jitter-local"] : ""}</List.Item>
+                                      <List.Item as='li'>jitter-remote: {feed_rtcp.video ? feed_rtcp.video["jitter-remote"] : ""}</List.Item>
+                                      <List.Item as='li'>lost: {feed_rtcp.video ? feed_rtcp.video["lost"] : ""}</List.Item>
+                                  </List.List>
+                              </List.Item>
+                              <List.Item as='li'>Audio
+                                  <List.List as='ul'>
+                                      <List.Item as='li'>in-link-quality: {feed_rtcp.audio ? feed_rtcp.audio["in-link-quality"] : ""}</List.Item>
+                                      <List.Item as='li'>in-media-link-quality: {feed_rtcp.audio ? feed_rtcp.audio["in-media-link-quality"] : ""}</List.Item>
+                                      <List.Item as='li'>jitter-local: {feed_rtcp.audio ? feed_rtcp.audio["jitter-local"] : ""}</List.Item>
+                                      <List.Item as='li'>jitter-remote: {feed_rtcp.audio ? feed_rtcp.audio["jitter-remote"] : ""}</List.Item>
+                                      <List.Item as='li'>lost: {feed_rtcp.audio ? feed_rtcp.audio["lost"] : ""}</List.Item>
+                                  </List.List>
+                              </List.Item>
+                          </List>
+                      }
+                      on='click'
+                      hideOnScroll
+                  />
                   {root ? root_content : ""}
               </Segment>
 
               <Grid>
                   <Grid.Row stretched>
                       <Grid.Column width={3}>
-
+                          <Segment.Group>
+                              { root ?
+                              <Segment>
+                                  <Popup trigger={<Button color="orange" icon='bell slash' onClick={() => this.stopForward(feed_id)} />} content='Stop forward' inverted />
+                                  <Popup trigger={<Button negative icon='user x' onClick={this.kickUser} />} content='Kick' inverted />
+                                      <Popup trigger={<Button color="brown" icon='sync alternate' alt="test" onClick={() => this.sendRemoteCommand("client-reconnect")} />} content='Reconnect' inverted />
+                                      <Popup trigger={<Button color="olive" icon='redo alternate' onClick={() => this.sendRemoteCommand("client-reload")} />} content='Reload page(LOST FEED HERE!)' inverted />
+                                      <Popup trigger={<Button color="teal" icon='microphone' onClick={() => this.sendRemoteCommand("client-mute")} />} content='Mute/Unmute' inverted />
+                                      <Popup trigger={<Button color="blue" icon='power off' onClick={() => this.sendRemoteCommand("client-disconnect")} />} content='Disconnect(LOST FEED HERE!)' inverted />
+                                      <Popup trigger={<Button color="yellow" icon='question' onClick={() => this.sendRemoteCommand("client-question")} />} content='Set/Unset question' inverted />
+                              </Segment>
+                                  : ""}
                           <Segment textAlign='center' className="group_list" raised>
                               <Table selectable compact='very' basic structured className="admin_table" unstackable>
-                                  <Table.Header>
-                                      <Table.Row>
-                                          <Table.HeaderCell colSpan='2'>
-                                              <Popup
-                                                  trigger={<Button positive icon='info' onClick={this.getFeedInfo} />}
-                                                  position='bottom right'
-                                                  content={
-                                                      <List as='ul'>
-                                                          <List.Item as='li'>Video
-                                                              <List.List as='ul'>
-                                                                  <List.Item as='li'>in-link-quality: {feed_rtcp.video ? feed_rtcp.video["in-link-quality"] : ""}</List.Item>
-                                                                  <List.Item as='li'>in-media-link-quality: {feed_rtcp.video ? feed_rtcp.video["in-media-link-quality"] : ""}</List.Item>
-                                                                  <List.Item as='li'>jitter-local: {feed_rtcp.video ? feed_rtcp.video["jitter-local"] : ""}</List.Item>
-                                                                  <List.Item as='li'>jitter-remote: {feed_rtcp.video ? feed_rtcp.video["jitter-remote"] : ""}</List.Item>
-                                                                  <List.Item as='li'>lost: {feed_rtcp.video ? feed_rtcp.video["lost"] : ""}</List.Item>
-                                                              </List.List>
-                                                          </List.Item>
-                                                          <List.Item as='li'>Audio
-                                                              <List.List as='ul'>
-                                                                  <List.Item as='li'>in-link-quality: {feed_rtcp.audio ? feed_rtcp.audio["in-link-quality"] : ""}</List.Item>
-                                                                  <List.Item as='li'>in-media-link-quality: {feed_rtcp.audio ? feed_rtcp.audio["in-media-link-quality"] : ""}</List.Item>
-                                                                  <List.Item as='li'>jitter-local: {feed_rtcp.audio ? feed_rtcp.audio["jitter-local"] : ""}</List.Item>
-                                                                  <List.Item as='li'>jitter-remote: {feed_rtcp.audio ? feed_rtcp.audio["jitter-remote"] : ""}</List.Item>
-                                                                  <List.Item as='li'>lost: {feed_rtcp.audio ? feed_rtcp.audio["lost"] : ""}</List.Item>
-                                                              </List.List>
-                                                          </List.Item>
-                                                      </List>
-                                                  }
-                                                  on='click'
-                                                  hideOnScroll
-                                              />
-                                              <Button color="orange" icon='bell slash' onClick={() => this.stopForward(feed_id)} />
-                                              <Button negative icon='user x' onClick={this.kickUser} />
-                                          </Table.HeaderCell>
-                                      </Table.Row>
-                                  </Table.Header>
                                   <Table.Body>
                                       {users_grid}
                                   </Table.Body>
                               </Table>
                           </Segment>
-
+                          </Segment.Group>
                       </Grid.Column>
                       <Grid.Column largeScreen={10}>
                           <div className="videos-panel">
