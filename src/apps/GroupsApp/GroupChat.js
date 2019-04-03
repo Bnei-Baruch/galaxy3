@@ -73,33 +73,10 @@ class GroupChat extends Component {
             if (whisper === true) {
                 // Private message
                 Janus.log("-:: It's private message: "+dateString+" : "+from+" : "+msg)
-                let {messages} = this.state;
-                //let message = dateString+" : "+from+" : "+msg;
-                let message = JSON.parse(msg);
-                message.time = dateString;
-                Janus.log("-:: It's public message: "+message);
-                messages.push(message);
-                this.setState({messages});
-                if(this.props.visible) {
-                    this.scrollToBottom();
-                } else {
-                    notifyMe("Shidur",message.text,true);
-                    this.props.onNewMsg();
-                }
+                this.showMessage(JSON.parse(msg));
             } else {
                 // Public message
-                // let {messages} = this.state;
-                // //let message = dateString+" : "+from+" : "+msg;
-                // let message = JSON.parse(msg);
-                // message.time = dateString;
-                // Janus.log("-:: It's public message: "+message);
-                // messages.push(message);
-                // this.setState({messages});
-                // if(this.props.visible) {
-                //     this.scrollToBottom();
-                // } else {
-                //     this.props.onNewMsg();
-                // }
+                Janus.log("-:: It's public message: "+msg);
             }
         } else if (what === "join") {
             // Somebody joined
@@ -117,6 +94,19 @@ class GroupChat extends Component {
         } else if (what === "destroyed") {
             let room = json["room"];
             Janus.log("The room: "+room+" has been destroyed")
+        }
+    };
+
+    showMessage = (message) => {
+        let {messages} = this.state;
+        message.time = getDateString();
+        messages.push(message);
+        this.setState({messages});
+        if(this.props.visible) {
+            this.scrollToBottom();
+        } else {
+            notifyMe("Shidur",message.text,true);
+            this.props.onNewMsg();
         }
     };
 

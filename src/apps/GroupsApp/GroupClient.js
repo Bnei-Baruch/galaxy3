@@ -378,6 +378,8 @@ class GroupClient extends Component {
                 videoroom.send({"message": register});
                 this.setState({user, muted: false, room: selected_room});
                 this.chat.initChatRoom(user);
+            } else if(ondata.type === "chat-broadcast") {
+                this.chat.showMessage(ondata);
             }
         });
     };
