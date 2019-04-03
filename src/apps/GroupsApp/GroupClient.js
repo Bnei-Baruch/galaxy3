@@ -370,21 +370,32 @@ class GroupClient extends Component {
             }
         }, ondata => {
             Janus.log("-- :: It's protocol public message: ", ondata);
-            if(ondata.type === "error" && ondata.error_code === 420) {
+            const {type,error_code,id} = ondata;
+            if(type === "error" && error_code === 420) {
                 alert(ondata.error);
                 this.state.protocol.hangup();
-            } else if(ondata.type === "joined") {
+            } else if(type === "joined") {
                 let register = { "request": "join", "room": selected_room, "ptype": "publisher", "display": JSON.stringify(user) };
                 videoroom.send({"message": register});
                 this.setState({user, muted: false, room: selected_room});
                 this.chat.initChatRoom(user);
-            } else if(ondata.type === "chat-broadcast") {
+            } else if(type === "chat-broadcast" && user.id === id) {
                 this.chat.showMessage(ondata);
+            } else if(type === "client-reconnect" && user.id === id) {
+                this.exitRoom(true);
+            } else if(type === "client-reload" && user.id === id) {
+                window.location.reload();
+            } else if(type === "client-disconnect" && user.id === id) {
+                this.exitRoom();
+            } else if(type === "client-question" && user.id === id) {
+                this.handleQuestion();
+            } else if(type === "client-mute" && user.id === id) {
+                this.micMute();
             }
         });
     };
 
-    exitRoom = () => {
+    exitRoom = (reconnect) => {
         let {videoroom, protocol} = this.state;
         let leave = {request : "leave"};
         videoroom.send({"message": leave});
@@ -392,7 +403,7 @@ class GroupClient extends Component {
         this.setState({muted: false, mystream: null, room: "", i: "", feeds: [], question: false});
         this.chat.exitChatRoom(1234);
         this.exitProtocol();
-        this.initVideoRoom();
+        this.initVideoRoom(reconnect);
         protocol.detach();
     };
 
