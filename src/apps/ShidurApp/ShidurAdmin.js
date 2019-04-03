@@ -833,8 +833,9 @@ class ShidurAdmin extends Component {
         msg.to = "ALL";
         Janus.log("-:: It's broadcast message: "+msg);
         messages.push(msg);
-        this.setState({messages, input_value: "", msg_type: "private"});
-        this.scrollToBottom();
+        this.setState({messages, input_value: "", msg_type: "private"}, () => {
+            this.scrollToBottom();
+        });
     };
 
     sendRemoteCommand = (command_type) => {

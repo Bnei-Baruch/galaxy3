@@ -737,7 +737,7 @@ class VirtualClient extends Component {
         videoroom.send({"message": leave});
         this.chat.exitChatRoom(room);
         localStorage.setItem("question", false);
-        this.setState({muted: false, cammuted: false, mystream: null, room: "", selected_room: "", i: "", feeds: [], mids: [], remoteFeed: null, question: false});
+        this.setState({muted: false, cammuted: false, mystream: null, room: "", selected_room: (reconnect ? room : ""), i: "", feeds: [], mids: [], remoteFeed: null, question: false});
         this.initVideoRoom(reconnect);
         protocol.detach();
     };
