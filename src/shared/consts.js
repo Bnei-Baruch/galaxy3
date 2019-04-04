@@ -39,7 +39,8 @@ export const servers_options = [
 export const videos_options = [
     { key: 1, text: '240p', value: 11 },
     { key: 2, text: '360p', value: 1 },
-    { key: 3, text: 'NoVideo', value: 3 },
+    { key: 3, text: '720p', value: 16 },
+    { key: 4, text: 'NoVideo', value: 3 },
 ];
 
 export const admin_videos_options = [

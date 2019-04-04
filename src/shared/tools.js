@@ -334,7 +334,7 @@ export const geoInfo = (url,cb) => fetch(`${url}`)
         return response.json().then(data => cb(data));
     }
 })
-    .catch(ex => Janus.log(`get geoInfo`, ex));
+    .catch(ex => console.log(`get geoInfo`, ex));
 
 // export const getSessions = (cb) => {
 //     let request = { "janus": "list_sessions", "transaction": Janus.randomString(12), "admin_secret": ADMIN_SECRET };

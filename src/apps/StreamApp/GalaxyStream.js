@@ -3,8 +3,14 @@ import { Janus } from "./lib/janus";
 import {client, getUser} from "../../components/UserManager";
 import { Segment, Menu, Select, Button, Grid } from 'semantic-ui-react';
 import VolumeSlider from "../../components/VolumeSlider";
-import {videos_options, audiog_options, gxycol, trllang, JANUS_SRV_EURFR, STUN_SRV_STR} from "../../shared/consts";
-import {geoInfo} from "../../shared/tools";
+import {
+    videos_options,
+    audiog_options,
+    gxycol,
+    trllang,
+    JANUS_SRV_EURFR,
+    STUN_SRV_STR,
+} from "../../shared/consts";
 import LoginPage from "../../components/LoginPage";
 import './GalaxyStream.css'
 
@@ -20,7 +26,7 @@ class GalaxyStream extends Component {
         videos: Number(localStorage.getItem("video")) || 1,
         audios: Number(localStorage.getItem("lang")) || 15,
         room: Number(localStorage.getItem("room")) || null,
-        muted: true,
+        muted: false,
         mixvolume: null,
         user: null,
         talking: null,
@@ -46,49 +52,57 @@ class GalaxyStream extends Component {
     };
 
     initStream = () => {
-        geoInfo('https://v4g.kbb1.com/geo.php?action=get', info => {
-            Janus.log(info);
-            let {user} = this.state;
-            this.setState({user: {...info,...user}});
-            localStorage.setItem("extip", info.external_ip);
-            let server = `${JANUS_SRV_EURFR}`;
-            // if (info.country_code === "IL") {
-            //     server = 'https://v4g.kbb1.com/janustrl';
-            // } else {
-            //     server = (info.sessions > 400) ? 'https://jnsuk.kbb1.com/janustrl' : 'https://jnseur.kbb1.com/janustrl';
-            // }
-            this.initJanus(server);
-        });
-        Janus.init({debug: false, callback: this.initJanus});
+        fetch('https://v4g.kbb1.com/geo.php?action=get')
+            .then((response) => {
+                if (response.ok) {
+                    return response.json().then(
+                        info => {
+                            let {user} = this.state;
+                            this.setState({user: {...info,...user}});
+                            localStorage.setItem("extip", info.external_ip);
+                            let server = `${JANUS_SRV_EURFR}`;
+                            // if (info.country_code === "IL") {
+                            //     server = 'https://v4g.kbb1.com/janustrl';
+                            // } else {
+                            //     server = (info.sessions > 400) ? 'https://jnsuk.kbb1.com/janustrl' : 'https://jnseur.kbb1.com/janustrl';
+                            // }
+                            this.initJanus(server);
+                        }
+                    );
+                }
+            })
+            .catch(ex => console.log(`get geoInfo`, ex));
     };
 
-    initJanus = (servers) => {
+    initJanus = (server) => {
         if(this.state.janus)
-           this.state.janus.destroy();
-        if(!servers)
-            return;
-        Janus.log(" -- Going to connect to: " + servers);
-        let janus = new Janus({
-            server: servers,
-            iceServers: [{urls: `${STUN_SRV_STR}`}],
-            success: () => {
-                Janus.log(" :: Connected to JANUS");
-                this.initVideoStream();
-                this.initDataStream();
-                this.initAudioStream();
-            },
-            error: (error) => {
-                Janus.log(error);
-            },
-            destroyed: () => {
-                Janus.log("kill");
+            this.state.janus.destroy();
+        Janus.init({
+            debug: ["error"],
+            callback: () => {
+                let janus = new Janus({
+                    server: server,
+                    iceServers: [{urls: STUN_SRV_STR}],
+                    success: () => {
+                        Janus.log(" :: Connected to JANUS");
+                        this.setState({janus});
+                        this.initVideoStream(janus);
+                        this.initDataStream(janus);
+                        this.initAudioStream(janus);
+                    },
+                    error: (error) => {
+                        Janus.log(error);
+                    },
+                    destroyed: () => {
+                        Janus.log("kill");
+                    }
+                });
             }
-        });
-        this.setState({janus});
+        })
     };
 
-    initVideoStream = () => {
-        let {janus,videos} = this.state;
+    initVideoStream = (janus) => {
+        let {videos} = this.state;
         janus.attach({
             plugin: "janus.plugin.streaming",
             opaqueId: "videostream-"+Janus.randomString(12),
@@ -114,14 +128,16 @@ class GalaxyStream extends Component {
         });
     };
 
-    initAudioStream = () => {
-        let {janus,audios} = this.state;
+    initAudioStream = (janus) => {
+        let {audios} = this.state;
         janus.attach({
             plugin: "janus.plugin.streaming",
             opaqueId: "audiostream-"+Janus.randomString(12),
             success: (audiostream) => {
                 Janus.log(audiostream);
-                this.setState({audiostream});
+                this.setState({audiostream}, () => {
+                    this.audioMute();
+                });
                 audiostream.send({message: {request: "watch", id: audios}});
             },
             error: (error) => {
@@ -141,8 +157,8 @@ class GalaxyStream extends Component {
         });
     };
 
-    initDataStream() {
-        this.state.janus.attach({
+    initDataStream(janus) {
+        janus.attach({
             plugin: "janus.plugin.streaming",
             opaqueId: "datastream-"+Janus.randomString(12),
             success: (datastream) => {
@@ -292,8 +308,9 @@ class GalaxyStream extends Component {
     };
 
     audioMute = () => {
-        this.setState({muted: !this.state.muted});
-        this.refs.remoteAudio.muted = !this.state.muted;
+        const {audiostream,muted} = this.state;
+        this.setState({muted: !muted});
+        muted ? audiostream.muteAudio() : audiostream.unmuteAudio()
     };
 
     toggleFullScreen = () => {
@@ -360,7 +377,6 @@ class GalaxyStream extends Component {
                            id="trlAudio"
                            autoPlay={true}
                            controls={false}
-                        // muted={muted}
                            playsInline={true}/>
                 </Segment>
                 <Grid columns={3}>
