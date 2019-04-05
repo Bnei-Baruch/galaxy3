@@ -487,6 +487,9 @@ class ShidurAdmin extends Component {
                 },
                 onremotetrack: (track, mid, on) => {
                     Janus.debug(" ::: Got a remote track event ::: (remote feed)");
+                    if(!mid) {
+                       mid = track.id.split("janus")[1];
+                    }
                     Janus.debug("Remote track (mid=" + mid + ") " + (on ? "added" : "removed") + ":", track);
                     // Which publisher are we getting on this mid?
                     let {mids,feedStreams} = this.state;
