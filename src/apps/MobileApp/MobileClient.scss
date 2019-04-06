@@ -48,20 +48,33 @@
 
 /* TESTING */
 
-.ui.selection.dropdown .menu {
+.select_room.ui.selection.dropdown .menu {
     min-width: calc(208% + 3px);
 }
 
-.ui.selection.dropdown .menu>.item {
+.select_room.ui.selection.dropdown .menu>.item {
     font-size: 70px;
+    height: 150px;
+}
+
+.select_room.ui.selection.dropdown .menu {
+    max-height: 80rem;
+}
+
+.select_device.ui.selection.dropdown .menu>.item {
+    font-size: 50px;
 }
 
 .ui.mini.menu {
     font-size: 30px;
 }
 
+.select_device {
+    font-size: 50px;
+}
+
 .ui.bottom.right.popup {
-    font-size: 30px;
+    font-size: 80px;
 }
 
 //i.icon, i.icons {

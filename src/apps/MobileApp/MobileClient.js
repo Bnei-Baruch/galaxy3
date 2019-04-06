@@ -951,12 +951,14 @@ class MobileClient extends Component {
                 <div className={classNames('video__overlay', {'talk' : talk})}>
                     {question ? <div className="question">
                         <svg viewBox="0 0 50 50">
-                            <text x="25" y="25" text-anchor="middle" alignment-baseline="central" dominant-baseline="central">&#xF128;</text>
+                            <text x="25" y="25" textAnchor="middle" alignmentBaseline="central" dominantBaseline="central">&#xF128;</text>
                         </svg>
                     </div>:''}
                     <div className="video__title">{!talk ? <Icon name="microphone slash" size="small" color="red"/> : ''}{display_name}</div>
                 </div>
-                    <svg className={classNames('nowebcam',{'hidden':!cammute})} viewBox="0 0 32 18" preserveAspectRatio="xMidYMid meet" ><text x="16" y="9" text-anchor="middle" alignment-baseline="central" dominant-baseline="central">&#xf2bd;</text></svg>
+                    <svg className={classNames('nowebcam',{'hidden':!cammute})} viewBox="0 0 32 18" preserveAspectRatio="xMidYMid meet" >
+                        <text x="16" y="9" textAnchor="middle" alignmentBaseline="central" dominantBaseline="central">&#xf2bd;</text>
+                    </svg>
                     <video
                         key={"v"+i}
                         ref={"remoteVideo" + i}
@@ -992,7 +994,7 @@ class MobileClient extends Component {
 
             <div className={classNames('vclient', { 'vclient--chat-open': this.state.visible })} >
                 <div className="vclient__toolbar">
-                    <Select
+                    <Select className='select_room'
                         disabled={mystream}
                         error={!selected_room}
                         placeholder=" Select Room: "
@@ -1008,7 +1010,7 @@ class MobileClient extends Component {
                     value={this.state.username_value}
                     onChange={(v,{value}) => this.setState({username_value: value})}
                     action>
-                    <input iconPosition='left' disabled={mystream}/>
+                    <input disabled={mystream}/>
                     <Icon name='user circle' />
                     {mystream ? <Button size='massive' negative icon='sign-out' onClick={this.exitRoom} />:""}
                     {!mystream ? <Button size='massive' primary icon='sign-in' disabled={delay||!selected_room||!audio_device} onClick={this.joinRoom} />:""}
@@ -1050,7 +1052,7 @@ class MobileClient extends Component {
                             <Icon color={cammuted ? "red" : ""} name={!cammuted ? "eye" : "eye slash"} />
                             {!cammuted ? "Stop Video" : "Start Video"}
                         </Menu.Item>
-                        <Popup
+                        <Popup flowing
                             trigger={<Menu.Item icon="setting" name="Settings"/>}
                             on='click'
                             position='bottom right'
@@ -1084,7 +1086,7 @@ class MobileClient extends Component {
                                         <div className={classNames('video__overlay')}>
                                             {question ?
                                                 <div className="question">
-                                                    <svg viewBox="0 0 50 50"><text x="25" y="25" text-anchor="middle" alignment-baseline="central" dominant-baseline="central">&#xF128;</text></svg>
+                                                    <svg viewBox="0 0 50 50"><text x="25" y="25" textAnchor="middle" alignmentBaseline="central" dominantBaseline="central">&#xF128;</text></svg>
                                                 </div>
                                             :
                                                 ''
@@ -1093,7 +1095,9 @@ class MobileClient extends Component {
                                                 {muted ? <Icon name="microphone slash" size="small" color="red"/> : ''}{this.state.username_value || this.state.user.name}
                                             </div>
                                         </div>
-                                        <svg className={classNames('nowebcam',{'hidden':!cammuted})} viewBox="0 0 32 18" preserveAspectRatio="xMidYMid meet" ><text x="16" y="9" text-anchor="middle" alignment-baseline="central" dominant-baseline="central">&#xf2bd;</text></svg>
+                                        <svg className={classNames('nowebcam',{'hidden':!cammuted})} viewBox="0 0 32 18" preserveAspectRatio="xMidYMid meet" >
+                                            <text x="16" y="9" textAnchor="middle" alignmentBaseline="central" dominantBaseline="central">&#xf2bd;</text>
+                                        </svg>
                                         <video
                                         className={classNames('mirror',{'hidden':cammuted})}
                                         ref="localVideo"
