@@ -27,8 +27,10 @@ class MobileClient extends Component {
         feeds: [],
         feedStreams: {},
         rooms: [],
-        room: "",
-        selected_room: "",
+        i: parseInt(localStorage.getItem("room_index"), 10) || null,
+        room: parseInt(localStorage.getItem("room"), 10) || "",
+        name: localStorage.getItem("room_name") || null,
+        selected_room: parseInt(localStorage.getItem("room"), 10) || "",
         videoroom: null,
         remoteFeed: null,
         myid: null,
@@ -215,10 +217,13 @@ class MobileClient extends Component {
                 Janus.log(" :: My handle: ", videoroom);
                 Janus.log("Plugin attached! (" + videoroom.getPlugin() + ", id=" + videoroom.getId() + ")");
                 Janus.log("  -- This is a publisher/manager");
-                let {user} = this.state;
+                let {user,i} = this.state;
                 user.handle = videoroom.getId();
                 this.setState({videoroom, user, remoteFeed: null});
                 this.initDevices(true);
+                if(i && !reconnect) {
+                    this.getRoomList();
+                }
                 if(reconnect) {
                     setTimeout(() => {
                         this.joinRoom(reconnect);
@@ -794,8 +799,10 @@ class MobileClient extends Component {
         setTimeout(() => {
             this.setState({delay: false});
         }, 3000);
-        let {janus, videoroom, selected_room, user, username_value, women} = this.state;
+        let {janus, videoroom, selected_room, user, username_value, women, i, name} = this.state;
         localStorage.setItem("room", selected_room);
+        localStorage.setItem("room_index", i);
+        localStorage.setItem("room_name", name);
         //This name will see other users
         user.display = username_value || user.name;
         localStorage.setItem("username", user.display);
