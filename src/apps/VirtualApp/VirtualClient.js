@@ -58,9 +58,7 @@ class VirtualClient extends Component {
 
     componentDidMount() {
         if (isMobile) {
-            //window.location = "";
-            let {user} = this.state;
-            this.initClient(user);
+            window.location = "/userm";
         } else {
             let {user} = this.state;
             this.initClient(user);
@@ -892,7 +890,7 @@ class VirtualClient extends Component {
                         options={rooms_list}
                         onClick={this.getRoomList}
                         onChange={(e, {value}) => this.selectRoom(value)}/>
-                    {mystream ? <Button negative icon='sign-out' onClick={this.exitRoom}/> : ""}
+                    {mystream ? <Button negative icon='sign-out' onClick={() => this.exitRoom(false)}/> : ""}
                     {!mystream ? <Button primary icon='sign-in' disabled={delay || !selected_room || !audio_device}
                                          onClick={this.joinRoom}/> : ""}
                 </Input>

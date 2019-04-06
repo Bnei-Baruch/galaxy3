@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import NewWindow from 'react-new-window';
+//import NewWindow from 'react-new-window';
 import { Janus } from "../../lib/janus";
 import classNames from 'classnames';
 
@@ -8,7 +8,7 @@ import {geoInfo, initJanus, getDevicesStream, micLevel, checkNotification,testDe
 import './MobileClient.scss'
 import './MobileConteiner.scss'
 import 'eqcss'
-import MobileChat from "./MobileChat";
+//import MobileChat from "./MobileChat";
 import {initGxyProtocol, sendProtocolMessage} from "../../shared/protocol";
 
 class MobileClient extends Component {
