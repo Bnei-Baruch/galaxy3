@@ -839,7 +839,7 @@ class MobileClient extends Component {
         videoroom.send({"message": leave});
         //this.chat.exitChatRoom(room);
         localStorage.setItem("question", false);
-        this.setState({video_device: null, muted: false, cammuted: false, mystream: null, room: "", selected_room: "", i: "", feeds: [],video_mids: [], mids: [], remoteFeed: null, question: false});
+        this.setState({video_device: null, muted: false, cammuted: false, mystream: null, feeds: [],video_mids: [], mids: [], remoteFeed: null, question: false});
         this.initVideoRoom();
         protocol.detach();
     };
@@ -848,8 +848,6 @@ class MobileClient extends Component {
         const {rooms} = this.state;
         let selected_room = rooms[i].room;
         let name = rooms[i].description;
-        if (this.state.room === selected_room)
-            return;
         this.setState({selected_room,name,i});
     };
 
