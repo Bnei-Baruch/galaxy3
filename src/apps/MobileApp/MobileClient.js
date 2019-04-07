@@ -997,6 +997,7 @@ class MobileClient extends Component {
                 <ReactSwipe
                     className="carousel"
                     swipeOptions={{
+                        startSlide: 0,
                         continuous: false,
                         disableScroll: true,
                         transitionEnd: (index, elem) => {

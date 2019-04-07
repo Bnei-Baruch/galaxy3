@@ -3,8 +3,7 @@ import { Janus } from "../StreamApp/lib/janus";
 import { Segment, Menu, Select, Button, Icon } from 'semantic-ui-react';
 //import VolumeSlider from "../../components/VolumeSlider";
 import {videos_options, audiog_options, gxycol, trllang, STUN_SRV_STR, JANUS_SRV_EURFR} from "../../shared/consts";
-//import '../StreamApp/GalaxyStream.css'
-
+import './MobileStreaming.scss'
 
 class VirtualStreaming extends Component {
 
@@ -311,39 +310,28 @@ class VirtualStreaming extends Component {
         return (
 
             <Segment secondary>
-                <Segment textAlign='center' className="ingest_segment" raised>
-                    <Menu secondary>
-                        <Menu.Item>
-                            <Button size='massive'
-                                    icon labelPosition='left'
-                                    floated='right'
-                                    onClick={this.props.prev}>
-                                <Icon name='left arrow' />
-                                TEN
-                            </Button>
-                        </Menu.Item>
-                        <Menu.Item>
-                            <Select size='massive'
+
+                    <div className="vclient__toolbar">
+                    <Menu icon='labeled' secondary size="mini">
+                        <Menu.Item icon="angle left" name="My Ten" onClick={this.props.prev} />
+                        <Select className='select_rate'
                                 compact
-                                error={!videos}
-                                placeholder="Video:"
-                                value={videos}
-                                options={videos_options}
-                                onChange={(e, {value}) => this.setVideo(value)}/>
-                        </Menu.Item>
-                        <Menu.Item>
-                            <Select
-                                compact={false}
-                                scrolling={false}
-                                error={!audios}
-                                placeholder="Audio:"
-                                value={audios}
-                                options={audiog_options}
-                                onChange={(e, {value, options}) => this.setAudio(value, options)}/>
-                        </Menu.Item>
-                        {/*<canvas ref="canvas1" id="canvas1" width="25" height="50"/>*/}
+                            error={!videos}
+                            placeholder="Video:"
+                            value={videos}
+                            options={videos_options}
+                            onChange={(e, {value}) => this.setVideo(value)}/>
+                        <Select className='select_lang'
+                                compact
+                            scrolling={false}
+                            error={!audios}
+                            placeholder="Audio:"
+                            value={audios}
+                            options={audiog_options}
+                            onChange={(e, {value, options}) => this.setAudio(value, options)}/>
                     </Menu>
-                </Segment>
+                    </div>
+
                 <Segment textAlign='center'>
                     <Button color='blue'
                             attached
