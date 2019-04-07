@@ -688,7 +688,7 @@ class SndmanUsers extends Component {
                             feeds[i].streamid = streamid;
                         },
                     });
-                    port = port + 2;
+                    port++;
                 }
             });
             this.setState({feeds, forward: true});
