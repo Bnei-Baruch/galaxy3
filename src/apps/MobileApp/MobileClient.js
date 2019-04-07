@@ -60,7 +60,8 @@ class MobileClient extends Component {
         selftest: "Self Audio Test",
         tested: false,
         support: false,
-        women: window.location.pathname === "/women/"
+        women: window.location.pathname === "/women/",
+        card: 0,
     };
 
     componentDidMount() {
@@ -883,20 +884,12 @@ class MobileClient extends Component {
         this.setState({muted: !muted});
     };
 
-    showShidur = () => {
-        this.setState({shidur: !this.state.shidur})
-    };
-
-    onUnload = () => {
-        this.setState({shidur: false})
-    };
-
-    onBlock = () => {
-        alert("You browser is block our popup! You need allow it")
-    };
-
     onNewMsg = (private_message) => {
         this.setState({count: this.state.count + 1});
+    };
+
+    handleSwipe = (i) => {
+        this.stream.videoMute(i)
     };
 
 
@@ -1003,7 +996,13 @@ class MobileClient extends Component {
             <div>
                 <ReactSwipe
                     className="carousel"
-                    swipeOptions={{ continuous: false }}
+                    swipeOptions={{
+                        continuous: false,
+                        disableScroll: true,
+                        transitionEnd: (index, elem) => {
+                            this.handleSwipe(index);
+                        }
+                    }}
                     ref={el => (reactSwipeEl = el)}
                 >
                     <div>
@@ -1039,18 +1038,6 @@ class MobileClient extends Component {
                                     <Menu.Item disabled={!mystream} onClick={this.handleQuestion}>
                                         <Icon color={question ? 'green' : ''} name='question'/>Question
                                     </Menu.Item>
-                                    {/*<Menu.Item disabled={this.state.shidur} onClick={this.showShidur} >*/}
-                                    {/*<Icon name="tv"/>*/}
-                                    {/*Open Broadcast*/}
-                                    {/*{this.state.shidur ?*/}
-                                    {/*<NewWindow*/}
-                                    {/*url='https://galaxy.kli.one/gxystr'*/}
-                                    {/*features={{width:"725",height:"635",left:"200",top:"200",location:"no"}}*/}
-                                    {/*title='V4G' onUnload={this.onUnload} onBlock={this.onBlock}>*/}
-                                    {/*</NewWindow> :*/}
-                                    {/*null*/}
-                                    {/*}*/}
-                                    {/*</Menu.Item>*/}
                                 </Menu>
                                 <Menu icon='labeled' secondary size="mini">
                                     {/*<Menu.Item position='right' disabled={selftest !== "Self Audio Test" || mystream} onClick={this.selfTest}>*/}
@@ -1067,7 +1054,7 @@ class MobileClient extends Component {
                                         {!cammuted ? "Stop Video" : "Start Video"}
                                     </Menu.Item>
                                     {mystream ?
-                                    <Menu.Item icon="tv" name="Broadcast" onClick={() => reactSwipeEl.next()}/>
+                                    <Menu.Item icon="angle right" name="Broadcast" onClick={() => reactSwipeEl.next()}/>
                                         :
                                     <Popup flowing
                                            trigger={<Menu.Item icon="setting" name="Settings"/>}
@@ -1145,7 +1132,10 @@ class MobileClient extends Component {
                         </div>
 
                     </div>
-                    <div><MobileStreaming /></div>
+                    <div><MobileStreaming
+                        ref={stream => {this.stream = stream;}}
+                        prev={() => reactSwipeEl.prev()}
+                    /></div>
                     {/*<div>PANE 3</div>*/}
                 </ReactSwipe>
                 {/*<button onClick={() => reactSwipeEl.next()}>Next</button>*/}

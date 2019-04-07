@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import { Janus } from "../StreamApp/lib/janus";
-import { Segment, Menu, Select, Button } from 'semantic-ui-react';
+import { Segment, Menu, Select, Button, Icon } from 'semantic-ui-react';
 //import VolumeSlider from "../../components/VolumeSlider";
 import {videos_options, audiog_options, gxycol, trllang, STUN_SRV_STR, JANUS_SRV_EURFR} from "../../shared/consts";
 //import '../StreamApp/GalaxyStream.css'
@@ -18,6 +18,7 @@ class VirtualStreaming extends Component {
         audios: Number(localStorage.getItem("lang")) || 15,
         room: Number(localStorage.getItem("room")) || null,
         muted: false,
+        vmuted: true,
         mixvolume: null,
         user: {},
         talking: null,
@@ -87,7 +88,7 @@ class VirtualStreaming extends Component {
             success: (videostream) => {
                 Janus.log(videostream);
                 this.setState({videostream});
-                videostream.send({message: {request: "watch", id: videos}});
+                //videostream.send({message: {request: "watch", id: videos}});
             },
             error: (error) => {
                 Janus.log("Error attaching plugin: " + error);
@@ -289,16 +290,17 @@ class VirtualStreaming extends Component {
         muted ? audiostream.muteAudio() : audiostream.unmuteAudio()
     };
 
+    videoMute = (i) => {
+        const {videostream,vmuted,videos} = this.state;
+        console.log(":: VIDEOMUTE", i , vmuted)
+        this.setState({vmuted: !vmuted});
+        let request = vmuted ? "watch": "stop";
+        videostream.send({message: {request, id: videos}});
+    };
+
     toggleFullScreen = () => {
         let vid = this.refs.remoteVideo;
         vid.webkitEnterFullscreen();
-        // if(vid.requestFullScreen){
-        //     vid.requestFullScreen();
-        // } else if(vid.webkitRequestFullScreen){
-        //     vid.webkitRequestFullScreen();
-        // } else if(vid.mozRequestFullScreen){
-        //     vid.mozRequestFullScreen();
-        // }
     };
 
 
@@ -310,9 +312,18 @@ class VirtualStreaming extends Component {
 
             <Segment secondary>
                 <Segment textAlign='center' className="ingest_segment" raised>
-                    <Menu secondary size='massive'>
+                    <Menu secondary>
                         <Menu.Item>
-                            <Select
+                            <Button size='massive'
+                                    icon labelPosition='left'
+                                    floated='right'
+                                    onClick={this.props.prev}>
+                                <Icon name='left arrow' />
+                                TEN
+                            </Button>
+                        </Menu.Item>
+                        <Menu.Item>
+                            <Select size='massive'
                                 compact
                                 error={!videos}
                                 placeholder="Video:"
