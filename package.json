@@ -15,8 +15,10 @@
     "react-new-window": "^0.0.9",
     "react-rangeslider": "^2.2.0",
     "react-scripts": "2.0.4",
+    "react-swipe": "^6.0.4",
     "semantic-ui-css": "^2.4.0",
     "semantic-ui-react": "^0.82.5",
+    "swipe-js-iso": "^2.1.5",
     "webrtc-adapter": "^6.4.0"
   },
   "scripts": {

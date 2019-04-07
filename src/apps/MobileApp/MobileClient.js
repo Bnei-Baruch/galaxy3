@@ -2,14 +2,17 @@ import React, { Component } from 'react';
 //import NewWindow from 'react-new-window';
 import { Janus } from "../../lib/janus";
 import classNames from 'classnames';
+import ReactSwipe from 'react-swipe';
 
 import {Menu, Select, Button,Input,Label,Icon,Popup} from "semantic-ui-react";
-import {geoInfo, initJanus, getDevicesStream, micLevel, checkNotification,testDevices,testMic} from "../../shared/tools";
+import {geoInfo, initJanus, getDevicesStream, checkNotification,testDevices,testMic} from "../../shared/tools";
 import './MobileClient.scss'
 import './MobileConteiner.scss'
 import 'eqcss'
 //import MobileChat from "./MobileChat";
 import {initGxyProtocol, sendProtocolMessage} from "../../shared/protocol";
+//import VirtualStreaming from "../VirtualApp/VirtualStreaming";
+import MobileStreaming from "./MobileStreaming";
 
 class MobileClient extends Component {
 
@@ -133,12 +136,12 @@ class MobileClient extends Component {
                     Janus.log(" :: Check Devices: ", stream);
                     let myvideo = this.refs.localVideo;
                     Janus.attachMediaStream(myvideo, stream);
-                    if(this.state.audioContext) {
-                        this.state.audioContext.close();
-                    }
-                    micLevel(stream ,this.refs.canvas1,audioContext => {
-                        this.setState({audioContext, stream});
-                    });
+                    // if(this.state.audioContext) {
+                    //     this.state.audioContext.close();
+                    // }
+                    // micLevel(stream ,this.refs.canvas1,audioContext => {
+                    //     this.setState({audioContext, stream});
+                    // });
                 })
             }
         }
@@ -994,141 +997,156 @@ class MobileClient extends Component {
         });
 
         let l = (<Label key='Carbon' floating size='mini' color='red'>{count}</Label>);
+        let reactSwipeEl;
 
         return (
+            <div>
+                <ReactSwipe
+                    className="carousel"
+                    swipeOptions={{ continuous: false }}
+                    ref={el => (reactSwipeEl = el)}
+                >
+                    <div>
+                        <div className={classNames('vclient', { 'vclient--chat-open': this.state.visible })} >
+                            <div className="vclient__toolbar">
+                                <Select className='select_room'
+                                        disabled={mystream}
+                                        error={!selected_room}
+                                        placeholder=" Select Room: "
+                                        value={i}
+                                        text={name ? name + ' : ( ' + this.state.feeds.length + ' ) ': ""}
+                                        icon={name ? 'users' : ''}
+                                        options={rooms_list}
+                                        onClick={this.getRoomList}
+                                        onChange={(e, {value}) => this.selectRoom(value)} />
+                                <Input
+                                    iconPosition='left'
+                                    placeholder="Type your name..."
+                                    value={this.state.username_value}
+                                    onChange={(v,{value}) => this.setState({username_value: value})}
+                                    action>
+                                    <input disabled={mystream}/>
+                                    <Icon name='user circle' />
+                                    {mystream ? <Button size='massive' negative icon='sign-out' onClick={this.exitRoom} />:""}
+                                    {!mystream ? <Button size='massive' primary icon='sign-in' disabled={delay||!selected_room||!audio_device} onClick={this.joinRoom} />:""}
+                                </Input>
+                                <Menu icon='labeled' secondary size="mini">
+                                    {/*<Menu.Item disabled={!mystream} onClick={() => this.setState({ visible: !this.state.visible, count: 0 })}>*/}
+                                    {/*<Icon name="comments"/>*/}
+                                    {/*{this.state.visible ? "Close" : "Open"} Chat */}
+                                    {/*{count > 0 ? l : ""} */}
+                                    {/*</Menu.Item>*/}
+                                    <Menu.Item disabled={!mystream} onClick={this.handleQuestion}>
+                                        <Icon color={question ? 'green' : ''} name='question'/>Question
+                                    </Menu.Item>
+                                    {/*<Menu.Item disabled={this.state.shidur} onClick={this.showShidur} >*/}
+                                    {/*<Icon name="tv"/>*/}
+                                    {/*Open Broadcast*/}
+                                    {/*{this.state.shidur ?*/}
+                                    {/*<NewWindow*/}
+                                    {/*url='https://galaxy.kli.one/gxystr'*/}
+                                    {/*features={{width:"725",height:"635",left:"200",top:"200",location:"no"}}*/}
+                                    {/*title='V4G' onUnload={this.onUnload} onBlock={this.onBlock}>*/}
+                                    {/*</NewWindow> :*/}
+                                    {/*null*/}
+                                    {/*}*/}
+                                    {/*</Menu.Item>*/}
+                                </Menu>
+                                <Menu icon='labeled' secondary size="mini">
+                                    {/*<Menu.Item position='right' disabled={selftest !== "Self Audio Test" || mystream} onClick={this.selfTest}>*/}
+                                    {/*<Icon color={tested ? 'green' : 'red'} name="sound" />*/}
+                                    {/*{selftest}*/}
+                                    {/*</Menu.Item>*/}
+                                    <Menu.Item disabled={women || !mystream} onClick={this.micMute} className="mute-button">
+                                        {/*<canvas className={muted ? 'hidden' : 'vumeter'} ref="canvas1" id="canvas1" width="15" height="35" />*/}
+                                        <Icon color={muted ? "red" : "green"} name={!muted ? "microphone" : "microphone slash"} />
+                                        {!muted ? "Mute" : "Unmute"}
+                                    </Menu.Item>
+                                    <Menu.Item disabled={!mystream || delay} onClick={this.camMute}>
+                                        <Icon color={cammuted ? "red" : ""} name={!cammuted ? "eye" : "eye slash"} />
+                                        {!cammuted ? "Stop Video" : "Start Video"}
+                                    </Menu.Item>
+                                    <Popup flowing
+                                           trigger={<Menu.Item icon="setting" name="Settings"/>}
+                                           on='click'
+                                           position='bottom right'
+                                    >
+                                        <Popup.Content>
+                                            <Select className='select_device'
+                                                    disabled={mystream}
+                                                    error={!audio_device}
+                                                    placeholder="Select Device:"
+                                                    value={audio_device}
+                                                    options={adevices_list}
+                                                    onChange={(e, {value}) => this.setDevice(video_device,value)}/>
+                                            <Select className='select_device'
+                                                    disabled={mystream}
+                                                    error={!video_device}
+                                                    placeholder="Select Device:"
+                                                    value={video_device}
+                                                    options={vdevices_list}
+                                                    onChange={(e, {value}) => this.setDevice(value,audio_device)} />
+                                        </Popup.Content>
+                                    </Popup>
+                                </Menu>
+                            </div>
 
-            <div className={classNames('vclient', { 'vclient--chat-open': this.state.visible })} >
-                <div className="vclient__toolbar">
-                    <Select className='select_room'
-                        disabled={mystream}
-                        error={!selected_room}
-                        placeholder=" Select Room: "
-                        value={i}
-                        text={name ? name + ' : ( ' + this.state.feeds.length + ' ) ': ""}
-                        icon={name ? 'users' : ''}
-                        options={rooms_list}
-                        onClick={this.getRoomList}
-                        onChange={(e, {value}) => this.selectRoom(value)} />
-                    <Input 
-                    iconPosition='left'
-                    placeholder="Type your name..."
-                    value={this.state.username_value}
-                    onChange={(v,{value}) => this.setState({username_value: value})}
-                    action>
-                    <input disabled={mystream}/>
-                    <Icon name='user circle' />
-                    {mystream ? <Button size='massive' negative icon='sign-out' onClick={this.exitRoom} />:""}
-                    {!mystream ? <Button size='massive' primary icon='sign-in' disabled={delay||!selected_room||!audio_device} onClick={this.joinRoom} />:""}
-                    </Input>
-                    <Menu icon='labeled' secondary size="mini">
-                        {/*<Menu.Item disabled={!mystream} onClick={() => this.setState({ visible: !this.state.visible, count: 0 })}>*/}
-                            {/*<Icon name="comments"/>*/}
-                            {/*{this.state.visible ? "Close" : "Open"} Chat */}
-                            {/*{count > 0 ? l : ""} */}
-                        {/*</Menu.Item>*/}
-                        <Menu.Item disabled={!mystream} onClick={this.handleQuestion}>
-                            <Icon color={question ? 'green' : ''} name='question'/>
-                            Ask a Question
-                        </Menu.Item>
-                        {/*<Menu.Item disabled={this.state.shidur} onClick={this.showShidur} >*/}
-                            {/*<Icon name="tv"/>*/}
-                            {/*Open Broadcast*/}
-                            {/*{this.state.shidur ?*/}
-                                {/*<NewWindow*/}
-                                {/*url='https://galaxy.kli.one/gxystr'*/}
-                                {/*features={{width:"725",height:"635",left:"200",top:"200",location:"no"}}*/}
-                                {/*title='V4G' onUnload={this.onUnload} onBlock={this.onBlock}>*/}
-                                {/*</NewWindow> :*/}
-                                {/*null*/}
-                            {/*}*/}
-                        {/*</Menu.Item>*/}
-                    </Menu>
-                    <Menu icon='labeled' secondary size="mini">
-                        {/*<Menu.Item position='right' disabled={selftest !== "Self Audio Test" || mystream} onClick={this.selfTest}>*/}
-                            {/*<Icon color={tested ? 'green' : 'red'} name="sound" />*/}
-                            {/*{selftest}*/}
-                        {/*</Menu.Item>*/}
-                        <Menu.Item disabled={women || !mystream} onClick={this.micMute} className="mute-button">
-                            <canvas className={muted ? 'hidden' : 'vumeter'} ref="canvas1" id="canvas1" width="15" height="35" />
-                            <Icon color={muted ? "red" : ""} name={!muted ? "microphone" : "microphone slash"} />
-                            {!muted ? "Mute" : "Unmute"}
-                        </Menu.Item>
-                        <Menu.Item disabled={!mystream || delay} onClick={this.camMute}>
-                            <Icon color={cammuted ? "red" : ""} name={!cammuted ? "eye" : "eye slash"} />
-                            {!cammuted ? "Stop Video" : "Start Video"}
-                        </Menu.Item>
-                        <Popup flowing
-                            trigger={<Menu.Item icon="setting" name="Settings"/>}
-                            on='click'
-                            position='bottom right'
-                        >
-                            <Popup.Content>
-                                <Select className='select_device'
-                                disabled={mystream}
-                                error={!audio_device}
-                                placeholder="Select Device:"
-                                value={audio_device}
-                                options={adevices_list}
-                                onChange={(e, {value}) => this.setDevice(video_device,value)}/>
-                                <Select className='select_device'
-                                disabled={mystream}
-                                error={!video_device}
-                                placeholder="Select Device:"
-                                value={video_device}
-                                options={vdevices_list}
-                                onChange={(e, {value}) => this.setDevice(value,audio_device)} />
-                            </Popup.Content>
-                        </Popup>
-                    </Menu>
-                </div>
-                <div basic className="vclient__main">
-                    <div className="vclient__main-wrapper">
-                        <div className="videos-panel">
-                            <div className="videos" onClick={this.switchFour}>
-                                <div className="videos__wrapper">
-                                    {mystream ? "" :
-                                    <div className="video">
-                                        <div className={classNames('video__overlay')}>
-                                            {question ?
-                                                <div className="question">
-                                                    <svg viewBox="0 0 50 50"><text x="25" y="25" textAnchor="middle" alignmentBaseline="central" dominantBaseline="central">&#xF128;</text></svg>
-                                                </div>
-                                            :
-                                                ''
-                                            }
-                                            <div className="video__title">
-                                                {muted ? <Icon name="microphone slash" size="small" color="red"/> : ''}{this.state.username_value || this.state.user.name}
+                            <div basic className="vclient__main">
+                                <div className="vclient__main-wrapper">
+                                    <div className="videos-panel">
+                                        <div className="videos" onClick={this.switchFour}>
+                                            <div className="videos__wrapper">
+                                                {mystream ? "" :
+                                                    <div className="video">
+                                                        <div className={classNames('video__overlay')}>
+                                                            {question ?
+                                                                <div className="question">
+                                                                    <svg viewBox="0 0 50 50"><text x="25" y="25" textAnchor="middle" alignmentBaseline="central" dominantBaseline="central">&#xF128;</text></svg>
+                                                                </div>
+                                                                :
+                                                                ''
+                                                            }
+                                                            <div className="video__title">
+                                                                {muted ? <Icon name="microphone slash" size="small" color="red"/> : ''}{this.state.username_value || this.state.user.name}
+                                                            </div>
+                                                        </div>
+                                                        <svg className={classNames('nowebcam',{'hidden':!cammuted})} viewBox="0 0 32 18" preserveAspectRatio="xMidYMid meet" >
+                                                            <text x="16" y="9" textAnchor="middle" alignmentBaseline="central" dominantBaseline="central">&#xf2bd;</text>
+                                                        </svg>
+                                                        <video
+                                                            className={classNames('mirror',{'hidden':cammuted})}
+                                                            ref="localVideo"
+                                                            id="localVideo"
+                                                            width={width}
+                                                            height={height}
+                                                            autoPlay={autoPlay}
+                                                            controls={controls}
+                                                            muted={true}
+                                                            playsInline={true}/>
+
+                                                    </div>}
+                                                {videos}
                                             </div>
                                         </div>
-                                        <svg className={classNames('nowebcam',{'hidden':!cammuted})} viewBox="0 0 32 18" preserveAspectRatio="xMidYMid meet" >
-                                            <text x="16" y="9" textAnchor="middle" alignmentBaseline="central" dominantBaseline="central">&#xf2bd;</text>
-                                        </svg>
-                                        <video
-                                        className={classNames('mirror',{'hidden':cammuted})}
-                                        ref="localVideo"
-                                        id="localVideo"
-                                        width={width}
-                                        height={height}
-                                        autoPlay={autoPlay}
-                                        controls={controls}
-                                        muted={true}
-                                        playsInline={true}/>
-                                    
-                                    </div>}
-                                    {videos}
+                                    </div>
+                                    {audios}
+                                    {/*<MobileChat*/}
+                                    {/*ref={chat => {this.chat = chat;}}*/}
+                                    {/*visible={this.state.visible}*/}
+                                    {/*janus={this.state.janus}*/}
+                                    {/*room={room}*/}
+                                    {/*user={this.state.user}*/}
+                                    {/*onNewMsg={this.onNewMsg} />*/}
                                 </div>
                             </div>
                         </div>
-                        {audios}
-                        {/*<MobileChat*/}
-                            {/*ref={chat => {this.chat = chat;}}*/}
-                            {/*visible={this.state.visible}*/}
-                            {/*janus={this.state.janus}*/}
-                            {/*room={room}*/}
-                            {/*user={this.state.user}*/}
-                            {/*onNewMsg={this.onNewMsg} />*/}
+
                     </div>
-                </div>
+                    <div><MobileStreaming /></div>
+                    {/*<div>PANE 3</div>*/}
+                </ReactSwipe>
+                {/*<button onClick={() => reactSwipeEl.next()}>Next</button>*/}
+                {/*<button onClick={() => reactSwipeEl.prev()}>Previous</button>*/}
             </div>
         );
     }
