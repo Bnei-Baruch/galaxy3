@@ -306,94 +306,87 @@ class VirtualStreaming extends Component {
 
         const {videos, audios, muted, talking} = this.state;
 
-        if(!this.state.room) {
+        return (
 
-            return (<b> :: THIS PAGE CAN NOT BE OPENED DIRECTLY ::</b>);
-
-        } else {
-
-            return (
-
-                <Segment secondary>
-                    <Segment textAlign='center' className="ingest_segment" raised>
-                        <Menu secondary size='massive'>
-                            <Menu.Item>
-                                <Select
-                                    compact
-                                    error={!videos}
-                                    placeholder="Video:"
-                                    value={videos}
-                                    options={videos_options}
-                                    onChange={(e, {value}) => this.setVideo(value)}/>
-                            </Menu.Item>
-                            <Menu.Item>
-                                <Select
-                                    compact={false}
-                                    scrolling={false}
-                                    error={!audios}
-                                    placeholder="Audio:"
-                                    value={audios}
-                                    options={audiog_options}
-                                    onChange={(e, {value, options}) => this.setAudio(value, options)}/>
-                            </Menu.Item>
-                            {/*<canvas ref="canvas1" id="canvas1" width="25" height="50"/>*/}
-                        </Menu>
-                    </Segment>
-                    <Segment textAlign='center'>
-                        <Button color='blue'
-                                attached
-                                floated='left'
-                                size='massive'
-                                icon='expand arrows alternate'
-                                onClick={this.toggleFullScreen}/>
-                        <video className={talking ? 'talk_border' : ''}
-                               ref="remoteVideo"
-                               id="remoteVideo"
-                               width="640"
-                               height="360"
-                               autoPlay={true}
-                               controls={false}
-                               muted={true}
-                               playsInline={true}/>
-                        <Button positive={!muted}
-                                negative={muted}
-                                size='massive'
-                                attached
-                                floated='right'
-                                icon={muted ? "volume off" : "volume up"}
-                                onClick={this.audioMute}/>
-                        <audio ref="remoteAudio"
-                               id="remoteAudio"
-                               autoPlay={true}
-                               controls={false}
-                               muted={muted}
-                               playsInline={true}/>
-                        <audio ref="trlAudio"
-                               id="trlAudio"
-                               autoPlay={true}
-                               controls={false}
-                            // muted={muted}
-                               playsInline={true}/>
-                    </Segment>
-                    {/*<Grid columns={3}>*/}
-                    {/*    <Grid.Column width={2}>*/}
-                    {/*        <Button color='blue'*/}
-                    {/*                icon='expand arrows alternate'*/}
-                    {/*                onClick={this.toggleFullScreen}/>*/}
-                    {/*    </Grid.Column>*/}
-                    {/*    <Grid.Column width={12}>*/}
-                    {/*        <VolumeSlider volume={this.setVolume}/>*/}
-                    {/*    </Grid.Column>*/}
-                    {/*    <Grid.Column width={1}>*/}
-                    {/*        <Button positive={!muted}*/}
-                    {/*                negative={muted}*/}
-                    {/*                icon={muted ? "volume off" : "volume up"}*/}
-                    {/*                onClick={this.audioMute}/>*/}
-                    {/*    </Grid.Column>*/}
-                    {/*</Grid>*/}
+            <Segment secondary>
+                <Segment textAlign='center' className="ingest_segment" raised>
+                    <Menu secondary size='massive'>
+                        <Menu.Item>
+                            <Select
+                                compact
+                                error={!videos}
+                                placeholder="Video:"
+                                value={videos}
+                                options={videos_options}
+                                onChange={(e, {value}) => this.setVideo(value)}/>
+                        </Menu.Item>
+                        <Menu.Item>
+                            <Select
+                                compact={false}
+                                scrolling={false}
+                                error={!audios}
+                                placeholder="Audio:"
+                                value={audios}
+                                options={audiog_options}
+                                onChange={(e, {value, options}) => this.setAudio(value, options)}/>
+                        </Menu.Item>
+                        {/*<canvas ref="canvas1" id="canvas1" width="25" height="50"/>*/}
+                    </Menu>
                 </Segment>
-            );
-        }
+                <Segment textAlign='center'>
+                    <Button color='blue'
+                            attached
+                            floated='left'
+                            size='massive'
+                            icon='expand arrows alternate'
+                            onClick={this.toggleFullScreen}/>
+                    <video className={talking ? 'talk_border' : ''}
+                           ref="remoteVideo"
+                           id="remoteVideo"
+                           width="640"
+                           height="360"
+                           autoPlay={true}
+                           controls={false}
+                           muted={true}
+                           playsInline={true}/>
+                    <Button positive={!muted}
+                            negative={muted}
+                            size='massive'
+                            attached
+                            floated='right'
+                            icon={muted ? "volume off" : "volume up"}
+                            onClick={this.audioMute}/>
+                    <audio ref="remoteAudio"
+                           id="remoteAudio"
+                           autoPlay={true}
+                           controls={false}
+                           muted={muted}
+                           playsInline={true}/>
+                    <audio ref="trlAudio"
+                           id="trlAudio"
+                           autoPlay={true}
+                           controls={false}
+                        // muted={muted}
+                           playsInline={true}/>
+                </Segment>
+                {/*<Grid columns={3}>*/}
+                {/*    <Grid.Column width={2}>*/}
+                {/*        <Button color='blue'*/}
+                {/*                icon='expand arrows alternate'*/}
+                {/*                onClick={this.toggleFullScreen}/>*/}
+                {/*    </Grid.Column>*/}
+                {/*    <Grid.Column width={12}>*/}
+                {/*        <VolumeSlider volume={this.setVolume}/>*/}
+                {/*    </Grid.Column>*/}
+                {/*    <Grid.Column width={1}>*/}
+                {/*        <Button positive={!muted}*/}
+                {/*                negative={muted}*/}
+                {/*                icon={muted ? "volume off" : "volume up"}*/}
+                {/*                onClick={this.audioMute}/>*/}
+                {/*    </Grid.Column>*/}
+                {/*</Grid>*/}
+            </Segment>
+        );
     }
 }
 

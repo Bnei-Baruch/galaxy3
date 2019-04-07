@@ -1066,6 +1066,9 @@ class MobileClient extends Component {
                                         <Icon color={cammuted ? "red" : ""} name={!cammuted ? "eye" : "eye slash"} />
                                         {!cammuted ? "Stop Video" : "Start Video"}
                                     </Menu.Item>
+                                    {mystream ?
+                                    <Menu.Item icon="tv" name="Broadcast" onClick={() => reactSwipeEl.next()}/>
+                                        :
                                     <Popup flowing
                                            trigger={<Menu.Item icon="setting" name="Settings"/>}
                                            on='click'
@@ -1087,7 +1090,7 @@ class MobileClient extends Component {
                                                     options={vdevices_list}
                                                     onChange={(e, {value}) => this.setDevice(value,audio_device)} />
                                         </Popup.Content>
-                                    </Popup>
+                                    </Popup>}
                                 </Menu>
                             </div>
 
