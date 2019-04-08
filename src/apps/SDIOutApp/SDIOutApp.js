@@ -457,7 +457,7 @@ class SDIOutApp extends Component {
             disabled_groups.push(feed);
             this.removeFeed(feed.id);
             this.setState({disabled_groups});
-        } else if(data.type === "sdi-restart_sdiout" && data.status.sdiout) {
+        } else if(data.type === "sdi-restart_sdiout") {
             const {feeds,users,quistions_queue,disabled_groups,feeds_queue,feedStreams,mids,pre_feed,program} = data.feed;
             this.setState({feeds,users,quistions_queue,disabled_groups,feeds_queue,feedStreams,pre_feed,program});
             this.programState(mids);
