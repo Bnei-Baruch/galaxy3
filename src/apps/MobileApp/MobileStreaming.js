@@ -1,9 +1,8 @@
 import React, { Component } from 'react';
 import { Janus } from "../StreamApp/lib/janus";
-import { Segment, Menu, Select, Button, Icon } from 'semantic-ui-react';
+import { Segment, Menu, Select, Button } from 'semantic-ui-react';
 //import VolumeSlider from "../../components/VolumeSlider";
 import {videos_options, audiog_options, gxycol, trllang, STUN_SRV_STR, JANUS_SRV_EURFR} from "../../shared/consts";
-import './MobileStreaming.scss'
 
 class VirtualStreaming extends Component {
 
@@ -336,7 +335,7 @@ class VirtualStreaming extends Component {
                     <Button color='blue'
                             attached
                             floated='left'
-                            size='massive'
+                            size='big'
                             icon='expand arrows alternate'
                             onClick={this.toggleFullScreen}/>
                     <video className={talking ? 'talk_border' : ''}
@@ -350,7 +349,7 @@ class VirtualStreaming extends Component {
                            playsInline={true}/>
                     <Button positive={!muted}
                             negative={muted}
-                            size='massive'
+                            size='big'
                             attached
                             floated='right'
                             icon={muted ? "volume off" : "volume up"}

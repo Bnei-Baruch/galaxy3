@@ -1007,7 +1007,7 @@ class MobileClient extends Component {
                     ref={el => (reactSwipeEl = el)}
                 >
                     <div>
-                        <div className={classNames('vclient', { 'vclient--chat-open': this.state.visible })} >
+                        <div className='vclient' >
                             <div className="vclient__toolbar">
                                 <Select className='select_room'
                                         disabled={mystream}
