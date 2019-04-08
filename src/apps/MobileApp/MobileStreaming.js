@@ -14,7 +14,6 @@ class VirtualStreaming extends Component {
         audio: null,
         videos: Number(localStorage.getItem("video")) || 1,
         audios: Number(localStorage.getItem("lang")) || 15,
-        room: Number(localStorage.getItem("room")) || null,
         muted: false,
         vmuted: true,
         mixvolume: null,
@@ -23,28 +22,26 @@ class VirtualStreaming extends Component {
     };
 
     componentDidMount() {
-        if(this.state.room) {
-            fetch('https://v4g.kbb1.com/geo.php?action=get')
-                .then((response) => {
-                    if (response.ok) {
-                        return response.json().then(
-                            info => {
-                                let {user} = this.state;
-                                this.setState({user: {...info,...user}});
-                                localStorage.setItem("extip", info.external_ip);
-                                let server = `${JANUS_SRV_EURFR}`;
-                                // if (info.country_code === "IL") {
-                                //     server = 'https://v4g.kbb1.com/janustrl';
-                                // } else {
-                                //     server = (info.sessions > 400) ? 'https://jnsuk.kbb1.com/janustrl' : 'https://jnseur.kbb1.com/janustrl';
-                                // }
-                                this.initJanus(server);
-                            }
-                        );
-                    }
-                })
-                .catch(ex => console.log(`get geoInfo`, ex));
-        }
+        fetch('https://v4g.kbb1.com/geo.php?action=get')
+            .then((response) => {
+                if (response.ok) {
+                    return response.json().then(
+                        info => {
+                            let {user} = this.state;
+                            this.setState({user: {...info,...user}});
+                            localStorage.setItem("extip", info.external_ip);
+                            let server = `${JANUS_SRV_EURFR}`;
+                            // if (info.country_code === "IL") {
+                            //     server = 'https://v4g.kbb1.com/janustrl';
+                            // } else {
+                            //     server = (info.sessions > 400) ? 'https://jnsuk.kbb1.com/janustrl' : 'https://jnseur.kbb1.com/janustrl';
+                            // }
+                            this.initJanus(server);
+                        }
+                    );
+                }
+            })
+            .catch(ex => console.log(`get geoInfo`, ex));
     };
 
     componentWillUnmount() {
