@@ -586,6 +586,12 @@ class ShidurApp extends Component {
 
         // Make sure there is no empty space in program
         if(feeds.length > 12 && manual === null) {
+            //FIXME: Here maybe problem lost sync if some slave is offline
+            //       and some leaving feed made empty slot. In this case if slave goes online
+            //       mids in master and slave will be different.
+            //       Maybe we need remove check of full program (feeds.length > 12).
+            //       But in this case we will get duplicate feeds,
+            //       because empty slot will be filled with next in queue
             Janus.log(" :: Auto Switch mids - ", mids);
             mids.forEach((mid,i) => {
                 Janus.debug(" :: mids iteration - ", i, mid);
