@@ -181,7 +181,7 @@ class ShidurToran extends Component {
     disableGroup = (e, pre_feed) => {
         if(e) e.preventDefault();
         let {disabled_groups} = this.state;
-        if(this.props.feeds.length < 13)
+        if(this.props.feeds.length < 14)
             return;
         Janus.log(" :: Put to disabled: ", pre_feed);
         let chk = disabled_groups.find(g => g.id === pre_feed.id);
@@ -285,7 +285,7 @@ class ShidurToran extends Component {
                     muted = {muted}
                     playsInline = {true} />
                 <Button className='close_button'
-                        disabled={feeds.length < 13}
+                        disabled={feeds.length < 14}
                         size='mini'
                         color='red'
                         icon='close'
@@ -311,7 +311,7 @@ class ShidurToran extends Component {
                     muted = {muted}
                     playsInline = {true} />
                 <Button className='close_button'
-                        disabled={feeds.length < 13}
+                        disabled={feeds.length < 14}
                         size='mini'
                         color='red'
                         icon='close'
