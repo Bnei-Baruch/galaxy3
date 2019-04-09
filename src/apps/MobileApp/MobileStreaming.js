@@ -83,7 +83,7 @@ class VirtualStreaming extends Component {
             success: (videostream) => {
                 Janus.log(videostream);
                 this.setState({videostream});
-                //videostream.send({message: {request: "watch", id: videos}});
+                videostream.send({message: {request: "watch", id: videos}});
             },
             error: (error) => {
                 Janus.log("Error attaching plugin: " + error);
@@ -287,9 +287,8 @@ class VirtualStreaming extends Component {
 
     videoMute = (i) => {
         const {videostream,vmuted,videos} = this.state;
-        console.log(":: VIDEOMUTE", i , vmuted)
         this.setState({vmuted: !vmuted});
-        let request = vmuted ? "watch": "stop";
+        let request = vmuted ? "start": "pause";
         videostream.send({message: {request, id: videos}});
     };
 
