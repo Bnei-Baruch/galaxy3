@@ -285,7 +285,7 @@ class ShidurToran extends Component {
                     muted = {muted}
                     playsInline = {true} />
                 <Button className='close_button'
-                        disable={feeds < 13}
+                        disabled={feeds.length < 13}
                         size='mini'
                         color='red'
                         icon='close'
@@ -311,7 +311,7 @@ class ShidurToran extends Component {
                     muted = {muted}
                     playsInline = {true} />
                 <Button className='close_button'
-                        disable={feeds < 13}
+                        disabled={feeds.length < 13}
                         size='mini'
                         color='red'
                         icon='close'
