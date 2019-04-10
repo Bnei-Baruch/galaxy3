@@ -16,7 +16,7 @@ class ShidurToran extends Component {
         mids: [],
         feeds_queue: 0,
         pr1: [],
-        pre: null,
+        previewFeed: null,
         preview: null,
         pre_feed: null,
         full_feed: null,
@@ -43,23 +43,32 @@ class ShidurToran extends Component {
         }
     }
 
-    newSwitchFeed = (id, preview, i) => {
-        let pre = null;
+    newPreviewFeed = (id, preview, i) => {
         this.props.janus.attach(
             {
                 plugin: "janus.plugin.videoroom",
                 opaqueId: "switchfeed_user",
                 success: (pluginHandle) => {
-                    pre = pluginHandle;
-                    pre.simulcastStarted = false;
-                    Janus.log("Plugin attached! (" + pre.getPlugin() + ", id=" + pre.getId() + ")");
+                    let previewFeed = pluginHandle;
+                    Janus.log("Plugin attached! (" + previewFeed.getPlugin() + ", id=" + previewFeed.getId() + ")");
                     Janus.log("  -- This is a subscriber");
-                    let listen = { "request": "join", "room": 1234, "ptype": "subscriber", streams: [{feed: id, mid: "1"},{feed: id, mid: "1"}] };
-                    pre.send({"message": listen});
-                    this.setState({pre});
+                    let streams = [{feed: id, mid: "1"},{feed: id, mid: "1"}];
+                    let subscribe = { "request": "join", "room": 1234, "ptype": "subscriber", streams };
+                    previewFeed.send({"message": subscribe});
+                    this.setState({previewFeed});
                 },
                 error: (error) => {
                     Janus.error("  -- Error attaching plugin...", error);
+                },
+                iceState: (state) => {
+                    Janus.log("ICE state (remote feed) changed to " + state);
+                },
+                webrtcState: (on) => {
+                    Janus.log("Janus says this WebRTC PeerConnection (remote feed) is " + (on ? "up" : "down") + " now");
+                },
+                slowLink: (uplink, nacks) => {
+                    Janus.warn("Janus reports problems " + (uplink ? "sending" : "receiving") +
+                        " packets on this PeerConnection (remote feed, " + nacks + " NACKs/s " + (uplink ? "received" : "sent") + ")");
                 },
                 onmessage: (msg, jsep) => {
                     Janus.debug(" ::: Got a message (subscriber) :::");
@@ -71,7 +80,7 @@ class ShidurToran extends Component {
                     } else if(event !== undefined && event !== null) {
                         if(event === "attached") {
                             // Subscriber created and attached
-                            Janus.log("Successfully attached to feed " + pre);
+                            Janus.log("Successfully attached to feed in room " + msg["room"]);
                         } else {
                             // What has just happened?
                         }
@@ -90,8 +99,9 @@ class ShidurToran extends Component {
                     if(jsep !== undefined && jsep !== null) {
                         Janus.debug("Handling SDP as well...");
                         Janus.debug(jsep);
+                        let {previewFeed} = this.state;
                         // Answer and attach
-                        pre.createAnswer(
+                        previewFeed.createAnswer(
                             {
                                 jsep: jsep,
                                 media: { audio: false, videoSend: false },	// We want recvonly audio/video
@@ -99,16 +109,13 @@ class ShidurToran extends Component {
                                     Janus.debug("Got SDP!");
                                     Janus.debug(jsep);
                                     let body = { "request": "start", "room": 1234 };
-                                    pre.send({"message": body, "jsep": jsep});
+                                    previewFeed.send({"message": body, "jsep": jsep});
                                 },
                                 error: (error) => {
                                     Janus.error("WebRTC error:", error);
                                 }
                             });
                     }
-                },
-                webrtcState: (on) => {
-                    Janus.log("Janus says this WebRTC PeerConnection (feed #" + pre + ") is " + (on ? "up" : "down") + " now");
                 },
                 onlocalstream: (stream) => {
                     // The subscriber stream is recvonly, we don't expect anything here
@@ -122,33 +129,32 @@ class ShidurToran extends Component {
                         //FIXME: does we really need to stop all track for feed id?
                         return;
                     }
-                    if(track.kind !== "video" || !on || !track.muted)
+                    if(track.kind !== "video" || !on)
                         return;
                     let stream = new MediaStream();
                     stream.addTrack(track.clone());
-                    Janus.debug("Remote feed #" + pre);
                     let switchvideo = mid === "0" ? this.refs.prevewVideo : this.refs.nextVideo;
                     Janus.log(" Attach remote stream on video: "+i);
                     Janus.attachMediaStream(switchvideo, stream);
                 },
                 oncleanup: () => {
-                    Janus.log(" ::: Got a cleanup notification (remote feed "+id+" : "+i+") :::");
-                    console.log(" :: Cleanup handle! - " + id + " - index: " + i);
+                    Janus.log(" ::: Got a cleanup notification (preview feed) :::");
                 }
             });
     };
 
     switchPreview = (id, preview) => {
-        if(!this.state.pre) {
-            this.newSwitchFeed(id, preview);
-        } else {
+        const {previewFeed} = this.state;
+        if(previewFeed && previewFeed.send) {
             let streams = [{feed: id, mid: "1", sub_mid: (preview ? "0" : "1")}];
             let switchfeed = {"request": "switch", streams};
-            this.state.pre.send ({"message": switchfeed,
+            previewFeed.send ({"message": switchfeed,
                 success: () => {
                     Janus.log(" :: Preview Switch Feed to: ", id);
                 }
             })
+        } else {
+            this.newPreviewFeed(id, preview);
         }
     };
 
@@ -168,12 +174,12 @@ class ShidurToran extends Component {
         this.switchPreview(pre_feed.id, true);
     };
 
-    selectNext = (next) => {
+    selectNext = () => {
         const {feeds,feeds_queue} = this.props;
         let next_feed = feeds[feeds_queue];
         if(next_feed) {
-            this.setState({next_feed});
             Janus.log(" :: Select next feed: ", next_feed);
+            this.setState({next_feed});
             this.switchPreview(next_feed.id, false);
         }
     };
