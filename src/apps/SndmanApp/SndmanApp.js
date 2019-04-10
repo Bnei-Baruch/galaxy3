@@ -409,7 +409,7 @@ class SndmanApp extends Component {
                     let feed = mids[mid].feed_id;
                     Janus.log(" >> This track is coming from feed " + feed + ":", mid);
                     if(!on) {
-                        console.log(" :: Going to stop track :: " + track + ":", mid);
+                        Janus.log(" :: Going to stop track :: " + track + ":", mid);
                         //FIXME: Remove callback for audio track does not come
                         track.stop();
                         //FIXME: does we really need to stop all track for feed id?

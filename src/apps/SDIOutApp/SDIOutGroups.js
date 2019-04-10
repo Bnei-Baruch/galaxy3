@@ -102,37 +102,37 @@ class SDIOutGroups extends Component {
       const muted = true;
       const full_question = full_feed && users[full_feed.display.id] ? users[full_feed.display.id].question : null;
 
-      let program = this.props.mids.map((feed,i) => {
-          if(feed && this.props.qam[i] === col) {
-              if(!feed.active) {
+      let program = this.props.mids.map((mid,i) => {
+          if(mid && this.props.qam[i] === col) {
+              if(!mid.active) {
                   return (<div className={fullscr ? "hidden" : ""} key={"prf" + i}>
                       <div className="video_box" key={"prov" + i}>
                           <div className="video_title" />
                       </div></div>)
+              } else {
+                  let qst = mid.user && users[mid.user.id] ? users[mid.user.id].question : false;
+                  let talk = mid.talk;
+                  //let id = feed.feed_id;
+                  return (<div className={fullscr ? "hidden" : ""} key={"prf" + i}>
+                      <div className="video_box"
+                           key={"prov" + i}
+                           ref={"provideo" + i}
+                           id={"provideo" + i}>
+                          <div className="video_title">{mid.user.display}</div>
+                          {qst ? <div className='qst_title'>?</div> : ""}
+                          <video className={talk ? "talk" : ""}
+                                 onClick={() => this.fullScreenGroup(i,mid)}
+                                 key={i}
+                                 ref={"programVideo" + i}
+                                 id={"programVideo" + i}
+                                 width={width}
+                                 height={height}
+                                 autoPlay={autoPlay}
+                                 controls={controls}
+                                 muted={muted}
+                                 playsInline={true}/>
+                      </div></div>);
               }
-              let user = JSON.parse(feed.feed_display);
-              let qst = users[user.id] ? users[user.id].question : false;
-              let talk = feed.talk;
-              //let id = feed.feed_id;
-              return (<div className={fullscr ? "hidden" : ""} key={"prf" + i}>
-                  <div className="video_box"
-                       key={"prov" + i}
-                       ref={"provideo" + i}
-                       id={"provideo" + i}>
-                      <div className="video_title">{user.display}</div>
-                      {qst ? <div className='qst_title'>?</div> : ""}
-                      <video className={talk ? "talk" : ""}
-                             onClick={() => this.fullScreenGroup(i,feed)}
-                             key={i}
-                             ref={"programVideo" + i}
-                             id={"programVideo" + i}
-                             width={width}
-                             height={height}
-                             autoPlay={autoPlay}
-                             controls={controls}
-                             muted={muted}
-                             playsInline={true}/>
-                  </div></div>);
           }
           return true;
       });
