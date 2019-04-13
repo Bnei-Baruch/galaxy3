@@ -574,19 +574,19 @@ class MobileClient extends Component {
                 },
                 onremotetrack: (track, mid, on) => {
                     Janus.log(" ::: Got a remote track event ::: (remote feed)");
-                    if(!mid) {
-                        mid = track.id.split("janus")[1];
-                    }
+                    // if(!mid) {
+                    //     mid = track.id.split("janus")[1];
+                    // }
                     Janus.log("Remote track (mid=" + mid + ") " + (on ? "added" : "removed") + ":", track);
                     // Which publisher are we getting on this mid?
                     let {mids,feedStreams} = this.state;
                     let feed = mids[mid].feed_id;
                     Janus.log(" >> This track is coming from feed " + feed + ":", mid);
                     if(!on) {
-                        Janus.log(" :: Going to stop track :: " + feed + ":", mid);
+                        //Janus.log(" :: Going to stop track :: " + feed + ":", mid);
                         //FIXME: Remove callback for audio track does not come
-                        track.stop();
-                        //FIXME: does we really need to stop all track for feed id?
+                        //track.stop();
+                        //FIXME: calling here stop method do problem on Safari, when feed reconnect
                         return;
                     }
                     // If we're here, a new track was added
@@ -608,6 +608,7 @@ class MobileClient extends Component {
                         this.setState({feedStreams});
                         //FIXME: this must be based on video mids
                         let remotevideo = this.refs["remoteVideo" + feedStreams[feed].slot];
+                        Janus.log("Attach to slot: ", feedStreams[feed].slot);
                         Janus.attachMediaStream(remotevideo, stream);
                     } else if(track.kind === "data") {
                         Janus.log("Created remote data channel");
@@ -921,15 +922,34 @@ class MobileClient extends Component {
 
         let videos = this.state.video_mids.map((mid,i) => {
             if(mid && i < 4) {
-                let feed = this.state.feeds.find(f => f.id === mid.feed_id);
-                if(!mid.active) {
-                    return (this.state.video_mids.length > 3 ? <div className="video"
+                if(mid.active) {
+                    let feed = this.state.feeds.find(f => f.id === mid.feed_id);
+                    //let id = feed.id;
+                    let talk = feed ? feed.talk : false;
+                    let question = feed ? feed.question : false;
+                    let cammute = feed ? feed.cammute : false;
+                    let display_name = feed ? feed.display.display : "";
+                    return (<div className="video"
                                  key={"vk" + i}
                                  ref={"video" + i}
                                  id={"video" + i}>
-                        <div><div className="video__title"></div></div>
+                        <div className={classNames('video__overlay', {'talk': talk})}>
+                            {question ? <div className="question">
+                                <svg viewBox="0 0 50 50">
+                                    <text x="25" y="25" textAnchor="middle" alignmentBaseline="central"
+                                          dominantBaseline="central">&#xF128;</text>
+                                </svg>
+                            </div> : ''}
+                            <div className="video__title">{!talk ?
+                                <Icon name="microphone slash" size="small" color="red"/> : ''}{display_name}</div>
+                        </div>
+                        <svg className={classNames('nowebcam', {'hidden': !cammute})} viewBox="0 0 32 18"
+                             preserveAspectRatio="xMidYMid meet">
+                            <text x="16" y="9" textAnchor="middle" alignmentBaseline="central"
+                                  dominantBaseline="central">&#xf2bd;</text>
+                        </svg>
                         <video
-                            key={"v"+i}
+                            key={"v" + i}
                             ref={"remoteVideo" + i}
                             id={"remoteVideo" + i}
                             width={width}
@@ -938,39 +958,8 @@ class MobileClient extends Component {
                             controls={controls}
                             muted={true}
                             playsInline={true}/>
-                    </div> : false);
+                    </div>);
                 }
-                //let id = feed.id;
-                let talk = feed ? feed.talk : false;
-                let question = feed ? feed.question : false;
-                let cammute = feed ? feed.cammute : false;
-                let display_name = feed ? feed.display.display : "";
-                return (<div className="video"
-                key={"vk" + i}
-                ref={"video" + i}
-                id={"video" + i}>
-                <div className={classNames('video__overlay', {'talk' : talk})}>
-                    {question ? <div className="question">
-                        <svg viewBox="0 0 50 50">
-                            <text x="25" y="25" textAnchor="middle" alignmentBaseline="central" dominantBaseline="central">&#xF128;</text>
-                        </svg>
-                    </div>:''}
-                    <div className="video__title">{!talk ? <Icon name="microphone slash" size="small" color="red"/> : ''}{display_name}</div>
-                </div>
-                    <svg className={classNames('nowebcam',{'hidden':!cammute})} viewBox="0 0 32 18" preserveAspectRatio="xMidYMid meet" >
-                        <text x="16" y="9" textAnchor="middle" alignmentBaseline="central" dominantBaseline="central">&#xf2bd;</text>
-                    </svg>
-                    <video
-                        key={"v"+i}
-                        ref={"remoteVideo" + i}
-                        id={"remoteVideo" + i}
-                        width={width}
-                        height={height}
-                        autoPlay={autoPlay}
-                        controls={controls}
-                        muted={true}
-                        playsInline={true}/>
-                </div>);
             }
             return true;
         });

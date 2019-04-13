@@ -1713,7 +1713,10 @@ export function Janus(gatewayCallbacks) {
 				config.remoteStream = event.streams[0];
 				if(event.track) {
 					// Notify about the new track
-					var mid = event.transceiver ? event.transceiver.mid : event.track.id;
+					//var mid = event.transceiver ? event.transceiver.mid : event.track.id;
+					var transceiver = config.pc.getTransceivers().find(
+						t => t.receiver.track.id === event.track.id);
+					var mid = transceiver.mid;
 					try {
 						pluginHandle.onremotetrack(event.track, mid, true);
 					} catch(e) {};
@@ -2393,8 +2396,10 @@ export function Janus(gatewayCallbacks) {
 		}
 		// https://code.google.com/p/webrtc/issues/detail?id=3508
 		var mediaConstraints = {};
-		if(Janus.unifiedPlan) {
-			// Unified Plan is supported, we can use transceivers
+		if((Janus.webRTCAdapter.browserDetails.browser === "firefox" && Janus.webRTCAdapter.browserDetails.version >= 59) ||
+			(Janus.webRTCAdapter.browserDetails.browser === "safari" && window.RTCRtpSender.prototype.replaceTrack) ||
+			(Janus.webRTCAdapter.browserDetails.browser === "chrome" && Janus.webRTCAdapter.browserDetails.version >= 72)) {
+			// Firefox >= 59, Safari and Chrome >= 72 use Transceivers
 			var audioTransceiver = null, videoTransceiver = null;
 			var transceivers = config.pc.getTransceivers();
 			if(transceivers && transceivers.length > 0) {
