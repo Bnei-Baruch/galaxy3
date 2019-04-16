@@ -259,11 +259,11 @@ class VirtualClient extends Component {
             onremotestream: (stream) => {
                 // The publisher stream is sendonly, we don't expect anything here
             },
-            ondataopen: (data) => {
-                Janus.log("The DataChannel is available!(publisher)");
+            ondataopen: (label) => {
+                Janus.log("Publisher - DataChannel is available! ("+label+")");
             },
-            ondata: (data) => {
-                Janus.log("We got data from the DataChannel! (publisher) " + data);
+            ondata: (data, label) => {
+                Janus.log("Publisher - Got data from the DataChannel! ("+label+")" + data);
             },
             oncleanup: () => {
                 Janus.log(" ::: Got a cleanup notification: we are unpublished now :::");
@@ -598,11 +598,11 @@ class VirtualClient extends Component {
                         Janus.log("-- Already active stream --");
                     }
                 },
-                ondataopen: (data) => {
-                    Janus.log("The DataChannel is available!(feed)");
+                ondataopen: (label) => {
+                    Janus.log("Feed - DataChannel is available! ("+label+")");
                 },
-                ondata: (data) => {
-                    Janus.debug("We got data from the DataChannel! (feed) " + data);
+                ondata: (data, label) => {
+                    Janus.log("Feed - Got data from the DataChannel! ("+label+")" + data);
                     let msg = JSON.parse(data);
                     this.onRoomData(msg);
                     Janus.log(" :: We got msg via DataChannel: ",msg)
