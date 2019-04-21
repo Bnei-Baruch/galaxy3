@@ -1,13 +1,13 @@
 import React, { Component, Fragment } from 'react';
 import { Janus } from "../../lib/janus";
-import {Segment, Table, Grid} from "semantic-ui-react";
+import {Table} from "semantic-ui-react";
 import {initJanus} from "../../shared/tools";
-import './AdminGuest.css';
+import './AdminCongress.css';
 import './AdminGuestVideo.scss'
 import {client, getUser} from "../../components/UserManager";
 import LoginPage from "../../components/LoginPage";
 
-class AdminGuest extends Component {
+class AdminCongress extends Component {
 
     state = {
         chatroom: null,
@@ -157,8 +157,8 @@ class AdminGuest extends Component {
     };
 
     onMessage = (videoroom, msg, jsep, initdata) => {
-        Janus.log(" ::: Got a message (publisher) :::");
-        Janus.log(msg);
+        Janus.debug(" ::: Got a message (publisher) :::");
+        Janus.debug(msg);
         let event = msg["videoroom"];
         if(event !== undefined && event !== null) {
             if(event === "joined") {
@@ -654,4 +654,4 @@ class AdminGuest extends Component {
   }
 }
 
-export default AdminGuest;
+export default AdminCongress;

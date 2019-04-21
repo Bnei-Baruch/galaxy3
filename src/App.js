@@ -11,7 +11,8 @@ import 'semantic-ui-css/semantic.min.css';
 // import SndmanApp from "./apps/SndmanApp/SndmanApp";
 // import GroupClient from "./apps/GroupsApp/GroupClient";
 // import GalaxyStream from "./apps/StreamApp/GalaxyStream";
-import AdminGuest from "./apps/AdminApp/AdminGuest";
+//import AdminGuest from "./apps/AdminApp/AdminGuest";
+import AdminCongress from "./apps/AdminApp/AdminCongress";
 
 class App extends Component {
 
@@ -25,7 +26,8 @@ class App extends Component {
                 {/* <SndmanApp/>*/}
                 {/*<GroupClient/>*/}
                 {/* <GalaxyStream/>*/}
-                 <AdminGuest/>
+                {/* <AdminGuest/>*/}
+                <AdminCongress/>
                  {/* <MobileClient/> */}
                  {/*<AdminStreaming/>*/}
                  {/*<GalaxyStream/>*/}
