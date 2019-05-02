@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import { Janus } from "../../lib/janus";
-import {Segment, Table, Icon} from "semantic-ui-react";
+import {Segment, Table} from "semantic-ui-react";
 import {getState, putData, initJanus} from "../../shared/tools";
 //import {MAX_FEEDS} from "../../shared/consts";
 import './ShidurUsers.css'
@@ -622,7 +622,7 @@ class ShidurUsers extends Component {
       const autoPlay = true;
       const controls = false;
       const muted = true;
-      const q = (<Icon color='red' name='question circle' />);
+      const q = (<b style={{color: 'red', fontSize: '20px', fontFamily: 'Verdana', fontWeight: 'bold'}}>?</b>);
 
       let rooms_list = rooms.map((data,i) => {
           const {room, num_participants, description} = data;
@@ -666,7 +666,7 @@ class ShidurUsers extends Component {
                   <div className={classNames('video__overlay', {'talk' : talk})}>
                       {question ? <div className="question">
                           <svg viewBox="0 0 50 50">
-                              <text x="25" y="25" text-anchor="middle" alignment-baseline="central" dominant-baseline="central">&#xF128;</text>
+                              <text x="25" y="25" textAnchor="middle" alignmentBaseline="central" dominantBaseline="central">&#xF128;</text>
                           </svg>
                       </div>:''}
                       {/*<div className="video__title">{!talk ? <Icon name="microphone slash" size="small" color="red"/> : ''}{name}</div>*/}
@@ -698,7 +698,7 @@ class ShidurUsers extends Component {
                   <div className={classNames('video__overlay', {'talk' : talk})}>
                       {question ? <div className="question">
                           <svg viewBox="0 0 50 50">
-                              <text x="25" y="25" text-anchor="middle" alignment-baseline="central" dominant-baseline="central">&#xF128;</text>
+                              <text x="25" y="25" textAnchor="middle" alignmentBaseline="central" dominantBaseline="central">&#xF128;</text>
                           </svg>
                       </div>:''}
                       {/*<div className="video__title">{!talk ? <Icon name="microphone slash" size="small" color="red"/> : ''}{name}</div>*/}
