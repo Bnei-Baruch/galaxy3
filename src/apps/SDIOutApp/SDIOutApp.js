@@ -593,7 +593,7 @@ class SDIOutApp extends Component {
                 Janus.debug(" :: mids iteration - ", i, mid);
                 if (mid && !mid.active) {
                     Janus.log(" :: Found empty slot in program! - ", mids[i]);
-                    let feed =  feeds[feeds_queue];
+                    let feed = feeds[feeds_queue];
                     feeds_queue++;
                     if(feeds_queue >= feeds.length) {
                         // End round here!
@@ -605,8 +605,10 @@ class SDIOutApp extends Component {
                         this.setState({feeds_queue});
                     }
                     Janus.log(":: Switch program to: ", feed);
-                    let streams = [{feed: feed.id, mid: "1"}];
-                    this.subscribeTo(streams);
+                    if(feed && feed.id) {
+                        let streams = [{feed: feed.id, mid: "1"}];
+                        this.subscribeTo(streams);
+                    }
                 }
             })
             // Slot in program changed manually
@@ -636,8 +638,10 @@ class SDIOutApp extends Component {
                     }
                     this.setState({program: null});
                     Janus.log(":: Switch program to: ", feed);
-                    let streams = [{feed: feed.id, mid: "1"}];
-                    this.subscribeTo(streams);
+                    if(feed && feed.id) {
+                        let streams = [{feed: feed.id, mid: "1"}];
+                        this.subscribeTo(streams);
+                    }
                     break
                 }
             }
