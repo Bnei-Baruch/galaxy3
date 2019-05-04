@@ -390,12 +390,12 @@ class ShidurToran extends Component {
                         <Button
                             color={sndman ? "green" : "red"}
                             disabled={!sndman || feeds.length < 13}
-                            onClick={() => this.sdiAction("restart_sndman", false, 1, this.props)}>
+                            onClick={() => this.sdiAction("restart_sndman", false, 1, this.props.feeds.length)}>
                             SndMan</Button>
                         <Button
                             color={sdiout ? "green" : "red"}
                             disabled={!sdiout || feeds.length < 13}
-                            onClick={() => this.sdiAction("restart_sdiout", false, 1, this.props)}>
+                            onClick={() => this.sdiAction("restart_sdiout", false, 1, this.props.feeds.length)}>
                             SdiOut</Button>
                     </Button.Group>
                 </Grid.Column>

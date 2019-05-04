@@ -1,7 +1,7 @@
 import React, {Component} from 'react';
 import {Janus} from "../../lib/janus";
 import {Grid} from "semantic-ui-react";
-import {getDateString, initJanus, getState} from "../../shared/tools";
+import {getDateString, initJanus, getState, putData} from "../../shared/tools";
 import {initGxyProtocol} from "../../shared/protocol";
 import ShidurGroups from "./ShidurGroups";
 import ShidurUsers from "./ShidurUsers";
@@ -505,7 +505,10 @@ class ShidurApp extends Component {
             this.setState({...data});
             if(data.sdiout || data.sndman) {
                 let status = data.sndman ?  {sndman: true} : {sdiout: true};
-                this.pre.sdiAction("state_shidur", status,1, this.state);
+                putData(`state/galaxy/shidur`, this.state, (cb) => {
+                    Janus.log(":: Save state to DB :: ",cb);
+                    this.pre.sdiAction("state_shidur", status,1, this.state.feeds.length);
+                });
             }
         }
     };

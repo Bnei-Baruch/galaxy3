@@ -540,10 +540,10 @@ class SndmanApp extends Component {
             this.removeFeed(feed.id);
             this.setState({disabled_groups});
         } else if(data.type === "sdi-restart_sndman") {
-            const {feeds,users,quistions_queue,disabled_groups,feeds_queue,feedStreams,mids,pre_feed,program} = data.feed;
-            this.setState({feeds,users,quistions_queue,disabled_groups,feeds_queue,feedStreams,pre_feed,program});
-            this.programState(mids);
-            //window.location.reload();
+            // const {feeds,users,quistions_queue,disabled_groups,feeds_queue,feedStreams,mids,pre_feed,program} = data.feed;
+            // this.setState({feeds,users,quistions_queue,disabled_groups,feeds_queue,feedStreams,pre_feed,program});
+            // this.programState(mids);
+            window.location.reload();
         } else if(data.type === "sdi-reset_queue") {
             this.resetQueue();
         } else if(data.type === "sdi-restore_group") {
@@ -577,16 +577,18 @@ class SndmanApp extends Component {
                 }
             }
         } else if(data.type === "sdi-state_shidur" && data.status.sndman) {
-            const {feeds,users,quistions_queue,disabled_groups,feeds_queue,feedStreams,mids,pre_feed,program} = data.feed;
-            if(feeds.length === 0) {
+            if(data.feed === 0) {
                 Janus.log(" :: Shidur page was reloaded or all groups is Offline :: ");
                 setTimeout(() => {
                     window.location.reload();
                 }, 2000);
                 //this.recoverState();
             } else {
-                this.setState({feeds,users,quistions_queue,disabled_groups,feeds_queue,feedStreams,pre_feed,program});
-                this.programSubscribtion(mids);
+                getState('state/galaxy/shidur', (state) => {
+                    const {feeds,users,quistions_queue,disabled_groups,feeds_queue,feedStreams,mids,pre_feed,program} = state;
+                    this.setState({feeds,users,quistions_queue,disabled_groups,feeds_queue,feedStreams,pre_feed,program});
+                    this.programSubscribtion(mids);
+                });
             }
         } else if(data.type === "event") {
             delete data.type;
