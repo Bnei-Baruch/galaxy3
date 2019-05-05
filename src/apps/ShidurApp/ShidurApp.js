@@ -421,7 +421,7 @@ class ShidurApp extends Component {
     subscribeTo = (subscription) => {
         // New feeds are available, do we need create a new plugin handle first?
         Janus.log(" -- Going to subscribe: ",subscription);
-        this.pre.sdiAction("subscribe-req" , true, null, subscription);
+        this.pre.sdiAction("subscribe_req" , true, null, subscription);
         if (this.state.remoteFeed) {
             this.state.remoteFeed.send({message:
                     {request: "subscribe", streams: subscription}
@@ -524,7 +524,7 @@ class ShidurApp extends Component {
 
     unsubscribeFrom = (streams, id) => {
         Janus.log(" :: Going to unsubscribe: ",streams);
-        this.pre.sdiAction("unsubscribe-req" , true, null, streams);
+        this.pre.sdiAction("unsubscribe_req" , true, null, streams);
         let {remoteFeed} = this.state;
 
         // Remove feed from preview
@@ -668,7 +668,6 @@ class ShidurApp extends Component {
 
     nextInQueue = () => {
         this.setDelay();
-        this.pre.sdiAction("next_inqueue", null,1, null);
         let {feeds_queue,feeds,round} = this.state;
         feeds_queue++;
         if(feeds_queue >= feeds.length) {
