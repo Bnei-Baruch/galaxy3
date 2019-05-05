@@ -109,7 +109,7 @@ class ShidurUsers extends Component {
                 this.state.preview.videoroom.send({
                     message: {request: "listparticipants", "room": room.room},
                     success: (data) => {
-                        Janus.log("Feeds: ", data.participants);
+                        Janus.debug("Feeds: ", data.participants);
                         let count = data.participants.filter(p => JSON.parse(p.display).role === "user");
                         rooms[i].num_participants = count.length;
                         this.setState({rooms});

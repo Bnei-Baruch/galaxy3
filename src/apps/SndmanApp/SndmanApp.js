@@ -726,6 +726,9 @@ class SndmanApp extends Component {
                     if(feed && feed.id) {
                         let streams = [{feed: feed.id, mid: "1"}];
                         this.subscribeTo(streams);
+                    } else {
+                        // We can't leave empty slot in program, so trigger autofill
+                        this.fillProgram(null, null);
                     }
                     break
                 }
