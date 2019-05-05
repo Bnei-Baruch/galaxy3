@@ -185,6 +185,7 @@ class ShidurToran extends Component {
     };
 
     disableGroup = (e, pre_feed) => {
+        this.setDelay();
         if(e) e.preventDefault();
         let {disable_button,feeds} = this.props;
         let {disabled_groups} = this.state;
@@ -331,6 +332,7 @@ class ShidurToran extends Component {
                         icon='close'
                         onClick={() => this.disableGroup(null, next_feed)} />
                 <Button className='hide_button'
+                        disabled={disable_button}
                         size='mini'
                         color='green'
                         icon='share'
@@ -356,7 +358,7 @@ class ShidurToran extends Component {
             return (
                 <Table.Row className={pre_feed && id === pre_feed.id ? 'active' : 'no'}
                            key={i} onClick={() => this.selectGroup(feed)}
-                           onContextMenu={(e) => this.disableGroup(e, feed, i)} >
+                           onContextMenu={(e) => this.disableGroup(e, feed, i)} disabled={disable_button}>
                     <Table.Cell width={5}>{display.display}</Table.Cell>
                     <Table.Cell width={1}>{0}</Table.Cell>
                     <Table.Cell width={1}>{0}</Table.Cell>

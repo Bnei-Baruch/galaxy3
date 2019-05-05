@@ -659,6 +659,7 @@ class ShidurApp extends Component {
     };
 
     nextInQueue = () => {
+        this.setDelay();
         this.pre.sdiAction("next_inqueue", null,1, null);
         let {feeds_queue,feeds,round} = this.state;
         feeds_queue++;
@@ -688,6 +689,13 @@ class ShidurApp extends Component {
                 this.col3.switchFour();
             }, 1000);
         }
+    };
+
+    setDelay = () => {
+        this.setState({disable_button: true, next_button: true});
+        setTimeout(() => {
+            this.setState({disable_button: false, next_button: false});
+        }, 2000);
     };
 
     render() {
