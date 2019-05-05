@@ -25,7 +25,7 @@ class ShidurGroups extends Component {
     switchProgram = (i) => {
         Janus.log(" :: Selected program Switch: ",i);
         this.setDelay();
-        const {mids,pre_feed} = this.props;
+        const {mids} = this.props;
         this.props.setProps({program: i});
 
         // Unsubscribe from previous mid
@@ -35,9 +35,6 @@ class ShidurGroups extends Component {
         setTimeout(() => {
             this.questionStatus();
         }, 1000);
-
-        // Send sdi action
-        this.sdiAction("switch_program" , false, i, pre_feed);
     };
 
     questionStatus = () => {
@@ -119,7 +116,7 @@ class ShidurGroups extends Component {
         });
 
         // Send sdi action
-        this.sdiAction("switch_four" , false, null, streams);
+        this.sdiAction("switch_req" , true, null, streams);
     };
 
     sdiAction = (action, status, i, feed) => {

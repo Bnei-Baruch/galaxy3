@@ -216,9 +216,9 @@ class SndmanApp extends Component {
                 Janus.log("Successfully joined room " + msg["room"] + " with ID " + myid);
                 this.publishOwnFeed();
                 if(msg["publishers"] !== undefined && msg["publishers"] !== null) {
-                    let list = msg["publishers"];
-                    let feeds = list.filter(feeder => JSON.parse(feeder.display).role === "group");
-                    this.setState({feeds});
+                    // let list = msg["publishers"];
+                    // let feeds = list.filter(feeder => JSON.parse(feeder.display).role === "group");
+                    // this.setState({feeds});
                     //this.makeSubscribtion(feeds);
                 }
             } else if(event === "talking") {
@@ -237,7 +237,6 @@ class SndmanApp extends Component {
                     let {feeds,feedStreams,users} = this.state;
                     Janus.debug("Got a list of available publishers/feeds:");
                     Janus.log(feed);
-                    let subscription = [];
                     for(let f in feed) {
                         let id = feed[f]["id"];
                         let display = JSON.parse(feed[f]["display"]);
@@ -249,11 +248,8 @@ class SndmanApp extends Component {
                         for (let i in streams) {
                             let stream = streams[i];
                             if(stream.type === "video") {
-                                let subst = {feed: id};
                                 stream["id"] = id;
                                 stream["display"] = display;
-                                subst.mid = stream.mid;
-                                subscription.push(subst);
                             }
                         }
                         feedStreams[id] = {id, display, streams};
@@ -262,14 +258,6 @@ class SndmanApp extends Component {
                     }
                     feeds.push(feed[0]);
                     this.setState({feeds,feedStreams,users});
-                    // Set next feed in queue first after program is full
-                    if(feeds.length === 13) {
-                        this.setState({feeds_queue: 12});
-                    }
-                    // Subscribe until program full
-                    if(feeds.length < 13 && subscription.length > 0) {
-                        this.subscribeTo(subscription);
-                    }
                 } else if(msg["leaving"] !== undefined && msg["leaving"] !== null) {
                     // One of the publishers has gone away?
                     let leaving = msg["leaving"];
@@ -365,7 +353,7 @@ class SndmanApp extends Component {
                     if(msg["streams"]) {
                         // Update map of subscriptions by mid
                         Janus.log(" :: Streams updated! : ",msg["streams"]);
-                        let {mids,pre_feed,program} = this.state;
+                        let {mids} = this.state;
                         for(let i in msg["streams"]) {
                             let mindex = msg["streams"][i]["mid"];
                             mids[mindex] = msg["streams"][i];
@@ -373,9 +361,7 @@ class SndmanApp extends Component {
                                 mids[mindex].user = JSON.parse(msg["streams"][i]["feed_display"]);
                             }
                         }
-                        this.setState({mids}, () => {
-                            this.fillProgram(pre_feed,program);
-                        });
+                        this.setState({mids});
                     }
                     if(jsep !== undefined && jsep !== null) {
                         Janus.debug("Handling SDP as well...");
@@ -518,11 +504,27 @@ class SndmanApp extends Component {
         });
     };
 
+    switchTo = (streams) => {
+        Janus.log(" :: Going to switch four: ", streams);
+        let message = {request: "switch", streams};
+        this.state.remoteFeed.send ({message,
+            success: () => {
+                Janus.debug(" -- Switch success: ");
+            }
+        });
+    };
+
     onProtocolData = (data) => {
         Janus.log(" :: Got Shidur Action: ", data);
         let {col, feed, i, status} = data;
         if(data.type === "sdi-switch_program") {
             this["col"+col].switchProgram(i, feed);
+        } else if(data.type === "sdi-switch_req") {
+            this.switchTo(feed)
+        } else if(data.type === "sdi-subscribe_req") {
+            this.subscribeTo(feed)
+        } else if(data.type === "sdi-unsubscribe_req") {
+            this.unsubscribeFrom(feed)
         } else if(data.type === "sdi-switch_four") {
             this["col"+col].switchFour();
         } else if(data.type === "sdi-next_inqueue") {
