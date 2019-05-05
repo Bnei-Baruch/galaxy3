@@ -186,8 +186,9 @@ class ShidurToran extends Component {
 
     disableGroup = (e, pre_feed) => {
         if(e) e.preventDefault();
+        let {disable_button,feeds} = this.props;
         let {disabled_groups} = this.state;
-        if(this.props.feeds.length < 14)
+        if(feeds.length < 14 || disable_button)
             return;
         Janus.log(" :: Put to disabled: ", pre_feed);
         let chk = disabled_groups.find(g => g.id === pre_feed.id);
@@ -248,9 +249,16 @@ class ShidurToran extends Component {
 
     zoomOut = () => this.setState({ zoom: false });
 
+    setDelay = () => {
+        this.props.setProps({disable_button: true, next_button: true});
+        setTimeout(() => {
+            this.props.setProps({disable_button: false, next_button: false});
+        }, 2000);
+    };
+
     render() {
 
-        const {users,feeds,pre_feed,feeds_queue,disabled_groups,round,qfeeds,sdiout,sndman,log_list} = this.props;
+        const {users,feeds,pre_feed,feeds_queue,disabled_groups,round,qfeeds,sdiout,sndman,log_list,disable_button} = this.props;
         const {next_feed,zoom} = this.state;
 
         const autoPlay = true;
@@ -291,7 +299,7 @@ class ShidurToran extends Component {
                     muted = {muted}
                     playsInline = {true} />
                 <Button className='close_button'
-                        disabled={feeds.length < 14}
+                        disabled={feeds.length < 14 || disable_button}
                         size='mini'
                         color='red'
                         icon='close'
@@ -317,7 +325,7 @@ class ShidurToran extends Component {
                     muted = {muted}
                     playsInline = {true} />
                 <Button className='close_button'
-                        disabled={feeds.length < 14}
+                        disabled={feeds.length < 14 || disable_button}
                         size='mini'
                         color='red'
                         icon='close'

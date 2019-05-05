@@ -146,9 +146,9 @@ class ShidurGroups extends Component {
     };
 
     setDelay = () => {
-        this.props.setProps({next_button: true});
+        this.props.setProps({disable_button: true, next_button: true});
         setTimeout(() => {
-            this.props.setProps({next_button: false});
+            this.props.setProps({disable_button: false, next_button: false});
         }, 2000);
     };
 

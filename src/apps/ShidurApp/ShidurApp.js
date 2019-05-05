@@ -37,6 +37,7 @@ class ShidurApp extends Component {
         myid: null,
         mypvtid: null,
         mystream: null,
+        disable_button: false,
         next_button: false,
         audio: null,
         muted: true,
