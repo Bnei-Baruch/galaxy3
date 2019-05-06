@@ -195,7 +195,6 @@ class ShidurToran extends Component {
         let chk = disabled_groups.find(g => g.id === pre_feed.id);
         if(chk)
             return;
-        this.sdiAction("disable_group", true, null, pre_feed);
         disabled_groups.push(pre_feed);
         this.props.removeFeed(pre_feed.id, true);
         this.props.setProps({disabled_groups});
@@ -222,7 +221,6 @@ class ShidurToran extends Component {
                     user.rfid = data.id;
                     users[user.id] = user;
                     this.props.setProps({disabled_groups,feeds,users});
-                    this.sdiAction("restore_group", true, i, data);
                 }
             }
         }

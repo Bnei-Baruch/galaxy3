@@ -434,30 +434,17 @@ class SDIOutApp extends Component {
     onProtocolData = (data) => {
         Janus.log(" :: Got Shidur Action: ", data);
         let {col, feed, i, status} = data;
-        if(data.type === "sdi-switch_program") {
-            this["col"+col].switchProgram(i, feed);
-        } else if(data.type === "sdi-switch_req") {
+        if(data.type === "sdi-switch_req") {
             this.switchTo(feed)
         } else if(data.type === "sdi-subscribe_req") {
             this.subscribeTo(feed)
         } else if(data.type === "sdi-unsubscribe_req") {
             this.unsubscribeFrom(feed)
-        } else if(data.type === "sdi-switch_four") {
-            this["col"+col].switchFour();
-        } else if(data.type === "sdi-next_inqueue") {
-            this.nextInQueue();
         } else if(data.type === "sdi-fullscr_group" && status) {
             this["col"+col].fullScreenGroup(i,feed);
         } else if(data.type === "sdi-fullscr_group" && !status) {
             let {col, feed, i} = data;
             this["col"+col].toFourGroup(i,feed);
-        } else if(data.type === "sdi-remove") {
-            this.removeFeed(feed.id);
-        } else if(data.type === "sdi-disable_group") {
-            let {disabled_groups} = this.state;
-            disabled_groups.push(feed);
-            this.removeFeed(feed.id);
-            this.setState({disabled_groups});
         } else if(data.type === "sdi-restart_sdiout") {
             // const {feeds,users,quistions_queue,disabled_groups,feeds_queue,feedStreams,mids,pre_feed,program} = data.feed;
             // this.setState({feeds,users,quistions_queue,disabled_groups,feeds_queue,feedStreams,pre_feed,program});
@@ -465,18 +452,6 @@ class SDIOutApp extends Component {
             window.location.reload();
         } else if(data.type === "sdi-reset_queue") {
             this.resetQueue();
-        } else if(data.type === "sdi-restore_group") {
-            let {disabled_groups,feeds,users} = this.state;
-            for(let i = 0; i < disabled_groups.length; i++){
-                if(disabled_groups[i].id === data.feed.id) {
-                    disabled_groups.splice(i, 1);
-                    feeds.push(data.feed);
-                    let user = data.feed.display;
-                    user.rfid = data.feed.id;
-                    users[user.id] = user;
-                    this.setState({disabled_groups,feeds,users});
-                }
-            }
         } else if(data.type === "question" && data.status) {
             let {quistions_queue,users} = this.state;
             if(users[data.user.id]) {
