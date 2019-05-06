@@ -179,36 +179,14 @@ class SDIOutApp extends Component {
                     // One of the publishers has gone away?
                     let leaving = msg["leaving"];
                     Janus.log("Publisher left: " + leaving);
-                    console.log("Publisher left: " + leaving);
-                    this.removeFeed(leaving);
-                    // Delete from disabled_groups
-                    let {disabled_groups} = this.state;
-                    for(let i = 0; i < disabled_groups.length; i++){
-                        if(disabled_groups[i].id === leaving) {
-                            disabled_groups.splice(i, 1);
-                            this.setState({disabled_groups});
-                            break
-                        }
-                    }
                 } else if(msg["unpublished"] !== undefined && msg["unpublished"] !== null) {
                     // One of the publishers has unpublished?
                     let unpublished = msg["unpublished"];
                     Janus.log("Publisher left: " + unpublished);
-                    console.log("Publisher left: " + unpublished);
                     if(unpublished === 'ok') {
                         // That's us
                         this.state.gxyhandle.hangup();
                         return;
-                    }
-                    this.removeFeed(unpublished);
-                    // Delete from disabled_groups
-                    let {disabled_groups} = this.state;
-                    for(let i = 0; i < disabled_groups.length; i++){
-                        if(disabled_groups[i].id === unpublished) {
-                            disabled_groups.splice(i, 1);
-                            this.setState({disabled_groups});
-                            break
-                        }
                     }
                 } else if(msg["error"] !== undefined && msg["error"] !== null) {
                     if(msg["error_code"] === 426) {
@@ -479,8 +457,8 @@ class SDIOutApp extends Component {
                 //this.recoverState();
             } else {
                 getState('state/galaxy/shidur', (state) => {
-                    const {feeds,users,quistions_queue,disabled_groups,feeds_queue,feedStreams,mids,pre_feed,program} = state;
-                    this.setState({feeds,users,quistions_queue,disabled_groups,feeds_queue,feedStreams,pre_feed,program});
+                    const {feeds,users,quistions_queue,feedStreams,mids} = state;
+                    this.setState({feeds,users,quistions_queue,feedStreams});
                     this.programSubscribtion(mids);
                 });
             }

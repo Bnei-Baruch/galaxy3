@@ -8,8 +8,6 @@ import SndmanGroups from "./SndmanGroups";
 import SndmanUsers from "./SndmanUsers";
 import {
     DATA_PORT,
-    // JANUS_IP_EURND,
-    // JANUS_IP_EURUK,
     JANUS_IP_ISRPT,
     JANUS_IP_EURFR,
     SECRET
@@ -166,13 +164,9 @@ class SndmanApp extends Component {
     forwardOwnFeed = (room) => {
         let {myid,gxyhandle,data_forward} = this.state;
         let isrip = `${JANUS_IP_ISRPT}`;
-        //let eurip = `${JANUS_IP_EURND}`;
-        //let ukip = `${JANUS_IP_EURUK}`;
         let frip = `${JANUS_IP_EURFR}`;
         let dport = DATA_PORT;
         let isrfwd = { "request": "rtp_forward","publisher_id":myid,"room":room,"secret":`${SECRET}`,"host":isrip,"data_port":dport};
-        //let eurfwd = { "request": "rtp_forward","publisher_id":myid,"room":room,"secret":`${SECRET}`,"host":eurip,"data_port":dport};
-        //let eukfwd = { "request": "rtp_forward","publisher_id":myid,"room":room,"secret":`${SECRET}`,"host":ukip,"data_port":dport};
         let efrfwd = { "request": "rtp_forward","publisher_id":myid,"room":room,"secret":`${SECRET}`,"host":frip,"data_port":dport};
         gxyhandle.send({"message": isrfwd,
             success: (data) => {
@@ -180,18 +174,6 @@ class SndmanApp extends Component {
                 Janus.log(" :: ISR Data Forward: ", data);
             },
         });
-        // gxyhandle.send({"message": eurfwd,
-        //     success: (data) => {
-        //         data_forward.eur = data["rtp_stream"]["data_stream_id"];
-        //         Janus.log(" :: EUR Data Forward: ", data);
-        //     },
-        // });
-        // gxyhandle.send({"message": eukfwd,
-        //     success: (data) => {
-        //         data_forward.euk = data["rtp_stream"]["data_stream_id"];
-        //         Janus.log(" :: EUK Data Forward: ", data);
-        //     },
-        // });
         gxyhandle.send({"message": efrfwd,
             success: (data) => {
                 data_forward.efr = data["rtp_stream"]["data_stream_id"];
@@ -262,36 +244,14 @@ class SndmanApp extends Component {
                     // One of the publishers has gone away?
                     let leaving = msg["leaving"];
                     Janus.log("Publisher left: " + leaving);
-                    console.log("Publisher left: " + leaving);
-                    this.removeFeed(leaving);
-                    // Delete from disabled_groups
-                    let {disabled_groups} = this.state;
-                    for(let i = 0; i < disabled_groups.length; i++){
-                        if(disabled_groups[i].id === leaving) {
-                            disabled_groups.splice(i, 1);
-                            this.setState({disabled_groups});
-                            break
-                        }
-                    }
                 } else if(msg["unpublished"] !== undefined && msg["unpublished"] !== null) {
                     // One of the publishers has unpublished?
                     let unpublished = msg["unpublished"];
                     Janus.log("Publisher left: " + unpublished);
-                    console.log("Publisher left: " + unpublished);
                     if(unpublished === 'ok') {
                         // That's us
                         this.state.gxyhandle.hangup();
                         return;
-                    }
-                    this.removeFeed(unpublished);
-                    // Delete from disabled_groups
-                    let {disabled_groups} = this.state;
-                    for(let i = 0; i < disabled_groups.length; i++){
-                        if(disabled_groups[i].id === unpublished) {
-                            disabled_groups.splice(i, 1);
-                            this.setState({disabled_groups});
-                            break
-                        }
                     }
                 } else if(msg["error"] !== undefined && msg["error"] !== null) {
                     if(msg["error_code"] === 426) {
@@ -562,8 +522,8 @@ class SndmanApp extends Component {
                 //this.recoverState();
             } else {
                 getState('state/galaxy/shidur', (state) => {
-                    const {feeds,users,quistions_queue,disabled_groups,feeds_queue,feedStreams,mids,pre_feed,program} = state;
-                    this.setState({feeds,users,quistions_queue,disabled_groups,feeds_queue,feedStreams,pre_feed,program});
+                    const {feeds,users,quistions_queue,feedStreams,mids} = state;
+                    this.setState({feeds,users,quistions_queue,feedStreams});
                     this.programSubscribtion(mids);
                 });
             }
