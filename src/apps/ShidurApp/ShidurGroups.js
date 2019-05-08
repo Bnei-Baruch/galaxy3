@@ -126,20 +126,27 @@ class ShidurGroups extends Component {
         sendProtocolMessage(protocol, user, msg );
     };
 
-    fullScreenGroup = (i,full_feed) => {
-        Janus.log(":: Make Full Screen Group: ",full_feed);
-        full_feed.display = JSON.parse(full_feed.feed_display);
-        this.setState({fullscr: !this.state.fullscr,full_feed});
-        let fourvideo = this.refs["programVideo" + i];
-        let fullvideo = this.refs.fullscreenVideo;
-        fullvideo.srcObject = fourvideo.captureStream();
-        this.sdiAction("fullscr_group" , true, i, full_feed);
+    fullScreenGroup = (i,feed) => {
+        feed.display = JSON.parse(feed.feed_display);
+        let {full_feed} = this.state;
+        if(full_feed && feed.feed_id === full_feed.feed_id) {
+            this.toFourGroup();
+            return;
+        } else if(full_feed) {
+            this.toFourGroup();
+        }
+        Janus.log(":: Make Full Screen Group: ",feed);
+        this.setState({fullscr: true,full_feed: feed});
+        // let fourvideo = this.refs["programVideo" + i];
+        // let fullvideo = this.refs.fullscreenVideo;
+        // fullvideo.srcObject = fourvideo.captureStream();
+        this.sdiAction("fullscr_group" , true, i, feed);
     };
 
     toFourGroup = () => {
         Janus.log(":: Back to four: ");
         this.sdiAction("fullscr_group" , false, null, this.state.full_feed);
-        this.setState({fullscr: !this.state.fullscr, full_feed: null});
+        this.setState({fullscr: false, full_feed: null});
     };
 
     setDelay = () => {
@@ -158,7 +165,7 @@ class ShidurGroups extends Component {
       const autoPlay = true;
       const controls = false;
       const muted = true;
-      const full_question = full_feed && users[full_feed.display.id] ? users[full_feed.display.id].question : null;
+      //const full_question = full_feed && users[full_feed.display.id] ? users[full_feed.display.id].question : null;
       const q = (<div className="question">
           <svg viewBox="0 0 50 50">
               <text x="25" y="25" textAnchor="middle" alignmentBaseline="central" dominantBaseline="central">&#xF128;</text>
@@ -174,16 +181,16 @@ class ShidurGroups extends Component {
                       </div></div>)
               } else {
                   let qst = mid.user && users[mid.user.id] ? users[mid.user.id].question : false;
-                  let talk = mid.talk;
+                  //let talk = mid.talk;
                   //let id = feed.feed_id;
-                  return (<div className={fullscr ? "hidden" : ""} key={"prf" + i}>
+                  return (<div key={"prf" + i}>
                       <div className="video_box"
                            key={"prov" + i}
                            ref={"provideo" + i}
                            id={"provideo" + i}>
                           <div className="video_title">{mid.user.display}</div>
                           {qst ? q : ""}
-                          <video className={talk ? "talk" : ""}
+                          <video className={fullscr && mid.feed_id === full_feed.feed_id ? "fullscreen" : ""}
                                  onClick={() => this.fullScreenGroup(i,mid)}
                                  key={i}
                                  ref={"programVideo" + i}
@@ -194,39 +201,40 @@ class ShidurGroups extends Component {
                                  controls={controls}
                                  muted={muted}
                                  playsInline={true}/>
-                          <Button className='next_button'
-                                  disabled={feeds.length < 2 || next_button}
-                                  size='mini'
-                                  color='green'
-                                  icon={pre_feed ? 'arrow up' : 'share'}
-                                  onClick={() => this.switchProgram(i)} />
+                          {fullscr && mid.feed_id === full_feed.feed_id ? "" :
+                              <Button className='next_button'
+                                      disabled={feeds.length < 2 || next_button}
+                                      size='mini'
+                                      color='green'
+                                      icon={pre_feed ? 'arrow up' : 'share'}
+                                      onClick={() => this.switchProgram(i)} />}
                       </div></div>);
               }
           }
           return true;
       });
 
-      let fullscreen = (<div className={fullscr ? "" : "hidden"}>
-              <div className="fullscrvideo_title">{full_feed ? full_feed.display.display : ""}</div>
-              {full_question ? q : ''}
-              <video ref = {"fullscreenVideo"}
-                     onClick={() => this.toFourGroup()}
-                     id = "fullscreenVideo"
-                     width = "402"
-                     height = "224"
-                     autoPlay = {autoPlay}
-                     controls = {controls}
-                     muted = {muted}
-                     playsInline = {true} />
-          </div>
-      );
+      // let fullscreen = (<div className={fullscr ? "" : "hidden"}>
+      //         <div className="fullscrvideo_title">{full_feed ? full_feed.display.display : ""}</div>
+      //         {full_question ? q : ''}
+      //         <video ref = {"fullscreenVideo"}
+      //                onClick={() => this.toFourGroup()}
+      //                id = "fullscreenVideo"
+      //                width = "402"
+      //                height = "224"
+      //                autoPlay = {autoPlay}
+      //                controls = {controls}
+      //                muted = {muted}
+      //                playsInline = {true} />
+      //     </div>
+      // );
 
       return (
           <Segment className="group_conteiner">
               <Segment attached className="program_segment" color='red'>
                   <div className="video_grid">
                       {program}
-                      {fullscreen}
+                      {/*{fullscreen}*/}
                   </div>
               </Segment>
               <Button className='fours_button'
