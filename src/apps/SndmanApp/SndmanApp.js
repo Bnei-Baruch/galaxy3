@@ -456,12 +456,7 @@ class SndmanApp extends Component {
                 streams.push({feed: m.feed_id, mid: "1", sub_mid: m.mid});
             }
         });
-        let switch_sync = {request: "switch", streams};
-        this.state.remoteFeed.send ({"message": switch_sync,
-            success: () => {
-                Janus.debug(" -- Switch success: ");
-            }
-        });
+        this.switchTo(streams);
     };
 
     switchTo = (streams) => {
@@ -489,10 +484,8 @@ class SndmanApp extends Component {
             let {col, feed, i} = data;
             this["col"+col].toFourGroup(i,feed);
         } else if(data.type === "sdi-restart_sndman") {
-            // const {feeds,users,quistions_queue,disabled_groups,feeds_queue,feedStreams,mids,pre_feed,program} = data.feed;
-            // this.setState({feeds,users,quistions_queue,disabled_groups,feeds_queue,feedStreams,pre_feed,program});
-            // this.programState(mids);
-            window.location.reload();
+            this.programState(feed);
+            //window.location.reload();
         } else if(data.type === "sdi-reset_queue") {
             this.resetQueue();
         } else if(data.type === "question" && data.status) {

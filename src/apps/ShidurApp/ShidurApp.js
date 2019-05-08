@@ -459,21 +459,12 @@ class ShidurApp extends Component {
                 if(!chk) {
                     qfeeds.push(q);
                 } else {
-                    //TODO: Here we reattach same feed to fix delay after many switch requests
+                    //FIXME: Does we need reattach same feed to fix delay after many switch requests?
                     //
-                    // for(let i = 0; i < pgm_state.length; i++){
+                    // for(let i = 0; i < mids.length; i++){
                     //     let c = 0;
-                    //     // FIXME: Array with null will do crash here!
-                    //     if(pgm_state[i].id === chk[c].id) {
-                    //         pr1[i].detach();
-                    //         pr1[i] = null;
-                    //         if(i < 4) {
-                    //             this.col1.switchNext(i,chk[0]);
-                    //         } else if(i < 8) {
-                    //             this.col2.switchNext(i,chk[0]);
-                    //         } else if(i < 12) {
-                    //             this.col3.switchNext(i,chk[0]);
-                    //         }
+                    //     if(mids[i] && mids[i].active && mids[i].feed_id === chk[c].id) {
+                    //         // TODO: unsubscribe-subscribe same stream
                     //         if(chk.length > 1) {
                     //             c++
                     //         }
