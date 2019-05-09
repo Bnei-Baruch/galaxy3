@@ -23,6 +23,8 @@ class ShidurGroups extends Component {
     };
 
     switchProgram = (i) => {
+        if(this.quadCheckDup())
+            return;
         Janus.log(" :: Selected program Switch: ",i);
         //this.setDelay();
         const {mids} = this.props;
@@ -35,6 +37,25 @@ class ShidurGroups extends Component {
         setTimeout(() => {
             this.questionStatus();
         }, 1000);
+    };
+
+    quadCheckDup = () => {
+        let {feeds,feeds_queue,pre_feed,index,mids} = this.props;
+        let {quad} = this.state;
+        let dup = false;
+        let feed = pre_feed || feeds[feeds_queue];
+        for(let i=index; i<index+4; i++) {
+            let sub_mid = quad[i];
+            let mid = mids[sub_mid];
+            if(mid && mid.active && feed.id) {
+                let feed_id = mids[sub_mid].feed_id;
+                if(feed.id === feed_id) {
+                    dup = true;
+                    break;
+                }
+            }
+        }
+        return dup;
     };
 
     questionStatus = () => {
