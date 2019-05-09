@@ -185,7 +185,7 @@ class ShidurToran extends Component {
     };
 
     disableGroup = (e, pre_feed) => {
-        this.setDelay();
+        //this.setDelay();
         if(e) e.preventDefault();
         let {disable_button,feeds} = this.props;
         let {disabled_groups} = this.state;

@@ -24,7 +24,7 @@ class ShidurGroups extends Component {
 
     switchProgram = (i) => {
         Janus.log(" :: Selected program Switch: ",i);
-        this.setDelay();
+        //this.setDelay();
         const {mids} = this.props;
         this.props.setProps({program: i});
 

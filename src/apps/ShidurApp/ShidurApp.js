@@ -660,7 +660,7 @@ class ShidurApp extends Component {
     };
 
     nextInQueue = () => {
-        this.setDelay();
+        //this.setDelay();
         let {feeds_queue,feeds,round} = this.state;
         feeds_queue++;
         if(feeds_queue >= feeds.length) {
