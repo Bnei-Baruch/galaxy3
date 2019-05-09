@@ -436,7 +436,8 @@ class ShidurToran extends Component {
                             Questions: {qfeeds.length}
                         </Label>
                         <Dropdown className='select_group' error={qfeeds.length > 0}
-                                  placeholder='Questions'
+                                  disabled={qfeeds.length === 0}
+                                  placeholder={qfeeds.length > 0 ? ':: Select group from list ::' : 'Questions...'}
                                   fluid
                                   upward
                                   selection
