@@ -155,9 +155,6 @@ class ShidurGroups extends Component {
         }
         Janus.log(":: Make Full Screen Group: ",feed);
         this.setState({fullscr: true,full_feed: feed});
-        // let fourvideo = this.refs["programVideo" + i];
-        // let fullvideo = this.refs.fullscreenVideo;
-        // fullvideo.srcObject = fourvideo.captureStream();
         this.sdiAction("fullscr_group" , true, i, feed);
     };
 
@@ -183,7 +180,6 @@ class ShidurGroups extends Component {
       const autoPlay = true;
       const controls = false;
       const muted = true;
-      //const full_question = full_feed && users[full_feed.display.id] ? users[full_feed.display.id].question : null;
       const q = (<div className="question">
           <svg viewBox="0 0 50 50">
               <text x="25" y="25" textAnchor="middle" alignmentBaseline="central" dominantBaseline="central">&#xF128;</text>
@@ -199,8 +195,6 @@ class ShidurGroups extends Component {
                       </div></div>)
               } else {
                   let qst = mid.user && users[mid.user.id] ? users[mid.user.id].question : false;
-                  //let talk = mid.talk;
-                  //let id = feed.feed_id;
                   return (<div key={"prf" + i}>
                       <div className="video_box"
                            key={"prov" + i}
@@ -232,27 +226,11 @@ class ShidurGroups extends Component {
           return true;
       });
 
-      // let fullscreen = (<div className={fullscr ? "" : "hidden"}>
-      //         <div className="fullscrvideo_title">{full_feed ? full_feed.display.display : ""}</div>
-      //         {full_question ? q : ''}
-      //         <video ref = {"fullscreenVideo"}
-      //                onClick={() => this.toFourGroup()}
-      //                id = "fullscreenVideo"
-      //                width = "402"
-      //                height = "224"
-      //                autoPlay = {autoPlay}
-      //                controls = {controls}
-      //                muted = {muted}
-      //                playsInline = {true} />
-      //     </div>
-      // );
-
       return (
           <Segment className="group_conteiner">
               <Segment attached className="program_segment" color='red'>
                   <div className="video_grid">
                       {program}
-                      {/*{fullscreen}*/}
                   </div>
               </Segment>
               <Button className='fours_button'
