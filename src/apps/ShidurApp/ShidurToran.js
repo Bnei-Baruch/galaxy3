@@ -255,6 +255,71 @@ class ShidurToran extends Component {
         }, 2000);
     };
 
+    questionStatus = () => {
+        let {mids,qfeeds,quistions_queue} = this.props;
+        for(let i = 0; i < quistions_queue.length; i++) {
+            let qp_count = mids.filter(qp => qp.active && qp.feed_id === quistions_queue[i].rfid).length;
+            let qf_chk = qfeeds.find(qf => qf.id === quistions_queue[i].rfid);
+            if(qp_count > 0 && qf_chk) {
+                for (let q = 0; q < qfeeds.length; q++) {
+                    if (qfeeds[q] && qfeeds[q].id === quistions_queue[i].rfid) {
+                        Janus.log(" - Remove QFEED: ", qfeeds[q]);
+                        qfeeds.splice(q, 1);
+                        this.props.setProps({qfeeds});
+                        break
+                    }
+                }
+            } else if(qp_count === 0 && !qf_chk) {
+                qfeeds.push({id: quistions_queue[i].rfid, display: quistions_queue[i].user});
+                this.props.setProps({qfeeds});
+            }
+        }
+    };
+
+    setPreset = () => {
+        Janus.log(" :: Set preset ::");
+        let {users,mids} = this.props;
+        let index = 0;
+        let preset = [
+            // Moscow - aceea810-34c9-4909-8619-ff3050afab23
+            // Piter - 2d2562e2-5b21-4d80-8147-8246f51e1f6e
+            // New York - 4d1bd4e4-5bba-4bee-a224-1136d812f2d8
+            // Kiev - 84beb035-cb7e-4a1d-b4f4-662b4bbdd55a
+            {"sub_mid":"0","user_id":"aceea810-34c9-4909-8619-ff3050afab23"},
+            {"sub_mid":"3","user_id":"2d2562e2-5b21-4d80-8147-8246f51e1f6e"},
+            {"sub_mid":"6","user_id":"4d1bd4e4-5bba-4bee-a224-1136d812f2d8"},
+            {"sub_mid":"9","user_id":"84beb035-cb7e-4a1d-b4f4-662b4bbdd55a"},
+        ];
+        let streams = [];
+
+        for(let i=index; i<index+4; i++) {
+            let sub_mid = preset[i].sub_mid;
+            let user_id = preset[i].user_id;
+            let mid = mids[sub_mid];
+            if(mid && mid.active && users[user_id]) {
+                // TODO: check if user online
+                let feed = users[user_id].rfid;
+                streams.push({feed, mid: "1", sub_mid});
+            }
+
+        }
+
+        Janus.log(" :: Going to switch four: ", streams);
+        let switch_four = {request: "switch", streams};
+        this.props.remoteFeed.send ({"message": switch_four,
+            success: () => {
+                Janus.debug(" -- Switch success: ");
+                // Add to qfeeds if removed from program with question status
+                setTimeout(() => {
+                    this.questionStatus();
+                }, 1000);
+            }
+        });
+
+        // Send sdi action
+        this.sdiAction("switch_req" , true, null, streams);
+    };
+
     render() {
 
         const {users,feeds,pre_feed,feeds_queue,disabled_groups,round,qfeeds,sdiout,sndman,log_list,disable_button} = this.props;
@@ -420,8 +485,8 @@ class ShidurToran extends Component {
                                   options={group_options}
                                   onClick={this.sortGroups}
                                   onChange={(e,{value}) => this.selectGroup(value)} />
-                        <Label attached='top left' color={feeds.length > 13 ? 'blue' : 'grey'} onClick={this.selectNext}>
-                            Next: {feeds[feeds_queue] ? feeds[feeds_queue].display.display : ""}
+                        <Label as='a' attached='top left' color='teal' onClick={this.setPreset}>
+                            Preset: 1
                         </Label>
                     </Segment>
                     <Segment textAlign='center' className="group_list" raised >
@@ -443,6 +508,9 @@ class ShidurToran extends Component {
                                   selection
                                   options={queue_options}
                                   onChange={(e,{value}) => this.selectGroup(value)} />
+                        <Label attached='top left' color={feeds.length > 13 ? 'blue' : 'grey'} onClick={this.selectNext}>
+                            Next: {feeds[feeds_queue] ? feeds[feeds_queue].display.display : ""}
+                        </Label>
                     </Segment>
                 </Grid.Column>
                 <Grid.Column>
