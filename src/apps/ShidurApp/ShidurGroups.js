@@ -47,12 +47,9 @@ class ShidurGroups extends Component {
         for(let i=index; i<index+4; i++) {
             let sub_mid = quad[i];
             let mid = mids[sub_mid];
-            if(mid && mid.active && feed.id) {
-                let feed_id = mids[sub_mid].feed_id;
-                if(feed.id === feed_id) {
-                    dup = true;
-                    break;
-                }
+            if(mid && mid.active && feed.id && mid.feed_id === feed.id) {
+                dup = true;
+                break;
             }
         }
         return dup;
