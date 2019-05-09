@@ -301,12 +301,11 @@ class ShidurToran extends Component {
                 let feed = users[user_id].rfid;
                 streams.push({feed, mid: "1", sub_mid});
             }
-
         }
 
-        Janus.log(" :: Going to switch four: ", streams);
-        let switch_four = {request: "switch", streams};
-        this.props.remoteFeed.send ({"message": switch_four,
+        Janus.log(" :: Going to switch to preset 1: ", streams);
+        let switch_preset = {request: "switch", streams};
+        this.props.remoteFeed.send ({"message": switch_preset,
             success: () => {
                 Janus.debug(" -- Switch success: ");
                 // Add to qfeeds if removed from program with question status
