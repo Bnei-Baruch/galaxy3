@@ -238,7 +238,7 @@ class ShidurGroups extends Component {
                   </div>
               </Segment>
               <Button className='fours_button'
-                      disabled={feeds.length < 16}
+                      disabled={feeds.length < 16 || fullscr}
                       attached='bottom'
                       color='blue'
                       size='mini'
