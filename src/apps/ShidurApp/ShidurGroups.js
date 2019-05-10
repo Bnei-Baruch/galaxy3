@@ -171,6 +171,51 @@ class ShidurGroups extends Component {
         }, 2000);
     };
 
+    setPreset = () => {
+        Janus.log(" :: Set preset ::");
+        let {feeds,users,mids} = this.props;
+        if(feeds.length < 16)
+            return;
+        let index = 0;
+        let preset = [
+            // Moscow - aceea810-34c9-4909-8619-ff3050afab23
+            // Piter - 2d2562e2-5b21-4d80-8147-8246f51e1f6e
+            // New York - 4d1bd4e4-5bba-4bee-a224-1136d812f2d8
+            // Kiev - 84beb035-cb7e-4a1d-b4f4-662b4bbdd55a
+            {"sub_mid":"0","user_id":"aceea810-34c9-4909-8619-ff3050afab23"},
+            {"sub_mid":"3","user_id":"2d2562e2-5b21-4d80-8147-8246f51e1f6e"},
+            {"sub_mid":"6","user_id":"4d1bd4e4-5bba-4bee-a224-1136d812f2d8"},
+            {"sub_mid":"9","user_id":"84beb035-cb7e-4a1d-b4f4-662b4bbdd55a"},
+        ];
+        let streams = [];
+
+        for(let i=index; i<index+4; i++) {
+            let sub_mid = preset[i].sub_mid;
+            let user_id = preset[i].user_id;
+            let mid = mids[sub_mid];
+            if(mid && mid.active && users[user_id]) {
+                // TODO: check if user online
+                let feed = users[user_id].rfid;
+                streams.push({feed, mid: "1", sub_mid});
+            }
+        }
+
+        Janus.log(" :: Going to switch to preset 1: ", streams);
+        let switch_preset = {request: "switch", streams};
+        this.props.remoteFeed.send ({"message": switch_preset,
+            success: () => {
+                Janus.debug(" -- Switch success: ");
+                // Add to qfeeds if removed from program with question status
+                setTimeout(() => {
+                    this.questionStatus();
+                }, 1000);
+            }
+        });
+
+        // Send sdi action
+        this.sdiAction("switch_req" , true, null, streams);
+    };
+
 
   render() {
       const { full_feed,fullscr,col } = this.state;
@@ -233,16 +278,22 @@ class ShidurGroups extends Component {
                       {program}
                   </div>
               </Segment>
-              <Button className='fours_button'
-                      disabled={feeds.length < 16 || fullscr}
-                      attached='bottom'
-                      color='blue'
-                      size='mini'
-                      onClick={this.switchFour}>
-                  <Icon name='share' />
-                  <Icon name='th large' />
-                  <Icon name='share' />
-              </Button>
+              <Button.Group attached='bottom' size='mini'>
+                  <Button className='preset_button'
+                          disabled={feeds.length < 16 || fullscr}
+                          color='teal'
+                          onClick={this.setPreset} >
+                      {col}
+                  </Button>
+                  <Button className='fours_button'
+                          disabled={feeds.length < 16 || fullscr}
+                          color='blue'
+                          onClick={this.switchFour}>
+                      <Icon name='share' />
+                      <Icon name='th large' />
+                      <Icon name='share' />
+                  </Button>
+              </Button.Group>
           </Segment>
     );
   }
