@@ -277,7 +277,7 @@ class ShidurGroups extends Component {
               </Segment>
               <Button.Group attached='bottom' size='mini'>
                   <Button className='preset_button'
-                          disabled={col !== 1 || fullscr}
+                          disabled={col !== 1 || feeds.length < 16 || fullscr}
                           color='teal'
                           onClick={this.setPreset} >
                       {col}
