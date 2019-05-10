@@ -173,10 +173,7 @@ class ShidurGroups extends Component {
 
     setPreset = () => {
         Janus.log(" :: Set preset ::");
-        let {feeds,users,mids} = this.props;
-        if(feeds.length < 16)
-            return;
-        let index = 0;
+        let {users,mids,index} = this.props;
         let preset = [
             // Moscow - aceea810-34c9-4909-8619-ff3050afab23
             // Piter - 2d2562e2-5b21-4d80-8147-8246f51e1f6e
@@ -280,7 +277,7 @@ class ShidurGroups extends Component {
               </Segment>
               <Button.Group attached='bottom' size='mini'>
                   <Button className='preset_button'
-                          disabled={feeds.length < 16 || fullscr}
+                          disabled={col !== 1 || fullscr}
                           color='teal'
                           onClick={this.setPreset} >
                       {col}
