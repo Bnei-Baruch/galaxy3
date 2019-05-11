@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import { Janus } from "../../lib/janus";
 import {Segment, Menu, Button, Input, Table, Grid, Message, Transition, Select, Icon, Popup, List} from "semantic-ui-react";
-import {initJanus, initChatRoom, getDateString, joinChatRoom, getPublisherInfo} from "../../shared/tools";
+import {initJanus, initChatRoom, getDateString, joinChatRoom, getPublisherInfo, getHiddenProp, notifyMe} from "../../shared/tools";
 import './ShidurAdmin.css';
 import './VideoConteiner.scss'
 import {SECRET} from "../../shared/consts";
@@ -145,7 +145,7 @@ class ShidurAdmin extends Component {
         let req = {request:"listforwarders",room,"secret":`${SECRET}`};
         videoroom.send ({"message": req,
             success: (data) => {
-                Janus.log(" :: List forwarders: ", data);
+                Janus.debug(" :: List forwarders: ", data);
                 if(!data.publishers)
                     return;
                 //let forwarders = data.publishers.filter(f => f.forwarders);
@@ -666,7 +666,7 @@ class ShidurAdmin extends Component {
     };
 
     onData = (data) => {
-        Janus.log(":: We got message from Data Channel: ",data);
+        Janus.debug(":: We got message from Data Channel: ",data);
         let json = JSON.parse(data);
         // var transaction = json["transaction"];
         // if (transactions[transaction]) {
@@ -704,6 +704,7 @@ class ShidurAdmin extends Component {
                 messages.push(message);
                 this.setState({messages});
                 this.scrollToBottom();
+                notifyMe(message.user.username, message.text,(getHiddenProp !== null));
             }
         } else if (what === "join") {
             // Somebody joined
