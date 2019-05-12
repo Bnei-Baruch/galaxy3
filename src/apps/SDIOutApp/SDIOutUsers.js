@@ -346,7 +346,7 @@ class SDIOutUsers extends Component {
 
     unsubscribeFrom = (id) => {
         // Unsubscribe from this publisher
-        let {questions,quistions_queue,cammuteds,feeds,users,feedStreams} = this.state;
+        let {questions,questions_queue,cammuteds,feeds,users,feedStreams} = this.state;
         let {remoteFeed} = this.state;
         for (let i=0; i<feeds.length; i++) {
             if (feeds[i].id === id) {
@@ -357,10 +357,10 @@ class SDIOutUsers extends Component {
                 if(questions[feeds[i].display.id]) {
                     delete questions[feeds[i].display.id];
                     this.setState({questions});
-                    for(let q = 0; q < quistions_queue.length; q++){
-                        if(quistions_queue[q].user.id === feeds[i].display.id) {
-                            quistions_queue.splice(q, 1);
-                            this.setState({quistions_queue});
+                    for(let q = 0; q < questions_queue.length; q++){
+                        if(questions_queue[q].user.id === feeds[i].display.id) {
+                            questions_queue.splice(q, 1);
+                            this.setState({questions_queue});
                             break
                         }
                     }
@@ -385,10 +385,10 @@ class SDIOutUsers extends Component {
                 if(questions[feedStreams[id].display.id]) {
                     delete questions[feedStreams[id].display.id];
                     this.setState({questions});
-                    for(let q = 0; q < quistions_queue.length; q++){
-                        if(quistions_queue[q].user.id === feedStreams[id].display.id) {
-                            quistions_queue.splice(q, 1);
-                            this.setState({quistions_queue});
+                    for(let q = 0; q < questions_queue.length; q++){
+                        if(questions_queue[q].user.id === feedStreams[id].display.id) {
+                            questions_queue.splice(q, 1);
+                            this.setState({questions_queue});
                             break
                         }
                     }

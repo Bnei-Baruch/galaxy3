@@ -36,7 +36,7 @@ class SndmanApp extends Component {
         full_feed: null,
         protocol: null,
         pgm_state: [],
-        quistions_queue: [],
+        questions_queue: [],
         room: 1234,
         remotefeed: null,
         myid: null,
@@ -489,20 +489,20 @@ class SndmanApp extends Component {
         } else if(data.type === "sdi-reset_queue") {
             this.resetQueue();
         } else if(data.type === "question" && data.status) {
-            let {quistions_queue,users} = this.state;
+            let {questions_queue,users} = this.state;
             if(users[data.user.id]) {
                 users[data.user.id].question = true;
                 data.rfid = users[data.user.id].rfid;
-                quistions_queue.push(data);
-                this.setState({quistions_queue, users});
+                questions_queue.push(data);
+                this.setState({questions_queue, users});
             }
         } else if(data.type === "question" && !data.status) {
-            let {quistions_queue,users} = this.state;
-            for(let i = 0; i < quistions_queue.length; i++){
-                if(quistions_queue[i].user.id === data.user.id) {
+            let {questions_queue,users} = this.state;
+            for(let i = 0; i < questions_queue.length; i++){
+                if(questions_queue[i].user.id === data.user.id) {
                     users[data.user.id].question = false;
-                    quistions_queue.splice(i, 1);
-                    this.setState({quistions_queue,users});
+                    questions_queue.splice(i, 1);
+                    this.setState({questions_queue,users});
                     break
                 }
             }
@@ -515,8 +515,8 @@ class SndmanApp extends Component {
                 //this.recoverState();
             } else {
                 getState('state/galaxy/shidur', (state) => {
-                    const {feeds,users,quistions_queue,feedStreams,mids} = state;
-                    this.setState({feeds,users,quistions_queue,feedStreams});
+                    const {feeds,users,questions_queue,feedStreams,mids} = state;
+                    this.setState({feeds,users,questions_queue,feedStreams});
                     this.programSubscribtion(mids);
                 });
             }
@@ -538,8 +538,8 @@ class SndmanApp extends Component {
                 Janus.log(" :: Got empty state - nothing to recover :(");
                 return;
             }
-            const {feeds,users,quistions_queue,disabled_groups,feeds_queue,feedStreams,mids} = state;
-            this.setState({feeds,users,quistions_queue,disabled_groups,feeds_queue,feedStreams});
+            const {feeds,users,questions_queue,disabled_groups,feeds_queue,feedStreams,mids} = state;
+            this.setState({feeds,users,questions_queue,disabled_groups,feeds_queue,feedStreams});
             let subscription = [];
             mids.forEach((mid,i) => {
                 Janus.debug(" :: mids iteration - ", i, mid);
@@ -562,7 +562,7 @@ class SndmanApp extends Component {
     };
 
     removeFeed = (id, disable) => {
-        let {feeds,users,quistions_queue,feeds_queue} = this.state;
+        let {feeds,users,questions_queue,feeds_queue} = this.state;
 
         for(let i=0; i<feeds.length; i++) {
             if(feeds[i].id === id) {
@@ -572,9 +572,9 @@ class SndmanApp extends Component {
                 delete users[user.id];
 
                 // Delete from questions list
-                for(let i = 0; i < quistions_queue.length; i++) {
-                    if(quistions_queue[i].user.id === user.id) {
-                        quistions_queue.splice(i, 1);
+                for(let i = 0; i < questions_queue.length; i++) {
+                    if(questions_queue[i].user.id === user.id) {
+                        questions_queue.splice(i, 1);
                         break
                     }
                 }
@@ -588,7 +588,7 @@ class SndmanApp extends Component {
                     this.setState({feeds_queue});
                 }
 
-                this.setState({feeds,users,quistions_queue}, () => {
+                this.setState({feeds,users,questions_queue}, () => {
                     // Send an unsubscribe request
                     let streams = [{ feed: id }];
                     this.unsubscribeFrom(streams, id);

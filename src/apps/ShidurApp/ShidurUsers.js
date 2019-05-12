@@ -34,7 +34,7 @@ class ShidurUsers extends Component {
             users: {}
             },
         protocol: null,
-        quistions_queue: [],
+        questions_queue: [],
         questions: {},
         myid: null,
         mypvtid: null,
@@ -277,7 +277,7 @@ class ShidurUsers extends Component {
     unsubscribeFrom = (h, id) => {
         // Unsubscribe from this publisher
         let {feeds,users,feedStreams} = this.state[h];
-        let {questions,quistions_queue} = this.state;
+        let {questions,questions_queue} = this.state;
         let {remoteFeed} = this.state[h];
         for (let i=0; i<feeds.length; i++) {
             if (feeds[i].id === id) {
@@ -288,10 +288,10 @@ class ShidurUsers extends Component {
                 if(questions[feeds[i].display.id]) {
                     delete questions[feeds[i].display.id];
                     this.setState({questions});
-                    for(let q = 0; q < quistions_queue.length; q++){
-                        if(quistions_queue[q].user.id === feeds[i].display.id) {
-                            quistions_queue.splice(q, 1);
-                            this.setState({quistions_queue});
+                    for(let q = 0; q < questions_queue.length; q++){
+                        if(questions_queue[q].user.id === feeds[i].display.id) {
+                            questions_queue.splice(q, 1);
+                            this.setState({questions_queue});
                             break
                         }
                     }
@@ -311,20 +311,20 @@ class ShidurUsers extends Component {
     };
 
     onProtocolData = (data) => {
-        let {questions,quistions_queue} = this.state;
+        let {questions,questions_queue} = this.state;
         if(data.type === "question" && data.status) {
             questions[data.user.id] = data.user;
-            quistions_queue.push(data);
-            this.setState({quistions_queue,questions});
+            questions_queue.push(data);
+            this.setState({questions_queue,questions});
         } else if(data.type === "question" && !data.status) {
             if(questions[data.user.id]) {
                 delete questions[data.user.id];
                 this.setState({questions});
             }
-            for(let i = 0; i < quistions_queue.length; i++){
-                if(quistions_queue[i].user.id === data.user.id) {
-                    quistions_queue.splice(i, 1);
-                    this.setState({quistions_queue});
+            for(let i = 0; i < questions_queue.length; i++){
+                if(questions_queue[i].user.id === data.user.id) {
+                    questions_queue.splice(i, 1);
+                    this.setState({questions_queue});
                     break
                 }
             }
@@ -616,7 +616,7 @@ class ShidurUsers extends Component {
 
 
   render() {
-      const {program,preview,disabled_rooms,rooms,quistions_queue} = this.state;
+      const {program,preview,disabled_rooms,rooms,questions_queue} = this.state;
       const width = "400";
       const height = "300";
       const autoPlay = true;
@@ -626,7 +626,7 @@ class ShidurUsers extends Component {
 
       let rooms_list = rooms.map((data,i) => {
           const {room, num_participants, description} = data;
-          let chk = quistions_queue.filter(q => q.room === room);
+          let chk = questions_queue.filter(q => q.room === room);
           return (
               <Table.Row negative={program.name === description}
                          positive={preview.name === description}

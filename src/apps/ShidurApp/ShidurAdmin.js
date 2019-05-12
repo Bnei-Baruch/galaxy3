@@ -19,7 +19,7 @@ class ShidurAdmin extends Component {
         groups: [],
         janus: null,
         questions: {},
-        quistions_queue: [],
+        questions_queue: [],
         feedStreams: {},
         mids: [],
         feeds: [],
@@ -566,7 +566,7 @@ class ShidurAdmin extends Component {
 
     unsubscribeFrom = (id) => {
         // Unsubscribe from this publisher
-        let {mids,questions,quistions_queue,cammuteds,feeds,users,feedStreams,feed_id} = this.state;
+        let {mids,questions,questions_queue,cammuteds,feeds,users,feedStreams,feed_id} = this.state;
         let {remoteFeed} = this.state;
         for (let i=0; i<feeds.length; i++) {
             if (feeds[i].id === id) {
@@ -577,10 +577,10 @@ class ShidurAdmin extends Component {
                 if(questions[feeds[i].display.id]) {
                     delete questions[feeds[i].display.id];
                     this.setState({questions});
-                    for(let q = 0; q < quistions_queue.length; q++){
-                        if(quistions_queue[q].user.id === feeds[i].display.id) {
-                            quistions_queue.splice(q, 1);
-                            this.setState({quistions_queue});
+                    for(let q = 0; q < questions_queue.length; q++){
+                        if(questions_queue[q].user.id === feeds[i].display.id) {
+                            questions_queue.splice(q, 1);
+                            this.setState({questions_queue});
                             break
                         }
                     }
@@ -611,10 +611,10 @@ class ShidurAdmin extends Component {
                 if(questions[feedStreams[id].display.id]) {
                     delete questions[feedStreams[id].display.id];
                     this.setState({questions});
-                    for(let q = 0; q < quistions_queue.length; q++){
-                        if(quistions_queue[q].user.id === feedStreams[id].display.id) {
-                            quistions_queue.splice(q, 1);
-                            this.setState({quistions_queue});
+                    for(let q = 0; q < questions_queue.length; q++){
+                        if(questions_queue[q].user.id === feedStreams[id].display.id) {
+                            questions_queue.splice(q, 1);
+                            this.setState({questions_queue});
                             break
                         }
                     }
@@ -753,16 +753,16 @@ class ShidurAdmin extends Component {
         }
 
         // if(data.type === "question" && data.status && data.room === 1234) {
-        //     let {quistions_queue,users} = this.state;
+        //     let {questions_queue,users} = this.state;
         //     data.user.rfid = users[data.user.id].rfid;
-        //     quistions_queue.push(data);
-        //     this.setState({quistions_queue});
+        //     questions_queue.push(data);
+        //     this.setState({questions_queue});
         // } else if(data.type === "question" && !data.status && data.room === 1234) {
-        //     let {quistions_queue} = this.state;
-        //     for(let i = 0; i < quistions_queue.length; i++){
-        //         if(quistions_queue[i].user.id === data.user.id) {
-        //             quistions_queue.splice(i, 1);
-        //             this.setState({quistions_queue});
+        //     let {questions_queue} = this.state;
+        //     for(let i = 0; i < questions_queue.length; i++){
+        //         if(questions_queue[i].user.id === data.user.id) {
+        //             questions_queue.splice(i, 1);
+        //             this.setState({questions_queue});
         //             break
         //         }
         //     }

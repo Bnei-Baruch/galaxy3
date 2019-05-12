@@ -22,7 +22,7 @@ class ShidurToran extends Component {
         full_feed: null,
         protocol: null,
         pgm_state: [],
-        quistions_queue: [],
+        questions_queue: [],
         muted: true,
         zoom: false,
         fullscr: false,
@@ -208,12 +208,12 @@ class ShidurToran extends Component {
             for(let i = 0; i < disabled_groups.length; i++) {
                 if(disabled_groups[i].display.id === data.display.id) {
                     if(disabled_groups[i].display.question) {
-                        let {quistions_queue,qfeeds} = this.props;
+                        let {questions_queue,qfeeds} = this.props;
                         let qq = {rfid: disabled_groups[i].id, user: disabled_groups[i].display};
                         let qs = {id: disabled_groups[i].id, display: disabled_groups[i].display};
                         qfeeds.push(qs);
-                        quistions_queue.push(qq);
-                        this.props.setProps({quistions_queue, qfeeds});
+                        questions_queue.push(qq);
+                        this.props.setProps({questions_queue, qfeeds});
                     }
                     disabled_groups.splice(i, 1);
                     feeds.push(data);

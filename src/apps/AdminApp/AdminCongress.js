@@ -13,7 +13,7 @@ class AdminCongress extends Component {
         chatroom: null,
         forwarders: [],
         janus: null,
-        quistions_queue: [],
+        questions_queue: [],
         feedStreams: {},
         mids: [],
         feeds: [],

@@ -56,13 +56,13 @@ class ShidurGroups extends Component {
     };
 
     questionStatus = () => {
-        let {mids,qfeeds,quistions_queue} = this.props;
-        for(let i = 0; i < quistions_queue.length; i++) {
-            let qp_count = mids.filter(qp => qp.active && qp.feed_id === quistions_queue[i].rfid).length;
-            let qf_chk = qfeeds.find(qf => qf.id === quistions_queue[i].rfid);
+        let {mids,qfeeds,questions_queue} = this.props;
+        for(let i = 0; i < questions_queue.length; i++) {
+            let qp_count = mids.filter(qp => qp.active && qp.feed_id === questions_queue[i].rfid).length;
+            let qf_chk = qfeeds.find(qf => qf.id === questions_queue[i].rfid);
             if(qp_count > 0 && qf_chk) {
                 for (let q = 0; q < qfeeds.length; q++) {
-                    if (qfeeds[q] && qfeeds[q].id === quistions_queue[i].rfid) {
+                    if (qfeeds[q] && qfeeds[q].id === questions_queue[i].rfid) {
                         Janus.log(" - Remove QFEED: ", qfeeds[q]);
                         qfeeds.splice(q, 1);
                         this.props.setProps({qfeeds});
@@ -70,7 +70,7 @@ class ShidurGroups extends Component {
                     }
                 }
             } else if(qp_count === 0 && !qf_chk) {
-                qfeeds.push({id: quistions_queue[i].rfid, display: quistions_queue[i].user});
+                qfeeds.push({id: questions_queue[i].rfid, display: questions_queue[i].user});
                 this.props.setProps({qfeeds});
             }
         }
@@ -78,8 +78,8 @@ class ShidurGroups extends Component {
     };
 
     saveState = () => {
-        let {feeds,users,quistions_queue,disabled_groups,feeds_queue,feedStreams,mids} = this.props;
-        let state = {feeds,users,quistions_queue,disabled_groups,feeds_queue,feedStreams,mids};
+        let {feeds,users,questions_queue,disabled_groups,feeds_queue,feedStreams,mids} = this.props;
+        let state = {feeds,users,questions_queue,disabled_groups,feeds_queue,feedStreams,mids};
         putData(`state/galaxy/shidur`, state, (cb) => {
             Janus.log(":: Save to state: ",cb);
         });

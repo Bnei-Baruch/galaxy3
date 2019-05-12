@@ -32,7 +32,7 @@ class ShidurApp extends Component {
         full_feed: null,
         protocol: null,
         pgm_state: [],
-        quistions_queue: [],
+        questions_queue: [],
         remotefeed: null,
         myid: null,
         mypvtid: null,
@@ -284,8 +284,8 @@ class ShidurApp extends Component {
     recoverState = () => {
         getState('state/galaxy/shidur', (state) => {
             Janus.log(" :: Get State: ", state);
-            const {feeds,users,quistions_queue,disabled_groups,feeds_queue,feedStreams,mids} = state;
-            this.setState({feeds,users,quistions_queue,disabled_groups,feeds_queue,feedStreams});
+            const {feeds,users,questions_queue,disabled_groups,feeds_queue,feedStreams,mids} = state;
+            this.setState({feeds,users,questions_queue,disabled_groups,feeds_queue,feedStreams});
             let subscription = [];
             mids.forEach((mid,i) => {
                 Janus.debug(" :: mids iteration - ", i, mid);
@@ -445,12 +445,12 @@ class ShidurApp extends Component {
 
     onProtocolData = (data) => {
         if(data.type === "question" && data.status) {
-            let {quistions_queue,users,qfeeds,mids} = this.state;
+            let {questions_queue,users,qfeeds,mids} = this.state;
             if(users[data.user.id]) {
                 users[data.user.id].question = true;
                 data.rfid = users[data.user.id].rfid;
                 let q = {id: data.rfid, display: data.user};
-                quistions_queue.push(data);
+                questions_queue.push(data);
                 // TODO: We need to check disabled list as well
 
                 // Check if qfeed already in program
@@ -472,17 +472,17 @@ class ShidurApp extends Component {
                     // }
                 }
 
-                this.setState({quistions_queue, users, qfeeds});
+                this.setState({questions_queue, users, qfeeds});
             }
         } else if(data.type === "question" && !data.status) {
             // TODO: We need to check disabled list as well
-            let {quistions_queue,users,qfeeds} = this.state;
-            for(let i = 0; i < quistions_queue.length; i++){
-                if(quistions_queue[i].user.id === data.user.id) {
+            let {questions_queue,users,qfeeds} = this.state;
+            for(let i = 0; i < questions_queue.length; i++){
+                if(questions_queue[i].user.id === data.user.id) {
                     users[data.user.id].question = false;
-                    quistions_queue.splice(i, 1);
+                    questions_queue.splice(i, 1);
                     qfeeds.splice(i, 1);
-                    this.setState({quistions_queue,users});
+                    this.setState({questions_queue,users});
                     break
                 }
             }
@@ -498,8 +498,8 @@ class ShidurApp extends Component {
             this.setState({...data});
             if(data.sdiout || data.sndman) {
                 let status = data.sndman ?  {sndman: true} : {sdiout: true};
-                const {feeds,users,quistions_queue,feedStreams,mids} = this.state;
-                let state = {feeds,users,quistions_queue,feedStreams,mids};
+                const {feeds,users,questions_queue,feedStreams,mids} = this.state;
+                let state = {feeds,users,questions_queue,feedStreams,mids};
                 putData(`state/galaxy/shidur`, state, (cb) => {
                     Janus.log(":: Save state to DB :: ",cb);
                     this.pre.sdiAction("state_shidur", status,1, this.state.feeds.length);
@@ -530,7 +530,7 @@ class ShidurApp extends Component {
     };
 
     removeFeed = (id, disable) => {
-        let {feeds,users,quistions_queue,qfeeds,feeds_queue} = this.state;
+        let {feeds,users,questions_queue,qfeeds,feeds_queue} = this.state;
 
         // Clean preview
         this.checkPreview(id);
@@ -546,9 +546,9 @@ class ShidurApp extends Component {
                 delete users[user.id];
 
                 // Delete from questions list
-                for(let i = 0; i < quistions_queue.length; i++) {
-                    if(quistions_queue[i].user.id === user.id) {
-                        quistions_queue.splice(i, 1);
+                for(let i = 0; i < questions_queue.length; i++) {
+                    if(questions_queue[i].user.id === user.id) {
+                        questions_queue.splice(i, 1);
                         break
                     }
                 }
@@ -570,7 +570,7 @@ class ShidurApp extends Component {
                     this.setState({feeds_queue});
                 }
 
-                this.setState({feeds,users,quistions_queue}, () => {
+                this.setState({feeds,users,questions_queue}, () => {
                     // Send an unsubscribe request
                     let streams = [{ feed: id }];
                     this.unsubscribeFrom(streams, id);
