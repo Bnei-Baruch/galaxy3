@@ -21,31 +21,20 @@ class ShidurApp extends Component {
         qfeeds: [],
         log_list: [],
         gxyhandle: null,
-        name: "",
         disabled_groups: [],
-        group: null,
-        pri: null,
-        pr1: [],
         pre: null,
         program: null,
         pre_feed: null,
-        full_feed: null,
         protocol: null,
-        pgm_state: [],
         questions_queue: [],
-        remotefeed: null,
         myid: null,
         mypvtid: null,
         mystream: null,
         disable_button: false,
         next_button: false,
-        audio: null,
-        muted: true,
         feeds_queue: 0,
         user: null,
         users: {},
-        zoom: false,
-        fullscr: false,
         round: 0,
         sdiout: false,
         sndman: false,
@@ -180,15 +169,6 @@ class ShidurApp extends Component {
                     if(subscription.length > 0)
                         this.subscribeTo(subscription);
                 }
-            } else if(event === "talking") {
-                //let id = msg["id"];
-                //Janus.log("User: "+id+" - start talking");
-            } else if(event === "stopped-talking") {
-                //let id = msg["id"];
-                //Janus.log("User: "+id+" - stop talking");
-            } else if(event === "destroyed") {
-                // The room has been destroyed
-                Janus.warn("The room has been destroyed!");
             } else if(event === "event") {
                 // Any new feed to attach to?
                 if(msg["publishers"] !== undefined && msg["publishers"] !== null) {
@@ -279,22 +259,6 @@ class ShidurApp extends Component {
             Janus.debug(jsep);
             gxyhandle.handleRemoteJsep({jsep: jsep});
         }
-    };
-
-    recoverState = () => {
-        getState('state/galaxy/shidur', (state) => {
-            Janus.log(" :: Get State: ", state);
-            const {feeds,users,questions_queue,disabled_groups,feeds_queue,feedStreams,mids} = state;
-            this.setState({feeds,users,questions_queue,disabled_groups,feeds_queue,feedStreams});
-            let subscription = [];
-            mids.forEach((mid,i) => {
-                Janus.debug(" :: mids iteration - ", i, mid);
-                if (mid && mid.active) {
-                    subscription.push({feed: mid.feed_id, mid: "1"})
-                }
-            });
-            this.subscribeTo(subscription);
-        });
     };
 
     actionLog = (user, text) => {
@@ -392,21 +356,11 @@ class ShidurApp extends Component {
                     let {mids,feedStreams,qam} = this.state;
                     let feed = mids[mid].feed_id;
                     Janus.log(" >> This track is coming from feed " + feed + ":", mid);
-                    if(!on) {
-                        Janus.log(" :: Going to stop track :: " + track + ":", mid);
-                        //FIXME: Remove callback for audio track does not come
-                        track.stop();
-                        //FIXME: does we really need to stop all track for feed id?
-                        return;
-                    }
-                    if(track.kind !== "video" || !on) {
-                        return;
-                    }
+                    if(track.kind !== "video" || !on) return;
                     let stream = new MediaStream();
                     stream.addTrack(track.clone());
                     feedStreams[feed].stream = stream;
                     this.setState({feedStreams});
-                    //let col = "col" + (mid < 4 ? 1 : mid < 8 ? 2 : mid < 12 ? 3 : 4);
                     let col = "col" + qam[mid];
                     let video = this[col].refs["programVideo" + mid];
                     Janus.log(" Attach remote stream on video: "+mid);
@@ -660,7 +614,6 @@ class ShidurApp extends Component {
     };
 
     nextInQueue = () => {
-        //this.setDelay();
         let {feeds_queue,feeds,round} = this.state;
         feeds_queue++;
         if(feeds_queue >= feeds.length) {
@@ -690,13 +643,6 @@ class ShidurApp extends Component {
         }
     };
 
-    setDelay = () => {
-        this.setState({disable_button: true, next_button: true});
-        setTimeout(() => {
-            this.setState({disable_button: false, next_button: false});
-        }, 2000);
-    };
-
     render() {
 
         const {user} = this.state;
@@ -714,7 +660,6 @@ class ShidurApp extends Component {
                                     ref={col => {this.col1 = col;}}
                                     setProps={this.setProps}
                                     unsubscribeFrom={this.unsubscribeFrom}
-                                    subscribeTo={this.subscribeTo}
                                     removeFeed={this.removeFeed} />
                             </Grid.Column>
                             <Grid.Column>
@@ -723,7 +668,6 @@ class ShidurApp extends Component {
                                     ref={col => {this.col2 = col;}}
                                     setProps={this.setProps}
                                     unsubscribeFrom={this.unsubscribeFrom}
-                                    subscribeTo={this.subscribeTo}
                                     removeFeed={this.removeFeed} />
                             </Grid.Column>
                             <Grid.Column>
@@ -732,7 +676,6 @@ class ShidurApp extends Component {
                                     ref={col => {this.col3 = col;}}
                                     setProps={this.setProps}
                                     unsubscribeFrom={this.unsubscribeFrom}
-                                    subscribeTo={this.subscribeTo}
                                     removeFeed={this.removeFeed} />
                             </Grid.Column>
                         </Grid.Row>
@@ -743,7 +686,6 @@ class ShidurApp extends Component {
                             setProps={this.setProps}
                             nextInQueue={this.nextInQueue}
                             unsubscribeFrom={this.unsubscribeFrom}
-                            subscribeTo={this.subscribeTo}
                             removeFeed={this.removeFeed} />
                     </Grid>
                 </Grid.Column>

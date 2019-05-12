@@ -1,7 +1,6 @@
 import React, { Component } from 'react';
 import { Janus } from "../../lib/janus";
 import {Segment, Icon, Button} from "semantic-ui-react";
-import {putData} from "../../shared/tools";
 import './ShidurGroups.scss'
 import {sendProtocolMessage} from "../../shared/protocol";
 
@@ -74,15 +73,6 @@ class ShidurGroups extends Component {
                 this.props.setProps({qfeeds});
             }
         }
-        //this.saveState();
-    };
-
-    saveState = () => {
-        let {feeds,users,questions_queue,disabled_groups,feeds_queue,feedStreams,mids} = this.props;
-        let state = {feeds,users,questions_queue,disabled_groups,feeds_queue,feedStreams,mids};
-        putData(`state/galaxy/shidur`, state, (cb) => {
-            Janus.log(":: Save to state: ",cb);
-        });
     };
 
     switchFour = () => {
