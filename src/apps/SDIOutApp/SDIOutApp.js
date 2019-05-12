@@ -343,7 +343,6 @@ class SDIOutApp extends Component {
             let {users} = this.state;
             if(users[data.user.id]) {
                 users[data.user.id].question = data.status;
-                data.rfid = users[data.user.id].rfid;
                 this.setState({users});
             }
         } else if(data.type === "sdi-state_shidur" && data.status.sdiout) {

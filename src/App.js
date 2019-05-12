@@ -23,7 +23,7 @@ class App extends Component {
                 {/* <ShidurAdmin/>*/}
                 {/*<SDIOutApp/>*/}
                  <ShidurApp/>
-                 {/*<SndmanApp/>*/}
+                {/* <SndmanApp/>*/}
                 {/*<GroupClient/>*/}
                 {/* <GalaxyStream/>*/}
                 {/* <AdminGuest/>*/}
