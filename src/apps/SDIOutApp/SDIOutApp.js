@@ -245,16 +245,7 @@ class SDIOutApp extends Component {
                     let {mids,qam} = this.state;
                     let feed = mids[mid].feed_id;
                     Janus.log(" >> This track is coming from feed " + feed + ":", mid);
-                    if(!on) {
-                        Janus.log(" :: Going to stop track :: " + track + ":", mid);
-                        //FIXME: Remove callback for audio track does not come
-                        track.stop();
-                        //FIXME: does we really need to stop all track for feed id?
-                        return;
-                    }
-                    if(track.kind !== "video" || !on) {
-                        return;
-                    }
+                    if(track.kind !== "video" || !on) return;
                     let stream = new MediaStream();
                     stream.addTrack(track.clone());
                     let col = "col" + qam[mid];
@@ -350,29 +341,25 @@ class SDIOutApp extends Component {
                 this.setState({users});
             }
         } else if(data.type === "sdi-state_shidur" && data.status.sdiout) {
-            if(data.feed === 0) {
-                Janus.log(" :: Shidur page was reloaded or all groups is Offline :: ");
-                setTimeout(() => {
-                    window.location.reload();
-                }, 2000);
-            } else {
+            getState('state/galaxy/shidur', (state) => {
+                const {users} = state;
+                this.setState({users});
+            });
+        } else if(data.type === "event") {
+            delete data.type;
+            this.setState({...data});
+            if(data.shidur) {
+                Janus.log(" :: Shidur already running :: ");
                 getState('state/galaxy/shidur', (state) => {
                     const {users,mids} = state;
                     this.setState({users});
                     this.programSubscribtion(mids);
                 });
             }
-        } else if(data.type === "event") {
-            delete data.type;
-            this.setState({...data});
-            if(data.shidur) {
-                //TODO: We will need it when when start using DB state
-                Janus.log(" :: Here we go do something when shidur already running :: ");
-            }
         }
     };
 
-    unsubscribeFrom = (streams, id) => {
+    unsubscribeFrom = (streams) => {
         Janus.log(" :: Going to unsubscribe: ",streams);
         let {remoteFeed} = this.state;
 

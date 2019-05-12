@@ -498,8 +498,8 @@ class ShidurApp extends Component {
             this.setState({...data});
             if(data.sdiout || data.sndman) {
                 let status = data.sndman ?  {sndman: true} : {sdiout: true};
-                const {feeds,users,questions_queue,feedStreams,mids} = this.state;
-                let state = {feeds,users,questions_queue,feedStreams,mids};
+                const {users,mids} = this.state;
+                let state = {users,mids};
                 putData(`state/galaxy/shidur`, state, (cb) => {
                     Janus.log(":: Save state to DB :: ",cb);
                     this.pre.sdiAction("state_shidur", status,1, this.state.feeds.length);
