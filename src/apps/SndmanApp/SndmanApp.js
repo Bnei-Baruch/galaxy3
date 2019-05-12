@@ -21,35 +21,19 @@ class SndmanApp extends Component {
     state = {
         qam: {0:1,1:2,2:3,3:1,4:2,5:3,6:1,7:2,8:3,9:1,10:2,11:3},
         janus: null,
-        feeds: [],
-        feedStreams: {},
         mids: [],
         gxyhandle: null,
         data_forward: {},
-        name: "",
         disabled_groups: [],
-        group: null,
-        pr1: [],
-        pre: null,
-        program: null,
-        pre_feed: null,
-        full_feed: null,
         protocol: null,
-        pgm_state: [],
-        questions_queue: [],
         room: 1234,
         remotefeed: null,
         myid: null,
         mypvtid: null,
         mystream: null,
-        audio: null,
-        muted: true,
-        feeds_queue: 0,
         user: null,
         users: {},
         shidur: false,
-        zoom: false,
-        fullscr: false,
     };
 
     componentDidMount() {
@@ -108,7 +92,6 @@ class SndmanApp extends Component {
                 Janus.log("  -- This is a publisher/manager");
                 let {user} = this.state;
                 let register = { "request": "join", "room": 1234, "ptype": "publisher", "display": JSON.stringify(user) };
-                //let register = { "request": "join", "room": 1234, "ptype": "publisher", "display": "sdi_out" };
                 gxyhandle.send({"message": register});
             },
             error: (error) => {
@@ -183,7 +166,7 @@ class SndmanApp extends Component {
         });
     };
 
-    onMessage = (msg, jsep, initdata) => {
+    onMessage = (msg, jsep) => {
         let {gxyhandle} = this.state;
         Janus.debug(" ::: Got a message (publisher) :::");
         Janus.debug(msg);
@@ -197,26 +180,11 @@ class SndmanApp extends Component {
                 this.setState({myid ,mypvtid});
                 Janus.log("Successfully joined room " + msg["room"] + " with ID " + myid);
                 this.publishOwnFeed();
-                if(msg["publishers"] !== undefined && msg["publishers"] !== null) {
-                    // let list = msg["publishers"];
-                    // let feeds = list.filter(feeder => JSON.parse(feeder.display).role === "group");
-                    // this.setState({feeds});
-                    //this.makeSubscribtion(feeds);
-                }
-            } else if(event === "talking") {
-                //let id = msg["id"];
-                //Janus.log("User: "+id+" - start talking");
-            } else if(event === "stopped-talking") {
-                //let id = msg["id"];
-                //Janus.log("User: "+id+" - stop talking");
-            } else if(event === "destroyed") {
-                // The room has been destroyed
-                Janus.warn("The room has been destroyed!");
             } else if(event === "event") {
                 // Any new feed to attach to?
                 if(msg["publishers"] !== undefined && msg["publishers"] !== null) {
                     let feed = msg["publishers"];
-                    let {feeds,feedStreams,users} = this.state;
+                    let {users} = this.state;
                     Janus.debug("Got a list of available publishers/feeds:");
                     Janus.log(feed);
                     for(let f in feed) {
@@ -224,22 +192,10 @@ class SndmanApp extends Component {
                         let display = JSON.parse(feed[f]["display"]);
                         if(display.role !== "group")
                             return;
-                        //let talk = feed[f]["talking"];
-                        let streams = feed[f]["streams"];
-                        feed[f].display = display;
-                        for (let i in streams) {
-                            let stream = streams[i];
-                            if(stream.type === "video") {
-                                stream["id"] = id;
-                                stream["display"] = display;
-                            }
-                        }
-                        feedStreams[id] = {id, display, streams};
                         users[display.id] = display;
                         users[display.id].rfid = id;
                     }
-                    feeds.push(feed[0]);
-                    this.setState({feeds,feedStreams,users});
+                    this.setState({users});
                 } else if(msg["leaving"] !== undefined && msg["leaving"] !== null) {
                     // One of the publishers has gone away?
                     let leaving = msg["leaving"];
@@ -351,24 +307,12 @@ class SndmanApp extends Component {
                     Janus.log(" ::: Got a remote track event ::: (remote feed)");
                     Janus.log("Remote track (mid=" + mid + ") " + (on ? "added" : "removed") + ":", track);
                     // Which publisher are we getting on this mid?
-                    let {mids,feedStreams,qam} = this.state;
+                    let {mids,qam} = this.state;
                     let feed = mids[mid].feed_id;
                     Janus.log(" >> This track is coming from feed " + feed + ":", mid);
-                    if(!on) {
-                        Janus.log(" :: Going to stop track :: " + track + ":", mid);
-                        //FIXME: Remove callback for audio track does not come
-                        track.stop();
-                        //FIXME: does we really need to stop all track for feed id?
-                        return;
-                    }
-                    if(track.kind !== "video" || !on) {
-                        return;
-                    }
+                    if(track.kind !== "video" || !on) return;
                     let stream = new MediaStream();
                     stream.addTrack(track.clone());
-                    feedStreams[feed].stream = stream;
-                    this.setState({feedStreams});
-                    //let col = "col" + (mid < 4 ? 1 : mid < 8 ? 2 : mid < 12 ? 3 : 4);
                     let col = "col" + qam[mid];
                     let video = this[col].refs["programVideo" + mid];
                     Janus.log(" Attach remote stream on video: "+mid);
@@ -402,39 +346,6 @@ class SndmanApp extends Component {
         // We don't creating, so let's do it
         this.setState({creatingFeed: true});
         this.newRemoteFeed(subscription);
-    };
-
-    makeSubscribtion = (feeds) => {
-        let {feedStreams,users} = this.state;
-        let subscription = [];
-        for(let f in feeds) {
-            let id = feeds[f]["id"];
-            let display = JSON.parse(feeds[f]["display"]);
-            //let talk = feeds[f]["talking"];
-            let streams = feeds[f]["streams"];
-            feeds[f].display = display;
-            //feeds[f].talk = talk;
-            for (let i in streams) {
-                let stream = streams[i];
-                if(stream.type === "video" && subscription.length < 12) {
-                    let subst = {feed: id};
-                    stream["id"] = id;
-                    stream["display"] = display;
-                    subst.mid = stream.mid;
-                    subscription.push(subst);
-                }
-            }
-            feedStreams[id] = {id, display, streams};
-            users[display.id] = display;
-            users[display.id].rfid = id;
-        }
-        this.setState({feeds,feedStreams,users});
-        // Set next feed in queue first after program is full
-        if(feeds.length > 12) {
-            this.setState({feeds_queue: 12});
-        }
-        if(subscription.length > 0)
-            this.subscribeTo(subscription);
     };
 
     programSubscribtion = (mids) => {
@@ -483,75 +394,37 @@ class SndmanApp extends Component {
         } else if(data.type === "sdi-fullscr_group" && !status) {
             let {col, feed, i} = data;
             this["col"+col].toFourGroup(i,feed);
-        } else if(data.type === "sdi-restart_sndman") {
+        } else if(data.type === "sdi-sync_sndman") {
             this.programState(feed);
-            //window.location.reload();
-        } else if(data.type === "sdi-reset_queue") {
-            this.resetQueue();
-        } else if(data.type === "question" && data.status) {
-            let {questions_queue,users} = this.state;
+        } else if(data.type === "sdi-restart_sndman") {
+            window.location.reload();
+        } else if(data.type === "question") {
+            let {users} = this.state;
             if(users[data.user.id]) {
-                users[data.user.id].question = true;
+                users[data.user.id].question = data.status;
                 data.rfid = users[data.user.id].rfid;
-                questions_queue.push(data);
-                this.setState({questions_queue, users});
-            }
-        } else if(data.type === "question" && !data.status) {
-            let {questions_queue,users} = this.state;
-            for(let i = 0; i < questions_queue.length; i++){
-                if(questions_queue[i].user.id === data.user.id) {
-                    users[data.user.id].question = false;
-                    questions_queue.splice(i, 1);
-                    this.setState({questions_queue,users});
-                    break
-                }
+                this.setState({users});
             }
         } else if(data.type === "sdi-state_shidur" && data.status.sndman) {
-            if(data.feed === 0) {
-                Janus.log(" :: Shidur page was reloaded or all groups is Offline :: ");
-                setTimeout(() => {
-                    window.location.reload();
-                }, 2000);
-                //this.recoverState();
-            } else {
-                getState('state/galaxy/shidur', (state) => {
-                    const {feeds,users,questions_queue,feedStreams,mids} = state;
-                    this.setState({feeds,users,questions_queue,feedStreams});
-                    this.programSubscribtion(mids);
-                });
-            }
+            getState('state/galaxy/shidur', (state) => {
+                const {users} = state;
+                this.setState({users});
+            });
         } else if(data.type === "event") {
             delete data.type;
             this.setState({...data});
             if(data.shidur) {
-                //TODO: We will need it when when start using DB state
-                Janus.log(" :: Here we go do something when shidur already running :: ");
+                Janus.log(" :: Shidur already running :: ");
+                getState('state/galaxy/shidur', (state) => {
+                    const {users,mids} = state;
+                    this.setState({users});
+                    this.programSubscribtion(mids);
+                });
             }
         }
     };
 
-
-    recoverState = () => {
-        getState('state/galaxy/shidur', (state) => {
-            Janus.log(" :: Get State: ", state);
-            if(JSON.stringify(state) === "{}") {
-                Janus.log(" :: Got empty state - nothing to recover :(");
-                return;
-            }
-            const {feeds,users,questions_queue,disabled_groups,feeds_queue,feedStreams,mids} = state;
-            this.setState({feeds,users,questions_queue,disabled_groups,feeds_queue,feedStreams});
-            let subscription = [];
-            mids.forEach((mid,i) => {
-                Janus.debug(" :: mids iteration - ", i, mid);
-                if (mid && mid.active) {
-                    subscription.push({feed: mid.feed_id, mid: "1"})
-                }
-            });
-            this.subscribeTo(subscription);
-        });
-    };
-
-    unsubscribeFrom = (streams, id) => {
+    unsubscribeFrom = (streams) => {
         Janus.log(" :: Going to unsubscribe: ",streams);
         let {remoteFeed} = this.state;
 
@@ -559,138 +432,6 @@ class SndmanApp extends Component {
         let unsubscribe = {request: "unsubscribe", streams};
         if(remoteFeed !== null)
             remoteFeed.send({ message: unsubscribe });
-    };
-
-    removeFeed = (id, disable) => {
-        let {feeds,users,questions_queue,feeds_queue} = this.state;
-
-        for(let i=0; i<feeds.length; i++) {
-            if(feeds[i].id === id) {
-                // Delete from users mapping object
-                let user = feeds[i].display;
-                console.log(" :: Remove feed: " + id + " - Name: " + user.username);
-                delete users[user.id];
-
-                // Delete from questions list
-                for(let i = 0; i < questions_queue.length; i++) {
-                    if(questions_queue[i].user.id === user.id) {
-                        questions_queue.splice(i, 1);
-                        break
-                    }
-                }
-
-                // Remove from general feeds list
-                feeds.splice(i, 1);
-
-                // Fix feeds_queue if equal to last index
-                if(feeds_queue >= feeds.length - 1) {
-                    feeds_queue = feeds.length - 1;
-                    this.setState({feeds_queue});
-                }
-
-                this.setState({feeds,users,questions_queue}, () => {
-                    // Send an unsubscribe request
-                    let streams = [{ feed: id }];
-                    this.unsubscribeFrom(streams, id);
-                });
-                break
-            }
-        }
-    };
-
-    fillProgram = (pre_feed, manual) => {
-        let {round,mids,feeds,feeds_queue} = this.state;
-
-        // Make sure there is no empty space in program
-        if(feeds.length > 12 && manual === null) {
-            Janus.log(" :: Auto Switch mids - ", mids);
-            mids.forEach((mid,i) => {
-                Janus.debug(" :: mids iteration - ", i, mid);
-                if (mid && !mid.active) {
-                    Janus.log(" :: Found empty slot in program! - ", mids[i]);
-                    let feed = feeds[feeds_queue];
-                    feeds_queue++;
-                    if(feeds_queue >= feeds.length) {
-                        // End round here!
-                        Janus.log(" -- ROUND END --");
-                        feeds_queue = 0;
-                        round++;
-                        this.setState({feeds_queue,round});
-                    } else {
-                        this.setState({feeds_queue});
-                    }
-                    Janus.log(":: Switch program to: ", feed);
-                    if(feed && feed.id) {
-                        let streams = [{feed: feed.id, mid: "1"}];
-                        this.subscribeTo(streams);
-                    }
-                }
-            })
-            // Slot in program changed manually
-        } else if(manual !== null) {
-            Janus.log(" :: Manual Switch mids - ", mids);
-            for(let i=0; i<mids.length; i++) {
-                let mid = mids[i];
-                Janus.debug(" :: mids iteration - ", i, mid);
-                if (mid && !mid.active) {
-                    Janus.log(" :: Found empty slot in program! - ", mids[i]);
-                    // If feed was in preview take him else take next in queue
-                    let feed = pre_feed ? pre_feed : feeds[feeds_queue];
-                    if(pre_feed) {
-                        // Hide preview
-                        this.setState({pre_feed: null});
-                    } else {
-                        feeds_queue++;
-                        if(feeds_queue >= feeds.length) {
-                            // End round here!
-                            Janus.log(" -- ROUND END --");
-                            feeds_queue = 0;
-                            round++;
-                            this.setState({feeds_queue,round});
-                        } else {
-                            this.setState({feeds_queue});
-                        }
-                    }
-                    this.setState({program: null});
-                    Janus.log(":: Switch program to: ", feed);
-                    if(feed && feed.id) {
-                        let streams = [{feed: feed.id, mid: "1"}];
-                        this.subscribeTo(streams);
-                    } else {
-                        // We can't leave empty slot in program, so trigger autofill
-                        this.fillProgram(null, null);
-                    }
-                    break
-                }
-            }
-        } else {
-            Janus.log(":: Auto Switch was triggered but program is not full :: ");
-        }
-    };
-
-    nextInQueue = () => {
-        let {feeds_queue,feeds,round} = this.state;
-        feeds_queue++;
-        if(feeds_queue >= feeds.length) {
-            // End round here!
-            Janus.log(" -- ROUND END --");
-            feeds_queue = 0;
-            round++;
-            this.setState({feeds_queue,round});
-        } else {
-            this.setState({feeds_queue});
-        }
-    };
-
-    setProps = (props) => {
-        this.setState({...props})
-    };
-
-    resetQueue = () => {
-        if(this.state.feeds.length > 12) {
-            Janus.log("-- Reset Queue --");
-            this.setState({feeds_queue: 0});
-        }
     };
 
     render() {
@@ -710,28 +451,19 @@ class SndmanApp extends Component {
                         <SndmanGroups
                             index={0} {...this.state}
                             ref={col => {this.col1 = col;}}
-                            setProps={this.setProps}
-                            unsubscribeFrom={this.unsubscribeFrom}
-                            subscribeTo={this.subscribeTo}
-                            removeFeed={this.removeFeed} />
+                        />
                     </Grid.Column>
                     <Grid.Column>
                         <SndmanGroups
                             index={4} {...this.state}
                             ref={col => {this.col2 = col;}}
-                            setProps={this.setProps}
-                            unsubscribeFrom={this.unsubscribeFrom}
-                            subscribeTo={this.subscribeTo}
-                            removeFeed={this.removeFeed} />
+                        />
                     </Grid.Column>
                     <Grid.Column>
                         <SndmanGroups
                             index={8} {...this.state}
                             ref={col => {this.col3 = col;}}
-                            setProps={this.setProps}
-                            unsubscribeFrom={this.unsubscribeFrom}
-                            subscribeTo={this.subscribeTo}
-                            removeFeed={this.removeFeed} />
+                        />
                     </Grid.Column>
                 </Grid.Row>
             </Grid>
