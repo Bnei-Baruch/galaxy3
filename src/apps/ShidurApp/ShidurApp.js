@@ -168,6 +168,8 @@ class ShidurApp extends Component {
                     }
                     if(subscription.length > 0)
                         this.subscribeTo(subscription);
+                    this.pre.sdiAction("restart_sndman");
+                    this.pre.sdiAction("restart_sdiout");
                 }
             } else if(event === "event") {
                 // Any new feed to attach to?
@@ -451,12 +453,10 @@ class ShidurApp extends Component {
             delete data.type;
             this.setState({...data});
             if(data.sdiout || data.sndman) {
-                let status = data.sndman ?  {sndman: true} : {sdiout: true};
                 const {users,mids} = this.state;
                 let state = {users,mids};
                 putData(`state/galaxy/shidur`, state, (cb) => {
                     Janus.log(":: Save state to DB :: ",cb);
-                    this.pre.sdiAction("state_shidur", status,1, this.state.feeds.length);
                 });
             }
         }

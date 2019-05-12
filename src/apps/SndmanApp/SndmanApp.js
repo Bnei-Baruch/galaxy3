@@ -180,6 +180,14 @@ class SndmanApp extends Component {
                 this.setState({myid ,mypvtid});
                 Janus.log("Successfully joined room " + msg["room"] + " with ID " + myid);
                 this.publishOwnFeed();
+                if(this.state.shidur) {
+                    Janus.log(" :: Shidur online - getting state :: ");
+                    getState('state/galaxy/shidur', (state) => {
+                        const {users,mids} = state;
+                        this.setState({users});
+                        this.programSubscribtion(mids);
+                    });
+                }
             } else if(event === "event") {
                 // Any new feed to attach to?
                 if(msg["publishers"] !== undefined && msg["publishers"] !== null) {
@@ -413,14 +421,6 @@ class SndmanApp extends Component {
         } else if(data.type === "event") {
             delete data.type;
             this.setState({...data});
-            if(data.shidur) {
-                Janus.log(" :: Shidur already running :: ");
-                getState('state/galaxy/shidur', (state) => {
-                    const {users,mids} = state;
-                    this.setState({users});
-                    this.programSubscribtion(mids);
-                });
-            }
         }
     };
 
