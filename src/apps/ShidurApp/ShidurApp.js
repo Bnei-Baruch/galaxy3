@@ -1,7 +1,7 @@
 import React, {Component} from 'react';
 import {Janus} from "../../lib/janus";
 import {Grid} from "semantic-ui-react";
-import {getDateString, initJanus, getState, putData} from "../../shared/tools";
+import {getDateString, initJanus, putData} from "../../shared/tools";
 import {initGxyProtocol} from "../../shared/protocol";
 import ShidurGroups from "./ShidurGroups";
 import ShidurUsers from "./ShidurUsers";
@@ -354,19 +354,19 @@ class ShidurApp extends Component {
                 onremotetrack: (track,mid,on) => {
                     Janus.log(" ::: Got a remote track event ::: (remote feed)");
                     Janus.log("Remote track (mid=" + mid + ") " + (on ? "added" : "removed") + ":", track);
-                    // Which publisher are we getting on this mid?
-                    let {mids,feedStreams,qam} = this.state;
-                    let feed = mids[mid].feed_id;
-                    Janus.log(" >> This track is coming from feed " + feed + ":", mid);
-                    if(track.kind !== "video" || !on) return;
-                    let stream = new MediaStream();
-                    stream.addTrack(track.clone());
-                    feedStreams[feed].stream = stream;
-                    this.setState({feedStreams});
-                    let col = "col" + qam[mid];
-                    let video = this[col].refs["programVideo" + mid];
-                    Janus.log(" Attach remote stream on video: "+mid);
-                    Janus.attachMediaStream(video, stream);
+                    if(track.kind === "video" && on) {
+                        let {mids,feedStreams,qam} = this.state;
+                        let feed = mids[mid].feed_id;
+                        Janus.log(" >> This track is coming from feed " + feed + ":", mid);
+                        let stream = new MediaStream();
+                        stream.addTrack(track.clone());
+                        feedStreams[feed].stream = stream;
+                        this.setState({feedStreams});
+                        let col = "col" + qam[mid];
+                        let video = this[col].refs["programVideo" + mid];
+                        Janus.log(" Attach remote stream on video: "+mid);
+                        Janus.attachMediaStream(video, stream);
+                    }
                 },
                 oncleanup: () => {
                     Janus.log(" ::: Got a cleanup notification (remote feed) :::");

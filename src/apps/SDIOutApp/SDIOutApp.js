@@ -249,17 +249,15 @@ class SDIOutApp extends Component {
                 onremotetrack: (track,mid,on) => {
                     Janus.log(" ::: Got a remote track event ::: (remote feed)");
                     Janus.log("Remote track (mid=" + mid + ") " + (on ? "added" : "removed") + ":", track);
-                    // Which publisher are we getting on this mid?
-                    let {mids,qam} = this.state;
-                    let feed = mids[mid].feed_id;
-                    Janus.log(" >> This track is coming from feed " + feed + ":", mid);
-                    if(track.kind !== "video" || !on) return;
-                    let stream = new MediaStream();
-                    stream.addTrack(track.clone());
-                    let col = "col" + qam[mid];
-                    let video = this[col].refs["programVideo" + mid];
-                    Janus.log(" Attach remote stream on video: "+mid);
-                    Janus.attachMediaStream(video, stream);
+                    if(track.kind === "video" && on) {
+                        let {qam} = this.state;
+                        let stream = new MediaStream();
+                        stream.addTrack(track.clone());
+                        let col = "col" + qam[mid];
+                        let video = this[col].refs["programVideo" + mid];
+                        Janus.log(" Attach remote stream on video: "+mid);
+                        Janus.attachMediaStream(video, stream);
+                    }
                 },
                 oncleanup: () => {
                     Janus.log(" ::: Got a cleanup notification (remote feed) :::");
