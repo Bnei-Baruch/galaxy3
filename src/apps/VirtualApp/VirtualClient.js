@@ -687,10 +687,11 @@ class VirtualClient extends Component {
         setTimeout(() => {
             this.setState({delay: false});
         }, 3000);
-        let {janus, videoroom, selected_room, user, username_value, women} = this.state;
+        let {janus, videoroom, selected_room, user, username_value, women, tested} = this.state;
         localStorage.setItem("room", selected_room);
         //This name will see other users
         user.display = username_value || user.name;
+        user.self_test = tested;
         localStorage.setItem("username", user.display);
 
         initGxyProtocol(janus, user, protocol => {

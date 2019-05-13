@@ -356,8 +356,9 @@ class GroupClient extends Component {
     };
 
     joinRoom = (reconnect) => {
-        let {janus, videoroom, selected_room, user} = this.state;
+        let {janus,videoroom,selected_room,user,tested} = this.state;
         user.display = user.title || user.name;
+        user.self_test = tested;
         localStorage.setItem("username", user.display);
         initGxyProtocol(janus, user, protocol => {
             this.setState({protocol});
