@@ -1082,8 +1082,10 @@ class ShidurAdmin extends Component {
       const controls = false;
       const muted = true;
 
-      let v = (<Icon name='volume up' />);
-      let q = (<Icon color='red' name='help' />);
+      const f = (<Icon name='volume up' />);
+      const q = (<Icon color='red' name='help' />);
+      const v = (<Icon name='checkmark' />);
+      const x = (<Icon name='close' />);
 
       const bitrate_options = [
           { key: 1, text: '150Kb/s', value: 150000 },
@@ -1117,10 +1119,12 @@ class ShidurAdmin extends Component {
           if(feed) {
               let fw = forwarders.find(f => f.publisher_id === feed.id);
               let qt = questions[feed.display.id] !== undefined;
+              let st = feed.display.self_test;
               return (
                   <Table.Row active={feed.id === this.state.feed_id} key={i} onClick={() => this.getUserInfo(feed)} >
-                      <Table.Cell width={5}>{qt ? q : ""}{feed.display.display}</Table.Cell>
-                      <Table.Cell width={1}>{fw ? v : ""}</Table.Cell>
+                      <Table.Cell width={10}>{qt ? q : ""}{feed.display.display}</Table.Cell>
+                      <Table.Cell width={1}>{fw ? f : ""}</Table.Cell>
+                      <Table.Cell positive={st} width={1}>{st ? v : ""}</Table.Cell>
                   </Table.Row>
               )
           }
@@ -1274,6 +1278,11 @@ class ShidurAdmin extends Component {
                           <Segment textAlign='center' className="group_list" raised>
                               <Table selectable compact='very' basic structured className="admin_table" unstackable>
                                   <Table.Body>
+                                      <Table.Row disabled>
+                                          <Table.Cell width={10}>Title</Table.Cell>
+                                          <Table.Cell width={1}>FW</Table.Cell>
+                                          <Table.Cell width={1}>ST</Table.Cell>
+                                      </Table.Row>
                                       {users_grid}
                                   </Table.Body>
                               </Table>

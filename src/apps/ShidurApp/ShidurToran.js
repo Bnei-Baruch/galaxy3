@@ -261,6 +261,8 @@ class ShidurToran extends Component {
         const muted = true;
         const pre_question = pre_feed && users[pre_feed.display.id] ? users[pre_feed.display.id].question : null;
         const next_question = next_feed && users[next_feed.display.id] ? users[next_feed.display.id].question : null;
+        const v = (<Icon name='checkmark' />);
+        const x = (<Icon name='close' />);
         const q = (<div className="questiont">
             <svg viewBox="0 0 50 50">
                 <text x="25" y="25" textAnchor="middle" alignmentBaseline="central" dominantBaseline="central">&#xF128;</text>
@@ -349,13 +351,14 @@ class ShidurToran extends Component {
 
         let groups_list = feeds.map((feed,i) => {
             const {id, display} = feed;
+            const st = users[display.id].self_test;
             return (
                 <Table.Row className={pre_feed && id === pre_feed.id ? 'active' : 'no'}
                            key={i} onClick={() => this.selectGroup(feed)}
                            onContextMenu={(e) => this.disableGroup(e, feed, i)} disabled={disable_button}>
-                    <Table.Cell width={5}>{display.display}</Table.Cell>
-                    <Table.Cell width={1}>{0}</Table.Cell>
-                    <Table.Cell width={1}>{0}</Table.Cell>
+                    <Table.Cell width={10}>{display.display}</Table.Cell>
+                    <Table.Cell positive={st} width={1}>{st ? v : ""}</Table.Cell>
+                    {/*<Table.Cell width={1}>{0}</Table.Cell>*/}
                 </Table.Row>
             )
         });
@@ -423,6 +426,11 @@ class ShidurToran extends Component {
                     <Segment textAlign='center' className="group_list" raised >
                         <Table selectable compact='very' basic structured className="admin_table" unstackable>
                             <Table.Body>
+                                <Table.Row disabled>
+                                    <Table.Cell width={10}>Title</Table.Cell>
+                                    <Table.Cell width={1}>ST</Table.Cell>
+                                    {/*<Table.Cell>AT</Table.Cell>*/}
+                                </Table.Row>
                                 {groups_list}
                             </Table.Body>
                         </Table>
