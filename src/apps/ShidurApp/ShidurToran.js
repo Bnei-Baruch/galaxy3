@@ -118,20 +118,15 @@ class ShidurToran extends Component {
                 },
                 onremotetrack: (track,mid,on) => {
                     Janus.log(" - Remote track "+mid+" is: "+on,track);
-                    if(!on) {
-                        console.log(" :: Going to stop track :: " + track + ":", mid);
-                        //FIXME: Remove callback for audio track does not come
-                        track.stop();
-                        //FIXME: does we really need to stop all track for feed id?
-                        return;
+                    if(on) {
+                        if (track.kind !== "video" || !on)
+                            return;
+                        let stream = new MediaStream();
+                        stream.addTrack(track.clone());
+                        let switchvideo = mid === "0" ? this.refs.prevewVideo : this.refs.nextVideo;
+                        Janus.log(" Attach remote stream on video: " + i);
+                        Janus.attachMediaStream(switchvideo, stream);
                     }
-                    if(track.kind !== "video" || !on)
-                        return;
-                    let stream = new MediaStream();
-                    stream.addTrack(track.clone());
-                    let switchvideo = mid === "0" ? this.refs.prevewVideo : this.refs.nextVideo;
-                    Janus.log(" Attach remote stream on video: "+i);
-                    Janus.attachMediaStream(switchvideo, stream);
                 },
                 oncleanup: () => {
                     Janus.log(" ::: Got a cleanup notification (preview feed) :::");

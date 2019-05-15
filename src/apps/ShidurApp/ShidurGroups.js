@@ -84,7 +84,7 @@ class ShidurGroups extends Component {
 
             // Don't switch if nobody in queue
             if(i === feeds.length) {
-                console.log("Queue is END");
+                Janus.log("Queue is END");
                 break;
             }
 

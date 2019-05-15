@@ -216,7 +216,6 @@ class ShidurApp extends Component {
                     // One of the publishers has gone away?
                     let leaving = msg["leaving"];
                     Janus.log("Publisher left: " + leaving);
-                    console.log("Publisher left: " + leaving);
                     this.removeFeed(leaving);
                     // Delete from disabled_groups
                     let {disabled_groups} = this.state;
@@ -231,7 +230,6 @@ class ShidurApp extends Component {
                     // One of the publishers has unpublished?
                     let unpublished = msg["unpublished"];
                     Janus.log("Publisher left: " + unpublished);
-                    console.log("Publisher left: " + unpublished);
                     if(unpublished === 'ok') {
                         // That's us
                         this.state.gxyhandle.hangup();
@@ -496,7 +494,7 @@ class ShidurApp extends Component {
                 // Write to log
                 if(!disable)
                     this.actionLog(user, "leave");
-                console.log(" :: Remove feed: " + id + " - Name: " + user.username);
+                Janus.log(" :: Remove feed: " + id + " - Name: " + user.username);
                 delete users[user.id];
 
                 // Delete from questions list
@@ -633,7 +631,7 @@ class ShidurApp extends Component {
 
     resetQueue = () => {
         if(this.state.feeds.length > 12) {
-            console.log("-- Reset Queue --");
+            Janus.log("-- Reset Queue --");
             this.setState({feeds_queue: 0});
             setTimeout(() => {
                 this.col1.switchFour();

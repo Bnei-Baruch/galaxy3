@@ -134,7 +134,7 @@ class ShidurAdmin extends Component {
                 success: (data) => {
                     Janus.log(" :: Got Feeds List (room :"+room_id+"): ", data);
                     let feeds = data.participants;
-                    console.log(feeds)
+                    Janus.log(feeds)
                 }
             });
         }
@@ -254,8 +254,8 @@ class ShidurAdmin extends Component {
     };
 
     onMessage = (videoroom, msg, jsep, initdata) => {
-        Janus.log(" ::: Got a message (publisher) :::");
-        Janus.log(msg);
+        Janus.debug(" ::: Got a message (publisher) :::");
+        Janus.debug(msg);
         let event = msg["videoroom"];
         if(event !== undefined && event !== null) {
             if(event === "joined") {
@@ -308,7 +308,7 @@ class ShidurAdmin extends Component {
             } else if(event === "talking") {
                 let {feeds} = this.state;
                 let id = msg["id"];
-                Janus.log("User: "+id+" - start talking");
+                Janus.debug("User: "+id+" - start talking");
                 for(let i=0; i<feeds.length; i++) {
                     if(feeds[i] && feeds[i].id === id) {
                         feeds[i].talk = true;
@@ -318,7 +318,7 @@ class ShidurAdmin extends Component {
             } else if(event === "stopped-talking") {
                 let {feeds} = this.state;
                 let id = msg["id"];
-                Janus.log("User: "+id+" - stop talking");
+                Janus.debug("User: "+id+" - stop talking");
                 for(let i=0; i<feeds.length; i++) {
                     if(feeds[i] && feeds[i].id === id) {
                         feeds[i].talk = false;
@@ -495,13 +495,7 @@ class ShidurAdmin extends Component {
                     let {mids,feedStreams} = this.state;
                     let feed = mids[mid].feed_id;
                     Janus.debug(" >> This track is coming from feed " + feed + ":", mid);
-                    if(!on) {
-                        console.log(" :: Going to stop track :: " + feed + ":", mid);
-                        //FIXME: Remove callback for audio track does not come
-                        track.stop();
-                        //FIXME: does we really need to stop all track for feed id?
-                        return;
-                    }
+                    if(!on) return;
                     // If we're here, a new track was added
                     if(track.kind === "audio") {
                         // New audio track: create a stream out of it, and use a hidden <audio> element
