@@ -14,6 +14,7 @@ class ShidurApp extends Component {
 
     state = {
         qam: {0:1,1:2,2:3,3:1,4:2,5:3,6:1,7:2,8:3,9:1,10:2,11:3},
+        quad: ["0","3","6","9","1","4","7","10","2","5","8","11"],
         janus: null,
         feeds: [],
         feedStreams: {},
@@ -481,6 +482,16 @@ class ShidurApp extends Component {
             remoteFeed.send({ message: unsubscribe });
     };
 
+    switchTo = (streams) => {
+        Janus.log(" :: Going to switch four: ", streams);
+        let message = {request: "switch", streams};
+        this.state.remoteFeed.send ({message,
+            success: () => {
+                Janus.debug(" -- Switch success: ");
+            }
+        });
+    };
+
     removeFeed = (id, disable) => {
         let {feeds,users,questions_queue,qfeeds,feeds_queue} = this.state;
 
@@ -630,14 +641,27 @@ class ShidurApp extends Component {
     };
 
     resetQueue = () => {
-        if(this.state.feeds.length > 12) {
+        let {feeds,quad} = this.state;
+        if(feeds.length > 12) {
             Janus.log("-- Reset Queue --");
-            this.setState({feeds_queue: 0});
+            let streams = [];
+            let feeds_queue = 0;
+            for(let i=0; i<12; i++) {
+                let sub_mid = quad[i];
+                let feed = feeds[i].id;
+                streams.push({feed, mid: "1", sub_mid});
+                feeds_queue++;
+            }
+            this.setState({feeds_queue});
+            this.switchTo(streams);
+
+            // Add to qfeeds if removed from program with question status
             setTimeout(() => {
-                this.col1.switchFour();
-                this.col2.switchFour();
-                this.col3.switchFour();
+                this.col1.questionStatus();
             }, 1000);
+
+            // Send sdi action
+            this.pre.sdiAction("switch_req" , true, null, streams);
         }
     };
 
