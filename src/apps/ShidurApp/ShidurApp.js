@@ -450,8 +450,8 @@ class ShidurApp extends Component {
             }
         } else if(data.type === "sound-test") {
             let {users} = this.state;
-            if(users[data.user.id]) {
-                users[data.user.id].sound_test = true;
+            if(users[data.id]) {
+                users[data.id].sound_test = true;
                 this.setState({users});
             }
         } else if(data.type === "event") {
