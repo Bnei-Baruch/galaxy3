@@ -346,7 +346,7 @@ class ShidurToran extends Component {
 
         let groups_list = feeds.map((feed,i) => {
             const {id, display} = feed;
-            const st = users[display.id].self_test;
+            const st = users[display.id].sound_test;
             return (
                 <Table.Row className={pre_feed && id === pre_feed.id ? 'active' : 'no'}
                            key={i} onClick={() => this.selectGroup(feed)}

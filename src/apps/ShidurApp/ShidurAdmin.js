@@ -297,8 +297,10 @@ class ShidurAdmin extends Component {
                             stream["display"] = display;
                         }
                         feedStreams[id] = {id, display, streams};
+                        let st = users[display.id] && users[display.id].sound_test;
                         users[display.id] = display;
                         users[display.id].rfid = id;
+                        users[display.id].sound_test = st;
                         subscription.push(subst);
                     }
                     this.setState({feeds,feedStreams,users});
@@ -362,8 +364,10 @@ class ShidurAdmin extends Component {
                             stream["display"] = display;
                         }
                         feedStreams[id] = {id, display, streams};
+                        let st = users[display.id] && users[display.id].sound_test;
                         users[display.id] = display;
                         users[display.id].rfid = id;
+                        users[display.id].sound_test = st;
                         subscription.push(subst);
                     }
                     feeds.push(feed[0]);
@@ -838,6 +842,13 @@ class ShidurAdmin extends Component {
 
     sendRemoteCommand = (command_type) => {
         const { protocol,feed_user,user } = this.state;
+        if(command_type === "sound-test") {
+            let {users} = this.state;
+            if(users[feed_user.id]) {
+                users[feed_user.id].sound_test = true;
+                this.setState({users});
+            }
+        }
         if(feed_user) {
             let msg = { type: command_type, id: feed_user.id};
             sendProtocolMessage(protocol, user, msg);
@@ -1113,7 +1124,8 @@ class ShidurAdmin extends Component {
           if(feed) {
               let fw = forwarders.find(f => f.publisher_id === feed.id);
               let qt = questions[feed.display.id] !== undefined;
-              let st = feed.display.self_test;
+              //let st = feed.display.self_test;
+              let st = this.state.users[feed.display.id].sound_test;
               return (
                   <Table.Row active={feed.id === this.state.feed_id} key={i} onClick={() => this.getUserInfo(feed)} >
                       <Table.Cell width={10}>{qt ? q : ""}{feed.display.display}</Table.Cell>
@@ -1223,6 +1235,7 @@ class ShidurAdmin extends Component {
           <Segment className="virtual_segment" color='blue' raised>
 
               <Segment textAlign='center' className="ingest_segment">
+                  <Button color='blue' icon='sound' onClick={() => this.sendRemoteCommand("sound-test")} />
                   <Popup
                       trigger={<Button positive icon='info' onClick={this.getFeedInfo} />}
                       position='bottom right'
