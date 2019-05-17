@@ -255,8 +255,11 @@ class ShidurToran extends Component {
         const controls = false;
         const muted = true;
         const pre_question = pre_feed && users[pre_feed.display.id] ? users[pre_feed.display.id].question : null;
+        const pre_st = pre_feed && users[pre_feed.display.id] ? users[pre_feed.display.id].sound_test : null;
         const next_question = next_feed && users[next_feed.display.id] ? users[next_feed.display.id].question : null;
+        const next_st = next_feed && users[next_feed.display.id] ? users[next_feed.display.id].sound_test : null;
         const v = (<Icon name='checkmark' />);
+        const stv = (<Label className='sound_test' color='green' icon='checkmark' />);
         const x = (<Icon name='close' />);
         const q = (<div className="questiont">
             <svg viewBox="0 0 50 50">
@@ -279,7 +282,7 @@ class ShidurToran extends Component {
 
         let preview = (<div className={pre_feed ? "" : "hidden"}>
                 <div className="fullscrvideo_title"><span>{pre_feed ? pre_feed.display.display : ""}</span></div>
-                {pre_question ? q : ''}
+                {pre_question ? q : ''}{pre_st ? stv : ''}
                 <video
                     onClick={() => this.zoomIn(true)}
                     ref = {"prevewVideo"}
@@ -306,7 +309,7 @@ class ShidurToran extends Component {
 
         let nextfeed = (<div className={next_feed ? "" : "hidden"}>
                 <div className="fullscrvideo_title"><span>{next_feed ? next_feed.display.display : ""}</span></div>
-                {next_question ? q : ''}
+                {next_question ? q : ''}{next_st ? stv : ''}
                 <video onClick={() => this.zoomIn(false)}
                     ref = {"nextVideo"}
                     id = "nextVideo"

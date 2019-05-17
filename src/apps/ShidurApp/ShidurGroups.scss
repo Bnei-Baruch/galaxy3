@@ -29,7 +29,7 @@
     font-family: "Liberation Serif";
     line-height: 1.1285em;
     position: absolute;
-    right: 40px;
+    right: 60px;
     color: #FFF;
     text-align: center;
     font-size: 25px;
@@ -43,6 +43,13 @@
     bottom: 0;
     position: absolute;
     right: 0px;
+    float: right !important;
+}
+
+.sound_test {
+    top: 15px;
+    position: absolute;
+    right: 17px;
     float: right !important;
 }
 
