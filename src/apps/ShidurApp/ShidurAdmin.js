@@ -750,6 +750,14 @@ class ShidurAdmin extends Component {
             }
         }
 
+        if(data.type === "sound-test") {
+            let {users} = this.state;
+            if(users[data.id]) {
+                users[data.id].sound_test = true;
+                this.setState({users});
+            }
+        }
+
         // if(data.type === "question" && data.status && data.room === 1234) {
         //     let {questions_queue,users} = this.state;
         //     data.user.rfid = users[data.user.id].rfid;
@@ -841,14 +849,7 @@ class ShidurAdmin extends Component {
     };
 
     sendRemoteCommand = (command_type) => {
-        const { protocol,feed_user,user } = this.state;
-        if(command_type === "sound-test") {
-            let {users} = this.state;
-            if(users[feed_user.id]) {
-                users[feed_user.id].sound_test = true;
-                this.setState({users});
-            }
-        }
+        const {protocol,feed_user,user} = this.state;
         if(feed_user) {
             let msg = { type: command_type, id: feed_user.id};
             sendProtocolMessage(protocol, user, msg);
