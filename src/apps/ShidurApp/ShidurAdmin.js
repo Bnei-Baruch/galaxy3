@@ -755,6 +755,9 @@ class ShidurAdmin extends Component {
             if(users[data.id]) {
                 users[data.id].sound_test = true;
                 this.setState({users});
+            } else {
+                users[data.id] = {sound_test: true};
+                this.setState({users});
             }
         }
 
