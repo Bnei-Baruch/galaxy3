@@ -392,6 +392,10 @@ class GroupClient extends Component {
                 this.handleQuestion();
             } else if(type === "client-mute" && user.id === id) {
                 this.micMute();
+            } else if(type === "sound-test" && user.id === id) {
+                let {user} = this.state;
+                user.sound_test = true;
+                this.setState({user});
             }
         });
     };
