@@ -1211,11 +1211,11 @@ class ShidurAdmin extends Component {
               </Segment>
 
               <Grid>
-                  <Grid.Row stretched>
-                      <Grid.Column width={3}>
+                  <Grid.Row stretched columns='equal'>
+                      <Grid.Column width={4}>
                           <Segment.Group>
                               { root ?
-                              <Segment>
+                              <Segment textAlign='center'>
                                   <Popup trigger={<Button color="orange" icon='bell slash' onClick={() => this.stopForward(feed_id)} />} content='Stop forward' inverted />
                                   <Popup trigger={<Button negative icon='user x' onClick={this.kickUser} />} content='Kick' inverted />
                                       <Popup trigger={<Button color="brown" icon='sync alternate' alt="test" onClick={() => this.sendRemoteCommand("client-reconnect")} />} content='Reconnect' inverted />
@@ -1239,7 +1239,7 @@ class ShidurAdmin extends Component {
                           </Segment>
                           </Segment.Group>
                       </Grid.Column>
-                      <Grid.Column largeScreen={10}>
+                      <Grid.Column largeScreen={9}>
                           <div className="videos-panel">
                               <div className="videos">
                                   <div className="videos__wrapper">
