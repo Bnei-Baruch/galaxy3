@@ -18,8 +18,6 @@ class ShidurAdmin extends Component {
         forwarders: [],
         groups: [],
         janus: null,
-        questions: {},
-        questions_queue: [],
         feedStreams: {},
         mids: [],
         feeds: [],
@@ -102,7 +100,7 @@ class ShidurAdmin extends Component {
             this.getRoomList();
             if(this.state.feed_user)
                 this.getFeedInfo()
-        }, 10000 );
+        }, 5000 );
     };
 
     getRoomList = () => {
@@ -267,7 +265,7 @@ class ShidurAdmin extends Component {
                 //this.publishOwnFeed();
                 // Any new feed to attach to?
                 if(msg["publishers"] !== undefined && msg["publishers"] !== null) {
-                    let {feedStreams,users,questions} = this.state;
+                    let {feedStreams,users} = this.state;
                     let list = msg["publishers"];
 
                     // Filter service and camera muted feeds
@@ -289,7 +287,6 @@ class ShidurAdmin extends Component {
                         let streams = feeds[f]["streams"];
                         feeds[f].display = display;
                         feeds[f].talk = talk;
-                        feeds[f].question = questions[display.id] !== undefined;
                         let subst = {feed: id};
                         for (let i in streams) {
                             let stream = streams[i];
@@ -298,9 +295,11 @@ class ShidurAdmin extends Component {
                         }
                         feedStreams[id] = {id, display, streams};
                         let st = users[display.id] && users[display.id].sound_test;
+                        let qt = users[display.id] && users[display.id].question;
                         users[display.id] = display;
                         users[display.id].rfid = id;
                         users[display.id].sound_test = st;
+                        users[display.id].question = qt;
                         subscription.push(subst);
                     }
                     this.setState({feeds,feedStreams,users});
@@ -354,7 +353,6 @@ class ShidurAdmin extends Component {
                         let display = JSON.parse(feed[f]["display"]);
                         if(display.role !== fr)
                             return;
-                        let talk = feed[f]["talking"];
                         let streams = feed[f]["streams"];
                         feed[f].display = display;
                         let subst = {feed: id};
@@ -365,9 +363,11 @@ class ShidurAdmin extends Component {
                         }
                         feedStreams[id] = {id, display, streams};
                         let st = users[display.id] && users[display.id].sound_test;
+                        let qt = users[display.id] && users[display.id].question;
                         users[display.id] = display;
                         users[display.id].rfid = id;
                         users[display.id].sound_test = st;
+                        users[display.id].question = qt;
                         subscription.push(subst);
                     }
                     feeds.push(feed[0]);
@@ -564,25 +564,13 @@ class ShidurAdmin extends Component {
 
     unsubscribeFrom = (id) => {
         // Unsubscribe from this publisher
-        let {mids,questions,questions_queue,cammuteds,feeds,users,feedStreams,feed_id} = this.state;
+        let {feeds,users,feed_id} = this.state;
         let {remoteFeed} = this.state;
         for (let i=0; i<feeds.length; i++) {
             if (feeds[i].id === id) {
                 Janus.log("Feed " + feeds[i] + " (" + id + ") has left the room, detaching");
-                //TODO: remove mids
-                delete users[feeds[i].display.id];
-                delete feedStreams[id];
-                if(questions[feeds[i].display.id]) {
-                    delete questions[feeds[i].display.id];
-                    this.setState({questions});
-                    for(let q = 0; q < questions_queue.length; q++){
-                        if(questions_queue[q].user.id === feeds[i].display.id) {
-                            questions_queue.splice(q, 1);
-                            this.setState({questions_queue});
-                            break
-                        }
-                    }
-                }
+
+                // Remove from feeds list
                 feeds.splice(i, 1);
                 // Send an unsubscribe request
                 let unsubscribe = {
@@ -597,28 +585,8 @@ class ShidurAdmin extends Component {
                     remoteFeed.detach();
                     this.setState({remoteFeed: null, groups: []});
                 }
-                this.setState({feeds,users,feedStreams});
+                this.setState({feeds,users});
                 break
-            }
-        }
-        // In case feed exit with camera muted
-        if(feedStreams[id]) {
-            if(cammuteds[feedStreams[id].display.id]) {
-                delete cammuteds[feedStreams[id].display.id];
-                delete users[feedStreams[id].display.id];
-                if(questions[feedStreams[id].display.id]) {
-                    delete questions[feedStreams[id].display.id];
-                    this.setState({questions});
-                    for(let q = 0; q < questions_queue.length; q++){
-                        if(questions_queue[q].user.id === feedStreams[id].display.id) {
-                            questions_queue.splice(q, 1);
-                            this.setState({questions_queue});
-                            break
-                        }
-                    }
-                }
-                delete feedStreams[id];
-                this.setState({cammuteds,users,feedStreams});
             }
         }
     };
@@ -724,34 +692,17 @@ class ShidurAdmin extends Component {
     };
 
     onProtocolData = (data) => {
-        let {current_room,feeds,users,questions} = this.state;
+        let {users} = this.state;
 
-        // List users by user id send question
-        if(data.type === "question" && data.status) {
-            questions[data.user.id] = data.user;
-            this.setState({questions});
-        } else if(data.type === "question" && !data.status) {
-            let {questions} = this.state;
-            if(questions[data.user.id]) {
-                delete questions[data.user.id];
-                this.setState({questions});
+        if(data.type === "question") {
+            if(users[data.user.id]) {
+                users[data.user.id].question = data.status;
+                this.setState({users});
+            } else {
+                users[data.user.id] = {question: data.status};
+                this.setState({users});
             }
-        }
-
-        // Put question state in feeds list
-        if (data.type === "question" && data.room === current_room) {
-            let rfid = users[data.user.id].rfid;
-            for (let i = 0; i < feeds.length; i++) {
-                if (feeds[i] && feeds[i].id === rfid) {
-                    feeds[i].question = data.status;
-                    this.setState({feeds});
-                    break
-                }
-            }
-        }
-
-        if(data.type === "sound-test") {
-            let {users} = this.state;
+        } else if(data.type === "sound-test") {
             if(users[data.id]) {
                 users[data.id].sound_test = true;
                 this.setState({users});
@@ -760,22 +711,6 @@ class ShidurAdmin extends Component {
                 this.setState({users});
             }
         }
-
-        // if(data.type === "question" && data.status && data.room === 1234) {
-        //     let {questions_queue,users} = this.state;
-        //     data.user.rfid = users[data.user.id].rfid;
-        //     questions_queue.push(data);
-        //     this.setState({questions_queue});
-        // } else if(data.type === "question" && !data.status && data.room === 1234) {
-        //     let {questions_queue} = this.state;
-        //     for(let i = 0; i < questions_queue.length; i++){
-        //         if(questions_queue[i].user.id === data.user.id) {
-        //             questions_queue.splice(i, 1);
-        //             this.setState({questions_queue});
-        //             break
-        //         }
-        //     }
-        // }
     };
 
     sendDataMessage = () => {
@@ -1084,7 +1019,7 @@ class ShidurAdmin extends Component {
 
   render() {
 
-      const { bitrate,rooms,current_room,switch_mode,user,feeds,feed_id,i,messages,description,room_id,room_name,root,forwarders,feed_rtcp,feed_talk,questions,msg_type } = this.state;
+      const { bitrate,rooms,current_room,switch_mode,user,feeds,feed_id,i,messages,description,room_id,room_name,root,forwarders,feed_rtcp,feed_talk,msg_type,users} = this.state;
       const width = "134";
       const height = "100";
       const autoPlay = true;
@@ -1127,9 +1062,9 @@ class ShidurAdmin extends Component {
       let users_grid = feeds.map((feed,i) => {
           if(feed) {
               let fw = forwarders.find(f => f.publisher_id === feed.id);
-              let qt = questions[feed.display.id] !== undefined;
+              let qt = users[feed.display.id].question;
+              let st = users[feed.display.id].sound_test;
               //let st = feed.display.self_test;
-              let st = this.state.users[feed.display.id].sound_test;
               return (
                   <Table.Row active={feed.id === this.state.feed_id} key={i} onClick={() => this.getUserInfo(feed)} >
                       <Table.Cell width={10}>{qt ? q : ""}{feed.display.display}</Table.Cell>
