@@ -371,6 +371,10 @@ class ShidurAdmin extends Component {
                         subscription.push(subst);
                     }
                     feeds.push(feed[0]);
+                    feeds.sort((a, b) => {
+                        if (a.display.username > b.display.username) return 1;
+                        if (a.display.username < b.display.username) return -1;
+                    });
                     this.setState({feeds,feedStreams,users});
                     if(subscription.length > 0 && fr === "user")
                         this.subscribeTo(subscription);
