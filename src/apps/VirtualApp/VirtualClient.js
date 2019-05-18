@@ -71,6 +71,7 @@ class VirtualClient extends Component {
 
     initClient = (user,error) => {
         localStorage.setItem("question", false);
+        localStorage.setItem("sound_test", false);
         checkNotification();
         geoInfo('https://v4g.kbb1.com/geo.php?action=get', data => {
             Janus.log(data);
@@ -692,8 +693,8 @@ class VirtualClient extends Component {
         //This name will see other users
         user.display = username_value || user.name;
         user.self_test = tested;
+        user.sound_test = reconnect ? JSON.parse(localStorage.getItem("sound_test")) : false;
         localStorage.setItem("username", user.display);
-
         initGxyProtocol(janus, user, protocol => {
             this.setState({protocol});
             // Send question event if before join it was true
@@ -729,6 +730,7 @@ class VirtualClient extends Component {
             } else if(type === "sound-test" && user.id === id) {
                 let {user} = this.state;
                 user.sound_test = true;
+                localStorage.setItem("sound_test", true);
                 this.setState({user});
             }
             this.onProtocolData(ondata);

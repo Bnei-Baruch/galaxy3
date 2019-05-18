@@ -68,6 +68,7 @@ class GroupClient extends Component {
 
     initGalaxy = (user,error) => {
         localStorage.setItem("question", false);
+        localStorage.setItem("sound_test", false);
         checkNotification();
         geoInfo('https://v4g.kbb1.com/geo.php?action=get', data => {
             Janus.log(data);
@@ -359,6 +360,7 @@ class GroupClient extends Component {
         let {janus,videoroom,selected_room,user,tested} = this.state;
         user.display = user.title || user.name;
         user.self_test = tested;
+        user.sound_test = reconnect ? JSON.parse(localStorage.getItem("sound_test")) : false;
         localStorage.setItem("username", user.display);
         initGxyProtocol(janus, user, protocol => {
             this.setState({protocol});
@@ -395,6 +397,7 @@ class GroupClient extends Component {
             } else if(type === "sound-test" && user.id === id) {
                 let {user} = this.state;
                 user.sound_test = true;
+                localStorage.setItem("sound_test", true);
                 this.setState({user});
             }
         });
