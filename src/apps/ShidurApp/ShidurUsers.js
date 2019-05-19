@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import { Janus } from "../../lib/janus";
-import {Segment, Table} from "semantic-ui-react";
+import {Segment, Table, Icon} from "semantic-ui-react";
 import {getState, putData, initJanus} from "../../shared/tools";
 //import {MAX_FEEDS} from "../../shared/consts";
 import './ShidurUsers.css'
@@ -321,12 +321,21 @@ class ShidurUsers extends Component {
                 delete questions[data.user.id];
                 this.setState({questions});
             }
-            for(let i = 0; i < questions_queue.length; i++){
+            for(let i=0; i<questions_queue.length; i++) {
                 if(questions_queue[i].user.id === data.user.id) {
                     questions_queue.splice(i, 1);
                     this.setState({questions_queue});
                     break
                 }
+            }
+        } else if(data.type === "sound-test") {
+            let {users} = this.state;
+            if(users[data.id]) {
+                users[data.id].sound_test = true;
+                this.setState({users});
+            } else {
+                users[data.id] = {sound_test: true};
+                this.setState({users});
             }
         }
 
@@ -616,7 +625,7 @@ class ShidurUsers extends Component {
 
 
   render() {
-      const {program,preview,disabled_rooms,rooms,questions_queue} = this.state;
+      const {program,preview,disabled_rooms,rooms,questions_queue,users} = this.state;
       const width = "400";
       const height = "300";
       const autoPlay = true;
@@ -659,6 +668,7 @@ class ShidurUsers extends Component {
               let id = feed.id;
               let talk = feed.talk;
               let question = feed.question;
+              let st = users[feed.display.id] && users[feed.display.id].sound_test;
               return (<div className="video"
                            key={"prov" + id}
                            ref={"provideo" + id}
@@ -668,8 +678,8 @@ class ShidurUsers extends Component {
                           <svg viewBox="0 0 50 50">
                               <text x="25" y="25" textAnchor="middle" alignmentBaseline="central" dominantBaseline="central">&#xF128;</text>
                           </svg>
+                          {st ? <Icon name="checkmark" size="small" color="green"/> : ''}
                       </div>:''}
-                      {/*<div className="video__title">{!talk ? <Icon name="microphone slash" size="small" color="red"/> : ''}{name}</div>*/}
                   </div>
                   <video className={talk ? "talk" : ""}
                          key={id}
@@ -691,6 +701,7 @@ class ShidurUsers extends Component {
               let id = feed.id;
               let talk = feed.talk;
               let question = feed.question;
+              let st = users[feed.display.id] && users[feed.display.id].sound_test;
               return (<div className="video"
                            key={"prev" + id}
                            ref={"prevideo" + id}
@@ -700,8 +711,8 @@ class ShidurUsers extends Component {
                           <svg viewBox="0 0 50 50">
                               <text x="25" y="25" textAnchor="middle" alignmentBaseline="central" dominantBaseline="central">&#xF128;</text>
                           </svg>
+                          {st ? <Icon name="checkmark" size="small" color="green"/> : ''}
                       </div>:''}
-                      {/*<div className="video__title">{!talk ? <Icon name="microphone slash" size="small" color="red"/> : ''}{name}</div>*/}
                   </div>
                   <video className={talk ? "talk" : ""}
                          key={id}
