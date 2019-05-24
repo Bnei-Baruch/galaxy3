@@ -43,12 +43,14 @@ class ShidurGroups extends Component {
         let {quad} = this.state;
         let dup = false;
         let feed = pre_feed || feeds[feeds_queue];
-        for(let i=index; i<index+4; i++) {
-            let sub_mid = quad[i];
-            let mid = mids[sub_mid];
-            if(mid && mid.active && feed.id && mid.feed_id === feed.id) {
-                dup = true;
-                break;
+        if(feed) {
+            for (let i = index; i < index + 4; i++) {
+                let sub_mid = quad[i];
+                let mid = mids[sub_mid];
+                if (mid && mid.active && feed.id && mid.feed_id === feed.id) {
+                    dup = true;
+                    break;
+                }
             }
         }
         return dup;
