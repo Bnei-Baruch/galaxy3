@@ -855,7 +855,7 @@ class ShidurAdmin extends Component {
     getRoomID = () => {
         const {rooms} = this.state;
         let id = 1028;
-        for(let i=id; i<1100; i++) {
+        for(let i=id; i<9999; i++) {
             let room_id = rooms.filter(room => room.room === i);
             if (room_id.length === 0) {
                 return i;
