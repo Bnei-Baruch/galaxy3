@@ -378,14 +378,8 @@ class AdminGuest extends Component {
                     let {mids,feedStreams} = this.state;
                     let feed = mids[mid].feed_id;
                     Janus.debug(" >> This track is coming from feed " + feed + ":", mid);
-                    if(!on) {
-                        //FIXME: Remove callback for audio track does not come
-                        track.stop();
-                        //FIXME: does we really need to stop all track for feed id?
-                        return;
-                    }
                     // If we're here, a new track was added
-                    if(track.kind === "video") {
+                    if(track.kind === "video" && on) {
                         // New video track: create a stream out of it
                         let stream = new MediaStream();
                         stream.addTrack(track.clone());

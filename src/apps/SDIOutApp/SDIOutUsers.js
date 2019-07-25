@@ -275,25 +275,18 @@ class SDIOutUsers extends Component {
                     let {mids,feedStreams} = this.state;
                     let feed = mids[mid].feed_id;
                     Janus.log(" >> This track is coming from feed " + feed + ":", mid);
-                    if(!on) {
-                        Janus.log(" :: Going to stop track :: " + feed + ":", mid);
-                        //FIXME: Remove callback for audio track does not come
-                        track.stop();
-                        //FIXME: does we really need to stop all track for feed id?
-                        return;
-                    }
                     if(feedStreams[feed].stream) {
                         return
                     }
                     // If we're here, a new track was added
-                    if(track.kind === "audio") {
+                    if(track.kind === "audio" && on) {
                         // New audio track: create a stream out of it, and use a hidden <audio> element
                         // let stream = new MediaStream();
                         // stream.addTrack(track.clone());
                         // Janus.log("Created remote audio stream:", stream);
                         // let remoteaudio = this.refs["remoteAudio" + feed];
                         // Janus.attachMediaStream(remoteaudio, stream);
-                    } else if(track.kind === "video") {
+                    } else if(track.kind === "video" && on) {
                         // New video track: create a stream out of it
                         let stream = new MediaStream();
                         stream.addTrack(track.clone());
