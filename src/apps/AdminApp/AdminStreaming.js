@@ -1,10 +1,10 @@
 import React, { Component } from 'react';
-import { Janus } from "../StreamApp/lib/janus";
+//import { Janus } from "../StreamApp/lib/janus";
+import { Janus } from "./janus";
 import { Segment, Menu, Select, Button, Grid } from 'semantic-ui-react';
 import VolumeSlider from "../../components/VolumeSlider";
-import {servers_options, admin_videos_options, audios_options} from "../../shared/consts";
+import {servers_options, admin_videos_options, audios_options, JANUS_SRV_EURFR} from "../../shared/consts";
 import './AdminStreaming.css';
-
 
 class AdminStreaming extends Component {
 
@@ -14,25 +14,39 @@ class AdminStreaming extends Component {
         audiostream: null,
         datastream: null,
         audio: null,
-        servers: "",
+        servers: `${JANUS_SRV_EURFR}`,
         videos: 1,
         audios: 15,
         muted: true,
+        started: false
     };
 
     componentDidMount() {
-        Janus.init({debug: ["log","error"], callback: this.initJanus});
+        // Janus.init({debug: ["debug","log","error"], callback: this.initJanus});
     };
 
     componentWillUnmount() {
         this.state.janus.destroy();
     };
 
+    startStream = () => {
+        if(this.state.started)
+            return;
+        this.setState({started: true});
+        Janus.init({debug: ["log","error"], callback: this.initJanus});
+        let promise = document.createElement("video").play();
+        if(promise instanceof Promise) {
+            promise.catch(function(error) {
+                console.log("AUTOPLAY ERROR: ", error)
+            }).then(function() {});
+        }
+    };
+
     initJanus = (servers) => {
         if(this.state.janus)
            this.state.janus.destroy();
         if(!servers)
-            return;
+            servers = this.state.servers;
         Janus.log(" -- Going to connect to: " + servers);
         let janus = new Janus({
             server: servers,
@@ -40,8 +54,8 @@ class AdminStreaming extends Component {
             success: () => {
                 Janus.log(" :: Connected to JANUS");
                 this.initVideoStream();
-                this.initDataStream();
-                this.initAudioStream();
+                //this.initDataStream();
+                //this.initAudioStream();
             },
             error: (error) => {
                 Janus.log(error);
@@ -66,11 +80,27 @@ class AdminStreaming extends Component {
             error: (error) => {
                 Janus.log("Error attaching plugin: " + error);
             },
+            iceState: (state) => {
+                Janus.log("ICE state changed to " + state);
+            },
+            webrtcState: (on) => {
+                Janus.log("Janus says our WebRTC PeerConnection is " + (on ? "up" : "down") + " now");
+            },
+            slowLink: (uplink, lost, mid) => {
+                Janus.log("Janus reports problems " + (uplink ? "sending" : "receiving") +
+                    " packets on mid " + mid + " (" + lost + " lost packets)");
+            },
             onmessage: (msg, jsep) => {
                 this.onStreamingMessage(this.state.videostream, msg, jsep, false);
             },
-            onremotestream: (stream) => {
-                Janus.log("Got a remote stream!", stream);
+            onremotetrack: (track, mid, on) => {
+                Janus.debug(" ::: Got a remote video track event :::");
+                Janus.debug("Remote video track (mid=" + mid + ") " + (on ? "added" : "removed") + ":", track);
+                if(this.state.video_stream) return;
+                let stream = new MediaStream();
+                stream.addTrack(track.clone());
+                this.setState({video_stream: stream});
+                Janus.log("Created remote video stream:", stream);
                 let video = this.refs.remoteVideo;
                 Janus.attachMediaStream(video, stream);
             },
@@ -89,15 +119,32 @@ class AdminStreaming extends Component {
                 Janus.log(audiostream);
                 this.setState({audiostream});
                 audiostream.send({message: {request: "watch", id: audios}});
+                audiostream.muteAudio()
             },
             error: (error) => {
                 Janus.log("Error attaching plugin: " + error);
             },
+            iceState: (state) => {
+                Janus.log("ICE state changed to " + state);
+            },
+            webrtcState: (on) => {
+                Janus.log("Janus says our WebRTC PeerConnection is " + (on ? "up" : "down") + " now");
+            },
+            slowLink: (uplink, lost, mid) => {
+                Janus.log("Janus reports problems " + (uplink ? "sending" : "receiving") +
+                    " packets on mid " + mid + " (" + lost + " lost packets)");
+            },
             onmessage: (msg, jsep) => {
                 this.onStreamingMessage(this.state.audiostream, msg, jsep, false);
             },
-            onremotestream: (stream) => {
-                Janus.log("Got a remote stream!", stream);
+            onremotetrack: (track, mid, on) => {
+                Janus.debug(" ::: Got a remote audio track event :::");
+                Janus.debug("Remote audio track (mid=" + mid + ") " + (on ? "added" : "removed") + ":", track);
+                if(this.state.audio_stream) return;
+                let stream = new MediaStream();
+                stream.addTrack(track.clone());
+                this.setState({audio_stream: stream});
+                Janus.log("Created remote audio stream:", stream);
                 let audio = this.refs.remoteAudio;
                 Janus.attachMediaStream(audio, stream);
                 //StreamVisualizer2(stream, this.refs.canvas1.current,50);
@@ -151,12 +198,16 @@ class AdminStreaming extends Component {
             handle.createAnswer({
                 jsep: jsep,
                 media: { audioSend: false, videoSend: false, data: initdata },
-                success: function(jsep) {
+                success: (jsep) => {
                     Janus.log("Got SDP!", jsep);
                     let body = { request: "start" };
                     handle.send({message: body, jsep: jsep});
                 },
-                error: function(error) {
+                customizeSdp: (jsep) => {
+                    Janus.debug(":: Modify original SDP: ",jsep);
+                    jsep.sdp = jsep.sdp.replace(/a=fmtp:111 minptime=10;useinbandfec=1\r\n/g, 'a=fmtp:111 minptime=10;useinbandfec=1;stereo=1;sprop-stereo=1\r\n');
+                },
+                error: (error) => {
                     Janus.log("WebRTC error: " + error);
                 }
             });
@@ -171,8 +222,19 @@ class AdminStreaming extends Component {
 
     setVideo = (videos) => {
         Janus.log(videos);
-        this.setState({videos});
-        this.state.videostream.send({message: { request: "switch", id: videos }});
+        if(videos === 4) {
+            this.state.videostream.hangup();
+            this.setState({videos, videostream: null, video_stream: null});
+        } else {
+            if(this.state.videostream) {
+                this.setState({videos});
+                this.state.videostream.send({message: { request: "switch", id: videos }});
+            } else {
+                this.setState({videos}, () => {
+                    this.initVideoStream();
+                });
+            }
+        }
     };
 
     setAudio = (audios) => {
@@ -188,26 +250,36 @@ class AdminStreaming extends Component {
     audioMute = () => {
         this.setState({muted: !this.state.muted});
         this.refs.remoteAudio.muted = !this.state.muted;
+        if(!this.state.audiostream)
+            this.initAudioStream();
+    };
+
+    toggleFullScreen = () => {
+        let vid = this.refs.remoteVideo;
+        vid.webkitEnterFullscreen();
     };
 
 
   render() {
 
-      const {servers, videos, audios, muted} = this.state;
+      const {servers, videos, audios, muted, started} = this.state;
 
     return (
 
       <Segment compact color='brown' raised>
 
           <Segment textAlign='center' className="ingest_segment" raised secondary>
-              <Menu secondary>
+              <Menu secondary size='huge'>
                   <Menu.Item>
-                      <Select
-                          error={!servers}
-                          placeholder="Server:"
-                          value={servers}
-                          options={servers_options}
-                          onChange={(e, {value}) => this.setServer(value)} />
+                      {/*<Select*/}
+                      {/*    error={!servers}*/}
+                      {/*    placeholder="Server:"*/}
+                      {/*    value={servers}*/}
+                      {/*    options={servers_options}*/}
+                      {/*    onChange={(e, {value}) => this.setServer(value)} />*/}
+                      <Button positive size='big' fluid
+                              icon='start'
+                              onClick={this.startStream} >Start</Button>
                   </Menu.Item>
                   <Menu.Item>
                       <Select
@@ -227,25 +299,31 @@ class AdminStreaming extends Component {
                           options={audios_options}
                           onChange={(e,{value}) => this.setAudio(value)} />
                   </Menu.Item>
-                  <canvas ref="canvas1" id="canvas1" width="25" height="50" />
+                  <Menu.Item>
+                      <Button positive={!muted} size='huge'
+                              negative={muted}
+                              icon={muted ? "volume off" : "volume up"}
+                              onClick={this.audioMute}/>
+                  </Menu.Item>
+                  {/*<canvas ref="canvas1" id="canvas1" width="25" height="50" />*/}
               </Menu>
           </Segment>
 
+          { !started || videos === 4 ? '' :
           <video ref="remoteVideo"
                  id="remoteVideo"
-                 width="640"
-                 height="360"
+                 width="100%"
+                 height="100%"
                  autoPlay={true}
-                 controls={true}
+                 controls={false}
                  muted={true}
-                 playsInline={true} />
+                 playsInline={true} /> }
 
           <audio ref="remoteAudio"
                  id="remoteAudio"
                  autoPlay={true}
                  controls={false}
-                 muted={muted}
-                 playsInline={true} />
+                 muted={muted} />
 
           <Grid columns={3}>
               <Grid.Column>
@@ -254,10 +332,9 @@ class AdminStreaming extends Component {
                   <VolumeSlider volume={this.setVolume} />
               </Grid.Column>
               <Grid.Column width={1}>
-                  <Button positive={!muted}
-                          negative={muted}
-                          icon={muted ? "volume off" : "volume up"}
-                          onClick={this.audioMute}/>
+                  <Button color='blue'
+                          icon='expand arrows alternate'
+                          onClick={this.toggleFullScreen}/>
               </Grid.Column>
           </Grid>
           {/*<VolumeMeter audioContext={this.remoteAudio.current} width={600} height={200}/>*/}
