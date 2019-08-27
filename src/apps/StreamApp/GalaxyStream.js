@@ -259,11 +259,8 @@ class GalaxyStream extends Component {
                 Janus.log("Created remote audio stream:", stream);
                 let audio = this.refs.trlAudio;
                 Janus.attachMediaStream(audio, stream);
-                //TODO: this method changed
-                this.state.trlstream.getVolume();
                 let talking = setInterval(this.ducerMixaudio, 200);
                 this.setState({talking});
-                console.log(this.state.trlstream)
             },
             oncleanup: () => {
                 Janus.log("Got a cleanup notification");
@@ -334,15 +331,15 @@ class GalaxyStream extends Component {
     };
 
     ducerMixaudio = () => {
-        //TODO: this method changed
-        let volume = this.state.trlstream.getVolume();
-        let audio = this.refs.remoteAudio;
-        if (volume > 1000) {
-            audio.volume = 0.2;
-        } else if (audio.volume + 0.04 <= this.state.mixvolume) {
-            audio.volume = audio.volume + 0.04;
-        }
-        console.log(":: Trl level: " + volume + " :: Current mixvolume: " + audio.volume)
+        this.state.trlstream.getVolume(null, volume => {
+            let audio = this.refs.remoteAudio;
+            if (volume > 0.2) {
+                audio.volume = 0.2;
+            } else if (audio.volume + 0.04 <= this.state.mixvolume) {
+                audio.volume = audio.volume + 0.04;
+            }
+            //console.log(":: Trl level: " + volume + " :: Current mixvolume: " + audio.volume + " :: Original mixvolume: " + this.state.mixvolume)
+        });
     };
 
     setVideo = (videos) => {
