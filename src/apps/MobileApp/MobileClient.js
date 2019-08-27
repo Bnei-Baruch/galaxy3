@@ -574,9 +574,9 @@ class MobileClient extends Component {
                 },
                 onremotetrack: (track, mid, on) => {
                     Janus.log(" ::: Got a remote track event ::: (remote feed)");
-                    // if(!mid) {
-                    //     mid = track.id.split("janus")[1];
-                    // }
+                    if(!mid) {
+                        mid = track.id.split("janus")[1];
+                    }
                     Janus.log("Remote track (mid=" + mid + ") " + (on ? "added" : "removed") + ":", track);
                     // Which publisher are we getting on this mid?
                     let {mids,feedStreams} = this.state;
