@@ -182,7 +182,6 @@ class GalaxyStream extends Component {
                 Janus.log("Created remote audio stream:", stream);
                 let audio = this.refs.remoteAudio;
                 Janus.attachMediaStream(audio, stream);
-                console.log(this.state.audiostream)
             },
             oncleanup: () => {
                 Janus.log("Got a cleanup notification");
