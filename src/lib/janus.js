@@ -2971,7 +2971,7 @@ export function Janus(gatewayCallbacks) {
 								result(0);
 							return;
 						}
-						console.log(res);
+						//console.log(res);
 						if((remote && res.id.indexOf("receiver") === -1) ||
 								(!remote && res.id.indexOf("sender") === -1)) {
 							if(size === 0 && currentVolume === -1)

@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { Janus } from "./lib/janus";
+import { Janus } from "../../lib/janus";
 import {client, getUser} from "../../components/UserManager";
 import { Segment, Menu, Select, Button, Grid } from 'semantic-ui-react';
 import VolumeSlider from "../../components/VolumeSlider";
@@ -114,11 +114,27 @@ class GalaxyStream extends Component {
             error: (error) => {
                 Janus.log("Error attaching plugin: " + error);
             },
+            iceState: (state) => {
+                Janus.log("ICE state changed to " + state);
+            },
+            webrtcState: (on) => {
+                Janus.log("Janus says our WebRTC PeerConnection is " + (on ? "up" : "down") + " now");
+            },
+            slowLink: (uplink, lost, mid) => {
+                Janus.log("Janus reports problems " + (uplink ? "sending" : "receiving") +
+                    " packets on mid " + mid + " (" + lost + " lost packets)");
+            },
             onmessage: (msg, jsep) => {
                 this.onStreamingMessage(this.state.videostream, msg, jsep, false);
             },
-            onremotestream: (stream) => {
-                Janus.log("Got a remote stream!", stream);
+            onremotetrack: (track, mid, on) => {
+                Janus.debug(" ::: Got a remote video track event :::");
+                Janus.debug("Remote video track (mid=" + mid + ") " + (on ? "added" : "removed") + ":", track);
+                if(this.state.video_stream) return;
+                let stream = new MediaStream();
+                stream.addTrack(track.clone());
+                this.setState({video_stream: stream});
+                Janus.log("Created remote video stream:", stream);
                 let video = this.refs.remoteVideo;
                 Janus.attachMediaStream(video, stream);
             },
@@ -143,13 +159,30 @@ class GalaxyStream extends Component {
             error: (error) => {
                 Janus.log("Error attaching plugin: " + error);
             },
+            iceState: (state) => {
+                Janus.log("ICE state changed to " + state);
+            },
+            webrtcState: (on) => {
+                Janus.log("Janus says our WebRTC PeerConnection is " + (on ? "up" : "down") + " now");
+            },
+            slowLink: (uplink, lost, mid) => {
+                Janus.log("Janus reports problems " + (uplink ? "sending" : "receiving") +
+                    " packets on mid " + mid + " (" + lost + " lost packets)");
+            },
             onmessage: (msg, jsep) => {
                 this.onStreamingMessage(this.state.audiostream, msg, jsep, false);
             },
-            onremotestream: (stream) => {
-                Janus.log("Got a remote stream!", stream);
+            onremotetrack: (track, mid, on) => {
+                Janus.debug(" ::: Got a remote audio track event :::");
+                Janus.debug("Remote audio track (mid=" + mid + ") " + (on ? "added" : "removed") + ":", track);
+                if(this.state.audio_stream) return;
+                let stream = new MediaStream();
+                stream.addTrack(track.clone());
+                this.setState({audio_stream: stream});
+                Janus.log("Created remote audio stream:", stream);
                 let audio = this.refs.remoteAudio;
                 Janus.attachMediaStream(audio, stream);
+                console.log(this.state.audiostream)
             },
             oncleanup: () => {
                 Janus.log("Got a cleanup notification");
@@ -203,16 +236,34 @@ class GalaxyStream extends Component {
             error: (error) => {
                 Janus.log("Error attaching plugin: " + error);
             },
+            iceState: (state) => {
+                Janus.log("ICE state changed to " + state);
+            },
+            webrtcState: (on) => {
+                Janus.log("Janus says our WebRTC PeerConnection is " + (on ? "up" : "down") + " now");
+            },
+            slowLink: (uplink, lost, mid) => {
+                Janus.log("Janus reports problems " + (uplink ? "sending" : "receiving") +
+                    " packets on mid " + mid + " (" + lost + " lost packets)");
+            },
             onmessage: (msg, jsep) => {
                 this.onStreamingMessage(this.state.trlstream, msg, jsep, false);
             },
-            onremotestream: (stream) => {
-                Janus.log("Got a remote stream!", stream);
+            onremotetrack: (track, mid, on) => {
+                Janus.debug(" ::: Got a remote audio track event :::");
+                Janus.debug("Remote audio track (mid=" + mid + ") " + (on ? "added" : "removed") + ":", track);
+                if(this.state.trlaudio_stream) return;
+                let stream = new MediaStream();
+                stream.addTrack(track.clone());
+                this.setState({trlaudio_stream: stream});
+                Janus.log("Created remote audio stream:", stream);
                 let audio = this.refs.trlAudio;
                 Janus.attachMediaStream(audio, stream);
+                //TODO: this method changed
                 this.state.trlstream.getVolume();
                 let talking = setInterval(this.ducerMixaudio, 200);
                 this.setState({talking});
+                console.log(this.state.trlstream)
             },
             oncleanup: () => {
                 Janus.log("Got a cleanup notification");
@@ -234,6 +285,10 @@ class GalaxyStream extends Component {
                     Janus.log("Got SDP!", jsep);
                     let body = { request: "start" };
                     handle.send({message: body, jsep: jsep});
+                },
+                customizeSdp: (jsep) => {
+                    Janus.debug(":: Modify original SDP: ",jsep);
+                    jsep.sdp = jsep.sdp.replace(/a=fmtp:111 minptime=10;useinbandfec=1\r\n/g, 'a=fmtp:111 minptime=10;useinbandfec=1;stereo=1;sprop-stereo=1\r\n');
                 },
                 error: (error) => {
                     Janus.log("WebRTC error: " + error);
@@ -279,6 +334,7 @@ class GalaxyStream extends Component {
     };
 
     ducerMixaudio = () => {
+        //TODO: this method changed
         let volume = this.state.trlstream.getVolume();
         let audio = this.refs.remoteAudio;
         if (volume > 1000) {
@@ -286,7 +342,7 @@ class GalaxyStream extends Component {
         } else if (audio.volume + 0.04 <= this.state.mixvolume) {
             audio.volume = audio.volume + 0.04;
         }
-        //Janus.log(":: Trl level: " + volume + " :: Current mixvolume: " + audio.volume)
+        console.log(":: Trl level: " + volume + " :: Current mixvolume: " + audio.volume)
     };
 
     setVideo = (videos) => {

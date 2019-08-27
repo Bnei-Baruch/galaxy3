@@ -504,7 +504,7 @@ class ShidurAdmin extends Component {
                     let feed = mids[mid].feed_id;
                     Janus.debug(" >> This track is coming from feed " + feed + ":", mid);
                     // If we're here, a new track was added
-                    if(track.kind === "audio" && on) {
+                    if(track.kind === "audio" && on && !feedStreams[feed].audio_stream) {
                         // New audio track: create a stream out of it, and use a hidden <audio> element
                         let stream = new MediaStream();
                         stream.addTrack(track.clone());
