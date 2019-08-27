@@ -206,18 +206,8 @@ class ShidurUsers extends Component {
                     let {mids,feedStreams} = this.state[h];
                     let feed = mids[mid].feed_id;
                     Janus.log(" >> This track is coming from feed " + feed + ":", mid);
-                    if(feedStreams[feed].stream) {
-                        return
-                    }
                     // If we're here, a new track was added
-                    if(track.kind === "audio" && on) {
-                        // New audio track: create a stream out of it, and use a hidden <audio> element
-                        // let stream = new MediaStream();
-                        // stream.addTrack(track.clone());
-                        // Janus.log("Created remote audio stream:", stream);
-                        // let remoteaudio = this.refs["remoteAudio" + feed];
-                        // Janus.attachMediaStream(remoteaudio, stream);
-                    } else if(track.kind === "video" && on) {
+                    if(track.kind === "video" && on) {
                         // New video track: create a stream out of it
                         let stream = new MediaStream();
                         stream.addTrack(track.clone());

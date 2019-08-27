@@ -568,7 +568,7 @@ class VirtualClient extends Component {
                     let feed = mids[mid].feed_id;
                     Janus.log(" >> This track is coming from feed " + feed + ":", mid);
                     // If we're here, a new track was added
-                    if(track.kind === "audio" && !feedStreams[feed].audio_stream && on) {
+                    if(track.kind === "audio" && on) {
                         // New audio track: create a stream out of it, and use a hidden <audio> element
                         let stream = new MediaStream();
                         stream.addTrack(track.clone());
@@ -577,7 +577,7 @@ class VirtualClient extends Component {
                         this.setState({feedStreams});
                         let remoteaudio = this.refs["remoteAudio" + feed];
                         Janus.attachMediaStream(remoteaudio, stream);
-                    } else if(track.kind === "video" && !feedStreams[feed].video_stream && on) {
+                    } else if(track.kind === "video" && on) {
                         // New video track: create a stream out of it
                         let stream = new MediaStream();
                         stream.addTrack(track.clone());

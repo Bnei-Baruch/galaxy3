@@ -355,8 +355,6 @@ class ShidurApp extends Component {
                     Janus.log("Remote track (mid=" + mid + ") " + (on ? "added" : "removed") + ":", track);
                     let {mids,feedStreams,qam} = this.state;
                     let feed = mids[mid].feed_id;
-                    if(feedStreams[feed].stream)
-                        return;
                     if(track.kind === "video" && on) {
                         Janus.log(" >> This track is coming from feed " + feed + ":", mid);
                         let stream = new MediaStream();
