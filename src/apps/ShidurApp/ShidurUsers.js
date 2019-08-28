@@ -95,7 +95,7 @@ class ShidurUsers extends Component {
                         if (a.description < b.description) return -1;
                         return 0;
                     });
-                    this.setState({rooms: newarray});
+                    //this.setState({rooms: newarray});
                     this.getFeedsList(newarray)
                 }
             });
@@ -550,6 +550,8 @@ class ShidurUsers extends Component {
         let h = "preview";
         if(this.state.preview.room === room)
             return;
+        let leave_room = {request : "leave", "room": this.state.preview.room};
+        this.state.preview.videoroom.send({"message": leave_room});
         Janus.log(" :: Attaching to Preview: ",group);
         this.setState({[h]:{...this.state[h], feeds: [], room, name, index}});
         this.initVideoRoom(room, "preview");
@@ -560,6 +562,8 @@ class ShidurUsers extends Component {
         let h = "program";
         if(this.state.program.room === room)
             return;
+        let leave_room = {request : "leave", "room": this.state.program.room};
+        this.state.program.videoroom.send({"message": leave_room});
         let state = {room, name, index};
         this.setState({[h]:{...this.state[h], room, name, state}});
         this.initVideoRoom(room, "program");

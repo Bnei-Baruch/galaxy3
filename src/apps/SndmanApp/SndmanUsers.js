@@ -118,7 +118,7 @@ class SndmanUsers extends Component {
             this.state.remoteFeed.detach();
         this.state.janus.attach({
             plugin: "janus.plugin.videoroom",
-            opaqueId: "videoroom_sdiout",
+            opaqueId: "videoroom_sndman",
             success: (videoroom) => {
                 Janus.log(videoroom);
                 let {user} = this.state;
@@ -625,7 +625,9 @@ class SndmanUsers extends Component {
                 //feed.detach();
             }
         });
-        this.setState({room, feeds: []});
+        let leave_room = {request : "leave", "room": this.state.room};
+        this.state.videoroom.send({"message": leave_room});
+        this.setState({feeds: [], room});
         this.initVideoRoom(room);
     };
 

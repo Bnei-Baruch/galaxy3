@@ -142,7 +142,7 @@ class SDIOutUsers extends Component {
             this.state.remoteFeed.detach();
         this.state.janus.attach({
             plugin: "janus.plugin.videoroom",
-            opaqueId: "preview_shidur",
+            opaqueId: "videoroom_sdiout",
             success: (videoroom) => {
                 this.setState({videoroom, remoteFeed: null});
                 Janus.log("Plugin attached! (" + videoroom.getPlugin() + ", id=" + videoroom.getId() + ")");
@@ -586,6 +586,8 @@ class SDIOutUsers extends Component {
         if(this.state.room === room)
             return;
         Janus.log(" :: Attaching to Preview: ",room);
+        let leave_room = {request : "leave", "room": this.state.room};
+        this.state.videoroom.send({"message": leave_room});
         this.setState({feeds: [], room});
         this.initVideoRoom(room);
     };

@@ -100,7 +100,7 @@ class ShidurAdmin extends Component {
             this.getRoomList();
             if(this.state.feed_user)
                 this.getFeedInfo()
-        }, 5000 );
+        }, 10000 );
     };
 
     getRoomList = () => {
@@ -108,7 +108,7 @@ class ShidurAdmin extends Component {
         if (videoroom) {
             videoroom.send({message: {request: "list"},
                 success: (data) => {
-                    //Janus.log(" :: Get Rooms List: ", data.list)
+                    Janus.log(" :: Get Rooms List: ", data.list)
                     data.list.sort((a, b) => {
                         // if (a.num_participants > b.num_participants) return -1;
                         // if (a.num_participants < b.num_participants) return 1;
@@ -116,7 +116,7 @@ class ShidurAdmin extends Component {
                         if (a.description < b.description) return -1;
                         return 0;
                     });
-                    this.setState({rooms: data.list});
+                    this.getFeedsList(data.list);
                     if(current_room !== "") {
                         this.listForward(current_room);
                     }
@@ -125,16 +125,20 @@ class ShidurAdmin extends Component {
         }
     };
 
-    getFeedsList = (room_id) => {
-        const {videoroom} = this.state;
-        if (videoroom) {
-            videoroom.send({message: {request: "listparticipants", "room": room_id},
-                success: (data) => {
-                    Janus.log(" :: Got Feeds List (room :"+room_id+"): ", data);
-                    let feeds = data.participants;
-                    Janus.log(feeds)
-                }
-            });
+    getFeedsList = (rooms) => {
+        let {videoroom} = this.state;
+        for (let i=0; i<rooms.length; i++) {
+            if(rooms[i].num_participants > 0) {
+                videoroom.send({
+                    message: {request: "listparticipants", "room": rooms[i].room},
+                    success: (data) => {
+                        Janus.log(" :: Get Partisipant List: ", data)
+                        let count = data.participants.filter(p => JSON.parse(p.display).role === "user");
+                        rooms[i].num_participants = count.length;
+                        this.setState({rooms});
+                    }
+                });
+            }
         }
     };
 
