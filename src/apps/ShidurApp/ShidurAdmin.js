@@ -108,7 +108,7 @@ class ShidurAdmin extends Component {
         if (videoroom) {
             videoroom.send({message: {request: "list"},
                 success: (data) => {
-                    Janus.log(" :: Get Rooms List: ", data.list)
+                    //Janus.log(" :: Get Rooms List: ", data.list)
                     data.list.sort((a, b) => {
                         // if (a.num_participants > b.num_participants) return -1;
                         // if (a.num_participants < b.num_participants) return 1;
@@ -132,7 +132,7 @@ class ShidurAdmin extends Component {
                 videoroom.send({
                     message: {request: "listparticipants", "room": rooms[i].room},
                     success: (data) => {
-                        Janus.log(" :: Get Partisipant List: ", data)
+                        //Janus.log(" :: Get Partisipant List: ", data)
                         let count = data.participants.filter(p => JSON.parse(p.display).role === "user");
                         rooms[i].num_participants = count.length;
                         this.setState({rooms});
