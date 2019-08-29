@@ -1765,7 +1765,9 @@ export function Janus(gatewayCallbacks) {
 					event.track.onunmute = function(ev) {
 						Janus.log("Remote track flowing again:", ev);
 						try {
-							pluginHandle.onremotetrack(ev.target, mid, true);
+						    // pluginHandle.onremotetrack(ev.target, mid, true);
+                            // Workaround to separate "add new" and "flow agan" track trigger
+							pluginHandle.onremotetrack(ev.target, mid, false);
 						} catch(e) {
 							Janus.error(e);
 						};
