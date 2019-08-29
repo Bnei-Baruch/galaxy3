@@ -22,18 +22,14 @@ class AdminStreaming extends Component {
     };
 
     componentDidMount() {
-        // Janus.init({debug: ["debug","log","error"], callback: this.initJanus});
+        Janus.init({debug: ["log","error"], callback: this.initJanus});
     };
 
     componentWillUnmount() {
         this.state.janus.destroy();
     };
 
-    startStream = (video) => {
-        if(this.state.started)
-            return;
-        this.setState({started: true, video, videos: video ? 1 : 4});
-        Janus.init({debug: ["log","error"], callback: this.initJanus});
+    checkAutoPlay = () => {
         let promise = document.createElement("video").play();
         if(promise instanceof Promise) {
             promise.catch(function(error) {
@@ -53,7 +49,7 @@ class AdminStreaming extends Component {
             iceServers: [{urls: "stun:stream.kli.one:3478"}],
             success: () => {
                 Janus.log(" :: Connected to JANUS");
-                this.state.video ? this.initVideoStream() : this.initAudioStream();
+                this.setState({started: true});
                 //this.initDataStream();
             },
             error: (error) => {
@@ -220,26 +216,17 @@ class AdminStreaming extends Component {
     };
 
     setVideo = (videos) => {
-        Janus.log(videos);
-        if(videos === 4) {
-            this.state.videostream.hangup();
-            this.setState({videos, videostream: null, video_stream: null, video: false});
-        } else {
-            if(this.state.videostream) {
-                this.setState({videos, video: true});
-                this.state.videostream.send({message: { request: "switch", id: videos }});
-            } else {
-                this.setState({videos, video: true}, () => {
-                    this.initVideoStream();
-                });
-            }
+        if(this.state.videostream) {
+            this.setState({videos});
+            this.state.videostream.send({message: { request: "switch", id: videos }});
         }
     };
 
     setAudio = (audios) => {
-        Janus.log(audios);
-        this.setState({audios});
-        this.state.audiostream.send({message: {request: "switch", id: audios}});
+        if(this.state.audiostream) {
+            this.setState({audios});
+            this.state.audiostream.send({message: {request: "switch", id: audios}});
+        }
     };
 
     setVolume = (value) => {
@@ -249,16 +236,28 @@ class AdminStreaming extends Component {
     audioMute = () => {
         this.setState({muted: !this.state.muted});
         this.refs.remoteAudio.muted = !this.state.muted;
-        if(!this.state.audiostream && this.state.video) {
+        if(!this.state.audiostream && this.state.muted) {
             this.initAudioStream();
-        } else if(!this.state.audiostream && !this.state.video) {
-            this.startStream(false);
+        } else {
+            this.state.audiostream.hangup();
+            this.setState({audiostream: null, audio_stream: null});
         }
+    };
+
+    videoMute = () => {
+        let video = this.state.video;
+        if(!this.state.videostream && !video) {
+            this.initVideoStream();
+        } else {
+            this.state.videostream.hangup();
+            this.setState({videostream: null, video_stream: null});
+        }
+        this.setState({video: !video});
     };
 
     toggleFullScreen = () => {
         let vid = this.refs.remoteVideo;
-        vid.webkitEnterFullscreen();
+        if(vid) vid.webkitEnterFullscreen();
     };
 
 
@@ -279,9 +278,9 @@ class AdminStreaming extends Component {
                       {/*    value={servers}*/}
                       {/*    options={servers_options}*/}
                       {/*    onChange={(e, {value}) => this.setServer(value)} />*/}
-                      <Button positive size='big' fluid
-                              icon='start'
-                              onClick={() => this.startStream(true)} >Start</Button>
+                      <Button positive={video} negative={!video} size='huge'
+                              icon={video ? "eye" : "eye slash"}
+                              onClick={this.videoMute} />
                   </Menu.Item>
                   <Menu.Item>
                       <Select
