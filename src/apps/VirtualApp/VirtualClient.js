@@ -577,7 +577,7 @@ class VirtualClient extends Component {
                         this.setState({feedStreams});
                         let remoteaudio = this.refs["remoteAudio" + feed];
                         Janus.attachMediaStream(remoteaudio, stream);
-                    } else if(track.kind === "video" && on) {
+                    } else if(track.kind === "video" && on && !feedStreams[feed].video_stream) {
                         // New video track: create a stream out of it
                         let stream = new MediaStream();
                         stream.addTrack(track.clone());

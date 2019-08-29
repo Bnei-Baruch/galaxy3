@@ -502,7 +502,7 @@ class ShidurAdmin extends Component {
                     if(!mid) {
                        mid = track.id.split("janus")[1];
                     }
-                    Janus.debug("Remote track (mid=" + mid + ") " + (on ? "added" : "removed") + ":", track);
+                    Janus.log("Remote track (mid=" + mid + ") " + (on ? "added" : "removed") + ":", track);
                     // Which publisher are we getting on this mid?
                     let {mids,feedStreams} = this.state;
                     let feed = mids[mid].feed_id;
@@ -517,7 +517,7 @@ class ShidurAdmin extends Component {
                         this.setState({feedStreams});
                         let remoteaudio = this.refs["remoteAudio" + feed];
                         Janus.attachMediaStream(remoteaudio, stream);
-                    } else if(track.kind === "video" && on) {
+                    } else if(track.kind === "video" && on && !feedStreams[feed].video_stream) {
                         // New video track: create a stream out of it
                         let stream = new MediaStream();
                         stream.addTrack(track.clone());

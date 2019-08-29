@@ -276,7 +276,7 @@ class SDIOutUsers extends Component {
                     let feed = mids[mid].feed_id;
                     Janus.log(" >> This track is coming from feed " + feed + ":", mid);
                     // If we're here, a new track was added
-                    if(track.kind === "video" && on) {
+                    if(track.kind === "video" && on && !feedStreams[feed].stream) {
                         // New video track: create a stream out of it
                         let stream = new MediaStream();
                         stream.addTrack(track.clone());
