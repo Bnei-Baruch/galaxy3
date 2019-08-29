@@ -586,8 +586,10 @@ class SDIOutUsers extends Component {
         if(this.state.room === room)
             return;
         Janus.log(" :: Attaching to Preview: ",room);
-        let leave_room = {request : "leave", "room": this.state.room};
-        this.state.videoroom.send({"message": leave_room});
+        if(this.state.videoroom) {
+            let leave_room = {request : "leave", "room": this.state.room};
+            this.state.videoroom.send({"message": leave_room});
+        }
         this.setState({feeds: [], room});
         this.initVideoRoom(room);
     };
