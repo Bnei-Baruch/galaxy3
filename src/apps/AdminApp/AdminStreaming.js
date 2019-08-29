@@ -13,6 +13,7 @@ class AdminStreaming extends Component {
         audiostream: null,
         datastream: null,
         audio: null,
+        video: false,
         servers: `${JANUS_SRV_EURFR}`,
         videos: 1,
         audios: 15,
@@ -28,10 +29,10 @@ class AdminStreaming extends Component {
         this.state.janus.destroy();
     };
 
-    startStream = () => {
+    startStream = (video) => {
         if(this.state.started)
             return;
-        this.setState({started: true});
+        this.setState({started: true, video, videos: video ? 1 : 4});
         Janus.init({debug: ["log","error"], callback: this.initJanus});
         let promise = document.createElement("video").play();
         if(promise instanceof Promise) {
@@ -52,9 +53,8 @@ class AdminStreaming extends Component {
             iceServers: [{urls: "stun:stream.kli.one:3478"}],
             success: () => {
                 Janus.log(" :: Connected to JANUS");
-                this.initVideoStream();
+                this.state.video ? this.initVideoStream() : this.initAudioStream();
                 //this.initDataStream();
-                //this.initAudioStream();
             },
             error: (error) => {
                 Janus.log(error);
@@ -223,13 +223,13 @@ class AdminStreaming extends Component {
         Janus.log(videos);
         if(videos === 4) {
             this.state.videostream.hangup();
-            this.setState({videos, videostream: null, video_stream: null});
+            this.setState({videos, videostream: null, video_stream: null, video: false});
         } else {
             if(this.state.videostream) {
-                this.setState({videos});
+                this.setState({videos, video: true});
                 this.state.videostream.send({message: { request: "switch", id: videos }});
             } else {
-                this.setState({videos}, () => {
+                this.setState({videos, video: true}, () => {
                     this.initVideoStream();
                 });
             }
@@ -249,8 +249,11 @@ class AdminStreaming extends Component {
     audioMute = () => {
         this.setState({muted: !this.state.muted});
         this.refs.remoteAudio.muted = !this.state.muted;
-        if(!this.state.audiostream)
+        if(!this.state.audiostream && this.state.video) {
             this.initAudioStream();
+        } else if(!this.state.audiostream && !this.state.video) {
+            this.startStream(false);
+        }
     };
 
     toggleFullScreen = () => {
@@ -261,7 +264,7 @@ class AdminStreaming extends Component {
 
   render() {
 
-      const {servers, videos, audios, muted, started} = this.state;
+      const {servers, videos, audios, muted, video} = this.state;
 
     return (
 
@@ -278,7 +281,7 @@ class AdminStreaming extends Component {
                       {/*    onChange={(e, {value}) => this.setServer(value)} />*/}
                       <Button positive size='big' fluid
                               icon='start'
-                              onClick={this.startStream} >Start</Button>
+                              onClick={() => this.startStream(true)} >Start</Button>
                   </Menu.Item>
                   <Menu.Item>
                       <Select
@@ -308,7 +311,7 @@ class AdminStreaming extends Component {
               </Menu>
           </Segment>
 
-          { !started || videos === 4 ? '' :
+          { !video ? '' :
           <video ref="remoteVideo"
                  id="remoteVideo"
                  width="100%"
