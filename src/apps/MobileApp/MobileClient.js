@@ -82,6 +82,7 @@ class MobileClient extends Component {
         });
         initJanus(janus => {
             user.session = janus.getSessionId();
+            user.system = navigator.userAgent;
             this.setState({janus, user});
             //this.chat.initChat(janus);
             this.initVideoRoom(error);

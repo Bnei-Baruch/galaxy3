@@ -1013,6 +1013,7 @@ class ShidurAdmin extends Component {
 
     getFeedInfo = () => {
         if(this.state.feed_user) {
+            console.log(this.state.feed_user);
             let {session,handle} = this.state.feed_user;
             if(session && handle) {
                 getPublisherInfo(session, handle, json => {
@@ -1029,7 +1030,7 @@ class ShidurAdmin extends Component {
 
   render() {
 
-      const { bitrate,rooms,current_room,switch_mode,user,feeds,feed_id,i,messages,description,room_id,room_name,root,forwarders,feed_rtcp,feed_talk,msg_type,users} = this.state;
+      const { bitrate,rooms,current_room,switch_mode,user,feeds,feed_id,feed_user,i,messages,description,room_id,room_name,root,forwarders,feed_rtcp,feed_talk,msg_type,users} = this.state;
       const width = "134";
       const height = "100";
       const autoPlay = true;
@@ -1190,6 +1191,12 @@ class ShidurAdmin extends Component {
                       position='bottom right'
                       content={
                           <List as='ul'>
+                              <List.Item as='li'>System
+                                  <List.List as='ul'>
+                                      <List.Item as='li'>OS: {feed_user && feed_user.system ? feed_user.system.split('(')[1].split(')')[0] : ""}</List.Item>
+                                      <List.Item as='li'>Browser: {feed_user && feed_user.system ? feed_user.system.split(')')[2].split(' ')[1] : ""}</List.Item>
+                                  </List.List>
+                              </List.Item>
                               <List.Item as='li'>Video
                                   <List.List as='ul'>
                                       <List.Item as='li'>in-link-quality: {feed_rtcp.video ? feed_rtcp.video["in-link-quality"] : ""}</List.Item>
