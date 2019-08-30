@@ -78,7 +78,7 @@ class GalaxyStream extends Component {
         if(this.state.janus)
             this.state.janus.destroy();
         Janus.init({
-            debug: ["error"],
+            debug: process.env.NODE_ENV !== 'production' ? ["log", "error"] : ["error"],
             callback: () => {
                 let janus = new Janus({
                     server: server,

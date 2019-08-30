@@ -13,7 +13,7 @@ import {
 
 export const initJanus = (cb,er,mlt) => {
     Janus.init({
-        debug: ["error"],
+        debug: process.env.NODE_ENV !== 'production' ? ["log", "error"] : ["error"],
         callback: () => {
             let janus = new Janus({
                 server: mlt ? JANUS_SRV_GXY : JANUS_SRV_VRT,
