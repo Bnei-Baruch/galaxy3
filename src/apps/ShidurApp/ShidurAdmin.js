@@ -995,8 +995,8 @@ class ShidurAdmin extends Component {
         Janus.log(" :: Selected feed: ",feed);
         let {display,id,talking} = feed;
         let {current_room} =  this.state;
-        //this.setState({feed_id: id, feed_user: display, feed_talk: talking, switch_mode: true});
-        this.setState({feed_id: id, feed_user: display, feed_talk: talking});
+        let feed_info = display.system ? platform.parse(display.system) : null;
+        this.setState({feed_id: id, feed_user: display, feed_info, feed_talk: talking});
         Janus.log(display,id,talking);
 
         if(current_room !== 1234)
@@ -1014,13 +1014,7 @@ class ShidurAdmin extends Component {
     };
 
     getFeedInfo = () => {
-        let {feed_user} = this.state;
-        if(feed_user) {
-            if(feed_user.system) {
-                let feed_info = platform.parse(feed_user.system);
-                this.setState({feed_info});
-            }
-            console.log(this.state.feed_user);
+        if(this.state.feed_user) {
             let {session,handle} = this.state.feed_user;
             if(session && handle) {
                 getPublisherInfo(session, handle, json => {
