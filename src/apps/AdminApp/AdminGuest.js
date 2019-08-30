@@ -81,19 +81,20 @@ class AdminGuest extends Component {
     };
 
     getRoomList = () => {
-        const {videoroom,current_room} = this.state;
+        const {videoroom} = this.state;
         if (videoroom) {
             videoroom.send({message: {request: "list"},
                 success: (data) => {
                     //Janus.log(" :: Get Rooms List: ", data.list)
-                    data.list.sort((a, b) => {
+                    let rooms = data.list.filter(r => r.num_participants > 0);
+                    rooms.sort((a, b) => {
                         // if (a.num_participants > b.num_participants) return -1;
                         // if (a.num_participants < b.num_participants) return 1;
                         if (a.description > b.description) return 1;
                         if (a.description < b.description) return -1;
                         return 0;
                     });
-                    this.setState({rooms: data.list});
+                    this.setState({rooms});
                 }
             });
         }
@@ -374,6 +375,9 @@ class AdminGuest extends Component {
                 onremotetrack: (track, mid, on) => {
                     Janus.debug(" ::: Got a remote track event ::: (remote feed)");
                     Janus.debug("Remote track (mid=" + mid + ") " + (on ? "added" : "removed") + ":", track);
+                    if(!mid) {
+                        mid = track.id.split("janus")[1];
+                    }
                     // Which publisher are we getting on this mid?
                     let {mids,feedStreams} = this.state;
                     let feed = mids[mid].feed_id;
