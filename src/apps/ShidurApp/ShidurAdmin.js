@@ -7,6 +7,7 @@ import './VideoConteiner.scss'
 import {SECRET} from "../../shared/consts";
 import {initGxyProtocol,sendProtocolMessage} from "../../shared/protocol";
 import classNames from "classnames";
+import platform from "platform";
 import {client, getUser} from "../../components/UserManager";
 import LoginPage from "../../components/LoginPage";
 
@@ -23,6 +24,7 @@ class ShidurAdmin extends Component {
         feeds: [],
         rooms: [],
         feed_id: null,
+        feed_info: null,
         feed_user: null,
         feed_talk: false,
         feed_rtcp: {},
@@ -1012,7 +1014,12 @@ class ShidurAdmin extends Component {
     };
 
     getFeedInfo = () => {
-        if(this.state.feed_user) {
+        let {feed_user} = this.state;
+        if(feed_user) {
+            if(feed_user.system) {
+                let feed_info = platform.parse(feed_user.system);
+                this.setState({feed_info});
+            }
             console.log(this.state.feed_user);
             let {session,handle} = this.state.feed_user;
             if(session && handle) {
@@ -1030,7 +1037,7 @@ class ShidurAdmin extends Component {
 
   render() {
 
-      const { bitrate,rooms,current_room,switch_mode,user,feeds,feed_id,feed_user,i,messages,description,room_id,room_name,root,forwarders,feed_rtcp,feed_talk,msg_type,users} = this.state;
+      const { bitrate,rooms,current_room,switch_mode,user,feeds,feed_id,feed_info,i,messages,description,room_id,room_name,root,forwarders,feed_rtcp,feed_talk,msg_type,users} = this.state;
       const width = "134";
       const height = "100";
       const autoPlay = true;
@@ -1193,8 +1200,9 @@ class ShidurAdmin extends Component {
                           <List as='ul'>
                               <List.Item as='li'>System
                                   <List.List as='ul'>
-                                      <List.Item as='li'>OS: {feed_user && feed_user.system ? feed_user.system.split('(')[1].split(')')[0] : ""}</List.Item>
-                                      <List.Item as='li'>Browser: {feed_user && feed_user.system ? feed_user.system.split(')')[2].split(' ')[1] : ""}</List.Item>
+                                      <List.Item as='li'>OS: {feed_info ? feed_info.os.toString() : ""}</List.Item>
+                                      <List.Item as='li'>Browser: {feed_info ? feed_info.name : ""}</List.Item>
+                                      <List.Item as='li'>Version: {feed_info ? feed_info.version : ""}</List.Item>
                                   </List.List>
                               </List.Item>
                               <List.Item as='li'>Video
