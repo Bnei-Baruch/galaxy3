@@ -126,7 +126,7 @@ class ShidurAdmin extends Component {
     };
 
     getFeedsList = (rooms) => {
-        let {videoroom} = this.state;
+        let {videoroom,users} = this.state;
         for (let i=0; i<rooms.length; i++) {
             if(rooms[i].num_participants > 0) {
                 videoroom.send({
@@ -134,7 +134,9 @@ class ShidurAdmin extends Component {
                     success: (data) => {
                         //Janus.log(" :: Get Partisipant List: ", data)
                         let count = data.participants.filter(p => JSON.parse(p.display).role === "user");
+                        let questions = data.participants.find(p => users[JSON.parse(p.display).id] ? users[JSON.parse(p.display).id].question : null);
                         rooms[i].num_participants = count.length;
+                        rooms[i].questions = questions;
                         this.setState({rooms});
                     }
                 });
@@ -1055,12 +1057,12 @@ class ShidurAdmin extends Component {
       });
 
       let rooms_grid = rooms.map((data,i) => {
-          const {room, num_participants, description} = data;
+          const {room, num_participants, description, questions} = data;
           return (
               <Table.Row active={current_room === room}
                          key={i} onClick={() => this.joinRoom(data, i)}
                          onContextMenu={(e) => this.disableRoom(e, data, i)} >
-                  <Table.Cell width={5}>{description}</Table.Cell>
+                  <Table.Cell width={5}>{questions ? q : ""}{description}</Table.Cell>
                   <Table.Cell width={1}>{num_participants}</Table.Cell>
               </Table.Row>
           )
