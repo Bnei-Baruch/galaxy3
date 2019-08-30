@@ -104,12 +104,12 @@ class ShidurAdmin extends Component {
     };
 
     getRoomList = () => {
-        const {videoroom,current_room} = this.state;
+        const {videoroom,current_room,root} = this.state;
         if (videoroom) {
             videoroom.send({message: {request: "list"},
                 success: (data) => {
                     //Janus.log(" :: Get Rooms List: ", data.list)
-                    let rooms = data.list.filter(r => r.num_participants > 0);
+                    let rooms = root ? data.list : data.list.filter(r => r.num_participants > 0);
                     rooms.sort((a, b) => {
                         // if (a.num_participants > b.num_participants) return -1;
                         // if (a.num_participants < b.num_participants) return 1;
