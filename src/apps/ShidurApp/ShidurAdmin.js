@@ -109,14 +109,15 @@ class ShidurAdmin extends Component {
             videoroom.send({message: {request: "list"},
                 success: (data) => {
                     //Janus.log(" :: Get Rooms List: ", data.list)
-                    data.list.sort((a, b) => {
+                    let rooms = data.list.filter(r => r.num_participants > 0);
+                    rooms.sort((a, b) => {
                         // if (a.num_participants > b.num_participants) return -1;
                         // if (a.num_participants < b.num_participants) return 1;
                         if (a.description > b.description) return 1;
                         if (a.description < b.description) return -1;
                         return 0;
                     });
-                    this.getFeedsList(data.list);
+                    this.getFeedsList(rooms);
                     if(current_room !== "") {
                         this.listForward(current_room);
                     }
