@@ -23,7 +23,7 @@ class SDIOutGroups extends Component {
     fullScreenGroup = (i,full_feed) => {
         Janus.log(":: Make Full Screen Group: ",full_feed);
         full_feed.display = JSON.parse(full_feed.feed_display);
-        this.setState({fullscr: !this.state.fullscr,full_feed});
+        this.setState({fullscr: true,full_feed});
         let fourvideo = this.refs["programVideo" + i];
         let fullvideo = this.refs.fullscreenVideo;
         fullvideo.srcObject = fourvideo.captureStream();
@@ -31,7 +31,7 @@ class SDIOutGroups extends Component {
 
     toFourGroup = () => {
         Janus.log(":: Back to four: ");
-        this.setState({fullscr: !this.state.fullscr, full_feed: null});
+        this.setState({fullscr: false, full_feed: null});
     };
 
 

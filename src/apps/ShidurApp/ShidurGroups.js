@@ -137,22 +137,24 @@ class ShidurGroups extends Component {
         sendProtocolMessage(protocol, user, msg );
     };
 
-    fullScreenGroup = (i,feed) => {
+    switchFullScreen = (i,feed) => {
         feed.display = JSON.parse(feed.feed_display);
         let {full_feed} = this.state;
         if(full_feed && feed.feed_id === full_feed.feed_id) {
             this.toFourGroup(() => {});
         } else if(full_feed) {
             this.toFourGroup(() => {
-                Janus.log(":: Make Full Screen Group: ",feed);
-                this.setState({fullscr: true,full_feed: feed});
-                this.sdiAction("fullscr_group" , true, i, feed);
+                this.toFullGroup(i,feed);
             });
         } else {
-            Janus.log(":: Make Full Screen Group: ",feed);
-            this.setState({fullscr: true,full_feed: feed});
-            this.sdiAction("fullscr_group" , true, i, feed);
+            this.toFullGroup(i,feed);
         }
+    };
+
+    toFullGroup = (i,feed) => {
+        Janus.log(":: Make Full Screen Group: ",feed);
+        this.setState({fullscr: true,full_feed: feed});
+        this.sdiAction("fullscr_group" , true, i, feed);
     };
 
     toFourGroup = (cb) => {
@@ -244,7 +246,7 @@ class ShidurGroups extends Component {
                           <div className="video_title">{mid.user.display}</div>
                           {qst ? q : ""}
                           <video className={fullscr && mid.feed_id === full_feed.feed_id ? "fullscreen" : ""}
-                                 onClick={() => this.fullScreenGroup(i,mid)}
+                                 onClick={() => this.switchFullScreen(i,mid)}
                                  key={i}
                                  ref={"programVideo" + i}
                                  id={"programVideo" + i}

@@ -37,7 +37,7 @@ class SndmanGroups extends Component {
     fullScreenGroup = (i,full_feed) => {
         Janus.log(":: Make Full Screen Group: ",full_feed);
         full_feed.display = JSON.parse(full_feed.feed_display);
-        this.setState({fullscr: !this.state.fullscr,full_feed});
+        this.setState({fullscr: true,full_feed});
         let fourvideo = this.refs["programVideo" + i];
         let fullvideo = this.refs.fullscreenVideo;
         fullvideo.srcObject = fourvideo.captureStream();
@@ -46,7 +46,7 @@ class SndmanGroups extends Component {
     toFourGroup = (i,full_feed) => {
         Janus.log(":: Back to four: ");
         const {forward,forward_request} = this.state;
-        this.setState({fullscr: !this.state.fullscr});
+        this.setState({fullscr: false});
         if(forward_request) {
             setTimeout(() => {
                 this.forwardStream(full_feed);
