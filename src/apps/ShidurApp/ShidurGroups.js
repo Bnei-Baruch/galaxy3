@@ -141,19 +141,25 @@ class ShidurGroups extends Component {
         let {full_feed} = this.state;
         if(full_feed && feed.feed_id === full_feed.feed_id) {
             this.toFourGroup();
-            return;
         } else if(full_feed) {
-            this.toFourGroup();
+            this.toFourGroup(() => {
+                Janus.log(":: Make Full Screen Group: ",feed);
+                this.setState({fullscr: true,full_feed: feed});
+                this.sdiAction("fullscr_group" , true, i, feed);
+            });
+        } else {
+            Janus.log(":: Make Full Screen Group: ",feed);
+            this.setState({fullscr: true,full_feed: feed});
+            this.sdiAction("fullscr_group" , true, i, feed);
         }
-        Janus.log(":: Make Full Screen Group: ",feed);
-        this.setState({fullscr: true,full_feed: feed});
-        this.sdiAction("fullscr_group" , true, i, feed);
     };
 
-    toFourGroup = () => {
+    toFourGroup = (cb) => {
         Janus.log(":: Back to four: ");
         this.sdiAction("fullscr_group" , false, null, this.state.full_feed);
-        this.setState({fullscr: false, full_feed: null});
+        this.setState({fullscr: false, full_feed: null}, () => {
+            cb();
+        });
     };
 
     setDelay = () => {
