@@ -141,7 +141,7 @@ class ShidurGroups extends Component {
         feed.display = JSON.parse(feed.feed_display);
         let {full_feed} = this.state;
         if(full_feed && feed.feed_id === full_feed.feed_id) {
-            this.toFourGroup();
+            this.toFourGroup(() => {});
         } else if(full_feed) {
             this.toFourGroup(() => {
                 Janus.log(":: Make Full Screen Group: ",feed);
