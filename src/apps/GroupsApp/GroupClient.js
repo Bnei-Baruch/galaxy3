@@ -12,7 +12,7 @@ import GroupChat from "./GroupChat";
 import {initGxyProtocol, sendProtocolMessage} from "../../shared/protocol";
 import {client, getUser} from "../../components/UserManager";
 import LoginPage from "../../components/LoginPage";
-import {GROUPS_ROOM} from "../../shared/consts";
+import {GEO_IP_INFO, GROUPS_ROOM} from "../../shared/consts";
 
 class GroupClient extends Component {
 
@@ -71,9 +71,9 @@ class GroupClient extends Component {
         localStorage.setItem("question", false);
         localStorage.setItem("sound_test", false);
         checkNotification();
-        geoInfo('https://v4g.kbb1.com/geo.php?action=get', data => {
+        geoInfo(`${GEO_IP_INFO}`, data => {
             Janus.log(data);
-            user.ip = data.external_ip;
+            user.ip = data.ip;
         });
         initJanus(janus => {
             user.session = janus.getSessionId();

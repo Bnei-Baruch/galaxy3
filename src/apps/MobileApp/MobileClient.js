@@ -13,6 +13,7 @@ import 'eqcss'
 import {initGxyProtocol, sendProtocolMessage} from "../../shared/protocol";
 //import VirtualStreaming from "../VirtualApp/VirtualStreaming";
 import MobileStreaming from "./MobileStreaming";
+import {GEO_IP_INFO} from "../../shared/consts";
 
 class MobileClient extends Component {
 
@@ -76,9 +77,9 @@ class MobileClient extends Component {
     initClient = (user,error) => {
         localStorage.setItem("question", false);
         checkNotification();
-        geoInfo('https://v4g.kbb1.com/geo.php?action=get', data => {
+        geoInfo(`${GEO_IP_INFO}`, data => {
             Janus.log(data);
-            user.ip = data.external_ip;
+            user.ip = data.ip;
         });
         initJanus(janus => {
             user.session = janus.getSessionId();

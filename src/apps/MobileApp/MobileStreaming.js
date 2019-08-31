@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import { Janus } from "../../lib/janus";
 import { Segment, Menu, Select, Button } from 'semantic-ui-react';
 //import VolumeSlider from "../../components/VolumeSlider";
-import {videos_options, audiog_options, gxycol, trllang, STUN_SRV_STR, JANUS_SRV_EURFR} from "../../shared/consts";
+import {videos_options, audiog_options, gxycol, trllang, STUN_SRV_STR, JANUS_SRV_EURFR, GEO_IP_INFO} from "../../shared/consts";
 
 class VirtualStreaming extends Component {
 
@@ -22,14 +22,14 @@ class VirtualStreaming extends Component {
     };
 
     componentDidMount() {
-        fetch('https://v4g.kbb1.com/geo.php?action=get')
+        fetch(`${GEO_IP_INFO}`)
             .then((response) => {
                 if (response.ok) {
                     return response.json().then(
                         info => {
                             let {user} = this.state;
                             this.setState({user: {...info,...user}});
-                            localStorage.setItem("extip", info.external_ip);
+                            localStorage.setItem("extip", info.ip);
                             let server = `${JANUS_SRV_EURFR}`;
                             // if (info.country_code === "IL") {
                             //     server = 'https://v4g.kbb1.com/janustrl';

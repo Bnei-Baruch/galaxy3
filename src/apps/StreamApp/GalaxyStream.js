@@ -9,7 +9,7 @@ import {
     gxycol,
     trllang,
     JANUS_SRV_EURFR,
-    STUN_SRV_STR,
+    STUN_SRV_STR, GEO_IP_INFO,
 } from "../../shared/consts";
 import LoginPage from "../../components/LoginPage";
 import './GalaxyStream.css'
@@ -52,14 +52,14 @@ class GalaxyStream extends Component {
     };
 
     initStream = () => {
-        fetch('https://v4g.kbb1.com/geo.php?action=get')
+        fetch(`${GEO_IP_INFO}`)
             .then((response) => {
                 if (response.ok) {
                     return response.json().then(
                         info => {
                             let {user} = this.state;
                             this.setState({user: {...info,...user}});
-                            localStorage.setItem("extip", info.external_ip);
+                            localStorage.setItem("extip", info.ip);
                             let server = `${JANUS_SRV_EURFR}`;
                             // if (info.country_code === "IL") {
                             //     server = 'https://v4g.kbb1.com/janustrl';

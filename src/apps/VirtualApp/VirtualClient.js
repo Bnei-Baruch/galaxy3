@@ -10,6 +10,7 @@ import './VideoConteiner.scss'
 import 'eqcss'
 import VirtualChat from "./VirtualChat";
 import {initGxyProtocol, sendProtocolMessage} from "../../shared/protocol";
+import {GEO_IP_INFO} from "../../shared/consts";
 
 class VirtualClient extends Component {
 
@@ -73,9 +74,9 @@ class VirtualClient extends Component {
         localStorage.setItem("question", false);
         localStorage.setItem("sound_test", false);
         checkNotification();
-        geoInfo('https://v4g.kbb1.com/geo.php?action=get', data => {
+        geoInfo(`${GEO_IP_INFO}`, data => {
             Janus.log(data);
-            user.ip = data.external_ip;
+            user.ip = data.ip;
         });
         initJanus(janus => {
             user.session = janus.getSessionId();

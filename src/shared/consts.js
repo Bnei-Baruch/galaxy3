@@ -7,6 +7,7 @@ export const SHIDUR_ID = "ce332655-d702-40d0-83eb-a6b950976984";
 export const SNDMAN_ID = "90966d26-0777-4179-9773-d7cd5456a5ed";
 export const SDIOUT_ID = "91966d26-0777-4179-9773-d7cd5456a5ed";
 export const STORAN_ID = "e97c7b89-bd3a-46b5-87f2-7b64559561d4";
+export const GEO_IP_INFO = process.env.REACT_APP_GEO_IP_INFO;
 export const DANTE_IN_IP = process.env.REACT_APP_DANTE_IN_IP;
 export const WFRP_STATE = process.env.REACT_APP_WFRP_STATE;
 export const WFDB_STATE = process.env.REACT_APP_WFDB_STATE;
