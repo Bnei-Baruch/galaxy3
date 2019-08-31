@@ -137,6 +137,14 @@ class ShidurGroups extends Component {
         sendProtocolMessage(protocol, user, msg );
     };
 
+    checkFullScreen = () => {
+        let {full_feed} = this.state;
+        if(full_feed) {
+            Janus.log(":: Group: " + full_feed + " , sending sdi-action...");
+            this.sdiAction("fullscr_group" , true, full_feed.mindex, full_feed);
+        }
+    };
+
     switchFullScreen = (i,feed) => {
         feed.display = JSON.parse(feed.feed_display);
         let {full_feed} = this.state;

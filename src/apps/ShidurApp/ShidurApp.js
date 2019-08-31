@@ -463,6 +463,12 @@ class ShidurApp extends Component {
                 let state = {users,mids};
                 putData(`state/galaxy/shidur`, state, (cb) => {
                     Janus.log(":: Save state to DB :: ",cb);
+                    setTimeout(() => {
+                        Janus.log(":: Check Full Screen state :: ");
+                        this.col1.checkFullScreen();
+                        this.col2.checkFullScreen();
+                        this.col3.checkFullScreen();
+                    }, 3000);
                 });
             }
         }
