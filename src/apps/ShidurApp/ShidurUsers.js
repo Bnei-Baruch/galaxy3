@@ -722,7 +722,7 @@ class ShidurUsers extends Component {
 
     return (
 
-        <Segment className="segment_conteiner">
+        <Segment className="users_container">
           
           <Segment className="program_segment" color='red'>
               <div className="shidur_overlay"><span>{program.name}</span></div>
