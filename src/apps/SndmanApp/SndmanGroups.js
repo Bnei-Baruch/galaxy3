@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import { Janus } from "../../lib/janus";
 import {Segment, Icon, Button, Label} from "semantic-ui-react";
 import './SndmanGroups.css'
-import {DANTE_IN_IP, SECRET} from "../../shared/consts";
+import {GROUPS_ROOM, DANTE_IN_IP, SECRET} from "../../shared/consts";
 
 class SndmanGroups extends Component {
 
@@ -18,7 +18,7 @@ class SndmanGroups extends Component {
         forward_request: false,
         full_feed: null,
         fullscr: false,
-        room: 1234,
+        room: GROUPS_ROOM,
         port: null,
     };
 

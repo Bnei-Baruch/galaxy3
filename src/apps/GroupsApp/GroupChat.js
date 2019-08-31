@@ -2,13 +2,14 @@ import React, { Component } from 'react';
 import { Janus } from "../../lib/janus";
 import {Message, Button, Input} from "semantic-ui-react";
 import {initChatRoom,getDateString,joinChatRoom,notifyMe} from "../../shared/tools";
+import {GROUPS_ROOM} from "../../shared/consts";
 //import {SHIDUR_ID} from "../../shared/consts";
 
 
 class GroupChat extends Component {
 
     state = {
-        room: 1234,
+        room: GROUPS_ROOM,
         chatroom: null,
         input_value: "",
         messages: [],
@@ -32,7 +33,7 @@ class GroupChat extends Component {
     };
 
     initChatRoom = (user) => {
-        joinChatRoom(this.state.chatroom,1234,user);
+        joinChatRoom(this.state.chatroom,GROUPS_ROOM,user);
     };
 
     onKeyPressed = (e) => {

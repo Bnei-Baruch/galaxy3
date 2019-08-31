@@ -8,6 +8,7 @@ import ShidurUsers from "./ShidurUsers";
 import {client, getUser} from "../../components/UserManager";
 import LoginPage from "../../components/LoginPage";
 import ShidurToran from "./ShidurToran";
+import {GROUPS_ROOM} from "../../shared/consts";
 
 
 class ShidurApp extends Component {
@@ -95,7 +96,7 @@ class ShidurApp extends Component {
                 Janus.log("Plugin attached! (" + gxyhandle.getPlugin() + ", id=" + gxyhandle.getId() + ")");
                 Janus.log("  -- This is a publisher/manager");
                 let {user} = this.state;
-                let register = { "request": "join", "room": 1234, "ptype": "publisher", "display": JSON.stringify(user) };
+                let register = { "request": "join", "room": GROUPS_ROOM, "ptype": "publisher", "display": JSON.stringify(user) };
                 gxyhandle.send({"message": register});
             },
             error: (error) => {
@@ -280,7 +281,7 @@ class ShidurApp extends Component {
                     Janus.log("Plugin attached! (" + remoteFeed.getPlugin() + ", id=" + remoteFeed.getId() + ")");
                     Janus.log("  -- This is a multistream subscriber",remoteFeed);
                     this.setState({remoteFeed, creatingFeed: false});
-                    let subscribe = { "request": "join", "room": 1234, "ptype": "subscriber", streams: subscription };
+                    let subscribe = { "request": "join", "room": GROUPS_ROOM, "ptype": "subscriber", streams: subscription };
                     remoteFeed.send({"message": subscribe});
                 },
                 error: (error) => {
@@ -338,7 +339,7 @@ class ShidurApp extends Component {
                                 success: (jsep) => {
                                     Janus.debug("Got SDP!");
                                     Janus.debug(jsep);
-                                    let body = { "request": "start", "room": 1234 };
+                                    let body = { "request": "start", "room": GROUPS_ROOM };
                                     remoteFeed.send({"message": body, "jsep": jsep});
                                 },
                                 error: (error) => {
@@ -582,7 +583,7 @@ class ShidurApp extends Component {
                         this.subscribeTo(streams);
                     } else {
                         //FIXME: Does we to trigger autofill here?
-                        Janus.log(":: IT'S HAPPEN HERE AS WELL? ::");
+                        Janus.error(":: IT'S HAPPEN HERE AS WELL? ::");
                     }
                 }
             })

@@ -6,7 +6,7 @@ import './SDIOutApp.css';
 import {initGxyProtocol} from "../../shared/protocol";
 import SDIOutGroups from "./SDIOutGroups";
 import SDIOutUsers from "./SDIOutUsers";
-import {SDIOUT_ID} from "../../shared/consts";
+import {GROUPS_ROOM,SDIOUT_ID} from "../../shared/consts";
 
 
 class SDIOutApp extends Component {
@@ -75,7 +75,7 @@ class SDIOutApp extends Component {
                 Janus.log("Plugin attached! (" + gxyhandle.getPlugin() + ", id=" + gxyhandle.getId() + ")");
                 Janus.log("  -- This is a publisher/manager");
                 let {user} = this.state;
-                let register = { "request": "join", "room": 1234, "ptype": "publisher", "display": JSON.stringify(user) };
+                let register = { "request": "join", "room": GROUPS_ROOM, "ptype": "publisher", "display": JSON.stringify(user) };
                 gxyhandle.send({"message": register});
             },
             error: (error) => {
@@ -178,7 +178,7 @@ class SDIOutApp extends Component {
                     Janus.log("Plugin attached! (" + remoteFeed.getPlugin() + ", id=" + remoteFeed.getId() + ")");
                     Janus.log("  -- This is a multistream subscriber",remoteFeed);
                     this.setState({remoteFeed, creatingFeed: false});
-                    let subscribe = { "request": "join", "room": 1234, "ptype": "subscriber", streams: subscription };
+                    let subscribe = { "request": "join", "room": GROUPS_ROOM, "ptype": "subscriber", streams: subscription };
                     remoteFeed.send({"message": subscribe});
                 },
                 error: (error) => {
@@ -234,7 +234,7 @@ class SDIOutApp extends Component {
                                 success: (jsep) => {
                                     Janus.debug("Got SDP!");
                                     Janus.debug(jsep);
-                                    let body = { "request": "start", "room": 1234 };
+                                    let body = { "request": "start", "room": GROUPS_ROOM };
                                     remoteFeed.send({"message": body, "jsep": jsep});
                                 },
                                 error: (error) => {

@@ -6,6 +6,7 @@ import './AdminCongress.css';
 import './AdminGuestVideo.scss'
 import {client, getUser} from "../../components/UserManager";
 import LoginPage from "../../components/LoginPage";
+import {GROUPS_ROOM} from "../../shared/consts";
 
 class AdminCongress extends Component {
 
@@ -175,7 +176,7 @@ class AdminCongress extends Component {
                     let list = msg["publishers"];
 
                     // Filter service and camera muted feeds
-                    let fr = this.state.current_room === 1234 ? "group" : "user";
+                    let fr = this.state.current_room === GROUPS_ROOM ? "group" : "user";
                     let feeds = list.filter(feeder => JSON.parse(feeder.display).role === fr);
                     feeds.sort((a, b) => {
                         if (JSON.parse(a.display).username > JSON.parse(b.display).username) return 1;
@@ -230,7 +231,7 @@ class AdminCongress extends Component {
                     Janus.debug("Got a list of available publishers/feeds:");
                     Janus.log(feed);
                     let subscription = [];
-                    let fr = this.state.current_room === 1234 ? "group" : "user";
+                    let fr = this.state.current_room === GROUPS_ROOM ? "group" : "user";
                     for(let f in feed) {
                         let id = feed[f]["id"];
                         let display = JSON.parse(feed[f]["display"]);
@@ -488,7 +489,7 @@ class AdminCongress extends Component {
     joinRoom = (data, i) => {
         Janus.log(" -- joinRoom: ", data, i);
         const {rooms,user,switchFeed} = this.state;
-        let room = data ? rooms[i].room : 1234;
+        let room = data ? rooms[i].room : GROUPS_ROOM;
         let room_name = data ? rooms[i].description : "Galaxy";
         if (this.state.current_room === room)
             return;
@@ -522,7 +523,7 @@ class AdminCongress extends Component {
         this.setState({feed_id: id, feed_user: display, feed_talk: talking});
         Janus.log(display,id,talking);
 
-        if(current_room !== 1234)
+        if(current_room !== GROUPS_ROOM)
             return;
 
         if(this.state.groups.length === 0) {
@@ -567,13 +568,13 @@ class AdminCongress extends Component {
           }
       });
 
-      let view = current_room !== 1234 ? "feeds" : "groups";
+      let view = current_room !== GROUPS_ROOM ? "feeds" : "groups";
 
       let videos = this.state[view].map((feed) => {
           if(feed) {
               let id = feed.id;
               let talk = feed.talk;
-              let selected = id === feed_id && current_room !== 1234;
+              let selected = id === feed_id && current_room !== GROUPS_ROOM;
               return (<div className="video"
                         key={"v" + id}
                         ref={"video" + id}
@@ -630,10 +631,10 @@ class AdminCongress extends Component {
                             <Table.Row disabled positive>
                                 <Table.Cell colSpan={2} textAlign='center'>Groups:</Table.Cell>
                             </Table.Row>
-                            <Table.Row active={current_room === 1234}
+                            <Table.Row active={current_room === GROUPS_ROOM}
                                         key={i} onClick={() => this.joinRoom(null, i)}>
                                 <Table.Cell width={5}>Galaxy</Table.Cell>
-                                <Table.Cell width={1}>{current_room === 1234 ? feeds.length : 0}</Table.Cell>
+                                <Table.Cell width={1}>{current_room === GROUPS_ROOM ? feeds.length : 0}</Table.Cell>
                             </Table.Row>
                             <Table.Row disabled positive>
                                 <Table.Cell colSpan={2} textAlign='center'>Users:</Table.Cell>

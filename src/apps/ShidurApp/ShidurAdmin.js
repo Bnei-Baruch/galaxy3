@@ -4,7 +4,7 @@ import {Segment, Menu, Button, Input, Table, Grid, Message, Transition, Select, 
 import {initJanus, initChatRoom, getDateString, joinChatRoom, getPublisherInfo, getHiddenProp, notifyMe} from "../../shared/tools";
 import './ShidurAdmin.css';
 import './VideoConteiner.scss'
-import {SECRET} from "../../shared/consts";
+import {GROUPS_ROOM,SECRET} from "../../shared/consts";
 import {initGxyProtocol,sendProtocolMessage} from "../../shared/protocol";
 import classNames from "classnames";
 import platform from "platform";
@@ -278,7 +278,7 @@ class ShidurAdmin extends Component {
                     let list = msg["publishers"];
 
                     // Filter service and camera muted feeds
-                    let fr = this.state.current_room === 1234 ? "group" : "user";
+                    let fr = this.state.current_room === GROUPS_ROOM ? "group" : "user";
                     let feeds = list.filter(feeder => JSON.parse(feeder.display).role === fr);
                     feeds.sort((a, b) => {
                         if (JSON.parse(a.display).username > JSON.parse(b.display).username) return 1;
@@ -356,7 +356,7 @@ class ShidurAdmin extends Component {
                     Janus.debug("Got a list of available publishers/feeds:");
                     Janus.log(feed);
                     let subscription = [];
-                    let fr = this.state.current_room === 1234 ? "group" : "user";
+                    let fr = this.state.current_room === GROUPS_ROOM ? "group" : "user";
                     for(let f in feed) {
                         let id = feed[f]["id"];
                         let display = JSON.parse(feed[f]["display"]);
@@ -673,7 +673,7 @@ class ShidurAdmin extends Component {
                 messages.push(message);
                 this.setState({messages});
                 this.scrollToBottom();
-            } else if(room === 1234){
+            } else if(room === GROUPS_ROOM){
                 // Public message
                 let {messages} = this.state;
                 let message = JSON.parse(msg);
@@ -776,7 +776,7 @@ class ShidurAdmin extends Component {
                 //FIXME: it's directly put to message box
                 let {messages} = this.state;
                 msg.time = getDateString();
-                msg.to = current_room === 1234 ? feed_user.username : feed_user.display;
+                msg.to = current_room === GROUPS_ROOM ? feed_user.username : feed_user.display;
                 Janus.log("-:: It's public message: "+msg);
                 messages.push(msg);
                 this.setState({messages, input_value: ""});
@@ -824,7 +824,7 @@ class ShidurAdmin extends Component {
     joinRoom = (data, i) => {
         Janus.log(" -- joinRoom: ", data, i);
         const {rooms,chatroom,user,switchFeed} = this.state;
-        let room = data ? rooms[i].room : 1234;
+        let room = data ? rooms[i].room : GROUPS_ROOM;
         let room_name = data ? rooms[i].description : "Galaxy";
         if (this.state.current_room === room)
             return;
@@ -999,7 +999,7 @@ class ShidurAdmin extends Component {
         this.setState({feed_id: id, feed_user: display, feed_info, feed_talk: talking});
         Janus.log(display,id,talking);
 
-        if(current_room !== 1234)
+        if(current_room !== GROUPS_ROOM)
             return;
 
         if(this.state.groups.length === 0) {
@@ -1098,13 +1098,13 @@ class ShidurAdmin extends Component {
           );
       });
 
-      let view = current_room !== 1234 ? "feeds" : "groups";
+      let view = current_room !== GROUPS_ROOM ? "feeds" : "groups";
 
       let videos = this.state[view].map((feed) => {
           if(feed) {
               let id = feed.id;
               let talk = feed.talk;
-              let selected = id === feed_id && current_room !== 1234;
+              let selected = id === feed_id && current_room !== GROUPS_ROOM;
               return (<div className="video"
                            key={"v" + id}
                            ref={"video" + id}
@@ -1274,10 +1274,10 @@ class ShidurAdmin extends Component {
                                       <Table.Row disabled positive>
                                           <Table.Cell colSpan={2} textAlign='center'>Groups:</Table.Cell>
                                       </Table.Row>
-                                      <Table.Row active={current_room === 1234}
+                                      <Table.Row active={current_room === GROUPS_ROOM}
                                                  key={i} onClick={() => this.joinRoom(null, i)}>
                                           <Table.Cell width={5}>Galaxy</Table.Cell>
-                                          <Table.Cell width={1}>{current_room === 1234 ? feeds.length : 0}</Table.Cell>
+                                          <Table.Cell width={1}>{current_room === GROUPS_ROOM ? feeds.length : 0}</Table.Cell>
                                       </Table.Row>
                                       <Table.Row disabled positive>
                                           <Table.Cell colSpan={2} textAlign='center'>Users:</Table.Cell>

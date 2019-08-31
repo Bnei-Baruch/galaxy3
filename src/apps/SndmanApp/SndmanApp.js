@@ -6,12 +6,7 @@ import './SndmanApp.css';
 import {initGxyProtocol} from "../../shared/protocol";
 import SndmanGroups from "./SndmanGroups";
 import SndmanUsers from "./SndmanUsers";
-import {
-    DATA_PORT,
-    JANUS_IP_ISRPT,
-    JANUS_IP_EURFR,
-    SECRET
-} from "../../shared/consts";
+import {GROUPS_ROOM, DATA_PORT, JANUS_IP_ISRPT, JANUS_IP_EURFR, SECRET} from "../../shared/consts";
 import {client, getUser} from "../../components/UserManager";
 import LoginPage from "../../components/LoginPage";
 
@@ -27,7 +22,7 @@ class SndmanApp extends Component {
         data_forward: {},
         disabled_groups: [],
         protocol: null,
-        room: 1234,
+        room: GROUPS_ROOM,
         remotefeed: null,
         myid: null,
         mypvtid: null,
@@ -92,7 +87,7 @@ class SndmanApp extends Component {
                 Janus.log("Plugin attached! (" + gxyhandle.getPlugin() + ", id=" + gxyhandle.getId() + ")");
                 Janus.log("  -- This is a publisher/manager");
                 let {user} = this.state;
-                let register = { "request": "join", "room": 1234, "ptype": "publisher", "display": JSON.stringify(user) };
+                let register = { "request": "join", "room": GROUPS_ROOM, "ptype": "publisher", "display": JSON.stringify(user) };
                 gxyhandle.send({"message": register});
             },
             error: (error) => {
@@ -244,7 +239,7 @@ class SndmanApp extends Component {
                     Janus.log("Plugin attached! (" + remoteFeed.getPlugin() + ", id=" + remoteFeed.getId() + ")");
                     Janus.log("  -- This is a multistream subscriber",remoteFeed);
                     this.setState({remoteFeed, creatingFeed: false});
-                    let subscribe = { "request": "join", "room": 1234, "ptype": "subscriber", streams: subscription };
+                    let subscribe = { "request": "join", "room": GROUPS_ROOM, "ptype": "subscriber", streams: subscription };
                     remoteFeed.send({"message": subscribe});
                 },
                 error: (error) => {
@@ -300,7 +295,7 @@ class SndmanApp extends Component {
                                 success: (jsep) => {
                                     Janus.debug("Got SDP!");
                                     Janus.debug(jsep);
-                                    let body = { "request": "start", "room": 1234 };
+                                    let body = { "request": "start", "room": GROUPS_ROOM };
                                     remoteFeed.send({"message": body, "jsep": jsep});
                                 },
                                 error: (error) => {

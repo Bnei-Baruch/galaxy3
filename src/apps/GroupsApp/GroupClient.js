@@ -12,6 +12,7 @@ import GroupChat from "./GroupChat";
 import {initGxyProtocol, sendProtocolMessage} from "../../shared/protocol";
 import {client, getUser} from "../../components/UserManager";
 import LoginPage from "../../components/LoginPage";
+import {GROUPS_ROOM} from "../../shared/consts";
 
 class GroupClient extends Component {
 
@@ -26,7 +27,7 @@ class GroupClient extends Component {
         feeds: [],
         rooms: [],
         room: "",
-        selected_room: 1234,
+        selected_room: GROUPS_ROOM,
         videoroom: null,
         remotefeed: null,
         myid: null,
@@ -383,7 +384,7 @@ class GroupClient extends Component {
                 videoroom.send({"message": register});
                 this.setState({user, muted: false, room: selected_room});
                 this.chat.initChatRoom(user);
-            } else if(type === "chat-broadcast" && room === 1234) {
+            } else if(type === "chat-broadcast" && room === GROUPS_ROOM) {
                 this.chat.showMessage(ondata);
             } else if(type === "client-reconnect" && user.id === id) {
                 this.exitRoom(true);
@@ -410,7 +411,7 @@ class GroupClient extends Component {
         videoroom.send({"message": leave});
         localStorage.setItem("question", false);
         this.setState({muted: false, mystream: null, room: "", i: "", feeds: [], question: false});
-        this.chat.exitChatRoom(1234);
+        this.chat.exitChatRoom(GROUPS_ROOM);
         this.exitProtocol();
         this.initVideoRoom(reconnect);
         protocol.detach();

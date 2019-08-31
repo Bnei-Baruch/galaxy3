@@ -3,6 +3,7 @@ import { Janus } from "../../lib/janus";
 import {Segment, Icon, Button} from "semantic-ui-react";
 import './ShidurGroups.scss'
 import {sendProtocolMessage} from "../../shared/protocol";
+import {GROUPS_ROOM} from "../../shared/consts";
 
 class ShidurGroups extends Component {
 
@@ -132,7 +133,7 @@ class ShidurGroups extends Component {
     sdiAction = (action, status, i, feed) => {
         const { protocol, user, index } = this.props;
         let col = index === 0 ? 1 : index === 4 ? 2 : index === 8 ? 3 : null;
-        let msg = { type: "sdi-"+action, status, room: 1234, col, i, feed};
+        let msg = { type: "sdi-"+action, status, room: GROUPS_ROOM, col, i, feed};
         sendProtocolMessage(protocol, user, msg );
     };
 

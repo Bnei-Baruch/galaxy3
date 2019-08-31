@@ -2,6 +2,7 @@ import React, {Component} from 'react';
 import {Janus} from "../../lib/janus";
 import {Grid, Label, Message, Segment, Table, Icon, Button, Dropdown, Dimmer} from "semantic-ui-react";
 import {sendProtocolMessage} from "../../shared/protocol";
+import {GROUPS_ROOM} from "../../shared/consts";
 import './ShidurToran.scss';
 
 
@@ -49,7 +50,7 @@ class ShidurToran extends Component {
                     Janus.log("Plugin attached! (" + previewFeed.getPlugin() + ", id=" + previewFeed.getId() + ")");
                     Janus.log("  -- This is a subscriber");
                     let streams = [{feed: id, mid: "1"},{feed: id, mid: "1"}];
-                    let subscribe = { "request": "join", "room": 1234, "ptype": "subscriber", streams };
+                    let subscribe = { "request": "join", "room": GROUPS_ROOM, "ptype": "subscriber", streams };
                     previewFeed.send({"message": subscribe});
                     this.setState({previewFeed});
                 },
@@ -104,7 +105,7 @@ class ShidurToran extends Component {
                                 success: (jsep) => {
                                     Janus.debug("Got SDP!");
                                     Janus.debug(jsep);
-                                    let body = { "request": "start", "room": 1234 };
+                                    let body = { "request": "start", "room": GROUPS_ROOM };
                                     previewFeed.send({"message": body, "jsep": jsep});
                                 },
                                 error: (error) => {
@@ -118,9 +119,7 @@ class ShidurToran extends Component {
                 },
                 onremotetrack: (track,mid,on) => {
                     Janus.log(" - Remote track "+mid+" is: "+on,track);
-                    if(on) {
-                        if (track.kind !== "video" || !on)
-                            return;
+                    if(track.kind === "video" && on) {
                         let stream = new MediaStream();
                         stream.addTrack(track.clone());
                         let switchvideo = mid === "0" ? this.refs.prevewVideo : this.refs.nextVideo;
@@ -220,7 +219,7 @@ class ShidurToran extends Component {
     sdiAction = (action, status, i, feed) => {
         const { protocol, user, index } = this.props;
         let col = index === 0 ? 1 : index === 4 ? 2 : index === 8 ? 3 : null;
-        let msg = { type: "sdi-"+action, status, room: 1234, col, i, feed};
+        let msg = { type: "sdi-"+action, status, room: GROUPS_ROOM, col, i, feed};
         sendProtocolMessage(protocol, user, msg );
     };
 
