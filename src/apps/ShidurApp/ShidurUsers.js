@@ -265,7 +265,6 @@ class ShidurUsers extends Component {
         for (let i=0; i<feeds.length; i++) {
             if (feeds[i].id === id) {
                 Janus.log("Feed " + feeds[i] + " (" + id + ") has left the room, detaching");
-                //TODO: remove mids
                 delete users[feeds[i].display.id];
                 delete feedStreams[id];
                 if(questions[feeds[i].display.id]) {

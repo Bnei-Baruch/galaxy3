@@ -191,26 +191,15 @@ class ShidurToran extends Component {
         this.selectNext();
     };
 
-    restoreGroup = (e, data, i) => {
+    restoreGroup = (e, data) => {
         e.preventDefault();
         if (e.type === 'contextmenu') {
-            let {disabled_groups,feeds,users} = this.props;
+            let {disabled_groups,feeds} = this.props;
             for(let i = 0; i < disabled_groups.length; i++) {
                 if(disabled_groups[i].display.id === data.display.id) {
-                    if(disabled_groups[i].display.question) {
-                        let {questions_queue,qfeeds} = this.props;
-                        let qq = {rfid: disabled_groups[i].id, user: disabled_groups[i].display};
-                        let qs = {id: disabled_groups[i].id, display: disabled_groups[i].display};
-                        qfeeds.push(qs);
-                        questions_queue.push(qq);
-                        this.props.setProps({questions_queue, qfeeds});
-                    }
                     disabled_groups.splice(i, 1);
                     feeds.push(data);
-                    let user = data.display;
-                    user.rfid = data.id;
-                    users[user.id] = user;
-                    this.props.setProps({disabled_groups,feeds,users});
+                    this.props.setProps({disabled_groups,feeds});
                 }
             }
         }

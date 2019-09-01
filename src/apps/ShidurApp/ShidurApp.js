@@ -407,7 +407,6 @@ class ShidurApp extends Component {
                 data.rfid = users[data.user.id].rfid;
                 let q = {id: data.rfid, display: data.user};
                 questions_queue.push(data);
-                // TODO: We need to check disabled list as well
 
                 // Check if qfeed already in program
                 let chk = mids.find(q => q.feed_id === data.rfid);
@@ -431,7 +430,6 @@ class ShidurApp extends Component {
                 this.setState({questions_queue, users, qfeeds});
             }
         } else if(data.type === "question" && !data.status) {
-            // TODO: We need to check disabled list as well
             let {questions_queue,users,qfeeds} = this.state;
             for(let i = 0; i < questions_queue.length; i++){
                 if(questions_queue[i].user.id === data.user.id) {
@@ -515,25 +513,27 @@ class ShidurApp extends Component {
             if(feeds[i].id === id) {
                 // Delete from users mapping object
                 let user = feeds[i].display;
-                // Write to log
-                if(!disable)
+
+                if(!disable) {
+                    // Write to log
                     this.actionLog(user, "leave");
-                Janus.log(" :: Remove feed: " + id + " - Name: " + user.username);
-                delete users[user.id];
+                    Janus.log(" :: Remove feed: " + id + " - Name: " + user.username);
+                    delete users[user.id];
 
-                // Delete from questions list
-                for(let i = 0; i < questions_queue.length; i++) {
-                    if(questions_queue[i].user.id === user.id) {
-                        questions_queue.splice(i, 1);
-                        break
+                    // Delete from questions list
+                    for(let i = 0; i < questions_queue.length; i++) {
+                        if(questions_queue[i].user.id === user.id) {
+                            questions_queue.splice(i, 1);
+                            break
+                        }
                     }
-                }
 
-                // Delete from qfeeds
-                for(let i = 0; i < qfeeds.length; i++){
-                    if(qfeeds[i].display.id === user.id) {
-                        qfeeds.splice(i, 1);
-                        break
+                    // Delete from qfeeds
+                    for(let i = 0; i < qfeeds.length; i++){
+                        if(qfeeds[i].display.id === user.id) {
+                            qfeeds.splice(i, 1);
+                            break
+                        }
                     }
                 }
 
