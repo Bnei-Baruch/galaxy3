@@ -23,8 +23,8 @@ class GalaxyStream extends Component {
         audiostream: null,
         datastream: null,
         audio: null,
-        videos: Number(localStorage.getItem("video")) || 1,
-        audios: Number(localStorage.getItem("lang")) || 15,
+        videos: Number(localStorage.getItem("gxy_video")) || 1,
+        audios: Number(localStorage.getItem("gxy_lang")) || 15,
         room: Number(localStorage.getItem("room")) || null,
         muted: false,
         mixvolume: null,
@@ -311,14 +311,14 @@ class GalaxyStream extends Component {
             if(name.match(/^(New York|Toronto)$/)) {
                 //this.initTranslationStream(303);
             } else {
-                this.initTranslationStream(trllang[localStorage.getItem("langtext")] || 303);
+                this.initTranslationStream(trllang[localStorage.getItem("gxy_langtext")] || 303);
             }
             Janus.log("You now talking");
         } else if(this.state.talking) {
             Janus.log("Stop talking");
             clearInterval(this.state.talking);
             this.refs.remoteAudio.volume = this.state.mixvolume;
-            let abody = { "request": "switch", "id": Number(localStorage.getItem("lang")) || 15};
+            let abody = { "request": "switch", "id": Number(localStorage.getItem("gxy_lang")) || 15};
             this.state.audiostream.send({"message": abody});
             if(this.state.trlstream) {
                 let tbody = { "request": "stop" };
@@ -344,15 +344,15 @@ class GalaxyStream extends Component {
     setVideo = (videos) => {
         this.setState({videos});
         this.state.videostream.send({message: { request: "switch", id: videos }});
-        localStorage.setItem("video", videos);
+        localStorage.setItem("gxy_video", videos);
     };
 
     setAudio = (audios,options) => {
         let text = options.filter(k => k.value === audios)[0].text;
         this.setState({audios});
         this.state.audiostream.send({message: {request: "switch", id: audios}});
-        localStorage.setItem("lang", audios);
-        localStorage.setItem("langtext", text);
+        localStorage.setItem("gxy_lang", audios);
+        localStorage.setItem("gxy_langtext", text);
     };
 
     setVolume = (value) => {
