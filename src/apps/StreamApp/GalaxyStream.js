@@ -130,7 +130,7 @@ class GalaxyStream extends Component {
             onremotetrack: (track, mid, on) => {
                 Janus.debug(" ::: Got a remote video track event :::");
                 Janus.debug("Remote video track (mid=" + mid + ") " + (on ? "added" : "removed") + ":", track);
-                if(this.state.video_stream) return;
+                if(!on) return;
                 let stream = new MediaStream();
                 stream.addTrack(track.clone());
                 this.setState({video_stream: stream});
@@ -175,7 +175,7 @@ class GalaxyStream extends Component {
             onremotetrack: (track, mid, on) => {
                 Janus.debug(" ::: Got a remote audio track event :::");
                 Janus.debug("Remote audio track (mid=" + mid + ") " + (on ? "added" : "removed") + ":", track);
-                if(this.state.audio_stream) return;
+                if(!on) return;
                 let stream = new MediaStream();
                 stream.addTrack(track.clone());
                 this.setState({audio_stream: stream});
@@ -251,7 +251,7 @@ class GalaxyStream extends Component {
             onremotetrack: (track, mid, on) => {
                 Janus.debug(" ::: Got a remote audio track event :::");
                 Janus.debug("Remote audio track (mid=" + mid + ") " + (on ? "added" : "removed") + ":", track);
-                if(this.state.trlaudio_stream) return;
+                if(!on) return;
                 let stream = new MediaStream();
                 stream.addTrack(track.clone());
                 this.setState({trlaudio_stream: stream});
