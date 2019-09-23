@@ -662,6 +662,7 @@ class SndmanUsers extends Component {
             this.setState({feeds, forward: false});
         } else {
             Janus.log(" :: Start forward from room: ", room);
+            // FIXME: We have to be sure that forward stopped
             this.setDelay();
             let port = 5630;
             feeds.forEach((feed,i) => {
@@ -686,7 +687,7 @@ class SndmanUsers extends Component {
         this.setState({onoff_but: true});
         setTimeout(() => {
             this.setState({onoff_but: false});
-        }, 1000);
+        }, 2000);
     };
 
     onKeyPressed = (e) => {
