@@ -11,7 +11,6 @@ import './MobileConteiner.scss'
 import 'eqcss'
 //import MobileChat from "./MobileChat";
 import {initGxyProtocol, sendProtocolMessage} from "../../shared/protocol";
-//import VirtualStreaming from "../VirtualApp/VirtualStreaming";
 import MobileStreaming from "./MobileStreaming";
 import {GEO_IP_INFO} from "../../shared/consts";
 
