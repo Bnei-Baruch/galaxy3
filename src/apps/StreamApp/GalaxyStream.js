@@ -25,7 +25,7 @@ class GalaxyStream extends Component {
         audio: null,
         videos: Number(localStorage.getItem("gxy_video")) || 1,
         audios: Number(localStorage.getItem("gxy_lang")) || 15,
-        room: Number(localStorage.getItem("room")) || null,
+        room: Number(localStorage.getItem("gxy_room")) || null,
         muted: false,
         mixvolume: null,
         user: null,
@@ -59,7 +59,7 @@ class GalaxyStream extends Component {
                         info => {
                             let {user} = this.state;
                             this.setState({user: {...info,...user}});
-                            localStorage.setItem("extip", info.ip);
+                            localStorage.setItem("gxy_extip", info.ip);
                             let server = `${JANUS_SRV_EURFR}`;
                             // if (info.country_code === "IL") {
                             //     server = 'https://v4g.kbb1.com/janustrl';
@@ -295,7 +295,7 @@ class GalaxyStream extends Component {
 
     checkData = (json) => {
         let {talk,col,name,ip} = json;
-        if(localStorage.getItem("extip") === ip)
+        if(localStorage.getItem("gxy_extip") === ip)
             this.streamGalaxy(talk,col,name);
     };
 

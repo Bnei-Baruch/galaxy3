@@ -22,9 +22,9 @@ class VirtualStreaming extends Component {
         audiostream: null,
         datastream: null,
         audio: null,
-        videos: Number(localStorage.getItem("video")) || 1,
-        audios: Number(localStorage.getItem("lang")) || 15,
-        room: Number(localStorage.getItem("room")) || null,
+        videos: Number(localStorage.getItem("vrt_video")) || 1,
+        audios: Number(localStorage.getItem("vrt_lang")) || 15,
+        room: Number(localStorage.getItem("vrt_room")) || null,
         muted: false,
         mixvolume: null,
         user: {},
@@ -40,7 +40,7 @@ class VirtualStreaming extends Component {
                             info => {
                                 let {user} = this.state;
                                 this.setState({user: {...info,...user}});
-                                localStorage.setItem("extip", info.ip);
+                                localStorage.setItem("vrt_extip", info.ip);
                                 let server = `${JANUS_SRV_EURFR}`;
                                 // if (info.country_code === "IL") {
                                 //     server = 'https://v4g.kbb1.com/janustrl';
@@ -281,7 +281,7 @@ class VirtualStreaming extends Component {
 
     checkData = (json) => {
         let {talk,col,name,ip} = json;
-        if(localStorage.getItem("extip") === ip)
+        if(localStorage.getItem("vrt_extip") === ip)
             this.streamGalaxy(talk,col,name);
     };
 
@@ -297,14 +297,14 @@ class VirtualStreaming extends Component {
             if(name.match(/^(newyork|toronto|chicago)$/)) {
                 this.initTranslationStream(303);
             } else {
-                this.initTranslationStream(trllang[localStorage.getItem("langtext")] || 303);
+                this.initTranslationStream(trllang[localStorage.getItem("vrt_langtext")] || 303);
             }
             Janus.log("You now talking");
         } else if(this.state.talking) {
             Janus.log("Stop talking");
             clearInterval(this.state.talking);
             this.refs.remoteAudio.volume = this.state.mixvolume;
-            let abody = { "request": "switch", "id": Number(localStorage.getItem("lang")) || 15};
+            let abody = { "request": "switch", "id": Number(localStorage.getItem("vrt_lang")) || 15};
             this.state.audiostream.send({"message": abody});
             let tbody = { "request": "stop" };
             this.state.trlstream.send({"message": tbody});
@@ -328,15 +328,15 @@ class VirtualStreaming extends Component {
     setVideo = (videos) => {
         this.setState({videos});
         this.state.videostream.send({message: { request: "switch", id: videos }});
-        localStorage.setItem("video", videos);
+        localStorage.setItem("vrt_video", videos);
     };
 
     setAudio = (audios,options) => {
         let text = options.filter(k => k.value === audios)[0].text;
         this.setState({audios});
         this.state.audiostream.send({message: {request: "switch", id: audios}});
-        localStorage.setItem("lang", audios);
-        localStorage.setItem("langtext", text);
+        localStorage.setItem("vrt_lang", audios);
+        localStorage.setItem("vrt_langtext", text);
     };
 
     setVolume = (value) => {
