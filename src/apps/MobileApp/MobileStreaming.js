@@ -62,7 +62,7 @@ class MobileStreaming extends Component {
                         this.setState({janus});
                         this.initVideoStream(janus);
                         this.initDataStream(janus);
-                        this.initAudioStream(janus);
+                        //this.initAudioStream(janus);
                     },
                     error: (error) => {
                         Janus.log(error);
