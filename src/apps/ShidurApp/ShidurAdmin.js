@@ -239,6 +239,10 @@ class ShidurAdmin extends Component {
             webrtcState: (on) => {
                 Janus.log("Janus says our WebRTC PeerConnection is " + (on ? "up" : "down") + " now");
             },
+            slowLink: (uplink, lost, mid) => {
+                Janus.log("Janus reports problems " + (uplink ? "sending" : "receiving") +
+                    " packets on mid " + mid + " (" + lost + " lost packets)");
+            },
             onmessage: (msg, jsep) => {
                 this.onMessage(this.state.videoroom, msg, jsep, false);
             },
@@ -442,9 +446,9 @@ class ShidurAdmin extends Component {
                 webrtcState: (on) => {
                     Janus.log("Janus says this WebRTC PeerConnection (remote feed) is " + (on ? "up" : "down") + " now");
                 },
-                slowLink: (uplink, nacks) => {
-                    Janus.warn("Janus reports problems " + (uplink ? "sending" : "receiving") +
-                        " packets on this PeerConnection (remote feed, " + nacks + " NACKs/s " + (uplink ? "received" : "sent") + ")");
+                slowLink: (uplink, lost, mid) => {
+                    Janus.log("Janus reports problems " + (uplink ? "sending" : "receiving") +
+                        " packets on mid " + mid + " (" + lost + " lost packets)");
                 },
                 onmessage: (msg, jsep) => {
                     Janus.log(" ::: Got a message (subscriber) :::");

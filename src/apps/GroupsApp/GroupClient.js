@@ -199,6 +199,10 @@ class GroupClient extends Component {
             webrtcState: (on) => {
                 Janus.log("Janus says our WebRTC PeerConnection is " + (on ? "up" : "down") + " now");
             },
+            slowLink: (uplink, lost, mid) => {
+                Janus.log("Janus reports problems " + (uplink ? "sending" : "receiving") +
+                    " packets on mid " + mid + " (" + lost + " lost packets)");
+            },
             onmessage: (msg, jsep) => {
                 this.onMessage(this.state.videoroom, msg, jsep, false);
             },
