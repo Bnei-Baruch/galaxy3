@@ -25,8 +25,8 @@ class GalaxyStream extends Component {
         audio: null,
         videos: Number(localStorage.getItem("gxy_video")) || 1,
         audios: Number(localStorage.getItem("gxy_lang")) || 15,
-        room: Number(localStorage.getItem("gxy_room")) || null,
-        muted: false,
+        room: Number(localStorage.getItem("room")) || null,
+        muted: true,
         mixvolume: null,
         user: null,
         talking: null,
@@ -88,7 +88,7 @@ class GalaxyStream extends Component {
                         this.setState({janus});
                         this.initVideoStream(janus);
                         this.initDataStream(janus);
-                        this.initAudioStream(janus);
+                        //this.initAudioStream(janus);
                     },
                     error: (error) => {
                         Janus.log(error);
@@ -151,9 +151,7 @@ class GalaxyStream extends Component {
             opaqueId: "audiostream-"+Janus.randomString(12),
             success: (audiostream) => {
                 Janus.log(audiostream);
-                this.setState({audiostream}, () => {
-                    this.audioMute();
-                });
+                this.setState({audiostream});
                 audiostream.send({message: {request: "watch", id: audios}});
             },
             error: (error) => {
@@ -360,9 +358,13 @@ class GalaxyStream extends Component {
     };
 
     audioMute = () => {
-        const {audiostream,muted} = this.state;
+        const {janus,audiostream,muted} = this.state;
         this.setState({muted: !muted});
-        muted ? audiostream.muteAudio() : audiostream.unmuteAudio()
+        if(audiostream) {
+            muted ? audiostream.muteAudio() : audiostream.unmuteAudio()
+        } else {
+            this.initAudioStream(janus);
+        }
     };
 
     toggleFullScreen = () => {
