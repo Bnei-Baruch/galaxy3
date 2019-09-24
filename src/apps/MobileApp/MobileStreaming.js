@@ -14,7 +14,7 @@ class MobileStreaming extends Component {
         audio: null,
         videos: Number(localStorage.getItem("mob_video")) || 1,
         audios: Number(localStorage.getItem("mob_lang")) || 15,
-        muted: false,
+        muted: true,
         vmuted: true,
         mixvolume: null,
         user: {},
@@ -125,9 +125,7 @@ class MobileStreaming extends Component {
             opaqueId: "audiostream-"+Janus.randomString(12),
             success: (audiostream) => {
                 Janus.log(audiostream);
-                this.setState({audiostream}, () => {
-                    this.audioMute();
-                });
+                this.setState({audiostream});
                 audiostream.send({message: {request: "watch", id: audios}});
             },
             error: (error) => {
@@ -332,9 +330,13 @@ class MobileStreaming extends Component {
     };
 
     audioMute = () => {
-        const {audiostream,muted} = this.state;
+        const {janus,audiostream,muted} = this.state;
         this.setState({muted: !muted});
-        muted ? audiostream.muteAudio() : audiostream.unmuteAudio()
+        if(audiostream) {
+            muted ? audiostream.muteAudio() : audiostream.unmuteAudio()
+        } else {
+            this.initAudioStream(janus);
+        }
     };
 
     videoMute = (i) => {
