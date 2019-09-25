@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import { Janus } from "../../lib/janus";
-import { Segment, Menu, Select, Button, Grid } from 'semantic-ui-react';
+import {Segment, Menu, Select, Button, Grid, Icon, Label} from 'semantic-ui-react';
 import VolumeSlider from "../../components/VolumeSlider";
 import {
     videos_options,
@@ -352,7 +352,7 @@ class VirtualStreaming extends Component {
     };
 
     toggleFullScreen = () => {
-        let vid = this.refs.remoteVideo;
+        let vid = this.refs.mediaplayer;
         if(vid.requestFullScreen){
             vid.requestFullScreen();
         } else if(vid.webkitRequestFullScreen){
@@ -401,16 +401,19 @@ class VirtualStreaming extends Component {
                         </Menu>
                     </Segment>
                     <Segment>
-                        <video className={talking ? 'talk_border' : ''}
-                               ref="remoteVideo"
+                        <div className='mediaplayer' ref="mediaplayer" >
+                        <video ref="remoteVideo"
                                id="remoteVideo"
-                               width="640"
-                               height="360"
+                               width="100%"
+                               height="100%"
                                autoPlay={true}
                                controls={false}
                                muted={true}
                                playsInline={true}/>
-
+                            {talking ? <Label className='talk' size='massive' color='red' >
+                                <Icon name='microphone' />On
+                            </Label> : ''}
+                        </div>
                         <audio ref="remoteAudio"
                                id="remoteAudio"
                                autoPlay={true}

@@ -4,6 +4,25 @@ body {
     font-family: Lato,'Helvetica Neue',Arial,Helvetica,sans-serif;
 }
 
-.talk_border {
-    border: 7px solid red;
+video {
+    pointer-events: none;
+}
+
+.mediaplayer {
+    position: relative;
+}
+
+.talk {
+    line-height: 1.1285em;
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    color: #FFF;
+    text-align: center;
+    font-size: 45px;
+    background-color: red;
+    width: auto;
+    padding: 0px 10px;
+    z-index: 2147483647;
+    float: right !important;
 }
