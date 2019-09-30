@@ -606,7 +606,8 @@ class SDIOutUsers extends Component {
     };
 
   render() {
-      const { name,users } = this.state.program;
+      const { users } = this.state;
+      const { name } = this.state.program;
       const width = "400";
       const height = "300";
       const autoPlay = true;
