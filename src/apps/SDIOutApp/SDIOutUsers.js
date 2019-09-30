@@ -110,9 +110,13 @@ class SDIOutUsers extends Component {
             }
         }
 
-        if(data.type === "question") {
+        // Set status in users list
+        if(data.type) {
             if(users[data.user.id]) {
-                users[data.user.id].question = data.status;
+                users[data.user.id][data.type] = data.status;
+                this.setState({users});
+            } else {
+                users[data.user.id] = {[data.type]: data.status};
                 this.setState({users});
             }
         }
