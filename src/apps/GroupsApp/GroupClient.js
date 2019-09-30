@@ -43,6 +43,7 @@ class GroupClient extends Component {
         users: {},
         visible: false,
         question: false,
+        geoinfo: false,
         selftest: "Self Audio Test",
         tested: false,
     };
@@ -72,20 +73,21 @@ class GroupClient extends Component {
         localStorage.setItem("sound_test", false);
         checkNotification();
         geoInfo(`${GEO_IP_INFO}`, data => {
-            Janus.log(data);
-            user.ip = data.ip;
+            user.ip = data ? data.ip : "127.0.0.1";
+            if(!data) alert('Fail to get GeoInfo! Question will be disabled!');
+            initJanus(janus => {
+                user.session = janus.getSessionId();
+                user.system = navigator.userAgent;
+                this.setState({janus, user, geoinfo: !!data});
+                this.chat.initChat(janus);
+                this.initVideoRoom(error);
+            }, er => {
+                setTimeout(() => {
+                    this.initClient(user,er);
+                }, 5000);
+            }, true);
         });
-        initJanus(janus => {
-            user.session = janus.getSessionId();
-            user.system = navigator.userAgent;
-            this.setState({janus, user});
-            this.chat.initChat(janus);
-            this.initVideoRoom(error);
-        }, er => {
-            setTimeout(() => {
-                this.initGalaxy(user,er);
-            }, 5000);
-        }, true);
+
     };
 
     initDevices = (video) => {
@@ -480,7 +482,7 @@ class GroupClient extends Component {
 
   render() {
 
-      const {user,audio_devices,video_devices,video_device,audio_device,muted,mystream,room,count,question,selftest,tested,progress} = this.state;
+      const {user,audio_devices,video_devices,video_device,audio_device,muted,mystream,room,count,question,selftest,tested,progress,geoinfo} = this.state;
       const width = "134";
       const height = "100";
       const autoPlay = true;
@@ -536,7 +538,7 @@ class GroupClient extends Component {
                 {this.state.visible ? "Close" : "Open"} Chat 
                 {count > 0 ? l : ""} 
               </Menu.Item>
-              <Menu.Item disabled={!mystream} onClick={this.handleQuestion}>
+              <Menu.Item disabled={!geoinfo || !mystream} onClick={this.handleQuestion}>
                 <Icon color={question ? 'green' : ''} name='question'/>
                 Ask a Question
               </Menu.Item>

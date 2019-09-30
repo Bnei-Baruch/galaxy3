@@ -30,7 +30,7 @@ export const initJanus = (cb,er,mlt) => {
                     Janus.log(" :: Janus destroyed -- reconnect after 10 sec :: ");
                     setTimeout(() => {
                         window.location.reload();
-                    }, 100000);
+                    }, 10000);
                 }
             });
         }
@@ -332,6 +332,8 @@ export const geoInfo = (url,cb) => fetch(`${url}`)
     .then((response) => {
     if (response.ok) {
         return response.json().then(data => cb(data));
+    } else {
+        cb(false);
     }
 })
     .catch(ex => console.log(`get geoInfo`, ex));
