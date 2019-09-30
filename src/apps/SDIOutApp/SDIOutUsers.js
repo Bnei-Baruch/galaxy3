@@ -110,6 +110,13 @@ class SDIOutUsers extends Component {
             }
         }
 
+        if(data.type === "question") {
+            if(users[data.user.id]) {
+                users[data.user.id].question = data.status;
+                this.setState({users});
+            }
+        }
+
         // List users by user id send question
         if(data.type === "question" && data.status) {
             questions[data.user.id] = data.user;
@@ -470,8 +477,10 @@ class SDIOutUsers extends Component {
                             }
                         }
                         feedStreams[id] = {id, display, streams};
+                        let qt = users[display.id] && users[display.id].question;
                         users[display.id] = display;
                         users[display.id].rfid = id;
+                        users[display.id].question = qt;
                         if(cammuteds.hasOwnProperty(display.id)) {
                             cammuteds[display.id].feed = feeds[f];
                             feeds[f].camera = false;
@@ -542,8 +551,10 @@ class SDIOutUsers extends Component {
                             }
                         }
                         feedStreams[id] = {id, display, streams};
+                        let qt = users[display.id] && users[display.id].question;
                         users[display.id] = display;
                         users[display.id].rfid = id;
+                        users[display.id].question = qt;
                         subscription.push(subst);
                     }
                     feeds.push(feed[0]);
@@ -595,14 +606,15 @@ class SDIOutUsers extends Component {
     };
 
   render() {
-      const { name } = this.state.program;
+      const { name,users } = this.state.program;
       const width = "400";
       const height = "300";
       const autoPlay = true;
       const controls = false;
       const muted = true;
 
-      let qst = this.state.feeds.find(q => q !== null && q !== undefined && q.question);
+      //let qst = this.state.feeds.find(q => q !== null && q !== undefined && q.question);
+      let questions = this.state.feeds.find(p => users[p.display.id] ? users[p.display.id].question : null);
 
       let preview = this.state.feeds.map((feed) => {
           if(feed && feed.camera !== false) {
@@ -638,7 +650,7 @@ class SDIOutUsers extends Component {
           <Segment className="preview_sdi">
               <div className="videos-panel">
                   <div className="title"><span>{name}</span></div>
-                  {qst ? <div className='qst_users'>?</div> : ""}
+                  {questions ? <div className='qst_users'>?</div> : ""}
                   <div className="videos">
                       <div className="videos__wrapper">{preview}</div>
                   </div>
