@@ -6,12 +6,12 @@ import 'semantic-ui-css/semantic.min.css';
 // import AdminStreaming from "./apps/AdminApp/AdminStreaming";
 // import VirtualClient from "./apps/VirtualApp/VirtualClient";
 // import ShidurAdmin from "./apps/ShidurApp/ShidurAdmin";
-import SDIOutApp from "./apps/SDIOutApp/SDIOutApp";
+// import SDIOutApp from "./apps/SDIOutApp/SDIOutApp";
 // import ShidurApp from "./apps/ShidurApp/ShidurApp";
 // import MobileClient from "./apps/MobileApp/MobileClient";
 // import SndmanApp from "./apps/SndmanApp/SndmanApp";
 // import GroupClient from "./apps/GroupsApp/GroupClient";
-// import GalaxyStream from "./apps/StreamApp/GalaxyStream";
+import GalaxyStream from "./apps/StreamApp/GalaxyStream";
 // import AdminGuest from "./apps/AdminApp/AdminGuest";
 // import AdminCongress from "./apps/AdminApp/AdminCongress";
 
@@ -23,7 +23,7 @@ class App extends Component {
                 {/*<GalaxyApp />*/}
                 {/*<VirtualClient/>*/}
                 {/* <ShidurAdmin/>*/}
-                <SDIOutApp/>
+                {/*<SDIOutApp/>*/}
                  {/*<ShidurApp/>*/}
                  {/*<SndmanApp/>*/}
                 {/*<GroupClient/>*/}
@@ -32,7 +32,7 @@ class App extends Component {
                 {/*<AdminCongress/>*/}
                 {/*  <MobileClient/>*/}
                 {/* <AdminStreaming/>*/}
-                {/* <GalaxyStream/>*/}
+                 <GalaxyStream/>
                 {/* <VirtualStreaming/>*/}
             </Fragment>
         );

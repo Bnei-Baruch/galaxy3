@@ -13,13 +13,13 @@ video {
 }
 
 .talk {
+    font-size: 3rem!important;
     line-height: 1.1285em;
     position: absolute;
     top: 20px;
     left: 20px;
     color: #FFF;
     text-align: center;
-    font-size: 45px;
     background-color: red;
     width: auto;
     padding: 0px 10px;
