@@ -371,7 +371,7 @@ class SDIOutUsers extends Component {
                             }
                         }
                         feedStreams[id] = {id, display, streams};
-                        users[display.id] = {...users[display.id],...display,rfid: id};
+                        users[display.id] = {...display, ...users[display.id] ,rfid: id};
                         subscription.push(subst);
                     }
                     this.setState({feeds,feedStreams,users});
@@ -438,7 +438,7 @@ class SDIOutUsers extends Component {
                             }
                         }
                         feedStreams[id] = {id, display, streams};
-                        users[display.id] = {...users[display.id],...display,rfid: id};
+                        users[display.id] = {...display, ...users[display.id], rfid: id};
                         subscription.push(subst);
                     }
                     feeds.push(feed[0]);
