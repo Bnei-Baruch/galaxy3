@@ -798,25 +798,19 @@ class MobileClient extends Component {
         setTimeout(() => {
             this.setState({delay: false});
         }, 3000);
-        let {janus, videoroom, selected_room, user, username_value, women, i, name, video_device} = this.state;
+        let {janus, videoroom, selected_room, user, username_value, women, i, name, video_device, cammuted} = this.state;
         localStorage.setItem("room", selected_room);
         localStorage.setItem("room_index", i);
         localStorage.setItem("room_name", name);
         //This name will see other users
         user.display = username_value || user.name;
         localStorage.setItem("username", user.display);
-
+        user.camera = reconnect !== true ? video_device !== "" : !cammuted;
         initGxyProtocol(janus, user, protocol => {
             this.setState({protocol});
             // Send question event if before join it was true
             if(reconnect && JSON.parse(localStorage.getItem("question"))) {
                 let msg = { type: "question", status: true, room: selected_room, user};
-                setTimeout(() => {
-                    sendProtocolMessage(protocol, user, msg );
-                }, 5000);
-            }
-            if(reconnect !== true) {
-                let msg = { type: "camera", status: video_device !== "", room: selected_room, user};
                 setTimeout(() => {
                     sendProtocolMessage(protocol, user, msg );
                 }, 5000);

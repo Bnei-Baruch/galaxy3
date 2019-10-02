@@ -685,11 +685,12 @@ class VirtualClient extends Component {
         setTimeout(() => {
             this.setState({delay: false});
         }, 3000);
-        let {janus, videoroom, selected_room, user, username_value, women, tested, video_device} = this.state;
+        let {janus, videoroom, selected_room, user, username_value, women, tested, video_device, cammuted} = this.state;
         localStorage.setItem("room", selected_room);
         //This name will see other users
         user.display = username_value || user.name;
         user.self_test = tested;
+        user.camera = reconnect !== true ? video_device !== "" : !cammuted;
         user.sound_test = reconnect ? JSON.parse(localStorage.getItem("sound_test")) : false;
         localStorage.setItem("username", user.display);
         initGxyProtocol(janus, user, protocol => {
@@ -697,12 +698,6 @@ class VirtualClient extends Component {
             // Send question event if before join it was true
             if(reconnect && JSON.parse(localStorage.getItem("question"))) {
                 let msg = { type: "question", status: true, room: selected_room, user};
-                setTimeout(() => {
-                    sendProtocolMessage(protocol, user, msg );
-                }, 5000);
-            }
-            if(reconnect !== true) {
-                let msg = { type: "camera", status: video_device !== "", room: selected_room, user};
                 setTimeout(() => {
                     sendProtocolMessage(protocol, user, msg );
                 }, 5000);
