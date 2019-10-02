@@ -80,6 +80,11 @@ class SDIOutUsers extends Component {
             }
         }
 
+        if(data.type === "leave" && users[data.id]) {
+            delete users[data.id];
+            this.setState({users});
+        }
+
         // User is turn on his camera we can show him
         if(data.type === "camera" && users[data.user.id] && room === data.room && data.status) {
             let rfid = users[data.user.id].rfid;

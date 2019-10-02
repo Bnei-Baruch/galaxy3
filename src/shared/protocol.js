@@ -164,6 +164,8 @@ const onProtocolData = (data,user,ondata) => {
         let username = json["username"];
         //var when = new Date();
         Janus.log("-:: Somebody left - username: "+username+" : Time: "+getDateString());
+        ondata({type: "leave", id: username});
+
         if (username === SHIDUR_ID) {
             Janus.log(":: Support Left ::");
         }
