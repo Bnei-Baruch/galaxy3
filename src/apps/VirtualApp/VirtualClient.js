@@ -725,6 +725,8 @@ class VirtualClient extends Component {
                 this.handleQuestion();
             } else if(type === "client-mute" && user.id === id) {
                 this.micMute();
+            } else if(type === "video-mute" && user.id === id) {
+                this.camMute();
             } else if(type === "sound-test" && user.id === id) {
                 let {user} = this.state;
                 user.sound_test = true;

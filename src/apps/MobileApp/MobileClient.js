@@ -817,7 +817,8 @@ class MobileClient extends Component {
             }
         }, ondata => {
             Janus.log("-- :: It's protocol public message: ", ondata);
-            if(ondata.type === "error" && ondata.error_code === 420) {
+            const {type,error_code,id} = ondata;
+            if(ondata.type === "error" && error_code === 420) {
                 alert(ondata.error);
                 this.state.protocol.hangup();
             } else if(ondata.type === "joined") {
@@ -825,12 +826,24 @@ class MobileClient extends Component {
                 videoroom.send({"message": register});
                 this.setState({user, muted: !women, room: selected_room});
                 //this.chat.initChatRoom(user,selected_room);
+            } else if(type === "client-reconnect" && user.id === id) {
+                this.exitRoom(true);
+            } else if(type === "client-reload" && user.id === id) {
+                window.location.reload();
+            } else if(type === "client-disconnect" && user.id === id) {
+                this.exitRoom();
+            } else if(type === "client-question" && user.id === id) {
+                this.handleQuestion();
+            } else if(type === "client-mute" && user.id === id) {
+                this.micMute();
+            } else if(type === "video-mute" && user.id === id) {
+                this.camMute();
             }
             this.onProtocolData(ondata);
         });
     };
 
-    exitRoom = () => {
+    exitRoom = (reconnect) => {
         let {videoroom, remoteFeed, protocol, room} = this.state;
         let leave = {request : "leave"};
         if(remoteFeed)
@@ -838,8 +851,8 @@ class MobileClient extends Component {
         videoroom.send({"message": leave});
         //this.chat.exitChatRoom(room);
         localStorage.setItem("question", false);
-        this.setState({video_device: null, muted: false, cammuted: false, mystream: null, feeds: [],video_mids: [], mids: [], remoteFeed: null, question: false});
-        this.initVideoRoom();
+        this.setState({video_device: null, muted: false, cammuted: false, mystream: null, room: "", selected_room: (reconnect ? room : ""), feeds: [],video_mids: [], mids: [], remoteFeed: null, question: false});
+        this.initVideoRoom(reconnect);
         protocol.detach();
     };
 
