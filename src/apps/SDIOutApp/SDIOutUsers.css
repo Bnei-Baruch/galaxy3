@@ -17,16 +17,18 @@
 
 .qst_users {
     font-family: Icons;
-    font-weight: bolder;
+    font-weight: 900;
+    display:inline-block;
+    -webkit-transform: scale(1.5,1);
     line-height: 0.9em;
     position: absolute;
     color: black;
     text-align: center;
-    font-size: 45px;
+    font-size: 55px;
     background-color: white;
-    /*background:rgba(34, 34, 34, .9);*/
     width: auto;
-    padding: 4.5px 10px;
+    height: auto;
+    padding: 0px 5px;
     float: right!important;
     right: 40px;
     top: 45px;
