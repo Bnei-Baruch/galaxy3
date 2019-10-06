@@ -34,8 +34,6 @@ class ShidurUsers extends Component {
             users: {}
             },
         protocol: null,
-        questions_queue: [],
-        questions: {},
         myid: null,
         mypvtid: null,
         mystream: null,
@@ -104,6 +102,7 @@ class ShidurUsers extends Component {
 
     //FIXME: tmp solution to show count without service users in room list
     getFeedsList = (rooms) => {
+        let {users} = this.state;
         rooms.forEach((room,i) => {
             if(room.num_participants > 0) {
                 this.state.preview.videoroom.send({
@@ -111,7 +110,9 @@ class ShidurUsers extends Component {
                     success: (data) => {
                         Janus.debug("Feeds: ", data.participants);
                         let count = data.participants.filter(p => JSON.parse(p.display).role === "user");
+                        let questions = data.participants.find(p => users[JSON.parse(p.display).id] ? users[JSON.parse(p.display).id].question : null);
                         rooms[i].num_participants = count.length;
+                        rooms[i].questions = questions;
                         this.setState({rooms});
                     }
                 });
@@ -260,24 +261,13 @@ class ShidurUsers extends Component {
     unsubscribeFrom = (h, id) => {
         // Unsubscribe from this publisher
         let {feeds,users,feedStreams} = this.state[h];
-        let {questions,questions_queue} = this.state;
         let {remoteFeed} = this.state[h];
         for (let i=0; i<feeds.length; i++) {
             if (feeds[i].id === id) {
                 Janus.log("Feed " + feeds[i] + " (" + id + ") has left the room, detaching");
                 delete users[feeds[i].display.id];
                 delete feedStreams[id];
-                if(questions[feeds[i].display.id]) {
-                    delete questions[feeds[i].display.id];
-                    this.setState({questions});
-                    for(let q = 0; q < questions_queue.length; q++){
-                        if(questions_queue[q].user.id === feeds[i].display.id) {
-                            questions_queue.splice(q, 1);
-                            this.setState({questions_queue});
-                            break
-                        }
-                    }
-                }
+
                 feeds.splice(i, 1);
                 // Send an unsubscribe request
                 let unsubscribe = {
@@ -293,56 +283,22 @@ class ShidurUsers extends Component {
     };
 
     onProtocolData = (data) => {
-        let {questions,questions_queue} = this.state;
-        if(data.type === "question" && data.status) {
-            questions[data.user.id] = data.user;
-            questions_queue.push(data);
-            this.setState({questions_queue,questions});
-        } else if(data.type === "question" && !data.status) {
-            if(questions[data.user.id]) {
-                delete questions[data.user.id];
-                this.setState({questions});
-            }
-            for(let i=0; i<questions_queue.length; i++) {
-                if(questions_queue[i].user.id === data.user.id) {
-                    questions_queue.splice(i, 1);
-                    this.setState({questions_queue});
-                    break
-                }
-            }
-        } else if(data.type === "sound-test") {
-            let {users} = this.state;
-            if(users[data.id]) {
-                users[data.id].sound_test = true;
+        let {users} = this.state;
+
+        // Set status in users list
+        if(data.type.match(/^(camera|question|sound-test)$/)) {
+            if(users[data.user.id]) {
+                users[data.user.id][data.type] = data.status;
                 this.setState({users});
             } else {
-                users[data.id] = {sound_test: true};
+                users[data.user.id] = {[data.type]: data.status};
                 this.setState({users});
             }
         }
 
-        let {preview,program} = this.state;
-        if (data.type === "question" && data.room === preview.room) {
-            let rfid = preview.users[data.user.id].rfid;
-            for (let i = 0; i < preview.feeds.length; i++) {
-                if (preview.feeds[i].id === rfid) {
-                    preview.feeds[i].question = data.status;
-                    this.setState({preview: {...preview}});
-                    break
-                }
-            }
-        }
-
-        if (data.type === "question" && data.room === program.room) {
-            let rfid = program.users[data.user.id].rfid;
-            for (let i = 0; i < program.feeds.length; i++) {
-                if (program.feeds[i].id === rfid) {
-                    program.feeds[i].question = data.status;
-                    this.setState({program: {...program}});
-                    break
-                }
-            }
-
+        if(data.type === "leave" && users[data.id]) {
+            delete users[data.id];
+            this.setState({users});
         }
     };
 
@@ -424,7 +380,6 @@ class ShidurUsers extends Component {
                         //let talk = feeds[f]["talking"];
                         let streams = feeds[f]["streams"];
                         feeds[f].display = display;
-                        feeds[f].question = this.state.questions[display.id] !== undefined;
                         let subst = {feed: id};
                         for (let i in streams) {
                             let stream = streams[i];
@@ -435,8 +390,7 @@ class ShidurUsers extends Component {
                             }
                         }
                         feedStreams[id] = {id, display, streams};
-                        users[display.id] = display;
-                        users[display.id].rfid = id;
+                        users[display.id] = {...display, ...users[display.id], rfid: id};
                         subscription.push(subst);
                     }
                     this.setState({[h]:{...this.state[h], feeds,feedStreams,users}});
@@ -503,8 +457,7 @@ class ShidurUsers extends Component {
                             }
                         }
                         feedStreams[id] = {id, display, streams};
-                        users[display.id] = display;
-                        users[display.id].rfid = id;
+                        users[display.id] = {...display, ...users[display.id], rfid: id};
                         subscription.push(subst);
                     }
                     feeds.push(feed[0]);
@@ -615,7 +568,7 @@ class ShidurUsers extends Component {
 
 
   render() {
-      const {program,preview,disabled_rooms,rooms,questions_queue,users} = this.state;
+      const {program,preview,disabled_rooms,rooms,users} = this.state;
       const width = "400";
       const height = "300";
       const autoPlay = true;
@@ -624,8 +577,7 @@ class ShidurUsers extends Component {
       const q = (<b style={{color: 'red', fontSize: '20px', fontFamily: 'Verdana', fontWeight: 'bold'}}>?</b>);
 
       let rooms_list = rooms.map((data,i) => {
-          const {room, num_participants, description} = data;
-          let chk = questions_queue.filter(q => q.room === room);
+          const {room, num_participants, description, questions} = data;
           return (
               <Table.Row negative={program.name === description}
                          positive={preview.name === description}
@@ -635,20 +587,20 @@ class ShidurUsers extends Component {
                          onContextMenu={(e) => this.disableRoom(e, data, i)} >
                   <Table.Cell width={5}>{description}</Table.Cell>
                   <Table.Cell width={1}>{num_participants}</Table.Cell>
-                  <Table.Cell width={1}>{chk.length > 0 ? q : ""}</Table.Cell>
+                  <Table.Cell width={1}>{questions ? q : ""}</Table.Cell>
               </Table.Row>
           )
       });
 
       let disabled_list = disabled_rooms.map((data,i) => {
-          const {room, num_participants, description} = data;
+          const {room, num_participants, description, questions} = data;
           return (
               <Table.Row key={room} warning
                          onClick={() => this.selectGroup(data, i)}
                          onContextMenu={(e) => this.restoreRoom(e, data, i)} >
                   <Table.Cell width={5}>{description}</Table.Cell>
                   <Table.Cell width={1}>{num_participants}</Table.Cell>
-                  <Table.Cell width={1}></Table.Cell>
+                  <Table.Cell width={1}>{questions ? q : ""}</Table.Cell>
               </Table.Row>
           )
       });
@@ -657,7 +609,7 @@ class ShidurUsers extends Component {
           if(feed) {
               let id = feed.id;
               let talk = feed.talk;
-              let question = feed.question;
+              let question = users[feed.display.id] && users[feed.display.id].question;
               let st = users[feed.display.id] && users[feed.display.id].sound_test;
               return (<div className="video"
                            key={"prov" + id}
@@ -690,7 +642,7 @@ class ShidurUsers extends Component {
           if(feed) {
               let id = feed.id;
               let talk = feed.talk;
-              let question = feed.question;
+              let question = users[feed.display.id] && users[feed.display.id].question;
               let st = users[feed.display.id] && users[feed.display.id].sound_test;
               return (<div className="video"
                            key={"prev" + id}
