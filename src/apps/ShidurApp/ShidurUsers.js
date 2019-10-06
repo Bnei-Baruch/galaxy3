@@ -72,6 +72,7 @@ class ShidurUsers extends Component {
             });
         },er => {}, true);
         setInterval(() => this.getRoomList(), 10000 );
+        setInterval(() => this.chkDisabledRooms(), 10000 );
 
     };
 
@@ -117,7 +118,29 @@ class ShidurUsers extends Component {
                     }
                 });
             }
-        })
+        });
+    };
+
+    chkDisabledRooms = () => {
+        let {users,disabled_rooms} = this.state;
+        for (let i=0; i<disabled_rooms.length; i++) {
+            if(disabled_rooms[i].num_participants === 0) {
+                disabled_rooms.splice(i, 1);
+                this.setState({disabled_rooms});
+                continue;
+            }
+            this.state.preview.videoroom.send({
+                message: {request: "listparticipants", "room": disabled_rooms[i].room},
+                success: (data) => {
+                    Janus.debug("Feeds: ", data.participants);
+                    let count = data.participants.filter(p => JSON.parse(p.display).role === "user");
+                    let questions = data.participants.find(p => users[JSON.parse(p.display).id] ? users[JSON.parse(p.display).id].question : null);
+                    disabled_rooms[i].num_participants = count.length;
+                    disabled_rooms[i].questions = questions;
+                    this.setState({disabled_rooms});
+                }
+            });
+        }
     };
 
     newRemoteFeed = (h, subscription) => {
@@ -557,7 +580,7 @@ class ShidurUsers extends Component {
         if (e.type === 'contextmenu') {
             let {disabled_rooms} = this.state;
             for(let i = 0; i < disabled_rooms.length; i++){
-                if ( disabled_rooms[i].room === data.room) {
+                if(disabled_rooms[i].room === data.room) {
                     disabled_rooms.splice(i, 1);
                     this.setState({disabled_rooms});
                     this.getRoomList();
