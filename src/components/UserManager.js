@@ -1,7 +1,8 @@
 import { Log as oidclog, UserManager } from 'oidc-client';
 import {KJUR} from 'jsrsasign';
 
-const AUTH_URL = 'https://accounts.kbb1.com/auth/realms/groups';
+//const AUTH_URL = 'https://accounts.kbb1.com/auth/realms/groups';
+const AUTH_URL = 'https://accounts.kbb1.com/auth/realms/main';
 export const BASE_URL = process.env.NODE_ENV === 'production' ? process.env.REACT_APP_GXY_URL : 'http://localhost:3000/';
 
 oidclog.logger = console;
@@ -27,6 +28,7 @@ export const getUser = (cb) =>
             let at = KJUR.jws.JWS.parse(user.access_token);
             let roles = at.payloadObj.realm_access.roles;
             //user = {...user.profile, roles}
+            console.log(" :: AUTH USER: ", user)
             const {sub,given_name,name,email} = user.profile;
             user = {
                 id: sub,

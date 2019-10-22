@@ -11,6 +11,8 @@ import 'eqcss'
 import VirtualChat from "./VirtualChat";
 import {initGxyProtocol, sendProtocolMessage} from "../../shared/protocol";
 import {GEO_IP_INFO} from "../../shared/consts";
+import LoginPage from "../../components/LoginPage";
+import {client, getUser} from "../../components/UserManager";
 
 class VirtualClient extends Component {
 
@@ -40,13 +42,7 @@ class VirtualClient extends Component {
         cammuted: false,
         shidur: false,
         protocol: null,
-        user: {
-            email: null,
-            id: Janus.randomString(10),
-            role: "user",
-            name: "user-"+Janus.randomString(4),
-            username: null,
-        },
+        user: null,
         users: {},
         username_value: localStorage.getItem("username") || "",
         visible: false,
@@ -59,12 +55,26 @@ class VirtualClient extends Component {
     };
 
     componentDidMount() {
-        if (isMobile) {
-            window.location = "/userm";
-        } else {
-            let {user} = this.state;
-            this.initClient(user);
-        }
+        // if (isMobile) {
+        //     window.location = "/userm";
+        // } else {
+        //     let {user} = this.state;
+        //     this.initClient(user);
+        // }
+        getUser(user => {
+            if(user) {
+                let gxy_user = user.roles.filter(role => role === 'gxy_user').length > 0;
+                if (gxy_user) {
+                    //client.signoutRedirect();
+                    delete user.roles;
+                    user.role = "group";
+                    this.initClient(user);
+                } else {
+                    alert("Access denied!");
+                    client.signoutRedirect();
+                }
+            }
+        });
     };
 
     componentWillUnmount() {
@@ -807,7 +817,7 @@ class VirtualClient extends Component {
 
     render() {
 
-        const { rooms,room,audio_devices,video_devices,video_device,audio_device,i,muted,cammuted,delay,mystream,selected_room,count,question,selftest,tested,women,geoinfo} = this.state;
+        const {rooms,room,audio_devices,video_devices,video_device,audio_device,i,muted,cammuted,delay,mystream,selected_room,count,question,selftest,tested,women,geoinfo,user} = this.state;
         const width = "134";
         const height = "100";
         const autoPlay = true;
@@ -878,6 +888,7 @@ class VirtualClient extends Component {
 
         let l = (<Label key='Carbon' floating size='mini' color='red'>{count}</Label>);
 
+        let login = (<LoginPage user={user} />);
         let content = (<div className={classNames('vclient', {'vclient--chat-open': this.state.visible})}>
             <div className="vclient__toolbar">
                 <Input
@@ -1022,7 +1033,8 @@ class VirtualClient extends Component {
 
         return (
             <div>
-                {isMobile ? <div> This content is unavailable on mobile </div> : content}
+                {/*{isMobile ? <div> This content is unavailable on mobile </div> : content}*/}
+                {user ? content : login}
             </div>
         );
     }
