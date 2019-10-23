@@ -4,7 +4,7 @@ import {Table} from "semantic-ui-react";
 import {initJanus} from "../../shared/tools";
 import './AdminCongress.css';
 import './AdminGuestVideo.scss'
-import {client, getUser} from "../../components/UserManager";
+import {client} from "../../components/UserManager";
 import LoginPage from "../../components/LoginPage";
 import {GROUPS_ROOM} from "../../shared/consts";
 
@@ -44,19 +44,6 @@ class AdminCongress extends Component {
 
     componentDidMount() {
         document.addEventListener("keydown", this.onKeyPressed);
-        getUser(user => {
-            if(user) {
-                let gxy_group = user.roles.filter(role => role === 'gxy_guest').length > 0;
-                if (gxy_group) {
-                    delete user.roles;
-                    user.role = "guest";
-                    this.initGuestAdmin(user);
-                } else {
-                    alert("Access denied!");
-                    client.signoutRedirect();
-                }
-            }
-        });
     };
 
     componentWillUnmount() {
@@ -67,6 +54,18 @@ class AdminCongress extends Component {
     onKeyPressed = (e) => {
         if(e.code === "Enter")
             this.sendPrivateMessage();
+    };
+
+    checkPermission = (user) => {
+        let gxy_group = user.roles.filter(role => role === 'gxy_guest').length > 0;
+        if (gxy_group) {
+            delete user.roles;
+            user.role = "guest";
+            this.initGuestAdmin(user);
+        } else {
+            alert("Access denied!");
+            client.signoutRedirect();
+        }
     };
 
     initGuestAdmin = (user) => {
@@ -600,7 +599,7 @@ class AdminCongress extends Component {
           return true;
       });
 
-      let login = (<LoginPage user={user} />);
+      let login = (<LoginPage user={user} checkPermission={this.checkPermission} />);
 
       let content = (
             <div className="wrapper">

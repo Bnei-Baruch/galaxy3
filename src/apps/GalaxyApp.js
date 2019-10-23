@@ -1,7 +1,7 @@
 import React, { Component, Fragment } from 'react';
 import {Button} from "semantic-ui-react";
 import LoginPage from '../components/LoginPage';
-import {client, getUser} from "../components/UserManager";
+import {client} from "../components/UserManager";
 
 class GalaxyApp extends Component {
 
@@ -27,6 +27,8 @@ class GalaxyApp extends Component {
 
         let opt = roles.map((role,i) => {
             // if(role === "bb_user") return (<Button key={i} size='massive' color='green' onClick={() => window.open("https://galaxy.kli.one/stream")} >Stream</Button>);
+            if(role === "gxy_guest") return (<Button key={i} size='massive' color='green' onClick={() => window.open("https://galaxy.kli.one/guest","_self")} >View</Button>);
+            if(role === "gxy_user") return (<Button key={i} size='massive' color='green' onClick={() => window.open("https://galaxy.kli.one/user","_self")} >User</Button>);
             if(role === "gxy_group") return (<Button key={i} size='massive' color='green' onClick={() => window.open("https://galaxy.kli.one/group","_self")} >Group</Button>);
             if(role === "gxy_shidur") return (<Button key={i} size='massive' color='green' onClick={() => window.open("https://galaxy.kli.one/shidur","_self")} >Shidur</Button>);
             if(role === "gxy_sndman") return (<Button key={i} size='massive' color='green' onClick={() => window.open("https://galaxy.kli.one/sndman","_self")} >SoundMan</Button>);

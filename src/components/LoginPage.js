@@ -45,12 +45,12 @@ class LoginPage extends Component {
         const {disabled, loading} = this.state;
 
         let login = (<Button size='massive' primary onClick={this.userLogin} disabled={disabled} loading={loading}>Login</Button>);
-        //let enter = (<Button size='massive' color='green' onClick={() => this.props.enter()} disabled={disabled} loading={loading}>Enter</Button>);
+
         let profile = (
             <Dropdown inline text=''>
                 <Dropdown.Menu>
                     <Dropdown.Item content='Profile:' disabled />
-                    {/*<Dropdown.Item text='My Account' onClick={() => window.open("https://accounts.kbb1.com/auth/realms/main/account", "_blank")} />*/}
+                    <Dropdown.Item text='My Account' onClick={() => window.open("https://accounts.kbb1.com/auth/realms/main/account", "_blank")} />
                     <Dropdown.Item text='Sign Out' onClick={() => client.signoutRedirect()} />
                 </Dropdown.Menu>
             </Dropdown>);

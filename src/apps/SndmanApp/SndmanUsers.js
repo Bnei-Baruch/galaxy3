@@ -4,15 +4,7 @@ import {Button, Icon, Segment, Label} from "semantic-ui-react";
 import {getState, initJanus} from "../../shared/tools";
 import './SndmanUsers.css';
 import './SndmanVideoConteiner.scss'
-import {
-    DANTE_IN_IP,
-    DATA_PORT,
-    // JANUS_IP_EURND,
-    // JANUS_IP_EURUK,
-    JANUS_IP_ISRPT,
-    JANUS_IP_EURFR,
-    SECRET
-} from "../../shared/consts";
+import {DANTE_IN_IP, DATA_PORT, JANUS_IP_ISRPT, JANUS_IP_EURFR, SECRET} from "../../shared/consts";
 import {initGxyProtocol} from "../../shared/protocol";
 import classNames from "classnames";
 
@@ -57,11 +49,9 @@ class SndmanUsers extends Component {
             let {user} = this.state;
             user.session = janus.getSessionId();
             this.setState({janus,user});
-            //this.initVideoRoom();
 
             initGxyProtocol(janus, user, protocol => {
                 this.setState({protocol});
-                //this.props.setProps({protocol});
             }, ondata => {
                 Janus.log("-- :: It's protocol public message: ", ondata);
                 this.onProtocolData(ondata);
@@ -736,7 +726,6 @@ class SndmanUsers extends Component {
 
       return (
           <Segment className="sndman_segment">
-          {/*<Segment className="segment_sdi" color='blue' raised>*/}
           <Segment attached className="preview_sdi" color='red'>
               <div className="videos-panel">
                   <div className="title"><span>{name}</span></div>
@@ -755,7 +744,6 @@ class SndmanUsers extends Component {
                   <Icon size='large' name={forward ? 'microphone' : 'microphone slash' } />
                   <Label attached='top left' color='grey'>{this.state.col}</Label>
               </Button>
-            {/*</Segment>*/}
           </Segment>
       );
   }

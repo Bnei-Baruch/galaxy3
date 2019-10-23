@@ -7,7 +7,7 @@ import {initGxyProtocol} from "../../shared/protocol";
 import SndmanGroups from "./SndmanGroups";
 import SndmanUsers from "./SndmanUsers";
 import {GROUPS_ROOM, DATA_PORT, JANUS_IP_ISRPT, JANUS_IP_EURFR, SECRET} from "../../shared/consts";
-import {client, getUser} from "../../components/UserManager";
+import {client} from "../../components/UserManager";
 import LoginPage from "../../components/LoginPage";
 
 
@@ -32,24 +32,20 @@ class SndmanApp extends Component {
         shidur: false,
     };
 
-    componentDidMount() {
-        getUser(user => {
-            if(user) {
-                let gxy_group = user.roles.filter(role => role === 'gxy_sndman').length > 0;
-                if (gxy_group) {
-                    delete user.roles;
-                    user.role = "sndman";
-                    this.initApp(user);
-                } else {
-                    alert("Access denied!");
-                    client.signoutRedirect();
-                }
-            }
-        });
-    };
-
     componentWillUnmount() {
         this.state.janus.destroy();
+    };
+
+    checkPermission = (user) => {
+        let gxy_group = user.roles.filter(role => role === 'gxy_sndman').length > 0;
+        if (gxy_group) {
+            delete user.roles;
+            user.role = "sndman";
+            this.initApp(user);
+        } else {
+            alert("Access denied!");
+            client.signoutRedirect();
+        }
     };
 
     initApp = (user) => {
@@ -430,7 +426,7 @@ class SndmanApp extends Component {
     render() {
         const {user} = this.state;
 
-        let login = (<LoginPage user={user} />);
+        let login = (<LoginPage user={user} checkPermission={this.checkPermission} />);
         let content = (
             <Grid columns={3}>
                 <Grid.Column>
