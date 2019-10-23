@@ -39,7 +39,7 @@ class GalaxyStream extends Component {
         if (gxy_public) {
             delete user.roles;
             user.role = gxy_group ? "group" : gxy_user ? "user" : "public";
-            this.initClient(user);
+            this.initStream(user);
         } else {
             alert("Access denied!");
             client.signoutRedirect();
