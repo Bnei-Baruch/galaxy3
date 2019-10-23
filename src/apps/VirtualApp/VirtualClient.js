@@ -3,7 +3,7 @@ import NewWindow from 'react-new-window';
 import { Janus } from "../../lib/janus";
 import classNames from 'classnames';
 import {isMobile} from "react-device-detect";
-import {Menu, Select, Button,Input,Label,Icon,Popup} from "semantic-ui-react";
+import {Menu, Select, Button,Input,Label,Icon,Popup,Dropdown} from "semantic-ui-react";
 import {geoInfo, initJanus, getDevicesStream, micLevel, checkNotification,testDevices,testMic} from "../../shared/tools";
 import './VirtualClient.scss'
 import './VideoConteiner.scss'
@@ -12,7 +12,7 @@ import VirtualChat from "./VirtualChat";
 import {initGxyProtocol, sendProtocolMessage} from "../../shared/protocol";
 import {GEO_IP_INFO} from "../../shared/consts";
 import LoginPage from "../../components/LoginPage";
-import {client, getUser} from "../../components/UserManager";
+import {client} from "../../components/UserManager";
 
 class VirtualClient extends Component {
 
@@ -44,7 +44,7 @@ class VirtualClient extends Component {
         protocol: null,
         user: null,
         users: {},
-        username_value: localStorage.getItem("username") || "",
+        username_value: "",
         visible: false,
         question: false,
         geoinfo: false,
@@ -61,20 +61,18 @@ class VirtualClient extends Component {
         //     let {user} = this.state;
         //     this.initClient(user);
         // }
-        getUser(user => {
-            if(user) {
-                let gxy_user = user.roles.filter(role => role === 'gxy_user').length > 0;
-                if (gxy_user) {
-                    //client.signoutRedirect();
-                    delete user.roles;
-                    user.role = "group";
-                    this.initClient(user);
-                } else {
-                    alert("Access denied!");
-                    client.signoutRedirect();
-                }
-            }
-        });
+    };
+
+    checkPermission = (user) => {
+        let gxy_user = user.roles.filter(role => role === 'gxy_user').length > 0;
+        if (gxy_user) {
+            delete user.roles;
+            user.role = "user";
+            this.initClient(user);
+        } else {
+            alert("Access denied!");
+            client.signoutRedirect();
+        }
     };
 
     componentWillUnmount() {
@@ -91,7 +89,7 @@ class VirtualClient extends Component {
             initJanus(janus => {
                 user.session = janus.getSessionId();
                 user.system = navigator.userAgent;
-                this.setState({janus, user, geoinfo: !!data});
+                this.setState({janus, user, username_value: user.title, geoinfo: !!data});
                 this.chat.initChat(janus);
                 this.initVideoRoom(error);
             }, er => {
@@ -814,6 +812,13 @@ class VirtualClient extends Component {
         this.setState({count: this.state.count + 1});
     };
 
+    accAction = (action) => {
+        if(action === "account")
+            window.open("https://accounts.kbb1.com/auth/realms/main/account", "_blank")
+        if(action === "signout")
+            client.signoutRedirect()
+    }
+
 
     render() {
 
@@ -835,6 +840,11 @@ class VirtualClient extends Component {
             const {label, deviceId} = device;
             return ({ key: i, text: label, value: deviceId})
         });
+
+        let account = [
+            {key: "a1", text: "My Account", value: "account"},
+            {key: "a2", text: "Sign Out", value: "signout"},
+        ];
 
         let vdevices_list = video_devices.map((device,i) => {
             const {label, deviceId} = device;
@@ -888,17 +898,15 @@ class VirtualClient extends Component {
 
         let l = (<Label key='Carbon' floating size='mini' color='red'>{count}</Label>);
 
-        let login = (<LoginPage user={user} />);
+        let login = (<LoginPage user={user} checkPermission={this.checkPermission} />);
         let content = (<div className={classNames('vclient', {'vclient--chat-open': this.state.visible})}>
             <div className="vclient__toolbar">
-                <Input
-                    iconPosition='left'
-                    placeholder="Type your name..."
+                <Input iconPosition='left'
+                    placeholder={this.state.username_value}
                     value={this.state.username_value}
-                    onChange={(v, {value}) => this.setState({username_value: value})}
                     action>
                     <input iconPosition='left' disabled={mystream}/>
-                    <Icon name='user circle'/>
+                    <Icon name='user circle' text='asd' />
                     <Select
                         disabled={mystream}
                         error={!selected_room}
@@ -958,6 +966,10 @@ class VirtualClient extends Component {
                         position='bottom right'
                     >
                         <Popup.Content>
+                            <Select
+                                    placeholder="Account:"
+                                    options={account}
+                                    onChange={(e, {value}) => this.accAction(value)} />
                             <Select className='select_device'
                                     disabled={mystream}
                                     error={!audio_device}
@@ -996,7 +1008,7 @@ class VirtualClient extends Component {
                                         }
                                         <div className="video__title">
                                             {muted ? <Icon name="microphone slash" size="small"
-                                                           color="red"/> : ''}{this.state.username_value || this.state.user.name}
+                                                           color="red"/> : ''}{this.state.username_value}
                                         </div>
                                     </div>
                                     <svg className={classNames('nowebcam', {'hidden': !cammuted})} viewBox="0 0 32 18"

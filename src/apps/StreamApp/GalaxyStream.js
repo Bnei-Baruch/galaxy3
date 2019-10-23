@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import { Janus } from "../../lib/janus";
-import {client, getUser} from "../../components/UserManager";
+import {client} from "../../components/UserManager";
 import { Segment, Menu, Select, Button, Grid, Label, Icon} from 'semantic-ui-react';
 import VolumeSlider from "../../components/VolumeSlider";
 import {
@@ -32,19 +32,18 @@ class GalaxyStream extends Component {
         talking: null,
     };
 
-    componentDidMount() {
-        getUser(user => {
-            if(user) {
-                let gxy_public = user.roles.filter(role => role === 'bb_user').length > 0;
-                if (gxy_public) {
-                    this.setState({user});
-                    this.initStream();
-                } else {
-                    alert("Access denied!");
-                    client.signoutRedirect();
-                }
-            }
-        });
+    checkPermission = (user) => {
+        let gxy_group = user.roles.filter(role => role === 'gxy_group').length > 0;
+        let gxy_user = user.roles.filter(role => role === 'gxy_user').length > 0;
+        let gxy_public = user.roles.filter(role => role === 'bb_user').length > 0;
+        if (gxy_public) {
+            delete user.roles;
+            user.role = gxy_group ? "group" : gxy_user ? "user" : "public";
+            this.initClient(user);
+        } else {
+            alert("Access denied!");
+            client.signoutRedirect();
+        }
     };
 
     componentWillUnmount() {
@@ -383,7 +382,7 @@ class GalaxyStream extends Component {
 
         const {videos, audios, muted, user, talking} = this.state;
 
-        let login = (<LoginPage user={user} />);
+        let login = (<LoginPage user={user} checkPermission={this.checkPermission} />);
         let content = (
             <Segment compact secondary>
                 <Segment textAlign='center' className="ingest_segment" raised>

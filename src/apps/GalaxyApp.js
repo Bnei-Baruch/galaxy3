@@ -11,12 +11,6 @@ class GalaxyApp extends Component {
         roles: [],
     };
 
-    componentDidMount() {
-        getUser(cb => {
-            if(cb) this.checkPermission(cb);
-        });
-    };
-
     checkPermission = (user) => {
         let gxy_public = user.roles.filter(role => role === 'bb_user').length === 0;
         if(!gxy_public) {
@@ -44,7 +38,7 @@ class GalaxyApp extends Component {
         return (
 
             <Fragment>
-                <LoginPage user={user} enter={opt} />
+                <LoginPage user={user} enter={opt} checkPermission={this.checkPermission} />
             </Fragment>
 
         );

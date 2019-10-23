@@ -10,7 +10,7 @@ import './VideoConteiner.scss'
 import nowebcam from './nowebcam.jpeg';
 import GroupChat from "./GroupChat";
 import {initGxyProtocol, sendProtocolMessage} from "../../shared/protocol";
-import {client, getUser} from "../../components/UserManager";
+import {client} from "../../components/UserManager";
 import LoginPage from "../../components/LoginPage";
 import {GEO_IP_INFO, GROUPS_ROOM} from "../../shared/consts";
 
@@ -48,27 +48,23 @@ class GroupClient extends Component {
         tested: false,
     };
 
-    componentDidMount() {
-        getUser(user => {
-            if(user) {
-                let gxy_group = user.roles.filter(role => role === 'gxy_group').length > 0;
-                if (gxy_group) {
-                    delete user.roles;
-                    user.role = "group";
-                    this.initGalaxy(user);
-                } else {
-                    alert("Access denied!");
-                    client.signoutRedirect();
-                }
-            }
-        });
+    checkPermission = (user) => {
+        let gxy_group = user.roles.filter(role => role === 'gxy_group').length > 0;
+        if (gxy_group) {
+            delete user.roles;
+            user.role = "group";
+            this.initClient(user);
+        } else {
+            alert("Access denied!");
+            client.signoutRedirect();
+        }
     };
 
     componentWillUnmount() {
         this.state.janus.destroy();
     };
 
-    initGalaxy = (user,error) => {
+    initClient = (user,error) => {
         localStorage.setItem("question", false);
         localStorage.setItem("sound_test", false);
         checkNotification();
@@ -524,7 +520,7 @@ class GroupClient extends Component {
       });
 
       let l = (<Label key='Carbon' floating size='mini' color='red'>{count}</Label>);
-      let login = (<LoginPage user={user} />);
+      let login = (<LoginPage user={user} checkPermission={this.checkPermission} />);
       let content =  (
         <div className={classNames('gclient', { 'gclient--chat-open': this.state.visible })} >
           <div className="gclient__toolbar">

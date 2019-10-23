@@ -15,12 +15,22 @@ const userManagerConfig = {
     response_type: 'token id_token',
     scope: 'profile',
     post_logout_redirect_uri: `${BASE_URL}`,
-    automaticSilentRenew: false,
+    automaticSilentRenew: true,
+    silent_redirect_uri: `${BASE_URL}/silent_renew.html`,
     filterProtocolClaims: true,
     loadUserInfo: true,
 };
 
 export const client = new UserManager(userManagerConfig);
+
+client.events.addAccessTokenExpiring(() => {
+    console.log("...RENEW TOKEN...");
+});
+
+client.events.addAccessTokenExpired(() => {
+    console.log("...!TOKEN EXPIRED!...");
+    client.signoutRedirect();
+});
 
 export const getUser = (cb) =>
     client.getUser().then((user) => {
@@ -29,19 +39,20 @@ export const getUser = (cb) =>
             let roles = at.payloadObj.realm_access.roles;
             //user = {...user.profile, roles}
             console.log(" :: AUTH USER: ", user)
-            const {sub,given_name,name,email} = user.profile;
+            const {sub,given_name,name,email,group} = user.profile;
             user = {
                 id: sub,
                 title: given_name,
                 username: given_name,
                 name,
+                group,
                 email,
                 roles
             }
         }
         cb(user)
     })
-        .catch(function(error) {
+        .catch((error) => {
             console.log("Error: ",error);
         });
 
