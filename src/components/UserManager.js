@@ -34,21 +34,11 @@ client.events.addAccessTokenExpired(() => {
 
 export const getUser = (cb) =>
     client.getUser().then((user) => {
-        if(user){
+        if(user) {
             let at = KJUR.jws.JWS.parse(user.access_token);
             let roles = at.payloadObj.realm_access.roles;
-            //user = {...user.profile, roles}
-            console.log(" :: AUTH USER: ", user)
-            const {sub,given_name,name,email,group} = user.profile;
-            user = {
-                id: sub,
-                title: given_name,
-                username: given_name,
-                name,
-                group,
-                email,
-                roles
-            }
+            const {sub,given_name,name,email,group,title} = user.profile;
+            user = {id: sub, username: given_name, name, title, group, email, roles}
         }
         cb(user)
     })

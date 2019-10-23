@@ -901,13 +901,11 @@ class VirtualClient extends Component {
         let login = (<LoginPage user={user} checkPermission={this.checkPermission} />);
         let content = (<div className={classNames('vclient', {'vclient--chat-open': this.state.visible})}>
             <div className="vclient__toolbar">
-                <Input iconPosition='left'
-                    placeholder={this.state.username_value}
-                    value={this.state.username_value}
-                    action>
-                    <input iconPosition='left' disabled={mystream}/>
-                    <Icon name='user circle' text='asd' />
-                    <Select
+                <Input>
+                    {mystream ? <Button attached='left' negative icon='sign-out' onClick={() => this.exitRoom(false)}/> : ""}
+                    {!mystream ? <Button attached='left' primary icon='sign-in' disabled={delay || !selected_room || !audio_device}
+                                         onClick={this.joinRoom}/> : ""}
+                    <Select attached='right'
                         disabled={mystream}
                         error={!selected_room}
 
@@ -916,9 +914,6 @@ class VirtualClient extends Component {
                         options={rooms_list}
                         onClick={this.getRoomList}
                         onChange={(e, {value}) => this.selectRoom(value)}/>
-                    {mystream ? <Button negative icon='sign-out' onClick={() => this.exitRoom(false)}/> : ""}
-                    {!mystream ? <Button primary icon='sign-in' disabled={delay || !selected_room || !audio_device}
-                                         onClick={this.joinRoom}/> : ""}
                 </Input>
                 <Menu icon='labeled' secondary size="mini">
                     <Menu.Item disabled={!mystream}
@@ -945,11 +940,13 @@ class VirtualClient extends Component {
                     </Menu.Item>
                 </Menu>
                 <Menu icon='labeled' secondary size="mini">
-                    <Menu.Item position='right' disabled={selftest !== "Self Audio Test" || mystream}
-                               onClick={this.selfTest}>
-                        <Icon color={tested ? 'green' : 'red'} name="sound"/>
-                        {selftest}
-                    </Menu.Item>
+                    {!mystream ?
+                        <Menu.Item position='right' disabled={selftest !== "Self Audio Test"}
+                                   onClick={this.selfTest}>
+                            <Icon color={tested ? 'green' : 'red'} name="sound"/>
+                            {selftest}
+                        </Menu.Item>
+                        : ""}
                     <Menu.Item disabled={women || !mystream} onClick={this.micMute} className="mute-button">
                         <canvas className={muted ? 'hidden' : 'vumeter'} ref="canvas1" id="canvas1" width="15"
                                 height="35"/>
@@ -966,10 +963,16 @@ class VirtualClient extends Component {
                         position='bottom right'
                     >
                         <Popup.Content>
-                            <Select
-                                    placeholder="Account:"
-                                    options={account}
-                                    onChange={(e, {value}) => this.accAction(value)} />
+                            <Button size='huge' fluid>
+                                <Icon name='user circle'/>
+                                <Dropdown inline text={this.state.username_value}>
+                                    <Dropdown.Menu>
+                                        <Dropdown.Item content='Profile:' disabled />
+                                        <Dropdown.Item text='My Account' onClick={() => window.open("https://accounts.kbb1.com/auth/realms/main/account", "_blank")} />
+                                        <Dropdown.Item text='Sign Out' onClick={() => client.signoutRedirect()} />
+                                    </Dropdown.Menu>
+                                </Dropdown>
+                            </Button>
                             <Select className='select_device'
                                     disabled={mystream}
                                     error={!audio_device}
