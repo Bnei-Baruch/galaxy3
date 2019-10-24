@@ -253,11 +253,9 @@ class GalaxyStream extends Component {
                 let stream = new MediaStream();
                 stream.addTrack(track.clone());
                 this.setState({trlaudio_stream: stream});
-                Janus.log("Created remote audio stream:", stream);
+                Janus.log("Created TRL audio stream:", stream);
                 let audio = this.refs.trlAudio;
                 Janus.attachMediaStream(audio, stream);
-                let talking = setInterval(this.ducerMixaudio, 200);
-                this.setState({talking});
             },
             oncleanup: () => {
                 Janus.log("Got a cleanup notification");
@@ -302,16 +300,19 @@ class GalaxyStream extends Component {
             let mixvolume = this.refs.remoteAudio.volume;
             this.setState({mixvolume, talking: true});
             let trlaudio = this.refs.trlAudio;
+            trlaudio.muted = false;
             trlaudio.volume = mixvolume;
             let body = { "request": "switch", "id": gxycol[col] };
             console.log(" :: Switch STR Stream: ",gxycol[col]);
             this.state.audiostream.send({"message": body});
-            //attachStreamGalaxy(gxycol[json.col],gxyaudio);
             if(name.match(/^(New York|Toronto)$/)) {
                 //this.initTranslationStream(303);
             } else {
                 let id = trllang[localStorage.getItem("gxy_langtext")] || 301;
-                this.initTranslationStream(id);
+                let body = { "request": "switch", "id": id };
+                this.state.trlstream.send({"message": body});
+                let talking = setInterval(this.ducerMixaudio, 200);
+                this.setState({talking});
                 console.log(" :: Init TRL Stream: ",localStorage.getItem("gxy_langtext"),id)
             }
             Janus.log("You now talking");
@@ -323,12 +324,9 @@ class GalaxyStream extends Component {
             let abody = { "request": "switch", "id": id};
             console.log(" :: Switch STR Stream: ",localStorage.getItem("gxy_lang"), id);
             this.state.audiostream.send({"message": abody});
-            if(this.state.trlstream) {
-                let tbody = { "request": "stop" };
-                this.state.trlstream.send({"message": tbody});
-                this.state.trlstream.hangup();
-                console.log(" :: Stop TRL Stream: ")
-            }
+            console.log(" :: Stop TRL Stream: ");
+            let trlaudio = this.refs.trlAudio;
+            trlaudio.muted = true;
             this.setState({talking: null});
         }
     };
@@ -370,6 +368,8 @@ class GalaxyStream extends Component {
             muted ? audiostream.muteAudio() : audiostream.unmuteAudio()
         } else {
             this.initAudioStream(janus);
+            let id = trllang[localStorage.getItem("gxy_langtext")] || 301;
+            this.initTranslationStream(id);
         }
     };
 
@@ -439,8 +439,11 @@ class GalaxyStream extends Component {
                     <audio ref="trlAudio"
                            id="trlAudio"
                            autoPlay={true}
+                           muted={true}
                            controls={false}
                            playsInline={true}/>
+                    {/*<Button onClick={() => this.streamGalaxy(true,1,"")}/>*/}
+                    {/*<Button onClick={() => this.streamGalaxy(false,1,"")}/>*/}
                 </Segment>
                 <Grid columns={3}>
                     <Grid.Column width={2}>
