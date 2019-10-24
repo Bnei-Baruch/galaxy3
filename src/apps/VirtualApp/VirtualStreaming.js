@@ -291,18 +291,15 @@ class VirtualStreaming extends Component {
             trlaudio.volume = mixvolume;
             let body = { "request": "switch", "id": gxycol[col] };
             this.state.audiostream.send({"message": body});
-            //attachStreamGalaxy(gxycol[json.col],gxyaudio);
-            if(name.match(/^(newyork|toronto|chicago)$/)) {
-                this.initTranslationStream(303);
-            } else {
-                this.initTranslationStream(trllang[localStorage.getItem("vrt_langtext")] || 303);
-            }
+            let id = trllang[localStorage.getItem("vrt_langtext")] || 301;
+            this.initTranslationStream(id);
             Janus.log("You now talking");
         } else if(this.state.talking) {
             Janus.log("Stop talking");
             clearInterval(this.state.talking);
             this.refs.remoteAudio.volume = this.state.mixvolume;
-            let abody = { "request": "switch", "id": Number(localStorage.getItem("vrt_lang")) || 15};
+            let id = Number(localStorage.getItem("vrt_lang")) || 15;
+            let abody = { "request": "switch", "id": id};
             this.state.audiostream.send({"message": abody});
             let tbody = { "request": "stop" };
             this.state.trlstream.send({"message": tbody});

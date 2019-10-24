@@ -1,8 +1,8 @@
 import React, { Component, Fragment } from 'react';
 import 'semantic-ui-css/semantic.min.css';
 // import GalaxyApp from "./apps/GalaxyApp";
-// import VirtualStreaming from "./apps/VirtualApp/VirtualStreaming";
-import GalaxyStream from "./apps/StreamApp/GalaxyStream";
+import VirtualStreaming from "./apps/VirtualApp/VirtualStreaming";
+// import GalaxyStream from "./apps/StreamApp/GalaxyStream";
 // import AdminStreaming from "./apps/AdminApp/AdminStreaming";
 // import VirtualClient from "./apps/VirtualApp/VirtualClient";
 // import ShidurAdmin from "./apps/ShidurApp/ShidurAdmin";
@@ -27,13 +27,13 @@ class App extends Component {
                 {/* <ShidurApp/>*/}
                  {/*<SndmanApp/>*/}
                 {/*<GroupClient/>*/}
-                 <GalaxyStream/>
+                {/* <GalaxyStream/>*/}
                 {/* <AdminGuest/>*/}
                 {/*<AdminCongress/>*/}
                 {/*  <MobileClient/>*/}
                 {/* <AdminStreaming/>*/}
                 {/* <GalaxyStream/>*/}
-                {/* <VirtualStreaming/>*/}
+                 <VirtualStreaming/>
             </Fragment>
         );
     }
