@@ -339,7 +339,8 @@ class VirtualStreaming extends Component {
     setAudio = (audios,options) => {
         let text = options.filter(k => k.value === audios)[0].text;
         this.setState({audios});
-        this.state.audiostream.send({message: {request: "switch", id: audios}});
+        if(this.state.audiostream)
+            this.state.audiostream.send({message: {request: "switch", id: audios}});
         localStorage.setItem("vrt_lang", audios);
         localStorage.setItem("vrt_langtext", text);
     };
