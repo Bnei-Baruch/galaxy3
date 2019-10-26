@@ -286,8 +286,8 @@ class VirtualStreaming extends Component {
             let mixvolume = this.refs.remoteAudio.volume;
             this.setState({mixvolume, talking: true});
             let trlaudio = this.refs.trlAudio;
-            trlaudio.muted = false;
             trlaudio.volume = mixvolume;
+            trlaudio.muted = false;
             let body = { "request": "switch", "id": gxycol[col] };
             console.log(" :: Switch STR Stream: ",gxycol[col]);
             this.state.audiostream.send({"message": body});
