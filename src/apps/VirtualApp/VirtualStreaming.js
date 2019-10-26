@@ -320,7 +320,7 @@ class VirtualStreaming extends Component {
     ducerMixaudio = () => {
         this.state.trlstream.getVolume(null, volume => {
             let audio = this.refs.remoteAudio;
-            let trl_volume = this.state.mixvolume*0.1;
+            let trl_volume = this.state.mixvolume*0.05;
             if (volume > 0.05) {
                 audio.volume = trl_volume;
             } else if (audio.volume + 0.01 <= this.state.mixvolume) {
