@@ -252,11 +252,9 @@ class GalaxyStream extends Component {
                 let stream = new MediaStream();
                 stream.addTrack(track.clone());
                 this.setState({trlaudio_stream: stream});
-                Janus.log("Created remote audio stream:", stream);
+                Janus.log("Created TRL audio stream:", stream);
                 let audio = this.refs.trlAudio;
                 Janus.attachMediaStream(audio, stream);
-                let talking = setInterval(this.ducerMixaudio, 200);
-                this.setState({talking});
             },
             oncleanup: () => {
                 Janus.log("Got a cleanup notification");
@@ -302,14 +300,19 @@ class GalaxyStream extends Component {
             this.setState({mixvolume, talking: true});
             let trlaudio = this.refs.trlAudio;
             trlaudio.volume = mixvolume;
+            trlaudio.muted = false;
             let body = { "request": "switch", "id": gxycol[col] };
+            console.log(" :: Switch STR Stream: ",gxycol[col]);
             this.state.audiostream.send({"message": body});
-            //attachStreamGalaxy(gxycol[json.col],gxyaudio);
             if(name.match(/^(New York|Toronto)$/)) {
                 //this.initTranslationStream(303);
             } else {
                 let id = trllang[localStorage.getItem("gxy_langtext")] || 301;
-                this.initTranslationStream(id);
+                let body = { "request": "switch", "id": id };
+                this.state.trlstream.send({"message": body});
+                let talking = setInterval(this.ducerMixaudio, 200);
+                this.setState({talking});
+                console.log(" :: Init TRL Stream: ",localStorage.getItem("gxy_langtext"),id)
             }
             Janus.log("You now talking");
         } else if(this.state.talking) {
@@ -318,12 +321,11 @@ class GalaxyStream extends Component {
             this.refs.remoteAudio.volume = this.state.mixvolume;
             let id = Number(localStorage.getItem("gxy_lang")) || 15;
             let abody = { "request": "switch", "id": id};
+            console.log(" :: Switch STR Stream: ",localStorage.getItem("gxy_lang"), id);
             this.state.audiostream.send({"message": abody});
-            if(this.state.trlstream) {
-                let tbody = { "request": "stop" };
-                this.state.trlstream.send({"message": tbody});
-                this.state.trlstream.hangup();
-            }
+            console.log(" :: Stop TRL Stream: ");
+            let trlaudio = this.refs.trlAudio;
+            trlaudio.muted = true;
             this.setState({talking: null});
         }
     };
@@ -331,10 +333,11 @@ class GalaxyStream extends Component {
     ducerMixaudio = () => {
         this.state.trlstream.getVolume(null, volume => {
             let audio = this.refs.remoteAudio;
-            if (volume > 0.2) {
-                audio.volume = 0.2;
-            } else if (audio.volume + 0.04 <= this.state.mixvolume) {
-                audio.volume = audio.volume + 0.04;
+            let trl_volume = this.state.mixvolume*0.05;
+            if (volume > 0.05) {
+                audio.volume = trl_volume;
+            } else if (audio.volume + 0.01 <= this.state.mixvolume) {
+                audio.volume = audio.volume + 0.01;
             }
             //console.log(":: Trl level: " + volume + " :: Current mixvolume: " + audio.volume + " :: Original mixvolume: " + this.state.mixvolume)
         });
@@ -349,7 +352,8 @@ class GalaxyStream extends Component {
     setAudio = (audios,options) => {
         let text = options.filter(k => k.value === audios)[0].text;
         this.setState({audios});
-        this.state.audiostream.send({message: {request: "switch", id: audios}});
+        if(this.state.audiostream)
+            this.state.audiostream.send({message: {request: "switch", id: audios}});
         localStorage.setItem("gxy_lang", audios);
         localStorage.setItem("gxy_langtext", text);
     };
@@ -365,6 +369,8 @@ class GalaxyStream extends Component {
             muted ? audiostream.muteAudio() : audiostream.unmuteAudio()
         } else {
             this.initAudioStream(janus);
+            let id = trllang[localStorage.getItem("gxy_langtext")] || 301;
+            this.initTranslationStream(id);
         }
     };
 
@@ -434,6 +440,7 @@ class GalaxyStream extends Component {
                     <audio ref="trlAudio"
                            id="trlAudio"
                            autoPlay={true}
+                           muted={true}
                            controls={false}
                            playsInline={true}/>
                 </Segment>
