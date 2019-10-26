@@ -242,8 +242,6 @@ class VirtualStreaming extends Component {
                 Janus.log("Created remote audio stream:", stream);
                 let audio = this.refs.trlAudio;
                 Janus.attachMediaStream(audio, stream);
-                let talking = setInterval(this.ducerMixaudio, 200);
-                this.setState({talking});
             },
             oncleanup: () => {
                 Janus.log("Got a cleanup notification");
@@ -288,11 +286,21 @@ class VirtualStreaming extends Component {
             let mixvolume = this.refs.remoteAudio.volume;
             this.setState({mixvolume, talking: true});
             let trlaudio = this.refs.trlAudio;
+            trlaudio.muted = false;
             trlaudio.volume = mixvolume;
             let body = { "request": "switch", "id": gxycol[col] };
+            console.log(" :: Switch STR Stream: ",gxycol[col]);
             this.state.audiostream.send({"message": body});
-            let id = trllang[localStorage.getItem("vrt_langtext")] || 301;
-            this.initTranslationStream(id);
+            if(name.match(/^(New York|Toronto)$/)) {
+                //this.initTranslationStream(303);
+            } else {
+                let id = trllang[localStorage.getItem("vrt_langtext")] || 301;
+                let body = { "request": "switch", "id": id };
+                this.state.trlstream.send({"message": body});
+                let talking = setInterval(this.ducerMixaudio, 200);
+                this.setState({talking});
+                console.log(" :: Init TRL Stream: ",localStorage.getItem("vrt_langtext"),id)
+            }
             Janus.log("You now talking");
         } else if(this.state.talking) {
             Janus.log("Stop talking");
@@ -300,10 +308,11 @@ class VirtualStreaming extends Component {
             this.refs.remoteAudio.volume = this.state.mixvolume;
             let id = Number(localStorage.getItem("vrt_lang")) || 15;
             let abody = { "request": "switch", "id": id};
+            console.log(" :: Switch STR Stream: ",localStorage.getItem("vrt_lang"), id);
             this.state.audiostream.send({"message": abody});
-            let tbody = { "request": "stop" };
-            this.state.trlstream.send({"message": tbody});
-            this.state.trlstream.hangup();
+            console.log(" :: Stop TRL Stream: ");
+            let trlaudio = this.refs.trlAudio;
+            trlaudio.muted = true;
             this.setState({talking: null});
         }
     };
@@ -311,10 +320,11 @@ class VirtualStreaming extends Component {
     ducerMixaudio = () => {
         this.state.trlstream.getVolume(null, volume => {
             let audio = this.refs.remoteAudio;
-            if (volume > 0.2) {
-                audio.volume = 0.2;
-            } else if (audio.volume + 0.04 <= this.state.mixvolume) {
-                audio.volume = audio.volume + 0.04;
+            let trl_volume = this.state.mixvolume*0.1;
+            if (volume > 0.05) {
+                audio.volume = trl_volume;
+            } else if (audio.volume + 0.01 <= this.state.mixvolume) {
+                audio.volume = audio.volume + 0.01;
             }
             //console.log(":: Trl level: " + volume + " :: Current mixvolume: " + audio.volume + " :: Original mixvolume: " + this.state.mixvolume)
         });
@@ -345,6 +355,8 @@ class VirtualStreaming extends Component {
             muted ? audiostream.muteAudio() : audiostream.unmuteAudio()
         } else {
             this.initAudioStream(janus);
+            let id = trllang[localStorage.getItem("vrt_langtext")] || 301;
+            this.initTranslationStream(id);
         }
     };
 
@@ -421,6 +433,7 @@ class VirtualStreaming extends Component {
                                id="trlAudio"
                                autoPlay={true}
                                controls={false}
+                               muted={true}
                             // muted={muted}
                                playsInline={true}/>
                     </Segment>

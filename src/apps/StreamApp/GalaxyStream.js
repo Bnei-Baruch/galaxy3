@@ -334,10 +334,11 @@ class GalaxyStream extends Component {
     ducerMixaudio = () => {
         this.state.trlstream.getVolume(null, volume => {
             let audio = this.refs.remoteAudio;
-            if (volume > 0.2) {
-                audio.volume = 0.2;
-            } else if (audio.volume + 0.04 <= this.state.mixvolume) {
-                audio.volume = audio.volume + 0.04;
+            let trl_volume = this.state.mixvolume*0.1;
+            if (volume > 0.05) {
+                audio.volume = trl_volume;
+            } else if (audio.volume + 0.01 <= this.state.mixvolume) {
+                audio.volume = audio.volume + 0.01;
             }
             //console.log(":: Trl level: " + volume + " :: Current mixvolume: " + audio.volume + " :: Original mixvolume: " + this.state.mixvolume)
         });
