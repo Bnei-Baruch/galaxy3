@@ -6,7 +6,7 @@ import './SndmanApp.css';
 import {initGxyProtocol} from "../../shared/protocol";
 import SndmanGroups from "./SndmanGroups";
 import SndmanUsers from "./SndmanUsers";
-import {GROUPS_ROOM, DATA_PORT, JANUS_IP_ISRPT, JANUS_IP_EURFR, SECRET} from "../../shared/consts";
+import {GROUPS_ROOM, DATA_PORT, JANUS_IP_ISRPT, JANUS_IP_EURFR, JANUS_IP_EURGR, SECRET} from "../../shared/consts";
 import {client, getUser} from "../../components/UserManager";
 import LoginPage from "../../components/LoginPage";
 
@@ -144,9 +144,11 @@ class SndmanApp extends Component {
         let {myid,gxyhandle,data_forward} = this.state;
         let isrip = `${JANUS_IP_ISRPT}`;
         let frip = `${JANUS_IP_EURFR}`;
+        let gerip = `${JANUS_IP_EURGR}`;
         let dport = DATA_PORT;
         let isrfwd = { "request": "rtp_forward","publisher_id":myid,"room":room,"secret":`${SECRET}`,"host":isrip,"data_port":dport};
         let efrfwd = { "request": "rtp_forward","publisher_id":myid,"room":room,"secret":`${SECRET}`,"host":frip,"data_port":dport};
+        let gerfwd = { "request": "rtp_forward","publisher_id":myid,"room":room,"secret":`${SECRET}`,"host":gerip,"data_port":dport};
         gxyhandle.send({"message": isrfwd,
             success: (data) => {
                 data_forward.isr = data["rtp_stream"]["data_stream_id"];
@@ -156,6 +158,13 @@ class SndmanApp extends Component {
         gxyhandle.send({"message": efrfwd,
             success: (data) => {
                 data_forward.efr = data["rtp_stream"]["data_stream_id"];
+                Janus.log(" :: EFR Data Forward: ", data);
+                this.setState({onoff_but: false});
+            },
+        });
+        gxyhandle.send({"message": gerfwd,
+            success: (data) => {
+                data_forward.ger = data["rtp_stream"]["data_stream_id"];
                 Janus.log(" :: EFR Data Forward: ", data);
                 this.setState({onoff_but: false});
             },
