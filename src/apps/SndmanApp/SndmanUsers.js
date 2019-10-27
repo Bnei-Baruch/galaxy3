@@ -8,7 +8,7 @@ import {
     DANTE_IN_IP,
     DATA_PORT,
     // JANUS_IP_EURND,
-    // JANUS_IP_EURUK,
+    JANUS_IP_EURGR,
     JANUS_IP_ISRPT,
     JANUS_IP_EURFR,
     SECRET
@@ -420,12 +420,12 @@ class SndmanUsers extends Component {
         let {myid,videoroom,data_forward} = this.state;
         let isrip = `${JANUS_IP_ISRPT}`;
         // let eurip = `${JANUS_IP_EURND}`;
-        // let ukip = `${JANUS_IP_EURUK}`;
+        let gerip = `${JANUS_IP_EURGR}`;
         let frip = `${JANUS_IP_EURFR}`;
         let dport = DATA_PORT;
         let isrfwd = { "request": "rtp_forward","publisher_id":myid,"room":room,"secret":`${SECRET}`,"host":isrip,"data_port":dport};
         // let eurfwd = { "request": "rtp_forward","publisher_id":myid,"room":room,"secret":`${SECRET}`,"host":eurip,"data_port":dport};
-        // let eukfwd = { "request": "rtp_forward","publisher_id":myid,"room":room,"secret":`${SECRET}`,"host":ukip,"data_port":dport};
+        let gerfwd = { "request": "rtp_forward","publisher_id":myid,"room":room,"secret":`${SECRET}`,"host":gerip,"data_port":dport};
         let efrfwd = { "request": "rtp_forward","publisher_id":myid,"room":room,"secret":`${SECRET}`,"host":frip,"data_port":dport};
         videoroom.send({"message": isrfwd,
             success: (data) => {
@@ -439,12 +439,12 @@ class SndmanUsers extends Component {
         //         Janus.log(" :: EUR Data Forward: ", data);
         //     },
         // });
-        // videoroom.send({"message": eukfwd,
-        //     success: (data) => {
-        //         data_forward.euk = data["rtp_stream"]["data_stream_id"];
-        //         Janus.log(" :: EUK Data Forward: ", data);
-        //     },
-        // });
+        videoroom.send({"message": gerfwd,
+            success: (data) => {
+                data_forward.ger = data["rtp_stream"]["data_stream_id"];
+                Janus.log(" :: GER Data Forward: ", data);
+            },
+        });
         videoroom.send({"message": efrfwd,
             success: (data) => {
                 data_forward.efr = data["rtp_stream"]["data_stream_id"];
