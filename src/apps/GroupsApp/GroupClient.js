@@ -55,7 +55,7 @@ class GroupClient extends Component {
                 if (gxy_group) {
                     delete user.roles;
                     user.role = "group";
-                    this.initGalaxy(user);
+                    this.initClient(user);
                 } else {
                     alert("Access denied!");
                     client.signoutRedirect();
@@ -68,7 +68,7 @@ class GroupClient extends Component {
         this.state.janus.destroy();
     };
 
-    initGalaxy = (user,error) => {
+    initClient = (user,error) => {
         localStorage.setItem("question", false);
         localStorage.setItem("sound_test", false);
         checkNotification();
