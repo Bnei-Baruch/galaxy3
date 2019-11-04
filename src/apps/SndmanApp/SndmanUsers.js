@@ -419,12 +419,10 @@ class SndmanUsers extends Component {
     forwardOwnFeed = (room) => {
         let {myid,videoroom,data_forward} = this.state;
         let isrip = `${JANUS_IP_ISRPT}`;
-        // let eurip = `${JANUS_IP_EURND}`;
         let gerip = `${JANUS_IP_EURGR}`;
         let frip = `${JANUS_IP_EURFR}`;
         let dport = DATA_PORT;
         let isrfwd = { "request": "rtp_forward","publisher_id":myid,"room":room,"secret":`${SECRET}`,"host":isrip,"data_port":dport};
-        // let eurfwd = { "request": "rtp_forward","publisher_id":myid,"room":room,"secret":`${SECRET}`,"host":eurip,"data_port":dport};
         let gerfwd = { "request": "rtp_forward","publisher_id":myid,"room":room,"secret":`${SECRET}`,"host":gerip,"data_port":dport};
         let efrfwd = { "request": "rtp_forward","publisher_id":myid,"room":room,"secret":`${SECRET}`,"host":frip,"data_port":dport};
         videoroom.send({"message": isrfwd,
@@ -433,12 +431,6 @@ class SndmanUsers extends Component {
                 Janus.log(" :: ISR Data Forward: ", data);
             },
         });
-        // videoroom.send({"message": eurfwd,
-        //     success: (data) => {
-        //         data_forward.eur = data["rtp_stream"]["data_stream_id"];
-        //         Janus.log(" :: EUR Data Forward: ", data);
-        //     },
-        // });
         videoroom.send({"message": gerfwd,
             success: (data) => {
                 data_forward.ger = data["rtp_stream"]["data_stream_id"];
@@ -604,27 +596,28 @@ class SndmanUsers extends Component {
     };
 
     attachToPreview = (room) => {
-        const {feeds,videoroom} = this.state;
+        const {feeds,videoroom,forward} = this.state;
         if (this.state.room === room)
             return;
         this.setState({onoff_but: true});
         Janus.log(" :: Attaching to Preview: ", room);
-        feeds.forEach(feed => {
-            if (feed !== null && feed !== undefined) {
-                this.sendMessage(feed.display, false);
-                if(feed.streamid) {
-                    this.setState({forward: false});
-                    let stopfw = { "request":"stop_rtp_forward","stream_id":feed.streamid,"publisher_id":feed.id,"room":this.state.room,"secret":`${SECRET}` };
-                    videoroom.send({"message": stopfw,
-                        success: (data) => {
-                            Janus.log(":: Forward callback: ", data);
-                        },
-                    });
+        if(forward) {
+            feeds.forEach(feed => {
+                if (feed !== null && feed !== undefined) {
+                    this.sendMessage(feed.display, false);
+                    if(feed.streamid) {
+                        let stopfw = { "request":"stop_rtp_forward","stream_id":feed.streamid,"publisher_id":feed.id,"room":this.state.room,"secret":`${SECRET}` };
+                        videoroom.send({"message": stopfw,
+                            success: (data) => {
+                                Janus.log(":: Forward callback: ", data);
+                            },
+                        });
+                    }
+                    Janus.log("-- :: Remove Feed: ",feed);
                 }
-                Janus.log("-- :: Remove Feed: ",feed);
-                //feed.detach();
-            }
-        });
+            });
+            this.setState({forward: false});
+        }
         if(this.state.videoroom) {
             let leave_room = {request : "leave", "room": this.state.room};
             this.state.videoroom.send({"message": leave_room});
