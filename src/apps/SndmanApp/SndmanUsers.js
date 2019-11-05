@@ -394,7 +394,7 @@ class SndmanUsers extends Component {
                 this.publishOwnFeed();
                 // Any new feed to attach to?
                 if(msg["publishers"] !== undefined && msg["publishers"] !== null) {
-                    let {feedStreams,users,questions} = this.state;
+                    let {feedStreams,users} = this.state;
                     let list = msg["publishers"];
 
                     // Filter service and camera muted feeds

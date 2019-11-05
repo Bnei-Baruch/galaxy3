@@ -64,7 +64,7 @@ class VirtualStreaming extends Component {
         if(this.state.janus)
             this.state.janus.destroy();
         Janus.init({
-            debug: ["error"],
+            debug: process.env.NODE_ENV !== 'production' ? ["log", "error"] : ["error"],
             callback: () => {
                 let janus = new Janus({
                     server: server,
@@ -78,9 +78,15 @@ class VirtualStreaming extends Component {
                     },
                     error: (error) => {
                         Janus.log(error);
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 5000);
                     },
                     destroyed: () => {
                         Janus.log("kill");
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 5000);
                     }
                 });
             }

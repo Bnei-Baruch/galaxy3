@@ -91,10 +91,16 @@ class GalaxyStream extends Component {
                         //this.initAudioStream(janus);
                     },
                     error: (error) => {
-                        Janus.log(error);
+                        Janus.error(error);
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 5000);
                     },
                     destroyed: () => {
-                        Janus.log("kill");
+                        Janus.error("kill");
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 5000);
                     }
                 });
             }
