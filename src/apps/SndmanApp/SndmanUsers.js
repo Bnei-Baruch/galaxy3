@@ -7,10 +7,9 @@ import './SndmanVideoConteiner.scss'
 import {
     DANTE_IN_IP,
     DATA_PORT,
-    // JANUS_IP_EURND,
-    JANUS_IP_EURGR,
-    JANUS_IP_ISRPT,
-    JANUS_IP_EURFR,
+    JANUS_STR_HOST_IL,
+    JANUS_STR_HOST_GR,
+    JANUS_STR_HOST_UK,
     SECRET
 } from "../../shared/consts";
 import {initGxyProtocol} from "../../shared/protocol";
@@ -352,9 +351,9 @@ class SndmanUsers extends Component {
 
     forwardOwnFeed = (room) => {
         let {myid,videoroom,data_forward} = this.state;
-        let isrip = `${JANUS_IP_ISRPT}`;
-        let gerip = `${JANUS_IP_EURGR}`;
-        let frip = `${JANUS_IP_EURFR}`;
+        let isrip = `${JANUS_STR_HOST_IL}`;
+        let gerip = `${JANUS_STR_HOST_GR}`;
+        let frip = `${JANUS_STR_HOST_UK}`;
         let dport = DATA_PORT;
         let isrfwd = { "request": "rtp_forward","publisher_id":myid,"room":room,"secret":`${SECRET}`,"host":isrip,"data_port":dport};
         let gerfwd = { "request": "rtp_forward","publisher_id":myid,"room":room,"secret":`${SECRET}`,"host":gerip,"data_port":dport};

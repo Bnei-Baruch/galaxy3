@@ -6,7 +6,7 @@ import './SndmanApp.css';
 import {initGxyProtocol} from "../../shared/protocol";
 import SndmanGroups from "./SndmanGroups";
 import SndmanUsers from "./SndmanUsers";
-import {GROUPS_ROOM, DATA_PORT, JANUS_IP_ISRPT, JANUS_IP_EURFR, JANUS_IP_EURGR, SECRET} from "../../shared/consts";
+import {GROUPS_ROOM, DATA_PORT, JANUS_STR_HOST_IL, JANUS_STR_HOST_GR ,JANUS_STR_HOST_UK, SECRET} from "../../shared/consts";
 import {client, getUser} from "../../components/UserManager";
 import LoginPage from "../../components/LoginPage";
 
@@ -142,9 +142,9 @@ class SndmanApp extends Component {
 
     forwardOwnFeed = (room) => {
         let {myid,gxyhandle,data_forward} = this.state;
-        let isrip = `${JANUS_IP_ISRPT}`;
-        let frip = `${JANUS_IP_EURFR}`;
-        let gerip = `${JANUS_IP_EURGR}`;
+        let isrip = `${JANUS_STR_HOST_IL}`;
+        let frip = `${JANUS_STR_HOST_UK}`;
+        let gerip = `${JANUS_STR_HOST_GR}`;
         let dport = DATA_PORT;
         let isrfwd = { "request": "rtp_forward","publisher_id":myid,"room":room,"secret":`${SECRET}`,"host":isrip,"data_port":dport};
         let efrfwd = { "request": "rtp_forward","publisher_id":myid,"room":room,"secret":`${SECRET}`,"host":frip,"data_port":dport};
