@@ -449,8 +449,6 @@ class GalaxyStream extends Component {
                            muted={true}
                            controls={false}
                            playsInline={true}/>
-                    {/*<Button onClick={() => this.streamGalaxy(true,1,"")}/>*/}
-                    {/*<Button onClick={() => this.streamGalaxy(false,1,"")}/>*/}
                 </Segment>
                 <Grid columns={3}>
                     <Grid.Column width={2}>
