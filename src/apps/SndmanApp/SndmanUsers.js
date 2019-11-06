@@ -4,7 +4,14 @@ import {Button, Icon, Segment, Label} from "semantic-ui-react";
 import {getState, initJanus} from "../../shared/tools";
 import './SndmanUsers.css';
 import './SndmanVideoConteiner.scss'
-import {DANTE_IN_IP, DATA_PORT, JANUS_IP_ISRPT, JANUS_IP_EURFR, SECRET} from "../../shared/consts";
+import {
+    DANTE_IN_IP,
+    DATA_PORT,
+    JANUS_STR_HOST_IL,
+    JANUS_STR_HOST_GR,
+    JANUS_STR_HOST_UK,
+    SECRET
+} from "../../shared/consts";
 import {initGxyProtocol} from "../../shared/protocol";
 import classNames from "classnames";
 
@@ -73,32 +80,23 @@ class SndmanUsers extends Component {
 
     onProtocolData = (data) => {
         //TODO: Need to add transaction handle (filter and acknowledge)
-        let {room,feeds,users,questions} = this.state;
+        let {users} = this.state;
 
-        // List users by user id send question
-        if(data.type === "question" && data.status) {
-            questions[data.user.id] = data.user;
-            this.setState({questions});
-        } else if(data.type === "question" && !data.status) {
-            let {questions} = this.state;
-            if(questions[data.user.id]) {
-                delete questions[data.user.id];
-                this.setState({questions});
+        // Set status in users list
+        if(data.type.match(/^(camera|question|sound-test)$/)) {
+            if(users[data.user.id]) {
+                users[data.user.id][data.type] = data.status;
+                this.setState({users});
+            } else {
+                users[data.user.id] = {[data.type]: data.status};
+                this.setState({users});
             }
         }
 
-        // Put question state in feeds list
-        if (data.type === "question" && data.room === room) {
-            let rfid = users[data.user.id].rfid;
-            for (let i = 0; i < feeds.length; i++) {
-                if (feeds[i] && feeds[i].id === rfid) {
-                    feeds[i].question = data.status;
-                    this.setState({feeds});
-                    break
-                }
-            }
+        if(data.type === "leave" && users[data.id]) {
+            delete users[data.id];
+            this.setState({users});
         }
-
     };
 
     initVideoRoom = (roomid) => {
@@ -303,24 +301,13 @@ class SndmanUsers extends Component {
 
     unsubscribeFrom = (id) => {
         // Unsubscribe from this publisher
-        let {questions,questions_queue,cammuteds,feeds,users,feedStreams} = this.state;
-        let {remoteFeed} = this.state;
+        let {feeds,users,feedStreams,remoteFeed} = this.state;
         for (let i=0; i<feeds.length; i++) {
             if (feeds[i].id === id) {
                 Janus.log("Feed " + feeds[i] + " (" + id + ") has left the room, detaching");
                 delete users[feeds[i].display.id];
                 delete feedStreams[id];
-                if(questions[feeds[i].display.id]) {
-                    delete questions[feeds[i].display.id];
-                    this.setState({questions});
-                    for(let q = 0; q < questions_queue.length; q++){
-                        if(questions_queue[q].user.id === feeds[i].display.id) {
-                            questions_queue.splice(q, 1);
-                            this.setState({questions_queue});
-                            break
-                        }
-                    }
-                }
+
                 feeds.splice(i, 1);
                 // Send an unsubscribe request
                 let unsubscribe = {
@@ -333,52 +320,6 @@ class SndmanUsers extends Component {
                 break
             }
         }
-        // In case feed exit with camera muted
-        if(feedStreams[id]) {
-            if(cammuteds[feedStreams[id].display.id]) {
-                delete cammuteds[feedStreams[id].display.id];
-                delete users[feedStreams[id].display.id];
-                if(questions[feedStreams[id].display.id]) {
-                    delete questions[feedStreams[id].display.id];
-                    this.setState({questions});
-                    for(let q = 0; q < questions_queue.length; q++){
-                        if(questions_queue[q].user.id === feedStreams[id].display.id) {
-                            questions_queue.splice(q, 1);
-                            this.setState({questions_queue});
-                            break
-                        }
-                    }
-                }
-                delete feedStreams[id];
-                this.setState({cammuteds,users,feedStreams});
-            }
-        }
-    };
-
-    onRoomData = (data) => {
-        let {feeds,users} = this.state;
-        let rfid = users[data.id].rfid;
-        let camera = data.camera;
-        // let remotevideo = this.refs["video" + rfid];
-        // remotevideo.remove();
-        if(camera === false) {
-            for (let i = 1; i < feeds.length; i++) {
-                if (feeds[i] !== null && feeds[i] !== undefined && feeds[i].rfid === rfid) {
-                    let feed = feeds[i];
-                    feeds[i] = null;
-                    feed.detach();
-                    this.setState({feeds});
-                    break
-                }
-            }
-        }
-        // for(let i=1; i<feeds.length; i++) {
-        //     if(feeds[i] !== null && feeds[i] !== undefined && feeds[i].rfid === rfid) {
-        //         feeds[i].rfcam = camera;
-        //         this.setState({feeds});
-        //         break
-        //     }
-        // }
     };
 
     publishOwnFeed = (useAudio) => {
@@ -408,14 +349,12 @@ class SndmanUsers extends Component {
 
     forwardOwnFeed = (room) => {
         let {myid,videoroom,data_forward} = this.state;
-        let isrip = `${JANUS_IP_ISRPT}`;
-        // let eurip = `${JANUS_IP_EURND}`;
-        // let ukip = `${JANUS_IP_EURUK}`;
-        let frip = `${JANUS_IP_EURFR}`;
+        let isrip = `${JANUS_STR_HOST_IL}`;
+        let gerip = `${JANUS_STR_HOST_GR}`;
+        let frip = `${JANUS_STR_HOST_UK}`;
         let dport = DATA_PORT;
         let isrfwd = { "request": "rtp_forward","publisher_id":myid,"room":room,"secret":`${SECRET}`,"host":isrip,"data_port":dport};
-        // let eurfwd = { "request": "rtp_forward","publisher_id":myid,"room":room,"secret":`${SECRET}`,"host":eurip,"data_port":dport};
-        // let eukfwd = { "request": "rtp_forward","publisher_id":myid,"room":room,"secret":`${SECRET}`,"host":ukip,"data_port":dport};
+        let gerfwd = { "request": "rtp_forward","publisher_id":myid,"room":room,"secret":`${SECRET}`,"host":gerip,"data_port":dport};
         let efrfwd = { "request": "rtp_forward","publisher_id":myid,"room":room,"secret":`${SECRET}`,"host":frip,"data_port":dport};
         videoroom.send({"message": isrfwd,
             success: (data) => {
@@ -423,18 +362,12 @@ class SndmanUsers extends Component {
                 Janus.log(" :: ISR Data Forward: ", data);
             },
         });
-        // videoroom.send({"message": eurfwd,
-        //     success: (data) => {
-        //         data_forward.eur = data["rtp_stream"]["data_stream_id"];
-        //         Janus.log(" :: EUR Data Forward: ", data);
-        //     },
-        // });
-        // videoroom.send({"message": eukfwd,
-        //     success: (data) => {
-        //         data_forward.euk = data["rtp_stream"]["data_stream_id"];
-        //         Janus.log(" :: EUK Data Forward: ", data);
-        //     },
-        // });
+        videoroom.send({"message": gerfwd,
+            success: (data) => {
+                data_forward.ger = data["rtp_stream"]["data_stream_id"];
+                Janus.log(" :: GER Data Forward: ", data);
+            },
+        });
         videoroom.send({"message": efrfwd,
             success: (data) => {
                 data_forward.efr = data["rtp_stream"]["data_stream_id"];
@@ -458,7 +391,7 @@ class SndmanUsers extends Component {
                 this.publishOwnFeed();
                 // Any new feed to attach to?
                 if(msg["publishers"] !== undefined && msg["publishers"] !== null) {
-                    let {feedStreams,users,questions} = this.state;
+                    let {feedStreams,users} = this.state;
                     let list = msg["publishers"];
 
                     // Filter service and camera muted feeds
@@ -475,7 +408,6 @@ class SndmanUsers extends Component {
                         let streams = feeds[f]["streams"];
                         feeds[f].display = display;
                         feeds[f].talk = talk;
-                        feeds[f].question = questions[display.id] !== undefined;
                         let subst = {feed: id};
                         for (let i in streams) {
                             let stream = streams[i];
@@ -486,8 +418,7 @@ class SndmanUsers extends Component {
                             }
                         }
                         feedStreams[id] = {id, display, streams};
-                        users[display.id] = display;
-                        users[display.id].rfid = id;
+                        users[display.id] = {...display, ...users[display.id], rfid: id};
                         subscription.push(subst);
                     }
                     this.setState({feeds,feedStreams,users});
@@ -553,8 +484,7 @@ class SndmanUsers extends Component {
                             }
                         }
                         feedStreams[id] = {id, display, streams};
-                        users[display.id] = display;
-                        users[display.id].rfid = id;
+                        users[display.id] = {...display, ...users[display.id], rfid: id};
                         subscription.push(subst);
                     }
                     feeds.push(feed[0]);
@@ -594,27 +524,28 @@ class SndmanUsers extends Component {
     };
 
     attachToPreview = (room) => {
-        const {feeds,videoroom} = this.state;
+        const {feeds,videoroom,forward} = this.state;
         if (this.state.room === room)
             return;
         this.setState({onoff_but: true});
         Janus.log(" :: Attaching to Preview: ", room);
-        feeds.forEach(feed => {
-            if (feed !== null && feed !== undefined) {
-                this.sendMessage(feed.display, false);
-                if(feed.streamid) {
-                    this.setState({forward: false});
-                    let stopfw = { "request":"stop_rtp_forward","stream_id":feed.streamid,"publisher_id":feed.id,"room":this.state.room,"secret":`${SECRET}` };
-                    videoroom.send({"message": stopfw,
-                        success: (data) => {
-                            Janus.log(":: Forward callback: ", data);
-                        },
-                    });
+        if(forward) {
+            feeds.forEach(feed => {
+                if (feed !== null && feed !== undefined) {
+                    this.sendMessage(feed.display, false);
+                    if(feed.streamid) {
+                        let stopfw = { "request":"stop_rtp_forward","stream_id":feed.streamid,"publisher_id":feed.id,"room":this.state.room,"secret":`${SECRET}` };
+                        videoroom.send({"message": stopfw,
+                            success: (data) => {
+                                Janus.log(":: Forward callback: ", data);
+                            },
+                        });
+                    }
+                    Janus.log("-- :: Remove Feed: ",feed);
                 }
-                Janus.log("-- :: Remove Feed: ",feed);
-                //feed.detach();
-            }
-        });
+            });
+            this.setState({forward: false});
+        }
         if(this.state.videoroom) {
             let leave_room = {request : "leave", "room": this.state.room};
             this.state.videoroom.send({"message": leave_room});
@@ -688,7 +619,7 @@ class SndmanUsers extends Component {
 
   render() {
       const { name } = this.state.program;
-      const { forward,onoff_but } = this.state;
+      const { forward,onoff_but,users } = this.state;
       const width = "400";
       const height = "300";
       const autoPlay = true;
@@ -699,8 +630,7 @@ class SndmanUsers extends Component {
           if(feed) {
               let id = feed.id;
               let talk = feed.talk;
-              //let rfcam = feed.rfcam;
-              let question = feed.question;
+              let question = users[feed.display.id] && users[feed.display.id].question;
               return (<div className="video"
                   key={"v" + id}
                   ref={"video" + id}

@@ -250,9 +250,9 @@ class ShidurUsers extends Component {
                 },
                 ondata: (data) => {
                     Janus.debug("We got data from the DataChannel! (feed) " + data);
-                    let msg = JSON.parse(data);
-                    this.onRoomData(msg);
-                    Janus.log(" :: We got msg via DataChannel: ",msg)
+                    // let msg = JSON.parse(data);
+                    // this.onRoomData(msg);
+                    // Janus.log(" :: We got msg via DataChannel: ",msg)
                 },
                 oncleanup: () => {
                     Janus.log(" ::: Got a cleanup notification (remote feed) :::");

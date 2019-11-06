@@ -28,6 +28,10 @@ export const JANUS_IP_ISRPT = process.env.REACT_APP_JANUS_IP_ISRPT;
 export const JANUS_IP_EURND = process.env.REACT_APP_JANUS_IP_EURND;
 export const JANUS_IP_EURUK = process.env.REACT_APP_JANUS_IP_EURUK;
 export const JANUS_IP_EURFR = process.env.REACT_APP_JANUS_IP_EURFR;
+export const JANUS_IP_EURGR = process.env.REACT_APP_JANUS_IP_EURGR;
+export const JANUS_STR_HOST_IL = process.env.REACT_APP_JANUS_HOST_IL;
+export const JANUS_STR_HOST_GR = process.env.REACT_APP_JANUS_HOST_GR;
+export const JANUS_STR_HOST_UK = process.env.REACT_APP_JANUS_HOST_UK;
 
 
 export const servers_options = [
