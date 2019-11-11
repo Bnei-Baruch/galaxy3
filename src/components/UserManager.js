@@ -1,12 +1,11 @@
 import { Log as oidclog, UserManager } from 'oidc-client';
 import {KJUR} from 'jsrsasign';
 
-//const AUTH_URL = 'https://accounts.kbb1.com/auth/realms/groups';
 const AUTH_URL = 'https://accounts.kbb1.com/auth/realms/main';
 export const BASE_URL = process.env.NODE_ENV === 'production' ? process.env.REACT_APP_GXY_URL : 'http://localhost:3000/';
 
 oidclog.logger = console;
-oidclog.level  = 3;
+oidclog.level  = 0;
 
 const userManagerConfig = {
     authority: AUTH_URL,
@@ -29,7 +28,7 @@ client.events.addAccessTokenExpiring(() => {
 
 client.events.addAccessTokenExpired(() => {
     console.log("...!TOKEN EXPIRED!...");
-    client.signoutRedirect();
+    //client.signoutRedirect();
 });
 
 export const getUser = (cb) =>
