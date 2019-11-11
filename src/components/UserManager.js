@@ -37,7 +37,7 @@ export const getUser = (cb) =>
             let at = KJUR.jws.JWS.parse(user.access_token);
             let roles = at.payloadObj.realm_access.roles;
             const {sub,given_name,name,email,group,title} = user.profile;
-            user = {id: sub, username: given_name, name, title, group, email, roles}
+            user = {id: sub, username: given_name, name, title: title || given_name, group, email, roles}
         }
         cb(user)
     })
