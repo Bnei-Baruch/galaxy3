@@ -1,6 +1,6 @@
 import React, {Component} from 'react';
 import {Janus} from "../../lib/janus";
-import {Grid, Label, Message, Segment, Table, Icon, Button, Dropdown, Dimmer} from "semantic-ui-react";
+import {Grid, Label, Message, Segment, Table, Icon, Button, Dropdown, Dimmer, Popup} from "semantic-ui-react";
 import {sendProtocolMessage} from "../../shared/protocol";
 import {GROUPS_ROOM} from "../../shared/consts";
 import './ShidurToran.scss';
@@ -275,7 +275,7 @@ class ShidurToran extends Component {
 
     render() {
 
-        const {users,feeds,pre_feed,feeds_queue,disabled_groups,round,qfeeds,sdiout,sndman,log_list,disable_button} = this.props;
+        const {users,feeds,pre_feed,feeds_queue,disabled_groups,round,qfeeds,sdiout,sndman,log_list,disable_button,presets} = this.props;
         const {next_feed,zoom} = this.state;
 
         const autoPlay = true;
@@ -374,6 +374,36 @@ class ShidurToran extends Component {
             )
         });
 
+        let preset1 = presets.map((data,i) => {
+            if(data && i>=0 && i<4) {
+                const {user_id} = data;
+                const title = users[user_id] ? users[user_id].title : "";
+                return (
+                    <p key={user_id}>{title}</p>
+                )
+            }
+        });
+
+        let preset2 = presets.map((data,i) => {
+            if(data && i>=4 && i<8) {
+                const {user_id} = data;
+                const title = users[user_id] ? users[user_id].title : "";
+                return (
+                    <p key={user_id}>{title}</p>
+                )
+            }
+        });
+
+        let preset3 = presets.map((data,i) => {
+            if(data && i>=8 && i<12) {
+                const {user_id} = data;
+                const title = users[user_id] ? users[user_id].title : "";
+                return (
+                    <p key={user_id}>{title}</p>
+                )
+            }
+        });
+
         let groups_list = feeds.map((feed,i) => {
             const {id, display} = feed;
             const st = users[display.id].sound_test;
@@ -451,9 +481,15 @@ class ShidurToran extends Component {
                         </Label>
                     </Segment>
                     <Button.Group attached='bottom' size='mini' >
-                        <Button disabled={!pre_feed} color='teal' content='1' onClick={() => this.savePreset(0)} />
-                        <Button disabled={!pre_feed} color='teal' content='2' onClick={() => this.savePreset(4)} />
-                        <Button disabled={!pre_feed} color='teal' content='3' onClick={() => this.savePreset(8)} />
+                        <Popup trigger={<Button disabled={!pre_feed} color='teal' content='1' onClick={() => this.savePreset(0)} />}
+                               content={preset1}
+                        />
+                        <Popup trigger={<Button disabled={!pre_feed} color='teal' content='2' onClick={() => this.savePreset(4)} />}
+                               content={preset2}
+                        />
+                        <Popup trigger={<Button disabled={!pre_feed} color='teal' content='3' onClick={() => this.savePreset(8)} />}
+                               content={preset3}
+                        />
                     </Button.Group>
                     <Segment textAlign='center' className="group_list" raised >
                         <Table selectable compact='very' basic structured className="admin_table" unstackable>
