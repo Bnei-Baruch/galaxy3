@@ -184,14 +184,14 @@ class ShidurGroups extends Component {
         Janus.log(" :: Set preset ::");
         let {users,mids,index} = this.props;
         let preset = [
-            // Moscow - aceea810-34c9-4909-8619-ff3050afab23
-            // Piter - 2d2562e2-5b21-4d80-8147-8246f51e1f6e
-            // New York - 4d1bd4e4-5bba-4bee-a224-1136d812f2d8
-            // Kiev - 84beb035-cb7e-4a1d-b4f4-662b4bbdd55a
-            {"sub_mid":"0","user_id":"aceea810-34c9-4909-8619-ff3050afab23"},
-            {"sub_mid":"3","user_id":"2d2562e2-5b21-4d80-8147-8246f51e1f6e"},
-            {"sub_mid":"6","user_id":"4d1bd4e4-5bba-4bee-a224-1136d812f2d8"},
-            {"sub_mid":"9","user_id":"84beb035-cb7e-4a1d-b4f4-662b4bbdd55a"},
+            // Moscow - 3b04bda7-9317-4eac-9027-02a4f25a14a1
+            // Piter - 4ead87b5-346b-454f-8a58-8e18643d8da9
+            // New York - f97ee9c7-1866-481d-b01a-57b1a2985858
+            // Kiev - 369fd5ce-43dc-467d-9936-a08f77739a40
+            {"sub_mid":"0","user_id":"3b04bda7-9317-4eac-9027-02a4f25a14a1"},
+            {"sub_mid":"3","user_id":"4ead87b5-346b-454f-8a58-8e18643d8da9"},
+            {"sub_mid":"6","user_id":"f97ee9c7-1866-481d-b01a-57b1a2985858"},
+            {"sub_mid":"9","user_id":"369fd5ce-43dc-467d-9936-a08f77739a40"},
         ];
         let streams = [];
 
