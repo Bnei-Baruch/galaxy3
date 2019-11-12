@@ -144,7 +144,7 @@ class ShidurApp extends Component {
                 Janus.log("Successfully joined room " + msg["room"] + " with ID " + myid);
                 if(msg["publishers"] !== undefined && msg["publishers"] !== null) {
                     let list = msg["publishers"];
-                    let {feedStreams,users,presets} = this.state;
+                    let {feedStreams,users} = this.state;
                     let feeds = list.filter(feeder => JSON.parse(feeder.display).role === "group");
 
                     let subscription = [];
@@ -168,10 +168,11 @@ class ShidurApp extends Component {
                         feedStreams[id] = {id, display, streams};
                         users[display.id] = display;
                         users[display.id].rfid = id;
-                        let pst = presets.find(p => p.user_id === display.id);
-                        if(pst) {
-                            users[display.id].preset = 1;
-                        }
+                        // Add this for customize preset 1
+                        // let pst = presets.find(p => p.user_id === display.id);
+                        // if(pst) {
+                        //     users[display.id].preset = 1;
+                        // }
                     }
                     this.setState({feeds,feedStreams,users});
                     // Set next feed in queue first after program is full
@@ -187,7 +188,7 @@ class ShidurApp extends Component {
                 // Any new feed to attach to?
                 if(msg["publishers"] !== undefined && msg["publishers"] !== null) {
                     let feed = msg["publishers"];
-                    let {feeds,feedStreams,users,presets} = this.state;
+                    let {feeds,feedStreams,users} = this.state;
                     Janus.debug("Got a list of available publishers/feeds:");
                     Janus.log(feed);
                     let subscription = [];
@@ -212,10 +213,11 @@ class ShidurApp extends Component {
                         feedStreams[id] = {id, display, streams};
                         users[display.id] = display;
                         users[display.id].rfid = id;
-                        let pst = presets.find(p => p && p.user_id === display.id);
-                        if(pst) {
-                            users[display.id].preset = 1;
-                        }
+                        // Add this for customize preset 1
+                        // let pst = presets.find(p => p && p.user_id === display.id);
+                        // if(pst) {
+                        //     users[display.id].preset = 1;
+                        // }
                     }
                     feeds.push(feed[0]);
                     this.setState({feeds,feedStreams,users});
@@ -518,7 +520,7 @@ class ShidurApp extends Component {
     };
 
     removeFeed = (id, disable) => {
-        let {feeds,users,questions_queue,qfeeds,feeds_queue} = this.state;
+        let {feeds,users,questions_queue,qfeeds,feeds_queue,presets} = this.state;
 
         // Clean preview
         this.checkPreview(id);
@@ -533,6 +535,13 @@ class ShidurApp extends Component {
                     this.actionLog(user, "leave");
                     Janus.log(" :: Remove feed: " + id + " - Name: " + user.username);
                     delete users[user.id];
+
+                    // Delete from presets
+                    for(let i = 4; i < presets.length; i++) {
+                        if(presets[i] && presets[i].user_id === user.id) {
+                            presets[i] = null;
+                        }
+                    }
 
                     // Delete from questions list
                     for(let i = 0; i < questions_queue.length; i++) {
@@ -560,7 +569,7 @@ class ShidurApp extends Component {
                     this.setState({feeds_queue});
                 }
 
-                this.setState({feeds,users,questions_queue}, () => {
+                this.setState({feeds,users,questions_queue,presets}, () => {
                     // Send an unsubscribe request
                     let streams = [{ feed: id }];
                     this.unsubscribeFrom(streams, id);

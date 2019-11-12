@@ -169,6 +169,10 @@ class ShidurToran extends Component {
         let col = index === 0 ? 1 : index === 4 ? 2 : index === 8 ? 3 : "";
         let pst = users[pre_feed.display.id].preset;
 
+        //Preset 1 is hardcoded
+        if(col === 1)
+            return;
+
         //Don't allow group be twice in presets
         if(pst && pst !== col)
             return;
@@ -366,12 +370,13 @@ class ShidurToran extends Component {
             const {id, display} = feed;
             const st = users[display.id].sound_test;
             const pr = users[display.id].preset;
+            const p = pr ? (<Label size='mini' color='teal' >{pr}</Label>) : "";
             return (
                 <Table.Row className={pre_feed && id === pre_feed.id ? 'active' : 'no'}
                            key={i} onClick={() => this.selectGroup(feed)}
                            onContextMenu={(e) => this.disableGroup(e, feed, i)} disabled={disable_button}>
                     <Table.Cell width={10}>{display.display}</Table.Cell>
-                    <Table.Cell width={1}>{pr}</Table.Cell>
+                    <Table.Cell width={1}>{p}</Table.Cell>
                     <Table.Cell positive={st} width={1}>{st ? v : ""}</Table.Cell>
                 </Table.Row>
             )
