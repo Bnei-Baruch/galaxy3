@@ -538,7 +538,7 @@ class ShidurApp extends Component {
 
                     // Delete from presets
                     for(let i = 4; i < presets.length; i++) {
-                        if(presets[i] && presets[i].user_id === user.id) {
+                        if(presets[i] !== null && presets[i] !== undefined && presets[i].user_id === user.id) {
                             presets[i] = null;
                         }
                     }

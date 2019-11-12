@@ -177,21 +177,29 @@ class ShidurToran extends Component {
         if(pst && pst !== col)
             return;
 
-        for(let i=index; i<index+4; i++) {
-            if(presets[i] && presets[i].user_id === pre_feed.display.id) {
-                presets[i] = null;
-                users[pre_feed.display.id].preset = "";
-                this.props.setProps({users,presets});
-                break;
-            } else if(presets[i]) {
-                continue;
-            } else {
-                presets[i] = {sub_mid: quad[i], user_id: pre_feed.display.id};
-                users[pre_feed.display.id].preset = col;
-                this.props.setProps({users,presets});
-                break;
+        //Preset property mean user going to be remove from presets
+        if(pst) {
+            for(let i=index; i<index+4; i++) {
+                if(presets[i] !== null && presets[i] !== undefined && presets[i].user_id === pre_feed.display.id) {
+                    presets[i] = null;
+                    users[pre_feed.display.id].preset = "";
+                    this.props.setProps({users, presets});
+                    break;
+                }
+            }
+        } else {
+            for(let i=index; i<index+4; i++) {
+                if(presets[i] !== null && presets[i] !== undefined) {
+                    continue;
+                } else {
+                    presets[i] = {sub_mid: quad[i], user_id: pre_feed.display.id};
+                    users[pre_feed.display.id].preset = col;
+                    this.props.setProps({users,presets});
+                    break;
+                }
             }
         }
+
         Janus.log(presets)
     };
 
