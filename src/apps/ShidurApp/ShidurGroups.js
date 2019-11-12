@@ -186,6 +186,7 @@ class ShidurGroups extends Component {
         let streams = [];
 
         for(let i=index; i<index+4; i++) {
+            if(!presets[i]) continue;
             let sub_mid = presets[i].sub_mid;
             let user_id = presets[i].user_id;
             let mid = mids[sub_mid];
