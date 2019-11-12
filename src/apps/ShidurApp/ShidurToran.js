@@ -164,6 +164,33 @@ class ShidurToran extends Component {
         this.switchPreview(pre_feed.id, true);
     };
 
+    savePreset = (index) => {
+        let {presets,pre_feed,quad,users} = this.props;
+        let col = index === 0 ? 1 : index === 4 ? 2 : index === 8 ? 3 : "";
+        let pst = users[pre_feed.display.id].preset;
+
+        //Don't allow group be twice in presets
+        if(pst && pst !== col)
+            return;
+
+        for(let i=index; i<index+4; i++) {
+            if(presets[i] && presets[i].user_id === pre_feed.display.id) {
+                presets[i] = null;
+                users[pre_feed.display.id].preset = "";
+                this.props.setProps({users,presets});
+                break;
+            } else if(presets[i]) {
+                continue;
+            } else {
+                presets[i] = {sub_mid: quad[i], user_id: pre_feed.display.id};
+                users[pre_feed.display.id].preset = col;
+                this.props.setProps({users,presets});
+                break;
+            }
+        }
+        Janus.log(presets)
+    };
+
     selectNext = () => {
         const {feeds,feeds_queue} = this.props;
         let next_feed = feeds[feeds_queue];
@@ -338,13 +365,14 @@ class ShidurToran extends Component {
         let groups_list = feeds.map((feed,i) => {
             const {id, display} = feed;
             const st = users[display.id].sound_test;
+            const pr = users[display.id].preset;
             return (
                 <Table.Row className={pre_feed && id === pre_feed.id ? 'active' : 'no'}
                            key={i} onClick={() => this.selectGroup(feed)}
                            onContextMenu={(e) => this.disableGroup(e, feed, i)} disabled={disable_button}>
                     <Table.Cell width={10}>{display.display}</Table.Cell>
+                    <Table.Cell width={1}>{pr}</Table.Cell>
                     <Table.Cell positive={st} width={1}>{st ? v : ""}</Table.Cell>
-                    {/*<Table.Cell width={1}>{0}</Table.Cell>*/}
                 </Table.Row>
             )
         });
@@ -393,7 +421,7 @@ class ShidurToran extends Component {
                     </Button.Group>
                 </Grid.Column>
                 <Grid.Column>
-                    <Segment textAlign='center' >
+                    <Segment attached textAlign='center' >
                         <Label attached='top right' color={feeds.length > 13 ? 'green' : 'grey'}>
                             Online: {feeds.length}
                         </Label>
@@ -409,13 +437,19 @@ class ShidurToran extends Component {
                             Next: {feeds[feeds_queue] ? feeds[feeds_queue].display.display : ""}
                         </Label>
                     </Segment>
+                    <Button.Group attached='bottom' size='mini' >
+                        <Button disabled={!pre_feed} color='teal' content='1' onClick={() => this.savePreset(0)} />
+                        <Button disabled={!pre_feed} color='teal' content='2' onClick={() => this.savePreset(4)} />
+                        <Button disabled={!pre_feed} color='teal' content='3' onClick={() => this.savePreset(8)} />
+                    </Button.Group>
                     <Segment textAlign='center' className="group_list" raised >
                         <Table selectable compact='very' basic structured className="admin_table" unstackable>
                             <Table.Body>
                                 <Table.Row disabled>
-                                    <Table.Cell width={10}>Title</Table.Cell>
-                                    <Table.Cell width={1}>ST</Table.Cell>
-                                    {/*<Table.Cell>AT</Table.Cell>*/}
+                                    <Table.Cell width={10}>
+                                    </Table.Cell>
+                                    <Table.Cell width={1}></Table.Cell>
+                                    <Table.Cell width={1}></Table.Cell>
                                 </Table.Row>
                                 {groups_list}
                             </Table.Body>

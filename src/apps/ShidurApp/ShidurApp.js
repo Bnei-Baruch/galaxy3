@@ -40,6 +40,7 @@ class ShidurApp extends Component {
         round: 0,
         sdiout: false,
         sndman: false,
+        presets:[],
     };
 
     componentWillUnmount() {
