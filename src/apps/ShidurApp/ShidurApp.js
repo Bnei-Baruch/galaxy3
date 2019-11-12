@@ -40,7 +40,16 @@ class ShidurApp extends Component {
         round: 0,
         sdiout: false,
         sndman: false,
-        presets:[],
+        presets:[
+            // Moscow - 3b04bda7-9317-4eac-9027-02a4f25a14a1
+            // Piter - 4ead87b5-346b-454f-8a58-8e18643d8da9
+            // New York - f97ee9c7-1866-481d-b01a-57b1a2985858
+            // Kiev - 369fd5ce-43dc-467d-9936-a08f77739a40
+            {"sub_mid":"0","user_id":"3b04bda7-9317-4eac-9027-02a4f25a14a1"},
+            {"sub_mid":"3","user_id":"4ead87b5-346b-454f-8a58-8e18643d8da9"},
+            {"sub_mid":"6","user_id":"f97ee9c7-1866-481d-b01a-57b1a2985858"},
+            {"sub_mid":"9","user_id":"369fd5ce-43dc-467d-9936-a08f77739a40"},
+        ],
     };
 
     componentWillUnmount() {
@@ -135,7 +144,7 @@ class ShidurApp extends Component {
                 Janus.log("Successfully joined room " + msg["room"] + " with ID " + myid);
                 if(msg["publishers"] !== undefined && msg["publishers"] !== null) {
                     let list = msg["publishers"];
-                    let {feedStreams,users} = this.state;
+                    let {feedStreams,users,presets} = this.state;
                     let feeds = list.filter(feeder => JSON.parse(feeder.display).role === "group");
 
                     let subscription = [];
@@ -159,6 +168,10 @@ class ShidurApp extends Component {
                         feedStreams[id] = {id, display, streams};
                         users[display.id] = display;
                         users[display.id].rfid = id;
+                        let pst = presets.find(p => p.user_id === display.id);
+                        if(pst) {
+                            users[display.id].preset = 1;
+                        }
                     }
                     this.setState({feeds,feedStreams,users});
                     // Set next feed in queue first after program is full
@@ -174,7 +187,7 @@ class ShidurApp extends Component {
                 // Any new feed to attach to?
                 if(msg["publishers"] !== undefined && msg["publishers"] !== null) {
                     let feed = msg["publishers"];
-                    let {feeds,feedStreams,users} = this.state;
+                    let {feeds,feedStreams,users,presets} = this.state;
                     Janus.debug("Got a list of available publishers/feeds:");
                     Janus.log(feed);
                     let subscription = [];
@@ -199,6 +212,10 @@ class ShidurApp extends Component {
                         feedStreams[id] = {id, display, streams};
                         users[display.id] = display;
                         users[display.id].rfid = id;
+                        let pst = presets.find(p => p && p.user_id === display.id);
+                        if(pst) {
+                            users[display.id].preset = 1;
+                        }
                     }
                     feeds.push(feed[0]);
                     this.setState({feeds,feedStreams,users});

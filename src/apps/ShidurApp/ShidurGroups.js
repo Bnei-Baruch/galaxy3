@@ -182,22 +182,12 @@ class ShidurGroups extends Component {
 
     setPreset = () => {
         Janus.log(" :: Set preset ::");
-        let {users,mids,index} = this.props;
-        let preset = [
-            // Moscow - 3b04bda7-9317-4eac-9027-02a4f25a14a1
-            // Piter - 4ead87b5-346b-454f-8a58-8e18643d8da9
-            // New York - f97ee9c7-1866-481d-b01a-57b1a2985858
-            // Kiev - 369fd5ce-43dc-467d-9936-a08f77739a40
-            {"sub_mid":"0","user_id":"3b04bda7-9317-4eac-9027-02a4f25a14a1"},
-            {"sub_mid":"3","user_id":"4ead87b5-346b-454f-8a58-8e18643d8da9"},
-            {"sub_mid":"6","user_id":"f97ee9c7-1866-481d-b01a-57b1a2985858"},
-            {"sub_mid":"9","user_id":"369fd5ce-43dc-467d-9936-a08f77739a40"},
-        ];
+        let {users,mids,index,presets} = this.props;
         let streams = [];
 
         for(let i=index; i<index+4; i++) {
-            let sub_mid = preset[i].sub_mid;
-            let user_id = preset[i].user_id;
+            let sub_mid = presets[i].sub_mid;
+            let user_id = presets[i].user_id;
             let mid = mids[sub_mid];
             if(mid && mid.active && users[user_id]) {
                 // TODO: check if user online
@@ -286,7 +276,7 @@ class ShidurGroups extends Component {
               </Segment>
               <Button.Group attached='bottom' size='mini'>
                   <Button className='preset_button'
-                          disabled={col !== 1 || feeds.length < 16 || fullscr}
+                          disabled={feeds.length < 16 || fullscr}
                           color='teal'
                           onClick={this.setPreset} >
                       {col}
