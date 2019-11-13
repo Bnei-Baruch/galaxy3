@@ -841,11 +841,6 @@ class VirtualClient extends Component {
             return ({ key: i, text: label, value: deviceId})
         });
 
-        let account = [
-            {key: "a1", text: "My Account", value: "account"},
-            {key: "a2", text: "Sign Out", value: "signout"},
-        ];
-
         let vdevices_list = video_devices.map((device,i) => {
             const {label, deviceId} = device;
             return ({ key: i, text: label, value: deviceId})
@@ -931,7 +926,7 @@ class VirtualClient extends Component {
                         Open Broadcast
                         {this.state.shidur ?
                             <NewWindow
-                                url='https://galaxy.kli.one/gxystr'
+                                url='https://galaxy.kli.one/stream'
                                 features={{width: "725", height: "635", left: "200", top: "200", location: "no"}}
                                 title='V4G' onUnload={this.onUnload} onBlock={this.onBlock}>
                             </NewWindow> :
@@ -1028,7 +1023,7 @@ class VirtualClient extends Component {
                                         autoPlay={autoPlay}
                                         controls={controls}
                                         muted={true}
-                                        playsinline={true}/>
+                                        playsInline={true}/>
 
                                 </div>
                                 {videos}
