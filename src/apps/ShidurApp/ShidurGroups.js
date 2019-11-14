@@ -190,14 +190,19 @@ class ShidurGroups extends Component {
             let sub_mid = presets[i].sub_mid;
             let user_id = presets[i].user_id;
             let mid = mids[sub_mid];
+
+            // Check if mid exist and user is online
             if(mid && mid.active && users[user_id]) {
-                // TODO: check if user online
                 let feed = users[user_id].rfid;
                 streams.push({feed, mid: "1", sub_mid});
             }
         }
 
-        Janus.log(" :: Going to switch to preset 1: ", streams);
+        // Avoid request with empty streams
+        if(streams.length === 0)
+            return;
+
+        Janus.log(" :: Going to switch to preset: ", streams);
         let switch_preset = {request: "switch", streams};
         this.props.remoteFeed.send ({"message": switch_preset,
             success: () => {
