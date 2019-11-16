@@ -804,7 +804,7 @@ class ShidurAdmin extends Component {
     sendRemoteCommand = (command_type) => {
         const {protocol,feed_user,user} = this.state;
         if(feed_user) {
-            let msg = { type: command_type, id: feed_user.id};
+            let msg = { type: command_type, id: feed_user.id, user: feed_user};
             sendProtocolMessage(protocol, user, msg);
         }
     };
