@@ -611,8 +611,8 @@ class ShidurApp extends Component {
                         let streams = [{feed: feed.id, mid: "1"}];
                         this.subscribeTo(streams);
                     } else {
-                        //FIXME: Does we to trigger autofill here?
-                        Janus.error(":: IT'S HAPPEN HERE AS WELL? ::");
+                        // We can't leave empty slot in program, so trigger autofill
+                        this.fillProgram(null, null);
                     }
                 }
             })
