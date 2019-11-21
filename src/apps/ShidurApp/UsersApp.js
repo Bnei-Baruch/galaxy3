@@ -6,6 +6,7 @@ import './ShidurUsers.css'
 import './VideoConteiner.scss'
 import {initGxyProtocol} from "../../shared/protocol";
 import UsersQuad from "./UsersQuad";
+import UsersToran from "./UsersToran";
 
 class UsersApp extends Component {
 
@@ -29,6 +30,7 @@ class UsersApp extends Component {
             let {user} = this.state;
             user.session = janus.getSessionId();
             this.setState({janus,user});
+            this.toran.initVideoRoom(null,"preview");
             //this.initVideoRoom(null, "preview");
 
             initGxyProtocol(janus, user, protocol => {
@@ -118,6 +120,7 @@ class UsersApp extends Component {
 
             <Segment className="users_container">
                 <UsersQuad {...this.state} />
+                <UsersToran ref={toran => {this.toran = toran;}} {...this.state} />
             </Segment>
         );
     }
