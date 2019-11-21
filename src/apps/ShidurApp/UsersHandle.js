@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React, {Component, Fragment} from 'react';
 import { Janus } from "../../lib/janus";
 import {Segment, Icon} from "semantic-ui-react";
 import {putData} from "../../shared/tools";
@@ -27,7 +27,7 @@ class UsersHandle extends Component {
             feedStreams: {},
             mids: [],
             name: "",
-            room: "",
+            room: 1040,
             users: {}
             },
         protocol: null,
@@ -40,6 +40,9 @@ class UsersHandle extends Component {
     };
 
     componentDidMount() {
+        setTimeout(() => {
+            this.initVideoRoom(1040, "program")
+        }, 3000);
     };
 
     componentWillUnmount() {
@@ -47,7 +50,7 @@ class UsersHandle extends Component {
     };
 
     newRemoteFeed = (h, subscription) => {
-        this.state.janus.attach(
+        this.props.janus.attach(
             {
                 plugin: "janus.plugin.videoroom",
                 opaqueId: "remotefeed_user",
@@ -213,7 +216,7 @@ class UsersHandle extends Component {
             this.state[h].videoroom.detach();
         if(this.state[h] && this.state[h].remoteFeed)
             this.state[h].remoteFeed.detach();
-        this.state.janus.attach({
+        this.props.janus.attach({
             plugin: "janus.plugin.videoroom",
             opaqueId: "preview_shidur",
             success: (videoroom) => {
@@ -222,7 +225,7 @@ class UsersHandle extends Component {
                 this.setState({[h]: {...this.state[h], videoroom, remoteFeed: null}});
                 Janus.log("Plugin attached! (" + videoroom.getPlugin() + ", id=" + videoroom.getId() + ")", this.state[h]);
                 Janus.log("  -- This is a publisher/manager");
-                let {user} = this.state;
+                let {user} = this.props;
 
                 if(roomid) {
                     let register = { "request": "join", "room": roomid, "ptype": "publisher", "display": JSON.stringify(user) };
@@ -493,18 +496,17 @@ class UsersHandle extends Component {
 
     return (
 
-        <Segment className="users_container">
+
           
-          <Segment className="program_segment" color='red'>
+          <Fragment>
               <div className="shidur_overlay"><span>{program.name}</span></div>
               <div className="videos-panel">
                   <div className="videos">
                       <div className="videos__wrapper">{program_feeds}</div>
                   </div>
               </div>
-          </Segment>
+          </Fragment>
 
-        </Segment>
     );
   }
 }

@@ -1,9 +1,10 @@
 import React, { Component } from 'react';
 import { Janus } from "../../lib/janus";
 import {Segment, Icon, Button} from "semantic-ui-react";
-import './ShidurGroups.scss'
+import './UsersQuad.scss'
 import {sendProtocolMessage} from "../../shared/protocol";
 import {GROUPS_ROOM} from "../../shared/consts";
+import UsersHandle from "./UsersHandle";
 
 class UsersQuad extends Component {
 
@@ -278,7 +279,11 @@ class UsersQuad extends Component {
           <Segment className="group_conteiner">
               <Segment attached className="program_segment" color='red'>
                   <div className="video_grid">
-                      {program}
+                      {/*{program}*/}
+                      <UsersHandle {...this.props} />
+                      <UsersHandle {...this.props} />
+                      <UsersHandle {...this.props} />
+                      <UsersHandle {...this.props} />
                   </div>
               </Segment>
               <Button.Group attached='bottom' size='mini'>
