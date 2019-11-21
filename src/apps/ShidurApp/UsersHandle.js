@@ -2,8 +2,6 @@ import React, {Component, Fragment} from 'react';
 import { Janus } from "../../lib/janus";
 import {Segment, Icon} from "semantic-ui-react";
 import {putData} from "../../shared/tools";
-import './ShidurUsers.css'
-import './VideoConteiner.scss'
 import classNames from "classnames";
 
 class UsersHandle extends Component {
@@ -27,7 +25,7 @@ class UsersHandle extends Component {
             feedStreams: {},
             mids: [],
             name: "",
-            room: 1040,
+            room: 1051,
             users: {}
             },
         protocol: null,
@@ -41,7 +39,7 @@ class UsersHandle extends Component {
 
     componentDidMount() {
         setTimeout(() => {
-            this.initVideoRoom(1040, "program")
+            this.initVideoRoom(1051, "program")
         }, 3000);
     };
 
@@ -421,7 +419,7 @@ class UsersHandle extends Component {
     };
 
     attachToProgram = () => {
-        const {room, name, index} = this.state.preview;
+        const {room, name, index} = this.state.program;
         let h = "program";
         if(this.state.program.room === room)
             return;
@@ -499,8 +497,8 @@ class UsersHandle extends Component {
 
           
           <Fragment>
-              <div className="shidur_overlay"><span>{program.name}</span></div>
               <div className="videos-panel">
+                  <div className="video_title">Test Room</div>
                   <div className="videos">
                       <div className="videos__wrapper">{program_feeds}</div>
                   </div>

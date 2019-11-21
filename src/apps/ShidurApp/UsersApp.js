@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import { Janus } from "../../lib/janus";
 import {Segment} from "semantic-ui-react";
 import {getState, putData, initJanus} from "../../shared/tools";
-import './ShidurUsers.css'
+import './UsersApp.css'
 import './VideoConteiner.scss'
 import {initGxyProtocol} from "../../shared/protocol";
 import UsersQuad from "./UsersQuad";

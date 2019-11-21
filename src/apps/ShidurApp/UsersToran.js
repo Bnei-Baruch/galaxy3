@@ -1,8 +1,6 @@
 import React, {Component, Fragment} from 'react';
 import { Janus } from "../../lib/janus";
 import {Segment, Table, Icon} from "semantic-ui-react";
-import './ShidurUsers.css'
-import './VideoConteiner.scss'
 import './ShidurToran.scss';
 import classNames from "classnames";
 

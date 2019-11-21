@@ -280,10 +280,18 @@ class UsersQuad extends Component {
               <Segment attached className="program_segment" color='red'>
                   <div className="video_grid">
                       {/*{program}*/}
-                      <UsersHandle {...this.props} />
-                      <UsersHandle {...this.props} />
-                      <UsersHandle {...this.props} />
-                      <UsersHandle {...this.props} />
+                      <div className="video_box" >
+                          <UsersHandle {...this.props} />
+                      </div>
+                      <div className="video_box" >
+                          <UsersHandle {...this.props} />
+                      </div>
+                      <div className="video_box" >
+                          <UsersHandle {...this.props} />
+                      </div>
+                      <div className="video_box" >
+                          <UsersHandle {...this.props} />
+                      </div>
                   </div>
               </Segment>
               <Button.Group attached='bottom' size='mini'>
