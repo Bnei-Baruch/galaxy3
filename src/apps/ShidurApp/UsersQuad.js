@@ -228,7 +228,7 @@ class UsersQuad extends Component {
 
   render() {
       const {full_feed,fullscr,col} = this.state;
-      const {feeds,pre_feed,users,next_button} = this.props;
+      const {rooms,pre_feed,users,next_button} = this.props;
       const q = (<div className="question">
           <svg viewBox="0 0 50 50">
               <text x="25" y="25" textAnchor="middle" alignmentBaseline="central" dominantBaseline="central">&#xF128;</text>
@@ -254,7 +254,7 @@ class UsersQuad extends Component {
                                 <UsersHandle ref={users => {this.users = users;}} {...this.props} />
                           {fullscr ? "" :
                               <Button className='next_button'
-                                      disabled={feeds.length < 2 || next_button}
+                                      disabled={rooms.length < 2 || next_button}
                                       size='mini'
                                       color='green'
                                       icon={pre_feed ? 'arrow up' : 'share'}
@@ -272,13 +272,13 @@ class UsersQuad extends Component {
               </Segment>
               <Button.Group attached='bottom' size='mini'>
                   <Button className='preset_button'
-                          disabled={feeds.length < 16 || fullscr}
+                          disabled={fullscr}
                           color='teal'
                           onClick={this.setPreset} >
                       {col}
                   </Button>
                   <Button className='fours_button'
-                          disabled={feeds.length < 16 || fullscr}
+                          disabled={fullscr}
                           color='blue'
                           onClick={this.switchFour}>
                       <Icon name='share' />

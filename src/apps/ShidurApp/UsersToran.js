@@ -13,85 +13,10 @@ class UsersToran extends Component {
         index: 0,
         disabled_rooms: [],
         group: null,
-        preview: {
-            feeds: [],
-            feedStreams: {},
-            mids: [],
-            name: "",
-            room: "",
-            users: {}
-            },
         protocol: null,
-        myid: null,
-        mypvtid: null,
-        mystream: null,
-        audio: null,
-        muted: true,
-        users: {},
     };
 
     componentDidMount() {
-        setInterval(() => this.getRoomList(), 10000 );
-        setInterval(() => this.chkDisabledRooms(), 10000 );
-    };
-
-    componentWillUnmount() {
-        this.state.janus.destroy();
-    };
-
-    getRoomList = () => {
-        const {disabled_rooms} = this.state;
-        let req = {request: "list"};
-        getPluginInfo(req, data => {
-            let usable_rooms = data.response.list.filter(room => room.num_participants > 0);
-            var newarray = usable_rooms.filter((room) => !disabled_rooms.find(droom => room.room === droom.room));
-            newarray.sort((a, b) => {
-                // if (a.num_participants > b.num_participants) return -1;
-                // if (a.num_participants < b.num_participants) return 1;
-                if (a.description > b.description) return 1;
-                if (a.description < b.description) return -1;
-                return 0;
-            });
-            this.getFeedsList(newarray)
-        })
-    };
-
-    //FIXME: tmp solution to show count without service users in room list
-    getFeedsList = (rooms) => {
-        let {users} = this.state;
-        rooms.forEach((room,i) => {
-            if(room.num_participants > 0) {
-                let req = {request: "listparticipants", "room": room.room};
-                getPluginInfo(req, data => {
-                    Janus.debug("Feeds: ", data);
-                    let count = data.response.participants.filter(p => JSON.parse(p.display).role === "user");
-                    let questions = data.response.participants.find(p => users[JSON.parse(p.display).id] ? users[JSON.parse(p.display).id].question : null);
-                    rooms[i].num_participants = count.length;
-                    rooms[i].questions = questions;
-                    this.setState({rooms});
-                })
-            }
-        });
-    };
-
-    chkDisabledRooms = () => {
-        let {users,disabled_rooms} = this.state;
-        for (let i=0; i<disabled_rooms.length; i++) {
-            if(disabled_rooms[i].num_participants === 0) {
-                disabled_rooms.splice(i, 1);
-                this.setState({disabled_rooms});
-                continue;
-            }
-            let req = {request: "listparticipants", "room": disabled_rooms[i].room};
-            getPluginInfo(req, data => {
-                Janus.debug("Feeds: ", data.response.participants);
-                let count = data.response.participants.filter(p => JSON.parse(p.display).role === "user");
-                let questions = data.response.participants.find(p => users[JSON.parse(p.display).id] ? users[JSON.parse(p.display).id].question : null);
-                disabled_rooms[i].num_participants = count.length;
-                disabled_rooms[i].questions = questions;
-                this.setState({disabled_rooms});
-            });
-        }
     };
 
     attachToPreview = (group, index) => {
@@ -145,16 +70,16 @@ class UsersToran extends Component {
 
 
   render() {
-      const {preview,disabled_rooms,rooms,users} = this.state;
+      const {preview,disabled_rooms,rooms,users} = this.props;
       const q = (<b style={{color: 'red', fontSize: '20px', fontFamily: 'Verdana', fontWeight: 'bold'}}>?</b>);
 
       let rooms_list = rooms.map((data,i) => {
           const {room, num_participants, description, questions} = data;
           return (
               <Table.Row
-                         positive={preview.name === description}
-                         disabled={num_participants === 0}
-                         className={preview.room === room ? 'active' : 'no'}
+                         // positive={preview.name === description}
+                         // disabled={num_participants === 0}
+                         // className={preview.room === room ? 'active' : 'no'}
                          key={room} onClick={() => this.selectGroup(data, i)}
                          onContextMenu={(e) => this.disableRoom(e, data, i)} >
                   <Table.Cell width={5}>{description}</Table.Cell>
@@ -180,7 +105,7 @@ class UsersToran extends Component {
       return (
           <Fragment>
               <Segment className="preview_conteiner" color='green' >
-                  <div className="shidur_overlay"><span>{preview.name}</span></div>
+                  <div className="shidur_overlay"><span>Test Room</span></div>
                   <UsersHandle ref={users => {this.users = users;}} {...this.props} />
               </Segment>
               <Segment textAlign='center' className="users_list" raised>
