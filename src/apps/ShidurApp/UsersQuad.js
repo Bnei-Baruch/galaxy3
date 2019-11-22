@@ -10,7 +10,7 @@ class UsersQuad extends Component {
 
     state = {
         col: null,
-        mids: [],
+        mids: [1,2,3,4],
         quad: [
             "0","3","6","9",
             "1","4","7","10",
@@ -236,32 +236,21 @@ class UsersQuad extends Component {
       </div>);
 
       let program = this.state.mids.map((mid,i) => {
-          if(mid && this.state.qam[i] === col) {
-              if(!mid.active) {
+              if(!mid) {
                   return (<div key={"prf" + i}>
                       <div className="video_box" key={"prov" + i}>
                           <div className="video_title" />
                       </div></div>)
               } else {
                   let qst = mid.user && users[mid.user.id] ? users[mid.user.id].question : false;
-                  return (<div key={"prf" + i}>
-                      <div className="video_box"
+                  return (
+                      <div className={fullscr && mid.feed_id === full_feed.feed_id ? "fullscreen" : "video_box"}
                            key={"prov" + i}
                            ref={"provideo" + i}
                            id={"provideo" + i}>
-                          <div className="video_title">{mid.user.display}</div>
+                          <div className="video_title">Test Room</div>
                           {qst ? q : ""}
-                          <video className={fullscr && mid.feed_id === full_feed.feed_id ? "fullscreen" : ""}
-                                 onClick={() => this.switchFullScreen(i,mid)}
-                                 key={i}
-                                 ref={"programVideo" + i}
-                                 id={"programVideo" + i}
-                                 width={width}
-                                 height={height}
-                                 autoPlay={autoPlay}
-                                 controls={controls}
-                                 muted={muted}
-                                 playsInline={true}/>
+                                <UsersHandle ref={users => {this.users = users;}} {...this.props} />
                           {fullscr && mid.feed_id === full_feed.feed_id ? "" :
                               <Button className='next_button'
                                       disabled={feeds.length < 2 || next_button}
@@ -269,29 +258,15 @@ class UsersQuad extends Component {
                                       color='green'
                                       icon={pre_feed ? 'arrow up' : 'share'}
                                       onClick={() => this.switchProgram(i)} />}
-                      </div></div>);
+                      </div>);
               }
-          }
-          return true;
       });
 
       return (
           <Segment className="group_conteiner">
               <Segment attached className="program_segment" color='red'>
                   <div className="video_grid">
-                      {/*{program}*/}
-                      <div className="video_box" >
-                          <UsersHandle {...this.props} />
-                      </div>
-                      <div className="video_box" >
-                          <UsersHandle {...this.props} />
-                      </div>
-                      <div className="video_box" >
-                          <UsersHandle {...this.props} />
-                      </div>
-                      <div className="video_box" >
-                          <UsersHandle {...this.props} />
-                      </div>
+                      {program}
                   </div>
               </Segment>
               <Button.Group attached='bottom' size='mini'>

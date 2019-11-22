@@ -3,7 +3,6 @@ import { Janus } from "../../lib/janus";
 import {Segment} from "semantic-ui-react";
 import {getState, putData, initJanus} from "../../shared/tools";
 import './UsersApp.css'
-import './VideoConteiner.scss'
 import {initGxyProtocol} from "../../shared/protocol";
 import UsersQuad from "./UsersQuad";
 import UsersToran from "./UsersToran";
@@ -30,7 +29,7 @@ class UsersApp extends Component {
             let {user} = this.state;
             user.session = janus.getSessionId();
             this.setState({janus,user});
-            this.toran.initVideoRoom(null,"preview");
+            this.toran.initVideoRoom(1051, "preview");
             //this.initVideoRoom(null, "preview");
 
             initGxyProtocol(janus, user, protocol => {

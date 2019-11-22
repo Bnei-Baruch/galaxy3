@@ -3,6 +3,7 @@ import { Janus } from "../../lib/janus";
 import {Segment, Table, Icon} from "semantic-ui-react";
 import './ShidurToran.scss';
 import classNames from "classnames";
+import UsersHandle from "./UsersHandle";
 
 class UsersToran extends Component {
 
@@ -139,7 +140,7 @@ class UsersToran extends Component {
                 Janus.log("Janus says our WebRTC PeerConnection is " + (on ? "up" : "down") + " now");
             },
             onmessage: (msg, jsep) => {
-                this.onMessage(h, msg, jsep, false);
+                //this.onMessage(h, msg, jsep, false);
             },
             onlocalstream: (mystream) => {
                 // We don't going to show us yet
@@ -469,14 +470,17 @@ class UsersToran extends Component {
         }
         Janus.log(" :: Attaching to Preview: ",group);
         this.setState({[h]:{...this.state[h], feeds: [], room, name, index}});
-        this.initVideoRoom(room, "preview");
+        //this.initVideoRoom(room, "preview");
     };
 
     selectGroup = (group, i) => {
         group.index = i;
         this.setState({group});
         Janus.log(group);
-        this.attachToPreview(group, i);
+        let room = group.room;
+        let name = group.description;
+        this.users.initVideoRoom(room, "program");
+        //this.attachToPreview(group, i);
     };
 
     disableRoom = (e, data, i) => {
@@ -577,13 +581,14 @@ class UsersToran extends Component {
 
       return (
           <Fragment>
-              <Segment className="preview_conteiner" color='green' onClick={this.attachToProgram} >
+              <Segment className="preview_conteiner" color='green' >
                   <div className="shidur_overlay"><span>{preview.name}</span></div>
-                  <div className="videos-panel">
-                      <div className="videos">
-                          <div className="videos__wrapper">{preview_feeds}</div>
-                      </div>
-                  </div>
+                  {/*<div className="videos-panel">*/}
+                  {/*    <div className="videos">*/}
+                  {/*        <div className="videos__wrapper">{preview_feeds}</div>*/}
+                  {/*    </div>*/}
+                  {/*</div>*/}
+                  <UsersHandle ref={users => {this.users = users;}} {...this.props} />
               </Segment>
               <Segment textAlign='center' className="users_list" raised>
                   <Table selectable compact='very' basic structured className="admin_table" unstackable>
