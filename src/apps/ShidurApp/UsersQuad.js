@@ -10,7 +10,7 @@ class UsersQuad extends Component {
 
     state = {
         col: null,
-        mids: [1,2,3,4],
+        mids: [0,1,2,3],
         quad: [
             "0","3","6","9",
             "1","4","7","10",
@@ -148,6 +148,11 @@ class UsersQuad extends Component {
     };
 
     switchFullScreen = (i,feed) => {
+        console.log(" :: FULLSCREEN", i)
+        let {fullscr} = this.state;
+        this.setState({fullscr: !fullscr, full_feed: i});
+        console.log(" :: FULLSCREEN", i, !fullscr)
+        return
         feed.display = JSON.parse(feed.feed_display);
         let {full_feed} = this.state;
         if(full_feed && feed.feed_id === full_feed.feed_id) {
@@ -164,12 +169,12 @@ class UsersQuad extends Component {
     toFullGroup = (i,feed) => {
         Janus.log(":: Make Full Screen Group: ",feed);
         this.setState({fullscr: true,full_feed: feed});
-        this.sdiAction("fullscr_group" , true, i, feed);
+        //this.sdiAction("fullscr_group" , true, i, feed);
     };
 
     toFourGroup = (cb) => {
         Janus.log(":: Back to four: ");
-        this.sdiAction("fullscr_group" , false, null, this.state.full_feed);
+        //this.sdiAction("fullscr_group" , false, null, this.state.full_feed);
         this.setState({fullscr: false, full_feed: null}, () => {
             cb();
         });
@@ -222,13 +227,8 @@ class UsersQuad extends Component {
 
 
   render() {
-      const { full_feed,fullscr,col } = this.state;
+      const {full_feed,fullscr,col} = this.state;
       const {feeds,pre_feed,users,next_button} = this.props;
-      const width = "201px";
-      const height = "113px";
-      const autoPlay = true;
-      const controls = false;
-      const muted = true;
       const q = (<div className="question">
           <svg viewBox="0 0 50 50">
               <text x="25" y="25" textAnchor="middle" alignmentBaseline="central" dominantBaseline="central">&#xF128;</text>
@@ -236,7 +236,7 @@ class UsersQuad extends Component {
       </div>);
 
       let program = this.state.mids.map((mid,i) => {
-              if(!mid) {
+              if(mid === null) {
                   return (<div key={"prf" + i}>
                       <div className="video_box" key={"prov" + i}>
                           <div className="video_title" />
@@ -244,14 +244,15 @@ class UsersQuad extends Component {
               } else {
                   let qst = mid.user && users[mid.user.id] ? users[mid.user.id].question : false;
                   return (
-                      <div className={fullscr && mid.feed_id === full_feed.feed_id ? "fullscreen" : "video_box"}
+                      <div className={fullscr && full_feed === i ? "video_full" : fullscr && full_feed !== i ? "hidden" : "video_box"}
+                           onClick={() => this.switchFullScreen(i,mid)}
                            key={"prov" + i}
                            ref={"provideo" + i}
                            id={"provideo" + i}>
-                          <div className="video_title">Test Room</div>
+                          <div className={fullscr ? "fullscrvideo_title" : "video_title"} >Test Room</div>
                           {qst ? q : ""}
                                 <UsersHandle ref={users => {this.users = users;}} {...this.props} />
-                          {fullscr && mid.feed_id === full_feed.feed_id ? "" :
+                          {fullscr ? "" :
                               <Button className='next_button'
                                       disabled={feeds.length < 2 || next_button}
                                       size='mini'

@@ -13,6 +13,19 @@
     height: 117px;
 }
 
+.video_full {
+    background-color: #444;
+    color: #fff;
+    font-size: 150%;
+    position:relative;
+    height: 230px;
+    width: 402px;
+}
+
+.hidden {
+    display: none;
+}
+
 .video_title {
     font-family: "Liberation Serif";
     line-height: 1.1285em;
@@ -40,6 +53,7 @@
     width: auto;
     padding: 0px 10px;
     float: right !important;
+    z-index: 2;
 }
 
 .next_button {
