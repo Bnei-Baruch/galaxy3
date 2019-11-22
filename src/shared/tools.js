@@ -381,6 +381,13 @@ export const getPublisherInfo = (session,handle,cb,mlt) => {
     })
 };
 
+export const getPluginInfo = (request,cb) => {
+    let req = { "janus": "message_plugin", "transaction": Janus.randomString(12), "admin_secret": ADMIN_SECRET, plugin: "janus.plugin.videoroom", request};
+    getData(`${JANUS_ADMIN_GXY}`,req,(json) => {
+        cb(json);
+    })
+};
+
 export const recordAudio = (stream) =>
     new Promise(async resolve => {
         const mediaRecorder = new MediaRecorder(stream);

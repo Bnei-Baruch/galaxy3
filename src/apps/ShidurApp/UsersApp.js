@@ -29,7 +29,7 @@ class UsersApp extends Component {
             let {user} = this.state;
             user.session = janus.getSessionId();
             this.setState({janus,user});
-            this.toran.initVideoRoom(1051, "preview");
+            //this.toran.initVideoRoom(1051, "preview");
             //this.initVideoRoom(null, "preview");
 
             initGxyProtocol(janus, user, protocol => {
