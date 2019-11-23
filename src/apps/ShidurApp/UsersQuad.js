@@ -221,13 +221,12 @@ class UsersQuad extends Component {
           let room = quad[i].room;
           return (
               <div className={fullscr && full_feed === i ? "video_full" : fullscr && full_feed !== i ? "hidden" : "video_box"}
-                   onClick={() => this.switchFullScreen(i,mid)}
-                   key={"pr" + i}
-                   ref={"pr" + i}
-                   id={"pr" + i}>
+                   key={"pr" + i} >
+                  <div className='click-panel' onClick={() => this.switchFullScreen(i,mid)} >
                   <div className={fullscr ? "fullscrvideo_title" : "video_title"} >{name}</div>
                   {qst ? q : ""}
                   <UsersHandle key={"q"+i} ref={ref => {this["users"+i] = ref;}} {...this.props} />
+                  </div>
                   {fullscr ? "" :
                       <Button className='next_button'
                               disabled={groups.length < 2 || next_button}
