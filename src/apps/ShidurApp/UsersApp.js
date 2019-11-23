@@ -12,7 +12,9 @@ class UsersApp extends Component {
     state = {
         janus: null,
         protocol: null,
-        group: {description: "", room: null},
+        group: "",
+        groups: [],
+        groups_queue: 0,
         rooms: [],
         disabled_rooms: [],
         user: {
@@ -55,20 +57,20 @@ class UsersApp extends Component {
         getPluginInfo(req, data => {
             let usable_rooms = data.response.list.filter(room => room.num_participants > 0);
             var newarray = usable_rooms.filter((room) => !disabled_rooms.find(droom => room.room === droom.room));
-            newarray.sort((a, b) => {
-                // if (a.num_participants > b.num_participants) return -1;
-                // if (a.num_participants < b.num_participants) return 1;
-                if (a.description > b.description) return 1;
-                if (a.description < b.description) return -1;
-                return 0;
-            });
+            // newarray.sort((a, b) => {
+            //     // if (a.num_participants > b.num_participants) return -1;
+            //     // if (a.num_participants < b.num_participants) return 1;
+            //     if (a.description > b.description) return 1;
+            //     if (a.description < b.description) return -1;
+            //     return 0;
+            // });
             this.getFeedsList(newarray)
         })
     };
 
     //FIXME: tmp solution to show count without service users in room list
     getFeedsList = (rooms) => {
-        let {users} = this.state;
+        let {users,groups} = this.state;
         rooms.forEach((room,i) => {
             if(room.num_participants > 0) {
                 let req = {request: "listparticipants", "room": room.room};
@@ -78,10 +80,13 @@ class UsersApp extends Component {
                     let questions = data.response.participants.find(p => users[JSON.parse(p.display).id] ? users[JSON.parse(p.display).id].question : null);
                     rooms[i].num_participants = count.length;
                     rooms[i].questions = questions;
-                    this.setState({rooms});
+                    //groups.push(rooms);
+                    this.setState({groups: rooms});
                 })
             }
         });
+        // this.setState({groups});
+        // console.log(groups)
     };
 
     chkDisabledRooms = () => {

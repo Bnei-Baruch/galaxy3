@@ -70,10 +70,10 @@ class UsersToran extends Component {
 
 
   render() {
-      const {group,disabled_rooms,rooms,users} = this.props;
+      const {group,disabled_rooms,groups,users} = this.props;
       const q = (<b style={{color: 'red', fontSize: '20px', fontFamily: 'Verdana', fontWeight: 'bold'}}>?</b>);
 
-      let rooms_list = rooms.map((data,i) => {
+      let rooms_list = groups.map((data,i) => {
           const {room, num_participants, description, questions} = data;
           return (
               <Table.Row

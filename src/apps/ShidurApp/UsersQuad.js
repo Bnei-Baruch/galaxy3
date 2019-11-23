@@ -9,22 +9,24 @@ import UsersHandle from "./UsersHandle";
 class UsersQuad extends Component {
 
     state = {
-        col: null,
-        mids: [0,1,2,3],
-        quad: [
-            "0","3","6","9",
-            "1","4","7","10",
-            "2","5","8","11"
-        ],
+        col: 4,
+        quad: [0,1,2,3],
     };
 
     componentDidMount() {
-        let { index } = this.props;
-        let col = index === 0 ? 1 : index === 4 ? 2 : index === 8 ? 3 : null;
-        this.setState({col});
     };
 
     switchProgram = (i) => {
+        const {group} = this.props;
+        let {quad} = this.state;
+        quad[i] = group;
+        this.setState({quad});
+        let room = group.room;
+        this["users"+i].initVideoRoom(room, "program");
+        console.log(group);
+
+        return
+
         if(this.quadCheckDup())
             return;
         Janus.log(" :: Selected program Switch: ",i);
@@ -39,6 +41,35 @@ class UsersQuad extends Component {
         setTimeout(() => {
             this.questionStatus();
         }, 1000);
+    };
+
+    switchFour = () => {
+        let {groups_queue,groups,round} = this.props;
+        let quad = [];
+
+        for(let i=0; i<4; i++) {
+
+            // Don't switch if nobody in queue
+            if(i === groups.length) {
+                Janus.log("Queue is END");
+                break;
+            }
+
+            if(groups_queue >= groups.length) {
+                // End round here!
+                Janus.log(" -- ROUND END --");
+                groups_queue = 0;
+                round++;
+                this.props.setProps({groups_queue,round});
+            }
+
+            let room = groups[groups_queue].room;
+            quad.push(groups[groups_queue]);
+            this.setState({quad});
+            this["users"+i].initVideoRoom(room, "program");
+            groups_queue++;
+            this.props.setProps({groups_queue});
+        }
     };
 
     quadCheckDup = () => {
@@ -77,17 +108,6 @@ class UsersQuad extends Component {
                 qfeeds.push({id: questions_queue[i].rfid, display: questions_queue[i].user});
                 this.props.setProps({qfeeds});
             }
-        }
-    };
-
-    switchFour = () => {
-        let {feeds_queue,rooms,round} = this.props;
-        let index = 0;
-
-        for(let i=index; i<index+4; i++) {
-            let room = rooms[i].room;
-            this["users"+i].initVideoRoom(room, "program");
-
         }
     };
 
@@ -186,43 +206,36 @@ class UsersQuad extends Component {
 
 
   render() {
-      const {full_feed,fullscr,col} = this.state;
-      const {rooms,pre_feed,users,next_button} = this.props;
+      const {full_feed,fullscr,col,quad} = this.state;
+      const {groups,pre_feed,users,next_button} = this.props;
       const q = (<div className="question">
           <svg viewBox="0 0 50 50">
               <text x="25" y="25" textAnchor="middle" alignmentBaseline="central" dominantBaseline="central">&#xF128;</text>
           </svg>
       </div>);
 
-      let program = this.state.mids.map((mid,i) => {
-          if (rooms.length === 0) return;
-              if(mid === null) {
-                  return (<div key={"prf" + i}>
-                      <div className="video_box" key={"prov" + i}>
-                          <div className="video_title" />
-                      </div></div>)
-              } else {
-                  let qst = mid.user && users[mid.user.id] ? users[mid.user.id].question : false;
-                  let name = rooms[mid].description;
-                  let room = rooms[mid].room;
-                  return (
-                      <div className={fullscr && full_feed === i ? "video_full" : fullscr && full_feed !== i ? "hidden" : "video_box"}
-                           onClick={() => this.switchFullScreen(i,mid)}
-                           key={"pr" + i}
-                           ref={"pr" + i}
-                           id={"pr" + i}>
-                          <div className={fullscr ? "fullscrvideo_title" : "video_title"} >{name}</div>
-                          {qst ? q : ""}
-                                <UsersHandle key={"q"+i} ref={ref => {this["users"+i] = ref;}} {...this.props} />
-                          {fullscr ? "" :
-                              <Button className='next_button'
-                                      disabled={rooms.length < 2 || next_button}
-                                      size='mini'
-                                      color='green'
-                                      icon={pre_feed ? 'arrow up' : 'share'}
-                                      onClick={() => this.switchProgram(i)} />}
-                      </div>);
-              }
+      let program = quad.map((mid,i) => {
+          if (groups.length === 0) return;
+          let qst = mid.user && users[mid.user.id] ? users[mid.user.id].question : false;
+          let name = quad[i].description;
+          let room = quad[i].room;
+          return (
+              <div className={fullscr && full_feed === i ? "video_full" : fullscr && full_feed !== i ? "hidden" : "video_box"}
+                   onClick={() => this.switchFullScreen(i,mid)}
+                   key={"pr" + i}
+                   ref={"pr" + i}
+                   id={"pr" + i}>
+                  <div className={fullscr ? "fullscrvideo_title" : "video_title"} >{name}</div>
+                  {qst ? q : ""}
+                  <UsersHandle key={"q"+i} ref={ref => {this["users"+i] = ref;}} {...this.props} />
+                  {fullscr ? "" :
+                      <Button className='next_button'
+                              disabled={groups.length < 2 || next_button}
+                              size='mini'
+                              color='green'
+                              icon={pre_feed ? 'arrow up' : 'share'}
+                              onClick={() => this.switchProgram(i)} />}
+              </div>);
       });
 
       return (
