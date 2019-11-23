@@ -12,6 +12,7 @@ class UsersApp extends Component {
     state = {
         janus: null,
         protocol: null,
+        group: {description: "", room: null},
         rooms: [],
         disabled_rooms: [],
         user: {
@@ -30,8 +31,8 @@ class UsersApp extends Component {
             let {user} = this.state;
             user.session = janus.getSessionId();
             this.setState({janus,user});
-            setInterval(() => this.getRoomList(), 10000 );
-            setInterval(() => this.chkDisabledRooms(), 10000 );
+            setInterval(() => this.getRoomList(), 2000 );
+            //setInterval(() => this.chkDisabledRooms(), 10000 );
             //this.toran.initVideoRoom(1051, "preview");
             //this.initVideoRoom(null, "preview");
 
@@ -39,7 +40,7 @@ class UsersApp extends Component {
                 this.setState({protocol});
             }, ondata => {
                 Janus.log("-- :: It's protocol public message: ", ondata);
-                this.onProtocolData(ondata);
+                //this.onProtocolData(ondata);
             });
         },er => {}, true);
     };
@@ -123,6 +124,10 @@ class UsersApp extends Component {
         }
     };
 
+    setProps = (props) => {
+        this.setState({...props})
+    };
+
 
     render() {
         const {users} = this.state;
@@ -131,8 +136,8 @@ class UsersApp extends Component {
         return (
 
             <Segment className="users_container">
-                <UsersQuad {...this.state} />
-                <UsersToran ref={toran => {this.toran = toran;}} {...this.state} />
+                <UsersQuad {...this.state} setProps={this.setProps} />
+                <UsersToran ref={toran => {this.toran = toran;}} {...this.state} setProps={this.setProps} />
             </Segment>
         );
     }

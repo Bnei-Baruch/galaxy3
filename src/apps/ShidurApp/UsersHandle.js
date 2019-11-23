@@ -13,22 +13,7 @@ class UsersHandle extends Component {
         index: 0,
         disabled_rooms: [],
         group: null,
-        preview: {
-            feeds: [],
-            feedStreams: {},
-            mids: [],
-            name: "",
-            room: "",
-            users: {}
-            },
-        program: {
-            feeds: [],
-            feedStreams: {},
-            mids: [],
-            name: "",
-            room: 1051,
-            users: {}
-            },
+        program: {feeds: [], feedStreams: {}, mids: [], name: "", room: "", users: {}},
         protocol: null,
         myid: null,
         mypvtid: null,
@@ -39,9 +24,9 @@ class UsersHandle extends Component {
     };
 
     componentDidMount() {
-        setTimeout(() => {
-            this.initVideoRoom(1051, "program")
-        }, 3000);
+        // setTimeout(() => {
+        //     this.initVideoRoom(1051, "program")
+        // }, 3000);
     };
 
     componentWillUnmount() {
@@ -60,9 +45,7 @@ class UsersHandle extends Component {
             opaqueId: "preview_shidur",
             success: (videoroom) => {
                 Janus.log(videoroom,this.state[h]);
-                // hdl.room = roomid;
-                this.setState({[h]: {...this.state[h], videoroom, remoteFeed: null}});
-                this.setState({room: roomid});
+                this.setState({[h]: {...this.state[h], room: roomid, videoroom, remoteFeed: null}});
                 Janus.log("Plugin attached! (" + videoroom.getPlugin() + ", id=" + videoroom.getId() + ")", this.state[h]);
                 Janus.log("  -- This is a publisher/manager");
                 let {user} = this.props;
@@ -256,7 +239,7 @@ class UsersHandle extends Component {
                     Janus.log("  -- This is a multistream subscriber",remoteFeed);
                     this.setState({ [h]:{...this.state[h], remoteFeed, creatingFeed: false}});
                     // We wait for the plugin to send us an offer
-                    let subscribe = {request: "join", room: this.state.room, ptype: "subscriber", streams: subscription};
+                    let subscribe = {request: "join", room: this.state[h].room, ptype: "subscriber", streams: subscription};
                     remoteFeed.send({ message: subscribe });
                 },
                 error: (error) => {
@@ -312,7 +295,7 @@ class UsersHandle extends Component {
                                 success: (jsep) => {
                                     Janus.debug("Got SDP!");
                                     Janus.debug(jsep);
-                                    let body = { request: "start", room: this.state.room };
+                                    let body = { request: "start", room: this.state[h].room };
                                     this.state[h].remoteFeed.send({ message: body, jsep: jsep });
                                 },
                                 error: (error) => {
@@ -340,7 +323,7 @@ class UsersHandle extends Component {
                         Janus.log("Created remote video stream:", stream);
                         feedStreams[feed].stream = stream;
                         this.setState({[h]:{...this.state[h], feedStreams}});
-                        let node = h === "preview" ? "remoteVideo" : "programVideo";
+                        let node = h === "program" ? "pv" : "program0" ? "pv0" : "program1" ? "pv1" : "program2" ? "pv2" : "program3" ? "pv3" : "";
                         let remotevideo = this.refs[node + feed];
                         Janus.attachMediaStream(remotevideo, stream);
                     } else {
@@ -455,7 +438,7 @@ class UsersHandle extends Component {
 
 
   render() {
-      const {program,preview,disabled_rooms,rooms,users} = this.state;
+      const {program,users} = this.state;
       const width = "400";
       const height = "300";
       const autoPlay = true;
@@ -483,8 +466,8 @@ class UsersHandle extends Component {
                   </div>
                   <video className={talk ? "talk" : ""}
                          key={id}
-                         ref={"programVideo" + id}
-                         id={"programVideo" + id}
+                         ref={"pv" + id}
+                         id={"pv" + id}
                          width={width}
                          height={height}
                          autoPlay={autoPlay}
@@ -503,7 +486,9 @@ class UsersHandle extends Component {
           <Fragment>
               <div className="videos-panel">
                   <div className="videos">
-                      <div className="videos__wrapper">{program_feeds}</div>
+                      <div className="videos__wrapper">
+                          {program_feeds}
+                      </div>
                   </div>
               </div>
           </Fragment>

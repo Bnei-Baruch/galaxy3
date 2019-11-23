@@ -81,55 +81,14 @@ class UsersQuad extends Component {
     };
 
     switchFour = () => {
-        let {feeds_queue,feeds,index,round} = this.props;
-        let {quad} = this.state;
-        let streams = [];
+        let {feeds_queue,rooms,round} = this.props;
+        let index = 0;
 
         for(let i=index; i<index+4; i++) {
-
-            // Don't switch if nobody in queue
-            if(i === feeds.length) {
-                Janus.log("Queue is END");
-                break;
-            }
-
-            if(feeds_queue >= feeds.length) {
-                // End round here!
-                Janus.log(" -- ROUND END --");
-                feeds_queue = 0;
-                round++;
-                this.props.setProps({feeds_queue,round});
-            }
-
-            // If program is not full avoid using feeds_queue
-            if(feeds.length < 13) {
-                let sub_mid = quad[i];
-                let feed = feeds[i].id;
-                streams.push({feed, mid: "1", sub_mid});
-            } else {
-                let sub_mid = quad[i];
-                let feed = feeds[feeds_queue].id;
-                streams.push({feed, mid: "1", sub_mid});
-                feeds_queue++;
-            }
+            let room = rooms[i].room;
+            this["users"+i].initVideoRoom(room, "program");
 
         }
-
-        this.props.setProps({feeds_queue});
-        Janus.log(" :: Going to switch four: ", streams);
-        let switch_four = {request: "switch", streams};
-        this.props.remoteFeed.send ({"message": switch_four,
-            success: () => {
-                Janus.debug(" -- Switch success: ");
-                // Add to qfeeds if removed from program with question status
-                setTimeout(() => {
-                    this.questionStatus();
-                }, 1000);
-            }
-        });
-
-        // Send sdi action
-        this.sdiAction("switch_req" , true, null, streams);
     };
 
     sdiAction = (action, status, i, feed) => {
@@ -236,6 +195,7 @@ class UsersQuad extends Component {
       </div>);
 
       let program = this.state.mids.map((mid,i) => {
+          if (rooms.length === 0) return;
               if(mid === null) {
                   return (<div key={"prf" + i}>
                       <div className="video_box" key={"prov" + i}>
@@ -243,15 +203,17 @@ class UsersQuad extends Component {
                       </div></div>)
               } else {
                   let qst = mid.user && users[mid.user.id] ? users[mid.user.id].question : false;
+                  let name = rooms[mid].description;
+                  let room = rooms[mid].room;
                   return (
                       <div className={fullscr && full_feed === i ? "video_full" : fullscr && full_feed !== i ? "hidden" : "video_box"}
                            onClick={() => this.switchFullScreen(i,mid)}
-                           key={"prov" + i}
-                           ref={"provideo" + i}
-                           id={"provideo" + i}>
-                          <div className={fullscr ? "fullscrvideo_title" : "video_title"} >Test Room</div>
+                           key={"pr" + i}
+                           ref={"pr" + i}
+                           id={"pr" + i}>
+                          <div className={fullscr ? "fullscrvideo_title" : "video_title"} >{name}</div>
                           {qst ? q : ""}
-                                <UsersHandle ref={users => {this.users = users;}} {...this.props} />
+                                <UsersHandle key={"q"+i} ref={ref => {this["users"+i] = ref;}} {...this.props} />
                           {fullscr ? "" :
                               <Button className='next_button'
                                       disabled={rooms.length < 2 || next_button}

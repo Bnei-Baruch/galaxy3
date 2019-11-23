@@ -68,6 +68,7 @@ $exactly-selector: _build-quantity-selector($selector-append, $selector);
 .videos{
     flex: 1 0 auto;
     position:relative;
+    height: inherit;
     // margin: -1px;
 &__wrapper {
      position:inherit;

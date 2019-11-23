@@ -36,7 +36,7 @@ class UsersToran extends Component {
 
     selectGroup = (group, i) => {
         group.index = i;
-        this.setState({group});
+        this.props.setProps({group});
         Janus.log(group);
         let room = group.room;
         let name = group.description;
@@ -70,16 +70,16 @@ class UsersToran extends Component {
 
 
   render() {
-      const {preview,disabled_rooms,rooms,users} = this.props;
+      const {group,disabled_rooms,rooms,users} = this.props;
       const q = (<b style={{color: 'red', fontSize: '20px', fontFamily: 'Verdana', fontWeight: 'bold'}}>?</b>);
 
       let rooms_list = rooms.map((data,i) => {
           const {room, num_participants, description, questions} = data;
           return (
               <Table.Row
-                         // positive={preview.name === description}
+                         positive={group.description === description}
                          // disabled={num_participants === 0}
-                         // className={preview.room === room ? 'active' : 'no'}
+                         className={group.room === room ? 'active' : 'no'}
                          key={room} onClick={() => this.selectGroup(data, i)}
                          onContextMenu={(e) => this.disableRoom(e, data, i)} >
                   <Table.Cell width={5}>{description}</Table.Cell>
@@ -105,7 +105,7 @@ class UsersToran extends Component {
       return (
           <Fragment>
               <Segment className="preview_conteiner" color='green' >
-                  <div className="shidur_overlay"><span>Test Room</span></div>
+                  <div className="shidur_overlay"><span>{group.description}</span></div>
                   <UsersHandle ref={users => {this.users = users;}} {...this.props} />
               </Segment>
               <Segment textAlign='center' className="users_list" raised>
