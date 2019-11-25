@@ -15,6 +15,7 @@ class UsersApp extends Component {
         group: "",
         groups: [],
         groups_queue: 0,
+        round: 0,
         rooms: [],
         disabled_rooms: [],
         user: {
@@ -42,7 +43,7 @@ class UsersApp extends Component {
                 this.setState({protocol});
             }, ondata => {
                 Janus.log("-- :: It's protocol public message: ", ondata);
-                //this.onProtocolData(ondata);
+                this.onProtocolData(ondata);
             });
         },er => {}, true);
     };

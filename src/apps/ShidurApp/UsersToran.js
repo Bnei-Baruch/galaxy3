@@ -19,6 +19,13 @@ class UsersToran extends Component {
     componentDidMount() {
     };
 
+    componentDidUpdate(prevProps) {
+        if(this.props.group === null && prevProps.group) {
+            //TODO: leave room was in preview
+            console.log("LEAVE ROOM IN PREVEW")
+        }
+    }
+
     attachToPreview = (group, index) => {
         let room = group.room;
         let name = group.description;
@@ -68,7 +75,6 @@ class UsersToran extends Component {
         }
     };
 
-
   render() {
       const {group,disabled_rooms,groups,users} = this.props;
       const q = (<b style={{color: 'red', fontSize: '20px', fontFamily: 'Verdana', fontWeight: 'bold'}}>?</b>);
@@ -77,9 +83,9 @@ class UsersToran extends Component {
           const {room, num_participants, description, questions} = data;
           return (
               <Table.Row
-                         positive={group.description === description}
+                         positive={group && group.description === description}
                          // disabled={num_participants === 0}
-                         className={group.room === room ? 'active' : 'no'}
+                         className={group && group.room === room ? 'active' : 'no'}
                          key={room} onClick={() => this.selectGroup(data, i)}
                          onContextMenu={(e) => this.disableRoom(e, data, i)} >
                   <Table.Cell width={5}>{description}</Table.Cell>
@@ -105,7 +111,7 @@ class UsersToran extends Component {
       return (
           <Fragment>
               <Segment className="preview_conteiner" color='green' >
-                  <div className="shidur_overlay"><span>{group.description}</span></div>
+                  <div className="shidur_overlay"><span>{group ? group.description : ""}</span></div>
                   <UsersHandle ref={users => {this.users = users;}} {...this.props} />
               </Segment>
               <Segment textAlign='center' className="users_list" raised>

@@ -114,6 +114,7 @@
 }
 
 .question {
+    z-index: 4;
     &:before {
         display: block;
         content: "";

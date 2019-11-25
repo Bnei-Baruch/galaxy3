@@ -102,7 +102,8 @@ class UsersHandle extends Component {
                 if(msg["publishers"] !== undefined && msg["publishers"] !== null) {
                     let list = msg["publishers"];
                     let feeds = list.filter(feeder => JSON.parse(feeder.display).role === "user");
-                    let {feedStreams,users} = this.state[h];
+                    let {feedStreams} = this.state[h];
+                    let {users} = this.props;
                     Janus.log(":: Got Pulbishers list: ", feeds);
                     Janus.debug("Got a list of available publishers/feeds:");
                     let subscription = [];
@@ -126,8 +127,10 @@ class UsersHandle extends Component {
                         subscription.push(subst);
                     }
                     this.setState({[h]:{...this.state[h], feeds,feedStreams,users}});
-                    if(subscription.length > 0)
+                    if(subscription.length > 0) {
+                        this.props.setProps({users});
                         this.subscribeTo(h, subscription);
+                    }
                 }
             } else if(event === "talking") {
                 // let {feeds} = this.state;
@@ -168,7 +171,8 @@ class UsersHandle extends Component {
                     this.setState({feedStreams})
                 } else if(msg["publishers"] !== undefined && msg["publishers"] !== null) {
                     let feed = msg["publishers"];
-                    let {feeds,feedStreams,users} = this.state[h];
+                    let {feeds,feedStreams} = this.state[h];
+                    let {users} = this.props;
                     Janus.debug("Got a list of available publishers/feeds:");
                     let subscription = [];
                     for(let f in feed) {
@@ -194,8 +198,10 @@ class UsersHandle extends Component {
                     }
                     feeds.push(feed[0]);
                     this.setState({ [h]:{...this.state[h], feeds,feedStreams,users}});
-                    if(subscription.length > 0)
+                    if(subscription.length > 0) {
                         this.subscribeTo(h, subscription);
+                        this.props.setProps({users});
+                    }
                 } else if(msg["leaving"] !== undefined && msg["leaving"] !== null) {
                     // One of the publishers has gone away?
                     var leaving = msg["leaving"];
@@ -438,7 +444,8 @@ class UsersHandle extends Component {
 
 
   render() {
-      const {program,users} = this.state;
+      const {program} = this.state;
+      const {users} = this.props;
       const width = "400";
       const height = "300";
       const autoPlay = true;

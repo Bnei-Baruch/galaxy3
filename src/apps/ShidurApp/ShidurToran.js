@@ -29,7 +29,7 @@ class ShidurToran extends Component {
         sorted_feeds: [],
     };
 
-    componentDidUpdate() {
+    componentDidUpdate(prevProps) {
         this.scrollToBottom();
         if(this.props.feeds_queue !== this.state.feeds_queue) {
             Janus.log(" --::: DidUpdate: ",this.props.feeds_queue, this.state.feeds_queue);

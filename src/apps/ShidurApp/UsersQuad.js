@@ -16,31 +16,32 @@ class UsersQuad extends Component {
     componentDidMount() {
     };
 
-    switchProgram = (i) => {
-        const {group} = this.props;
+    switchProgram = (i,g) => {
+        let {group,groups,groups_queue,round} = this.props;
         let {quad} = this.state;
-        quad[i] = group;
+        let room;
+
+        if(group) {
+            // From preview
+            quad[i] = group.index;
+            room = group.room;
+            this.props.setProps({group: null});
+        } else {
+            // Next in queue
+            groups_queue++;
+            if(groups_queue >= groups.length) {
+                // End round here!
+                Janus.log(" -- ROUND END --");
+                groups_queue = 0;
+                round++;
+            }
+            quad[i] = groups_queue;
+            room = groups[groups_queue].room;
+            this.props.setProps({groups_queue,round});
+        }
+
         this.setState({quad});
-        let room = group.room;
         this["users"+i].initVideoRoom(room, "program");
-        console.log(group);
-
-        return
-
-        if(this.quadCheckDup())
-            return;
-        Janus.log(" :: Selected program Switch: ",i);
-        //this.setDelay();
-        const {mids} = this.props;
-        this.props.setProps({program: i});
-
-        // Unsubscribe from previous mid
-        let streams = [{ sub_mid: mids[i].mid }];
-        this.props.unsubscribeFrom(streams, mids[i].feed_id);
-
-        setTimeout(() => {
-            this.questionStatus();
-        }, 1000);
     };
 
     switchFour = () => {
@@ -64,7 +65,7 @@ class UsersQuad extends Component {
             }
 
             let room = groups[groups_queue].room;
-            quad.push(groups[groups_queue]);
+            quad.push(groups_queue);
             this.setState({quad});
             this["users"+i].initVideoRoom(room, "program");
             groups_queue++;
@@ -127,22 +128,8 @@ class UsersQuad extends Component {
     };
 
     switchFullScreen = (i,feed) => {
-        console.log(" :: FULLSCREEN", i)
         let {fullscr} = this.state;
         this.setState({fullscr: !fullscr, full_feed: i});
-        console.log(" :: FULLSCREEN", i, !fullscr)
-        return
-        feed.display = JSON.parse(feed.feed_display);
-        let {full_feed} = this.state;
-        if(full_feed && feed.feed_id === full_feed.feed_id) {
-            this.toFourGroup(() => {});
-        } else if(full_feed) {
-            this.toFourGroup(() => {
-                this.toFullGroup(i,feed);
-            });
-        } else {
-            this.toFullGroup(i,feed);
-        }
     };
 
     toFullGroup = (i,feed) => {
@@ -204,7 +191,6 @@ class UsersQuad extends Component {
         this.sdiAction("switch_req" , true, null, streams);
     };
 
-
   render() {
       const {full_feed,fullscr,col,quad} = this.state;
       const {groups,pre_feed,users,next_button} = this.props;
@@ -214,15 +200,15 @@ class UsersQuad extends Component {
           </svg>
       </div>);
 
-      let program = quad.map((mid,i) => {
+      let program = quad.map((g,i) => {
           if (groups.length === 0) return;
-          let qst = mid.user && users[mid.user.id] ? users[mid.user.id].question : false;
-          let name = quad[i].description;
-          let room = quad[i].room;
+          let qst = !!groups[g] && groups[g].questions;
+          let name = groups[g] ? groups[g].description : "";
+          let room = groups[g] ? groups[g].room : "";
           return (
               <div className={fullscr && full_feed === i ? "video_full" : fullscr && full_feed !== i ? "hidden" : "video_box"}
                    key={"pr" + i} >
-                  <div className='click-panel' onClick={() => this.switchFullScreen(i,mid)} >
+                  <div className='click-panel' onClick={() => this.switchFullScreen(i)} >
                   <div className={fullscr ? "fullscrvideo_title" : "video_title"} >{name}</div>
                   {qst ? q : ""}
                   <UsersHandle key={"q"+i} ref={ref => {this["users"+i] = ref;}} {...this.props} />
@@ -233,7 +219,7 @@ class UsersQuad extends Component {
                               size='mini'
                               color='green'
                               icon={pre_feed ? 'arrow up' : 'share'}
-                              onClick={() => this.switchProgram(i)} />}
+                              onClick={() => this.switchProgram(i,g)} />}
               </div>);
       });
 
