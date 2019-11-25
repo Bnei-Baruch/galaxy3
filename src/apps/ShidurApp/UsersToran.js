@@ -21,8 +21,7 @@ class UsersToran extends Component {
 
     componentDidUpdate(prevProps) {
         if(this.props.group === null && prevProps.group) {
-            //TODO: leave room was in preview
-            console.log("LEAVE ROOM IN PREVEW")
+            this.users.exitVideoRoom(prevProps.group.room, "program");
         }
     }
 

@@ -193,7 +193,7 @@ class UsersQuad extends Component {
 
   render() {
       const {full_feed,fullscr,col,quad} = this.state;
-      const {groups,pre_feed,users,next_button} = this.props;
+      const {groups,group,next_button} = this.props;
       const q = (<div className="question">
           <svg viewBox="0 0 50 50">
               <text x="25" y="25" textAnchor="middle" alignmentBaseline="central" dominantBaseline="central">&#xF128;</text>
@@ -204,7 +204,7 @@ class UsersQuad extends Component {
           if (groups.length === 0) return;
           let qst = !!groups[g] && groups[g].questions;
           let name = groups[g] ? groups[g].description : "";
-          let room = groups[g] ? groups[g].room : "";
+          //let room = groups[g] ? groups[g].room : "";
           return (
               <div className={fullscr && full_feed === i ? "video_full" : fullscr && full_feed !== i ? "hidden" : "video_box"}
                    key={"pr" + i} >
@@ -218,7 +218,7 @@ class UsersQuad extends Component {
                               disabled={groups.length < 2 || next_button}
                               size='mini'
                               color='green'
-                              icon={pre_feed ? 'arrow up' : 'share'}
+                              icon={group ? 'arrow up' : 'share'}
                               onClick={() => this.switchProgram(i,g)} />}
               </div>);
       });

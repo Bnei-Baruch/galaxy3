@@ -87,6 +87,18 @@ class UsersHandle extends Component {
         });
     };
 
+    exitVideoRoom = (roomid, h) => {
+        if(this.state[h] && this.state[h].videoroom) {
+            let leave_room = {request : "leave", "room": roomid};
+            this.state.program.videoroom.send({"message": leave_room});
+            this.state[h].videoroom.detach();
+        }
+        if(this.state[h] && this.state[h].remoteFeed)
+            this.state[h].remoteFeed.detach();
+        this.setState({[h]:{...this.state[h], feeds: []}});
+    };
+
+
     onMessage = (h, msg, jsep, initdata) => {
         Janus.log(" ::: Got a message (publisher) :::");
         Janus.log(msg);
