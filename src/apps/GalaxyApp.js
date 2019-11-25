@@ -26,7 +26,7 @@ class GalaxyApp extends Component {
         const {user, roles} = this.state;
 
         let opt = roles.map((role,i) => {
-            // if(role === "bb_user") return (<Button key={i} size='massive' color='green' onClick={() => window.open("https://galaxy.kli.one/stream")} >Stream</Button>);
+            if(role === "bb_user") return (<Button key={i} size='massive' color='green' onClick={() => window.open("https://galaxy.kli.one/stream")} >Stream</Button>);
             if(role === "gxy_guest") return (<Button key={i} size='massive' color='green' onClick={() => window.open("https://galaxy.kli.one/guest","_self")} >View</Button>);
             if(role === "gxy_user") return (<Button key={i} size='massive' color='green' onClick={() => window.open("https://galaxy.kli.one/client","_self")} >Client</Button>);
             if(role === "gxy_group") return (<Button key={i} size='massive' color='green' onClick={() => window.open("https://galaxy.kli.one/group","_self")} >Group</Button>);

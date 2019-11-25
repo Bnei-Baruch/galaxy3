@@ -1,5 +1,4 @@
 import React, { Component } from 'react';
-import NewWindow from 'react-new-window';
 import { Janus } from "../../lib/janus";
 import classNames from 'classnames';
 
@@ -446,18 +445,6 @@ class GroupClient extends Component {
         this.setState({muted: !muted});
     };
 
-    showShidur = () => {
-        this.setState({shidur: !this.state.shidur})
-    };
-
-    onUnload = () => {
-        this.setState({shidur: false})
-    };
-
-    onBlock = () => {
-        alert("You browser is block our popup! You need allow it")
-    };
-
     onNewMsg = () => {
         this.setState({count: this.state.count + 1});
     };
@@ -538,17 +525,9 @@ class GroupClient extends Component {
                 <Icon color={question ? 'green' : ''} name='question'/>
                 Ask a Question
               </Menu.Item>
-              <Menu.Item disabled={this.state.shidur} onClick={this.showShidur} >
+              <Menu.Item onClick={() => window.open("https://galaxy.kli.one/stream")} >
                 <Icon name="tv"/>
                 Open Broadcast
-                {this.state.shidur ?
-                  <NewWindow
-                    url='https://galaxy.kli.one/stream'
-                    features={{width:"725",height:"635",left:"200",top:"200",location:"no"}}
-                    title='V4G' onUnload={this.onUnload} onBlock={this.onBlock}>
-                  </NewWindow> :
-                  null
-                }
               </Menu.Item>
             </Menu>
             <Menu icon='labeled' secondary size="mini">

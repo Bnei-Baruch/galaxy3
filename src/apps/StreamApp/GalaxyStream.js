@@ -398,7 +398,7 @@ class GalaxyStream extends Component {
 
         let login = (<LoginPage user={user} checkPermission={this.checkPermission} />);
         let content = (
-            <Segment compact secondary>
+            <Segment compact secondary className="stream_segment">
                 <Segment textAlign='center' className="ingest_segment" raised>
                     <Menu secondary>
                         <Menu.Item>

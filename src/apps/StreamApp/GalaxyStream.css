@@ -12,6 +12,10 @@ video {
     position: relative;
 }
 
+.stream_segment {
+    max-width: 1100px;
+}
+
 .talk {
     font-size: 3rem!important;
     line-height: 1.1285em;

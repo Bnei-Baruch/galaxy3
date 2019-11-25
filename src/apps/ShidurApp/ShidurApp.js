@@ -597,18 +597,17 @@ class ShidurApp extends Component {
                         Janus.log(" -- ROUND END --");
                         feeds_queue = 0;
                         round++;
-                        this.setState({feeds_queue,round});
-                    } else {
-                        this.setState({feeds_queue});
                     }
-                    Janus.log(":: Switch program to: ", feed);
-                    if(feed && feed.id) {
-                        let streams = [{feed: feed.id, mid: "1"}];
-                        this.subscribeTo(streams);
-                    } else {
-                        // We can't leave empty slot in program, so trigger autofill
-                        this.fillProgram(null, null);
-                    }
+                    this.setState({feeds_queue,round}, () => {
+                        Janus.log(":: Switch program to: ", feed);
+                        if(feed && feed.id) {
+                            let streams = [{feed: feed.id, mid: "1"}];
+                            this.subscribeTo(streams);
+                        } else {
+                            // We can't leave empty slot in program, so trigger autofill
+                            this.fillProgram(null, null);
+                        }
+                    });
                 }
             })
         // Slot in program changed manually
