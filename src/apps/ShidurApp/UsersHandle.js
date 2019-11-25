@@ -315,12 +315,12 @@ class UsersHandle extends Component {
                     // The subscriber stream is recvonly, we don't expect anything here
                 },
                 onremotetrack: (track, mid, on) => {
-                    Janus.log(" ::: Got a remote track event ::: (remote feed)");
-                    Janus.log("Remote track (mid=" + mid + ") " + (on ? "added" : "removed") + ":", track);
+                    Janus.debug(" ::: Got a remote track event ::: (remote feed)");
+                    Janus.debug("Remote track (mid=" + mid + ") " + (on ? "added" : "removed") + ":", track);
                     // Which publisher are we getting on this mid?
                     let {mids,feedStreams} = this.state[h];
                     let feed = mids[mid].feed_id;
-                    Janus.log(" >> This track is coming from feed " + feed + ":", mid);
+                    Janus.debug(" >> This track is coming from feed " + feed + ":", mid);
                     // If we're here, a new track was added
                     if(track.kind === "video" && on) {
                         // New video track: create a stream out of it
@@ -332,8 +332,6 @@ class UsersHandle extends Component {
                         let node = h === "program" ? "pv" : "program0" ? "pv0" : "program1" ? "pv1" : "program2" ? "pv2" : "program3" ? "pv3" : "";
                         let remotevideo = this.refs[node + feed];
                         Janus.attachMediaStream(remotevideo, stream);
-                    } else {
-                        Janus.log("Created remote data channel");
                     }
                 },
                 ondataopen: (data) => {

@@ -28,7 +28,6 @@ class UsersQuad extends Component {
             this.props.setProps({group: null});
         } else {
             // Next in queue
-            groups_queue++;
             if(groups_queue >= groups.length) {
                 // End round here!
                 Janus.log(" -- ROUND END --");
@@ -37,6 +36,7 @@ class UsersQuad extends Component {
             }
             quad[i] = groups_queue;
             room = groups[groups_queue].room;
+            groups_queue++;
             this.props.setProps({groups_queue,round});
         }
 
