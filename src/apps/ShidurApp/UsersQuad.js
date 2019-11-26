@@ -41,7 +41,7 @@ class UsersQuad extends Component {
         }
 
         this.setState({quad});
-        this["users"+i].initVideoRoom(room, "program");
+        this["users"+i].initVideoRoom(room);
     };
 
     switchFour = () => {
@@ -67,7 +67,7 @@ class UsersQuad extends Component {
             let room = groups[groups_queue].room;
             quad.push(groups_queue);
             this.setState({quad});
-            this["users"+i].initVideoRoom(room, "program");
+            this["users"+i].initVideoRoom(room);
             groups_queue++;
             this.props.setProps({groups_queue});
         }

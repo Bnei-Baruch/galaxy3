@@ -1745,7 +1745,7 @@ export function Janus(gatewayCallbacks) {
 						return;
 					Janus.log("Adding onended callback to track:", event.track);
 					event.track.onended = function(ev) {
-						Janus.log("Remote track removed:", ev);
+						Janus.debug("Remote track removed:", ev);
 						if(config.remoteStream) {
 							config.remoteStream.removeTrack(ev.target);
 							var mid = ev.target.id;
@@ -1763,7 +1763,7 @@ export function Janus(gatewayCallbacks) {
 					};
 					event.track.onmute = event.track.onended;
 					event.track.onunmute = function(ev) {
-						Janus.log("Remote track flowing again:", ev);
+						Janus.debug("Remote track flowing again:", ev);
 						try {
 						    // pluginHandle.onremotetrack(ev.target, mid, true);
                             // Workaround to separate "add new" and "flow agan" track trigger

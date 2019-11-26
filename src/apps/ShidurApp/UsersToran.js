@@ -1,9 +1,8 @@
 import React, {Component, Fragment} from 'react';
 import { Janus } from "../../lib/janus";
-import {Segment, Table, Icon} from "semantic-ui-react";
+import {Segment, Table} from "semantic-ui-react";
 import './ShidurToran.scss';
 import UsersHandle from "./UsersHandle";
-import {getPluginInfo} from "../../shared/tools";
 
 class UsersToran extends Component {
 
@@ -21,7 +20,7 @@ class UsersToran extends Component {
 
     componentDidUpdate(prevProps) {
         if(this.props.group === null && prevProps.group) {
-            this.users.exitVideoRoom(prevProps.group.room, "program");
+            this.users.exitVideoRoom(prevProps.group.room);
         }
     }
 
