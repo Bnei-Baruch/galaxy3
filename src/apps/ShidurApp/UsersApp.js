@@ -34,11 +34,8 @@ class UsersApp extends Component {
             let {user} = this.state;
             user.session = janus.getSessionId();
             this.setState({janus,user});
-            setInterval(() => this.getRoomList(), 2000 );
+            setInterval(() => this.getRoomList(), 5000 );
             //setInterval(() => this.chkDisabledRooms(), 10000 );
-            //this.toran.initVideoRoom(1051, "preview");
-            //this.initVideoRoom(null, "preview");
-
             initGxyProtocol(janus, user, protocol => {
                 this.setState({protocol});
             }, ondata => {
@@ -57,19 +54,11 @@ class UsersApp extends Component {
         let req = {request: "list"};
         getPluginInfo(req, data => {
             let usable_rooms = data.response.list.filter(room => room.num_participants > 0);
-            var newarray = usable_rooms.filter((room) => !disabled_rooms.find(droom => room.room === droom.room));
-            // newarray.sort((a, b) => {
-            //     // if (a.num_participants > b.num_participants) return -1;
-            //     // if (a.num_participants < b.num_participants) return 1;
-            //     if (a.description > b.description) return 1;
-            //     if (a.description < b.description) return -1;
-            //     return 0;
-            // });
+            let newarray = usable_rooms.filter((room) => !disabled_rooms.find(droom => room.room === droom.room));
             this.getFeedsList(newarray)
         })
     };
 
-    //FIXME: tmp solution to show count without service users in room list
     getFeedsList = (rooms) => {
         let {users,groups} = this.state;
         rooms.forEach((room,i) => {
@@ -78,16 +67,48 @@ class UsersApp extends Component {
                 getPluginInfo(req, data => {
                     Janus.debug("Feeds: ", data);
                     let count = data.response.participants.filter(p => JSON.parse(p.display).role === "user");
-                    let questions = data.response.participants.find(p => users[JSON.parse(p.display).id] ? users[JSON.parse(p.display).id].question : null);
-                    rooms[i].num_participants = count.length;
-                    rooms[i].questions = questions;
-                    //groups.push(rooms);
-                    this.setState({groups: rooms});
+                    if(count.length !== 0) {
+                        let questions = data.response.participants.find(p => users[JSON.parse(p.display).id] ? users[JSON.parse(p.display).id].question : null);
+                        rooms[i].num_participants = count.length;
+                        rooms[i].questions = questions;
+                        this.setState({rooms});
+                    }
                 })
             }
         });
-        // this.setState({groups});
-        // console.log(groups)
+        if(groups.length === 0) {
+            this.setState({groups: rooms});
+        } else {
+            setTimeout(() => this.groupsQueue(),4000);
+        }
+    };
+
+    groupsQueue = () => {
+        let {groups,rooms} = this.state;
+        if(groups.length > rooms.length) {
+            for (let i=0; i<groups.length; i++) {
+                let group = rooms.find(r => r.room === groups[i].room);
+                if (!group) {
+                    groups.splice(i, 1);
+                    this.setState({groups});
+                    break
+                }
+            }
+        } else {
+            for(let i=0; i<rooms.length; i++) {
+                let group = groups.find(r => r.room === rooms[i].room);
+                if(group) {
+                    for(let g=0; g<groups.length; g++) {
+                        if(groups[g].room === rooms[i].room && groups[g].num_participants !== rooms[i].num_participants) {
+                            groups[g] = rooms[i];
+                        }
+                    }
+                } else {
+                    groups.push(rooms[i]);
+                }
+            }
+            this.setState({groups});
+        }
     };
 
     chkDisabledRooms = () => {
