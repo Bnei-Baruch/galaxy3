@@ -35,7 +35,7 @@ class UsersApp extends Component {
             user.session = janus.getSessionId();
             this.setState({janus,user});
             setInterval(() => this.getRoomList(), 5000 );
-            //setInterval(() => this.chkDisabledRooms(), 10000 );
+            setInterval(() => this.chkDisabledRooms(), 5000 );
             initGxyProtocol(janus, user, protocol => {
                 this.setState({protocol});
             }, ondata => {
@@ -61,30 +61,28 @@ class UsersApp extends Component {
 
     getFeedsList = (rooms) => {
         let {users,groups} = this.state;
-        rooms.forEach((room,i) => {
-            if(room.num_participants > 0) {
-                let req = {request: "listparticipants", "room": room.room};
-                getPluginInfo(req, data => {
-                    Janus.debug("Feeds: ", data);
-                    let count = data.response.participants.filter(p => JSON.parse(p.display).role === "user");
-                    if(count.length !== 0) {
-                        let questions = data.response.participants.find(p => users[JSON.parse(p.display).id] ? users[JSON.parse(p.display).id].question : null);
-                        rooms[i].num_participants = count.length;
-                        rooms[i].questions = questions;
-                        this.setState({rooms});
-                    }
-                })
-            }
-        });
-        if(groups.length === 0) {
-            this.setState({groups: rooms});
-        } else {
-            setTimeout(() => this.groupsQueue(),4000);
+        for(let i=0; i<rooms.length; i++) {
+            let req = {request: "listparticipants", "room": rooms[i].room};
+            getPluginInfo(req, data => {
+                Janus.debug("Feeds: ", data);
+                let count = data.response.participants.filter(p => JSON.parse(p.display).role === "user");
+                rooms[i].num_participants = count.length;
+                let questions = data.response.participants.find(p => users[JSON.parse(p.display).id] ? users[JSON.parse(p.display).id].question : null);
+                rooms[i].questions = questions;
+                if(groups.length === 0 && rooms.length-1 === i) {
+                    let r = rooms.filter(room => room.num_participants > 0);
+                    this.setState({groups: r});
+                }
+                if(groups.length > 0 && rooms.length-1 === i) {
+                    let r = rooms.filter(room => room.num_participants > 0);
+                    this.groupsQueue(r)
+                }
+            })
         }
     };
 
-    groupsQueue = () => {
-        let {groups,rooms} = this.state;
+    groupsQueue = (rooms) => {
+        let {groups} = this.state;
         if(groups.length > rooms.length) {
             for (let i=0; i<groups.length; i++) {
                 let group = rooms.find(r => r.room === groups[i].room);
@@ -126,7 +124,9 @@ class UsersApp extends Component {
                 let questions = data.response.participants.find(p => users[JSON.parse(p.display).id] ? users[JSON.parse(p.display).id].question : null);
                 disabled_rooms[i].num_participants = count.length;
                 disabled_rooms[i].questions = questions;
-                this.setState({disabled_rooms});
+                if(disabled_rooms.length-1 === i) {
+                    this.setState({disabled_rooms});
+                }
             });
         }
     };

@@ -7,12 +7,8 @@ import UsersHandle from "./UsersHandle";
 class UsersToran extends Component {
 
     state = {
-        janus: null,
-        rooms: [],
         index: 0,
-        disabled_rooms: [],
         group: null,
-        protocol: null,
     };
 
     componentDidMount() {
@@ -24,57 +20,40 @@ class UsersToran extends Component {
         }
     }
 
-    attachToPreview = (group, index) => {
-        let room = group.room;
-        let name = group.description;
-        let h = "preview";
-        if(this.state.preview.room === room)
-            return;
-        if(this.state.preview.videoroom) {
-            let leave_room = {request : "leave", "room": this.state.preview.room};
-            this.state.preview.videoroom.send({"message": leave_room});
-        }
-        Janus.log(" :: Attaching to Preview: ",group);
-        this.setState({[h]:{...this.state[h], feeds: [], room, name, index}});
-        //this.initVideoRoom(room, "preview");
-    };
-
     selectGroup = (group, i) => {
         group.index = i;
         this.props.setProps({group});
         Janus.log(group);
         let room = group.room;
-        let name = group.description;
         this.users.initVideoRoom(room, "program");
-        //this.attachToPreview(group, i);
     };
 
     disableRoom = (e, data, i) => {
         e.preventDefault();
         if (e.type === 'contextmenu') {
-            let {disabled_rooms} = this.state;
+            let {disabled_rooms} = this.props;
+            let group = disabled_rooms.find(r => r.room === data.room);
+            if(group) return;
             disabled_rooms.push(data);
-            this.setState({disabled_rooms});
-            this.getRoomList();
+            this.props.setProps({disabled_rooms});
         }
     };
 
     restoreRoom = (e, data, i) => {
         e.preventDefault();
         if (e.type === 'contextmenu') {
-            let {disabled_rooms} = this.state;
+            let {disabled_rooms} = this.props;
             for(let i = 0; i < disabled_rooms.length; i++){
                 if(disabled_rooms[i].room === data.room) {
                     disabled_rooms.splice(i, 1);
-                    this.setState({disabled_rooms});
-                    this.getRoomList();
+                    this.props.setProps({disabled_rooms});
                 }
             }
         }
     };
 
   render() {
-      const {group,disabled_rooms,groups,users} = this.props;
+      const {group,disabled_rooms,groups} = this.props;
       const q = (<b style={{color: 'red', fontSize: '20px', fontFamily: 'Verdana', fontWeight: 'bold'}}>?</b>);
 
       let rooms_list = groups.map((data,i) => {
