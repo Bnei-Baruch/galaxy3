@@ -4,7 +4,7 @@ import { Janus } from "../../lib/janus";
 import classNames from 'classnames';
 import {isMobile} from "react-device-detect";
 import {Menu, Select, Button,Input,Label,Icon,Popup} from "semantic-ui-react";
-import {geoInfo, initJanus, getDevicesStream, micLevel, checkNotification,testDevices,testMic} from "../../shared/tools";
+import {geoInfo, initJanus, getDevicesStream, micLevel, checkNotification,testDevices,testMic,genUUID} from "../../shared/tools";
 import './VirtualClient.scss'
 import './VideoConteiner.scss'
 import 'eqcss'
@@ -42,7 +42,7 @@ class OldClient extends Component {
         protocol: null,
         user: {
             email: null,
-            id: Janus.randomString(10),
+            id: localStorage.getItem("uuid") || genUUID(),
             role: "user",
             name: "user-"+Janus.randomString(4),
             username: null,
@@ -74,6 +74,7 @@ class OldClient extends Component {
     initClient = (user,error) => {
         localStorage.setItem("question", false);
         localStorage.setItem("sound_test", false);
+        localStorage.setItem("uuid", user.id);
         checkNotification();
         geoInfo(`${GEO_IP_INFO}`, data => {
             user.ip = data ? data.ip : "127.0.0.1";
