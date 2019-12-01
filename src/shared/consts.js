@@ -152,5 +152,10 @@ export const trllang = {
         "French": 305,
         "Spanish": 304,
         "German": 307,
-        "Italian": 306
+        "Italian": 306,
+        "Turkish": 308,
+        "Bulgarian": 310,
+        "Romanian": 312,
+        "Lithuanian": 315,
+        "Ukrainian": 322
 };
