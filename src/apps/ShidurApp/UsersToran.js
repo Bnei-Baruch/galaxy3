@@ -57,7 +57,7 @@ class UsersToran extends Component {
       const q = (<b style={{color: 'red', fontSize: '20px', fontFamily: 'Verdana', fontWeight: 'bold'}}>?</b>);
 
       let rooms_list = groups.map((data,i) => {
-          const {room, num_participants, description, questions} = data;
+          const {room, num_users, description, questions} = data;
           return (
               <Table.Row
                          positive={group && group.description === description}
@@ -66,7 +66,7 @@ class UsersToran extends Component {
                          key={room} onClick={() => this.selectGroup(data, i)}
                          onContextMenu={(e) => this.disableRoom(e, data, i)} >
                   <Table.Cell width={5}>{description}</Table.Cell>
-                  <Table.Cell width={1}>{num_participants}</Table.Cell>
+                  <Table.Cell width={1}>{num_users}</Table.Cell>
                   <Table.Cell width={1}>{questions ? q : ""}</Table.Cell>
               </Table.Row>
           )

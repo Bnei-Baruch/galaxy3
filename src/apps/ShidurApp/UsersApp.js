@@ -65,16 +65,17 @@ class UsersApp extends Component {
             let req = {request: "listparticipants", "room": rooms[i].room};
             getPluginInfo(req, data => {
                 Janus.debug("Feeds: ", data);
-                let count = data.response.participants.filter(p => JSON.parse(p.display).role === "user");
-                rooms[i].num_participants = count.length;
+                //let count = data.response.participants.filter(p => JSON.parse(p.display).role === "user");
+                let count = data.response.participants.filter(p => p.publisher);
+                rooms[i].num_users = count.length;
                 let questions = data.response.participants.find(p => users[JSON.parse(p.display).id] ? users[JSON.parse(p.display).id].question : null);
                 rooms[i].questions = questions;
                 if(groups.length === 0 && rooms.length-1 === i) {
-                    let r = rooms.filter(room => room.num_participants > 0);
+                    let r = rooms.filter(room => room.num_users > 0);
                     this.setState({groups: r});
                 }
                 if(groups.length > 0 && rooms.length-1 === i) {
-                    let r = rooms.filter(room => room.num_participants > 0);
+                    let r = rooms.filter(room => room.num_users > 0);
                     this.groupsQueue(r)
                 }
             })
@@ -97,7 +98,7 @@ class UsersApp extends Component {
                 let group = groups.find(r => r.room === rooms[i].room);
                 if(group) {
                     for(let g=0; g<groups.length; g++) {
-                        if(groups[g].room === rooms[i].room && groups[g].num_participants !== rooms[i].num_participants) {
+                        if(groups[g].room === rooms[i].room && groups[g].num_users !== rooms[i].num_users) {
                             groups[g] = rooms[i];
                         }
                     }
@@ -112,7 +113,7 @@ class UsersApp extends Component {
     chkDisabledRooms = () => {
         let {users,disabled_rooms} = this.state;
         for (let i=0; i<disabled_rooms.length; i++) {
-            if(disabled_rooms[i].num_participants === 0) {
+            if(disabled_rooms[i].num_users === 0) {
                 disabled_rooms.splice(i, 1);
                 this.setState({disabled_rooms});
                 continue;
@@ -120,9 +121,10 @@ class UsersApp extends Component {
             let req = {request: "listparticipants", "room": disabled_rooms[i].room};
             getPluginInfo(req, data => {
                 Janus.debug("Feeds: ", data.response.participants);
-                let count = data.response.participants.filter(p => JSON.parse(p.display).role === "user");
+                //let count = data.response.participants.filter(p => JSON.parse(p.display).role === "user");
+                let count = data.response.participants.filter(p => p.publisher);
                 let questions = data.response.participants.find(p => users[JSON.parse(p.display).id] ? users[JSON.parse(p.display).id].question : null);
-                disabled_rooms[i].num_participants = count.length;
+                disabled_rooms[i].num_users = count.length;
                 disabled_rooms[i].questions = questions;
                 if(disabled_rooms.length-1 === i) {
                     this.setState({disabled_rooms});
