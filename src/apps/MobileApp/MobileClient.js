@@ -5,7 +5,15 @@ import classNames from 'classnames';
 import ReactSwipe from 'react-swipe';
 
 import {Menu, Select, Button,Input,Label,Icon,Popup} from "semantic-ui-react";
-import {geoInfo, initJanus, getDevicesStream, checkNotification,testDevices,testMic} from "../../shared/tools";
+import {
+    geoInfo,
+    initJanus,
+    getDevicesStream,
+    checkNotification,
+    testDevices,
+    testMic,
+    genUUID
+} from "../../shared/tools";
 import './MobileClient.scss'
 import './MobileConteiner.scss'
 import 'eqcss'
@@ -48,7 +56,7 @@ class MobileClient extends Component {
         protocol: null,
         user: {
             email: null,
-            id: Janus.randomString(10),
+            id: localStorage.getItem("uuid") || genUUID(),
             role: "user",
             name: "user-"+Janus.randomString(4),
             username: null,
@@ -75,6 +83,7 @@ class MobileClient extends Component {
 
     initClient = (user,error) => {
         localStorage.setItem("question", false);
+        localStorage.setItem("uuid", user.id);
         checkNotification();
         geoInfo(`${GEO_IP_INFO}`, data => {
             Janus.log(data);
