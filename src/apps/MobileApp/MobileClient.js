@@ -814,11 +814,13 @@ class MobileClient extends Component {
         //This name will see other users
         user.display = username_value || user.name;
         localStorage.setItem("username", user.display);
+        user.question = false;
         user.camera = reconnect !== true ? video_device !== "" : !cammuted;
         initGxyProtocol(janus, user, protocol => {
             this.setState({protocol});
             // Send question event if before join it was true
             if(reconnect && JSON.parse(localStorage.getItem("question"))) {
+                user.question = true;
                 let msg = { type: "question", status: true, room: selected_room, user};
                 setTimeout(() => {
                     sendProtocolMessage(protocol, user, msg );
@@ -874,9 +876,10 @@ class MobileClient extends Component {
 
     handleQuestion = () => {
         //TODO: only when shidur user is online will be avelable send question event, so we need to add check
-        const { protocol, user, room, question} = this.state;
+        let {protocol, user, room, question} = this.state;
         localStorage.setItem("question", !question);
-        let msg = { type: "question", status: !question, room, user};
+        user.question = !question;
+        let msg = {type: "question", status: !question, room, user};
         sendProtocolMessage(protocol, user, msg );
         this.setState({question: !question});
     };

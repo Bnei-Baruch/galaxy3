@@ -364,11 +364,13 @@ class GroupClient extends Component {
         user.display = user.title || user.name;
         user.self_test = tested;
         user.sound_test = reconnect ? JSON.parse(localStorage.getItem("sound_test")) : false;
+        user.question = false;
         localStorage.setItem("username", user.display);
         initGxyProtocol(janus, user, protocol => {
             this.setState({protocol});
             if(reconnect && JSON.parse(localStorage.getItem("question"))) {
                 // Send question event if before join it was true
+                user.question = true;
                 let msg = { type: "question", status: true, room: selected_room, user};
                 setTimeout(() => {
                     sendProtocolMessage(protocol, user, msg );
@@ -431,9 +433,10 @@ class GroupClient extends Component {
 
     handleQuestion = () => {
         //TODO: only when shidur user is online will be avelable send question event, so we need to add check
-        const { protocol, user, room, question} = this.state;
+        let {protocol, user, room, question} = this.state;
         localStorage.setItem("question", !question);
-        let msg = { type: "question", status: !question, room, user};
+        user.question = !question;
+        let msg = {type: "question", status: !question, room, user};
         sendProtocolMessage(protocol, user, msg );
         this.setState({question: !question});
     };

@@ -691,6 +691,7 @@ class OldClient extends Component {
         //This name will see other users
         user.display = username_value || user.name;
         user.self_test = tested;
+        user.question = false;
         user.camera = reconnect !== true ? video_device !== "" : !cammuted;
         user.sound_test = reconnect ? JSON.parse(localStorage.getItem("sound_test")) : false;
         localStorage.setItem("username", user.display);
@@ -698,6 +699,7 @@ class OldClient extends Component {
             this.setState({protocol});
             // Send question event if before join it was true
             if(reconnect && JSON.parse(localStorage.getItem("question"))) {
+                user.question = true;
                 let msg = { type: "question", status: true, room: selected_room, user};
                 setTimeout(() => {
                     sendProtocolMessage(protocol, user, msg );
@@ -762,9 +764,10 @@ class OldClient extends Component {
 
     handleQuestion = () => {
         //TODO: only when shidur user is online will be avelable send question event, so we need to add check
-        const { protocol, user, room, question} = this.state;
+        let {protocol, user, room, question} = this.state;
         localStorage.setItem("question", !question);
-        let msg = { type: "question", status: !question, room, user};
+        user.question = !question;
+        let msg = {type: "question", status: !question, room, user};
         sendProtocolMessage(protocol, user, msg );
         this.setState({question: !question});
     };
