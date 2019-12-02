@@ -284,11 +284,14 @@ class GroupClient extends Component {
         Janus.debug("Event: " + event);
         if(event !== undefined && event !== null) {
             if(event === "joined") {
-                // Publisher/manager created, negotiate WebRTC and attach to existing feeds, if any
+                let {user,selected_room,protocol} = this.state;
                 let myid = msg["id"];
                 let mypvtid = msg["private_id"];
-                this.setState({myid ,mypvtid});
+                user.rfid = myid;
+                this.setState({user,myid,mypvtid});
+                let pmsg = { type: "enter", status: true, room: selected_room, user};
                 Janus.log("Successfully joined room " + msg["room"] + " with ID " + myid);
+                sendProtocolMessage(protocol, user, pmsg);
                 this.publishOwnFeed(true);
                 // Any new feed to attach to?
                 if(msg["publishers"] !== undefined && msg["publishers"] !== null) {
