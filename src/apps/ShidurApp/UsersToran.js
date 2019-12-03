@@ -59,9 +59,7 @@ class UsersToran extends Component {
       let rooms_list = groups.map((data,i) => {
           const {room, num_users, description, questions} = data;
           return (
-              <Table.Row
-                         positive={group && group.description === description}
-                         // disabled={num_participants === 0}
+              <Table.Row positive={group && group.description === description}
                          className={group && group.room === room ? 'active' : 'no'}
                          key={room} onClick={() => this.selectGroup(data, i)}
                          onContextMenu={(e) => this.disableRoom(e, data, i)} >
@@ -73,13 +71,13 @@ class UsersToran extends Component {
       });
 
       let disabled_list = disabled_rooms.map((data,i) => {
-          const {room, num_participants, description, questions} = data;
+          const {room, num_users, description, questions} = data;
           return (
               <Table.Row key={room} warning
                          onClick={() => this.selectGroup(data, i)}
                          onContextMenu={(e) => this.restoreRoom(e, data, i)} >
                   <Table.Cell width={5}>{description}</Table.Cell>
-                  <Table.Cell width={1}>{num_participants}</Table.Cell>
+                  <Table.Cell width={1}>{num_users}</Table.Cell>
                   <Table.Cell width={1}>{questions ? q : ""}</Table.Cell>
               </Table.Row>
           )

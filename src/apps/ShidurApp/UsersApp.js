@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import { Janus } from "../../lib/janus";
 import {Segment} from "semantic-ui-react";
-import {getState, putData, initJanus, getPluginInfo} from "../../shared/tools";
+import {getState, putData, initJanus} from "../../shared/tools";
 import './UsersApp.css'
 import {initGxyProtocol} from "../../shared/protocol";
 import UsersQuad from "./UsersQuad";
@@ -35,7 +35,6 @@ class UsersApp extends Component {
             user.session = janus.getSessionId();
             this.setState({janus,user});
             setInterval(() => this.getRoomList(), 5000 );
-            setInterval(() => this.chkDisabledRooms(), 5000 );
             initGxyProtocol(janus, user, protocol => {
                 this.setState({protocol});
             }, ondata => {
@@ -50,87 +49,13 @@ class UsersApp extends Component {
     };
 
     getRoomList = () => {
-        const {disabled_rooms} = this.state;
-        let req = {request: "list"};
-        getPluginInfo(req, data => {
-            let usable_rooms = data.response.list.filter(room => room.num_participants > 0);
-            let newarray = usable_rooms.filter((room) => !disabled_rooms.find(droom => room.room === droom.room));
-            this.getFeedsList(newarray)
-        })
-    };
-
-    getFeedsList = (rooms) => {
-        let {users,groups} = this.state;
-        for(let i=0; i<rooms.length; i++) {
-            let req = {request: "listparticipants", "room": rooms[i].room};
-            getPluginInfo(req, data => {
-                Janus.debug("Feeds: ", data);
-                //let count = data.response.participants.filter(p => JSON.parse(p.display).role === "user");
-                let count = data.response.participants.filter(p => p.publisher);
-                rooms[i].num_users = count.length;
-                let questions = data.response.participants.find(p => users[JSON.parse(p.display).id] ? users[JSON.parse(p.display).id].question : null);
-                rooms[i].questions = questions;
-                if(groups.length === 0 && rooms.length-1 === i) {
-                    let r = rooms.filter(room => room.num_users > 0);
-                    this.setState({groups: r});
-                }
-                if(groups.length > 0 && rooms.length-1 === i) {
-                    let r = rooms.filter(room => room.num_users > 0);
-                    this.groupsQueue(r)
-                }
-            })
-        }
-    };
-
-    groupsQueue = (rooms) => {
-        let {groups} = this.state;
-        if(groups.length > rooms.length) {
-            for (let i=0; i<groups.length; i++) {
-                let group = rooms.find(r => r.room === groups[i].room);
-                if (!group) {
-                    groups.splice(i, 1);
-                    this.setState({groups});
-                    break
-                }
-            }
-        } else {
-            for(let i=0; i<rooms.length; i++) {
-                let group = groups.find(r => r.room === rooms[i].room);
-                if(group) {
-                    for(let g=0; g<groups.length; g++) {
-                        if(groups[g].room === rooms[i].room && groups[g].num_users !== rooms[i].num_users) {
-                            groups[g] = rooms[i];
-                        }
-                    }
-                } else {
-                    groups.push(rooms[i]);
-                }
-            }
-            this.setState({groups});
-        }
-    };
-
-    chkDisabledRooms = () => {
-        let {users,disabled_rooms} = this.state;
-        for (let i=0; i<disabled_rooms.length; i++) {
-            if(disabled_rooms[i].num_users === 0) {
-                disabled_rooms.splice(i, 1);
-                this.setState({disabled_rooms});
-                continue;
-            }
-            let req = {request: "listparticipants", "room": disabled_rooms[i].room};
-            getPluginInfo(req, data => {
-                Janus.debug("Feeds: ", data.response.participants);
-                //let count = data.response.participants.filter(p => JSON.parse(p.display).role === "user");
-                let count = data.response.participants.filter(p => p.publisher);
-                let questions = data.response.participants.find(p => users[JSON.parse(p.display).id] ? users[JSON.parse(p.display).id].question : null);
-                disabled_rooms[i].num_users = count.length;
-                disabled_rooms[i].questions = questions;
-                if(disabled_rooms.length-1 === i) {
-                    this.setState({disabled_rooms});
-                }
-            });
-        }
+        let {disabled_rooms} = this.state;
+        getState('galaxy/rooms', (rooms) => {
+            Janus.log(" :: Get Rooms: ", rooms);
+            let groups = rooms.filter((room) => !disabled_rooms.find(droom => room.room === droom.room));
+            disabled_rooms = rooms.filter((room) => !groups.find(droom => room.room === droom.room));
+            this.setState({groups,disabled_rooms});
+        });
     };
 
     onProtocolData = (data) => {
