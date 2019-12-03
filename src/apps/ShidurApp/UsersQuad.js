@@ -232,7 +232,7 @@ class UsersQuad extends Component {
               </Segment>
               <Button.Group attached='bottom' size='mini'>
                   <Button className='preset_button'
-                          disabled={fullscr}
+                          disabled={true}
                           color='teal'
                           onClick={this.setPreset} >
                       {col}

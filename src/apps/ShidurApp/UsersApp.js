@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React, {Component, Fragment} from 'react';
 import { Janus } from "../../lib/janus";
 import {Segment} from "semantic-ui-react";
 import {getState, putData, initJanus} from "../../shared/tools";
@@ -51,7 +51,6 @@ class UsersApp extends Component {
     getRoomList = () => {
         let {disabled_rooms} = this.state;
         getState('galaxy/rooms', (rooms) => {
-            Janus.log(" :: Get Rooms: ", rooms);
             let groups = rooms.filter((room) => !disabled_rooms.find(droom => room.room === droom.room));
             disabled_rooms = rooms.filter((room) => !groups.find(droom => room.room === droom.room));
             this.setState({groups,disabled_rooms});
@@ -89,10 +88,10 @@ class UsersApp extends Component {
 
         return (
 
-            <Segment className="users_container">
+            <Fragment>
                 <UsersQuad {...this.state} setProps={this.setProps} />
                 <UsersToran ref={toran => {this.toran = toran;}} {...this.state} setProps={this.setProps} />
-            </Segment>
+            </Fragment>
         );
     }
 }
