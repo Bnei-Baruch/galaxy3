@@ -341,11 +341,14 @@ class OldClient extends Component {
         let event = msg["videoroom"];
         if(event !== undefined && event !== null) {
             if(event === "joined") {
-                // Publisher/manager created, negotiate WebRTC and attach to existing feeds, if any
+                let {user,selected_room,protocol} = this.state;
                 let myid = msg["id"];
                 let mypvtid = msg["private_id"];
-                this.setState({myid ,mypvtid});
+                user.rfid = myid;
+                this.setState({user,myid ,mypvtid});
+                let pmsg = { type: "enter", status: true, room: selected_room, user};
                 Janus.log("Successfully joined room " + msg["room"] + " with ID " + myid);
+                sendProtocolMessage(protocol, user, pmsg);
                 this.publishOwnFeed(true);
                 // Any new feed to attach to?
                 if(msg["publishers"] !== undefined && msg["publishers"] !== null) {
@@ -754,12 +757,14 @@ class OldClient extends Component {
     };
 
     selectRoom = (i) => {
-        const {rooms} = this.state;
+        const {rooms,user} = this.state;
         let selected_room = rooms[i].room;
         let name = rooms[i].description;
         if (this.state.room === selected_room)
             return;
-        this.setState({selected_room,name,i});
+        user.room = selected_room;
+        user.group = name;
+        this.setState({user,selected_room,name,i});
     };
 
     handleQuestion = () => {

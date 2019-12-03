@@ -297,10 +297,10 @@ class VirtualStreaming extends Component {
             let body = { "request": "switch", "id": gxycol[col] };
             console.log(" :: Switch STR Stream: ",gxycol[col]);
             this.state.audiostream.send({"message": body});
-            if(name.match(/^(New York|Toronto)$/)) {
-                //this.initTranslationStream(303);
+            let id = trllang[localStorage.getItem("vrt_langtext")];
+            if(name.match(/^(New York|Toronto)$/) || !id) {
+                console.log(" :: Not TRL Stream attach")
             } else {
-                let id = trllang[localStorage.getItem("vrt_langtext")] || 301;
                 let body = { "request": "switch", "id": id };
                 this.state.trlstream.send({"message": body});
                 let talking = setInterval(this.ducerMixaudio, 200);
