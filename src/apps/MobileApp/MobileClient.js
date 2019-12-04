@@ -819,6 +819,8 @@ class MobileClient extends Component {
         user.display = username_value || user.name;
         localStorage.setItem("username", user.display);
         user.question = false;
+        user.room = selected_room;
+        user.group = name;
         user.camera = reconnect !== true ? video_device !== "" : !cammuted;
         initGxyProtocol(janus, user, protocol => {
             this.setState({protocol});
