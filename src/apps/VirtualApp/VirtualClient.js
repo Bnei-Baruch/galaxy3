@@ -352,6 +352,7 @@ class VirtualClient extends Component {
                 let myid = msg["id"];
                 let mypvtid = msg["private_id"];
                 user.rfid = myid;
+                user.timestamp = Date.now();
                 this.setState({user,myid ,mypvtid});
                 let pmsg = { type: "enter", status: true, room: selected_room, user};
                 Janus.log("Successfully joined room " + msg["room"] + " with ID " + myid);
