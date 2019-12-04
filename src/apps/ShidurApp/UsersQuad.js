@@ -10,7 +10,7 @@ class UsersQuad extends Component {
 
     state = {
         col: 4,
-        quad: [0,1,2,3],
+        quad: [null,null,null,null],
     };
 
     componentDidMount() {
@@ -19,12 +19,10 @@ class UsersQuad extends Component {
     switchProgram = (i,g) => {
         let {group,groups,groups_queue,round} = this.props;
         let {quad} = this.state;
-        let room;
 
         if(group) {
             // From preview
             quad[i] = group.index;
-            room = group.room;
             this.props.setProps({group: null});
         } else {
             // Next in queue
@@ -35,13 +33,11 @@ class UsersQuad extends Component {
                 round++;
             }
             quad[i] = groups_queue;
-            room = groups[groups_queue].room;
             groups_queue++;
             this.props.setProps({groups_queue,round});
         }
 
         this.setState({quad});
-        this["users"+i].initVideoRoom(room);
     };
 
     switchFour = () => {
@@ -64,10 +60,8 @@ class UsersQuad extends Component {
                 this.props.setProps({groups_queue,round});
             }
 
-            let room = groups[groups_queue].room;
             quad.push(groups_queue);
             this.setState({quad});
-            this["users"+i].initVideoRoom(room);
             groups_queue++;
             this.props.setProps({groups_queue});
         }
@@ -211,7 +205,7 @@ class UsersQuad extends Component {
                   <div className='click-panel' onClick={() => this.switchFullScreen(i)} >
                   <div className={fullscr ? "fullscrvideo_title" : "video_title"} >{name}</div>
                   {qst ? q : ""}
-                  <UsersHandle key={"q"+i} ref={ref => {this["users"+i] = ref;}} {...this.props} />
+                  <UsersHandle key={"q"+i} g={g} {...this.props} />
                   </div>
                   {fullscr ? "" :
                       <Button className='next_button'

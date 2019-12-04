@@ -17,6 +17,13 @@ class UsersHandle extends Component {
         mystream: null
     };
 
+    componentDidUpdate(prevProps) {
+        let {groups,g} = this.props;
+        if(g !== prevProps.g) {
+            this.initVideoRoom(groups[g].room);
+        }
+    }
+
     initVideoRoom = (roomid) => {
         if(this.state.videoroom) {
             let leave_room = {request : "leave", "room": this.state.room};
@@ -80,8 +87,8 @@ class UsersHandle extends Component {
 
 
     onMessage = (msg, jsep, initdata) => {
-        Janus.log(" ::: Got a message (publisher) :::");
-        Janus.log(msg);
+        Janus.debug(" ::: Got a message (publisher) :::");
+        Janus.debug(msg);
         let event = msg["videoroom"];
         if(event !== undefined && event !== null) {
             if(event === "joined") {
