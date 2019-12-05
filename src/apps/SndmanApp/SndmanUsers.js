@@ -52,6 +52,9 @@ class SndmanUsers extends Component {
 
     componentDidMount() {
         document.addEventListener("keydown", this.onKeyPressed);
+        getState('galaxy/users', (users) => {
+            this.setState({users});
+        });
         initJanus(janus => {
             let {user} = this.state;
             user.session = janus.getSessionId();

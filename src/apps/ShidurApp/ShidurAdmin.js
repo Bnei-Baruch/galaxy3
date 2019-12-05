@@ -1,7 +1,16 @@
 import React, { Component } from 'react';
 import { Janus } from "../../lib/janus";
 import {Segment, Menu, Button, Input, Table, Grid, Message, Transition, Select, Icon, Popup, List} from "semantic-ui-react";
-import {initJanus, initChatRoom, getDateString, joinChatRoom, getPublisherInfo, getHiddenProp, notifyMe} from "../../shared/tools";
+import {
+    initJanus,
+    initChatRoom,
+    getDateString,
+    joinChatRoom,
+    getPublisherInfo,
+    getHiddenProp,
+    notifyMe,
+    getState
+} from "../../shared/tools";
 import './ShidurAdmin.css';
 import './VideoConteiner.scss'
 import {GROUPS_ROOM,SECRET} from "../../shared/consts";
@@ -52,6 +61,14 @@ class ShidurAdmin extends Component {
 
     componentDidMount() {
         document.addEventListener("keydown", this.onKeyPressed);
+        let users = {};
+        getState('galaxy/users', (data) => {
+            users = {...data};
+            getState('galaxy/groups', (data) => {
+                users = {...users,...data};
+                this.setState({users});
+            });
+        });
     };
 
     componentWillUnmount() {

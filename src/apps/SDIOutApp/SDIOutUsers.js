@@ -39,6 +39,9 @@ class SDIOutUsers extends Component {
     };
 
     componentDidMount() {
+        getState('galaxy/users', (users) => {
+            this.setState({users});
+        });
         initJanus(janus => {
             let {user} = this.state;
             user.session = janus.getSessionId();
