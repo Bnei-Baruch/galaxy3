@@ -13,10 +13,25 @@ class UsersQuad extends Component {
         quad: [null,null,null,null],
     };
 
-    componentDidMount() {
+    componentDidUpdate(prevProps) {
+        let {groups} = this.props;
+        if(groups.length > prevProps.groups.length) {
+            console.log(" :: Group enter in queue");
+
+            // Autofill quad 4 groups
+            if(groups.length < 5) {
+                this.switchFour();
+            }
+        } else if(groups.length < prevProps.groups.length) {
+            console.log(" :: Group exit from queue")
+        }
     };
 
-    switchProgram = (i,g) => {
+    fillProgram = (i) => {
+        this.switchProgram(i);
+    };
+
+    switchProgram = (i) => {
         let {group,groups,groups_queue,round} = this.props;
         let {quad} = this.state;
 
@@ -42,7 +57,7 @@ class UsersQuad extends Component {
 
     switchFour = () => {
         let {groups_queue,groups,round} = this.props;
-        let quad = [];
+        let {quad} = this.state;
 
         for(let i=0; i<4; i++) {
 
@@ -60,49 +75,15 @@ class UsersQuad extends Component {
                 this.props.setProps({groups_queue,round});
             }
 
-            quad.push(groups_queue);
-            this.setState({quad});
+            quad[i] = groups_queue;
             groups_queue++;
             this.props.setProps({groups_queue});
         }
-    };
+        this.setState({quad});
 
-    quadCheckDup = () => {
-        let {feeds,feeds_queue,pre_feed,index,mids} = this.props;
-        let {quad} = this.state;
-        let dup = false;
-        let feed = pre_feed || feeds[feeds_queue];
-        if(feed) {
-            for (let i = index; i < index + 4; i++) {
-                let sub_mid = quad[i];
-                let mid = mids[sub_mid];
-                if (mid && mid.active && feed.id && mid.feed_id === feed.id) {
-                    dup = true;
-                    break;
-                }
-            }
-        }
-        return dup;
-    };
-
-    questionStatus = () => {
-        let {mids,qfeeds,questions_queue} = this.props;
-        for(let i = 0; i < questions_queue.length; i++) {
-            let qp_count = mids.filter(qp => qp.active && qp.feed_id === questions_queue[i].rfid).length;
-            let qf_chk = qfeeds.find(qf => qf.id === questions_queue[i].rfid);
-            if(qp_count > 0 && qf_chk) {
-                for (let q = 0; q < qfeeds.length; q++) {
-                    if (qfeeds[q] && qfeeds[q].id === questions_queue[i].rfid) {
-                        Janus.log(" - Remove QFEED: ", qfeeds[q]);
-                        qfeeds.splice(q, 1);
-                        this.props.setProps({qfeeds});
-                        break
-                    }
-                }
-            } else if(qp_count === 0 && !qf_chk) {
-                qfeeds.push({id: questions_queue[i].rfid, display: questions_queue[i].user});
-                this.props.setProps({qfeeds});
-            }
+        // Disable queue until program full
+        if(groups.length < 4) {
+            this.props.setProps({groups_queue: 0});
         }
     };
 
@@ -147,44 +128,6 @@ class UsersQuad extends Component {
         }, 2000);
     };
 
-    setPreset = () => {
-        Janus.log(" :: Set preset ::");
-        let {users,mids,index,presets} = this.props;
-        let streams = [];
-
-        for(let i=index; i<index+4; i++) {
-            if(!presets[i]) continue;
-            let sub_mid = presets[i].sub_mid;
-            let user_id = presets[i].user_id;
-            let mid = mids[sub_mid];
-
-            // Check if mid exist and user is online
-            if(mid && mid.active && users[user_id]) {
-                let feed = users[user_id].rfid;
-                streams.push({feed, mid: "1", sub_mid});
-            }
-        }
-
-        // Avoid request with empty streams
-        if(streams.length === 0)
-            return;
-
-        Janus.log(" :: Going to switch to preset: ", streams);
-        let switch_preset = {request: "switch", streams};
-        this.props.remoteFeed.send ({"message": switch_preset,
-            success: () => {
-                Janus.debug(" -- Switch success: ");
-                // Add to qfeeds if removed from program with question status
-                setTimeout(() => {
-                    this.questionStatus();
-                }, 1000);
-            }
-        });
-
-        // Send sdi action
-        this.sdiAction("switch_req" , true, null, streams);
-    };
-
   render() {
       const {full_feed,fullscr,col,quad} = this.state;
       const {groups,group,next_button} = this.props;
@@ -205,7 +148,7 @@ class UsersQuad extends Component {
                   <div className='click-panel' onClick={() => this.switchFullScreen(i)} >
                   <div className={fullscr ? "fullscrvideo_title" : "video_title"} >{name}</div>
                   {qst ? q : ""}
-                  <UsersHandle key={"q"+i} g={g} {...this.props} />
+                  <UsersHandle key={"q"+i} g={g} index={i} fillProgram={this.fillProgram} {...this.props} />
                   </div>
                   {fullscr ? "" :
                       <Button className='next_button'

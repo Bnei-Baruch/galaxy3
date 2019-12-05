@@ -18,9 +18,14 @@ class UsersHandle extends Component {
     };
 
     componentDidUpdate(prevProps) {
-        let {groups,g} = this.props;
-        if(g !== prevProps.g) {
+        let {groups,index,g} = this.props;
+        let {room} = this.state;
+        if(g !== prevProps.g && groups[g].room !== room) {
             this.initVideoRoom(groups[g].room);
+        }
+        if(g === prevProps.g && groups[g] && groups[g].room !== room) {
+            console.log(" :: Room changed in index", index);
+            this.props.fillProgram(index);
         }
     }
 
