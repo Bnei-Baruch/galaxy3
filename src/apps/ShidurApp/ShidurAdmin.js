@@ -323,12 +323,7 @@ class ShidurAdmin extends Component {
                             stream["display"] = display;
                         }
                         feedStreams[id] = {id, display, streams};
-                        let st = users[display.id] && users[display.id].sound_test;
-                        let qt = users[display.id] && users[display.id].question;
-                        users[display.id] = display;
-                        users[display.id].rfid = id;
-                        users[display.id].sound_test = st;
-                        users[display.id].question = qt;
+                        users[display.id] = {...display, ...users[display.id], rfid: id};
                         subscription.push(subst);
                     }
                     this.setState({feeds,feedStreams,users});
@@ -391,12 +386,7 @@ class ShidurAdmin extends Component {
                             stream["display"] = display;
                         }
                         feedStreams[id] = {id, display, streams};
-                        let st = users[display.id] && users[display.id].sound_test;
-                        let qt = users[display.id] && users[display.id].question;
-                        users[display.id] = display;
-                        users[display.id].rfid = id;
-                        users[display.id].sound_test = st;
-                        users[display.id].question = qt;
+                        users[display.id] = {...display, ...users[display.id], rfid: id};
                         subscription.push(subst);
                     }
                     feeds.push(feed[0]);
@@ -1014,10 +1004,11 @@ class ShidurAdmin extends Component {
     getUserInfo = (feed) => {
         Janus.log(" :: Selected feed: ",feed);
         let {display,id,talking} = feed;
-        let {current_room} =  this.state;
+        let {current_room,users} =  this.state;
         let feed_info = display.system ? platform.parse(display.system) : null;
-        this.setState({feed_id: id, feed_user: display, feed_info, feed_talk: talking});
-        Janus.log(display,id,talking);
+        let feed_user = {...display,...users[display.id]};
+        this.setState({feed_id: id, feed_user, feed_info, feed_talk: talking});
+        Janus.log(feed_user,id,talking);
 
         if(current_room !== GROUPS_ROOM)
             return;
