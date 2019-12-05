@@ -5,12 +5,19 @@ import './UsersQuad.scss'
 import {sendProtocolMessage} from "../../shared/protocol";
 import {GROUPS_ROOM} from "../../shared/consts";
 import UsersHandle from "./UsersHandle";
+import {putData} from "../../shared/tools";
 
 class UsersQuad extends Component {
 
     state = {
         col: 4,
         quad: [null,null,null,null],
+    };
+
+    componentDidMount() {
+        setTimeout(() => {
+            this.switchFour();
+        }, 5000);
     };
 
     componentDidUpdate(prevProps) {
@@ -53,6 +60,11 @@ class UsersQuad extends Component {
         }
 
         this.setState({quad});
+
+        // Save state
+        putData(`galaxy/program`, {quad}, (cb) => {
+            Janus.log(":: Save to state: ",cb);
+        });
     };
 
     switchFour = () => {
@@ -85,6 +97,11 @@ class UsersQuad extends Component {
         if(groups.length < 4) {
             this.props.setProps({groups_queue: 0});
         }
+
+        // Save state
+        putData(`galaxy/program`, {quad}, (cb) => {
+            Janus.log(":: Save to state: ",cb);
+        });
     };
 
     sdiAction = (action, status, i, feed) => {

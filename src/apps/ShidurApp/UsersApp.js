@@ -30,11 +30,14 @@ class UsersApp extends Component {
     };
 
     componentDidMount() {
+        getState('galaxy/users', (users) => {
+            this.setState({users});
+        });
         initJanus(janus => {
             let {user} = this.state;
             user.session = janus.getSessionId();
             this.setState({janus,user});
-            setInterval(() => this.getRoomList(), 5000 );
+            setInterval(() => this.getRoomList(), 3000 );
             initGxyProtocol(janus, user, protocol => {
                 this.setState({protocol});
             }, ondata => {

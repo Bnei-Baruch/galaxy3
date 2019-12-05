@@ -1,7 +1,7 @@
 import React, {Component} from 'react';
 import {Janus} from "../../lib/janus";
 import {Grid} from "semantic-ui-react";
-import {getDateString, initJanus, putData} from "../../shared/tools";
+import {getDateString, getState, initJanus, putData} from "../../shared/tools";
 import {initGxyProtocol} from "../../shared/protocol";
 import ShidurGroups from "./ShidurGroups";
 import ShidurUsers from "./ShidurUsers";
@@ -51,6 +51,12 @@ class ShidurApp extends Component {
             {"sub_mid":"6","user_id":"f97ee9c7-1866-481d-b01a-57b1a2985858"},
             {"sub_mid":"9","user_id":"369fd5ce-43dc-467d-9936-a08f77739a40"},
         ],
+    };
+
+    componentDidMount() {
+        getState('galaxy/groups', (users) => {
+            this.setState({users});
+        });
     };
 
     componentWillUnmount() {
@@ -744,6 +750,9 @@ class ShidurApp extends Component {
                 </Grid.Column>
                 <Grid.Column width={4}>
                     <UsersApp />
+                    {/*<ShidurUsers*/}
+                    {/*    ref={col => {this.col4 = col;}}*/}
+                    {/*    setProps={this.setProps} />*/}
                 </Grid.Column>
             </Grid>
         );
