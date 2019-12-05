@@ -9,7 +9,7 @@ import {client} from "../../components/UserManager";
 import LoginPage from "../../components/LoginPage";
 import ShidurToran from "./ShidurToran";
 import {GROUPS_ROOM} from "../../shared/consts";
-import UsersApp from "./UsersApp";
+//import UsersApp from "./UsersApp";
 
 
 class ShidurApp extends Component {
@@ -749,10 +749,10 @@ class ShidurApp extends Component {
                     </Grid>
                 </Grid.Column>
                 <Grid.Column width={4}>
-                    <UsersApp />
-                    {/*<ShidurUsers*/}
-                    {/*    ref={col => {this.col4 = col;}}*/}
-                    {/*    setProps={this.setProps} />*/}
+                    {/*<UsersApp />*/}
+                    <ShidurUsers
+                        ref={col => {this.col4 = col;}}
+                        setProps={this.setProps} />
                 </Grid.Column>
             </Grid>
         );
