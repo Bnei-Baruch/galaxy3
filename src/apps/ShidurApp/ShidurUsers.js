@@ -309,7 +309,7 @@ class ShidurUsers extends Component {
         let {users} = this.state;
 
         // Set status in users list
-        if(data.type.match(/^(camera|question|sound-test)$/)) {
+        if(data.type.match(/^(camera|question|sound_test)$/)) {
             if(users[data.user.id]) {
                 users[data.user.id][data.type] = data.status;
                 this.setState({users});

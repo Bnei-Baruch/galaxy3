@@ -465,7 +465,7 @@ class ShidurApp extends Component {
                     break
                 }
             }
-        } else if(data.type === "sound-test") {
+        } else if(data.type === "sound_test") {
             let {users} = this.state;
             if(users[data.id]) {
                 users[data.id].sound_test = true;

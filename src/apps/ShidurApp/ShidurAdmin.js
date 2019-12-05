@@ -717,7 +717,7 @@ class ShidurAdmin extends Component {
         let {users} = this.state;
 
         // Set status in users list
-        if(data.type.match(/^(camera|question|sound-test)$/)) {
+        if(data.type.match(/^(camera|question|sound_test)$/)) {
             if(users[data.user.id]) {
                 users[data.user.id][data.type] = data.status;
                 this.setState({users});
@@ -1190,7 +1190,7 @@ class ShidurAdmin extends Component {
           <Segment className="virtual_segment" color='blue' raised>
 
               <Segment textAlign='center' className="ingest_segment">
-                  <Button color='blue' icon='sound' onClick={() => this.sendRemoteCommand("sound-test")} />
+                  <Button color='blue' icon='sound' onClick={() => this.sendRemoteCommand("sound_test")} />
                   <Popup
                       trigger={<Button positive icon='info' onClick={this.getFeedInfo} />}
                       position='bottom right'
