@@ -716,20 +716,13 @@ class ShidurAdmin extends Component {
     onProtocolData = (data) => {
         let {users} = this.state;
 
-        if(data.type === "question") {
+        // Set status in users list
+        if(data.type.match(/^(camera|question|sound-test)$/)) {
             if(users[data.user.id]) {
-                users[data.user.id].question = data.status;
+                users[data.user.id][data.type] = data.status;
                 this.setState({users});
             } else {
-                users[data.user.id] = {question: data.status};
-                this.setState({users});
-            }
-        } else if(data.type === "sound-test") {
-            if(users[data.id]) {
-                users[data.id].sound_test = true;
-                this.setState({users});
-            } else {
-                users[data.id] = {sound_test: true};
+                users[data.user.id] = {[data.type]: data.status};
                 this.setState({users});
             }
         }
@@ -811,7 +804,7 @@ class ShidurAdmin extends Component {
     sendRemoteCommand = (command_type) => {
         const {protocol,feed_user,user} = this.state;
         if(feed_user) {
-            let msg = { type: command_type, id: feed_user.id, user: feed_user};
+            let msg = { type: command_type, status: true, id: feed_user.id, user: feed_user};
             sendProtocolMessage(protocol, user, msg);
         }
     };
