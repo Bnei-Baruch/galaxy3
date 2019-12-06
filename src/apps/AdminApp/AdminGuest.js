@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import { Janus } from "../../lib/janus";
 import {Segment, Table, Grid} from "semantic-ui-react";
-import {initJanus} from "../../shared/tools";
+import {getState, initJanus} from "../../shared/tools";
 import './AdminGuest.css';
 import './AdminGuestVideo.scss'
 import classNames from "classnames";
@@ -76,28 +76,21 @@ class AdminGuest extends Component {
 
         }, er => {}, true);
         setInterval(() => {
-            this.getRoomList();
+            this.getGroupsList();
         }, 10000 );
     };
 
-    getRoomList = () => {
-        const {videoroom} = this.state;
-        if (videoroom) {
-            videoroom.send({message: {request: "list"},
-                success: (data) => {
-                    //Janus.log(" :: Get Rooms List: ", data.list)
-                    let rooms = data.list.filter(r => r.num_participants > 0);
-                    rooms.sort((a, b) => {
-                        // if (a.num_participants > b.num_participants) return -1;
-                        // if (a.num_participants < b.num_participants) return 1;
-                        if (a.description > b.description) return 1;
-                        if (a.description < b.description) return -1;
-                        return 0;
-                    });
-                    this.setState({rooms});
-                }
+    getGroupsList = () => {
+        getState('galaxy/rooms', (rooms) => {
+            rooms.sort((a, b) => {
+                // if (a.num_users > b.num_users) return -1;
+                // if (a.num_users < b.num_users) return 1;
+                if (a.description > b.description) return 1;
+                if (a.description < b.description) return -1;
+                return 0;
             });
-        }
+            this.setState({rooms});
+        });
     };
 
     initVideoRoom = (roomid) => {
@@ -120,7 +113,7 @@ class AdminGuest extends Component {
                     videoroom.send({"message": register});
                 } else {
                     // Get list rooms
-                    this.getRoomList();
+                    this.getGroupsList();
                 }
             },
             error: (error) => {
@@ -504,7 +497,6 @@ class AdminGuest extends Component {
         videoroom.send({"message": videoreq,
             success: () => {
                 Janus.log(":: Video room leave callback: ");
-                //this.getRoomList();
             }});
     };
 
@@ -539,12 +531,12 @@ class AdminGuest extends Component {
       //const muted = true;
 
       let rooms_grid = rooms.map((data,i) => {
-          const {room, num_participants, description} = data;
+          const {room, num_users, description} = data;
           return (
               <Table.Row active={current_room === room}
                          key={i} onClick={() => this.joinRoom(data, i)} >
                   <Table.Cell width={5}>{description}</Table.Cell>
-                  <Table.Cell width={1}>{num_participants}</Table.Cell>
+                  <Table.Cell width={1}>{num_users}</Table.Cell>
               </Table.Row>
           )
       });

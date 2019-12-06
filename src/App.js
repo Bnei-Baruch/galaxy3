@@ -8,12 +8,12 @@ import 'semantic-ui-css/semantic.min.css';
 // import GroupClient from "./apps/GroupsApp/GroupClient";
 // import GalaxyStream from "./apps/StreamApp/GalaxyStream";
 // import ShidurAdmin from "./apps/ShidurApp/ShidurAdmin";
-import ShidurApp from "./apps/ShidurApp/ShidurApp";
+// import ShidurApp from "./apps/ShidurApp/ShidurApp";
 // import UsersApp from "./apps/ShidurApp/UsersApp";
 // import SndmanApp from "./apps/SndmanApp/SndmanApp";
 // import SDIOutApp from "./apps/SDIOutApp/SDIOutApp";
 // import AdminGuest from "./apps/AdminApp/AdminGuest";
-// import AdminCongress from "./apps/AdminApp/AdminCongress";
+import AdminCongress from "./apps/AdminApp/AdminCongress";
 // import AdminStreaming from "./apps/AdminApp/AdminStreaming";
 
 class App extends Component {
@@ -29,12 +29,12 @@ class App extends Component {
                 {/*<GroupClient/>*/}
                 {/* <GalaxyStream/>*/}
                 {/* <ShidurAdmin/>*/}
-                 <ShidurApp/>
+                 {/*<ShidurApp/>*/}
                  {/*<UsersApp />*/}
                 {/* <SndmanApp/>*/}
                 {/*<SDIOutApp/>*/}
                 {/* <AdminGuest/>*/}
-                {/*<AdminCongress/>*/}
+                <AdminCongress/>
                 {/* <AdminStreaming/>*/}
             </Fragment>
         );
