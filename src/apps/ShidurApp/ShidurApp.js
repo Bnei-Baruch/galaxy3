@@ -168,8 +168,7 @@ class ShidurApp extends Component {
                             }
                         }
                         feedStreams[id] = {id, display, streams};
-                        users[display.id] = display;
-                        users[display.id].rfid = id;
+                        users[display.id] = {...display, ...users[display.id], rfid: id};
                         // Add this for customize preset 1
                         // let pst = presets.find(p => p.user_id === display.id);
                         // if(pst) {
@@ -213,8 +212,7 @@ class ShidurApp extends Component {
                             }
                         }
                         feedStreams[id] = {id, display, streams};
-                        users[display.id] = display;
-                        users[display.id].rfid = id;
+                        users[display.id] = {...display, ...users[display.id], rfid: id};
                         // Add this for customize preset 1
                         // let pst = presets.find(p => p && p.user_id === display.id);
                         // if(pst) {

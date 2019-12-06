@@ -30,8 +30,8 @@ class App extends Component {
                 {/* <GalaxyStream/>*/}
                 {/* <ShidurAdmin/>*/}
                  <ShidurApp/>
-                {/* <UsersApp />*/}
-                 {/*<SndmanApp/>*/}
+                 {/*<UsersApp />*/}
+                {/* <SndmanApp/>*/}
                 {/*<SDIOutApp/>*/}
                 {/* <AdminGuest/>*/}
                 {/*<AdminCongress/>*/}
