@@ -74,13 +74,30 @@ class ShidurUsers extends Component {
                 this.initVideoRoom(room, "program");
             });
         },er => {}, true);
-        setInterval(() => this.getRoomList(), 10000 );
-        setInterval(() => this.chkDisabledRooms(), 10000 );
+        setInterval(() => this.getGroupsList(), 5000 );
+        //setInterval(() => this.getRoomList(), 10000 );
+        //setInterval(() => this.chkDisabledRooms(), 10000 );
 
     };
 
     componentWillUnmount() {
         this.state.janus.destroy();
+    };
+
+    getGroupsList = () => {
+        let {disabled_rooms} = this.state;
+        getState('galaxy/rooms', (groups) => {
+            let rooms = groups.filter((room) => !disabled_rooms.find(droom => room.room === droom.room));
+            disabled_rooms = groups.filter((room) => !rooms.find(droom => room.room === droom.room));
+            rooms.sort((a, b) => {
+                // if (a.num_users > b.num_users) return -1;
+                // if (a.num_users < b.num_users) return 1;
+                if (a.description > b.description) return 1;
+                if (a.description < b.description) return -1;
+                return 0;
+            });
+            this.setState({rooms,disabled_rooms});
+        });
     };
 
     getRoomList = () => {
@@ -349,7 +366,7 @@ class ShidurUsers extends Component {
                     videoroom.send({"message": register});
                 } else {
                     // Get list rooms
-                    this.getRoomList();
+                    this.getGroupsList();
                 }
 
             },
@@ -574,7 +591,7 @@ class ShidurUsers extends Component {
             let {disabled_rooms} = this.state;
             disabled_rooms.push(data);
             this.setState({disabled_rooms});
-            this.getRoomList();
+            this.getGroupsList();
         }
     };
 
@@ -586,7 +603,7 @@ class ShidurUsers extends Component {
                 if(disabled_rooms[i].room === data.room) {
                     disabled_rooms.splice(i, 1);
                     this.setState({disabled_rooms});
-                    this.getRoomList();
+                    this.getGroupsList();
                 }
             }
         }
@@ -603,29 +620,29 @@ class ShidurUsers extends Component {
       const q = (<b style={{color: 'red', fontSize: '20px', fontFamily: 'Verdana', fontWeight: 'bold'}}>?</b>);
 
       let rooms_list = rooms.map((data,i) => {
-          const {room, num_participants, description, questions} = data;
+          const {room, num_users, description, questions} = data;
           return (
               <Table.Row negative={program.name === description}
                          positive={preview.name === description}
-                         disabled={num_participants === 0}
+                         disabled={num_users === 0}
                          className={preview.room === room ? 'active' : 'no'}
                          key={room} onClick={() => this.selectGroup(data, i)}
                          onContextMenu={(e) => this.disableRoom(e, data, i)} >
                   <Table.Cell width={5}>{description}</Table.Cell>
-                  <Table.Cell width={1}>{num_participants}</Table.Cell>
+                  <Table.Cell width={1}>{num_users}</Table.Cell>
                   <Table.Cell width={1}>{questions ? q : ""}</Table.Cell>
               </Table.Row>
           )
       });
 
       let disabled_list = disabled_rooms.map((data,i) => {
-          const {room, num_participants, description, questions} = data;
+          const {room, num_users, description, questions} = data;
           return (
               <Table.Row key={room} warning
                          onClick={() => this.selectGroup(data, i)}
                          onContextMenu={(e) => this.restoreRoom(e, data, i)} >
                   <Table.Cell width={5}>{description}</Table.Cell>
-                  <Table.Cell width={1}>{num_participants}</Table.Cell>
+                  <Table.Cell width={1}>{num_users}</Table.Cell>
                   <Table.Cell width={1}>{questions ? q : ""}</Table.Cell>
               </Table.Row>
           )

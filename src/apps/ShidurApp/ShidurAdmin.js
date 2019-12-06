@@ -115,10 +115,27 @@ class ShidurAdmin extends Component {
             });
         }, er => {}, true);
         setInterval(() => {
-            this.getRoomList();
+            this.getGroupsList();
             if(this.state.feed_user)
                 this.getFeedInfo()
-        }, 10000 );
+        }, 5000 );
+    };
+
+    getGroupsList = () => {
+        let {current_room} = this.state;
+        getState('galaxy/rooms', (rooms) => {
+            rooms.sort((a, b) => {
+                // if (a.num_users > b.num_users) return -1;
+                // if (a.num_users < b.num_users) return 1;
+                if (a.description > b.description) return 1;
+                if (a.description < b.description) return -1;
+                return 0;
+            });
+            this.setState({rooms});
+            if(current_room !== "") {
+                this.listForward(current_room);
+            }
+        });
     };
 
     getRoomList = () => {
@@ -127,10 +144,10 @@ class ShidurAdmin extends Component {
             videoroom.send({message: {request: "list"},
                 success: (data) => {
                     //Janus.log(" :: Get Rooms List: ", data.list)
-                    let rooms = root ? data.list : data.list.filter(r => r.num_participants > 0);
+                    let rooms = root ? data.list : data.list.filter(r => r.num_users > 0);
                     rooms.sort((a, b) => {
-                        // if (a.num_participants > b.num_participants) return -1;
-                        // if (a.num_participants < b.num_participants) return 1;
+                        // if (a.num_users > b.num_users) return -1;
+                        // if (a.num_users < b.num_users) return 1;
                         if (a.description > b.description) return 1;
                         if (a.description < b.description) return -1;
                         return 0;
@@ -147,14 +164,14 @@ class ShidurAdmin extends Component {
     getFeedsList = (rooms) => {
         let {videoroom,users} = this.state;
         for (let i=0; i<rooms.length; i++) {
-            if(rooms[i].num_participants > 0) {
+            if(rooms[i].num_users > 0) {
                 videoroom.send({
                     message: {request: "listparticipants", "room": rooms[i].room},
                     success: (data) => {
                         //Janus.log(" :: Get Partisipant List: ", data)
                         let count = data.participants.filter(p => JSON.parse(p.display).role === "user");
                         let questions = data.participants.find(p => users[JSON.parse(p.display).id] ? users[JSON.parse(p.display).id].question : null);
-                        rooms[i].num_participants = count.length;
+                        rooms[i].num_users = count.length;
                         rooms[i].questions = questions;
                         this.setState({rooms});
                     }
@@ -240,7 +257,7 @@ class ShidurAdmin extends Component {
                     videoroom.send({"message": register});
                 } else {
                     // Get list rooms
-                    this.getRoomList();
+                    this.getGroupsList();
                 }
             },
             error: (error) => {
@@ -1062,18 +1079,18 @@ class ShidurAdmin extends Component {
       ];
 
       let rooms_list = rooms.map((data,i) => {
-          const {room, num_participants, description} = data;
-          return ({ key: room, text: description, value: i, description: num_participants.toString()})
+          const {room, num_users, description} = data;
+          return ({ key: room, text: description, value: i, description: num_users.toString()})
       });
 
       let rooms_grid = rooms.map((data,i) => {
-          const {room, num_participants, description, questions} = data;
+          const {room, num_users, description, questions} = data;
           return (
               <Table.Row active={current_room === room}
                          key={i} onClick={() => this.joinRoom(data, i)}
                          onContextMenu={(e) => this.disableRoom(e, data, i)} >
                   <Table.Cell width={5}>{questions ? q : ""}{description}</Table.Cell>
-                  <Table.Cell width={1}>{num_participants}</Table.Cell>
+                  <Table.Cell width={1}>{num_users}</Table.Cell>
               </Table.Row>
           )
       });
