@@ -93,7 +93,7 @@ class UsersApp extends Component {
 
             <Fragment>
                 <UsersQuad {...this.state} setProps={this.setProps} />
-                <UsersToran ref={toran => {this.toran = toran;}} {...this.state} setProps={this.setProps} />
+                <UsersToran {...this.state} setProps={this.setProps} gerGroups={this.getRoomList} />
             </Fragment>
         );
     }

@@ -23,9 +23,11 @@ class UsersQuad extends Component {
     componentDidUpdate(prevProps) {
         let {groups} = this.props;
         if(groups.length > prevProps.groups.length) {
-            console.log(" :: Group enter in queue");
+            let res = groups.filter(o => !prevProps.groups.some(v => v.room === o.room))[0];
+            console.log(" :: Group enter in queue: ", res);
         } else if(groups.length < prevProps.groups.length) {
-            console.log(" :: Group exit from queue")
+            let res = prevProps.groups.filter(o => !groups.some(v => v.room === o.room))[0];
+            console.log(" :: Group exit from queue: ", res)
         }
     };
 

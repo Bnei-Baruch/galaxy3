@@ -37,6 +37,7 @@ class UsersToran extends Component {
             if(group) return;
             disabled_rooms.push(data);
             this.props.setProps({disabled_rooms});
+            this.props.gerGroups();
         }
     };
 
@@ -48,6 +49,7 @@ class UsersToran extends Component {
                 if(disabled_rooms[i].room === data.room) {
                     disabled_rooms.splice(i, 1);
                     this.props.setProps({disabled_rooms});
+                    this.props.gerGroups();
                 }
             }
         }
