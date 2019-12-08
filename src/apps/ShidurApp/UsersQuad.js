@@ -14,20 +14,29 @@ class UsersQuad extends Component {
         quad: [null,null,null,null],
     };
 
-    componentDidMount() {
-        setTimeout(() => {
-            this.switchFour();
-        }, 5000);
-    };
-
     componentDidUpdate(prevProps) {
-        let {groups} = this.props;
+        let {groups,groups_queue} = this.props;
+        let {quad} = this.state;
         if(groups.length > prevProps.groups.length) {
             let res = groups.filter(o => !prevProps.groups.some(v => v.room === o.room))[0];
             console.log(" :: Group enter in queue: ", res);
+            if(groups.length < 5) {
+                this.switchFour();
+            }
         } else if(groups.length < prevProps.groups.length) {
             let res = prevProps.groups.filter(o => !groups.some(v => v.room === o.room))[0];
-            console.log(" :: Group exit from queue: ", res)
+            console.log(" :: Group exit from queue: ", res);
+            for(let i=0; i<4; i++) {
+                if(quad[i] && quad[i].room === res.room) {
+                    quad[i] = groups.length < 4 ? null : this.quadGroup(groups_queue);
+                    this.setState({quad});
+                    // Save state
+                    putData(`galaxy/program`, {quad}, (cb) => {
+                        Janus.log(":: Save to state: ",cb);
+                    });
+                    break;
+                }
+            }
         }
     };
 
