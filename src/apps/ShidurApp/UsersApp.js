@@ -74,6 +74,10 @@ class UsersApp extends Component {
             }
         }
 
+        if(data.type === "question") {
+            this.quad.setQuestion(data.user, data.status);
+        }
+
         if(data.type === "leave" && users[data.id]) {
             delete users[data.id];
             this.setState({users});
@@ -92,7 +96,7 @@ class UsersApp extends Component {
         return (
 
             <Fragment>
-                <UsersQuad {...this.state} setProps={this.setProps} />
+                <UsersQuad {...this.state} ref={quad => {this.quad = quad;}} setProps={this.setProps} />
                 <UsersToran {...this.state} setProps={this.setProps} gerGroups={this.getRoomList} />
             </Fragment>
         );

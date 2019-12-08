@@ -15,8 +15,7 @@ class UsersQuad extends Component {
     };
 
     componentDidUpdate(prevProps) {
-        let {groups,groups_queue} = this.props;
-        let {quad} = this.state;
+        let {groups} = this.props;
         if(groups.length > prevProps.groups.length) {
             let res = groups.filter(o => !prevProps.groups.some(v => v.room === o.room))[0];
             console.log(" :: Group enter in queue: ", res);
@@ -26,16 +25,38 @@ class UsersQuad extends Component {
         } else if(groups.length < prevProps.groups.length) {
             let res = prevProps.groups.filter(o => !groups.some(v => v.room === o.room))[0];
             console.log(" :: Group exit from queue: ", res);
-            for(let i=0; i<4; i++) {
-                if(quad[i] && quad[i].room === res.room) {
-                    quad[i] = groups.length < 4 ? null : this.quadGroup(groups_queue);
-                    this.setState({quad});
-                    // Save state
-                    putData(`galaxy/program`, {quad}, (cb) => {
-                        Janus.log(":: Save to state: ",cb);
-                    });
-                    break;
-                }
+            this.fillProgram(res);
+        }
+    };
+
+    fillProgram = (data) => {
+        let {groups,groups_queue} = this.props;
+        let {quad} = this.state;
+        for(let i=0; i<4; i++) {
+            if(quad[i] && quad[i].room === data.room) {
+                // FIXME: Does we need send leave room request?
+                quad[i] = groups.length < 4 ? null : this.quadGroup(groups_queue);
+                this.setState({quad});
+                // Save state
+                putData(`galaxy/program`, {quad}, (cb) => {
+                    Janus.log(":: Save to state: ",cb);
+                });
+                break;
+            }
+        }
+    };
+
+    setQuestion = (data, status) => {
+        let {quad} = this.state;
+        for(let i=0; i<4; i++) {
+            if(quad[i] && quad[i].room === data.room) {
+                quad[i].questions = status;
+                this.setState({quad});
+                // Save state
+                putData(`galaxy/program`, {quad}, (cb) => {
+                    Janus.log(":: Save to state: ",cb);
+                });
+                break;
             }
         }
     };
