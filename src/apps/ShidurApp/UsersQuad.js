@@ -24,18 +24,17 @@ class UsersQuad extends Component {
         let {groups} = this.props;
         if(groups.length > prevProps.groups.length) {
             console.log(" :: Group enter in queue");
-
-            // Autofill quad 4 groups
-            if(groups.length < 5) {
-                this.switchFour();
-            }
         } else if(groups.length < prevProps.groups.length) {
             console.log(" :: Group exit from queue")
         }
     };
 
-    fillProgram = (i) => {
-        this.switchProgram(i);
+    quadGroup = (queue) => {
+        let {groups} = this.props;
+        let group = groups[queue];
+        delete group.users;
+        group.queue = queue;
+        return group;
     };
 
     switchProgram = (i) => {
@@ -44,7 +43,7 @@ class UsersQuad extends Component {
 
         if(group) {
             // From preview
-            quad[i] = group.index;
+            quad[i] = group;
             this.props.setProps({group: null});
         } else {
             // Next in queue
@@ -54,7 +53,7 @@ class UsersQuad extends Component {
                 groups_queue = 0;
                 round++;
             }
-            quad[i] = groups_queue;
+            quad[i] = this.quadGroup(groups_queue);
             groups_queue++;
             this.props.setProps({groups_queue,round});
         }
@@ -87,7 +86,7 @@ class UsersQuad extends Component {
                 this.props.setProps({groups_queue,round});
             }
 
-            quad[i] = groups_queue;
+            quad[i] = this.quadGroup(groups_queue);
             groups_queue++;
             this.props.setProps({groups_queue});
         }
@@ -156,8 +155,8 @@ class UsersQuad extends Component {
 
       let program = quad.map((g,i) => {
           if (groups.length === 0) return;
-          let qst = !!groups[g] && groups[g].questions;
-          let name = groups[g] ? groups[g].description : "";
+          let qst = g && g.questions;
+          let name = g ? g.description : "";
           //let room = groups[g] ? groups[g].room : "";
           return (
               <div className={fullscr && full_feed === i ? "video_full" : fullscr && full_feed !== i ? "hidden" : "video_box"}
@@ -165,7 +164,7 @@ class UsersQuad extends Component {
                   <div className='click-panel' onClick={() => this.switchFullScreen(i)} >
                   <div className={fullscr ? "fullscrvideo_title" : "video_title"} >{name}</div>
                   {qst ? q : ""}
-                  <UsersHandle key={"q"+i} g={g} index={i} fillProgram={this.fillProgram} {...this.props} />
+                  <UsersHandle key={"q"+i} g={g} index={i} {...this.props} />
                   </div>
                   {fullscr ? "" :
                       <Button className='next_button'

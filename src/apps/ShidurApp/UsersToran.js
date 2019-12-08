@@ -21,7 +21,8 @@ class UsersToran extends Component {
     }
 
     selectGroup = (group, i) => {
-        group.index = i;
+        delete group.users;
+        group.queue = i;
         this.props.setProps({group});
         Janus.log(group);
         let room = group.room;
