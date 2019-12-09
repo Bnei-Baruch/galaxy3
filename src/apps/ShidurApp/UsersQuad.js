@@ -36,10 +36,10 @@ class UsersQuad extends Component {
         }
     };
 
-    setQuestion = (data, status) => {
+    setQuestion = (room, status) => {
         let {quad} = this.state;
         for(let i=0; i<4; i++) {
-            if(quad[i] && quad[i].room === data.room) {
+            if(quad[i] && quad[i].room === room) {
                 quad[i].questions = status;
                 this.setState({quad});
                 // Save state

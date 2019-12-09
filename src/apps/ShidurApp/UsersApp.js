@@ -75,7 +75,7 @@ class UsersApp extends Component {
         }
 
         if(data.type === "question") {
-            this.quad.setQuestion(data.user, data.status);
+            this.quad.setQuestion(data.room, data.status);
         }
 
         if(data.type === "leave" && users[data.id]) {
