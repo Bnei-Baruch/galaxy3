@@ -197,7 +197,7 @@ class UsersQuad extends Component {
                               size='mini'
                               color='green'
                               icon={group ? 'arrow up' : 'share'}
-                              onClick={() => this.switchProgram(i,g)} />}
+                              onClick={() => this.switchProgram(i, false)} />}
               </div>);
       });
 
