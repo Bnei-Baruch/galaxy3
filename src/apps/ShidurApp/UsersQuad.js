@@ -3,7 +3,6 @@ import { Janus } from "../../lib/janus";
 import {Segment, Icon, Button} from "semantic-ui-react";
 import './UsersQuad.scss'
 import {sendProtocolMessage} from "../../shared/protocol";
-import {GROUPS_ROOM} from "../../shared/consts";
 import UsersHandle from "./UsersHandle";
 import {putData} from "../../shared/tools";
 
@@ -129,45 +128,45 @@ class UsersQuad extends Component {
     };
 
     sdiAction = (action, status, i, feed) => {
-        const { protocol, user, index } = this.props;
-        let col = index === 0 ? 1 : index === 4 ? 2 : index === 8 ? 3 : null;
-        let msg = { type: "sdi-"+action, status, room: GROUPS_ROOM, col, i, feed};
+        const {protocol, user} = this.props;
+        let msg = {type: "sdi-"+action, status, room: null, col: 4, i, feed};
         sendProtocolMessage(protocol, user, msg );
-    };
-
-    checkFullScreen = () => {
-        let {full_feed} = this.state;
-        if(full_feed) {
-            Janus.log(":: Group: " + full_feed + " , sending sdi-action...");
-            this.sdiAction("fullscr_group" , true, full_feed.mindex, full_feed);
-        }
     };
 
     switchFullScreen = (i,feed) => {
         let {fullscr} = this.state;
         this.setState({fullscr: !fullscr, full_feed: i});
+        this.sdiAction("fullscr_group" , !fullscr, i, feed);
     };
 
-    toFullGroup = (i,feed) => {
-        Janus.log(":: Make Full Screen Group: ",feed);
-        this.setState({fullscr: true,full_feed: feed});
-        //this.sdiAction("fullscr_group" , true, i, feed);
-    };
-
-    toFourGroup = (cb) => {
-        Janus.log(":: Back to four: ");
-        //this.sdiAction("fullscr_group" , false, null, this.state.full_feed);
-        this.setState({fullscr: false, full_feed: null}, () => {
-            cb();
-        });
-    };
-
-    setDelay = () => {
-        this.props.setProps({disable_button: true, next_button: true});
-        setTimeout(() => {
-            this.props.setProps({disable_button: false, next_button: false});
-        }, 2000);
-    };
+    // checkFullScreen = () => {
+    //     let {full_feed} = this.state;
+    //     if(full_feed) {
+    //         Janus.log(":: Group: " + full_feed + " , sending sdi-action...");
+    //         this.sdiAction("fullscr_group" , true, full_feed.mindex, full_feed);
+    //     }
+    // };
+    //
+    // toFullGroup = (i,feed) => {
+    //     Janus.log(":: Make Full Screen Group: ",feed);
+    //     this.setState({fullscr: true,full_feed: feed});
+    //     //this.sdiAction("fullscr_group" , true, i, feed);
+    // };
+    //
+    // toFourGroup = (cb) => {
+    //     Janus.log(":: Back to four: ");
+    //     //this.sdiAction("fullscr_group" , false, null, this.state.full_feed);
+    //     this.setState({fullscr: false, full_feed: null}, () => {
+    //         cb();
+    //     });
+    // };
+    //
+    // setDelay = () => {
+    //     this.props.setProps({disable_button: true, next_button: true});
+    //     setTimeout(() => {
+    //         this.props.setProps({disable_button: false, next_button: false});
+    //     }, 2000);
+    // };
 
   render() {
       const {full_feed,fullscr,col,quad} = this.state;
