@@ -16,32 +16,22 @@ class UsersQuad extends Component {
 
     componentDidUpdate(prevProps) {
         let {groups} = this.props;
+        let {quad} = this.state;
         if(groups.length > prevProps.groups.length) {
             let res = groups.filter(o => !prevProps.groups.some(v => v.room === o.room))[0];
             console.log(" :: Group enter in queue: ", res);
-            if(groups.length < 5) {
+            if(groups.length < 5 || quad[0] === null) {
                 this.switchFour();
             }
         } else if(groups.length < prevProps.groups.length) {
             let res = prevProps.groups.filter(o => !groups.some(v => v.room === o.room))[0];
             console.log(" :: Group exit from queue: ", res);
-            this.fillProgram(res);
-        }
-    };
-
-    fillProgram = (data) => {
-        let {groups,groups_queue} = this.props;
-        let {quad} = this.state;
-        for(let i=0; i<4; i++) {
-            if(quad[i] && quad[i].room === data.room) {
-                // FIXME: Does we need send leave room request?
-                quad[i] = groups.length < 4 ? null : this.quadGroup(groups_queue);
-                this.setState({quad});
-                // Save state
-                putData(`galaxy/program`, {quad}, (cb) => {
-                    Janus.log(":: Save to state: ",cb);
-                });
-                break;
+            for(let i=0; i<4; i++) {
+                if(quad[i] && quad[i].room === res.room) {
+                    // FIXME: Does we need send leave room request?
+                    this.switchProgram(i, true);
+                    break;
+                }
             }
         }
     };
@@ -69,9 +59,12 @@ class UsersQuad extends Component {
         return group;
     };
 
-    switchProgram = (i) => {
+    switchProgram = (i, leave) => {
         let {group,groups,groups_queue,round} = this.props;
         let {quad} = this.state;
+
+        if(leave)
+            groups_queue--;
 
         if(group) {
             // From preview
@@ -85,7 +78,7 @@ class UsersQuad extends Component {
                 groups_queue = 0;
                 round++;
             }
-            quad[i] = this.quadGroup(groups_queue);
+            quad[i] = groups.length < 4 ? null : this.quadGroup(groups_queue);
             groups_queue++;
             this.props.setProps({groups_queue,round});
         }
