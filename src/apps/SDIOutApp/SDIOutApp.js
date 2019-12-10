@@ -5,8 +5,9 @@ import {getState, initJanus} from "../../shared/tools";
 import './SDIOutApp.css';
 import {initGxyProtocol} from "../../shared/protocol";
 import SDIOutGroups from "./SDIOutGroups";
-import SDIOutUsers from "./SDIOutUsers";
+//import SDIOutUsers from "./SDIOutUsers";
 import {GROUPS_ROOM,SDIOUT_ID} from "../../shared/consts";
+import UsersSDIOut from "./UsersSDIOut";
 
 
 class SDIOutApp extends Component {
@@ -319,6 +320,9 @@ class SDIOutApp extends Component {
     onProtocolData = (data) => {
         Janus.log(" :: Got Shidur Action: ", data);
         let {col, feed, i, status} = data;
+
+        if(col === 4) return
+
         if(data.type === "sdi-switch_req") {
             this.switchTo(feed)
         } else if(data.type === "sdi-subscribe_req") {
@@ -388,9 +392,10 @@ class SDIOutApp extends Component {
                     />
                 </Grid.Column>
                 <Grid.Column>
-                    <SDIOutUsers
-                        ref={col => {this.col4 = col;}}
-                        onProtocolData={this.onProtocolData} />
+                    <UsersSDIOut />
+                    {/*<SDIOutUsers*/}
+                    {/*    ref={col => {this.col4 = col;}}*/}
+                    {/*    onProtocolData={this.onProtocolData} />*/}
                 </Grid.Column>
                 </Grid.Row>
             </Grid>
