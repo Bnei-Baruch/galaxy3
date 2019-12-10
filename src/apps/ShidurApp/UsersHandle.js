@@ -1,4 +1,4 @@
-import React, {Component, Fragment} from 'react';
+import React, {Component} from 'react';
 import './UsersHandle.scss'
 import { Janus } from "../../lib/janus";
 import {Icon} from "semantic-ui-react";
@@ -374,21 +374,15 @@ class UsersHandle extends Component {
           return true;
       });
 
-    return (
-
-
-          
-          <Fragment>
-              <div className="videos-panel">
-                  <div className="videos">
-                      <div className="videos__wrapper">
-                          {program_feeds}
-                      </div>
+      return (
+          <div className="videos-panel">
+              <div className="videos">
+                  <div className="videos__wrapper">
+                      {program_feeds}
                   </div>
               </div>
-          </Fragment>
-
-    );
+          </div>
+      );
   }
 }
 

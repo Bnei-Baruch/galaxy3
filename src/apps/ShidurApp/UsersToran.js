@@ -11,9 +11,6 @@ class UsersToran extends Component {
         group: null,
     };
 
-    componentDidMount() {
-    };
-
     componentDidUpdate(prevProps) {
         if(this.props.group === null && prevProps.group) {
             this.users.exitVideoRoom(prevProps.group.room);

@@ -1,7 +1,6 @@
 import React, {Component, Fragment} from 'react';
 import { Janus } from "../../lib/janus";
-import {Segment} from "semantic-ui-react";
-import {getState, putData, initJanus} from "../../shared/tools";
+import {getState, initJanus} from "../../shared/tools";
 import './UsersApp.css'
 import {initGxyProtocol} from "../../shared/protocol";
 import UsersQuad from "./UsersQuad";
@@ -88,13 +87,8 @@ class UsersApp extends Component {
         this.setState({...props})
     };
 
-
     render() {
-        const {users} = this.state;
-
-
         return (
-
             <Fragment>
                 <UsersQuad {...this.state} ref={quad => {this.quad = quad;}} setProps={this.setProps} />
                 <UsersToran {...this.state} setProps={this.setProps} gerGroups={this.getRoomList} />
