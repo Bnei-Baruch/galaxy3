@@ -41,7 +41,46 @@ class UsersQuadSndman extends Component {
         videoroom.data({ text: message })
     };
 
-    forwardStream = () => {
+    forwardStream = (feed) => {
+        const {fullscr,forward_feed,room,forward,port} = this.state;
+        const {gxyhandle} = this.props;
+        //FIXME: This is really problem place we call start forward from one place and stop from two placed
+        // and we depend on callback from request and fullscreen state and feed info.
+        // fix1: we take now feed info from state only in render and pass as param to needed functions
+        // fix2: don't limit stop forward with fullscreen state it's will be limit only for start forward
+        // fix3: set forward state after success request callback (send message to client must be here as well)
+        // fix4: add start forward request progress state
+        // fix5: put delay between start/stop request switch (It's still hacky we actually need callback from sendMessage)
+        // fix6: put delay on stop request from shidur if start forward request still in progress
+        if(forward) {
+            Janus.log(" :: Stop forward from room: ", room);
+            this.setDelay();
+            let stopfw = { "request":"stop_rtp_forward","stream_id":forward_feed.streamid,"publisher_id":forward_feed.id,"room":room,"secret":`${SECRET}` };
+            gxyhandle.send({"message": stopfw,
+                success: (data) => {
+                    Janus.log(":: Forward callback: ", data);
+                    this.sendMessage(forward_feed.display, false);
+                    this.setState({forward_feed: {}, forward: false});
+                },
+            });
+        } else if(fullscr) {
+            Janus.log(" :: Start forward from room: ", room);
+            this.setDelay();
+            let forward = { "request": "rtp_forward","publisher_id":feed.feed_id,"room":room,"secret":`${SECRET}`,"host":`${DANTE_IN_IP}`,"audio_port":port};
+            gxyhandle.send({"message": forward,
+                success: (data) => {
+                    Janus.log(":: Forward callback: ", data);
+                    forward_feed.streamid = data["rtp_stream"]["audio_stream_id"];
+                    forward_feed.id = feed.feed_id;
+                    forward_feed.display = feed.display;
+                    this.sendMessage(feed.display, true);
+                    this.setState({forward_feed, forward: true});
+                },
+            });
+        }
+    };
+
+    forwardUsersStream = () => {
         const {feeds, room, videoroom, forward} = this.state;
         // TODO: WE need solution for joining users to already forwarded room
         if(forward) {
@@ -90,7 +129,7 @@ class UsersQuadSndman extends Component {
     };
 
   render() {
-      const {full_feed,fullscr,col,quad,forward,onoff_but} = this.state;
+      const {full_group,full_feed,fullscr,col,quad,forward,forward_request} = this.state;
       const q = (<div className="question">
           <svg viewBox="0 0 50 50">
               <text x="25" y="25" textAnchor="middle" alignmentBaseline="central" dominantBaseline="central">&#xF128;</text>
@@ -118,12 +157,12 @@ class UsersQuadSndman extends Component {
               </div>
           </Segment>
               <Button className='fours_button'
-                      disabled={onoff_but}
+                      disabled={!fullscr || forward_request}
                       attached='bottom'
                       positive={!forward}
                       negative={forward}
                       onKeyDown={(e) => this.onKeyPressed(e)}
-                      onClick={this.forwardStream}>
+                      onClick={() => this.forwardStream(full_group)}>
                   <Icon size='large' name={forward ? 'microphone' : 'microphone slash' } />
                   <Label attached='top left' color='grey'>{this.state.col}</Label>
               </Button>
