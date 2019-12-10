@@ -6,10 +6,11 @@ import './SndmanApp.css';
 import {initGxyProtocol} from "../../shared/protocol";
 import SndmanGroups from "./SndmanGroups";
 //import SndmanUsers from "./SndmanUsers";
-import {GROUPS_ROOM, DATA_PORT, JANUS_STR_HOST_IL, JANUS_STR_HOST_GR ,JANUS_STR_HOST_UK, SECRET} from "../../shared/consts";
+import {GROUPS_ROOM} from "../../shared/consts";
 import {client} from "../../components/UserManager";
 import LoginPage from "../../components/LoginPage";
 import UsersSndman from "./UsersSndman";
+import {initDataForward} from "../../shared/forward";
 
 
 class SndmanApp extends Component {
@@ -19,8 +20,8 @@ class SndmanApp extends Component {
         janus: null,
         feedStreams: {},
         mids: [],
+        fwdhandle: null,
         gxyhandle: null,
-        data_forward: {},
         disabled_groups: [],
         protocol: null,
         room: GROUPS_ROOM,
@@ -63,6 +64,10 @@ class SndmanApp extends Component {
                     this.state.protocol.hangup();
                 } else if(ondata.type === "joined") {
                     this.initVideoRoom();
+                    initDataForward(janus, fwdhandle => {
+                        this.setState({fwdhandle});
+                        console.log(" --- FWD ---", fwdhandle)
+                    })
                 }
                 this.onProtocolData(ondata);
             });
@@ -93,7 +98,6 @@ class SndmanApp extends Component {
             },
             webrtcState: (on) => {
                 Janus.log("Janus says our WebRTC PeerConnection is " + (on ? "up" : "down") + " now");
-                this.forwardOwnFeed(this.state.room);
             },
             onmessage: (msg, jsep) => {
                 this.onMessage(msg, jsep, false);
@@ -104,62 +108,6 @@ class SndmanApp extends Component {
             oncleanup: () => {
                 Janus.log(" ::: Got a cleanup notification: we are unpublished now :::");
             }
-        });
-    };
-
-    publishOwnFeed = (useAudio) => {
-        // Publish our stream
-        let {gxyhandle} = this.state;
-
-        gxyhandle.createOffer(
-            {
-                media: {  audio: false, video: false, data: true },	// Publishers are sendonly
-                simulcast: false,
-                success: (jsep) => {
-                    Janus.debug("Got publisher SDP!");
-                    Janus.debug(jsep);
-                    let publish = { "request": "configure", "audio": false, "video": false, "data": true };
-                    gxyhandle.send({"message": publish, "jsep": jsep});
-                },
-                error: (error) => {
-                    Janus.error("WebRTC error:", error);
-                    if (useAudio) {
-                        this.publishOwnFeed(false);
-                    } else {
-                        Janus.error("WebRTC error... " + JSON.stringify(error));
-                    }
-                }
-            });
-    };
-
-    forwardOwnFeed = (room) => {
-        let {myid,gxyhandle,data_forward} = this.state;
-        let isrip = `${JANUS_STR_HOST_IL}`;
-        let frip = `${JANUS_STR_HOST_UK}`;
-        let gerip = `${JANUS_STR_HOST_GR}`;
-        let dport = DATA_PORT;
-        let isrfwd = { "request": "rtp_forward","publisher_id":myid,"room":room,"secret":`${SECRET}`,"host":isrip,"data_port":dport};
-        let efrfwd = { "request": "rtp_forward","publisher_id":myid,"room":room,"secret":`${SECRET}`,"host":frip,"data_port":dport};
-        let gerfwd = { "request": "rtp_forward","publisher_id":myid,"room":room,"secret":`${SECRET}`,"host":gerip,"data_port":dport};
-        gxyhandle.send({"message": isrfwd,
-            success: (data) => {
-                data_forward.isr = data["rtp_stream"]["data_stream_id"];
-                Janus.log(" :: ISR Data Forward: ", data);
-            },
-        });
-        gxyhandle.send({"message": efrfwd,
-            success: (data) => {
-                data_forward.efr = data["rtp_stream"]["data_stream_id"];
-                Janus.log(" :: EFR Data Forward: ", data);
-                this.setState({onoff_but: false});
-            },
-        });
-        gxyhandle.send({"message": gerfwd,
-            success: (data) => {
-                data_forward.ger = data["rtp_stream"]["data_stream_id"];
-                Janus.log(" :: EFR Data Forward: ", data);
-                this.setState({onoff_but: false});
-            },
         });
     };
 
@@ -176,7 +124,6 @@ class SndmanApp extends Component {
                 let mypvtid = msg["private_id"];
                 this.setState({myid ,mypvtid});
                 Janus.log("Successfully joined room " + msg["room"] + " with ID " + myid);
-                this.publishOwnFeed();
                 if(this.state.shidur) {
                     Janus.log(" :: Shidur online - getting state :: ");
                     getState('state/galaxy/shidur', (state) => {

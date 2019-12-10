@@ -106,7 +106,7 @@ class SndmanGroups extends Component {
         let {room,col} = this.state;
         let message = `{"talk":${talk},"name":"${user.display}","ip":"${user.ip}","col":${col},"room":${room}}`;
         Janus.log(":: Sending message: ",message);
-        this.props.gxyhandle.data({ text: message });
+        this.props.fwdhandle.data({ text: message });
     };
 
     onKeyPressed = (e) => {
