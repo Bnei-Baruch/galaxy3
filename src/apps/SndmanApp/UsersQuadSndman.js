@@ -10,6 +10,7 @@ class UsersQuadSndman extends Component {
 
     state = {
         col: 4,
+        full_group: null,
         quad: [null,null,null,null],
     };
 
@@ -83,9 +84,9 @@ class UsersQuadSndman extends Component {
         }
     };
 
-    switchFullScreen = (i,feed) => {
+    switchFullScreen = (i,full_group) => {
         let {fullscr} = this.state;
-        this.setState({fullscr: !fullscr, full_feed: i});
+        this.setState({fullscr: !fullscr, full_feed: i, full_group});
     };
 
   render() {

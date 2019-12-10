@@ -127,16 +127,18 @@ class UsersQuad extends Component {
         });
     };
 
-    sdiAction = (action, status, i, feed) => {
+    sdiAction = (action, status, i, group) => {
         const {protocol, user} = this.props;
-        let msg = {type: "sdi-"+action, status, room: null, col: 4, i, feed};
+        let msg = {type: "sdi-"+action, status, room: null, col: 4, i, group};
         sendProtocolMessage(protocol, user, msg );
     };
 
-    switchFullScreen = (i,feed) => {
+    switchFullScreen = (i,g) => {
+        let {groups} = this.props;
         let {fullscr} = this.state;
+        let group = groups[g.queue];
         this.setState({fullscr: !fullscr, full_feed: i});
-        this.sdiAction("fullscr_group" , !fullscr, i, feed);
+        this.sdiAction("fullscr_group" , !fullscr, i, group);
     };
 
     // checkFullScreen = () => {
@@ -185,7 +187,7 @@ class UsersQuad extends Component {
           return (
               <div className={fullscr && full_feed === i ? "video_full" : fullscr && full_feed !== i ? "hidden" : "video_box"}
                    key={"pr" + i} >
-                  <div className='click-panel' onClick={() => this.switchFullScreen(i)} >
+                  <div className='click-panel' onClick={() => this.switchFullScreen(i,g)} >
                   <div className={fullscr ? "fullscrvideo_title" : "video_title"} >{name}</div>
                   {qst ? q : ""}
                   <UsersHandle key={"q"+i} g={g} index={i} {...this.props} />

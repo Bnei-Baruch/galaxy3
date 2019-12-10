@@ -50,11 +50,11 @@ class UsersSndman extends Component {
 
     onProtocolData = (data) => {
         let {users} = this.state;
-        let {col, feed, i, status} = data;
+        let {col, group, i, status} = data;
 
         // Shidur action
         if(data.type === "sdi-fullscr_group" && col === 4) {
-            this.quad.switchFullScreen(i,feed);
+            this.quad.switchFullScreen(i,group);
         }
 
         // Set status in users list
