@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import {Button, Icon, Label, Segment} from "semantic-ui-react";
 import './UsersQuadSndman.scss'
 import UsersHandleSndman from "./UsersHandleSndman";
-import {getState} from "../../shared/tools";
+import {getState,getPluginInfo} from "../../shared/tools";
 import {Janus} from "../../lib/janus";
 import {DANTE_IN_IP, SECRET} from "../../shared/consts";
 
@@ -35,10 +35,10 @@ class UsersQuadSndman extends Component {
     };
 
     sendMessage = (user, talk) => {
-        let {videoroom,room} = this.state;
-        var message = `{"talk":${talk},"name":"${user.display}","ip":"${user.ip}","col":4,"room":${room}}`;
+        let {room} = this.state;
+        let message = `{"talk":${talk},"name":"${user.display}","ip":"${user.ip}","col":4,"room":${room}}`;
         Janus.log(":: Sending message: ",message);
-        videoroom.data({ text: message })
+        this.props.fwdhandle.data({ text: message });
     };
 
     forwardStream = (feed) => {
@@ -56,27 +56,40 @@ class UsersQuadSndman extends Component {
             Janus.log(" :: Stop forward from room: ", room);
             this.setDelay();
             let stopfw = { "request":"stop_rtp_forward","stream_id":forward_feed.streamid,"publisher_id":forward_feed.id,"room":room,"secret":`${SECRET}` };
-            gxyhandle.send({"message": stopfw,
-                success: (data) => {
-                    Janus.log(":: Forward callback: ", data);
-                    this.sendMessage(forward_feed.display, false);
-                    this.setState({forward_feed: {}, forward: false});
-                },
+            getPluginInfo(stopfw, data => {
+                Janus.log(":: Forward callback: ", data);
+                this.sendMessage(forward_feed.display, false);
+                this.setState({forward_feed: {}, forward: false});
             });
+            // gxyhandle.send({"message": stopfw,
+            //     success: (data) => {
+            //         Janus.log(":: Forward callback: ", data);
+            //         this.sendMessage(forward_feed.display, false);
+            //         this.setState({forward_feed: {}, forward: false});
+            //     },
+            // });
         } else if(fullscr) {
             Janus.log(" :: Start forward from room: ", room);
             this.setDelay();
             let forward = { "request": "rtp_forward","publisher_id":feed.feed_id,"room":room,"secret":`${SECRET}`,"host":`${DANTE_IN_IP}`,"audio_port":port};
-            gxyhandle.send({"message": forward,
-                success: (data) => {
-                    Janus.log(":: Forward callback: ", data);
-                    forward_feed.streamid = data["rtp_stream"]["audio_stream_id"];
-                    forward_feed.id = feed.feed_id;
-                    forward_feed.display = feed.display;
-                    this.sendMessage(feed.display, true);
-                    this.setState({forward_feed, forward: true});
-                },
+            getPluginInfo(forward, data => {
+                Janus.log(":: Forward callback: ", data);
+                forward_feed.streamid = data["rtp_stream"]["audio_stream_id"];
+                forward_feed.id = feed.feed_id;
+                forward_feed.display = feed.display;
+                this.sendMessage(feed.display, true);
+                this.setState({forward_feed, forward: true});
             });
+            // gxyhandle.send({"message": forward,
+            //     success: (data) => {
+            //         Janus.log(":: Forward callback: ", data);
+            //         forward_feed.streamid = data["rtp_stream"]["audio_stream_id"];
+            //         forward_feed.id = feed.feed_id;
+            //         forward_feed.display = feed.display;
+            //         this.sendMessage(feed.display, true);
+            //         this.setState({forward_feed, forward: true});
+            //     },
+            // });
         }
     };
 
