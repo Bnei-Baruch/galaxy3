@@ -1,11 +1,11 @@
 import React, {Component, Fragment} from 'react';
 import { Janus } from "../../lib/janus";
 import {getState, initJanus} from "../../shared/tools";
-import './UsersSDIOut.css'
+import './UsersSndman.css'
 import {initGxyProtocol} from "../../shared/protocol";
-import UsersQuadSDIOut from "./UsersQuadSDIOut";
+import UsersQuadSndman from "./UsersQuadSndman";
 
-class UsersSDIOut extends Component {
+class UsersSndman extends Component {
 
     state = {
         janus: null,
@@ -81,10 +81,10 @@ class UsersSDIOut extends Component {
     render() {
         return (
             <Fragment>
-                <UsersQuadSDIOut {...this.state} ref={quad => {this.quad = quad;}} setProps={this.setProps} />
+                <UsersQuadSndman {...this.state} ref={quad => {this.quad = quad;}} setProps={this.setProps} />
             </Fragment>
         );
     }
 }
 
-export default UsersSDIOut;
+export default UsersSndman;

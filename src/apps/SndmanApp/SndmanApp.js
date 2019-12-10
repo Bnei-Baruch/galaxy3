@@ -5,10 +5,11 @@ import {getState, initJanus} from "../../shared/tools";
 import './SndmanApp.css';
 import {initGxyProtocol} from "../../shared/protocol";
 import SndmanGroups from "./SndmanGroups";
-import SndmanUsers from "./SndmanUsers";
+//import SndmanUsers from "./SndmanUsers";
 import {GROUPS_ROOM, DATA_PORT, JANUS_STR_HOST_IL, JANUS_STR_HOST_GR ,JANUS_STR_HOST_UK, SECRET} from "../../shared/consts";
-import {client, getUser} from "../../components/UserManager";
+import {client} from "../../components/UserManager";
 import LoginPage from "../../components/LoginPage";
+import UsersSndman from "./UsersSndman";
 
 
 class SndmanApp extends Component {
@@ -385,6 +386,9 @@ class SndmanApp extends Component {
     onProtocolData = (data) => {
         Janus.log(" :: Got Shidur Action: ", data);
         let {col, feed, i, status} = data;
+
+        if(col === 4) return;
+
         if(data.type === "sdi-switch_req") {
             this.switchTo(feed)
         } else if(data.type === "sdi-subscribe_req") {
@@ -434,10 +438,11 @@ class SndmanApp extends Component {
         let content = (
             <Grid columns={3}>
                 <Grid.Column>
-                    <SndmanUsers
-                        ref={col => {this.col4 = col;}}
-                        setProps={this.setProps}
-                        onProtocolData={this.onProtocolData} />
+                    <UsersSndman />
+                    {/*<SndmanUsers*/}
+                    {/*    ref={col => {this.col4 = col;}}*/}
+                    {/*    setProps={this.setProps}*/}
+                    {/*    onProtocolData={this.onProtocolData} />*/}
                 </Grid.Column>
                 <Grid.Row>
                     <Grid.Column>
