@@ -6,11 +6,22 @@
     height: 180px;
 }
 
-.video_box {
+.group_box {
     background-color: #444;
     color: #fff;
     font-size: 150%;
     position:relative;
+    height: 101px;
+}
+
+.group_full {
+    background-color: #444;
+    color: #fff;
+    font-size: 150%;
+    position:relative;
+    height: 203px;
+    width: 360px;
+    z-index: 1;
 }
 
 .video_title {

@@ -36,11 +36,7 @@ class SndmanGroups extends Component {
 
     fullScreenGroup = (i,full_feed) => {
         Janus.log(":: Make Full Screen Group: ",full_feed);
-        full_feed.display = JSON.parse(full_feed.feed_display);
         this.setState({fullscr: true,full_feed});
-        let fourvideo = this.refs["programVideo" + i];
-        let fullvideo = this.refs.fullscreenVideo;
-        fullvideo.srcObject = fourvideo.captureStream();
     };
 
     toFourGroup = (i,full_feed) => {
@@ -125,26 +121,25 @@ class SndmanGroups extends Component {
       const autoPlay = true;
       const controls = false;
       const muted = true;
-      const full_question = full_feed && users[full_feed.display.id] ? users[full_feed.display.id].question : null;
+      const q = (<div className="question">
+          <svg viewBox="0 0 50 50">
+              <text x="25" y="25" textAnchor="middle" alignmentBaseline="central" dominantBaseline="central">&#xF128;</text>
+          </svg>
+      </div>);
 
       let program = this.props.mids.map((mid,i) => {
           if(mid && this.props.qam[i] === col) {
               if(!mid.active) {
-                  return (<div className={fullscr ? "hidden" : ""} key={"prf" + i}>
-                      <div className="video_box" key={"prov" + i}>
-                          <div className="video_title" />
-                      </div></div>)
+                  return (<div className="group_box" key={"prov" + i} />)
               } else {
                   let qst = mid.user && users[mid.user.id] ? users[mid.user.id].question : false;
                   let talk = mid.talk;
                   //let id = feed.feed_id;
-                  return (<div className={fullscr ? "hidden" : ""} key={"prf" + i}>
-                      <div className="video_box"
-                           key={"prov" + i}
-                           ref={"provideo" + i}
-                           id={"provideo" + i}>
-                          <div className="video_title">{mid.user.display}</div>
-                          {qst ? <div className='qst_title'>?</div> : ""}
+                  return (
+                      <div className={fullscr && full_feed.mid === mid.mid ? "group_full" : fullscr && full_feed.mid !== mid.mid ? "hidden" : "group_box"}
+                           key={"prov" + i} ref={"provideo" + i} id={"provideo" + i}>
+                          <div className={fullscr ? "fullscrvideo_title" : "video_title"} >{mid.user.display}</div>
+                          {qst ? q : ""}
                           <video className={talk ? "talk" : ""}
                                  key={i}
                                  ref={"programVideo" + i}
@@ -155,34 +150,17 @@ class SndmanGroups extends Component {
                                  controls={controls}
                                  muted={muted}
                                  playsInline={true}/>
-                      </div></div>);
+                      </div>);
               }
           }
           return true;
       });
-
-      let fullscreen = (<div className={fullscr ? "" : "hidden"}>
-              <div className="fullscrvideo_title">
-                  <span>{full_feed ? full_feed.display.display : ""}</span>
-              </div>
-              <div className={full_question ? 'qst_fullscreentitle' : 'hidden'}>?</div>
-              <video ref = {"fullscreenVideo"}
-                     id = "fullscreenVideo"
-                     width = "360"
-                     height = "200"
-                     autoPlay = {autoPlay}
-                     controls = {controls}
-                     muted = {muted}
-                     playsInline = {true} />
-          </div>
-      );
 
       return (
           <Segment className="sndman_segment">
           <Segment attached className="preview_sdi" color='red'>
               <div className="video_grid">
                   {program}
-                  {fullscreen}
               </div>
           </Segment>
               <Button className='fours_button'
