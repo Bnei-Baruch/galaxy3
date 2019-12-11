@@ -12,6 +12,7 @@ class UsersQuadSndman extends Component {
         col: 4,
         feeds: [],
         full_group: null,
+        forward_request: false,
         quad: [null,null,null,null],
     };
 
@@ -24,14 +25,14 @@ class UsersQuadSndman extends Component {
     };
 
     onKeyPressed = (e) => {
-        if(e.code === "Numpad4" && !this.state.onoff_but)
+        if(e.code === "Numpad4" && !this.state.forward_request)
             this.forwardStream();
     };
 
     setDelay = () => {
-        this.setState({onoff_but: true});
+        this.setState({forward_request: true});
         setTimeout(() => {
-            this.setState({onoff_but: false});
+            this.setState({forward_request: false});
         }, 2000);
     };
 
@@ -41,8 +42,8 @@ class UsersQuadSndman extends Component {
         this.props.fwdhandle.data({ text: message });
     };
 
-    forwardStream = (feed) => {
-        const {fullscr,forward,full_group,feeds} = this.state;
+    forwardStream = (full_group) => {
+        const {fullscr,forward,feeds} = this.state;
         let {room, users} = full_group;
         let port = 5630;
         //FIXME: This is really problem place we call start forward from one place and stop from two placed
@@ -85,13 +86,26 @@ class UsersQuadSndman extends Component {
         }
     };
 
-    switchFullScreen = (i,full_group) => {
-        let {fullscr} = this.state;
-        this.setState({fullscr: !fullscr, full_feed: i, full_group});
+    fullScreenGroup = (i,full_group) => {
+        Janus.log(":: Make Full Screen Group: ",full_group);
+        this.setState({fullscr: true, full_feed: i, full_group});
+    };
+
+    toFourGroup = (i,full_group) => {
+        Janus.log(":: Back to four: ");
+        const {forward,forward_request} = this.state;
+        this.setState({fullscr: false});
+        if(forward_request) {
+            setTimeout(() => {
+                this.forwardStream(full_group);
+            }, 1000);
+        } else if(forward) {
+            this.forwardStream(full_group);
+        }
     };
 
   render() {
-      const {full_group,full_feed,fullscr,col,quad,forward,forward_request} = this.state;
+      const {full_group,full_feed,fullscr,quad,forward,forward_request} = this.state;
       const q = (<div className="question">
           <svg viewBox="0 0 50 50">
               <text x="25" y="25" textAnchor="middle" alignmentBaseline="central" dominantBaseline="central">&#xF128;</text>

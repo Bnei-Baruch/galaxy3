@@ -53,8 +53,10 @@ class UsersSndman extends Component {
         let {col, group, i, status} = data;
 
         // Shidur action
-        if(data.type === "sdi-fullscr_group" && col === 4) {
-            this.quad.switchFullScreen(i,group);
+        if(data.type === "sdi-fullscr_group" && col === 4 && status) {
+            this.quad.fullScreenGroup(i,group);
+        } else if(data.type === "sdi-fullscr_group" && col === 4 && !status) {
+            this.quad.toFourGroup(i,group);
         }
 
         // Set status in users list
