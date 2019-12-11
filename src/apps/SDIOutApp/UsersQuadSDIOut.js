@@ -16,7 +16,7 @@ class UsersQuadSDIOut extends Component {
             getState('galaxy/program', ({quad}) => {
                 this.setState({quad});
             });
-        }, 3000);
+        }, 1000);
     };
 
     switchFullScreen = (i,feed) => {
@@ -25,7 +25,7 @@ class UsersQuadSDIOut extends Component {
     };
 
   render() {
-      const {full_feed,fullscr,col,quad} = this.state;
+      const {full_feed,fullscr,quad} = this.state;
 
       let program = quad.map((g,i) => {
           let qst = g && g.questions;

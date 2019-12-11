@@ -1,7 +1,6 @@
 import React, {Component} from 'react';
 import './UsersHandleSDIOut.scss'
 import { Janus } from "../../lib/janus";
-import {Icon} from "semantic-ui-react";
 import classNames from "classnames";
 
 class UsersHandleSDIOut extends Component {
@@ -21,7 +20,6 @@ class UsersHandleSDIOut extends Component {
         let {g} = this.props;
         let {room} = this.state;
         if(g && JSON.stringify(g) !== JSON.stringify(prevProps.g) && g.room !== room) {
-            console.log(g.room)
             this.initVideoRoom(g.room);
         }
     }

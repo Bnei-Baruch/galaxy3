@@ -21,7 +21,6 @@ class UsersHandle extends Component {
         let {g} = this.props;
         let {room} = this.state;
         if(g && JSON.stringify(g) !== JSON.stringify(prevProps.g) && g.room !== room) {
-            console.log(g.room)
             this.initVideoRoom(g.room);
         }
     }
