@@ -81,7 +81,7 @@ class UsersSndman extends Component {
     render() {
         return (
             <Fragment>
-                <UsersQuadSndman {...this.state} ref={quad => {this.quad = quad;}} setProps={this.setProps} />
+                <UsersQuadSndman fwdhandle={this.props.fwdhandle} {...this.state} ref={quad => {this.quad = quad;}} setProps={this.setProps} />
             </Fragment>
         );
     }

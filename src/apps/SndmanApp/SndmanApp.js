@@ -385,7 +385,7 @@ class SndmanApp extends Component {
         let content = (
             <Grid columns={3}>
                 <Grid.Column>
-                    <UsersSndman />
+                    <UsersSndman fwdhandle={this.state.fwdhandle} />
                     {/*<SndmanUsers*/}
                     {/*    ref={col => {this.col4 = col;}}*/}
                     {/*    setProps={this.setProps}*/}

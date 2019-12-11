@@ -36,8 +36,7 @@ class UsersQuadSndman extends Component {
     };
 
     sendMessage = (user, talk) => {
-        let {room} = this.state;
-        let message = `{"talk":${talk},"name":"${user.display}","ip":"${user.ip}","col":4,"room":${room}}`;
+        let message = `{"talk":${talk},"name":"${user.display}","ip":"${user.ip}","col":4,"room":${user.room}}`;
         Janus.log(":: Sending message: ",message);
         this.props.fwdhandle.data({ text: message });
     };
@@ -59,8 +58,8 @@ class UsersQuadSndman extends Component {
             this.setDelay();
             feeds.forEach((feed,i) => {
                 if (feed) {
-                    // FIXME: if we change sources on client based on room id (not ip) we send message only once
-                    this.sendMessage(feed.display, false);
+                    // FIXME: if we change sources on client based on room id (not ip) we send message only once?
+                    this.sendMessage(feed, false);
                     let stopfw = { "request":"stop_rtp_forward","stream_id":feed.streamid,"publisher_id":feed.rfid,"room":feed.room,"secret":`${SECRET}` };
                     getPluginInfo(stopfw, data => {
                         Janus.log(":: Forward callback: ", data);
@@ -73,12 +72,11 @@ class UsersQuadSndman extends Component {
             this.setDelay();
             users.forEach((user,i) => {
                 if (user) {
-                    this.sendMessage(user.display, true);
-                    let forward = { "request": "rtp_forward","publisher_id":feed.feed_id,"room":room,"secret":`${SECRET}`,"host":`${DANTE_IN_IP}`,"audio_port":port};
+                    let forward = { "request": "rtp_forward","publisher_id":user.rfid,"room":room,"secret":`${SECRET}`,"host":`${DANTE_IN_IP}`,"audio_port":port};
                     getPluginInfo(forward, data => {
                         Janus.log(":: Forward callback: ", data);
-                        users[i].streamid = data["rtp_stream"]["audio_stream_id"];
-                        this.sendMessage(user.display, true);
+                        users[i].streamid = data.response["rtp_stream"]["audio_stream_id"];
+                        this.sendMessage(user, true);
                     });
                     port++;
                 }
