@@ -237,13 +237,13 @@ class ShidurGroups extends Component {
           if(mid && this.props.qam[i] === col) {
               if(!mid.active) {
                   return (<div key={"prf" + i}>
-                      <div className="video_box" key={"prov" + i}>
+                      <div className="group_box" key={"prov" + i}>
                           <div className="video_title" />
                       </div></div>)
               } else {
                   let qst = mid.user && users[mid.user.id] ? users[mid.user.id].question : false;
                   return (<div key={"prf" + i}>
-                      <div className="video_box"
+                      <div className="group_box"
                            key={"prov" + i}
                            ref={"provideo" + i}
                            id={"provideo" + i}>

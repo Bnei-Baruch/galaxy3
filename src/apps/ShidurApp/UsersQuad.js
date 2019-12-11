@@ -134,41 +134,35 @@ class UsersQuad extends Component {
     };
 
     switchFullScreen = (i,g) => {
-        let {groups} = this.props;
-        let {fullscr} = this.state;
-        let group = groups[g.queue];
-        this.setState({fullscr: !fullscr, full_feed: i});
-        this.sdiAction("fullscr_group" , !fullscr, i, group);
+        if(!g) return;
+        let {fullscr,full_feed} = this.state;
+
+        if(fullscr && full_feed === i) {
+            this.toFourGroup(i,g,() => {});
+        } else if(fullscr) {
+            this.toFourGroup(i,g, () => {
+                this.toFullGroup(i,g);
+            });
+        } else {
+            this.toFullGroup(i,g);
+        }
     };
 
-    // checkFullScreen = () => {
-    //     let {full_feed} = this.state;
-    //     if(full_feed) {
-    //         Janus.log(":: Group: " + full_feed + " , sending sdi-action...");
-    //         this.sdiAction("fullscr_group" , true, full_feed.mindex, full_feed);
-    //     }
-    // };
-    //
-    // toFullGroup = (i,feed) => {
-    //     Janus.log(":: Make Full Screen Group: ",feed);
-    //     this.setState({fullscr: true,full_feed: feed});
-    //     //this.sdiAction("fullscr_group" , true, i, feed);
-    // };
-    //
-    // toFourGroup = (cb) => {
-    //     Janus.log(":: Back to four: ");
-    //     //this.sdiAction("fullscr_group" , false, null, this.state.full_feed);
-    //     this.setState({fullscr: false, full_feed: null}, () => {
-    //         cb();
-    //     });
-    // };
-    //
-    // setDelay = () => {
-    //     this.props.setProps({disable_button: true, next_button: true});
-    //     setTimeout(() => {
-    //         this.props.setProps({disable_button: false, next_button: false});
-    //     }, 2000);
-    // };
+    toFullGroup = (i,g) => {
+        Janus.log(":: Make Full Screen Group: ",g);
+        let group = this.props.groups[g.queue];
+        this.setState({fullscr: true, full_feed: i});
+        this.sdiAction("fullscr_group" , true, i, group);
+    };
+
+    toFourGroup = (i,g,cb) => {
+        Janus.log(":: Back to four: ");
+        let group = this.props.groups[g.queue];
+        this.sdiAction("fullscr_group" , false, i, group);
+        this.setState({fullscr: false, full_feed: null}, () => {
+            cb();
+        });
+    };
 
   render() {
       const {full_feed,fullscr,col,quad} = this.state;
@@ -185,16 +179,15 @@ class UsersQuad extends Component {
           let name = g ? g.description : "";
           //let room = groups[g] ? groups[g].room : "";
           return (
-              <div className={fullscr && full_feed === i ? "video_full" : fullscr && full_feed !== i ? "hidden" : "video_box"}
-                   key={"pr" + i} >
-                  <div className='click-panel' onClick={() => this.switchFullScreen(i,g)} >
-                  <div className={fullscr ? "fullscrvideo_title" : "video_title"} >{name}</div>
+              <div className={fullscr && full_feed === i ? "video_full" : "video_box"}
+                   key={"pr" + i} onClick={() => this.switchFullScreen(i,g)} >
+                  <div className='video_title' >{name}</div>
                   {qst ? q : ""}
                   <UsersHandle key={"q"+i} g={g} index={i} {...this.props} />
-                  </div>
+
                   {fullscr ? "" :
                       <Button className='next_button'
-                              disabled={groups.length < 2 || next_button}
+                              disabled={groups.length < 5 || next_button}
                               size='mini'
                               color='green'
                               icon={group ? 'arrow up' : 'share'}
@@ -217,7 +210,7 @@ class UsersQuad extends Component {
                       {col}
                   </Button>
                   <Button className='fours_button'
-                          disabled={fullscr}
+                          disabled={groups.length < 10 || fullscr}
                           color='blue'
                           onClick={this.switchFour}>
                       <Icon name='share' />
