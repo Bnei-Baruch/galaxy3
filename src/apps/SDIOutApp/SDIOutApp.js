@@ -38,7 +38,9 @@ class SDIOutApp extends Component {
             let {user} = this.state;
             user.session = janus.getSessionId();
             this.setState({janus,user});
-
+            getState('galaxy/groups', (users) => {
+                this.setState({users});
+            });
             initGxyProtocol(janus, user, protocol => {
                 this.setState({protocol});
             }, ondata => {
@@ -112,10 +114,8 @@ class SDIOutApp extends Component {
                 this.setState({myid ,mypvtid});
                 Janus.log("Successfully joined room " + msg["room"] + " with ID " + myid);
                 if(this.state.shidur) {
-                    Janus.log(" :: Shidur online - getting state :: ");
-                    getState('state/galaxy/shidur', (state) => {
-                        const {users,mids} = state;
-                        this.setState({users});
+                    Janus.log(" :: Shidur online - getting mids :: ");
+                    getState('galaxy/mids', ({mids}) => {
                         this.programSubscribtion(mids);
                     });
                 }

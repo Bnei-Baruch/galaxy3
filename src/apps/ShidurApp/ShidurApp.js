@@ -53,12 +53,6 @@ class ShidurApp extends Component {
         ],
     };
 
-    componentDidMount() {
-        getState('galaxy/groups', (users) => {
-            this.setState({users});
-        });
-    };
-
     componentWillUnmount() {
         this.state.janus.destroy();
     };
@@ -78,7 +72,9 @@ class ShidurApp extends Component {
     initGalaxy = (user) => {
         initJanus(janus => {
             this.setState({janus,user});
-
+            getState('galaxy/groups', (users) => {
+                this.setState({users});
+            });
             initGxyProtocol(janus, user, protocol => {
                 this.setState({protocol});
             }, ondata => {
@@ -473,10 +469,10 @@ class ShidurApp extends Component {
             delete data.type;
             this.setState({...data});
             if(data.sdiout || data.sndman) {
-                const {users,mids} = this.state;
-                let state = {users,mids};
-                putData(`state/galaxy/shidur`, state, (cb) => {
-                    Janus.log(":: Save state to DB :: ",cb);
+                const {mids} = this.state;
+                // Save state
+                putData(`galaxy/mids`, {mids}, (cb) => {
+                    Janus.log(":: Save MIDS to DB: ",cb);
                     setTimeout(() => {
                         Janus.log(":: Check Full Screen state :: ");
                         this.col1.checkFullScreen();
