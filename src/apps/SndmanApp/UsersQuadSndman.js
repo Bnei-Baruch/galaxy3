@@ -10,6 +10,7 @@ class UsersQuadSndman extends Component {
 
     state = {
         col: 4,
+        feeds: [],
         full_group: null,
         quad: [null,null,null,null],
     };
@@ -42,8 +43,9 @@ class UsersQuadSndman extends Component {
     };
 
     forwardStream = (feed) => {
-        const {fullscr,forward_feed,room,forward,port} = this.state;
-        const {gxyhandle} = this.props;
+        const {fullscr,forward,full_group,feeds} = this.state;
+        let {room, users} = full_group;
+        let port = 5630;
         //FIXME: This is really problem place we call start forward from one place and stop from two placed
         // and we depend on callback from request and fullscreen state and feed info.
         // fix1: we take now feed info from state only in render and pass as param to needed functions
@@ -55,84 +57,33 @@ class UsersQuadSndman extends Component {
         if(forward) {
             Janus.log(" :: Stop forward from room: ", room);
             this.setDelay();
-            let stopfw = { "request":"stop_rtp_forward","stream_id":forward_feed.streamid,"publisher_id":forward_feed.id,"room":room,"secret":`${SECRET}` };
-            getPluginInfo(stopfw, data => {
-                Janus.log(":: Forward callback: ", data);
-                this.sendMessage(forward_feed.display, false);
-                this.setState({forward_feed: {}, forward: false});
-            });
-            // gxyhandle.send({"message": stopfw,
-            //     success: (data) => {
-            //         Janus.log(":: Forward callback: ", data);
-            //         this.sendMessage(forward_feed.display, false);
-            //         this.setState({forward_feed: {}, forward: false});
-            //     },
-            // });
-        } else if(fullscr) {
-            Janus.log(" :: Start forward from room: ", room);
-            this.setDelay();
-            let forward = { "request": "rtp_forward","publisher_id":feed.feed_id,"room":room,"secret":`${SECRET}`,"host":`${DANTE_IN_IP}`,"audio_port":port};
-            getPluginInfo(forward, data => {
-                Janus.log(":: Forward callback: ", data);
-                forward_feed.streamid = data["rtp_stream"]["audio_stream_id"];
-                forward_feed.id = feed.feed_id;
-                forward_feed.display = feed.display;
-                this.sendMessage(feed.display, true);
-                this.setState({forward_feed, forward: true});
-            });
-            // gxyhandle.send({"message": forward,
-            //     success: (data) => {
-            //         Janus.log(":: Forward callback: ", data);
-            //         forward_feed.streamid = data["rtp_stream"]["audio_stream_id"];
-            //         forward_feed.id = feed.feed_id;
-            //         forward_feed.display = feed.display;
-            //         this.sendMessage(feed.display, true);
-            //         this.setState({forward_feed, forward: true});
-            //     },
-            // });
-        }
-    };
-
-    forwardUsersStream = () => {
-        const {feeds, room, videoroom, forward} = this.state;
-        // TODO: WE need solution for joining users to already forwarded room
-        if(forward) {
-            Janus.log(" :: Stop forward from room: ", room);
-            this.setDelay();
             feeds.forEach((feed,i) => {
-                if (feed !== null && feed !== undefined) {
+                if (feed) {
                     // FIXME: if we change sources on client based on room id (not ip) we send message only once
                     this.sendMessage(feed.display, false);
-                    let stopfw = { "request":"stop_rtp_forward","stream_id":feed.streamid,"publisher_id":feed.id,"room":room,"secret":`${SECRET}` };
-                    videoroom.send({"message": stopfw,
-                        success: (data) => {
-                            Janus.log(":: Forward callback: ", data);
-                            feeds[i].streamid = null;
-                        },
+                    let stopfw = { "request":"stop_rtp_forward","stream_id":feed.streamid,"publisher_id":feed.rfid,"room":feed.room,"secret":`${SECRET}` };
+                    getPluginInfo(stopfw, data => {
+                        Janus.log(":: Forward callback: ", data);
                     });
                 }
             });
-            this.setState({feeds, forward: false});
-        } else {
+            this.setState({feeds: [], forward: false});
+        } else if(fullscr) {
             Janus.log(" :: Start forward from room: ", room);
-            // FIXME: We have to be sure that forward stopped
             this.setDelay();
-            let port = 5630;
-            feeds.forEach((feed,i) => {
-                if (feed !== null && feed !== undefined) {
-                    this.sendMessage(feed.display, true);
-                    let forward = { "request": "rtp_forward","publisher_id":feed.id,"room":room,"secret":`${SECRET}`,"host":`${DANTE_IN_IP}`,"audio_port":port};
-                    videoroom.send({"message": forward,
-                        success: (data) => {
-                            Janus.log(":: Forward callback: ", data);
-                            let streamid = data["rtp_stream"]["audio_stream_id"];
-                            feeds[i].streamid = streamid;
-                        },
+            users.forEach((user,i) => {
+                if (user) {
+                    this.sendMessage(user.display, true);
+                    let forward = { "request": "rtp_forward","publisher_id":feed.feed_id,"room":room,"secret":`${SECRET}`,"host":`${DANTE_IN_IP}`,"audio_port":port};
+                    getPluginInfo(forward, data => {
+                        Janus.log(":: Forward callback: ", data);
+                        users[i].streamid = data["rtp_stream"]["audio_stream_id"];
+                        this.sendMessage(user.display, true);
                     });
                     port++;
                 }
             });
-            this.setState({feeds, forward: true});
+            this.setState({feeds: users, forward: true});
         }
     };
 
