@@ -17,16 +17,23 @@ class UsersQuadSndman extends Component {
     };
 
     componentDidMount() {
+        document.addEventListener("keydown", this.onKeyPressed);
         setInterval(() => {
             getState('galaxy/program', ({quad}) => {
                 this.setState({quad});
             });
-        }, 3000);
+        }, 1000);
+    };
+
+    componentWillUnmount() {
+        document.removeEventListener("keydown", this.onKeyPressed);
     };
 
     onKeyPressed = (e) => {
-        if(e.code === "Numpad4" && !this.state.forward_request)
-            this.forwardStream();
+        const {fullscr, forward_request, full_group} = this.state;
+        if(e.code === "Numpad4" && fullscr && full_group && !forward_request) {
+            this.forwardStream(full_group);
+        }
     };
 
     setDelay = () => {
