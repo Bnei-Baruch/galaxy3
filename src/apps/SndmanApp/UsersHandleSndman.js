@@ -41,14 +41,8 @@ class UsersHandleSndman extends Component {
                 Janus.log("Plugin attached! (" + videoroom.getPlugin() + ", id=" + videoroom.getId() + ")");
                 Janus.log("  -- This is a publisher/manager");
                 let {user} = this.props;
-
-                if(roomid) {
-                    let register = { "request": "join", "room": roomid, "ptype": "publisher", "display": JSON.stringify(user) };
-                    videoroom.send({"message": register});
-                } else {
-                    this.getRoomList();
-                }
-
+                let register = { "request": "join", "room": roomid, "ptype": "publisher", "display": JSON.stringify(user) };
+                videoroom.send({"message": register});
             },
             error: (error) => {
                 Janus.log("Error attaching plugin: " + error);

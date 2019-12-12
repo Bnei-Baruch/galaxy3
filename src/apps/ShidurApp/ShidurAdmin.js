@@ -32,6 +32,7 @@ class ShidurAdmin extends Component {
         mids: [],
         feeds: [],
         rooms: [],
+        rooms_list: [],
         feed_id: null,
         feed_info: null,
         feed_user: null,
@@ -139,44 +140,18 @@ class ShidurAdmin extends Component {
     };
 
     getRoomList = () => {
-        const {videoroom,current_room,root} = this.state;
-        if (videoroom) {
-            videoroom.send({message: {request: "list"},
+        if (this.state.videoroom) {
+            this.state.videoroom.send({message: {request: "list"},
                 success: (data) => {
-                    //Janus.log(" :: Get Rooms List: ", data.list)
-                    let rooms = root ? data.list : data.list.filter(r => r.num_users > 0);
-                    rooms.sort((a, b) => {
-                        // if (a.num_users > b.num_users) return -1;
-                        // if (a.num_users < b.num_users) return 1;
+                    let rooms_list = data.list;
+                    rooms_list.sort((a, b) => {
                         if (a.description > b.description) return 1;
                         if (a.description < b.description) return -1;
                         return 0;
                     });
-                    this.getFeedsList(rooms);
-                    if(current_room !== "") {
-                        this.listForward(current_room);
-                    }
+                    this.setState({rooms_list});
                 }
             });
-        }
-    };
-
-    getFeedsList = (rooms) => {
-        let {videoroom,users} = this.state;
-        for (let i=0; i<rooms.length; i++) {
-            if(rooms[i].num_users > 0) {
-                videoroom.send({
-                    message: {request: "listparticipants", "room": rooms[i].room},
-                    success: (data) => {
-                        //Janus.log(" :: Get Partisipant List: ", data)
-                        let count = data.participants.filter(p => JSON.parse(p.display).role === "user");
-                        let questions = data.participants.find(p => users[JSON.parse(p.display).id] ? users[JSON.parse(p.display).id].question : null);
-                        rooms[i].num_users = count.length;
-                        rooms[i].questions = questions;
-                        this.setState({rooms});
-                    }
-                });
-            }
         }
     };
 
@@ -839,8 +814,8 @@ class ShidurAdmin extends Component {
     };
 
     selectRoom = (i) => {
-        const {rooms} = this.state;
-        let room_id = rooms[i].room;
+        const {rooms_list} = this.state;
+        let room_id = rooms_list[i].room;
         this.setState({room_id});
     };
 
@@ -1078,9 +1053,9 @@ class ShidurAdmin extends Component {
           { key: 'private', text: 'Private', value: 'private' },
       ];
 
-      let rooms_list = rooms.map((data,i) => {
-          const {room, num_users, description} = data;
-          return ({ key: room, text: description, value: i, description: num_users.toString()})
+      let rooms_list = this.state.rooms_list.map((data,i) => {
+          const {room, num_participants, description} = data;
+          return ({ key: room, text: description, value: i, description: num_participants.toString()})
       });
 
       let rooms_grid = rooms.map((data,i) => {
@@ -1187,6 +1162,7 @@ class ShidurAdmin extends Component {
                       placeholder="Select Room:"
                       value={i}
                       options={rooms_list}
+                      onClick={this.getRoomList}
                       onChange={(e, {value}) => this.selectRoom(value)} />
               </Menu.Item>
               <Menu.Item>

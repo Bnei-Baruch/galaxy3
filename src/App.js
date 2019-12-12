@@ -1,13 +1,13 @@
 import React, { Component, Fragment } from 'react';
 import 'semantic-ui-css/semantic.min.css';
 // import GalaxyApp from "./apps/GalaxyApp";
-import OldClient from "./apps/VirtualApp/OldClient";
+// import OldClient from "./apps/VirtualApp/OldClient";
 // import MobileClient from "./apps/MobileApp/MobileClient";
 // import VirtualClient from "./apps/VirtualApp/VirtualClient";
 // import VirtualStreaming from "./apps/VirtualApp/VirtualStreaming";
 // import GroupClient from "./apps/GroupsApp/GroupClient";
 // import GalaxyStream from "./apps/StreamApp/GalaxyStream";
-// import ShidurAdmin from "./apps/ShidurApp/ShidurAdmin";
+import ShidurAdmin from "./apps/ShidurApp/ShidurAdmin";
 // import ShidurApp from "./apps/ShidurApp/ShidurApp";
 // import UsersApp from "./apps/ShidurApp/UsersApp";
 // import SndmanApp from "./apps/SndmanApp/SndmanApp";
@@ -23,13 +23,13 @@ class App extends Component {
         return (
             <Fragment>
                 {/*<GalaxyApp />*/}
-                <OldClient />
+                {/*<OldClient />*/}
                 {/*  <MobileClient/>*/}
                 {/*<VirtualClient/>*/}
                 {/* <VirtualStreaming/>*/}
                 {/*<GroupClient/>*/}
                 {/* <GalaxyStream/>*/}
-                {/* <ShidurAdmin/>*/}
+                 <ShidurAdmin/>
                 {/* <ShidurApp/>*/}
                 {/* <UsersApp />*/}
                  {/*<SndmanApp/>*/}
