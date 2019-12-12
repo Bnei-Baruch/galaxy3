@@ -578,7 +578,7 @@ class ShidurAdmin extends Component {
 
     unsubscribeFrom = (id) => {
         // Unsubscribe from this publisher
-        let {feeds,users,feed_id} = this.state;
+        let {feeds,users,feed_id,current_room} = this.state;
         let {remoteFeed} = this.state;
         for (let i=0; i<feeds.length; i++) {
             if (feeds[i].id === id) {
@@ -595,7 +595,7 @@ class ShidurAdmin extends Component {
                     remoteFeed.send({ message: unsubscribe });
 
                 // Detach selected feed
-                if(feed_id === id) {
+                if(feed_id === id && current_room === GROUPS_ROOM) {
                     remoteFeed.detach();
                     this.setState({remoteFeed: null, groups: []});
                 }
