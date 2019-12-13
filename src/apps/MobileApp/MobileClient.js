@@ -1045,7 +1045,7 @@ class MobileClient extends Component {
                                     action>
                                     <input disabled={mystream}/>
                                     <Icon name='user circle' />
-                                    {mystream ? <Button size='massive' negative icon='sign-out' onClick={this.exitRoom} />:""}
+                                    {mystream ? <Button size='massive' negative icon='sign-out' onClick={() => this.exitRoom(false)} />:""}
                                     {!mystream ? <Button size='massive' primary icon='sign-in' disabled={delay||!selected_room||!audio_device} onClick={this.joinRoom} />:""}
                                 </Input>
                                 <Menu icon='labeled' secondary size="mini">
