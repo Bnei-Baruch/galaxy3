@@ -225,6 +225,7 @@ class ShidurAdmin extends Component {
                 Janus.log("  -- This is a publisher/manager");
                 let {user} = this.state;
                 this.setState({videoroom, remoteFeed: null, groups: []});
+                this.getRoomList();
 
                 if(room_id) {
                     this.listForward(room_id);
@@ -864,10 +865,10 @@ class ShidurAdmin extends Component {
     };
 
     getRoomID = () => {
-        const {rooms} = this.state;
+        const {rooms_list} = this.state;
         let id = 1028;
         for(let i=id; i<9999; i++) {
-            let room_id = rooms.filter(room => room.room === i);
+            let room_id = rooms_list.filter(room => room.room === i);
             if (room_id.length === 0) {
                 return i;
             }
