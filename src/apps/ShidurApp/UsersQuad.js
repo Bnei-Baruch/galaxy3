@@ -177,14 +177,13 @@ class UsersQuad extends Component {
           if (groups.length === 0) return;
           let qst = g && g.questions;
           let name = g ? g.description : "";
-          //let room = groups[g] ? groups[g].room : "";
           return (
-              <div className={fullscr && full_feed === i ? "video_full" : "video_box"}
-                   key={"pr" + i} onClick={() => this.switchFullScreen(i,g)} >
+              <div key={"pr" + i} className={fullscr && full_feed === i ? "video_full" : "video_box"} >
+                  <div className='click-panel' onClick={() => this.switchFullScreen(i,g)} >
                   <div className='video_title' >{name}</div>
                   {qst ? q : ""}
                   <UsersHandle key={"q"+i} g={g} index={i} {...this.props} />
-
+                  </div>
                   {fullscr ? "" :
                       <Button className='next_button'
                               disabled={groups.length < 5 || next_button}
@@ -192,7 +191,8 @@ class UsersQuad extends Component {
                               color='green'
                               icon={group ? 'arrow up' : 'share'}
                               onClick={() => this.switchProgram(i, false)} />}
-              </div>);
+              </div>
+          );
       });
 
       return (
