@@ -8,6 +8,7 @@ import UsersQuadSDIOut from "./UsersQuadSDIOut";
 class UsersSDIOut extends Component {
 
     state = {
+        ce: null,
         janus: null,
         protocol: null,
         group: "",
@@ -66,6 +67,10 @@ class UsersSDIOut extends Component {
                 users[data.user.id] = {[data.type]: data.status};
                 this.setState({users});
             }
+        }
+
+        if(data.type === "camera") {
+            this.setState({ce: data.user});
         }
 
         if(data.type === "leave" && users[data.id]) {

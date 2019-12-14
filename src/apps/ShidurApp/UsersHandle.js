@@ -18,10 +18,15 @@ class UsersHandle extends Component {
     };
 
     componentDidUpdate(prevProps) {
-        let {g} = this.props;
+        let {g,ce} = this.props;
         let {room} = this.state;
         if(g && JSON.stringify(g) !== JSON.stringify(prevProps.g) && g.room !== room) {
             this.initVideoRoom(g.room);
+        }
+        if(ce && JSON.stringify(ce) !== JSON.stringify(prevProps.ce) && ce.room === room && ce.camera) {
+            let {feedStreams} = this.state;
+            let remotevideo = this.refs["pv" + ce.rfid];
+            Janus.attachMediaStream(remotevideo, feedStreams[ce.rfid].stream);
         }
     }
 
@@ -274,7 +279,8 @@ class UsersHandle extends Component {
                         feedStreams[feed].stream = stream;
                         this.setState({feedStreams});
                         let remotevideo = this.refs["pv" + feed];
-                        Janus.attachMediaStream(remotevideo, stream);
+                        if(remotevideo)
+                            Janus.attachMediaStream(remotevideo, stream);
                     }
                 },
                 ondataopen: (data) => {
@@ -335,7 +341,8 @@ class UsersHandle extends Component {
       //const q = (<b style={{color: 'red', fontSize: '20px', fontFamily: 'Verdana', fontWeight: 'bold'}}>?</b>);
 
       let program_feeds = feeds.map((feed) => {
-          if(feed) {
+          let camera = users[feed.display.id] && users[feed.display.id].camera !== false;
+          if(feed && camera) {
               let id = feed.id;
               let talk = feed.talk;
               let question = users[feed.display.id] && users[feed.display.id].question;

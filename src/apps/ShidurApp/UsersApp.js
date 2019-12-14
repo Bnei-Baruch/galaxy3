@@ -9,6 +9,7 @@ import UsersToran from "./UsersToran";
 class UsersApp extends Component {
 
     state = {
+        ce: null,
         janus: null,
         protocol: null,
         group: "",
@@ -71,6 +72,10 @@ class UsersApp extends Component {
                 users[data.user.id] = {[data.type]: data.status};
                 this.setState({users});
             }
+        }
+
+        if(data.type === "camera") {
+            this.setState({ce: data.user});
         }
 
         if(data.type === "question") {
