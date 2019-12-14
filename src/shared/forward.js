@@ -90,7 +90,7 @@ const onMessage = (msg, jsep, fwdhandle) => {
                 let unpublished = msg["unpublished"];
                 Janus.log("Publisher left: " + unpublished);
                 if(unpublished === 'ok') {
-                    this.state.gxyhandle.hangup();
+                    fwdhandle.hangup();
                 }
             } else if(msg["error"] !== undefined && msg["error"] !== null) {
                 Janus.log(msg["error"]);
