@@ -29,6 +29,18 @@
     width:102%; height:270px;
 }
 
+.users_list {
+    overflow-y:scroll;
+    top:0px; left:0px;
+    width:100%; height:170px;
+}
+
+.disabled_users {
+    overflow-y:scroll;
+    top:0px; left:0px;
+    width:100%; height:120px;
+}
+
 .preview_conteiner {
     cursor: pointer!important;
     width: 460px;
