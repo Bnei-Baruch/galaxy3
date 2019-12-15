@@ -74,9 +74,9 @@ class UsersApp extends Component {
             }
         }
 
-        if(data.type === "camera") {
-            this.setState({ce: data.user});
-        }
+        // if(data.type === "camera") {
+        //     this.setState({ce: data.user});
+        // }
 
         if(data.type === "question") {
             this.quad.setQuestion(data.room, data.status);
