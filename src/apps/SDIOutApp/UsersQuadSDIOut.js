@@ -19,9 +19,12 @@ class UsersQuadSDIOut extends Component {
         }, 1000);
     };
 
-    switchFullScreen = (i,feed) => {
-        let {fullscr} = this.state;
-        this.setState({fullscr: !fullscr, full_feed: i});
+    toFullGroup = (i,g) => {
+        this.setState({fullscr: true, full_feed: i});
+    };
+
+    toFourGroup = (i,g) => {
+        this.setState({fullscr: false, full_feed: null});
     };
 
   render() {
