@@ -88,9 +88,9 @@ class UsersHandleSndman extends Component {
             if(event === "joined") {
                 let myid = msg["id"];
                 let mypvtid = msg["private_id"];
-                this.setState({myid ,mypvtid});
+                this.setState({myid, mypvtid});
                 Janus.log("Successfully joined room " + msg["room"] + " with ID " + myid);
-                if(msg["publishers"] !== undefined && msg["publishers"] !== null) {
+                if (msg["publishers"] !== undefined && msg["publishers"] !== null) {
                     let list = msg["publishers"];
                     let feeds = list.filter(feeder => JSON.parse(feeder.display).role === "user");
                     let {feedStreams} = this.state;
@@ -98,7 +98,7 @@ class UsersHandleSndman extends Component {
                     Janus.log(":: Got Pulbishers list: ", feeds);
                     Janus.debug("Got a list of available publishers/feeds:");
                     let subscription = [];
-                    for(let f in feeds) {
+                    for (let f in feeds) {
                         let id = feeds[f]["id"];
                         let display = JSON.parse(feeds[f]["display"]);
                         //let talk = feeds[f]["talking"];
@@ -109,7 +109,7 @@ class UsersHandleSndman extends Component {
                             let stream = streams[i];
                             stream["id"] = id;
                             stream["display"] = display;
-                            if(stream.type === "video") {
+                            if (stream.type === "video") {
                                 subst.mid = stream.mid;
                             }
                         }
@@ -117,10 +117,30 @@ class UsersHandleSndman extends Component {
                         users[display.id] = {...display, ...users[display.id], rfid: id};
                         subscription.push(subst);
                     }
-                    this.setState({feeds,feedStreams,users});
-                    if(subscription.length > 0) {
+                    this.setState({feeds, feedStreams, users});
+                    if (subscription.length > 0) {
                         this.props.setProps({users});
                         this.subscribeTo(subscription);
+                    }
+                }
+            } else if(event === "talking") {
+                let {feeds} = this.state;
+                let id = msg["id"];
+                Janus.log("User: "+id+" - start talking");
+                for(let i=0; i<feeds.length; i++) {
+                    if(feeds[i] && feeds[i].id === id) {
+                        feeds[i].talk = true;
+                        this.setState({feeds});
+                    }
+                }
+            } else if(event === "stopped-talking") {
+                let {feeds} = this.state;
+                let id = msg["id"];
+                Janus.log("User: "+id+" - stop talking");
+                for(let i=0; i<feeds.length; i++) {
+                    if(feeds[i] && feeds[i].id === id) {
+                        feeds[i].talk = false;
+                        this.setState({feeds});
                     }
                 }
             } else if(event === "destroyed") {
