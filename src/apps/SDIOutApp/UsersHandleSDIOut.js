@@ -106,9 +106,10 @@ class UsersHandleSDIOut extends Component {
                     for (let f in feeds) {
                         let id = feeds[f]["id"];
                         let display = JSON.parse(feeds[f]["display"]);
-                        //let talk = feeds[f]["talking"];
+                        let talk = feeds[f]["talking"];
                         let streams = feeds[f]["streams"];
                         feeds[f].display = display;
+                        feeds[f].talk = talk;
                         let subst = {feed: id};
                         for (let i in streams) {
                             let stream = streams[i];
