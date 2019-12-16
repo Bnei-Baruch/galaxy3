@@ -481,6 +481,7 @@ class ShidurApp extends Component {
                         this.col1.checkFullScreen();
                         this.col2.checkFullScreen();
                         this.col3.checkFullScreen();
+                        this.users.checkFullScreen();
                     }, 3000);
                 });
             }
@@ -746,7 +747,7 @@ class ShidurApp extends Component {
                     </Grid>
                 </Grid.Column>
                 <Grid.Column width={4}>
-                    <UsersApp />
+                    <UsersApp ref={users => {this.users = users;}} />
                     {/*<ShidurUsers*/}
                     {/*    ref={col => {this.col4 = col;}}*/}
                     {/*    setProps={this.setProps} />*/}

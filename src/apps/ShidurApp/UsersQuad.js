@@ -133,6 +133,14 @@ class UsersQuad extends Component {
         sendProtocolMessage(protocol, user, msg );
     };
 
+    checkFullScreen = () => {
+        let {fullscr,full_feed,quad} = this.state;
+        if(fullscr) {
+            Janus.log(":: Group: " + full_feed + " , sending sdi-action...");
+            this.sdiAction("fullscr_group" , true, full_feed, quad[full_feed]);
+        }
+    };
+
     switchFullScreen = (i,g) => {
         if(!g) return;
         let {fullscr,full_feed} = this.state;
