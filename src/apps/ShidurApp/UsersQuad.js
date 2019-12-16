@@ -150,15 +150,13 @@ class UsersQuad extends Component {
 
     toFullGroup = (i,g) => {
         Janus.log(":: Make Full Screen Group: ",g);
-        let group = this.props.groups[g.queue];
         this.setState({fullscr: true, full_feed: i});
-        this.sdiAction("fullscr_group" , true, i, group);
+        this.sdiAction("fullscr_group" , true, i, g);
     };
 
     toFourGroup = (i,g,cb) => {
         Janus.log(":: Back to four: ");
-        let group = this.props.groups[g.queue];
-        this.sdiAction("fullscr_group" , false, i, group);
+        this.sdiAction("fullscr_group" , false, i, g);
         this.setState({fullscr: false, full_feed: null}, () => {
             cb();
         });

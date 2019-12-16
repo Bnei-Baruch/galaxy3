@@ -51,7 +51,7 @@ class UsersQuadSndman extends Component {
 
     forwardStream = (full_group) => {
         const {fullscr,forward,feeds} = this.state;
-        let {room, users} = full_group;
+        let {room} = full_group;
         let port = 5630;
         //FIXME: This is really problem place we call start forward from one place and stop from two placed
         // and we depend on callback from request and fullscreen state and feed info.
@@ -78,18 +78,20 @@ class UsersQuadSndman extends Component {
         } else if(fullscr) {
             Janus.log(" :: Start forward from room: ", room);
             this.setDelay();
-            users.forEach((user,i) => {
-                if (user) {
-                    let forward = { "request": "rtp_forward","publisher_id":user.rfid,"room":room,"secret":`${SECRET}`,"host":`${DANTE_IN_IP}`,"audio_port":port};
-                    getPluginInfo(forward, data => {
-                        Janus.log(":: Forward callback: ", data);
-                        users[i].streamid = data.response["rtp_stream"]["audio_stream_id"];
-                        this.sendMessage(user, true);
-                    });
-                    port++;
-                }
+            getState(`galaxy/room/${room}`, (data) => {
+                data.users.forEach((user,i) => {
+                    if (user) {
+                        let forward = { "request": "rtp_forward","publisher_id":user.rfid,"room":room,"secret":`${SECRET}`,"host":`${DANTE_IN_IP}`,"audio_port":port};
+                        getPluginInfo(forward, data => {
+                            Janus.log(":: Forward callback: ", data);
+                            data.users[i].streamid = data.response["rtp_stream"]["audio_stream_id"];
+                            this.sendMessage(user, true);
+                        });
+                        port++;
+                    }
+                });
+                this.setState({feeds: data.users, forward: true});
             });
-            this.setState({feeds: users, forward: true});
         }
     };
 
