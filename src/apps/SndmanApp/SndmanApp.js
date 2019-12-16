@@ -73,7 +73,11 @@ class SndmanApp extends Component {
                 }
                 this.onProtocolData(ondata);
             });
-        },er => {}, true);
+        },er => {
+            setTimeout(() => {
+                window.location.reload();
+            }, 3000);
+        }, true);
     };
 
     initVideoRoom = () => {

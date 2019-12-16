@@ -56,7 +56,11 @@ class SDIOutApp extends Component {
                 }
                 this.onProtocolData(ondata);
             });
-        }, er => {}, true);
+        }, er => {
+            setTimeout(() => {
+                window.location.reload();
+            }, 10000);
+        }, true);
     };
 
     componentWillUnmount() {

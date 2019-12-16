@@ -87,7 +87,10 @@ class ShidurApp extends Component {
                 }
                 this.onProtocolData(ondata);
             });
-        },er => {}, true);
+        },er => {
+            alert(er);
+            window.location.reload();
+        }, true);
     };
 
     initVideoRoom = () => {
