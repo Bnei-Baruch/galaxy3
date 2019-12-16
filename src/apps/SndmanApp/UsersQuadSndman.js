@@ -79,18 +79,21 @@ class UsersQuadSndman extends Component {
             Janus.log(" :: Start forward from room: ", room);
             this.setDelay();
             getState(`galaxy/room/${room}`, (data) => {
-                data.users.forEach((user,i) => {
-                    if (user) {
+                let {users} = data;
+                users.forEach((user,i) => {
+                    if (user && user.rfid) {
                         let forward = { "request": "rtp_forward","publisher_id":user.rfid,"room":room,"secret":`${SECRET}`,"host":`${DANTE_IN_IP}`,"audio_port":port};
                         getPluginInfo(forward, data => {
                             Janus.log(":: Forward callback: ", data);
-                            data.users[i].streamid = data.response["rtp_stream"]["audio_stream_id"];
+                            users[i].streamid = data.response["rtp_stream"]["audio_stream_id"];
                             this.sendMessage(user, true);
                         });
                         port++;
+                    } else {
+                        Janus.error("Forward failed for user: " + user + " in room: " + room, data)
                     }
                 });
-                this.setState({feeds: data.users, forward: true});
+                this.setState({feeds: users, forward: true});
             });
         }
     };
