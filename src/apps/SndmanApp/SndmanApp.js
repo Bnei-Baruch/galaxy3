@@ -361,11 +361,6 @@ class SndmanApp extends Component {
                 users[data.user.id].question = data.status;
                 this.setState({users});
             }
-        } else if(data.type === "sdi-state_shidur" && data.status.sndman) {
-            getState('state/galaxy/shidur', (state) => {
-                const {users} = state;
-                this.setState({users});
-            });
         } else if(data.type === "event") {
             delete data.type;
             this.setState({...data});

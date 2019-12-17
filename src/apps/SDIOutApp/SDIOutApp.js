@@ -325,7 +325,7 @@ class SDIOutApp extends Component {
         Janus.log(" :: Got Shidur Action: ", data);
         let {col, feed, i, status} = data;
 
-        if(col === 4) return
+        if(col === 4) return;
 
         if(data.type === "sdi-switch_req") {
             this.switchTo(feed)
@@ -348,11 +348,6 @@ class SDIOutApp extends Component {
                 users[data.user.id].question = data.status;
                 this.setState({users});
             }
-        } else if(data.type === "sdi-state_shidur" && data.status.sdiout) {
-            getState('state/galaxy/shidur', (state) => {
-                const {users} = state;
-                this.setState({users});
-            });
         } else if(data.type === "event") {
             delete data.type;
             this.setState({...data});
