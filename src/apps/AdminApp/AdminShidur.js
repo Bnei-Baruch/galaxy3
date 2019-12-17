@@ -11,8 +11,8 @@ import {
     notifyMe,
     getState
 } from "../../shared/tools";
-import './ShidurAdmin.css';
-import './VideoConteiner.scss'
+import './AdminShidur.css';
+import './AdminShidurVideo.scss'
 import {GROUPS_ROOM,SECRET} from "../../shared/consts";
 import {initGxyProtocol,sendProtocolMessage} from "../../shared/protocol";
 import classNames from "classnames";
@@ -20,7 +20,7 @@ import platform from "platform";
 import {client} from "../../components/UserManager";
 import LoginPage from "../../components/LoginPage";
 
-class ShidurAdmin extends Component {
+class AdminShidur extends Component {
 
     state = {
         chatroom: null,
@@ -1103,4 +1103,4 @@ class ShidurAdmin extends Component {
   }
 }
 
-export default ShidurAdmin;
+export default AdminShidur;
