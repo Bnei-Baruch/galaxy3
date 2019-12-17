@@ -57,7 +57,6 @@ class AdminRoot extends Component {
         input_value: "",
         switch_mode: false,
         users: {},
-        root: false,
     };
 
     componentDidMount() {
@@ -85,17 +84,16 @@ class AdminRoot extends Component {
     checkPermission = (user) => {
         let gxy_root = user.roles.find(role => role === 'gxy_root');
         if (gxy_root) {
-            this.setState({root: gxy_root});
             delete user.roles;
             user.role = "root";
-            this.initShidurAdmin(user);
+            this.initAdminRoot(user);
         } else {
             alert("Access denied!");
             client.signoutRedirect();
         }
     };
 
-    initShidurAdmin = (user) => {
+    initAdminRoot = (user) => {
         initJanus(janus => {
             this.setState({janus,user});
             this.initVideoRoom();
@@ -600,7 +598,7 @@ class AdminRoot extends Component {
                     this.setState({remoteFeed: null, groups: []});
                 }
 
-                if(feed_user.rfid === id) {
+                if(feed_user && feed_user.rfid === id) {
                     this.setState({feed_user: null});
                 }
 
@@ -990,6 +988,7 @@ class AdminRoot extends Component {
         videoroom.send({"message": request,
             success: (data) => {
                 Janus.log(":: Kick callback: ", data);
+                this.setState({feed_user: null});
             },
         });
     };
@@ -1035,7 +1034,7 @@ class AdminRoot extends Component {
 
   render() {
 
-      const { bitrate,rooms,current_room,switch_mode,user,feeds,feed_id,feed_info,i,messages,description,room_id,room_name,root,forwarders,feed_rtcp,feed_talk,msg_type,users} = this.state;
+      const { bitrate,rooms,current_room,switch_mode,user,feeds,feed_id,feed_info,i,messages,description,room_id,room_name,forwarders,feed_rtcp,feed_talk,msg_type,users} = this.state;
       const width = "134";
       const height = "100";
       const autoPlay = true;
@@ -1045,7 +1044,7 @@ class AdminRoot extends Component {
       const f = (<Icon name='volume up' />);
       const q = (<Icon color='red' name='help' />);
       const v = (<Icon name='checkmark' />);
-      const x = (<Icon name='close' />);
+      //const x = (<Icon name='close' />);
 
       const bitrate_options = [
           { key: 1, text: '150Kb/s', value: 150000 },
@@ -1150,43 +1149,6 @@ class AdminRoot extends Component {
 
       let login = (<LoginPage user={user} checkPermission={this.checkPermission} />);
 
-      let root_content = (
-          <Menu secondary >
-              <Menu.Item>
-                  <Button color='orange' icon='bell slash' labelPosition='right'
-                          content={room_name} onClick={this.stopForward} />
-              </Menu.Item>
-              <Menu.Item>
-              </Menu.Item>
-              <Menu.Item>
-                  <Button negative onClick={this.removeRoom}>Remove</Button>
-                  :::
-                  <Select
-                      error={room_id}
-                      scrolling
-                      placeholder="Select Room:"
-                      value={i}
-                      options={rooms_list}
-                      onClick={this.getRoomList}
-                      onChange={(e, {value}) => this.selectRoom(value)} />
-              </Menu.Item>
-              <Menu.Item>
-                  <Input type='text' placeholder='Room description...' action value={description}
-                         onChange={(v,{value}) => this.setState({description: value})}>
-                      <input />
-                      <Select
-                          compact={true}
-                          scrolling={false}
-                          placeholder="Room Bitrate:"
-                          value={bitrate}
-                          options={bitrate_options}
-                          onChange={(e, {value}) => this.setBitrate(value)}/>
-                      <Button positive onClick={this.createRoom}>Create</Button>
-                  </Input>
-              </Menu.Item>
-          </Menu>
-      );
-
       let content = (
           <Segment className="virtual_segment" color='blue' raised>
 
@@ -1227,14 +1189,46 @@ class AdminRoot extends Component {
                       on='click'
                       hideOnScroll
                   />
-                  {root ? root_content : ""}
+                  <Menu secondary >
+                      <Menu.Item>
+                          <Button color='orange' icon='bell slash' labelPosition='right'
+                                  content={room_name} onClick={this.stopForward} />
+                      </Menu.Item>
+                      <Menu.Item>
+                      </Menu.Item>
+                      <Menu.Item>
+                          <Button negative onClick={this.removeRoom}>Remove</Button>
+                          :::
+                          <Select
+                              error={room_id}
+                              scrolling
+                              placeholder="Select Room:"
+                              value={i}
+                              options={rooms_list}
+                              onClick={this.getRoomList}
+                              onChange={(e, {value}) => this.selectRoom(value)} />
+                      </Menu.Item>
+                      <Menu.Item>
+                          <Input type='text' placeholder='Room description...' action value={description}
+                                 onChange={(v,{value}) => this.setState({description: value})}>
+                              <input />
+                              <Select
+                                  compact={true}
+                                  scrolling={false}
+                                  placeholder="Room Bitrate:"
+                                  value={bitrate}
+                                  options={bitrate_options}
+                                  onChange={(e, {value}) => this.setBitrate(value)}/>
+                              <Button positive onClick={this.createRoom}>Create</Button>
+                          </Input>
+                      </Menu.Item>
+                  </Menu>
               </Segment>
 
               <Grid>
                   <Grid.Row stretched columns='equal'>
                       <Grid.Column width={4}>
                           <Segment.Group>
-                              { root ?
                               <Segment textAlign='center'>
                                   <Popup trigger={<Button color="orange" icon='bell slash' onClick={() => this.stopForward(feed_id)} />} content='Stop forward' inverted />
                                   <Popup trigger={<Button negative icon='user x' onClick={this.kickUser} />} content='Kick' inverted />
@@ -1247,7 +1241,6 @@ class AdminRoot extends Component {
                                   <Popup trigger={<Button color="blue" icon='power off' onClick={() => this.sendRemoteCommand("client-disconnect")} />} content='Disconnect(LOST FEED HERE!)' inverted />
                                   <Popup trigger={<Button color="yellow" icon='question' onClick={() => this.sendRemoteCommand("client-question")} />} content='Set/Unset question' inverted />
                               </Segment>
-                                  : ""}
                           <Segment textAlign='center' className="group_list" raised>
                               <Table selectable compact='very' basic structured className="admin_table" unstackable>
                                   <Table.Body>
@@ -1322,11 +1315,9 @@ class AdminRoot extends Component {
       );
 
       return (
-
           <div>
               {user ? content : login}
           </div>
-
       );
   }
 }
