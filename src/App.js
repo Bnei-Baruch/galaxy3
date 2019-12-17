@@ -8,7 +8,8 @@ import 'semantic-ui-css/semantic.min.css';
 // import GroupClient from "./apps/GroupsApp/GroupClient";
 // import GalaxyStream from "./apps/StreamApp/GalaxyStream";
 // import ShidurAdmin from "./apps/ShidurApp/ShidurAdmin";
-import ShidurApp from "./apps/ShidurApp/ShidurApp";
+import AdminRoot from "./apps/AdminApp/AdminRoot";
+// import ShidurApp from "./apps/ShidurApp/ShidurApp";
 // import UsersApp from "./apps/ShidurApp/UsersApp";
 // import SndmanApp from "./apps/SndmanApp/SndmanApp";
 // import SDIOutApp from "./apps/SDIOutApp/SDIOutApp";
@@ -29,8 +30,9 @@ class App extends Component {
                 {/* <VirtualStreaming/>*/}
                 {/*<GroupClient/>*/}
                 {/* <GalaxyStream/>*/}
+                <AdminRoot />
                 {/* <ShidurAdmin/>*/}
-                 <ShidurApp/>
+                 {/*<ShidurApp/>*/}
                  {/*<UsersApp />*/}
                  {/*<SndmanApp/>*/}
                 {/*<SDIOutApp />*/}

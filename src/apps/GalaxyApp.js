@@ -33,7 +33,7 @@ class GalaxyApp extends Component {
             if(role === "gxy_shidur") return (<Button key={i} size='massive' color='green' onClick={() => window.open("https://galaxy.kli.one/shidur","_self")} >Shidur</Button>);
             if(role === "gxy_sndman") return (<Button key={i} size='massive' color='green' onClick={() => window.open("https://galaxy.kli.one/sndman","_self")} >SoundMan</Button>);
             if(role === "gxy_admin") return (<Button key={i} size='massive' color='green' onClick={() => window.open("https://galaxy.kli.one/admin","_self")} >Admin</Button>);
-            // if(role === "gxy_root") return (<Button disabled key={i} size='massive' color='green' onClick={() => window.open("https://galaxy.kli.one/root","_self")} >Root</Button>);
+            if(role === "gxy_root") return (<Button key={i} size='massive' color='green' onClick={() => window.open("https://galaxy.kli.one/root","_self")} >Root</Button>);
             return false
         });
 
