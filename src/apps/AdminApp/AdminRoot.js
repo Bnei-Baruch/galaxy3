@@ -9,11 +9,11 @@ import {
     getPublisherInfo,
     getHiddenProp,
     notifyMe,
-    getState
+    getState, getPluginInfo
 } from "../../shared/tools";
 import './AdminRoot.css';
 import './AdminRootVideo.scss'
-import {GROUPS_ROOM,SECRET} from "../../shared/consts";
+import {DANTE_IN_IP, GROUPS_ROOM, SECRET} from "../../shared/consts";
 import {initGxyProtocol,sendProtocolMessage} from "../../shared/protocol";
 import classNames from "classnames";
 import platform from "platform";
@@ -174,6 +174,21 @@ class AdminRoot extends Component {
                 this.setState({forwarders});
             }
         })
+    };
+
+    startForward = (id) => {
+        console.log(" : Start Forward : ",id);
+        const {feed_user,current_room} = this.state;
+        if(current_room === "")
+            return;
+        let port = 5630;
+        if(feed_user) {
+            let forward = { "request": "rtp_forward","publisher_id":feed_user.rfid,"room":current_room,"secret":`${SECRET}`,"host":`${DANTE_IN_IP}`,"audio_port":port};
+            getPluginInfo(forward, data => {
+                Janus.log(":: Forward callback: ", data);
+                //this.sendMessage(user, true);
+            });
+        }
     };
 
     stopForward = (id) => {
@@ -1191,7 +1206,7 @@ class AdminRoot extends Component {
                   />
                   <Menu secondary >
                       <Menu.Item>
-                          <Button color='orange' icon='bell slash' labelPosition='right'
+                          <Button color='orange' icon='volume off' labelPosition='right'
                                   content={room_name} onClick={this.stopForward} />
                       </Menu.Item>
                       <Menu.Item>
@@ -1230,7 +1245,8 @@ class AdminRoot extends Component {
                       <Grid.Column width={4}>
                           <Segment.Group>
                               <Segment textAlign='center'>
-                                  <Popup trigger={<Button color="orange" icon='bell slash' onClick={() => this.stopForward(feed_id)} />} content='Stop forward' inverted />
+                                  <Popup trigger={<Button color="black" icon='volume up' onClick={() => this.startForward(feed_id)} />} content='Start forward' inverted />
+                                  <Popup trigger={<Button color="orange" icon='volume off' onClick={() => this.stopForward(feed_id)} />} content='Stop forward' inverted />
                                   <Popup trigger={<Button negative icon='user x' onClick={this.kickUser} />} content='Kick' inverted />
                                   <Popup trigger={<Button color="brown" icon='sync alternate' alt="test" onClick={() => this.sendRemoteCommand("client-reconnect")} />} content='Reconnect' inverted />
                                   <Popup trigger={<Button color="olive" icon='redo alternate' onClick={() => this.sendRemoteCommand("client-reload")} />} content='Reload page(LOST FEED HERE!)' inverted />
