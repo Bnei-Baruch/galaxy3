@@ -244,6 +244,8 @@ class VirtualClient extends Component {
             this.state.videoroom.detach();
         if(this.state.remoteFeed)
             this.state.remoteFeed.detach();
+        if(this.state.protocol)
+            this.state.protocol.detach();
         this.state.janus.attach({
             plugin: "janus.plugin.videoroom",
             opaqueId: "videoroom_user",
@@ -253,7 +255,7 @@ class VirtualClient extends Component {
                 Janus.log("  -- This is a publisher/manager");
                 let {user} = this.state;
                 user.handle = videoroom.getId();
-                this.setState({videoroom, user, remoteFeed: null});
+                this.setState({videoroom, user, remoteFeed: null, protocol: null});
                 this.initDevices(true);
                 if(reconnect) {
                     setTimeout(() => {
