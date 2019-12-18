@@ -1,7 +1,6 @@
 import React, { Component } from 'react';
 import { Janus } from "../../lib/janus";
 import classNames from 'classnames';
-
 import {Menu, Select,Label,Icon,Popup} from "semantic-ui-react";
 import {geoInfo, initJanus, getDevicesStream, micLevel, checkNotification,testDevices,testMic} from "../../shared/tools";
 import './GroupClient.scss'
@@ -22,6 +21,8 @@ class GroupClient extends Component {
         video_devices: [],
         audio_device: "",
         video_device: "",
+        audio: null,
+        video: null,
         janus: null,
         feeds: [],
         rooms: [],
@@ -32,7 +33,6 @@ class GroupClient extends Component {
         myid: null,
         mypvtid: null,
         mystream: null,
-        audio: null,
         muted: false,
         cammuted: false,
         shidur: false,
@@ -102,6 +102,8 @@ class GroupClient extends Component {
                 this.setState({video_devices, audio_devices});
                 this.setDevice(video_id, audio_id);
             } else if(video) {
+                alert("Video device not detected!");
+                this.setState({video_device: null});
                 //Try to get video fail reson
                 testDevices(true, false, steam => {});
                 // Right now if we get some problem with video device the - enumerateDevices()
@@ -164,9 +166,29 @@ class GroupClient extends Component {
         },1000);
     };
 
+    mediaState = (media) => {
+        if(media === "video") {
+            let count = 0;
+            let chk = setInterval(() => {
+                count++;
+                if(count < 11 && this.state.video) {
+                    clearInterval(chk);
+                }
+                if(count >= 10) {
+                    clearInterval(chk);
+                    // TODO: Try to detect reason
+                    this.exitRoom(false);
+                    alert("Server stopped receiving our media! Check your network or device.");
+                }
+            },3000);
+        }
+    };
+
     initVideoRoom = (reconnect) => {
         if(this.state.videoroom)
             this.state.videoroom.detach();
+        if(this.state.protocol)
+            this.state.protocol.detach();
         this.state.janus.attach({
             plugin: "janus.plugin.videoroom",
             opaqueId: "videoroom_user",
@@ -190,8 +212,12 @@ class GroupClient extends Component {
             consentDialog: (on) => {
                 Janus.debug("Consent dialog should be " + (on ? "on" : "off") + " now");
             },
-            mediaState: (medium, on) => {
-                Janus.log("Janus " + (on ? "started" : "stopped") + " receiving our " + medium);
+            mediaState: (media, on) => {
+                Janus.log("Janus " + (on ? "started" : "stopped") + " receiving our " + media);
+                this.setState({[media]: on});
+                if(!on) {
+                    this.mediaState(media);
+                }
             },
             webrtcState: (on) => {
                 Janus.log("Janus says our WebRTC PeerConnection is " + (on ? "up" : "down") + " now");
@@ -204,18 +230,9 @@ class GroupClient extends Component {
                 this.onMessage(this.state.videoroom, msg, jsep, false);
             },
             onlocaltrack: (track, on) => {
-                Janus.debug(" ::: Got a local stream :::");
-                if(on) {
-                    let {videoroom} = this.state;
-                    let mystream = new MediaStream();
-                    mystream.addTrack(track.clone());
-                    Janus.log(mystream);
-                    this.setState({mystream});
-                    if(videoroom.webrtcStuff.pc.iceConnectionState !== "completed" &&
-                        videoroom.webrtcStuff.pc.iceConnectionState !== "connected") {
-                        Janus.debug("Publishing... ");
-                    }
-                }
+                Janus.log(" ::: Got a local track event :::");
+                Janus.log("Local track " + (on ? "added" : "removed") + ":", track);
+                this.setState({mystream: track});
             },
             onremotestream: (stream) => {
                 // The publisher stream is sendonly, we don't expect anything here
@@ -277,7 +294,7 @@ class GroupClient extends Component {
             });
     };
 
-    onMessage = (videoroom, msg, jsep, initdata) => {
+    onMessage = (videoroom, msg, jsep) => {
         Janus.debug(" ::: Got a message (publisher) :::");
         Janus.debug(msg);
         let event = msg["videoroom"];
@@ -293,50 +310,19 @@ class GroupClient extends Component {
                 Janus.log("Successfully joined room " + msg["room"] + " with ID " + myid);
                 sendProtocolMessage(protocol, user, pmsg);
                 this.publishOwnFeed(true);
-                // Any new feed to attach to?
-                if(msg["publishers"] !== undefined && msg["publishers"] !== null) {
-                    let list = msg["publishers"];
-                    let feeds_list = list.filter(feeder => JSON.parse(feeder.display).role === "group");
-                    Janus.log(":: Got Pulbishers list: ", feeds_list);
-                    Janus.debug("Got a list of available publishers/feeds:");
-                    Janus.log(list);
-                }
-            } else if(event === "destroyed") {
-                // The room has been destroyed
-                Janus.warn("The room has been destroyed!");
             } else if(event === "event") {
                 // Any new feed to attach to?
                 if(msg["publishers"] !== undefined && msg["publishers"] !== null) {
                     let list = msg["publishers"];
                     Janus.debug("Got a list of available publishers/feeds:");
                     Janus.debug(list);
-                } else if(msg["leaving"] !== undefined && msg["leaving"] !== null) {
-                    // One of the publishers has gone away?
-                    let {feeds} = this.state;
-                    let leaving = msg["leaving"];
-                    Janus.log("Publisher left: " + leaving);
-                    let remoteFeed = null;
-                    if(remoteFeed != null) {
-                        Janus.debug("Feed " + remoteFeed.rfid + " (" + remoteFeed.rfuser + ") has left the room, detaching");
-                        feeds[remoteFeed.rfindex] = null;
-                        remoteFeed.detach();
-                    }
-                    this.setState({feeds});
                 } else if(msg["unpublished"] !== undefined && msg["unpublished"] !== null) {
-                    // One of the publishers has unpublished?
-                    let {feeds} = this.state;
                     let unpublished = msg["unpublished"];
                     Janus.log("Publisher left: " + unpublished);
                     if(unpublished === 'ok') {
                         // That's us
                         videoroom.hangup();
                         return;
-                    }
-                    let remoteFeed = null;
-                    if(remoteFeed !== null) {
-                        Janus.debug("Feed " + remoteFeed.rfid + " (" + remoteFeed.rfuser + ") has left the room, detaching");
-                        feeds[remoteFeed.rfindex] = null;
-                        remoteFeed.detach();
                     }
                 } else if(msg["error"] !== undefined && msg["error"] !== null) {
                     if(msg["error_code"] === 426) {
@@ -412,7 +398,7 @@ class GroupClient extends Component {
     };
 
     exitRoom = (reconnect) => {
-        let {videoroom, protocol} = this.state;
+        let {videoroom} = this.state;
         let leave = {request : "leave"};
         videoroom.send({"message": leave});
         localStorage.setItem("question", false);
@@ -420,7 +406,6 @@ class GroupClient extends Component {
         this.chat.exitChatRoom(GROUPS_ROOM);
         this.exitProtocol();
         this.initVideoRoom(reconnect);
-        protocol.detach();
     };
 
     exitProtocol = () => {
@@ -527,7 +512,7 @@ class GroupClient extends Component {
                 {this.state.visible ? "Close" : "Open"} Chat 
                 {count > 0 ? l : ""} 
               </Menu.Item>
-              <Menu.Item disabled={!geoinfo || !mystream} onClick={this.handleQuestion}>
+              <Menu.Item disabled={video_device === null || !geoinfo || !mystream} onClick={this.handleQuestion}>
                 <Icon color={question ? 'green' : ''} name='question'/>
                 Ask a Question
               </Menu.Item>
