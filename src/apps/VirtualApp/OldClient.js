@@ -113,7 +113,7 @@ class OldClient extends Component {
                 this.setDevice(video_id, audio_id);
             } else if(video) {
                 alert("Video device not detected!");
-                this.setState({cammuted: true});
+                this.setState({cammuted: true, video_device: null});
                 //Try to get video fail reson
                 testDevices(true, false, steam => {});
                 // Right now if we get some problem with video device the - enumerateDevices()
@@ -368,7 +368,7 @@ class OldClient extends Component {
         let event = msg["videoroom"];
         if(event !== undefined && event !== null) {
             if(event === "joined") {
-                let {user,selected_room,protocol,cammuted} = this.state;
+                let {user,selected_room,protocol,video_device} = this.state;
                 let myid = msg["id"];
                 let mypvtid = msg["private_id"];
                 user.rfid = myid;
@@ -377,7 +377,7 @@ class OldClient extends Component {
                 let pmsg = { type: "enter", status: true, room: selected_room, user};
                 Janus.log("Successfully joined room " + msg["room"] + " with ID " + myid);
                 sendProtocolMessage(protocol, user, pmsg);
-                this.publishOwnFeed(!cammuted);
+                this.publishOwnFeed(video_device !== null);
                 // Any new feed to attach to?
                 if(msg["publishers"] !== undefined && msg["publishers"] !== null) {
                     let list = msg["publishers"];
@@ -721,13 +721,13 @@ class OldClient extends Component {
         setTimeout(() => {
             this.setState({delay: false});
         }, 3000);
-        let {janus, videoroom, selected_room, user, username_value, women, tested, cammuted} = this.state;
+        let {janus, videoroom, selected_room, user, username_value, women, tested, video_device} = this.state;
         localStorage.setItem("room", selected_room);
         //This name will see other users
         user.display = username_value || user.name;
         user.self_test = tested;
         user.question = false;
-        user.camera = !cammuted;
+        user.camera = video_device !== null;
         user.sound_test = reconnect ? JSON.parse(localStorage.getItem("sound_test")) : false;
         localStorage.setItem("username", user.display);
         initGxyProtocol(janus, user, protocol => {
@@ -950,7 +950,7 @@ class OldClient extends Component {
                         {this.state.visible ? "Close" : "Open"} Chat
                         {count > 0 ? l : ""}
                     </Menu.Item>
-                    <Menu.Item disabled={cammuted || !geoinfo || !mystream} onClick={this.handleQuestion}>
+                    <Menu.Item disabled={video_device === null || !geoinfo || !mystream} onClick={this.handleQuestion}>
                         <Icon color={question ? 'green' : ''} name='question'/>
                         Ask a Question
                     </Menu.Item>
@@ -981,7 +981,7 @@ class OldClient extends Component {
                         <Icon color={muted ? "red" : ""} name={!muted ? "microphone" : "microphone slash"}/>
                         {!muted ? "Mute" : "Unmute"}
                     </Menu.Item>
-                    <Menu.Item disabled={cammuted || !mystream || delay} onClick={this.camMute}>
+                    <Menu.Item disabled={video_device === null || !mystream || delay} onClick={this.camMute}>
                         <Icon color={cammuted ? "red" : ""} name={!cammuted ? "eye" : "eye slash"}/>
                         {!cammuted ? "Stop Video" : "Start Video"}
                     </Menu.Item>
