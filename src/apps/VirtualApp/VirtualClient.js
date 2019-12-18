@@ -118,6 +118,8 @@ class VirtualClient extends Component {
                 this.setState({video_devices, audio_devices});
                 this.setDevice(video_id, audio_id);
             } else if(video) {
+                alert("Video device not detected!");
+                this.setState({cammuted: true});
                 //Try to get video fail reson
                 testDevices(true, false, steam => {});
                 // Right now if we get some problem with video device the - enumerateDevices()
@@ -348,7 +350,7 @@ class VirtualClient extends Component {
         let event = msg["videoroom"];
         if(event !== undefined && event !== null) {
             if(event === "joined") {
-                let {user,selected_room,protocol} = this.state;
+                let {user,selected_room,protocol,cammuted} = this.state;
                 let myid = msg["id"];
                 let mypvtid = msg["private_id"];
                 user.rfid = myid;
@@ -357,7 +359,7 @@ class VirtualClient extends Component {
                 let pmsg = { type: "enter", status: true, room: selected_room, user};
                 Janus.log("Successfully joined room " + msg["room"] + " with ID " + myid);
                 sendProtocolMessage(protocol, user, pmsg);
-                this.publishOwnFeed(true);
+                this.publishOwnFeed(!cammuted);
                 // Any new feed to attach to?
                 if(msg["publishers"] !== undefined && msg["publishers"] !== null) {
                     let list = msg["publishers"];
@@ -376,6 +378,8 @@ class VirtualClient extends Component {
                         let display = JSON.parse(feeds[f]["display"]);
                         let talk = feeds[f]["talking"];
                         let streams = feeds[f]["streams"];
+                        let video = streams.filter(v => v.type === "video").length === 0;
+                        feeds[f].cammute = video;
                         feeds[f].display = display;
                         feeds[f].talk = talk;
                         for (let i in streams) {
@@ -442,6 +446,8 @@ class VirtualClient extends Component {
                         if(display.role !== "user")
                             return;
                         let streams = feed[f]["streams"];
+                        let video = streams.filter(v => v.type === "video").length === 0;
+                        feed[f].cammute = video;
                         feed[f].display = display;
                         for (let i in streams) {
                             let stream = streams[i];
@@ -697,13 +703,13 @@ class VirtualClient extends Component {
         setTimeout(() => {
             this.setState({delay: false});
         }, 3000);
-        let {janus, videoroom, selected_room, user, username_value, women, tested, video_device, cammuted} = this.state;
+        let {janus, videoroom, selected_room, user, username_value, women, tested, cammuted} = this.state;
         localStorage.setItem("room", selected_room);
         //This name will see other users
         user.display = username_value || user.name;
         user.self_test = tested;
         user.question = false;
-        user.camera = reconnect !== true ? video_device !== "" : !cammuted;
+        user.camera = !cammuted;
         user.sound_test = reconnect ? JSON.parse(localStorage.getItem("sound_test")) : false;
         localStorage.setItem("username", user.display);
         initGxyProtocol(janus, user, protocol => {
@@ -910,7 +916,7 @@ class VirtualClient extends Component {
                     {!mystream ? <Button attached='left' primary icon='sign-in' disabled={delay || !selected_room || !audio_device}
                                          onClick={this.joinRoom}/> : ""}
                     <Select attached='right'
-                        disabled={mystream}
+                        disabled={audio_device === null || mystream}
                         error={!selected_room}
 
                         placeholder="Select Room:"
@@ -926,7 +932,7 @@ class VirtualClient extends Component {
                         {this.state.visible ? "Close" : "Open"} Chat
                         {count > 0 ? l : ""}
                     </Menu.Item>
-                    <Menu.Item disabled={!geoinfo || !mystream} onClick={this.handleQuestion}>
+                    <Menu.Item disabled={cammuted || !geoinfo || !mystream} onClick={this.handleQuestion}>
                         <Icon color={question ? 'green' : ''} name='question'/>
                         Ask a Question
                     </Menu.Item>
@@ -945,7 +951,7 @@ class VirtualClient extends Component {
                 </Menu>
                 <Menu icon='labeled' secondary size="mini">
                     {!mystream ?
-                        <Menu.Item position='right' disabled={selftest !== "Self Audio Test"}
+                        <Menu.Item position='right' disabled={audio_device === null || selftest !== "Self Audio Test"}
                                    onClick={this.selfTest}>
                             <Icon color={tested ? 'green' : 'red'} name="sound"/>
                             {selftest}
@@ -957,7 +963,7 @@ class VirtualClient extends Component {
                         <Icon color={muted ? "red" : ""} name={!muted ? "microphone" : "microphone slash"}/>
                         {!muted ? "Mute" : "Unmute"}
                     </Menu.Item>
-                    <Menu.Item disabled={!mystream || delay} onClick={this.camMute}>
+                    <Menu.Item disabled={cammuted || !mystream || delay} onClick={this.camMute}>
                         <Icon color={cammuted ? "red" : ""} name={!cammuted ? "eye" : "eye slash"}/>
                         {!cammuted ? "Stop Video" : "Start Video"}
                     </Menu.Item>

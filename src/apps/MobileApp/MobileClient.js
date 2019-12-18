@@ -119,6 +119,8 @@ class MobileClient extends Component {
                 this.setState({video_devices, audio_devices});
                 this.setDevice(video_id, audio_id);
             } else if(video) {
+                alert("Video device not detected!");
+                this.setState({cammuted: true});
                 //Try to get video fail reson
                 testDevices(true, false, steam => {});
                 // Right now if we get some problem with video device the - enumerateDevices()
@@ -352,7 +354,7 @@ class MobileClient extends Component {
         let event = msg["videoroom"];
         if(event !== undefined && event !== null) {
             if(event === "joined") {
-                let {user,selected_room,protocol} = this.state;
+                let {user,selected_room,protocol,cammuted} = this.state;
                 let myid = msg["id"];
                 let mypvtid = msg["private_id"];
                 user.rfid = myid;
@@ -361,7 +363,7 @@ class MobileClient extends Component {
                 let pmsg = { type: "enter", status: true, room: selected_room, user};
                 Janus.log("Successfully joined room " + msg["room"] + " with ID " + myid);
                 sendProtocolMessage(protocol, user, pmsg);
-                this.publishOwnFeed(true);
+                this.publishOwnFeed(!cammuted);
                 // Any new feed to attach to?
                 if(msg["publishers"] !== undefined && msg["publishers"] !== null) {
                     let list = msg["publishers"];
@@ -380,6 +382,8 @@ class MobileClient extends Component {
                         let display = JSON.parse(feeds[f]["display"]);
                         let talk = feeds[f]["talking"];
                         let streams = feeds[f]["streams"];
+                        let video = streams.filter(v => v.type === "video").length === 0;
+                        feeds[f].cammute = video;
                         feeds[f].display = display;
                         feeds[f].talk = talk;
                         let subst = {feed: id};
@@ -447,6 +451,8 @@ class MobileClient extends Component {
                         if(display.role !== "user")
                             return;
                         let streams = feed[f]["streams"];
+                        let video = streams.filter(v => v.type === "video").length === 0;
+                        feed[f].cammute = video;
                         feed[f].display = display;
                         let subst = {feed: id};
                         for (let i in streams) {
@@ -811,7 +817,7 @@ class MobileClient extends Component {
         setTimeout(() => {
             this.setState({delay: false});
         }, 3000);
-        let {janus, videoroom, selected_room, user, username_value, women, i, name, video_device, cammuted} = this.state;
+        let {janus, videoroom, selected_room, user, username_value, women, i, name, cammuted} = this.state;
         localStorage.setItem("room", selected_room);
         localStorage.setItem("room_index", i);
         localStorage.setItem("room_name", name);
@@ -821,7 +827,7 @@ class MobileClient extends Component {
         user.question = false;
         user.room = selected_room;
         user.group = name;
-        user.camera = reconnect !== true ? video_device !== "" : !cammuted;
+        user.camera = !cammuted;
         initGxyProtocol(janus, user, protocol => {
             this.setState({protocol});
             // Send question event if before join it was true
@@ -1028,7 +1034,7 @@ class MobileClient extends Component {
                         <div className='vclient' >
                             <div className="vclient__toolbar">
                                 <Select className='select_room'
-                                        disabled={mystream}
+                                        disabled={audio_device === null || mystream}
                                         error={!selected_room}
                                         placeholder=" Select Room: "
                                         value={i}
@@ -1054,7 +1060,7 @@ class MobileClient extends Component {
                                     {/*{this.state.visible ? "Close" : "Open"} Chat */}
                                     {/*{count > 0 ? l : ""} */}
                                     {/*</Menu.Item>*/}
-                                    <Menu.Item disabled={!mystream} onClick={this.handleQuestion}>
+                                    <Menu.Item disabled={cammuted || !mystream} onClick={this.handleQuestion}>
                                         <Icon color={question ? 'green' : ''} name='question'/>Question
                                     </Menu.Item>
                                 </Menu>
@@ -1068,7 +1074,7 @@ class MobileClient extends Component {
                                         <Icon color={muted ? "red" : "green"} name={!muted ? "microphone" : "microphone slash"} />
                                         {!muted ? "Mute" : "Unmute"}
                                     </Menu.Item>
-                                    <Menu.Item disabled={!mystream || delay} onClick={this.camMute}>
+                                    <Menu.Item disabled={cammuted || !mystream || delay} onClick={this.camMute}>
                                         <Icon color={cammuted ? "red" : ""} name={!cammuted ? "eye" : "eye slash"} />
                                         {!cammuted ? "Stop Video" : "Start Video"}
                                     </Menu.Item>
