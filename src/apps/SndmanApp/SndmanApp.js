@@ -5,7 +5,6 @@ import {getState, initJanus} from "../../shared/tools";
 import './SndmanApp.css';
 import {initGxyProtocol} from "../../shared/protocol";
 import SndmanGroups from "./SndmanGroups";
-//import SndmanUsers from "./SndmanUsers";
 import {GROUPS_ROOM} from "../../shared/consts";
 import {client} from "../../components/UserManager";
 import LoginPage from "../../components/LoginPage";
@@ -385,10 +384,6 @@ class SndmanApp extends Component {
             <Grid columns={3}>
                 <Grid.Column>
                     <UsersSndman fwdhandle={this.state.fwdhandle} />
-                    {/*<SndmanUsers*/}
-                    {/*    ref={col => {this.col4 = col;}}*/}
-                    {/*    setProps={this.setProps}*/}
-                    {/*    onProtocolData={this.onProtocolData} />*/}
                 </Grid.Column>
                 <Grid.Row>
                     <Grid.Column>

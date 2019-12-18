@@ -5,7 +5,6 @@ import {getState, initJanus} from "../../shared/tools";
 import './SDIOutApp.css';
 import {initGxyProtocol} from "../../shared/protocol";
 import SDIOutGroups from "./SDIOutGroups";
-//import SDIOutUsers from "./SDIOutUsers";
 import {GROUPS_ROOM,SDIOUT_ID} from "../../shared/consts";
 import UsersSDIOut from "./UsersSDIOut";
 
@@ -392,9 +391,6 @@ class SDIOutApp extends Component {
                 </Grid.Column>
                 <Grid.Column>
                     <UsersSDIOut />
-                    {/*<SDIOutUsers*/}
-                    {/*    ref={col => {this.col4 = col;}}*/}
-                    {/*    onProtocolData={this.onProtocolData} />*/}
                 </Grid.Column>
                 </Grid.Row>
             </Grid>
