@@ -10,7 +10,7 @@ import './VideoConteiner.scss'
 import 'eqcss'
 import VirtualChat from "./VirtualChat";
 import {initGxyProtocol, sendProtocolMessage} from "../../shared/protocol";
-import {GEO_IP_INFO} from "../../shared/consts";
+import {GEO_IP_INFO,PROTOCOL_ROOM} from "../../shared/consts";
 
 class OldClient extends Component {
 
@@ -23,6 +23,8 @@ class OldClient extends Component {
         video_devices: [],
         audio_device: "",
         video_device: "",
+        audio: null,
+        video: null,
         janus: null,
         feeds: [],
         feedStreams: {},
@@ -35,7 +37,6 @@ class OldClient extends Component {
         mypvtid: null,
         mystream: null,
         mids: [],
-        audio: null,
         muted: false,
         cammuted: false,
         shidur: false,
@@ -121,7 +122,7 @@ class OldClient extends Component {
                 Janus.log(" :: Trying to get audio only");
                 this.initDevices(false);
             } else {
-                //Try to get audio fail reson
+                //Try to get audio fail reason
                 testDevices(false, true, steam => {});
                 alert(" :: No input devices found ::");
                 //FIXME: What we going to do in this case?
@@ -213,6 +214,24 @@ class OldClient extends Component {
         })
     };
 
+    mediaState = (media) => {
+        if(media === "video") {
+            let count = 0;
+            let chk = setInterval(() => {
+                count++;
+                if(count < 11 && this.state.video) {
+                    clearInterval(chk);
+                }
+                if(count >= 10) {
+                    clearInterval(chk);
+                    alert("Server stopped receiving our media! Check your network or device.");
+                    // TODO: Try to detect reason
+                    this.exitRoom(false);
+                }
+            },3000);
+        }
+    };
+
     initVideoRoom = (reconnect) => {
         if(this.state.videoroom)
             this.state.videoroom.detach();
@@ -244,8 +263,12 @@ class OldClient extends Component {
             iceState: (state) => {
                 Janus.log("ICE state changed to " + state);
             },
-            mediaState: (medium, on) => {
-                Janus.error("Janus " + (on ? "started" : "stopped") + " receiving our " + medium);
+            mediaState: (media, on) => {
+                Janus.log("Janus " + (on ? "started" : "stopped") + " receiving our " + media);
+                this.setState({[media]: on});
+                if(!on) {
+                    this.mediaState(media);
+                }
             },
             webrtcState: (on) => {
                 Janus.log("Janus says our WebRTC PeerConnection is " + (on ? "up" : "down") + " now");
@@ -757,10 +780,11 @@ class OldClient extends Component {
             remoteFeed.send({"message": leave});
         videoroom.send({"message": leave});
         this.chat.exitChatRoom(room);
+        let pl = {textroom : "leave", transaction: Janus.randomString(12),"room": PROTOCOL_ROOM};
+        protocol.data({text: JSON.stringify(pl)});
         localStorage.setItem("question", false);
         this.setState({muted: false, cammuted: false, mystream: null, room: "", selected_room: (reconnect ? room : ""), i: "", feeds: [], mids: [], remoteFeed: null, question: false});
         this.initVideoRoom(reconnect);
-        protocol.detach();
     };
 
     selectRoom = (i) => {

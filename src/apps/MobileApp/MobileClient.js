@@ -20,7 +20,7 @@ import 'eqcss'
 //import MobileChat from "./MobileChat";
 import {initGxyProtocol, sendProtocolMessage} from "../../shared/protocol";
 import MobileStreaming from "./MobileStreaming";
-import {GEO_IP_INFO} from "../../shared/consts";
+import {GEO_IP_INFO,PROTOCOL_ROOM} from "../../shared/consts";
 
 class MobileClient extends Component {
 
@@ -34,6 +34,8 @@ class MobileClient extends Component {
         video_devices: [],
         audio_device: "",
         video_device: "",
+        audio: null,
+        video: null,
         janus: null,
         feeds: [],
         feedStreams: {},
@@ -49,7 +51,6 @@ class MobileClient extends Component {
         mystream: null,
         mids: [],
         video_mids: [],
-        audio: null,
         muted: false,
         cammuted: false,
         shidur: false,
@@ -221,6 +222,24 @@ class MobileClient extends Component {
         })
     };
 
+    mediaState = (media) => {
+        if(media === "video") {
+            let count = 0;
+            let chk = setInterval(() => {
+                count++;
+                if(count < 11 && this.state.video) {
+                    clearInterval(chk);
+                }
+                if(count >= 10) {
+                    clearInterval(chk);
+                    alert("Server stopped receiving our media! Check your network or device.");
+                    // TODO: Try to detect reason
+                    this.exitRoom(false);
+                }
+            },3000);
+        }
+    };
+
     initVideoRoom = (reconnect) => {
         if(this.state.videoroom)
             this.state.videoroom.detach();
@@ -255,8 +274,12 @@ class MobileClient extends Component {
             iceState: (state) => {
                 Janus.log("ICE state changed to " + state);
             },
-            mediaState: (medium, on) => {
-                Janus.log("Janus " + (on ? "started" : "stopped") + " receiving our " + medium);
+            mediaState: (media, on) => {
+                Janus.log("Janus " + (on ? "started" : "stopped") + " receiving our " + media);
+                this.setState({[media]: on});
+                if(!on) {
+                    this.mediaState(media);
+                }
             },
             webrtcState: (on) => {
                 Janus.log("Janus says our WebRTC PeerConnection is " + (on ? "up" : "down") + " now");
@@ -873,10 +896,11 @@ class MobileClient extends Component {
             remoteFeed.send({"message": leave});
         videoroom.send({"message": leave});
         //this.chat.exitChatRoom(room);
+        let pl = {textroom : "leave", transaction: Janus.randomString(12),"room": PROTOCOL_ROOM};
+        protocol.data({text: JSON.stringify(pl)});
         localStorage.setItem("question", false);
         this.setState({video_device: null, muted: false, cammuted: false, mystream: null, room: "", selected_room: (reconnect ? room : ""), feeds: [],video_mids: [], mids: [], remoteFeed: null, question: false});
         this.initVideoRoom(reconnect);
-        protocol.detach();
     };
 
     selectRoom = (i) => {
