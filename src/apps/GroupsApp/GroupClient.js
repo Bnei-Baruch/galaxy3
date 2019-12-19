@@ -281,48 +281,37 @@ class GroupClient extends Component {
     };
 
     publishOwnFeed = (useVideo) => {
-        // FIXME: Does we allow video only mode?
         let {videoroom,audio_device,video_device} = this.state;
         let height = (Janus.webRTCAdapter.browserDetails.browser === "safari") ? 480 : 360;
-        videoroom.createOffer(
-            {
-                // Add data:true here if you want to publish datachannels as well
-                media: {
-                    audioRecv: false, videoRecv: false, audioSend: true, videoSend: useVideo, audio: {
-                        autoGainControl: false,
-                        echoCancellation: false,
-                        highpassFilter: false,
-                        noiseSuppression: false,
-                        deviceId: {
-                            exact: audio_device
-                        }
-                    },
-                    video: {
-                        width: 640,
-                        height: height,
-                        deviceId: {
-                            exact: video_device
-                        }
-                    },
-                    data: true
+        videoroom.createOffer({
+            media: {
+                audioRecv: false, videoRecv: false, audioSend: true, videoSend: useVideo,
+                audio: {
+                    autoGainControl: false, echoCancellation: false, highpassFilter: false, noiseSuppression: false,
+                    deviceId: {exact: audio_device}
                 },
-                //media: { audioRecv: false, videoRecv: false, audioSend: useAudio, videoSend: true },	// Publishers are sendonly
-                simulcast: false,
-                success: (jsep) => {
-                    Janus.debug("Got publisher SDP!");
-                    Janus.debug(jsep);
-                    let publish = { "request": "configure", "audio": true, "video": useVideo, "data": true };
-                    videoroom.send({"message": publish, "jsep": jsep});
+                video: {
+                    width: 640, height: height,
+                    deviceId: {exact: video_device}
                 },
-                error: (error) => {
-                    Janus.error("WebRTC error:", error);
-                    if (useVideo) {
-                        this.publishOwnFeed(false);
-                    } else {
-                        Janus.error("WebRTC error... " + JSON.stringify(error));
-                    }
+                data: true
+            },
+            simulcast: false,
+            success: (jsep) => {
+                Janus.debug("Got publisher SDP!");
+                Janus.debug(jsep);
+                let publish = { request: "configure", audio: true, video: useVideo, data: true };
+                videoroom.send({"message": publish, "jsep": jsep});
+            },
+            error: (error) => {
+                Janus.error("WebRTC error:", error);
+                if (useVideo) {
+                    this.publishOwnFeed(false);
+                } else {
+                    Janus.error("WebRTC error... " + JSON.stringify(error));
                 }
-            });
+            }
+        });
     };
 
     onMessage = (videoroom, msg, jsep) => {
@@ -455,7 +444,6 @@ class GroupClient extends Component {
 
     micMute = () => {
         let {videoroom, muted} = this.state;
-        //mystream.getAudioTracks()[0].enabled = !muted;
         muted ? videoroom.unmuteAudio() : videoroom.muteAudio();
         this.setState({muted: !muted});
     };
@@ -486,7 +474,6 @@ class GroupClient extends Component {
       const autoPlay = true;
       const controls = false;
       const talk = false;
-      //const vmuted = true;
 
       let adevices_list = audio_devices.map((device,i) => {
           const {label, deviceId} = device;
@@ -524,97 +511,97 @@ class GroupClient extends Component {
       let l = (<Label key='Carbon' floating size='mini' color='red'>{count}</Label>);
       let login = (<LoginPage user={user} checkPermission={this.checkPermission} />);
       let content =  (
-        <div className={classNames('gclient', { 'gclient--chat-open': this.state.visible })} >
-          <div className="gclient__toolbar">
-            <Menu icon='labeled' secondary size="mini">
-                <Menu.Item disabled={!video_device || progress} onClick={this.initConnection}>
-                    <Icon color={mystream ? 'green' : 'red'} name='power off'/>
-                    {!mystream ? "Disconnected" : "Connected"}
-                </Menu.Item>
-              <Menu.Item disabled={!mystream} onClick={() => this.setState({ visible: !this.state.visible, count: 0 })}>
-                <Icon name="comments"/>
-                {this.state.visible ? "Close" : "Open"} Chat 
-                {count > 0 ? l : ""} 
-              </Menu.Item>
-              <Menu.Item disabled={video_device === null || !geoinfo || !mystream} onClick={this.handleQuestion}>
-                <Icon color={question ? 'green' : ''} name='question'/>
-                Ask a Question
-              </Menu.Item>
-              <Menu.Item onClick={() => window.open("https://galaxy.kli.one/stream")} >
-                <Icon name="tv"/>
-                Open Broadcast
-              </Menu.Item>
-            </Menu>
-            <Menu icon='labeled' secondary size="mini">
-                <Menu.Item position='right' disabled={selftest !== "Self Audio Test" || mystream} onClick={this.selfTest}>
-                    <Icon color={tested ? 'green' : 'red'} name="sound" />
-                    {selftest}
-                </Menu.Item>
-              <Menu.Item position='right' disabled onClick={this.micMute} className="mute-button">
-                <Icon color={muted ? "red" : ""} name={!muted ? "microphone" : "microphone slash"} />
-                {!muted ? "Mute" : "Unmute"}
-                  <canvas className={muted ? 'hidden' : 'vumeter'} ref="canvas1" id="canvas1" width="15" height="35" />
-              </Menu.Item>
-              <Popup
-                trigger={<Menu.Item icon="setting" name="Settings"/>}
-                on='click'
-                position='bottom right'
-              >
-                <Popup.Content>
-                <Select className='select_device'
-                  disabled={mystream}
-                  error={!audio_device}
-                  placeholder="Select Device:"
-                  value={audio_device}
-                  options={adevices_list}
-                  onChange={(e, {value}) => this.setDevice(video_device,value)}/>
-                <Select className='select_device'
-                  disabled={mystream}
-                  error={!video_device}
-                  placeholder="Select Device:"
-                  value={video_device}
-                  options={vdevices_list}
-                  onChange={(e, {value}) => this.setDevice(value,audio_device)} />
-                </Popup.Content>
-              </Popup>
-            </Menu>
-          </div>
-          <div basic className="gclient__main" onDoubleClick={() => this.setState({ visible: !this.state.visible })} >
-            <div className="videos-panel">
-
-              <div className="videos">
-                <div className="videos__wrapper">
-                  <div className="video">
-                      <div className={classNames('video__overlay', {'talk' : talk})}>
-                          {question ? <div className="question">
-                              <svg viewBox="0 0 50 50"><text x="25" y="25" textAnchor="middle" alignmentBaseline="central">&#xF128;</text></svg>
-                          </div> : ''}
-                          {/*<div className="video__title">{!talk ? <Icon name="microphone slash" size="small" color="red"/> : ''}{name}</div>*/}
-                      </div>
-                    <video ref="localVideo"
-                      id="localVideo"
-                      poster={nowebcam}
-                      width={width}
-                      height={height}
-                      autoPlay={autoPlay}
-                      controls={controls}
-                      muted={true}
-                      playsInline={true}/>
-                  </div>
-                  {videos}
-                </div>
+          <div className={classNames('gclient', { 'gclient--chat-open': this.state.visible })} >
+              <div className="gclient__toolbar">
+                  <Menu icon='labeled' secondary size="mini">
+                      <Menu.Item disabled={!video_device || progress} onClick={this.initConnection}>
+                          <Icon color={mystream ? 'green' : 'red'} name='power off'/>
+                          {!mystream ? "Disconnected" : "Connected"}
+                      </Menu.Item>
+                      <Menu.Item disabled={!mystream} onClick={() => this.setState({ visible: !this.state.visible, count: 0 })}>
+                          <Icon name="comments"/>
+                          {this.state.visible ? "Close" : "Open"} Chat
+                          {count > 0 ? l : ""}
+                      </Menu.Item>
+                      <Menu.Item disabled={video_device === null || !geoinfo || !mystream} onClick={this.handleQuestion}>
+                          <Icon color={question ? 'green' : ''} name='question'/>
+                          Ask a Question
+                      </Menu.Item>
+                      <Menu.Item onClick={() => window.open("https://galaxy.kli.one/stream")} >
+                          <Icon name="tv"/>
+                          Open Broadcast
+                      </Menu.Item>
+                  </Menu>
+                  <Menu icon='labeled' secondary size="mini">
+                      <Menu.Item position='right' disabled={selftest !== "Self Audio Test" || mystream} onClick={this.selfTest}>
+                          <Icon color={tested ? 'green' : 'red'} name="sound" />
+                          {selftest}
+                      </Menu.Item>
+                      <Menu.Item position='right' disabled onClick={this.micMute} className="mute-button">
+                          <Icon color={muted ? "red" : ""} name={!muted ? "microphone" : "microphone slash"} />
+                          {!muted ? "Mute" : "Unmute"}
+                          <canvas className={muted ? 'hidden' : 'vumeter'} ref="canvas1" id="canvas1" width="15" height="35" />
+                      </Menu.Item>
+                      <Popup
+                          trigger={<Menu.Item icon="setting" name="Settings"/>}
+                          on='click'
+                          position='bottom right'
+                      >
+                          <Popup.Content>
+                              <Select className='select_device'
+                                      disabled={mystream}
+                                      error={!audio_device}
+                                      placeholder="Select Device:"
+                                      value={audio_device}
+                                      options={adevices_list}
+                                      onChange={(e, {value}) => this.setDevice(video_device,value)}/>
+                              <Select className='select_device'
+                                      disabled={mystream}
+                                      error={!video_device}
+                                      placeholder="Select Device:"
+                                      value={video_device}
+                                      options={vdevices_list}
+                                      onChange={(e, {value}) => this.setDevice(value,audio_device)} />
+                          </Popup.Content>
+                      </Popup>
+                  </Menu>
               </div>
-            </div>
-            <GroupChat
-                ref={chat => {this.chat = chat;}}
-              visible={this.state.visible}
-              janus={this.state.janus}
-              room={room}
-              user={this.state.user}
-              onNewMsg={this.onNewMsg} />
+              <div basic className="gclient__main" onDoubleClick={() => this.setState({ visible: !this.state.visible })} >
+                  <div className="videos-panel">
+
+                      <div className="videos">
+                          <div className="videos__wrapper">
+                              <div className="video">
+                                  <div className={classNames('video__overlay', {'talk' : talk})}>
+                                      {question ? <div className="question">
+                                          <svg viewBox="0 0 50 50"><text x="25" y="25" textAnchor="middle" alignmentBaseline="central">&#xF128;</text></svg>
+                                      </div> : ''}
+                                      {/*<div className="video__title">{!talk ? <Icon name="microphone slash" size="small" color="red"/> : ''}{name}</div>*/}
+                                  </div>
+                                  <video ref="localVideo"
+                                         id="localVideo"
+                                         poster={nowebcam}
+                                         width={width}
+                                         height={height}
+                                         autoPlay={autoPlay}
+                                         controls={controls}
+                                         muted={true}
+                                         playsInline={true}/>
+                              </div>
+                              {videos}
+                          </div>
+                      </div>
+                  </div>
+                  <GroupChat
+                      ref={chat => {this.chat = chat;}}
+                      visible={this.state.visible}
+                      janus={this.state.janus}
+                      room={room}
+                      user={this.state.user}
+                      onNewMsg={this.onNewMsg} />
+              </div>
           </div>
-        </div>
-    )
+      );
 
       return (
           <div>

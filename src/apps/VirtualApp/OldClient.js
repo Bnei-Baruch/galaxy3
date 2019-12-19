@@ -346,48 +346,37 @@ class OldClient extends Component {
     };
 
     publishOwnFeed = (useVideo) => {
-        // FIXME: Does we allow video only mode?
         let {videoroom,audio_device,video_device} = this.state;
         let height = (Janus.webRTCAdapter.browserDetails.browser === "safari") ? 480 : 360;
-        videoroom.createOffer(
-            {
-                // Add data:true here if you want to publish datachannels as well
-                media: {
-                    audioRecv: false, videoRecv: false, audioSend: true, videoSend: useVideo, audio: {
-                        autoGainControl: false,
-                        echoCancellation: false,
-                        highpassFilter: false,
-                        noiseSuppression: false,
-                        deviceId: {
-                            exact: audio_device
-                        }
-                    },
-                    video: {
-                        width: 640,
-                        height: height,
-                        deviceId: {
-                            exact: video_device
-                        }
-                    },
-                    data: true
+        videoroom.createOffer({
+            media: {
+                audioRecv: false, videoRecv: false, audioSend: true, videoSend: useVideo,
+                audio: {
+                    autoGainControl: false, echoCancellation: false, highpassFilter: false, noiseSuppression: false,
+                    deviceId: {exact: audio_device}
                 },
-                //media: { audioRecv: false, videoRecv: false, audioSend: useAudio, videoSend: true, data: true },	// Publishers are sendonly
-                simulcast: false,
-                success: (jsep) => {
-                    Janus.debug("Got publisher SDP!");
-                    Janus.debug(jsep);
-                    let publish = { "request": "configure", "audio": true, "video": useVideo, "data": true };
-                    videoroom.send({"message": publish, "jsep": jsep});
+                video: {
+                    width: 640, height: height,
+                    deviceId: {exact: video_device}
                 },
-                error: (error) => {
-                    Janus.error("WebRTC error:", error);
-                    if (useVideo) {
-                        this.publishOwnFeed(false);
-                    } else {
-                        Janus.error("WebRTC error... " + JSON.stringify(error));
-                    }
+                data: true
+            },
+            simulcast: false,
+            success: (jsep) => {
+                Janus.debug("Got publisher SDP!");
+                Janus.debug(jsep);
+                let publish = { request: "configure", audio: true, video: useVideo, data: true };
+                videoroom.send({"message": publish, "jsep": jsep});
+            },
+            error: (error) => {
+                Janus.error("WebRTC error:", error);
+                if (useVideo) {
+                    this.publishOwnFeed(false);
+                } else {
+                    Janus.error("WebRTC error... " + JSON.stringify(error));
                 }
-            });
+            }
+        });
     };
 
     onMessage = (videoroom, msg, jsep, initdata) => {
