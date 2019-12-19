@@ -27,10 +27,8 @@ export const initJanus = (cb,er,mlt) => {
                     er(error);
                 },
                 destroyed: () => {
-                    Janus.log(" :: Janus destroyed -- reconnect after 10 sec :: ");
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 10000);
+                    Janus.error(" :: Janus destroyed :: ");
+                    er(true);
                 }
             });
         }
