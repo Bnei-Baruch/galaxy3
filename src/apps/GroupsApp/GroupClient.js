@@ -10,7 +10,7 @@ import GroupChat from "./GroupChat";
 import {initGxyProtocol, sendProtocolMessage} from "../../shared/protocol";
 import {client} from "../../components/UserManager";
 import LoginPage from "../../components/LoginPage";
-import {GEO_IP_INFO, GROUPS_ROOM} from "../../shared/consts";
+import {GEO_IP_INFO, GROUPS_ROOM, PROTOCOL_ROOM} from "../../shared/consts";
 
 class GroupClient extends Component {
 
@@ -198,7 +198,7 @@ class GroupClient extends Component {
                 Janus.log("  -- This is a publisher/manager");
                 let {user} = this.state;
                 user.handle = videoroom.getId();
-                this.setState({videoroom, user});
+                this.setState({videoroom, user, protocol: null});
                 this.initDevices(true);
                 if(reconnect) {
                     setTimeout(() => {
@@ -398,25 +398,15 @@ class GroupClient extends Component {
     };
 
     exitRoom = (reconnect) => {
-        let {videoroom} = this.state;
+        let {videoroom,protocol} = this.state;
         let leave = {request : "leave"};
         videoroom.send({"message": leave});
         localStorage.setItem("question", false);
         this.setState({muted: false, mystream: null, room: "", i: "", feeds: [], question: false});
         this.chat.exitChatRoom(GROUPS_ROOM);
-        this.exitProtocol();
+        let pl = {textroom : "leave", transaction: Janus.randomString(12),"room": PROTOCOL_ROOM};
+        protocol.data({text: JSON.stringify(pl)});
         this.initVideoRoom(reconnect);
-    };
-
-    exitProtocol = () => {
-        let {protocol} = this.state;
-        let chatreq = {textroom : "leave", transaction: Janus.randomString(12),"room": 1000};
-        protocol.data({text: JSON.stringify(chatreq),
-            success: () => {
-                Janus.log(":: Protocol leave callback: ");
-                this.setState({protocol: null});
-            }
-        });
     };
 
     handleQuestion = () => {
