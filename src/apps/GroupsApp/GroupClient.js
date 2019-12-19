@@ -185,14 +185,23 @@ class GroupClient extends Component {
             let count = 0;
             let chk = setInterval(() => {
                 count++;
-                if(count < 11 && this.state.video) {
+                let {video,ice} = this.state;
+
+                // Video is back stop counter
+                if(count < 11 && video) {
                     clearInterval(chk);
                 }
+
+                // Network problem handled in iceState
+                if(count < 11 && ice === "disconnected") {
+                    clearInterval(chk);
+                }
+
+                // Video still not back disconnecting
                 if(count >= 10) {
                     clearInterval(chk);
-                    // TODO: Try to detect reason
                     this.exitRoom(false);
-                    alert("Server stopped receiving our media! Check your network or device.");
+                    alert("Server stopped receiving our media! Check your video device.");
                 }
             },3000);
         }

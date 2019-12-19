@@ -222,19 +222,42 @@ class MobileClient extends Component {
         })
     };
 
+    iceState = () => {
+        let count = 0;
+        let chk = setInterval(() => {
+            count++;
+            if(count < 11 && this.state.ice === "connected") {
+                clearInterval(chk);
+            }
+            if(count >= 10) {
+                clearInterval(chk);
+                this.state.janus.destroy();
+            }
+        },3000);
+    };
+
     mediaState = (media) => {
         if(media === "video") {
             let count = 0;
             let chk = setInterval(() => {
                 count++;
-                if(count < 11 && this.state.video) {
+                let {video,ice} = this.state;
+
+                // Video is back stop counter
+                if(count < 11 && video) {
                     clearInterval(chk);
                 }
+
+                // Network problem handled in iceState
+                if(count < 11 && ice === "disconnected") {
+                    clearInterval(chk);
+                }
+
+                // Video still not back disconnecting
                 if(count >= 10) {
                     clearInterval(chk);
-                    alert("Server stopped receiving our media! Check your network or device.");
-                    // TODO: Try to detect reason
                     this.exitRoom(false);
+                    alert("Server stopped receiving our media! Check your video device.");
                 }
             },3000);
         }
@@ -275,6 +298,11 @@ class MobileClient extends Component {
             },
             iceState: (state) => {
                 Janus.log("ICE state changed to " + state);
+                this.setState({ice: state});
+                if(state === "disconnected") {
+                    // FIXME: ICE restart does not work properly, so we will do silent reconnect
+                    this.iceState();
+                }
             },
             mediaState: (media, on) => {
                 Janus.log("Janus " + (on ? "started" : "stopped") + " receiving our " + media);
@@ -899,10 +927,13 @@ class MobileClient extends Component {
         videoroom.send({"message": leave});
         //this.chat.exitChatRoom(room);
         let pl = {textroom : "leave", transaction: Janus.randomString(12),"room": PROTOCOL_ROOM};
-        protocol.data({text: JSON.stringify(pl)});
         localStorage.setItem("question", false);
         this.setState({video_device: null, muted: false, cammuted: false, mystream: null, room: "", selected_room: (reconnect ? room : ""), feeds: [],video_mids: [], mids: [], remoteFeed: null, question: false});
-        this.initVideoRoom(reconnect);
+        protocol.data({text: JSON.stringify(pl),
+            success: () => {
+                this.initVideoRoom(reconnect);
+            }
+        });
     };
 
     selectRoom = (i) => {
