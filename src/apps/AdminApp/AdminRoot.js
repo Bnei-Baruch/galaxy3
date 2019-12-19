@@ -1062,6 +1062,7 @@ class AdminRoot extends Component {
       //const x = (<Icon name='close' />);
 
       const bitrate_options = [
+          { key: 0, text: '50Kb/s', value: 50000 },
           { key: 1, text: '150Kb/s', value: 150000 },
           { key: 2, text: '300Kb/s', value: 300000 },
           { key: 3, text: '600Kb/s', value: 600000 },
