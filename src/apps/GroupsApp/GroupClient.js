@@ -181,6 +181,7 @@ class GroupClient extends Component {
     };
 
     mediaState = (media) => {
+        // Handle video
         if(media === "video") {
             let count = 0;
             let chk = setInterval(() => {
@@ -202,6 +203,38 @@ class GroupClient extends Component {
                     clearInterval(chk);
                     this.exitRoom(false);
                     alert("Server stopped receiving our media! Check your video device.");
+                }
+            },3000);
+        }
+
+        //Handle audio
+        if(media === "audio") {
+            let count = 0;
+            let chk = setInterval(() => {
+                count++;
+                let {audio,video,ice,question} = this.state;
+
+                // Audio is back stop counter
+                if(count < 11 && audio) {
+                    clearInterval(chk);
+                }
+
+                // Network problem handled in iceState
+                if(count < 11 && ice === "disconnected") {
+                    clearInterval(chk);
+                }
+
+                // The problem with both devices, leave resolve it in video loop
+                if(count < 11 && !audio && !video) {
+                    clearInterval(chk);
+                }
+
+                // Audio still not back
+                if(count >= 10 && !audio && video) {
+                    clearInterval(chk);
+                    if(question)
+                        this.handleQuestion();
+                    alert("Server stopped receiving our Audio! Check your Mic");
                 }
             },3000);
         }
@@ -468,7 +501,7 @@ class GroupClient extends Component {
 
   render() {
 
-      const {user,audio_devices,video_devices,video_device,audio_device,muted,mystream,room,count,question,selftest,tested,progress,geoinfo} = this.state;
+      const {audio,user,audio_devices,video_devices,video_device,audio_device,muted,mystream,room,count,question,selftest,tested,progress,geoinfo} = this.state;
       const width = "134";
       const height = "100";
       const autoPlay = true;
@@ -523,7 +556,7 @@ class GroupClient extends Component {
                           {this.state.visible ? "Close" : "Open"} Chat
                           {count > 0 ? l : ""}
                       </Menu.Item>
-                      <Menu.Item disabled={video_device === null || !geoinfo || !mystream} onClick={this.handleQuestion}>
+                      <Menu.Item disabled={!audio || video_device === null || !geoinfo || !mystream} onClick={this.handleQuestion}>
                           <Icon color={question ? 'green' : ''} name='question'/>
                           Ask a Question
                       </Menu.Item>
