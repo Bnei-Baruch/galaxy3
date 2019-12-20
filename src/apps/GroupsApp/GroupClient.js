@@ -296,7 +296,8 @@ class GroupClient extends Component {
             onlocaltrack: (track, on) => {
                 Janus.log(" ::: Got a local track event :::");
                 Janus.log("Local track " + (on ? "added" : "removed") + ":", track);
-                this.setState({mystream: track});
+                if(!this.state.mystream)
+                    this.setState({mystream: track});
             },
             onremotestream: (stream) => {
                 // The publisher stream is sendonly, we don't expect anything here
