@@ -190,7 +190,7 @@ class UsersQuad extends Component {
                   {qst ? q : ""}
                   <UsersHandle key={"q"+i} g={g} index={i} {...this.props} />
                   </div>
-                  {fullscr ? "" :
+                  {fullscr && full_feed === i ? "" :
                       <Button className='next_button'
                               disabled={groups.length < 5 || next_button}
                               size='mini'
