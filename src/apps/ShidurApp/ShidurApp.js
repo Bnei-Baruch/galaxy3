@@ -187,7 +187,7 @@ class ShidurApp extends Component {
                 // Any new feed to attach to?
                 if(msg["publishers"] !== undefined && msg["publishers"] !== null) {
                     let feed = msg["publishers"];
-                    let {feeds,feedStreams,users} = this.state;
+                    let {mids,feeds,feedStreams,users} = this.state;
                     Janus.debug("Got a list of available publishers/feeds:");
                     Janus.log(feed);
                     let subscription = [];
@@ -225,7 +225,7 @@ class ShidurApp extends Component {
                         this.setState({feeds_queue: 12});
                     }
                     // Subscribe until program full
-                    if(feeds.length < 13 && subscription.length > 0) {
+                    if(mids.length < 12 && subscription.length > 0) {
                         this.subscribeTo(subscription);
                     }
                 } else if(msg["leaving"] !== undefined && msg["leaving"] !== null) {
