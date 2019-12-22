@@ -58,15 +58,18 @@ class UsersToran extends Component {
   render() {
       const {group,disabled_rooms,groups,groups_queue} = this.props;
       const q = (<b style={{color: 'red', fontSize: '20px', fontFamily: 'Verdana', fontWeight: 'bold'}}>?</b>);
+      const next_group = groups[groups_queue] ? groups[groups_queue].description : groups[0] ? groups[0].description : "";
 
       let rooms_list = groups.map((data,i) => {
           const {room, num_users, description, questions} = data;
+          const next = data.description === next_group;
+          const active = group && group.room === room;
           return (
               <Popup className='popup_preview' on='click' position='right center' onOpen={() => {
                   this.selectGroup(data, i)
               }} trigger={
               <Table.Row positive={group && group.description === description}
-                         className={group && group.room === room ? 'active' : 'no'}
+                         className={active ? 'active' : next ? 'warning' : 'no'}
                          key={room}
                          onContextMenu={(e) => this.disableRoom(e, data, i)} >
                   <Table.Cell width={5}>{description}</Table.Cell>
@@ -85,7 +88,7 @@ class UsersToran extends Component {
               <Popup className='popup_preview' on='click' position='right center' onOpen={() => {
                   this.selectGroup(data, i)
               }} trigger={
-                  <Table.Row key={room} warning
+                  <Table.Row key={room} error
                              onClick={() => this.selectGroup(data, i)}
                              onContextMenu={(e) => this.restoreRoom(e, data, i)} >
                       <Table.Cell width={5}>{description}</Table.Cell>
@@ -118,7 +121,7 @@ class UsersToran extends Component {
                             onClick={this.sortGroups}
                             onChange={(e,{value}) => this.selectGroup(value)} />
                   <Label attached='top left' color={groups.length > 4 ? 'blue' : 'grey'} >
-                      Next: {groups[groups_queue] ? groups[groups_queue].description : ""}
+                      Next: {next_group}
                   </Label>
               </Segment>
               <Segment textAlign='center' className="users_list" raised>

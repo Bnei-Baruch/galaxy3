@@ -364,7 +364,7 @@ class ShidurToran extends Component {
         let disabled_list = disabled_groups.map((data,i) => {
             const {id, display} = data;
             return (
-                <Table.Row key={id} warning
+                <Table.Row key={id} error
                            onClick={() => this.selectGroup(data, i)}
                            onContextMenu={(e) => this.restoreGroup(e, data, i)} >
                     <Table.Cell width={5}>{display.display}</Table.Cell>
