@@ -287,7 +287,7 @@ class ShidurToran extends Component {
         const next_st = next_feed && users[next_feed.display.id] ? users[next_feed.display.id].sound_test : null;
         const v = (<Icon name='checkmark' />);
         const stv = (<Label className='sound_test' color='green' icon='checkmark' />);
-        const x = (<Icon name='close' />);
+        //const x = (<Icon name='close' />);
         const q = (<div className="questiont">
             <svg viewBox="0 0 50 50">
                 <text x="25" y="25" textAnchor="middle" alignmentBaseline="central" dominantBaseline="central">&#xF128;</text>

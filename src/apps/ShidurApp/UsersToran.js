@@ -1,6 +1,6 @@
 import React, {Component, Fragment} from 'react';
 import { Janus } from "../../lib/janus";
-import {Button, Dropdown, Label, Popup, Segment, Table} from "semantic-ui-react";
+import {Dropdown, Label, Popup, Segment, Table} from "semantic-ui-react";
 import './ShidurToran.scss';
 import UsersHandle from "./UsersHandle";
 

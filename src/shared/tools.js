@@ -28,7 +28,7 @@ export const initJanus = (cb,er,mlt) => {
                 },
                 destroyed: () => {
                     Janus.error(" :: Janus destroyed :: ");
-                    er(true);
+                    er("Janus destroyed");
                 }
             });
         }
