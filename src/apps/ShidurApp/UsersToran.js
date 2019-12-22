@@ -1,6 +1,6 @@
 import React, {Component, Fragment} from 'react';
 import { Janus } from "../../lib/janus";
-import {Segment, Table} from "semantic-ui-react";
+import {Button, Popup, Segment, Table} from "semantic-ui-react";
 import './ShidurToran.scss';
 import UsersHandle from "./UsersHandle";
 
@@ -23,7 +23,10 @@ class UsersToran extends Component {
         this.props.setProps({group});
         Janus.log(group);
         let room = group.room;
-        this.users.initVideoRoom(room, "program");
+        // setTimeout(() => {
+        //     this.users.initVideoRoom(room, "program");
+        // }, 1000)
+
     };
 
     disableRoom = (e, data, i) => {
@@ -59,14 +62,20 @@ class UsersToran extends Component {
       let rooms_list = groups.map((data,i) => {
           const {room, num_users, description, questions} = data;
           return (
+              <Popup className='popup_preview' on='click' position='right center' onOpen={() => {
+                  this.selectGroup(data, i)
+              }} trigger={
               <Table.Row positive={group && group.description === description}
                          className={group && group.room === room ? 'active' : 'no'}
-                         key={room} onClick={() => this.selectGroup(data, i)}
+                         key={room}
                          onContextMenu={(e) => this.disableRoom(e, data, i)} >
                   <Table.Cell width={5}>{description}</Table.Cell>
                   <Table.Cell width={1}>{num_users}</Table.Cell>
                   <Table.Cell width={1}>{questions ? q : ""}</Table.Cell>
-              </Table.Row>
+              </Table.Row>}><Segment className="preview_conteiner" color='green' >
+                  <div className="shidur_overlay"><span>{group ? group.description : ""}</span></div>
+                  <UsersHandle g={data} {...this.props} />
+              </Segment></Popup>
           )
       });
 
@@ -85,10 +94,6 @@ class UsersToran extends Component {
 
       return (
           <Fragment>
-              <Segment className="preview_conteiner" color='green' >
-                  <div className="shidur_overlay"><span>{group ? group.description : ""}</span></div>
-                  <UsersHandle ref={users => {this.users = users;}} {...this.props} />
-              </Segment>
               <Segment textAlign='center' className="users_list" raised>
                   <Table selectable compact='very' basic structured className="admin_table" unstackable>
                       <Table.Body>
