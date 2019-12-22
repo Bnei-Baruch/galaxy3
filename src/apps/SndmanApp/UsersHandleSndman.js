@@ -20,18 +20,21 @@ class UsersHandleSndman extends Component {
         let {g} = this.props;
         let {room} = this.state;
         if(g && JSON.stringify(g) !== JSON.stringify(prevProps.g) && g.room !== room) {
-            this.initVideoRoom(g.room);
+            if(room) {
+                this.exitVideoRoom(room, () =>{
+                    this.initVideoRoom(g.room);
+                });
+            } else {
+                this.initVideoRoom(g.room);
+            }
         }
     }
 
+    componentWillUnmount() {
+        this.exitVideoRoom(this.state.room, () =>{})
+    };
+
     initVideoRoom = (roomid) => {
-        if(this.state.videoroom) {
-            let leave_room = {request : "leave", "room": this.state.room};
-            this.state.videoroom.send({"message": leave_room});
-            this.state.videoroom.detach();
-        }
-        if(this.state.remoteFeed)
-            this.state.remoteFeed.detach();
         this.props.janus.attach({
             plugin: "janus.plugin.videoroom",
             opaqueId: "preview_shidur",
@@ -68,15 +71,18 @@ class UsersHandleSndman extends Component {
         });
     };
 
-    exitVideoRoom = (roomid) => {
+    exitVideoRoom = (roomid, callback) => {
         if(this.state.videoroom) {
             let leave_room = {request : "leave", "room": roomid};
-            this.state.videoroom.send({"message": leave_room});
-            this.state.videoroom.detach();
+            this.state.videoroom.send({"message": leave_room,
+                success: () => {
+                    this.state.videoroom.detach();
+                    if(this.state.remoteFeed)
+                        this.state.remoteFeed.detach();
+                    callback();
+                }
+            });
         }
-        if(this.state.remoteFeed)
-            this.state.remoteFeed.detach();
-        this.setState({feeds: []});
     };
 
 

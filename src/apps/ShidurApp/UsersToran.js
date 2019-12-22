@@ -1,6 +1,6 @@
 import React, {Component, Fragment} from 'react';
 import { Janus } from "../../lib/janus";
-import {Button, Popup, Segment, Table} from "semantic-ui-react";
+import {Button, Dropdown, Label, Popup, Segment, Table} from "semantic-ui-react";
 import './ShidurToran.scss';
 import UsersHandle from "./UsersHandle";
 
@@ -9,24 +9,14 @@ class UsersToran extends Component {
     state = {
         index: 0,
         group: null,
+        sorted_feeds: [],
     };
-
-    componentDidUpdate(prevProps) {
-        if(this.props.group === null && prevProps.group) {
-            this.users.exitVideoRoom(prevProps.group.room);
-        }
-    }
 
     selectGroup = (group, i) => {
         delete group.users;
         group.queue = i;
         this.props.setProps({group});
         Janus.log(group);
-        let room = group.room;
-        // setTimeout(() => {
-        //     this.users.initVideoRoom(room, "program");
-        // }, 1000)
-
     };
 
     disableRoom = (e, data, i) => {
@@ -55,8 +45,18 @@ class UsersToran extends Component {
         }
     };
 
+    sortGroups = () => {
+        let sorted_feeds = this.props.groups.slice();
+        sorted_feeds.sort((a, b) => {
+            if (a.description > b.description) return 1;
+            if (a.description < b.description) return -1;
+            return 0;
+        });
+        this.setState({sorted_feeds});
+    };
+
   render() {
-      const {group,disabled_rooms,groups} = this.props;
+      const {group,disabled_rooms,groups,groups_queue} = this.props;
       const q = (<b style={{color: 'red', fontSize: '20px', fontFamily: 'Verdana', fontWeight: 'bold'}}>?</b>);
 
       let rooms_list = groups.map((data,i) => {
@@ -82,18 +82,45 @@ class UsersToran extends Component {
       let disabled_list = disabled_rooms.map((data,i) => {
           const {room, num_users, description, questions} = data;
           return (
-              <Table.Row key={room} warning
-                         onClick={() => this.selectGroup(data, i)}
-                         onContextMenu={(e) => this.restoreRoom(e, data, i)} >
-                  <Table.Cell width={5}>{description}</Table.Cell>
-                  <Table.Cell width={1}>{num_users}</Table.Cell>
-                  <Table.Cell width={1}>{questions ? q : ""}</Table.Cell>
-              </Table.Row>
+              <Popup className='popup_preview' on='click' position='right center' onOpen={() => {
+                  this.selectGroup(data, i)
+              }} trigger={
+                  <Table.Row key={room} warning
+                             onClick={() => this.selectGroup(data, i)}
+                             onContextMenu={(e) => this.restoreRoom(e, data, i)} >
+                      <Table.Cell width={5}>{description}</Table.Cell>
+                      <Table.Cell width={1}>{num_users}</Table.Cell>
+                      <Table.Cell width={1}>{questions ? q : ""}</Table.Cell>
+                  </Table.Row>}><Segment className="preview_conteiner" color='green' >
+                  <div className="shidur_overlay"><span>{group ? group.description : ""}</span></div>
+                  <UsersHandle g={data} {...this.props} />
+              </Segment></Popup>
           )
+      });
+
+      let group_options = this.state.sorted_feeds.map((feed,i) => {
+          const display = feed.description;
+          return ({ key: i, value: feed, text: display })
       });
 
       return (
           <Fragment>
+              <Segment attached textAlign='center' >
+                  <Label attached='top right' color={groups.length > 4 ? 'green' : 'grey'}>
+                      Online: {groups.length}
+                  </Label>
+                  <Dropdown className='select_group'
+                            placeholder='Search..'
+                            fluid
+                            search
+                            selection
+                            options={group_options}
+                            onClick={this.sortGroups}
+                            onChange={(e,{value}) => this.selectGroup(value)} />
+                  <Label attached='top left' color={groups.length > 4 ? 'blue' : 'grey'} >
+                      Next: {groups[groups_queue] ? groups[groups_queue].description : ""}
+                  </Label>
+              </Segment>
               <Segment textAlign='center' className="users_list" raised>
                   <Table selectable compact='very' basic structured className="admin_table" unstackable>
                       <Table.Body>

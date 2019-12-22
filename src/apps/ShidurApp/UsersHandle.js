@@ -18,26 +18,24 @@ class UsersHandle extends Component {
     };
 
     componentDidUpdate(prevProps) {
-        let {g,ce} = this.props;
+        let {g} = this.props;
         let {room} = this.state;
         if(g && JSON.stringify(g) !== JSON.stringify(prevProps.g) && g.room !== room) {
-            this.initVideoRoom(g.room);
+            if(room) {
+                this.exitVideoRoom(room, () =>{
+                    this.initVideoRoom(g.room);
+                });
+            } else {
+                this.initVideoRoom(g.room);
+            }
         }
-        // if(ce && JSON.stringify(ce) !== JSON.stringify(prevProps.ce) && ce.room === room && ce.camera) {
-        //     let {feedStreams} = this.state;
-        //     let remotevideo = this.refs["pv" + ce.rfid];
-        //     Janus.attachMediaStream(remotevideo, feedStreams[ce.rfid].stream);
-        // }
     }
 
+    componentWillUnmount() {
+        this.exitVideoRoom(this.state.room, () =>{})
+    };
+
     initVideoRoom = (roomid) => {
-        if(this.state.videoroom) {
-            let leave_room = {request : "leave", "room": this.state.room};
-            this.state.videoroom.send({"message": leave_room});
-            this.state.videoroom.detach();
-        }
-        if(this.state.remoteFeed)
-            this.state.remoteFeed.detach();
         this.props.janus.attach({
             plugin: "janus.plugin.videoroom",
             opaqueId: "preview_shidur",
@@ -74,19 +72,22 @@ class UsersHandle extends Component {
         });
     };
 
-    exitVideoRoom = (roomid) => {
+    exitVideoRoom = (roomid, callback) => {
         if(this.state.videoroom) {
             let leave_room = {request : "leave", "room": roomid};
-            this.state.videoroom.send({"message": leave_room});
-            this.state.videoroom.detach();
+            this.state.videoroom.send({"message": leave_room,
+                success: (data) => {
+                    this.state.videoroom.detach();
+                    if(this.state.remoteFeed)
+                        this.state.remoteFeed.detach();
+                    callback();
+                }
+            });
         }
-        if(this.state.remoteFeed)
-            this.state.remoteFeed.detach();
-        this.setState({feeds: []});
     };
 
 
-    onMessage = (msg, jsep, initdata) => {
+    onMessage = (msg, jsep) => {
         Janus.debug(" ::: Got a message (publisher) :::");
         Janus.debug(msg);
         let event = msg["videoroom"];
