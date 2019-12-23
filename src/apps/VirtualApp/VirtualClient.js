@@ -388,7 +388,7 @@ class VirtualClient extends Component {
 
     publishOwnFeed = (useVideo) => {
         let {videoroom,audio_device,video_device} = this.state;
-        let height = (Janus.webRTCAdapter.browserDetails.browser === "safari") ? 480 : 360;
+        //let height = (Janus.webRTCAdapter.browserDetails.browser === "safari") ? 480 : 360;
         videoroom.createOffer({
             media: {
                 audioRecv: false, videoRecv: false, audioSend: true, videoSend: useVideo,
@@ -397,7 +397,7 @@ class VirtualClient extends Component {
                     deviceId: {exact: audio_device}
                 },
                 video: {
-                    width: 640, height: height,
+                    width: 320, height: 180,
                     deviceId: {exact: video_device}
                 },
                 data: true
