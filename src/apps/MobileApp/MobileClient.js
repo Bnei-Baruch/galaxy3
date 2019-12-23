@@ -12,7 +12,7 @@ import {
     checkNotification,
     testDevices,
     testMic,
-    genUUID, micLevel
+    genUUID
 } from "../../shared/tools";
 import './MobileClient.scss'
 import './MobileConteiner.scss'
@@ -155,12 +155,12 @@ class MobileClient extends Component {
                     Janus.log(" :: Check Devices: ", stream);
                     let myvideo = this.refs.localVideo;
                     Janus.attachMediaStream(myvideo, stream);
-                    if(this.state.audioContext) {
-                        this.state.audioContext.close();
-                    }
-                    micLevel(stream ,this.refs.canvas1,audioContext => {
-                        this.setState({audioContext, stream});
-                    });
+                    // if(this.state.audioContext) {
+                    //     this.state.audioContext.close();
+                    // }
+                    // micLevel(stream ,this.refs.canvas1,audioContext => {
+                    //     this.setState({audioContext, stream});
+                    // });
                 })
             }
         }
@@ -204,7 +204,7 @@ class MobileClient extends Component {
                         return 0;
                     });
                     this.setState({rooms: filter});
-                    this.getFeedsList(filter)
+                    //this.getFeedsList(filter)
                 }
             });
         }
