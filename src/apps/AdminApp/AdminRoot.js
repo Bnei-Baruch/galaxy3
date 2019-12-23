@@ -23,7 +23,7 @@ import LoginPage from "../../components/LoginPage";
 class AdminRoot extends Component {
 
     state = {
-        bitrate: 150000,
+        bitrate: 128000,
         chatroom: null,
         forwarders: [],
         groups: [],
@@ -1068,8 +1068,8 @@ class AdminRoot extends Component {
       //const x = (<Icon name='close' />);
 
       const bitrate_options = [
-          { key: 0, text: '50Kb/s', value: 50000 },
-          { key: 1, text: '150Kb/s', value: 150000 },
+          { key: 0, text: '64Kb/s', value: 64000 },
+          { key: 1, text: '128Kb/s', value: 128000 },
           { key: 2, text: '300Kb/s', value: 300000 },
           { key: 3, text: '600Kb/s', value: 600000 },
       ];

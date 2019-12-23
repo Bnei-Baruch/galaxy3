@@ -21,6 +21,7 @@ class GroupClient extends Component {
         video_devices: [],
         audio_device: "",
         video_device: "",
+        video_setting: {width: 640, height: 360, fps: 30},
         audio: null,
         video: null,
         janus: null,
@@ -128,7 +129,7 @@ class GroupClient extends Component {
                 localStorage.setItem("video_device", video_device);
                 localStorage.setItem("audio_device", audio_device);
                 Janus.log(" :: Going to check Devices: ");
-                getDevicesStream(audio_device,video_device,stream => {
+                getDevicesStream(audio_device,video_device,this.state.video_setting, stream => {
                     Janus.log(" :: Check Devices: ", stream);
                     let myvideo = this.refs.localVideo;
                     Janus.attachMediaStream(myvideo, stream);
@@ -315,8 +316,10 @@ class GroupClient extends Component {
     };
 
     publishOwnFeed = (useVideo) => {
-        let {videoroom,audio_device,video_device} = this.state;
-        let height = (Janus.webRTCAdapter.browserDetails.browser === "safari") ? 480 : 360;
+        let {videoroom,audio_device,video_device,video_setting} = this.state;
+        const width = video_setting.width;
+        const height = video_setting.height;
+        const ideal = video_setting.fps;
         videoroom.createOffer({
             media: {
                 audioRecv: false, videoRecv: false, audioSend: true, videoSend: useVideo,
@@ -325,7 +328,8 @@ class GroupClient extends Component {
                     deviceId: {exact: audio_device}
                 },
                 video: {
-                    width: 640, height: height,
+                    width, height,
+                    frameRate: {ideal, min: 1},
                     deviceId: {exact: video_device}
                 },
                 data: true

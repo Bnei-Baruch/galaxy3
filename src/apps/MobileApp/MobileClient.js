@@ -12,7 +12,7 @@ import {
     checkNotification,
     testDevices,
     testMic,
-    genUUID
+    genUUID, micLevel
 } from "../../shared/tools";
 import './MobileClient.scss'
 import './MobileConteiner.scss'
@@ -20,7 +20,7 @@ import 'eqcss'
 //import MobileChat from "./MobileChat";
 import {initGxyProtocol, sendProtocolMessage} from "../../shared/protocol";
 import MobileStreaming from "./MobileStreaming";
-import {GEO_IP_INFO,PROTOCOL_ROOM} from "../../shared/consts";
+import {GEO_IP_INFO, PROTOCOL_ROOM, vsettings_list} from "../../shared/consts";
 
 class MobileClient extends Component {
 
@@ -34,6 +34,7 @@ class MobileClient extends Component {
         video_devices: [],
         audio_device: "",
         video_device: "",
+        video_setting: {width: 320, height: 180, fps: 15},
         audio: null,
         video: null,
         janus: null,
@@ -111,6 +112,7 @@ class MobileClient extends Component {
                 // Be sure device still exist
                 let video_device = localStorage.getItem("video_device");
                 let audio_device = localStorage.getItem("audio_device");
+                let video_setting = JSON.parse(localStorage.getItem("video_setting")) || this.state.video_setting;
                 let achk = audio_devices.filter(a => a.deviceId === audio_device).length > 0;
                 let vchk = video_devices.filter(v => v.deviceId === video_device).length > 0;
                 let video_id = video ? (video_device !== "" && vchk ? video_device : video_devices[0].deviceId) : null;
@@ -118,7 +120,7 @@ class MobileClient extends Component {
                 Janus.log(" :: Got Video devices: ", video_devices);
                 Janus.log(" :: Got Audio devices: ", audio_devices);
                 this.setState({video_devices, audio_devices});
-                this.setDevice(video_id, audio_id);
+                this.setDevice(video_id, audio_id, video_setting);
             } else if(video) {
                 alert("Video device not detected!");
                 this.setState({cammuted: true, video_device: null});
@@ -130,7 +132,7 @@ class MobileClient extends Component {
                 Janus.log(" :: Trying to get audio only");
                 this.initDevices(false);
             } else {
-                //Try to get audio fail reson
+                //Try to get audio fail reason
                 testDevices(false, true, steam => {});
                 alert(" :: No input devices found ::");
                 //FIXME: What we going to do in this case?
@@ -139,23 +141,26 @@ class MobileClient extends Component {
         }, { audio: true, video: video });
     };
 
-    setDevice = (video_device,audio_device) => {
-        if(audio_device !== this.state.audio_device || video_device !== this.state.video_device) {
-            this.setState({video_device,audio_device});
+    setDevice = (video_device,audio_device,video_setting) => {
+        if(audio_device !== this.state.audio_device
+            || video_device !== this.state.video_device
+            || JSON.stringify(video_setting) !== JSON.stringify(this.state.video_setting)) {
+            this.setState({video_device,audio_device,video_setting});
             if(this.state.audio_device !== "" || this.state.video_device !== "") {
                 localStorage.setItem("video_device", video_device);
                 localStorage.setItem("audio_device", audio_device);
+                localStorage.setItem("video_setting", JSON.stringify(video_setting));
                 Janus.log(" :: Going to check Devices: ");
-                getDevicesStream(audio_device,video_device,stream => {
+                getDevicesStream(audio_device,video_device,video_setting,stream => {
                     Janus.log(" :: Check Devices: ", stream);
                     let myvideo = this.refs.localVideo;
                     Janus.attachMediaStream(myvideo, stream);
-                    // if(this.state.audioContext) {
-                    //     this.state.audioContext.close();
-                    // }
-                    // micLevel(stream ,this.refs.canvas1,audioContext => {
-                    //     this.setState({audioContext, stream});
-                    // });
+                    if(this.state.audioContext) {
+                        this.state.audioContext.close();
+                    }
+                    micLevel(stream ,this.refs.canvas1,audioContext => {
+                        this.setState({audioContext, stream});
+                    });
                 })
             }
         }
@@ -391,8 +396,10 @@ class MobileClient extends Component {
     };
 
     publishOwnFeed = (useVideo) => {
-        let {videoroom,audio_device,video_device} = this.state;
-        //let height = (Janus.webRTCAdapter.browserDetails.browser === "safari") ? 180 : 180;
+        let {videoroom,audio_device,video_device,video_setting} = this.state;
+        const width = video_setting.width;
+        const height = video_setting.height;
+        const ideal = video_setting.fps;
         videoroom.createOffer({
             media: {
                 audioRecv: false, videoRecv: false, audioSend: true, videoSend: useVideo,
@@ -401,8 +408,8 @@ class MobileClient extends Component {
                     deviceId: {exact: audio_device}
                 },
                 video: {
-                    width: 320, height: 180,
-                    //frameRate: {ideal: 15, min: 10},
+                    width, height,
+                    frameRate: {ideal, min: 1},
                     deviceId: {exact: video_device}
                 },
                 data: true
@@ -425,7 +432,7 @@ class MobileClient extends Component {
         });
     };
 
-    onMessage = (videoroom, msg, jsep, initdata) => {
+    onMessage = (videoroom, msg, jsep) => {
         Janus.log(" ::: Got a message (publisher) :::");
         Janus.log(msg);
         let event = msg["videoroom"];
@@ -1012,7 +1019,7 @@ class MobileClient extends Component {
 
     render() {
 
-        const { audio,rooms,name,audio_devices,video_devices,video_device,audio_device,i,muted,cammuted,delay,mystream,selected_room,count,question,selftest,tested,women,feedStreams} = this.state;
+        const {video_setting,audio,rooms,name,audio_devices,video_devices,video_device,audio_device,i,muted,cammuted,delay,mystream,selected_room,count,question,selftest,tested,women,feedStreams} = this.state;
         const width = "134";
         const height = "100";
         const autoPlay = true;
@@ -1174,14 +1181,21 @@ class MobileClient extends Component {
                                                     placeholder="Select Device:"
                                                     value={audio_device}
                                                     options={adevices_list}
-                                                    onChange={(e, {value}) => this.setDevice(video_device,value)}/>
+                                                    onChange={(e, {value}) => this.setDevice(video_device, value, video_setting)}/>
                                             <Select className='select_device'
                                                     disabled={mystream}
                                                     error={!video_device}
                                                     placeholder="Select Device:"
                                                     value={video_device}
                                                     options={vdevices_list}
-                                                    onChange={(e, {value}) => this.setDevice(value,audio_device)} />
+                                                    onChange={(e, {value}) => this.setDevice(value, audio_device, video_setting)}/>
+                                            <Select className='select_device'
+                                                    disabled={mystream}
+                                                    error={!video_device}
+                                                    placeholder="Video Settings:"
+                                                    value={video_setting}
+                                                    options={vsettings_list}
+                                                    onChange={(e, {value}) => this.setDevice(video_device, audio_device, value)}/>
                                         </Popup.Content>
                                     </Popup>}
                                 </Menu>

@@ -34,6 +34,13 @@ export const JANUS_STR_HOST_GR = process.env.REACT_APP_JANUS_HOST_GR;
 export const JANUS_STR_HOST_UK = process.env.REACT_APP_JANUS_HOST_UK;
 
 
+export const vsettings_list = [
+    { key: 0, text: '320 x 180, 15 fps', value: {width: 320, height: 180, fps: 15}},
+    { key: 1, text: '320 x 180, 30 fps', value: {width: 320, height: 180, fps: 30} },
+    { key: 2, text: '640 x 360, 15 fps', value: {width: 640, height: 360, fps: 15} },
+    { key: 3, text: '640 x 360, 30 fps', value: {width: 640, height: 360, fps: 30} },
+];
+
 export const servers_options = [
     { key: 1, text: 'Israel (PT)', value: `${JANUS_SRV_ISRPT}` },
     { key: 2, text: 'Europe (ND)', value: `${JANUS_SRV_EURND}` },
