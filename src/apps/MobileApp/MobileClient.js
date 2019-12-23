@@ -392,7 +392,7 @@ class MobileClient extends Component {
 
     publishOwnFeed = (useVideo) => {
         let {videoroom,audio_device,video_device} = this.state;
-        let height = (Janus.webRTCAdapter.browserDetails.browser === "safari") ? 480 : 360;
+        //let height = (Janus.webRTCAdapter.browserDetails.browser === "safari") ? 180 : 180;
         videoroom.createOffer({
             media: {
                 audioRecv: false, videoRecv: false, audioSend: true, videoSend: useVideo,
@@ -401,7 +401,8 @@ class MobileClient extends Component {
                     deviceId: {exact: audio_device}
                 },
                 video: {
-                    width: 640, height: height,
+                    width: 320, height: 180,
+                    //frameRate: {ideal: 15, min: 10},
                     deviceId: {exact: video_device}
                 },
                 data: true

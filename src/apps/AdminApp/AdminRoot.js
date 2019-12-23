@@ -736,6 +736,12 @@ class AdminRoot extends Component {
                 this.setState({users});
             }
         }
+
+        // Save user on enter
+        if(data.type.match(/^(enter)$/)) {
+            users[data.user.id] = data.user;
+            this.setState({users});
+        }
     };
 
     sendDataMessage = () => {
