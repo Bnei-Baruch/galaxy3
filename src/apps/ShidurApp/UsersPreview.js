@@ -17,6 +17,10 @@ class UsersPreview extends Component {
         mystream: null
     };
 
+    componentDidMount() {
+        this.attachPreview(this.props.pg);
+    }
+
     componentWillUnmount() {
         if(this.state.remoteFeed)
             this.state.remoteFeed.detach();

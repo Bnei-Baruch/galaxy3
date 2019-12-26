@@ -8,25 +8,15 @@ class UsersToran extends Component {
 
     state = {
         index: 0,
-        open: false,
         group: null,
         sorted_feeds: [],
     };
 
     selectGroup = (group, i) => {
         Janus.log(group, i);
-        this.setState({open: true});
-        // Selected from dropdown
-        if(i === undefined) this.attachPreview(group);
+        this.setState({pg: group});
         group.queue = i;
         this.props.setProps({group});
-    };
-
-    attachPreview = (g, i) => {
-        Janus.log("attachPreview", g);
-        setTimeout(() => {
-            this.pre ? this.pre.attachPreview(g) : this.attachPreview(g);
-        }, 500)
     };
 
     disableRoom = (e, data, i) => {
@@ -75,9 +65,8 @@ class UsersToran extends Component {
           const next = data.description === next_group;
           const active = group && group.room === room;
           return (
-              <Popup className='popup_preview' on='click' position='right center' open={this.state.open}
-                     onOpen={() => {this.attachPreview(data, i)}}
-                     onClose={() => this.setState({open: false})}
+              <Popup className='popup_preview' on='click'
+                     position='right center'
                      trigger={
               <Table.Row positive={group && group.description === description}
                          className={active ? 'active' : next ? 'warning' : 'no'}
@@ -89,7 +78,7 @@ class UsersToran extends Component {
                   <Table.Cell width={1}>{questions ? q : ""}</Table.Cell>
               </Table.Row>}><Segment className="preview_conteiner" color='green' >
                   <div className="shidur_overlay"><span>{group ? group.description : ""}</span></div>
-                  <UsersPreview ref={pre => {this.pre = pre;}} {...this.props} />
+                  <UsersPreview pg={this.state.pg} {...this.props} />
               </Segment></Popup>
           )
       });
@@ -97,8 +86,8 @@ class UsersToran extends Component {
       let disabled_list = disabled_rooms.map((data,i) => {
           const {room, num_users, description, questions} = data;
           return (
-              <Popup className='popup_preview' on='click' position='right center' open={this.state.open}
-                     onOpen={() => {this.attachPreview(data, i)}}
+              <Popup className='popup_preview' on='click'
+                     position='right center' open={this.state.open}
                      onClose={() => this.setState({open: false})}
                      trigger={
                   <Table.Row key={room} error
@@ -109,7 +98,7 @@ class UsersToran extends Component {
                       <Table.Cell width={1}>{questions ? q : ""}</Table.Cell>
                   </Table.Row>}><Segment className="preview_conteiner" color='green' >
                   <div className="shidur_overlay"><span>{group ? group.description : ""}</span></div>
-                  <UsersPreview ref={pre => {this.pre = pre;}} {...this.props} />
+                  <UsersPreview pg={this.state.pg} {...this.props} />
               </Segment></Popup>
           )
       });
