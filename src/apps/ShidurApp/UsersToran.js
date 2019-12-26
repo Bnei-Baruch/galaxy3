@@ -8,13 +8,16 @@ class UsersToran extends Component {
 
     state = {
         index: 0,
+        open: false,
         group: null,
         sorted_feeds: [],
     };
 
     selectGroup = (group, i) => {
-        Janus.log(group);
-        delete group.users;
+        Janus.log(group, i);
+        this.setState({open: true});
+        // Selected from dropdown
+        if(i === undefined) this.attachPreview(group);
         group.queue = i;
         this.props.setProps({group});
     };
@@ -22,7 +25,7 @@ class UsersToran extends Component {
     attachPreview = (g, i) => {
         Janus.log("attachPreview", g);
         setTimeout(() => {
-            this.pre.attachPreview ? this.pre.attachPreview(g) : this.attachPreview(g);
+            this.pre ? this.pre.attachPreview(g) : this.attachPreview(g);
         }, 500)
     };
 
@@ -68,14 +71,14 @@ class UsersToran extends Component {
       const next_group = groups[groups_queue] ? groups[groups_queue].description : groups[0] ? groups[0].description : "";
 
       let rooms_list = groups.map((data,i) => {
-          let g = Object.assign({}, data);
           const {room, num_users, description, questions} = data;
           const next = data.description === next_group;
           const active = group && group.room === room;
           return (
-              <Popup className='popup_preview' on='click' position='right center' onOpen={() => {
-                  this.attachPreview(g, i)
-              }} trigger={
+              <Popup className='popup_preview' on='click' position='right center' open={this.state.open}
+                     onOpen={() => {this.attachPreview(data, i)}}
+                     onClose={() => this.setState({open: false})}
+                     trigger={
               <Table.Row positive={group && group.description === description}
                          className={active ? 'active' : next ? 'warning' : 'no'}
                          key={room}
@@ -92,12 +95,12 @@ class UsersToran extends Component {
       });
 
       let disabled_list = disabled_rooms.map((data,i) => {
-          let g = Object.assign({}, data);
           const {room, num_users, description, questions} = data;
           return (
-              <Popup className='popup_preview' on='click' position='right center' onOpen={() => {
-                  this.attachPreview(g, i)
-              }} trigger={
+              <Popup className='popup_preview' on='click' position='right center' open={this.state.open}
+                     onOpen={() => {this.attachPreview(data, i)}}
+                     onClose={() => this.setState({open: false})}
+                     trigger={
                   <Table.Row key={room} error
                              onClick={() => this.selectGroup(data, i)}
                              onContextMenu={(e) => this.restoreRoom(e, data, i)} >
@@ -106,7 +109,7 @@ class UsersToran extends Component {
                       <Table.Cell width={1}>{questions ? q : ""}</Table.Cell>
                   </Table.Row>}><Segment className="preview_conteiner" color='green' >
                   <div className="shidur_overlay"><span>{group ? group.description : ""}</span></div>
-                  <UsersPreview g={data} ref={pre => {this.pre = pre;}} {...this.props} />
+                  <UsersPreview ref={pre => {this.pre = pre;}} {...this.props} />
               </Segment></Popup>
           )
       });

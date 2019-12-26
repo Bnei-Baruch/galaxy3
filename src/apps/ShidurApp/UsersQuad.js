@@ -67,6 +67,7 @@ class UsersQuad extends Component {
 
         if(group) {
             // From preview
+            delete group.users;
             quad[i] = group;
             this.props.setProps({group: null});
         } else {
