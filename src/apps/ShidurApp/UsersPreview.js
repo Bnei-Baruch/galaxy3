@@ -23,14 +23,15 @@ class UsersPreview extends Component {
     };
 
     attachPreview = (g) => {
-        this.setState({room: g.room});
-        let subscription = [];
-        for (let i in g.users) {
-            let id = g.users[i].rfid;
-            let subst = {feed: id, mid: "1"};
-            subscription.push(subst);
-        }
-        this.subscribeTo(subscription);
+        this.setState({room: g.room}, () =>{
+            let subscription = [];
+            for (let i in g.users) {
+                let id = g.users[i].rfid;
+                let subst = {feed: id, mid: "1"};
+                subscription.push(subst);
+            }
+            this.subscribeTo(subscription);
+        });
     };
 
     newRemoteFeed = (subscription) => {

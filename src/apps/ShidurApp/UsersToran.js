@@ -21,7 +21,9 @@ class UsersToran extends Component {
 
     attachPreview = (g, i) => {
         Janus.log("attachPreview", g);
-        setTimeout(() => this.pre.attachPreview(g), 500)
+        setTimeout(() => {
+            this.pre.attachPreview ? this.pre.attachPreview(g) : this.attachPreview(g);
+        }, 500)
     };
 
     disableRoom = (e, data, i) => {
@@ -84,7 +86,7 @@ class UsersToran extends Component {
                   <Table.Cell width={1}>{questions ? q : ""}</Table.Cell>
               </Table.Row>}><Segment className="preview_conteiner" color='green' >
                   <div className="shidur_overlay"><span>{group ? group.description : ""}</span></div>
-                  <UsersPreview g={data} ref={pre => {this.pre = pre;}} {...this.props} />
+                  <UsersPreview ref={pre => {this.pre = pre;}} {...this.props} />
               </Segment></Popup>
           )
       });
