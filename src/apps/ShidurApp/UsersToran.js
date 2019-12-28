@@ -87,8 +87,7 @@ class UsersToran extends Component {
           const {room, num_users, description, questions} = data;
           return (
               <Popup className='popup_preview' on='click'
-                     position='right center' open={this.state.open}
-                     onClose={() => this.setState({open: false})}
+                     position='right center'
                      trigger={
                   <Table.Row key={room} error
                              onClick={() => this.selectGroup(data, i)}
