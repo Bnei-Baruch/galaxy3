@@ -60,7 +60,7 @@ class UsersToran extends Component {
     };
 
   render() {
-      const {group,disabled_rooms,groups,groups_queue} = this.props;
+      const {group,disabled_rooms,groups,groups_queue,questions} = this.props;
       const q = (<b style={{color: 'red', fontSize: '20px', fontFamily: 'Verdana', fontWeight: 'bold'}}>?</b>);
       const next_group = groups[groups_queue] ? groups[groups_queue].description : groups[0] ? groups[0].description : "";
 
@@ -130,6 +130,11 @@ class UsersToran extends Component {
                   <Label attached='top left' color={groups.length > 4 ? 'blue' : 'grey'} >
                       Next: {next_group}
                   </Label>
+                  {questions > 0 ?
+                      <Label attached='bottom right' color='red'>
+                          Questions: {questions}
+                      </Label>
+                  : ""}
               </Segment>
               <Segment textAlign='center' className="users_list" raised>
                   <Table selectable compact='very' basic structured className="admin_table" unstackable>

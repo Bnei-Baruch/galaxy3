@@ -16,6 +16,7 @@ class UsersApp extends Component {
         groups: [],
         groups_queue: 0,
         round: 0,
+        questions: 1,
         rooms: [],
         disabled_rooms: [],
         user: {
