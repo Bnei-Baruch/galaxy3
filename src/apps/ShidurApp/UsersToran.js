@@ -20,7 +20,9 @@ class UsersToran extends Component {
     };
 
     closePopup = () => {
-        this.props.setProps({group: null});
+        setTimeout(() => {
+            this.props.setProps({group: null})
+        },1000);
     };
 
     disableRoom = (e, data, i) => {
