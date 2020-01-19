@@ -93,6 +93,7 @@ class UsersToran extends Component {
           return (
               <Popup className='popup_preview' on='click'
                      position='right center'
+                     onClose={this.closePopup}
                      trigger={
                   <Table.Row key={room} error
                              onClick={() => this.selectGroup(data, i)}
