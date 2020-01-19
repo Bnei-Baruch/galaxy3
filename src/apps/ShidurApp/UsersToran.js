@@ -19,6 +19,10 @@ class UsersToran extends Component {
         this.props.setProps({group});
     };
 
+    closePopup = () => {
+        this.props.setProps({group: null});
+    };
+
     disableRoom = (e, data, i) => {
         e.preventDefault();
         if (e.type === 'contextmenu') {
@@ -67,6 +71,7 @@ class UsersToran extends Component {
           return (
               <Popup className='popup_preview' on='click'
                      position='right center'
+                     onClose={this.closePopup}
                      trigger={
               <Table.Row positive={group && group.description === description}
                          className={active ? 'active' : next ? 'warning' : 'no'}
