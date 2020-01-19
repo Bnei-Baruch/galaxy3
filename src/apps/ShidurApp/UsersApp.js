@@ -16,7 +16,7 @@ class UsersApp extends Component {
         groups: [],
         groups_queue: 0,
         round: 0,
-        questions: 1,
+        questions: 0,
         rooms: [],
         disabled_rooms: [],
         user: {
@@ -58,6 +58,7 @@ class UsersApp extends Component {
             let groups = rooms.filter((room) => !disabled_rooms.find(droom => room.room === droom.room));
             disabled_rooms = rooms.filter((room) => !groups.find(droom => room.room === droom.room));
             this.setState({groups,disabled_rooms});
+            this.quad.questionStatus();
         });
     };
 

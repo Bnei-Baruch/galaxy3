@@ -50,6 +50,14 @@ class UsersQuad extends Component {
         }
     };
 
+    questionStatus = () => {
+        let {groups} = this.props;
+        let {quad} = this.state;
+        let list = groups.filter((room) => !quad.find(droom => room.room === droom.room));
+        let questions = list.filter(room => room.questions).length;
+        this.props.setProps({questions});
+    };
+
     quadGroup = (queue) => {
         let {groups} = this.props;
         let group = groups[queue];
@@ -88,6 +96,7 @@ class UsersQuad extends Component {
         // Save state
         putData(`galaxy/program`, {quad}, (cb) => {
             Janus.log(":: Save to state: ",cb);
+            this.questionStatus();
         });
     };
 
