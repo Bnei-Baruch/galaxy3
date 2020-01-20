@@ -7,6 +7,7 @@ import {initGxyProtocol} from "../../shared/protocol";
 import SDIOutGroups from "./SDIOutGroups";
 import {GROUPS_ROOM,SDIOUT_ID} from "../../shared/consts";
 import UsersSDIOut from "./UsersSDIOut";
+import QuestionSDIOut from "./QestionSDIOut";
 
 
 class SDIOutApp extends Component {
@@ -40,21 +41,21 @@ class SDIOutApp extends Component {
             getState('galaxy/groups', (users) => {
                 this.setState({users});
             });
-            initGxyProtocol(janus, user, protocol => {
-                this.setState({protocol});
-            }, ondata => {
-                Janus.log("-- :: It's protocol public message: ", ondata);
-                if(ondata.type === "error" && ondata.error_code === 420) {
-                    console.log(ondata.error + " - Reload after 10 seconds");
-                    this.state.protocol.hangup();
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 10000);
-                } else if(ondata.type === "joined") {
-                    this.initVideoRoom();
-                }
-                this.onProtocolData(ondata);
-            });
+            // initGxyProtocol(janus, user, protocol => {
+            //     this.setState({protocol});
+            // }, ondata => {
+            //     Janus.log("-- :: It's protocol public message: ", ondata);
+            //     if(ondata.type === "error" && ondata.error_code === 420) {
+            //         console.log(ondata.error + " - Reload after 10 seconds");
+            //         this.state.protocol.hangup();
+            //         setTimeout(() => {
+            //             window.location.reload();
+            //         }, 10000);
+            //     } else if(ondata.type === "joined") {
+            //         this.initVideoRoom();
+            //     }
+            //     this.onProtocolData(ondata);
+            // });
         }, er => {
             setTimeout(() => {
                 window.location.reload();
@@ -369,29 +370,36 @@ class SDIOutApp extends Component {
 
             <Grid columns={2} className="sdi_container">
                 <Grid.Row>
-                <Grid.Column>
-                    <SDIOutGroups
-                        index={0} {...this.state}
-                        ref={col => {this.col1 = col;}}
-                    />
-                </Grid.Column>
-                <Grid.Column>
-                    <SDIOutGroups
-                        index={4} {...this.state}
-                        ref={col => {this.col2 = col;}}
-                    />
-                </Grid.Column>
+                    <Grid.Column>
+                        <SDIOutGroups
+                            index={0} {...this.state}
+                            ref={col => {this.col1 = col;}}
+                        />
+                    </Grid.Column>
+                    <Grid.Column>
+                        <SDIOutGroups
+                            index={4} {...this.state}
+                            ref={col => {this.col2 = col;}}
+                        />
+                    </Grid.Column>
                 </Grid.Row>
                 <Grid.Row>
-                <Grid.Column>
-                    <SDIOutGroups
-                        index={8} {...this.state}
-                        ref={col => {this.col3 = col;}}
-                    />
-                </Grid.Column>
-                <Grid.Column>
-                    <UsersSDIOut />
-                </Grid.Column>
+                    <Grid.Column>
+                        <SDIOutGroups
+                            index={8} {...this.state}
+                            ref={col => {this.col3 = col;}}
+                        />
+                    </Grid.Column>
+                    <Grid.Column>
+                        <UsersSDIOut />
+                    </Grid.Column>
+                </Grid.Row>
+                <Grid.Row>
+                    <Grid.Column>
+                        <QuestionSDIOut />
+                    </Grid.Column>
+                    <Grid.Column>
+                    </Grid.Column>
                 </Grid.Row>
             </Grid>
         );
