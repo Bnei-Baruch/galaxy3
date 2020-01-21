@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import { Janus } from "../../lib/janus";
-import {Grid} from "semantic-ui-react";
+import {Grid, Segment} from "semantic-ui-react";
 import {getState, initJanus} from "../../shared/tools";
 import './SDIOutApp.css';
 import {initGxyProtocol} from "../../shared/protocol";
@@ -8,11 +8,14 @@ import SDIOutGroups from "./SDIOutGroups";
 import {GROUPS_ROOM,SDIOUT_ID} from "../../shared/consts";
 import UsersSDIOut from "./UsersSDIOut";
 import QuestionSDIOut from "./QestionSDIOut";
+import UsersHandleSDIOut from "./UsersHandleSDIOut";
 
 
 class SDIOutApp extends Component {
 
     state = {
+        group: null,
+        room: null,
         qam: {0:1,1:2,2:3,3:1,4:2,5:3,6:1,7:2,8:3,9:1,10:2,11:3},
         janus: null,
         mids: [],
@@ -41,21 +44,21 @@ class SDIOutApp extends Component {
             getState('galaxy/groups', (users) => {
                 this.setState({users});
             });
-            // initGxyProtocol(janus, user, protocol => {
-            //     this.setState({protocol});
-            // }, ondata => {
-            //     Janus.log("-- :: It's protocol public message: ", ondata);
-            //     if(ondata.type === "error" && ondata.error_code === 420) {
-            //         console.log(ondata.error + " - Reload after 10 seconds");
-            //         this.state.protocol.hangup();
-            //         setTimeout(() => {
-            //             window.location.reload();
-            //         }, 10000);
-            //     } else if(ondata.type === "joined") {
-            //         this.initVideoRoom();
-            //     }
-            //     this.onProtocolData(ondata);
-            // });
+            initGxyProtocol(janus, user, protocol => {
+                this.setState({protocol});
+            }, ondata => {
+                Janus.log("-- :: It's protocol public message: ", ondata);
+                if(ondata.type === "error" && ondata.error_code === 420) {
+                    console.log(ondata.error + " - Reload after 10 seconds");
+                    this.state.protocol.hangup();
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 10000);
+                } else if(ondata.type === "joined") {
+                    this.initVideoRoom();
+                }
+                this.onProtocolData(ondata);
+            });
         }, er => {
             setTimeout(() => {
                 window.location.reload();
@@ -323,9 +326,7 @@ class SDIOutApp extends Component {
 
     onProtocolData = (data) => {
         Janus.log(" :: Got Shidur Action: ", data);
-        let {col, feed, i, status} = data;
-
-        if(col === 4) return;
+        let {room, col, feed, group, i, status} = data;
 
         if(data.type === "sdi-switch_req") {
             this.switchTo(feed)
@@ -334,10 +335,29 @@ class SDIOutApp extends Component {
         } else if(data.type === "sdi-unsubscribe_req") {
             this.unsubscribeFrom(feed)
         } else if(data.type === "sdi-fullscr_group" && status) {
-            this["col"+col].fullScreenGroup(i,feed);
+            //this["col"+col].fullScreenGroup(i,feed);
+            if(room) {
+                this.setState({group: feed, room}, () => {
+                    let fourvideo = this["col"+col].refs["programVideo" + i];
+                    let fullvideo = this.qst.refs.fullscreenVideo;
+                    fullvideo.srcObject = fourvideo.captureStream();
+                    this.qst.fullScreenGroup(i,feed);
+                });
+            } else {
+                this.setState({group, room});
+                this.users.initVideoRoom(group.room);
+            }
+
         } else if(data.type === "sdi-fullscr_group" && !status) {
             let {col, feed, i} = data;
-            this["col"+col].toFourGroup(i,feed);
+            if(col === 4 && !this.state.room) {
+                this.users.exitVideoRoom(this.state.group.room, () =>{
+                    this.setState({room: 1234});
+                });
+            } else {
+                this.qst.toFourGroup(i,feed);
+            }
+            //this["col"+col].toFourGroup(i,feed);
         } else if(data.type === "sdi-sync_sdiout") {
             this.programState(feed);
         } else if(data.type === "sdi-restart_sdiout") {
@@ -364,7 +384,14 @@ class SDIOutApp extends Component {
             remoteFeed.send({ message: unsubscribe });
     };
 
+    setProps = (props) => {
+        this.setState({...props})
+    };
+
     render() {
+        let {group,room} = this.state;
+        // let qst = g && g.questions;
+        let name = group && group.description;
 
         return (
 
@@ -396,7 +423,19 @@ class SDIOutApp extends Component {
                 </Grid.Row>
                 <Grid.Row>
                     <Grid.Column>
-                        <QuestionSDIOut />
+                        {!room ?
+                            <Segment className="preview_sdi">
+                                <div className="usersvideo_grid">
+                                    <div className="video_full">
+                                        <div className="fullscrvideo_title" >{name}</div>
+                                        {/*{qst ? <div className="qst_fullscreentitle">?</div> : ""}*/}
+                                        <UsersHandleSDIOut ref={users => {this.users = users;}} {...this.state} setProps={this.setProps} />
+                                    </div>
+                                </div>
+                            </Segment>
+                            :
+                            <QuestionSDIOut {...this.state} ref={qst => {this.qst = qst;}} />
+                        }
                     </Grid.Column>
                     <Grid.Column>
                     </Grid.Column>
