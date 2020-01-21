@@ -156,12 +156,8 @@ class UsersQuad extends Component {
         let {fullscr,full_feed} = this.state;
 
         if(fullscr && full_feed === i) {
-            this.toFourGroup(i,g,() => {},q);
-        } else if(fullscr) {
-            this.toFourGroup(i,g, () => {
-                this.toFullGroup(i,g,q);
-            });
-        } else {
+            this.toFourGroup(i,g,q);
+        } else if(!fullscr) {
             this.toFullGroup(i,g,q);
         }
     };
@@ -172,12 +168,10 @@ class UsersQuad extends Component {
         this.sdiAction("fullscr_group" , true, i, g, q);
     };
 
-    toFourGroup = (i,g,cb,q) => {
+    toFourGroup = (i,g,q) => {
         Janus.log(":: Back to four: ");
         this.sdiAction("fullscr_group" , false, i, g, q);
-        this.setState({fullscr: false, full_feed: null}, () => {
-            cb();
-        });
+        this.setState({fullscr: false, full_feed: null});
     };
 
   render() {
