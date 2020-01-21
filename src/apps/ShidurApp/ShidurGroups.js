@@ -150,12 +150,8 @@ class ShidurGroups extends Component {
         feed.display = JSON.parse(feed.feed_display);
         let {full_feed} = this.state;
         if(full_feed && feed.feed_id === full_feed.feed_id) {
-            this.toFourGroup(() => {}, question);
-        } else if(full_feed) {
-            this.toFourGroup(() => {
-                this.toFullGroup(i,feed,question);
-            }, question);
-        } else {
+            this.toFourGroup(question);
+        } else if(!full_feed) {
             this.toFullGroup(i,feed,question);
         }
     };
@@ -167,13 +163,11 @@ class ShidurGroups extends Component {
         this.sdiAction("fullscr_group" , true, i, feed, question);
     };
 
-    toFourGroup = (cb,question) => {
+    toFourGroup = (question) => {
         this.setState({question: false});
         Janus.log(":: Back to four: ");
         this.sdiAction("fullscr_group" , false, null, this.state.full_feed, question);
-        this.setState({fullscr: false, full_feed: null}, () => {
-            cb();
-        });
+        this.setState({fullscr: false, full_feed: null});
     };
 
     setDelay = () => {
