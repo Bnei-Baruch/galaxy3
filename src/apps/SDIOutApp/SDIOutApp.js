@@ -326,7 +326,7 @@ class SDIOutApp extends Component {
 
     onProtocolData = (data) => {
         Janus.log(" :: Got Shidur Action: ", data);
-        let {room, col, feed, group, i, status} = data;
+        let {room, col, feed, group, i, status, qst} = data;
 
         if(data.type === "sdi-switch_req") {
             this.switchTo(feed)
@@ -335,29 +335,34 @@ class SDIOutApp extends Component {
         } else if(data.type === "sdi-unsubscribe_req") {
             this.unsubscribeFrom(feed)
         } else if(data.type === "sdi-fullscr_group" && status) {
-            //this["col"+col].fullScreenGroup(i,feed);
-            if(room) {
-                this.setState({group: feed, room}, () => {
-                    let fourvideo = this["col"+col].refs["programVideo" + i];
-                    let fullvideo = this.qst.refs.fullscreenVideo;
-                    fullvideo.srcObject = fourvideo.captureStream();
-                    this.qst.fullScreenGroup(i,feed);
-                });
+            if(qst) {
+                if(room) {
+                    this.setState({group: feed, room}, () => {
+                        let fourvideo = this["col"+col].refs["programVideo" + i];
+                        let fullvideo = this.qst.refs.fullscreenVideo;
+                        fullvideo.srcObject = fourvideo.captureStream();
+                        this.qst.fullScreenGroup(i,feed);
+                    });
+                } else {
+                    this.setState({group, room});
+                    this.users.initVideoRoom(group.room);
+                }
             } else {
-                this.setState({group, room});
-                this.users.initVideoRoom(group.room);
+                this["col"+col].fullScreenGroup(i,feed);
             }
-
         } else if(data.type === "sdi-fullscr_group" && !status) {
             let {col, feed, i} = data;
-            if(col === 4 && !this.state.room) {
-                this.users.exitVideoRoom(this.state.group.room, () =>{
-                    this.setState({room: 1234});
-                });
+            if(qst) {
+                if(col === 4 && !this.state.room) {
+                    this.users.exitVideoRoom(this.state.group.room, () =>{
+                        this.setState({room: 1234});
+                    });
+                } else {
+                    this.qst.toFourGroup(i,feed);
+                }
             } else {
-                this.qst.toFourGroup(i,feed);
+                this["col"+col].toFourGroup(i,feed);
             }
-            //this["col"+col].toFourGroup(i,feed);
         } else if(data.type === "sdi-sync_sdiout") {
             this.programState(feed);
         } else if(data.type === "sdi-restart_sdiout") {

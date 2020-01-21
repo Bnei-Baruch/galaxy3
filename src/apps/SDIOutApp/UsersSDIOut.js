@@ -51,15 +51,15 @@ class UsersSDIOut extends Component {
 
     onProtocolData = (data) => {
         let {users} = this.state;
-        let {col, feed, i, status} = data;
+        let {col, feed, i, status, qst} = data;
 
         // Shidur action
         if(data.type === "sdi-fullscr_group" && col === 4 && status) {
-            this.quad.toFullGroup(i,feed);
+            if(!qst) this.quad.toFullGroup(i,feed);
         }
 
         if(data.type === "sdi-fullscr_group" && col === 4 && !status) {
-            this.quad.toFourGroup(i,feed);
+            if(!qst) this.quad.toFourGroup(i,feed);
         }
 
         // Set status in users list

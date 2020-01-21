@@ -90,8 +90,8 @@ class UsersApp extends Component {
         }
     };
 
-    checkFullScreen = () => {
-        this.quad.checkFullScreen();
+    checkFullScreen = (question) => {
+        this.quad.checkFullScreen(question);
     };
 
     setProps = (props) => {

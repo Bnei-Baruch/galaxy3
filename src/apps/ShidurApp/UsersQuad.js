@@ -137,44 +137,44 @@ class UsersQuad extends Component {
         });
     };
 
-    sdiAction = (action, status, i, group) => {
+    sdiAction = (action, status, i, group, qst) => {
         const {protocol, user} = this.props;
-        let msg = {type: "sdi-"+action, status, room: null, col: 4, i, group};
-        sendProtocolMessage(protocol, user, msg );
+        let msg = {type: "sdi-"+action, status, room: null, col: 4, i, group, qst};
+        sendProtocolMessage(protocol, user, msg);
     };
 
-    checkFullScreen = () => {
+    checkFullScreen = (question) => {
         let {fullscr,full_feed,quad} = this.state;
         if(fullscr) {
             Janus.log(":: Group: " + full_feed + " , sending sdi-action...");
-            this.sdiAction("fullscr_group" , true, full_feed, quad[full_feed]);
+            this.sdiAction("fullscr_group" , true, full_feed, quad[full_feed], question);
         }
     };
 
-    switchFullScreen = (i,g) => {
+    switchFullScreen = (i,g,q) => {
         if(!g) return;
         let {fullscr,full_feed} = this.state;
 
         if(fullscr && full_feed === i) {
-            this.toFourGroup(i,g,() => {});
+            this.toFourGroup(i,g,() => {},q);
         } else if(fullscr) {
             this.toFourGroup(i,g, () => {
-                this.toFullGroup(i,g);
+                this.toFullGroup(i,g,q);
             });
         } else {
-            this.toFullGroup(i,g);
+            this.toFullGroup(i,g,q);
         }
     };
 
-    toFullGroup = (i,g) => {
+    toFullGroup = (i,g,q) => {
         Janus.log(":: Make Full Screen Group: ",g);
         this.setState({fullscr: true, full_feed: i});
-        this.sdiAction("fullscr_group" , true, i, g);
+        this.sdiAction("fullscr_group" , true, i, g, q);
     };
 
-    toFourGroup = (i,g,cb) => {
+    toFourGroup = (i,g,cb,q) => {
         Janus.log(":: Back to four: ");
-        this.sdiAction("fullscr_group" , false, i, g);
+        this.sdiAction("fullscr_group" , false, i, g, q);
         this.setState({fullscr: false, full_feed: null}, () => {
             cb();
         });
@@ -195,7 +195,7 @@ class UsersQuad extends Component {
           let name = g ? g.description : "";
           return (
               <div key={"pr" + i} className={fullscr && full_feed === i ? "video_full" : "video_box"} >
-                  <div className='click-panel' onClick={() => this.switchFullScreen(i,g)} >
+                  <div className='click-panel' onClick={() => this.switchFullScreen(i,g,true)} >
                   <div className='video_title' >{name}</div>
                   {qst ? q : ""}
                   <UsersHandle key={"q"+i} g={g} index={i} {...this.props} />

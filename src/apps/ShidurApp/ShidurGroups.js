@@ -130,44 +130,44 @@ class ShidurGroups extends Component {
         this.sdiAction("switch_req" , true, null, streams);
     };
 
-    sdiAction = (action, status, i, feed) => {
+    sdiAction = (action, status, i, feed, qst) => {
         const { protocol, user, index } = this.props;
         let col = index === 0 ? 1 : index === 4 ? 2 : index === 8 ? 3 : null;
-        let msg = { type: "sdi-"+action, status, room: GROUPS_ROOM, col, i, feed};
-        sendProtocolMessage(protocol, user, msg );
+        let msg = { type: "sdi-"+action, status, room: GROUPS_ROOM, col, i, feed, qst};
+        sendProtocolMessage(protocol, user, msg);
     };
 
-    checkFullScreen = () => {
+    checkFullScreen = (question) => {
         let {full_feed} = this.state;
         if(full_feed) {
             Janus.log(":: Group: " + full_feed + " , sending sdi-action...");
-            this.sdiAction("fullscr_group" , true, full_feed.mindex, full_feed);
+            this.sdiAction("fullscr_group" , true, full_feed.mindex, full_feed, question);
         }
     };
 
-    switchFullScreen = (i,feed) => {
+    switchFullScreen = (i,feed,question) => {
         feed.display = JSON.parse(feed.feed_display);
         let {full_feed} = this.state;
         if(full_feed && feed.feed_id === full_feed.feed_id) {
-            this.toFourGroup(() => {});
+            this.toFourGroup(() => {}, question);
         } else if(full_feed) {
             this.toFourGroup(() => {
-                this.toFullGroup(i,feed);
-            });
+                this.toFullGroup(i,feed,question);
+            }, question);
         } else {
-            this.toFullGroup(i,feed);
+            this.toFullGroup(i,feed,question);
         }
     };
 
-    toFullGroup = (i,feed) => {
+    toFullGroup = (i,feed,question) => {
         Janus.log(":: Make Full Screen Group: ",feed);
         this.setState({fullscr: true,full_feed: feed});
-        this.sdiAction("fullscr_group" , true, i, feed);
+        this.sdiAction("fullscr_group" , true, i, feed, question);
     };
 
-    toFourGroup = (cb) => {
+    toFourGroup = (cb,question) => {
         Janus.log(":: Back to four: ");
-        this.sdiAction("fullscr_group" , false, null, this.state.full_feed);
+        this.sdiAction("fullscr_group" , false, null, this.state.full_feed, question);
         this.setState({fullscr: false, full_feed: null}, () => {
             cb();
         });
@@ -250,7 +250,7 @@ class ShidurGroups extends Component {
                           <div className="video_title">{mid.user.display}</div>
                           {qst ? q : ""}
                           <video className={fullscr && mid.feed_id === full_feed.feed_id ? "fullscreen" : ""}
-                                 onClick={() => this.switchFullScreen(i,mid)}
+                                 onClick={() => this.switchFullScreen(i,mid,true)}
                                  key={i}
                                  ref={"programVideo" + i}
                                  id={"programVideo" + i}

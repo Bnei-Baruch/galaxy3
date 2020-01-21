@@ -477,10 +477,11 @@ class ShidurApp extends Component {
                     Janus.log(":: Save MIDS to DB: ",cb);
                     setTimeout(() => {
                         Janus.log(":: Check Full Screen state :: ");
-                        this.col1.checkFullScreen();
-                        this.col2.checkFullScreen();
-                        this.col3.checkFullScreen();
-                        this.users.checkFullScreen();
+                        //TODO: make golabal question state
+                        this.col1.checkFullScreen(true);
+                        this.col2.checkFullScreen(true);
+                        this.col3.checkFullScreen(true);
+                        this.users.checkFullScreen(true);
                     }, 3000);
                 });
             }
