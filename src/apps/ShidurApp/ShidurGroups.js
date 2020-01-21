@@ -8,6 +8,7 @@ import {GROUPS_ROOM} from "../../shared/consts";
 class ShidurGroups extends Component {
 
     state = {
+        question: false,
         col: null,
         quad: [
             "0","3","6","9",
@@ -160,12 +161,14 @@ class ShidurGroups extends Component {
     };
 
     toFullGroup = (i,feed,question) => {
+        this.setState({question});
         Janus.log(":: Make Full Screen Group: ",feed);
         this.setState({fullscr: true,full_feed: feed});
         this.sdiAction("fullscr_group" , true, i, feed, question);
     };
 
     toFourGroup = (cb,question) => {
+        this.setState({question: false});
         Janus.log(":: Back to four: ");
         this.sdiAction("fullscr_group" , false, null, this.state.full_feed, question);
         this.setState({fullscr: false, full_feed: null}, () => {
@@ -220,7 +223,7 @@ class ShidurGroups extends Component {
 
 
   render() {
-      const { full_feed,fullscr,col } = this.state;
+      const { full_feed,fullscr,col,question } = this.state;
       const {feeds,pre_feed,users,next_button} = this.props;
       const width = "201px";
       const height = "113px";
@@ -242,6 +245,8 @@ class ShidurGroups extends Component {
                       </div></div>)
               } else {
                   let qst = mid.user && users[mid.user.id] ? users[mid.user.id].question : false;
+                  let qf = fullscr && mid.feed_id === full_feed.feed_id && question;
+                  let ff = fullscr && mid.feed_id === full_feed.feed_id && !question;
                   return (<div key={"prf" + i}>
                       <div className="group_box"
                            key={"prov" + i}
@@ -249,7 +254,7 @@ class ShidurGroups extends Component {
                            id={"provideo" + i}>
                           <div className="video_title">{mid.user.display}</div>
                           {qst ? q : ""}
-                          <video className={fullscr && mid.feed_id === full_feed.feed_id ? "fullscreen" : ""}
+                          <video className={qf ? "qst_border" : ff ? "fullscreen" : ""}
                                  onClick={() => this.switchFullScreen(i,mid,true)}
                                  key={i}
                                  ref={"programVideo" + i}
@@ -260,6 +265,12 @@ class ShidurGroups extends Component {
                                  controls={controls}
                                  muted={muted}
                                  playsInline={true}/>
+                          {!question ?
+                          <Button className='fullscr_button'
+                                  size='mini'
+                                  color='blue'
+                                  icon='expand arrows alternate'
+                                  onClick={() => this.switchFullScreen(i,mid,false)} /> : ""}
                           {fullscr && mid.feed_id === full_feed.feed_id ? "" :
                               <Button className='next_button'
                                       disabled={feeds.length < 2 || next_button}

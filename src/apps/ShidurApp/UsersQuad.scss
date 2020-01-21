@@ -19,7 +19,16 @@
     font-size: 150%;
     position:relative;
     height: 117px;
-    border:2px solid rgba(255, 0, 0, 1);
+    border:3px solid rgba(255, 0, 0, 1);
+}
+
+.video_qst {
+    background-color: #444;
+    color: #fff;
+    font-size: 150%;
+    position:relative;
+    height: 117px;
+    border:3px solid blue;
 }
 
 .click-panel {
@@ -83,6 +92,14 @@
     z-index: 3;
 }
 
+.fullscr_button {
+    bottom: 0;
+    position: absolute;
+    left: 3px;
+    float: right !important;
+    z-index: 3;
+}
+
 .sound_test {
     top: 15px;
     position: absolute;
@@ -94,8 +111,12 @@
     flex: 0 0 auto!important;
 }
 
+.qst_border {
+    border:3px solid rgba(255, 0, 0, 1);
+}
+
 .fullscreen {
-    border:2px solid rgba(255, 0, 0, 1);
+    border:3px solid blue;
 }
 
 .select_group i.icon, i.icons {

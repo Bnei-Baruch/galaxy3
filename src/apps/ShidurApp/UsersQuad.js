@@ -9,6 +9,7 @@ import {putData} from "../../shared/tools";
 class UsersQuad extends Component {
 
     state = {
+        question: false,
         col: 4,
         quad: [null,null,null,null],
     };
@@ -163,19 +164,21 @@ class UsersQuad extends Component {
     };
 
     toFullGroup = (i,g,q) => {
+        this.setState({question: q});
         Janus.log(":: Make Full Screen Group: ",g);
         this.setState({fullscr: true, full_feed: i});
         this.sdiAction("fullscr_group" , true, i, g, q);
     };
 
     toFourGroup = (i,g,q) => {
+        this.setState({question: false});
         Janus.log(":: Back to four: ");
         this.sdiAction("fullscr_group" , false, i, g, q);
         this.setState({fullscr: false, full_feed: null});
     };
 
   render() {
-      const {full_feed,fullscr,col,quad} = this.state;
+      const {full_feed,fullscr,col,quad,question} = this.state;
       const {groups,group,next_button} = this.props;
       const q = (<div className="question">
           <svg viewBox="0 0 50 50">
@@ -186,14 +189,22 @@ class UsersQuad extends Component {
       let program = quad.map((g,i) => {
           if (groups.length === 0) return;
           let qst = g && g.questions;
+          let qf = fullscr && full_feed === i && question;
+          let ff = fullscr && full_feed === i && !question;
           let name = g ? g.description : "";
           return (
-              <div key={"pr" + i} className={fullscr && full_feed === i ? "video_full" : "video_box"} >
+              <div key={"pr" + i} className={qf ? "video_full" : ff ? "video_qst" : "video_box"} >
                   <div className='click-panel' onClick={() => this.switchFullScreen(i,g,true)} >
                   <div className='video_title' >{name}</div>
                   {qst ? q : ""}
                   <UsersHandle key={"q"+i} g={g} index={i} {...this.props} />
                   </div>
+                  {!question ?
+                  <Button className='fullscr_button'
+                          size='mini'
+                          color='blue'
+                          icon='expand arrows alternate'
+                          onClick={() => this.switchFullScreen(i,g,false)} /> : ""}
                   {fullscr && full_feed === i ? "" :
                       <Button className='next_button'
                               disabled={groups.length < 5 || next_button}
