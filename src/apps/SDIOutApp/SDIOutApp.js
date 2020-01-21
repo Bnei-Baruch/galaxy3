@@ -347,7 +347,7 @@ class SDIOutApp extends Component {
                     this.setState({group, room});
                     this.users.initVideoRoom(group.room);
                 }
-            } else {
+            } else if(col !== 4) {
                 this["col"+col].fullScreenGroup(i,feed);
             }
         } else if(data.type === "sdi-fullscr_group" && !status) {
@@ -357,10 +357,10 @@ class SDIOutApp extends Component {
                     this.users.exitVideoRoom(this.state.group.room, () =>{
                         this.setState({room: 1234});
                     });
-                } else {
+                } else if(this.qst) {
                     this.qst.toFourGroup(i,feed);
                 }
-            } else {
+            } else if(col !== 4) {
                 this["col"+col].toFourGroup(i,feed);
             }
         } else if(data.type === "sdi-sync_sdiout") {
