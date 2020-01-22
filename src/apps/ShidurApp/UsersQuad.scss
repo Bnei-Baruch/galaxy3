@@ -135,12 +135,14 @@
     position: absolute;
     left: 18px;
     float: left !important;
+    z-index: 3;
 }
 
 .hide_button {
     position: absolute;
     left: 49px;
     float: left !important;
+    z-index: 3;
 }
 
 .question {

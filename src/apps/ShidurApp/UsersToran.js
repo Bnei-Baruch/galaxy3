@@ -9,20 +9,27 @@ class UsersToran extends Component {
     state = {
         index: 0,
         group: null,
+        open: false,
         sorted_feeds: [],
+        pg: null,
     };
+
+    componentDidUpdate(prevProps) {
+        let {group} = this.props;
+        if(prevProps.group !== group && group === null) {
+            this.setState({open: false});
+        }
+    }
 
     selectGroup = (group, i) => {
         Janus.log(group, i);
-        this.setState({pg: group});
+        this.setState({pg: group, open: true});
         group.queue = i;
         this.props.setProps({group});
     };
 
     closePopup = () => {
-        setTimeout(() => {
-            this.props.setProps({group: null})
-        },1000);
+        this.props.setProps({group: null});
     };
 
     disableRoom = (e, data, i) => {
@@ -63,18 +70,27 @@ class UsersToran extends Component {
 
   render() {
       const {group,disabled_rooms,groups,groups_queue,questions} = this.props;
+      const {open} = this.state;
       const q = (<b style={{color: 'red', fontSize: '20px', fontFamily: 'Verdana', fontWeight: 'bold'}}>?</b>);
       const next_group = groups[groups_queue] ? groups[groups_queue].description : groups[0] ? groups[0].description : "";
+
+      let popup_preview = (
+          <Popup className='popup_preview'
+                 position='right center'
+                 open={open}
+                 trigger={<div />}
+                 content={<Segment className="preview_conteiner" color='green' >
+                            <div className="shidur_overlay"><span>{group ? group.description : ""}</span></div>
+                            <UsersPreview pg={this.state.pg} {...this.props} closePopup={this.closePopup} />
+                        </Segment>}
+          />
+      );
 
       let rooms_list = groups.map((data,i) => {
           const {room, num_users, description, questions} = data;
           const next = data.description === next_group;
           const active = group && group.room === room;
           return (
-              <Popup className='popup_preview' on='click'
-                     position='right center'
-                     onClose={this.closePopup}
-                     trigger={
               <Table.Row positive={group && group.description === description}
                          className={active ? 'active' : next ? 'warning' : 'no'}
                          key={room}
@@ -83,30 +99,20 @@ class UsersToran extends Component {
                   <Table.Cell width={5}>{description}</Table.Cell>
                   <Table.Cell width={1}>{num_users}</Table.Cell>
                   <Table.Cell width={1}>{questions ? q : ""}</Table.Cell>
-              </Table.Row>}><Segment className="preview_conteiner" color='green' >
-                  <div className="shidur_overlay"><span>{group ? group.description : ""}</span></div>
-                  <UsersPreview pg={this.state.pg} {...this.props} />
-              </Segment></Popup>
+              </Table.Row>
           )
       });
 
       let disabled_list = disabled_rooms.map((data,i) => {
           const {room, num_users, description, questions} = data;
           return (
-              <Popup className='popup_preview' on='click'
-                     position='right center'
-                     onClose={this.closePopup}
-                     trigger={
                   <Table.Row key={room} error
                              onClick={() => this.selectGroup(data, i)}
                              onContextMenu={(e) => this.restoreRoom(e, data, i)} >
                       <Table.Cell width={5}>{description}</Table.Cell>
                       <Table.Cell width={1}>{num_users}</Table.Cell>
                       <Table.Cell width={1}>{questions ? q : ""}</Table.Cell>
-                  </Table.Row>}><Segment className="preview_conteiner" color='green' >
-                  <div className="shidur_overlay"><span>{group ? group.description : ""}</span></div>
-                  <UsersPreview pg={this.state.pg} {...this.props} />
-              </Segment></Popup>
+                  </Table.Row>
           )
       });
 
@@ -138,6 +144,7 @@ class UsersToran extends Component {
                       </Label>
                   : ""}
               </Segment>
+              {popup_preview}
               <Segment textAlign='center' className="users_list" raised>
                   <Table selectable compact='very' basic structured className="admin_table" unstackable>
                       <Table.Body>

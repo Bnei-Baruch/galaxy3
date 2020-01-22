@@ -1,8 +1,8 @@
 import React, {Component} from 'react';
 import './UsersHandle.scss'
 import { Janus } from "../../lib/janus";
-//import {Icon} from "semantic-ui-react";
 import classNames from "classnames";
+import {Button} from "semantic-ui-react";
 
 class UsersPreview extends Component {
 
@@ -19,6 +19,18 @@ class UsersPreview extends Component {
 
     componentDidMount() {
         this.attachPreview(this.props.pg);
+    }
+
+    componentDidUpdate(prevProps) {
+        let {pg} = this.props;
+        let {room} = this.state;
+        if(pg && JSON.stringify(pg) !== JSON.stringify(prevProps.pg) && pg.room !== room) {
+            if(this.state.remoteFeed)
+                this.state.remoteFeed.detach();
+            this.setState({remoteFeed: null}, () => {
+                this.attachPreview(this.props.pg);
+            });
+        }
     }
 
     componentWillUnmount() {
@@ -203,6 +215,17 @@ class UsersPreview extends Component {
                          controls={controls}
                          muted={muted}
                          playsInline={true}/>
+                  <Button className='close_button'
+                          disabled
+                          size='mini'
+                          color='red'
+                          icon='close'
+                          onClick={() => this.disableGroup(null, id)} />
+                  <Button className='hide_button'
+                          size='mini'
+                          color='orange'
+                          icon='window minimize'
+                          onClick={() => this.props.closePopup()} />
               </div>);
           }
           return true;
