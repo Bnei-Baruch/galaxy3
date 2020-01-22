@@ -27,7 +27,7 @@ class UsersPreview extends Component {
         if(pg && JSON.stringify(pg) !== JSON.stringify(prevProps.pg) && pg.room !== room) {
             if(this.state.remoteFeed)
                 this.state.remoteFeed.detach();
-            this.setState({remoteFeed: null}, () => {
+            this.setState({remoteFeed: null, mids: [], feeds: [], feedStreams: {}}, () => {
                 this.attachPreview(this.props.pg);
             });
         }
@@ -215,17 +215,6 @@ class UsersPreview extends Component {
                          controls={controls}
                          muted={muted}
                          playsInline={true}/>
-                  <Button className='close_button'
-                          disabled
-                          size='mini'
-                          color='red'
-                          icon='close'
-                          onClick={() => this.disableGroup(null, id)} />
-                  <Button className='hide_button'
-                          size='mini'
-                          color='orange'
-                          icon='window minimize'
-                          onClick={() => this.props.closePopup()} />
               </div>);
           }
           return true;
@@ -234,6 +223,17 @@ class UsersPreview extends Component {
       return (
           <div className="videos-panel">
               <div className="videos">
+                  <Button className='close_button'
+                          disabled
+                          size='mini'
+                          color='red'
+                          icon='close'
+                          onClick={() => this.disableGroup()} />
+                  <Button className='hide_button'
+                          size='mini'
+                          color='orange'
+                          icon='window minimize'
+                          onClick={() => this.props.closePopup()} />
                   <div className="videos__wrapper">
                       {program_feeds}
                   </div>
