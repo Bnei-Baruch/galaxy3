@@ -1,6 +1,6 @@
 import React, {Component, Fragment} from 'react';
 import { Janus } from "../../lib/janus";
-import {Dropdown, Label, Popup, Segment, Table} from "semantic-ui-react";
+import {Button, Dropdown, Label, Popup, Segment, Table} from "semantic-ui-react";
 import './ShidurToran.scss';
 import UsersPreview from "./UsersPreview";
 
@@ -66,6 +66,26 @@ class UsersToran extends Component {
             return 0;
         });
         this.setState({sorted_feeds});
+    };
+
+    savePreset = () => {
+        let {presets,group} = this.props;
+
+        //TODO: Don't allow group be twice in presets
+
+        //TODO: remove from presets
+
+        for(let i=0; i<4; i++) {
+            if(presets[i] !== null && presets[i] !== undefined) {
+                continue;
+            } else {
+                presets[i] = group;
+                this.props.setProps({presets});
+                break;
+            }
+        }
+
+        Janus.log(presets)
     };
 
   render() {
@@ -138,12 +158,13 @@ class UsersToran extends Component {
                   <Label attached='top left' color={groups.length > 4 ? 'blue' : 'grey'} >
                       Next: {next_group}
                   </Label>
-                  {questions > 0 ?
-                      <Label attached='bottom right' color='red'>
-                          Questions: {questions}
-                      </Label>
-                  : ""}
               </Segment>
+              <Button.Group attached='bottom' size='mini' >
+                  <Popup trigger={<Button disabled={!group} color='teal' content='4' onClick={() => this.savePreset()} />}
+                         content=''
+                  />
+                  <Button color={questions > 0 ? 'red' : 'grey'}>Questions: {questions}</Button>
+              </Button.Group>
               {popup_preview}
               <Segment textAlign='center' className="users_list" raised>
                   <Table selectable compact='very' basic structured className="admin_table" unstackable>

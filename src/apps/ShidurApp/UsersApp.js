@@ -28,6 +28,7 @@ class UsersApp extends Component {
             name: "shidur"
         },
         users: {},
+        presets:[],
     };
 
     componentDidMount() {
