@@ -194,7 +194,7 @@ class UsersQuad extends Component {
 
   render() {
       const {full_feed,fullscr,col,quad,question} = this.state;
-      const {groups,group,next_button} = this.props;
+      const {groups,group,next_button,presets} = this.props;
       const q = (<div className="question">
           <svg viewBox="0 0 50 50">
               <text x="25" y="25" textAnchor="middle" alignmentBaseline="central" dominantBaseline="central">&#xF128;</text>
@@ -240,7 +240,7 @@ class UsersQuad extends Component {
               </Segment>
               <Button.Group attached='bottom' size='mini'>
                   <Button className='preset_button'
-                          disabled={true}
+                          disabled={presets.length === 0}
                           color='teal'
                           onClick={this.setPreset} >
                       {col}
