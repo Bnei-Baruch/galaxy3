@@ -71,19 +71,32 @@ class UsersToran extends Component {
     savePreset = () => {
         let {presets,group} = this.props;
 
-        //TODO: Don't allow group be twice in presets
+        // First group to preset
+        if(presets.length === 0) {
+            delete group.users;
+            presets[0] = group;
+            this.props.setProps({presets});
+            return
+        }
 
-        //TODO: remove from presets
-
-        for(let i=0; i<4; i++) {
-            if(presets[i] !== null && presets[i] !== undefined) {
-                continue;
-            } else {
-                presets[i] = group;
+        //Don't allow group be twice in presets
+        for(let i=0; i<presets.length; i++) {
+            //remove from presets
+            if(presets[i].room === group.room) {
+                presets.splice(i, 1);
                 this.props.setProps({presets});
-                break;
+                return
             }
         }
+
+        // Presets is full
+        if(presets.length === 4)
+            return;
+
+        //Add to presets
+        delete group.users;
+        presets.push(group);
+        this.props.setProps({presets});
 
         Janus.log(presets)
     };
@@ -95,7 +108,7 @@ class UsersToran extends Component {
     };
 
   render() {
-      const {group,disabled_rooms,groups,groups_queue,questions} = this.props;
+      const {group,disabled_rooms,groups,groups_queue,questions,presets} = this.props;
       const {open} = this.state;
       const q = (<b style={{color: 'red', fontSize: '20px', fontFamily: 'Verdana', fontWeight: 'bold'}}>?</b>);
       const next_group = groups[groups_queue] ? groups[groups_queue].description : groups[0] ? groups[0].description : "";
@@ -116,6 +129,8 @@ class UsersToran extends Component {
           const {room, num_users, description, questions} = data;
           const next = data.description === next_group;
           const active = group && group.room === room;
+          const pr = presets.find(pst => pst.room === room);
+          const p = pr ? (<Label size='mini' color='teal' >4</Label>) : "";
           return (
               <Table.Row positive={group && group.description === description}
                          className={active ? 'active' : next ? 'warning' : 'no'}
@@ -123,6 +138,7 @@ class UsersToran extends Component {
                          onClick={() => this.selectGroup(data, i)}
                          onContextMenu={(e) => this.disableRoom(e, data, i)} >
                   <Table.Cell width={5}>{description}</Table.Cell>
+                  <Table.Cell width={1}>{p}</Table.Cell>
                   <Table.Cell width={1}>{num_users}</Table.Cell>
                   <Table.Cell width={1}>{questions ? q : ""}</Table.Cell>
               </Table.Row>
@@ -147,6 +163,11 @@ class UsersToran extends Component {
           return ({ key: i, value: feed, text: display })
       });
 
+      let preset4 = presets.map((data,i) => {
+          const {room,description} = data;
+          return (<p key={room}>{description}</p>)
+      });
+
       return (
           <Fragment>
               <Segment attached textAlign='center' >
@@ -166,9 +187,7 @@ class UsersToran extends Component {
                   </Label>
               </Segment>
               <Button.Group attached='bottom' size='mini' >
-                  <Popup trigger={<Button disabled color='teal' content='4' onClick={() => this.savePreset()} />}
-                         content=''
-                  />
+                  <Popup trigger={<Button disabled={!group} color='teal' content='4' onClick={() => this.savePreset()} />} content={preset4} />
                   <Button color={questions.length > 0 ? 'red' : 'grey'} onClick={this.previewQuestion} >Questions: {questions.length}</Button>
               </Button.Group>
               {popup_preview}
