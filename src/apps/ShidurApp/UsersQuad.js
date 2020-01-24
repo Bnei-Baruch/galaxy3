@@ -138,6 +138,21 @@ class UsersQuad extends Component {
         });
     };
 
+    setPreset = () => {
+        let {presets} = this.props;
+        let {quad} = this.state;
+
+        for(let i=0; i<presets.length; i++) {
+            quad[i] = presets[i];
+        }
+        this.setState({quad});
+
+        // Save state
+        putData(`galaxy/program`, {quad}, (cb) => {
+            Janus.log(":: Save to state: ",cb);
+        });
+    };
+
     sdiAction = (action, status, i, group, qst) => {
         const {protocol, user} = this.props;
         let msg = {type: "sdi-"+action, status, room: null, col: 4, i, group, qst};
