@@ -88,6 +88,12 @@ class UsersToran extends Component {
         Janus.log(presets)
     };
 
+    previewQuestion = () => {
+        let {questions} = this.props;
+        if(questions.length > 0)
+            this.selectGroup(questions[0], null);
+    };
+
   render() {
       const {group,disabled_rooms,groups,groups_queue,questions} = this.props;
       const {open} = this.state;
@@ -160,10 +166,10 @@ class UsersToran extends Component {
                   </Label>
               </Segment>
               <Button.Group attached='bottom' size='mini' >
-                  <Popup trigger={<Button disabled={!group} color='teal' content='4' onClick={() => this.savePreset()} />}
+                  <Popup trigger={<Button disabled color='teal' content='4' onClick={() => this.savePreset()} />}
                          content=''
                   />
-                  <Button color={questions > 0 ? 'red' : 'grey'}>Questions: {questions}</Button>
+                  <Button color={questions.length > 0 ? 'red' : 'grey'} onClick={this.previewQuestion} >Questions: {questions.length}</Button>
               </Button.Group>
               {popup_preview}
               <Segment textAlign='center' className="users_list" raised>
