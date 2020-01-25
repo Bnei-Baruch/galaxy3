@@ -433,7 +433,7 @@ class SDIOutApp extends Component {
                                 <div className="usersvideo_grid">
                                     <div className="video_full">
                                         <div className="fullscrvideo_title" >{name}</div>
-                                        {/*{qst ? <div className="qst_fullscreentitle">?</div> : ""}*/}
+                                        {group && group.questions ? <div className="qst_fullscreentitle">?</div> : ""}
                                         <UsersHandleSDIOut ref={users => {this.users = users;}} {...this.state} setProps={this.setProps} />
                                     </div>
                                 </div>
