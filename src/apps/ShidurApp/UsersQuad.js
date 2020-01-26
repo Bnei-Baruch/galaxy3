@@ -198,10 +198,11 @@ class UsersQuad extends Component {
             this.toFourGroup(i,g,() => {},q);
             setStore({qst: false,col: 4,group: g});
         } else if(fullscr) {
-            this.toFourGroup(i,g, () => {
-                this.toFullGroup(i,g,q);
-                setStore({qst: true,col: 4,group: g});
-            });
+            return
+            // this.toFourGroup(i,g, () => {
+            //     this.toFullGroup(i,g,q);
+            //     setStore({qst: true,col: 4,group: g});
+            // });
         } else {
             this.toFullGroup(i,g,q);
             setStore({qst: true,col: 4,group: g});

@@ -177,10 +177,11 @@ class ShidurGroups extends Component {
             this.toFourGroup(() => {}, q);
             setStore({qst: false,col,feed});
         } else if(full_feed) {
-            this.toFourGroup(() => {
-                this.toFullGroup(i,feed,q);
-                setStore({qst: true,col,feed});
-            }, q);
+            return
+            // this.toFourGroup(() => {
+            //     this.toFullGroup(i,feed,q);
+            //     setStore({qst: true,col,feed});
+            // }, q);
         } else {
             this.toFullGroup(i,feed,q);
             setStore({qst: true,col,feed});
