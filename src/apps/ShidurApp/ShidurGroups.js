@@ -4,6 +4,7 @@ import {Segment, Icon, Button} from "semantic-ui-react";
 import './ShidurGroups.scss'
 import {sendProtocolMessage} from "../../shared/protocol";
 import {GROUPS_ROOM} from "../../shared/consts";
+import {getStore, setStore} from "../../shared/store";
 
 class ShidurGroups extends Component {
 
@@ -146,28 +147,60 @@ class ShidurGroups extends Component {
         }
     };
 
-    switchFullScreen = (i,feed,question) => {
+    switchFullScreen = (i,feed,q) => {
         feed.display = JSON.parse(feed.feed_display);
-        let {full_feed} = this.state;
+        let {full_feed,question} = this.state;
+
+        if(question) return;
+
         if(full_feed && feed.feed_id === full_feed.feed_id) {
-            this.toFourGroup(question);
-        } else if(!full_feed) {
-            this.toFullGroup(i,feed,question);
+            this.toFourGroup(() => {}, q);
+        } else if(full_feed) {
+            this.toFourGroup(() => {
+                this.toFullGroup(i,feed,q);
+            }, q);
+        } else {
+            this.toFullGroup(i,feed,q);
         }
     };
 
-    toFullGroup = (i,feed,question) => {
-        this.setState({question});
-        Janus.log(":: Make Full Screen Group: ",feed);
-        this.setState({fullscr: true,full_feed: feed});
-        this.sdiAction("fullscr_group" , true, i, feed, question);
+    switchQuestion = (i,feed,q) => {
+        feed.display = JSON.parse(feed.feed_display);
+        let {full_feed,fullscr,question,col} = this.state;
+
+        if(fullscr && !question) return;
+
+        let store = getStore();
+        if(store.qst && store.col !== col) return;
+
+        if(full_feed && feed.feed_id === full_feed.feed_id) {
+            this.toFourGroup(() => {}, q);
+            setStore({qst: false,col,feed});
+        } else if(full_feed) {
+            this.toFourGroup(() => {
+                this.toFullGroup(i,feed,q);
+                setStore({qst: true,col,feed});
+            }, q);
+        } else {
+            this.toFullGroup(i,feed,q);
+            setStore({qst: true,col,feed});
+        }
     };
 
-    toFourGroup = (question) => {
+    toFullGroup = (i,feed,q) => {
+        this.setState({question: q});
+        Janus.log(":: Make Full Screen Group: ",feed);
+        this.setState({fullscr: true,full_feed: feed});
+        this.sdiAction("fullscr_group" , true, i, feed, q);
+    };
+
+    toFourGroup = (cb,q) => {
         this.setState({question: false});
         Janus.log(":: Back to four: ");
-        this.sdiAction("fullscr_group" , false, null, this.state.full_feed, question);
-        this.setState({fullscr: false, full_feed: null});
+        this.sdiAction("fullscr_group" , false, null, this.state.full_feed, q);
+        this.setState({fullscr: false, full_feed: null}, () => {
+            cb();
+        });
     };
 
     setDelay = () => {
@@ -249,7 +282,7 @@ class ShidurGroups extends Component {
                           <div className="video_title">{mid.user.display}</div>
                           {qst ? q : ""}
                           <video className={qf ? "qst_border" : ff ? "fullscreen" : ""}
-                                 onClick={() => this.switchFullScreen(i,mid,true)}
+                                 onClick={() => this.switchQuestion(i,mid,true)}
                                  key={i}
                                  ref={"programVideo" + i}
                                  id={"programVideo" + i}

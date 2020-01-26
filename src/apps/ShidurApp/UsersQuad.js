@@ -5,6 +5,7 @@ import './UsersQuad.scss'
 import {sendProtocolMessage} from "../../shared/protocol";
 import UsersHandle from "./UsersHandle";
 import {putData} from "../../shared/tools";
+import {getStore, setStore} from "../../shared/store";
 
 class UsersQuad extends Component {
 
@@ -169,27 +170,56 @@ class UsersQuad extends Component {
 
     switchFullScreen = (i,g,q) => {
         if(!g) return;
-        let {fullscr,full_feed} = this.state;
+        let {fullscr,full_feed,question} = this.state;
+
+        if(question) return;
 
         if(fullscr && full_feed === i) {
-            this.toFourGroup(i,g,q);
-        } else if(!fullscr) {
+            this.toFourGroup(i,g,() => {},q);
+        } else if(fullscr) {
+            this.toFourGroup(i,g, () => {
+                this.toFullGroup(i,g,q);
+            });
+        } else {
             this.toFullGroup(i,g,q);
         }
     };
 
+    switchQuestion = (i,g,q) => {
+        if(!g) return;
+        let {fullscr,full_feed,question,col} = this.state;
+
+        if(fullscr && !question) return;
+
+        let store = getStore();
+        if(store.qst && store.col !== col) return;
+
+        if(fullscr && full_feed === i) {
+            this.toFourGroup(i,g,() => {},q);
+            setStore({qst: false,col: 4,group: g});
+        } else if(fullscr) {
+            this.toFourGroup(i,g, () => {
+                this.toFullGroup(i,g,q);
+                setStore({qst: true,col: 4,group: g});
+            });
+        } else {
+            this.toFullGroup(i,g,q);
+            setStore({qst: true,col: 4,group: g});
+        }
+    };
+
     toFullGroup = (i,g,q) => {
-        this.setState({question: q});
         Janus.log(":: Make Full Screen Group: ",g);
-        this.setState({fullscr: true, full_feed: i});
+        this.setState({fullscr: true, full_feed: i, question: q});
         this.sdiAction("fullscr_group" , true, i, g, q);
     };
 
-    toFourGroup = (i,g,q) => {
-        this.setState({question: false});
+    toFourGroup = (i,g,cb,q) => {
         Janus.log(":: Back to four: ");
         this.sdiAction("fullscr_group" , false, i, g, q);
-        this.setState({fullscr: false, full_feed: null});
+        this.setState({fullscr: false, full_feed: null, question: false}, () => {
+            cb();
+        });
     };
 
   render() {
@@ -209,7 +239,7 @@ class UsersQuad extends Component {
           let name = g ? g.description : "";
           return (
               <div key={"pr" + i} className={qf ? "video_full" : ff ? "video_qst" : "video_box"} >
-                  <div className='click-panel' onClick={() => this.switchFullScreen(i,g,true)} >
+                  <div className='click-panel' onClick={() => this.switchQuestion(i,g,true)} >
                   <div className='video_title' >{name}</div>
                   {qst ? q : ""}
                   <UsersHandle key={"q"+i} g={g} index={i} {...this.props} />
