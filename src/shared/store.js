@@ -1,4 +1,9 @@
-let store = {};
+let store = {
+    qst: false,
+    feed: {},
+    group: {},
+    col: null
+};
 
 export const getStore = () => {
     return store;

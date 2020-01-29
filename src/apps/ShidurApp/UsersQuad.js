@@ -31,8 +31,8 @@ class UsersQuad extends Component {
                 if(quad[i] && quad[i].room === res.room) {
                     // Check question state
                     let store = getStore();
-                    const {group} = store;
-                    if(store.group && group.room === res.room) {
+                    const {qst,group} = store;
+                    if(qst && group.room === res.room) {
                         this.toFourGroup(i,group,() => {},true);
                         setStore({qst: false,col: 4,group});
                     }
