@@ -20,15 +20,22 @@ class UsersQuad extends Component {
         let {quad} = this.state;
         if(groups.length > prevProps.groups.length) {
             let res = groups.filter(o => !prevProps.groups.some(v => v.room === o.room))[0];
-            console.log(" :: Group enter in queue: ", res);
+            Janus.log(" :: Group enter in queue: ", res);
             if(groups.length < 5 || quad[0] === null) {
                 this.switchFour();
             }
         } else if(groups.length < prevProps.groups.length) {
             let res = prevProps.groups.filter(o => !groups.some(v => v.room === o.room))[0];
-            console.log(" :: Group exit from queue: ", res);
+            Janus.log(" :: Group exit from queue: ", res);
             for(let i=0; i<4; i++) {
                 if(quad[i] && quad[i].room === res.room) {
+                    // Check question state
+                    let store = getStore();
+                    const {group} = store;
+                    if(store.group && group.room === res.room) {
+                        this.toFourGroup(i,group,() => {},true);
+                        setStore({qst: false,col: 4,group});
+                    }
                     // FIXME: Does we need send leave room request?
                     this.switchProgram(i, true);
                     break;

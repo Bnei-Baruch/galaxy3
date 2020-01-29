@@ -9,6 +9,7 @@ import LoginPage from "../../components/LoginPage";
 import ShidurToran from "./ShidurToran";
 import {GROUPS_ROOM} from "../../shared/consts";
 import UsersApp from "./UsersApp";
+import {getStore, setStore} from "../../shared/store";
 
 
 class ShidurApp extends Component {
@@ -556,6 +557,14 @@ class ShidurApp extends Component {
                             qfeeds.splice(i, 1);
                             break
                         }
+                    }
+
+                    // Check question state
+                    let store = getStore();
+                    const {col,feed} = store;
+                    if(store.feed && store.feed.feed_id === id) {
+                        this["col"+col].toFourGroup(() => {}, true);
+                        setStore({qst: false,col,feed});
                     }
                 }
 
