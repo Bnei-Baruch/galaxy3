@@ -226,7 +226,8 @@ class ShidurApp extends Component {
                         this.setState({feeds_queue: 12});
                     }
                     // Subscribe until program full
-                    if(mids.length < 12 && subscription.length > 0) {
+                    let slots = mids.filter(mid => mid.active);
+                    if(slots.length < 12 && subscription.length > 0) {
                         this.subscribeTo(subscription);
                     }
                 } else if(msg["leaving"] !== undefined && msg["leaving"] !== null) {
