@@ -562,8 +562,8 @@ class ShidurApp extends Component {
 
                     // Check question state
                     let store = getStore();
-                    const {qst,col,feed} = store;
-                    if(qst && feed.feed_id === id) {
+                    let {qst,col,feed} = store;
+                    if(qst && col !== 4 && feed.feed_id === id) {
                         this["col"+col].toFourGroup(() => {}, true);
                         setStore({qst: false,col,feed});
                     }

@@ -31,10 +31,10 @@ class UsersQuad extends Component {
                 if(quad[i] && quad[i].room === res.room) {
                     // Check question state
                     let store = getStore();
-                    const {qst,group} = store;
-                    if(qst && group.room === res.room) {
+                    let {qst,col,group} = store;
+                    if(qst && col === 4 && group.room === res.room) {
                         this.toFourGroup(i,group,() => {},true);
-                        setStore({qst: false,col: 4,group});
+                        setStore({qst: false,col,group});
                     }
                     // FIXME: Does we need send leave room request?
                     this.switchProgram(i, true);
