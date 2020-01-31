@@ -559,14 +559,14 @@ class ShidurApp extends Component {
                             break
                         }
                     }
+                }
 
-                    // Check question state
-                    let store = getStore();
-                    let {qst,col,feed} = store;
-                    if(qst && col !== 4 && feed.feed_id === id) {
-                        this["col"+col].toFourGroup(() => {}, true);
-                        setStore({qst: false,col,feed});
-                    }
+                // Check question state
+                let store = getStore();
+                let {qst,col,feed} = store;
+                if(qst && col !== 4 && feed.feed_id === id) {
+                    this["col"+col].toFourGroup(() => {}, true);
+                    setStore({qst: false,col,feed});
                 }
 
                 // Remove from general feeds list
