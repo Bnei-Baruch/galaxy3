@@ -223,12 +223,15 @@ class OldClient extends Component {
         let count = 0;
         let chk = setInterval(() => {
             count++;
-            if(count < 11 && this.state.ice === "connected") {
+            let {ice,user} = this.state;
+            if(count < 11 && ice === "connected") {
                 clearInterval(chk);
             }
             if(count >= 10) {
                 clearInterval(chk);
-                this.state.janus.destroy();
+                this.exitRoom(false);
+                alert("Network setting is changed!");
+                this.initClient(user,true);
             }
         },3000);
     };
