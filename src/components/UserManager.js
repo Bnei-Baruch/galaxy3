@@ -28,7 +28,7 @@ client.events.addAccessTokenExpiring(() => {
 
 client.events.addAccessTokenExpired(() => {
     console.log("...!TOKEN EXPIRED!...");
-    //client.signoutRedirect();
+    client.signoutRedirect();
 });
 
 export const getUser = (cb) =>
