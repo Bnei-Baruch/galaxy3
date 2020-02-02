@@ -51,6 +51,10 @@ class GroupClient extends Component {
     checkPermission = (user) => {
         let gxy_group = user.roles.filter(role => role === 'gxy_group').length > 0;
         if (gxy_group) {
+            client.events.addAccessTokenExpired(() => {
+                console.log("...!TOKEN EXPIRED!...");
+                client.signoutRedirect();
+            });
             delete user.roles;
             user.role = "group";
             this.initClient(user);
