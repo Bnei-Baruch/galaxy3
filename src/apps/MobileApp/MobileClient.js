@@ -79,10 +79,6 @@ class MobileClient extends Component {
         this.initClient(user);
     };
 
-    componentWillUnmount() {
-        this.state.janus.destroy();
-    };
-
     initClient = (user,error) => {
         localStorage.setItem("question", false);
         localStorage.setItem("uuid", user.id);
@@ -231,7 +227,7 @@ class MobileClient extends Component {
         let count = 0;
         let chk = setInterval(() => {
             count++;
-            let {ice,user} = this.state;
+            let {ice} = this.state;
             if(count < 11 && ice === "connected") {
                 clearInterval(chk);
             }
@@ -239,7 +235,7 @@ class MobileClient extends Component {
                 clearInterval(chk);
                 this.exitRoom(false);
                 alert("Network setting is changed!");
-                this.initClient(user,true);
+                window.location.reload();
             }
         },3000);
     };

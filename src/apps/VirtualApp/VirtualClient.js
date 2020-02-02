@@ -19,6 +19,7 @@ class VirtualClient extends Component {
     state = {
         count: 0,
         creatingFeed: false,
+        kicked: false,
         delay: false,
         audioContext: null,
         audio_devices: [],
@@ -81,11 +82,9 @@ class VirtualClient extends Component {
         }
     };
 
-    componentWillUnmount() {
-        this.state.janus.destroy();
-    };
-
     initClient = (user,error) => {
+        if(this.state.kicked)
+            return;
         localStorage.setItem("question", false);
         localStorage.setItem("sound_test", false);
         checkNotification();
@@ -234,7 +233,7 @@ class VirtualClient extends Component {
         let count = 0;
         let chk = setInterval(() => {
             count++;
-            let {ice,user} = this.state;
+            let {ice} = this.state;
             if(count < 11 && ice === "connected") {
                 clearInterval(chk);
             }
@@ -242,7 +241,7 @@ class VirtualClient extends Component {
                 clearInterval(chk);
                 this.exitRoom(false);
                 alert("Network setting is changed!");
-                this.initClient(user,true);
+                window.location.reload();
             }
         },3000);
     };
@@ -314,6 +313,10 @@ class VirtualClient extends Component {
             this.state.remoteFeed.detach();
         if(this.state.protocol)
             this.state.protocol.detach();
+        if(this.state.kicked) {
+            client.signoutRedirect();
+            return
+        }
         this.state.janus.attach({
             plugin: "janus.plugin.videoroom",
             opaqueId: "videoroom_user",
@@ -559,10 +562,9 @@ class VirtualClient extends Component {
                         this.subscribeTo(subscription);
                 } else if(msg["leaving"] !== undefined && msg["leaving"] !== null) {
                     // One of the publishers has gone away?
-                    var leaving = msg["leaving"];
+                    let leaving = msg["leaving"];
                     Janus.log("Publisher left: " + leaving);
                     this.unsubscribeFrom(leaving);
-
                 } else if(msg["unpublished"] !== undefined && msg["unpublished"] !== null) {
                     let unpublished = msg["unpublished"];
                     Janus.log("Publisher left: " + unpublished);
@@ -832,6 +834,10 @@ class VirtualClient extends Component {
                 window.location.reload();
             } else if(type === "client-disconnect" && user.id === id) {
                 this.exitRoom();
+            } else if(type === "client-kicked" && user.id === id) {
+                this.setState({kicked: true}, () => {
+                    this.exitRoom();
+                });
             } else if(type === "client-question" && user.id === id) {
                 this.handleQuestion();
             } else if(type === "client-mute" && user.id === id) {

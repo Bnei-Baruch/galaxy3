@@ -17,6 +17,7 @@ class GroupClient extends Component {
     state = {
         count: 0,
         audioContext: null,
+        kicked: false,
         audio_devices: [],
         video_devices: [],
         audio_device: "",
@@ -64,11 +65,9 @@ class GroupClient extends Component {
         }
     };
 
-    componentWillUnmount() {
-        this.state.janus.destroy();
-    };
-
     initClient = (user,error) => {
+        if(this.state.kicked)
+            return;
         localStorage.setItem("question", false);
         localStorage.setItem("sound_test", false);
         checkNotification();
@@ -175,7 +174,7 @@ class GroupClient extends Component {
         let count = 0;
         let chk = setInterval(() => {
             count++;
-            let {ice,user} = this.state;
+            let {ice} = this.state;
             if(count < 11 && ice === "connected") {
                 clearInterval(chk);
             }
@@ -183,7 +182,7 @@ class GroupClient extends Component {
                 clearInterval(chk);
                 this.exitRoom(false);
                 alert("Network setting is changed!");
-                this.initClient(user,true);
+                window.location.reload();
             }
         },3000);
     };
@@ -253,6 +252,10 @@ class GroupClient extends Component {
             this.state.videoroom.detach();
         if(this.state.protocol)
             this.state.protocol.detach();
+        if(this.state.kicked) {
+            client.signoutRedirect();
+            return
+        }
         this.state.janus.attach({
             plugin: "janus.plugin.videoroom",
             opaqueId: "videoroom_user",
@@ -449,6 +452,10 @@ class GroupClient extends Component {
                 window.location.reload();
             } else if(type === "client-disconnect" && user.id === id) {
                 this.exitRoom();
+            } else if(type === "client-kicked" && user.id === id) {
+                this.setState({kicked: true}, () => {
+                    this.exitRoom();
+                });
             } else if(type === "client-question" && user.id === id) {
                 this.handleQuestion();
             } else if(type === "client-mute" && user.id === id) {
