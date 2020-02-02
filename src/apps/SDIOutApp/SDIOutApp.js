@@ -344,7 +344,7 @@ class SDIOutApp extends Component {
                         this.qst.fullScreenGroup(i,feed);
                     });
                 } else {
-                    this.setState({group, room});
+                    this.setState({group, room, users: {...this.col4.state.users}});
                     this.users.initVideoRoom(group.room);
                 }
             } else if(col !== 4) {
@@ -423,7 +423,9 @@ class SDIOutApp extends Component {
                         />
                     </Grid.Column>
                     <Grid.Column>
-                        <UsersSDIOut />
+                        <UsersSDIOut
+                            ref={col => {this.col4 = col;}}
+                        />
                     </Grid.Column>
                 </Grid.Row>
                 <Grid.Row>
