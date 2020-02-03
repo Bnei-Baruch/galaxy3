@@ -32,10 +32,11 @@
   "eslintConfig": {
     "extends": "react-app"
   },
-  "browserslist": [
-    ">0.2%",
-    "not dead",
-    "not ie <= 11",
-    "not op_mini all"
-  ]
+  "browserslist": {
+    "production": [],
+    "development": []
+  },
+  "resolutions": {
+    "**/**/fsevents": "^1.2.9"
+  }
 }
