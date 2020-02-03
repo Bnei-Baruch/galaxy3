@@ -344,7 +344,7 @@ class SDIOutApp extends Component {
                         this.qst.fullScreenGroup(i,feed);
                     });
                 } else {
-                    this.setState({group, room, users: {...this.col4.state.users}});
+                    this.setState({group, room, users: {...this.state.users,...this.col4.state.users}});
                     this.users.initVideoRoom(group.room);
                 }
             } else if(col !== 4) {
