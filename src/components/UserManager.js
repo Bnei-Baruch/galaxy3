@@ -26,6 +26,11 @@ client.events.addAccessTokenExpiring(() => {
     console.log("...RENEW TOKEN...");
 });
 
+client.events.addUserSignedOut(() => {
+    console.log("...LOGOUT EVENT...");
+    //client.signoutRedirect();
+});
+
 export const getUser = (cb) =>
     client.getUser().then((user) => {
         if(user) {

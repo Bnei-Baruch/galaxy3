@@ -17,7 +17,13 @@ class LoginPage extends Component {
     appLogin = () => {
         getUser(user => {
             if(user) {
-                this.props.checkPermission(user);
+                client.querySessionStatus().then(() => {
+                    this.props.checkPermission(user);
+                }).catch((error) => {
+                    console.log("querySessionStatus: ", error);
+                    alert("We detect wrong browser cookies settings");
+                    client.signoutRedirect();
+                });
             } else {
                 client.signinRedirectCallback().then((user) => {
                     if(user.state) window.location = user.state;
@@ -25,7 +31,7 @@ class LoginPage extends Component {
                     client.signinSilent().then(user => {
                         if(user) this.appLogin();
                     }).catch((error) => {
-                        console.log("SigninSilent error: ",error);
+                        console.log("SigninSilent error: ", error);
                         this.setState({disabled: false, loading: false});
                     });
                 });
