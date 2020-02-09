@@ -116,6 +116,7 @@ class GroupChat extends Component {
         let {user} = this.props;
         let msg = {user, text: input_value};
         let message = {
+            ack: false,
             textroom: "message",
             transaction: Janus.randomString(12),
             room: this.state.room,

@@ -121,6 +121,7 @@ class ChatClient extends Component {
         let {input_value, user} = this.state;
         let msg = {user, text: input_value};
         let message = {
+            ack: false,
             textroom: "message",
             transaction: Janus.randomString(12),
             room: this.state.room,

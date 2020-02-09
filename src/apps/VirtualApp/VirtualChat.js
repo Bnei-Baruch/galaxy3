@@ -141,6 +141,7 @@ class VirtualChat extends Component {
         let msg = {user, text: input_value};
         let pvt = room_chat ? "" : from ? {"to": from} : {"to": `${SHIDUR_ID}`};
         let message = {
+            ack: false,
             textroom: "message",
             transaction: Janus.randomString(12),
             room: this.state.room,

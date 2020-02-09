@@ -196,6 +196,7 @@ const onProtocolData = (data,user,ondata) => {
 export const sendProtocolMessage = (protocol,user,msg) => {
     //let msg = {user, text: text};
     let message = {
+        ack: false,
         textroom: "message",
         transaction: Janus.randomString(12),
         room: PROTOCOL_ROOM,
