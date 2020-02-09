@@ -259,7 +259,7 @@ class SDIOutApp extends Component {
                         let col = "col" + qam[mid];
                         let video = this[col].refs["programVideo" + mid];
                         Janus.log(" Attach remote stream on video: "+mid);
-                        Janus.attachMediaStream(video, stream);
+                        if(video) Janus.attachMediaStream(video, stream);
                     }
                 },
                 oncleanup: () => {
