@@ -35,8 +35,5 @@
   "browserslist": {
     "production": [],
     "development": []
-  },
-  "resolutions": {
-    "**/**/fsevents": "^1.2.9"
   }
 }

@@ -92,11 +92,17 @@ class VirtualClient extends Component {
             user.ip = data ? data.ip : "127.0.0.1";
             if(!data) alert('Fail to get GeoInfo! Question will be disabled!');
             initJanus(janus => {
-                user.session = janus.getSessionId();
-                user.system = navigator.userAgent;
-                this.setState({janus, user, username_value: user.title, geoinfo: !!data});
-                this.chat.initChat(janus);
-                this.initVideoRoom(error);
+                // Check if unified plan supported
+                if(Janus.unifiedPlan) {
+                    user.session = janus.getSessionId();
+                    user.system = navigator.userAgent;
+                    this.setState({janus, user, username_value: user.title, geoinfo: !!data});
+                    this.chat.initChat(janus);
+                    this.initVideoRoom(error);
+                } else {
+                    alert("WebRTC Unified Plan is NOT supported")
+                    client.signoutRedirect();
+                }
             }, er => {
                 setTimeout(() => {
                     this.initClient(user,er);
