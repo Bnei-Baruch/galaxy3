@@ -703,6 +703,7 @@ class AdminShidur extends Component {
         let {input_value,user} = this.state;
         let msg = {user, text: input_value};
         let message = {
+            ack: false,
             textroom: "message",
             transaction: Janus.randomString(12),
             room: this.state.current_room,
@@ -731,6 +732,7 @@ class AdminShidur extends Component {
         };
         let msg = {user, text: input_value};
         let message = {
+            ack: false,
             textroom: "message",
             transaction: Janus.randomString(12),
             room: this.state.current_room,
