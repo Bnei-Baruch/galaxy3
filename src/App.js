@@ -1,8 +1,8 @@
 import React, { Component, Fragment } from 'react';
 import 'semantic-ui-css/semantic.min.css';
 // import GalaxyApp from "./apps/GalaxyApp";
-// import OldClient from "./apps/VirtualApp/OldClient";
-import MobileClient from "./apps/MobileApp/MobileClient";
+import OldClient from "./apps/VirtualApp/OldClient";
+// import MobileClient from "./apps/MobileApp/MobileClient";
 // import VirtualClient from "./apps/VirtualApp/VirtualClient";
 // import VirtualStreaming from "./apps/VirtualApp/VirtualStreaming";
 // import GroupClient from "./apps/GroupsApp/GroupClient";
@@ -24,8 +24,8 @@ class App extends Component {
         return (
             <Fragment>
                 {/*<GalaxyApp />*/}
-                {/*<OldClient />*/}
-                <MobileClient/>
+                <OldClient />
+                {/*<MobileClient/>*/}
                 {/*<VirtualClient/>*/}
                 {/* <VirtualStreaming/>*/}
                 {/*<GroupClient/>*/}
