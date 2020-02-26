@@ -259,7 +259,8 @@ class AdminShidur extends Component {
 
                     // Filter service and camera muted feeds
                     let fr = this.state.current_room === GROUPS_ROOM ? "group" : "user";
-                    let feeds = list.filter(feeder => JSON.parse(feeder.display).role === fr);
+                    //FIXME: Tmp fix for black screen in room caoused by feed with video_codec = none
+                    let feeds = list.filter(feeder => JSON.parse(feeder.display).role === fr && feeder.video_codec !== "none");
                     feeds.sort((a, b) => {
                         if (JSON.parse(a.display).username > JSON.parse(b.display).username) return 1;
                         if (JSON.parse(a.display).username < JSON.parse(b.display).username) return -1;

@@ -463,7 +463,8 @@ class VirtualClient extends Component {
                 // Any new feed to attach to?
                 if(msg["publishers"] !== undefined && msg["publishers"] !== null) {
                     let list = msg["publishers"];
-                    let feeds = list.filter(feeder => JSON.parse(feeder.display).role === "user");
+                    //FIXME:  Tmp fix for black screen in room caoused by feed with video_codec = none
+                    let feeds = list.filter(feeder => JSON.parse(feeder.display).role === "user" && feeder.video_codec !== "none");
                     let {feedStreams,users} = this.state;
                     Janus.log(":: Got Pulbishers list: ", feeds);
                     if(feeds.length > 15) {
