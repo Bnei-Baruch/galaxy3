@@ -59,7 +59,7 @@ class UsersApp extends Component {
             let groups = rooms.filter((room) => !disabled_rooms.find(droom => room.room === droom.room));
             disabled_rooms = rooms.filter((room) => !groups.find(droom => room.room === droom.room));
             this.setState({groups,disabled_rooms});
-            this.quad.questionStatus();
+            this.col3.questionStatus();
         });
     };
 
@@ -82,7 +82,7 @@ class UsersApp extends Component {
         // }
 
         if(data.type === "question") {
-            this.quad.setQuestion(data.room, data.status);
+            this.col3.setQuestion(data.room, data.status);
         }
 
         if(data.type === "leave" && users[data.id]) {
@@ -92,7 +92,7 @@ class UsersApp extends Component {
     };
 
     checkFullScreen = () => {
-        this.quad.checkFullScreen();
+        this.col3.checkFullScreen();
     };
 
     setProps = (props) => {
@@ -102,7 +102,8 @@ class UsersApp extends Component {
     render() {
         return (
             <Fragment>
-                <UsersQuad {...this.state} ref={quad => {this.quad = quad;}} setProps={this.setProps} />
+                <UsersQuad index={0} {...this.state} ref={col3 => {this.col3 = col3;}} setProps={this.setProps} />
+                <UsersQuad index={4} {...this.state} ref={col4 => {this.col4 = col4;}} setProps={this.setProps} />
                 <UsersToran {...this.state} setProps={this.setProps} gerGroups={this.getRoomList} />
             </Fragment>
         );

@@ -11,24 +11,30 @@ class UsersQuad extends Component {
 
     state = {
         question: false,
-        col: 4,
-        quad: [null,null,null,null],
+        col: null,
+        vquad: [null,null,null,null,null,null,null,null],
+    };
+
+    componentDidMount() {
+        let { index } = this.props;
+        let col = index === 0 ? 3 : index === 4 ? 4 : index === 8 ? 5 : null;
+        this.setState({col});
     };
 
     componentDidUpdate(prevProps) {
-        let {groups} = this.props;
-        let {quad} = this.state;
+        let {groups,index} = this.props;
+        let {vquad} = this.state;
         if(groups.length > prevProps.groups.length) {
             let res = groups.filter(o => !prevProps.groups.some(v => v.room === o.room))[0];
             Janus.log(" :: Group enter in queue: ", res);
-            if(groups.length < 5 || quad[0] === null) {
+            if((groups.length > index && groups.length < index + 5) || vquad[index] === null) {
                 this.switchFour();
             }
         } else if(groups.length < prevProps.groups.length) {
             let res = prevProps.groups.filter(o => !groups.some(v => v.room === o.room))[0];
             Janus.log(" :: Group exit from queue: ", res);
-            for(let i=0; i<4; i++) {
-                if(quad[i] && quad[i].room === res.room) {
+            for(let i=index; i<index+4; i++) {
+                if(vquad[i] && vquad[i].room === res.room) {
                     // Check question state
                     let store = getStore();
                     let {qst,col,group} = store;
@@ -45,13 +51,14 @@ class UsersQuad extends Component {
     };
 
     setQuestion = (room, status) => {
-        let {quad} = this.state;
-        for(let i=0; i<4; i++) {
-            if(quad[i] && quad[i].room === room) {
-                quad[i].questions = status;
-                this.setState({quad});
+        let {index} = this.props;
+        let {vquad} = this.state;
+        for(let i=index; i<index+4; i++) {
+            if(vquad[i] && vquad[i].room === room) {
+                vquad[i].questions = status;
+                this.setState({vquad});
                 // Save state
-                putData(`galaxy/program`, {quad}, (cb) => {
+                putData(`galaxy/program`, {vquad}, (cb) => {
                     Janus.log(":: Save to state: ",cb);
                 });
                 break;
@@ -61,8 +68,8 @@ class UsersQuad extends Component {
 
     questionStatus = () => {
         let {groups} = this.props;
-        let {quad} = this.state;
-        let list = groups.filter((room) => !quad.find(droom => room.room === droom.room));
+        let {vquad} = this.state;
+        let list = groups.filter((room) => !vquad.find(droom => room.room === droom.room));
         let questions = list.filter(room => room.questions);
         this.props.setProps({questions});
     };
@@ -77,7 +84,7 @@ class UsersQuad extends Component {
 
     switchProgram = (i, leave) => {
         let {group,groups,groups_queue,round} = this.props;
-        let {quad} = this.state;
+        let {vquad} = this.state;
 
         if(leave)
             groups_queue--;
@@ -85,7 +92,7 @@ class UsersQuad extends Component {
         if(group) {
             // From preview
             delete group.users;
-            quad[i] = group;
+            vquad[i] = group;
             this.props.setProps({group: null});
         } else {
             // Next in queue
@@ -95,25 +102,25 @@ class UsersQuad extends Component {
                 groups_queue = 0;
                 round++;
             }
-            quad[i] = groups.length < 4 ? null : this.quadGroup(groups_queue);
+            vquad[i] = groups.length < 4 ? null : this.quadGroup(groups_queue);
             groups_queue++;
             this.props.setProps({groups_queue,round});
         }
 
-        this.setState({quad});
+        this.setState({vquad});
 
         // Save state
-        putData(`galaxy/program`, {quad}, (cb) => {
+        putData(`galaxy/program`, {vquad}, (cb) => {
             Janus.log(":: Save to state: ",cb);
             this.questionStatus();
         });
     };
 
     switchFour = () => {
-        let {groups_queue,groups,round} = this.props;
-        let {quad} = this.state;
+        let {groups_queue,groups,round,index} = this.props;
+        let {vquad} = this.state;
 
-        for(let i=0; i<4; i++) {
+        for(let i=index; i<index+4; i++) {
 
             // Don't switch if nobody in queue
             if(i === groups.length) {
@@ -129,11 +136,11 @@ class UsersQuad extends Component {
                 this.props.setProps({groups_queue,round});
             }
 
-            quad[i] = this.quadGroup(groups_queue);
+            vquad[i] = this.quadGroup(groups_queue);
             groups_queue++;
             this.props.setProps({groups_queue});
         }
-        this.setState({quad});
+        this.setState({vquad});
 
         // Disable queue until program full
         if(groups.length < 4) {
@@ -141,22 +148,22 @@ class UsersQuad extends Component {
         }
 
         // Save state
-        putData(`galaxy/program`, {quad}, (cb) => {
+        putData(`galaxy/program`, {vquad}, (cb) => {
             Janus.log(":: Save to state: ",cb);
         });
     };
 
     setPreset = () => {
         let {presets} = this.props;
-        let {quad} = this.state;
+        let {vquad} = this.state;
 
         for(let i=0; i<presets.length; i++) {
-            quad[i] = presets[i];
+            vquad[i] = presets[i];
         }
-        this.setState({quad});
+        this.setState({vquad});
 
         // Save state
-        putData(`galaxy/program`, {quad}, (cb) => {
+        putData(`galaxy/program`, {vquad}, (cb) => {
             Janus.log(":: Save to state: ",cb);
         });
     };
@@ -168,10 +175,10 @@ class UsersQuad extends Component {
     };
 
     checkFullScreen = () => {
-        let {fullscr,full_feed,quad,question} = this.state;
+        let {fullscr,full_feed,vquad,question} = this.state;
         if(fullscr) {
             Janus.log(":: Group: " + full_feed + " , sending sdi-action...");
-            this.sdiAction("fullscr_group" , true, full_feed, quad[full_feed], question);
+            this.sdiAction("fullscr_group" , true, full_feed, vquad[full_feed], question);
         }
     };
 
@@ -231,16 +238,17 @@ class UsersQuad extends Component {
     };
 
   render() {
-      const {full_feed,fullscr,col,quad,question} = this.state;
-      const {groups,group,next_button,presets} = this.props;
+      const {full_feed,fullscr,col,vquad,question} = this.state;
+      const {groups,group,next_button,presets,index} = this.props;
       const q = (<div className="question">
           <svg viewBox="0 0 50 50">
               <text x="25" y="25" textAnchor="middle" alignmentBaseline="central" dominantBaseline="central">&#xF128;</text>
           </svg>
       </div>);
 
-      let program = quad.map((g,i) => {
+      let program = vquad.map((g,i) => {
           if (groups.length === 0) return;
+          if(i < index && i > index + 4) return;
           let qst = g && g.questions;
           let qf = fullscr && full_feed === i && question;
           let ff = fullscr && full_feed === i && !question;
