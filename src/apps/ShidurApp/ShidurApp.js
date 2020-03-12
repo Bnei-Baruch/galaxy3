@@ -158,7 +158,7 @@ class ShidurApp extends Component {
                         //feeds[f].talk = talk;
                         for (let i in streams) {
                             let stream = streams[i];
-                            if(stream.type === "video" && subscription.length < 12) {
+                            if(stream.type === "video" && subscription.length < 4) {
                                 let subst = {feed: id};
                                 stream["id"] = id;
                                 stream["display"] = display;
@@ -176,8 +176,8 @@ class ShidurApp extends Component {
                     }
                     this.setState({feeds,feedStreams,users});
                     // Set next feed in queue first after program is full
-                    if(feeds.length > 12) {
-                        this.setState({feeds_queue: 12});
+                    if(feeds.length > 4) {
+                        this.setState({feeds_queue: 4});
                     }
                     if(subscription.length > 0)
                         this.subscribeTo(subscription);
@@ -222,12 +222,12 @@ class ShidurApp extends Component {
                     this.setState({feeds,feedStreams,users});
                     this.actionLog(feed[0].display, "enter");
                     // Set next feed in queue first after program is full
-                    if(feeds.length === 13) {
-                        this.setState({feeds_queue: 12});
+                    if(feeds.length === 5) {
+                        this.setState({feeds_queue: 4});
                     }
                     // Subscribe until program full
                     let slots = mids.filter(mid => mid.active);
-                    if(slots.length < 12 && subscription.length > 0) {
+                    if(slots.length < 4 && subscription.length > 0) {
                         this.subscribeTo(subscription);
                     }
                 } else if(msg["leaving"] !== undefined && msg["leaving"] !== null) {
@@ -480,8 +480,8 @@ class ShidurApp extends Component {
                     setTimeout(() => {
                         Janus.log(":: Check Full Screen state :: ");
                         this.col1.checkFullScreen();
-                        this.col2.checkFullScreen();
-                        this.col3.checkFullScreen();
+                        // this.col2.checkFullScreen();
+                        // this.col3.checkFullScreen();
                         this.users.checkFullScreen();
                     }, 3000);
                 });
@@ -564,7 +564,7 @@ class ShidurApp extends Component {
                 // Check question state
                 let store = getStore();
                 let {qst,col,feed} = store;
-                if(qst && col !== 4 && feed.feed_id === id) {
+                if(qst && col === 1 && feed.feed_id === id) {
                     this["col"+col].toFourGroup(() => {}, true);
                     setStore({qst: false,col,feed});
                 }
@@ -592,7 +592,7 @@ class ShidurApp extends Component {
         let {round,mids,feeds,feeds_queue} = this.state;
 
         // Make sure there is no empty space in program
-        if(feeds.length > 12 && manual === null) {
+        if(feeds.length > 4 && manual === null) {
             //FIXME: Here maybe problem lost sync if some slave is offline
             //       and some leaving feed made empty slot. In this case if slave goes online
             //       mids in master and slave will be different.
@@ -686,11 +686,11 @@ class ShidurApp extends Component {
 
     resetQueue = () => {
         let {feeds,quad} = this.state;
-        if(feeds.length > 12) {
+        if(feeds.length > 4) {
             Janus.log("-- Reset Queue --");
             let streams = [];
             let feeds_queue = 0;
-            for(let i=0; i<12; i++) {
+            for(let i=0; i<4; i++) {
                 let sub_mid = quad[i];
                 let feed = feeds[i].id;
                 streams.push({feed, mid: "1", sub_mid});
