@@ -38,7 +38,7 @@ class UsersQuad extends Component {
                     // Check question state
                     let store = getStore();
                     let {qst,col,group} = store;
-                    if(qst && col === 4 && group.room === res.room) {
+                    if(qst && col !== 1 && group.room === res.room) {
                         this.toFourGroup(i,group,() => {},true);
                         setStore({qst: false,col,group});
                     }
@@ -170,7 +170,8 @@ class UsersQuad extends Component {
 
     sdiAction = (action, status, i, group, qst) => {
         const {protocol, user} = this.props;
-        let msg = {type: "sdi-"+action, status, room: null, col: 4, i, group, qst};
+        const {col} = this.state;
+        let msg = {type: "sdi-"+action, status, room: null, col, i, group, qst};
         sendProtocolMessage(protocol, user, msg);
     };
 
@@ -210,16 +211,16 @@ class UsersQuad extends Component {
 
         if(fullscr && full_feed === i) {
             this.toFourGroup(i,g,() => {},q);
-            setStore({qst: false,col: 4,group: g});
+            setStore({qst: false,col,group: g});
         } else if(fullscr) {
             return
             // this.toFourGroup(i,g, () => {
             //     this.toFullGroup(i,g,q);
-            //     setStore({qst: true,col: 4,group: g});
+            //     setStore({qst: true,col,group: g});
             // });
         } else {
             this.toFullGroup(i,g,q);
-            setStore({qst: true,col: 4,group: g});
+            setStore({qst: true,col,group: g});
         }
     };
 
@@ -239,7 +240,7 @@ class UsersQuad extends Component {
 
   render() {
       const {full_feed,fullscr,col,vquad,question} = this.state;
-      const {groups,group,next_button,presets,index} = this.props;
+      const {groups,group,next_button,presets} = this.props;
       const q = (<div className="question">
           <svg viewBox="0 0 50 50">
               <text x="25" y="25" textAnchor="middle" alignmentBaseline="central" dominantBaseline="central">&#xF128;</text>
@@ -248,7 +249,6 @@ class UsersQuad extends Component {
 
       let program = vquad.map((g,i) => {
           if (groups.length === 0) return;
-          //if(i < index && i > index + 4) return;
           let qst = g && g.questions;
           let qf = fullscr && full_feed === i && question;
           let ff = fullscr && full_feed === i && !question;
