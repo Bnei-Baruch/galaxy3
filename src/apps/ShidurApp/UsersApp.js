@@ -93,7 +93,9 @@ class UsersApp extends Component {
     };
 
     checkFullScreen = () => {
+        this.col2.checkFullScreen();
         this.col3.checkFullScreen();
+        this.col4.checkFullScreen();
     };
 
     setProps = (props) => {

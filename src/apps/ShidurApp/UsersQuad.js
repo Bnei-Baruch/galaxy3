@@ -69,7 +69,7 @@ class UsersQuad extends Component {
     questionStatus = () => {
         let {groups} = this.props;
         let {vquad} = this.state;
-        let list = groups.filter((room) => !vquad.find(droom => room.room === droom.room));
+        let list = groups.filter((room) => !vquad.find(droom => droom && room.room === droom.room));
         let questions = list.filter(room => room.questions);
         this.props.setProps({questions});
     };
