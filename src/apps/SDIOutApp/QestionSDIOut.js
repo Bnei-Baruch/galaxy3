@@ -7,7 +7,7 @@ class QuestionSDIOut extends Component {
 
     state = {};
 
-    fullScreenGroup = (i,full_feed) => {
+    toFullGroup = (i,full_feed) => {
         Janus.log(":: Make Full Screen Group: ",full_feed);
         full_feed.display = JSON.parse(full_feed.feed_display);
         this.setState({fullscr: true,full_feed});

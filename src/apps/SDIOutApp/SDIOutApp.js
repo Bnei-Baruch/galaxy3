@@ -3,17 +3,20 @@ import { Janus } from "../../lib/janus";
 import {Grid, Segment} from "semantic-ui-react";
 import {getState, initJanus} from "../../shared/tools";
 import './SDIOutApp.css';
+import './UsersSDIOut.css'
 import {initGxyProtocol} from "../../shared/protocol";
 import SDIOutGroups from "./SDIOutGroups";
 import {GROUPS_ROOM,SDIOUT_ID} from "../../shared/consts";
-import UsersSDIOut from "./UsersSDIOut";
+//import UsersSDIOut from "./UsersSDIOut";
 import QuestionSDIOut from "./QestionSDIOut";
 import UsersHandleSDIOut from "./UsersHandleSDIOut";
+import UsersQuadSDIOut from "./UsersQuadSDIOut";
 
 
 class SDIOutApp extends Component {
 
     state = {
+        ce: null,
         group: null,
         room: null,
         qam: {0:1,1:2,2:3,3:1,4:2,5:3,6:1,7:2,8:3,9:1,10:2,11:3},
@@ -41,8 +44,13 @@ class SDIOutApp extends Component {
             let {user} = this.state;
             user.session = janus.getSessionId();
             this.setState({janus,user});
-            getState('galaxy/groups', (users) => {
-                this.setState({users});
+            let users = {};
+            getState('galaxy/users', (data) => {
+                users = {...data};
+                getState('galaxy/groups', (data) => {
+                    users = {...users,...data};
+                    this.setState({users});
+                });
             });
             initGxyProtocol(janus, user, protocol => {
                 this.setState({protocol});
@@ -326,6 +334,7 @@ class SDIOutApp extends Component {
 
     onProtocolData = (data) => {
         Janus.log(" :: Got Shidur Action: ", data);
+        let {users} = this.state;
         let {room, col, feed, group, i, status, qst} = data;
 
         if(data.type === "sdi-switch_req") {
@@ -341,41 +350,55 @@ class SDIOutApp extends Component {
                         let fourvideo = this["col"+col].refs["programVideo" + i];
                         let fullvideo = this.qst.refs.fullscreenVideo;
                         fullvideo.srcObject = fourvideo.captureStream();
-                        this.qst.fullScreenGroup(i,feed);
+                        this.qst.toFullGroup(i,feed);
                     });
                 } else {
                     this.setState({group, room, users: {...this.state.users,...this.col4.state.users}});
                     this.users.initVideoRoom(group.room);
                 }
-            } else if(col !== 4) {
-                this["col"+col].fullScreenGroup(i,feed);
+            } else {
+                this["col"+col].toFullGroup(i,feed);
             }
         } else if(data.type === "sdi-fullscr_group" && !status) {
             let {col, feed, i} = data;
             if(qst) {
-                if(col === 4 && !this.state.room) {
+                if(col !== 1 && !this.state.room) {
                     this.users.exitVideoRoom(this.state.group.room, () =>{
                         this.setState({room: 1234});
                     });
                 } else if(this.qst) {
                     this.qst.toFourGroup(i,feed);
                 }
-            } else if(col !== 4) {
+            } else {
                 this["col"+col].toFourGroup(i,feed);
             }
         } else if(data.type === "sdi-sync_sdiout") {
             this.programState(feed);
         } else if(data.type === "sdi-restart_sdiout") {
             window.location.reload();
-        } else if(data.type === "question") {
-            let {users} = this.state;
-            if(users[data.user.id]) {
-                users[data.user.id].question = data.status;
-                this.setState({users});
-            }
         } else if(data.type === "event") {
             delete data.type;
             this.setState({...data});
+        }
+
+        // Set status in users list
+        if(data.type && data.type.match(/^(camera|question|sound_test)$/)) {
+            if(users[data.user.id]) {
+                users[data.user.id][data.type] = data.status;
+                this.setState({users});
+            } else {
+                users[data.user.id] = {[data.type]: data.status};
+                this.setState({users});
+            }
+        }
+
+        if(data.type && data.type === "camera") {
+            this.setState({ce: data.user});
+        }
+
+        if(data.type && data.type === "leave" && users[data.id]) {
+            delete users[data.id];
+            this.setState({users});
         }
     };
 
@@ -403,29 +426,18 @@ class SDIOutApp extends Component {
             <Grid columns={2} className="sdi_container">
                 <Grid.Row>
                     <Grid.Column>
-                        <SDIOutGroups
-                            index={0} {...this.state}
-                            ref={col => {this.col1 = col;}}
-                        />
+                        <SDIOutGroups index={0} {...this.state} ref={col => {this.col1 = col;}}/>
                     </Grid.Column>
                     <Grid.Column>
-                        <SDIOutGroups
-                            index={4} {...this.state}
-                            ref={col => {this.col2 = col;}}
-                        />
+                        <UsersQuadSDIOut index={0} {...this.state} ref={col => {this.col2 = col;}} setProps={this.setProps} />
                     </Grid.Column>
                 </Grid.Row>
                 <Grid.Row>
                     <Grid.Column>
-                        <SDIOutGroups
-                            index={8} {...this.state}
-                            ref={col => {this.col3 = col;}}
-                        />
+                        <UsersQuadSDIOut index={4} {...this.state} ref={col => {this.col3 = col;}} setProps={this.setProps} />
                     </Grid.Column>
                     <Grid.Column>
-                        <UsersSDIOut
-                            ref={col => {this.col4 = col;}}
-                        />
+                        <UsersQuadSDIOut index={8} {...this.state} ref={col => {this.col4 = col;}} setProps={this.setProps} />
                     </Grid.Column>
                 </Grid.Row>
                 <Grid.Row>

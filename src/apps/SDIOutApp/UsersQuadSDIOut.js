@@ -7,14 +7,17 @@ import {getState} from "../../shared/tools";
 class UsersQuadSDIOut extends Component {
 
     state = {
-        col: 4,
-        quad: [null,null,null,null],
+        col: null,
+        vquad: [null,null,null,null],
     };
 
     componentDidMount() {
+        let { index } = this.props;
+        let col = index === 0 ? 2 : index === 4 ? 3 : index === 8 ? 4 : null;
+        this.setState({col});
         setInterval(() => {
-            getState('galaxy/program', ({quad}) => {
-                this.setState({quad});
+            getState(`galaxy/qids/q`+col, ({vquad}) => {
+                this.setState({vquad});
             });
         }, 1000);
     };
@@ -28,9 +31,9 @@ class UsersQuadSDIOut extends Component {
     };
 
   render() {
-      const {full_feed,fullscr,quad} = this.state;
+      const {full_feed,fullscr,vquad} = this.state;
 
-      let program = quad.map((g,i) => {
+      let program = vquad.map((g,i) => {
           let qst = g && g.questions;
           let name = g ? g.description : "";
           //let room = groups[g] ? groups[g].room : "";
