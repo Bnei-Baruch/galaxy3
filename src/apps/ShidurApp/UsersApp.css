@@ -2,15 +2,20 @@
     position: absolute!important;
     right: 0px!important;
     padding-right: 3rem!important;
+    width: 75% !important;
 }
 
 .vquad2 {
     right: 2rem!important;
 }
 
+.vquad3 {
+    right: 1rem!important;
+}
+
 .vtoran {
     position: absolute!important;
-    right: 10px!important;
+    right: 20px!important;
 }
 
 .videos-panel {

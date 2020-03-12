@@ -17,7 +17,7 @@ class UsersQuad extends Component {
 
     componentDidMount() {
         let { index } = this.props;
-        let col = index === 0 ? 3 : index === 4 ? 4 : index === 8 ? 5 : null;
+        let col = index === 0 ? 2 : index === 4 ? 3 : index === 8 ? 4 : null;
         this.setState({col});
     };
 
@@ -27,7 +27,7 @@ class UsersQuad extends Component {
         if(groups.length > prevProps.groups.length) {
             let res = groups.filter(o => !prevProps.groups.some(v => v.room === o.room))[0];
             Janus.log(" :: Group enter in queue: ", res);
-            if((groups.length > index && groups.length < index + 5) || vquad[index] === null) {
+            if((groups.length > index && groups.length < index + 5) || (vquad[index] === null && index === 0)) {
                 this.switchFour();
             }
         } else if(groups.length < prevProps.groups.length) {

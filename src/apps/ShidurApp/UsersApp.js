@@ -103,13 +103,16 @@ class UsersApp extends Component {
     render() {
         return (
             <Fragment>
-                <Grid columns={2} className='virtual' >
+                <Grid columns={3} className='virtual' >
                     <Grid.Row>
                         <Grid.Column className='vquad2'>
-                            <UsersQuad index={0} {...this.state} ref={col3 => {this.col3 = col3;}} setProps={this.setProps} />
+                            <UsersQuad index={0} {...this.state} ref={col2 => {this.col2 = col2;}} setProps={this.setProps} />
+                        </Grid.Column>
+                        <Grid.Column className='vquad3'>
+                            <UsersQuad index={4} {...this.state} ref={col3 => {this.col3 = col3;}} setProps={this.setProps} />
                         </Grid.Column>
                         <Grid.Column>
-                            <UsersQuad index={4} {...this.state} ref={col4 => {this.col4 = col4;}} setProps={this.setProps} />
+                            <UsersQuad index={8} {...this.state} ref={col4 => {this.col4 = col4;}} setProps={this.setProps} />
                         </Grid.Column>
                     </Grid.Row>
                         <div className='vtoran' >
@@ -117,9 +120,7 @@ class UsersApp extends Component {
                                 <UsersToran {...this.state} setProps={this.setProps} gerGroups={this.getRoomList} />
                             </Grid.Column>
                         </div>
-
                 </Grid>
-
             </Fragment>
         );
     }
