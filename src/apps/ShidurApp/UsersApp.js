@@ -5,6 +5,7 @@ import './UsersApp.css'
 import {initGxyProtocol} from "../../shared/protocol";
 import UsersQuad from "./UsersQuad";
 import UsersToran from "./UsersToran";
+import {Grid} from "semantic-ui-react";
 
 class UsersApp extends Component {
 
@@ -102,9 +103,23 @@ class UsersApp extends Component {
     render() {
         return (
             <Fragment>
-                <UsersQuad index={0} {...this.state} ref={col3 => {this.col3 = col3;}} setProps={this.setProps} />
-                <UsersQuad index={4} {...this.state} ref={col4 => {this.col4 = col4;}} setProps={this.setProps} />
-                <UsersToran {...this.state} setProps={this.setProps} gerGroups={this.getRoomList} />
+                <Grid columns={2} className='virtual' >
+                    <Grid.Row>
+                        <Grid.Column className='vquad2'>
+                            <UsersQuad index={0} {...this.state} ref={col3 => {this.col3 = col3;}} setProps={this.setProps} />
+                        </Grid.Column>
+                        <Grid.Column>
+                            <UsersQuad index={4} {...this.state} ref={col4 => {this.col4 = col4;}} setProps={this.setProps} />
+                        </Grid.Column>
+                    </Grid.Row>
+                        <div className='vtoran' >
+                            <Grid.Column>
+                                <UsersToran {...this.state} setProps={this.setProps} gerGroups={this.getRoomList} />
+                            </Grid.Column>
+                        </div>
+
+                </Grid>
+
             </Fragment>
         );
     }

@@ -737,14 +737,15 @@ class ShidurApp extends Component {
                                     removeFeed={this.removeFeed} />
                             </Grid.Column>
                             <Grid.Column>
-                                <ShidurGroups
-                                    index={8} {...this.state}
-                                    ref={col => {this.col3 = col;}}
-                                    setProps={this.setProps}
-                                    unsubscribeFrom={this.unsubscribeFrom}
-                                    removeFeed={this.removeFeed} />
+                            {/*    <ShidurGroups*/}
+                            {/*        index={8} {...this.state}*/}
+                            {/*        ref={col => {this.col3 = col;}}*/}
+                            {/*        setProps={this.setProps}*/}
+                            {/*        unsubscribeFrom={this.unsubscribeFrom}*/}
+                            {/*        removeFeed={this.removeFeed} />*/}
                             </Grid.Column>
                         </Grid.Row>
+
                         <ShidurToran
                             {...this.state}
                             ref={pre => {this.pre = pre;}}
@@ -755,9 +756,9 @@ class ShidurApp extends Component {
                             removeFeed={this.removeFeed} />
                     </Grid>
                 </Grid.Column>
-                <Grid.Column width={4}>
-                    <UsersApp ref={users => {this.users = users;}} />
-                </Grid.Column>
+                {/*<Grid.Column width={4}>*/}
+                <UsersApp ref={users => {this.users = users;}} />
+                {/*</Grid.Column>*/}
             </Grid>
         );
 
