@@ -9,18 +9,21 @@ import {DANTE_IN_IP, SECRET} from "../../shared/consts";
 class UsersQuadSndman extends Component {
 
     state = {
-        col: 4,
+        col: null,
         feeds: [],
         full_group: null,
         forward_request: false,
-        quad: [null,null,null,null],
+        vquad: [null,null,null,null],
     };
 
     componentDidMount() {
+        let { index } = this.props;
+        let col = index === 0 ? 2 : index === 4 ? 3 : index === 8 ? 4 : null;
+        this.setState({col});
         document.addEventListener("keydown", this.onKeyPressed);
         setInterval(() => {
-            getState('galaxy/program', ({quad}) => {
-                this.setState({quad});
+            getState(`galaxy/qids/q`+col, ({vquad}) => {
+                this.setState({vquad});
             });
         }, 1000);
     };
@@ -30,8 +33,8 @@ class UsersQuadSndman extends Component {
     };
 
     onKeyPressed = (e) => {
-        const {fullscr, forward_request, full_group} = this.state;
-        if(e.code === "Numpad4" && fullscr && full_group && !forward_request) {
+        const {fullscr, forward_request,full_group,col} = this.state;
+        if(e.code === "Numpad"+col && fullscr && full_group && !forward_request) {
             this.forwardStream(full_group);
         }
     };
@@ -117,14 +120,14 @@ class UsersQuadSndman extends Component {
     };
 
   render() {
-      const {full_group,full_feed,fullscr,quad,forward,forward_request} = this.state;
+      const {full_group,full_feed,fullscr,vquad,forward,forward_request} = this.state;
       const q = (<div className="question">
           <svg viewBox="0 0 50 50">
               <text x="25" y="25" textAnchor="middle" alignmentBaseline="central" dominantBaseline="central">&#xF128;</text>
           </svg>
       </div>);
 
-      let program = quad.map((g,i) => {
+      let program = vquad.map((g,i) => {
           let qst = g && g.questions;
           let name = g ? g.description : "";
           //let room = groups[g] ? groups[g].room : "";

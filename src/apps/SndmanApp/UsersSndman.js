@@ -4,6 +4,7 @@ import {getState, initJanus} from "../../shared/tools";
 import './UsersSndman.css'
 import {initGxyProtocol} from "../../shared/protocol";
 import UsersQuadSndman from "./UsersQuadSndman";
+import {Grid} from "semantic-ui-react";
 
 class UsersSndman extends Component {
 
@@ -53,10 +54,10 @@ class UsersSndman extends Component {
         let {col, group, i, status} = data;
 
         // Shidur action
-        if(data.type === "sdi-fullscr_group" && col === 4 && status) {
-            this.quad.fullScreenGroup(i,group);
-        } else if(data.type === "sdi-fullscr_group" && col === 4 && !status) {
-            this.quad.toFourGroup(i,group);
+        if(data.type === "sdi-fullscr_group" && col !== 1 && status) {
+            this["col"+col].fullScreenGroup(i,group);
+        } else if(data.type === "sdi-fullscr_group" && col !== 1 && !status) {
+            this["col"+col].toFourGroup(i,group);
         }
 
         // Set status in users list
@@ -82,9 +83,19 @@ class UsersSndman extends Component {
 
     render() {
         return (
-            <Fragment>
-                <UsersQuadSndman fwdhandle={this.props.fwdhandle} {...this.state} ref={quad => {this.quad = quad;}} setProps={this.setProps} />
-            </Fragment>
+            <Grid columns={3}>
+                <Grid.Row>
+                    <Grid.Column>
+                        <UsersQuadSndman index={0} fwdhandle={this.props.fwdhandle} {...this.state} ref={col => {this.col2 = col;}} setProps={this.setProps} />
+                    </Grid.Column>
+                    <Grid.Column>
+                        <UsersQuadSndman index={4} fwdhandle={this.props.fwdhandle} {...this.state} ref={col => {this.col3 = col;}} setProps={this.setProps} />
+                    </Grid.Column>
+                    <Grid.Column>
+                        <UsersQuadSndman index={8} fwdhandle={this.props.fwdhandle} {...this.state} ref={col => {this.col4 = col;}} setProps={this.setProps} />
+                    </Grid.Column>
+                </Grid.Row>
+            </Grid>
         );
     }
 }

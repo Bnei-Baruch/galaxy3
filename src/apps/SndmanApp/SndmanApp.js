@@ -337,7 +337,7 @@ class SndmanApp extends Component {
         Janus.log(" :: Got Shidur Action: ", data);
         let {col, feed, i, status} = data;
 
-        if(col === 4) return;
+        if(col !== 1) return;
 
         if(data.type === "sdi-switch_req") {
             this.switchTo(feed)
@@ -382,9 +382,10 @@ class SndmanApp extends Component {
         let login = (<LoginPage user={user} checkPermission={this.checkPermission} />);
         let content = (
             <Grid columns={3}>
-                <Grid.Column>
+                <Grid.Column width={12}>
+                <Grid.Row>
                     <UsersSndman fwdhandle={this.state.fwdhandle} />
-                </Grid.Column>
+                </Grid.Row>
                 <Grid.Row>
                     <Grid.Column>
                         <SndmanGroups
@@ -392,19 +393,20 @@ class SndmanApp extends Component {
                             ref={col => {this.col1 = col;}}
                         />
                     </Grid.Column>
-                    <Grid.Column>
-                        <SndmanGroups
-                            index={4} {...this.state}
-                            ref={col => {this.col2 = col;}}
-                        />
-                    </Grid.Column>
-                    <Grid.Column>
-                        <SndmanGroups
-                            index={8} {...this.state}
-                            ref={col => {this.col3 = col;}}
-                        />
-                    </Grid.Column>
+                    {/*<Grid.Column>*/}
+                    {/*    <SndmanGroups*/}
+                    {/*        index={4} {...this.state}*/}
+                    {/*        ref={col => {this.col2 = col;}}*/}
+                    {/*    />*/}
+                    {/*</Grid.Column>*/}
+                    {/*<Grid.Column>*/}
+                    {/*    <SndmanGroups*/}
+                    {/*        index={8} {...this.state}*/}
+                    {/*        ref={col => {this.col3 = col;}}*/}
+                    {/*    />*/}
+                    {/*</Grid.Column>*/}
                 </Grid.Row>
+                </Grid.Column>
             </Grid>
         );
 
