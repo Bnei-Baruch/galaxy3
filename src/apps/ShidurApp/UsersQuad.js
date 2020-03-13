@@ -51,7 +51,6 @@ class UsersQuad extends Component {
     };
 
     setQuestion = (room, status) => {
-        let {index} = this.props;
         let {vquad,col} = this.state;
         for(let i=0; i<4; i++) {
             if(vquad[i] && vquad[i].room === room) {
@@ -112,7 +111,7 @@ class UsersQuad extends Component {
         // Save state
         putData(`galaxy/qids/q`+col, {vquad}, (cb) => {
             Janus.log(":: Save to state: ",cb);
-            this.questionStatus();
+            //this.questionStatus();
         });
     };
 

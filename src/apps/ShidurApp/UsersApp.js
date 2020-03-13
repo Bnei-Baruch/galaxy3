@@ -60,7 +60,13 @@ class UsersApp extends Component {
             let groups = rooms.filter((room) => !disabled_rooms.find(droom => room.room === droom.room));
             disabled_rooms = rooms.filter((room) => !groups.find(droom => room.room === droom.room));
             this.setState({groups,disabled_rooms});
-            this.col3.questionStatus();
+            let quads = [...this.col2.state.vquad,...this.col3.state.vquad,...this.col4.state.vquad];
+            let list = groups.filter((room) => !quads.find(droom => droom && room.room === droom.room));
+            let questions = list.filter(room => room.questions);
+            this.setState({questions});
+            // this.col2.questionStatus();
+            // this.col3.questionStatus();
+            // this.col4.questionStatus();
         });
     };
 
@@ -83,7 +89,9 @@ class UsersApp extends Component {
         // }
 
         if(data.type === "question") {
+            this.col2.setQuestion(data.room, data.status);
             this.col3.setQuestion(data.room, data.status);
+            this.col4.setQuestion(data.room, data.status);
         }
 
         if(data.type === "leave" && users[data.id]) {
