@@ -334,7 +334,7 @@ class SndmanApp extends Component {
         Janus.log(" :: Got Shidur Action: ", data);
         let {col, feed, i, status} = data;
 
-        if(col !== 1) return;
+        if(col === 2 || col === 3 || col === 4) return;
 
         if(data.type === "sdi-switch_req") {
             this.switchTo(feed)
