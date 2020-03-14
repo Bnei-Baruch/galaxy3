@@ -15,8 +15,7 @@ import {getStore, setStore} from "../../shared/store";
 class ShidurApp extends Component {
 
     state = {
-        qam: {0:1,1:2,2:3,3:1,4:2,5:3,6:1,7:2,8:3,9:1,10:2,11:3},
-        quad: ["0","3","6","9","1","4","7","10","2","5","8","11"],
+        quad: ["0","1","2","3"],
         janus: null,
         feeds: [],
         feedStreams: {},
@@ -370,7 +369,7 @@ class ShidurApp extends Component {
                 onremotetrack: (track,mid,on) => {
                     Janus.log(" ::: Got a remote track event ::: (remote feed)");
                     Janus.log("Remote track (mid=" + mid + ") " + (on ? "added" : "removed") + ":", track);
-                    let {mids,feedStreams,qam} = this.state;
+                    let {mids,feedStreams} = this.state;
                     let feed = mids[mid].feed_id;
                     if(track.kind === "video" && on) {
                         Janus.log(" >> This track is coming from feed " + feed + ":", mid);
@@ -378,8 +377,7 @@ class ShidurApp extends Component {
                         stream.addTrack(track.clone());
                         feedStreams[feed].stream = stream;
                         this.setState({feedStreams});
-                        let col = "col" + qam[mid];
-                        let video = this[col].refs["programVideo" + mid];
+                        let video = this.col1.refs["programVideo" + mid];
                         Janus.log(" Attach remote stream on video: "+mid);
                         if(video) Janus.attachMediaStream(video, stream);
                     }

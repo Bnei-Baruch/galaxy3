@@ -261,11 +261,9 @@ class SDIOutApp extends Component {
                     Janus.log(" ::: Got a remote track event ::: (remote feed)");
                     Janus.log("Remote track (mid=" + mid + ") " + (on ? "added" : "removed") + ":", track);
                     if(track.kind === "video" && on) {
-                        let {qam} = this.state;
                         let stream = new MediaStream();
                         stream.addTrack(track.clone());
-                        let col = "col" + qam[mid];
-                        let video = this[col].refs["programVideo" + mid];
+                        let video = this.col1.refs["programVideo" + mid];
                         Janus.log(" Attach remote stream on video: "+mid);
                         if(video) Janus.attachMediaStream(video, stream);
                     }

@@ -8,11 +8,6 @@ class SndmanGroups extends Component {
 
     state = {
         col: null,
-        quad: [
-            "0","3","6","9",
-            "1","4","7","10",
-            "2","5","8","11"
-        ],
         forward: false,
         forward_feed: {},
         forward_request: false,
@@ -128,7 +123,7 @@ class SndmanGroups extends Component {
       </div>);
 
       let program = this.props.mids.map((mid,i) => {
-          if(mid && this.props.qam[i] === col) {
+          if(mid) {
               if(!mid.active) {
                   return (<div className="group_box" key={"prov" + i} />)
               } else {

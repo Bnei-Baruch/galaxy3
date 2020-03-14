@@ -11,11 +11,7 @@ class ShidurGroups extends Component {
     state = {
         question: false,
         col: null,
-        quad: [
-            "0","3","6","9",
-            "1","4","7","10",
-            "2","5","8","11"
-        ],
+        quad: ["0","1","2","3"],
     };
 
     componentDidMount() {
@@ -102,7 +98,7 @@ class ShidurGroups extends Component {
             }
 
             // If program is not full avoid using feeds_queue
-            if(feeds.length < 13) {
+            if(feeds.length < 5) {
                 let sub_mid = quad[i];
                 let feed = feeds[i].id;
                 streams.push({feed, mid: "1", sub_mid});
@@ -265,7 +261,7 @@ class ShidurGroups extends Component {
       </div>);
 
       let program = this.props.mids.map((mid,i) => {
-          if(mid && this.props.qam[i] === col) {
+          if(mid) {
               if(!mid.active) {
                   return (<div key={"prf" + i}>
                       <div className="group_box" key={"prov" + i}>
@@ -321,13 +317,14 @@ class ShidurGroups extends Component {
               </Segment>
               <Button.Group attached='bottom' size='mini'>
                   <Button className='preset_button'
-                          disabled={feeds.length < 16 || fullscr}
+                          //disabled={feeds.length < 16 || fullscr}
+                          disabled
                           color='teal'
                           onClick={this.setPreset} >
                       {col}
                   </Button>
                   <Button className='fours_button'
-                          disabled={feeds.length < 16 || fullscr}
+                          disabled={feeds.length < 9 || fullscr}
                           color='blue'
                           onClick={this.switchFour}>
                       <Icon name='share' />

@@ -15,7 +15,6 @@ import {initDataForward} from "../../shared/forward";
 class SndmanApp extends Component {
 
     state = {
-        qam: {0:1,1:2,2:3,3:1,4:2,5:3,6:1,7:2,8:3,9:1,10:2,11:3},
         janus: null,
         feedStreams: {},
         mids: [],
@@ -262,11 +261,9 @@ class SndmanApp extends Component {
                     Janus.log(" ::: Got a remote track event ::: (remote feed)");
                     Janus.log("Remote track (mid=" + mid + ") " + (on ? "added" : "removed") + ":", track);
                     if(track.kind === "video" && on) {
-                        let {qam} = this.state;
                         let stream = new MediaStream();
                         stream.addTrack(track.clone());
-                        let col = "col" + qam[mid];
-                        let video = this[col].refs["programVideo" + mid];
+                        let video = this.col1.refs["programVideo" + mid];
                         Janus.log(" Attach remote stream on video: "+mid);
                         if(video) Janus.attachMediaStream(video, stream);
                     }

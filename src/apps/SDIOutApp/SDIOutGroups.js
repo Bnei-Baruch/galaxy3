@@ -7,11 +7,6 @@ class SDIOutGroups extends Component {
 
     state = {
         col: null,
-        quad: [
-            "0","3","6","9",
-            "1","4","7","10",
-            "2","5","8","11"
-        ],
     };
 
     componentDidMount() {
@@ -36,7 +31,7 @@ class SDIOutGroups extends Component {
 
 
   render() {
-      const { full_feed,fullscr,col } = this.state;
+      const { full_feed,fullscr } = this.state;
       const {users} = this.props;
       const width = "320px";
       const height = "180px";
@@ -46,7 +41,7 @@ class SDIOutGroups extends Component {
       const full_question = full_feed && users[full_feed.display.id] ? users[full_feed.display.id].question : null;
 
       let program = this.props.mids.map((mid,i) => {
-          if(mid && this.props.qam[i] === col) {
+          if(mid) {
               if(!mid.active) {
                   return (<div className={fullscr ? "hidden" : ""} key={"prf" + i}>
                       <div className="video_box" key={"prov" + i}>
