@@ -2,6 +2,11 @@
     width: 418px;
 }
 
+.sndman {
+    position: absolute;
+    padding: 19px;
+}
+
 .preview_sdi {
     width: 390px!important;
     height: 235px!important;

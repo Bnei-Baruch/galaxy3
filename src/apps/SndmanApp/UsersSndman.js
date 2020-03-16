@@ -86,8 +86,12 @@ class UsersSndman extends Component {
             <Grid columns={3}>
                 <Grid.Row>
                     <Grid.Column>
+                    </Grid.Column>
+                    <Grid.Column>
                         <UsersQuadSndman index={0} fwdhandle={this.props.fwdhandle} {...this.state} ref={col => {this.col2 = col;}} setProps={this.setProps} />
                     </Grid.Column>
+                </Grid.Row>
+                <Grid.Row>
                     <Grid.Column>
                         <UsersQuadSndman index={4} fwdhandle={this.props.fwdhandle} {...this.state} ref={col => {this.col3 = col;}} setProps={this.setProps} />
                     </Grid.Column>

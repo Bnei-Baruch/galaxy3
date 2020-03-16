@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import { Janus } from "../../lib/janus";
-import {Grid} from "semantic-ui-react";
+//import {Grid} from "semantic-ui-react";
 import {getState, initJanus} from "../../shared/tools";
 import './SndmanApp.css';
 import {initGxyProtocol} from "../../shared/protocol";
@@ -378,33 +378,15 @@ class SndmanApp extends Component {
 
         let login = (<LoginPage user={user} checkPermission={this.checkPermission} />);
         let content = (
-            <Grid columns={3}>
-                <Grid.Column width={12}>
-                <Grid.Row>
-                    <UsersSndman fwdhandle={this.state.fwdhandle} />
-                </Grid.Row>
-                <Grid.Row>
-                    <Grid.Column>
-                        <SndmanGroups
-                            index={0} {...this.state}
-                            ref={col => {this.col1 = col;}}
-                        />
-                    </Grid.Column>
-                    {/*<Grid.Column>*/}
-                    {/*    <SndmanGroups*/}
-                    {/*        index={4} {...this.state}*/}
-                    {/*        ref={col => {this.col2 = col;}}*/}
-                    {/*    />*/}
-                    {/*</Grid.Column>*/}
-                    {/*<Grid.Column>*/}
-                    {/*    <SndmanGroups*/}
-                    {/*        index={8} {...this.state}*/}
-                    {/*        ref={col => {this.col3 = col;}}*/}
-                    {/*    />*/}
-                    {/*</Grid.Column>*/}
-                </Grid.Row>
-                </Grid.Column>
-            </Grid>
+            <div>
+                <div className='sndman'>
+                    <SndmanGroups
+                        index={0} {...this.state}
+                        ref={col => {this.col1 = col;}}
+                    />
+                </div>
+                <UsersSndman fwdhandle={this.state.fwdhandle} />
+            </div>
         );
 
         return (
