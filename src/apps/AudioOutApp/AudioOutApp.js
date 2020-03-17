@@ -5,7 +5,6 @@ import {getState, initJanus} from "../../shared/tools";
 import './AudioOutApp.css';
 import './UsersAudioOut.css'
 import {initGxyProtocol} from "../../shared/protocol";
-import {GROUPS_ROOM,SDIOUT_ID} from "../../shared/consts";
 import UsersHandleAudioOut from "./UsersHandleAudioOut";
 
 
@@ -28,8 +27,8 @@ class AudioOutApp extends Component {
             handle: 0,
             role: "audioout",
             display: "audioout",
-            id: SDIOUT_ID,
-            name: "sdiout"
+            id: Janus.randomString(10),
+            name: "audioout"
         },
         users: {},
         shidur: false,
