@@ -71,10 +71,10 @@ class UsersQuadSndman extends Component {
                 if (feed) {
                     // FIXME: if we change sources on client based on room id (not ip) we send message only once?
                     this.sendMessage(feed, false);
-                    let stopfw = { "request":"stop_rtp_forward","stream_id":feed.streamid,"publisher_id":feed.rfid,"room":feed.room,"secret":`${SECRET}` };
-                    getPluginInfo(stopfw, data => {
-                        Janus.log(":: Forward callback: ", data);
-                    });
+                    // let stopfw = { "request":"stop_rtp_forward","stream_id":feed.streamid,"publisher_id":feed.rfid,"room":feed.room,"secret":`${SECRET}` };
+                    // getPluginInfo(stopfw, data => {
+                    //     Janus.log(":: Forward callback: ", data);
+                    // });
                 }
             });
             this.setState({feeds: [], forward: false});
@@ -85,13 +85,14 @@ class UsersQuadSndman extends Component {
                 let {users} = data;
                 users.forEach((user,i) => {
                     if (user && user.rfid) {
-                        let forward = { "request": "rtp_forward","publisher_id":user.rfid,"room":room,"secret":`${SECRET}`,"host":`${DANTE_IN_IP}`,"audio_port":port};
-                        getPluginInfo(forward, data => {
-                            Janus.log(":: Forward callback: ", data);
-                            users[i].streamid = data.response["rtp_stream"]["audio_stream_id"];
-                            this.sendMessage(user, true);
-                        });
-                        port++;
+                        this.sendMessage(user, true);
+                        // let forward = { "request": "rtp_forward","publisher_id":user.rfid,"room":room,"secret":`${SECRET}`,"host":`${DANTE_IN_IP}`,"audio_port":port};
+                        // getPluginInfo(forward, data => {
+                        //     Janus.log(":: Forward callback: ", data);
+                        //     users[i].streamid = data.response["rtp_stream"]["audio_stream_id"];
+                        //     this.sendMessage(user, true);
+                        // });
+                        // port++;
                     } else {
                         Janus.error("Forward failed for user: " + user + " in room: " + room, data)
                     }
