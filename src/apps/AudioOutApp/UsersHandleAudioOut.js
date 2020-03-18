@@ -122,7 +122,7 @@ class UsersHandleAudioOut extends Component {
                             let stream = streams[i];
                             stream["id"] = id;
                             stream["display"] = display;
-                            if (stream.type === "video") {
+                            if(stream.type === "audio") {
                                 subst.mid = stream.mid;
                             }
                         }
@@ -187,7 +187,7 @@ class UsersHandleAudioOut extends Component {
                             let stream = streams[i];
                             stream["id"] = id;
                             stream["display"] = display;
-                            if(stream.type === "video") {
+                            if(stream.type === "audio") {
                                 subst.mid = stream.mid;
                             }
                         }
@@ -300,14 +300,20 @@ class UsersHandleAudioOut extends Component {
                 onremotetrack: (track, mid, on) => {
                     let {mids,feedStreams} = this.state;
                     let feed = mids[mid].feed_id;
-                    if(track.kind === "video" && on) {
+
+                    if(track.kind === "audio" && on) {
+                        // New audio track: create a stream out of it, and use a hidden <audio> element
                         let stream = new MediaStream();
                         stream.addTrack(track.clone());
-                        feedStreams[feed].stream = stream;
+                        Janus.log("Created remote audio stream:", stream);
+                        feedStreams[feed].audio_stream = stream;
                         this.setState({feedStreams});
-                        let remotevideo = this.refs["pv" + feed];
-                        if(remotevideo)
-                            Janus.attachMediaStream(remotevideo, stream);
+                        let remoteaudio = this.refs["pa" + feed];
+                        Janus.attachMediaStream(remoteaudio, stream);
+                    } else if(track.kind === "data") {
+                        Janus.debug("Its data channel");
+                    } else {
+                        Janus.debug(" :: Track already attached: ",track);
                     }
                 },
                 ondataopen: (data) => {
@@ -365,26 +371,17 @@ class UsersHandleAudioOut extends Component {
       const autoPlay = true;
       const controls = false;
       const muted = true;
-      //const q = (<b style={{color: 'red', fontSize: '20px', fontFamily: 'Verdana', fontWeight: 'bold'}}>?</b>);
 
       let program_feeds = feeds.map((feed) => {
           let camera = users[feed.display.id] && users[feed.display.id].camera !== false;
           if(feed && camera) {
               let id = feed.id;
               let talk = feed.talk;
-              //let question = users[feed.display.id] && users[feed.display.id].question;
-              //let st = users[feed.display.id] && users[feed.display.id].sound_test;
               return (<div className="video"
                            key={"prov" + id}
                            ref={"provideo" + id}
                            id={"provideo" + id}>
                   <div className={classNames('video__overlay', {'talk' : talk})}>
-                      {/*{question ? <div className="question">*/}
-                      {/*    <svg viewBox="0 0 50 50">*/}
-                      {/*        <text x="25" y="25" textAnchor="middle" alignmentBaseline="central" dominantBaseline="central">&#xF128;</text>*/}
-                      {/*    </svg>*/}
-                      {/*    {st ? <Icon name="checkmark" size="small" color="green"/> : ''}*/}
-                      {/*</div>:''}*/}
                   </div>
                   <video className={talk ? "talk" : ""}
                          key={id}
@@ -396,6 +393,13 @@ class UsersHandleAudioOut extends Component {
                          controls={controls}
                          muted={muted}
                          playsInline={true}/>
+                  <audio
+                      key={"a" + id}
+                      ref={"pa" + id}
+                      id={"pa" + id}
+                      autoPlay={autoPlay}
+                      controls={controls}
+                      playsinline={true}/>
               </div>);
           }
           return true;
