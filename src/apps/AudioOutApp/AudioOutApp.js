@@ -75,25 +75,25 @@ class AudioOutApp extends Component {
 
         if(data.type === "sdi-switch_req") {
             this.switchTo(feed)
-        } else if(data.type === "sdi-subscribe_req") {
-            this.subscribeTo(feed)
-        } else if(data.type === "sdi-unsubscribe_req") {
-            this.unsubscribeFrom(feed)
+        // } else if(data.type === "sdi-subscribe_req") {
+        //     this.subscribeTo(feed)
+        // } else if(data.type === "sdi-unsubscribe_req") {
+        //     this.unsubscribeFrom(feed)
         } else if(data.type === "sdi-fullscr_group" && status) {
             if(qst) {
                 if(room) {
-                    this.setState({group: feed, room}, () => {
-                        let fourvideo = this["col"+col].refs["programVideo" + i];
-                        let fullvideo = this.qst.refs.fullscreenVideo;
-                        fullvideo.srcObject = fourvideo.captureStream();
-                        this.qst.toFullGroup(i,feed);
-                    });
+                    // this.setState({group: feed, room}, () => {
+                    //     let fourvideo = this["col"+col].refs["programVideo" + i];
+                    //     let fullvideo = this.qst.refs.fullscreenVideo;
+                    //     fullvideo.srcObject = fourvideo.captureStream();
+                    //     this.qst.toFullGroup(i,feed);
+                    // });
                 } else {
                     this.setState({group, room});
                     this.users.initVideoRoom(group.room);
                 }
             } else {
-                this["col"+col].toFullGroup(i,feed);
+                //this["col"+col].toFullGroup(i,feed);
             }
         } else if(data.type === "sdi-fullscr_group" && !status) {
             let {col, feed, i} = data;
@@ -103,10 +103,10 @@ class AudioOutApp extends Component {
                         this.setState({room: 1234});
                     });
                 } else if(this.qst) {
-                    this.qst.toFourGroup(i,feed);
+                    //this.qst.toFourGroup(i,feed);
                 }
             } else {
-                this["col"+col].toFourGroup(i,feed);
+                //this["col"+col].toFourGroup(i,feed);
             }
         } else if(data.type === "sdi-sync_sdiout") {
             this.programState(feed);
@@ -118,7 +118,7 @@ class AudioOutApp extends Component {
         }
 
         // Set status in users list
-        if(data.type && data.type.match(/^(camera|question|sound_test)$/)) {
+        if(data.type && data.type.match(/^(question|sound_test)$/)) {
             if(users[data.user.id]) {
                 users[data.user.id][data.type] = data.status;
                 this.setState({users});
@@ -128,9 +128,9 @@ class AudioOutApp extends Component {
             }
         }
 
-        if(data.type && data.type === "camera") {
-            this.setState({ce: data.user});
-        }
+        // if(data.type && data.type === "camera") {
+        //     this.setState({ce: data.user});
+        // }
 
         if(data.type && data.type === "leave" && users[data.id]) {
             delete users[data.id];

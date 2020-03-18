@@ -28,11 +28,11 @@ class UsersHandleAudioOut extends Component {
                 this.initVideoRoom(g.room);
             }
         }
-        if(ce && JSON.stringify(ce) !== JSON.stringify(prevProps.ce) && ce.room === room && ce.camera) {
-            let {feedStreams} = this.state;
-            let remotevideo = this.refs["pv" + ce.rfid];
-            Janus.attachMediaStream(remotevideo, feedStreams[ce.rfid].stream);
-        }
+        // if(ce && JSON.stringify(ce) !== JSON.stringify(prevProps.ce) && ce.room === room && ce.camera) {
+        //     let {feedStreams} = this.state;
+        //     let remotevideo = this.refs["pv" + ce.rfid];
+        //     Janus.attachMediaStream(remotevideo, feedStreams[ce.rfid].stream);
+        // }
     }
 
     componentWillUnmount() {
@@ -373,8 +373,8 @@ class UsersHandleAudioOut extends Component {
       const muted = true;
 
       let program_feeds = feeds.map((feed) => {
-          let camera = users[feed.display.id] && users[feed.display.id].camera !== false;
-          if(feed && camera) {
+          //let camera = users[feed.display.id] && users[feed.display.id].camera !== false;
+          if(feed) {
               let id = feed.id;
               let talk = feed.talk;
               return (<div className="video"
@@ -399,7 +399,7 @@ class UsersHandleAudioOut extends Component {
                       id={"pa" + id}
                       autoPlay={autoPlay}
                       controls={controls}
-                      playsinline={true}/>
+                      playsInline={true}/>
               </div>);
           }
           return true;
