@@ -11,6 +11,7 @@ import UsersHandleAudioOut from "./UsersHandleAudioOut";
 class AudioOutApp extends Component {
 
     state = {
+        audio: false,
         ce: null,
         group: null,
         room: null,
@@ -112,6 +113,8 @@ class AudioOutApp extends Component {
             this.programState(feed);
         } else if(data.type === "sdi-restart_sdiout") {
             window.location.reload();
+        } else if(data.type === "audio-out") {
+            this.setState({audio: status});
         } else if(data.type === "event") {
             delete data.type;
             this.setState({...data});

@@ -5,6 +5,7 @@ import UsersHandleSndman from "./UsersHandleSndman";
 import {getState,getPluginInfo} from "../../shared/tools";
 import {Janus} from "../../lib/janus";
 import {DANTE_IN_IP, SECRET} from "../../shared/consts";
+import {sendProtocolMessage} from "../../shared/protocol";
 
 class UsersQuadSndman extends Component {
 
@@ -77,6 +78,7 @@ class UsersQuadSndman extends Component {
                     // });
                 }
             });
+            this.micMute(false);
             this.setState({feeds: [], forward: false});
         } else if(fullscr) {
             Janus.log(" :: Start forward from room: ", room);
@@ -98,6 +100,7 @@ class UsersQuadSndman extends Component {
                     }
                 });
                 this.setState({feeds: users, forward: true});
+                this.micMute(true);
             });
         }
     };
@@ -118,6 +121,12 @@ class UsersQuadSndman extends Component {
         } else if(forward) {
             this.forwardStream(full_group);
         }
+    };
+
+    micMute = (status) => {
+        const {protocol, user} = this.props;
+        let msg = {type: "audio-out", status, room: null, col:null, i:null, feed:null};
+        sendProtocolMessage(protocol, user, msg );
     };
 
   render() {

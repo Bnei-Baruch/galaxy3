@@ -365,7 +365,7 @@ class UsersHandleAudioOut extends Component {
 
   render() {
       const {feeds} = this.state;
-      const {users} = this.props;
+      const {audio} = this.props;
       const width = "400";
       const height = "300";
       const autoPlay = true;
@@ -399,6 +399,7 @@ class UsersHandleAudioOut extends Component {
                       id={"pa" + id}
                       autoPlay={autoPlay}
                       controls={controls}
+                      muted={!audio}
                       playsInline={true}/>
               </div>);
           }
