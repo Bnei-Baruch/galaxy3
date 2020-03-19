@@ -52,14 +52,18 @@ class UsersQuad extends Component {
 
     setQuestion = (room, status) => {
         let {vquad,col} = this.state;
+        let {groups} = this.props;
         for(let i=0; i<4; i++) {
             if(vquad[i] && vquad[i].room === room) {
-                vquad[i].questions = status;
-                this.setState({vquad});
-                // Save state
-                putData(`galaxy/qids/q`+col, {vquad}, (cb) => {
-                    Janus.log(":: Save to state: ",cb);
-                });
+                let group = groups.find(g => g.room === room);
+                if(vquad[i].questions !== group.questions) {
+                    vquad[i].questions = group.questions;
+                    this.setState({vquad});
+                    // Save state
+                    putData(`galaxy/qids/q`+col, {vquad}, (cb) => {
+                        Janus.log(":: Save to state: ",cb);
+                    });
+                }
                 break;
             }
         }

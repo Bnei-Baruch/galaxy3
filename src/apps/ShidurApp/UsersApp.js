@@ -64,9 +64,6 @@ class UsersApp extends Component {
             let list = groups.filter((room) => !quads.find(droom => droom && room.room === droom.room));
             let questions = list.filter(room => room.questions);
             this.setState({questions});
-            // this.col2.questionStatus();
-            // this.col3.questionStatus();
-            // this.col4.questionStatus();
         });
     };
 
@@ -89,12 +86,22 @@ class UsersApp extends Component {
         // }
 
         if(data.type === "question") {
-            this.col2.setQuestion(data.room, data.status);
-            this.col3.setQuestion(data.room, data.status);
-            this.col4.setQuestion(data.room, data.status);
+            setTimeout(() => {
+                this.col2.setQuestion(data.room, data.status);
+                this.col3.setQuestion(data.room, data.status);
+                this.col4.setQuestion(data.room, data.status);
+            }, 3000);
         }
 
         if(data.type === "leave" && users[data.id]) {
+            let user = users[data.id];
+            if(user.room) {
+                setTimeout(() => {
+                    this.col2.setQuestion(user.room);
+                    this.col3.setQuestion(user.room);
+                    this.col4.setQuestion(user.room);
+                }, 3000);
+            }
             delete users[data.id];
             this.setState({users});
         }
