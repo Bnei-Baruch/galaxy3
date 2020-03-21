@@ -42,7 +42,6 @@ class MobileClient extends Component {
         feedStreams: {},
         rooms: [],
         room: "",
-        name: localStorage.getItem("room_name") || null,
         selected_room: parseInt(localStorage.getItem("room"), 10) || "",
         videoroom: null,
         remoteFeed: null,
@@ -913,10 +912,8 @@ class MobileClient extends Component {
         setTimeout(() => {
             this.setState({delay: false});
         }, 3000);
-        let {janus, videoroom, selected_room, user, username_value, women, i, name, video_device} = this.state;
+        let {janus, videoroom, selected_room, user, username_value, women, name, video_device} = this.state;
         localStorage.setItem("room", selected_room);
-        localStorage.setItem("room_index", i);
-        localStorage.setItem("room_name", name);
         //This name will see other users
         user.display = username_value || user.name;
         localStorage.setItem("username", user.display);
@@ -971,7 +968,7 @@ class MobileClient extends Component {
         //this.chat.exitChatRoom(room);
         let pl = {textroom : "leave", transaction: Janus.randomString(12),"room": PROTOCOL_ROOM};
         localStorage.setItem("question", false);
-        this.setState({video_device: null, muted: false, cammuted: false, mystream: null, room: "", selected_room: (reconnect ? room : ""), feeds: [],video_mids: [], mids: [], remoteFeed: null, question: false});
+        this.setState({video_device: null, muted: false, cammuted: false, mystream: null, name: "", room: "", selected_room: (reconnect ? room : ""), feeds: [],video_mids: [], mids: [], remoteFeed: null, question: false});
         protocol.data({text: JSON.stringify(pl),
             success: () => {
                 this.initVideoRoom(reconnect);
