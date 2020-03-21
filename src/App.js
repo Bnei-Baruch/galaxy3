@@ -1,7 +1,7 @@
 import React, { Component, Fragment } from 'react';
 import 'semantic-ui-css/semantic.min.css';
 // import GalaxyApp from "./apps/GalaxyApp";
-// import OldClient from "./apps/VirtualApp/OldClient";
+import OldClient from "./apps/VirtualApp/OldClient";
 // import MobileClient from "./apps/MobileApp/MobileClient";
 // import VirtualClient from "./apps/VirtualApp/VirtualClient";
 // import VirtualStreaming from "./apps/VirtualApp/VirtualStreaming";
@@ -9,7 +9,7 @@ import 'semantic-ui-css/semantic.min.css';
 // import GalaxyStream from "./apps/StreamApp/GalaxyStream";
 // import AdminRoot from "./apps/AdminApp/AdminRoot";
 // import AdminShidur from "./apps/AdminApp/AdminShidur";
-import ShidurApp from "./apps/ShidurApp/ShidurApp";
+// import ShidurApp from "./apps/ShidurApp/ShidurApp";
 // import UsersApp from "./apps/ShidurApp/UsersApp";
 // import SndmanApp from "./apps/SndmanApp/SndmanApp";
 // import AudioOutApp from "./apps/AudioOutApp/AudioOutApp";
@@ -25,7 +25,7 @@ class App extends Component {
         return (
             <Fragment>
                 {/*<GalaxyApp />*/}
-                {/*<OldClient />*/}
+                <OldClient />
                 {/*<MobileClient/>*/}
                 {/*<VirtualClient/>*/}
                 {/* <VirtualStreaming/>*/}
@@ -33,7 +33,7 @@ class App extends Component {
                 {/* <GalaxyStream/>*/}
                 {/*<AdminRoot />*/}
                 {/*<AdminShidur />*/}
-                 <ShidurApp/>
+                {/* <ShidurApp/>*/}
                  {/*<UsersApp />*/}
                  {/*<AudioOutApp />*/}
                  {/*<SndmanApp/>*/}

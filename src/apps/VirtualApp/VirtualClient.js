@@ -34,7 +34,7 @@ class VirtualClient extends Component {
         feedStreams: {},
         rooms: [],
         room: "",
-        selected_room: "",
+        selected_room: parseInt(localStorage.getItem("room"), 10) || "",
         videoroom: null,
         remoteFeed: null,
         myid: null,
@@ -218,21 +218,28 @@ class VirtualClient extends Component {
         }
     };
 
-    //FIXME: tmp solution to show count without service users in room list
     getFeedsList = (rooms) => {
-        let {videoroom} = this.state;
-        rooms.forEach((room,i) => {
-            if(room.num_participants > 0) {
-                videoroom.send({
-                    message: {request: "listparticipants", "room": room.room},
-                    success: (data) => {
-                        let count = data.participants.filter(p => JSON.parse(p.display).role === "user");
-                        rooms[i].num_participants = count.length;
-                        this.setState({rooms});
-                    }
-                });
-            }
-        })
+        let {selected_room,user} = this.state;
+        if(selected_room !== "") {
+            let room = rooms.find(r => r.room === selected_room);
+            let name = room.description;
+            user.room = selected_room;
+            user.group = name;
+            this.setState({user,name});
+        }
+        //TODO: Need solution to show count without service users in room list
+        // rooms.forEach((room,i) => {
+        //     if(room.num_participants > 0) {
+        //         videoroom.send({
+        //             message: {request: "listparticipants", "room": room.room},
+        //             success: (data) => {
+        //                 let count = data.participants.filter(p => JSON.parse(p.display).role === "user");
+        //                 rooms[i].num_participants = count.length;
+        //                 this.setState({rooms});
+        //             }
+        //         });
+        //     }
+        // })
     };
 
     iceState = () => {
@@ -330,10 +337,13 @@ class VirtualClient extends Component {
                 Janus.log(" :: My handle: ", videoroom);
                 Janus.log("Plugin attached! (" + videoroom.getPlugin() + ", id=" + videoroom.getId() + ")");
                 Janus.log("  -- This is a publisher/manager");
-                let {user} = this.state;
+                let {user,selected_room} = this.state;
                 user.handle = videoroom.getId();
                 this.setState({videoroom, user, remoteFeed: null, protocol: null});
                 this.initDevices(true);
+                if(selected_room !== "") {
+                    this.getRoomList();
+                }
                 if(reconnect) {
                     setTimeout(() => {
                         this.joinRoom(reconnect);
@@ -870,7 +880,7 @@ class VirtualClient extends Component {
         this.chat.exitChatRoom(room);
         let pl = {textroom : "leave", transaction: Janus.randomString(12),"room": PROTOCOL_ROOM};
         localStorage.setItem("question", false);
-        this.setState({muted: false, cammuted: false, mystream: null, room: "", selected_room: (reconnect ? room : ""), i: "", feeds: [], mids: [], remoteFeed: null, question: false});
+        this.setState({muted: false, cammuted: false, mystream: null, room: "", selected_room: (reconnect ? room : ""), feeds: [], mids: [], remoteFeed: null, question: false});
         protocol.data({text: JSON.stringify(pl),
             success: () => {
                 this.initVideoRoom(reconnect);
@@ -878,15 +888,15 @@ class VirtualClient extends Component {
         });
     };
 
-    selectRoom = (i) => {
+    selectRoom = (roomid) => {
         const {rooms,user} = this.state;
-        let selected_room = rooms[i].room;
-        let name = rooms[i].description;
-        if (this.state.room === selected_room)
+        let room = rooms.find(r => r.room === roomid);
+        let name = room.description;
+        if (this.state.room === roomid)
             return;
-        user.room = selected_room;
+        user.room = roomid;
         user.group = name;
-        this.setState({user,selected_room,name,i});
+        this.setState({user,selected_room: roomid,name});
     };
 
     handleQuestion = () => {
@@ -945,7 +955,7 @@ class VirtualClient extends Component {
 
     render() {
 
-        const {video_setting,audio,rooms,room,audio_devices,video_devices,video_device,audio_device,i,muted,cammuted,delay,mystream,selected_room,count,question,selftest,tested,women,geoinfo,user} = this.state;
+        const {video_setting,audio,rooms,room,audio_devices,video_devices,video_device,audio_device,muted,cammuted,delay,mystream,selected_room,count,question,selftest,tested,women,geoinfo,user} = this.state;
         const width = "134";
         const height = "100";
         const autoPlay = true;
@@ -956,7 +966,7 @@ class VirtualClient extends Component {
 
         let rooms_list = rooms.map((data,i) => {
             const {room, num_participants, description} = data;
-            return ({ key: room, text: description, value: i, description: num_participants.toString()})
+            return ({ key: i, text: description, value: room, description: num_participants.toString()})
         });
 
         let adevices_list = audio_devices.map((device,i) => {
@@ -1023,12 +1033,11 @@ class VirtualClient extends Component {
                     {mystream ? <Button attached='left' negative icon='sign-out' onClick={() => this.exitRoom(false)}/> : ""}
                     {!mystream ? <Button attached='left' primary icon='sign-in' disabled={delay || !selected_room || !audio_device}
                                          onClick={this.joinRoom}/> : ""}
-                    <Select attached='right'
+                    <Select search attached='right'
                         disabled={audio_device === null || mystream}
                         error={!selected_room}
-
                         placeholder="Select Room:"
-                        value={i}
+                        value={selected_room}
                         options={rooms_list}
                         onClick={this.getRoomList}
                         onChange={(e, {value}) => this.selectRoom(value)}/>

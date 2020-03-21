@@ -41,8 +41,7 @@ class MobileClient extends Component {
         feeds: [],
         feedStreams: {},
         rooms: [],
-        i: parseInt(localStorage.getItem("room_index"), 10) || null,
-        room: parseInt(localStorage.getItem("room"), 10) || "",
+        room: "",
         name: localStorage.getItem("room_name") || null,
         selected_room: parseInt(localStorage.getItem("room"), 10) || "",
         videoroom: null,
@@ -206,27 +205,34 @@ class MobileClient extends Component {
                         return 0;
                     });
                     this.setState({rooms: filter});
-                    //this.getFeedsList(filter)
+                    this.getFeedsList(filter)
                 }
             });
         }
     };
 
-    //FIXME: tmp solution to show count without service users in room list
     getFeedsList = (rooms) => {
-        let {videoroom} = this.state;
-        rooms.forEach((room,i) => {
-            if(room.num_participants > 0) {
-                videoroom.send({
-                    message: {request: "listparticipants", "room": room.room},
-                    success: (data) => {
-                        let count = data.participants.filter(p => JSON.parse(p.display).role === "user");
-                        rooms[i].num_participants = count.length;
-                        this.setState({rooms});
-                    }
-                });
-            }
-        })
+        let {selected_room,user} = this.state;
+        if(selected_room !== "") {
+            let room = rooms.find(r => r.room === selected_room);
+            let name = room.description;
+            user.room = selected_room;
+            user.group = name;
+            this.setState({user,name});
+        }
+        //TODO: Need solution to show count without service users in room list
+        // rooms.forEach((room,i) => {
+        //     if(room.num_participants > 0) {
+        //         videoroom.send({
+        //             message: {request: "listparticipants", "room": room.room},
+        //             success: (data) => {
+        //                 let count = data.participants.filter(p => JSON.parse(p.display).role === "user");
+        //                 rooms[i].num_participants = count.length;
+        //                 this.setState({rooms});
+        //             }
+        //         });
+        //     }
+        // })
     };
 
     iceState = () => {
@@ -320,11 +326,11 @@ class MobileClient extends Component {
                 Janus.log(" :: My handle: ", videoroom);
                 Janus.log("Plugin attached! (" + videoroom.getPlugin() + ", id=" + videoroom.getId() + ")");
                 Janus.log("  -- This is a publisher/manager");
-                let {user,i} = this.state;
+                let {user,selected_room} = this.state;
                 user.handle = videoroom.getId();
                 this.setState({videoroom, user, remoteFeed: null, protocol: null});
                 this.initDevices(true);
-                if(i && !reconnect) {
+                if(selected_room !== "") {
                     this.getRoomList();
                 }
                 if(reconnect) {
@@ -973,15 +979,15 @@ class MobileClient extends Component {
         });
     };
 
-    selectRoom = (i) => {
+    selectRoom = (roomid) => {
         const {rooms,user} = this.state;
-        let selected_room = rooms[i].room;
-        let name = rooms[i].description;
-        if (this.state.room === selected_room)
+        let room = rooms.find(r => r.room === roomid);
+        let name = room.description;
+        if (this.state.room === roomid)
             return;
-        user.room = selected_room;
+        user.room = roomid;
         user.group = name;
-        this.setState({user,selected_room,name,i});
+        this.setState({user,selected_room: roomid,name});
     };
 
     handleQuestion = () => {
@@ -1025,7 +1031,7 @@ class MobileClient extends Component {
 
     render() {
 
-        const {video_setting,audio,rooms,name,audio_devices,video_devices,video_device,audio_device,i,muted,cammuted,delay,mystream,selected_room,count,question,selftest,tested,women,feedStreams} = this.state;
+        const {video_setting,audio,rooms,name,audio_devices,video_devices,video_device,audio_device,muted,cammuted,delay,mystream,selected_room,count,question,selftest,tested,women,feedStreams} = this.state;
         const width = "134";
         const height = "100";
         const autoPlay = true;
@@ -1036,7 +1042,7 @@ class MobileClient extends Component {
 
         let rooms_list = rooms.map((data,i) => {
             const {room, num_participants, description} = data;
-            return ({ key: room, text: description, value: i, description: num_participants.toString()})
+            return ({ key: i, text: description, value: room, description: num_participants.toString()})
         });
 
         let adevices_list = audio_devices.map((device,i) => {
@@ -1131,7 +1137,7 @@ class MobileClient extends Component {
                                         disabled={audio_device === null || mystream}
                                         error={!selected_room}
                                         placeholder=" Select Room: "
-                                        value={i}
+                                        value={selected_room}
                                         text={name ? name + ' : ( ' + this.state.feeds.length + ' ) ': ""}
                                         icon={name ? 'users' : ''}
                                         options={rooms_list}
