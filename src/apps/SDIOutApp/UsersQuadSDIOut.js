@@ -13,7 +13,7 @@ class UsersQuadSDIOut extends Component {
 
     componentDidMount() {
         let { index } = this.props;
-        let col = index === 0 ? 2 : index === 4 ? 3 : index === 8 ? 4 : null;
+        let col = index === 0 ? 1 : index === 4 ? 2 : index === 8 ? 3 : index === 12 ? 4 : null;
         this.setState({col});
         setInterval(() => {
             getState(`galaxy/qids/q`+col, ({vquad}) => {

@@ -113,6 +113,17 @@ class ShidurApp extends Component {
             delete users[data.id];
             this.setState({users});
         }
+
+        if(data.type === "event") {
+            delete data.type;
+            this.setState({...data});
+            if(data.sdiout || data.sndman) {
+                setTimeout(() => {
+                    Janus.log(":: Check Full Screen state :: ");
+                    this.checkFullScreen();
+                }, 3000);
+            }
+        }
     };
 
     checkFullScreen = () => {
