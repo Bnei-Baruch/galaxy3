@@ -70,7 +70,7 @@ class ShidurApp extends Component {
             let groups = rooms.filter((room) => !disabled_rooms.find(droom => room.room === droom.room));
             disabled_rooms = rooms.filter((room) => !groups.find(droom => room.room === droom.room));
             this.setState({groups,disabled_rooms});
-            let quads = [...this.col2.state.vquad,...this.col3.state.vquad,...this.col4.state.vquad];
+            let quads = [...this.col1.state.vquad,...this.col2.state.vquad,...this.col3.state.vquad,...this.col4.state.vquad];
             let list = groups.filter((room) => !quads.find(droom => droom && room.room === droom.room));
             let questions = list.filter(room => room.questions);
             this.setState({questions});
@@ -90,10 +90,6 @@ class ShidurApp extends Component {
                 this.setState({users});
             }
         }
-
-        // if(data.type === "camera") {
-        //     this.setState({ce: data.user});
-        // }
 
         if(data.type === "question") {
             setTimeout(() => {
