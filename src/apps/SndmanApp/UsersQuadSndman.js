@@ -2,9 +2,8 @@ import React, { Component } from 'react';
 import {Button, Icon, Label, Segment} from "semantic-ui-react";
 import './UsersQuadSndman.scss'
 import UsersHandleSndman from "./UsersHandleSndman";
-import {getState,getPluginInfo} from "../../shared/tools";
+import {getState} from "../../shared/tools";
 import {Janus} from "../../lib/janus";
-import {DANTE_IN_IP, SECRET} from "../../shared/consts";
 import {sendProtocolMessage} from "../../shared/protocol";
 
 class UsersQuadSndman extends Component {
@@ -19,7 +18,7 @@ class UsersQuadSndman extends Component {
 
     componentDidMount() {
         let { index } = this.props;
-        let col = index === 0 ? 2 : index === 4 ? 3 : index === 8 ? 4 : null;
+        let col = index === 0 ? 1 : index === 4 ? 2 : index === 8 ? 3 : index === 12 ? 4 : null;
         this.setState({col});
         document.addEventListener("keydown", this.onKeyPressed);
         setInterval(() => {
@@ -56,7 +55,6 @@ class UsersQuadSndman extends Component {
     forwardStream = (full_group) => {
         const {fullscr,forward,feeds} = this.state;
         let {room} = full_group;
-        let port = 5630;
         //FIXME: This is really problem place we call start forward from one place and stop from two placed
         // and we depend on callback from request and fullscreen state and feed info.
         // fix1: we take now feed info from state only in render and pass as param to needed functions
@@ -72,10 +70,6 @@ class UsersQuadSndman extends Component {
                 if (feed) {
                     // FIXME: if we change sources on client based on room id (not ip) we send message only once?
                     this.sendMessage(feed, false);
-                    // let stopfw = { "request":"stop_rtp_forward","stream_id":feed.streamid,"publisher_id":feed.rfid,"room":feed.room,"secret":`${SECRET}` };
-                    // getPluginInfo(stopfw, data => {
-                    //     Janus.log(":: Forward callback: ", data);
-                    // });
                 }
             });
             this.micMute(false);
@@ -88,13 +82,6 @@ class UsersQuadSndman extends Component {
                 users.forEach((user,i) => {
                     if (user && user.rfid) {
                         this.sendMessage(user, true);
-                        // let forward = { "request": "rtp_forward","publisher_id":user.rfid,"room":room,"secret":`${SECRET}`,"host":`${DANTE_IN_IP}`,"audio_port":port};
-                        // getPluginInfo(forward, data => {
-                        //     Janus.log(":: Forward callback: ", data);
-                        //     users[i].streamid = data.response["rtp_stream"]["audio_stream_id"];
-                        //     this.sendMessage(user, true);
-                        // });
-                        // port++;
                     } else {
                         Janus.error("Forward failed for user: " + user + " in room: " + room, data)
                     }

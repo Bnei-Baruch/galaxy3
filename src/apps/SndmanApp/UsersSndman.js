@@ -1,4 +1,4 @@
-import React, {Component, Fragment} from 'react';
+import React, {Component} from 'react';
 import { Janus } from "../../lib/janus";
 import {getState, initJanus} from "../../shared/tools";
 import './UsersSndman.css'
@@ -9,6 +9,7 @@ import {Grid} from "semantic-ui-react";
 class UsersSndman extends Component {
 
     state = {
+        fwdhandle: null,
         janus: null,
         protocol: null,
         group: "",
@@ -75,6 +76,15 @@ class UsersSndman extends Component {
             delete users[data.id];
             this.setState({users});
         }
+
+        if(data.type === "event") {
+            delete data.type;
+            this.setState({...data});
+        }
+
+        if(data.type === "sdi-restart_sndman") {
+            window.location.reload();
+        }
     };
 
     setProps = (props) => {
@@ -86,17 +96,18 @@ class UsersSndman extends Component {
             <Grid columns={3}>
                 <Grid.Row>
                     <Grid.Column>
+                        <UsersQuadSndman index={0} fwdhandle={this.props.fwdhandle} {...this.state} ref={col => {this.col2 = col;}} setProps={this.setProps} />
                     </Grid.Column>
                     <Grid.Column>
-                        <UsersQuadSndman index={0} fwdhandle={this.props.fwdhandle} {...this.state} ref={col => {this.col2 = col;}} setProps={this.setProps} />
+                        <UsersQuadSndman index={4} fwdhandle={this.props.fwdhandle} {...this.state} ref={col => {this.col2 = col;}} setProps={this.setProps} />
                     </Grid.Column>
                 </Grid.Row>
                 <Grid.Row>
                     <Grid.Column>
-                        <UsersQuadSndman index={4} fwdhandle={this.props.fwdhandle} {...this.state} ref={col => {this.col3 = col;}} setProps={this.setProps} />
+                        <UsersQuadSndman index={8} fwdhandle={this.props.fwdhandle} {...this.state} ref={col => {this.col3 = col;}} setProps={this.setProps} />
                     </Grid.Column>
                     <Grid.Column>
-                        <UsersQuadSndman index={8} fwdhandle={this.props.fwdhandle} {...this.state} ref={col => {this.col4 = col;}} setProps={this.setProps} />
+                        <UsersQuadSndman index={12} fwdhandle={this.props.fwdhandle} {...this.state} ref={col => {this.col4 = col;}} setProps={this.setProps} />
                     </Grid.Column>
                 </Grid.Row>
             </Grid>

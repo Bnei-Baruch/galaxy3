@@ -11,9 +11,9 @@ import 'semantic-ui-css/semantic.min.css';
 // import AdminShidur from "./apps/AdminApp/AdminShidur";
 // import ShidurApp from "./apps/ShidurApp/ShidurApp";
 // import UsersApp from "./apps/ShidurApp/UsersApp";
-// import SndmanApp from "./apps/SndmanApp/SndmanApp";
+import SndmanApp from "./apps/SndmanApp/SndmanApp";
 // import AudioOutApp from "./apps/AudioOutApp/AudioOutApp";
-import SDIOutApp from "./apps/SDIOutApp/SDIOutApp";
+// import SDIOutApp from "./apps/SDIOutApp/SDIOutApp";
 // import UsersSDIOut from "./apps/SDIOutApp/UsersSDIOut";
 // import AdminGuest from "./apps/AdminApp/AdminGuest";
 // import AdminCongress from "./apps/AdminApp/AdminCongress";
@@ -36,8 +36,8 @@ class App extends Component {
                 {/* <ShidurApp/>*/}
                  {/*<UsersApp />*/}
                  {/*<AudioOutApp />*/}
-                 {/*<SndmanApp/>*/}
-                <SDIOutApp />
+                 <SndmanApp/>
+                {/*<SDIOutApp />*/}
                 {/*<UsersSDIOut />*/}
                 {/* <AdminGuest/>*/}
                 {/*<AdminCongress/>*/}
