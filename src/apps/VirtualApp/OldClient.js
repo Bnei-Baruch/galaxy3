@@ -11,6 +11,7 @@ import 'eqcss'
 import VirtualChat from "./VirtualChat";
 import {initGxyProtocol, sendProtocolMessage} from "../../shared/protocol";
 import {GEO_IP_INFO,PROTOCOL_ROOM,vsettings_list} from "../../shared/consts";
+import platform from "platform";
 
 class OldClient extends Component {
 
@@ -82,6 +83,8 @@ class OldClient extends Component {
                 if(Janus.unifiedPlan) {
                     user.session = janus.getSessionId();
                     user.system = navigator.userAgent;
+                    let browser = platform.parse(user.system);
+                    Janus.log("SYSTEM INFO: ", browser.name);
                     this.setState({janus, user, geoinfo: !!data});
                     this.chat.initChat(janus);
                     this.initVideoRoom(error);

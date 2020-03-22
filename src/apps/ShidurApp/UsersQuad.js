@@ -17,7 +17,7 @@ class UsersQuad extends Component {
 
     componentDidMount() {
         let { index } = this.props;
-        let col = index === 0 ? 2 : index === 4 ? 3 : index === 8 ? 4 : null;
+        let col = index === 0 ? 1 : index === 4 ? 2 : index === 8 ? 3 : index === 12 ? 4 : null;
         this.setState({col});
     };
 
@@ -296,7 +296,7 @@ class UsersQuad extends Component {
                   </Button>
                   <Button className='fours_button'
                           disabled={groups.length < 10 || fullscr}
-                          color='blue'
+                          color='brown'
                           onClick={this.switchFour}>
                       <Icon name='share' />
                       <Icon name='th large' />
