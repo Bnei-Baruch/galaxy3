@@ -26,6 +26,8 @@ class ShidurApp extends Component {
         user: null,
         users: {},
         presets:[],
+        sdiout: false,
+        sndman: false,
     };
 
     componentWillUnmount() {

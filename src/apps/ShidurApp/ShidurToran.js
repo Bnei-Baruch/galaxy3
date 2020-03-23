@@ -1,6 +1,7 @@
 import React, {Component} from 'react';
 import {Janus} from "../../lib/janus";
-import {Grid, Label, Message, Segment, Table, Icon, Button, Dropdown, Popup} from "semantic-ui-react";
+import {Grid, Label, Message, Segment, Table, Button, Dropdown, Popup} from "semantic-ui-react";
+import {sendProtocolMessage} from "../../shared/protocol";
 import './ShidurToran.scss';
 import UsersPreview from "./UsersPreview";
 
@@ -108,9 +109,16 @@ class ShidurToran extends Component {
             this.selectGroup(questions[0], null);
     };
 
+    sdiAction = (action, status, i, feed) => {
+        const { protocol, user, index } = this.props;
+        let col = index === 0 ? 1 : index === 4 ? 2 : index === 8 ? 3 : index === 12 ? 4 : null;
+        let msg = { type: "sdi-"+action, status, room: null, col, i, feed};
+        sendProtocolMessage(protocol, user, msg );
+    };
+
     render() {
 
-        const {group,disabled_rooms,groups,groups_queue,questions,presets,users} = this.props;
+        const {group,disabled_rooms,groups,groups_queue,questions,presets,users,sdiout,sndman} = this.props;
         const {open} = this.state;
         const q = (<b style={{color: 'red', fontSize: '20px', fontFamily: 'Verdana', fontWeight: 'bold'}}>?</b>);
         const next_group = groups[groups_queue] ? groups[groups_queue].description : groups[0] ? groups[0].description : "";
@@ -173,14 +181,14 @@ class ShidurToran extends Component {
                     </Message>
                     <Button.Group attached='bottom' >
                         <Button
-                            // color={sndman ? "green" : "red"}
-                            // disabled={!sndman || feeds.length < 13}
-                            onClick={() => this.sdiAction("restart_sndman", false, 1, this.props.mids)}>
+                            color={sndman ? "green" : "red"}
+                            disabled={!sndman}
+                            onClick={() => this.sdiAction("restart_sndman", false, 1, null)}>
                             SndMan</Button>
                         <Button
-                            // color={sdiout ? "green" : "red"}
-                            // disabled={!sdiout || feeds.length < 13}
-                            onClick={() => this.sdiAction("restart_sdiout", false, 1, this.props.mids)}>
+                            color={sdiout ? "green" : "red"}
+                            disabled={!sdiout}
+                            onClick={() => this.sdiAction("restart_sdiout", false, 1, null)}>
                             SdiOut</Button>
                     </Button.Group>
                 </Grid.Column>
