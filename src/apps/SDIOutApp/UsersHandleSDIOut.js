@@ -31,7 +31,8 @@ class UsersHandleSDIOut extends Component {
         if(ce && JSON.stringify(ce) !== JSON.stringify(prevProps.ce) && ce.room === room && ce.camera) {
             let {feedStreams} = this.state;
             let remotevideo = this.refs["pv" + ce.rfid];
-            Janus.attachMediaStream(remotevideo, feedStreams[ce.rfid].stream);
+            if(remotevideo && feedStreams[ce.rfid] && feedStreams[ce.rfid].stream)
+                Janus.attachMediaStream(remotevideo, feedStreams[ce.rfid].stream);
         }
     }
 
