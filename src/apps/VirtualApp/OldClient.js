@@ -75,30 +75,34 @@ class OldClient extends Component {
         localStorage.setItem("sound_test", false);
         localStorage.setItem("uuid", user.id);
         checkNotification();
-        geoInfo(`${GEO_IP_INFO}`, data => {
-            user.ip = data ? data.ip : "127.0.0.1";
-            if(!data) alert('Fail to get GeoInfo! Question will be disabled!');
-            initJanus(janus => {
-                // Check if unified plan supported
-                if(Janus.unifiedPlan) {
-                    user.session = janus.getSessionId();
-                    user.system = navigator.userAgent;
-                    let browser = platform.parse(user.system);
-                    Janus.log("SYSTEM INFO: ", browser.name);
-                    this.setState({janus, user, geoinfo: !!data});
-                    this.chat.initChat(janus);
-                    this.initVideoRoom(error);
-                } else {
-                    alert("WebRTC Unified Plan is NOT supported")
-                    this.setState({audio_device: null});
-                }
-            }, er => {
-                setTimeout(() => {
-                    this.initClient(user,er);
-                }, 5000);
-            }, true);
-        });
-
+        let system = navigator.userAgent;
+        let browser = platform.parse(system);
+        if(/Safari|Firefox|Chrome/.test(browser.name)) {
+            geoInfo(`${GEO_IP_INFO}`, data => {
+                user.ip = data ? data.ip : "127.0.0.1";
+                if(!data) alert('Fail to get GeoInfo! Question will be disabled!');
+                initJanus(janus => {
+                    // Check if unified plan supported
+                    if(Janus.unifiedPlan) {
+                        user.session = janus.getSessionId();
+                        user.system = system;
+                        this.setState({janus, user, geoinfo: !!data});
+                        this.chat.initChat(janus);
+                        this.initVideoRoom(error);
+                    } else {
+                        alert("WebRTC Unified Plan is NOT supported")
+                        this.setState({audio_device: null});
+                    }
+                }, er => {
+                    setTimeout(() => {
+                        this.initClient(user,er);
+                    }, 5000);
+                }, true);
+            });
+        } else {
+            alert("Browser not supported");
+            window.location = "https://galaxy.kli.one";
+        }
     };
 
     initDevices = (video) => {
@@ -1154,7 +1158,7 @@ class OldClient extends Component {
 
         return (
             <div>
-                {isMobile ? <div> This content is unavailable on mobile </div> : content}
+                {isMobile ? content : content}
             </div>
         );
     }
