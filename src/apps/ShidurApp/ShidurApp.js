@@ -95,10 +95,10 @@ class ShidurApp extends Component {
 
         if(data.type === "question") {
             setTimeout(() => {
-                this.col1.setQuestion(data.room, data.status);
-                this.col2.setQuestion(data.room, data.status);
-                this.col3.setQuestion(data.room, data.status);
-                this.col4.setQuestion(data.room, data.status);
+                this.col1.setQuestion(data.room);
+                this.col2.setQuestion(data.room);
+                this.col3.setQuestion(data.room);
+                this.col4.setQuestion(data.room);
             }, 3000);
         }
 
