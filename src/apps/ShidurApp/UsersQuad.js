@@ -23,14 +23,14 @@ class UsersQuad extends Component {
 
     componentDidUpdate(prevProps) {
         let {groups,index} = this.props;
-        let {vquad} = this.state;
+        let {vquad,col} = this.state;
         if(groups.length > prevProps.groups.length) {
             let res = groups.filter(o => !prevProps.groups.some(v => v.room === o.room))[0];
             Janus.log(" :: Group enter in queue: ", res);
             if(vquad[0] === null && groups.length > index+4) {
                 setTimeout(() => {
                     this.switchFour();
-                }, index*1000);
+                }, col*1000);
             }
         } else if(groups.length < prevProps.groups.length) {
             let res = prevProps.groups.filter(o => !groups.some(v => v.room === o.room))[0];
