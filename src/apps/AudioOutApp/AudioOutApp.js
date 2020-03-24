@@ -99,7 +99,7 @@ class AudioOutApp extends Component {
         } else if(data.type === "sdi-fullscr_group" && !status) {
             let {col, feed, i} = data;
             if(qst) {
-                if(col !== 1 && !this.state.room) {
+                if(col !== 1 && !this.state.room && this.state.group && this.state.group.room) {
                     this.users.exitVideoRoom(this.state.group.room, () =>{
                         this.setState({room: 1234});
                     });

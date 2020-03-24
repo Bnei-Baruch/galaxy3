@@ -382,6 +382,14 @@ class UsersHandleAudioOut extends Component {
                            ref={"provideo" + id}
                            id={"provideo" + id}>
                   <div className={classNames('video__overlay', {'talk' : talk})}>
+                      <audio
+                          key={"a" + id}
+                          ref={"pa" + id}
+                          id={"pa" + id}
+                          autoPlay={autoPlay}
+                          controls={true}
+                          muted={!audio}
+                          playsInline={true}/>
                   </div>
                   <video className={talk ? "talk" : ""}
                          key={id}
@@ -393,14 +401,6 @@ class UsersHandleAudioOut extends Component {
                          controls={controls}
                          muted={muted}
                          playsInline={true}/>
-                  <audio
-                      key={"a" + id}
-                      ref={"pa" + id}
-                      id={"pa" + id}
-                      autoPlay={autoPlay}
-                      controls={controls}
-                      muted={!audio}
-                      playsInline={true}/>
               </div>);
           }
           return true;

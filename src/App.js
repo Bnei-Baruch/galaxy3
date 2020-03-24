@@ -9,10 +9,10 @@ import 'semantic-ui-css/semantic.min.css';
 // import GalaxyStream from "./apps/StreamApp/GalaxyStream";
 // import AdminRoot from "./apps/AdminApp/AdminRoot";
 // import AdminShidur from "./apps/AdminApp/AdminShidur";
-import ShidurApp from "./apps/ShidurApp/ShidurApp";
+// import ShidurApp from "./apps/ShidurApp/ShidurApp";
 // import UsersApp from "./apps/ShidurApp/UsersApp";
 // import SndmanApp from "./apps/SndmanApp/SndmanApp";
-// import AudioOutApp from "./apps/AudioOutApp/AudioOutApp";
+import AudioOutApp from "./apps/AudioOutApp/AudioOutApp";
 // import SDIOutApp from "./apps/SDIOutApp/SDIOutApp";
 // import UsersSDIOut from "./apps/SDIOutApp/UsersSDIOut";
 // import AdminGuest from "./apps/AdminApp/AdminGuest";
@@ -27,15 +27,15 @@ class App extends Component {
                 {/*<GalaxyApp />*/}
                 {/*<OldClient />*/}
                 {/*<MobileClient/>*/}
-                {/*<VirtualClient/>*/}
+                {/*<VirtualClient />*/}
                 {/* <VirtualStreaming/>*/}
                 {/*<GroupClient/>*/}
                 {/* <GalaxyStream/>*/}
                 {/*<AdminRoot />*/}
                 {/*<AdminShidur />*/}
-                 <ShidurApp/>
+                {/* <ShidurApp/>*/}
                  {/*<UsersApp />*/}
-                 {/*<AudioOutApp />*/}
+                 <AudioOutApp />
                  {/*<SndmanApp/>*/}
                 {/*<SDIOutApp />*/}
                 {/*<UsersSDIOut />*/}

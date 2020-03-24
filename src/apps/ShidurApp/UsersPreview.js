@@ -29,6 +29,7 @@ class UsersPreview extends Component {
                 this.state.remoteFeed.detach();
             this.setState({remoteFeed: null, mids: [], feeds: [], feedStreams: {}}, () => {
                 this.attachPreview(this.props.pg);
+                console.log("ATTACHING PREVIEW:", this.props.pg)
             });
         }
     }
