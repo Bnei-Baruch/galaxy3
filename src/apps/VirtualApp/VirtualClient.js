@@ -75,7 +75,7 @@ class VirtualClient extends Component {
             });
             delete user.roles;
             user.role = "user";
-            this.initClient(user);
+            this.initClient(user, false);
         } else {
             alert("Access denied!");
             client.signoutRedirect();
@@ -104,9 +104,10 @@ class VirtualClient extends Component {
                     client.signoutRedirect();
                 }
             }, er => {
-                setTimeout(() => {
-                    this.initClient(user,er);
-                }, 5000);
+                alert(er)
+                // setTimeout(() => {
+                //     this.initClient(user,er);
+                // }, 5000);
             }, true);
         });
 

@@ -66,7 +66,7 @@ class OldClient extends Component {
             window.location = "/userm";
         } else {
             let {user} = this.state;
-            this.initClient(user);
+            this.initClient(user, false);
         }
     };
 
@@ -90,13 +90,14 @@ class OldClient extends Component {
                         this.chat.initChat(janus);
                         this.initVideoRoom(error);
                     } else {
-                        alert("WebRTC Unified Plan is NOT supported")
+                        alert("WebRTC Unified Plan is NOT supported");
                         this.setState({audio_device: null});
                     }
                 }, er => {
-                    setTimeout(() => {
-                        this.initClient(user,er);
-                    }, 5000);
+                    alert(er);
+                    // setTimeout(() => {
+                    //     this.initClient(user,er);
+                    // }, 5000);
                 }, true);
             });
         } else {
@@ -840,7 +841,7 @@ class OldClient extends Component {
             } else if(type === "client-reload" && user.id === id) {
                 window.location.reload();
             } else if(type === "client-disconnect" && user.id === id) {
-                this.exitRoom();
+                this.exitRoom(false);
             } else if(type === "client-question" && user.id === id) {
                 this.handleQuestion();
             } else if(type === "client-mute" && user.id === id) {

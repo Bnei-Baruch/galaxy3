@@ -74,7 +74,7 @@ class MobileClient extends Component {
 
     componentDidMount() {
         let {user} = this.state;
-        this.initClient(user);
+        this.initClient(user, false);
     };
 
     initClient = (user,error) => {
@@ -98,9 +98,10 @@ class MobileClient extends Component {
                 this.setState({audio_device: null});
             }
         }, er => {
-            setTimeout(() => {
-                this.initClient(user,er);
-            }, 5000);
+            alert(er)
+            // setTimeout(() => {
+            //     this.initClient(user,er);
+            // }, 5000);
         }, true);
     };
 
