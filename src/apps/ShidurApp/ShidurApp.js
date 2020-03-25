@@ -53,7 +53,7 @@ class ShidurApp extends Component {
             getState('galaxy/users', (users) => {
                 this.setState({users});
             });
-            setInterval(() => this.getRoomList(), 3000 );
+            setInterval(() => this.getRoomList(), 1000 );
             initGxyProtocol(janus, user, protocol => {
                 this.setState({protocol});
             }, ondata => {
@@ -71,7 +71,7 @@ class ShidurApp extends Component {
         getState('galaxy/rooms', (rooms) => {
             let groups = rooms.filter((room) => !disabled_rooms.find(droom => room.room === droom.room));
             disabled_rooms = rooms.filter((room) => !groups.find(droom => room.room === droom.room));
-            this.setState({groups,disabled_rooms});
+            this.setState({rooms,groups,disabled_rooms});
             let quads = [...this.col1.state.vquad,...this.col2.state.vquad,...this.col3.state.vquad,...this.col4.state.vquad];
             let list = groups.filter((room) => !quads.find(droom => droom && room.room === droom.room));
             let questions = list.filter(room => room.questions);
@@ -99,7 +99,7 @@ class ShidurApp extends Component {
                 this.col2.setQuestion(data.room);
                 this.col3.setQuestion(data.room);
                 this.col4.setQuestion(data.room);
-            }, 3000);
+            }, 2000);
         }
 
         if(data.type === "leave" && users[data.id]) {
@@ -110,7 +110,7 @@ class ShidurApp extends Component {
                     this.col2.setQuestion(user.room);
                     this.col3.setQuestion(user.room);
                     this.col4.setQuestion(user.room);
-                }, 3000);
+                }, 2000);
             }
             delete users[data.id];
             this.setState({users});

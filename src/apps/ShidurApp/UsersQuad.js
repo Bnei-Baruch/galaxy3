@@ -52,16 +52,31 @@ class UsersQuad extends Component {
         }
     };
 
+    quadCheckDup = () => {
+        let {group,groups,groups_queue} = this.props;
+        let {vquad} = this.state;
+        let dup = false;
+        let g = group || groups[groups_queue];
+        for (let i=0; i<4; i++) {
+            if(vquad[i] && g && vquad[i].room === g.room) {
+                dup = true;
+                break;
+            }
+        }
+        return dup;
+    };
+
+
     setQuestion = (room) => {
         let {vquad,col} = this.state;
-        let {groups} = this.props;
+        let {rooms} = this.props;
         for(let i=0; i<4; i++) {
             if(vquad[i] && vquad[i].room === room) {
-                let group = groups.find(g => g.room === room);
-                if(vquad[i].questions !== group.questions) {
-                    vquad[i].questions = group.questions;
+                let group = rooms.find(g => g.room === room);
+                let qs = group ? group.questions : false;
+                if(vquad[i].questions !== qs) {
+                    vquad[i].questions = qs;
                     this.setState({vquad});
-                    // Save state
                     putData(`galaxy/qids/q`+col, {vquad}, (cb) => {
                         Janus.log(":: Save to state: ",cb);
                     });
@@ -85,6 +100,9 @@ class UsersQuad extends Component {
 
         if(leave)
             groups_queue--;
+
+        if(this.quadCheckDup())
+            return;
 
         if(group) {
             // From preview
