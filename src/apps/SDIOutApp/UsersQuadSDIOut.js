@@ -40,8 +40,8 @@ class UsersQuadSDIOut extends Component {
           return (
               <div className={fullscr && full_feed === i ? "video_full" : fullscr && full_feed !== i ? "hidden" : "usersvideo_box"}
                    key={"pr" + i} >
-                  <div className={fullscr ? "fullscrvideo_title" : "video_title"} >{name}</div>
                   {qst ? <div className={fullscr ? "qst_fullscreentitle" : "qst_title"}>?</div> : ""}
+                  <div className={fullscr ? "fullscrvideo_title" : "video_title"} >{name}</div>
                   <UsersHandleSDIOut key={"q"+i} g={g} index={i} {...this.props} />
               </div>);
       });
