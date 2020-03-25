@@ -15,7 +15,6 @@ class AudioOutApp extends Component {
         ce: null,
         group: null,
         room: null,
-        qam: {0:1,1:2,2:3,3:1,4:2,5:3,6:1,7:2,8:3,9:1,10:2,11:3},
         janus: null,
         mids: [],
         gxyhandle: null,
@@ -74,43 +73,13 @@ class AudioOutApp extends Component {
         let {users} = this.state;
         let {room, col, feed, group, i, status, qst} = data;
 
-        if(data.type === "sdi-switch_req") {
-            this.switchTo(feed)
-        // } else if(data.type === "sdi-subscribe_req") {
-        //     this.subscribeTo(feed)
-        // } else if(data.type === "sdi-unsubscribe_req") {
-        //     this.unsubscribeFrom(feed)
-        } else if(data.type === "sdi-fullscr_group" && status) {
-            if(qst) {
-                if(room) {
-                    // this.setState({group: feed, room}, () => {
-                    //     let fourvideo = this["col"+col].refs["programVideo" + i];
-                    //     let fullvideo = this.qst.refs.fullscreenVideo;
-                    //     fullvideo.srcObject = fourvideo.captureStream();
-                    //     this.qst.toFullGroup(i,feed);
-                    // });
-                } else {
-                    this.setState({group, room});
-                    this.users.initVideoRoom(group.room);
-                }
-            } else {
-                //this["col"+col].toFullGroup(i,feed);
+        if(data.type === "sdi-fullscr_group" && status && qst) {
+            this.setState({group, room});
+            this.users.initVideoRoom(group.room);
+        } else if(data.type === "sdi-fullscr_group" && !status && qst) {
+            if(this.state.group && this.state.group.room) {
+                this.users.exitVideoRoom(this.state.group.room, () =>{});
             }
-        } else if(data.type === "sdi-fullscr_group" && !status) {
-            let {col, feed, i} = data;
-            if(qst) {
-                if(col !== 1 && !this.state.room && this.state.group && this.state.group.room) {
-                    this.users.exitVideoRoom(this.state.group.room, () =>{
-                        this.setState({room: 1234});
-                    });
-                } else if(this.qst) {
-                    //this.qst.toFourGroup(i,feed);
-                }
-            } else {
-                //this["col"+col].toFourGroup(i,feed);
-            }
-        } else if(data.type === "sdi-sync_sdiout") {
-            this.programState(feed);
         } else if(data.type === "sdi-restart_sdiout") {
             window.location.reload();
         } else if(data.type === "audio-out") {
@@ -131,10 +100,6 @@ class AudioOutApp extends Component {
             }
         }
 
-        // if(data.type && data.type === "camera") {
-        //     this.setState({ce: data.user});
-        // }
-
         if(data.type && data.type === "leave" && users[data.id]) {
             delete users[data.id];
             this.setState({users});
@@ -147,15 +112,13 @@ class AudioOutApp extends Component {
 
     render() {
         let {group} = this.state;
-        // let qst = g && g.questions;
         let name = group && group.description;
 
         return (
             <Segment className="preview_sdi">
                 <div className="usersvideo_grid">
                     <div className="video_full">
-                        <div className="fullscrvideo_title" >{name}</div>
-                        {group && group.questions ? <div className="qst_fullscreentitle">?</div> : ""}
+                        <div className="title" >{name}</div>
                         <UsersHandleAudioOut ref={users => {this.users = users;}} {...this.state} setProps={this.setProps} />
                     </div>
                 </div>

@@ -57,6 +57,7 @@ $exactly-selector: _build-quantity-selector($selector-append, $selector);
     text-align: right;
     margin-bottom: .1em;
     margin-top: .2em;
+    color: blue;
     span {
         display: inline-block;
         background: blue;

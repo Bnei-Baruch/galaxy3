@@ -1,7 +1,6 @@
 import React, {Component} from 'react';
 import './UsersHandleAudioOut.scss'
 import { Janus } from "../../lib/janus";
-import classNames from "classnames";
 
 class UsersHandleAudioOut extends Component {
 
@@ -17,7 +16,7 @@ class UsersHandleAudioOut extends Component {
     };
 
     componentDidUpdate(prevProps) {
-        let {g,ce} = this.props;
+        let {g} = this.props;
         let {room} = this.state;
         if(g && JSON.stringify(g) !== JSON.stringify(prevProps.g) && g.room !== room) {
             if(room) {
@@ -28,11 +27,6 @@ class UsersHandleAudioOut extends Component {
                 this.initVideoRoom(g.room);
             }
         }
-        // if(ce && JSON.stringify(ce) !== JSON.stringify(prevProps.ce) && ce.room === room && ce.camera) {
-        //     let {feedStreams} = this.state;
-        //     let remotevideo = this.refs["pv" + ce.rfid];
-        //     Janus.attachMediaStream(remotevideo, feedStreams[ce.rfid].stream);
-        // }
     }
 
     componentWillUnmount() {
@@ -81,6 +75,7 @@ class UsersHandleAudioOut extends Component {
             let leave_room = {request : "leave", "room": roomid};
             this.state.videoroom.send({"message": leave_room,
                 success: (data) => {
+                    this.setState({feeds: [], mids: [], feedStreams: {}});
                     this.state.videoroom.detach();
                     if(this.state.remoteFeed)
                         this.state.remoteFeed.detach();
@@ -104,7 +99,7 @@ class UsersHandleAudioOut extends Component {
                 if (msg["publishers"] !== undefined && msg["publishers"] !== null) {
                     let list = msg["publishers"];
                     //FIXME: Tmp fix for black screen in room caoused by feed with video_codec = none
-                    let feeds = list.filter(feeder => JSON.parse(feeder.display).role === "user" && feeder.video_codec !== "none");
+                    let feeds = list.filter(feeder => JSON.parse(feeder.display).role === "user" && feeder.audio_codec !== "none");
                     let {feedStreams} = this.state;
                     let {users} = this.props;
                     Janus.log(":: Got Pulbishers list: ", feeds);
@@ -309,11 +304,8 @@ class UsersHandleAudioOut extends Component {
                         feedStreams[feed].audio_stream = stream;
                         this.setState({feedStreams});
                         let remoteaudio = this.refs["pa" + feed];
-                        Janus.attachMediaStream(remoteaudio, stream);
-                    } else if(track.kind === "data") {
-                        Janus.debug("Its data channel");
-                    } else {
-                        Janus.debug(" :: Track already attached: ",track);
+                        if(remoteaudio)
+                            Janus.attachMediaStream(remoteaudio, stream);
                     }
                 },
                 ondataopen: (data) => {
@@ -365,54 +357,30 @@ class UsersHandleAudioOut extends Component {
 
   render() {
       const {feeds} = this.state;
-      const {audio} = this.props;
-      const width = "400";
-      const height = "300";
-      const autoPlay = true;
-      const controls = false;
-      const muted = true;
+      const {audio,users} = this.props;
 
       let program_feeds = feeds.map((feed) => {
-          //let camera = users[feed.display.id] && users[feed.display.id].camera !== false;
+          let name = users[feed.display.id].display;
           if(feed) {
               let id = feed.id;
               let talk = feed.talk;
-              return (<div className="video"
-                           key={"prov" + id}
-                           ref={"provideo" + id}
-                           id={"provideo" + id}>
-                  <div className={classNames('video__overlay', {'talk' : talk})}>
-                      <audio
-                          key={"a" + id}
-                          ref={"pa" + id}
-                          id={"pa" + id}
-                          autoPlay={autoPlay}
-                          controls={true}
-                          muted={!audio}
-                          playsInline={true}/>
-                  </div>
-                  <video className={talk ? "talk" : ""}
-                         key={id}
-                         ref={"pv" + id}
-                         id={"pv" + id}
-                         width={width}
-                         height={height}
-                         autoPlay={autoPlay}
-                         controls={controls}
-                         muted={muted}
-                         playsInline={true}/>
+              return (<div key={"t" + id} className="title" >{name}
+              <audio className={talk ? "talk" : ""}
+                             key={"a" + id}
+                             ref={"pa" + id}
+                             id={"pa" + id}
+                             autoPlay={true}
+                             controls={true}
+                             muted={!audio}
+                             playsInline={true}/>
               </div>);
           }
           return true;
       });
 
       return (
-          <div className="videos-panel">
-              <div className="videos">
-                  <div className="videos__wrapper">
-                      {program_feeds}
-                  </div>
-              </div>
+          <div>
+              {program_feeds}
           </div>
       );
   }
