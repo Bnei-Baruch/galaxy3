@@ -360,7 +360,7 @@ class UsersHandleAudioOut extends Component {
       const {audio,users} = this.props;
 
       let program_feeds = feeds.map((feed) => {
-          let name = users[feed.display.id].display;
+          let name = users[feed.display.id] && users[feed.display.id].display ? users[feed.display.id].display : "";
           if(feed) {
               let id = feed.id;
               let talk = feed.talk;
