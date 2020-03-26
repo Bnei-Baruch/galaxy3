@@ -914,7 +914,6 @@ class OldClient extends Component {
 
     micMute = () => {
         let {videoroom, muted} = this.state;
-        //mystream.getAudioTracks()[0].enabled = !muted;
         muted ? videoroom.unmuteAudio() : videoroom.muteAudio();
         this.setState({muted: !muted});
     };

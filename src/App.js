@@ -10,11 +10,9 @@ import OldClient from "./apps/VirtualApp/OldClient";
 // import AdminRoot from "./apps/AdminApp/AdminRoot";
 // import AdminShidur from "./apps/AdminApp/AdminShidur";
 // import ShidurApp from "./apps/ShidurApp/ShidurApp";
-// import UsersApp from "./apps/ShidurApp/UsersApp";
 // import SndmanApp from "./apps/SndmanApp/SndmanApp";
 // import AudioOutApp from "./apps/AudioOutApp/AudioOutApp";
 // import SDIOutApp from "./apps/SDIOutApp/SDIOutApp";
-// import UsersSDIOut from "./apps/SDIOutApp/UsersSDIOut";
 // import AdminGuest from "./apps/AdminApp/AdminGuest";
 // import AdminCongress from "./apps/AdminApp/AdminCongress";
 // import AdminStreaming from "./apps/AdminApp/AdminStreaming";
@@ -33,15 +31,13 @@ class App extends Component {
                 {/* <GalaxyStream/>*/}
                 {/*<AdminRoot />*/}
                 {/*<AdminShidur />*/}
-                {/* <ShidurApp/>*/}
-                 {/*<UsersApp />*/}
-                 {/*<AudioOutApp />*/}
-                 {/*<SndmanApp/>*/}
+                {/*<ShidurApp/>*/}
+                {/*<AudioOutApp />*/}
+                {/*<SndmanApp/>*/}
                 {/*<SDIOutApp />*/}
-                {/*<UsersSDIOut />*/}
                 {/* <AdminGuest/>*/}
                 {/*<AdminCongress/>*/}
-                {/* <AdminStreaming/>*/}
+                {/*<AdminStreaming/>*/}
             </Fragment>
         );
     }
