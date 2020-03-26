@@ -907,7 +907,10 @@ class VirtualClient extends Component {
         user.question = !question;
         let msg = {type: "question", status: !question, room, user};
         sendProtocolMessage(protocol, user, msg );
-        this.setState({question: !question});
+        this.setState({question: !question, delay: true});
+        setTimeout(() => {
+            this.setState({delay: false});
+        }, 3000);
     };
 
     camMute = () => {
@@ -1050,7 +1053,7 @@ class VirtualClient extends Component {
                         {this.state.visible ? "Close" : "Open"} Chat
                         {count > 0 ? l : ""}
                     </Menu.Item>
-                    <Menu.Item disabled={!audio || video_device === null || !geoinfo || !mystream} onClick={this.handleQuestion}>
+                    <Menu.Item disabled={!audio || video_device === null || !geoinfo || !mystream || delay} onClick={this.handleQuestion}>
                         <Icon color={question ? 'green' : ''} name='question'/>
                         Ask a Question
                     </Menu.Item>

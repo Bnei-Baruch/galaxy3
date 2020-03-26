@@ -995,7 +995,10 @@ class MobileClient extends Component {
         user.question = !question;
         let msg = {type: "question", status: !question, room, user};
         sendProtocolMessage(protocol, user, msg );
-        this.setState({question: !question});
+        this.setState({question: !question, delay: true});
+        setTimeout(() => {
+            this.setState({delay: false});
+        }, 3000);
     };
 
     camMute = () => {
@@ -1158,7 +1161,7 @@ class MobileClient extends Component {
                                     {/*{this.state.visible ? "Close" : "Open"} Chat */}
                                     {/*{count > 0 ? l : ""} */}
                                     {/*</Menu.Item>*/}
-                                    <Menu.Item disabled={!audio || video_device === null || !mystream} onClick={this.handleQuestion}>
+                                    <Menu.Item disabled={!audio || video_device === null || !mystream || delay} onClick={this.handleQuestion}>
                                         <Icon color={question ? 'green' : ''} name='question'/>Question
                                     </Menu.Item>
                                 </Menu>
