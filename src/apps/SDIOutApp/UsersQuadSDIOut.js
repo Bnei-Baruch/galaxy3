@@ -1,6 +1,5 @@
 import React, { Component } from 'react';
 import {Segment} from "semantic-ui-react";
-import './UsersQuadSDIOut.scss'
 import UsersHandleSDIOut from "./UsersHandleSDIOut";
 import {getState} from "../../shared/tools";
 

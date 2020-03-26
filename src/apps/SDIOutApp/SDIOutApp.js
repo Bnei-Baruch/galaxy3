@@ -4,6 +4,7 @@ import {Grid, Segment} from "semantic-ui-react";
 import {getState, initJanus} from "../../shared/tools";
 import './SDIOutApp.css';
 import './UsersSDIOut.css'
+import './UsersQuadSDIOut.scss'
 import {initGxyProtocol} from "../../shared/protocol";
 import {SDIOUT_ID} from "../../shared/consts";
 import UsersHandleSDIOut from "./UsersHandleSDIOut";
@@ -16,7 +17,6 @@ class SDIOutApp extends Component {
         ce: null,
         group: null,
         room: null,
-        qam: {0:1,1:2,2:3,3:1,4:2,5:3,6:1,7:2,8:3,9:1,10:2,11:3},
         janus: null,
         mids: [],
         gxyhandle: null,
@@ -75,17 +75,23 @@ class SDIOutApp extends Component {
 
         if(data.type === "sdi-fullscr_group" && status) {
             if(qst) {
-                this.setState({group, room});
-                this.users.initVideoRoom(group.room);
+                if(room) {
+                    this.users.exitVideoRoom(this.state.room, () => {
+                        this.users.initVideoRoom(group.room);
+                        this.setState({group, room});
+                    });
+                } else {
+                    this.users.initVideoRoom(group.room);
+                    this.setState({group, room});
+                }
             } else {
                 this["col"+col].toFullGroup(i,feed);
             }
         } else if(data.type === "sdi-fullscr_group" && !status) {
             let {col, feed, i} = data;
             if(qst) {
-                this.users.exitVideoRoom(this.state.group.room, () => {
-                    this.setState({room: null})
-                });
+                this.users.exitVideoRoom(this.state.room, () => {});
+                this.setState({group: null, room: null});
             } else {
                 this["col"+col].toFourGroup(i,feed);
             }
@@ -122,7 +128,7 @@ class SDIOutApp extends Component {
     };
 
     render() {
-        let {group,room} = this.state;
+        let {group} = this.state;
         // let qst = g && g.questions;
         let name = group && group.description;
 
@@ -147,17 +153,15 @@ class SDIOutApp extends Component {
                 </Grid.Row>
                 <Grid.Row>
                     <Grid.Column>
-                        {!room ?
                         <Segment className="preview_sdi">
                             <div className="usersvideo_grid">
                                 <div className="video_full">
-                                    <div className="fullscrvideo_title" >{name}</div>
                                     {group && group.questions ? <div className="qst_fullscreentitle">?</div> : ""}
+                                    <div className="fullscrvideo_title" >{name}</div>
                                     <UsersHandleSDIOut ref={users => {this.users = users;}} {...this.state} setProps={this.setProps} />
                                 </div>
                             </div>
                         </Segment>
-                            : ""}
                     </Grid.Column>
                     <Grid.Column>
                     </Grid.Column>
