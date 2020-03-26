@@ -1180,7 +1180,7 @@ class AdminRoot extends Component {
                   <Button color='blue' icon='sound' onClick={() => this.sendRemoteCommand("sound_test")} />
                   <Popup
                       trigger={<Button positive icon='info' onClick={this.getFeedInfo} />}
-                      position='bottom right'
+                      position='bottom left'
                       content={
                           <List as='ul'>
                               <List.Item as='li'>System
@@ -1215,8 +1215,8 @@ class AdminRoot extends Component {
                   />
                   <Menu secondary >
                       <Menu.Item>
-                          <Button color='orange' icon='volume off' labelPosition='right'
-                                  content={room_name} onClick={this.stopForward} />
+                          {/*<Button color='orange' icon='volume off' labelPosition='right'*/}
+                          {/*        content={room_name} onClick={this.stopForward} />*/}
                       </Menu.Item>
                       <Menu.Item>
                       </Menu.Item>
@@ -1254,8 +1254,8 @@ class AdminRoot extends Component {
                       <Grid.Column width={4}>
                           <Segment.Group>
                               <Segment textAlign='center'>
-                                  <Popup trigger={<Button color="black" icon='volume up' onClick={() => this.startForward(feed_id)} />} content='Start forward' inverted />
-                                  <Popup trigger={<Button color="orange" icon='volume off' onClick={() => this.stopForward(feed_id)} />} content='Stop forward' inverted />
+                                  {/*<Popup trigger={<Button color="black" icon='volume up' onClick={() => this.startForward(feed_id)} />} content='Start forward' inverted />*/}
+                                  {/*<Popup trigger={<Button color="orange" icon='volume off' onClick={() => this.stopForward(feed_id)} />} content='Stop forward' inverted />*/}
                                   <Popup trigger={<Button negative icon='user x' onClick={() => this.sendRemoteCommand("client-kicked")} />} content='Kick' inverted />
                                   <Popup trigger={<Button color="brown" icon='sync alternate' alt="test" onClick={() => this.sendRemoteCommand("client-reconnect")} />} content='Reconnect' inverted />
                                   <Popup trigger={<Button color="olive" icon='redo alternate' onClick={() => this.sendRemoteCommand("client-reload")} />} content='Reload page(LOST FEED HERE!)' inverted />
@@ -1269,6 +1269,9 @@ class AdminRoot extends Component {
                           <Segment textAlign='center' className="group_list" raised>
                               <Table selectable compact='very' basic structured className="admin_table" unstackable>
                                   <Table.Body>
+                                      <Table.Row disabled positive>
+                                          <Table.Cell colSpan={3} textAlign='center'>Users:</Table.Cell>
+                                      </Table.Row>
                                       <Table.Row disabled>
                                           <Table.Cell width={10}>Title</Table.Cell>
                                           <Table.Cell width={1}>FW</Table.Cell>
@@ -1299,14 +1302,6 @@ class AdminRoot extends Component {
                                   <Table.Body>
                                       <Table.Row disabled positive>
                                           <Table.Cell colSpan={2} textAlign='center'>Groups:</Table.Cell>
-                                      </Table.Row>
-                                      <Table.Row active={current_room === GROUPS_ROOM}
-                                                 key={i} onClick={() => this.joinRoom(null, i)}>
-                                          <Table.Cell width={5}>Galaxy</Table.Cell>
-                                          <Table.Cell width={1}>{current_room === GROUPS_ROOM ? feeds.length : 0}</Table.Cell>
-                                      </Table.Row>
-                                      <Table.Row disabled positive>
-                                          <Table.Cell colSpan={2} textAlign='center'>Users:</Table.Cell>
                                       </Table.Row>
                                       {rooms_grid}
                                   </Table.Body>

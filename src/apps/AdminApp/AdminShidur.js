@@ -992,7 +992,7 @@ class AdminShidur extends Component {
                   <Button color='blue' icon='sound' onClick={() => this.sendRemoteCommand("sound_test")} />
                   <Popup
                       trigger={<Button positive icon='info' onClick={this.getFeedInfo} />}
-                      position='bottom right'
+                      position='bottom left'
                       content={
                           <List as='ul'>
                               <List.Item as='li'>System
@@ -1034,6 +1034,9 @@ class AdminShidur extends Component {
                           <Segment textAlign='center' className="group_list" raised>
                               <Table selectable compact='very' basic structured className="admin_table" unstackable>
                                   <Table.Body>
+                                      <Table.Row disabled positive>
+                                          <Table.Cell colSpan={3} textAlign='center'>Users:</Table.Cell>
+                                      </Table.Row>
                                       <Table.Row disabled>
                                           <Table.Cell width={10}>Title</Table.Cell>
                                           <Table.Cell width={1}>FW</Table.Cell>
@@ -1064,14 +1067,6 @@ class AdminShidur extends Component {
                                   <Table.Body>
                                       <Table.Row disabled positive>
                                           <Table.Cell colSpan={2} textAlign='center'>Groups:</Table.Cell>
-                                      </Table.Row>
-                                      <Table.Row active={current_room === GROUPS_ROOM}
-                                                 key={i} onClick={() => this.joinRoom(null, i)}>
-                                          <Table.Cell width={5}>Galaxy</Table.Cell>
-                                          <Table.Cell width={1}>{current_room === GROUPS_ROOM ? feeds.length : 0}</Table.Cell>
-                                      </Table.Row>
-                                      <Table.Row disabled positive>
-                                          <Table.Cell colSpan={2} textAlign='center'>Users:</Table.Cell>
                                       </Table.Row>
                                       {rooms_grid}
                                   </Table.Body>

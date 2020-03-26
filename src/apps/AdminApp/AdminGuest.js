@@ -599,8 +599,7 @@ class AdminGuest extends Component {
                               <Table selectable compact='very' basic structured className="admin_table" unstackable>
                                   <Table.Header>
                                       <Table.Row disabled positive>
-                                          <Table.HeaderCell colSpan='2'>
-                                          </Table.HeaderCell>
+                                          <Table.Cell colSpan={2} textAlign='center'>Users:</Table.Cell>
                                       </Table.Row>
                                   </Table.Header>
                                   <Table.Body>
@@ -626,14 +625,6 @@ class AdminGuest extends Component {
                                   <Table.Body>
                                       <Table.Row disabled positive>
                                           <Table.Cell colSpan={2} textAlign='center'>Groups:</Table.Cell>
-                                      </Table.Row>
-                                      <Table.Row active={current_room === GROUPS_ROOM}
-                                                 key={i} onClick={() => this.joinRoom(null, i)}>
-                                          <Table.Cell width={5}>Galaxy</Table.Cell>
-                                          <Table.Cell width={1}>{current_room === GROUPS_ROOM ? feeds.length : 0}</Table.Cell>
-                                      </Table.Row>
-                                      <Table.Row disabled positive>
-                                          <Table.Cell colSpan={2} textAlign='center'>Users:</Table.Cell>
                                       </Table.Row>
                                       {rooms_grid}
                                   </Table.Body>
