@@ -886,7 +886,7 @@ class AdminRoot extends Component {
 
     getRoomID = () => {
         const {rooms_list} = this.state;
-        let id = 1028;
+        let id = 2100;
         for(let i=id; i<9999; i++) {
             let room_id = rooms_list.filter(room => room.room === i);
             if (room_id.length === 0) {
