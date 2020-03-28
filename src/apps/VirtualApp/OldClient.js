@@ -433,7 +433,7 @@ class OldClient extends Component {
       media: {
         audioRecv: false, videoRecv: false, audioSend: true, videoSend: useVideo,
         audio: {
-          autoGainControl: false, echoCancellation: false, highpassFilter: false, noiseSuppression: false,
+          //autoGainControl: false, echoCancellation: false, highpassFilter: false, noiseSuppression: false,
           deviceId: { exact: audio_device }
         },
         video: {
@@ -1188,7 +1188,7 @@ class OldClient extends Component {
 
     return (
       <div>
-        {isMobile ? content : content}
+        {isMobile ? <div> This content is unavailable on mobile </div> : content}
       </div>
     );
   }
