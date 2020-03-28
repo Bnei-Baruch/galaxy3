@@ -14,7 +14,7 @@ import { GEO_IP_INFO, PROTOCOL_ROOM, vsettings_list } from '../../shared/consts'
 import platform from 'platform';
 import { Help } from './components/Help';
 import { withTranslation } from 'react-i18next';
-import { mapNameToLanguage } from '../../translations';
+import { mapNameToLanguage, setLanguage } from '../../i18n/i18n';
 
 class OldClient extends Component {
 
@@ -58,7 +58,7 @@ class OldClient extends Component {
     visible: false,
     question: false,
     geoinfo: false,
-    selftest: this.props.t('selfAudioTest'),
+    selftest: this.props.t('oldClient.selfAudioTest'),
     tested: false,
     support: false,
     women: window.location.pathname === '/women/'
@@ -85,7 +85,7 @@ class OldClient extends Component {
       geoInfo(`${GEO_IP_INFO}`, data => {
         user.ip = data ? data.ip : '127.0.0.1';
         if (!data) {
-          alert(t('failGeoInfo'));
+          alert(t('oldClient.failGeoInfo'));
         }
         initJanus(janus => {
           // Check if unified plan supported
@@ -96,7 +96,7 @@ class OldClient extends Component {
             this.chat.initChat(janus);
             this.initVideoRoom(error);
           } else {
-            alert(t('unifiedPlanNotSupported'));
+            alert(t('oldClient.unifiedPlanNotSupported'));
             this.setState({ audio_device: null });
           }
         }, er => {
@@ -107,7 +107,7 @@ class OldClient extends Component {
         }, true);
       });
     } else {
-      alert(t('browserNotSupported'));
+      alert(t('oldClient.browserNotSupported'));
       window.location = 'https://galaxy.kli.one';
     }
   };
@@ -131,7 +131,7 @@ class OldClient extends Component {
         this.setState({ video_devices, audio_devices });
         this.setDevice(video_id, audio_id, video_setting);
       } else if (video) {
-        alert(t('videoNotDetected'));
+        alert(t('oldClient.videoNotDetected'));
         this.setState({ cammuted: true, video_device: null });
         //Try to get video fail reson
         testDevices(true, false, steam => {
@@ -145,7 +145,7 @@ class OldClient extends Component {
         //Try to get audio fail reason
         testDevices(false, true, steam => {
         });
-        alert(t('noInputDevices'));
+        alert(t('oldClient.noInputDevices'));
         //FIXME: What we going to do in this case?
         this.setState({ audio_device: null });
       }
@@ -179,22 +179,22 @@ class OldClient extends Component {
 
   selfTest = () => {
     const { t } = this.props;
-    this.setState({ selftest: t('recording') + 9 });
+    this.setState({ selftest: t('oldClient.recording') + 9 });
     testMic(this.state.stream);
 
     let rect = 9;
     let rec  = setInterval(() => {
       rect--;
-      this.setState({ selftest: t('recording') + rect });
+      this.setState({ selftest: t('oldClient.recording') + rect });
       if (rect <= 0) {
         clearInterval(rec);
         let playt = 11;
         let play  = setInterval(() => {
           playt--;
-          this.setState({ selftest: t('playing') + playt });
+          this.setState({ selftest: t('oldClient.playing') + playt });
           if (playt <= 0) {
             clearInterval(play);
-            this.setState({ selftest: t('selfAudioTest'), tested: true });
+            this.setState({ selftest: t('oldClient.selfAudioTest'), tested: true });
           }
         }, 1000);
       }
@@ -263,7 +263,7 @@ class OldClient extends Component {
         clearInterval(chk);
         this.exitRoom(false);
         alert();
-        window.location.reload(this.props.t('networkSettingsChanged'));
+        window.location.reload(this.props.t('oldClient.networkSettingsChanged'));
       }
     }, 3000);
   };
@@ -291,7 +291,7 @@ class OldClient extends Component {
         if (count >= 10) {
           clearInterval(chk);
           this.exitRoom(false);
-          alert(t('serverStoppedReceiveOurMedia'));
+          alert(t('oldClient.serverStoppedReceiveOurMedia'));
         }
       }, 3000);
     }
@@ -324,7 +324,7 @@ class OldClient extends Component {
           if (question) {
             this.handleQuestion();
           }
-          alert(t('serverStoppedReceiveOurAudio'));
+          alert(t('oldClient.serverStoppedReceiveOurAudio'));
         }
       }, 3000);
     }
@@ -494,7 +494,7 @@ class OldClient extends Component {
           let { feedStreams, users } = this.state;
           Janus.log(':: Got Pulbishers list: ', feeds);
           if (feeds.length > 15) {
-            alert(t('maxUsersInRoom'));
+            alert(t('oldClient.maxUsersInRoom'));
             window.location.reload();
           }
           Janus.debug('Got a list of available publishers/feeds:');
@@ -849,7 +849,7 @@ class OldClient extends Component {
       Janus.log('-- :: It\'s protocol public message: ', ondata);
       const { type, error_code, id, room } = ondata;
       if (type === 'error' && error_code === 420) {
-        alert(this.props.t('Error') + ondata.error);
+        alert(this.props.t('oldClient.Error') + ondata.error);
         this.state.protocol.hangup();
       } else if (type === 'joined') {
         let register = { 'request': 'join', 'room': selected_room, 'ptype': 'publisher', 'display': JSON.stringify(user) };
@@ -963,7 +963,7 @@ class OldClient extends Component {
   };
 
   onBlock = () => {
-    alert(this.props.t('popupBlock'));
+    alert(this.props.t('oldClient.popupBlock'));
   };
 
   onNewMsg = (private_message) => {
@@ -1050,7 +1050,7 @@ class OldClient extends Component {
       <div className="vclient__toolbar">
         <Input
           iconPosition='left'
-          placeholder={t('yourName')}
+          placeholder={t('oldClient.yourName')}
           value={this.state.username_value}
           onChange={(v, { value }) => this.setState({ username_value: value })}
           action>
@@ -1060,10 +1060,10 @@ class OldClient extends Component {
             search
             disabled={audio_device === null || mystream}
             error={!selected_room}
-            placeholder={t('selectRoom')}
+            placeholder={t('oldClient.selectRoom')}
             value={selected_room}
             options={rooms_list}
-            noResultsMessage={t('noResultsFound')}
+            noResultsMessage={t('oldClient.noResultsFound')}
             onClick={this.getRoomList}
             onChange={(e, { value }) => this.selectRoom(value)} />
           {mystream ? <Button negative icon='sign-out' onClick={() => this.exitRoom(false)} /> : ''}
@@ -1074,16 +1074,16 @@ class OldClient extends Component {
           <Menu.Item disabled={!mystream}
                      onClick={() => this.setState({ visible: !this.state.visible, count: 0 })}>
             <Icon name="comments" />
-            {t(this.state.visible ? 'closeChat' : 'openChat')}
+            {t(this.state.visible ? 'oldClient.closeChat' : 'oldClient.openChat')}
             {count > 0 ? l : ''}
           </Menu.Item>
           <Menu.Item disabled={!audio || video_device === null || !geoinfo || !mystream || delay || otherFeedHasQuestion} onClick={this.handleQuestion}>
             <Icon color={question ? 'green' : ''} name='question' />
-            {t('askQuestion')}
+            {t('oldClient.askQuestion')}
           </Menu.Item>
           <Menu.Item disabled={this.state.shidur} onClick={this.showShidur}>
             <Icon name="tv" />
-            {t('openBroadcast')}
+            {t('oldClient.openBroadcast')}
             {this.state.shidur ?
               <NewWindow
                 url='https://galaxy.kli.one/gxystr'
@@ -1096,7 +1096,7 @@ class OldClient extends Component {
         </Menu>
         <Menu icon='labeled' secondary size="mini">
           {!mystream ?
-            <Menu.Item position='right' disabled={audio_device === null || selftest !== 'Self Audio Test'}
+            <Menu.Item position='right' disabled={audio_device === null || selftest !== t('oldClient.selfAudioTest')}
                        onClick={this.selfTest}>
               <Icon color={tested ? 'green' : 'red'} name="sound" />
               {selftest}
@@ -1106,11 +1106,11 @@ class OldClient extends Component {
             <canvas className={muted ? 'hidden' : 'vumeter'} ref="canvas1" id="canvas1" width="15"
                     height="35" />
             <Icon color={muted ? 'red' : ''} name={!muted ? 'microphone' : 'microphone slash'} />
-            {t(muted ? 'unMute' : 'mute')}
+            {t(muted ? 'oldClient.unMute' : 'oldClient.mute')}
           </Menu.Item>
           <Menu.Item disabled={video_device === null || !mystream || delay} onClick={this.camMute}>
             <Icon color={cammuted ? 'red' : ''} name={!cammuted ? 'eye' : 'eye slash'} />
-            {t(cammuted ? 'startVideo' : 'stopVideo')}
+            {t(cammuted ? 'oldClient.startVideo' : 'oldClient.stopVideo')}
           </Menu.Item>
           <Menu.Item>
             <Select
@@ -1118,12 +1118,12 @@ class OldClient extends Component {
               value={i18n.language}
               options={mapNameToLanguage(i18n.language)}
               onChange={(e, { value }) => {
-                i18n.changeLanguage(value);
-                localStorage.setItem('lng', value);
+                setLanguage(value);
+                this.setState({ selftest: t('oldClient.selfAudioTest') });
               }} />
           </Menu.Item>
           <Popup
-            trigger={<Menu.Item icon="setting" name={t('settings')} />}
+            trigger={<Menu.Item icon="setting" name={t('oldClient.settings')} />}
             on='click'
             position='bottom right'
           >
@@ -1131,27 +1131,27 @@ class OldClient extends Component {
               <Select className='select_device'
                       disabled={mystream}
                       error={!audio_device}
-                      placeholder={t('selectDevice')}
+                      placeholder={t('oldClient.selectDevice')}
                       value={audio_device}
                       options={adevices_list}
                       onChange={(e, { value }) => this.setDevice(video_device, value, video_setting)} />
               <Select className='select_device'
                       disabled={mystream}
                       error={!video_device}
-                      placeholder={t('selectDevice')}
+                      placeholder={t('oldClient.selectDevice')}
                       value={video_device}
                       options={vdevices_list}
                       onChange={(e, { value }) => this.setDevice(value, audio_device, video_setting)} />
               <Select className='select_device'
                       disabled={mystream}
                       error={!video_device}
-                      placeholder={t('videoSettings')}
+                      placeholder={t('oldClient.videoSettings')}
                       value={video_setting}
                       options={vsettings_list}
                       onChange={(e, { value }) => this.setDevice(video_device, audio_device, value)} />
             </Popup.Content>
           </Popup>
-          <Help />
+          <Help t={t} />
         </Menu>
       </div>
       <div basic className="vclient__main" onDoubleClick={() => this.setState({ visible: !this.state.visible })}>

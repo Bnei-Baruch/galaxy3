@@ -209,8 +209,8 @@ class VirtualChat extends Component {
       <div className="chat-panel">
         {/* <div className="chat" > */}
         <Button.Group attached='top'>
-          <Button disabled={room_chat} color='blue' onClick={() => this.tooggleChat(true)}>{t('roomChat')}</Button>
-          <Button disabled={!room_chat} color='blue' onClick={() => this.tooggleChat(false)}>{t('supportChat')}</Button>
+          <Button disabled={room_chat} color='blue' onClick={() => this.tooggleChat(true)}>{t('virtualChat.roomChat')}</Button>
+          <Button disabled={!room_chat} color='blue' onClick={() => this.tooggleChat(false)}>{t('virtualChat.supportChat')}</Button>
         </Button.Group>
         <Message attached className='messages_list'>
           <div className="messages-wrapper">
@@ -219,10 +219,10 @@ class VirtualChat extends Component {
           </div>
         </Message>
 
-        <Input fluid type='text' placeholder={t('enterMessage')} action value={this.state.input_value}
+        <Input fluid type='text' placeholder={t('virtualChat.enterMessage')} action value={this.state.input_value}
                onChange={(v, { value }) => this.setState({ input_value: value })}>
           <input />
-          <Button size='mini' positive onClick={this.sendChatMessage}>{t('send')}</Button>
+          <Button size='mini' positive onClick={this.sendChatMessage}>{t('virtualChat.send')}</Button>
         </Input>
         {/* </div> */}
       </div>
