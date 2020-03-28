@@ -40,7 +40,7 @@ class VirtualChat extends Component {
     };
 
     onKeyPressed = (e) => {
-        if(e.code === "Enter")
+        if(e.code === "Enter" && this.state.input_value !== "")
             this.sendChatMessage();
     };
 
@@ -211,7 +211,7 @@ class VirtualChat extends Component {
                             {room_chat ? room_msgs : admin_msgs}
                             <div ref='end' />
                         </div>
-                        
+
                     </Message>
 
                     <Input fluid type='text' placeholder='Type your message' action value={this.state.input_value}
