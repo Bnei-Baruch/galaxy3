@@ -3,7 +3,7 @@ import { Button, Icon, Menu, Popup } from 'semantic-ui-react';
 
 export const Help = () => (
   <Popup
-    trigger={<Menu.Item><Icon name="help" />Feedback/Help</Menu.Item>}
+    trigger={<Menu.Item><Icon name="address card" />Feedback/Help</Menu.Item>}
     on="click"
     position="bottom right"
   >
