@@ -94,23 +94,20 @@ class ShidurApp extends Component {
         }
 
         if(data.type === "question") {
-            setTimeout(() => {
-                this.col1.setQuestion(data.room);
-                this.col2.setQuestion(data.room);
-                this.col3.setQuestion(data.room);
-                this.col4.setQuestion(data.room);
-            }, 2000);
+            const {room, status} = data;
+            this.col1.setQuestion(room, status);
+            this.col2.setQuestion(room, status);
+            this.col3.setQuestion(room, status);
+            this.col4.setQuestion(room, status);
         }
 
         if(data.type === "leave" && users[data.id]) {
             let user = users[data.id];
-            if(user.room) {
-                setTimeout(() => {
-                    this.col1.setQuestion(user.room);
-                    this.col2.setQuestion(user.room);
-                    this.col3.setQuestion(user.room);
-                    this.col4.setQuestion(user.room);
-                }, 2000);
+            if(user.room && user.question) {
+                this.col1.setQuestion(user.room, false);
+                this.col2.setQuestion(user.room, false);
+                this.col3.setQuestion(user.room, false);
+                this.col4.setQuestion(user.room, false);
             }
             delete users[data.id];
             this.setState({users});
