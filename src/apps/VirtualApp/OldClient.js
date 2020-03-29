@@ -415,9 +415,11 @@ class OldClient extends Component {
     let { feeds, users } = this.state;
     let rfid             = users[data.id].rfid;
     let camera           = data.camera;
+    let question         = data.question;
     for (let i = 0; i < feeds.length; i++) {
       if (feeds[i] && feeds[i].id === rfid) {
         feeds[i].cammute = !camera;
+        feeds[i].question = question;
         this.setState({ feeds });
         break;
       }
@@ -798,21 +800,6 @@ class OldClient extends Component {
     }
   };
 
-  onProtocolData = (data) => {
-    //TODO: Need to add transaction handle (filter and acknowledge)
-    let { room, feeds, users, user } = this.state;
-    if (data.type === 'question' && data.room === room && user.id !== data.user.id) {
-      let rfid = users[data.user.id].rfid;
-      for (let i = 0; i < feeds.length; i++) {
-        if (feeds[i] && feeds[i].id === rfid) {
-          feeds[i].question = data.status;
-          break;
-        }
-      }
-      this.setState({ feeds });
-    }
-  };
-
   sendDataMessage = (key, value) => {
     let { videoroom, user } = this.state;
     user[key]               = value;
@@ -878,7 +865,6 @@ class OldClient extends Component {
       } else if(type === "audio-out" && room === selected_room) {
         this.handleAudioOut(ondata);
       }
-      this.onProtocolData(ondata);
     });
   };
 
@@ -924,6 +910,7 @@ class OldClient extends Component {
     setTimeout(() => {
       this.setState({ delay: false });
     }, 3000);
+    this.sendDataMessage('question', !question);
   };
 
   handleAudioOut = (data) => {
