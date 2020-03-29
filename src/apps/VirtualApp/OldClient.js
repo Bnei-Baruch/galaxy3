@@ -588,6 +588,11 @@ class OldClient extends Component {
           this.setState({ feeds, feedStreams, users });
           if (subscription.length > 0) {
             this.subscribeTo(subscription);
+            // Send question event for new feed
+            setTimeout(() => {
+              if(this.state.question)
+              this.sendDataMessage('question', true);
+            }, 3000);
           }
         } else if (msg['leaving'] !== undefined && msg['leaving'] !== null) {
           // One of the publishers has gone away?
