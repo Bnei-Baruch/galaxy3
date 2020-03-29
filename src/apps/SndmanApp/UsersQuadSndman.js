@@ -72,7 +72,7 @@ class UsersQuadSndman extends Component {
                     this.sendMessage(feed, false);
                 }
             });
-            this.micMute(false);
+            this.micMute(false, room);
             this.setState({feeds: [], forward: false});
         } else if(fullscr) {
             Janus.log(" :: Start forward from room: ", room);
@@ -87,7 +87,7 @@ class UsersQuadSndman extends Component {
                     }
                 });
                 this.setState({feeds: users, forward: true});
-                this.micMute(true);
+                this.micMute(true, room);
             });
         }
     };
@@ -110,8 +110,8 @@ class UsersQuadSndman extends Component {
         }
     };
 
-    micMute = (status) => {
-        const {protocol, user, room} = this.props;
+    micMute = (status, room) => {
+        const {protocol, user} = this.props;
         let msg = {type: "audio-out", status, room, col:null, i:null, feed:null};
         sendProtocolMessage(protocol, user, msg );
     };
