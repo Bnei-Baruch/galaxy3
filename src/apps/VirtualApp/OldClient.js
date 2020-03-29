@@ -853,6 +853,8 @@ class OldClient extends Component {
                 user.sound_test = true;
                 localStorage.setItem("sound_test", true);
                 this.setState({user});
+            } else if(type === "audio-out" && room === selected_room) {
+                this.handleAudioOut(ondata);
             }
             this.onProtocolData(ondata);
         });
@@ -897,6 +899,15 @@ class OldClient extends Component {
         setTimeout(() => {
             this.setState({delay: false});
         }, 3000);
+    };
+
+    handleAudioOut = (data) => {
+        if (data.status) {
+            // remove question mark when sndman unmute our room
+            if (this.state.question) {
+                this.handleQuestion();
+            }
+        }
     };
 
     camMute = () => {
