@@ -591,7 +591,7 @@ class OldClient extends Component {
             // Send question event for new feed
             setTimeout(() => {
               if(this.state.question)
-              this.sendDataMessage('question', true);
+                this.sendDataMessage('question', true);
             }, 3000);
           }
         } else if (msg['leaving'] !== undefined && msg['leaving'] !== null) {
