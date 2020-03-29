@@ -130,9 +130,9 @@ class AdminRoot extends Component {
                 return 0;
             });
             this.setState({rooms});
-            if(current_room !== "") {
-                this.listForward(current_room);
-            }
+            // if(current_room !== "") {
+            //     this.listForward(current_room);
+            // }
         });
     };
 
@@ -240,7 +240,7 @@ class AdminRoot extends Component {
                 this.getRoomList();
 
                 if(room_id) {
-                    this.listForward(room_id);
+                    //this.listForward(room_id);
                     let register = { "request": "join", "room": room_id, "ptype": "publisher", "display": JSON.stringify(user) };
                     videoroom.send({"message": register});
                 } else {
