@@ -111,8 +111,8 @@ class UsersQuadSndman extends Component {
     };
 
     micMute = (status) => {
-        const {protocol, user} = this.props;
-        let msg = {type: "audio-out", status, room: null, col:null, i:null, feed:null};
+        const {protocol, user, room} = this.props;
+        let msg = {type: "audio-out", status, room, col:null, i:null, feed:null};
         sendProtocolMessage(protocol, user, msg );
     };
 

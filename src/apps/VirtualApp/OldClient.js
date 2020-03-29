@@ -875,6 +875,8 @@ class OldClient extends Component {
         user.sound_test = true;
         localStorage.setItem('sound_test', true);
         this.setState({ user });
+      } else if(type === "audio-out" && room === selected_room) {
+        this.handleAudioOut(ondata);
       }
       this.onProtocolData(ondata);
     });
@@ -924,6 +926,15 @@ class OldClient extends Component {
     }, 3000);
   };
 
+  handleAudioOut = (data) => {
+    if (data.status) {
+      // remove question mark when sndman unmute our room
+      if (this.state.question) {
+        this.handleQuestion();
+      }
+    }
+  };
+
   camMute = () => {
     let { videoroom, cammuted, protocol, user, room } = this.state;
     cammuted ? videoroom.unmuteVideo() : videoroom.muteVideo();
@@ -961,7 +972,7 @@ class OldClient extends Component {
 
   render() {
 
-    const { video_setting, audio, rooms, room, audio_devices, video_devices, video_device, audio_device, muted, cammuted, delay, mystream, selected_room, count, question, selftest, tested, women, geoinfo } = this.state;
+    const { video_setting, audio, rooms, room, audio_devices, video_devices, video_device, audio_device, muted, cammuted, delay, mystream, selected_room, count, question, selftest, tested, women, geoinfo, myid} = this.state;
     const width                                                                                                                                                                                               = '134';
     const height                                                                                                                                                                                              = '100';
     const autoPlay                                                                                                                                                                                            = true;
@@ -985,6 +996,7 @@ class OldClient extends Component {
       return ({ key: i, text: label, value: deviceId });
     });
 
+    let otherFeedHasQuestion = false;
     let videos = this.state.feeds.map((feed) => {
       if (feed) {
         let id           = feed.id;
@@ -993,6 +1005,7 @@ class OldClient extends Component {
         let cammute      = feed.cammute;
         //let name = feed.display.name;
         let display_name = feed.display.display;
+        otherFeedHasQuestion = otherFeedHasQuestion || (question && id !== myid);
         return (<div className="video"
                      key={'v' + id}
                      ref={'video' + id}
@@ -1062,7 +1075,7 @@ class OldClient extends Component {
             {this.state.visible ? 'Close' : 'Open'} Chat
             {count > 0 ? l : ''}
           </Menu.Item>
-          <Menu.Item disabled={!audio || video_device === null || !geoinfo || !mystream || delay} onClick={this.handleQuestion}>
+          <Menu.Item disabled={!audio || video_device === null || !geoinfo || !mystream || delay || otherFeedHasQuestion} onClick={this.handleQuestion}>
             <Icon color={question ? 'green' : ''} name='question' />
             Ask a Question
           </Menu.Item>
