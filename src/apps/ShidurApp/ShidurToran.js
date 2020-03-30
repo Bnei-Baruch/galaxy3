@@ -30,21 +30,28 @@ class ShidurToran extends Component {
         this.props.setProps({group});
     };
 
-    closePopup = () => {
+    closePopup = ({disable=false}={}) => {
+        if (disable) {
+            this.disableRoom(this.state.group);
+        }
         this.props.setProps({group: null});
     };
 
-    disableRoom = (e, data, i) => {
+    handleDisableRoom = (e, data) => {
         e.preventDefault();
         if (e.type === 'contextmenu') {
-            let {disabled_rooms} = this.props;
-            let group = disabled_rooms.find(r => r.room === data.room);
-            if(group) return;
-            disabled_rooms.push(data);
-            this.props.setProps({disabled_rooms});
-            this.props.gerGroups();
+            this.disableRoom(data);
         }
     };
+
+    disableRoom(data) {
+        let {disabled_rooms} = this.props;
+        let group = disabled_rooms.find(r => r.room === data.room);
+        if (group) return;
+        disabled_rooms.push(data);
+        this.props.setProps({disabled_rooms});
+        this.props.gerGroups();
+    }
 
     restoreRoom = (e, data, i) => {
         e.preventDefault();
@@ -134,7 +141,7 @@ class ShidurToran extends Component {
                            className={active ? 'active' : next ? 'warning' : 'no'}
                            key={room}
                            onClick={() => this.selectGroup(data, i)}
-                           onContextMenu={(e) => this.disableRoom(e, data, i)} >
+                           onContextMenu={(e) => this.handleDisableRoom(e, data)} >
                     <Table.Cell width={5}>{description}</Table.Cell>
                     <Table.Cell width={1}>{p}</Table.Cell>
                     <Table.Cell width={1}>{num_users}</Table.Cell>
