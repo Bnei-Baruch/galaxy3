@@ -15,6 +15,7 @@ class ShidurApp extends Component {
     state = {
         ce: null,
         janus: null,
+        instances: {gxy1: null, gxy3: null},
         protocol: null,
         group: "",
         groups: [],
