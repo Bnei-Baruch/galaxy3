@@ -6,6 +6,7 @@
   "dependencies": {
     "classnames": "^2.2.6",
     "eqcss": "^1.9.1",
+    "i18next": "^19.3.4",
     "jsrsasign": "^8.0.12",
     "node-sass": "^4.13.0",
     "oidc-client": "^1.10.1",
@@ -13,6 +14,7 @@
     "react": "^16.12.0",
     "react-device-detect": "^1.6.2",
     "react-dom": "^16.12.0",
+    "react-i18next": "^11.3.4",
     "react-new-window": "^0.0.9",
     "react-rangeslider": "^2.2.0",
     "react-scripts": "3.4.0",
