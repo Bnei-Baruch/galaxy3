@@ -22,10 +22,10 @@ class UsersHandleSndman extends Component {
         if(g && JSON.stringify(g) !== JSON.stringify(prevProps.g) && g.room !== room) {
             if(room) {
                 this.exitVideoRoom(room, () =>{
-                    this.initVideoRoom(g.room);
+                    this.initVideoRoom(g.room, g.janus);
                 });
             } else {
-                this.initVideoRoom(g.room);
+                this.initVideoRoom(g.room, g.janus);
             }
         }
     }
@@ -34,8 +34,8 @@ class UsersHandleSndman extends Component {
         this.exitVideoRoom(this.state.room, () =>{})
     };
 
-    initVideoRoom = (roomid) => {
-        this.props.janus.attach({
+    initVideoRoom = (roomid, inst) => {
+        this.props[inst].janus.attach({
             plugin: "janus.plugin.videoroom",
             opaqueId: "preview_shidur",
             success: (videoroom) => {
@@ -60,7 +60,7 @@ class UsersHandleSndman extends Component {
                 Janus.log("Janus says our WebRTC PeerConnection is " + (on ? "up" : "down") + " now");
             },
             onmessage: (msg, jsep) => {
-                this.onMessage(msg, jsep, false);
+                this.onMessage(msg, jsep, inst);
             },
             onlocalstream: (mystream) => {
                 Janus.debug(" ::: Got a local stream :::", mystream);
@@ -86,7 +86,7 @@ class UsersHandleSndman extends Component {
     };
 
 
-    onMessage = (msg, jsep, initdata) => {
+    onMessage = (msg, jsep, inst) => {
         Janus.debug(" ::: Got a message (publisher) :::");
         Janus.debug(msg);
         let event = msg["videoroom"];
@@ -128,7 +128,7 @@ class UsersHandleSndman extends Component {
                     this.setState({feeds, feedStreams, users});
                     if (subscription.length > 0) {
                         this.props.setProps({users});
-                        this.subscribeTo(subscription);
+                        this.subscribeTo(subscription, inst);
                     }
                 }
             } else if(event === "talking") {
@@ -193,7 +193,7 @@ class UsersHandleSndman extends Component {
                     feeds.push(feed[0]);
                     this.setState({feeds,feedStreams,users});
                     if(subscription.length > 0) {
-                        this.subscribeTo(subscription);
+                        this.subscribeTo(subscription, inst);
                         this.props.setProps({users});
                     }
                 } else if(msg["leaving"] !== undefined && msg["leaving"] !== null) {
@@ -226,8 +226,8 @@ class UsersHandleSndman extends Component {
         }
     };
 
-    newRemoteFeed = (subscription) => {
-        this.props.janus.attach(
+    newRemoteFeed = (subscription, inst) => {
+        this.props[inst].janus.attach(
             {
                 plugin: "janus.plugin.videoroom",
                 opaqueId: "remotefeed_user",
@@ -316,7 +316,7 @@ class UsersHandleSndman extends Component {
             });
     };
 
-    subscribeTo = (subscription) => {
+    subscribeTo = (subscription, inst) => {
         if (this.state.remoteFeed) {
             this.state.remoteFeed.send({message:
                     {request: "subscribe", streams: subscription}
@@ -325,11 +325,11 @@ class UsersHandleSndman extends Component {
         }
         if (this.state.creatingFeed) {
             setTimeout(() => {
-                this.subscribeTo(subscription);
+                this.subscribeTo(subscription, inst);
             }, 500);
         } else {
             this.setState({creatingFeed: true});
-            this.newRemoteFeed(subscription);
+            this.newRemoteFeed(subscription, inst);
         }
     };
 

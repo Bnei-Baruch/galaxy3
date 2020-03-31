@@ -49,7 +49,7 @@ class UsersQuadSndman extends Component {
     sendMessage = (user, talk) => {
         let message = `{"talk":${talk},"name":"${user.display}","ip":"${user.ip}","col":4,"room":${user.room}}`;
         Janus.log(":: Sending message: ",message);
-        this.props.fwdhandle.data({ text: message });
+        this.props[user.janus].fwdhandle.data({ text: message });
     };
 
     forwardStream = (full_group) => {
@@ -111,9 +111,9 @@ class UsersQuadSndman extends Component {
     };
 
     micMute = (status, room) => {
-        const {protocol, user} = this.props;
+        const {user} = this.props;
         let msg = {type: "audio-out", status, room, col:null, i:null, feed:null};
-        sendProtocolMessage(protocol, user, msg );
+        sendProtocolMessage(this.props[room.janus].protocol, user, msg );
     };
 
   render() {
