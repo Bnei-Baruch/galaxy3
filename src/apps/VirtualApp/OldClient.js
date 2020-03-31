@@ -105,7 +105,7 @@ class OldClient extends Component {
           // setTimeout(() => {
           //     this.initClient(user,er);
           // }, 5000);
-        }, true);
+        }, user.janus);
       });
     } else {
       alert(t('oldClient.browserNotSupported'));

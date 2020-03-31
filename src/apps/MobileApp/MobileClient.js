@@ -103,7 +103,7 @@ class MobileClient extends Component {
             // setTimeout(() => {
             //     this.initClient(user,er);
             // }, 5000);
-        }, true);
+        }, user.janus);
     };
 
     initDevices = (video) => {
