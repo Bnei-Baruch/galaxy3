@@ -15,7 +15,8 @@ class ShidurApp extends Component {
     state = {
         ce: null,
         janus: null,
-        instances: {gxy1: null, gxy3: null},
+        gxy1: {janus: null, protocol: null},
+        gxy3: {janus: null, protocol: null},
         protocol: null,
         group: "",
         groups: [],
@@ -40,7 +41,12 @@ class ShidurApp extends Component {
         if (gxy_group) {
             delete user.roles;
             user.role = "shidur";
-            this.initGalaxy(user);
+            user.session = 0;
+            getState('galaxy/users', (users) => {
+                this.setState({user,users});
+                setInterval(() => this.getRoomList(), 1000 );
+                this.initGalaxy(user);
+            });
         } else {
             alert("Access denied!");
             client.signoutRedirect();
@@ -48,21 +54,34 @@ class ShidurApp extends Component {
     };
 
     initGalaxy = (user) => {
+        let {gxy1,gxy3} = this.state;
+
         initJanus(janus => {
-            user.session = janus.getSessionId();
-            this.setState({janus,user});
-            getState('galaxy/users', (users) => {
-                this.setState({users});
-            });
-            setInterval(() => this.getRoomList(), 1000 );
+            gxy1.janus = janus;
+            user.id = "gxy1";
             initGxyProtocol(janus, user, protocol => {
-                this.setState({protocol});
+                gxy1.protocol = protocol;
+                this.setState({gxy1});
             }, ondata => {
-                Janus.log("-- :: It's protocol public message: ", ondata);
-                this.onProtocolData(ondata);
+                Janus.log("GXY1 :: protocol public message: ", ondata);
+                this.onProtocolData(ondata, "gxy1");
             });
         },er => {
-            alert(er);
+            alert("gxy1: " + er);
+            window.location.reload();
+        }, "gxy1");
+
+        initJanus(janus => {
+            gxy3.janus = janus;
+            initGxyProtocol(janus, user, protocol => {
+                gxy3.protocol = protocol;
+                this.setState({gxy3});
+            }, ondata => {
+                Janus.log("GXY3 :: protocol public message: ", ondata);
+                this.onProtocolData(ondata, "gxy3");
+            });
+        },er => {
+            alert("gxy3: " + er);
             window.location.reload();
         }, true);
     };
@@ -80,7 +99,7 @@ class ShidurApp extends Component {
         });
     };
 
-    onProtocolData = (data) => {
+    onProtocolData = (data, inst) => {
         let {users} = this.state;
 
         // Set status in users list
@@ -173,9 +192,6 @@ class ShidurApp extends Component {
                         <ShidurToran {...this.state} setProps={this.setProps} gerGroups={this.getRoomList} />
                     </Grid>
                 </Grid.Column>
-                {/*<Grid.Column width={4}>*/}
-                {/*<UsersApp ref={users => {this.users = users;}} />*/}
-                {/*</Grid.Column>*/}
             </Grid>
         );
 

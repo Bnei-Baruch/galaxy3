@@ -47,12 +47,12 @@ class UsersPreview extends Component {
                 let subst = {feed: id, mid: "1"};
                 subscription.push(subst);
             }
-            this.subscribeTo(subscription);
+            this.subscribeTo(subscription, g.janus);
         });
     };
 
-    newRemoteFeed = (subscription) => {
-        this.props.janus.attach(
+    newRemoteFeed = (subscription, inst) => {
+        this.props[inst].janus.attach(
             {
                 plugin: "janus.plugin.videoroom",
                 opaqueId: "remotefeed_user",
@@ -142,7 +142,7 @@ class UsersPreview extends Component {
             });
     };
 
-    subscribeTo = (subscription) => {
+    subscribeTo = (subscription, inst) => {
         if (this.state.remoteFeed) {
             this.state.remoteFeed.send({message:
                     {request: "subscribe", streams: subscription}
@@ -151,11 +151,11 @@ class UsersPreview extends Component {
         }
         if (this.state.creatingFeed) {
             setTimeout(() => {
-                this.subscribeTo(subscription);
+                this.subscribeTo(subscription, inst);
             }, 500);
         } else {
             this.setState({creatingFeed: true});
-            this.newRemoteFeed(subscription);
+            this.newRemoteFeed(subscription, inst);
         }
     };
 
@@ -179,32 +179,21 @@ class UsersPreview extends Component {
 
   render() {
       const {mids} = this.state;
-      const {users} = this.props;
       const width = "400";
       const height = "300";
       const autoPlay = true;
       const controls = false;
       const muted = true;
-      //const q = (<b style={{color: 'red', fontSize: '20px', fontFamily: 'Verdana', fontWeight: 'bold'}}>?</b>);
 
       let program_feeds = mids.map((mid) => {
-          //let camera = users[feed.display.id] && users[feed.display.id].camera !== false;
           if(mid) {
               let id = mid.feed_id;
               let talk = mid.talk;
-              //let question = users[mid.display.id] && users[mid.display.id].question;
-              //let st = users[mid.display.id] && users[mid.display.id].sound_test;
               return (<div className="video"
                            key={"prov" + id}
                            ref={"provideo" + id}
                            id={"provideo" + id}>
                   <div className={classNames('video__overlay', {'talk' : talk})}>
-                      {/*{question ? <div className="question">*/}
-                      {/*    <svg viewBox="0 0 50 50">*/}
-                      {/*        <text x="25" y="25" textAnchor="middle" alignmentBaseline="central" dominantBaseline="central">&#xF128;</text>*/}
-                      {/*    </svg>*/}
-                      {/*    {st ? <Icon name="checkmark" size="small" color="green"/> : ''}*/}
-                      {/*</div>:''}*/}
                   </div>
                   <video className={talk ? "talk" : ""}
                          key={id}
