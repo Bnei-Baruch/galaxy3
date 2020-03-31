@@ -17,10 +17,10 @@ class SDIOutApp extends Component {
         ce: null,
         group: null,
         room: null,
-        janus: null,
+        gxy1: {janus: null, protocol: null},
+        gxy3: {janus: null, protocol: null},
         mids: [],
         gxyhandle: null,
-        protocol: null,
         myid: null,
         mypvtid: null,
         mystream: null,
@@ -37,17 +37,19 @@ class SDIOutApp extends Component {
     };
 
     componentDidMount() {
+        let {user,gxy1,gxy3} = this.state;
+
         initJanus(janus => {
-            let {user} = this.state;
-            user.session = janus.getSessionId();
-            this.setState({janus,user});
+            gxy1.janus = janus;
             getState('galaxy/users', (users) => {
                 this.setState({users});
             });
+            user.id = "gxy1";
             initGxyProtocol(janus, user, protocol => {
-                this.setState({protocol});
+                gxy1.protocol = protocol;
+                this.setState({gxy1});
             }, ondata => {
-                Janus.log("-- :: It's protocol public message: ", ondata);
+                Janus.log("GXY1 :: It's protocol public message: ", ondata);
                 if(ondata.type === "error" && ondata.error_code === 420) {
                     console.log(ondata.error + " - Reload after 10 seconds");
                     this.state.protocol.hangup();
@@ -55,20 +57,41 @@ class SDIOutApp extends Component {
                         window.location.reload();
                     }, 10000);
                 }
-                this.onProtocolData(ondata);
+                this.onProtocolData(ondata, "gxy1");
+            });
+        }, er => {
+            Janus.error(er);
+        }, "gxy1");
+
+        initJanus(janus => {
+            gxy3.janus = janus;
+            initGxyProtocol(janus, user, protocol => {
+                gxy3.protocol = protocol;
+                this.setState({gxy3});
+            }, ondata => {
+                Janus.log("GXY3 :: It's protocol public message: ", ondata);
+                if(ondata.type === "error" && ondata.error_code === 420) {
+                    console.log(ondata.error + " - Reload after 10 seconds");
+                    this.state.protocol.hangup();
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 10000);
+                }
+                this.onProtocolData(ondata, "gxy3");
             });
         }, er => {
             setTimeout(() => {
                 window.location.reload();
             }, 10000);
-        }, true);
+        }, "gxy3");
     };
 
     componentWillUnmount() {
-        this.state.janus.destroy();
+        this.state.gxy1.janus.destroy();
+        this.state.gxy3.janus.destroy();
     };
 
-    onProtocolData = (data) => {
+    onProtocolData = (data, inst) => {
         Janus.log(" :: Got Shidur Action: ", data);
         let {users} = this.state;
         let {room, col, feed, group, i, status, qst} = data;
@@ -77,11 +100,11 @@ class SDIOutApp extends Component {
             if(qst) {
                 if(room) {
                     this.users.exitVideoRoom(this.state.room, () => {
-                        this.users.initVideoRoom(group.room);
+                        this.users.initVideoRoom(group.room, group.janus);
                         this.setState({group, room});
                     });
                 } else {
-                    this.users.initVideoRoom(group.room);
+                    this.users.initVideoRoom(group.room, group.janus);
                     this.setState({group, room});
                 }
             } else {

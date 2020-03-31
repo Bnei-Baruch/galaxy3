@@ -14,10 +14,8 @@ class ShidurApp extends Component {
 
     state = {
         ce: null,
-        janus: null,
         gxy1: {janus: null, protocol: null},
         gxy3: {janus: null, protocol: null},
-        protocol: null,
         group: "",
         groups: [],
         groups_queue: 0,
@@ -56,6 +54,7 @@ class ShidurApp extends Component {
     initGalaxy = (user) => {
         let {gxy1,gxy3} = this.state;
 
+        // Init GXY1
         initJanus(janus => {
             gxy1.janus = janus;
             user.id = "gxy1";
@@ -71,6 +70,7 @@ class ShidurApp extends Component {
             window.location.reload();
         }, "gxy1");
 
+        // Init GXY3
         initJanus(janus => {
             gxy3.janus = janus;
             initGxyProtocol(janus, user, protocol => {
