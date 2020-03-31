@@ -84,6 +84,7 @@ class OldClient extends Component {
     if (/Safari|Firefox|Chrome/.test(browser.name)) {
       geoInfo(`${GEO_IP_INFO}`, data => {
         user.ip = data ? data.ip : '127.0.0.1';
+        user.janus = data && data.country === "IL" ? "gxy3" : "gxy1";
         if (!data) {
           alert(t('oldClient.failGeoInfo'));
         }

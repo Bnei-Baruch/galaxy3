@@ -84,6 +84,7 @@ class MobileClient extends Component {
         geoInfo(`${GEO_IP_INFO}`, data => {
             Janus.log(data);
             user.ip = data.ip;
+            user.janus = data && data.country === "IL" ? "gxy3" : "gxy1";
         });
         initJanus(janus => {
             // Check if unified plan supported
