@@ -182,7 +182,7 @@ class VirtualChat extends Component {
   };
 
   render() {
-
+    const { t }                                 = this.props;
     const { messages, support_msgs, room_chat } = this.state;
 
     let room_msgs = messages.map((msg, i) => {
@@ -209,21 +209,20 @@ class VirtualChat extends Component {
       <div className="chat-panel">
         {/* <div className="chat" > */}
         <Button.Group attached='top'>
-          <Button disabled={room_chat} color='blue' onClick={() => this.tooggleChat(true)}>Room chat</Button>
-          <Button disabled={!room_chat} color='blue' onClick={() => this.tooggleChat(false)}>Support chat</Button>
+          <Button disabled={room_chat} color='blue' onClick={() => this.tooggleChat(true)}>{t('virtualChat.roomChat')}</Button>
+          <Button disabled={!room_chat} color='blue' onClick={() => this.tooggleChat(false)}>{t('virtualChat.supportChat')}</Button>
         </Button.Group>
         <Message attached className='messages_list'>
           <div className="messages-wrapper">
             {room_chat ? room_msgs : admin_msgs}
             <div ref='end' />
           </div>
-
         </Message>
 
-        <Input fluid type='text' placeholder='Type your message' action value={this.state.input_value}
+        <Input fluid type='text' placeholder={t('virtualChat.enterMessage')} action value={this.state.input_value}
                onChange={(v, { value }) => this.setState({ input_value: value })}>
           <input />
-          <Button size='mini' positive onClick={this.sendChatMessage}>Send</Button>
+          <Button size='mini' positive onClick={this.sendChatMessage}>{t('virtualChat.send')}</Button>
         </Input>
         {/* </div> */}
       </div>

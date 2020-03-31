@@ -1,7 +1,11 @@
-import React, { Component, Fragment } from 'react';
+import React, { Component } from 'react';
 import 'semantic-ui-css/semantic.min.css';
+import { I18nextProvider } from 'react-i18next';
+import i18n from 'i18next';
+
+import OldClient from './apps/VirtualApp/OldClient';
+import './i18n/i18n';
 // import GalaxyApp from "./apps/GalaxyApp";
-import OldClient from "./apps/VirtualApp/OldClient";
 // import MobileClient from "./apps/MobileApp/MobileClient";
 // import VirtualClient from "./apps/VirtualApp/VirtualClient";
 // import VirtualStreaming from "./apps/VirtualApp/VirtualStreaming";
@@ -18,29 +22,28 @@ import OldClient from "./apps/VirtualApp/OldClient";
 // import AdminStreaming from "./apps/AdminApp/AdminStreaming";
 
 class App extends Component {
-
-    render() {
-        return (
-            <Fragment>
-                {/*<GalaxyApp />*/}
-                <OldClient />
-                {/*<MobileClient/>*/}
-                {/*<VirtualClient />*/}
-                {/* <VirtualStreaming/>*/}
-                {/*<GroupClient/>*/}
-                {/* <GalaxyStream/>*/}
-                {/*<AdminRoot />*/}
-                {/*<AdminShidur />*/}
-                {/* <AdminGuest/>*/}
-                {/*<ShidurApp/>*/}
-                {/*<AudioOutApp />*/}
-                {/*<SndmanApp/>*/}
-                {/*<SDIOutApp />*/}
-                {/*<AdminCongress/>*/}
-                {/*<AdminStreaming/>*/}
-            </Fragment>
-        );
-    }
+  render() {
+    return (
+      <I18nextProvider i18n={i18n}>
+        {/*<GalaxyApp />*/}
+        <OldClient />
+        {/*<MobileClient/>*/}
+        {/*<VirtualClient />*/}
+        {/* <VirtualStreaming/>*/}
+        {/*<GroupClient/>*/}
+        {/* <GalaxyStream/>*/}
+        {/*<AdminRoot />*/}
+        {/*<AdminShidur />*/}
+        {/* <AdminGuest/>*/}
+        {/*<ShidurApp/>*/}
+        {/*<AudioOutApp />*/}
+        {/*<SndmanApp/>*/}
+        {/*<SDIOutApp />*/}
+        {/*<AdminCongress/>*/}
+        {/*<AdminStreaming/>*/}
+      </I18nextProvider>
+    );
+  }
 }
 
 export default App;
