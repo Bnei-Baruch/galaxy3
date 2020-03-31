@@ -32,7 +32,7 @@ class ShidurToran extends Component {
 
     closePopup = ({disable=false}={}) => {
         if (disable) {
-            this.disableRoom(this.state.group);
+            this.disableRoom(this.props.group);
         }
         this.props.setProps({group: null});
     };
@@ -44,14 +44,14 @@ class ShidurToran extends Component {
         }
     };
 
-    disableRoom(data) {
+    disableRoom = (data) => {
         let {disabled_rooms} = this.props;
         let group = disabled_rooms.find(r => r.room === data.room);
         if (group) return;
         disabled_rooms.push(data);
         this.props.setProps({disabled_rooms});
         this.props.gerGroups();
-    }
+    };
 
     restoreRoom = (e, data, i) => {
         e.preventDefault();
