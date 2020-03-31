@@ -15,10 +15,10 @@ class AudioOutApp extends Component {
         ce: null,
         group: null,
         room: null,
-        janus: null,
+        gxy1: {janus: null, protocol: null},
+        gxy3: {janus: null, protocol: null},
         mids: [],
         gxyhandle: null,
-        protocol: null,
         myid: null,
         mypvtid: null,
         mystream: null,
@@ -35,47 +35,68 @@ class AudioOutApp extends Component {
     };
 
     componentDidMount() {
+        let {user,gxy1,gxy3} = this.state;
+        getState('galaxy/users', (users) => {
+            this.setState({users});
+        });
+
+        // Init GXY1
         initJanus(janus => {
-            let {user} = this.state;
-            user.session = janus.getSessionId();
-            this.setState({janus,user});
-            getState('galaxy/users', (users) => {
-                this.setState({users});
-            });
+            gxy1.janus = janus;
             initGxyProtocol(janus, user, protocol => {
-                this.setState({protocol});
+                gxy1.protocol = protocol;
+                this.setState({gxy1});
             }, ondata => {
                 Janus.log("-- :: It's protocol public message: ", ondata);
                 if(ondata.type === "error" && ondata.error_code === 420) {
                     console.log(ondata.error + " - Reload after 10 seconds");
-                    this.state.protocol.hangup();
+                    this.state.gxy1.protocol.hangup();
                     setTimeout(() => {
                         window.location.reload();
                     }, 10000);
-                } else if(ondata.type === "joined") {
-                    //this.initVideoRoom();
                 }
-                this.onProtocolData(ondata);
+                this.onProtocolData(ondata, "gxy1");
+            });
+        }, er => {
+            Janus.error(er);
+        }, "gxy1");
+
+        // Init GXY3
+        initJanus(janus => {
+            gxy3.janus = janus;
+            initGxyProtocol(janus, user, protocol => {
+                gxy3.protocol = protocol;
+                this.setState({gxy3});
+            }, ondata => {
+                Janus.log("-- :: It's protocol public message: ", ondata);
+                if(ondata.type === "error" && ondata.error_code === 420) {
+                    console.log(ondata.error + " - Reload after 10 seconds");
+                    this.state.gxy3.protocol.hangup();
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 10000);
+                }
+                this.onProtocolData(ondata, "gxy3");
             });
         }, er => {
             setTimeout(() => {
                 window.location.reload();
             }, 10000);
-        }, true);
+        }, "gxy3");
     };
 
     componentWillUnmount() {
         this.state.janus.destroy();
     };
 
-    onProtocolData = (data) => {
+    onProtocolData = (data, inst) => {
         Janus.log(" :: Got Shidur Action: ", data);
         let {users} = this.state;
         let {room, col, feed, group, i, status, qst} = data;
 
         if(data.type === "sdi-fullscr_group" && status && qst) {
             this.setState({group, room});
-            this.users.initVideoRoom(group.room);
+            this.users.initVideoRoom(group.room, group.janus);
         } else if(data.type === "sdi-fullscr_group" && !status && qst) {
             if(this.state.group && this.state.group.room) {
                 this.users.exitVideoRoom(this.state.group.room, () =>{});

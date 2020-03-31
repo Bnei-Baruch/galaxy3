@@ -39,6 +39,7 @@ class SDIOutApp extends Component {
     componentDidMount() {
         let {user,gxy1,gxy3} = this.state;
 
+        // Init GXY1
         initJanus(janus => {
             gxy1.janus = janus;
             getState('galaxy/users', (users) => {
@@ -52,7 +53,7 @@ class SDIOutApp extends Component {
                 Janus.log("GXY1 :: It's protocol public message: ", ondata);
                 if(ondata.type === "error" && ondata.error_code === 420) {
                     console.log(ondata.error + " - Reload after 10 seconds");
-                    this.state.protocol.hangup();
+                    this.state.gxy1.protocol.hangup();
                     setTimeout(() => {
                         window.location.reload();
                     }, 10000);
@@ -63,6 +64,7 @@ class SDIOutApp extends Component {
             Janus.error(er);
         }, "gxy1");
 
+        // Init GXY3
         initJanus(janus => {
             gxy3.janus = janus;
             initGxyProtocol(janus, user, protocol => {
@@ -72,7 +74,7 @@ class SDIOutApp extends Component {
                 Janus.log("GXY3 :: It's protocol public message: ", ondata);
                 if(ondata.type === "error" && ondata.error_code === 420) {
                     console.log(ondata.error + " - Reload after 10 seconds");
-                    this.state.protocol.hangup();
+                    this.state.gxy3.protocol.hangup();
                     setTimeout(() => {
                         window.location.reload();
                     }, 10000);
