@@ -28,6 +28,8 @@ class AdminRoot extends Component {
         forwarders: [],
         groups: [],
         janus: null,
+        gxy1: {janus: null, chatroom: null, protocol: null},
+        gxy3: {janus: null, chatroom: null, protocol: null},
         feedStreams: {},
         mids: [],
         feeds: [],
@@ -61,19 +63,15 @@ class AdminRoot extends Component {
 
     componentDidMount() {
         document.addEventListener("keydown", this.onKeyPressed);
-        let users = {};
-        getState('galaxy/users', (data) => {
-            users = {...data};
-            getState('galaxy/groups', (data) => {
-                users = {...users,...data};
-                this.setState({users});
-            });
+        getState('galaxy/users', (users) => {
+            this.setState({users});
         });
     };
 
     componentWillUnmount() {
         document.removeEventListener("keydown", this.onKeyPressed);
-        this.state.janus.destroy();
+        this.state.gxy1.janus.destroy();
+        this.state.gxy3.janus.destroy();
     };
 
     onKeyPressed = (e) => {
@@ -94,24 +92,51 @@ class AdminRoot extends Component {
     };
 
     initAdminRoot = (user) => {
+        let {gxy3,gxy1} = this.state;
+
         initJanus(janus => {
-            this.setState({janus,user});
-            this.initVideoRoom();
+            gxy3.janus = janus;
+            this.setState({gxy3,user});
 
             initChatRoom(janus, null, chatroom => {
                 Janus.log(":: Got Chat Handle: ",chatroom);
-                this.setState({chatroom});
+                gxy3.chatroom = chatroom;
+                this.setState({gxy3});
             }, data => {
                 this.onData(data);
             });
 
-            initGxyProtocol(janus, this.state.user, protocol => {
-                this.setState({protocol});
+            initGxyProtocol(janus, user, protocol => {
+                gxy3.protocol = protocol;
+                this.setState({gxy3});
             }, ondata => {
                 Janus.log("-- :: It's protocol public message: ", ondata);
-                this.onProtocolData(ondata);
+                //this.initVideoRoom("gxy3");
+                this.onProtocolData(ondata, "gxy3");
             });
-        }, er => {}, true);
+        }, er => {}, "gxy3");
+
+        initJanus(janus => {
+            gxy1.janus = janus;
+            this.setState({gxy1});
+
+            initChatRoom(janus, null, chatroom => {
+                Janus.log(":: Got Chat Handle: ",chatroom);
+                gxy1.chatroom = chatroom;
+                this.setState({gxy1});
+            }, data => {
+                this.onData(data);
+            });
+
+            initGxyProtocol(janus, user, protocol => {
+                gxy1.protocol = protocol;
+                this.setState({gxy1});
+            }, ondata => {
+                Janus.log("-- :: It's protocol public message: ", ondata);
+                //this.initVideoRoom("gxy1");
+                this.onProtocolData(ondata, "gxy1");
+            });
+        }, er => {}, "gxy1");
         setInterval(() => {
             this.getGroupsList();
             if(this.state.feed_user)
@@ -223,12 +248,13 @@ class AdminRoot extends Component {
         });
     };
 
-    initVideoRoom = (room_id) => {
-        if(this.state.videoroom)
-            this.state.videoroom.detach();
-        if(this.state.remoteFeed)
-            this.state.remoteFeed.detach();
-        this.state.janus.attach({
+    initVideoRoom = (inst, room_id) => {
+        let janus = this.state[inst].janus;
+        if(this.state[inst].videoroom)
+            this.state[inst].videoroom.detach();
+        if(this.state[inst].remoteFeed)
+            this.state[inst].remoteFeed.detach();
+        janus.attach({
             plugin: "janus.plugin.videoroom",
             opaqueId: "videoroom_user",
             success: (videoroom) => {
@@ -236,7 +262,7 @@ class AdminRoot extends Component {
                 Janus.log("Plugin attached! (" + videoroom.getPlugin() + ", id=" + videoroom.getId() + ")");
                 Janus.log("  -- This is a publisher/manager");
                 let {user} = this.state;
-                this.setState({videoroom, remoteFeed: null, groups: []});
+                this.setState({[inst]:{...this.state[inst], videoroom}, groups: []});
                 this.getRoomList();
 
                 if(room_id) {
@@ -265,7 +291,7 @@ class AdminRoot extends Component {
                     " packets on mid " + mid + " (" + lost + " lost packets)");
             },
             onmessage: (msg, jsep) => {
-                this.onMessage(this.state.videoroom, msg, jsep, false);
+                this.onMessage(this.state[inst].videoroom, msg, jsep, inst);
             },
             onlocalstream: (mystream) => {
                 Janus.debug(" ::: Got a local stream :::");
@@ -285,7 +311,7 @@ class AdminRoot extends Component {
         });
     };
 
-    onMessage = (videoroom, msg, jsep, initdata) => {
+    onMessage = (videoroom, msg, jsep, inst) => {
         Janus.debug(" ::: Got a message (publisher) :::");
         Janus.debug(msg);
         let event = msg["videoroom"];
@@ -333,7 +359,7 @@ class AdminRoot extends Component {
                     }
                     this.setState({feeds,feedStreams,users});
                     if(subscription.length > 0 && fr === "user")
-                        this.subscribeTo(subscription);
+                        this.subscribeTo(subscription, inst);
                 }
             } else if(event === "talking") {
                 let {feeds} = this.state;
@@ -406,7 +432,7 @@ class AdminRoot extends Component {
                     // One of the publishers has gone away?
                     var leaving = msg["leaving"];
                     Janus.log("Publisher left: " + leaving);
-                    this.unsubscribeFrom(leaving);
+                    this.unsubscribeFrom(leaving, inst);
 
                 } else if(msg["unpublished"] !== undefined && msg["unpublished"] !== null) {
                     let unpublished = msg["unpublished"];
@@ -416,7 +442,7 @@ class AdminRoot extends Component {
                         videoroom.hangup();
                         return;
                     }
-                    this.unsubscribeFrom(unpublished);
+                    this.unsubscribeFrom(unpublished, inst);
 
                 } else if(msg["error"] !== undefined && msg["error"] !== null) {
                     if(msg["error_code"] === 426) {
@@ -434,8 +460,8 @@ class AdminRoot extends Component {
         }
     };
 
-    newRemoteFeed = (subscription) => {
-        this.state.janus.attach(
+    newRemoteFeed = (subscription, inst) => {
+        this.state[inst].janus.attach(
             {
                 plugin: "janus.plugin.videoroom",
                 opaqueId: "remotefeed_user",
@@ -443,7 +469,7 @@ class AdminRoot extends Component {
                     let remoteFeed = pluginHandle;
                     Janus.log("Plugin attached! (" + remoteFeed.getPlugin() + ", id=" + remoteFeed.getId() + ")");
                     Janus.log("  -- This is a multistream subscriber",remoteFeed);
-                    this.setState({remoteFeed, creatingFeed: false});
+                    this.setState({[inst]: {...this.state[inst],remoteFeed}, creatingFeed: false});
                     // We wait for the plugin to send us an offer
                     let subscribe = {request: "join", room: this.state.current_room, ptype: "subscriber", streams: subscription};
                     remoteFeed.send({ message: subscribe });
@@ -495,7 +521,7 @@ class AdminRoot extends Component {
                         Janus.debug("Handling SDP as well...");
                         Janus.debug(jsep);
                         // Answer and attach
-                        this.state.remoteFeed.createAnswer(
+                        this.state[inst].remoteFeed.createAnswer(
                             {
                                 jsep: jsep,
                                 // Add data:true here if you want to subscribe to datachannels as well
@@ -505,7 +531,7 @@ class AdminRoot extends Component {
                                     Janus.debug("Got SDP!");
                                     Janus.debug(jsep);
                                     let body = { request: "start", room: this.state.current_room, data: false };
-                                    this.state.remoteFeed.send({ message: body, jsep: jsep });
+                                    this.state[inst].remoteFeed.send({ message: body, jsep: jsep });
                                 },
                                 error: (error) => {
                                     Janus.error("WebRTC error:", error);
@@ -567,10 +593,10 @@ class AdminRoot extends Component {
             });
     };
 
-    subscribeTo = (subscription) => {
+    subscribeTo = (subscription, inst) => {
         // New feeds are available, do we need create a new plugin handle first?
-        if (this.state.remoteFeed) {
-            this.state.remoteFeed.send({message:
+        if (this.state[inst].remoteFeed) {
+            this.state[inst].remoteFeed.send({message:
                     {request: "subscribe", streams: subscription}
             });
             return;
@@ -579,20 +605,20 @@ class AdminRoot extends Component {
         if (this.state.creatingFeed) {
             // Still working on the handle
             setTimeout(() => {
-                this.subscribeTo(subscription);
+                this.subscribeTo(subscription, inst);
             }, 500);
             return
         }
 
         // We don't creating, so let's do it
         this.setState({creatingFeed: true});
-        this.newRemoteFeed(subscription);
+        this.newRemoteFeed(subscription, inst);
     };
 
-    unsubscribeFrom = (id) => {
+    unsubscribeFrom = (id, inst) => {
         // Unsubscribe from this publisher
         let {feeds,users,feed_id,current_room,feed_user} = this.state;
-        let {remoteFeed} = this.state;
+        let {remoteFeed} = this.state[inst];
         for (let i=0; i<feeds.length; i++) {
             if (feeds[i].id === id) {
                 Janus.log("Feed " + feeds[i] + " (" + id + ") has left the room, detaching");
@@ -859,16 +885,16 @@ class AdminRoot extends Component {
         }
 
         if(this.state.current_room)
-            this.exitRoom(this.state.current_room);
+            this.exitRoom(this.state.current_room, "gxy3");
         this.setState({switch_mode: false, current_room: room, room_name,feeds: [], feed_user: null, feed_id: null});
 
-        this.initVideoRoom(room);
+        this.initVideoRoom("gxy3", room);
 
-        joinChatRoom(chatroom,room,user)
+        joinChatRoom(this.state.gxy3.chatroom,room,user)
     };
 
-    exitRoom = (room) => {
-        let {videoroom, chatroom} = this.state;
+    exitRoom = (room, inst) => {
+        let {videoroom, chatroom} = this.state[inst];
         let videoreq = {request : "leave", "room": room};
         let chatreq = {textroom : "leave", transaction: Janus.randomString(12),"room": room};
         Janus.log(room);
