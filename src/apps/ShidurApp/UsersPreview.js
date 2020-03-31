@@ -225,11 +225,10 @@ class UsersPreview extends Component {
           <div className="videos-panel">
               <div className="videos">
                   <Button className='close_button'
-                          disabled
                           size='mini'
                           color='red'
                           icon='close'
-                          onClick={() => this.disableGroup()} />
+                          onClick={() => this.props.closePopup({disable: true})} />
                   <Button className='hide_button'
                           size='mini'
                           color='orange'
