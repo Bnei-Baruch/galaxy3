@@ -65,14 +65,18 @@ class OldClient extends Component {
   };
 
   componentDidMount() {
-    geoInfo('gxy3.json', data => this.setState({gxy3: data}));
-    geoInfo('gxy1.json', data => this.setState({gxy1: data}));
-    if (isMobile) {
-      window.location = '/userm';
-    } else {
-      let { user } = this.state;
-      this.initClient(user, false);
-    }
+    geoInfo('gxy1.json', data => {
+      this.setState({gxy1: data});
+      geoInfo('gxy3.json', data => {
+        this.setState({gxy3: data});
+        if (isMobile) {
+          window.location = '/userm';
+        } else {
+          let { user } = this.state;
+          this.initClient(user, false);
+        }
+      });
+    });
   };
 
   initClient = (user, error) => {
