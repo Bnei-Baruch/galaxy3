@@ -171,12 +171,12 @@ export const resources = {
         feedback: 'Фидбек',
         help: 'Помощь',
       },
-      virtualChat: {
-        roomChat: 'Чат комнаты',
-        supportChat: 'Чат поддержки',
-        send: 'послать',
-        enterMessage: 'Введите сообщение',
-      },
+    },
+    virtualChat: {
+      roomChat: 'Чат комнаты',
+      supportChat: 'Чат поддержки',
+      send: 'послать',
+      enterMessage: 'Введите сообщение',
     },
   },
 };
