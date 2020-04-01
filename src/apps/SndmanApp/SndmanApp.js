@@ -39,7 +39,7 @@ class SndmanApp extends Component {
             user.role = "sndman";
             user.session = 0;
             getState('galaxy/users', (users) => {
-                this.setState({users});
+                this.setState({user,users});
             });
             this.initApp(user);
         } else {

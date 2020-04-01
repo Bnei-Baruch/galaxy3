@@ -14,8 +14,8 @@ import './i18n/i18n';
 // import AdminRoot from "./apps/AdminApp/AdminRoot";
 // import AdminShidur from "./apps/AdminApp/AdminShidur";
 // import AdminGuest from "./apps/AdminApp/AdminGuest";
-import ShidurApp from "./apps/ShidurApp/ShidurApp";
-// import SndmanApp from "./apps/SndmanApp/SndmanApp";
+// import ShidurApp from "./apps/ShidurApp/ShidurApp";
+import SndmanApp from "./apps/SndmanApp/SndmanApp";
 // import AudioOutApp from "./apps/AudioOutApp/AudioOutApp";
 // import SDIOutApp from "./apps/SDIOutApp/SDIOutApp";
 // import AdminCongress from "./apps/AdminApp/AdminCongress";
@@ -35,9 +35,9 @@ class App extends Component {
         {/*<AdminRoot />*/}
         {/*<AdminShidur />*/}
         {/* <AdminGuest/>*/}
-        <ShidurApp/>
+        {/*<ShidurApp/>*/}
+        <SndmanApp/>
         {/*<AudioOutApp />*/}
-        {/*<SndmanApp/>*/}
         {/*<SDIOutApp />*/}
         {/*<AdminCongress/>*/}
         {/*<AdminStreaming/>*/}
