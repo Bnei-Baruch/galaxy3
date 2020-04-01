@@ -46,15 +46,15 @@ class UsersQuadSndman extends Component {
         }, 2000);
     };
 
-    sendMessage = (user, talk) => {
+    sendMessage = (user, talk, inst) => {
         let message = `{"talk":${talk},"name":"${user.display}","ip":"${user.ip}","col":4,"room":${user.room}}`;
         Janus.log(":: Sending message: ",message);
-        this.props[user.janus].fwdhandle.data({ text: message });
+        this.props.gxy3.fwdhandle.data({ text: message });
     };
 
     forwardStream = (full_group) => {
         const {fullscr,forward,feeds} = this.state;
-        let {room} = full_group;
+        let {room,janus} = full_group;
         //FIXME: This is really problem place we call start forward from one place and stop from two placed
         // and we depend on callback from request and fullscreen state and feed info.
         // fix1: we take now feed info from state only in render and pass as param to needed functions
@@ -69,10 +69,10 @@ class UsersQuadSndman extends Component {
             feeds.forEach((feed,i) => {
                 if (feed) {
                     // FIXME: if we change sources on client based on room id (not ip) we send message only once?
-                    this.sendMessage(feed, false);
+                    this.sendMessage(feed, false, janus);
                 }
             });
-            this.micMute(false, room);
+            this.micMute(false, room, janus);
             this.setState({feeds: [], forward: false});
         } else if(fullscr) {
             Janus.log(" :: Start forward from room: ", room);
@@ -81,19 +81,19 @@ class UsersQuadSndman extends Component {
                 let {users} = data;
                 users.forEach((user,i) => {
                     if (user && user.rfid) {
-                        this.sendMessage(user, true);
+                        this.sendMessage(user, true, janus);
                     } else {
                         Janus.error("Forward failed for user: " + user + " in room: " + room, data)
                     }
                 });
                 this.setState({feeds: users, forward: true});
-                this.micMute(true, room);
+                this.micMute(true, room, janus);
             });
         }
     };
 
     fullScreenGroup = (i,full_group) => {
-        Janus.log(":: Make Full Screen Group: ",full_group);
+        console.log(":: Make Full Screen Group: ",full_group);
         this.setState({fullscr: true, full_feed: i, full_group});
     };
 
@@ -110,10 +110,10 @@ class UsersQuadSndman extends Component {
         }
     };
 
-    micMute = (status, room) => {
+    micMute = (status, room, inst) => {
         const {user} = this.props;
         let msg = {type: "audio-out", status, room, col:null, i:null, feed:null};
-        sendProtocolMessage(this.props[room.janus].protocol, user, msg );
+        sendProtocolMessage(this.props[inst].protocol, user, msg );
     };
 
   render() {

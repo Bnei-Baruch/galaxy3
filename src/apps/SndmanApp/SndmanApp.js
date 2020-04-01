@@ -63,10 +63,10 @@ class SndmanApp extends Component {
                     alert(ondata.error);
                     gxy1.protocol.hangup();
                 } else if(ondata.type === "joined") {
-                    initDataForward(janus, fwdhandle => {
-                        gxy1.fwdhandle = fwdhandle;
-                        this.setState({gxy1});
-                    })
+                    // initDataForward(janus, fwdhandle => {
+                    //     gxy1.fwdhandle = fwdhandle;
+                    //     this.setState({gxy1});
+                    // })
                 }
                 this.onProtocolData(ondata, "gxy1");
             });
