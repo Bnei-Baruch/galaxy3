@@ -1115,7 +1115,7 @@ class OldClient extends Component {
           </Menu.Item>
           <Menu.Item>
             <Select
-              search
+              compact
               value={i18n.language}
               options={mapNameToLanguage(i18n.language)}
               onChange={(e, { value }) => {

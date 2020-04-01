@@ -36,12 +36,12 @@ export const resources = {
         feedback: 'Feedback',
         help: 'Help',
       },
-    },
-    virtualChat: {
-      roomChat: 'Room chat',
-      supportChat: 'Support chat',
-      send: 'Send',
-      enterMessage: 'Type your message',
+      virtualChat: {
+        roomChat: 'Room chat',
+        supportChat: 'Support chat',
+        send: 'Send',
+        enterMessage: 'Type your message',
+      },
     },
   },
   es: {
@@ -81,12 +81,12 @@ export const resources = {
         feedback: 'Comentarios',
         help: 'Ayuda',
       },
-    },
-    virtualChat: {
-      roomChat: 'Sala de chat',
-      supportChat: 'Chat de soporte',
-      send: 'Enviar',
-      enterMessage: 'Escriba su mensaje',
+      virtualChat: {
+        roomChat: 'Sala de chat',
+        supportChat: 'Chat de soporte',
+        send: 'Enviar',
+        enterMessage: 'Escriba su mensaje',
+      },
     },
   },
   he: {
@@ -126,12 +126,12 @@ export const resources = {
         feedback: 'משוב',
         help: 'עזרה',
       },
-    },
-    virtualChat: {
-      roomChat: 'צ׳אט כללי',
-      supportChat: 'צ׳אט תמיכה',
-      send: 'שלח',
-      enterMessage: 'הקלד/י את ההודעה',
+      virtualChat: {
+        roomChat: 'צ׳אט כללי',
+        supportChat: 'צ׳אט תמיכה',
+        send: 'שלח',
+        enterMessage: 'הקלד/י את ההודעה',
+      },
     },
   },
   ru: {
@@ -171,12 +171,12 @@ export const resources = {
         feedback: 'Фидбек',
         help: 'Помощь',
       },
-    },
-    virtualChat: {
-      roomChat: 'Чат комнаты',
-      supportChat: 'Чат поддержки',
-      send: 'послать',
-      enterMessage: 'Введите сообщение',
+      virtualChat: {
+        roomChat: 'Чат комнаты',
+        supportChat: 'Чат поддержки',
+        send: 'послать',
+        enterMessage: 'Введите сообщение',
+      },
     },
   },
 };
