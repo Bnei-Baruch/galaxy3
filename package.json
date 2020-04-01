@@ -26,6 +26,7 @@
   },
   "scripts": {
     "start": "react-scripts start",
+    "starts": "HTTPS=true react-scripts start",
     "build": "react-scripts build",
     "deploy": "react-scripts build && scripts/deploy.sh",
     "test": "react-scripts test",

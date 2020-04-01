@@ -33,6 +33,8 @@ export const JANUS_STR_HOST_IL = process.env.REACT_APP_JANUS_HOST_IL;
 export const JANUS_STR_HOST_GR = process.env.REACT_APP_JANUS_HOST_GR;
 export const JANUS_STR_HOST_UK = process.env.REACT_APP_JANUS_HOST_UK;
 
+export const MONITORING_BACKEND = process.env.REACT_APP_MONITORING_BACKEND;
+
 
 export const vsettings_list = [
     { key: 0, text: '320 x 180, 15 fps', value: {width: 320, height: 180, fps: 15}},

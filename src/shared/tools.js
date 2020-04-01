@@ -273,10 +273,9 @@ export const getDevicesStream = (audioid,videoid,video_setting,cb) => {
     const ideal = video_setting.fps;
     let video = videoid ? {width, height, frameRate: {ideal, min: 1}, deviceId: {exact: videoid}} : "";
     let audio = audioid ? {deviceId: {exact: audioid}} : "";
-        navigator.mediaDevices
-            .getUserMedia({ audio: audio, video: video }).then(stream => {
-            cb(stream);
-        });
+    navigator.mediaDevices.getUserMedia({ audio: audio, video: video }).then(stream => {
+        cb(stream);
+    });
 };
 
 export const testDevices = (video,audio,cb) => {

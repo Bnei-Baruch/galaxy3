@@ -15,6 +15,8 @@ import platform from 'platform';
 import { Help } from './components/Help';
 import { withTranslation } from 'react-i18next';
 import { mapNameToLanguage, setLanguage } from '../../i18n/i18n';
+import { Monitoring } from './components/Monitoring';
+import { MonitoringData } from './components/MonitoringData';
 
 class OldClient extends Component {
 
@@ -41,6 +43,8 @@ class OldClient extends Component {
     myid: null,
     mypvtid: null,
     mystream: null,
+    localVideoTrackId: '',
+    localAudioTrackId: '',
     mids: [],
     muted: false,
     cammuted: false,
@@ -61,8 +65,22 @@ class OldClient extends Component {
     selftest: this.props.t('oldClient.selfAudioTest'),
     tested: false,
     support: false,
-    women: window.location.pathname === '/women/'
+    women: window.location.pathname === '/women/',
+    monitoringData: new MonitoringData(),
   };
+
+  componentDidUpdate(prevProps, prevState) {
+    if (this.state.videoroom !== prevState.videoroom ||
+        this.state.localVideoTrackId !== prevState.localVideoTrackId ||
+        this.state.localAudioTrackId !== prevState.localAudioTrackId ||
+        JSON.stringify(this.state.user) !== JSON.stringify(prevState.user)) {
+      this.state.monitoringData.setConnection(
+        this.state.videoroom,
+        this.state.localAudioTrackId,
+        this.state.localVideoTrackId,
+        this.state.user);
+    }
+  }
 
   componentDidMount() {
     if (isMobile) {
@@ -399,8 +417,18 @@ class OldClient extends Component {
         if (!women) {
           videoroom.muteAudio();
         }
+        const stateUpdate = {};
+        if (!this.state.localVideoTrackId && track.kind === 'video') {
+          stateUpdate['localVideoTrackId'] = track.id;
+        }
+        if (!this.state.localAudioTrackId && track.kind === 'audio') {
+          stateUpdate['localAudioTrackId'] = track.id;
+        }
         if (!this.state.mystream) {
-          this.setState({ mystream: track });
+          stateUpdate['mystream'] = track;
+        }
+        if (Object.keys(stateUpdate).length) {
+          this.setState(stateUpdate);
         }
       },
       onremotestream: (stream) => {
@@ -972,7 +1000,8 @@ class OldClient extends Component {
   };
 
   render() {
-    const { video_setting, audio, rooms, room, audio_devices, video_devices, video_device, audio_device, muted, cammuted, delay, mystream, selected_room, count, question, selftest, tested, women, geoinfo, myid } = this.state;
+    console.log('State:', this.state);
+    const { monitoringData, video_setting, audio, rooms, room, audio_devices, video_devices, video_device, audio_device, muted, cammuted, delay, mystream, selected_room, count, question, selftest, tested, women, geoinfo, myid } = this.state;
 
     const { t, i18n } = this.props;
     const width       = '134';
@@ -1055,11 +1084,11 @@ class OldClient extends Component {
           value={this.state.username_value}
           onChange={(v, { value }) => this.setState({ username_value: value })}
           action>
-          <input iconPosition='left' disabled={mystream} />
+          <input iconPosition='left' disabled={!!mystream} />
           <Icon name='user circle' />
           <Select
             search
-            disabled={audio_device === null || mystream}
+            disabled={audio_device === null || !!mystream}
             error={!selected_room}
             placeholder={t('oldClient.selectRoom')}
             value={selected_room}
@@ -1130,21 +1159,21 @@ class OldClient extends Component {
           >
             <Popup.Content>
               <Select className='select_device'
-                      disabled={mystream}
+                      disabled={!!mystream}
                       error={!audio_device}
                       placeholder={t('oldClient.selectDevice')}
                       value={audio_device}
                       options={adevices_list}
                       onChange={(e, { value }) => this.setDevice(video_device, value, video_setting)} />
               <Select className='select_device'
-                      disabled={mystream}
+                      disabled={!!mystream}
                       error={!video_device}
                       placeholder={t('oldClient.selectDevice')}
                       value={video_device}
                       options={vdevices_list}
                       onChange={(e, { value }) => this.setDevice(value, audio_device, video_setting)} />
               <Select className='select_device'
-                      disabled={mystream}
+                      disabled={!!mystream}
                       error={!video_device}
                       placeholder={t('oldClient.videoSettings')}
                       value={video_setting}
@@ -1153,6 +1182,7 @@ class OldClient extends Component {
             </Popup.Content>
           </Popup>
           <Help t={t} />
+          <Monitoring monitoringData={monitoringData} />
         </Menu>
       </div>
       <div basic className="vclient__main" onDoubleClick={() => this.setState({ visible: !this.state.visible })}>
