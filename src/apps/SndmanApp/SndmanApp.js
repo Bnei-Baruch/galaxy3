@@ -54,6 +54,7 @@ class SndmanApp extends Component {
         // Init GXY1
         initJanus(janus => {
             gxy1.janus = janus;
+            user.id = "sndman-gxy1";
             initGxyProtocol(janus, user, protocol => {
                 gxy1.protocol = protocol;
             }, ondata => {

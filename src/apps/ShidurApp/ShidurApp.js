@@ -57,7 +57,7 @@ class ShidurApp extends Component {
         // Init GXY1
         initJanus(janus => {
             gxy1.janus = janus;
-            user.id = "gxy1";
+            user.id = "shidur-gxy1";
             initGxyProtocol(janus, user, protocol => {
                 gxy1.protocol = protocol;
                 this.setState({gxy1});

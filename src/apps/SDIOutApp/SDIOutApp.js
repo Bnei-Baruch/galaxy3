@@ -45,7 +45,7 @@ class SDIOutApp extends Component {
             getState('galaxy/users', (users) => {
                 this.setState({users});
             });
-            user.id = "gxy1";
+            user.id = "sdiout-gxy1";
             initGxyProtocol(janus, user, protocol => {
                 gxy1.protocol = protocol;
                 this.setState({gxy1});
