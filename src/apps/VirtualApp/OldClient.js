@@ -65,6 +65,8 @@ class OldClient extends Component {
   };
 
   componentDidMount() {
+    geoInfo('gxy3.json', data => this.setState({gxy3: data}));
+    geoInfo('gxy1.json', data => this.setState({gxy1: data}));
     if (isMobile) {
       window.location = '/userm';
     } else {
@@ -202,30 +204,37 @@ class OldClient extends Component {
     }, 1000);
   };
 
+  // getRoomList = () => {
+  //   const { videoroom, women } = this.state;
+  //   if (videoroom) {
+  //     videoroom.send({
+  //       message: { request: 'list' },
+  //       success: (data) => {
+  //         Janus.log(' :: Get Rooms List: ', data.list);
+  //         let filter = data.list.filter(r => /W\./i.test(r.description) === women);
+  //         filter.sort((a, b) => {
+  //           // if (a.num_participants > b.num_participants) return -1;
+  //           // if (a.num_participants < b.num_participants) return 1;
+  //           if (a.description > b.description) {
+  //             return 1;
+  //           }
+  //           if (a.description < b.description) {
+  //             return -1;
+  //           }
+  //           return 0;
+  //         });
+  //         this.setState({ rooms: filter });
+  //         this.getFeedsList(filter);
+  //       }
+  //     });
+  //   }
+  // };
+
   getRoomList = () => {
-    const { videoroom, women } = this.state;
-    if (videoroom) {
-      videoroom.send({
-        message: { request: 'list' },
-        success: (data) => {
-          Janus.log(' :: Get Rooms List: ', data.list);
-          let filter = data.list.filter(r => /W\./i.test(r.description) === women);
-          filter.sort((a, b) => {
-            // if (a.num_participants > b.num_participants) return -1;
-            // if (a.num_participants < b.num_participants) return 1;
-            if (a.description > b.description) {
-              return 1;
-            }
-            if (a.description < b.description) {
-              return -1;
-            }
-            return 0;
-          });
-          this.setState({ rooms: filter });
-          this.getFeedsList(filter);
-        }
-      });
-    }
+    const {women, user} = this.state;
+    let filter = this.state[user.janus].filter(r => /W\./i.test(r.description) === women);
+    this.setState({ rooms: filter });
+    this.getFeedsList(filter);
   };
 
   getFeedsList = (rooms) => {

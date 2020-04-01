@@ -5,7 +5,7 @@ import i18n from 'i18next';
 
 import './i18n/i18n';
 // import GalaxyApp from "./apps/GalaxyApp";
-// import OldClient from './apps/VirtualApp/OldClient';
+import OldClient from './apps/VirtualApp/OldClient';
 // import MobileClient from "./apps/MobileApp/MobileClient";
 // import VirtualClient from "./apps/VirtualApp/VirtualClient";
 // import VirtualStreaming from "./apps/VirtualApp/VirtualStreaming";
@@ -15,7 +15,7 @@ import './i18n/i18n';
 // import AdminShidur from "./apps/AdminApp/AdminShidur";
 // import AdminGuest from "./apps/AdminApp/AdminGuest";
 // import ShidurApp from "./apps/ShidurApp/ShidurApp";
-import SndmanApp from "./apps/SndmanApp/SndmanApp";
+// import SndmanApp from "./apps/SndmanApp/SndmanApp";
 // import AudioOutApp from "./apps/AudioOutApp/AudioOutApp";
 // import SDIOutApp from "./apps/SDIOutApp/SDIOutApp";
 // import AdminCongress from "./apps/AdminApp/AdminCongress";
@@ -26,7 +26,7 @@ class App extends Component {
     return (
       <I18nextProvider i18n={i18n}>
         {/*<GalaxyApp />*/}
-        {/*<OldClient />*/}
+        <OldClient />
         {/*<MobileClient/>*/}
         {/*<VirtualClient />*/}
         {/* <VirtualStreaming/>*/}
@@ -36,7 +36,7 @@ class App extends Component {
         {/*<AdminShidur />*/}
         {/* <AdminGuest/>*/}
         {/*<ShidurApp/>*/}
-        <SndmanApp/>
+        {/*<SndmanApp/>*/}
         {/*<AudioOutApp />*/}
         {/*<SDIOutApp />*/}
         {/*<AdminCongress/>*/}
