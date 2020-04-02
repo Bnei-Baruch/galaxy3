@@ -17,10 +17,10 @@ export const setLanguage = value => {
 const languages = new Map([
   ['en',
     [
-      { key: 'en', value: 'en', text: 'English', flag: 'us', },
-      { key: 'es', value: 'es', text: 'Spanish', flag: 'es', },
-      { key: 'he', value: 'he', text: 'Hebrew', flag: 'il', },
-      { key: 'ru', value: 'ru', text: 'Russian', flag: 'ru', },
+      { key: 'en', value: 'en', text: 'English', },
+      { key: 'es', value: 'es', text: 'Spanish', },
+      { key: 'he', value: 'he', text: 'Hebrew', },
+      { key: 'ru', value: 'ru', text: 'Russian', },
     ]
   ],
   ['es',
