@@ -70,49 +70,54 @@ class OldClient extends Component {
       if (isMobile) {
         window.location = '/userm';
       } else {
-        let { user } = this.state;
-        this.initClient(user, false);
+        let {user,selected_room} = this.state;
+        const { t } = this.props;
+        localStorage.setItem('question', false);
+        localStorage.setItem('sound_test', false);
+        localStorage.setItem('uuid', user.id);
+        checkNotification();
+        let system  = navigator.userAgent;
+        let browser = platform.parse(system);
+        if (/Safari|Firefox|Chrome/.test(browser.name)) {
+          geoInfo(`${GEO_IP_INFO}`, data => {
+            user.ip = data ? data.ip : '127.0.0.1';
+            user.system = system;
+            if (!data) {
+              alert(t('oldClient.failGeoInfo'));
+            }
+
+            this.setState({geoinfo: !!data});
+            if (selected_room !== '') {
+              this.getRoomList(user);
+            }
+          });
+        } else {
+          alert(t('oldClient.browserNotSupported'));
+          window.location = 'https://galaxy.kli.one';
+        }
       }
     });
   };
 
   initClient = (user, error) => {
     const { t } = this.props;
-    localStorage.setItem('question', false);
-    localStorage.setItem('sound_test', false);
-    localStorage.setItem('uuid', user.id);
-    checkNotification();
-    let system  = navigator.userAgent;
-    let browser = platform.parse(system);
-    if (/Safari|Firefox|Chrome/.test(browser.name)) {
-      geoInfo(`${GEO_IP_INFO}`, data => {
-        user.ip = data ? data.ip : '127.0.0.1';
-        if (!data) {
-          alert(t('oldClient.failGeoInfo'));
-        }
-        initJanus(janus => {
-          // Check if unified plan supported
-          if (Janus.unifiedPlan) {
-            user.session = janus.getSessionId();
-            user.system  = system;
-            this.setState({ janus, user, geoinfo: !!data });
-            this.chat.initChat(janus);
-            this.initVideoRoom(error);
-          } else {
-            alert(t('oldClient.unifiedPlanNotSupported'));
-            this.setState({ audio_device: null });
-          }
-        }, er => {
-          alert(er);
-          // setTimeout(() => {
-          //     this.initClient(user,er);
-          // }, 5000);
-        }, user.janus);
-      });
-    } else {
-      alert(t('oldClient.browserNotSupported'));
-      window.location = 'https://galaxy.kli.one';
-    }
+    initJanus(janus => {
+      // Check if unified plan supported
+      if (Janus.unifiedPlan) {
+        user.session = janus.getSessionId();
+        this.setState({janus, user});
+        this.chat.initChat(janus);
+        this.initVideoRoom(error);
+      } else {
+        alert(t('oldClient.unifiedPlanNotSupported'));
+        this.setState({ audio_device: null });
+      }
+    }, er => {
+      alert(er);
+      // setTimeout(() => {
+      //     this.initClient(user,er);
+      // }, 5000);
+    }, user.janus);
   };
 
   initDevices = (video) => {
@@ -230,23 +235,22 @@ class OldClient extends Component {
   //   }
   // };
 
-  getRoomList = () => {
-    const {women} = this.state;
-    let filter = this.state.groups.filter(r => /W\./i.test(r.description) === women);
-    this.setState({ rooms: filter });
-    this.getFeedsList(filter);
-  };
-
-  getFeedsList = (rooms) => {
-    let { selected_room, user } = this.state;
+  getRoomList = (user) => {
+    const {women,selected_room} = this.state;
+    let rooms = this.state.groups.filter(r => /W\./i.test(r.description) === women);
+    this.setState({ rooms });
     if (selected_room !== '') {
       let room   = rooms.find(r => r.room === selected_room);
       let name   = room.description;
       user.room  = selected_room;
       user.janus  = room.janus;
       user.group = name;
-      this.setState({ user, name });
+      this.setState({user,name});
+      this.initClient(user, false)
     }
+  };
+
+  getFeedsList = (rooms, user) => {
     //TODO: Need solution to show count without service users in room list
     // rooms.forEach((room,i) => {
     //     if(room.num_participants > 0) {
@@ -358,13 +362,10 @@ class OldClient extends Component {
         Janus.log(' :: My handle: ', videoroom);
         Janus.log('Plugin attached! (' + videoroom.getPlugin() + ', id=' + videoroom.getId() + ')');
         Janus.log('  -- This is a publisher/manager');
-        let { user, selected_room } = this.state;
+        let { user } = this.state;
         user.handle                 = videoroom.getId();
         this.setState({ videoroom, user, remoteFeed: null, protocol: null });
         this.initDevices(true);
-        if (selected_room !== '') {
-          this.getRoomList();
-        }
         if (reconnect) {
           setTimeout(() => {
             this.joinRoom(reconnect);
@@ -912,6 +913,7 @@ class OldClient extends Component {
   };
 
   selectRoom = (roomid) => {
+    console.log(roomid)
     const { rooms, user } = this.state;
     let room              = rooms.find(r => r.room === roomid);
     let name              = room.description;
@@ -1077,7 +1079,7 @@ class OldClient extends Component {
             value={selected_room}
             options={rooms_list}
             noResultsMessage={t('oldClient.noResultsFound')}
-            onClick={this.getRoomList}
+            //onClick={this.getRoomList}
             onChange={(e, { value }) => this.selectRoom(value)} />
           {mystream ? <Button negative icon='sign-out' onClick={() => this.exitRoom(false)} /> : ''}
           {!mystream ? <Button primary icon='sign-in' disabled={delay || !selected_room || !audio_device}
