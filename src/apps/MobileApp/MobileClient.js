@@ -215,8 +215,8 @@ class MobileClient extends Component {
     // };
 
     getRoomList = () => {
-        const {women, user} = this.state;
-        let filter = this.state[user.janus].filter(r => /W\./i.test(r.description) === women);
+        const {women} = this.state;
+        let filter = this.state.groups.filter(r => /W\./i.test(r.description) === women);
         this.setState({ rooms: filter });
         this.getFeedsList(filter);
     };
@@ -1053,8 +1053,9 @@ class MobileClient extends Component {
         //let iOS = ['iPad', 'iPhone', 'iPod'].indexOf(navigator.platform) >= 0;
 
         let rooms_list = rooms.map((data,i) => {
-            const {room, num_participants, description} = data;
-            return ({ key: i, text: description, value: room, description: num_participants.toString()})
+            const {room, description} = data;
+            return ({ key: i, text: description, value: room})
+            //return ({ key: i, text: description, value: room, description: num_participants.toString()})
         });
 
         let adevices_list = audio_devices.map((device,i) => {
@@ -1150,8 +1151,9 @@ class MobileClient extends Component {
                                         error={!selected_room}
                                         placeholder=" Select Room: "
                                         value={selected_room}
-                                        text={name ? name + ' : ( ' + this.state.feeds.length + ' ) ': ""}
-                                        icon={name ? 'users' : ''}
+                                        //text={name ? name + ' : ( ' + this.state.feeds.length + ' ) ': ""}
+                                        text={name}
+                                        //icon={name ? 'users' : ''}
                                         options={rooms_list}
                                         onClick={this.getRoomList}
                                         onChange={(e, {value}) => this.selectRoom(value)} />

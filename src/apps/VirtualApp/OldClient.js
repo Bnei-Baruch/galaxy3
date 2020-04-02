@@ -994,8 +994,9 @@ class OldClient extends Component {
     //let iOS = ['iPad', 'iPhone', 'iPod'].indexOf(navigator.platform) >= 0;
 
     let rooms_list = rooms.map((data, i) => {
-      const { room, num_participants, description } = data;
-      return ({ key: i, text: description, value: room, description: num_participants.toString() });
+      const { room, description } = data;
+      return ({ key: i, text: description, value: room });
+      //return ({ key: i, text: description, value: room, description: num_participants.toString() });
     });
 
     let adevices_list = audio_devices.map((device, i) => {
