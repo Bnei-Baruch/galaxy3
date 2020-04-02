@@ -996,6 +996,7 @@ class MobileClient extends Component {
             return;
         user.room = roomid;
         user.group = name;
+        user.janus  = room.janus;
         this.setState({user,selected_room: roomid,name});
     };
 
