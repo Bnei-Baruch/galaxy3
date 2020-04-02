@@ -91,25 +91,25 @@ class MobileClient extends Component {
             Janus.log(data);
             user.ip = data.ip;
             user.janus = data && data.country === "IL" ? "gxy3" : "gxy1";
+            initJanus(janus => {
+                // Check if unified plan supported
+                if(Janus.unifiedPlan) {
+                    user.session = janus.getSessionId();
+                    user.system = navigator.userAgent;
+                    this.setState({janus, user});
+                    //this.chat.initChat(janus);
+                    this.initVideoRoom(error);
+                } else {
+                    alert("WebRTC Unified Plan is NOT supported");
+                    this.setState({audio_device: null});
+                }
+            }, er => {
+                alert(er)
+                // setTimeout(() => {
+                //     this.initClient(user,er);
+                // }, 5000);
+            }, user.janus);
         });
-        initJanus(janus => {
-            // Check if unified plan supported
-            if(Janus.unifiedPlan) {
-                user.session = janus.getSessionId();
-                user.system = navigator.userAgent;
-                this.setState({janus, user});
-                //this.chat.initChat(janus);
-                this.initVideoRoom(error);
-            } else {
-                alert("WebRTC Unified Plan is NOT supported");
-                this.setState({audio_device: null});
-            }
-        }, er => {
-            alert(er)
-            // setTimeout(() => {
-            //     this.initClient(user,er);
-            // }, 5000);
-        }, user.janus);
     };
 
     initDevices = (video) => {
