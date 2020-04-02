@@ -276,8 +276,8 @@ class OldClient extends Component {
       if (count >= 10) {
         clearInterval(chk);
         this.exitRoom(false);
-        alert();
-        window.location.reload(this.props.t('oldClient.networkSettingsChanged'));
+        alert(this.props.t('oldClient.networkSettingsChanged'));
+        window.location.reload();
       }
     }, 3000);
   };
