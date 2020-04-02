@@ -73,13 +73,10 @@ class MobileClient extends Component {
     };
 
     componentDidMount() {
-        geoInfo('gxy1.json', data => {
-            this.setState({gxy1: data});
-            geoInfo('gxy3.json', data => {
-                this.setState({gxy3: data});
-                let {user} = this.state;
-                this.initClient(user, false);
-            });
+        geoInfo('rooms.json', groups => {
+            this.setState({groups});
+            let {user} = this.state;
+            this.initClient(user, false);
         });
     };
 
@@ -90,7 +87,6 @@ class MobileClient extends Component {
         geoInfo(`${GEO_IP_INFO}`, data => {
             Janus.log(data);
             user.ip = data.ip;
-            user.janus = data && data.country === "IL" ? "gxy3" : "gxy1";
             initJanus(janus => {
                 // Check if unified plan supported
                 if(Janus.unifiedPlan) {
@@ -231,6 +227,7 @@ class MobileClient extends Component {
             let room = rooms.find(r => r.room === selected_room);
             let name = room.description;
             user.room = selected_room;
+            user.janus  = room.janus;
             user.group = name;
             this.setState({user,name});
         }

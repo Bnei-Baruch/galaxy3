@@ -65,17 +65,14 @@ class OldClient extends Component {
   };
 
   componentDidMount() {
-    geoInfo('gxy1.json', data => {
-      this.setState({gxy1: data});
-      geoInfo('gxy3.json', data => {
-        this.setState({gxy3: data});
-        if (isMobile) {
-          window.location = '/userm';
-        } else {
-          let { user } = this.state;
-          this.initClient(user, false);
-        }
-      });
+    geoInfo('rooms.json', groups => {
+      this.setState({groups});
+      if (isMobile) {
+        window.location = '/userm';
+      } else {
+        let { user } = this.state;
+        this.initClient(user, false);
+      }
     });
   };
 
@@ -90,7 +87,6 @@ class OldClient extends Component {
     if (/Safari|Firefox|Chrome/.test(browser.name)) {
       geoInfo(`${GEO_IP_INFO}`, data => {
         user.ip = data ? data.ip : '127.0.0.1';
-        user.janus = data && data.country === "IL" ? "gxy3" : "gxy1";
         if (!data) {
           alert(t('oldClient.failGeoInfo'));
         }
@@ -235,8 +231,8 @@ class OldClient extends Component {
   // };
 
   getRoomList = () => {
-    const {women, user} = this.state;
-    let filter = this.state[user.janus].filter(r => /W\./i.test(r.description) === women);
+    const {women} = this.state;
+    let filter = this.state.groups.filter(r => /W\./i.test(r.description) === women);
     this.setState({ rooms: filter });
     this.getFeedsList(filter);
   };
@@ -247,6 +243,7 @@ class OldClient extends Component {
       let room   = rooms.find(r => r.room === selected_room);
       let name   = room.description;
       user.room  = selected_room;
+      user.janus  = room.janus;
       user.group = name;
       this.setState({ user, name });
     }
