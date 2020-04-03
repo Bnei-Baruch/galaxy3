@@ -16,7 +16,7 @@ class GalaxyApp extends Component {
         if(!gxy_public) {
             this.setState({user, roles: user.roles});
         } else {
-            alert("Access denied!");
+            alert("Thank you for registering to the Galaxy system. We will grant you the access to the system soon.");
             client.signoutRedirect();
         }
     };
