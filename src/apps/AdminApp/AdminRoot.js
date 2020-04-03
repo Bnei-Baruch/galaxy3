@@ -1,22 +1,10 @@
 import React, {Component} from 'react';
 import {Janus} from "../../lib/janus";
-import {
-    Button,
-    Grid,
-    Icon,
-    Input,
-    List,
-    Menu,
-    Message,
-    Popup,
-    Segment,
-    Select,
-    Table
-} from "semantic-ui-react";
+import {Button, Grid, Icon, Input, List, Menu, Message, Popup, Segment, Select, Table} from "semantic-ui-react";
 import {getDateString, getState} from "../../shared/tools";
 import './AdminRoot.css';
 import './AdminRootVideo.scss'
-import {SECRET} from "../../shared/consts";
+import {JANUS_GATEWAYS, SECRET} from "../../shared/consts";
 import classNames from "classnames";
 import platform from "platform";
 import {client} from "../../components/UserManager";
@@ -27,13 +15,13 @@ class AdminRoot extends Component {
 
     state = {
         bitrate: 128000,
-        janus: null,
         gateways: {},
+        current_gateway: "",
         feedStreams: {},
         mids: [],
         feeds: [],
         rooms: [],
-        rooms_list: [],
+        rooms_list: {},
         feed_id: null,
         feed_info: null,
         feed_user: null,
@@ -86,7 +74,6 @@ class AdminRoot extends Component {
     };
 
     initAdminRoot = (user) => {
-        const JANUS_GATEWAYS = ["gxy1", "gxy2", "gxy3"];
         const gateways = {};
         JANUS_GATEWAYS.forEach(inst => {
             gateways[inst] = new GxyJanus(inst);
@@ -129,28 +116,43 @@ class AdminRoot extends Component {
         });
     };
 
-    getRoomList = (inst) => {
-        const janus = this.state.gateways[inst];
-        if (janus.videoroom) {
-            janus.videoroom.send({
-                message: {request: "list"},
-                success: (data) => {
-                    let rooms_list = data.list;
-                    rooms_list.sort((a, b) => {
-                        if (a.description > b.description) return 1;
-                        if (a.description < b.description) return -1;
-                        return 0;
-                    });
-                    this.setState({rooms_list});
-                }
-            });
-        }
-    };
+    // getRoomList = () => {
+    //     console.log("[AdminRoot] getRoomList");
+    //     const {gateways, current_gateway} = this.state;
+    //     const gateway = gateways[current_gateway];
+    //     if (gateway.videoroom) {
+    //         gateway.videoroom.send({
+    //             message: {request: "list"},
+    //             success: (data) => {
+    //                 let rooms_list = data.list;
+    //                 rooms_list.sort((a, b) => {
+    //                     if (a.description > b.description) return 1;
+    //                     if (a.description < b.description) return -1;
+    //                     return 0;
+    //                 });
+    //
+    //                 this.setState({
+    //                         rooms_list: {
+    //                             ...this.state.rooms_list,
+    //                             [current_gateway]: rooms_list,
+    //                         }
+    //                     }
+    //                 );
+    //             },
+    //             error: (err) => {
+    //                 gateway.error("[videoroom] list rooms error", err);
+    //             }
+    //         });
+    //     } else {
+    //         this.newVideoRoom(gateway)
+    //             .then(this.getRoomList);
+    //     }
+    // };
 
     newVideoRoom = (gateway, room) => {
         console.log("[AdminRoot] newVideoRoom", room);
 
-        gateway.initVideoRoom({
+        return gateway.initVideoRoom({
             onmessage: (msg, jsep) => {
                 this.onVideoroomMessage(gateway, msg, jsep);
             }
@@ -158,24 +160,24 @@ class AdminRoot extends Component {
             .then(() => {
                 console.log("[AdminRoot] gateway.initVideoRoom success");
 
-                this.getRoomList(gateway.name);
-
-                const register = {
-                    "request": "join",
-                    room,
-                    "ptype": "publisher",
-                    "display": JSON.stringify(this.state.user)
-                };
-                console.log("[AdminRoot] join videoroom room", register);
-                gateway.videoroom.send({
-                    message: register,
-                    success: () => {
-                        gateway.log('[videoroom] join as publisher success', register)
-                    },
-                    error: (err) => {
-                        gateway.error('[videoroom] error join as publisher', register, err)
-                    }
-                });
+                if (room) {
+                    const register = {
+                        "request": "join",
+                        room,
+                        "ptype": "publisher",
+                        "display": JSON.stringify(this.state.user)
+                    };
+                    console.log("[AdminRoot] join videoroom room", register);
+                    gateway.videoroom.send({
+                        message: register,
+                        success: () => {
+                            gateway.log('[videoroom] join as publisher success', register)
+                        },
+                        error: (err) => {
+                            gateway.error('[videoroom] error join as publisher', register, err)
+                        }
+                    });
+                }
             })
             .catch(err => {
                     console.log("[AdminRoot] gateway.initVideoRoom error", err);
@@ -338,7 +340,6 @@ class AdminRoot extends Component {
                     gateway.error("[remoteFeed] error message:", msg["error"]);
                 } else if(event !== undefined && event !== null) {
                     if(event === "attached") {
-                        //this.setState({creatingFeed: false});
                         gateway.log("[remoteFeed] Successfully attached to feed in room " + msg["room"]);
                     } else if(event === "event") {
                         // Check if we got an event on a simulcast-related event from this publisher
@@ -572,8 +573,12 @@ class AdminRoot extends Component {
 
     sendBroadcastMessage = () => {
         const {current_room, input_value, messages, user, rooms, gateways} = this.state;
-        const {janus: inst} = rooms.find(x => x.room === current_room);
-        const gateway = gateways[inst];
+        const room_data = rooms.find(x => x.room === current_room);
+        if (!room_data) {
+            console.warn("[AdminRoot] sendBroadcastMessage. no room data in state");
+            alert("No room data in state: " + current_room);
+        }
+        const gateway = gateways[room_data.janus];
 
         const msg = {type: "chat-broadcast", room: current_room, user, text: input_value};
         gateway.sendProtocolMessage(null, msg)
@@ -612,12 +617,6 @@ class AdminRoot extends Component {
         this.refs.end.scrollIntoView({ behavior: 'smooth' })
     };
 
-    selectRoom = (i) => {
-        const {rooms_list} = this.state;
-        let room_id = rooms_list[i].room;
-        this.setState({room_id});
-    };
-
     joinRoom = (data, i) => {
         console.log("[AdminRoot] joinRoom", data, i);
         const {rooms, user, current_room} = this.state;
@@ -645,14 +644,19 @@ class AdminRoot extends Component {
 
     exitRoom = (room) => {
         console.log("[AdminRoot] exitRoom", room);
-        const {rooms, gateways} = this.state;
-        const {janus: inst} = rooms.find(x => x.room === room);
-        const gateway = gateways[inst];
 
-        console.log('[AdminRoot] exitRoom janus videoroom', inst, gateway.videoroom);
+        const {rooms, gateways} = this.state;
+        const room_data = rooms.find(x => x.room === room);
+        if (!room_data) {
+            console.warn("[AdminRoot] exitRoom. no room data in state");
+        }
+
+        const gateway = gateways[room_data.janus];
+
+        console.log('[AdminRoot] exitRoom janus videoroom', gateway.name, gateway.videoroom);
 
         if (gateway.videoroom)
-            console.log('[AdminRoot] exitRoom detach videoroom', inst, gateway.videoroom);
+            console.log('[AdminRoot] exitRoom detach videoroom', gateway.name, gateway.videoroom);
             gateway.videoroom.detach();
         gateway.videoroom = null;
 
@@ -664,115 +668,124 @@ class AdminRoot extends Component {
         });
 
         if (gateway.remoteFeed)
-            console.log('[AdminRoot] exitRoom detach remoteFeed', inst, gateway.remoteFeed);
+            console.log('[AdminRoot] exitRoom detach remoteFeed', gateway.name, gateway.remoteFeed);
             gateway.remoteFeed.detach();
         gateway.remoteFeed = null;
     };
 
-    getRoomID = () => {
-        const {rooms_list} = this.state;
-        let id = 2100;
-        for(let i=id; i<9999; i++) {
-            let room_id = rooms_list.filter(room => room.room === i);
-            if (room_id.length === 0) {
-                return i;
-            }
-        }
-    };
+    // selectRoom = (e, data) => {
+    //     const {rooms_list,current_gateway} = this.state;
+    //     this.setState({room_id: rooms_list[current_gateway][data.value].room});
+    // };
 
-    createChatRoom = (id,description) => {
-        const {chatroom} = this.state;
-        let req = {
-            textroom : "create",
-            room : id,
-            transaction: Janus.randomString(12),
-            secret: `${SECRET}`,
-            description : description,
-            is_private : false,
-            permanent : true
-        };
-        chatroom.data({text: JSON.stringify(req),
-            success: () => {
-                Janus.log(":: Successfuly created room: ",id);
-            },
-            error: (reason) => {
-                Janus.log(reason);
-            }
-        });
-    };
+    // selectJanusInstance = (e, data) => {
+    //     this.setState({current_gateway: data.value}, this.getRoomList);
+    // };
 
-    removeChatRoom = (id) => {
-        const {chatroom} = this.state;
-        let req = {
-            textroom: "destroy",
-            room: id,
-            transaction: Janus.randomString(12),
-            secret: `${SECRET}`,
-            permanent: true,
-        };
-        chatroom.data({text: JSON.stringify(req),
-            success: () => {
-                Janus.log(":: Successfuly removed room: ", id);
-            },
-            error: (reason) => {
-                Janus.log(reason);
-            }
-        });
-    };
+    // getRoomID = () => {
+    //     const {rooms_list} = this.state;
+    //     let id = 2100;
+    //     for(let i=id; i<9999; i++) {
+    //         let room_id = rooms_list.filter(room => room.room === i);
+    //         if (room_id.length === 0) {
+    //             return i;
+    //         }
+    //     }
+    // };
 
-    setBitrate = (bitrate) => {
-        this.setState({bitrate});
-    };
+    // createChatRoom = (id,description) => {
+    //     const {chatroom} = this.state;
+    //     let req = {
+    //         textroom : "create",
+    //         room : id,
+    //         transaction: Janus.randomString(12),
+    //         secret: `${SECRET}`,
+    //         description : description,
+    //         is_private : false,
+    //         permanent : true
+    //     };
+    //     chatroom.data({text: JSON.stringify(req),
+    //         success: () => {
+    //             Janus.log(":: Successfuly created room: ",id);
+    //         },
+    //         error: (reason) => {
+    //             Janus.log(reason);
+    //         }
+    //     });
+    // };
 
-    createRoom = () => {
-        let {bitrate,description,videoroom} = this.state;
-        let room_id = this.getRoomID();
-        let janus_room = {
-            request : "create",
-            room: room_id,
-            description: description,
-            secret: `${SECRET}`,
-            publishers: 20,
-            bitrate: bitrate,
-            fir_freq: 10,
-            audiocodec: "opus",
-            videocodec: "h264",
-            audiolevel_event: true,
-            audio_level_average: 100,
-            audio_active_packets: 25,
-            record: false,
-            is_private: false,
-            permanent: true,
-        };
-        Janus.log(description);
-        videoroom.send({"message": janus_room,
-            success: (data) => {
-                Janus.log(":: Create callback: ", data);
-                this.getRoomList();
-                alert("Room: "+description+" created!")
-                this.createChatRoom(room_id,description);
-            },
-        });
-        this.setState({description: ""});
-    };
+    // removeChatRoom = (id) => {
+    //     const {chatroom} = this.state;
+    //     let req = {
+    //         textroom: "destroy",
+    //         room: id,
+    //         transaction: Janus.randomString(12),
+    //         secret: `${SECRET}`,
+    //         permanent: true,
+    //     };
+    //     chatroom.data({text: JSON.stringify(req),
+    //         success: () => {
+    //             Janus.log(":: Successfuly removed room: ", id);
+    //         },
+    //         error: (reason) => {
+    //             Janus.log(reason);
+    //         }
+    //     });
+    // };
 
-    removeRoom = () => {
-        const {room_id,videoroom} = this.state;
-        let janus_room = {
-            request: "destroy",
-            room: room_id,
-            secret: `${SECRET}`,
-            permanent: true,
-        };
-        videoroom.send({"message": janus_room,
-            success: (data) => {
-                Janus.log(":: Remove callback: ", data);
-                this.getRoomList();
-                alert("Room ID: "+room_id+" removed!");
-                this.removeChatRoom(room_id);
-            },
-        });
-    };
+    // setBitrate = (bitrate) => {
+    //     this.setState({bitrate});
+    // };
+
+    // createRoom = () => {
+    //     let {bitrate,description,videoroom} = this.state;
+    //     let room_id = this.getRoomID();
+    //     let janus_room = {
+    //         request : "create",
+    //         room: room_id,
+    //         description: description,
+    //         secret: `${SECRET}`,
+    //         publishers: 20,
+    //         bitrate: bitrate,
+    //         fir_freq: 10,
+    //         audiocodec: "opus",
+    //         videocodec: "h264",
+    //         audiolevel_event: true,
+    //         audio_level_average: 100,
+    //         audio_active_packets: 25,
+    //         record: false,
+    //         is_private: false,
+    //         permanent: true,
+    //     };
+    //     Janus.log(description);
+    //     videoroom.send({"message": janus_room,
+    //         success: (data) => {
+    //             Janus.log(":: Create callback: ", data);
+    //             this.getRoomList();
+    //             alert("Room: "+description+" created!")
+    //             this.createChatRoom(room_id,description);
+    //         },
+    //     });
+    //     this.setState({description: ""});
+    // };
+
+    // removeRoom = () => {
+    //     const {room_id,videoroom} = this.state;
+    //     let janus_room = {
+    //         request: "destroy",
+    //         room: room_id,
+    //         secret: `${SECRET}`,
+    //         permanent: true,
+    //     };
+    //     videoroom.send({"message": janus_room,
+    //         success: (data) => {
+    //             Janus.log(":: Remove callback: ", data);
+    //             this.getRoomList();
+    //             alert("Room ID: "+room_id+" removed!");
+    //             this.removeChatRoom(room_id);
+    //         },
+    //     });
+    // };
 
     getUserInfo = (feed) => {
         console.log("[AdminRoot] getUserInfo", feed);
@@ -802,7 +815,7 @@ class AdminRoot extends Component {
     };
 
   render() {
-      const { bitrate,rooms,current_room,user,feeds,feed_id,feed_info,i,messages,description,room_id,feed_rtcp,msg_type,users} = this.state;
+      const { bitrate,rooms,current_room,rooms_list, current_gateway,user,feeds,feed_id,feed_info,i,messages,description,room_id,feed_rtcp,msg_type,users} = this.state;
       const width = "134";
       const height = "100";
       const autoPlay = true;
@@ -814,22 +827,22 @@ class AdminRoot extends Component {
       const v = (<Icon name='checkmark' />);
       //const x = (<Icon name='close' />);
 
-      const bitrate_options = [
-          { key: 0, text: '64Kb/s', value: 64000 },
-          { key: 1, text: '128Kb/s', value: 128000 },
-          { key: 2, text: '300Kb/s', value: 300000 },
-          { key: 3, text: '600Kb/s', value: 600000 },
-      ];
+      // const bitrate_options = [
+      //     { key: 0, text: '64Kb/s', value: 64000 },
+      //     { key: 1, text: '128Kb/s', value: 128000 },
+      //     { key: 2, text: '300Kb/s', value: 300000 },
+      //     { key: 3, text: '600Kb/s', value: 600000 },
+      // ];
 
       const send_options = [
           { key: 'all', text: 'All', value: 'all' },
           { key: 'private', text: 'Private', value: 'private' },
       ];
 
-      let rooms_list = this.state.rooms_list.map((data,i) => {
-          const {room, num_participants, description} = data;
-          return ({ key: room, text: description, value: i, description: num_participants.toString()})
-      });
+      // const videorooms = (rooms_list[current_gateway] || []).map((data,i) => {
+      //     const {room, num_participants, description} = data;
+      //     return ({ key: room, text: description, value: i, description: num_participants.toString()})
+      // });
 
       let rooms_grid = rooms.map((data,i) => {
           const {room, num_users, description, questions} = data;
@@ -940,34 +953,47 @@ class AdminRoot extends Component {
                       hideOnScroll
                   />
                   <Menu secondary >
-                      <Menu.Item>
+                      <Menu.Item >
+                        <Message info content="Rooms management is pending new implementation" />
                       </Menu.Item>
-                      <Menu.Item>
-                          <Button negative onClick={this.removeRoom}>Remove</Button>
-                          :::
-                          <Select
-                              error={room_id}
-                              scrolling
-                              placeholder="Select Room:"
-                              value={i}
-                              options={rooms_list}
-                              onClick={this.getRoomList}
-                              onChange={(e, {value}) => this.selectRoom(value)} />
-                      </Menu.Item>
-                      <Menu.Item>
-                          <Input type='text' placeholder='Room description...' action value={description}
-                                 onChange={(v,{value}) => this.setState({description: value})}>
-                              <input />
-                              <Select
-                                  compact={true}
-                                  scrolling={false}
-                                  placeholder="Room Bitrate:"
-                                  value={bitrate}
-                                  options={bitrate_options}
-                                  onChange={(e, {value}) => this.setBitrate(value)}/>
-                              <Button positive onClick={this.createRoom}>Create</Button>
-                          </Input>
-                      </Menu.Item>
+
+                  {/*    <Menu.Item>*/}
+                  {/*        <Select placeholder="Janus instance"*/}
+                  {/*                value={current_gateway}*/}
+                  {/*                onChange={this.selectJanusInstance}*/}
+                  {/*                options={*/}
+                  {/*                    JANUS_GATEWAYS.map((gateway) => ({*/}
+                  {/*                        key: gateway,*/}
+                  {/*                        text: gateway,*/}
+                  {/*                        value: gateway,*/}
+                  {/*                    }))*/}
+                  {/*                }/>*/}
+                  {/*    </Menu.Item>*/}
+                  {/*    <Menu.Item>*/}
+                  {/*        <Button negative onClick={this.removeRoom}>Remove</Button>*/}
+                  {/*        :::*/}
+                  {/*        <Select*/}
+                  {/*            error={room_id}*/}
+                  {/*            scrolling*/}
+                  {/*            placeholder="Select Room:"*/}
+                  {/*            value={i}*/}
+                  {/*            options={videorooms}*/}
+                  {/*            onChange={this.selectRoom} />*/}
+                  {/*    </Menu.Item>*/}
+                  {/*    <Menu.Item>*/}
+                  {/*        <Input type='text' placeholder='Room description...' action value={description}*/}
+                  {/*               onChange={(v,{value}) => this.setState({description: value})}>*/}
+                  {/*            <input />*/}
+                  {/*            <Select*/}
+                  {/*                compact={true}*/}
+                  {/*                scrolling={false}*/}
+                  {/*                placeholder="Room Bitrate:"*/}
+                  {/*                value={bitrate}*/}
+                  {/*                options={bitrate_options}*/}
+                  {/*                onChange={(e, {value}) => this.setBitrate(value)}/>*/}
+                  {/*            <Button positive onClick={this.createRoom}>Create</Button>*/}
+                  {/*        </Input>*/}
+                  {/*    </Menu.Item>*/}
                   </Menu>
               </Segment>
 
