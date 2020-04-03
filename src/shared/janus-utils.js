@@ -96,12 +96,10 @@ class GxyJanus {
                     opaqueId: "chatroom_user",
                     success: (pluginHandle) => {
                         this.chatroom = pluginHandle;
-                        this.log("[chatroom] Plugin attached! (" + this.chatroom.getPlugin() + ", id=" + this.chatroom.getId() + ")");
-
-                        // Setup the DataChannel
-                        this.chatroom.send({"message": {"request": "setup"}});
-
-                        resolve();
+                        this.log("[chatroom] attach success", this.chatroom.getId());
+                        this.send("chatroom", "setup", this.chatroom, {request: "setup"})
+                            .then(resolve)
+                            .catch(reject);
                     },
                     error: (err) => {
                         this.error("[chatroom] Error attaching plugin", err);
@@ -112,10 +110,12 @@ class GxyJanus {
                     },
                     onmessage: (msg, jsep) => {
                         this.debug("[chatroom] message", msg);
+
                         if (msg["error"] !== undefined && msg["error"] !== null) {
                             this.error("[chatroom] message error", msg);
                             alert("chatroom message error: " + msg["error"]);
                         }
+
                         if (jsep !== undefined && jsep !== null) {
                             // Answer
                             this.chatroom.createAnswer(
@@ -124,7 +124,7 @@ class GxyJanus {
                                     media: {audio: false, video: false, data: true},  // We only use datachannels
                                     success: (jsep) => {
                                         this.debug("[chatroom] Got SDP!", jsep);
-                                        this.chatroom.send({"message": {"request": "ack"}, "jsep": jsep});
+                                        this.send("chatroom", "ack jsep", this.chatroom, {request: "ack"}, {jsep});
                                     },
                                     error: (err) => {
                                         this.error("[chatroom] createAnswer error", err);
@@ -142,27 +142,28 @@ class GxyJanus {
                         ondata(data);
                     },
                     oncleanup: () => {
-                        this.warn("[chatroom] ::: Got a cleanup notification :::");
+                        this.log("[chatroom] cleanup");
                     }
                 }
             );
         });
     };
 
-    joinChatRoom = (roomid, user) => {
-        return new Promise((resolve, reject) => {
-            const register = {
-                textroom: "join",
-                transaction: Janus.randomString(12),
-                room: roomid,
-                username: user.id,
-                display: user.display
-            };
-            this.chatroom.data({
-                text: JSON.stringify(register),
-                success: resolve,
-                error: reject,
-            });
+    chatRoomJoin = (room, user) => {
+        return this.data("chatroom", this.chatroom, {
+            textroom: "join",
+            transaction: Janus.randomString(12),
+            room,
+            username: user.id,
+            display: user.display
+        });
+    };
+
+    chatRoomLeave = (room) => {
+        return this.data("chatroom", this.chatroom, {
+            textroom: "leave",
+            transaction: Janus.randomString(12),
+            room
         });
     };
 
@@ -174,15 +175,13 @@ class GxyJanus {
                     opaqueId: "gxy_protocol",
                     success: (handle) => {
                         this.protocol = handle;
-                        this.log("[protocol] Plugin attached! (" + this.protocol.getPlugin() + ", id=" + this.protocol.getId() + ")");
-
-                        // Setup the DataChannel
-                        this.protocol.send({"message": {"request": "setup"}});
-
-                        resolve();
+                        this.log("[protocol] attach success", this.protocol.getId());
+                        this.send("protocol", "setup", this.protocol, {request: "setup"})
+                            .then(resolve)
+                            .catch(reject);
                     },
                     error: (err) => {
-                        this.error("[protocol] Error attaching plugin", err);
+                        this.error("[protocol] attach error", err);
                         reject(err);
                     },
                     webrtcState: (on) => {
@@ -202,7 +201,7 @@ class GxyJanus {
                                     media: {audio: false, video: false, data: true},  // We only use datachannels
                                     success: (jsep) => {
                                         this.debug("[protocol] Got SDP!", jsep);
-                                        this.protocol.send({"message": {"request": "ack"}, "jsep": jsep});
+                                        this.send("protocol", "ack jsep", this.protocol, {request: "ack"}, {jsep});
                                     },
                                     error: (err) => {
                                         this.error("[protocol] createAnswer error", err);
@@ -214,20 +213,12 @@ class GxyJanus {
                     },
                     ondataopen: () => {
                         this.log("[protocol] DataChannel is available. Joining in");
-                        let register = {
+                        this.data("protocol", this.protocol, {
                             textroom: "join",
                             transaction: Janus.randomString(12),
                             room: PROTOCOL_ROOM,
                             username: user.id || user.sub,
                             display: user.display
-                        };
-                        this.protocol.data({
-                            text: JSON.stringify(register),
-                            success: () => { this.debug("[protocol] join success") },
-                            error: (err) => {
-                                this.error("[protocol] join error", err);
-                                alert("protocol join error: " + err);
-                            }
                         });
                     },
                     ondata: (data) => {
@@ -349,31 +340,12 @@ class GxyJanus {
     };
 
     sendProtocolMessage = (user, msg) => {
-        let message = {
+        return this.data("protocol", this.protocol, {
             ack: false,
             textroom: "message",
             transaction: Janus.randomString(12),
             room: PROTOCOL_ROOM,
             text: JSON.stringify(msg),
-        };
-
-        // Note: messages are always acknowledged by default. This means that you'll
-        // always receive a confirmation back that the message has been received by the
-        // server and forwarded to the recipients. If you do not want this to happen,
-        // just add an ack:false property to the message above, and server won't send
-        // you a response (meaning you just have to hope it succeeded).
-        return new Promise((resolve, reject) => {
-            this.protocol.data({
-                text: JSON.stringify(message),
-                success: () => {
-                    this.debug("[protocol] data success", message);
-                    resolve(message);
-                },
-                error: (err) => {
-                    this.error("[protocol] data error", message, err);
-                    reject(err);
-                }
-            });
         });
     };
 
@@ -384,12 +356,11 @@ class GxyJanus {
                 opaqueId: "videoroom_user",
                 success: (handle) => {
                     this.videoroom = handle;
-                    this.log("[videoroom] :: My handle: ", this.videoroom);
-                    this.log("[videoroom] Plugin attached! (" + this.videoroom.getPlugin() + ", id=" + this.videoroom.getId() + ")");
-                    resolve();
+                    this.log("[videoroom] attached success", this.videoroom.getId());
+                    resolve(handle);
                 },
                 error: (err) => {
-                    this.error("[videoroom] Error attaching plugin", err);
+                    this.error("[videoroom] attach error", err);
                     reject(err);
                 },
                 consentDialog: (on) => {
@@ -430,10 +401,46 @@ class GxyJanus {
                     if (callbacks.onmessage) callbacks.onmessage(msg, jsep);
                 },
                 oncleanup: () => {
-                    this.warn("[videoroom] ::: Got a cleanup notification: we are unpublished now :::");
+                    this.log("[videoroom] cleanup");
                     if (callbacks.oncleanup) callbacks.oncleanup();
                 }
             });
+        });
+    };
+
+    detachVideoRoom = () => {
+        return new Promise((resolve, reject) => {
+            if (this.videoroom) {
+                this.log('[videoroom] detach');
+                this.videoroom.detach({
+                    success: () => {
+                        this.debug("[videoroom] detach success");
+                        resolve();
+                    },
+                    error: (err) => {
+                        this.error("[videoroom] detach error", err);
+                        reject(err);
+                    }
+                });
+            } else {
+                resolve();
+            }
+        });
+    };
+
+    videoRoomJoin = (room, user, ptype = "publisher") => {
+        return this.send("videoroom", "join room", this.videoroom,{
+            request: "join",
+            room,
+            ptype,
+            display: JSON.stringify(user)
+        });
+    };
+
+    videoRoomLeave = (room) => {
+        return this.send("videoroom", "leave room", this.videoroom,{
+            request: "leave",
+            room
         });
     };
 
@@ -444,12 +451,11 @@ class GxyJanus {
                 opaqueId: "remotefeed_user",
                 success: (handle) => {
                     this.remoteFeed = handle;
-                    this.log("[remoteFeed] Plugin attached! (" + this.remoteFeed.getPlugin() + ", id=" + this.remoteFeed.getId() + ")");
-                    this.log("[remoteFeed] This is a multistream subscriber", this.remoteFeed);
-                    resolve();
+                    this.log("[remoteFeed] attach success", this.remoteFeed.getId() );
+                    resolve(handle);
                 },
                 error: (err) => {
-                    this.error("[remoteFeed] Error attaching plugin", err);
+                    this.error("[remoteFeed] attach error", err);
                     reject(err);
                 },
                 iceState: (state) => {
@@ -489,10 +495,75 @@ class GxyJanus {
                     if (callbacks.onmessage) callbacks.onmessage(msg, jsep);
                 },
                 oncleanup: () => {
-                    this.warn("[remoteFeed] ::: Got a cleanup notification :::");
+                    this.log("[remoteFeed] cleanup");
                     if (callbacks.oncleanup) callbacks.oncleanup();
                 }
             });
+        });
+    };
+
+    detachRemoteFeed = () => {
+        return new Promise((resolve, reject) => {
+            if (this.remoteFeed) {
+                this.log('[remoteFeed] detach');
+                this.remoteFeed.detach({
+                    success: () => {
+                        this.debug("[remoteFeed] detach success");
+                        resolve();
+                    },
+                    error: (err) => {
+                        this.error("[remoteFeed] detach error", err);
+                        reject(err);
+                    }
+                });
+            } else {
+                resolve();
+            }
+        });
+    };
+
+    send = (component, action, handle, message, extraParams = {}) => {
+        return new Promise((resolve, reject) => {
+            if (handle) {
+                this.log(`[${component}] ${action}`, message);
+                handle.send({
+                    message,
+                    ...extraParams,
+                    success: () => {
+                        this.debug(`[${component}] ${action} success`, message);
+                        resolve();
+                    },
+                    error: (err) => {
+                        this.error(`[${component}] ${action} error`, message, err);
+                        reject(err);
+                    }
+                });
+            } else {
+                this.error("can't send to an uninitialized handle", component, action);
+                reject(new Error(`${component} not initialized`));
+            }
+        });
+    };
+
+    data = (component, handle, payload) => {
+        return new Promise((resolve, reject) => {
+            if (handle) {
+                this.debug(`[${component}] data`, payload);
+                handle.data({
+                    text: JSON.stringify(payload),
+                    success: () => {
+                        this.debug(`[${component}] data success`, payload);
+                        resolve();
+                    },
+                    error: (err) => {
+                        this.error(`[${component}] data error`, payload, err);
+                        reject(err);
+                    }
+                });
+            } else {
+                this.error("can't send data to an uninitialized handle", component);
+                reject(new Error(`${component} not initialized`));
+            }
         });
     };
 

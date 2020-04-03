@@ -85,16 +85,16 @@ class AdminRoot extends Component {
                 .then(() => {
                     gateway.initChatRoom(data => this.onChatData(gateway, data))
                         .catch(err => {
-                            console.log("[AdminRoot] gateway.initChatRoom error", gateway.name, err);
+                            console.error("[AdminRoot] gateway.initChatRoom error", gateway.name, err);
                         });
 
                     gateway.initGxyProtocol(user, data => this.onProtocolData(gateway, data))
                         .catch(err => {
-                            console.log("[AdminRoot] gateway.initGxyProtocol error", gateway.name, err);
+                            console.error("[AdminRoot] gateway.initGxyProtocol error", gateway.name, err);
                         });
                 })
                 .catch(err => {
-                    console.log("[AdminRoot] gateway.init error", gateway.name, err);
+                    console.error("[AdminRoot] gateway.init error", gateway.name, err);
                 })
         });
 
@@ -156,33 +156,7 @@ class AdminRoot extends Component {
             onmessage: (msg, jsep) => {
                 this.onVideoroomMessage(gateway, msg, jsep);
             }
-        })
-            .then(() => {
-                console.log("[AdminRoot] gateway.initVideoRoom success");
-
-                if (room) {
-                    const register = {
-                        "request": "join",
-                        room,
-                        "ptype": "publisher",
-                        "display": JSON.stringify(this.state.user)
-                    };
-                    console.log("[AdminRoot] join videoroom room", register);
-                    gateway.videoroom.send({
-                        message: register,
-                        success: () => {
-                            gateway.log('[videoroom] join as publisher success', register)
-                        },
-                        error: (err) => {
-                            gateway.error('[videoroom] error join as publisher', register, err)
-                        }
-                    });
-                }
-            })
-            .catch(err => {
-                    console.log("[AdminRoot] gateway.initVideoRoom error", err);
-                }
-            );
+        });
     };
 
     onVideoroomMessage = (gateway, msg, jsep) => {
@@ -639,8 +613,13 @@ class AdminRoot extends Component {
         });
 
         const gateway = this.state.gateways[inst];
-        this.newVideoRoom(gateway, room);
-        gateway.joinChatRoom(room, user);
+
+        this.newVideoRoom(gateway, room)
+            .then(() => {
+                gateway.videoRoomJoin(room, user);
+            });
+
+        gateway.chatRoomJoin(room, user);
     };
 
     exitRoom = (room) => {
@@ -654,25 +633,22 @@ class AdminRoot extends Component {
         }
 
         const gateway = gateways[room_data.janus];
+        console.log('[AdminRoot] exitRoom janus instance', gateway.name);
 
-        console.log('[AdminRoot] exitRoom janus videoroom', gateway.name, gateway.videoroom);
+        if (gateway.remoteFeed) {
+            console.log('[AdminRoot] exitRoom detach remoteFeed');
+            gateway.detachRemoteFeed()
+                .finally(() => gateway.remoteFeed = null);
+        }
 
-        if (gateway.videoroom)
-            console.log('[AdminRoot] exitRoom detach videoroom', gateway.name, gateway.videoroom);
-            gateway.videoroom.detach();
-        gateway.videoroom = null;
+        if (gateway.videoroom) {
+            console.log('[AdminRoot] exitRoom leave and detach videoroom');
+            gateway.videoRoomLeave(room)
+                .then(() => gateway.detachVideoRoom())
+                .finally(() => gateway.videoroom = null);
+        }
 
-        let chatreq = {textroom: "leave", transaction: Janus.randomString(12), room};
-        gateway.chatroom.data({
-            text: JSON.stringify(chatreq),
-            success: () => { gateway.log('leave chatroom success', chatreq)},
-            error: (err) => { gateway.error('error chatroom room', chatreq, err)}
-        });
-
-        if (gateway.remoteFeed)
-            console.log('[AdminRoot] exitRoom detach remoteFeed', gateway.name, gateway.remoteFeed);
-            gateway.remoteFeed.detach();
-        gateway.remoteFeed = null;
+        gateway.chatRoomLeave(room);
     };
 
     // selectRoom = (e, data) => {
