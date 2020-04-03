@@ -1,5 +1,5 @@
 import {Janus} from "../lib/janus";
-import {DATA_PORT, JANUS_STR_HOST_GR, JANUS_STR_HOST_IL, JANUS_STR_HOST_UK, SECRET} from "./consts";
+import {DATA_PORT, JANUS_STR_HOST_PL, JANUS_STR_HOST_GR, JANUS_STR_HOST_UK, SECRET} from "./consts";
 
 let data_forward = {};
 let myid;
@@ -50,10 +50,10 @@ export const initDataForward = (janus, callback) => {
 };
 
 const forwardOwnFeed = (myid, fwdhandle) => {
-    let isrip = `${JANUS_STR_HOST_IL}`;
-    let frip = `${JANUS_STR_HOST_UK}`;
-    let gerip = `${JANUS_STR_HOST_GR}`;
-    let ips = [isrip, frip, gerip];
+    let PL = `${JANUS_STR_HOST_PL}`;
+    let FR = `${JANUS_STR_HOST_UK}`;
+    let GR = `${JANUS_STR_HOST_GR}`;
+    let ips = [PL, FR, GR];
 
     for(let i=0; i<ips.length; i++) {
         let isrfwd = { "request": "rtp_forward","publisher_id":myid,"room":1000,"secret":`${SECRET}`,"host":ips[i],"data_port":DATA_PORT};
