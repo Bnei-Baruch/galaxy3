@@ -21,6 +21,7 @@ import 'eqcss'
 import {initGxyProtocol, sendProtocolMessage} from "../../shared/protocol";
 import MobileStreaming from "./MobileStreaming";
 import {GEO_IP_INFO, PROTOCOL_ROOM, vsettings_list} from "../../shared/consts";
+import platform from "platform";
 
 class MobileClient extends Component {
 
@@ -74,32 +75,47 @@ class MobileClient extends Component {
 
     componentDidMount() {
         let {user} = this.state;
-        this.initClient(user, false);
+        const { t } = this.props;
+        localStorage.setItem('question', false);
+        localStorage.setItem('sound_test', false);
+        localStorage.setItem('uuid', user.id);
+        checkNotification();
+        let system  = navigator.userAgent;
+        let browser = platform.parse(system);
+        if (/Safari|Firefox|Chrome/.test(browser.name)) {
+            geoInfo(`${GEO_IP_INFO}`, data => {
+                user.ip = data ? data.ip : '127.0.0.1';
+                user.system = system;
+                if (!data) {
+                    alert("Failed to get Geo Info");
+                }
+
+                this.setState({geoinfo: !!data});
+                this.getRoomList(user);
+            });
+        } else {
+            alert("Browser not supported");
+            window.location = 'https://galaxy.kli.one';
+        }
     };
 
     initClient = (user,error) => {
-        localStorage.setItem("question", false);
-        localStorage.setItem("uuid", user.id);
-        checkNotification();
-        geoInfo(`${GEO_IP_INFO}`, data => {
-            Janus.log(data);
-            user.ip = data.ip;
-            user.janus = data && data.country === "IL" ? "gxy3" : "gxy1";
-        });
+        const { t } = this.props;
+        if(this.state.janus)
+            this.state.janus.destroy();
         initJanus(janus => {
             // Check if unified plan supported
-            if(Janus.unifiedPlan) {
+            if (Janus.unifiedPlan) {
                 user.session = janus.getSessionId();
-                user.system = navigator.userAgent;
                 this.setState({janus, user});
                 //this.chat.initChat(janus);
                 this.initVideoRoom(error);
             } else {
-                alert("WebRTC Unified Plan is NOT supported");
-                this.setState({audio_device: null});
+                alert("Unified Plan is NOT supported");
+                this.setState({ audio_device: null });
             }
         }, er => {
-            alert(er)
+            console.log(er);
             // setTimeout(() => {
             //     this.initClient(user,er);
             // }, 5000);
@@ -191,36 +207,65 @@ class MobileClient extends Component {
         },1000);
     };
 
-    getRoomList = () => {
-        const {videoroom, women} = this.state;
-        if (videoroom) {
-            videoroom.send({message: {request: "list"},
-                success: (data) => {
-                    Janus.log(" :: Get Rooms List: ", data.list);
-                    let filter = data.list.filter(r => /W\./i.test(r.description) === women);
-                    filter.sort((a, b) => {
-                        // if (a.num_participants > b.num_participants) return -1;
-                        // if (a.num_participants < b.num_participants) return 1;
-                        if (a.description > b.description) return 1;
-                        if (a.description < b.description) return -1;
-                        return 0;
-                    });
-                    this.setState({rooms: filter});
-                    this.getFeedsList(filter)
-                }
-            });
+    // getRoomList = () => {
+    //     const {videoroom, women} = this.state;
+    //     if (videoroom) {
+    //         videoroom.send({message: {request: "list"},
+    //             success: (data) => {
+    //                 Janus.log(" :: Get Rooms List: ", data.list);
+    //                 let filter = data.list.filter(r => /W\./i.test(r.description) === women);
+    //                 filter.sort((a, b) => {
+    //                     // if (a.num_participants > b.num_participants) return -1;
+    //                     // if (a.num_participants < b.num_participants) return 1;
+    //                     if (a.description > b.description) return 1;
+    //                     if (a.description < b.description) return -1;
+    //                     return 0;
+    //                 });
+    //                 this.setState({rooms: filter});
+    //                 this.getFeedsList(filter)
+    //             }
+    //         });
+    //     }
+    // };
+
+    getRoomList = (user) => {
+        geoInfo('rooms.json', groups => {
+            this.setState({groups});
+            const {women,selected_room} = this.state;
+            let rooms = groups.filter(r => /W\./i.test(r.description) === women);
+            this.setState({groups,rooms});
+            if (selected_room !== '') {
+                let room   = rooms.find(r => r.room === selected_room);
+                let name   = room.description;
+                user.room  = selected_room;
+                user.janus  = room.janus;
+                user.group = name;
+                this.setState({user,name});
+            }
+            this.initClient(user, false)
+        });
+    };
+
+    selectRoom = (roomid) => {
+        const { rooms, user } = this.state;
+        let room              = rooms.find(r => r.room === roomid);
+        let name              = room.description;
+        if (this.state.room === roomid) {
+            return;
         }
+        user.room  = roomid;
+        user.group = name;
+        let reconnect = user.janus && user.janus !== room.janus;
+        user.janus  = room.janus;
+        this.setState({ user, selected_room: roomid, name }, () => {
+            if(reconnect) {
+                this.setState({ delay: true });
+                this.initClient(user, false);
+            }
+        });
     };
 
     getFeedsList = (rooms) => {
-        let {selected_room,user} = this.state;
-        if(selected_room !== "") {
-            let room = rooms.find(r => r.room === selected_room);
-            let name = room.description;
-            user.room = selected_room;
-            user.group = name;
-            this.setState({user,name});
-        }
         //TODO: Need solution to show count without service users in room list
         // rooms.forEach((room,i) => {
         //     if(room.num_participants > 0) {
@@ -327,13 +372,10 @@ class MobileClient extends Component {
                 Janus.log(" :: My handle: ", videoroom);
                 Janus.log("Plugin attached! (" + videoroom.getPlugin() + ", id=" + videoroom.getId() + ")");
                 Janus.log("  -- This is a publisher/manager");
-                let {user,selected_room} = this.state;
+                let {user} = this.state;
                 user.handle = videoroom.getId();
-                this.setState({videoroom, user, remoteFeed: null, protocol: null});
+                this.setState({videoroom, user, remoteFeed: null, protocol: null, delay: false});
                 this.initDevices(true);
-                if(selected_room !== "") {
-                    this.getRoomList();
-                }
                 if(reconnect) {
                     setTimeout(() => {
                         this.joinRoom(reconnect);
@@ -978,17 +1020,6 @@ class MobileClient extends Component {
         });
     };
 
-    selectRoom = (roomid) => {
-        const {rooms,user} = this.state;
-        let room = rooms.find(r => r.room === roomid);
-        let name = room.description;
-        if (this.state.room === roomid)
-            return;
-        user.room = roomid;
-        user.group = name;
-        this.setState({user,selected_room: roomid,name});
-    };
-
     handleQuestion = () => {
         //TODO: only when shidur user is online will be avelable send question event, so we need to add check
         let {protocol, user, room, question} = this.state;
@@ -1043,8 +1074,9 @@ class MobileClient extends Component {
         //let iOS = ['iPad', 'iPhone', 'iPod'].indexOf(navigator.platform) >= 0;
 
         let rooms_list = rooms.map((data,i) => {
-            const {room, num_participants, description} = data;
-            return ({ key: i, text: description, value: room, description: num_participants.toString()})
+            const {room, description} = data;
+            return ({ key: i, text: description, value: room})
+            //return ({ key: i, text: description, value: room, description: num_participants.toString()})
         });
 
         let adevices_list = audio_devices.map((device,i) => {
@@ -1140,10 +1172,11 @@ class MobileClient extends Component {
                                         error={!selected_room}
                                         placeholder=" Select Room: "
                                         value={selected_room}
-                                        text={name ? name + ' : ( ' + this.state.feeds.length + ' ) ': ""}
-                                        icon={name ? 'users' : ''}
+                                        //text={name ? name + ' : ( ' + this.state.feeds.length + ' ) ': ""}
+                                        text={name}
+                                        //icon={name ? 'users' : ''}
                                         options={rooms_list}
-                                        onClick={this.getRoomList}
+                                        //onClick={this.getRoomList}
                                         onChange={(e, {value}) => this.selectRoom(value)} />
                                 <Input
                                     iconPosition='left'

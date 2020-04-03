@@ -17,34 +17,34 @@ export const setLanguage = value => {
 const languages = new Map([
   ['en',
     [
-      { key: 'en', value: 'en', text: 'English', flag: 'us', },
-      { key: 'es', value: 'es', text: 'Spanish', flag: 'es', },
-      { key: 'he', value: 'he', text: 'Hebrew', flag: 'il', },
-      { key: 'ru', value: 'ru', text: 'Russian', flag: 'ru', },
+      { key: 'en', value: 'en', text: 'English', },
+      { key: 'es', value: 'es', text: 'Spanish', },
+      { key: 'he', value: 'he', text: 'Hebrew', },
+      { key: 'ru', value: 'ru', text: 'Russian', },
     ]
   ],
   ['es',
     [
-      { key: 'en', value: 'en', text: 'Ingles', flag: 'us', },
-      { key: 'es', value: 'es', text: 'Español', flag: 'es', },
-      { key: 'he', value: 'he', text: 'Hebreo', flag: 'il', },
-      { key: 'ru', value: 'ru', text: 'Ruso', flag: 'ru', },
+      { key: 'en', value: 'en', text: 'Ingles', },
+      { key: 'es', value: 'es', text: 'Español', },
+      { key: 'he', value: 'he', text: 'Hebreo', },
+      { key: 'ru', value: 'ru', text: 'Ruso', },
     ]
   ],
   ['he',
     [
-      { key: 'en', value: 'en', text: 'אנגלית', flag: 'us', },
-      { key: 'es', value: 'es', text: 'ספרדית', flag: 'es', },
-      { key: 'he', value: 'he', text: 'עברית', flag: 'il', },
-      { key: 'ru', value: 'ru', text: 'רוסית', flag: 'ru', },
+      { key: 'en', value: 'en', text: 'אנגלית', },
+      { key: 'es', value: 'es', text: 'ספרדית', },
+      { key: 'he', value: 'he', text: 'עברית', },
+      { key: 'ru', value: 'ru', text: 'רוסית', },
     ]
   ],
   ['ru',
     [
-      { key: 'en', value: 'en', text: 'Английский', flag: 'us', },
-      { key: 'es', value: 'es', text: 'Испанский', flag: 'es', },
-      { key: 'he', value: 'he', text: 'Иврит', flag: 'il', },
-      { key: 'ru', value: 'ru', text: 'Русский', flag: 'ru', },
+      { key: 'en', value: 'en', text: 'Английский', },
+      { key: 'es', value: 'es', text: 'Испанский', },
+      { key: 'he', value: 'he', text: 'Иврит', },
+      { key: 'ru', value: 'ru', text: 'Русский', },
     ]
   ],
 ]);

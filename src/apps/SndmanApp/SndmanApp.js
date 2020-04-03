@@ -39,7 +39,7 @@ class SndmanApp extends Component {
             user.role = "sndman";
             user.session = 0;
             getState('galaxy/users', (users) => {
-                this.setState({users});
+                this.setState({user,users});
             });
             this.initApp(user);
         } else {
@@ -54,6 +54,7 @@ class SndmanApp extends Component {
         // Init GXY1
         initJanus(janus => {
             gxy1.janus = janus;
+            user.id = "sndman-gxy1";
             initGxyProtocol(janus, user, protocol => {
                 gxy1.protocol = protocol;
             }, ondata => {
@@ -62,10 +63,10 @@ class SndmanApp extends Component {
                     alert(ondata.error);
                     gxy1.protocol.hangup();
                 } else if(ondata.type === "joined") {
-                    initDataForward(janus, fwdhandle => {
-                        gxy1.fwdhandle = fwdhandle;
-                        this.setState({gxy1});
-                    })
+                    // initDataForward(janus, fwdhandle => {
+                    //     gxy1.fwdhandle = fwdhandle;
+                    //     this.setState({gxy1});
+                    // })
                 }
                 this.onProtocolData(ondata, "gxy1");
             });
