@@ -1,35 +1,34 @@
-import React, { Component } from 'react';
-import { Janus } from "../../lib/janus";
-import {Segment, Menu, Button, Input, Table, Grid, Message, Transition, Select, Icon, Popup, List} from "semantic-ui-react";
+import React, {Component} from 'react';
+import {Janus} from "../../lib/janus";
 import {
-    initJanus,
-    initChatRoom,
-    getDateString,
-    joinChatRoom,
-    getPublisherInfo,
-    getHiddenProp,
-    notifyMe,
-    getState, getPluginInfo
-} from "../../shared/tools";
+    Button,
+    Grid,
+    Icon,
+    Input,
+    List,
+    Menu,
+    Message,
+    Popup,
+    Segment,
+    Select,
+    Table
+} from "semantic-ui-react";
+import {getDateString, getState} from "../../shared/tools";
 import './AdminRoot.css';
 import './AdminRootVideo.scss'
-import {DANTE_IN_IP, GROUPS_ROOM, SECRET} from "../../shared/consts";
-import {initGxyProtocol,sendProtocolMessage} from "../../shared/protocol";
+import {SECRET} from "../../shared/consts";
 import classNames from "classnames";
 import platform from "platform";
 import {client} from "../../components/UserManager";
 import LoginPage from "../../components/LoginPage";
+import GxyJanus from "../../shared/janus-utils";
 
 class AdminRoot extends Component {
 
     state = {
         bitrate: 128000,
-        chatroom: null,
-        forwarders: [],
-        groups: [],
         janus: null,
-        gxy1: {janus: null, chatroom: null, protocol: null},
-        gxy3: {janus: null, chatroom: null, protocol: null},
+        gateways: {},
         feedStreams: {},
         mids: [],
         feeds: [],
@@ -42,10 +41,6 @@ class AdminRoot extends Component {
         feed_rtcp: {},
         current_room: "",
         room_id: "",
-        room_name: "Forward",
-        videoroom: null,
-        remotefeed: null,
-        switchFeed: null,
         myid: null,
         mypvtid: null,
         mystream: null,
@@ -57,7 +52,6 @@ class AdminRoot extends Component {
         messages: [],
         visible: false,
         input_value: "",
-        switch_mode: false,
         users: {},
     };
 
@@ -70,8 +64,7 @@ class AdminRoot extends Component {
 
     componentWillUnmount() {
         document.removeEventListener("keydown", this.onKeyPressed);
-        this.state.gxy1.janus.destroy();
-        this.state.gxy3.janus.destroy();
+        this.state.gateways.forEach(x => x.destroy());
     };
 
     onKeyPressed = (e) => {
@@ -84,6 +77,7 @@ class AdminRoot extends Component {
         if (gxy_root) {
             delete user.roles;
             user.role = "root";
+            this.setState({user});
             this.initAdminRoot(user);
         } else {
             alert("Access denied!");
@@ -92,78 +86,54 @@ class AdminRoot extends Component {
     };
 
     initAdminRoot = (user) => {
-        let {gxy3,gxy1} = this.state;
+        const JANUS_GATEWAYS = ["gxy1", "gxy2", "gxy3"];
+        const gateways = {};
+        JANUS_GATEWAYS.forEach(inst => {
+            gateways[inst] = new GxyJanus(inst);
+        });
+        this.setState({gateways});
 
-        initJanus(janus => {
-            gxy3.janus = janus;
-            this.setState({gxy3,user});
+        Object.values(gateways).forEach(gateway => {
+            gateway.init()
+                .then(() => {
+                    gateway.initChatRoom(data => this.onChatData(gateway, data))
+                        .catch(err => {
+                            console.log("[AdminRoot] gateway.initChatRoom error", gateway.name, err);
+                        });
 
-            initChatRoom(janus, null, chatroom => {
-                Janus.log(":: Got Chat Handle: ",chatroom);
-                gxy3.chatroom = chatroom;
-                this.setState({gxy3});
-            }, data => {
-                this.onData(data);
-            });
+                    gateway.initGxyProtocol(user, data => this.onProtocolData(gateway, data))
+                        .catch(err => {
+                            console.log("[AdminRoot] gateway.initGxyProtocol error", gateway.name, err);
+                        });
+                })
+                .catch(err => {
+                    console.log("[AdminRoot] gateway.init error", gateway.name, err);
+                })
+        });
 
-            initGxyProtocol(janus, user, protocol => {
-                gxy3.protocol = protocol;
-                this.setState({gxy3});
-            }, ondata => {
-                Janus.log("-- :: It's protocol public message: ", ondata);
-                //this.initVideoRoom("gxy3");
-                this.onProtocolData(ondata, "gxy3");
-            });
-        }, er => {}, "gxy3");
-
-        initJanus(janus => {
-            gxy1.janus = janus;
-            this.setState({gxy1});
-
-            initChatRoom(janus, null, chatroom => {
-                Janus.log(":: Got Chat Handle: ",chatroom);
-                gxy1.chatroom = chatroom;
-                this.setState({gxy1});
-            }, data => {
-                this.onData(data);
-            });
-
-            initGxyProtocol(janus, user, protocol => {
-                gxy1.protocol = protocol;
-                this.setState({gxy1});
-            }, ondata => {
-                Janus.log("-- :: It's protocol public message: ", ondata);
-                //this.initVideoRoom("gxy1");
-                this.onProtocolData(ondata, "gxy1");
-            });
-        }, er => {}, "gxy1");
         setInterval(() => {
-            this.getGroupsList();
-            if(this.state.feed_user)
+            this.getRoomsState();
+            if (this.state.feed_user)
                 this.getFeedInfo()
-        }, 1000 );
+        }, 1000);
     };
 
-    getGroupsList = () => {
-        let {current_room} = this.state;
+    getRoomsState = () => {
         getState('galaxy/rooms', (rooms) => {
             rooms.sort((a, b) => {
-                // if (a.num_users > b.num_users) return -1;
-                // if (a.num_users < b.num_users) return 1;
                 if (a.description > b.description) return 1;
                 if (a.description < b.description) return -1;
                 return 0;
             });
             this.setState({rooms});
-            // if(current_room !== "") {
-            //     this.listForward(current_room);
-            // }
         });
     };
 
-    getRoomList = () => {
-        if (this.state.videoroom) {
-            this.state.videoroom.send({message: {request: "list"},
+    getRoomList = (inst) => {
+        const janus = this.state.gateways[inst];
+        if (janus.videoroom) {
+            janus.videoroom.send({
+                message: {request: "list"},
                 success: (data) => {
                     let rooms_list = data.list;
                     rooms_list.sort((a, b) => {
@@ -177,169 +147,69 @@ class AdminRoot extends Component {
         }
     };
 
-    listForward = (room) => {
-        let {videoroom} = this.state;
-        let req = {request:"listforwarders",room,"secret":`${SECRET}`};
-        videoroom.send ({"message": req,
-            success: (data) => {
-                Janus.debug(" :: List forwarders: ", data);
-                if(!data.publishers)
-                    return;
-                //let forwarders = data.publishers.filter(f => f.forwarders);
-                let forwarders = [];
-                for(let i=0; i<data.publishers.length; i++) {
-                    if(data.publishers[i].forwarders) {
-                        let user = data.publishers[i].display;
-                        data.publishers[i].display = JSON.parse(user);
-                        let role = data.publishers[i].display.role;
-                        if(role === "user" || role === "group")
-                            forwarders.push(data.publishers[i])
-                    }
-                }
-                this.setState({forwarders});
+    newVideoRoom = (gateway, room) => {
+        console.log("[AdminRoot] newVideoRoom", room);
+
+        gateway.initVideoRoom({
+            onmessage: (msg, jsep) => {
+                this.onVideoroomMessage(gateway, msg, jsep);
             }
         })
-    };
+            .then(() => {
+                console.log("[AdminRoot] gateway.initVideoRoom success");
 
-    startForward = (id) => {
-        console.log(" : Start Forward : ",id);
-        const {feed_user,current_room} = this.state;
-        if(current_room === "")
-            return;
-        let port = 5630;
-        if(feed_user) {
-            let forward = { "request": "rtp_forward","publisher_id":feed_user.rfid,"room":current_room,"secret":`${SECRET}`,"host":`${DANTE_IN_IP}`,"audio_port":port};
-            getPluginInfo(forward, data => {
-                Janus.log(":: Forward callback: ", data);
-                //this.sendMessage(user, true);
-            });
-        }
-    };
+                this.getRoomList(gateway.name);
 
-    stopForward = (id) => {
-        const {videoroom,current_room} = this.state;
-        if(current_room === "")
-            return;
-        let req = {request:"listforwarders",room:current_room,secret:`${SECRET}`};
-        videoroom.send ({"message": req,
-            success: (data) => {
-                for(let i=0; i<data.publishers.length; i++) {
-                    if(data.publishers[i].forwarders) {
-                        let user = data.publishers[i].display;
-                        data.publishers[i].display = JSON.parse(user);
-                        let role = data.publishers[i].display.role;
-                        let publisher_id = data.publishers[i].publisher_id;
-                        if(id && id === publisher_id) {
-                            for(let f=0; f<data.publishers[i].forwarders.length; f++) {
-                                let stream_id = data.publishers[i].forwarders[f].stream_id;
-                                let stop_forward = {request:"stop_rtp_forward",stream_id,publisher_id,"room":current_room,"secret":`${SECRET}`};
-                                videoroom.send({"message": stop_forward});
-                            }
-                        } else if(role === "user" || role === "group") {
-                            for(let f=0; f<data.publishers[i].forwarders.length; f++) {
-                                let stream_id = data.publishers[i].forwarders[f].stream_id;
-                                let stop_forward = {request:"stop_rtp_forward",stream_id,publisher_id,"room":current_room,"secret":`${SECRET}`};
-                                videoroom.send({"message": stop_forward});
-                            }
-                        }
+                const register = {
+                    "request": "join",
+                    room,
+                    "ptype": "publisher",
+                    "display": JSON.stringify(this.state.user)
+                };
+                console.log("[AdminRoot] join videoroom room", register);
+                gateway.videoroom.send({
+                    message: register,
+                    success: () => {
+                        gateway.log('[videoroom] join as publisher success', register)
+                    },
+                    error: (err) => {
+                        gateway.error('[videoroom] error join as publisher', register, err)
                     }
+                });
+            })
+            .catch(err => {
+                    console.log("[AdminRoot] gateway.initVideoRoom error", err);
                 }
-            }
-        });
+            );
     };
 
-    initVideoRoom = (inst, room_id) => {
-        let janus = this.state[inst].janus;
-        if(this.state[inst].videoroom)
-            this.state[inst].videoroom.detach();
-        if(this.state[inst].remoteFeed)
-            this.state[inst].remoteFeed.detach();
-        janus.attach({
-            plugin: "janus.plugin.videoroom",
-            opaqueId: "videoroom_user",
-            success: (videoroom) => {
-                Janus.log(" :: My handle: ", videoroom);
-                Janus.log("Plugin attached! (" + videoroom.getPlugin() + ", id=" + videoroom.getId() + ")");
-                Janus.log("  -- This is a publisher/manager");
-                let {user} = this.state;
-                this.setState({[inst]:{...this.state[inst], videoroom}, groups: []});
-                this.getRoomList();
-
-                if(room_id) {
-                    //this.listForward(room_id);
-                    let register = { "request": "join", "room": room_id, "ptype": "publisher", "display": JSON.stringify(user) };
-                    videoroom.send({"message": register});
-                } else {
-                    // Get list rooms
-                    this.getGroupsList();
-                }
-            },
-            error: (error) => {
-                Janus.log("Error attaching plugin: " + error);
-            },
-            consentDialog: (on) => {
-                Janus.debug("Consent dialog should be " + (on ? "on" : "off") + " now");
-            },
-            mediaState: (medium, on) => {
-                Janus.log("Janus " + (on ? "started" : "stopped") + " receiving our " + medium);
-            },
-            webrtcState: (on) => {
-                Janus.log("Janus says our WebRTC PeerConnection is " + (on ? "up" : "down") + " now");
-            },
-            slowLink: (uplink, lost, mid) => {
-                Janus.log("Janus reports problems " + (uplink ? "sending" : "receiving") +
-                    " packets on mid " + mid + " (" + lost + " lost packets)");
-            },
-            onmessage: (msg, jsep) => {
-                this.onMessage(this.state[inst].videoroom, msg, jsep, inst);
-            },
-            onlocalstream: (mystream) => {
-                Janus.debug(" ::: Got a local stream :::");
-            },
-            onremotestream: (stream) => {
-                // The publisher stream is sendonly, we don't expect anything here
-            },
-            ondataopen: (data) => {
-                Janus.log("The DataChannel is available!(publisher)");
-            },
-            ondata: (data) => {
-                Janus.debug("We got data from the DataChannel! (publisher) " + data);
-            },
-            oncleanup: () => {
-                Janus.log(" ::: Got a cleanup notification: we are unpublished now :::");
-            }
-        });
-    };
-
-    onMessage = (videoroom, msg, jsep, inst) => {
-        Janus.debug(" ::: Got a message (publisher) :::");
-        Janus.debug(msg);
-        let event = msg["videoroom"];
+    onVideoroomMessage = (gateway, msg, jsep) => {
+        const event = msg["videoroom"];
         if(event !== undefined && event !== null) {
             if(event === "joined") {
                 // Publisher/manager created, negotiate WebRTC and attach to existing feeds, if any
                 let myid = msg["id"];
                 let mypvtid = msg["private_id"];
                 this.setState({myid ,mypvtid});
-                Janus.log("Successfully joined room " + msg["room"] + " with ID " + myid);
-                //this.publishOwnFeed();
+                console.log("[AdminRoot] Successfully joined room " + msg["room"] + " with ID " + myid + " on " + gateway.name);
+
                 // Any new feed to attach to?
                 if(msg["publishers"] !== undefined && msg["publishers"] !== null) {
                     let {feedStreams,users} = this.state;
                     let list = msg["publishers"];
+                    console.log("[AdminRoot] Got Publishers (joined)", list);
 
                     // Filter service and camera muted feeds
-                    let fr = this.state.current_room === GROUPS_ROOM ? "group" : "user";
+                    let fr = "user";
                     let feeds = list.filter(feeder => JSON.parse(feeder.display).role === fr);
                     feeds.sort((a, b) => {
                         if (JSON.parse(a.display).username > JSON.parse(b.display).username) return 1;
                         if (JSON.parse(a.display).username < JSON.parse(b.display).username) return -1;
+                        return 0;
                     });
 
-                    Janus.log(":: Got Pulbishers list: ", feeds);
-                    Janus.debug("Got a list of available publishers/feeds:");
-                    Janus.log(list);
-                    let subscription = [];
+                    console.log("[AdminRoot] available feeds", feeds);
+                    const subscription = [];
                     for(let f in feeds) {
                         let id = feeds[f]["id"];
                         let display = JSON.parse(feeds[f]["display"]);
@@ -347,6 +217,7 @@ class AdminRoot extends Component {
                         let streams = feeds[f]["streams"];
                         feeds[f].display = display;
                         feeds[f].talk = talk;
+                        feeds[f].janus = gateway.name;
                         let subst = {feed: id};
                         for (let i in streams) {
                             let stream = streams[i];
@@ -359,12 +230,12 @@ class AdminRoot extends Component {
                     }
                     this.setState({feeds,feedStreams,users});
                     if(subscription.length > 0 && fr === "user")
-                        this.subscribeTo(subscription, inst);
+                        this.subscribeTo(subscription, gateway.name);
                 }
             } else if(event === "talking") {
                 let {feeds} = this.state;
                 let id = msg["id"];
-                Janus.debug("User: "+id+" - start talking");
+                console.debug("[AdminRoot] User start talking", id);
                 for(let i=0; i<feeds.length; i++) {
                     if(feeds[i] && feeds[i].id === id) {
                         feeds[i].talk = true;
@@ -374,7 +245,7 @@ class AdminRoot extends Component {
             } else if(event === "stopped-talking") {
                 let {feeds} = this.state;
                 let id = msg["id"];
-                Janus.debug("User: "+id+" - stop talking");
+                console.debug("[AdminRoot] User stop talking", id);
                 for(let i=0; i<feeds.length; i++) {
                     if(feeds[i] && feeds[i].id === id) {
                         feeds[i].talk = false;
@@ -382,8 +253,7 @@ class AdminRoot extends Component {
                 }
                 this.setState({feeds});
             } else if(event === "destroyed") {
-                // The room has been destroyed
-                Janus.warn("The room has been destroyed!");
+                console.warn("[AdminRoot] The room has been destroyed!");
             } else if(event === "event") {
                 // Any info on our streams or a new feed to attach to?
                 let {feedStreams,user,myid} = this.state;
@@ -398,11 +268,11 @@ class AdminRoot extends Component {
                     this.setState({feedStreams})
                 } else if(msg["publishers"] !== undefined && msg["publishers"] !== null) {
                     let feed = msg["publishers"];
+                    console.log("[AdminRoot] Got Publishers (event)", feed);
+
                     let {feeds,feedStreams,users} = this.state;
-                    Janus.debug("Got a list of available publishers/feeds:");
-                    Janus.log(feed);
                     let subscription = [];
-                    let fr = this.state.current_room === GROUPS_ROOM ? "group" : "user";
+                    let fr = "user";
                     for(let f in feed) {
                         let id = feed[f]["id"];
                         let display = JSON.parse(feed[f]["display"]);
@@ -410,6 +280,7 @@ class AdminRoot extends Component {
                             return;
                         let streams = feed[f]["streams"];
                         feed[f].display = display;
+                        feed[f].janus = gateway.name;
                         let subst = {feed: id};
                         for (let i in streams) {
                             let stream = streams[i];
@@ -424,286 +295,185 @@ class AdminRoot extends Component {
                     feeds.sort((a, b) => {
                         if (a.display.username > b.display.username) return 1;
                         if (a.display.username < b.display.username) return -1;
+                        return 0;
                     });
                     this.setState({feeds,feedStreams,users});
                     if(subscription.length > 0 && fr === "user")
-                        this.subscribeTo(subscription);
+                        this.subscribeTo(subscription, gateway.name);
                 } else if(msg["leaving"] !== undefined && msg["leaving"] !== null) {
                     // One of the publishers has gone away?
-                    var leaving = msg["leaving"];
-                    Janus.log("Publisher left: " + leaving);
-                    this.unsubscribeFrom(leaving, inst);
-
+                    const leaving = msg["leaving"];
+                    console.log("[AdminRoot] leaving", leaving);
+                    this.unsubscribeFrom(leaving, gateway.name);
                 } else if(msg["unpublished"] !== undefined && msg["unpublished"] !== null) {
                     let unpublished = msg["unpublished"];
-                    Janus.log("Publisher left: " + unpublished);
+                    console.log("[AdminRoot] unpublished", unpublished);
                     if(unpublished === 'ok') {
-                        // That's us
-                        videoroom.hangup();
-                        return;
+                        console.log("[AdminRoot] videoroom.hangup()", gateway.name);
+                        gateway.videoroom.hangup(); // That's us
+                    } else {
+                        this.unsubscribeFrom(unpublished, gateway.name);
                     }
-                    this.unsubscribeFrom(unpublished, inst);
-
                 } else if(msg["error"] !== undefined && msg["error"] !== null) {
                     if(msg["error_code"] === 426) {
-                        Janus.log("This is a no such room");
+                        console.error("[AdminRoot] no such room", gateway.name, msg);
                     } else {
-                        Janus.log(msg["error"]);
+                        console.error("[AdminRoot] videoroom error message", msg);
                     }
                 }
             }
         }
+
         if(jsep !== undefined && jsep !== null) {
-            Janus.debug("Handling SDP as well...");
-            Janus.debug(jsep);
-            videoroom.handleRemoteJsep({jsep: jsep});
+            gateway.debug("[videoroom] Handling SDP as well...", jsep);
+            gateway.videoroom.handleRemoteJsep({jsep});
         }
     };
 
-    newRemoteFeed = (subscription, inst) => {
-        this.state[inst].janus.attach(
-            {
-                plugin: "janus.plugin.videoroom",
-                opaqueId: "remotefeed_user",
-                success: (pluginHandle) => {
-                    let remoteFeed = pluginHandle;
-                    Janus.log("Plugin attached! (" + remoteFeed.getPlugin() + ", id=" + remoteFeed.getId() + ")");
-                    Janus.log("  -- This is a multistream subscriber",remoteFeed);
-                    this.setState({[inst]: {...this.state[inst],remoteFeed}, creatingFeed: false});
-                    // We wait for the plugin to send us an offer
-                    let subscribe = {request: "join", room: this.state.current_room, ptype: "subscriber", streams: subscription};
-                    remoteFeed.send({ message: subscribe });
-                },
-                error: (error) => {
-                    Janus.error("  -- Error attaching plugin...", error);
-                },
-                iceState: (state) => {
-                    Janus.log("ICE state (remote feed) changed to " + state);
-                },
-                webrtcState: (on) => {
-                    Janus.log("Janus says this WebRTC PeerConnection (remote feed) is " + (on ? "up" : "down") + " now");
-                },
-                slowLink: (uplink, lost, mid) => {
-                    Janus.log("Janus reports problems " + (uplink ? "sending" : "receiving") +
-                        " packets on mid " + mid + " (" + lost + " lost packets)");
-                },
-                onmessage: (msg, jsep) => {
-                    Janus.log(" ::: Got a message (subscriber) :::");
-                    Janus.log(msg);
-                    let event = msg["videoroom"];
-                    Janus.log("Event: " + event);
-                    if(msg["error"] !== undefined && msg["error"] !== null) {
-                        Janus.debug("-- ERROR: " + msg["error"]);
-                    } else if(event !== undefined && event !== null) {
-                        if(event === "attached") {
-                            //this.setState({creatingFeed: false});
-                            Janus.log("Successfully attached to feed in room " + msg["room"]);
-                        } else if(event === "event") {
-                            // Check if we got an event on a simulcast-related event from this publisher
-                        } else {
-                            // What has just happened?
-                        }
-                    }
-                    if(msg["streams"]) {
-                        // Update map of subscriptions by mid
-                        let {mids} = this.state;
-                        for(let i in msg["streams"]) {
-                            let mindex = msg["streams"][i]["mid"];
-                            mids[mindex] = msg["streams"][i];
-                            if(msg["streams"][i]["feed_display"]) {
-                                let display = JSON.parse(msg["streams"][i]["feed_display"]);
-                                mids[mindex].feed_user = display;
-                            }
-                        }
-                        this.setState({mids});
-                    }
-                    if(jsep !== undefined && jsep !== null) {
-                        Janus.debug("Handling SDP as well...");
-                        Janus.debug(jsep);
-                        // Answer and attach
-                        this.state[inst].remoteFeed.createAnswer(
-                            {
-                                jsep: jsep,
-                                // Add data:true here if you want to subscribe to datachannels as well
-                                // (obviously only works if the publisher offered them in the first place)
-                                media: { audioSend: false, videoSend: false, data: false},	// We want recvonly audio/video
-                                success: (jsep) => {
-                                    Janus.debug("Got SDP!");
-                                    Janus.debug(jsep);
-                                    let body = { request: "start", room: this.state.current_room, data: false };
-                                    this.state[inst].remoteFeed.send({ message: body, jsep: jsep });
-                                },
-                                error: (error) => {
-                                    Janus.error("WebRTC error:", error);
-                                    Janus.debug("WebRTC error... " + JSON.stringify(error));
-                                }
-                            });
-                    }
-                },
-                onlocaltrack: (track, on) => {
-                    // The subscriber stream is recvonly, we don't expect anything here
-                },
-                onremotetrack: (track, mid, on) => {
-                    Janus.debug(" ::: Got a remote track event ::: (remote feed)");
-                    if(!mid) {
-                       mid = track.id.split("janus")[1];
-                    }
-                    Janus.log("Remote track (mid=" + mid + ") " + (on ? "added" : "removed") + ":", track);
-                    // Which publisher are we getting on this mid?
-                    let {mids,feedStreams} = this.state;
-                    let feed = mids[mid].feed_id;
-                    Janus.debug(" >> This track is coming from feed " + feed + ":", mid);
-                    // If we're here, a new track was added
-                    if(track.kind === "audio" && on) {
-                        // New audio track: create a stream out of it, and use a hidden <audio> element
-                        let stream = new MediaStream();
-                        stream.addTrack(track.clone());
-                        Janus.log("Created remote audio stream:", stream);
-                        feedStreams[feed].audio_stream = stream;
-                        this.setState({feedStreams});
-                        let remoteaudio = this.refs["remoteAudio" + feed];
-                        Janus.attachMediaStream(remoteaudio, stream);
-                    } else if(track.kind === "video" && on) {
-                        // New video track: create a stream out of it
-                        let stream = new MediaStream();
-                        stream.addTrack(track.clone());
-                        Janus.log("Created remote video stream:", stream);
-                        feedStreams[feed].video_stream = stream;
-                        this.setState({feedStreams});
-                        let remotevideo = this.refs["remoteVideo" + feed];
-                        Janus.attachMediaStream(remotevideo, stream);
-                    } else if(track.kind === "data") {
-                        Janus.debug("Its data channel");
+    newRemoteFeed = (gateway, subscription) => {
+        gateway.newRemoteFeed({
+            onmessage:(msg, jsep) => {
+                let event = msg["videoroom"];
+                if(msg["error"] !== undefined && msg["error"] !== null) {
+                    gateway.error("[remoteFeed] error message:", msg["error"]);
+                } else if(event !== undefined && event !== null) {
+                    if(event === "attached") {
+                        //this.setState({creatingFeed: false});
+                        gateway.log("[remoteFeed] Successfully attached to feed in room " + msg["room"]);
+                    } else if(event === "event") {
+                        // Check if we got an event on a simulcast-related event from this publisher
                     } else {
-                        Janus.debug(" :: Track already attached: ",track);
+                        // What has just happened?
                     }
-                },
-                ondataopen: (data) => {
-                    Janus.log("The DataChannel is available!(feed)");
-                },
-                ondata: (data) => {
-                    Janus.debug("We got data from the DataChannel! (feed) " + data);
-                    // let msg = JSON.parse(data);
-                    // this.onRoomData(msg);
-                    // Janus.log(" :: We got msg via DataChannel: ",msg)
-                },
-                oncleanup: () => {
-                    Janus.log(" ::: Got a cleanup notification (remote feed) :::");
                 }
+                if(msg["streams"]) {
+                    // Update map of subscriptions by mid
+                    let {mids} = this.state;
+                    for(let i in msg["streams"]) {
+                        let mindex = msg["streams"][i]["mid"];
+                        mids[mindex] = msg["streams"][i];
+                        if(msg["streams"][i]["feed_display"]) {
+                            let display = JSON.parse(msg["streams"][i]["feed_display"]);
+                            mids[mindex].feed_user = display;
+                        }
+                    }
+                    this.setState({mids});
+                }
+                if(jsep !== undefined && jsep !== null) {
+                    gateway.debug("[remoteFeed] Handling SDP as well...", jsep);
+                    gateway.remoteFeed.createAnswer(
+                        {
+                            jsep: jsep,
+                            media: { audioSend: false, videoSend: false, data: false},	// We want recvonly audio/video
+                            success: (jsep) => {
+                                gateway.debug("[remoteFeed] Got SDP", jsep);
+                                let body = { request: "start", room: this.state.current_room, data: false };
+                                gateway.remoteFeed.send({ message: body, jsep: jsep });
+                            },
+                            error: (error) => {
+                                gateway.error("[remoteFeed] createAnswer error", error);
+                            }
+                        });
+                }
+            },
+            onremotetrack: (track, mid, on) => {
+                // Which publisher are we getting on this mid?
+                let {mids,feedStreams} = this.state;
+                let feed = mids[mid].feed_id;
+                console.log("[AdminRoot] This track is coming from feed " + feed + ":", mid);
+                // If we're here, a new track was added
+                if(track.kind === "audio" && on) {
+                    // New audio track: create a stream out of it, and use a hidden <audio> element
+                    let stream = new MediaStream();
+                    stream.addTrack(track.clone());
+                    console.log("[AdminRoot] Created remote audio stream:", stream);
+                    feedStreams[feed].audio_stream = stream;
+                    this.setState({feedStreams});
+                    let remoteaudio = this.refs["remoteAudio" + feed];
+                    Janus.attachMediaStream(remoteaudio, stream);
+                } else if(track.kind === "video" && on) {
+                    // New video track: create a stream out of it
+                    let stream = new MediaStream();
+                    stream.addTrack(track.clone());
+                    console.log("[AdminRoot] Created remote video stream:", stream);
+                    feedStreams[feed].video_stream = stream;
+                    this.setState({feedStreams});
+                    let remotevideo = this.refs["remoteVideo" + feed];
+                    Janus.attachMediaStream(remotevideo, stream);
+                } else if(track.kind === "data") {
+                    console.debug("[AdminRoot] It's data channel");
+                } else {
+                    console.debug("[AdminRoot] Track already attached: ", track);
+                }
+            },
+        })
+            .then(() => {
+                const subscribe = {request: "join", room: this.state.current_room, ptype: "subscriber", streams: subscription};
+                console.log("[AdminRoot] newRemoteFeed join", subscribe);
+                gateway.remoteFeed.send({
+                    message: subscribe,
+                    success: () => { gateway.log('[remoteFeed] join as subscriber success', subscribe)},
+                    error: (err) => { gateway.error('[remoteFeed] error join as subscriber', subscribe, err)}
+                });
+            })
+            .catch(err => {
+                console.error("[AdminRoot] gateway.newRemoteFeed error", err);
             });
     };
 
     subscribeTo = (subscription, inst) => {
-        // New feeds are available, do we need create a new plugin handle first?
-        if (this.state[inst].remoteFeed) {
-            this.state[inst].remoteFeed.send({message:
-                    {request: "subscribe", streams: subscription}
-            });
-            return;
-        }
-        // We don't have a handle yet, but we may be creating one already
-        if (this.state.creatingFeed) {
-            // Still working on the handle
-            setTimeout(() => {
-                this.subscribeTo(subscription, inst);
-            }, 500);
-            return
-        }
+        const gateway = this.state.gateways[inst];
 
-        // We don't creating, so let's do it
-        this.setState({creatingFeed: true});
-        this.newRemoteFeed(subscription, inst);
+        // New feeds are available, do we need create a new plugin handle first?
+        if (gateway.remoteFeed) {
+            const subscribe = {request: "subscribe", streams: subscription};
+            console.log("[AdminRoot] subscribeTo subscribe", subscribe);
+            gateway.remoteFeed.send({
+                message: subscribe,
+                success: () => { gateway.log('[remoteFeed] subscribe success', subscribe)},
+                error: (err) => { gateway.error('[remoteFeed] error subscribe', subscribe, err)}
+            });
+        } else {
+            this.newRemoteFeed(gateway, subscription);
+        }
     };
 
     unsubscribeFrom = (id, inst) => {
-        // Unsubscribe from this publisher
-        let {feeds,users,feed_id,current_room,feed_user} = this.state;
-        let {remoteFeed} = this.state[inst];
-        for (let i=0; i<feeds.length; i++) {
+        console.log("[AdminRoot] unsubscribeFrom", inst, id);
+        const {feeds, users, feed_user, gateways} = this.state;
+        const gateway = gateways[inst];
+        for (let i = 0; i < feeds.length; i++) {
             if (feeds[i].id === id) {
-                Janus.log("Feed " + feeds[i] + " (" + id + ") has left the room, detaching");
+                console.log("[AdminRoot] unsubscribeFrom feed", feeds[i]);
 
                 // Remove from feeds list
                 feeds.splice(i, 1);
+
                 // Send an unsubscribe request
-                let unsubscribe = {
-                    request: "unsubscribe",
-                    streams: [{ feed: id }]
-                };
-                if(remoteFeed !== null)
-                    remoteFeed.send({ message: unsubscribe });
+                const unsubscribe = {request: "unsubscribe", streams: [{feed: id}]};
+                console.log("[AdminRoot] unsubscribeFrom unsubscribe", unsubscribe);
+                gateway.remoteFeed.send({
+                    message: unsubscribe,
+                    success: () => { gateway.log('[remoteFeed] unsubscribe success', unsubscribe)},
+                    error: (err) => { gateway.error('[remoteFeed] error unsubscribe', unsubscribe, err)}
+                });
 
-                // Detach selected feed
-                if(feed_id === id && current_room === GROUPS_ROOM) {
-                    remoteFeed.detach();
-                    this.setState({remoteFeed: null, groups: []});
-                }
-
-                if(feed_user && feed_user.rfid === id) {
+                if (feed_user && feed_user.rfid === id) {
                     this.setState({feed_user: null});
                 }
 
-                this.setState({feeds,users});
+                this.setState({feeds, users});
                 break
             }
         }
     };
 
-    switchFeed = (id) => {
-        let {remoteFeed} = this.state;
-        let streams = [
-            {feed: id, mid: "0", sub_mid: "0"},
-            {feed: id, mid: "1", sub_mid: "1"},
-            ];
-        let switchfeed = {"request" : "switch", streams};
-        remoteFeed.send ({"message": switchfeed,
-            success: (cb) => {
-                Janus.log(" :: Switch Feed: ", id, cb);
-            }
-        })
-    };
-
-    publishOwnFeed = (useAudio) => {
-        // Publish our stream
-        let {videoroom} = this.state;
-
-        videoroom.createOffer(
-            {
-                // Add data:true here if you want to publish datachannels as well
-                media: { audio: false, video: false, data: false },
-                simulcast: false,
-                success: (jsep) => {
-                    Janus.debug("Got publisher SDP!");
-                    Janus.debug(jsep);
-                    let publish = { "request": "configure", "audio": false, "video": false, "data": false };
-                    videoroom.send({"message": publish, "jsep": jsep});
-                },
-                error: (error) => {
-                    Janus.error("WebRTC error:", error);
-                    if (useAudio) {
-                        this.publishOwnFeed(false);
-                    } else {
-                        Janus.error("WebRTC error... " + JSON.stringify(error));
-                    }
-                }
-            });
-    };
-
-    onData = (data) => {
-        Janus.debug(":: We got message from Data Channel: ",data);
-        let json = JSON.parse(data);
-        // var transaction = json["transaction"];
-        // if (transactions[transaction]) {
-        //     // Someone was waiting for this
-        //     transactions[transaction](json);
-        //     delete transactions[transaction];
-        //     return;
-        // }
-        let what = json["textroom"];
+    onChatData = (gateway, data) => {
+        const json = JSON.parse(data);
+        const what = json["textroom"];
         if (what === "message") {
             // Incoming message: public or private?
             let msg = json["text"];
-            let room = json["room"];
             msg = msg.replace(new RegExp('<', 'g'), '&lt');
             msg = msg.replace(new RegExp('>', 'g'), '&gt');
             let from = json["from"];
@@ -715,45 +485,35 @@ class AdminRoot extends Component {
                 let message = JSON.parse(msg);
                 message.user.username = message.user.display;
                 message.time = dateString;
-                Janus.log("-:: It's private message: ", message, from);
+                console.log("[AdminRoot] private message", gateway.name, from, message);
                 messages.push(message);
                 this.setState({messages});
                 this.scrollToBottom();
-            } else if(room === GROUPS_ROOM){
-                // Public message
-                let {messages} = this.state;
-                let message = JSON.parse(msg);
-                message.time = dateString;
-                Janus.log("-:: It's public message: ", message);
-                messages.push(message);
-                this.setState({messages});
-                this.scrollToBottom();
-                notifyMe(message.user.username, message.text,(getHiddenProp !== null));
+            } else {
+                console.warn("[AdminRoot] unexpected public chat message", json);
             }
         } else if (what === "join") {
-            // Somebody joined
             let username = json["username"];
             let display = json["display"];
-            Janus.log("-:: Somebody joined - username: "+username+" : display: "+display)
+            gateway.log("[chatroom] Somebody joined", username, display);
         } else if (what === "leave") {
-            // Somebody left
             let username = json["username"];
-            let when = new Date();
-            Janus.log("-:: Somebody left - username: "+username+" : Time: "+getDateString())
+            gateway.log("[chatroom] Somebody left", username, getDateString());
         } else if (what === "kicked") {
-            // Somebody was kicked
-            // var username = json["username"];
+            let username = json["username"];
+            gateway.log("[chatroom] Somebody was kicked", username, getDateString());
         } else if (what === "destroyed") {
             let room = json["room"];
-            Janus.log("The room: "+room+" has been destroyed")
+            gateway.log("[chatroom] room destroyed", room);
         }
     };
 
-    onProtocolData = (data) => {
+    onProtocolData = (gateway, data) => {
         let {users} = this.state;
 
         // Set status in users list
         if(data.type.match(/^(camera|question|sound_test)$/)) {
+            gateway.log("[protocol] user", data.type, data.status, data.user.id);
             if(users[data.user.id]) {
                 users[data.user.id][data.type] = data.status;
                 this.setState({users});
@@ -765,48 +525,25 @@ class AdminRoot extends Component {
 
         // Save user on enter
         if(data.type.match(/^(enter)$/)) {
+            gateway.log("[protocol] user entered", data.user);
             users[data.user.id] = data.user;
             this.setState({users});
         }
     };
 
-    sendDataMessage = () => {
-        let {input_value,user} = this.state;
-        let msg = {user, text: input_value};
-        let message = {
-            ack: false,
-            textroom: "message",
-            transaction: Janus.randomString(12),
-            room: this.state.current_room,
-            text: JSON.stringify(msg),
-        };
-        // Note: messages are always acknowledged by default. This means that you'll
-        // always receive a confirmation back that the message has been received by the
-        // server and forwarded to the recipients. If you do not want this to happen,
-        // just add an ack:false property to the message above, and server won't send
-        // you a response (meaning you just have to hope it succeeded).
-        this.state.chatroom.data({
-            text: JSON.stringify(message),
-            error: (reason) => { alert(reason); },
-            success: () => {
-                Janus.log(":: Message sent ::");
-                this.setState({input_value: ""});
-            }
-        });
-    };
-
     sendPrivateMessage = () => {
-        let {input_value,user,feed_user,current_room} = this.state;
+        const {input_value,user,feed_user,current_room, gateways} = this.state;
         if(!feed_user) {
             alert("Choose user");
-            return
-        };
-        let msg = {user, text: input_value};
-        let message = {
+            return;
+        }
+
+        const msg = {user, text: input_value};
+        const message = {
             ack: false,
             textroom: "message",
             transaction: Janus.randomString(12),
-            room: this.state.current_room,
+            room: current_room,
             to: feed_user.id,
             text: JSON.stringify(msg),
         };
@@ -815,45 +552,55 @@ class AdminRoot extends Component {
         // server and forwarded to the recipients. If you do not want this to happen,
         // just add an ack:false property to the message above, and server won't send
         // you a response (meaning you just have to hope it succeeded).
-        this.state.chatroom.data({
+        const gateway = gateways[feed_user.janus];
+        gateway.chatroom.data({
             text: JSON.stringify(message),
-            error: (reason) => { alert(reason); },
+            error: (err) => {
+                gateway.error("[chatroom] error data", err);
+                alert(err);
+                },
             success: () => {
-                Janus.log(":: Message sent ::");
-                //FIXME: it's directly put to message box
+                gateway.log("[chatroom] data success", message);
                 let {messages} = this.state;
                 msg.time = getDateString();
-                msg.to = current_room === GROUPS_ROOM ? feed_user.username : feed_user.display;
-                Janus.log("-:: It's public message: "+msg);
+                msg.to = feed_user.display;
                 messages.push(msg);
-                this.setState({messages, input_value: ""});
-                this.scrollToBottom();
+                this.setState({messages, input_value: ""}, this.scrollToBottom);
             }
         });
     };
 
     sendBroadcastMessage = () => {
-        const { protocol, current_room, input_value, messages, user } = this.state;
-        let msg = { type: "chat-broadcast", room: current_room, user, text: input_value};
-        sendProtocolMessage(protocol, null, msg );
-        msg.time = getDateString();
-        msg.to = "ALL";
-        Janus.log("-:: It's broadcast message: "+msg);
-        messages.push(msg);
-        this.setState({messages, input_value: "", msg_type: "private"}, () => {
-            this.scrollToBottom();
-        });
+        const {current_room, input_value, messages, user, rooms, gateways} = this.state;
+        const {janus: inst} = rooms.find(x => x.room === current_room);
+        const gateway = gateways[inst];
+
+        const msg = {type: "chat-broadcast", room: current_room, user, text: input_value};
+        gateway.sendProtocolMessage(null, msg)
+            .then(() => {
+                msg.time = getDateString();
+                msg.to = "all";
+                messages.push(msg);
+                this.setState({messages, input_value: "", msg_type: "private"}, this.scrollToBottom);
+            })
+            .catch(alert);
     };
 
     sendRemoteCommand = (command_type) => {
-        let {protocol,feed_user,user} = this.state;
-        if(feed_user) {
-            if(command_type === "sound_test") {
-                feed_user.sound_test = true;
-            }
-            let msg = { type: command_type, status: true, id: feed_user.id, user: feed_user};
-            sendProtocolMessage(protocol, user, msg);
+        const {gateways, feed_user, user} = this.state;
+        if(!feed_user) {
+            alert("Choose user");
+            return;
         }
+
+        if (command_type === "sound_test") {
+            feed_user.sound_test = true;
+        }
+
+        const gateway = gateways[feed_user.janus];
+        gateway.sendProtocolMessage(user, {type: command_type, status: true, id: feed_user.id, user: feed_user})
+            .catch(alert);
+
     };
 
     sendMessage = () => {
@@ -872,42 +619,54 @@ class AdminRoot extends Component {
     };
 
     joinRoom = (data, i) => {
-        Janus.log(" -- joinRoom: ", data, i);
-        const {rooms,chatroom,user,switchFeed} = this.state;
-        let room = data ? rooms[i].room : GROUPS_ROOM;
-        let room_name = data ? rooms[i].description : "Galaxy";
-        if (this.state.current_room === room)
+        console.log("[AdminRoot] joinRoom", data, i);
+        const {rooms, user, current_room} = this.state;
+        const {room, janus: inst} = rooms[i];
+
+        if (current_room === room)
             return;
-        Janus.log(" :: Enter to room: ", room);
-        if(switchFeed) {
-            switchFeed.detach();
-            this.setState({switchFeed: null});
-        }
 
-        if(this.state.current_room)
-            this.exitRoom(this.state.current_room, "gxy3");
-        this.setState({switch_mode: false, current_room: room, room_name,feeds: [], feed_user: null, feed_id: null});
+        console.log("[AdminRoot] joinRoom", room, inst);
 
-        this.initVideoRoom("gxy3", room);
+        if (current_room)
+            this.exitRoom(current_room);
 
-        joinChatRoom(this.state.gxy3.chatroom,room,user)
+        this.setState({
+            current_room: room,
+            feeds: [],
+            feed_user: null,
+            feed_id: null
+        });
+
+        const gateway = this.state.gateways[inst];
+        this.newVideoRoom(gateway, room);
+        gateway.joinChatRoom(room, user);
     };
 
-    exitRoom = (room, inst) => {
-        let {videoroom, chatroom} = this.state[inst];
-        let videoreq = {request : "leave", "room": room};
-        let chatreq = {textroom : "leave", transaction: Janus.randomString(12),"room": room};
-        Janus.log(room);
-        videoroom.send({"message": videoreq,
-            success: () => {
-                Janus.log(":: Video room leave callback: ");
-                //this.getRoomList();
-            }});
-        chatroom.data({text: JSON.stringify(chatreq),
-            success: () => {
-                Janus.log(":: Text room leave callback: ");
-            }
+    exitRoom = (room) => {
+        console.log("[AdminRoot] exitRoom", room);
+        const {rooms, gateways} = this.state;
+        const {janus: inst} = rooms.find(x => x.room === room);
+        const gateway = gateways[inst];
+
+        console.log('[AdminRoot] exitRoom janus videoroom', inst, gateway.videoroom);
+
+        if (gateway.videoroom)
+            console.log('[AdminRoot] exitRoom detach videoroom', inst, gateway.videoroom);
+            gateway.videoroom.detach();
+        gateway.videoroom = null;
+
+        let chatreq = {textroom: "leave", transaction: Janus.randomString(12), room};
+        gateway.chatroom.data({
+            text: JSON.stringify(chatreq),
+            success: () => { gateway.log('leave chatroom success', chatreq)},
+            error: (err) => { gateway.error('error chatroom room', chatreq, err)}
         });
+
+        if (gateway.remoteFeed)
+            console.log('[AdminRoot] exitRoom detach remoteFeed', inst, gateway.remoteFeed);
+            gateway.remoteFeed.detach();
+        gateway.remoteFeed = null;
     };
 
     getRoomID = () => {
@@ -1015,75 +774,35 @@ class AdminRoot extends Component {
         });
     };
 
-    disableRoom = (e, data, i) => {
-        e.preventDefault();
-        if (e.type === 'contextmenu') {
-            Janus.log(data)
-            // let {disabled_rooms} = this.state;
-            // disabled_rooms.push(data);
-            // this.setState({disabled_rooms});
-            // this.getRoomList();
-        }
-    };
-
-    kickUser = (id) => {
-        const {current_room,videoroom,feed_id} = this.state;
-        let request = {
-            request: "kick",
-            room: current_room,
-            secret: `${SECRET}`,
-            id: feed_id,
-        };
-        videoroom.send({"message": request,
-            success: (data) => {
-                Janus.log(":: Kick callback: ", data);
-                this.setState({feed_user: null});
-            },
-        });
-    };
-
     getUserInfo = (feed) => {
-        Janus.log(" :: Selected feed: ",feed);
-        let {display,id,talking} = feed;
-        let {current_room,users} =  this.state;
-        let feed_info = display.system ? platform.parse(display.system) : null;
-        let feed_user = {...display,...users[display.id]};
-        this.setState({feed_id: id, feed_user, feed_info, feed_talk: talking});
-        Janus.log(feed_user,id,talking);
-
-        if(current_room !== GROUPS_ROOM)
-            return;
-
-        if(this.state.groups.length === 0) {
-            let groups = [];
-            groups.push(feed);
-            this.setState({groups});
-            let subscription = [{feed: id, mid: "0"},{feed: id, mid: "1"}];
-            this.subscribeTo(subscription);
-        } else {
-            this.switchFeed(id);
-        }
+        console.log("[AdminRoot] getUserInfo", feed);
+        const {display, id} = feed;
+        const {users} = this.state;
+        const feed_info = display.system ? platform.parse(display.system) : null;
+        const feed_user = {...display, ...users[display.id]};
+        this.setState({feed_id: id, feed_user, feed_info});
     };
 
     getFeedInfo = () => {
-        if(this.state.feed_user) {
-            let {session,handle} = this.state.feed_user;
-            if(session && handle) {
-                getPublisherInfo(session, handle, json => {
-                        //Janus.log(":: Publisher info", json);
-                        let video = json.info.webrtc.media[1].rtcp.main;
-                        let audio = json.info.webrtc.media[0].rtcp.main;
-                        this.setState({feed_rtcp: {video, audio}});
-                    }, true
-                )
+        const {gateways, feed_user} = this.state;
+        if (feed_user) {
+            const {session, handle} = this.state.feed_user;
+            if (session && handle) {
+                const gateway = gateways[feed_user.janus];
+                gateway.getPublisherInfo(session, handle)
+                    .then(data => {
+                            console.debug("[AdminRoot] Publisher info", data);
+                            const video = data.info.webrtc.media[1].rtcp.main;
+                            const audio = data.info.webrtc.media[0].rtcp.main;
+                            this.setState({feed_rtcp: {video, audio}});
+                        }
+                    )
             }
         }
     };
 
-
   render() {
-
-      const { bitrate,rooms,current_room,switch_mode,user,feeds,feed_id,feed_info,i,messages,description,room_id,room_name,forwarders,feed_rtcp,feed_talk,msg_type,users} = this.state;
+      const { bitrate,rooms,current_room,user,feeds,feed_id,feed_info,i,messages,description,room_id,feed_rtcp,msg_type,users} = this.state;
       const width = "134";
       const height = "100";
       const autoPlay = true;
@@ -1116,8 +835,7 @@ class AdminRoot extends Component {
           const {room, num_users, description, questions} = data;
           return (
               <Table.Row active={current_room === room}
-                         key={i} onClick={() => this.joinRoom(data, i)}
-                         onContextMenu={(e) => this.disableRoom(e, data, i)} >
+                         key={i} onClick={() => this.joinRoom(data, i)} >
                   <Table.Cell width={5}>{questions ? q : ""}{description}</Table.Cell>
                   <Table.Cell width={1}>{num_users}</Table.Cell>
               </Table.Row>
@@ -1126,14 +844,11 @@ class AdminRoot extends Component {
 
       let users_grid = feeds.map((feed,i) => {
           if(feed) {
-              let fw = forwarders.find(f => f.publisher_id === feed.id);
               let qt = users[feed.display.id].question;
               let st = users[feed.display.id].sound_test;
-              //let st = feed.display.self_test;
               return (
                   <Table.Row active={feed.id === this.state.feed_id} key={i} onClick={() => this.getUserInfo(feed)} >
                       <Table.Cell width={10}>{qt ? q : ""}{feed.display.display}</Table.Cell>
-                      <Table.Cell width={1}>{fw ? f : ""}</Table.Cell>
                       <Table.Cell positive={st} width={1}>{st ? v : ""}</Table.Cell>
                   </Table.Row>
               )
@@ -1151,13 +866,11 @@ class AdminRoot extends Component {
           );
       });
 
-      let view = current_room !== GROUPS_ROOM ? "feeds" : "groups";
-
-      let videos = this.state[view].map((feed) => {
+      let videos = this.state.feeds.map((feed) => {
           if(feed) {
               let id = feed.id;
               let talk = feed.talk;
-              let selected = id === feed_id && current_room !== GROUPS_ROOM;
+              let selected = id === feed_id;
               return (<div className="video"
                            key={"v" + id}
                            ref={"video" + id}
@@ -1183,19 +896,6 @@ class AdminRoot extends Component {
           }
           return true;
       });
-
-      let switchvideo = (
-          <div className="video">
-              <div className={classNames('video__overlay', {'talk' : feed_talk})} />
-              <video ref = {"switchVideo"}
-                     id = "switchVideo"
-                     width = {width}
-                     height = {height}
-                     autoPlay = {autoPlay}
-                     controls
-                     muted = {false}
-                     playsInline = {true} />
-          </div>);
 
       let login = (<LoginPage user={user} checkPermission={this.checkPermission} />);
 
@@ -1241,10 +941,6 @@ class AdminRoot extends Component {
                   />
                   <Menu secondary >
                       <Menu.Item>
-                          {/*<Button color='orange' icon='volume off' labelPosition='right'*/}
-                          {/*        content={room_name} onClick={this.stopForward} />*/}
-                      </Menu.Item>
-                      <Menu.Item>
                       </Menu.Item>
                       <Menu.Item>
                           <Button negative onClick={this.removeRoom}>Remove</Button>
@@ -1280,15 +976,11 @@ class AdminRoot extends Component {
                       <Grid.Column width={4}>
                           <Segment.Group>
                               <Segment textAlign='center'>
-                                  {/*<Popup trigger={<Button color="black" icon='volume up' onClick={() => this.startForward(feed_id)} />} content='Start forward' inverted />*/}
-                                  {/*<Popup trigger={<Button color="orange" icon='volume off' onClick={() => this.stopForward(feed_id)} />} content='Stop forward' inverted />*/}
                                   <Popup trigger={<Button negative icon='user x' onClick={() => this.sendRemoteCommand("client-kicked")} />} content='Kick' inverted />
                                   <Popup trigger={<Button color="brown" icon='sync alternate' alt="test" onClick={() => this.sendRemoteCommand("client-reconnect")} />} content='Reconnect' inverted />
                                   <Popup trigger={<Button color="olive" icon='redo alternate' onClick={() => this.sendRemoteCommand("client-reload")} />} content='Reload page(LOST FEED HERE!)' inverted />
                                   <Popup trigger={<Button color="teal" icon='microphone' onClick={() => this.sendRemoteCommand("client-mute")} />} content='Mic Mute/Unmute' inverted />
-                                  {view === "feeds" ?
                                   <Popup trigger={<Button color="pink" icon='eye' onClick={() => this.sendRemoteCommand("video-mute")} />} content='Cam Mute/Unmute' inverted />
-                                  : ""}
                                   <Popup trigger={<Button color="blue" icon='power off' onClick={() => this.sendRemoteCommand("client-disconnect")} />} content='Disconnect(LOST FEED HERE!)' inverted />
                                   <Popup trigger={<Button color="yellow" icon='question' onClick={() => this.sendRemoteCommand("client-question")} />} content='Set/Unset question' inverted />
                               </Segment>
@@ -1300,7 +992,6 @@ class AdminRoot extends Component {
                                       </Table.Row>
                                       <Table.Row disabled>
                                           <Table.Cell width={10}>Title</Table.Cell>
-                                          <Table.Cell width={1}>FW</Table.Cell>
                                           <Table.Cell width={1}>ST</Table.Cell>
                                       </Table.Row>
                                       {users_grid}
@@ -1313,10 +1004,7 @@ class AdminRoot extends Component {
                           <div className="videos-panel">
                               <div className="videos">
                                   <div className="videos__wrapper">
-                                      {switch_mode ? "" : videos}
-                                      <Transition visible={switch_mode} animation='scale' duration={500}>
-                                          {switchvideo}
-                                      </Transition>
+                                      {videos}
                                   </div>
                               </div>
                           </div>
@@ -1327,7 +1015,7 @@ class AdminRoot extends Component {
                               <Table selectable compact='very' basic structured className="admin_table" unstackable>
                                   <Table.Body>
                                       <Table.Row disabled positive>
-                                          <Table.Cell colSpan={2} textAlign='center'>Groups:</Table.Cell>
+                                          <Table.Cell colSpan={2} textAlign='center'>Rooms:</Table.Cell>
                                       </Table.Row>
                                       {rooms_grid}
                                   </Table.Body>
