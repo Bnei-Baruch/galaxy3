@@ -577,6 +577,7 @@ class AdminRoot extends Component {
         if (!room_data) {
             console.warn("[AdminRoot] sendBroadcastMessage. no room data in state");
             alert("No room data in state: " + current_room);
+            return;
         }
         const gateway = gateways[room_data.janus];
 
@@ -649,6 +650,7 @@ class AdminRoot extends Component {
         const room_data = rooms.find(x => x.room === room);
         if (!room_data) {
             console.warn("[AdminRoot] exitRoom. no room data in state");
+            return;
         }
 
         const gateway = gateways[room_data.janus];
