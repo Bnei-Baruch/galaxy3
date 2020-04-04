@@ -1,7 +1,7 @@
 import React, {Component} from 'react';
 import {Janus} from "../../lib/janus";
-import {Button, Grid, Icon, Input, List, Menu, Message, Popup, Segment, Select, Table} from "semantic-ui-react";
-import {getDateString, getState} from "../../shared/tools";
+import {Button, Grid, Icon, List, Menu, Message, Popup, Segment, Table} from "semantic-ui-react";
+import {getState} from "../../shared/tools";
 import './AdminRoot.css';
 import './AdminRootVideo.scss'
 import {JANUS_GATEWAYS, SECRET} from "../../shared/consts";
@@ -10,12 +10,14 @@ import platform from "platform";
 import {client} from "../../components/UserManager";
 import LoginPage from "../../components/LoginPage";
 import GxyJanus from "../../shared/janus-utils";
+import ChatBox from "./components/ChatBox";
 
 class AdminRoot extends Component {
 
     state = {
         bitrate: 128000,
         gateways: {},
+        gatewaysInitialized: false,
         current_gateway: "",
         feedStreams: {},
         mids: [],
@@ -32,35 +34,26 @@ class AdminRoot extends Component {
         myid: null,
         mypvtid: null,
         mystream: null,
-        msg_type: "private",
         audio: null,
         muted: true,
         user: null,
         description: "",
-        messages: [],
         visible: false,
-        input_value: "",
         users: {},
     };
 
     componentDidMount() {
-        document.addEventListener("keydown", this.onKeyPressed);
         getState('galaxy/users', (users) => {
             this.setState({users});
         });
     };
 
     componentWillUnmount() {
-        document.removeEventListener("keydown", this.onKeyPressed);
         this.state.gateways.forEach(x => x.destroy());
     };
 
-    onKeyPressed = (e) => {
-        if(e.code === "Enter")
-            this.sendPrivateMessage();
-    };
-
     checkPermission = (user) => {
+        // let gxy_root = true;
         let gxy_root = user.roles.find(role => role === 'gxy_root');
         if (gxy_root) {
             delete user.roles;
@@ -80,22 +73,21 @@ class AdminRoot extends Component {
         });
         this.setState({gateways});
 
-        Object.values(gateways).forEach(gateway => {
-            gateway.init()
+        Promise.all(Object.values(gateways).map(gateway => {
+            console.log("Initializing", gateway.name);
+            return gateway.init()
                 .then(() => {
-                    gateway.initChatRoom(data => this.onChatData(gateway, data))
-                        .catch(err => {
-                            console.error("[AdminRoot] gateway.initChatRoom error", gateway.name, err);
-                        });
-
                     gateway.initGxyProtocol(user, data => this.onProtocolData(gateway, data))
                         .catch(err => {
-                            console.error("[AdminRoot] gateway.initGxyProtocol error", gateway.name, err);
+                            console.error("[Admin] gateway.initGxyProtocol error", gateway.name, err);
                         });
                 })
                 .catch(err => {
-                    console.error("[AdminRoot] gateway.init error", gateway.name, err);
+                    console.error("[Admin] gateway.init error", gateway.name, err);
                 })
+        })).then(() => {
+            console.log("[Admin] gateways initialization complete");
+            this.setState({gatewaysInitialized: true});
         });
 
         setInterval(() => {
@@ -117,7 +109,7 @@ class AdminRoot extends Component {
     };
 
     // getRoomList = () => {
-    //     console.log("[AdminRoot] getRoomList");
+    //     console.log("[Admin] getRoomList");
     //     const {gateways, current_gateway} = this.state;
     //     const gateway = gateways[current_gateway];
     //     if (gateway.videoroom) {
@@ -150,7 +142,7 @@ class AdminRoot extends Component {
     // };
 
     newVideoRoom = (gateway, room) => {
-        console.log("[AdminRoot] newVideoRoom", room);
+        console.log("[Admin] newVideoRoom", room);
 
         return gateway.initVideoRoom({
             onmessage: (msg, jsep) => {
@@ -167,13 +159,13 @@ class AdminRoot extends Component {
                 let myid = msg["id"];
                 let mypvtid = msg["private_id"];
                 this.setState({myid ,mypvtid});
-                console.log("[AdminRoot] Successfully joined room " + msg["room"] + " with ID " + myid + " on " + gateway.name);
+                console.log("[Admin] Successfully joined room " + msg["room"] + " with ID " + myid + " on " + gateway.name);
 
                 // Any new feed to attach to?
                 if(msg["publishers"] !== undefined && msg["publishers"] !== null) {
                     let {feedStreams,users} = this.state;
                     let list = msg["publishers"];
-                    console.log("[AdminRoot] Got Publishers (joined)", list);
+                    console.log("[Admin] Got Publishers (joined)", list);
 
                     // Filter service and camera muted feeds
                     let fr = "user";
@@ -184,7 +176,7 @@ class AdminRoot extends Component {
                         return 0;
                     });
 
-                    console.log("[AdminRoot] available feeds", feeds);
+                    console.log("[Admin] available feeds", feeds);
                     const subscription = [];
                     for(let f in feeds) {
                         let id = feeds[f]["id"];
@@ -211,7 +203,7 @@ class AdminRoot extends Component {
             } else if(event === "talking") {
                 let {feeds} = this.state;
                 let id = msg["id"];
-                console.debug("[AdminRoot] User start talking", id);
+                console.debug("[Admin] User start talking", id);
                 for(let i=0; i<feeds.length; i++) {
                     if(feeds[i] && feeds[i].id === id) {
                         feeds[i].talk = true;
@@ -221,7 +213,7 @@ class AdminRoot extends Component {
             } else if(event === "stopped-talking") {
                 let {feeds} = this.state;
                 let id = msg["id"];
-                console.debug("[AdminRoot] User stop talking", id);
+                console.debug("[Admin] User stop talking", id);
                 for(let i=0; i<feeds.length; i++) {
                     if(feeds[i] && feeds[i].id === id) {
                         feeds[i].talk = false;
@@ -229,7 +221,7 @@ class AdminRoot extends Component {
                 }
                 this.setState({feeds});
             } else if(event === "destroyed") {
-                console.warn("[AdminRoot] The room has been destroyed!");
+                console.warn("[Admin] The room has been destroyed!");
             } else if(event === "event") {
                 // Any info on our streams or a new feed to attach to?
                 let {feedStreams,user,myid} = this.state;
@@ -244,7 +236,7 @@ class AdminRoot extends Component {
                     this.setState({feedStreams})
                 } else if(msg["publishers"] !== undefined && msg["publishers"] !== null) {
                     let feed = msg["publishers"];
-                    console.log("[AdminRoot] Got Publishers (event)", feed);
+                    console.log("[Admin] Got Publishers (event)", feed);
 
                     let {feeds,feedStreams,users} = this.state;
                     let subscription = [];
@@ -279,22 +271,22 @@ class AdminRoot extends Component {
                 } else if(msg["leaving"] !== undefined && msg["leaving"] !== null) {
                     // One of the publishers has gone away?
                     const leaving = msg["leaving"];
-                    console.log("[AdminRoot] leaving", leaving);
+                    console.log("[Admin] leaving", leaving);
                     this.unsubscribeFrom(leaving, gateway.name);
                 } else if(msg["unpublished"] !== undefined && msg["unpublished"] !== null) {
                     let unpublished = msg["unpublished"];
-                    console.log("[AdminRoot] unpublished", unpublished);
+                    console.log("[Admin] unpublished", unpublished);
                     if(unpublished === 'ok') {
-                        console.log("[AdminRoot] videoroom.hangup()", gateway.name);
+                        console.log("[Admin] videoroom.hangup()", gateway.name);
                         gateway.videoroom.hangup(); // That's us
                     } else {
                         this.unsubscribeFrom(unpublished, gateway.name);
                     }
                 } else if(msg["error"] !== undefined && msg["error"] !== null) {
                     if(msg["error_code"] === 426) {
-                        console.error("[AdminRoot] no such room", gateway.name, msg);
+                        console.error("[Admin] no such room", gateway.name, msg);
                     } else {
-                        console.error("[AdminRoot] videoroom error message", msg);
+                        console.error("[Admin] videoroom error message", msg);
                     }
                 }
             }
@@ -355,13 +347,13 @@ class AdminRoot extends Component {
                 // Which publisher are we getting on this mid?
                 let {mids,feedStreams} = this.state;
                 let feed = mids[mid].feed_id;
-                console.log("[AdminRoot] This track is coming from feed " + feed + ":", mid);
+                console.log("[Admin] This track is coming from feed " + feed + ":", mid);
                 // If we're here, a new track was added
                 if(track.kind === "audio" && on) {
                     // New audio track: create a stream out of it, and use a hidden <audio> element
                     let stream = new MediaStream();
                     stream.addTrack(track.clone());
-                    console.log("[AdminRoot] Created remote audio stream:", stream);
+                    console.log("[Admin] Created remote audio stream:", stream);
                     feedStreams[feed].audio_stream = stream;
                     this.setState({feedStreams});
                     let remoteaudio = this.refs["remoteAudio" + feed];
@@ -370,21 +362,21 @@ class AdminRoot extends Component {
                     // New video track: create a stream out of it
                     let stream = new MediaStream();
                     stream.addTrack(track.clone());
-                    console.log("[AdminRoot] Created remote video stream:", stream);
+                    console.log("[Admin] Created remote video stream:", stream);
                     feedStreams[feed].video_stream = stream;
                     this.setState({feedStreams});
                     let remotevideo = this.refs["remoteVideo" + feed];
                     Janus.attachMediaStream(remotevideo, stream);
                 } else if(track.kind === "data") {
-                    console.debug("[AdminRoot] It's data channel");
+                    console.debug("[Admin] It's data channel");
                 } else {
-                    console.debug("[AdminRoot] Track already attached: ", track);
+                    console.debug("[Admin] Track already attached: ", track);
                 }
             },
         })
             .then(() => {
                 const subscribe = {request: "join", room: this.state.current_room, ptype: "subscriber", streams: subscription};
-                console.log("[AdminRoot] newRemoteFeed join", subscribe);
+                console.log("[Admin] newRemoteFeed join", subscribe);
                 gateway.remoteFeed.send({
                     message: subscribe,
                     success: () => { gateway.log('[remoteFeed] join as subscriber success', subscribe)},
@@ -392,7 +384,7 @@ class AdminRoot extends Component {
                 });
             })
             .catch(err => {
-                console.error("[AdminRoot] gateway.newRemoteFeed error", err);
+                console.error("[Admin] gateway.newRemoteFeed error", err);
             });
     };
 
@@ -402,7 +394,7 @@ class AdminRoot extends Component {
         // New feeds are available, do we need create a new plugin handle first?
         if (gateway.remoteFeed) {
             const subscribe = {request: "subscribe", streams: subscription};
-            console.log("[AdminRoot] subscribeTo subscribe", subscribe);
+            console.log("[Admin] subscribeTo subscribe", subscribe);
             gateway.remoteFeed.send({
                 message: subscribe,
                 success: () => { gateway.log('[remoteFeed] subscribe success', subscribe)},
@@ -414,19 +406,19 @@ class AdminRoot extends Component {
     };
 
     unsubscribeFrom = (id, inst) => {
-        console.log("[AdminRoot] unsubscribeFrom", inst, id);
+        console.log("[Admin] unsubscribeFrom", inst, id);
         const {feeds, users, feed_user, gateways} = this.state;
         const gateway = gateways[inst];
         for (let i = 0; i < feeds.length; i++) {
             if (feeds[i].id === id) {
-                console.log("[AdminRoot] unsubscribeFrom feed", feeds[i]);
+                console.log("[Admin] unsubscribeFrom feed", feeds[i]);
 
                 // Remove from feeds list
                 feeds.splice(i, 1);
 
                 // Send an unsubscribe request
                 const unsubscribe = {request: "unsubscribe", streams: [{feed: id}]};
-                console.log("[AdminRoot] unsubscribeFrom unsubscribe", unsubscribe);
+                console.log("[Admin] unsubscribeFrom unsubscribe", unsubscribe);
                 gateway.remoteFeed.send({
                     message: unsubscribe,
                     success: () => { gateway.log('[remoteFeed] unsubscribe success', unsubscribe)},
@@ -440,46 +432,6 @@ class AdminRoot extends Component {
                 this.setState({feeds, users});
                 break
             }
-        }
-    };
-
-    onChatData = (gateway, data) => {
-        const json = JSON.parse(data);
-        const what = json["textroom"];
-        if (what === "message") {
-            // Incoming message: public or private?
-            let msg = json["text"];
-            msg = msg.replace(new RegExp('<', 'g'), '&lt');
-            msg = msg.replace(new RegExp('>', 'g'), '&gt');
-            let from = json["from"];
-            let dateString = getDateString(json["date"]);
-            let whisper = json["whisper"];
-            if (whisper === true) {
-                // Private message
-                let {messages} = this.state;
-                let message = JSON.parse(msg);
-                message.user.username = message.user.display;
-                message.time = dateString;
-                console.log("[AdminRoot] private message", gateway.name, from, message);
-                messages.push(message);
-                this.setState({messages});
-                this.scrollToBottom();
-            } else {
-                console.warn("[AdminRoot] unexpected public chat message", json);
-            }
-        } else if (what === "join") {
-            let username = json["username"];
-            let display = json["display"];
-            gateway.log("[chatroom] Somebody joined", username, display);
-        } else if (what === "leave") {
-            let username = json["username"];
-            gateway.log("[chatroom] Somebody left", username, getDateString());
-        } else if (what === "kicked") {
-            let username = json["username"];
-            gateway.log("[chatroom] Somebody was kicked", username, getDateString());
-        } else if (what === "destroyed") {
-            let room = json["room"];
-            gateway.log("[chatroom] room destroyed", room);
         }
     };
 
@@ -506,66 +458,6 @@ class AdminRoot extends Component {
         }
     };
 
-    sendPrivateMessage = () => {
-        const {input_value,user,feed_user,current_room, gateways} = this.state;
-        if(!feed_user) {
-            alert("Choose user");
-            return;
-        }
-
-        const msg = {user, text: input_value};
-        const message = {
-            ack: false,
-            textroom: "message",
-            transaction: Janus.randomString(12),
-            room: current_room,
-            to: feed_user.id,
-            text: JSON.stringify(msg),
-        };
-        // Note: messages are always acknowledged by default. This means that you'll
-        // always receive a confirmation back that the message has been received by the
-        // server and forwarded to the recipients. If you do not want this to happen,
-        // just add an ack:false property to the message above, and server won't send
-        // you a response (meaning you just have to hope it succeeded).
-        const gateway = gateways[feed_user.janus];
-        gateway.chatroom.data({
-            text: JSON.stringify(message),
-            error: (err) => {
-                gateway.error("[chatroom] error data", err);
-                alert(err);
-                },
-            success: () => {
-                gateway.log("[chatroom] data success", message);
-                let {messages} = this.state;
-                msg.time = getDateString();
-                msg.to = feed_user.display;
-                messages.push(msg);
-                this.setState({messages, input_value: ""}, this.scrollToBottom);
-            }
-        });
-    };
-
-    sendBroadcastMessage = () => {
-        const {current_room, input_value, messages, user, rooms, gateways} = this.state;
-        const room_data = rooms.find(x => x.room === current_room);
-        if (!room_data) {
-            console.warn("[AdminRoot] sendBroadcastMessage. no room data in state");
-            alert("No room data in state: " + current_room);
-            return;
-        }
-        const gateway = gateways[room_data.janus];
-
-        const msg = {type: "chat-broadcast", room: current_room, user, text: input_value};
-        gateway.sendProtocolMessage(null, msg)
-            .then(() => {
-                msg.time = getDateString();
-                msg.to = "all";
-                messages.push(msg);
-                this.setState({messages, input_value: "", msg_type: "private"}, this.scrollToBottom);
-            })
-            .catch(alert);
-    };
-
     sendRemoteCommand = (command_type) => {
         const {gateways, feed_user, user} = this.state;
         if(!feed_user) {
@@ -583,24 +475,15 @@ class AdminRoot extends Component {
 
     };
 
-    sendMessage = () => {
-        const {msg_type} = this.state;
-        msg_type === "private" ? this.sendPrivateMessage() : this.sendBroadcastMessage();
-    };
-
-    scrollToBottom = () => {
-        this.refs.end.scrollIntoView({ behavior: 'smooth' })
-    };
-
     joinRoom = (data, i) => {
-        console.log("[AdminRoot] joinRoom", data, i);
+        console.log("[Admin] joinRoom", data, i);
         const {rooms, user, current_room} = this.state;
         const {room, janus: inst} = rooms[i];
 
         if (current_room === room)
             return;
 
-        console.log("[AdminRoot] joinRoom", room, inst);
+        console.log("[Admin] joinRoom", room, inst);
 
         if (current_room)
             this.exitRoom(current_room);
@@ -623,26 +506,26 @@ class AdminRoot extends Component {
     };
 
     exitRoom = (room) => {
-        console.log("[AdminRoot] exitRoom", room);
+        console.log("[Admin] exitRoom", room);
 
         const {rooms, gateways} = this.state;
         const room_data = rooms.find(x => x.room === room);
         if (!room_data) {
-            console.warn("[AdminRoot] exitRoom. no room data in state");
+            console.warn("[Admin] exitRoom. no room data in state");
             return;
         }
 
         const gateway = gateways[room_data.janus];
-        console.log('[AdminRoot] exitRoom janus instance', gateway.name);
+        console.log('[Admin] exitRoom janus instance', gateway.name);
 
         if (gateway.remoteFeed) {
-            console.log('[AdminRoot] exitRoom detach remoteFeed');
+            console.log('[Admin] exitRoom detach remoteFeed');
             gateway.detachRemoteFeed()
                 .finally(() => gateway.remoteFeed = null);
         }
 
         if (gateway.videoroom) {
-            console.log('[AdminRoot] exitRoom leave and detach videoroom');
+            console.log('[Admin] exitRoom leave and detach videoroom');
             gateway.videoRoomLeave(room)
                 .then(() => gateway.detachVideoRoom())
                 .finally(() => gateway.videoroom = null);
@@ -766,7 +649,7 @@ class AdminRoot extends Component {
     // };
 
     getUserInfo = (feed) => {
-        console.log("[AdminRoot] getUserInfo", feed);
+        console.log("[Admin] getUserInfo", feed);
         const {display, id} = feed;
         const {users} = this.state;
         const feed_info = display.system ? platform.parse(display.system) : null;
@@ -782,7 +665,7 @@ class AdminRoot extends Component {
                 const gateway = gateways[feed_user.janus];
                 gateway.getPublisherInfo(session, handle)
                     .then(data => {
-                            console.debug("[AdminRoot] Publisher info", data);
+                            console.debug("[Admin] Publisher info", data);
                             const video = data.info.webrtc.media[1].rtcp.main;
                             const audio = data.info.webrtc.media[0].rtcp.main;
                             this.setState({feed_rtcp: {video, audio}});
@@ -793,7 +676,12 @@ class AdminRoot extends Component {
     };
 
   render() {
-      const { bitrate,rooms,current_room,rooms_list, current_gateway,user,feeds,feed_id,feed_info,i,messages,description,room_id,feed_rtcp,msg_type,users} = this.state;
+      const { bitrate,rooms,current_room,rooms_list, current_gateway,user,feeds,feed_id,feed_info,i,description,room_id,feed_user,feed_rtcp,users, gateways,gatewaysInitialized} = this.state;
+
+      if (!!user && !gatewaysInitialized) {
+          return "Initializing connections to janus instances...";
+      }
+
       const width = "134";
       const height = "100";
       const autoPlay = true;
@@ -811,11 +699,6 @@ class AdminRoot extends Component {
       //     { key: 2, text: '300Kb/s', value: 300000 },
       //     { key: 3, text: '600Kb/s', value: 600000 },
       // ];
-
-      const send_options = [
-          { key: 'all', text: 'All', value: 'all' },
-          { key: 'private', text: 'Private', value: 'private' },
-      ];
 
       // const videorooms = (rooms_list[current_gateway] || []).map((data,i) => {
       //     const {room, num_participants, description} = data;
@@ -844,17 +727,6 @@ class AdminRoot extends Component {
                   </Table.Row>
               )
           }
-      });
-
-      let list_msgs = messages.map((msg,i) => {
-          let {user,time,text,to} = msg;
-          return (
-              <div key={i}><p>
-                  <i style={{color: 'grey'}}>{time}</i> -
-                  <b style={{color: user.role === "admin" ? 'red' : 'blue'}}>{user.username}</b>
-                  {to ? <b style={{color: 'blue'}}>-> {to} :</b> : ""}
-              </p>{text}</div>
-          );
       });
 
       let videos = this.state.feeds.map((feed) => {
@@ -1030,25 +902,12 @@ class AdminRoot extends Component {
                   </Grid.Row>
               </Grid>
 
-              <Segment className='chat_segment'>
-
-                  <Message className='messages_list'>
-                      {list_msgs}
-                      <div ref='end' />
-                  </Message>
-
-                  <Input fluid type='text' placeholder='Type your message' action value={this.state.input_value}
-                         onChange={(v,{value}) => this.setState({input_value: value})}>
-                      <input />
-                      <Select options={send_options}
-                              value={msg_type}
-                              error={msg_type === "all"}
-                              onChange={(e,{value}) => this.setState({msg_type: value})} />
-                      <Button positive negative={msg_type === "all"} onClick={this.sendMessage}>Send</Button>
-                  </Input>
-
-              </Segment>
-
+              <ChatBox user={user}
+                       rooms={rooms}
+                       selected_room={current_room}
+                       selected_user={feed_user}
+                       gateways={gateways}
+              />
           </Segment>
       );
 

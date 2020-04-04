@@ -149,6 +149,26 @@ class GxyJanus {
         });
     };
 
+    detachChatRoom = () => {
+        return new Promise((resolve, reject) => {
+            if (this.chatroom) {
+                this.log('[chatroom] detach');
+                this.chatroom.detach({
+                    success: () => {
+                        this.debug("[chatroom] detach success");
+                        resolve();
+                    },
+                    error: (err) => {
+                        this.error("[chatroom] detach error", err);
+                        reject(err);
+                    }
+                });
+            } else {
+                resolve();
+            }
+        });
+    };
+
     chatRoomJoin = (room, user) => {
         return this.data("chatroom", this.chatroom, {
             textroom: "join",
