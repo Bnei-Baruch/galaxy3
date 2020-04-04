@@ -49,18 +49,51 @@ class AdminRoot extends Component {
     };
 
     checkPermission = (user) => {
-        // let gxy_root = true;
-        let gxy_root = user.roles.find(role => role === 'gxy_root');
-        if (gxy_root) {
+        const roles = new Set(user.roles || []);
+
+        // let role = "root";
+        let role = null;
+        if (roles.has("gxy_root")) {
+            role = "root";
+        } else if (roles.has("gxy_admin")) {
+            role = "admin";
+        }  else if (roles.has("gxy_guest")) {
+            role = "guest";
+        }
+
+        if (role) {
+            console.log("[Admin] checkPermission role is", role);
             delete user.roles;
-            user.role = "root";
-            this.setState({user});
-            this.initAdminRoot(user);
+            user.role = role;
+            this.setState({user}, () => {
+                this.initAdminRoot(user);
+            });
         } else {
             alert("Access denied!");
             client.signoutRedirect();
         }
     };
+
+    isAllowed = (level) => {
+        const {user} = this.state;
+        if (!user) {
+            return false;
+        }
+
+        const {role} = user;
+        switch (level) {
+            case "root":
+                return role === "root";
+            case "admin":
+                return role === "admin" || role === "root";
+            case "guest":
+                return role === "guest" || role === "admin" || role === "root";
+            default:
+                return false;
+        }
+    };
+
+    withAudio = () => (this.isAllowed("admin"));
 
     initAdminRoot = (user) => {
         const gateways = {};
@@ -73,10 +106,12 @@ class AdminRoot extends Component {
             console.log("Initializing", gateway.name);
             return gateway.init()
                 .then(() => {
-                    gateway.initGxyProtocol(user, data => this.onProtocolData(gateway, data))
-                        .catch(err => {
-                            console.error("[Admin] gateway.initGxyProtocol error", gateway.name, err);
-                        });
+                    if (this.isAllowed("admin")) {
+                        gateway.initGxyProtocol(user, data => this.onProtocolData(gateway, data))
+                            .catch(err => {
+                                console.error("[Admin] gateway.initGxyProtocol error", gateway.name, err);
+                            });
+                    }
                 })
                 .catch(err => {
                     console.error("[Admin] gateway.init error", gateway.name, err);
@@ -154,6 +189,9 @@ class AdminRoot extends Component {
                             let stream = streams[i];
                             stream["id"] = id;
                             stream["display"] = display;
+                            if(!this.withAudio() && stream.type === "video") {
+                                subst.mid = stream.mid;
+                            }
                         }
                         feedStreams[id] = {id, display, streams};
                         users[display.id] = {...display, ...users[display.id], rfid: id};
@@ -217,6 +255,9 @@ class AdminRoot extends Component {
                             let stream = streams[i];
                             stream["id"] = id;
                             stream["display"] = display;
+                            if(!this.withAudio() && stream.type === "video") {
+                                subst.mid = stream.mid;
+                            }
                         }
                         feedStreams[id] = {id, display, streams};
                         users[display.id] = {...display, ...users[display.id], rfid: id};
@@ -283,8 +324,7 @@ class AdminRoot extends Component {
                         let mindex = msg["streams"][i]["mid"];
                         mids[mindex] = msg["streams"][i];
                         if(msg["streams"][i]["feed_display"]) {
-                            let display = JSON.parse(msg["streams"][i]["feed_display"]);
-                            mids[mindex].feed_user = display;
+                            mids[mindex].feed_user = JSON.parse(msg["streams"][i]["feed_display"]);
                         }
                     }
                     this.setState({mids});
@@ -312,7 +352,7 @@ class AdminRoot extends Component {
                 let feed = mids[mid].feed_id;
                 console.log("[Admin] This track is coming from feed " + feed + ":", mid);
                 // If we're here, a new track was added
-                if(track.kind === "audio" && on) {
+                if(track.kind === "audio" && on && this.withAudio()) {
                     // New audio track: create a stream out of it, and use a hidden <audio> element
                     let stream = new MediaStream();
                     stream.addTrack(track.clone());
@@ -465,7 +505,9 @@ class AdminRoot extends Component {
                 gateway.videoRoomJoin(room, user);
             });
 
-        gateway.chatRoomJoin(room, user);
+        if (this.isAllowed("admin")) {
+            gateway.chatRoomJoin(room, user);
+        }
     };
 
     exitRoom = (room) => {
@@ -494,7 +536,9 @@ class AdminRoot extends Component {
                 .finally(() => gateway.videoroom = null);
         }
 
-        gateway.chatRoomLeave(room);
+        if (this.isAllowed("admin")) {
+            gateway.chatRoomLeave(room);
+        }
     };
 
     getUserInfo = (feed) => {
@@ -575,28 +619,34 @@ class AdminRoot extends Component {
               let id = feed.id;
               let talk = feed.talk;
               let selected = id === feed_id;
-              return (<div className="video"
-                           key={"v" + id}
-                           ref={"video" + id}
-                           id={"video" + id}>
-                  <div className={classNames('video__overlay', {'talk' : talk}, {'selected' : selected})} />
-                  <video key={id}
-                         ref={"remoteVideo" + id}
-                         id={"remoteVideo" + id}
-                         width={width}
-                         height={height}
-                         autoPlay={autoPlay}
-                         controls={controls}
-                         muted={muted}
-                         playsInline={true}/>
-                  <audio
-                      key={"a" + id}
-                      ref={"remoteAudio" + id}
-                      id={"remoteAudio" + id}
-                      autoPlay={autoPlay}
-                      controls={controls}
-                      playsInline={true}/>
-              </div>);
+              return (
+                  <div className="video"
+                       key={"v" + id}
+                       ref={"video" + id}
+                       id={"video" + id}>
+                      <div className={classNames('video__overlay', {'talk': talk}, {'selected': selected})}/>
+                      <video key={id}
+                             ref={"remoteVideo" + id}
+                             id={"remoteVideo" + id}
+                             width={width}
+                             height={height}
+                             autoPlay={autoPlay}
+                             controls={controls}
+                             muted={muted}
+                             playsInline={true}/>
+                      {
+                          this.withAudio() ?
+                              <audio
+                                  key={"a" + id}
+                                  ref={"remoteAudio" + id}
+                                  id={"remoteAudio" + id}
+                                  autoPlay={autoPlay}
+                                  controls={controls}
+                                  playsInline={true}/>
+                              : null
+                      }
+                  </div>
+              );
           }
           return true;
       });
@@ -606,75 +656,88 @@ class AdminRoot extends Component {
       let content = (
           <Segment className="virtual_segment" color='blue' raised>
 
-              <Segment textAlign='center' className="ingest_segment">
-                  <Button color='blue' icon='sound' onClick={() => this.sendRemoteCommand("sound_test")} />
-                  <Popup
-                      trigger={<Button positive icon='info' onClick={this.getFeedInfo} />}
-                      position='bottom left'
-                      content={
-                          <List as='ul'>
-                              <List.Item as='li'>System
-                                  <List.List as='ul'>
-                                      <List.Item as='li'>OS: {feed_info ? feed_info.os.toString() : ""}</List.Item>
-                                      <List.Item as='li'>Browser: {feed_info ? feed_info.name : ""}</List.Item>
-                                      <List.Item as='li'>Version: {feed_info ? feed_info.version : ""}</List.Item>
-                                  </List.List>
-                              </List.Item>
-                              <List.Item as='li'>Video
-                                  <List.List as='ul'>
-                                      <List.Item as='li'>in-link-quality: {feed_rtcp.video ? feed_rtcp.video["in-link-quality"] : ""}</List.Item>
-                                      <List.Item as='li'>in-media-link-quality: {feed_rtcp.video ? feed_rtcp.video["in-media-link-quality"] : ""}</List.Item>
-                                      <List.Item as='li'>jitter-local: {feed_rtcp.video ? feed_rtcp.video["jitter-local"] : ""}</List.Item>
-                                      <List.Item as='li'>jitter-remote: {feed_rtcp.video ? feed_rtcp.video["jitter-remote"] : ""}</List.Item>
-                                      <List.Item as='li'>lost: {feed_rtcp.video ? feed_rtcp.video["lost"] : ""}</List.Item>
-                                  </List.List>
-                              </List.Item>
-                              <List.Item as='li'>Audio
-                                  <List.List as='ul'>
-                                      <List.Item as='li'>in-link-quality: {feed_rtcp.audio ? feed_rtcp.audio["in-link-quality"] : ""}</List.Item>
-                                      <List.Item as='li'>in-media-link-quality: {feed_rtcp.audio ? feed_rtcp.audio["in-media-link-quality"] : ""}</List.Item>
-                                      <List.Item as='li'>jitter-local: {feed_rtcp.audio ? feed_rtcp.audio["jitter-local"] : ""}</List.Item>
-                                      <List.Item as='li'>jitter-remote: {feed_rtcp.audio ? feed_rtcp.audio["jitter-remote"] : ""}</List.Item>
-                                      <List.Item as='li'>lost: {feed_rtcp.audio ? feed_rtcp.audio["lost"] : ""}</List.Item>
-                                  </List.List>
-                              </List.Item>
-                          </List>
-                      }
-                      on='click'
-                      hideOnScroll
-                  />
+              {
+                  this.isAllowed("admin") ?
+                      <Segment textAlign='center' className="ingest_segment">
+                          <Button color='blue' icon='sound' onClick={() => this.sendRemoteCommand("sound_test")} />
+                          <Popup
+                              trigger={<Button positive icon='info' onClick={this.getFeedInfo} />}
+                              position='bottom left'
+                              content={
+                                  <List as='ul'>
+                                      <List.Item as='li'>System
+                                          <List.List as='ul'>
+                                              <List.Item as='li'>OS: {feed_info ? feed_info.os.toString() : ""}</List.Item>
+                                              <List.Item as='li'>Browser: {feed_info ? feed_info.name : ""}</List.Item>
+                                              <List.Item as='li'>Version: {feed_info ? feed_info.version : ""}</List.Item>
+                                          </List.List>
+                                      </List.Item>
+                                      <List.Item as='li'>Video
+                                          <List.List as='ul'>
+                                              <List.Item as='li'>in-link-quality: {feed_rtcp.video ? feed_rtcp.video["in-link-quality"] : ""}</List.Item>
+                                              <List.Item as='li'>in-media-link-quality: {feed_rtcp.video ? feed_rtcp.video["in-media-link-quality"] : ""}</List.Item>
+                                              <List.Item as='li'>jitter-local: {feed_rtcp.video ? feed_rtcp.video["jitter-local"] : ""}</List.Item>
+                                              <List.Item as='li'>jitter-remote: {feed_rtcp.video ? feed_rtcp.video["jitter-remote"] : ""}</List.Item>
+                                              <List.Item as='li'>lost: {feed_rtcp.video ? feed_rtcp.video["lost"] : ""}</List.Item>
+                                          </List.List>
+                                      </List.Item>
+                                      <List.Item as='li'>Audio
+                                          <List.List as='ul'>
+                                              <List.Item as='li'>in-link-quality: {feed_rtcp.audio ? feed_rtcp.audio["in-link-quality"] : ""}</List.Item>
+                                              <List.Item as='li'>in-media-link-quality: {feed_rtcp.audio ? feed_rtcp.audio["in-media-link-quality"] : ""}</List.Item>
+                                              <List.Item as='li'>jitter-local: {feed_rtcp.audio ? feed_rtcp.audio["jitter-local"] : ""}</List.Item>
+                                              <List.Item as='li'>jitter-remote: {feed_rtcp.audio ? feed_rtcp.audio["jitter-remote"] : ""}</List.Item>
+                                              <List.Item as='li'>lost: {feed_rtcp.audio ? feed_rtcp.audio["lost"] : ""}</List.Item>
+                                          </List.List>
+                                      </List.Item>
+                                  </List>
+                              }
+                              on='click'
+                              hideOnScroll
+                          />
 
-                  {chatRoomsInitialized ? <RoomManager gateways={gateways} /> : null}
+                          {
+                              this.isAllowed("root") && chatRoomsInitialized ?
+                                  <RoomManager gateways={gateways}/>
+                                  : null
+                          }
 
-              </Segment>
+                      </Segment>
+                      : null
+              }
 
               <Grid>
                   <Grid.Row stretched columns='equal'>
                       <Grid.Column width={4}>
                           <Segment.Group>
-                              <Segment textAlign='center'>
-                                  <Popup trigger={<Button negative icon='user x' onClick={() => this.sendRemoteCommand("client-kicked")} />} content='Kick' inverted />
-                                  <Popup trigger={<Button color="brown" icon='sync alternate' alt="test" onClick={() => this.sendRemoteCommand("client-reconnect")} />} content='Reconnect' inverted />
-                                  <Popup trigger={<Button color="olive" icon='redo alternate' onClick={() => this.sendRemoteCommand("client-reload")} />} content='Reload page(LOST FEED HERE!)' inverted />
-                                  <Popup trigger={<Button color="teal" icon='microphone' onClick={() => this.sendRemoteCommand("client-mute")} />} content='Mic Mute/Unmute' inverted />
-                                  <Popup trigger={<Button color="pink" icon='eye' onClick={() => this.sendRemoteCommand("video-mute")} />} content='Cam Mute/Unmute' inverted />
-                                  <Popup trigger={<Button color="blue" icon='power off' onClick={() => this.sendRemoteCommand("client-disconnect")} />} content='Disconnect(LOST FEED HERE!)' inverted />
-                                  <Popup trigger={<Button color="yellow" icon='question' onClick={() => this.sendRemoteCommand("client-question")} />} content='Set/Unset question' inverted />
+                              {
+                                  this.isAllowed("root") ?
+                                      <Segment textAlign='center'>
+                                          <Popup trigger={<Button negative icon='user x' onClick={() => this.sendRemoteCommand("client-kicked")} />} content='Kick' inverted />
+                                          <Popup trigger={<Button color="brown" icon='sync alternate' alt="test" onClick={() => this.sendRemoteCommand("client-reconnect")} />} content='Reconnect' inverted />
+                                          <Popup trigger={<Button color="olive" icon='redo alternate' onClick={() => this.sendRemoteCommand("client-reload")} />} content='Reload page(LOST FEED HERE!)' inverted />
+                                          <Popup trigger={<Button color="teal" icon='microphone' onClick={() => this.sendRemoteCommand("client-mute")} />} content='Mic Mute/Unmute' inverted />
+                                          <Popup trigger={<Button color="pink" icon='eye' onClick={() => this.sendRemoteCommand("video-mute")} />} content='Cam Mute/Unmute' inverted />
+                                          <Popup trigger={<Button color="blue" icon='power off' onClick={() => this.sendRemoteCommand("client-disconnect")} />} content='Disconnect(LOST FEED HERE!)' inverted />
+                                          <Popup trigger={<Button color="yellow" icon='question' onClick={() => this.sendRemoteCommand("client-question")} />} content='Set/Unset question' inverted />
+                                      </Segment>
+                                      : null
+                              }
+
+                              <Segment textAlign='center' className="group_list" raised>
+                                  <Table selectable compact='very' basic structured className="admin_table" unstackable>
+                                      <Table.Body>
+                                          <Table.Row disabled positive>
+                                              <Table.Cell colSpan={3} textAlign='center'>Users:</Table.Cell>
+                                          </Table.Row>
+                                          <Table.Row disabled>
+                                              <Table.Cell width={10}>Title</Table.Cell>
+                                              <Table.Cell width={1}>ST</Table.Cell>
+                                          </Table.Row>
+                                          {users_grid}
+                                      </Table.Body>
+                                  </Table>
                               </Segment>
-                          <Segment textAlign='center' className="group_list" raised>
-                              <Table selectable compact='very' basic structured className="admin_table" unstackable>
-                                  <Table.Body>
-                                      <Table.Row disabled positive>
-                                          <Table.Cell colSpan={3} textAlign='center'>Users:</Table.Cell>
-                                      </Table.Row>
-                                      <Table.Row disabled>
-                                          <Table.Cell width={10}>Title</Table.Cell>
-                                          <Table.Cell width={1}>ST</Table.Cell>
-                                      </Table.Row>
-                                      {users_grid}
-                                  </Table.Body>
-                              </Table>
-                          </Segment>
                           </Segment.Group>
                       </Grid.Column>
                       <Grid.Column largeScreen={9}>
@@ -703,13 +766,17 @@ class AdminRoot extends Component {
                   </Grid.Row>
               </Grid>
 
-              <ChatBox user={user}
-                       rooms={rooms}
-                       selected_room={current_room}
-                       selected_user={feed_user}
-                       gateways={gateways}
-                       onChatRoomsInitialized={this.onChatRoomsInitialized}
-              />
+              {
+                  this.isAllowed("admin") ?
+                      <ChatBox user={user}
+                               rooms={rooms}
+                               selected_room={current_room}
+                               selected_user={feed_user}
+                               gateways={gateways}
+                               onChatRoomsInitialized={this.onChatRoomsInitialized}/>
+                      : null
+              }
+
           </Segment>
       );
 
