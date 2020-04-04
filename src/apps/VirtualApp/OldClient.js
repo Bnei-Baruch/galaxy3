@@ -68,7 +68,7 @@ class OldClient extends Component {
     if (isMobile) {
       window.location = '/userm';
     } else {
-      let {user} = this.state;
+      const user  = Object.assign({}, this.state.user);
       const { t } = this.props;
       localStorage.setItem('question', false);
       localStorage.setItem('sound_test', false);
@@ -78,13 +78,12 @@ class OldClient extends Component {
       let browser = platform.parse(system);
       if (/Safari|Firefox|Chrome/.test(browser.name)) {
         geoInfo(`${GEO_IP_INFO}`, data => {
-          user.ip = data ? data.ip : '127.0.0.1';
+          user.ip     = data ? data.ip : '127.0.0.1';
           user.system = system;
           if (!data) {
             alert(t('oldClient.failGeoInfo'));
           }
-
-          this.setState({geoinfo: !!data});
+          this.setState({ user, geoinfo: !!data });
           this.getRoomList(user);
         });
       } else {
@@ -96,13 +95,15 @@ class OldClient extends Component {
 
   initClient = (user, error) => {
     const { t } = this.props;
-    if(this.state.janus)
-      this.state.janus.destroy();
+    if (this.state.janus) {
+      this.janus.destroy();
+    }
     initJanus(janus => {
       // Check if unified plan supported
       if (Janus.unifiedPlan) {
-        user.session = janus.getSessionId();
-        this.setState({janus, user});
+        const u   = Object.assign({}, user);
+        u.session = janus.getSessionId();
+        this.setState({ janus, user: u });
         this.chat.initChat(janus);
         this.initVideoRoom(error);
       } else {
@@ -138,7 +139,7 @@ class OldClient extends Component {
       } else if (video) {
         alert(t('oldClient.videoNotDetected'));
         this.setState({ cammuted: true, video_device: null });
-        //Try to get video fail reson
+        //Try to get video fail reason
         testDevices(true, false, steam => {
         });
         // Right now if we get some problem with video device the - enumerateDevices()
@@ -234,35 +235,36 @@ class OldClient extends Component {
 
   getRoomList = (user) => {
     geoInfo('rooms.json', groups => {
-      this.setState({groups});
-      const {women,selected_room} = this.state;
-      let rooms = groups.filter(r => /W\./i.test(r.description) === women);
-      this.setState({groups,rooms});
+      const { women, selected_room } = this.state;
+      let rooms                      = groups.filter(r => /W\./i.test(r.description) === women);
+      this.setState({ groups, rooms });
       if (selected_room !== '') {
-        let room   = rooms.find(r => r.room === selected_room);
-        let name   = room.description;
-        user.room  = selected_room;
-        user.janus  = room.janus;
-        user.group = name;
-        this.setState({user,name});
+        const room = rooms.find(r => r.room === selected_room);
+        const name = room.description;
+        const u    = Object.assign({}, user);
+        u.room     = selected_room;
+        u.janus    = room.janus;
+        u.group    = name;
+        this.setState({ user: u, name });
       }
-      this.initClient(user, false)
+      this.initClient(user, false);
     });
   };
 
   selectRoom = (roomid) => {
-    const { rooms, user } = this.state;
-    let room              = rooms.find(r => r.room === roomid);
-    let name              = room.description;
+    const { rooms } = this.state;
+    const user      = Object.assign({}, this.state.user);
+    const room      = rooms.find(r => r.room === roomid);
+    const name      = room.description;
     if (this.state.room === roomid) {
       return;
     }
-    user.room  = roomid;
-    user.group = name;
-    let reconnect = user.janus && user.janus !== room.janus;
-    user.janus  = room.janus;
+    user.room       = roomid;
+    user.group      = name;
+    const reconnect = user.janus && user.janus !== room.janus;
+    user.janus      = room.janus;
     this.setState({ user, selected_room: roomid, name }, () => {
-      if(reconnect) {
+      if (reconnect) {
         this.setState({ delay: true });
         this.initClient(user, false);
       }
@@ -279,7 +281,17 @@ class OldClient extends Component {
     this.chat.exitChatRoom(room);
     let pl = { textroom: 'leave', transaction: Janus.randomString(12), 'room': PROTOCOL_ROOM };
     localStorage.setItem('question', false);
-    this.setState({ muted: false, cammuted: false, mystream: null, room: '', selected_room: (reconnect ? room : ''), feeds: [], mids: [], remoteFeed: null, question: false });
+    this.setState({
+      muted: false,
+      cammuted: false,
+      mystream: null,
+      room: '',
+      selected_room: (reconnect ? room : ''),
+      feeds: [],
+      mids: [],
+      remoteFeed: null,
+      question: false,
+    });
     protocol.data({
       text: JSON.stringify(pl),
       success: () => {
@@ -400,9 +412,15 @@ class OldClient extends Component {
         Janus.log(' :: My handle: ', videoroom);
         Janus.log('Plugin attached! (' + videoroom.getPlugin() + ', id=' + videoroom.getId() + ')');
         Janus.log('  -- This is a publisher/manager');
-        let { user } = this.state;
-        user.handle                 = videoroom.getId();
-        this.setState({ videoroom, user, remoteFeed: null, protocol: null, delay: false });
+        const user  = Object.assign({}, this.state.user);
+        user.handle = videoroom.getId();
+        this.setState({
+          videoroom: videoroom,
+          user,
+          remoteFeed: null,
+          protocol: null,
+          delay: false,
+        });
         this.initDevices(true);
         if (reconnect) {
           setTimeout(() => {
@@ -468,10 +486,11 @@ class OldClient extends Component {
   };
 
   onRoomData = (data) => {
-    let { feeds, users } = this.state;
-    let rfid             = users[data.id].rfid;
-    let camera           = data.camera;
-    let question         = data.question;
+    let { users } = this.state;
+    const feeds   = Object.assign([], this.state.feeds);
+    let rfid      = users[data.id].rfid;
+    let camera    = data.camera;
+    let question  = data.question;
     for (let i = 0; i < feeds.length; i++) {
       if (feeds[i] && feeds[i].id === rfid) {
         feeds[i].cammute  = !camera;
@@ -526,11 +545,12 @@ class OldClient extends Component {
     let event = msg['videoroom'];
     if (event !== undefined && event !== null) {
       if (event === 'joined') {
-        let { user, selected_room, protocol, video_device } = this.state;
-        let myid                                            = msg['id'];
-        let mypvtid                                         = msg['private_id'];
-        user.rfid                                           = myid;
-        user.timestamp                                      = Date.now();
+        let { selected_room, protocol, video_device } = this.state;
+        const user                                    = Object.assign({}, this.state.user);
+        let myid                                      = msg['id'];
+        let mypvtid                                   = msg['private_id'];
+        user.rfid                                     = myid;
+        user.timestamp                                = Date.now();
         this.setState({ user, myid, mypvtid });
         let pmsg = { type: 'enter', status: true, room: selected_room, user };
         Janus.log('Successfully joined room ' + msg['room'] + ' with ID ' + myid);
@@ -538,10 +558,12 @@ class OldClient extends Component {
         this.publishOwnFeed(video_device !== null);
         // Any new feed to attach to?
         if (msg['publishers'] !== undefined && msg['publishers'] !== null) {
-          let list                   = msg['publishers'];
+          let list          = Object.assign([], msg['publishers']);
           //FIXME:  Tmp fix for black screen in room caoused by feed with video_codec = none
-          let feeds                  = list.filter(feeder => JSON.parse(feeder.display).role === 'user' && feeder.video_codec !== 'none');
-          let { feedStreams, users } = this.state;
+          let feeds         = list.filter(feeder => JSON.parse(feeder.display).role === 'user' && feeder.video_codec !== 'none');
+          const feedStreams = Object.assign([], this.state.feedStreams);
+          const users       = Object.assign([], this.state.users);
+
           Janus.log(':: Got Pulbishers list: ', feeds);
           if (feeds.length > 15) {
             alert(t('oldClient.maxUsersInRoom'));
@@ -578,8 +600,8 @@ class OldClient extends Component {
           }
         }
       } else if (event === 'talking') {
-        let { feeds } = this.state;
-        let id        = msg['id'];
+        const feeds = Object.assign([], this.state.feeds);
+        const id    = msg['id'];
         Janus.log('User: ' + id + ' - start talking');
         for (let i = 0; i < feeds.length; i++) {
           if (feeds[i] && feeds[i].id === id) {
@@ -588,8 +610,8 @@ class OldClient extends Component {
         }
         this.setState({ feeds });
       } else if (event === 'stopped-talking') {
-        let { feeds } = this.state;
-        let id        = msg['id'];
+        const feeds = Object.assign([], this.state.feeds);
+        const id    = msg['id'];
         Janus.log('User: ' + id + ' - stop talking');
         for (let i = 0; i < feeds.length; i++) {
           if (feeds[i] && feeds[i].id === id) {
@@ -601,8 +623,10 @@ class OldClient extends Component {
         // The room has been destroyed
         Janus.warn('The room has been destroyed!');
       } else if (event === 'event') {
+
         // Any info on our streams or a new feed to attach to?
-        let { feedStreams, user, myid } = this.state;
+        let { user, myid } = this.state;
+        const feedStreams  = Object.assign([], this.state.feedStreams);
         if (msg['streams'] !== undefined && msg['streams'] !== null) {
           let streams = msg['streams'];
           for (let i in streams) {
@@ -610,17 +634,18 @@ class OldClient extends Component {
             stream['id']      = myid;
             stream['display'] = user;
           }
-          feedStreams[myid] = { id: myid, display: user, streams: streams };
+          feedStreams[myid] = { id: myid, display: user, streams };
           this.setState({ feedStreams });
         } else if (msg['publishers'] !== undefined && msg['publishers'] !== null) {
-          let feed                          = msg['publishers'];
-          let { feeds, feedStreams, users } = this.state;
+          let feed    = Object.assign({}, msg['publishers']);
+          const feeds = Object.assign([], this.state.feeds);
+          const users = Object.assign([], this.state.users);
           Janus.debug('Got a list of available publishers/feeds:');
           Janus.log(feed);
           let subscription = [];
           for (let f in feed) {
-            let id      = feed[f]['id'];
-            let display = JSON.parse(feed[f]['display']);
+            const id      = feed[f]['id'];
+            const display = JSON.parse(feed[f]['display']);
             if (display.role !== 'user') {
               return;
             }
@@ -654,12 +679,11 @@ class OldClient extends Component {
           }
         } else if (msg['leaving'] !== undefined && msg['leaving'] !== null) {
           // One of the publishers has gone away?
-          var leaving = msg['leaving'];
+          const leaving = msg['leaving'];
           Janus.log('Publisher left: ' + leaving);
           this.unsubscribeFrom(leaving);
-
         } else if (msg['unpublished'] !== undefined && msg['unpublished'] !== null) {
-          let unpublished = msg['unpublished'];
+          const unpublished = msg['unpublished'];
           Janus.log('Publisher left: ' + unpublished);
           if (unpublished === 'ok') {
             // That's us
@@ -667,7 +691,6 @@ class OldClient extends Component {
             return;
           }
           this.unsubscribeFrom(unpublished);
-
         } else if (msg['error'] !== undefined && msg['error'] !== null) {
           if (msg['error_code'] === 426) {
             Janus.log('This is a no such room');
@@ -690,8 +713,8 @@ class OldClient extends Component {
         plugin: 'janus.plugin.videoroom',
         opaqueId: 'remotefeed_user',
         success: (pluginHandle) => {
-          let remoteFeed = pluginHandle;
-          Janus.log('Plugin attached! (' + remoteFeed.getPlugin() + ', id=' + remoteFeed.getId() + ')');
+          const remoteFeed = pluginHandle;
+          Janus.log('2 Plugin attached! (' + remoteFeed.getPlugin() + ', id=' + remoteFeed.getId() + ')');
           Janus.log('  -- This is a multistream subscriber', remoteFeed);
           this.setState({ remoteFeed, creatingFeed: false });
           // We wait for the plugin to send us an offer
@@ -714,9 +737,8 @@ class OldClient extends Component {
         onmessage: (msg, jsep) => {
           Janus.log(' ::: Got a message (subscriber) :::');
           Janus.log(msg);
-          let event = msg['videoroom'];
+          const event = msg['videoroom'];
           Janus.log('Event: ' + event);
-          let { remoteFeed } = this.state;
           if (msg['error'] !== undefined && msg['error'] !== null) {
             Janus.debug('-- ERROR: ' + msg['error']);
           } else if (event !== undefined && event !== null) {
@@ -731,7 +753,7 @@ class OldClient extends Component {
           }
           if (msg['streams']) {
             // Update map of subscriptions by mid
-            let { mids } = this.state;
+            const mids = Object.assign([], this.state.mids);
             for (let i in msg['streams']) {
               let mindex   = msg['streams'][i]['mid'];
               //let feed_id = msg["streams"][i]["feed_id"];
@@ -740,6 +762,7 @@ class OldClient extends Component {
             this.setState({ mids });
           }
           if (jsep !== undefined && jsep !== null) {
+            const { remoteFeed } = this.state;
             Janus.debug('Handling SDP as well...');
             Janus.debug(jsep);
             // Answer and attach
@@ -772,8 +795,9 @@ class OldClient extends Component {
           }
           Janus.log('Remote track (mid=' + mid + ') ' + (on ? 'added' : 'removed') + ':', track);
           // Which publisher are we getting on this mid?
-          let { mids, feedStreams } = this.state;
-          let feed                  = mids[mid].feed_id;
+          let { mids }      = this.state;
+          const feedStreams = Object.assign([], this.state.feedStreams);
+          let feed          = mids[mid].feed_id;
           Janus.log(' >> This track is coming from feed ' + feed + ':', mid);
           // If we're here, a new track was added
           if (track.kind === 'audio' && on) {
@@ -841,7 +865,10 @@ class OldClient extends Component {
 
   unsubscribeFrom = (id) => {
     // Unsubscribe from this publisher
-    let { feeds, remoteFeed, users, feedStreams } = this.state;
+    const { remoteFeed } = this.state;
+    const feeds          = Object.assign([], this.state.feeds);
+    const users          = Object.assign([], this.state.users);
+    const feedStreams    = Object.assign([], this.state.feedStreams);
     for (let i = 0; i < feeds.length; i++) {
       if (feeds[i].id === id) {
         Janus.log('Feed ' + feeds[i] + ' (' + id + ') has left the room, detaching');
@@ -864,9 +891,12 @@ class OldClient extends Component {
   };
 
   sendDataMessage = (key, value) => {
-    let { videoroom, user } = this.state;
-    user[key]               = value;
-    var message             = JSON.stringify(user);
+    const user = Object.assign({}, this.state.user);
+    user[key]  = value;
+    this.setState({ user });
+
+    const { videoroom } = this.state;
+    const message       = JSON.stringify(user);
     Janus.log(':: Sending message: ', message);
     videoroom.data({ text: message });
   };
@@ -876,7 +906,8 @@ class OldClient extends Component {
     setTimeout(() => {
       this.setState({ delay: false });
     }, 3000);
-    let { janus, videoroom, selected_room, user, username_value, women, tested, video_device } = this.state;
+    let { janus, videoroom, selected_room, username_value, women, tested, video_device } = this.state;
+    let user                                                                             = Object.assign({}, this.state.user);
     localStorage.setItem('room', selected_room);
     //This name will see other users
     user.display    = username_value || user.name;
@@ -884,13 +915,15 @@ class OldClient extends Component {
     user.question   = false;
     user.camera     = video_device !== null;
     user.sound_test = reconnect ? JSON.parse(localStorage.getItem('sound_test')) : false;
+    this.setState({ user });
     localStorage.setItem('username', user.display);
     initGxyProtocol(janus, user, protocol => {
       this.setState({ protocol });
       // Send question event if before join it was true
       if (reconnect && JSON.parse(localStorage.getItem('question'))) {
         user.question = true;
-        let msg       = { type: 'question', status: true, room: selected_room, user };
+        this.setState({ user });
+        let msg = { type: 'question', status: true, room: selected_room, user };
         setTimeout(() => {
           sendProtocolMessage(protocol, user, msg);
         }, 5000);
@@ -899,7 +932,7 @@ class OldClient extends Component {
       Janus.log('-- :: It\'s protocol public message: ', ondata);
       const { type, error_code, id, room } = ondata;
       if (type === 'error' && error_code === 420) {
-        alert(this.props.t('oldClient.Error') + ondata.error);
+        alert(this.props.t('oldClient.error') + ondata.error);
         this.state.protocol.hangup();
       } else if (type === 'joined') {
         let register = { 'request': 'join', 'room': selected_room, 'ptype': 'publisher', 'display': JSON.stringify(user) };
@@ -921,7 +954,6 @@ class OldClient extends Component {
       } else if (type === 'video-mute' && user.id === id) {
         this.camMute();
       } else if (type === 'sound_test' && user.id === id) {
-        let { user }    = this.state;
         user.sound_test = true;
         localStorage.setItem('sound_test', true);
         this.setState({ user });
@@ -933,12 +965,13 @@ class OldClient extends Component {
 
   handleQuestion = () => {
     //TODO: only when shidur user is online will be avelable send question event, so we need to add check
-    let { protocol, user, room, question } = this.state;
+    const { protocol, room, question } = this.state;
+    const user                         = Object.assign({}, this.state.user);
     localStorage.setItem('question', !question);
-    user.question = !question;
-    let msg       = { type: 'question', status: !question, room, user };
+    let msg = { type: 'question', status: !question, room, user };
     sendProtocolMessage(protocol, user, msg);
-    this.setState({ question: !question, delay: true });
+    user.question = !question;
+    this.setState({ user, question: !question, delay: true });
     setTimeout(() => {
       this.setState({ delay: false });
     }, 3000);
@@ -989,15 +1022,18 @@ class OldClient extends Component {
     this.setState({ count: this.state.count + 1 });
   };
 
+  mapDevices = (devices) => {
+    return devices.map(({ label, deviceId }, i) => {
+      return ({ key: i, text: label, value: deviceId });
+    });
+  };
+
   render() {
-    const { video_setting, audio, rooms, room, audio_devices, video_devices, video_device, audio_device, muted, cammuted, delay, mystream, selected_room, count, question, selftest, tested, women, geoinfo, myid } = this.state;
+    const { janus, video_setting, audio, rooms, room, audio_devices, video_devices, video_device, audio_device, muted, cammuted, delay, mystream, selected_room, count, question, selftest, tested, women, geoinfo, myid, feeds, visible, username_value, user, shidur } = this.state;
 
     const { t, i18n } = this.props;
     const width       = '134';
     const height      = '100';
-    const autoPlay    = true;
-    const controls    = false;
-    //const vmuted = true;
 
     //let iOS = ['iPad', 'iPhone', 'iPod'].indexOf(navigator.platform) >= 0;
 
@@ -1007,78 +1043,66 @@ class OldClient extends Component {
       //return ({ key: i, text: description, value: room, description: num_participants.toString() });
     });
 
-    let adevices_list = audio_devices.map((device, i) => {
-      const { label, deviceId } = device;
-      return ({ key: i, text: label, value: deviceId });
-    });
-
-    let vdevices_list = video_devices.map((device, i) => {
-      const { label, deviceId } = device;
-      return ({ key: i, text: label, value: deviceId });
-    });
+    let adevices_list = this.mapDevices(audio_devices);
+    let vdevices_list = this.mapDevices(video_devices);
 
     let otherFeedHasQuestion = false;
-    let videos               = this.state.feeds.map((feed) => {
-      if (feed) {
-        let id               = feed.id;
-        let talk             = feed.talk;
-        let question         = feed.question;
-        let cammute          = feed.cammute;
-        //let name = feed.display.name;
-        let display_name     = feed.display.display;
-        otherFeedHasQuestion = otherFeedHasQuestion || (question && id !== myid);
-        return (<div className="video"
-                     key={'v' + id}
-                     ref={'video' + id}
-                     id={'video' + id}>
-          <div className={classNames('video__overlay', { 'talk': talk })}>
-            {question ? <div className="question">
-              <svg viewBox="0 0 50 50">
-                <text x="25" y="25" textAnchor="middle" alignmentBaseline="central" dominantBaseline="central">&#xF128;</text>
-              </svg>
-            </div> : ''}
-            <div className="video__title">{!talk ? <Icon name="microphone slash" size="small" color="red" /> : ''}{display_name}</div>
-          </div>
-          <svg className={classNames('nowebcam', { 'hidden': !cammute })} viewBox="0 0 32 18" preserveAspectRatio="xMidYMid meet">
-            <text x="16" y="9" textAnchor="middle" alignmentBaseline="central" dominantBaseline="central">&#xf2bd;</text>
-          </svg>
-          <video
-            key={'v' + id}
-            ref={'remoteVideo' + id}
-            id={'remoteVideo' + id}
-            width={width}
-            height={height}
-            autoPlay={autoPlay}
-            controls={controls}
-            muted={true}
-            playsInline={true} />
-          <audio
-            key={'a' + id}
-            ref={'remoteAudio' + id}
-            id={'remoteAudio' + id}
-            autoPlay={autoPlay}
-            controls={controls}
-            playsInline={true} />
-        </div>);
-      }
-      return true;
+    let videos               = feeds.filter(feed => feed).map(feed => {
+      const { id, talk, question, cammute, display } = feed;
+
+      let display_name     = display.display;
+      otherFeedHasQuestion = otherFeedHasQuestion || (question && id !== myid);
+
+      return (<div className="video"
+                   key={'v' + id}
+                   ref={'video' + id}
+                   id={'video' + id}>
+        <div className={classNames('video__overlay', { 'talk': talk })}>
+          {question ? <div className="question">
+            <svg viewBox="0 0 50 50">
+              <text x="25" y="25" textAnchor="middle" alignmentBaseline="central" dominantBaseline="central">&#xF128;</text>
+            </svg>
+          </div> : ''}
+          <div className="video__title">{!talk ? <Icon name="microphone slash" size="small" color="red" /> : ''}{display_name}</div>
+        </div>
+        <svg className={classNames('nowebcam', { 'hidden': !cammute })} viewBox="0 0 32 18" preserveAspectRatio="xMidYMid meet">
+          <text x="16" y="9" textAnchor="middle" alignmentBaseline="central" dominantBaseline="central">&#xf2bd;</text>
+        </svg>
+        <video
+          key={'v' + id}
+          ref={'remoteVideo' + id}
+          id={'remoteVideo' + id}
+          width={width}
+          height={height}
+          autoPlay={true}
+          controls={false}
+          muted={true}
+          playsInline={true} />
+        <audio
+          key={'a' + id}
+          ref={'remoteAudio' + id}
+          id={'remoteAudio' + id}
+          autoPlay={true}
+          controls={false}
+          playsInline={true} />
+      </div>);
     });
 
     let l = (<Label key='Carbon' floating size='mini' color='red'>{count}</Label>);
 
-    let content = (<div className={classNames('vclient', { 'vclient--chat-open': this.state.visible })}>
+    let content = (<div className={classNames('vclient', { 'vclient--chat-open': visible })}>
       <div className="vclient__toolbar">
         <Input
           iconPosition='left'
           placeholder={t('oldClient.yourName')}
-          value={this.state.username_value}
+          value={username_value}
           onChange={(v, { value }) => this.setState({ username_value: value })}
           action>
-          <input iconPosition='left' disabled={mystream} />
+          <input iconPosition='left' disabled={!!mystream} />
           <Icon name='user circle' />
           <Select
             search
-            disabled={audio_device === null || mystream}
+            disabled={audio_device === null || !!mystream}
             error={!selected_room}
             placeholder={t('oldClient.selectRoom')}
             value={selected_room}
@@ -1092,19 +1116,19 @@ class OldClient extends Component {
         </Input>
         <Menu icon='labeled' secondary size="mini">
           <Menu.Item disabled={!mystream}
-                     onClick={() => this.setState({ visible: !this.state.visible, count: 0 })}>
+                     onClick={() => this.setState({ visible: !visible, count: 0 })}>
             <Icon name="comments" />
-            {t(this.state.visible ? 'oldClient.closeChat' : 'oldClient.openChat')}
+            {t(visible ? 'oldClient.closeChat' : 'oldClient.openChat')}
             {count > 0 ? l : ''}
           </Menu.Item>
           <Menu.Item disabled={!audio || video_device === null || !geoinfo || !mystream || delay || otherFeedHasQuestion} onClick={this.handleQuestion}>
             <Icon color={question ? 'green' : ''} name='question' />
             {t('oldClient.askQuestion')}
           </Menu.Item>
-          <Menu.Item disabled={this.state.shidur} onClick={this.showShidur}>
+          <Menu.Item disabled={shidur} onClick={this.showShidur}>
             <Icon name="tv" />
             {t('oldClient.openBroadcast')}
-            {this.state.shidur ?
+            {shidur ?
               <NewWindow
                 url='https://galaxy.kli.one/gxystr'
                 features={{ width: '725', height: '635', left: '200', top: '200', location: 'no' }}
@@ -1174,7 +1198,9 @@ class OldClient extends Component {
           <Help t={t} />
         </Menu>
       </div>
-      <div basic className="vclient__main" onDoubleClick={() => this.setState({ visible: !this.state.visible })}>
+      <div className="vclient__main" onDoubleClick={() => this.setState({
+        visible: !visible
+      })}>
         <div className="vclient__main-wrapper">
           <div className="videos-panel">
             <div className="videos">
@@ -1194,7 +1220,7 @@ class OldClient extends Component {
                     }
                     <div className="video__title">
                       {muted ? <Icon name="microphone slash" size="small"
-                                     color="red" /> : ''}{this.state.username_value || this.state.user.name}
+                                     color="red" /> : ''}{username_value || user.name}
                     </div>
                   </div>
                   <svg className={classNames('nowebcam', { 'hidden': !cammuted })} viewBox="0 0 32 18"
@@ -1208,8 +1234,8 @@ class OldClient extends Component {
                     id="localVideo"
                     width={width}
                     height={height}
-                    autoPlay={autoPlay}
-                    controls={controls}
+                    autoPlay={true}
+                    controls={false}
                     muted={true}
                     playsInline={true} />
 
@@ -1223,10 +1249,10 @@ class OldClient extends Component {
             ref={chat => {
               this.chat = chat;
             }}
-            visible={this.state.visible}
-            janus={this.state.janus}
+            visible={visible}
+            janus={janus}
             room={room}
-            user={this.state.user}
+            user={user}
             onNewMsg={this.onNewMsg} />
         </div>
       </div>
