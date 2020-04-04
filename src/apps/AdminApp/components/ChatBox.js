@@ -17,6 +17,7 @@ class ChatBox extends Component {
             selected_user: null,
             selected_room: null,
             rooms:[],
+            onChatRoomsInitialized: noop
     */
 
     state = {
@@ -49,14 +50,19 @@ class ChatBox extends Component {
         const {gateways} = this.props;
         console.log("[Admin] [ChatBox] initGateways", gateways);
 
-        Object.values(gateways).forEach(gateway => {
+        Promise.all(Object.values(gateways).map(gateway => {
             if (!gateway.chatroom) {
                 gateway.initChatRoom(data => this.onChatData(gateway, data))
                     .catch(err => {
                         console.error("[Admin] [ChatBox] gateway.initChatRoom error", gateway.name, err);
                     });
             }
-        });
+        }))
+            .then(() => {
+                if (!!this.props.onChatRoomsInitialized) {
+                    this.props.onChatRoomsInitialized();
+                }
+            });
     };
 
     onKeyPressed = (e) => {

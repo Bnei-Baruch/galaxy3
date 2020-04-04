@@ -549,9 +549,9 @@ class GxyJanus {
                 handle.send({
                     message,
                     ...extraParams,
-                    success: () => {
+                    success: (...resp) => {
                         this.debug(`[${component}] ${action} success`, message);
-                        resolve();
+                        resolve(...resp);
                     },
                     error: (err) => {
                         this.error(`[${component}] ${action} error`, message, err);
@@ -571,9 +571,9 @@ class GxyJanus {
                 this.debug(`[${component}] data`, payload);
                 handle.data({
                     text: JSON.stringify(payload),
-                    success: () => {
+                    success: (...resp) => {
                         this.debug(`[${component}] data success`, payload);
-                        resolve();
+                        resolve(...resp);
                     },
                     error: (err) => {
                         this.error(`[${component}] data error`, payload, err);
