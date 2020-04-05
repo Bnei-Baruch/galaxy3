@@ -3,6 +3,7 @@ import {
     JANUS_ADMIN_GXY,
     JANUS_ADMIN_VRT,
     JANUS_SRV_GXY3,
+    JANUS_SRV_GXY2,
     JANUS_SRV_GXY1,
     ADMIN_SECRET,
     STUN_SRV_GXY,
@@ -16,7 +17,7 @@ export const initJanus = (cb,er,gxy) => {
         debug: process.env.NODE_ENV !== 'production' ? ["log","error"] : ["error"],
         callback: () => {
             let janus = new Janus({
-                server: gxy === "gxy1" ? JANUS_SRV_GXY1 : JANUS_SRV_GXY3,
+                server: gxy === "gxy1" ? JANUS_SRV_GXY1 : gxy === "gxy2" ? JANUS_SRV_GXY2 : JANUS_SRV_GXY3,
                 iceServers: [{urls: STUN_SRV_GXY}],
                 success: () => {
                     Janus.log(" :: Connected to JANUS");

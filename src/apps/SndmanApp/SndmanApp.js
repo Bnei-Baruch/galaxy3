@@ -15,6 +15,7 @@ class SndmanApp extends Component {
 
     state = {
         gxy1: {janus: null, protocol: null, fwdhandle: null},
+        gxy2: {janus: null, protocol: null, fwdhandle: null},
         gxy3: {janus: null, protocol: null, fwdhandle: null},
         group: "",
         groups: [],
@@ -49,7 +50,7 @@ class SndmanApp extends Component {
     };
 
     initApp = (user) => {
-        let {gxy1,gxy3} = this.state;
+        let {gxy1,gxy2,gxy3} = this.state;
 
         // Init GXY1
         initJanus(janus => {
@@ -62,17 +63,30 @@ class SndmanApp extends Component {
                 if(ondata.type === "error" && ondata.error_code === 420) {
                     alert(ondata.error);
                     gxy1.protocol.hangup();
-                } else if(ondata.type === "joined") {
-                    // initDataForward(janus, fwdhandle => {
-                    //     gxy1.fwdhandle = fwdhandle;
-                    //     this.setState({gxy1});
-                    // })
                 }
                 this.onProtocolData(ondata, "gxy1");
             });
         },er => {
             Janus.error(er);
         }, "gxy1");
+
+        // Init GXY2
+        initJanus(janus => {
+            gxy2.janus = janus;
+            user.id = "sndman-gxy2";
+            initGxyProtocol(janus, user, protocol => {
+                gxy2.protocol = protocol;
+            }, ondata => {
+                Janus.log("GXY2 :: It's protocol public message: ", ondata);
+                if(ondata.type === "error" && ondata.error_code === 420) {
+                    alert(ondata.error);
+                    gxy2.protocol.hangup();
+                }
+                this.onProtocolData(ondata, "gxy2");
+            });
+        },er => {
+            Janus.error(er);
+        }, "gxy2");
 
         // Init GXY3
         initJanus(janus => {

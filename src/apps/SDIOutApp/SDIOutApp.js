@@ -18,6 +18,7 @@ class SDIOutApp extends Component {
         group: null,
         room: null,
         gxy1: {janus: null, protocol: null},
+        gxy2: {janus: null, protocol: null},
         gxy3: {janus: null, protocol: null},
         mids: [],
         gxyhandle: null,
@@ -37,7 +38,7 @@ class SDIOutApp extends Component {
     };
 
     componentDidMount() {
-        let {user,gxy1,gxy3} = this.state;
+        let {user,gxy1,gxy2,gxy3} = this.state;
 
         // Init GXY1
         initJanus(janus => {
@@ -63,6 +64,28 @@ class SDIOutApp extends Component {
         }, er => {
             Janus.error(er);
         }, "gxy1");
+
+        // Init GXY2
+        initJanus(janus => {
+            gxy2.janus = janus;
+            user.id = "sdiout-gxy2";
+            initGxyProtocol(janus, user, protocol => {
+                gxy2.protocol = protocol;
+                this.setState({gxy2});
+            }, ondata => {
+                Janus.log("GXY2 :: It's protocol public message: ", ondata);
+                if(ondata.type === "error" && ondata.error_code === 420) {
+                    console.log(ondata.error + " - Reload after 10 seconds");
+                    this.state.gxy2.protocol.hangup();
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 10000);
+                }
+                this.onProtocolData(ondata, "gxy2");
+            });
+        }, er => {
+            Janus.error(er);
+        }, "gxy2");
 
         // Init GXY3
         initJanus(janus => {
