@@ -96,7 +96,7 @@ class OldClient extends Component {
   initClient = (user, error) => {
     const { t } = this.props;
     if (this.state.janus) {
-      this.janus.destroy();
+      this.state.janus.destroy();
     }
     initJanus(janus => {
       // Check if unified plan supported
