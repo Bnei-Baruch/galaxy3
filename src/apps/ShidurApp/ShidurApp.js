@@ -43,7 +43,7 @@ class ShidurApp extends Component {
             user.session = 0;
             getState('galaxy/users', (users) => {
                 this.setState({user,users});
-                setInterval(() => this.getRoomList(), 1000 );
+                setInterval(() => this.getRoomList(), 2000 );
                 this.initGalaxy(user);
             });
         } else {

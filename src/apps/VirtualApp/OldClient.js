@@ -550,7 +550,6 @@ class OldClient extends Component {
         let myid                                      = msg['id'];
         let mypvtid                                   = msg['private_id'];
         user.rfid                                     = myid;
-        user.timestamp                                = Date.now();
         this.setState({ user, myid, mypvtid });
         let pmsg = { type: 'enter', status: true, room: selected_room, user };
         Janus.log('Successfully joined room ' + msg['room'] + ' with ID ' + myid);
@@ -915,6 +914,7 @@ class OldClient extends Component {
     user.question   = false;
     user.camera     = video_device !== null;
     user.sound_test = reconnect ? JSON.parse(localStorage.getItem('sound_test')) : false;
+    user.timestamp  = Date.now();
     this.setState({ user });
     localStorage.setItem('username', user.display);
     initGxyProtocol(janus, user, protocol => {
