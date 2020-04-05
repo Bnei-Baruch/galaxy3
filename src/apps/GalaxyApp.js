@@ -27,7 +27,7 @@ class GalaxyApp extends Component {
         const opt = roles.map((role,i) => {
             switch (role) {
                 case "bb_user":
-                    return (<Button key={i} size='massive' color='green' onClick={() => window.open("https://galaxy.kli.one/stream")} >Stream</Button>);
+                    //return (<Button key={i} size='massive' color='green' onClick={() => window.open("https://galaxy.kli.one/stream")} >Stream</Button>);
                 case "gxy_user":
                         return (<Button key={i} size='massive' color='green' onClick={() => window.open("https://galaxy.kli.one/user","_self")} >Galaxy</Button>);
                 case "gxy_shidur":
