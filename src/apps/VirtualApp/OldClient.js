@@ -83,7 +83,7 @@ class OldClient extends Component {
           if (!data) {
             alert(t('oldClient.failGeoInfo'));
           }
-          this.setState({ user, geoinfo: !!data });
+          this.setState({ geoinfo: !!data });
           this.getRoomList(user);
         });
       } else {
@@ -101,9 +101,8 @@ class OldClient extends Component {
     initJanus(janus => {
       // Check if unified plan supported
       if (Janus.unifiedPlan) {
-        const u   = Object.assign({}, user);
-        u.session = janus.getSessionId();
-        this.setState({ janus, user: u });
+        user.session = janus.getSessionId();
+        this.setState({ janus, user });
         this.chat.initChat(janus);
         this.initVideoRoom(error);
       } else {
@@ -207,32 +206,6 @@ class OldClient extends Component {
     }, 1000);
   };
 
-  // getRoomList = () => {
-  //   const { videoroom, women } = this.state;
-  //   if (videoroom) {
-  //     videoroom.send({
-  //       message: { request: 'list' },
-  //       success: (data) => {
-  //         Janus.log(' :: Get Rooms List: ', data.list);
-  //         let filter = data.list.filter(r => /W\./i.test(r.description) === women);
-  //         filter.sort((a, b) => {
-  //           // if (a.num_participants > b.num_participants) return -1;
-  //           // if (a.num_participants < b.num_participants) return 1;
-  //           if (a.description > b.description) {
-  //             return 1;
-  //           }
-  //           if (a.description < b.description) {
-  //             return -1;
-  //           }
-  //           return 0;
-  //         });
-  //         this.setState({ rooms: filter });
-  //         this.getFeedsList(filter);
-  //       }
-  //     });
-  //   }
-  // };
-
   getRoomList = (user) => {
     geoInfo('rooms.json', groups => {
       const { women, selected_room } = this.state;
@@ -241,11 +214,10 @@ class OldClient extends Component {
       if (selected_room !== '') {
         const room = rooms.find(r => r.room === selected_room);
         const name = room.description;
-        const u    = Object.assign({}, user);
-        u.room     = selected_room;
-        u.janus    = room.janus;
-        u.group    = name;
-        this.setState({ user: u, name });
+        user.room     = selected_room;
+        user.janus    = room.janus;
+        user.group    = name;
+        this.setState({ name });
       }
       this.initClient(user, false);
     });
@@ -259,16 +231,17 @@ class OldClient extends Component {
     if (this.state.room === roomid) {
       return;
     }
+    this.setState({ selected_room: roomid, name });
     user.room       = roomid;
     user.group      = name;
     const reconnect = user.janus && user.janus !== room.janus;
     user.janus      = room.janus;
-    this.setState({ user, selected_room: roomid, name }, () => {
-      if (reconnect) {
-        this.setState({ delay: true });
-        this.initClient(user, false);
-      }
-    });
+    if (reconnect) {
+      this.setState({ delay: true });
+      this.initClient(user, false);
+    } else {
+      this.setState({ user });
+    }
   };
 
   exitRoom = (reconnect) => {
