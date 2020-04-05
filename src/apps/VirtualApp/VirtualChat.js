@@ -7,7 +7,6 @@ import { SHIDUR_ID } from '../../shared/consts';
 class VirtualChat extends Component {
 
   state = {
-    ...this.props,
     chatroom: null,
     input_value: '',
     messages: [],
@@ -15,6 +14,13 @@ class VirtualChat extends Component {
     room_chat: true,
     from: null,
   };
+
+  static getDerivedStateFromProps(props, state) {
+    return {
+      ...state,
+      ...props
+    }
+  }
 
   componentDidMount() {
     document.addEventListener('keydown', this.onKeyPressed);
