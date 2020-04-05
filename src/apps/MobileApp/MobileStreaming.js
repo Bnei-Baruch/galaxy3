@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import { Janus } from "../../lib/janus";
 import { Segment, Menu, Select, Button } from 'semantic-ui-react';
 //import VolumeSlider from "../../components/VolumeSlider";
-import {videos_options, audiog_options, gxycol, trllang, STUN_SRV_STR, JANUS_SRV_EURFR, GEO_IP_INFO} from "../../shared/consts";
+import {videos_options, audiog_options, gxycol, trllang, STUN_SRV_STR, JANUS_SRV_STR3, JANUS_SRV_STR4, GEO_IP_INFO} from "../../shared/consts";
 
 class MobileStreaming extends Component {
 
@@ -30,12 +30,7 @@ class MobileStreaming extends Component {
                             let {user} = this.state;
                             this.setState({user: {...info,...user}});
                             localStorage.setItem("mob_extip", info.ip);
-                            let server = `${JANUS_SRV_EURFR}`;
-                            // if (info.country_code === "IL") {
-                            //     server = 'https://v4g.kbb1.com/janustrl';
-                            // } else {
-                            //     server = (info.sessions > 400) ? 'https://jnsuk.kbb1.com/janustrl' : 'https://jnseur.kbb1.com/janustrl';
-                            // }
+                            let server = info && info.country === "IL" ? `${JANUS_SRV_STR4}` : `${JANUS_SRV_STR3}`;
                             this.initJanus(server);
                         }
                     );
