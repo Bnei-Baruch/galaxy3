@@ -4,8 +4,8 @@ import { I18nextProvider } from 'react-i18next';
 import i18n from 'i18next';
 
 import './i18n/i18n';
-import GalaxyApp from "./apps/GalaxyApp";
-// import OldClient from './apps/VirtualApp/OldClient';
+import GalaxyApp from './apps/GalaxyApp';
+import OldClient from './apps/VirtualApp/OldClient';
 // import MobileClient from "./apps/MobileApp/MobileClient";
 // import VirtualClient from "./apps/VirtualApp/VirtualClient";
 // import VirtualStreaming from "./apps/VirtualApp/VirtualStreaming";
@@ -25,8 +25,8 @@ class App extends Component {
   render() {
     return (
       <I18nextProvider i18n={i18n}>
-        <GalaxyApp />
-        {/*<OldClient />*/}
+        {!process.env.REACT_APP_LOCAL && <GalaxyApp />}
+        {process.env.REACT_APP_LOCAL && <OldClient />}
         {/*<MobileClient/>*/}
         {/*<VirtualClient />*/}
         {/* <VirtualStreaming/>*/}
