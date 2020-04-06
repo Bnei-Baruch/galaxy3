@@ -865,7 +865,7 @@ class OldClient extends Component {
   sendDataMessage = (key, value) => {
     const user = Object.assign({}, this.state.user);
     user[key]  = value;
-    //this.setState({ user });
+    this.setState({ user });
 
     const { videoroom } = this.state;
     const message       = JSON.stringify(user);
@@ -961,13 +961,15 @@ class OldClient extends Component {
   };
 
   camMute = () => {
-    let { videoroom, cammuted, protocol, user, room } = this.state;
+    let { videoroom, cammuted, protocol, room } = this.state;
+    const user = Object.assign({}, this.state.user);
     cammuted ? videoroom.unmuteVideo() : videoroom.muteVideo();
     this.setState({ cammuted: !cammuted, delay: true });
     setTimeout(() => {
       this.setState({ delay: false });
     }, 3000);
     this.sendDataMessage('camera', this.state.cammuted);
+    user.camera = cammuted;
     // Send to protocol camera status event
     let msg = { type: 'camera', status: cammuted, room, user };
     sendProtocolMessage(protocol, user, msg);
