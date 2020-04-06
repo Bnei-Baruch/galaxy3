@@ -6,17 +6,16 @@ import {client} from "../components/UserManager";
 class GalaxyApp extends Component {
 
     state = {
-        pass: false,
         user: null,
         roles: [],
     };
 
     checkPermission = (user) => {
-        let gxy_public = user.roles.filter(role => role === 'bb_user').length === 0;
-        if(!gxy_public) {
+        let gxy_user = user.roles.filter(role => /gxy_/.test(role)).length === 0;
+        if(!gxy_user) {
             this.setState({user, roles: user.roles});
         } else {
-            alert("Thank you for registering to the Galaxy system. We will grant you the access to the system soon.");
+            alert("Access denied.");
             client.signoutRedirect();
         }
     };
@@ -30,7 +29,7 @@ class GalaxyApp extends Component {
             if(role === "gxy_shidur") return (<Button key={i} size='massive' color='green' onClick={() => window.open("https://galaxy.kli.one/shidur","_self")} >Shidur</Button>);
             if(role === "gxy_sndman") return (<Button key={i} size='massive' color='green' onClick={() => window.open("https://galaxy.kli.one/sndman","_self")} >SoundMan</Button>);
             if(role.match(/^(gxy_admin|gxy_root|gxy_guest)$/)) return (<Button key={i} size='massive' color='green' onClick={() => window.open("https://galaxy.kli.one/admin","_self")} >Admin</Button>);
-            return false
+            return false;
         });
 
         return (
