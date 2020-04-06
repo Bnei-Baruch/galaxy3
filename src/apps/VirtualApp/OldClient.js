@@ -865,7 +865,7 @@ class OldClient extends Component {
   sendDataMessage = (key, value) => {
     const user = Object.assign({}, this.state.user);
     user[key]  = value;
-    this.setState({ user });
+    //this.setState({ user });
 
     const { videoroom } = this.state;
     const message       = JSON.stringify(user);
@@ -941,9 +941,9 @@ class OldClient extends Component {
     const { protocol, room, question } = this.state;
     const user                         = Object.assign({}, this.state.user);
     localStorage.setItem('question', !question);
+    user.question = !question;
     let msg = { type: 'question', status: !question, room, user };
     sendProtocolMessage(protocol, user, msg);
-    user.question = !question;
     this.setState({ user, question: !question, delay: true });
     setTimeout(() => {
       this.setState({ delay: false });
