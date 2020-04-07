@@ -1,7 +1,5 @@
 // Monitoring library to track connection stats.
-import {
-  MONITORING_BACKEND,
-} from "./consts";
+import monitoringAPI from "./monitoringAPI";
 
 const ONE_SECOND_IN_MS = 1000;
 const STORE_INTERVAL = 60 * ONE_SECOND_IN_MS; // Store for one minute in ms.
@@ -151,24 +149,17 @@ export const MonitoringData = class {
         data: this.storedData,
       };
       // Update backend.
-      fetch(`${MONITORING_BACKEND}/update`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', },
-        body: JSON.stringify(data),
-      }).then((response) => {
-        if (response.ok) {
-          this.fetchErrors = 0;
-          return response.json()
-        } else {
-          throw new Error(`Fetch error: ${response.status}`);
-        }
-      }).then((data) => {
-        this.lastUpdateTimestamp = lastTimestamp;
-      })
-      .catch((error) => {
-        console.error('Error:', error);
-        this.fetchErrors++;
-      });
+			monitoringAPI.post('update', data).then((response) => {
+				if (response.status === 200) {
+					this.fetchErrors = 0;
+					this.lastUpdateTimestamp = lastTimestamp;
+				} else {
+					throw new Error(`Fetch error: ${response.status}`);
+				}
+			}).catch((error) => {
+				console.error('Error:', error);
+				this.fetchErrors++;
+			});
     }
   }
 };
