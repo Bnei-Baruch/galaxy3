@@ -12,7 +12,7 @@ import {
     checkNotification,
     testDevices,
     testMic,
-    genUUID
+    genUUID, getState
 } from "../../shared/tools";
 import './MobileClient.scss'
 import './MobileConteiner.scss'
@@ -207,42 +207,21 @@ class MobileClient extends Component {
         },1000);
     };
 
-    // getRoomList = () => {
-    //     const {videoroom, women} = this.state;
-    //     if (videoroom) {
-    //         videoroom.send({message: {request: "list"},
-    //             success: (data) => {
-    //                 Janus.log(" :: Get Rooms List: ", data.list);
-    //                 let filter = data.list.filter(r => /W\./i.test(r.description) === women);
-    //                 filter.sort((a, b) => {
-    //                     // if (a.num_participants > b.num_participants) return -1;
-    //                     // if (a.num_participants < b.num_participants) return 1;
-    //                     if (a.description > b.description) return 1;
-    //                     if (a.description < b.description) return -1;
-    //                     return 0;
-    //                 });
-    //                 this.setState({rooms: filter});
-    //                 this.getFeedsList(filter)
-    //             }
-    //         });
-    //     }
-    // };
-
     getRoomList = (user) => {
-        geoInfo('rooms.json', groups => {
-            this.setState({groups});
-            const {women,selected_room} = this.state;
-            let rooms = groups.filter(r => /W\./i.test(r.description) === women);
-            this.setState({groups,rooms});
+        getState('galaxy/groups', (groups) => {
+            let rooms = groups.rooms;
+            const { selected_room } = this.state;
+            //let rooms                      = groups.filter(r => /W\./i.test(r.description) === women);
+            this.setState({ rooms });
             if (selected_room !== '') {
-                let room   = rooms.find(r => r.room === selected_room);
-                let name   = room.description;
-                user.room  = selected_room;
-                user.janus  = room.janus;
-                user.group = name;
-                this.setState({user,name});
+                const room = rooms.find(r => r.room === selected_room);
+                const name = room.description;
+                user.room     = selected_room;
+                user.janus    = room.janus;
+                user.group    = name;
+                this.setState({ name });
             }
-            this.initClient(user, false)
+            this.initClient(user, false);
         });
     };
 
@@ -1195,9 +1174,9 @@ class MobileClient extends Component {
                                     {/*{this.state.visible ? "Close" : "Open"} Chat */}
                                     {/*{count > 0 ? l : ""} */}
                                     {/*</Menu.Item>*/}
-                                    <Menu.Item disabled={!audio || video_device === null || !mystream || delay} onClick={this.handleQuestion}>
-                                        <Icon color={question ? 'green' : ''} name='question'/>Question
-                                    </Menu.Item>
+                                    {/*<Menu.Item disabled={!audio || video_device === null || !mystream || delay} onClick={this.handleQuestion}>*/}
+                                    {/*    <Icon color={question ? 'green' : ''} name='question'/>Question*/}
+                                    {/*</Menu.Item>*/}
                                 </Menu>
                                 <Menu icon='labeled' secondary size="mini">
                                     {/*<Menu.Item position='right' disabled={selftest !== "Self Audio Test" || mystream} onClick={this.selfTest}>*/}

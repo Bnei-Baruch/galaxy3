@@ -4,7 +4,17 @@ import { Janus } from '../../lib/janus';
 import classNames from 'classnames';
 import { isMobile } from 'react-device-detect';
 import { Button, Icon, Input, Label, Menu, Popup, Select } from 'semantic-ui-react';
-import { checkNotification, genUUID, geoInfo, getDevicesStream, initJanus, micLevel, testDevices, testMic } from '../../shared/tools';
+import {
+  checkNotification,
+  genUUID,
+  geoInfo,
+  getDevicesStream,
+  getState,
+  initJanus,
+  micLevel,
+  testDevices,
+  testMic
+} from '../../shared/tools';
 import './VirtualClient.scss';
 import './VideoConteiner.scss';
 import 'eqcss';
@@ -207,10 +217,11 @@ class OldClient extends Component {
   };
 
   getRoomList = (user) => {
-    geoInfo('rooms.json', groups => {
-      const { women, selected_room } = this.state;
-      let rooms                      = groups.filter(r => /W\./i.test(r.description) === women);
-      this.setState({ groups, rooms });
+    getState('galaxy/groups', (groups) => {
+      let rooms = groups.rooms;
+      const { selected_room } = this.state;
+      //let rooms                      = groups.filter(r => /W\./i.test(r.description) === women);
+      this.setState({ rooms });
       if (selected_room !== '') {
         const room = rooms.find(r => r.room === selected_room);
         const name = room.description;
