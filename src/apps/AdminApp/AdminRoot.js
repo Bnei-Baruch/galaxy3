@@ -125,7 +125,7 @@ class AdminRoot extends Component {
             this.getRoomsState();
             if (this.state.feed_user)
                 this.getFeedInfo()
-        }, 1000);
+        }, 3000);
     };
 
     getRoomsState = () => {
