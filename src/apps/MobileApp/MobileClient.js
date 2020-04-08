@@ -15,6 +15,9 @@ import {
   testDevices,
   testMic,
 } from "../../shared/tools";
+import './MobileClient.scss'
+import './MobileConteiner.scss'
+import 'eqcss'
 //import MobileChat from "./MobileChat";
 import {initGxyProtocol, sendProtocolMessage} from "../../shared/protocol";
 import MobileStreaming from "./MobileStreaming";
@@ -23,18 +26,6 @@ import platform from "platform";
 
 import { Monitoring } from '../../components/Monitoring';
 import { MonitoringData } from '../../shared/MonitoringData';
-
-import { isMobile } from 'react-device-detect';
-// Loading css dynamically allows importing both
-// OldClient and Mobile client in App.js
-async function loadCss() {
-  if (isMobile) {
-    await import('./MobileClient.scss');
-    await import('./MobileConteiner.scss');
-    await import('eqcss');
-  }
-}
-loadCss();
 
 class MobileClient extends Component {
 

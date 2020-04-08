@@ -15,6 +15,9 @@ import {
   testDevices,
   testMic,
 } from '../../shared/tools';
+import './VirtualClient.scss';
+import './VideoConteiner.scss';
+import 'eqcss';
 import VirtualChat from './VirtualChat';
 import { initGxyProtocol, sendProtocolMessage } from '../../shared/protocol';
 import { GEO_IP_INFO, PROTOCOL_ROOM, vsettings_list } from '../../shared/consts';
@@ -24,17 +27,6 @@ import { withTranslation } from 'react-i18next';
 import { mapNameToLanguage, setLanguage } from '../../i18n/i18n';
 import { Monitoring } from '../../components/Monitoring';
 import { MonitoringData } from '../../shared/MonitoringData';
-
-// Loading css dynamically allows importing both
-// OldClient and Mobile client in App.js
-async function loadCss() {
-  if (!isMobile) {
-    await import('./VirtualClient.scss');
-    await import('./VideoConteiner.scss');
-    await import('eqcss');
-  }
-}
-loadCss();
 
 class OldClient extends Component {
 
