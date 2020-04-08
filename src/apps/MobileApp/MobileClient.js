@@ -6,22 +6,35 @@ import ReactSwipe from 'react-swipe';
 
 import {Menu, Select, Button,Input,Label,Icon,Popup} from "semantic-ui-react";
 import {
-    geoInfo,
-    initJanus,
-    getDevicesStream,
-    checkNotification,
-    testDevices,
-    testMic,
-    genUUID, getState
+  checkNotification,
+  genUUID,
+  geoInfo,
+  getDevicesStream,
+  getState,
+  initJanus,
+  testDevices,
+  testMic,
 } from "../../shared/tools";
-import './MobileClient.scss'
-import './MobileConteiner.scss'
-import 'eqcss'
 //import MobileChat from "./MobileChat";
 import {initGxyProtocol, sendProtocolMessage} from "../../shared/protocol";
 import MobileStreaming from "./MobileStreaming";
 import {GEO_IP_INFO, PROTOCOL_ROOM, vsettings_list} from "../../shared/consts";
 import platform from "platform";
+
+import { Monitoring } from '../../components/Monitoring';
+import { MonitoringData } from '../../shared/MonitoringData';
+
+import { isMobile } from 'react-device-detect';
+// Loading css dynamically allows importing both
+// OldClient and Mobile client in App.js
+async function loadCss() {
+  if (isMobile) {
+    await import('./MobileClient.scss');
+    await import('./MobileConteiner.scss');
+    await import('eqcss');
+  }
+}
+loadCss();
 
 class MobileClient extends Component {
 
@@ -48,7 +61,8 @@ class MobileClient extends Component {
         remoteFeed: null,
         myid: null,
         mypvtid: null,
-        mystream: null,
+        localVideoTrack: null,
+        localAudioTrack: null,
         mids: [],
         video_mids: [],
         muted: false,
@@ -71,7 +85,21 @@ class MobileClient extends Component {
         support: false,
         women: window.location.pathname === "/women/",
         card: 0,
+        monitoringData: new MonitoringData(),
     };
+
+    componentDidUpdate(prevProps, prevState) {
+      if (this.state.videoroom !== prevState.videoroom ||
+          this.state.localVideoTrack !== prevState.localVideoTrack ||
+          this.state.localAudioTrack !== prevState.localAudioTrack ||
+          JSON.stringify(this.state.user) !== JSON.stringify(prevState.user)) {
+        this.state.monitoringData.setConnection(
+          this.state.videoroom,
+          this.state.localAudioTrack,
+          this.state.localVideoTrack,
+          this.state.user);
+      }
+    }
 
     componentDidMount() {
         let {user} = this.state;
@@ -393,12 +421,16 @@ class MobileClient extends Component {
                 this.onMessage(this.state.videoroom, msg, jsep, false);
             },
             onlocaltrack: (track, on) => {
-                Janus.log(" ::: Got a local track event :::");
-                Janus.log("Local track " + (on ? "added" : "removed") + ":", track);
-                let {videoroom,women} = this.state;
-                if(!women) videoroom.muteAudio();
-                if(!this.state.mystream)
-                    this.setState({mystream: track});
+              Janus.log(" ::: Got a local track event :::");
+              Janus.log("Local track " + (on ? "added" : "removed") + ":", track);
+              let {videoroom,women} = this.state;
+              if(!women) videoroom.muteAudio();
+              if (track.kind === 'video') {
+                this.setState({localVideoTrack: track});
+              }
+              if (track.kind === 'audio') {
+                this.setState({localAudioTrack: track});
+              }
             },
             onremotestream: (stream) => {
                 // The publisher stream is sendonly, we don't expect anything here
@@ -991,7 +1023,21 @@ class MobileClient extends Component {
         //this.chat.exitChatRoom(room);
         let pl = {textroom : "leave", transaction: Janus.randomString(12),"room": PROTOCOL_ROOM};
         localStorage.setItem("question", false);
-        this.setState({video_device: null, muted: false, cammuted: false, mystream: null, name: "", room: "", selected_room: (reconnect ? room : ""), feeds: [],video_mids: [], mids: [], remoteFeed: null, question: false});
+        this.setState({
+          cammuted: false,
+          feeds: [],
+          localAudioTrack: null,
+          localVideoTrack: null,
+          mids: [],
+          muted: false,
+          name: "",
+          question: false,
+          remoteFeed: null,
+          room: "",
+          selected_room: (reconnect ? room : ""),
+          video_device: null,
+          video_mids: [],
+        });
         protocol.data({text: JSON.stringify(pl),
             success: () => {
                 this.initVideoRoom(reconnect);
@@ -1027,7 +1073,7 @@ class MobileClient extends Component {
 
     micMute = () => {
         let {videoroom, muted} = this.state;
-        //mystream.getAudioTracks()[0].enabled = !muted;
+        //localAudioTrack.getAudioTracks()[0].enabled = !muted;
         muted ? videoroom.unmuteAudio() : videoroom.muteAudio();
         this.setState({muted: !muted});
     };
@@ -1042,8 +1088,28 @@ class MobileClient extends Component {
 
 
     render() {
-
-        const {video_setting,audio,rooms,name,audio_devices,video_devices,video_device,audio_device,muted,cammuted,delay,mystream,selected_room,count,question,selftest,tested,women,feedStreams} = this.state;
+        const {
+          audio,
+          audio_device,
+          audio_devices,
+          cammuted,
+          count,
+          delay,
+          feedStreams,
+          localAudioTrack,
+          monitoringData,
+          muted,
+          name,
+          question,
+          rooms,
+          selected_room,
+          selftest,
+          tested,
+          video_device,
+          video_devices,
+          video_setting,
+          women,
+        } = this.state;
         const width = "134";
         const height = "100";
         const autoPlay = true;
@@ -1147,7 +1213,7 @@ class MobileClient extends Component {
                         <div className='vclient' >
                             <div className="vclient__toolbar">
                                 <Select className='select_room'
-                                        disabled={audio_device === null || mystream}
+                                        disabled={audio_device === null || !!localAudioTrack}
                                         error={!selected_room}
                                         placeholder=" Select Room: "
                                         value={selected_room}
@@ -1163,36 +1229,36 @@ class MobileClient extends Component {
                                     value={this.state.username_value}
                                     onChange={(v,{value}) => this.setState({username_value: value})}
                                     action>
-                                    <input disabled={mystream}/>
+                                    <input disabled={!!localAudioTrack}/>
                                     <Icon name='user circle' />
-                                    {mystream ? <Button size='massive' negative icon='sign-out' onClick={() => this.exitRoom(false)} />:""}
-                                    {!mystream ? <Button size='massive' primary icon='sign-in' disabled={delay||!selected_room||!audio_device} onClick={this.joinRoom} />:""}
+                                    {!!localAudioTrack ? <Button size='massive' negative icon='sign-out' onClick={() => this.exitRoom(false)} />:""}
+                                    {!localAudioTrack ? <Button size='massive' primary icon='sign-in' disabled={delay||!selected_room||!audio_device} onClick={this.joinRoom} />:""}
                                 </Input>
                                 <Menu icon='labeled' secondary size="mini">
-                                    {/*<Menu.Item disabled={!mystream} onClick={() => this.setState({ visible: !this.state.visible, count: 0 })}>*/}
+                                    {/*<Menu.Item disabled={!localAudioTrack} onClick={() => this.setState({ visible: !this.state.visible, count: 0 })}>*/}
                                     {/*<Icon name="comments"/>*/}
                                     {/*{this.state.visible ? "Close" : "Open"} Chat */}
                                     {/*{count > 0 ? l : ""} */}
                                     {/*</Menu.Item>*/}
-                                    {/*<Menu.Item disabled={!audio || video_device === null || !mystream || delay} onClick={this.handleQuestion}>*/}
+                                    {/*<Menu.Item disabled={!audio || video_device === null || !localAudioTrack || delay} onClick={this.handleQuestion}>*/}
                                     {/*    <Icon color={question ? 'green' : ''} name='question'/>Question*/}
                                     {/*</Menu.Item>*/}
                                 </Menu>
                                 <Menu icon='labeled' secondary size="mini">
-                                    {/*<Menu.Item position='right' disabled={selftest !== "Self Audio Test" || mystream} onClick={this.selfTest}>*/}
+                                    {/*<Menu.Item position='right' disabled={selftest !== "Self Audio Test" || !!localAudioTrack} onClick={this.selfTest}>*/}
                                     {/*<Icon color={tested ? 'green' : 'red'} name="sound" />*/}
                                     {/*{selftest}*/}
                                     {/*</Menu.Item>*/}
-                                    <Menu.Item disabled={women || !mystream} onClick={this.micMute} className="mute-button">
+                                    <Menu.Item disabled={women || !localAudioTrack} onClick={this.micMute} className="mute-button">
                                         {/*<canvas className={muted ? 'hidden' : 'vumeter'} ref="canvas1" id="canvas1" width="15" height="35" />*/}
                                         <Icon color={muted ? "red" : "green"} name={!muted ? "microphone" : "microphone slash"} />
                                         {!muted ? "Mute" : "Unmute"}
                                     </Menu.Item>
-                                    <Menu.Item disabled={video_device === null || !mystream || delay} onClick={this.camMute}>
+                                    <Menu.Item disabled={video_device === null || !localAudioTrack || delay} onClick={this.camMute}>
                                         <Icon color={cammuted ? "red" : ""} name={!cammuted ? "eye" : "eye slash"} />
                                         {!cammuted ? "Stop Video" : "Start Video"}
                                     </Menu.Item>
-                                    {mystream ?
+                                    {!!localAudioTrack ?
                                     <Menu.Item icon="angle right" name="Broadcast" onClick={() => reactSwipeEl.next()}/>
                                         :
                                     <Popup flowing
@@ -1202,21 +1268,21 @@ class MobileClient extends Component {
                                     >
                                         <Popup.Content>
                                             <Select className='select_device'
-                                                    disabled={mystream}
+                                                    disabled={!!localAudioTrack}
                                                     error={!audio_device}
                                                     placeholder="Select Device:"
                                                     value={audio_device}
                                                     options={adevices_list}
                                                     onChange={(e, {value}) => this.setDevice(video_device, value, video_setting)}/>
                                             <Select className='select_device'
-                                                    disabled={mystream}
+                                                    disabled={!!localAudioTrack}
                                                     error={!video_device}
                                                     placeholder="Select Device:"
                                                     value={video_device}
                                                     options={vdevices_list}
                                                     onChange={(e, {value}) => this.setDevice(value, audio_device, video_setting)}/>
                                             <Select className='select_device'
-                                                    disabled={mystream}
+                                                    disabled={!!localAudioTrack}
                                                     error={!video_device}
                                                     placeholder="Video Settings:"
                                                     value={video_setting}
@@ -1224,6 +1290,7 @@ class MobileClient extends Component {
                                                     onChange={(e, {value}) => this.setDevice(video_device, audio_device, value)}/>
                                         </Popup.Content>
                                     </Popup>}
+                                    <Monitoring monitoringData={monitoringData} />
                                 </Menu>
                             </div>
 
@@ -1232,7 +1299,7 @@ class MobileClient extends Component {
                                     <div className="videos-panel">
                                         <div className="videos" onClick={this.switchFour}>
                                             <div className="videos__wrapper">
-                                                {mystream ? "" :
+                                                {!!localAudioTrack ? "" :
                                                     <div className="video">
                                                         <div className={classNames('video__overlay')}>
                                                             {question ?

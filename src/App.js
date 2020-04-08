@@ -2,11 +2,12 @@ import React, { Component } from 'react';
 import 'semantic-ui-css/semantic.min.css';
 import { I18nextProvider } from 'react-i18next';
 import i18n from 'i18next';
+import { isMobile } from 'react-device-detect';
 
 import './i18n/i18n';
 // import GalaxyApp from "./apps/GalaxyApp";
 import OldClient from './apps/VirtualApp/OldClient';
-// import MobileClient from "./apps/MobileApp/MobileClient";
+import MobileClient from "./apps/MobileApp/MobileClient";
 // import VirtualClient from "./apps/VirtualApp/VirtualClient";
 // import VirtualStreaming from "./apps/VirtualApp/VirtualStreaming";
 // import GroupClient from "./apps/GroupsApp/GroupClient";
@@ -26,21 +27,22 @@ class App extends Component {
     return (
       <I18nextProvider i18n={i18n}>
         {/*<GalaxyApp />*/}
-        <OldClient />
+        {isMobile ? <MobileClient /> : <OldClient />}
+        {/*<OldClient />*/}
         {/*<MobileClient/>*/}
         {/*<VirtualClient />*/}
-        {/* <VirtualStreaming/>*/}
-        {/*<GroupClient/>*/}
-        {/* <GalaxyStream/>*/}
+        {/*<VirtualStreaming />*/}
+        {/*<GroupClient />*/}
+        {/*<GalaxyStream />*/}
         {/*<AdminRoot />*/}
         {/*<AdminShidur />*/}
-        {/* <AdminGuest/>*/}
-        {/*<ShidurApp/>*/}
-        {/*<SndmanApp/>*/}
+        {/*<AdminGuest />*/}
+        {/*<ShidurApp />*/}
+        {/*<SndmanApp />*/}
         {/*<AudioOutApp />*/}
         {/*<SDIOutApp />*/}
-        {/*<AdminCongress/>*/}
-        {/*<AdminStreaming/>*/}
+        {/*<AdminCongress />*/}
+        {/*<AdminStreaming />*/}
       </I18nextProvider>
     );
   }
