@@ -1,13 +1,12 @@
-import React, { Component } from 'react';
+import React, {Component, Fragment} from 'react';
 //import NewWindow from 'react-new-window';
 import { Janus } from "../../lib/janus";
 import classNames from 'classnames';
 import ReactSwipe from 'react-swipe';
 
-import {Menu, Select, Button,Input,Label,Icon,Popup} from "semantic-ui-react";
+import {Menu, Select, Button, Input, Label, Icon, Popup, Dropdown} from "semantic-ui-react";
 import {
   checkNotification,
-  genUUID,
   geoInfo,
   getDevicesStream,
   getState,
@@ -26,6 +25,8 @@ import platform from "platform";
 
 import { Monitoring } from '../../components/Monitoring';
 import { MonitoringData } from '../../shared/MonitoringData';
+import {client} from "../../components/UserManager";
+import LoginPage from "../../components/LoginPage";
 
 class MobileClient extends Component {
 
@@ -60,13 +61,7 @@ class MobileClient extends Component {
         cammuted: false,
         shidur: false,
         protocol: null,
-        user: {
-            email: null,
-            id: localStorage.getItem("uuid") || genUUID(),
-            role: "user",
-            name: "user-"+Janus.randomString(4),
-            username: null,
-        },
+        user: null,
         users: {},
         username_value: localStorage.getItem("username") || "",
         visible: false,
@@ -90,10 +85,28 @@ class MobileClient extends Component {
           this.state.localVideoTrack,
           this.state.user);
       }
-    }
+    };
+
+    checkPermission = (user) => {
+        let gxy_user = user.roles.filter(role => role === 'gxy_user').length > 0;
+        if (gxy_user) {
+            client.events.addAccessTokenExpired(() => {
+                console.log("...!TOKEN EXPIRED!...");
+                client.signoutRedirect();
+            });
+            delete user.roles;
+            user.role = "user";
+            this.checkClient(user);
+        } else {
+            alert("Access denied!");
+            client.signoutRedirect();
+        }
+    };
 
     componentDidMount() {
-        let {user} = this.state;
+    };
+
+    checkClient = (user) => {
         const { t } = this.props;
         localStorage.setItem('question', false);
         localStorage.setItem('sound_test', false);
@@ -103,20 +116,19 @@ class MobileClient extends Component {
         let browser = platform.parse(system);
         if (/Safari|Firefox|Chrome/.test(browser.name)) {
             geoInfo(`${GEO_IP_INFO}`, data => {
-                user.ip = data ? data.ip : '127.0.0.1';
+                user.ip     = data ? data.ip : '127.0.0.1';
                 user.system = system;
                 if (!data) {
-                    alert("Failed to get Geo Info");
+                    alert(t('oldClient.failGeoInfo'));
                 }
-
-                this.setState({geoinfo: !!data});
+                this.setState({ geoinfo: !!data });
                 this.getRoomList(user);
             });
         } else {
-            alert("Browser not supported");
+            alert(t('oldClient.browserNotSupported'));
             window.location = 'https://galaxy.kli.one';
         }
-    };
+    }
 
     initClient = (user,error) => {
         const { t } = this.props;
@@ -1080,6 +1092,7 @@ class MobileClient extends Component {
 
     render() {
         const {
+            user,
           audio,
           audio_device,
           audio_devices,
@@ -1185,8 +1198,8 @@ class MobileClient extends Component {
 
         let l = (<Label key='Carbon' floating size='mini' color='red'>{count}</Label>);
         let reactSwipeEl;
-
-        return (
+        let login = (<LoginPage user={user} checkPermission={this.checkPermission} />);
+        let content = (
             <div>
                 <ReactSwipe
                     className="carousel"
@@ -1203,25 +1216,22 @@ class MobileClient extends Component {
                     <div>
                         <div className='vclient' >
                             <div className="vclient__toolbar">
-                                <Select className='select_room'
-                                        disabled={audio_device === null || !!localAudioTrack}
-                                        error={!selected_room}
-                                        placeholder=" Select Room: "
-                                        value={selected_room}
-                                        //text={name ? name + ' : ( ' + this.state.feeds.length + ' ) ': ""}
-                                        text={name}
-                                        //icon={name ? 'users' : ''}
-                                        options={rooms_list}
-                                        //onClick={this.getRoomList}
-                                        onChange={(e, {value}) => this.selectRoom(value)} />
                                 <Input
                                     iconPosition='left'
-                                    placeholder="Type your name..."
-                                    value={this.state.username_value}
-                                    onChange={(v,{value}) => this.setState({username_value: value})}
                                     action>
-                                    <input disabled={!!localAudioTrack}/>
-                                    <Icon name='user circle' />
+                                    <Select className='select_room'
+                                            disabled={audio_device === null || !!localAudioTrack}
+                                            error={!selected_room}
+                                            placeholder=" Select Room: "
+                                            value={selected_room}
+                                        //text={name ? name + ' : ( ' + this.state.feeds.length + ' ) ': ""}
+                                            text={name}
+                                        //icon={name ? 'users' : ''}
+                                            options={rooms_list}
+                                        //onClick={this.getRoomList}
+                                            onChange={(e, {value}) => this.selectRoom(value)} />
+                                    {/*<input disabled={!!localAudioTrack}/>*/}
+                                    {/*<Icon name='user circle' />*/}
                                     {!!localAudioTrack ? <Button size='massive' negative icon='sign-out' onClick={() => this.exitRoom(false)} />:""}
                                     {!localAudioTrack ? <Button size='massive' primary icon='sign-in' disabled={delay||!selected_room||!audio_device} onClick={this.joinRoom} />:""}
                                 </Input>
@@ -1250,37 +1260,47 @@ class MobileClient extends Component {
                                         {!cammuted ? "Stop Video" : "Start Video"}
                                     </Menu.Item>
                                     {!!localAudioTrack ?
-                                    <Menu.Item icon="angle right" name="Broadcast" onClick={() => reactSwipeEl.next()}/>
+                                        <Menu.Item icon="angle right" name="Broadcast" onClick={() => reactSwipeEl.next()}/>
                                         :
-                                    <Popup flowing
-                                           trigger={<Menu.Item icon="setting" name="Settings"/>}
-                                           on='click'
-                                           position='bottom right'
-                                    >
-                                        <Popup.Content>
-                                            <Select className='select_device'
-                                                    disabled={!!localAudioTrack}
-                                                    error={!audio_device}
-                                                    placeholder="Select Device:"
-                                                    value={audio_device}
-                                                    options={adevices_list}
-                                                    onChange={(e, {value}) => this.setDevice(video_device, value, video_setting)}/>
-                                            <Select className='select_device'
-                                                    disabled={!!localAudioTrack}
-                                                    error={!video_device}
-                                                    placeholder="Select Device:"
-                                                    value={video_device}
-                                                    options={vdevices_list}
-                                                    onChange={(e, {value}) => this.setDevice(value, audio_device, video_setting)}/>
-                                            <Select className='select_device'
-                                                    disabled={!!localAudioTrack}
-                                                    error={!video_device}
-                                                    placeholder="Video Settings:"
-                                                    value={video_setting}
-                                                    options={vsettings_list}
-                                                    onChange={(e, {value}) => this.setDevice(video_device, audio_device, value)}/>
-                                        </Popup.Content>
-                                    </Popup>}
+                                        <Popup flowing
+                                               trigger={<Menu.Item icon="setting" name="Settings"/>}
+                                               on='click'
+                                               position='bottom right'
+                                        >
+                                            <Popup.Content>
+                                                <Button className='select_device' fluid>
+                                                    <Icon name='user circle'/>
+                                                    <Dropdown inline text={this.state.username_value}>
+                                                        <Dropdown.Menu>
+                                                            <Dropdown.Item content='Profile:' disabled />
+                                                            <Dropdown.Item text='My Account' onClick={() => window.open("https://accounts.kbb1.com/auth/realms/main/account", "_blank")} />
+                                                            <Dropdown.Item text='Sign Out' onClick={() => client.signoutRedirect()} />
+                                                        </Dropdown.Menu>
+                                                    </Dropdown>
+                                                </Button>
+                                                <Select className='select_device'
+                                                        disabled={!!localAudioTrack}
+                                                        error={!audio_device}
+                                                        placeholder="Select Device:"
+                                                        value={audio_device}
+                                                        options={adevices_list}
+                                                        onChange={(e, {value}) => this.setDevice(video_device, value, video_setting)}/>
+                                                <Select className='select_device'
+                                                        disabled={!!localAudioTrack}
+                                                        error={!video_device}
+                                                        placeholder="Select Device:"
+                                                        value={video_device}
+                                                        options={vdevices_list}
+                                                        onChange={(e, {value}) => this.setDevice(value, audio_device, video_setting)}/>
+                                                <Select className='select_device'
+                                                        disabled={!!localAudioTrack}
+                                                        error={!video_device}
+                                                        placeholder="Video Settings:"
+                                                        value={video_setting}
+                                                        options={vsettings_list}
+                                                        onChange={(e, {value}) => this.setDevice(video_device, audio_device, value)}/>
+                                            </Popup.Content>
+                                        </Popup>}
                                     <Monitoring monitoringData={monitoringData} />
                                 </Menu>
                             </div>
@@ -1345,6 +1365,12 @@ class MobileClient extends Component {
                 {/*<button onClick={() => reactSwipeEl.next()}>Next</button>*/}
                 {/*<button onClick={() => reactSwipeEl.prev()}>Previous</button>*/}
             </div>
+        );
+
+        return (
+            <Fragment>
+                {user ? content : login}
+            </Fragment>
         );
     }
 }
