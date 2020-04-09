@@ -26,22 +26,21 @@ class App extends Component {
     return (
       <I18nextProvider i18n={i18n}>
         {/*<GalaxyApp />*/}
-        {/*{<MobileClient />}*/}
         <OldClient />
         {/*<MobileClient/>*/}
         {/*<VirtualClient />*/}
-        {/*<VirtualStreaming />*/}
-        {/*<GroupClient />*/}
-        {/*<GalaxyStream />*/}
+        {/* <VirtualStreaming/>*/}
+        {/*<GroupClient/>*/}
+        {/* <GalaxyStream/>*/}
         {/*<AdminRoot />*/}
         {/*<AdminShidur />*/}
-        {/*<AdminGuest />*/}
-        {/*<ShidurApp />*/}
-        {/*<SndmanApp />*/}
+        {/* <AdminGuest/>*/}
+        {/*<ShidurApp/>*/}
+        {/*<SndmanApp/>*/}
         {/*<AudioOutApp />*/}
         {/*<SDIOutApp />*/}
-        {/*<AdminCongress />*/}
-        {/*<AdminStreaming />*/}
+        {/*<AdminCongress/>*/}
+        {/*<AdminStreaming/>*/}
       </I18nextProvider>
     );
   }

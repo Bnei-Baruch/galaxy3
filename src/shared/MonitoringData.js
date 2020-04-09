@@ -1,5 +1,8 @@
 // Monitoring library to track connection stats.
-import monitoringAPI from "./monitoringAPI";
+import pako from 'pako';
+import {
+  MONITORING_BACKEND,
+} from "./consts";
 
 const ONE_SECOND_IN_MS = 1000;
 const STORE_INTERVAL = 60 * ONE_SECOND_IN_MS; // Store for one minute in ms.
@@ -129,9 +132,7 @@ export const MonitoringData = class {
     // This is Async callback. Sort stored data.
     this.storedData.sort((a, b) => a[0].timestamp - b[0].timestamp);
     // Throw old stats, STORE_INTERVAL from last timestamp stored.
-    const lastTimestamp = (this.storedData.length &&
-                           this.storedData[this.storedData.length - 1] &&
-                           this.storedData[this.storedData.length - 1].length) ? this.storedData[this.storedData.length - 1][0].timestamp : 0;
+    const lastTimestamp = this.lastTimestamp();
     if (lastTimestamp) {
       this.storedData = this.storedData.filter((data) => data[0].timestamp >= lastTimestamp - STORE_INTERVAL);
     }
@@ -143,23 +144,51 @@ export const MonitoringData = class {
     if ((!this.lastUpdateTimestamp && !this.fetchErrors) /* Fetch for the first time */ ||
         ((lastTimestamp - this.lastUpdateTimestamp > STORE_INTERVAL) /* Fetch after STORE_INTERVAL */ &&
          (lastTimestamp - this.lastFetchTimestamp > backoff) /* Fetch after errors backoff */)) {
-      this.lastFetchTimestamp = lastTimestamp;
-      const data = {
-        user: this.user,
-        data: this.storedData,
-      };
-      // Update backend.
-			monitoringAPI.post('update', data).then((response) => {
-				if (response.status === 200) {
-					this.fetchErrors = 0;
-					this.lastUpdateTimestamp = lastTimestamp;
-				} else {
-					throw new Error(`Fetch error: ${response.status}`);
-				}
-			}).catch((error) => {
-				console.error('Error:', error);
-				this.fetchErrors++;
-			});
+			this.update(/*logToConsole=*/false);
     }
   }
+
+	lastTimestamp() {
+    return (this.storedData.length &&
+            this.storedData[this.storedData.length - 1] &&
+            this.storedData[this.storedData.length - 1].length) ?
+              this.storedData[this.storedData.length - 1][0].timestamp : 0;
+	}
+
+  update(logToConsole) {
+		const lastTimestamp = this.lastTimestamp();
+		this.lastFetchTimestamp = lastTimestamp;
+		const data = {
+			user: this.user,
+			data: this.storedData,
+		};
+		if (logToConsole) {
+			console.log('Update', data);
+		}
+		// Update backend.
+		fetch(`${MONITORING_BACKEND}/update`, {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+				'Content-Encoding': 'gzip',
+			},
+			body: pako.gzip(JSON.stringify(data)),
+		}).then((response) => {
+			if (response.ok) {
+				this.fetchErrors = 0;
+				return response.json()
+			} else {
+				throw new Error(`Fetch error: ${response.status}`);
+			}
+		}).then((data) => {
+			this.lastUpdateTimestamp = lastTimestamp;
+			if (logToConsole) {
+				console.log('Updaate success.');
+			}
+		})
+		.catch((error) => {
+			console.error('Update monitoring error:', error);
+			this.fetchErrors++;
+		});
+	}
 };

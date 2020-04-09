@@ -22,6 +22,7 @@ import {initGxyProtocol, sendProtocolMessage} from "../../shared/protocol";
 import MobileStreaming from "./MobileStreaming";
 import {GEO_IP_INFO, PROTOCOL_ROOM, vsettings_list} from "../../shared/consts";
 import platform from "platform";
+import { isMobile } from 'react-device-detect';
 
 import { Monitoring } from '../../components/Monitoring';
 import { MonitoringData } from '../../shared/MonitoringData';
@@ -104,6 +105,10 @@ class MobileClient extends Component {
     };
 
     componentDidMount() {
+        if(!isMobile && window.location.href.indexOf("userm") > -1) {
+            window.location = '/user/';
+            return;
+        }
     };
 
     checkClient = (user) => {
@@ -116,19 +121,20 @@ class MobileClient extends Component {
         let browser = platform.parse(system);
         if (/Safari|Firefox|Chrome/.test(browser.name)) {
             geoInfo(`${GEO_IP_INFO}`, data => {
-                user.ip     = data ? data.ip : '127.0.0.1';
+                user.ip = data ? data.ip : '127.0.0.1';
                 user.system = system;
                 if (!data) {
-                    alert(t('oldClient.failGeoInfo'));
+                    alert("Failed to get Geo Info");
                 }
-                this.setState({ geoinfo: !!data });
+
+                this.setState({geoinfo: !!data});
                 this.getRoomList(user);
             });
         } else {
-            alert(t('oldClient.browserNotSupported'));
+            alert("Browser not supported");
             window.location = 'https://galaxy.kli.one';
         }
-    }
+    };
 
     initClient = (user,error) => {
         const { t } = this.props;

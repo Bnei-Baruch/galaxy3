@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import {client,getUser} from './UserManager';
-import { Container,Message,Button,Dropdown,Image } from 'semantic-ui-react';
+import { Container,Message,Button,Dropdown,Image,Divider } from 'semantic-ui-react';
 import logo from './logo.svg';
 
 class LoginPage extends Component {
@@ -71,6 +71,13 @@ class LoginPage extends Component {
                     </Message.Header>
                     <p>The Group Today Is You Tomorrow</p>
                     {this.props.user === null ? login : this.props.enter}
+                    {this.props.user === null ? "" :
+                        <div>
+                            <Divider horizontal>.</Divider>
+                            <Button primary onClick={() => window.open("http://ktuviot.kbb1.com/three_languages","_blank")} >Workshop Questions</Button>
+                            <Button primary onClick={() => window.open("https://bb.kli.one/","_blank")} >BB KLI</Button>
+                        </div>
+                    }
                     <Image size='large' src={logo} centered />
                 </Message>
             </Container>
