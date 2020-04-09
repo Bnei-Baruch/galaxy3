@@ -23,6 +23,7 @@ import {initGxyProtocol, sendProtocolMessage} from "../../shared/protocol";
 import MobileStreaming from "./MobileStreaming";
 import {GEO_IP_INFO, PROTOCOL_ROOM, vsettings_list} from "../../shared/consts";
 import platform from "platform";
+import { isMobile } from 'react-device-detect';
 
 import { Monitoring } from '../../components/Monitoring';
 import { MonitoringData } from '../../shared/MonitoringData';
@@ -93,6 +94,14 @@ class MobileClient extends Component {
     }
 
     componentDidMount() {
+        if(!isMobile)
+        {
+            if(window.location.href.indexOf("userm")> -1)
+            {
+                window.location = '/user/';
+                return;
+            }
+        }
         let {user} = this.state;
         const { t } = this.props;
         localStorage.setItem('question', false);

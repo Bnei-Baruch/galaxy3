@@ -40,7 +40,8 @@ class MobileStreaming extends Component {
     };
 
     componentWillUnmount() {
-        this.state.janus.destroy();
+        if(this.state.janus!=null)
+            this.state.janus.destroy();
     };
 
     initJanus = (server) => {
