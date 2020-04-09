@@ -63,7 +63,7 @@ class MobileClient extends Component {
         protocol: null,
         user: null,
         users: {},
-        username_value: localStorage.getItem("username") || "",
+        username_value: "",
         visible: false,
         question: false,
         selftest: "Self Audio Test",
@@ -138,7 +138,7 @@ class MobileClient extends Component {
             // Check if unified plan supported
             if (Janus.unifiedPlan) {
                 user.session = janus.getSessionId();
-                this.setState({janus, user});
+                this.setState({janus, user, username_value: user.title});
                 //this.chat.initChat(janus);
                 this.initVideoRoom(error);
             } else {
@@ -1321,7 +1321,7 @@ class MobileClient extends Component {
                                                                 ''
                                                             }
                                                             <div className="video__title">
-                                                                {muted ? <Icon name="microphone slash" size="small" color="red"/> : ''}{this.state.username_value || this.state.user.name}
+                                                                {muted ? <Icon name="microphone slash" size="small" color="red"/> : ''}{this.state.username_value}
                                                             </div>
                                                         </div>
                                                         <svg className={classNames('nowebcam',{'hidden':!cammuted})} viewBox="0 0 32 18" preserveAspectRatio="xMidYMid meet" >
