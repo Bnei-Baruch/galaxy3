@@ -94,13 +94,9 @@ class MobileClient extends Component {
     }
 
     componentDidMount() {
-        if(!isMobile)
-        {
-            if(window.location.href.indexOf("userm")> -1)
-            {
-                window.location = '/user/';
-                return;
-            }
+        if(!isMobile && window.location.href.indexOf("userm") > -1) {
+            window.location = '/user/';
+            return;
         }
         let {user} = this.state;
         const { t } = this.props;
