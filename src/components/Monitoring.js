@@ -4,6 +4,7 @@ import React, {
   useState,
 } from 'react';
 import {
+  Button,
   Icon,
   Menu,
 	Modal,
@@ -67,7 +68,10 @@ export const Monitoring = (props) => {
 					 disabled={!Object.keys(data).length}>
 			<Modal.Header>Link Info</Modal.Header>
 			<Modal.Content>
-					{statsTable}        
+          <div>
+            <Button onClick={() => monitoringData.update(/*logToConsole*/true)}>Update</Button>
+            {statsTable}
+          </div>
       </Modal.Content>
     </Modal> 
   );
