@@ -44,6 +44,10 @@ class ShidurToran extends Component {
         }
     };
 
+    shidurMode = (mode) => {
+        this.props.setProps({mode});
+    };
+
     disableRoom = (data) => {
         let {disabled_rooms} = this.props;
         let group = disabled_rooms.find(r => r.room === data.room);
@@ -125,7 +129,7 @@ class ShidurToran extends Component {
 
     render() {
 
-        const {group,disabled_rooms,groups,groups_queue,questions,presets,users,sdiout,sndman} = this.props;
+        const {group,disabled_rooms,groups,groups_queue,questions,presets,users,sdiout,sndman,mode} = this.props;
         const {open} = this.state;
         const q = (<b style={{color: 'red', fontSize: '20px', fontFamily: 'Verdana', fontWeight: 'bold'}}>?</b>);
         const next_group = groups[groups_queue] ? groups[groups_queue].description : groups[0] ? groups[0].description : "";
@@ -241,7 +245,14 @@ class ShidurToran extends Component {
                                 <UsersPreview pg={this.state.pg} {...this.props} closePopup={this.closePopup} />
                                 </Segment> : ""}
                     </Segment>
-                    <Segment textAlign='center' className="disabled_groups">
+                </Grid.Column>
+                <Grid.Column>
+                    <Button.Group attached='top' size='mini' >
+                        <Button disabled={mode === "gvarim"} color='teal' content='Gvarim' onClick={() => this.shidurMode("gvarim")} />
+                        <Button disabled={mode === "nashim"} color='teal' content='Nashim' onClick={() => this.shidurMode("nashim")} />
+                        <Button disabled={mode === "beyahad" || mode === ""} color='teal' content='Beyahad' onClick={() => this.shidurMode("beyahad")} />
+                    </Button.Group>
+                    <Segment attached textAlign='center' className="disabled_groups">
                         <Table selectable compact='very' basic structured className="admin_table" unstackable>
                             <Table.Body>
                                 {disabled_list}
