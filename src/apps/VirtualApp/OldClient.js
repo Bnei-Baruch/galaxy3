@@ -246,8 +246,8 @@ class OldClient extends Component {
         user.janus    = room.janus;
         user.group    = name;
         this.setState({ name });
+        this.initClient(user, false);
       }
-      this.initClient(user, false);
     });
   };
 
@@ -262,14 +262,9 @@ class OldClient extends Component {
     this.setState({ selected_room: roomid, name });
     user.room       = roomid;
     user.group      = name;
-    const reconnect = user.janus && user.janus !== room.janus;
     user.janus      = room.janus;
-    if (reconnect) {
-      this.setState({ delay: true });
-      this.initClient(user, false);
-    } else {
-      this.setState({ user });
-    }
+    this.setState({ delay: true });
+    this.initClient(user, false);
   };
 
   exitRoom = (reconnect) => {

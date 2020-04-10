@@ -244,28 +244,24 @@ class MobileClient extends Component {
                 user.janus    = room.janus;
                 user.group    = name;
                 this.setState({ name });
+                this.initClient(user, false);
             }
-            this.initClient(user, false);
         });
     };
 
     selectRoom = (roomid) => {
         const { rooms, user } = this.state;
-        let room              = rooms.find(r => r.room === roomid);
-        let name              = room.description;
+        const room      = rooms.find(r => r.room === roomid);
+        const name      = room.description;
         if (this.state.room === roomid) {
             return;
         }
-        user.room  = roomid;
-        user.group = name;
-        let reconnect = user.janus && user.janus !== room.janus;
-        user.janus  = room.janus;
-        this.setState({ user, selected_room: roomid, name }, () => {
-            if(reconnect) {
-                this.setState({ delay: true });
-                this.initClient(user, false);
-            }
-        });
+        this.setState({ selected_room: roomid, name });
+        user.room       = roomid;
+        user.group      = name;
+        user.janus      = room.janus;
+        this.setState({ delay: true });
+        this.initClient(user, false);
     };
 
     getFeedsList = (rooms) => {
