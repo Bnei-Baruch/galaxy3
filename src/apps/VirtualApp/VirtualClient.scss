@@ -52,13 +52,35 @@
     background:#000;
     padding: 1.6em;
     flex: 1 0 100%;
+    .layout--split &{
+        flex: 1 0 50%;
+    }
     // transition: .2s all linear;
 
     .vclient--chat-open & {
         flex: 1 0 calc(100% - 400px);
     }
+    .layout--split &{
+        .vclient--chat-open & {
+            flex: 1 0 calc(50% - 200px);
+        }
+    }
 }
 
+.broadcast-panel {
+    
+    background:#000;
+    padding: 1.6em;
+    display: none;
+    .layout--split &{
+        display: flex;
+        flex: 1 0 50%;
+        .vclient--chat-open & {
+            flex: 1 0 calc(50% - 200px);
+        }
+        // width: 300px;
+    }
+}
 .chat-panel {
     flex: 0 0 400px;
     overflow: hidden;

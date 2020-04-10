@@ -1,5 +1,4 @@
 import React, { Component } from 'react';
-import NewWindow from 'react-new-window';
 import { Janus } from '../../lib/janus';
 import classNames from 'classnames';
 import { isMobile } from 'react-device-detect';
@@ -27,6 +26,7 @@ import { withTranslation } from 'react-i18next';
 import { mapNameToLanguage, setLanguage } from '../../i18n/i18n';
 import { Monitoring } from '../../components/Monitoring';
 import { MonitoringData } from '../../shared/MonitoringData';
+import VirtualStreaming from './VirtualStreaming';
 
 class OldClient extends Component {
 
@@ -76,7 +76,10 @@ class OldClient extends Component {
     support: false,
     women: window.location.pathname === '/women/',
     monitoringData: new MonitoringData(),
-  };
+    numberOfVirtualUsers: localStorage.getItem('number_of_virtual_users') || '1',
+    currentLayout: localStorage.getItem('currentLayout') || 'double',
+    detachedSource: false,
+  }
 
   componentDidUpdate(prevProps, prevState) {
     if (this.state.videoroom !== prevState.videoroom ||
@@ -197,6 +200,7 @@ class OldClient extends Component {
         Janus.log(' :: Going to check Devices: ');
         getDevicesStream(audio_device, video_device, video_setting, stream => {
           Janus.log(' :: Check Devices: ', stream);
+					console.log(this.refs);
           let myvideo = this.refs.localVideo;
           Janus.attachMediaStream(myvideo, stream);
           if (this.state.audioContext) {
@@ -1013,16 +1017,11 @@ class OldClient extends Component {
     this.setState({ shidur: !this.state.shidur });
   };
 
-  onUnload = () => {
-    this.setState({ shidur: false });
-  };
-
-  onBlock = () => {
-    alert(this.props.t('oldClient.popupBlock'));
-  };
-
+	// TODO: Why was removed?!?!
   onNewMsg = (private_message) => {
-    this.setState({ count: this.state.count + 1 });
+		console.log('onNewMsg', private_message);
+		// Was removed. Why?
+    // this.setState({ count: this.state.count + 1 });
   };
 
   mapDevices = (devices) => {
@@ -1038,7 +1037,9 @@ class OldClient extends Component {
       audio_devices,
       cammuted,
       count,
+			currentLayout,
       delay,
+			detachedSource,
       feeds,
       geoinfo,
       janus,
@@ -1046,6 +1047,7 @@ class OldClient extends Component {
       monitoringData,
       muted,
       myid,
+			numberOfVirtualUsers,
       question,
       room,
       rooms,
@@ -1065,8 +1067,42 @@ class OldClient extends Component {
     const { t, i18n } = this.props;
     const width       = '134';
     const height      = '100';
+		const layout      = room === '' ? 'equal' : currentLayout;
 
     //let iOS = ['iPad', 'iPhone', 'iPod'].indexOf(navigator.platform) >= 0;
+
+    let layoutIcon;
+    switch (currentLayout) {
+    case 'double':
+      layoutIcon = 'table';
+      break;
+    case 'split':
+      layoutIcon = 'columns';
+      break;
+    default:
+      layoutIcon = 'layout grid';
+      break;
+    }
+
+    let noOfVideos = parseInt(numberOfVirtualUsers, 10);
+    if (room !== '') {
+      if (shidur && !detachedSource && layout !== 'split') {
+        noOfVideos += 1; // + Source
+      }
+			// TODO: Probably not correct calculation... no num_participants...
+      const thisRoom = rooms.find(r => r.room === room);
+      noOfVideos += (thisRoom ? parseInt(thisRoom.num_participants) - 1 : 0); // others - myself
+    }
+
+    let source = room !== '' && shidur &&
+      <VirtualStreaming
+        setDetached={() => {
+          this.setState({ detachedSource: true });
+        }}
+        setAttached={() => {
+          this.setState({ detachedSource: false });
+        }}
+      />;
 
     let rooms_list = rooms.map((data, i) => {
       const { room, description } = data;
@@ -1119,6 +1155,51 @@ class OldClient extends Component {
       </div>);
     });
 
+		const myself = (
+			<div className="video">
+				<div className={classNames('video__overlay')}>
+					{question ?
+						<div className="question">
+							<svg viewBox="0 0 50 50">
+								<text x="25" y="25" textAnchor="middle"
+											alignmentBaseline="central"
+											dominantBaseline="central">&#xF128;</text>
+							</svg>
+						</div>
+						:
+						''
+					}
+					<div className="video__title">
+						{muted ? <Icon name="microphone slash" size="small"
+													 color="red" /> : ''}{username_value || user.name}
+					</div>
+				</div>
+				<svg className={classNames('nowebcam', { 'hidden': !cammuted })} viewBox="0 0 32 18"
+						 preserveAspectRatio="xMidYMid meet">
+					<text x="16" y="9" textAnchor="middle" alignmentBaseline="central"
+								dominantBaseline="central">&#xf2bd;</text>
+				</svg>
+				<video
+					className={classNames('mirror', { 'hidden': cammuted })}
+					ref="localVideo"
+					id="localVideo"
+					width={width}
+					height={height}
+					autoPlay={true}
+					controls={false}
+					muted={true}
+					playsInline={true} />
+			</div>
+		);
+
+    const manyMyself = () => {
+      const result = [];
+      for (let i = 0; i < parseInt(numberOfVirtualUsers, 10); i++) {
+        result.push(myself);
+      }
+      return result;
+    };
+
     let l = (<Label key='Carbon' floating size='mini' color='red'>{count}</Label>);
 
     let content = (<div className={classNames('vclient', { 'vclient--chat-open': visible })}>
@@ -1145,6 +1226,31 @@ class OldClient extends Component {
           {!localAudioTrack ? <Button primary icon='sign-in' disabled={delay || !selected_room || !audio_device}
                                onClick={this.joinRoom} /> : ''}
         </Input>
+        <Input>
+          <Select placeholder='number of virtual users' options={[
+            { value: '1', text: '1' },
+            { value: '2', text: '2' },
+            { value: '3', text: '3' },
+            { value: '4', text: '4' },
+            { value: '5', text: '5' },
+            { value: '6', text: '6' },
+            { value: '7', text: '7' },
+            { value: '8', text: '8' },
+            { value: '9', text: '9' },
+            { value: '10', text: '10' },
+            { value: '11', text: '11' },
+            { value: '12', text: '12' },
+            { value: '13', text: '13' },
+            { value: '14', text: '14' },
+            { value: '15', text: '15' },
+            { value: '16', text: '16' },
+            { value: '17', text: '17' },
+          ]} value={numberOfVirtualUsers} onChange={(e, { value }) => {
+            this.setState({ numberOfVirtualUsers: value });
+            localStorage.setItem('number_of_virtual_users', value);
+          }}>
+          </Select>
+        </Input>
         <Menu icon='labeled' secondary size="mini">
           <Menu.Item disabled={!localAudioTrack}
                      onClick={() => this.setState({ visible: !visible, count: 0 })}>
@@ -1156,18 +1262,25 @@ class OldClient extends Component {
             <Icon color={question ? 'green' : ''} name='question' />
             {t('oldClient.askQuestion')}
           </Menu.Item>
-          <Menu.Item disabled={shidur} onClick={this.showShidur}>
+					<Menu.Item onClick={this.showShidur} disabled={room === ''}>
             <Icon name="tv" />
-            {t('oldClient.openBroadcast')}
-            {shidur ?
-              <NewWindow
-                url='https://galaxy.kli.one/gxystr'
-                features={{ width: '725', height: '635', left: '200', top: '200', location: 'no' }}
-                title='V4G' onUnload={this.onUnload} onBlock={this.onBlock}>
-              </NewWindow> :
-              null
-            }
+						{shidur ? t('oldClient.closeBroadcast') : t('oldClient.openBroadcast')}
           </Menu.Item>
+					<Popup
+						trigger={<Menu.Item icon={layoutIcon} name="Layout" />}
+						disabled={room === ''}
+						on='click'
+						position='bottom center'
+					>
+						{/* Update the icon above to current layout */}
+						<Popup.Content>
+							<Button.Group>
+								<Button onClick={() => this.setState({ currentLayout: 'double' })} active={currentLayout === 'double'} icon="table" /> {/* Double first */}
+								<Button onClick={() => this.setState({ currentLayout: 'split' })} active={currentLayout === 'split'} icon="columns" /> {/* Split */}
+								<Button onClick={() => this.setState({ currentLayout: 'equal' })} active={currentLayout === 'equal'} icon="layout grid" /> {/* Equal */}
+							</Button.Group>
+						</Popup.Content>
+					</Popup>
         </Menu>
         <Menu icon='labeled' secondary size="mini">
           {!localAudioTrack ?
@@ -1233,45 +1346,35 @@ class OldClient extends Component {
       <div className="vclient__main" onDoubleClick={() => this.setState({
         visible: !visible
       })}>
-        <div className="vclient__main-wrapper">
+        <div className={`
+          vclient__main-wrapper
+          no-of-videos-${noOfVideos}
+          layout--${layout}
+          broadcast--${room !== '' && shidur ? 'on' : 'off'}
+          ${detachedSource ? ' broadcast--popup' : 'broadcast--inline'}
+         `}>
+
+          {/* ${layout === 'equal' ? ' broadcast--equal' : ''} */}
+          {/* ${layout === 'double' ? ' broadcast--double' : ''} */}
+          {/* ${layout === 'split' ? ' broadcast--split' : ''} */}
+
+          <div className="broadcast-panel">
+            <div className="videos">
+              <div className="broadcast__wrapper">
+                {layout === 'split' && source}
+              </div>
+            </div>
+          </div>
+
           <div className="videos-panel">
             <div className="videos">
               <div className="videos__wrapper">
-                <div className="video">
-                  <div className={classNames('video__overlay')}>
-                    {question ?
-                      <div className="question">
-                        <svg viewBox="0 0 50 50">
-                          <text x="25" y="25" textAnchor="middle"
-                                alignmentBaseline="central"
-                                dominantBaseline="central">&#xF128;</text>
-                        </svg>
-                      </div>
-                      :
-                      ''
-                    }
-                    <div className="video__title">
-                      {muted ? <Icon name="microphone slash" size="small"
-                                     color="red" /> : ''}{username_value || user.name}
-                    </div>
-                  </div>
-                  <svg className={classNames('nowebcam', { 'hidden': !cammuted })} viewBox="0 0 32 18"
-                       preserveAspectRatio="xMidYMid meet">
-                    <text x="16" y="9" textAnchor="middle" alignmentBaseline="central"
-                          dominantBaseline="central">&#xf2bd;</text>
-                  </svg>
-                  <video
-                    className={classNames('mirror', { 'hidden': cammuted })}
-                    ref="localVideo"
-                    id="localVideo"
-                    width={width}
-                    height={height}
-                    autoPlay={true}
-                    controls={false}
-                    muted={true}
-                    playsInline={true} />
 
-                </div>
+                {layout === 'equal' && source}
+                {layout === 'double' && source}
+                {manyMyself()}
+                {/*{myself}*/}
+
                 {videos}
               </div>
             </div>
