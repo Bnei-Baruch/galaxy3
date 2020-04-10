@@ -71,9 +71,11 @@ class LoginPage extends Component {
                     </Message.Header>
                     <p>The Group Today Is You Tomorrow</p>
                     {this.props.user === null ? login : this.props.enter}
-                    {this.props.user === null ? "" :
+                    <Divider horizontal>.</Divider>
+                    {this.props.user === null ?
+                        <Button color='violet' onClick={() => window.open("https://forms.gle/F6Lm2KMLUkU4hrmK8","_blank")} >Support</Button>
+                        :
                         <div>
-                            <Divider horizontal>.</Divider>
                             <Button primary onClick={() => window.open("http://ktuviot.kbb1.com/three_languages","_blank")} >Workshop Questions</Button>
                             <Button primary onClick={() => window.open("https://bb.kli.one/","_blank")} >BB KLI</Button>
                         </div>
