@@ -29,7 +29,6 @@ export const initJanus = (cb,er,gxy) => {
                 },
                 destroyed: () => {
                     Janus.error(" :: Janus destroyed :: ");
-                    er("Janus destroyed");
                 }
             });
         }

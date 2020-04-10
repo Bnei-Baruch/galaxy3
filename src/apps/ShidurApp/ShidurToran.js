@@ -121,10 +121,10 @@ class ShidurToran extends Component {
     };
 
     sdiAction = (action, status, i, feed) => {
-        const { gxy3, user, index } = this.props;
+        const { GxyJanus, user, index } = this.props;
         let col = index === 0 ? 1 : index === 4 ? 2 : index === 8 ? 3 : index === 12 ? 4 : null;
         let msg = { type: "sdi-"+action, status, room: null, col, i, feed};
-        sendProtocolMessage(gxy3.protocol, user, msg );
+        sendProtocolMessage(GxyJanus.gxy3.protocol, user, msg );
     };
 
     render() {

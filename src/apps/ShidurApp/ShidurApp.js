@@ -14,9 +14,11 @@ class ShidurApp extends Component {
 
     state = {
         ce: null,
-        gxy1: {janus: null, protocol: null},
-        gxy2: {janus: null, protocol: null},
-        gxy3: {janus: null, protocol: null},
+        GxyJanus: {
+            gxy1: {janus: null, protocol: null},
+            gxy2: {janus: null, protocol: null},
+            gxy3: {janus: null, protocol: null},
+        },
         group: "",
         groups: [],
         groups_queue: 0,
@@ -45,7 +47,8 @@ class ShidurApp extends Component {
             getState('galaxy/users', (users) => {
                 this.setState({user,users});
                 setInterval(() => this.getRoomList(), 2000 );
-                this.initGalaxy(user);
+                let gxy = ["gxy1","gxy2","gxy3"]
+                this.initGalaxy(user,gxy);
             });
         } else {
             alert("Access denied!");
@@ -53,55 +56,25 @@ class ShidurApp extends Component {
         }
     };
 
-    initGalaxy = (user) => {
-        let {gxy1,gxy2,gxy3} = this.state;
-
-        // Init GXY1
-        initJanus(janus => {
-            gxy1.janus = janus;
-            user.id = "shidur-gxy1";
-            initGxyProtocol(janus, user, protocol => {
-                gxy1.protocol = protocol;
-                this.setState({gxy1});
-            }, ondata => {
-                Janus.log("GXY1 :: protocol public message: ", ondata);
-                this.onProtocolData(ondata, "gxy1");
-            });
-        },er => {
-            alert("gxy1: " + er);
-            window.location.reload();
-        }, "gxy1");
-
-        // Init GXY2
-        initJanus(janus => {
-            gxy2.janus = janus;
-            user.id = "shidur-gxy2";
-            initGxyProtocol(janus, user, protocol => {
-                gxy2.protocol = protocol;
-                this.setState({gxy2});
-            }, ondata => {
-                Janus.log("GXY2 :: protocol public message: ", ondata);
-                this.onProtocolData(ondata, "gxy2");
-            });
-        },er => {
-            alert("gxy2: " + er);
-            window.location.reload();
-        }, "gxy2");
-
-        // Init GXY3
-        initJanus(janus => {
-            gxy3.janus = janus;
-            initGxyProtocol(janus, user, protocol => {
-                gxy3.protocol = protocol;
-                this.setState({gxy3});
-            }, ondata => {
-                Janus.log("GXY3 :: protocol public message: ", ondata);
-                this.onProtocolData(ondata, "gxy3");
-            });
-        },er => {
-            alert("gxy3: " + er);
-            window.location.reload();
-        }, true);
+    initGalaxy = (user,gxy) => {
+        for(let i=0; i<gxy.length; i++) {
+            let {GxyJanus} = this.state;
+            initJanus(janus => {
+                GxyJanus[gxy[i]].janus = janus;
+                if(gxy[i] !== "gxy3")
+                    user.id = "shidur-" + gxy[i];
+                initGxyProtocol(janus, user, protocol => {
+                    GxyJanus[gxy[i]].protocol = protocol;
+                    this.setState({...GxyJanus[gxy[i]]});
+                }, ondata => {
+                    Janus.log(i + " :: protocol public message: ", ondata);
+                    this.onProtocolData(ondata, gxy[i]);
+                });
+            },er => {
+                alert(gxy[i] + ": " + er);
+                this.initGalaxy(user,[gxy[i]]);
+            }, gxy[i]);
+        }
     };
 
     getRoomList = () => {
