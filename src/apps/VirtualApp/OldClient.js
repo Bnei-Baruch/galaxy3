@@ -1026,7 +1026,9 @@ class OldClient extends Component {
   };
 
   updateLayout = (currentLayout) => {
-    this.setState({ currentLayout, sourceLoading: true });
+    this.setState({ currentLayout, sourceLoading: true }, () => {
+      localStorage.setItem('currentLayout', currentLayout);
+    });
   }
 
 	// TODO: Why was removed?!?!
@@ -1277,7 +1279,7 @@ class OldClient extends Component {
             <Icon color={question ? 'green' : ''} name='question' />
             {t('oldClient.askQuestion')}
           </Menu.Item>
-					<Menu.Item onClick={this.showShidur} disabled={sourceLoading}>
+					<Menu.Item onClick={this.showShidur} disabled={room !== '' && sourceLoading}>
             <Icon name="tv" />
 						{shidur ? t('oldClient.closeBroadcast') : t('oldClient.openBroadcast')}
           </Menu.Item>
