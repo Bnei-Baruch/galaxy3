@@ -20,6 +20,7 @@ class ShidurApp extends Component {
         group: "",
         groups: [],
         groups_queue: 0,
+        mode: "",
         round: 0,
         questions: [],
         rooms: [],
@@ -104,8 +105,15 @@ class ShidurApp extends Component {
     };
 
     getRoomList = () => {
-        let {disabled_rooms} = this.state;
+        let {disabled_rooms,mode} = this.state;
         getState('galaxy/rooms', (rooms) => {
+            if(mode === "nashim") {
+                rooms = rooms.filter(r => r.description.match(/^W /));
+            } else if(mode === "gvarim") {
+                rooms = rooms.filter(r => !r.description.match(/^W /));
+            } else if(mode === "beyahad") {
+                this.setState({mode: ""})
+            }
             let groups = rooms.filter((room) => room.janus !== "" && !disabled_rooms.find(droom => room.room === droom.room));
             disabled_rooms = rooms.filter((room) => room.janus !== "" && !groups.find(droom => room.room === droom.room));
             this.setState({rooms,groups,disabled_rooms});

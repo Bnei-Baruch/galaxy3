@@ -123,8 +123,9 @@ class OldClient extends Component {
         if (!data) {
           alert(t('oldClient.failGeoInfo'));
         }
-        this.setState({ geoinfo: !!data });
-        this.getRoomList(user);
+        this.setState({ geoinfo: !!data, user }, () => {
+          this.getRoomList(user);
+        });
       });
     } else {
       alert(t('oldClient.browserNotSupported'));
