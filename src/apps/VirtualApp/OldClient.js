@@ -1067,12 +1067,12 @@ class OldClient extends Component {
     const { t, i18n } = this.props;
     const width       = '134';
     const height      = '100';
-		const layout      = room === '' ? 'equal' : currentLayout;
+		const layout      = !shidur ? 'equal' : currentLayout;
 
     //let iOS = ['iPad', 'iPhone', 'iPod'].indexOf(navigator.platform) >= 0;
 
     let layoutIcon;
-    switch (currentLayout) {
+    switch (layout) {
     case 'double':
       layoutIcon = 'table';
       break;
@@ -1266,17 +1266,17 @@ class OldClient extends Component {
 						{shidur ? t('oldClient.closeBroadcast') : t('oldClient.openBroadcast')}
           </Menu.Item>
 					<Popup
-						trigger={<Menu.Item icon={layoutIcon} name="Layout" />}
-						disabled={room === ''}
+						trigger={<Menu.Item disabled={!shidur} icon={layoutIcon} name="Layout" />}
+						disabled={!shidur}
 						on='click'
 						position='bottom center'
 					>
 						{/* Update the icon above to current layout */}
 						<Popup.Content>
 							<Button.Group>
-								<Button onClick={() => this.setState({ currentLayout: 'double' })} active={currentLayout === 'double'} icon="table" /> {/* Double first */}
-								<Button onClick={() => this.setState({ currentLayout: 'split' })} active={currentLayout === 'split'} icon="columns" /> {/* Split */}
-								<Button onClick={() => this.setState({ currentLayout: 'equal' })} active={currentLayout === 'equal'} icon="layout grid" /> {/* Equal */}
+								<Button onClick={() => this.setState({ currentLayout: 'double' })} active={layout === 'double'} icon="table" /> {/* Double first */}
+								<Button onClick={() => this.setState({ currentLayout: 'split' })} active={layout === 'split'} icon="columns" /> {/* Split */}
+								<Button onClick={() => this.setState({ currentLayout: 'equal' })} active={layout === 'equal'} icon="layout grid" /> {/* Equal */}
 							</Button.Group>
 						</Popup.Content>
 					</Popup>
