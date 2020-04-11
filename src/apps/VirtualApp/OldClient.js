@@ -1098,7 +1098,7 @@ class OldClient extends Component {
       break;
     }
 
-    let source = shidur &&
+    let source = room !== '' && shidur &&
       <VirtualStreaming
         setDetached={() => {
           this.setState({ detachedSource: true });
