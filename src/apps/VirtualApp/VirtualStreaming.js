@@ -56,8 +56,18 @@ class VirtualStreaming extends Component {
   };
 
   componentWillUnmount() {
-    this.state.janus.destroy();
+    if (this.state.janus) {
+      this.state.janus.destroy();
+    }
   };
+
+  onSuccess() {
+    const {setLoading} = this.props;
+    const {videostream, audiostream, datastream} = this.state;
+    if (videostream && /*audiostream &&*/ datastream) {
+      setLoading(false);
+    }
+  }
 
   initJanus = (server) => {
     if (this.state.janus) {
@@ -71,6 +81,7 @@ class VirtualStreaming extends Component {
           iceServers: [{ urls: STUN_SRV_STR }],
           success: () => {
             Janus.log(' :: Connected to JANUS');
+            console.log(janus);
             this.setState({ janus });
             this.initVideoStream(janus);
             this.initDataStream(janus);
@@ -79,14 +90,12 @@ class VirtualStreaming extends Component {
           error: (error) => {
             Janus.log(error);
             setTimeout(() => {
-              window.location.reload();
+              this.initJanus();
             }, 5000);
+            console.log('RELOAD ON ERROR', error);
           },
           destroyed: () => {
-            Janus.log('kill');
-            setTimeout(() => {
-              window.location.reload();
-            }, 5000);
+            Janus.log('Janus handle successfully destroyed.');
           }
         });
       }
@@ -102,6 +111,7 @@ class VirtualStreaming extends Component {
         Janus.log(videostream);
         this.setState({ videostream });
         videostream.send({ message: { request: 'watch', id: videos } });
+        this.onSuccess();
       },
       error: (error) => {
         Janus.log('Error attaching plugin: ' + error);
@@ -147,6 +157,7 @@ class VirtualStreaming extends Component {
         Janus.log(audiostream);
         this.setState({ audiostream });
         audiostream.send({ message: { request: 'watch', id: audios } });
+        this.onSuccess();
       },
       error: (error) => {
         Janus.log('Error attaching plugin: ' + error);
@@ -192,6 +203,7 @@ class VirtualStreaming extends Component {
         this.setState({ datastream });
         let body = { request: 'watch', id: 101 };
         datastream.send({ 'message': body });
+        this.onSuccess();
       },
       error: (error) => {
         Janus.log('Error attaching plugin: ' + error);

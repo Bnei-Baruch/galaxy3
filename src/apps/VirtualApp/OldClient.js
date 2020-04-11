@@ -79,6 +79,7 @@ class OldClient extends Component {
     numberOfVirtualUsers: localStorage.getItem('number_of_virtual_users') || '1',
     currentLayout: localStorage.getItem('currentLayout') || 'double',
     detachedSource: false,
+    sourceLoading: false,
   }
 
   componentDidUpdate(prevProps, prevState) {
@@ -200,7 +201,6 @@ class OldClient extends Component {
         Janus.log(' :: Going to check Devices: ');
         getDevicesStream(audio_device, video_device, video_setting, stream => {
           Janus.log(' :: Check Devices: ', stream);
-					console.log(this.refs);
           let myvideo = this.refs.localVideo;
           Janus.attachMediaStream(myvideo, stream);
           if (this.state.audioContext) {
@@ -1014,8 +1014,20 @@ class OldClient extends Component {
   };
 
   showShidur = () => {
-    this.setState({ shidur: !this.state.shidur });
+    const { shidur } = this.state;
+    const stateUpdate = {
+      shidur: !shidur,
+    };
+    // Set source loading when shidur initializes.
+    if (!shidur) {
+      stateUpdate.sourceLoading = true;
+    }
+    this.setState(stateUpdate);
   };
+
+  updateLayout = (currentLayout) => {
+    this.setState({ currentLayout, sourceLoading: true });
+  }
 
 	// TODO: Why was removed?!?!
   onNewMsg = (private_message) => {
@@ -1054,6 +1066,7 @@ class OldClient extends Component {
       selected_room,
       selftest,
       shidur,
+      sourceLoading,
       tested,
       user,
       username_value,
@@ -1063,6 +1076,7 @@ class OldClient extends Component {
       visible,
       women,
     } = this.state;
+
 
     const { t, i18n } = this.props;
     const width       = '134';
@@ -1091,6 +1105,9 @@ class OldClient extends Component {
         }}
         setAttached={() => {
           this.setState({ detachedSource: false });
+        }}
+        setLoading={(loading) => {
+          this.setState({ sourceLoading: loading });
         }}
       />;
 
@@ -1190,7 +1207,6 @@ class OldClient extends Component {
       return result;
     };
 
-    console.log('numberOfVirtualUsers', numberOfVirtualUsers, typeof numberOfVirtualUsers);
     let noOfVideos = parseInt(numberOfVirtualUsers, 10);
     if (room !== '') {
       if (shidur && !detachedSource && layout !== 'split') {
@@ -1261,12 +1277,12 @@ class OldClient extends Component {
             <Icon color={question ? 'green' : ''} name='question' />
             {t('oldClient.askQuestion')}
           </Menu.Item>
-					<Menu.Item onClick={this.showShidur} disabled={room === ''}>
+					<Menu.Item onClick={this.showShidur} disabled={room === '' || sourceLoading}>
             <Icon name="tv" />
 						{shidur ? t('oldClient.closeBroadcast') : t('oldClient.openBroadcast')}
           </Menu.Item>
 					<Popup
-						trigger={<Menu.Item disabled={!shidur} icon={layoutIcon} name="Layout" />}
+						trigger={<Menu.Item disabled={!shidur || sourceLoading} icon={layoutIcon} name="Layout" />}
 						disabled={!shidur}
 						on='click'
 						position='bottom center'
@@ -1274,9 +1290,9 @@ class OldClient extends Component {
 						{/* Update the icon above to current layout */}
 						<Popup.Content>
 							<Button.Group>
-								<Button onClick={() => this.setState({ currentLayout: 'double' })} active={layout === 'double'} icon="table" /> {/* Double first */}
-								<Button onClick={() => this.setState({ currentLayout: 'split' })} active={layout === 'split'} icon="columns" /> {/* Split */}
-								<Button onClick={() => this.setState({ currentLayout: 'equal' })} active={layout === 'equal'} icon="layout grid" /> {/* Equal */}
+								<Button onClick={() => this.updateLayout('double')} active={layout === 'double'} disabled={sourceLoading} icon="table" /> {/* Double first */}
+								<Button onClick={() => this.updateLayout('split')} active={layout === 'split'} disabled={sourceLoading} icon="columns" /> {/* Split */}
+								<Button onClick={() => this.updateLayout('equal')} active={layout === 'equal'} disabled={sourceLoading} icon="layout grid" /> {/* Equal */}
 							</Button.Group>
 						</Popup.Content>
 					</Popup>
