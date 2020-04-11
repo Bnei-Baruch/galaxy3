@@ -57,7 +57,7 @@ class OldClient extends Component {
     mids: [],
     muted: false,
     cammuted: false,
-    shidur: false,
+    shidur: true,
     protocol: null,
     user: {
       email: null,
@@ -79,7 +79,7 @@ class OldClient extends Component {
     numberOfVirtualUsers: localStorage.getItem('number_of_virtual_users') || '1',
     currentLayout: localStorage.getItem('currentLayout') || 'double',
     detachedSource: false,
-    sourceLoading: false,
+    sourceLoading: true,
   }
 
   componentDidUpdate(prevProps, prevState) {
@@ -1081,7 +1081,7 @@ class OldClient extends Component {
     const { t, i18n } = this.props;
     const width       = '134';
     const height      = '100';
-		const layout      = !shidur ? 'equal' : currentLayout;
+		const layout      = (room === '' || !shidur) ? 'equal' : currentLayout;
 
     //let iOS = ['iPad', 'iPhone', 'iPod'].indexOf(navigator.platform) >= 0;
 
@@ -1098,7 +1098,7 @@ class OldClient extends Component {
       break;
     }
 
-    let source = room !== '' && shidur &&
+    let source = shidur &&
       <VirtualStreaming
         setDetached={() => {
           this.setState({ detachedSource: true });
@@ -1277,13 +1277,13 @@ class OldClient extends Component {
             <Icon color={question ? 'green' : ''} name='question' />
             {t('oldClient.askQuestion')}
           </Menu.Item>
-					<Menu.Item onClick={this.showShidur} disabled={room === '' || sourceLoading}>
+					<Menu.Item onClick={this.showShidur} disabled={sourceLoading}>
             <Icon name="tv" />
 						{shidur ? t('oldClient.closeBroadcast') : t('oldClient.openBroadcast')}
           </Menu.Item>
 					<Popup
-						trigger={<Menu.Item disabled={!shidur || sourceLoading} icon={layoutIcon} name="Layout" />}
-						disabled={!shidur}
+						trigger={<Menu.Item disabled={room === '' || !shidur || sourceLoading} icon={layoutIcon} name="Layout" />}
+						disabled={room === '' || !shidur}
 						on='click'
 						position='bottom center'
 					>
