@@ -1084,16 +1084,6 @@ class OldClient extends Component {
       break;
     }
 
-    let noOfVideos = parseInt(numberOfVirtualUsers, 10);
-    if (room !== '') {
-      if (shidur && !detachedSource && layout !== 'split') {
-        noOfVideos += 1; // + Source
-      }
-			// TODO: Probably not correct calculation... no num_participants...
-      const thisRoom = rooms.find(r => r.room === room);
-      noOfVideos += (thisRoom ? parseInt(thisRoom.num_participants) - 1 : 0); // others - myself
-    }
-
     let source = room !== '' && shidur &&
       <VirtualStreaming
         setDetached={() => {
@@ -1114,7 +1104,7 @@ class OldClient extends Component {
     let vdevices_list = this.mapDevices(video_devices);
 
     let otherFeedHasQuestion = false;
-    let videos               = feeds.filter(feed => feed).map(feed => {
+    let otherVideos          = feeds.filter(feed => feed).map(feed => {
       const { id, talk, question, cammute, display } = feed;
 
       let display_name     = display.display;
@@ -1199,6 +1189,15 @@ class OldClient extends Component {
       }
       return result;
     };
+
+    console.log('numberOfVirtualUsers', numberOfVirtualUsers, typeof numberOfVirtualUsers);
+    let noOfVideos = parseInt(numberOfVirtualUsers, 10);
+    if (room !== '') {
+      if (shidur && !detachedSource && layout !== 'split') {
+        noOfVideos += 1; // + Source
+      }
+      noOfVideos += otherVideos.length;
+    }
 
     let l = (<Label key='Carbon' floating size='mini' color='red'>{count}</Label>);
 
@@ -1375,7 +1374,7 @@ class OldClient extends Component {
                 {manyMyself()}
                 {/*{myself}*/}
 
-                {videos}
+                {otherVideos}
               </div>
             </div>
           </div>
