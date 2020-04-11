@@ -114,8 +114,9 @@ class MobileClient extends Component {
                     alert("Failed to get Geo Info");
                 }
 
-                this.setState({geoinfo: !!data});
-                this.getRoomList(user);
+                this.setState({ geoinfo: !!data, user }, () => {
+                    this.getRoomList(user);
+                });
             });
         } else {
             alert("Browser not supported");
