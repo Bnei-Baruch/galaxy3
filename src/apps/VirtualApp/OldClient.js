@@ -16,6 +16,7 @@ import {
 } from '../../shared/tools';
 import './VirtualClient.scss';
 import './VideoConteiner.scss';
+import './CustomIcons.scss';
 import 'eqcss';
 import VirtualChat from './VirtualChat';
 import { initGxyProtocol, sendProtocolMessage } from '../../shared/protocol';
@@ -1090,13 +1091,13 @@ class OldClient extends Component {
     let layoutIcon;
     switch (layout) {
     case 'double':
-      layoutIcon = 'table';
+      layoutIcon = 'layout-double';
       break;
     case 'split':
-      layoutIcon = 'columns';
+      layoutIcon = 'layout-split';
       break;
     default:
-      layoutIcon = 'layout grid';
+      layoutIcon = 'layout-equal';
       break;
     }
 
@@ -1133,7 +1134,7 @@ class OldClient extends Component {
                    key={'v' + id}
                    ref={'video' + id}
                    id={'video' + id}>
-        <div className={classNames('video__overlay', { 'talk': talk })}>
+        <div className={classNames('video__overlay', { 'talk-frame': talk })}>
           {question ? <div className="question">
             <svg viewBox="0 0 50 50">
               <text x="25" y="25" textAnchor="middle" alignmentBaseline="central" dominantBaseline="central">&#xF128;</text>
@@ -1284,7 +1285,7 @@ class OldClient extends Component {
 						{shidur ? t('oldClient.closeBroadcast') : t('oldClient.openBroadcast')}
           </Menu.Item>
 					<Popup
-						trigger={<Menu.Item disabled={room === '' || !shidur || sourceLoading} icon={layoutIcon} name="Layout" />}
+						trigger={<Menu.Item disabled={room === '' || !shidur || sourceLoading} icon={{ className:`icon--custom ${layoutIcon}`}} name="Layout" />}
 						disabled={room === '' || !shidur}
 						on='click'
 						position='bottom center'
@@ -1292,9 +1293,9 @@ class OldClient extends Component {
 						{/* Update the icon above to current layout */}
 						<Popup.Content>
 							<Button.Group>
-								<Button onClick={() => this.updateLayout('double')} active={layout === 'double'} disabled={sourceLoading} icon="table" /> {/* Double first */}
-								<Button onClick={() => this.updateLayout('split')} active={layout === 'split'} disabled={sourceLoading} icon="columns" /> {/* Split */}
-								<Button onClick={() => this.updateLayout('equal')} active={layout === 'equal'} disabled={sourceLoading} icon="layout grid" /> {/* Equal */}
+								<Button  onClick={() => this.updateLayout('double')} active={layout === 'double'} disabled={sourceLoading} icon={{className:'icon--custom layout-double'}} /> {/* Double first */}
+								<Button  onClick={() => this.updateLayout('split')} active={layout === 'split'} disabled={sourceLoading} icon={{className:'icon--custom layout-split'}} /> {/* Split */}
+								<Button  onClick={() => this.updateLayout('equal')} active={layout === 'equal'} disabled={sourceLoading} icon={{className:'icon--custom layout-equal'}} /> {/* Equal */}
 							</Button.Group>
 						</Popup.Content>
 					</Popup>

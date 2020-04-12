@@ -30,54 +30,6 @@
 	}
 	@return $sortedMap;
 }
-// Quantity queries
-// 1. Last Simple Selector
-@function _last-simple-selector($selector) {
-	$parsed: selector-parse($selector);
-
-	@if length($parsed)>1 {
-		@error '`#{$selector}` contains #{length($parsed)} selectors and the `_last-simple-selector()`function accepts only 1.';
-	}
-
-	$last-simple-selector: nth(nth($parsed, 1), -1);
-
-	@return $last-simple-selector;
-}
-
-// 2. Build Quantity Selector
-@function _build-quantity-selector($selector-append, $last-selector) {
-	$quantity-selector: ();
-
-	@each $s in & {
-		$last-simple-selector: '~'+ if($last-selector, $last-selector, _last-simple-selector($s));
-		$sel: selector-append($s, $selector-append);
-		$sel2: selector-nest($sel, $last-simple-selector);
-		$quantity-selector: append($quantity-selector, $sel, 'comma');
-		$quantity-selector: append($quantity-selector, $sel2, 'comma');
-	}
-
-	@return $quantity-selector;
-}
-
-// 6. Exactly
-@mixin exactly($count, $selector: null) {
-	$selector-append: ':nth-last-child(#{$count}):first-child';
-
-	@if type-of($count) !='number'or not unitless($count) or $count < 1 {
-		@error '`#{$count}` is not a valid number for `exactly`';
-	}
-
-	@if $selector !=null and (type-of($selector) !='string'or length($selector) > 1) {
-		@error '`#{$selector}` is not a valid selector for `exactly`';
-	}
-
-	$exactly-selector: _build-quantity-selector($selector-append, $selector);
-
-
-	@at-root #{$exactly-selector} {
-		@content;
-	}
-}
 
 //////////////////////////////////////////////
 
@@ -149,7 +101,7 @@
 		height: 100%;
 		z-index: 1;
 
-		&.talk {
+		&.talk-frame {
 			border: 4px solid rgba(yellow, .6);
 		}
 	}

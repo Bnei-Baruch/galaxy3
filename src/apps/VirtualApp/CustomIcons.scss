@@ -1,0 +1,19 @@
+@font-face {
+  font-family: CustomIcons;
+  src: url(font/galaxy-custom.eot);
+  src: url(font/galaxy-custom.eot?#iefix) format('embedded-opentype'), url(font/galaxy-custom.woff2) format('woff2'), url(font/galaxy-custom.woff) format('woff'), url(font/galaxy-custom.ttf) format('truetype'), url(font/galaxy-custom.svg#icons) format('svg');
+  font-style: normal;
+  font-weight: 400;
+  font-variant: normal;
+  text-decoration: inherit;
+  text-transform: none
+}
+
+i.icon.icon--custom{
+  font-family: CustomIcons;
+}
+i.icon{
+  &.layout-double:before{content:'\e801';}
+  &.layout-split:before{content:'\e800';}
+  &.layout-equal:before{content:'\e802';}
+}
