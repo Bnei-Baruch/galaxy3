@@ -67,38 +67,38 @@ class UsersQuad extends Component {
     };
 
 
-    // setQuestion = (room) => {
-    //     let {vquad,col} = this.state;
-    //     let {rooms} = this.props;
-    //     for(let i=0; i<4; i++) {
-    //         if(vquad[i] && vquad[i].room === room) {
-    //             let group = rooms.find(g => g.room === room);
-    //             let qs = group ? group.questions : false;
-    //             if(vquad[i].questions !== qs) {
-    //                 vquad[i].questions = qs;
-    //                 this.setState({vquad});
-    //                 putData(`galaxy/qids/q`+col, {vquad}, (cb) => {
-    //                     Janus.log(":: Save to state: ",cb);
-    //                 });
-    //             }
-    //             break;
-    //         }
-    //     }
-    // };
-
-    setQuestion = (room, status) => {
+    setQuestion = (room) => {
         let {vquad,col} = this.state;
+        let {rooms} = this.props;
         for(let i=0; i<4; i++) {
             if(vquad[i] && vquad[i].room === room) {
-                vquad[i].questions = status;
-                this.setState({vquad});
-                // putData(`galaxy/qids/q`+col, {vquad}, (cb) => {
-                //     Janus.log(":: Save to state: ",cb);
-                // });
+                let group = rooms.find(g => g.room === room);
+                let qs = group ? group.questions : false;
+                if(vquad[i].questions !== qs) {
+                    vquad[i].questions = qs;
+                    this.setState({vquad});
+                    putData(`galaxy/qids/q`+col, {vquad}, (cb) => {
+                        Janus.log(":: Save to state: ",cb);
+                    });
+                }
                 break;
             }
         }
     };
+
+    // setQuestion = (room, status) => {
+    //     let {vquad,col} = this.state;
+    //     for(let i=0; i<4; i++) {
+    //         if(vquad[i] && vquad[i].room === room) {
+    //             vquad[i].questions = status;
+    //             this.setState({vquad});
+    //             // putData(`galaxy/qids/q`+col, {vquad}, (cb) => {
+    //             //     Janus.log(":: Save to state: ",cb);
+    //             // });
+    //             break;
+    //         }
+    //     }
+    // };
 
     quadGroup = (queue) => {
         let {groups} = this.props;
@@ -139,9 +139,9 @@ class UsersQuad extends Component {
         this.setState({vquad});
 
         // Save state
-        // putData(`galaxy/qids/q`+col, {vquad}, (cb) => {
-        //     Janus.log(":: Save to state: ",cb);
-        // });
+        putData(`galaxy/qids/q`+col, {vquad}, (cb) => {
+            Janus.log(":: Save to state: ",cb);
+        });
     };
 
     switchFour = () => {
@@ -176,9 +176,9 @@ class UsersQuad extends Component {
         }
 
         // Save state
-        // putData(`galaxy/qids/q`+col, {vquad}, (cb) => {
-        //     Janus.log(":: Save to state: ",cb);
-        // });
+        putData(`galaxy/qids/q`+col, {vquad}, (cb) => {
+            Janus.log(":: Save to state: ",cb);
+        });
     };
 
     setPreset = () => {
@@ -191,9 +191,9 @@ class UsersQuad extends Component {
         this.setState({vquad});
 
         // Save state
-        // putData(`galaxy/qids/q`+col, {vquad}, (cb) => {
-        //     Janus.log(":: Save to state: ",cb);
-        // });
+        putData(`galaxy/qids/q`+col, {vquad}, (cb) => {
+            Janus.log(":: Save to state: ",cb);
+        });
     };
 
     sdiAction = (action, status, i, group, qst) => {

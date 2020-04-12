@@ -118,7 +118,6 @@ class ShidurApp extends Component {
             //disabled_rooms = rooms.filter((room) => room.janus !== "" && !groups.find(droom => room.room === droom.room));
             this.setState({rooms,groups});
             let quads = [...this.col1.state.vquad,...this.col2.state.vquad,...this.col3.state.vquad,...this.col4.state.vquad];
-            console.log(quads)
             let list = groups.filter((room) => !quads.find(droom => droom && room.room === droom.room));
             let questions = list.filter(room => room.questions);
             this.setState({questions});
@@ -141,19 +140,23 @@ class ShidurApp extends Component {
 
         if(data.type === "question") {
             const {room, status} = data;
-            this.col1.setQuestion(room, status);
-            this.col2.setQuestion(room, status);
-            this.col3.setQuestion(room, status);
-            this.col4.setQuestion(room, status);
+            setTimeout(() => {
+                this.col1.setQuestion(room, status);
+                this.col2.setQuestion(room, status);
+                this.col3.setQuestion(room, status);
+                this.col4.setQuestion(room, status);
+            }, 3000);
         }
 
         if(data.type === "leave" && users[data.id]) {
             let user = users[data.id];
             if(user.room && user.question) {
-                this.col1.setQuestion(user.room, false);
-                this.col2.setQuestion(user.room, false);
-                this.col3.setQuestion(user.room, false);
-                this.col4.setQuestion(user.room, false);
+                setTimeout(() => {
+                    this.col1.setQuestion(user.room, false);
+                    this.col2.setQuestion(user.room, false);
+                    this.col3.setQuestion(user.room, false);
+                    this.col4.setQuestion(user.room, false);
+                }, 3000);
             }
             delete users[data.id];
             this.setState({users});
