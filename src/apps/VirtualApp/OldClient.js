@@ -111,7 +111,7 @@ class OldClient extends Component {
             alert(t('oldClient.failGeoInfo'));
           }
           this.setState({ geoinfo: !!data, user }, () => {
-          this.getRoomList(user);
+            this.getRoomList(user);
           });
         });
       } else {
@@ -560,7 +560,8 @@ class OldClient extends Component {
         if (msg['publishers'] !== undefined && msg['publishers'] !== null) {
           let list          = Object.assign([], msg['publishers']);
           //FIXME:  Tmp fix for black screen in room caoused by feed with video_codec = none
-          let feeds         = list.filter(feeder => JSON.parse(feeder.display).role === 'user' && feeder.video_codec !== 'none');
+          let feeds         = list.sort((a, b) => a.display.timestamp - b.display.timestamp)
+            .filter(feeder => JSON.parse(feeder.display).role === 'user' && feeder.video_codec !== 'none');
           const feedStreams = Object.assign([], this.state.feedStreams);
           const users       = Object.assign([], this.state.users);
 
@@ -1041,28 +1042,8 @@ class OldClient extends Component {
     });
   };
 
-  buildLocalFeed = () => {
-    const {
-            cammuted,
-            myid,
-            question,
-            user: { name, timestamp = Date.now() },
-            username_value,
-            muted
-          } = this.state;
-
-    return {
-      id: myid,
-      muted,
-      question,
-      cammute: cammuted,
-      display: { display: username_value || name, timestamp }
-    };
-
-  };
-
-  renderLocalMedia = (feed, width, height) => {
-    const { question, muted, cammute, display: { display } } = feed;
+  renderLocalMedia = (width, height) => {
+    const { username_value, user, cammuted, question, muted } = this.state;
 
     return (<div className="video">
       <div className={classNames('video__overlay')}>
@@ -1079,16 +1060,16 @@ class OldClient extends Component {
         }
         <div className="video__title">
           {muted ? <Icon name="microphone slash" size="small"
-                         color="red" /> : ''}{display}
+                         color="red" /> : ''}{username_value || user.name}
         </div>
       </div>
-      <svg className={classNames('nowebcam', { 'hidden': !cammute })} viewBox="0 0 32 18"
+      <svg className={classNames('nowebcam', { 'hidden': !cammuted })} viewBox="0 0 32 18"
            preserveAspectRatio="xMidYMid meet">
         <text x="16" y="9" textAnchor="middle" alignmentBaseline="central"
               dominantBaseline="central">&#xf2bd;</text>
       </svg>
       <video
-        className={classNames('mirror', { 'hidden': cammute })}
+        className={classNames('mirror', { 'hidden': cammuted })}
         ref="localVideo"
         id="localVideo"
         width={width}
@@ -1100,12 +1081,9 @@ class OldClient extends Component {
 
     </div>);
   };
-  renderMedia      = feed => {
+
+  renderMedia = (feed, width, height) => {
     const { id, talk, question, cammute, display: { display } } = feed;
-    const width                                                 = '134';
-    const height                                                = '100';
-    if (!id || id === this.state.user.rfid) K;
-    return this.renderLocalMedia(feed, width, height);
 
     return (
       <div className="video"
@@ -1195,13 +1173,20 @@ class OldClient extends Component {
     let vdevices_list = this.mapDevices(video_devices);
 
     let otherFeedHasQuestion = false;
-    let videos               = [this.buildLocalFeed(), ...feeds.filter(feed => feed)]
-      .sort((a, b) => b.display.timestamp - a.display.timestamp)
-      .map(feed => {
-        const { question, id } = feed;
-        otherFeedHasQuestion   = otherFeedHasQuestion || (question && id !== myid);
-        return this.renderMedia(feed);
-      });
+    let localPushed          = false;
+    let videos               = feeds.filter(feed => feed).reduce((result, feed, i) => {
+      const { question, id } = feed;
+      otherFeedHasQuestion   = otherFeedHasQuestion || (question && id !== myid);
+      result.push(this.renderMedia(feed, width, height));
+      if (!localPushed && (feeds.length - 1 === i || (feed.display.timestamp <= user.timestamp && feeds[i + 1].display.timestamp > user.timestamp))) {
+        localPushed = true;
+        result.push(this.renderLocalMedia(width, height));
+      }
+      return result;
+    }, []);
+    if (videos.length === 0) {
+      videos = [this.renderLocalMedia(width, height)];
+    }
 
     let l = (<Label key='Carbon' floating size='mini' color='red'>{count}</Label>);
 
