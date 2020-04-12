@@ -80,9 +80,9 @@ class OldClient extends Component {
 
   componentDidUpdate(prevProps, prevState) {
     if (this.state.videoroom !== prevState.videoroom ||
-        this.state.localVideoTrack !== prevState.localVideoTrack ||
-        this.state.localAudioTrack !== prevState.localAudioTrack ||
-        JSON.stringify(this.state.user) !== JSON.stringify(prevState.user)) {
+      this.state.localVideoTrack !== prevState.localVideoTrack ||
+      this.state.localAudioTrack !== prevState.localAudioTrack ||
+      JSON.stringify(this.state.user) !== JSON.stringify(prevState.user)) {
       this.state.monitoringData.setConnection(
         this.state.videoroom,
         this.state.localAudioTrack,
@@ -236,16 +236,16 @@ class OldClient extends Component {
 
   getRoomList = (user) => {
     getState('galaxy/groups', (groups) => {
-      let rooms = groups.rooms;
+      let rooms               = groups.rooms;
       const { selected_room } = this.state;
       //let rooms                      = groups.filter(r => /W\./i.test(r.description) === women);
       this.setState({ rooms });
       if (selected_room !== '') {
         const room = rooms.find(r => r.room === selected_room);
         const name = room.description;
-        user.room     = selected_room;
-        user.janus    = room.janus;
-        user.group    = name;
+        user.room  = selected_room;
+        user.janus = room.janus;
+        user.group = name;
         this.setState({ name });
         this.initClient(user, false);
       }
@@ -261,9 +261,9 @@ class OldClient extends Component {
       return;
     }
     this.setState({ selected_room: roomid, name });
-    user.room       = roomid;
-    user.group      = name;
-    user.janus      = room.janus;
+    user.room  = roomid;
+    user.group = name;
+    user.janus = room.janus;
     this.setState({ delay: true });
     this.initClient(user, false);
   };
@@ -465,10 +465,10 @@ class OldClient extends Component {
           videoroom.muteAudio();
         }
         if (track.kind === 'video') {
-          this.setState({localVideoTrack: track});
+          this.setState({ localVideoTrack: track });
         }
         if (track.kind === 'audio') {
-          this.setState({localAudioTrack: track});
+          this.setState({ localAudioTrack: track });
         }
       },
       onremotestream: (stream) => {
@@ -936,7 +936,12 @@ class OldClient extends Component {
         alert(this.props.t('oldClient.error') + ondata.error);
         this.state.protocol.hangup();
       } else if (type === 'joined') {
-        let register = { 'request': 'join', 'room': selected_room, 'ptype': 'publisher', 'display': JSON.stringify(user) };
+        let register = {
+          'request': 'join',
+          'room': selected_room,
+          'ptype': 'publisher',
+          'display': JSON.stringify(user)
+        };
         videoroom.send({ 'message': register });
         this.setState({ user, muted: !women, room: selected_room });
         this.chat.initChatRoom(user, selected_room);
@@ -970,7 +975,7 @@ class OldClient extends Component {
     const user                         = Object.assign({}, this.state.user);
     localStorage.setItem('question', !question);
     user.question = !question;
-    let msg = { type: 'question', status: !question, room, user };
+    let msg       = { type: 'question', status: !question, room, user };
     sendProtocolMessage(protocol, user, msg);
     this.setState({ user, question: !question, delay: true });
     setTimeout(() => {
@@ -990,7 +995,7 @@ class OldClient extends Component {
 
   camMute = () => {
     let { videoroom, cammuted, protocol, room } = this.state;
-    const user = Object.assign({}, this.state.user);
+    const user                                  = Object.assign({}, this.state.user);
     cammuted ? videoroom.unmuteVideo() : videoroom.muteVideo();
     this.setState({ cammuted: !cammuted, delay: true });
     setTimeout(() => {
@@ -999,7 +1004,7 @@ class OldClient extends Component {
     this.sendDataMessage('camera', this.state.cammuted);
     user.camera = cammuted;
     // Send to protocol camera status event
-    let msg = { type: 'camera', status: cammuted, room, user };
+    let msg     = { type: 'camera', status: cammuted, room, user };
     sendProtocolMessage(protocol, user, msg);
   };
 
@@ -1033,34 +1038,34 @@ class OldClient extends Component {
 
   render() {
     const {
-      audio,
-      audio_device,
-      audio_devices,
-      cammuted,
-      count,
-      delay,
-      feeds,
-      geoinfo,
-      janus,
-      localAudioTrack,
-      monitoringData,
-      muted,
-      myid,
-      question,
-      room,
-      rooms,
-      selected_room,
-      selftest,
-      shidur,
-      tested,
-      user,
-      username_value,
-      video_device,
-      video_devices,
-      video_setting,
-      visible,
-      women,
-    } = this.state;
+            audio,
+            audio_device,
+            audio_devices,
+            cammuted,
+            count,
+            delay,
+            feeds,
+            geoinfo,
+            janus,
+            localAudioTrack,
+            monitoringData,
+            muted,
+            myid,
+            question,
+            room,
+            rooms,
+            selected_room,
+            selftest,
+            shidur,
+            tested,
+            user,
+            username_value,
+            video_device,
+            video_devices,
+            video_setting,
+            visible,
+            women,
+          } = this.state;
 
     const { t, i18n } = this.props;
     const width       = '134';
@@ -1094,7 +1099,8 @@ class OldClient extends Component {
               <text x="25" y="25" textAnchor="middle" alignmentBaseline="central" dominantBaseline="central">&#xF128;</text>
             </svg>
           </div> : ''}
-          <div className="video__title">{!talk ? <Icon name="microphone slash" size="small" color="red" /> : ''}{display_name}</div>
+          <div className="video__title">{!talk ?
+            <Icon name="microphone slash" size="small" color="red" /> : ''}{display_name}</div>
         </div>
         <svg className={classNames('nowebcam', { 'hidden': !cammute })} viewBox="0 0 32 18" preserveAspectRatio="xMidYMid meet">
           <text x="16" y="9" textAnchor="middle" alignmentBaseline="central" dominantBaseline="central">&#xf2bd;</text>
@@ -1143,7 +1149,7 @@ class OldClient extends Component {
             onChange={(e, { value }) => this.selectRoom(value)} />
           {localAudioTrack ? <Button negative icon='sign-out' onClick={() => this.exitRoom(false)} /> : ''}
           {!localAudioTrack ? <Button primary icon='sign-in' disabled={delay || !selected_room || !audio_device}
-                               onClick={this.joinRoom} /> : ''}
+                                      onClick={this.joinRoom} /> : ''}
         </Input>
         <Menu icon='labeled' secondary size="mini">
           <Menu.Item disabled={!localAudioTrack}
