@@ -111,7 +111,7 @@ class OldClient extends Component {
             alert(t('oldClient.failGeoInfo'));
           }
           this.setState({ geoinfo: !!data, user }, () => {
-            this.getRoomList(user);
+          this.getRoomList(user);
           });
         });
       } else {
@@ -718,7 +718,12 @@ class OldClient extends Component {
           Janus.log('  -- This is a multistream subscriber', remoteFeed);
           this.setState({ remoteFeed, creatingFeed: false });
           // We wait for the plugin to send us an offer
-          let subscribe = { request: 'join', room: this.state.room, ptype: 'subscriber', streams: subscription };
+          let subscribe = {
+            request: 'join',
+            room: this.state.room,
+            ptype: 'subscriber',
+            streams: subscription
+          };
           remoteFeed.send({ message: subscribe });
         },
         error: (error) => {
@@ -1036,6 +1041,113 @@ class OldClient extends Component {
     });
   };
 
+  buildLocalFeed = () => {
+    const {
+            cammuted,
+            myid,
+            question,
+            user: { name, timestamp = Date.now() },
+            username_value,
+            muted
+          } = this.state;
+
+    return {
+      id: myid,
+      muted,
+      question,
+      cammute: cammuted,
+      display: { display: username_value || name, timestamp }
+    };
+
+  };
+
+  renderLocalMedia = (feed, width, height) => {
+    const { question, muted, cammute, display: { display } } = feed;
+
+    return (<div className="video">
+      <div className={classNames('video__overlay')}>
+        {question ?
+          <div className="question">
+            <svg viewBox="0 0 50 50">
+              <text x="25" y="25" textAnchor="middle"
+                    alignmentBaseline="central"
+                    dominantBaseline="central">&#xF128;</text>
+            </svg>
+          </div>
+          :
+          ''
+        }
+        <div className="video__title">
+          {muted ? <Icon name="microphone slash" size="small"
+                         color="red" /> : ''}{display}
+        </div>
+      </div>
+      <svg className={classNames('nowebcam', { 'hidden': !cammute })} viewBox="0 0 32 18"
+           preserveAspectRatio="xMidYMid meet">
+        <text x="16" y="9" textAnchor="middle" alignmentBaseline="central"
+              dominantBaseline="central">&#xf2bd;</text>
+      </svg>
+      <video
+        className={classNames('mirror', { 'hidden': cammute })}
+        ref="localVideo"
+        id="localVideo"
+        width={width}
+        height={height}
+        autoPlay={true}
+        controls={false}
+        muted={true}
+        playsinline={true} />
+
+    </div>);
+  };
+  renderMedia      = feed => {
+    const { id, talk, question, cammute, display: { display } } = feed;
+    const width                                                 = '134';
+    const height                                                = '100';
+    if (!id || id === this.state.user.rfid) K;
+    return this.renderLocalMedia(feed, width, height);
+
+    return (
+      <div className="video"
+           key={'v' + id}
+           ref={'video' + id}
+           id={'video' + id}>
+        <div className={classNames('video__overlay', { 'talk': talk })}>
+          {question ? <div className="question">
+            <svg viewBox="0 0 50 50">
+              <text x="25" y="25" textAnchor="middle" alignmentBaseline="central"
+                    dominantBaseline="central">&#xF128;</text>
+            </svg>
+          </div> : ''}
+          <div className="video__title">{!talk ?
+            <Icon name="microphone slash" size="small" color="red" /> : ''}{display}</div>
+        </div>
+        <svg className={classNames('nowebcam', { 'hidden': !cammute })} viewBox="0 0 32 18"
+             preserveAspectRatio="xMidYMid meet">
+          <text x="16" y="9" textAnchor="middle" alignmentBaseline="central"
+                dominantBaseline="central">&#xf2bd;</text>
+        </svg>
+        <video
+          key={'v' + id}
+          ref={'remoteVideo' + id}
+          id={'remoteVideo' + id}
+          width={width}
+          height={height}
+          autoPlay={true}
+          controls={false}
+          muted={true}
+          playsinline={true} />
+        <audio
+          key={'a' + id}
+          ref={'remoteAudio' + id}
+          id={'remoteAudio' + id}
+          autoPlay={true}
+          controls={false}
+          playsinline={true} />
+      </div>
+    );
+  };
+
   render() {
     const {
             audio,
@@ -1068,9 +1180,9 @@ class OldClient extends Component {
           } = this.state;
 
     const { t, i18n } = this.props;
-    const width       = '134';
-    const height      = '100';
 
+    const width  = '134';
+    const height = '100';
     //let iOS = ['iPad', 'iPhone', 'iPod'].indexOf(navigator.platform) >= 0;
 
     let rooms_list = rooms.map((data, i) => {
@@ -1083,47 +1195,13 @@ class OldClient extends Component {
     let vdevices_list = this.mapDevices(video_devices);
 
     let otherFeedHasQuestion = false;
-    let videos               = feeds.filter(feed => feed).map(feed => {
-      const { id, talk, question, cammute, display } = feed;
-
-      let display_name     = display.display;
-      otherFeedHasQuestion = otherFeedHasQuestion || (question && id !== myid);
-
-      return (<div className="video"
-                   key={'v' + id}
-                   ref={'video' + id}
-                   id={'video' + id}>
-        <div className={classNames('video__overlay', { 'talk': talk })}>
-          {question ? <div className="question">
-            <svg viewBox="0 0 50 50">
-              <text x="25" y="25" textAnchor="middle" alignmentBaseline="central" dominantBaseline="central">&#xF128;</text>
-            </svg>
-          </div> : ''}
-          <div className="video__title">{!talk ?
-            <Icon name="microphone slash" size="small" color="red" /> : ''}{display_name}</div>
-        </div>
-        <svg className={classNames('nowebcam', { 'hidden': !cammute })} viewBox="0 0 32 18" preserveAspectRatio="xMidYMid meet">
-          <text x="16" y="9" textAnchor="middle" alignmentBaseline="central" dominantBaseline="central">&#xf2bd;</text>
-        </svg>
-        <video
-          key={'v' + id}
-          ref={'remoteVideo' + id}
-          id={'remoteVideo' + id}
-          width={width}
-          height={height}
-          autoPlay={true}
-          controls={false}
-          muted={true}
-          playsInline={true} />
-        <audio
-          key={'a' + id}
-          ref={'remoteAudio' + id}
-          id={'remoteAudio' + id}
-          autoPlay={true}
-          controls={false}
-          playsInline={true} />
-      </div>);
-    });
+    let videos               = [this.buildLocalFeed(), ...feeds.filter(feed => feed)]
+      .sort((a, b) => b.display.timestamp - a.display.timestamp)
+      .map(feed => {
+        const { question, id } = feed;
+        otherFeedHasQuestion   = otherFeedHasQuestion || (question && id !== myid);
+        return this.renderMedia(feed);
+      });
 
     let l = (<Label key='Carbon' floating size='mini' color='red'>{count}</Label>);
 
@@ -1148,8 +1226,9 @@ class OldClient extends Component {
             //onClick={this.getRoomList}
             onChange={(e, { value }) => this.selectRoom(value)} />
           {localAudioTrack ? <Button negative icon='sign-out' onClick={() => this.exitRoom(false)} /> : ''}
-          {!localAudioTrack ? <Button primary icon='sign-in' disabled={delay || !selected_room || !audio_device}
-                                      onClick={this.joinRoom} /> : ''}
+          {!localAudioTrack ?
+            <Button primary icon='sign-in' disabled={delay || !selected_room || !audio_device}
+                    onClick={this.joinRoom} /> : ''}
         </Input>
         <Menu icon='labeled' secondary size="mini">
           <Menu.Item disabled={!localAudioTrack}
@@ -1158,7 +1237,9 @@ class OldClient extends Component {
             {t(visible ? 'oldClient.closeChat' : 'oldClient.openChat')}
             {count > 0 ? l : ''}
           </Menu.Item>
-          <Menu.Item disabled={!audio || video_device === null || !geoinfo || !localAudioTrack || delay || otherFeedHasQuestion} onClick={this.handleQuestion}>
+          <Menu.Item
+            disabled={!audio || video_device === null || !geoinfo || !localAudioTrack || delay || otherFeedHasQuestion}
+            onClick={this.handleQuestion}>
             <Icon color={question ? 'green' : ''} name='question' />
             {t('oldClient.askQuestion')}
           </Menu.Item>
@@ -1177,7 +1258,8 @@ class OldClient extends Component {
         </Menu>
         <Menu icon='labeled' secondary size="mini">
           {!localAudioTrack ?
-            <Menu.Item position='right' disabled={audio_device === null || selftest !== t('oldClient.selfAudioTest')}
+            <Menu.Item position='right'
+                       disabled={audio_device === null || selftest !== t('oldClient.selfAudioTest')}
                        onClick={this.selfTest}>
               <Icon color={tested ? 'green' : 'red'} name="sound" />
               {selftest}
@@ -1243,41 +1325,6 @@ class OldClient extends Component {
           <div className="videos-panel">
             <div className="videos">
               <div className="videos__wrapper">
-                <div className="video">
-                  <div className={classNames('video__overlay')}>
-                    {question ?
-                      <div className="question">
-                        <svg viewBox="0 0 50 50">
-                          <text x="25" y="25" textAnchor="middle"
-                                alignmentBaseline="central"
-                                dominantBaseline="central">&#xF128;</text>
-                        </svg>
-                      </div>
-                      :
-                      ''
-                    }
-                    <div className="video__title">
-                      {muted ? <Icon name="microphone slash" size="small"
-                                     color="red" /> : ''}{username_value || user.name}
-                    </div>
-                  </div>
-                  <svg className={classNames('nowebcam', { 'hidden': !cammuted })} viewBox="0 0 32 18"
-                       preserveAspectRatio="xMidYMid meet">
-                    <text x="16" y="9" textAnchor="middle" alignmentBaseline="central"
-                          dominantBaseline="central">&#xf2bd;</text>
-                  </svg>
-                  <video
-                    className={classNames('mirror', { 'hidden': cammuted })}
-                    ref="localVideo"
-                    id="localVideo"
-                    width={width}
-                    height={height}
-                    autoPlay={true}
-                    controls={false}
-                    muted={true}
-                    playsInline={true} />
-
-                </div>
                 {videos}
               </div>
             </div>
