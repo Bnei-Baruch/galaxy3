@@ -115,9 +115,10 @@ class ShidurApp extends Component {
                 this.setState({mode: ""})
             }
             let groups = rooms.filter((room) => room.janus !== "" && !disabled_rooms.find(droom => room.room === droom.room));
-            disabled_rooms = rooms.filter((room) => room.janus !== "" && !groups.find(droom => room.room === droom.room));
-            this.setState({rooms,groups,disabled_rooms});
+            //disabled_rooms = rooms.filter((room) => room.janus !== "" && !groups.find(droom => room.room === droom.room));
+            this.setState({rooms,groups});
             let quads = [...this.col1.state.vquad,...this.col2.state.vquad,...this.col3.state.vquad,...this.col4.state.vquad];
+            console.log(quads)
             let list = groups.filter((room) => !quads.find(droom => droom && room.room === droom.room));
             let questions = list.filter(room => room.questions);
             this.setState({questions});
