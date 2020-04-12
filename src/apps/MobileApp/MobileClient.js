@@ -1089,7 +1089,7 @@ class MobileClient extends Component {
     };
 
     handleSwipe = (i) => {
-        this.stream.videoMute(i)
+      //  this.stream.videoMute(i)
     };
 
 
