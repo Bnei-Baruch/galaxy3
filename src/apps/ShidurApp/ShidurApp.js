@@ -35,7 +35,9 @@ class ShidurApp extends Component {
     };
 
     componentWillUnmount() {
-        this.state.janus.destroy();
+        this.state.GxyJanus.gxy1.janus.destroy();
+        this.state.GxyJanus.gxy2.janus.destroy();
+        this.state.GxyJanus.gxy3.janus.destroy();
     };
 
     checkPermission = (user) => {
@@ -60,6 +62,8 @@ class ShidurApp extends Component {
         for(let i=0; i<gxy.length; i++) {
             let {GxyJanus} = this.state;
             initJanus(janus => {
+                if(GxyJanus[gxy[i]].janus)
+                    GxyJanus[gxy[i]].janus.destroy();
                 GxyJanus[gxy[i]].janus = janus;
                 if(gxy[i] !== "gxy3")
                     user.id = "shidur-" + gxy[i];
@@ -68,6 +72,13 @@ class ShidurApp extends Component {
                     this.setState({...GxyJanus[gxy[i]]});
                 }, ondata => {
                     Janus.log(i + " :: protocol public message: ", ondata);
+                    if(ondata.type === "error" && ondata.error_code === 420) {
+                        console.error(ondata.error + " - Reload after 10 seconds");
+                        this.state.GxyJanus[gxy[i]].protocol.hangup();
+                        setTimeout(() => {
+                            this.initGalaxy(user,[gxy[i]]);
+                        }, 10000);
+                    }
                     this.onProtocolData(ondata, gxy[i]);
                 });
             },er => {

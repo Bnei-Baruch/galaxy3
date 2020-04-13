@@ -47,13 +47,17 @@ class AudioOutApp extends Component {
     };
 
     componentWillUnmount() {
-        this.state.janus.destroy();
+        this.state.GxyJanus.gxy1.janus.destroy();
+        this.state.GxyJanus.gxy2.janus.destroy();
+        this.state.GxyJanus.gxy3.janus.destroy();
     };
 
     initGalaxy = (user,gxy) => {
         for(let i=0; i<gxy.length; i++) {
             let {GxyJanus} = this.state;
             initJanus(janus => {
+                if(GxyJanus[gxy[i]].janus)
+                    GxyJanus[gxy[i]].janus.destroy();
                 GxyJanus[gxy[i]].janus = janus;
                 if(gxy[i] !== "gxy3")
                     user.id = "audout-" + gxy[i];
