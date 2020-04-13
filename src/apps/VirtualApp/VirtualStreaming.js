@@ -1,6 +1,6 @@
 import React, { Component, Fragment } from 'react';
 import { Janus } from '../../lib/janus';
-import { Label } from 'semantic-ui-react';
+import { Label, Button, Select } from 'semantic-ui-react';
 import NewWindow from 'react-new-window';
 import {
   GEO_IP_INFO,
@@ -10,7 +10,8 @@ import {
   gxycol,
   trllang,
 } from '../../shared/consts';
-import '../StreamApp/GalaxyStream.css';
+// import '../StreamApp/GalaxyStream.css';
+import './BroadcastStream.scss';
 
 class VirtualStreaming extends Component {
 
@@ -435,7 +436,34 @@ class VirtualStreaming extends Component {
     const inLine = (
       <div className="video video--broadcast" key='v0' ref='video0' id='video0'>
         <div className="video" ref="mediaplayer">
-          <div className="video__overlay"></div>
+          <div className="video__overlay">
+          <Button color='blue'
+                        icon='expand arrows alternate'
+                        onClick={this.toggleFullScreen} />
+                        <Button color='yellow'
+                        icon='expand arrows alternate'
+                        onClick={this.toggleNewWindow} />
+                        {/* <VolumeSlider volume={this.setVolume} /> */}
+                        <Button positive={!muted}
+                        negative={muted}
+                        icon={muted ? 'volume off' : 'volume up'}
+                        onClick={this.audioMute} />
+                         <Select
+                    compact
+                    error={!videos}
+                    placeholder="Video:"
+                    value={videos}
+                    options={videos_options}
+                    onChange={(e, { value }) => this.setVideo(value)} />
+                    <Select
+                    compact={false}
+                    scrolling={false}
+                    error={!audios}
+                    placeholder="Audio:"
+                    value={audios}
+                    options={audiog_options}
+                    onChange={(e, { value, options }) => this.setAudio(value, options)} />
+          </div>
           {/* <div className='mediaplayer' ref="mediaplayer"> */}
           <video ref="remoteVideo"
                  id="remoteVideo"
