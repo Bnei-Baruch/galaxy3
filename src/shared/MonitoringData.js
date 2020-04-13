@@ -108,7 +108,7 @@ export const MonitoringData = class {
     if (pc && this.localAudioTrack.constructor.name === 'MediaStreamTrack' &&
         (!this.localVideoTrack || this.localVideoTrack.constructor.name === 'MediaStreamTrack')) {
       const datas = [];
-      const SKIP_REPORTS = ['certificate', 'codec', 'track', 'remote-candidate'];
+      const SKIP_REPORTS = ['certificate', 'codec', 'track', 'local-candidate', 'remote-candidate'];
       const getStatsPromises = [];
       getStatsPromises.push(pc.getStats(this.localAudioTrack).then(stats => {
         const audioReports = {name: 'audio', reports: [], timestamp: defaultTimestamp};
@@ -138,6 +138,48 @@ export const MonitoringData = class {
           datas.push(videoReports);
         }));
       }
+
+      // Missing some important reports. Add them manually.
+      const ids = [this.localAudioTrack.id];
+      if (this.localVideoTrack) {
+        ids.push(this.localVideoTrack.id);
+      }
+      let mediaSourceIds = [];
+      let ssrcs = [];
+      getStatsPromises.push(pc.getStats(null).then((stats) => {
+        stats.forEach(report => {
+          if (ids.includes(report.trackIdentifier)) {
+            if (report.mediaSourceId && !mediaSourceIds.includes(report.mediaSourceId)) {
+              mediaSourceIds.push(report.mediaSourceId);
+            }
+          }
+        });
+        if (mediaSourceIds.length) {
+          stats.forEach(report => {
+            if (mediaSourceIds.includes(report.mediaSourceId)) {
+              if (report.ssrc) {
+                ssrcs.push(report.ssrc);
+              }
+            }
+          });
+        }
+        if (ssrcs.length) {
+          stats.forEach(report => {
+            if (ssrcs.includes(report.ssrc) || mediaSourceIds.includes(report.mediaSourceId) || ids.includes(report.trackIdentifier)) {
+              const kind = report.kind;
+              const type = report.type;
+              const data = datas.find((data) => data.name === kind);
+              if (data && data.reports) {
+                const r = data.reports.find((r) => r.type === type);
+                if (!r) {
+                  data.reports.push(report);
+                }
+              }
+            }
+          });
+        }
+      }));
+      
       Promise.all(getStatsPromises).then(() => {
         this.forEachMonitor_(datas, defaultTimestamp);
       });
