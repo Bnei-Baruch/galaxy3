@@ -9,6 +9,7 @@ import UsersPreview from "./UsersPreview";
 class ShidurToran extends Component {
 
     state = {
+        delay: false,
         index: 0,
         group: null,
         open: false,
@@ -24,6 +25,7 @@ class ShidurToran extends Component {
     }
 
     selectGroup = (group, i) => {
+        if(this.state.delay) return;
         Janus.log(group, i);
         this.setState({pg: group, open: true});
         group.queue = i;
@@ -49,15 +51,18 @@ class ShidurToran extends Component {
     };
 
     disableRoom = (data) => {
+        if(this.state.delay) return;
         let {disabled_rooms} = this.props;
         let group = disabled_rooms.find(r => r.room === data.room);
         if (group) return;
         disabled_rooms.push(data);
         this.props.setProps({disabled_rooms});
-        this.props.gerGroups();
+        this.setDelay();
+        //this.props.gerGroups();
     };
 
     restoreRoom = (e, data, i) => {
+        if(this.state.delay) return;
         e.preventDefault();
         if (e.type === 'contextmenu') {
             let {disabled_rooms} = this.props;
@@ -65,7 +70,8 @@ class ShidurToran extends Component {
                 if(disabled_rooms[i].room === data.room) {
                     disabled_rooms.splice(i, 1);
                     this.props.setProps({disabled_rooms});
-                    this.props.gerGroups();
+                    this.setDelay();
+                    //this.props.gerGroups();
                 }
             }
         }
@@ -127,10 +133,17 @@ class ShidurToran extends Component {
         sendProtocolMessage(GxyJanus.gxy3.protocol, user, msg );
     };
 
+    setDelay = () => {
+        this.setState({delay: true});
+        setTimeout(() => {
+            this.setState({delay: false});
+        }, 3000);
+    };
+
     render() {
 
         const {group,disabled_rooms,groups,groups_queue,questions,presets,users,sdiout,sndman,mode} = this.props;
-        const {open} = this.state;
+        const {open,delay} = this.state;
         const q = (<b style={{color: 'red', fontSize: '20px', fontFamily: 'Verdana', fontWeight: 'bold'}}>?</b>);
         const next_group = groups[groups_queue] ? groups[groups_queue].description : groups[0] ? groups[0].description : "";
 
@@ -225,7 +238,7 @@ class ShidurToran extends Component {
                         <Popup trigger={<Button disabled color='teal' content='2' onClick={() => this.savePreset(4)} />} content={preset4} />
                         <Popup trigger={<Button disabled color='teal' content='3' onClick={() => this.savePreset(8)} />} content={preset4} />
                     </Button.Group>
-                    <Segment textAlign='center' className="group_list" raised >
+                    <Segment textAlign='center' className="group_list" raised disabled={delay} >
                         <Table selectable compact='very' basic structured className="admin_table" unstackable>
                             <Table.Body>
                                 {rooms_list}

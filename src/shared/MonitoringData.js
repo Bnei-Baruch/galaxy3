@@ -5,9 +5,13 @@ import {
 } from "./consts";
 
 const ONE_SECOND_IN_MS = 1000;
-const STORE_INTERVAL = 60 * ONE_SECOND_IN_MS; // Store for one minute in ms.
-const MAX_EXPONENTIAL_BACKOFF_MS = 10 * 60 * ONE_SECOND_IN_MS; // 10 Minutes in ms.
+const ONE_MINUTE_IN_MS = 60 * 1000;
 const FIVE_SECONDS_IN_MS = 5 * ONE_SECOND_IN_MS;
+
+const INITIAL_STORE_INTERVAL = 5 * ONE_MINUTE_IN_MS;
+const INITIAL_SAMPLE_INTERVAL = FIVE_SECONDS_IN_MS;
+const MAX_EXPONENTIAL_BACKOFF_MS = 10 * ONE_MINUTE_IN_MS;
+
 
 export const MonitoringData = class {
   constructor() {
@@ -18,12 +22,34 @@ export const MonitoringData = class {
     this.user = null;
     this.monitorIntervalId = 0;
     this.storedData = [];
-    this.lastUpdateTimestamp = 0;
     this.onDataCallback = null;
     this.fetchErrors = 0;
     this.lastFetchTimestamp = 0;
+    this.lastUpdateTimestamp = 0;
 
-    this.startMonitoring();
+    this.spec = {
+      sample_interval: INITIAL_SAMPLE_INTERVAL,
+      store_interval: INITIAL_STORE_INTERVAL,
+      metrics_blacklist: [],
+    };
+
+    this.restartMonitoring();
+  }
+
+  updateSpec(spec) {
+    if (!isNaN(spec.store_interval) && spec.store_interval >= ONE_MINUTE_IN_MS) {
+      this.spec.store_interval = spec.store_interval;
+    }
+    if (Array.isArray(spec.metrics_blacklist) &&
+        spec.metrics_blacklist.every((metric) => typeof metric === 'string')) {
+      this.spec.metrics_blacklist = spec.metrics_blacklist;
+    }
+    if (!isNaN(spec.sample_interval) &&
+        this.spec.sample_interval !== spec.sample_interval &&
+        spec.sample_interval >= ONE_SECOND_IN_MS) {
+      this.spec.sample_interval = spec.sample_interval;
+      this.restartMonitoring();
+    }
   }
 
   register(callback) {
@@ -41,8 +67,9 @@ export const MonitoringData = class {
     this.user = user;
   }
 
-  startMonitoring() {
-    this.monitorIntervalId = setInterval(() => this.monitor_(), ONE_SECOND_IN_MS)
+  restartMonitoring() {
+    this.stopMonitoring();
+    this.monitorIntervalId = setInterval(() => this.monitor_(), this.spec.sample_interval);
   }
 
   stopMonitoring() {
@@ -81,7 +108,7 @@ export const MonitoringData = class {
     if (pc && this.localAudioTrack.constructor.name === 'MediaStreamTrack' &&
         (!this.localVideoTrack || this.localVideoTrack.constructor.name === 'MediaStreamTrack')) {
       const datas = [];
-      const SKIP_REPORTS = ['certificate', 'codec', 'track', 'remote-candidate'];
+      const SKIP_REPORTS = ['certificate', 'codec', 'track', 'local-candidate', 'remote-candidate'];
       const getStatsPromises = [];
       getStatsPromises.push(pc.getStats(this.localAudioTrack).then(stats => {
         const audioReports = {name: 'audio', reports: [], timestamp: defaultTimestamp};
@@ -111,6 +138,48 @@ export const MonitoringData = class {
           datas.push(videoReports);
         }));
       }
+
+      // Missing some important reports. Add them manually.
+      const ids = [this.localAudioTrack.id];
+      if (this.localVideoTrack) {
+        ids.push(this.localVideoTrack.id);
+      }
+      let mediaSourceIds = [];
+      let ssrcs = [];
+      getStatsPromises.push(pc.getStats(null).then((stats) => {
+        stats.forEach(report => {
+          if (ids.includes(report.trackIdentifier)) {
+            if (report.mediaSourceId && !mediaSourceIds.includes(report.mediaSourceId)) {
+              mediaSourceIds.push(report.mediaSourceId);
+            }
+          }
+        });
+        if (mediaSourceIds.length) {
+          stats.forEach(report => {
+            if (mediaSourceIds.includes(report.mediaSourceId)) {
+              if (report.ssrc) {
+                ssrcs.push(report.ssrc);
+              }
+            }
+          });
+        }
+        if (ssrcs.length) {
+          stats.forEach(report => {
+            if (ssrcs.includes(report.ssrc) || mediaSourceIds.includes(report.mediaSourceId) || ids.includes(report.trackIdentifier)) {
+              const kind = report.kind;
+              const type = report.type;
+              const data = datas.find((data) => data.name === kind);
+              if (data && data.reports) {
+                const r = data.reports.find((r) => r.type === type);
+                if (!r) {
+                  data.reports.push(report);
+                }
+              }
+            }
+          });
+        }
+      }));
+      
       Promise.all(getStatsPromises).then(() => {
         this.forEachMonitor_(datas, defaultTimestamp);
       });
@@ -134,7 +203,7 @@ export const MonitoringData = class {
     // Throw old stats, STORE_INTERVAL from last timestamp stored.
     const lastTimestamp = this.lastTimestamp();
     if (lastTimestamp) {
-      this.storedData = this.storedData.filter((data) => data[0].timestamp >= lastTimestamp - STORE_INTERVAL);
+      this.storedData = this.storedData.filter((data) => data[0].timestamp >= lastTimestamp - this.spec.store_interval);
     }
     if (datas.length && this.onDataCallback && this.storedData.length) {
       this.onDataCallback(this.storedData[this.storedData.length - 1]);
@@ -142,53 +211,56 @@ export const MonitoringData = class {
 
     const backoff = Math.min(MAX_EXPONENTIAL_BACKOFF_MS, FIVE_SECONDS_IN_MS * Math.pow(2, this.fetchErrors));
     if ((!this.lastUpdateTimestamp && !this.fetchErrors) /* Fetch for the first time */ ||
-        ((lastTimestamp - this.lastUpdateTimestamp > STORE_INTERVAL) /* Fetch after STORE_INTERVAL */ &&
+        ((lastTimestamp - this.lastUpdateTimestamp > this.spec.store_interval) /* Fetch after STORE_INTERVAL */ &&
          (lastTimestamp - this.lastFetchTimestamp > backoff) /* Fetch after errors backoff */)) {
-			this.update(/*logToConsole=*/false);
+      this.update(/*logToConsole=*/false);
     }
   }
 
-	lastTimestamp() {
+  lastTimestamp() {
     return (this.storedData.length &&
             this.storedData[this.storedData.length - 1] &&
             this.storedData[this.storedData.length - 1].length) ?
               this.storedData[this.storedData.length - 1][0].timestamp : 0;
-	}
+  }
 
   update(logToConsole) {
-		const lastTimestamp = this.lastTimestamp();
-		this.lastFetchTimestamp = lastTimestamp;
-		const data = {
-			user: this.user,
-			data: this.storedData,
-		};
-		if (logToConsole) {
-			console.log('Update', data);
-		}
-		// Update backend.
-		fetch(`${MONITORING_BACKEND}/update`, {
-			method: 'POST',
-			headers: {
-				'Content-Type': 'application/json',
-				'Content-Encoding': 'gzip',
-			},
-			body: pako.gzip(JSON.stringify(data)),
-		}).then((response) => {
-			if (response.ok) {
-				this.fetchErrors = 0;
-				return response.json()
-			} else {
-				throw new Error(`Fetch error: ${response.status}`);
-			}
-		}).then((data) => {
-			this.lastUpdateTimestamp = lastTimestamp;
-			if (logToConsole) {
-				console.log('Updaate success.');
-			}
-		})
-		.catch((error) => {
-			console.error('Update monitoring error:', error);
-			this.fetchErrors++;
-		});
-	}
+    const lastTimestamp = this.lastTimestamp();
+    this.lastFetchTimestamp = lastTimestamp;
+    const data = {
+      user: this.user,
+      data: this.storedData,
+    };
+    if (logToConsole) {
+      console.log('Update', data);
+    }
+    // Update backend.
+    fetch(`${MONITORING_BACKEND}/update`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Content-Encoding': 'gzip',
+      },
+      body: pako.gzip(JSON.stringify(data)),
+    }).then((response) => {
+      if (response.ok) {
+        this.fetchErrors = 0;
+        return response.json();
+      } else {
+        throw new Error(`Fetch error: ${response.status}`);
+      }
+    }).then((data) => {
+      if (data && data.spec) {
+        this.updateSpec(data.spec);
+      }
+      this.lastUpdateTimestamp = lastTimestamp;
+      if (logToConsole) {
+        console.log('Update success.');
+      }
+    })
+    .catch((error) => {
+      console.error('Update monitoring error:', error);
+      this.fetchErrors++;
+    });
+  }
 };
