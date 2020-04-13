@@ -157,7 +157,7 @@ export const MonitoringData = class {
         if (mediaSourceIds.length) {
           stats.forEach(report => {
             if (mediaSourceIds.includes(report.mediaSourceId)) {
-              if (report.ssrc) {
+              if (report.ssrc && !ssrcs.includes(report.ssrc)) {
                 ssrcs.push(report.ssrc);
               }
             }
