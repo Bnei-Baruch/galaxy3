@@ -15,9 +15,11 @@ class AudioOutApp extends Component {
         ce: null,
         group: null,
         room: null,
-        gxy1: {janus: null, protocol: null},
-        gxy2: {janus: null, protocol: null},
-        gxy3: {janus: null, protocol: null},
+        GxyJanus: {
+            gxy1: {janus: null, protocol: null},
+            gxy2: {janus: null, protocol: null},
+            gxy3: {janus: null, protocol: null},
+        },
         mids: [],
         gxyhandle: null,
         myid: null,
@@ -36,81 +38,50 @@ class AudioOutApp extends Component {
     };
 
     componentDidMount() {
-        let {user,gxy1,gxy2,gxy3} = this.state;
+        let {user} = this.state;
         getState('galaxy/users', (users) => {
             this.setState({users});
+            let gxy = ["gxy1","gxy2","gxy3"]
+            this.initGalaxy(user,gxy);
         });
-
-        // Init GXY1
-        initJanus(janus => {
-            gxy1.janus = janus;
-            user.id = "audout-gxy1";
-            initGxyProtocol(janus, user, protocol => {
-                gxy1.protocol = protocol;
-                this.setState({gxy1});
-            }, ondata => {
-                Janus.log("-- :: It's protocol public message: ", ondata);
-                if(ondata.type === "error" && ondata.error_code === 420) {
-                    console.log(ondata.error + " - Reload after 10 seconds");
-                    this.state.gxy1.protocol.hangup();
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 10000);
-                }
-                this.onProtocolData(ondata, "gxy1");
-            });
-        }, er => {
-            Janus.error(er);
-        }, "gxy1");
-
-        // Init GXY2
-        initJanus(janus => {
-            gxy2.janus = janus;
-            user.id = "audout-gxy2";
-            initGxyProtocol(janus, user, protocol => {
-                gxy2.protocol = protocol;
-                this.setState({gxy2});
-            }, ondata => {
-                Janus.log("-- :: It's protocol public message: ", ondata);
-                if(ondata.type === "error" && ondata.error_code === 420) {
-                    console.log(ondata.error + " - Reload after 10 seconds");
-                    this.state.gxy2.protocol.hangup();
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 10000);
-                }
-                this.onProtocolData(ondata, "gxy2");
-            });
-        }, er => {
-            Janus.error(er);
-        }, "gxy2");
-
-        // Init GXY3
-        initJanus(janus => {
-            gxy3.janus = janus;
-            initGxyProtocol(janus, user, protocol => {
-                gxy3.protocol = protocol;
-                this.setState({gxy3});
-            }, ondata => {
-                Janus.log("-- :: It's protocol public message: ", ondata);
-                if(ondata.type === "error" && ondata.error_code === 420) {
-                    console.log(ondata.error + " - Reload after 10 seconds");
-                    this.state.gxy3.protocol.hangup();
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 10000);
-                }
-                this.onProtocolData(ondata, "gxy3");
-            });
-        }, er => {
-            setTimeout(() => {
-                window.location.reload();
-            }, 10000);
-        }, "gxy3");
     };
 
     componentWillUnmount() {
-        this.state.janus.destroy();
+        this.state.GxyJanus.gxy1.janus.destroy();
+        this.state.GxyJanus.gxy2.janus.destroy();
+        this.state.GxyJanus.gxy3.janus.destroy();
+    };
+
+    initGalaxy = (user,gxy) => {
+        for(let i=0; i<gxy.length; i++) {
+            let {GxyJanus} = this.state;
+            initJanus(janus => {
+                if(GxyJanus[gxy[i]].janus)
+                    GxyJanus[gxy[i]].janus.destroy();
+                GxyJanus[gxy[i]].janus = janus;
+                if(gxy[i] !== "gxy3")
+                    user.id = "audout-" + gxy[i];
+                initGxyProtocol(janus, user, protocol => {
+                    GxyJanus[gxy[i]].protocol = protocol;
+                    this.setState({...GxyJanus[gxy[i]]});
+                }, ondata => {
+                    Janus.log(i + " :: protocol public message: ", ondata);
+                    if(ondata.type === "error" && ondata.error_code === 420) {
+                        console.error(ondata.error + " - Reload after 10 seconds");
+                        this.state.GxyJanus[gxy[i]].protocol.hangup();
+                        setTimeout(() => {
+                            this.initGalaxy(user,[gxy[i]]);
+                        }, 10000);
+                    }
+                    this.onProtocolData(ondata, gxy[i]);
+                });
+            },er => {
+                console.error(gxy[i] + ": " + er);
+                setTimeout(() => {
+                    this.initGalaxy(user,[gxy[i]]);
+                }, 10000);
+            }, gxy[i]);
+        }
     };
 
     onProtocolData = (data, inst) => {

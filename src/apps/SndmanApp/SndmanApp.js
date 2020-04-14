@@ -14,9 +14,11 @@ import UsersQuadSndman from "./UsersQuadSndman";
 class SndmanApp extends Component {
 
     state = {
-        gxy1: {janus: null, protocol: null, fwdhandle: null},
-        gxy2: {janus: null, protocol: null, fwdhandle: null},
-        gxy3: {janus: null, protocol: null, fwdhandle: null},
+        GxyJanus: {
+            gxy1: {janus: null, protocol: null, fwdhandle: null},
+            gxy2: {janus: null, protocol: null, fwdhandle: null},
+            gxy3: {janus: null, protocol: null, fwdhandle: null},
+        },
         group: "",
         groups: [],
         groups_queue: 0,
@@ -29,8 +31,9 @@ class SndmanApp extends Component {
     };
 
     componentWillUnmount() {
-        this.state.gxy1.janus.destroy();
-        this.state.gxy3.janus.destroy();
+        this.state.GxyJanus.gxy1.janus.destroy();
+        this.state.GxyJanus.gxy2.janus.destroy();
+        this.state.GxyJanus.gxy3.janus.destroy();
     };
 
     checkPermission = (user) => {
@@ -41,76 +44,50 @@ class SndmanApp extends Component {
             user.session = 0;
             getState('galaxy/users', (users) => {
                 this.setState({user,users});
+                let gxy = ["gxy1","gxy2","gxy3"]
+                this.initGalaxy(user,gxy);
             });
-            this.initApp(user);
         } else {
             alert("Access denied!");
             client.signoutRedirect();
         }
     };
 
-    initApp = (user) => {
-        let {gxy1,gxy2,gxy3} = this.state;
-
-        // Init GXY1
-        initJanus(janus => {
-            gxy1.janus = janus;
-            user.id = "sndman-gxy1";
-            initGxyProtocol(janus, user, protocol => {
-                gxy1.protocol = protocol;
-            }, ondata => {
-                Janus.log("GXY1 :: It's protocol public message: ", ondata);
-                if(ondata.type === "error" && ondata.error_code === 420) {
-                    alert(ondata.error);
-                    gxy1.protocol.hangup();
-                }
-                this.onProtocolData(ondata, "gxy1");
-            });
-        },er => {
-            Janus.error(er);
-        }, "gxy1");
-
-        // Init GXY2
-        initJanus(janus => {
-            gxy2.janus = janus;
-            user.id = "sndman-gxy2";
-            initGxyProtocol(janus, user, protocol => {
-                gxy2.protocol = protocol;
-            }, ondata => {
-                Janus.log("GXY2 :: It's protocol public message: ", ondata);
-                if(ondata.type === "error" && ondata.error_code === 420) {
-                    alert(ondata.error);
-                    gxy2.protocol.hangup();
-                }
-                this.onProtocolData(ondata, "gxy2");
-            });
-        },er => {
-            Janus.error(er);
-        }, "gxy2");
-
-        // Init GXY3
-        initJanus(janus => {
-            gxy3.janus = janus;
-            initGxyProtocol(janus, user, protocol => {
-                gxy3.protocol = protocol;
-            }, ondata => {
-                Janus.log("GXY3 :: It's protocol public message: ", ondata);
-                if(ondata.type === "error" && ondata.error_code === 420) {
-                    alert(ondata.error);
-                    gxy3.protocol.hangup();
-                } else if(ondata.type === "joined") {
-                    initDataForward(janus, fwdhandle => {
-                        gxy3.fwdhandle = fwdhandle;
-                        this.setState({gxy3});
-                    })
-                }
-                this.onProtocolData(ondata, "gxy3");
-            });
-        },er => {
-            setTimeout(() => {
-                window.location.reload();
-            }, 3000);
-        }, "gxy3");
+    initGalaxy = (user,gxy) => {
+        for(let i=0; i<gxy.length; i++) {
+            let {GxyJanus} = this.state;
+            initJanus(janus => {
+                if(GxyJanus[gxy[i]].janus)
+                    GxyJanus[gxy[i]].janus.destroy();
+                GxyJanus[gxy[i]].janus = janus;
+                if(gxy[i] !== "gxy3")
+                    user.id = "sndman-" + gxy[i];
+                initGxyProtocol(janus, user, protocol => {
+                    GxyJanus[gxy[i]].protocol = protocol;
+                    this.setState({...GxyJanus[gxy[i]]});
+                }, ondata => {
+                    Janus.log(i + " :: protocol public message: ", ondata);
+                    if(ondata.type === "error" && ondata.error_code === 420) {
+                        console.error(ondata.error + " - Reload after 10 seconds");
+                        this.state.GxyJanus[gxy[i]].protocol.hangup();
+                        setTimeout(() => {
+                            this.initGalaxy(user,[gxy[i]]);
+                        }, 10000);
+                    } else if(ondata.type === "joined" && gxy[i] === "gxy3") {
+                        initDataForward(janus, fwdhandle => {
+                            GxyJanus[gxy[i]].fwdhandle = fwdhandle;
+                            this.setState({...GxyJanus[gxy[i]]});
+                        })
+                    }
+                    this.onProtocolData(ondata, gxy[i]);
+                });
+            },er => {
+                console.error(gxy[i] + ": " + er);
+                setTimeout(() => {
+                    this.initGalaxy(user,[gxy[i]]);
+                }, 10000);
+            }, gxy[i]);
+        }
     };
 
     onProtocolData = (data, inst) => {
