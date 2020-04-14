@@ -465,7 +465,8 @@ class VirtualStreaming extends Component {
             <Dropdown
               selection
               placeholder="Video quality"
-              text={video_option ? `${video_option.text}    ${video_option.description}` : ''}
+              text={video_option ? `${video_option.text} ${video_option.description}` : ''}
+              value={videos}
               >
               <Dropdown.Menu>
                 {videos_options2.map((option, i) => {
