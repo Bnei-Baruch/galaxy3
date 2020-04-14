@@ -26,11 +26,12 @@ export const MonitoringData = class {
     this.fetchErrors = 0;
     this.lastFetchTimestamp = 0;
     this.lastUpdateTimestamp = 0;
+    this.sentDataCount = 0;
 
     this.spec = {
       sample_interval: INITIAL_SAMPLE_INTERVAL,
       store_interval: INITIAL_STORE_INTERVAL,
-      metrics_blacklist: [],
+      metrics_whitelist: [],
     };
 
     this.restartMonitoring();
@@ -40,9 +41,10 @@ export const MonitoringData = class {
     if (!isNaN(spec.store_interval) && spec.store_interval >= ONE_MINUTE_IN_MS) {
       this.spec.store_interval = spec.store_interval;
     }
-    if (Array.isArray(spec.metrics_blacklist) &&
-        spec.metrics_blacklist.every((metric) => typeof metric === 'string')) {
-      this.spec.metrics_blacklist = spec.metrics_blacklist;
+    if (Array.isArray(spec.metrics_whitelist) &&
+        spec.metrics_whitelist.length > 0 &&
+        spec.metrics_whitelist.every((metric) => typeof metric === 'string')) {
+      this.spec.metrics_whitelist = spec.metrics_whitelist;
     }
     if (!isNaN(spec.sample_interval) &&
         this.spec.sample_interval !== spec.sample_interval &&
@@ -157,7 +159,7 @@ export const MonitoringData = class {
         if (mediaSourceIds.length) {
           stats.forEach(report => {
             if (mediaSourceIds.includes(report.mediaSourceId)) {
-              if (report.ssrc) {
+              if (report.ssrc && !ssrcs.includes(report.ssrc)) {
                 ssrcs.push(report.ssrc);
               }
             }
@@ -224,14 +226,37 @@ export const MonitoringData = class {
               this.storedData[this.storedData.length - 1][0].timestamp : 0;
   }
 
+  filterData(data, metrics, prefix) {
+    console.log(this.sentDataCount, data, prefix);
+    if (Array.isArray(data)) {
+      return data.filter(e =>
+        metrics.some(m => m.startsWith([prefix, e.name ? `[name:${e.name}]` : `[type:${e.type}]`].filter(part => part).join('.'))))
+          .map(e => this.filterData(e, metrics, [prefix, e.name ? `[name:${e.name}]` : `[type:${e.type}]`].filter(part => part).join('.')));
+    } else if (typeof data === 'object') {
+      const filterField = ['type', 'name'].find(f => prefix.split('.').slice(-1)[0].startsWith(`[${f}`))
+      const copy = {};
+      Object.entries(data).filter(([key, value]) => metrics.some(m => m.startsWith(`${prefix}.${key}`) || [filterField, 'timestamp'].includes(key)))
+        .forEach(([key, value]) => copy[key] = [filterField, 'timestamp'].includes(key) ? value : this.filterData(value, metrics, `${prefix}.${key}`));
+      return copy;
+    }
+    if (!metrics.some(m => m === prefix)) {
+      console.log(`Expected leaf ${data} to fully match prefix ${prefix} to one of the metrics ${metrics}`);
+    }
+    return data;
+  }
+
   update(logToConsole) {
     const lastTimestamp = this.lastTimestamp();
     this.lastFetchTimestamp = lastTimestamp;
+
+    const sentData = this.storedData.map((d, index) => this.sentDataCount++ % 100 === 0 ? d : this.filterData(d, this.spec.metrics_whitelist, ''));
+    this.sentDataCount = this.sentDataCount % 100;  // Keep count small.
     const data = {
       user: this.user,
-      data: this.storedData,
+      data: sentData,
     };
     if (logToConsole) {
+      console.log('Spec', this.spec);
       console.log('Update', data);
     }
     // Update backend.
