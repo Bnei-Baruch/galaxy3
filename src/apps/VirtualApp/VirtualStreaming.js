@@ -1,8 +1,13 @@
 import React, { Component, Fragment } from 'react';
 import { Janus } from '../../lib/janus';
-import { Label, Button, Select } from 'semantic-ui-react';
+import { Label, Button, Select, Dropdown } from 'semantic-ui-react';
+import VolumeSlider from "../../components/VolumeSlider";
 import NewWindow from 'react-new-window';
 import {
+  videos_options,
+  videos_options2,
+  audiog_options2,
+  audiog_options,
   GEO_IP_INFO,
   JANUS_SRV_STR3,
   JANUS_SRV_STR4,
@@ -443,25 +448,55 @@ class VirtualStreaming extends Component {
                         <Button color='yellow'
                         icon='expand arrows alternate'
                         onClick={this.toggleNewWindow} />
-                        {/* <VolumeSlider volume={this.setVolume} /> */}
+                        <VolumeSlider volume={this.setVolume} />
                         <Button positive={!muted}
                         negative={muted}
                         icon={muted ? 'volume off' : 'volume up'}
                         onClick={this.audioMute} />
-                         <Select
-                    compact
-                    error={!videos}
-                    placeholder="Video:"
-                    value={videos}
-                    options={videos_options}
-                    onChange={(e, { value }) => this.setVideo(value)} />
+                        <Select
+                        error={!videos}
+                        placeholder="Video quality:"
+                        value={videos}
+                        options={videos_options}
+                        onChange={(e, { value }) => this.setVideo(value)} 
+                        />
+                        <Dropdown
+                          selection
+                          placeholder="Video quality"
+                          value={videos}
+                          onChange={(e, { value }) => this.setVideo(value)}
+                          >
+                          <Dropdown.Menu>
+                            {videos_options2.map((option, i) => {
+                              if (option.divider === true) return (<Dropdown.Divider key={i}/>);
+                              return (
+                                <Dropdown.Item
+                                    key={i}
+                                    text={option.text}
+                                    icon={option.icon}
+                                    description={option.description}
+                                    action={option.action}
+                                    onClick={this.handleOption}
+                                />
+                              );
+                            })}
+                          </Dropdown.Menu>
+                        </Dropdown>
                     <Select
-                    compact={false}
-                    scrolling={false}
+                    // compact={false}
+                    // scrolling={false}
                     error={!audios}
                     placeholder="Audio:"
                     value={audios}
                     options={audiog_options}
+                    onChange={(e, { value, options }) => this.setAudio(value, options)} />
+                                      <Select
+                    // compact={false}
+                    // scrolling={false}
+                    error={!audios}
+                    placeholder="Audio:"
+                    value={audios}
+                    options={audiog_options2}
                     onChange={(e, { value, options }) => this.setAudio(value, options)} />
           </div>
           {/* <div className='mediaplayer' ref="mediaplayer"> */}
