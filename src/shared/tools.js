@@ -29,7 +29,6 @@ export const initJanus = (cb,er,gxy) => {
                 },
                 destroyed: () => {
                     Janus.error(" :: Janus destroyed :: ");
-                    er("Janus destroyed");
                 }
             });
         }
@@ -435,55 +434,16 @@ export const testMic = async (stream) => {
     await sleep(10000);
 };
 
-// export function setStereoSDP(sdp) {
-//     var sdpLines = sdp.split('\r\n');
-//     // Find opus payload.
-//     var opusIndex = findLine(sdpLines, 'a=rtpmap', 'opus/48000/2');
-//     var opusPayload;
-//     if (opusIndex) {
-//         opusPayload = getCodecPayloadType(sdpLines[opusIndex]);
-//     }
-//     if (opusPayload === undefined){
-//         return sdp;
-//     }
-//     // Find the payload in fmtp line.
-//     var fmtpLineIndex = findLine(sdpLines, 'a=fmtp:' + opusPayload.toString());
-//     if (fmtpLineIndex === null) {
-//         sdpLines.splice(opusIndex + 1,0,'a=fmtp:' + opusPayload.toString() + ' stereo=1;sprop-stereo=1');
-//     }else{
-//         sdpLines[fmtpLineIndex] = sdpLines[fmtpLineIndex].concat(';stereo=1;sprop-stereo=1');
-//     }
-//     // Append stereo=1 to fmtp line.
-//     // added maxaveragebitrate here; about 50 kbits/s
-//     // added stereo=1 here for stereo audio
-//     // x-google-min-bitrate=50; x-google-max-bitrate=50
-//     sdp = sdpLines.join('\r\n');
-//     return sdp;
-// }
-//
-// // Find the line in sdpLines that starts with |prefix|, and, if specified,
-// // contains |substr| (case-insensitive search).
-// function findLine(sdpLines, prefix, substr) {
-//     return findLineInRange(sdpLines, 0, -1, prefix, substr);
-// }
-// // Find the line in sdpLines[startLine...endLine - 1] that starts with |prefix|
-// // and, if specified, contains |substr| (case-insensitive search).
-// function findLineInRange(sdpLines, startLine, endLine, prefix, substr) {
-//     var realEndLine = endLine !== -1 ? endLine : sdpLines.length;
-//     for (var i = startLine; i < realEndLine; ++i) {
-//         if (sdpLines[i].indexOf(prefix) === 0) {
-//             if (!substr ||
-//                 sdpLines[i].toLowerCase().indexOf(substr.toLowerCase()) !== -1) {
-//                 return i;
-//             }
-//         }
-//     }
-//     return null;
-// }
-//
-// // Gets the codec payload type from an a=rtpmap:X line.
-// function getCodecPayloadType(sdpLine) {
-//     var pattern = new RegExp('a=rtpmap:(\\d+) \\w+\\/\\d+');
-//     var result = sdpLine.match(pattern);
-//     return (result && result.length === 2) ? result[1] : null;
-// }
+export const takeImage = (stream, cb) => {
+    const track = stream.getVideoTracks()[0];
+    let imageCapture = new ImageCapture(track);
+    imageCapture.takePhoto().then(blob => {
+        let reader = new FileReader();
+        reader.onload = () => {
+            let dataUrl = reader.result;
+            let base64 = dataUrl.split(',')[1];
+            cb(base64);
+        };
+        reader.readAsDataURL(blob);
+    })
+}

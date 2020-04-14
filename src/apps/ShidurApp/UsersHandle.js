@@ -36,7 +36,7 @@ class UsersHandle extends Component {
     };
 
     initVideoRoom = (roomid, isnt) => {
-        this.props[isnt].janus.attach({
+        this.props.GxyJanus[isnt].janus.attach({
             plugin: "janus.plugin.videoroom",
             opaqueId: "preview_shidur",
             success: (videoroom) => {
@@ -207,7 +207,7 @@ class UsersHandle extends Component {
     };
 
     newRemoteFeed = (subscription, inst) => {
-        this.props[inst].janus.attach(
+        this.props.GxyJanus[inst].janus.attach(
             {
                 plugin: "janus.plugin.videoroom",
                 opaqueId: "remotefeed_user",

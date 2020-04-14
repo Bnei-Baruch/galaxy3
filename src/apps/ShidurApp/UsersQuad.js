@@ -200,7 +200,7 @@ class UsersQuad extends Component {
         const {user} = this.props;
         const {col} = this.state;
         let msg = {type: "sdi-"+action, status, room: null, col, i, group, qst};
-        sendProtocolMessage(this.props.gxy3.protocol, user, msg);
+        sendProtocolMessage(this.props.GxyJanus.gxy3.protocol, user, msg);
     };
 
     checkFullScreen = () => {
