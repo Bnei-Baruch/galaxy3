@@ -29,7 +29,7 @@ class ShidurApp extends Component {
         disabled_rooms: [],
         user: null,
         users: {},
-        presets:[],
+        presets: {1:[],2:[],3:[],4:[]},
         sdiout: false,
         sndman: false,
     };
