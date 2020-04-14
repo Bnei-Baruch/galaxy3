@@ -438,66 +438,67 @@ class VirtualStreaming extends Component {
       </NewWindow>
     );
 
+    const video_option = videos_options2.find((option) => option.value === videos);
+
     const inLine = (
       <div className="video video--broadcast" key='v0' ref='video0' id='video0'>
         <div className="video" ref="mediaplayer">
           <div className="video__overlay">
-          <Button color='blue'
-                        icon='expand arrows alternate'
-                        onClick={this.toggleFullScreen} />
-                        <Button color='yellow'
-                        icon='expand arrows alternate'
-                        onClick={this.toggleNewWindow} />
-                        <VolumeSlider volume={this.setVolume} />
-                        <Button positive={!muted}
-                        negative={muted}
-                        icon={muted ? 'volume off' : 'volume up'}
-                        onClick={this.audioMute} />
-                        <Select
-                        error={!videos}
-                        placeholder="Video quality:"
-                        value={videos}
-                        options={videos_options}
-                        onChange={(e, { value }) => this.setVideo(value)} 
-                        />
-                        <Dropdown
-                          selection
-                          placeholder="Video quality"
-                          value={videos}
-                          onChange={(e, { value }) => this.setVideo(value)}
-                          >
-                          <Dropdown.Menu>
-                            {videos_options2.map((option, i) => {
-                              if (option.divider === true) return (<Dropdown.Divider key={i}/>);
-                              return (
-                                <Dropdown.Item
-                                    key={i}
-                                    text={option.text}
-                                    icon={option.icon}
-                                    description={option.description}
-                                    action={option.action}
-                                    onClick={this.handleOption}
-                                />
-                              );
-                            })}
-                          </Dropdown.Menu>
-                        </Dropdown>
-                    <Select
-                    // compact={false}
-                    // scrolling={false}
-                    error={!audios}
-                    placeholder="Audio:"
-                    value={audios}
-                    options={audiog_options}
-                    onChange={(e, { value, options }) => this.setAudio(value, options)} />
-                                      <Select
-                    // compact={false}
-                    // scrolling={false}
-                    error={!audios}
-                    placeholder="Audio:"
-                    value={audios}
-                    options={audiog_options2}
-                    onChange={(e, { value, options }) => this.setAudio(value, options)} />
+            <Button color='blue'
+              icon='expand arrows alternate'
+              onClick={this.toggleFullScreen} />
+            <Button color='yellow'
+              icon='expand arrows alternate'
+              onClick={this.toggleNewWindow} />
+            <VolumeSlider volume={this.setVolume} />
+            <Button positive={!muted}
+              negative={muted}
+              icon={muted ? 'volume off' : 'volume up'}
+              onClick={this.audioMute} />
+            <Select
+              error={!videos}
+              placeholder="Video quality:"
+              value={videos}
+              options={videos_options}
+              onChange={(e, { value }) => this.setVideo(value)} 
+            />
+            <Dropdown
+              selection
+              placeholder="Video quality"
+              text={video_option ? `${video_option.text}    ${video_option.description}` : ''}
+              >
+              <Dropdown.Menu>
+                {videos_options2.map((option, i) => {
+                  if (option.divider === true) return (<Dropdown.Divider key={i}/>);
+                  return (
+                    <Dropdown.Item
+                        key={i}
+                        text={option.text}
+                        icon={option.icon}
+                        description={option.description}
+                        action={option.action}
+                        onClick={() => this.setVideo(option.value)}
+                    />
+                  );
+                })}
+              </Dropdown.Menu>
+            </Dropdown>
+            <Select
+              // compact={false}
+              // scrolling={false}
+              error={!audios}
+              placeholder="Audio:"
+              value={audios}
+              options={audiog_options}
+              onChange={(e, { value, options }) => this.setAudio(value, options)} />
+            <Select
+              // compact={false}
+              // scrolling={false}
+              error={!audios}
+              placeholder="Audio:"
+              value={audios}
+              options={audiog_options2}
+              onChange={(e, { value, options }) => this.setAudio(value, options)} />
           </div>
           {/* <div className='mediaplayer' ref="mediaplayer"> */}
           <video ref="remoteVideo"
