@@ -68,7 +68,7 @@ class OldClient extends Component {
     },
     users: {},
     username_value: localStorage.getItem('username') || '',
-    visible: false,
+    chatVisible: false,
     question: false,
     geoinfo: false,
     selftest: this.props.t('oldClient.selfAudioTest'),
@@ -1037,6 +1037,7 @@ class OldClient extends Component {
       audio_device,
       audio_devices,
       cammuted,
+      chatVisible,
       count,
       delay,
       feeds,
@@ -1058,7 +1059,6 @@ class OldClient extends Component {
       video_device,
       video_devices,
       video_setting,
-      visible,
       women,
     } = this.state;
 
@@ -1121,7 +1121,7 @@ class OldClient extends Component {
 
     let l = (<Label key='Carbon' floating size='mini' color='red'>{count}</Label>);
 
-    let content = (<div className={classNames('vclient', { 'vclient--chat-open': visible })}>
+    let content = (<div className={classNames('vclient', { 'vclient--chat-open': chatVisible })}>
       <div className="vclient__toolbar">
         <Input
           iconPosition='left'
@@ -1147,9 +1147,9 @@ class OldClient extends Component {
         </Input>
         <Menu icon='labeled' secondary size="mini">
           <Menu.Item disabled={!localAudioTrack}
-                     onClick={() => this.setState({ visible: !visible, count: 0 })}>
+                     onClick={() => this.setState({ chatVisible: !chatVisible, count: 0 })}>
             <Icon name="comments" />
-            {t(visible ? 'oldClient.closeChat' : 'oldClient.openChat')}
+            {t(chatVisible ? 'oldClient.closeChat' : 'oldClient.openChat')}
             {count > 0 ? l : ''}
           </Menu.Item>
           <Menu.Item disabled={!audio || video_device === null || !geoinfo || !localAudioTrack || delay || otherFeedHasQuestion} onClick={this.handleQuestion}>
@@ -1231,7 +1231,7 @@ class OldClient extends Component {
         </Menu>
       </div>
       <div className="vclient__main" onDoubleClick={() => this.setState({
-        visible: !visible
+        chatVisible: !chatVisible
       })}>
         <div className="vclient__main-wrapper">
           <div className="videos-panel">
@@ -1281,7 +1281,7 @@ class OldClient extends Component {
             ref={chat => {
               this.chat = chat;
             }}
-            visible={visible}
+            visible={chatVisible}
             janus={janus}
             room={room}
             user={user}
