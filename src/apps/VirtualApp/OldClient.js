@@ -1045,7 +1045,8 @@ class OldClient extends Component {
   renderLocalMedia = (width, height) => {
     const { username_value, user, cammuted, question, muted } = this.state;
 
-    return (<div className="video">
+    return (<div className="video"
+                 key={'localMedia'}>
       <div className={classNames('video__overlay')}>
         {question ?
           <div className="question">
@@ -1070,8 +1071,8 @@ class OldClient extends Component {
       </svg>
       <video
         className={classNames('mirror', { 'hidden': cammuted })}
-        ref="localVideo"
-        id="localVideo"
+        ref={'localVideo'}
+        id={'localVideo'}
         width={width}
         height={height}
         autoPlay={true}
