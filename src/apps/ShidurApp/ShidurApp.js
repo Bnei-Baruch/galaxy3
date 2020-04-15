@@ -158,6 +158,20 @@ class ShidurApp extends Component {
         }
     };
 
+    nextInQueue = () => {
+        let {groups_queue,groups,round} = this.state;
+        groups_queue++;
+        if(groups_queue >= groups.length) {
+            // End round here!
+            Janus.log(" -- ROUND END --");
+            groups_queue = 0;
+            round++;
+            this.setState({groups_queue,round});
+        } else {
+            this.setState({groups_queue});
+        }
+    };
+
     checkFullScreen = () => {
         this.col1.checkFullScreen();
         this.col2.checkFullScreen();
@@ -202,7 +216,7 @@ class ShidurApp extends Component {
                                 <UsersQuad index={12} {...this.state} ref={col4 => {this.col4 = col4;}} setProps={this.setProps} />
                             </Grid.Column>
                         </Grid.Row>
-                        <ShidurToran {...this.state} setProps={this.setProps} gerGroups={this.getRoomList} />
+                        <ShidurToran {...this.state} setProps={this.setProps} nextInQueue={this.nextInQueue} gerGroups={this.getRoomList} />
                     </Grid>
                 </Grid.Column>
             </Grid>
