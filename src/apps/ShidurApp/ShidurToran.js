@@ -149,6 +149,7 @@ class ShidurToran extends Component {
         const {open,delay} = this.state;
         const q = (<b style={{color: 'red', fontSize: '20px', fontFamily: 'Verdana', fontWeight: 'bold'}}>?</b>);
         const next_group = groups[groups_queue] ? groups[groups_queue].description : groups[0] ? groups[0].description : "";
+        const ng = groups[groups_queue] || null;
 
         let rooms_list = groups.map((data,i) => {
             const {room, num_users, description, questions} = data;
@@ -202,9 +203,12 @@ class ShidurToran extends Component {
             <Grid.Row>
                 <Grid.Column>
                     <Segment className="preview_conteiner">
+                        {ng ?
                         <Segment className="group_segment" color='blue'>
-                            {/*{nextfeed}*/}
+                                <div className="shidur_overlay"><span>{ng.description}</span></div>
+                                <UsersPreview pg={ng} {...this.props} next />
                         </Segment>
+                            : ""}
                     </Segment>
                     <Message attached className='info-panel' color='grey'>
                         {/*{action_log}*/}

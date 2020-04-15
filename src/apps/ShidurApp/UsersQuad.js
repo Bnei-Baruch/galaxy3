@@ -278,7 +278,7 @@ class UsersQuad extends Component {
       </div>);
 
       let program = vquad.map((g,i) => {
-          if (groups.length === 0) return;
+          if (groups.length === 0) return false;
           let qst = g && g.questions;
           let qf = fullscr && full_feed === i && question;
           let ff = fullscr && full_feed === i && !question;
