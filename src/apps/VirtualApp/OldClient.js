@@ -572,8 +572,8 @@ class OldClient extends Component {
         if (msg['publishers'] !== undefined && msg['publishers'] !== null) {
           let list          = Object.assign([], msg['publishers']);
           //FIXME:  Tmp fix for black screen in room caoused by feed with video_codec = none
-          let feeds         = list.sort((a, b) => a.display.timestamp - b.display.timestamp)
-            .filter(feeder => JSON.parse(feeder.display).role === 'user' && feeder.video_codec !== 'none');
+          let feeds         = list.sort((a, b) => JSON.parse(a.display).timestamp - JSON.parse(b.display).timestamp)
+              .filter(feeder => JSON.parse(feeder.display).role === 'user' && feeder.video_codec !== 'none');
           const feedStreams = Object.assign([], this.state.feedStreams);
           const users       = Object.assign([], this.state.users);
 
