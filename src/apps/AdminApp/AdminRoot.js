@@ -165,9 +165,9 @@ class AdminRoot extends Component {
                     let list = msg["publishers"];
                     console.log("[Admin] Got Publishers (joined)", list);
 
-                    // Filter service and camera muted feeds
+                    // Filter service feeds and sort by timestamp
                     let fr = "user";
-                    let feeds         = list.sort((a, b) => a.display.timestamp - b.display.timestamp)
+                    let feeds         = list.sort((a, b) => JSON.parse(a.display).timestamp - JSON.parse(b.display).timestamp)
                         .filter(feeder => JSON.parse(feeder.display).role === fr && feeder.video_codec !== 'none');
 
                     console.log("[Admin] available feeds", feeds);
