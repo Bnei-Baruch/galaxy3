@@ -30,6 +30,12 @@ class VirtualChat extends Component {
     document.removeEventListener('keydown', this.onKeyPressed);
   };
 
+  componentDidUpdate(prevProps) {
+    if (this.props.visible && !prevProps.visible) {
+      this.refs.input.focus();
+    }
+  }
+
   initChat = (janus) => {
     initChatRoom(janus, null, chatroom => {
       Janus.log(':: Got Chat Handle: ', chatroom);
@@ -191,23 +197,60 @@ class VirtualChat extends Component {
     const { t }                                 = this.props;
     const { messages, support_msgs, room_chat } = this.state;
 
+		const urlRegex =/(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#/%?=~_|!:,.;()]*[-A-Z0-9+&@#/%=~_|()])/ig;
+    const textWithLinks = (text) => {
+			const parts = [];
+			let start = 0;
+			for (const match of text.matchAll(urlRegex)) {
+				const url = match[0];
+				const index = match.index;
+				if (index > start) {
+					parts.push(<span key={start}>{text.slice(start, index)}</span>);
+				}
+				parts.push(<a key={index} target='blank_' href={url}>{url}</a>);
+				start = index + url.length;
+			}
+			if (start < text.length) {
+				parts.push(<span key={start}>{text.slice(start, text.length)}</span>);
+			}
+			return parts;
+    };
+
+		const isRTLChar = /[\u0590-\u07FF\u200F\u202B\u202E\uFB1D-\uFDFD\uFE70-\uFEFC]/;
+		const isAscii = /[\x00-\x7F]/;
+		const isAsciiChar = /[a-zA-Z]/;
+		const isRTLString = (text) => {
+			let rtl = 0;
+			let ltr = 0;
+			for (let i = 0; i < text.length; i++){
+				if (!isAscii.test(text[i]) || isAsciiChar.test(text[i])) {
+					if (isRTLChar.test(text[i])) {
+						rtl++;
+					} else {
+						ltr++;
+					}
+				}
+			}
+			return rtl > ltr;
+		};
+
     let room_msgs = messages.map((msg, i) => {
       let { user, time, text } = msg;
       return (
-        <div key={i}><p>
+        <div key={i} style={{direction: isRTLString(text) ? 'rtl' : 'ltr'}}><p>
           <i style={{ color: 'grey' }}>{time}</i> -
           <b style={{ color: user.role === 'admin' ? 'red' : 'blue' }}>{user.display}</b>:
-        </p>{text}</div>
+        </p>{textWithLinks(text)}</div>
       );
     });
 
     let admin_msgs = support_msgs.map((msg, i) => {
       let { user, time, text } = msg;
       return (
-        <div key={i}><p>
+        <div key={i} style={{direction: isRTLString(text) ? 'rtl' : 'ltr'}}><p>
           <i style={{ color: 'grey' }}>{time}</i> -
           <b style={{ color: user.role === 'admin' ? 'red' : 'blue' }}>{user.role === 'admin' ? user.username : user.display}</b>:
-        </p>{text}</div>
+        </p>{textWithLinks(text)}</div>
       );
     });
 
@@ -225,9 +268,14 @@ class VirtualChat extends Component {
           </div>
         </Message>
 
-        <Input fluid type='text' placeholder={t('virtualChat.enterMessage')} action value={this.state.input_value}
+        <Input ref='input'
+							 fluid type='text'
+							 placeholder={t('virtualChat.enterMessage')}
+							 action
+							 value={this.state.input_value}
                onChange={(v, { value }) => this.setState({ input_value: value })}>
-          <input />
+          <input dir={isRTLString(this.state.input_value) ? 'rtl' : 'ltr'}
+								 style={{textAlign: isRTLString(this.state.input_value) ? 'right' : 'left'}}/>
           <Button size='mini' positive onClick={this.sendChatMessage}>{t('virtualChat.send')}</Button>
         </Input>
         {/* </div> */}
