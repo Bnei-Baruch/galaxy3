@@ -1175,18 +1175,20 @@ class OldClient extends Component {
 
     let otherFeedHasQuestion = false;
     let localPushed          = false;
-    let videos               = feeds.filter(feed => feed).reduce((result, feed, i) => {
+    let videos = feeds.filter(feed => feed).reduce((result, feed) => {
       const { question, id } = feed;
       otherFeedHasQuestion   = otherFeedHasQuestion || (question && id !== myid);
-      result.push(this.renderMedia(feed, width, height));
-      if (!localPushed && (feeds.length - 1 === i || (feed.display.timestamp <= user.timestamp && feeds[i + 1].display.timestamp > user.timestamp))) {
+
+      if (!localPushed && feed.display.timestamp >= user.timestamp) {
         localPushed = true;
         result.push(this.renderLocalMedia(width, height));
       }
+      result.push(this.renderMedia(feed, width, height));
       return result;
     }, []);
-    if (videos.length === 0) {
-      videos = [this.renderLocalMedia(width, height)];
+
+    if (!localPushed) {
+      videos.push(this.renderLocalMedia(width, height));
     }
 
     let l = (<Label key='Carbon' floating size='mini' color='red'>{count}</Label>);
