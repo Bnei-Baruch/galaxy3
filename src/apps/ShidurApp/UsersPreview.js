@@ -4,7 +4,7 @@ import { Janus } from "../../lib/janus";
 import classNames from "classnames";
 import {Button} from "semantic-ui-react";
 
-class UsersPreview extends Component {
+class   UsersPreview extends Component {
 
     state = {
         feeds: [],
@@ -213,16 +213,26 @@ class UsersPreview extends Component {
       return (
           <div className="videos-panel">
               <div className="videos">
-                  <Button className='close_button'
-                          size='mini'
-                          color='red'
-                          icon='close'
-                          onClick={() => this.props.closePopup({disable: true})} />
-                  <Button className='hide_button'
-                          size='mini'
-                          color='orange'
-                          icon='window minimize'
-                          onClick={() => this.props.closePopup()} />
+                  {this.props.next ?
+                      <Button className='close_button'
+                              size='mini'
+                              color='green'
+                              icon='share'
+                              onClick={this.props.nextInQueue} />
+                              :
+                      <div>
+                          <Button className='close_button'
+                                  size='mini'
+                                  color='red'
+                                  icon='close'
+                                  onClick={() => this.props.closePopup({disable: true})} />
+                          <Button className='hide_button'
+                                  size='mini'
+                                  color='orange'
+                                  icon='window minimize'
+                                  onClick={() => this.props.closePopup()} />
+                      </div>
+                  }
                   <div className="videos__wrapper">
                       {program_feeds}
                   </div>
