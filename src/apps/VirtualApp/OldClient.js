@@ -1055,7 +1055,7 @@ class OldClient extends Component {
   };
 
   renderLocalMedia = (width, height) => {
-    const { username_value, user, cammuted, question, muted } = this.state;
+    const { username_value, cammuted, question, muted } = this.state;
 
     return (<div className="video"
                  key={'localMedia'}>
@@ -1073,7 +1073,7 @@ class OldClient extends Component {
         }
         <div className="video__title">
           {muted ? <Icon name="microphone slash" size="small"
-                         color="red" /> : ''}{username_value || user.name}
+                         color="red" /> : ''}{username_value}
         </div>
       </div>
       <svg className={classNames('nowebcam', { 'hidden': !cammuted })} viewBox="0 0 32 18"
@@ -1090,7 +1090,7 @@ class OldClient extends Component {
         autoPlay={true}
         controls={false}
         muted={true}
-        playsinline={true} />
+        playsInline={true} />
 
     </div>);
   };
@@ -1127,14 +1127,14 @@ class OldClient extends Component {
           autoPlay={true}
           controls={false}
           muted={true}
-          playsinline={true} />
+          playsInline={true} />
         <audio
           key={'a' + id}
           ref={'remoteAudio' + id}
           id={'remoteAudio' + id}
           autoPlay={true}
           controls={false}
-          playsinline={true} />
+          playsInline={true} />
       </div>
     );
   };
@@ -1163,7 +1163,6 @@ class OldClient extends Component {
       shidur,
       tested,
       user,
-      username_value,
       video_device,
       video_devices,
       video_setting,
@@ -1323,41 +1322,6 @@ class OldClient extends Component {
           <div className="videos-panel">
             <div className="videos">
               <div className="videos__wrapper">
-                <div className="video">
-                  <div className={classNames('video__overlay')}>
-                    {question ?
-                      <div className="question">
-                        <svg viewBox="0 0 50 50">
-                          <text x="25" y="25" textAnchor="middle"
-                                alignmentBaseline="central"
-                                dominantBaseline="central">&#xF128;</text>
-                        </svg>
-                      </div>
-                      :
-                      ''
-                    }
-                    <div className="video__title">
-                      {muted ? <Icon name="microphone slash" size="small" color="red" /> : ''}
-                      {username_value}
-                    </div>
-                  </div>
-                  <svg className={classNames('nowebcam', { 'hidden': !cammuted })} viewBox="0 0 32 18"
-                       preserveAspectRatio="xMidYMid meet">
-                    <text x="16" y="9" textAnchor="middle" alignmentBaseline="central"
-                          dominantBaseline="central">&#xf2bd;</text>
-                  </svg>
-                  <video
-                    className={classNames('mirror', { 'hidden': cammuted })}
-                    ref="localVideo"
-                    id="localVideo"
-                    width={width}
-                    height={height}
-                    autoPlay={true}
-                    controls={false}
-                    muted={true}
-                    playsInline={true} />
-
-                </div>
                 {videos}
               </div>
             </div>
