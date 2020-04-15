@@ -100,7 +100,8 @@ class UsersHandle extends Component {
                 if(msg["publishers"] !== undefined && msg["publishers"] !== null) {
                     let list = msg["publishers"];
                     //FIXME: Tmp fix for black screen in room caoused by feed with video_codec = none
-                    let feeds = list.filter(feeder => JSON.parse(feeder.display).role === "user" && feeder.video_codec !== "none");
+                    let feeds         = list.sort((a, b) => a.display.timestamp - b.display.timestamp)
+                        .filter(feeder => JSON.parse(feeder.display).role === 'user' && feeder.video_codec !== 'none');
                     let {feedStreams} = this.state;
                     let {users} = this.props;
                     Janus.log(":: Got Pulbishers list: ", feeds);
