@@ -185,8 +185,10 @@ class UsersQuad extends Component {
         let {presets} = this.props;
         let {vquad,col} = this.state;
 
-        for(let i=0; i<presets.length; i++) {
-            vquad[i] = presets[i];
+        if(presets[col].length === 0) return;
+
+        for(let i=0; i<presets[col].length; i++) {
+            vquad[i] = presets[col][i];
         }
         this.setState({vquad});
 

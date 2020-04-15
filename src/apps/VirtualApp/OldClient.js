@@ -63,7 +63,7 @@ class OldClient extends Component {
     user: null,
     users: {},
     username_value: "",
-    visible: false,
+    chatVisible: false,
     question: false,
     geoinfo: false,
     selftest: this.props.t('oldClient.selfAudioTest'),
@@ -75,9 +75,9 @@ class OldClient extends Component {
 
   componentDidUpdate(prevProps, prevState) {
     if (this.state.videoroom !== prevState.videoroom ||
-        this.state.localVideoTrack !== prevState.localVideoTrack ||
-        this.state.localAudioTrack !== prevState.localAudioTrack ||
-        JSON.stringify(this.state.user) !== JSON.stringify(prevState.user)) {
+      this.state.localVideoTrack !== prevState.localVideoTrack ||
+      this.state.localAudioTrack !== prevState.localAudioTrack ||
+      JSON.stringify(this.state.user) !== JSON.stringify(prevState.user)) {
       this.state.monitoringData.setConnection(
         this.state.videoroom,
         this.state.localAudioTrack,
@@ -572,7 +572,8 @@ class OldClient extends Component {
         if (msg['publishers'] !== undefined && msg['publishers'] !== null) {
           let list          = Object.assign([], msg['publishers']);
           //FIXME:  Tmp fix for black screen in room caoused by feed with video_codec = none
-          let feeds         = list.filter(feeder => JSON.parse(feeder.display).role === 'user' && feeder.video_codec !== 'none');
+          let feeds         = list.sort((a, b) => a.display.timestamp - b.display.timestamp)
+            .filter(feeder => JSON.parse(feeder.display).role === 'user' && feeder.video_codec !== 'none');
           const feedStreams = Object.assign([], this.state.feedStreams);
           const users       = Object.assign([], this.state.users);
 
@@ -730,7 +731,12 @@ class OldClient extends Component {
           Janus.log('  -- This is a multistream subscriber', remoteFeed);
           this.setState({ remoteFeed, creatingFeed: false });
           // We wait for the plugin to send us an offer
-          let subscribe = { request: 'join', room: this.state.room, ptype: 'subscriber', streams: subscription };
+          let subscribe = {
+            request: 'join',
+            room: this.state.room,
+            ptype: 'subscriber',
+            streams: subscription
+          };
           remoteFeed.send({ message: subscribe });
         },
         error: (error) => {
@@ -948,7 +954,12 @@ class OldClient extends Component {
         alert(this.props.t('oldClient.error') + ondata.error);
         this.state.protocol.hangup();
       } else if (type === 'joined') {
-        let register = { 'request': 'join', 'room': selected_room, 'ptype': 'publisher', 'display': JSON.stringify(user) };
+        let register = {
+          'request': 'join',
+          'room': selected_room,
+          'ptype': 'publisher',
+          'display': JSON.stringify(user)
+        };
         videoroom.send({ 'message': register });
         this.setState({ user, muted: !women, room: selected_room });
         this.chat.initChatRoom(user, selected_room);
@@ -1043,12 +1054,98 @@ class OldClient extends Component {
     });
   };
 
+  renderLocalMedia = (width, height) => {
+    const { username_value, user, cammuted, question, muted } = this.state;
+
+    return (<div className="video"
+                 key={'localMedia'}>
+      <div className={classNames('video__overlay')}>
+        {question ?
+          <div className="question">
+            <svg viewBox="0 0 50 50">
+              <text x="25" y="25" textAnchor="middle"
+                    alignmentBaseline="central"
+                    dominantBaseline="central">&#xF128;</text>
+            </svg>
+          </div>
+          :
+          ''
+        }
+        <div className="video__title">
+          {muted ? <Icon name="microphone slash" size="small"
+                         color="red" /> : ''}{username_value || user.name}
+        </div>
+      </div>
+      <svg className={classNames('nowebcam', { 'hidden': !cammuted })} viewBox="0 0 32 18"
+           preserveAspectRatio="xMidYMid meet">
+        <text x="16" y="9" textAnchor="middle" alignmentBaseline="central"
+              dominantBaseline="central">&#xf2bd;</text>
+      </svg>
+      <video
+        className={classNames('mirror', { 'hidden': cammuted })}
+        ref={'localVideo'}
+        id={'localVideo'}
+        width={width}
+        height={height}
+        autoPlay={true}
+        controls={false}
+        muted={true}
+        playsinline={true} />
+
+    </div>);
+  };
+
+  renderMedia = (feed, width, height) => {
+    const { id, talk, question, cammute, display: { display } } = feed;
+
+    return (
+      <div className="video"
+           key={'v' + id}
+           ref={'video' + id}
+           id={'video' + id}>
+        <div className={classNames('video__overlay', { 'talk': talk })}>
+          {question ? <div className="question">
+            <svg viewBox="0 0 50 50">
+              <text x="25" y="25" textAnchor="middle" alignmentBaseline="central"
+                    dominantBaseline="central">&#xF128;</text>
+            </svg>
+          </div> : ''}
+          <div className="video__title">{!talk ?
+            <Icon name="microphone slash" size="small" color="red" /> : ''}{display}</div>
+        </div>
+        <svg className={classNames('nowebcam', { 'hidden': !cammute })} viewBox="0 0 32 18"
+             preserveAspectRatio="xMidYMid meet">
+          <text x="16" y="9" textAnchor="middle" alignmentBaseline="central"
+                dominantBaseline="central">&#xf2bd;</text>
+        </svg>
+        <video
+          key={'v' + id}
+          ref={'remoteVideo' + id}
+          id={'remoteVideo' + id}
+          width={width}
+          height={height}
+          autoPlay={true}
+          controls={false}
+          muted={true}
+          playsinline={true} />
+        <audio
+          key={'a' + id}
+          ref={'remoteAudio' + id}
+          id={'remoteAudio' + id}
+          autoPlay={true}
+          controls={false}
+          playsinline={true} />
+      </div>
+    );
+  };
+
   render() {
     const {
       audio,
       audio_device,
       audio_devices,
       cammuted,
+      chatVisible,
       count,
       delay,
       feeds,
@@ -1070,7 +1167,6 @@ class OldClient extends Component {
       video_device,
       video_devices,
       video_setting,
-      visible,
       women,
     } = this.state;
 
@@ -1088,52 +1184,26 @@ class OldClient extends Component {
     let vdevices_list = this.mapDevices(video_devices);
 
     let otherFeedHasQuestion = false;
-    let videos               = feeds.filter(feed => feed).map(feed => {
-      const { id, talk, question, cammute, display } = feed;
-
-      let display_name     = display.display;
-      otherFeedHasQuestion = otherFeedHasQuestion || (question && id !== myid);
-
-      return (<div className="video"
-                   key={'v' + id}
-                   ref={'video' + id}
-                   id={'video' + id}>
-        <div className={classNames('video__overlay', { 'talk': talk })}>
-          {question ? <div className="question">
-            <svg viewBox="0 0 50 50">
-              <text x="25" y="25" textAnchor="middle" alignmentBaseline="central" dominantBaseline="central">&#xF128;</text>
-            </svg>
-          </div> : ''}
-          <div className="video__title">{!talk ? <Icon name="microphone slash" size="small" color="red" /> : ''}{display_name}</div>
-        </div>
-        <svg className={classNames('nowebcam', { 'hidden': !cammute })} viewBox="0 0 32 18" preserveAspectRatio="xMidYMid meet">
-          <text x="16" y="9" textAnchor="middle" alignmentBaseline="central" dominantBaseline="central">&#xf2bd;</text>
-        </svg>
-        <video
-          key={'v' + id}
-          ref={'remoteVideo' + id}
-          id={'remoteVideo' + id}
-          width={width}
-          height={height}
-          autoPlay={true}
-          controls={false}
-          muted={true}
-          playsInline={true} />
-        <audio
-          key={'a' + id}
-          ref={'remoteAudio' + id}
-          id={'remoteAudio' + id}
-          autoPlay={true}
-          controls={false}
-          playsInline={true} />
-      </div>);
-    });
+    let localPushed          = false;
+    let videos               = feeds.filter(feed => feed).reduce((result, feed, i) => {
+      const { question, id } = feed;
+      otherFeedHasQuestion   = otherFeedHasQuestion || (question && id !== myid);
+      result.push(this.renderMedia(feed, width, height));
+      if (!localPushed && (feeds.length - 1 === i || (feed.display.timestamp <= user.timestamp && feeds[i + 1].display.timestamp > user.timestamp))) {
+        localPushed = true;
+        result.push(this.renderLocalMedia(width, height));
+      }
+      return result;
+    }, []);
+    if (videos.length === 0) {
+      videos = [this.renderLocalMedia(width, height)];
+    }
 
     let l = (<Label key='Carbon' floating size='mini' color='red'>{count}</Label>);
 
     let login = (<LoginPage user={user} checkPermission={this.checkPermission} />);
 
-    let content = (<div className={classNames('vclient', { 'vclient--chat-open': visible })}>
+    let content = (<div className={classNames('vclient', { 'vclient--chat-open': chatVisible })}>
       <div className="vclient__toolbar">
         <Input>
           <Select
@@ -1147,17 +1217,20 @@ class OldClient extends Component {
             //onClick={this.getRoomList}
             onChange={(e, { value }) => this.selectRoom(value)} />
           {localAudioTrack ? <Button negative icon='sign-out' onClick={() => this.exitRoom(false)} /> : ''}
-          {!localAudioTrack ? <Button primary icon='sign-in' disabled={delay || !selected_room || !audio_device}
-                               onClick={this.joinRoom} /> : ''}
+          {!localAudioTrack ?
+            <Button primary icon='sign-in' disabled={delay || !selected_room || !audio_device}
+                    onClick={this.joinRoom} /> : ''}
         </Input>
         <Menu icon='labeled' secondary size="mini">
           <Menu.Item disabled={!localAudioTrack}
-                     onClick={() => this.setState({ visible: !visible, count: 0 })}>
+                     onClick={() => this.setState({ chatVisible: !chatVisible, count: 0 })}>
             <Icon name="comments" />
-            {t(visible ? 'oldClient.closeChat' : 'oldClient.openChat')}
+            {t(chatVisible ? 'oldClient.closeChat' : 'oldClient.openChat')}
             {count > 0 ? l : ''}
           </Menu.Item>
-          <Menu.Item disabled={!audio || video_device === null || !geoinfo || !localAudioTrack || delay || otherFeedHasQuestion} onClick={this.handleQuestion}>
+          <Menu.Item
+            disabled={!audio || video_device === null || !geoinfo || !localAudioTrack || delay || otherFeedHasQuestion}
+            onClick={this.handleQuestion}>
             <Icon color={question ? 'green' : ''} name='question' />
             {t('oldClient.askQuestion')}
           </Menu.Item>
@@ -1176,7 +1249,8 @@ class OldClient extends Component {
         </Menu>
         <Menu icon='labeled' secondary size="mini">
           {!localAudioTrack ?
-            <Menu.Item position='right' disabled={audio_device === null || selftest !== t('oldClient.selfAudioTest')}
+            <Menu.Item position='right'
+                       disabled={audio_device === null || selftest !== t('oldClient.selfAudioTest')}
                        onClick={this.selfTest}>
               <Icon color={tested ? 'green' : 'red'} name="sound" />
               {selftest}
@@ -1243,7 +1317,7 @@ class OldClient extends Component {
         </Menu>
       </div>
       <div className="vclient__main" onDoubleClick={() => this.setState({
-        visible: !visible
+        chatVisible: !chatVisible
       })}>
         <div className="vclient__main-wrapper">
           <div className="videos-panel">
@@ -1293,7 +1367,7 @@ class OldClient extends Component {
             ref={chat => {
               this.chat = chat;
             }}
-            visible={visible}
+            visible={chatVisible}
             janus={janus}
             room={room}
             user={user}
