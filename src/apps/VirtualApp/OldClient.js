@@ -68,7 +68,7 @@ class OldClient extends Component {
     },
     users: {},
     username_value: localStorage.getItem('username') || '',
-    visible: false,
+    chatVisible: false,
     question: false,
     geoinfo: false,
     selftest: this.props.t('oldClient.selfAudioTest'),
@@ -236,16 +236,16 @@ class OldClient extends Component {
 
   getRoomList = (user) => {
     getState('galaxy/groups', (groups) => {
-      let rooms               = groups.rooms;
+      let rooms = groups.rooms;
       const { selected_room } = this.state;
       //let rooms                      = groups.filter(r => /W\./i.test(r.description) === women);
       this.setState({ rooms });
       if (selected_room !== '') {
         const room = rooms.find(r => r.room === selected_room);
         const name = room.description;
-        user.room  = selected_room;
-        user.janus = room.janus;
-        user.group = name;
+        user.room     = selected_room;
+        user.janus    = room.janus;
+        user.group    = name;
         this.setState({ name });
         this.initClient(user, false);
       }
@@ -261,9 +261,9 @@ class OldClient extends Component {
       return;
     }
     this.setState({ selected_room: roomid, name });
-    user.room  = roomid;
-    user.group = name;
-    user.janus = room.janus;
+    user.room       = roomid;
+    user.group      = name;
+    user.janus      = room.janus;
     this.setState({ delay: true });
     this.initClient(user, false);
   };
@@ -465,10 +465,10 @@ class OldClient extends Component {
           videoroom.muteAudio();
         }
         if (track.kind === 'video') {
-          this.setState({ localVideoTrack: track });
+          this.setState({localVideoTrack: track});
         }
         if (track.kind === 'audio') {
-          this.setState({ localAudioTrack: track });
+          this.setState({localAudioTrack: track});
         }
       },
       onremotestream: (stream) => {
@@ -981,7 +981,7 @@ class OldClient extends Component {
     const user                         = Object.assign({}, this.state.user);
     localStorage.setItem('question', !question);
     user.question = !question;
-    let msg       = { type: 'question', status: !question, room, user };
+    let msg = { type: 'question', status: !question, room, user };
     sendProtocolMessage(protocol, user, msg);
     this.setState({ user, question: !question, delay: true });
     setTimeout(() => {
@@ -1001,7 +1001,7 @@ class OldClient extends Component {
 
   camMute = () => {
     let { videoroom, cammuted, protocol, room } = this.state;
-    const user                                  = Object.assign({}, this.state.user);
+    const user = Object.assign({}, this.state.user);
     cammuted ? videoroom.unmuteVideo() : videoroom.muteVideo();
     this.setState({ cammuted: !cammuted, delay: true });
     setTimeout(() => {
@@ -1010,7 +1010,7 @@ class OldClient extends Component {
     this.sendDataMessage('camera', this.state.cammuted);
     user.camera = cammuted;
     // Send to protocol camera status event
-    let msg     = { type: 'camera', status: cammuted, room, user };
+    let msg = { type: 'camera', status: cammuted, room, user };
     sendProtocolMessage(protocol, user, msg);
   };
 
@@ -1129,39 +1129,39 @@ class OldClient extends Component {
 
   render() {
     const {
-            audio,
-            audio_device,
-            audio_devices,
-            cammuted,
-            count,
-            delay,
-            feeds,
-            geoinfo,
-            janus,
-            localAudioTrack,
-            monitoringData,
-            muted,
-            myid,
-            question,
-            room,
-            rooms,
-            selected_room,
-            selftest,
-            shidur,
-            tested,
-            user,
-            username_value,
-            video_device,
-            video_devices,
-            video_setting,
-            visible,
-            women,
-          } = this.state;
+      audio,
+      audio_device,
+      audio_devices,
+      cammuted,
+      chatVisible,
+      count,
+      delay,
+      feeds,
+      geoinfo,
+      janus,
+      localAudioTrack,
+      monitoringData,
+      muted,
+      myid,
+      question,
+      room,
+      rooms,
+      selected_room,
+      selftest,
+      shidur,
+      tested,
+      user,
+      username_value,
+      video_device,
+      video_devices,
+      video_setting,
+      women,
+    } = this.state;
 
     const { t, i18n } = this.props;
+    const width       = '134';
+    const height      = '100';
 
-    const width  = '134';
-    const height = '100';
     //let iOS = ['iPad', 'iPhone', 'iPod'].indexOf(navigator.platform) >= 0;
 
     let rooms_list = rooms.map((data, i) => {
@@ -1191,7 +1191,7 @@ class OldClient extends Component {
 
     let l = (<Label key='Carbon' floating size='mini' color='red'>{count}</Label>);
 
-    let content = (<div className={classNames('vclient', { 'vclient--chat-open': visible })}>
+    let content = (<div className={classNames('vclient', { 'vclient--chat-open': chatVisible })}>
       <div className="vclient__toolbar">
         <Input
           iconPosition='left'
@@ -1218,9 +1218,9 @@ class OldClient extends Component {
         </Input>
         <Menu icon='labeled' secondary size="mini">
           <Menu.Item disabled={!localAudioTrack}
-                     onClick={() => this.setState({ visible: !visible, count: 0 })}>
+                     onClick={() => this.setState({ chatVisible: !chatVisible, count: 0 })}>
             <Icon name="comments" />
-            {t(visible ? 'oldClient.closeChat' : 'oldClient.openChat')}
+            {t(chatVisible ? 'oldClient.closeChat' : 'oldClient.openChat')}
             {count > 0 ? l : ''}
           </Menu.Item>
           <Menu.Item
@@ -1305,7 +1305,7 @@ class OldClient extends Component {
         </Menu>
       </div>
       <div className="vclient__main" onDoubleClick={() => this.setState({
-        visible: !visible
+        chatVisible: !chatVisible
       })}>
         <div className="vclient__main-wrapper">
           <div className="videos-panel">
@@ -1320,7 +1320,7 @@ class OldClient extends Component {
             ref={chat => {
               this.chat = chat;
             }}
-            visible={visible}
+            visible={chatVisible}
             janus={janus}
             room={room}
             user={user}
