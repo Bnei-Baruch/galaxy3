@@ -1078,7 +1078,7 @@ class OldClient extends Component {
         autoPlay={true}
         controls={false}
         muted={true}
-        playsinline={true} />
+        playsInline={true} />
 
     </div>);
   };
@@ -1115,14 +1115,14 @@ class OldClient extends Component {
           autoPlay={true}
           controls={false}
           muted={true}
-          playsinline={true} />
+          playsInline={true} />
         <audio
           key={'a' + id}
           ref={'remoteAudio' + id}
           id={'remoteAudio' + id}
           autoPlay={true}
           controls={false}
-          playsinline={true} />
+          playsInline={true} />
       </div>
     );
   };
