@@ -367,8 +367,7 @@ class VirtualStreaming extends Component {
     localStorage.setItem('vrt_video', videos);
   };
 
-  setAudio = (audios, options) => {
-    let text = options.filter(k => k.value === audios)[0].text;
+  setAudio = (audios, text) => {
     this.setState({ audios });
     if (this.state.audiostream) {
       this.state.audiostream.send({ message: { request: 'switch', id: audios } });
@@ -514,7 +513,7 @@ class VirtualStreaming extends Component {
                           flag={option.flag}
                           description={option.description}
                           action={option.action}
-                          onClick={() => this.setAudio(option.value)}
+                          onClick={() => this.setAudio(option.value, option.text)}
                       />
                     );
                   })}
