@@ -1,11 +1,12 @@
-import React, {Component, Fragment} from 'react';
+import React, { Component } from 'react';
 import NewWindow from 'react-new-window';
 import { Janus } from '../../lib/janus';
 import classNames from 'classnames';
 import { isMobile } from 'react-device-detect';
-import {Button, Dropdown, Icon, Input, Label, Menu, Popup, Select} from 'semantic-ui-react';
+import { Button, Icon, Input, Label, Menu, Popup, Select } from 'semantic-ui-react';
 import {
   checkNotification,
+  genUUID,
   geoInfo,
   getDevicesStream,
   getState,
@@ -26,8 +27,6 @@ import { withTranslation } from 'react-i18next';
 import { mapNameToLanguage, setLanguage } from '../../i18n/i18n';
 import { Monitoring } from '../../components/Monitoring';
 import { MonitoringData } from '../../shared/MonitoringData';
-import {client} from "../../components/UserManager";
-import LoginPage from "../../components/LoginPage";
 
 class OldClient extends Component {
 
@@ -60,9 +59,15 @@ class OldClient extends Component {
     cammuted: false,
     shidur: false,
     protocol: null,
-    user: null,
+    user: {
+      email: null,
+      id: localStorage.getItem('uuid') || genUUID(),
+      role: 'user',
+      name: 'user-' + Janus.randomString(4),
+      username: null,
+    },
     users: {},
-    username_value: "",
+    username_value: localStorage.getItem('username') || '',
     chatVisible: false,
     question: false,
     geoinfo: false,
@@ -89,49 +94,32 @@ class OldClient extends Component {
   componentDidMount() {
     if (isMobile) {
       window.location = '/userm';
-    }
-  };
-
-  checkPermission = (user) => {
-    let gxy_user = user.roles.filter(role => role === 'gxy_user').length > 0;
-    if (gxy_user) {
-      client.events.addAccessTokenExpired(() => {
-        console.log("...!TOKEN EXPIRED!...");
-        client.signoutRedirect();
-      });
-      delete user.roles;
-      user.role = "user";
-      this.checkClient(user);
     } else {
-      alert("Access denied!");
-      client.signoutRedirect();
-    }
-  };
-
-  checkClient = (user) => {
-    const { t } = this.props;
-    localStorage.setItem('question', false);
-    localStorage.setItem('sound_test', false);
-    localStorage.setItem('uuid', user.id);
-    checkNotification();
-    let system  = navigator.userAgent;
-    let browser = platform.parse(system);
-    if (/Safari|Firefox|Chrome/.test(browser.name)) {
-      geoInfo(`${GEO_IP_INFO}`, data => {
-        user.ip     = data ? data.ip : '127.0.0.1';
-        user.system = system;
-        if (!data) {
-          alert(t('oldClient.failGeoInfo'));
-        }
-        this.setState({ geoinfo: !!data, user }, () => {
-          this.getRoomList(user);
+      const user  = Object.assign({}, this.state.user);
+      const { t } = this.props;
+      localStorage.setItem('question', false);
+      localStorage.setItem('sound_test', false);
+      localStorage.setItem('uuid', user.id);
+      checkNotification();
+      let system  = navigator.userAgent;
+      let browser = platform.parse(system);
+      if (/Safari|Firefox|Chrome/.test(browser.name)) {
+        geoInfo(`${GEO_IP_INFO}`, data => {
+          user.ip     = data ? data.ip : '127.0.0.1';
+          user.system = system;
+          if (!data) {
+            alert(t('oldClient.failGeoInfo'));
+          }
+          this.setState({ geoinfo: !!data, user }, () => {
+            this.getRoomList(user);
+          });
         });
-      });
-    } else {
-      alert(t('oldClient.browserNotSupported'));
-      window.location = 'https://galaxy.kli.one';
+      } else {
+        alert(t('oldClient.browserNotSupported'));
+        window.location = 'https://galaxy.kli.one';
+      }
     }
-  }
+  };
 
   initClient = (user, error) => {
     const { t } = this.props;
@@ -142,7 +130,7 @@ class OldClient extends Component {
       // Check if unified plan supported
       if (Janus.unifiedPlan) {
         user.session = janus.getSessionId();
-        this.setState({ janus, user, username_value: user.title });
+        this.setState({ janus, user });
         this.chat.initChat(janus);
         this.initVideoRoom(error);
       } else {
@@ -1055,7 +1043,7 @@ class OldClient extends Component {
   };
 
   renderLocalMedia = (width, height) => {
-    const { username_value, cammuted, question, muted } = this.state;
+    const { username_value, user, cammuted, question, muted } = this.state;
 
     return (<div className="video"
                  key={'localMedia'}>
@@ -1073,7 +1061,7 @@ class OldClient extends Component {
         }
         <div className="video__title">
           {muted ? <Icon name="microphone slash" size="small"
-                         color="red" /> : ''}{username_value}
+                         color="red" /> : ''}{username_value || user.name}
         </div>
       </div>
       <svg className={classNames('nowebcam', { 'hidden': !cammuted })} viewBox="0 0 32 18"
@@ -1163,6 +1151,7 @@ class OldClient extends Component {
       shidur,
       tested,
       user,
+      username_value,
       video_device,
       video_devices,
       video_setting,
@@ -1172,6 +1161,8 @@ class OldClient extends Component {
     const { t, i18n } = this.props;
     const width       = '134';
     const height      = '100';
+
+    //let iOS = ['iPad', 'iPhone', 'iPod'].indexOf(navigator.platform) >= 0;
 
     let rooms_list = rooms.map((data, i) => {
       const { room, description } = data;
@@ -1202,11 +1193,16 @@ class OldClient extends Component {
 
     let l = (<Label key='Carbon' floating size='mini' color='red'>{count}</Label>);
 
-    let login = (<LoginPage user={user} checkPermission={this.checkPermission} />);
-
     let content = (<div className={classNames('vclient', { 'vclient--chat-open': chatVisible })}>
       <div className="vclient__toolbar">
-        <Input>
+        <Input
+          iconPosition='left'
+          placeholder={t('oldClient.yourName')}
+          value={username_value}
+          onChange={(v, { value }) => this.setState({ username_value: value })}
+          action>
+          <input iconPosition='left' disabled={!!localAudioTrack} />
+          <Icon name='user circle' />
           <Select
             search
             disabled={audio_device === null || !!localAudioTrack}
@@ -1240,7 +1236,7 @@ class OldClient extends Component {
             {t('oldClient.openBroadcast')}
             {shidur ?
               <NewWindow
-                url='https://galaxy.kli.one/stream'
+                url='https://galaxy.kli.one/gxystr'
                 features={{ width: '725', height: '635', left: '200', top: '200', location: 'no' }}
                 title='V4G' onUnload={this.onUnload} onBlock={this.onBlock}>
               </NewWindow> :
@@ -1267,22 +1263,22 @@ class OldClient extends Component {
             <Icon color={cammuted ? 'red' : ''} name={!cammuted ? 'eye' : 'eye slash'} />
             {t(cammuted ? 'oldClient.startVideo' : 'oldClient.stopVideo')}
           </Menu.Item>
+          <Menu.Item>
+            <Select
+              compact
+              value={i18n.language}
+              options={mapNameToLanguage(i18n.language)}
+              onChange={(e, { value }) => {
+                setLanguage(value);
+                this.setState({ selftest: t('oldClient.selfAudioTest') });
+              }} />
+          </Menu.Item>
           <Popup
             trigger={<Menu.Item icon="setting" name={t('oldClient.settings')} />}
             on='click'
             position='bottom right'
           >
             <Popup.Content>
-              <Button size='huge' fluid>
-                <Icon name='user circle'/>
-                <Dropdown inline text={this.state.username_value}>
-                  <Dropdown.Menu>
-                    <Dropdown.Item content='Profile:' disabled />
-                    <Dropdown.Item text='My Account' onClick={() => window.open("https://accounts.kbb1.com/auth/realms/main/account", "_blank")} />
-                    <Dropdown.Item text='Sign Out' onClick={() => client.signoutRedirect()} />
-                  </Dropdown.Menu>
-                </Dropdown>
-              </Button>
               <Select className='select_device'
                       disabled={!!localAudioTrack}
                       error={!audio_device}
@@ -1304,13 +1300,6 @@ class OldClient extends Component {
                       value={video_setting}
                       options={vsettings_list}
                       onChange={(e, { value }) => this.setDevice(video_device, audio_device, value)} />
-              <Select className='select_device'
-                      value={i18n.language}
-                      options={mapNameToLanguage(i18n.language)}
-                      onChange={(e, { value }) => {
-                        setLanguage(value);
-                        this.setState({ selftest: t('oldClient.selfAudioTest') });
-                      }} />
             </Popup.Content>
           </Popup>
           <Help t={t} />
@@ -1343,9 +1332,9 @@ class OldClient extends Component {
     </div>);
 
     return (
-      <Fragment>
-        {user ? content : login}
-      </Fragment>
+      <div>
+        {isMobile ? <div> This content is unavailable on mobile </div> : content}
+      </div>
     );
   }
 }
