@@ -500,7 +500,7 @@ class VirtualStreaming extends Component {
                   {audiog_options2.map((option, i) => {
                     if (option.divider === true) return (<Dropdown.Divider key={i}/>);
                     if (option.header === true) return (
-                      <Dropdown.Header className='ui blue' icon={option.icon}>
+                      <Dropdown.Header className='ui blue' icon={option.icon} key={i}>
                         {option.text}
                         {(option.description ? <Header as='div' size='tiny' color='grey' content={option.description} /> : '')}
                       </Dropdown.Header>
