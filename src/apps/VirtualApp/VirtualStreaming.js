@@ -1,6 +1,6 @@
 import React, { Component, Fragment } from 'react';
 import { Janus } from '../../lib/janus';
-import { Label, Button, Select, Dropdown } from 'semantic-ui-react';
+import { Label, Button, Select, Dropdown, Header } from 'semantic-ui-react';
 import VolumeSlider from "../../components/VolumeSlider";
 import NewWindow from 'react-new-window';
 import {
@@ -439,7 +439,8 @@ class VirtualStreaming extends Component {
     );
 
     const video_option = videos_options2.find((option) => option.value === videos);
-
+    const audio_option = audiog_options2.find((option) => option.value === audios);
+    
     const inLine = (
       <div className="video video--broadcast" key='v0' ref='video0' id='video0'>
         <div className="video" ref="mediaplayer">
@@ -455,13 +456,13 @@ class VirtualStreaming extends Component {
               negative={muted}
               icon={muted ? 'volume off' : 'volume up'}
               onClick={this.audioMute} />
-            <Select
+            {/* <Select
               error={!videos}
               placeholder="Video quality:"
               value={videos}
               options={videos_options}
               onChange={(e, { value }) => this.setVideo(value)} 
-            />
+            /> */}
             <Dropdown
               selection
               placeholder="Video quality"
@@ -471,6 +472,12 @@ class VirtualStreaming extends Component {
               <Dropdown.Menu>
                 {videos_options2.map((option, i) => {
                   if (option.divider === true) return (<Dropdown.Divider key={i}/>);
+                  if (option.header === true) return (
+                    <Dropdown.Header className='ui blue' icon={option.icon}>
+                        {option.text}
+                        {(option.description ? <Header as='div' size='tiny' color='grey' content={option.description} /> : '')}
+                      </Dropdown.Header>
+                  );
                   return (
                     <Dropdown.Item
                         key={i}
@@ -484,22 +491,36 @@ class VirtualStreaming extends Component {
                 })}
               </Dropdown.Menu>
             </Dropdown>
-            <Select
-              // compact={false}
-              // scrolling={false}
-              error={!audios}
-              placeholder="Audio:"
+            <Dropdown
+              selection
+              placeholder="Audio"
+              text={audio_option ? `${audio_option.text}` : ''}
               value={audios}
-              options={audiog_options}
-              onChange={(e, { value, options }) => this.setAudio(value, options)} />
-            <Select
-              // compact={false}
-              // scrolling={false}
-              error={!audios}
-              placeholder="Audio:"
-              value={audios}
-              options={audiog_options2}
-              onChange={(e, { value, options }) => this.setAudio(value, options)} />
+              >
+                <Dropdown.Menu>
+                  {audiog_options2.map((option, i) => {
+                    if (option.divider === true) return (<Dropdown.Divider key={i}/>);
+                    if (option.header === true) return (
+                      <Dropdown.Header className='ui blue' icon={option.icon}>
+                        {option.text}
+                        {(option.description ? <Header as='div' size='tiny' color='grey' content={option.description} /> : '')}
+                      </Dropdown.Header>
+                    );
+                    return (
+                      <Dropdown.Item
+                          key={i}
+                          text={option.text}
+                          icon={option.icon}
+                          flag={option.flag}
+                          description={option.description}
+                          action={option.action}
+                          onClick={() => this.setAudio(option.value)}
+                      />
+                    );
+                  })}
+                </Dropdown.Menu>
+              </Dropdown>
+
           </div>
           {/* <div className='mediaplayer' ref="mediaplayer"> */}
           <video ref="remoteVideo"

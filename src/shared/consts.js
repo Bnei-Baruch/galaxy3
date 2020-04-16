@@ -58,7 +58,9 @@ export const videos_options2 = [
     { key: 4, text: 'Audio only', description:"(no video)", value: 3 },
 ];
 export const audiog_options2 = [
-    { key: 101, value: 101, text: 'Workshop', disabled: true, icon: "tags", selected: true},
+    
+    { header: true, text: 'Stream for workshop', description:'(focus group is muted)', icon: 'group'},
+    // { key: 101, value: 101, text: 'Workshop', disabled: true, icon: "tags", selected: true},
     { key: 2, value: 2, flag: 'il', text: 'Hebrew' },
     { key: 3, value: 3, flag: 'ru', text: 'Russian' },
     { key: 4, value: 4, flag: 'us', text: 'English' },
@@ -66,7 +68,9 @@ export const audiog_options2 = [
     { key: 5, value: 5, flag: 'fr', text: 'French' },
     { key: 8, value: 8, flag: 'it', text: 'Italian' },
     { key: 7, value: 7, flag: 'de', text: 'German' },
-    { key: 100, value: 100, text: 'Source', disabled: true, icon: "tags", selected: true},
+    {divider:true},
+    { header: true, text: 'Source stream', description:'(focus group is on)', icon: 'group'},
+    // { key: 100, value: 100, text: 'Source', disabled: true, icon: "tags", selected: true},
     { key: 'he', value: 15, flag: 'il', text: 'Hebrew' },
     { key: 'ru', value: 23, flag: 'ru', text: 'Russian' },
     { key: 'en', value: 24, flag: 'us', text: 'English' },
@@ -91,7 +95,8 @@ export const audiog_options2 = [
     { key: 'ua', value: 55, flag: 'ua', text: 'Ukrainian' },
     { key: 'nl', value: 56, flag: 'nl', text: 'Dutch' },
     { key: 'cn', value: 57, flag: 'cn', text: 'Chinese' },
-    { key: 99, value: 99, text: 'Special', disabled: true, icon: "tags", selected: true},
+    {divider:true},
+    { header: true, text: 'Dual languages stream', description:'(focus group is on)', icon: 'group'},
     { key: 'heru', value: 10, text: 'Heb-Rus' },
     { key: 'heen', value: 17, text: 'Heb-Eng' },
 ];
