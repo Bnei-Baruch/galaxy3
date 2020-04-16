@@ -27,8 +27,9 @@ import { isMobile } from 'react-device-detect';
 
 import { Monitoring } from '../../components/Monitoring';
 import { MonitoringData } from '../../shared/MonitoringData';
+import LoginMessage from "../../components/LoginMessage";
 
-class MobileClient extends Component {
+class OldMobileClient extends Component {
 
     state = {
         count: 0,
@@ -1203,6 +1204,7 @@ class MobileClient extends Component {
                     ref={el => (reactSwipeEl = el)}
                 >
                     <div>
+                        <LoginMessage />
                         <div className='vclient' >
                             <div className="vclient__toolbar">
                                 <Select className='select_room'
@@ -1351,4 +1353,4 @@ class MobileClient extends Component {
     }
 }
 
-export default MobileClient;
+export default OldMobileClient;

@@ -50,7 +50,10 @@ class LoginPage extends Component {
 
         const {disabled, loading} = this.state;
 
-        let login = (<Button size='massive' primary onClick={this.userLogin} disabled={disabled} loading={loading}>Login</Button>);
+        let login = (<div>
+            <Button size='massive' primary onClick={this.userLogin} disabled={disabled} loading={loading}>Login</Button>
+            <Button size='massive' primary onClick={() => window.open("https://galaxy.kli.one/guest","_self")} >Guest</Button>
+        </div>);
 
         let profile = (
             <Dropdown inline text=''>
