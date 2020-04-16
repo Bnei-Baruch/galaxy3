@@ -96,7 +96,7 @@ export const audiog_options2 = [
     { key: 'nl', value: 56, flag: 'nl', text: 'Dutch' },
     { key: 'cn', value: 57, flag: 'cn', text: 'Chinese' },
     {divider:true},
-    { header: true, text: 'Dual languages stream', description:'(focus group is on)', icon: 'group'},
+    { header: true, text: 'Dual languages stream', description:'(focus group is muted)', icon: 'group'},
     { key: 'heru', value: 10, text: 'Heb-Rus' },
     { key: 'heen', value: 17, text: 'Heb-Eng' },
 ];

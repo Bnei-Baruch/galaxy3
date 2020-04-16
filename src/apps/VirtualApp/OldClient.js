@@ -1377,15 +1377,15 @@ class OldClient extends Component {
           {/* ${layout === 'split' ? ' broadcast--split' : ''} */}
 
           <div className="broadcast-panel">
-            <div className="videos">
+            {/* <div className="videos"> */}
               <div className="broadcast__wrapper">
                 {layout === 'split' && source}
               </div>
-            </div>
+            {/* </div> */}
           </div>
 
           <div className="videos-panel">
-            <div className="videos">
+            {/* <div className="videos"> */}
               <div className="videos__wrapper">
 
                 {layout === 'equal' && source}
@@ -1395,7 +1395,7 @@ class OldClient extends Component {
 
                 {otherVideos}
               </div>
-            </div>
+            {/* </div> */}
           </div>
           <VirtualChat
             t={t}

@@ -442,26 +442,14 @@ class VirtualStreaming extends Component {
     
     const inLine = (
       <div className="video video--broadcast" key='v0' ref='video0' id='video0'>
-        <div className="video" ref="mediaplayer">
+       
           <div className="video__overlay">
             <Button color='blue'
-              icon='expand arrows alternate'
+              icon='expand'
               onClick={this.toggleFullScreen} />
-            <Button color='yellow'
-              icon='expand arrows alternate'
+            <Button color='blue'
+              icon='external square'
               onClick={this.toggleNewWindow} />
-            <VolumeSlider volume={this.setVolume} />
-            <Button positive={!muted}
-              negative={muted}
-              icon={muted ? 'volume off' : 'volume up'}
-              onClick={this.audioMute} />
-            {/* <Select
-              error={!videos}
-              placeholder="Video quality:"
-              value={videos}
-              options={videos_options}
-              onChange={(e, { value }) => this.setVideo(value)} 
-            /> */}
             <Dropdown
               selection
               placeholder="Video quality"
@@ -479,15 +467,15 @@ class VirtualStreaming extends Component {
                   );
                   return (
                     <Dropdown.Item
-                        key={i}
-                        text={option.text}
-                        icon={option.icon}
-                        description={option.description}
-                        action={option.action}
-                        onClick={() => this.setVideo(option.value)}
+                    key={i}
+                    text={option.text}
+                    icon={option.icon}
+                    description={option.description}
+                    action={option.action}
+                    onClick={() => this.setVideo(option.value)}
                     />
-                  );
-                })}
+                    );
+                  })}
               </Dropdown.Menu>
             </Dropdown>
             <Dropdown
@@ -507,21 +495,26 @@ class VirtualStreaming extends Component {
                     );
                     return (
                       <Dropdown.Item
-                          key={i}
-                          text={option.text}
-                          icon={option.icon}
-                          flag={option.flag}
-                          description={option.description}
-                          action={option.action}
-                          onClick={() => this.setAudio(option.value, option.text)}
+                      key={i}
+                      text={option.text}
+                      icon={option.icon}
+                      flag={option.flag}
+                      description={option.description}
+                      action={option.action}
+                      onClick={() => this.setAudio(option.value, option.text)}
                       />
-                    );
-                  })}
+                      );
+                    })}
                 </Dropdown.Menu>
               </Dropdown>
+            <VolumeSlider volume={this.setVolume} />
+            <Button positive={!muted}
+              negative={muted}
+              icon={muted ? 'volume off' : 'volume up'}
+              onClick={this.audioMute} />
 
           </div>
-          {/* <div className='mediaplayer' ref="mediaplayer"> */}
+          <div className='mediaplayer' ref="mediaplayer">
           <video ref="remoteVideo"
                  id="remoteVideo"
                  width="134"
