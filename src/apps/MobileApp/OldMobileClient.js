@@ -95,8 +95,8 @@ class OldMobileClient extends Component {
     }
 
     componentDidMount() {
-        if(!isMobile && window.location.href.indexOf("userm") > -1) {
-            window.location = '/user/';
+        if(!isMobile && window.location.href.indexOf("guestm") > -1) {
+            window.location = '/guest/';
             return;
         }
         let {user} = this.state;

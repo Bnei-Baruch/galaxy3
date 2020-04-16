@@ -94,7 +94,7 @@ class OldClient extends Component {
 
   componentDidMount() {
     if (isMobile) {
-      window.location = '/userm';
+      window.location = '/guestm';
     } else {
       const user  = Object.assign({}, this.state.user);
       const { t } = this.props;
