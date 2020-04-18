@@ -1,5 +1,6 @@
 import React, { Component } from 'react'
-import {Button, Container, Message} from 'semantic-ui-react'
+import {Button, Container, Message, Icon} from 'semantic-ui-react'
+import {withTranslation} from "react-i18next";
 
 class LoginMessage extends Component {
     state = { visible: true }
@@ -9,14 +10,15 @@ class LoginMessage extends Component {
     }
 
     render() {
-
-        let login = (<Button primary onClick={() => window.open("https://galaxy.kli.one/user","_self")} >LOGIN</Button>);
+        const { t } = this.props;
+        let login = (<Button primary size='massive' onClick={() => window.open("https://galaxy.kli.one/user","_self")} >LOGIN</Button>);
 
         if (this.state.visible) {
             return (
                 <Container textAlign='center' >
-                    <Message visible negative size='massive' onDismiss={this.handleDismiss} >
-                        <Message.Header>Please {login} to make it safe for us</Message.Header>
+                    <Message icon visible negative size='massive' onDismiss={this.handleDismiss} >
+                        <Icon>{login}</Icon>
+                        <Message.Header>{t('loginMessage.loginWarning')}</Message.Header>
                     </Message>
                 </Container>
             )
@@ -28,4 +30,4 @@ class LoginMessage extends Component {
     }
 }
 
-export default LoginMessage
+export default withTranslation()(LoginMessage);
