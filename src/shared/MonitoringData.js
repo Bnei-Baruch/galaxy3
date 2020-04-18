@@ -227,7 +227,6 @@ export const MonitoringData = class {
   }
 
   filterData(data, metrics, prefix) {
-    console.log(this.sentDataCount, data, prefix);
     if (Array.isArray(data)) {
       return data.filter(e =>
         metrics.some(m => m.startsWith([prefix, e.name ? `[name:${e.name}]` : `[type:${e.type}]`].filter(part => part).join('.'))))

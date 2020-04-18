@@ -85,9 +85,9 @@ class OldClient extends Component {
 
   componentDidUpdate(prevProps, prevState) {
     if (this.state.videoroom !== prevState.videoroom ||
-        this.state.localVideoTrack !== prevState.localVideoTrack ||
-        this.state.localAudioTrack !== prevState.localAudioTrack ||
-        JSON.stringify(this.state.user) !== JSON.stringify(prevState.user)) {
+      this.state.localVideoTrack !== prevState.localVideoTrack ||
+      this.state.localAudioTrack !== prevState.localAudioTrack ||
+      JSON.stringify(this.state.user) !== JSON.stringify(prevState.user)) {
       this.state.monitoringData.setConnection(
         this.state.videoroom,
         this.state.localAudioTrack,
@@ -565,8 +565,8 @@ class OldClient extends Component {
         if (msg['publishers'] !== undefined && msg['publishers'] !== null) {
           let list          = Object.assign([], msg['publishers']);
           //FIXME:  Tmp fix for black screen in room caoused by feed with video_codec = none
-         let feeds          = list.sort((a, b) => JSON.parse(a.display).timestamp - JSON.parse(b.display).timestamp)
-             .filter(feeder => JSON.parse(feeder.display).role === 'user' && feeder.video_codec !== 'none');
+          let feeds          = list.sort((a, b) => JSON.parse(a.display).timestamp - JSON.parse(b.display).timestamp)
+              .filter(feeder => JSON.parse(feeder.display).role === 'user' && feeder.video_codec !== 'none');
           const feedStreams = Object.assign([], this.state.feedStreams);
           const users       = Object.assign([], this.state.users);
 
@@ -1139,6 +1139,7 @@ class OldClient extends Component {
       audio_device,
       audio_devices,
       cammuted,
+      chatVisible,
       count,
 			currentLayout,
       delay,
@@ -1164,7 +1165,6 @@ class OldClient extends Component {
       video_device,
       video_devices,
       video_setting,
-      chatVisible,
       women,
     } = this.state;
 
@@ -1328,7 +1328,7 @@ class OldClient extends Component {
         <Menu icon='labeled' secondary size="mini">
           {!localAudioTrack ?
             <Menu.Item position='right'
-											 disabled={audio_device === null || selftest !== t('oldClient.selfAudioTest')}
+                       disabled={audio_device === null || selftest !== t('oldClient.selfAudioTest')}
                        onClick={this.selfTest}>
               <Icon color={tested ? 'green' : 'red'} name="sound" />
               {selftest}

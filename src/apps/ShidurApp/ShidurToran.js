@@ -87,34 +87,37 @@ class ShidurToran extends Component {
         this.setState({sorted_feeds});
     };
 
-    savePreset = () => {
+    savePreset = (p) => {
         let {presets,group} = this.props;
 
+        // Take to preset from preview
+        if(!group) return
+
         // First group to preset
-        if(presets.length === 0) {
+        if(presets[p].length === 0) {
             delete group.users;
-            presets[0] = group;
+            presets[p][0] = group;
             this.props.setProps({presets});
             return
         }
 
         //Don't allow group be twice in presets
-        for(let i=0; i<presets.length; i++) {
+        for(let i=0; i<presets[p].length; i++) {
             //remove from presets
-            if(presets[i].room === group.room) {
-                presets.splice(i, 1);
+            if(presets[p][i].room === group.room) {
+                presets[p].splice(i, 1);
                 this.props.setProps({presets});
                 return
             }
         }
 
         // Presets is full
-        if(presets.length === 4)
+        if(presets[p].length === 4)
             return;
 
         //Add to presets
         delete group.users;
-        presets.push(group);
+        presets[p].push(group);
         this.props.setProps({presets});
 
         Janus.log(presets)
@@ -146,12 +149,14 @@ class ShidurToran extends Component {
         const {open,delay} = this.state;
         const q = (<b style={{color: 'red', fontSize: '20px', fontFamily: 'Verdana', fontWeight: 'bold'}}>?</b>);
         const next_group = groups[groups_queue] ? groups[groups_queue].description : groups[0] ? groups[0].description : "";
+        const ng = groups[groups_queue] || null;
 
         let rooms_list = groups.map((data,i) => {
             const {room, num_users, description, questions} = data;
             const next = data.description === next_group;
             const active = group && group.room === room;
-            const pr = presets.find(pst => pst.room === room);
+            //const pr = presets.find(pst => pst.room === room);
+            const pr = false
             const p = pr ? (<Label size='mini' color='teal' >4</Label>) : "";
             return (
                 <Table.Row positive={group && group.description === description}
@@ -185,19 +190,25 @@ class ShidurToran extends Component {
             return ({ key: i, value: feed, text: display })
         });
 
-        let preset4 = presets.map((data,i) => {
-            const {room,description} = data;
-            return (<p key={room}>{description}</p>)
-        });
+        let pst_buttons = Object.keys(presets).map(p => {
+            let preset = presets[p].map(data => {
+                const {room,description} = data;
+                return (<p key={room}>{description}</p>)
+            });
+            return (<Popup on='hover' trigger={<Button color='teal' content={p} onClick={() => this.savePreset(p)} />} content={preset} />)
+        })
 
 
         return (
             <Grid.Row>
                 <Grid.Column>
                     <Segment className="preview_conteiner">
+                        {ng ?
                         <Segment className="group_segment" color='blue'>
-                            {/*{nextfeed}*/}
+                                <div className="shidur_overlay"><span>{ng.description}</span></div>
+                                <UsersPreview pg={ng} {...this.props} next />
                         </Segment>
+                            : ""}
                     </Segment>
                     <Message attached className='info-panel' color='grey'>
                         {/*{action_log}*/}
@@ -234,9 +245,7 @@ class ShidurToran extends Component {
                         </Label>
                     </Segment>
                     <Button.Group attached='bottom' size='mini' >
-                        <Popup trigger={<Button disabled color='teal' content='1' onClick={() => this.savePreset(0)} />} content={preset4} />
-                        <Popup trigger={<Button disabled color='teal' content='2' onClick={() => this.savePreset(4)} />} content={preset4} />
-                        <Popup trigger={<Button disabled color='teal' content='3' onClick={() => this.savePreset(8)} />} content={preset4} />
+                        {pst_buttons}
                     </Button.Group>
                     <Segment textAlign='center' className="group_list" raised disabled={delay} >
                         <Table selectable compact='very' basic structured className="admin_table" unstackable>
