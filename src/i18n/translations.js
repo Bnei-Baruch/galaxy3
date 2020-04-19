@@ -56,6 +56,7 @@ export const resources = {
       },
       loginMessage : {
         register: 'register',
+        login: 'LOGIN',
         loginWarning1: 'You are using the system as a guest. In order to help us  keep the system secured we kindly ask you to ',
         loginWarning2: 'and start using it safely. If you already did it just click the login button.',
       },
@@ -118,6 +119,7 @@ export const resources = {
       },
       loginMessage : {
         register: 'registrarse',
+        login: 'LOGIN',
         loginWarning1: 'Está usando el sistema como invitado (guest). Para poder ayudarnos a mantener la seguridad del sistema, le solicitamos amablemente que se ',
         loginWarning2: 'y comience a usarlo de forma segura. Si ya lo ha hecho solo presiona el botón "Ingresar".',
       },
@@ -180,6 +182,7 @@ export const resources = {
       },
       loginMessage : {
         register: 'להרשם',
+        login: 'כניסה',
         loginWarning1: 'הנך משתמש/ת במערכת כאורח/ת. כדי לעזור לנו לשמור על בטחון המערכת אנחנו מבקשים ממך ',
         loginWarning2: 'ולהתחיל להשתמש במערכת בצורה בטוחה. אם כבר ביצעת הרשמה בעבר אז רק תלחץ על כפתור הכניסה.',
       },
@@ -242,6 +245,7 @@ export const resources = {
       },
       loginMessage : {
         register: 'зарегистрироваться',
+        login: 'ВОЙТИ',
         loginWarning1: 'Вы используете систему в качестве гостя. Чтобы помочь нам обеспечить безопасность системы, просим вас ',
         loginWarning2: 'и начать безопасно ее использовать. Если вы уже сделали это просто нажмите на кнопку Войти.',
       },

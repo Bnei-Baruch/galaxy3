@@ -6,7 +6,7 @@ const LoginMessage = () => {
   const [visible, setVisible] = useState(true);
   const { t }                 = useTranslation();
 
-  let login = (<Button primary size='massive' onClick={() => window.open('https://galaxy.kli.one/user', '_self')}>LOGIN</Button>);
+  let login = (<Button primary size='massive' onClick={() => window.open('https://galaxy.kli.one/user', '_self')}>{t('loginMessage.login')}</Button>);
 
   return visible
     ? (
