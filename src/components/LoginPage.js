@@ -104,7 +104,7 @@ class LoginPage extends Component {
                                         <Header size='huge' >
                                             {t('loginPage.regUsers')}
                                         </Header>
-                                        <br /><br />
+                                        <h3>&nbsp;</h3>
                                         <Button size='massive' primary onClick={this.userLogin} disabled={disabled} loading={loading}>{t('loginPage.login')}</Button>
                                     </Grid.Column>
 
@@ -112,8 +112,7 @@ class LoginPage extends Component {
                                         <Header size='huge'>
                                             {t('loginPage.newUsers')}
                                         </Header>
-                                        <p>{t('loginPage.guestMessage')}</p>
-                                        <br />
+                                        <h3>{t('loginPage.guestMessage1')} <a href='#' onClick={this.userLogin}>{t('loginPage.register')}</a> {t('loginPage.guestMessage2')}</h3>
                                         <Button size='massive' primary onClick={() => window.open("https://galaxy.kli.one/guest","_self")} >{t('loginPage.guest')}</Button>
                                     </Grid.Column>
                                 </Grid.Row>

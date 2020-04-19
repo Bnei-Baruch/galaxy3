@@ -16,9 +16,9 @@ class LoginMessage extends Component {
         if (this.state.visible) {
             return (
                 <Container textAlign='center' >
-                    <Message icon visible negative size='massive' onDismiss={this.handleDismiss} >
+                    <Message icon visible negative size='huge' onDismiss={this.handleDismiss} >
                         <Icon>{login}</Icon>
-                        <Message.Header>{t('loginMessage.loginWarning')}</Message.Header>
+                        <Message.Header>{t('loginMessage.loginWarning1')} <a href='#' onClick={() => window.open("https://galaxy.kli.one/user","_self")}>{t('loginMessage.register')}</a> {t('loginMessage.loginWarning2')}</Message.Header>
                     </Message>
                 </Container>
             )
