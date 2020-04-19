@@ -4,9 +4,10 @@ import { useTranslation } from 'react-i18next';
 
 const LoginMessage = () => {
   const [visible, setVisible] = useState(true);
-  const { t }                 = useTranslation();
+  const { t, i18n }           = useTranslation();
+  const rtl                   = i18n.language === 'he' ? 'rtl' : '';
 
-  let login = (<Button primary size='massive' onClick={() => window.open('https://galaxy.kli.one/user', '_self')}>LOGIN</Button>);
+  let login = (<Button primary size='massive' onClick={() => window.open('https://galaxy.kli.one/user', '_self')}>{t('loginMessage.login')}</Button>);
 
   return visible
     ? (
@@ -15,7 +16,7 @@ const LoginMessage = () => {
           <Message.Content>
             <Grid celled>
               <Grid.Row reversed>
-                <Grid.Column width={13} tablet={12} mobile={10}>
+                <Grid.Column width={13} tablet={12} mobile={10} style={{ direction: rtl }}>
                   {t('loginMessage.loginWarning1')} <a href='#' onClick={() => window.open('https://galaxy.kli.one/user', '_self')}>{t('loginMessage.register')}</a> {t('loginMessage.loginWarning2')}
                 </Grid.Column>
                 <Grid.Column width={3} textAlign='left'>
