@@ -44,7 +44,23 @@
 
     }
 
-
+     .login-message {
+         width: 100%;
+         .ui.celled.grid {
+             box-shadow: none;
+             margin: 0;
+             &>.row {
+                 box-shadow: none;
+                 &>.column {
+                     box-shadow: none;
+                 }
+             }
+         }
+         .ui.message {
+             margin: 0;
+             padding: 0;
+         }
+     }
 
 }
 .videos-panel {
