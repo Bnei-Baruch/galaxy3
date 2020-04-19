@@ -1,6 +1,6 @@
 import React, { Component, Fragment } from 'react';
 import { Janus } from '../../lib/janus';
-import { Label, Button, Select, Dropdown, Header } from 'semantic-ui-react';
+import { Label, Button, Select, Dropdown, Header, Icon } from 'semantic-ui-react';
 import VolumeSlider from "../../components/VolumeSlider";
 import NewWindow from 'react-new-window';
 import {
@@ -439,22 +439,22 @@ class VirtualStreaming extends Component {
 
     const video_option = videos_options2.find((option) => option.value === videos);
     const audio_option = audiog_options2.find((option) => option.value === audios);
-    
+    // const quality_trigger = (
+      
+    // )
     const inLine = (
       <div className="video video--broadcast" key='v0' ref='video0' id='video0'>
        
           <div className="video__overlay">
-            <Button color='blue'
-              icon='expand'
-              onClick={this.toggleFullScreen} />
-            <Button color='blue'
-              icon='external square'
-              onClick={this.toggleNewWindow} />
+            <div className="controls">
+            <div className="controls__quality">
             <Dropdown
-              selection
-              placeholder="Video quality"
-              text={video_option ? `${video_option.text} ${video_option.description}` : ''}
-              value={videos}
+              upward
+              floating
+              scrolling
+              icon={null}
+              selectOnBlur={false}
+              trigger={<button>{video_option ? `${video_option.description}` : ''}</button>}
               >
               <Dropdown.Menu>
                 {videos_options2.map((option, i) => {
@@ -478,41 +478,53 @@ class VirtualStreaming extends Component {
                   })}
               </Dropdown.Menu>
             </Dropdown>
-            <Dropdown
-              selection
-              placeholder="Audio"
-              text={audio_option ? `${audio_option.text}` : ''}
-              value={audios}
-              >
-                <Dropdown.Menu>
-                  {audiog_options2.map((option, i) => {
-                    if (option.divider === true) return (<Dropdown.Divider key={i}/>);
-                    if (option.header === true) return (
-                      <Dropdown.Header className='ui blue' icon={option.icon} key={i}>
-                        {option.text}
-                        {(option.description ? <Header as='div' size='tiny' color='grey' content={option.description} /> : '')}
-                      </Dropdown.Header>
-                    );
-                    return (
-                      <Dropdown.Item
-                      key={i}
-                      text={option.text}
-                      icon={option.icon}
-                      flag={option.flag}
-                      description={option.description}
-                      action={option.action}
-                      onClick={() => this.setAudio(option.value, option.text)}
-                      />
+              
+            </div>
+             <Dropdown
+                upward
+                floating
+                scrolling
+                icon={null}
+                selectOnBlur={false}
+                trigger={<button>{audio_option ? `${audio_option.text}` : ''}</button>}
+                >
+                  <Dropdown.Menu style={{maxHeight:200+'px'}}>
+                    {audiog_options2.map((option, i) => {
+                      if (option.divider === true) return (<Dropdown.Divider key={i}/>);
+                      if (option.header === true) return (
+                        <Dropdown.Header className='ui blue' icon={option.icon} key={i}>
+                          {option.text}
+                          {(option.description ? <Header as='div' size='tiny' color='grey' content={option.description} /> : '')}
+                        </Dropdown.Header>
                       );
-                    })}
-                </Dropdown.Menu>
-              </Dropdown>
-            <VolumeSlider volume={this.setVolume} />
-            <Button positive={!muted}
-              negative={muted}
-              icon={muted ? 'volume off' : 'volume up'}
-              onClick={this.audioMute} />
-
+                      return (
+                        <Dropdown.Item
+                        key={i}
+                        text={option.text}
+                        icon={option.icon}
+                        flag={option.flag}
+                        description={option.description}
+                        action={option.action}
+                        onClick={() => this.setAudio(option.value, option.text)}
+                        />
+                        );
+                      })}
+                  </Dropdown.Menu>
+                </Dropdown>
+                <button onClick={this.audioMute}>
+                  <Icon name={muted ? 'volume off' : 'volume up'}/>
+                </button>
+              
+       
+              {/* <VolumeSlider volume={this.setVolume} /> */}
+              <div className="controls__spacer"></div>
+              <button onClick={this.toggleFullScreen}>
+                <Icon name="expand"/>
+              </button>
+              <button onClick={this.toggleNewWindow}>
+                <Icon name="external square"/>
+              </button>
+            </div>
           </div>
           <div className='mediaplayer' ref="mediaplayer">
           <video ref="remoteVideo"
