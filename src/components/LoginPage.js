@@ -101,7 +101,7 @@ class LoginPage extends Component {
 
                                 <Grid.Row verticalAlign='middle'>
                                     <Grid.Column>
-                                        <Header>
+                                        <Header size='huge' >
                                             {t('loginPage.regUsers')}
                                         </Header>
                                         <br /><br />
@@ -109,7 +109,7 @@ class LoginPage extends Component {
                                     </Grid.Column>
 
                                     <Grid.Column>
-                                        <Header>
+                                        <Header size='huge'>
                                             {t('loginPage.newUsers')}
                                         </Header>
                                         <p>{t('loginPage.guestMessage')}</p>
