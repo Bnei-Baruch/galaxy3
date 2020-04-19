@@ -34,6 +34,7 @@ class VirtualStreaming extends Component {
     mixvolume: null,
     user: {},
     talking: null,
+    cssFixInterval: null,
   };
 
   componentDidMount() {
@@ -59,11 +60,25 @@ class VirtualStreaming extends Component {
         })
         .catch(ex => console.log(`get geoInfo`, ex));
     }
+    this.setState({cssFixInterval: setInterval(() => this.cssFix(), 500)});
   };
+
+  cssFix() {
+    const d = document.getElementsByClassName('languages-dropdown');
+    if (d) {
+      const o = d[0].closest('.video__overlay');
+      if (o) {
+        d[0].style.maxHeight = `${o.offsetHeight-50}px`;
+      }
+    }
+  }
 
   componentWillUnmount() {
     if (this.state.janus) {
       this.state.janus.destroy();
+    }
+    if (this.state.cssFixInterval) {
+      clearInterval(this.state.cssFixInterval);
     }
   };
 
@@ -488,7 +503,7 @@ class VirtualStreaming extends Component {
                 selectOnBlur={false}
                 trigger={<button>{audio_option ? `${audio_option.text}` : ''}</button>}
                 >
-                  <Dropdown.Menu style={{maxHeight:200+'px'}}>
+                  <Dropdown.Menu className='languages-dropdown'>
                     {audiog_options2.map((option, i) => {
                       if (option.divider === true) return (<Dropdown.Divider key={i}/>);
                       if (option.header === true) return (
