@@ -59,6 +59,9 @@
          .ui.message {
              margin: 0;
              padding: 0;
+             &>.close.icon {
+                 z-index: 1000;
+             }
          }
      }
 
