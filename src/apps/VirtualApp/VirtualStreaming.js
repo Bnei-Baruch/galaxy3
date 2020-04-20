@@ -64,11 +64,13 @@ class VirtualStreaming extends Component {
   };
 
   cssFix() {
-    const d = document.getElementsByClassName('languages-dropdown');
-    if (d) {
-      const o = d[0].closest('.video__overlay');
+    const d = document.getElementsByClassName('controls__dropdown');
+    if (d){
+      const o = document.getElementById('video0');
       if (o) {
-        d[0].style.maxHeight = `${o.offsetHeight-50}px`;
+        Array.from(d).forEach(x => {
+          x.style.maxHeight = `${o.offsetHeight-50}px`;
+        });
       }
     }
   }
@@ -462,7 +464,6 @@ class VirtualStreaming extends Component {
        
           <div className="video__overlay">
             <div className="controls">
-            <div className="controls__quality">
             <Dropdown
               upward
               floating
@@ -471,7 +472,7 @@ class VirtualStreaming extends Component {
               selectOnBlur={false}
               trigger={<button>{video_option ? `${video_option.description}` : ''}</button>}
               >
-              <Dropdown.Menu>
+              <Dropdown.Menu className='controls__dropdown'>
                 {videos_options2.map((option, i) => {
                   if (option.divider === true) return (<Dropdown.Divider key={i}/>);
                   if (option.header === true) return (
@@ -494,7 +495,7 @@ class VirtualStreaming extends Component {
               </Dropdown.Menu>
             </Dropdown>
               
-            </div>
+            
              <Dropdown
                 upward
                 floating
@@ -503,7 +504,7 @@ class VirtualStreaming extends Component {
                 selectOnBlur={false}
                 trigger={<button>{audio_option ? `${audio_option.text}` : ''}</button>}
                 >
-                  <Dropdown.Menu className='languages-dropdown'>
+                  <Dropdown.Menu className='controls__dropdown'>
                     {audiog_options2.map((option, i) => {
                       if (option.divider === true) return (<Dropdown.Divider key={i}/>);
                       if (option.header === true) return (
