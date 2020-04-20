@@ -17,7 +17,7 @@ class GalaxyApp extends Component {
         if(!gxy_user && gxy.length > 1) {
             this.setState({user, roles: user.roles});
         } else if(!gxy_user && gxy.length === 1) {
-            window.location = 'https://galalxy.kli.one/user';
+            window.location = '/user';
         } else {
             alert("Access denied.");
             client.signoutRedirect();
