@@ -52,7 +52,7 @@ class LoginPage extends Component {
     render() {
         const { t, i18n } = this.props;
         const {disabled, loading} = this.state;
-
+        const rtl = i18n.language === "he" ? "rtl" : "";
         let profile = (
             <Dropdown inline text=''>
                 <Dropdown.Menu>
@@ -84,7 +84,7 @@ class LoginPage extends Component {
                         </Menu.Item>
                     </Menu.Menu>
                 </Menu>
-            <Container textAlign='center' >
+            <Container textAlign='center' style={{direction: rtl}} >
                 <br />
                 <Message size='massive'>
                     <Message.Header>
@@ -104,7 +104,7 @@ class LoginPage extends Component {
                                         <Header size='huge' >
                                             {t('loginPage.regUsers')}
                                         </Header>
-                                        <h3>&nbsp;</h3>
+                                        <br /><br />
                                         <Button size='massive' primary onClick={this.userLogin} disabled={disabled} loading={loading}>{t('loginPage.login')}</Button>
                                     </Grid.Column>
 
@@ -112,7 +112,8 @@ class LoginPage extends Component {
                                         <Header size='huge'>
                                             {t('loginPage.newUsers')}
                                         </Header>
-                                        <h3>{t('loginPage.guestMessage1')} <a href='#' onClick={this.userLogin}>{t('loginPage.register')}</a> {t('loginPage.guestMessage2')}</h3>
+                                        <p style={{fontSize: "1.3em"}}>{t('loginPage.guestMessage1')} <a href='#' onClick={this.userLogin}>{t('loginPage.register')}</a> {t('loginPage.guestMessage2')}</p>
+                                        <br />
                                         <Button size='massive' primary onClick={() => window.open("https://galaxy.kli.one/guest","_self")} >{t('loginPage.guest')}</Button>
                                     </Grid.Column>
                                 </Grid.Row>
