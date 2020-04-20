@@ -11,9 +11,13 @@ class GalaxyApp extends Component {
     };
 
     checkPermission = (user) => {
-        let gxy_user = user.roles.filter(role => /gxy_/.test(role)).length === 0;
-        if(!gxy_user) {
+        let gxy = user.roles.filter(role => /gxy_/.test(role));
+        let gxy_user = gxy.length === 0
+        console.log(gxy)
+        if(!gxy_user && gxy.length > 1) {
             this.setState({user, roles: user.roles});
+        } else if(!gxy_user && gxy.length === 1) {
+            window.location = 'https://galalxy.kli.one/user';
         } else {
             alert("Access denied.");
             client.signoutRedirect();
