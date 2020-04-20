@@ -119,7 +119,7 @@ export const resources = {
       },
       loginMessage : {
         register: 'registrarse',
-        login: 'LOGIN',
+        login: 'INGRESAR',
         loginWarning1: 'Está usando el sistema como invitado (guest). Para poder ayudarnos a mantener la seguridad del sistema, le solicitamos amablemente que se ',
         loginWarning2: 'y comience a usarlo de forma segura. Si ya lo ha hecho solo presiona el botón "Ingresar".',
       },
