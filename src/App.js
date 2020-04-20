@@ -27,6 +27,7 @@ class App extends Component {
         {/*<OldMobileClient />*/}
         {/*<MobileClient/>*/}
         {/*<VirtualClient />*/}
+        {/* <VirtualClient />*/}
         {/* <VirtualStreaming/>*/}
         {/*<GroupClient/>*/}
         {/* <GalaxyStream/>*/}
