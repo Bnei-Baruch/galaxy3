@@ -99,7 +99,7 @@ class LoginPage extends Component {
                             <Grid columns={2} stackable textAlign='center'>
                                 <Divider vertical />
 
-                                <Grid.Row verticalAlign='middle'>
+                                <Grid.Row verticalAlign='bottom'>
                                     <Grid.Column>
                                         <Header size='huge' >{t('loginPage.regUsers')}</Header>
                                         <p style={{fontSize: "1.3em", opacity: '0.0' }}>You can either login and using the system as authorize user</p>
