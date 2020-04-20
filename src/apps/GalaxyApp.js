@@ -16,7 +16,7 @@ class GalaxyApp extends Component {
         console.log(gxy)
         if(!gxy_user && gxy.length > 1) {
             this.setState({user, roles: user.roles});
-        } else if(!gxy_user && gxy.length === 1) {
+        } else if(!gxy_user && gxy.length === 1 && gxy[0] === "gxy_user") {
             window.location = '/user';
         } else {
             alert("Access denied.");
