@@ -971,6 +971,8 @@ class OldClient extends Component {
         window.location.reload();
       } else if (type === 'client-disconnect' && user.id === id) {
         this.exitRoom(false);
+      } else if(type === "client-kicked" && user.id === id) {
+        client.signoutRedirect();
       } else if (type === 'client-question' && user.id === id) {
         this.handleQuestion();
       } else if (type === 'client-mute' && user.id === id) {
