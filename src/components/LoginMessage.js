@@ -7,22 +7,29 @@ const LoginMessage = () => {
   const { t, i18n }           = useTranslation();
   const rtl                   = i18n.language === 'he' ? 'rtl' : '';
 
-  let login = (<Button primary size='massive' onClick={() => window.open('https://galaxy.kli.one/user', '_self')}>{t('loginMessage.login')}</Button>);
+  let login          = (<Button primary size='massive' onClick={() => window.open('https://galaxy.kli.one/user', '_self')}>{t('loginMessage.login')}</Button>);
+  const firstColumn  = (<Grid.Column width={13} tablet={12} mobile={10} style={{ direction: rtl }}>
+    <span style={rtl ? {paddingRight: '10px'} : {}}>
+    {t('loginMessage.loginWarning1')} <a href='#' onClick={() => window.open('https://galaxy.kli.one/user', '_self')}>{t('loginMessage.register')}</a> {t('loginMessage.loginWarning2')}
+    </span>
+  </Grid.Column>);
+  const secondColumn = (<Grid.Column width={3} textAlign='left'>
+    <Icon>{login}</Icon>
+  </Grid.Column>);
+
+  const row = (
+    rtl
+      ? <Grid.Row reversed>{secondColumn}{firstColumn}</Grid.Row>
+      : <Grid.Row reversed>{firstColumn}{secondColumn}</Grid.Row>
+  );
 
   return visible
     ? (
       <Container textAlign='center' className="login-message">
-        <Message icon visible negative size='huge' onDismiss={() => setVisible(false)}>
+        <Message icon visible negative size='huge' onDismiss={() => setVisible(false)} className={rtl ? 'rtl' : 'ltr'}>
           <Message.Content>
             <Grid celled>
-              <Grid.Row reversed>
-                <Grid.Column width={13} tablet={12} mobile={10} style={{ direction: rtl }}>
-                  {t('loginMessage.loginWarning1')} <a href='#' onClick={() => window.open('https://galaxy.kli.one/user', '_self')}>{t('loginMessage.register')}</a> {t('loginMessage.loginWarning2')}
-                </Grid.Column>
-                <Grid.Column width={3} textAlign='left'>
-                  <Icon>{login}</Icon>
-                </Grid.Column>
-              </Grid.Row>
+              {row}
             </Grid>
           </Message.Content>
         </Message>
