@@ -13,14 +13,10 @@ import VirtualClient from "./apps/VirtualApp/VirtualClient";
 // import GroupClient from "./apps/GroupsApp/GroupClient";
 // import GalaxyStream from "./apps/StreamApp/GalaxyStream";
 // import AdminRoot from "./apps/AdminApp/AdminRoot";
-// import AdminShidur from "./apps/AdminApp/AdminShidur";
-// import AdminGuest from "./apps/AdminApp/AdminGuest";
 // import ShidurApp from "./apps/ShidurApp/ShidurApp";
 // import SndmanApp from "./apps/SndmanApp/SndmanApp";
 // import AudioOutApp from "./apps/AudioOutApp/AudioOutApp";
 // import SDIOutApp from "./apps/SDIOutApp/SDIOutApp";
-// import AdminCongress from "./apps/AdminApp/AdminCongress";
-// import AdminStreaming from "./apps/AdminApp/AdminStreaming";
 
 class App extends Component {
   render() {
@@ -35,14 +31,10 @@ class App extends Component {
         {/*<GroupClient/>*/}
         {/* <GalaxyStream/>*/}
         {/*<AdminRoot />*/}
-        {/*<AdminShidur />*/}
-        {/* <AdminGuest/>*/}
         {/*<ShidurApp/>*/}
         {/*<SndmanApp/>*/}
         {/*<AudioOutApp />*/}
         {/*<SDIOutApp />*/}
-        {/*<AdminCongress/>*/}
-        {/*<AdminStreaming/>*/}
       </I18nextProvider>
     );
   }
