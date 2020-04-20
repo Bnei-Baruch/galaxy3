@@ -1,16 +1,17 @@
 import React, { useState } from 'react';
 import { Button, Container, Grid, Icon, Message } from 'semantic-ui-react';
 import { useTranslation } from 'react-i18next';
+import {userLogin} from "./UserManager";
 
 const LoginMessage = () => {
   const [visible, setVisible] = useState(true);
   const { t, i18n }           = useTranslation();
   const rtl                   = i18n.language === 'he' ? 'rtl' : '';
 
-  let login          = (<Button primary size='massive' onClick={() => window.open('https://galaxy.kli.one/user', '_self')}>{t('loginMessage.login')}</Button>);
+  let login          = (<Button primary size='massive' onClick={() => userLogin('https://galaxy.kli.one/user')} >{t('loginMessage.login')}</Button>);
   const firstColumn  = (<Grid.Column width={13} tablet={12} mobile={10} style={{ direction: rtl }}>
     <span style={rtl ? {paddingRight: '10px'} : {}}>
-    {t('loginMessage.loginWarning1')} <a href='#' onClick={() => window.open('https://galaxy.kli.one/user', '_self')}>{t('loginMessage.register')}</a> {t('loginMessage.loginWarning2')}
+    {t('loginMessage.loginWarning1')} <a href='#' onClick={() => userLogin('https://galaxy.kli.one/user')} >{t('loginMessage.register')}</a> {t('loginMessage.loginWarning2')}
     </span>
   </Grid.Column>);
   const secondColumn = (<Grid.Column width={3} textAlign='left'>
