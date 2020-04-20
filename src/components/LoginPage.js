@@ -101,17 +101,13 @@ class LoginPage extends Component {
 
                                 <Grid.Row verticalAlign='middle'>
                                     <Grid.Column>
-                                        <Header size='huge' >
-                                            {t('loginPage.regUsers')}
-                                        </Header>
-                                        <br /><br />
+                                        <Header size='huge' >{t('loginPage.regUsers')}</Header>
+                                        <p style={{fontSize: "1.3em", opacity: '0.0' }}>You can either login and using the system as authorize user</p>
+                                        <br />
                                         <Button size='massive' primary onClick={this.userLogin} disabled={disabled} loading={loading}>{t('loginPage.login')}</Button>
                                     </Grid.Column>
-
                                     <Grid.Column>
-                                        <Header size='huge'>
-                                            {t('loginPage.newUsers')}
-                                        </Header>
+                                        <Header size='huge'>{t('loginPage.newUsers')}</Header>
                                         <p style={{fontSize: "1.3em"}}>{t('loginPage.guestMessage1')} <a href='#' onClick={this.userLogin}>{t('loginPage.register')}</a> {t('loginPage.guestMessage2')}</p>
                                         <br />
                                         <Button size='massive' primary onClick={() => window.open("https://galaxy.kli.one/guest","_self")} >{t('loginPage.guest')}</Button>
