@@ -21,6 +21,7 @@ class LoginPage extends Component {
         getUser(user => {
             if(user) {
                 client.querySessionStatus().then(() => {
+                    this.setState({loading: false});
                     this.props.checkPermission(user);
                 }).catch((error) => {
                     console.log("querySessionStatus: ", error);
