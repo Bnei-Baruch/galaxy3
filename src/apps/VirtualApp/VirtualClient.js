@@ -1342,7 +1342,7 @@ class OldClient extends Component {
 
     return (
       <Fragment>
-        {user ? content : login}
+        {user && !isMobile ? content : !isMobile ? login : ""}
       </Fragment>
     );
   }
