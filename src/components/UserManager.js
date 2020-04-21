@@ -36,6 +36,10 @@ client.events.addUserSignedOut(() => {
     //client.signoutRedirect();
 });
 
+client.events.addSilentRenewError((error) =>{
+    console.error("Silent Renew Error: " + error)
+});
+
 export const getUser = (cb) =>
     client.getUser().then((user) => {
         if(user) {
