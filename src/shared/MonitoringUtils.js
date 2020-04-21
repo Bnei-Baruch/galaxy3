@@ -90,51 +90,92 @@ export const fetchData = (path) => {
   });
 };
 
-export const popup = (text, tooltip = '') => (<Popup trigger={<div>{String(text)}</div>} content={tooltip || String(text)} mouseEnterDelay={300} mouseLeaveDelay={800} on='hover' />);
+export const popup = (text, tooltip = '') => (<Popup trigger={<div style={{display: 'inline-block'}}>{String(text)}</div>} content={tooltip || String(text)} mouseEnterDelay={300} mouseLeaveDelay={800} on='hover' />);
 
-export const userRow = (user, stats, now, onUser) => (
-  <Table.Row key={user.id}>
-    <Table.Cell><a style={{cursor: 'pointer'}} onClick={onUser ? () => onUser() : null}>{popup(user.display)}</a></Table.Cell>
-    <Table.Cell>{popup(user.group)}</Table.Cell>
-    <Table.Cell>{popup(user.janus)}</Table.Cell>
-    <Table.Cell>{popup(sinceTimestamp(user.timestamp, now))}</Table.Cell>
-    <Table.Cell>{popup(system(user.system))}</Table.Cell>
-    {stats.slice(0, 1).map((values) => (<Table.Cell key={5} textAlign='center'>{popup(values[1])}</Table.Cell>))}
-    {stats.slice(1).map((values, index) => (<Table.Cell key={index + 6} textAlign='center'>{statValues(values)}</Table.Cell>))}
-  </Table.Row>
-);
-
-const displayValue = (value) => value[0] === null ? '' : value[1];
-const statValues = (values) => {
-  if (!Array.isArray(values) || values.length !== 10) {
-    // No data for user.
-    return values;
+export const userRow = (user, stats, now, onUser) => {
+  let color = '';
+  if (stats.score && stats.score.value > 100) {
+    color = 'rgb(255, 100, 100)';
   }
   return (
-    <Table textAlign='center' style={{padding: '1px', border: 'none'}}>
+    <Table.Row key={user.id} style={{backgroundColor: color}}>
+      <Table.Cell><a style={{cursor: 'pointer'}} onClick={onUser ? () => onUser() : null}>{popup(user.display)}</a></Table.Cell>
+      <Table.Cell>{popup(user.group)}</Table.Cell>
+      <Table.Cell>{popup(user.janus)}</Table.Cell>
+      <Table.Cell>{popup(sinceTimestamp(user.timestamp, now))}</Table.Cell>
+      <Table.Cell>{popup(system(user.system))}</Table.Cell>
+      <Table.Cell key={'update'}>
+        {stats.update && stats.update.value !== undefined && stats.update.value !== null ? popup(stats.update.view) : null}
+      </Table.Cell>
+      <Table.Cell key={'score'}>
+        {stats.score && stats.score.value !== undefined && stats.score.value !== null ? popup(stats.score.view) : null}
+      </Table.Cell>
+      <Table.Cell key={'audio.jitter'} textAlign='center'>
+        {stats.audio && stats.audio.jitter ? statTable(stats.audio.jitter) : null}
+      </Table.Cell>
+      <Table.Cell key={'audio.packetsLost'} textAlign='center'>
+        {stats.audio && stats.audio.packetsLost ? statTable(stats.audio.packetsLost) : null}
+      </Table.Cell>
+      <Table.Cell key={'audio.roundTripTime'} textAlign='center'>
+        {stats.audio && stats.audio.roundTripTime ? statTable(stats.audio.roundTripTime) : null}
+      </Table.Cell>
+      <Table.Cell key={'video.jitter'} textAlign='center'>
+        {stats.video && stats.video.jitter ? statTable(stats.video.jitter) : null}
+      </Table.Cell>
+      <Table.Cell key={'video.packetsLost'} textAlign='center'>
+        {stats.video && stats.video.packetsLost ? statTable(stats.video.packetsLost) : null}
+      </Table.Cell>
+      <Table.Cell key={'video.roundTripTime'} textAlign='center'>
+        {stats.video && stats.video.roundTripTime ? statTable(stats.video.roundTripTime) : null}
+      </Table.Cell>
+    </Table.Row>
+  );
+}
+
+const SMALL_FLOAT = 0.00001;
+const statTable = (stats) => {
+  if (!stats.last) {
+    return null;
+  }
+  let color = '';
+  if (stats.score) {
+    if (stats.score.value < -SMALL_FLOAT) {
+      color = 'lightgreen';
+    } else if (stats.score.value > SMALL_FLOAT) {
+      color = 'rgb(255, 150, 150)';
+    }
+  }
+  return (
+    <Table textAlign='center' style={{padding: '1px', border: 'none', backgroundColor: color}}>
       <Table.Body>
         <Table.Row style={{padding: '1px'}}>
-          <Table.Cell colSpan="3" style={{padding: '1px'}}>{popup(displayValue(values[0]), 'last value from user')}</Table.Cell>
+          <Table.Cell colSpan="3" style={{padding: '1px'}}>
+            {!stats.last ? '' :
+            <div style={{display: 'flex', justifyContent: 'space-evenly'}}>
+              <div>{popup(stats.last.view, `${stats.last.value} last value from user`)}</div>
+              <div>&#916;{popup(stats.score.view, `${stats.score.value} Average diff between last minute and last 3 mintues.`)}</div>
+            </div>}
+          </Table.Cell>
         </Table.Row>
-        { values[3][0] === 0 ? null :
+        {!stats.oneMin ? null :
         <Table.Row style={{padding: '1px'}}>
-          <Table.Cell style={{padding: '1px'}}>{popup(displayValue(values[1]), 'average over 1 minute')}</Table.Cell>
-          <Table.Cell style={{padding: '1px'}}>{popup(displayValue(values[2]), 'stdev over 1 minute')}</Table.Cell>
-          <Table.Cell style={{padding: '1px'}}>{popup(displayValue(values[3]), 'number of samples for 1 minute')}</Table.Cell>
+          <Table.Cell style={{padding: '1px'}}>{popup(stats.oneMin.mean.view, `${stats.oneMin.mean.value} average over 1 minute`)}</Table.Cell>
+          <Table.Cell style={{padding: '1px'}}>{popup(stats.oneMin.stdev.view, `${stats.oneMin.stdev.value} stdev over 1 minute`)}</Table.Cell>
+          <Table.Cell style={{padding: '1px'}}>{popup(stats.oneMin.length.view, `${stats.oneMin.length.value} number of samples for 1 minute`)}</Table.Cell>
         </Table.Row>}
-        { values[6][0] === 0 ? null :
+        {!stats.threeMin ? null :
         <Table.Row style={{padding: '1px'}}>
-          <Table.Cell style={{padding: '1px'}}>{popup(displayValue(values[4]), 'average over 3 minutes')}</Table.Cell>
-          <Table.Cell style={{padding: '1px'}}>{popup(displayValue(values[5]), 'stdev over 3 minutes')}</Table.Cell>
-          <Table.Cell style={{padding: '1px'}}>{popup(displayValue(values[6]), 'number of samples for 3 minutes')}</Table.Cell>
+          <Table.Cell style={{padding: '1px'}}>{popup(stats.threeMin.mean.view, `${stats.threeMin.mean.value} average over 3 minutes`)}</Table.Cell>
+          <Table.Cell style={{padding: '1px'}}>{popup(stats.threeMin.stdev.view, `${stats.threeMin.stdev.value} stdev over 3 minutes`)}</Table.Cell>
+          <Table.Cell style={{padding: '1px'}}>{popup(stats.threeMin.length.view, `${stats.threeMin.length.value} number of samples for 3 minutes`)}</Table.Cell>
         </Table.Row>}
-        { values[9][0] === 0 ? null :
+        {!stats.tenMin ? null :
         <Table.Row style={{padding: '1px'}}>
-          <Table.Cell style={{padding: '1px'}}>{popup(displayValue(values[7]), 'average over 10 minutes')}</Table.Cell>
-          <Table.Cell style={{padding: '1px'}}>{popup(displayValue(values[8]), 'stdev over 10 minutes')}</Table.Cell>
-          <Table.Cell style={{padding: '1px'}}>{popup(displayValue(values[9]), 'number of samples for 10 minutes')}</Table.Cell>
+          <Table.Cell style={{padding: '1px'}}>{popup(stats.tenMin.mean.view, `${stats.tenMin.mean.value} average over 10 minute`)}</Table.Cell>
+          <Table.Cell style={{padding: '1px'}}>{popup(stats.tenMin.stdev.view, `${stats.tenMin.stdev.value} stdev over 10 minute`)}</Table.Cell>
+          <Table.Cell style={{padding: '1px'}}>{popup(stats.tenMin.length.view, `${stats.tenMin.length.value} number of samples for 10 minute`)}</Table.Cell>
         </Table.Row>}
-      </Table.Body>
+     </Table.Body>
     </Table>
   );
 };

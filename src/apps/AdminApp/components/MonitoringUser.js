@@ -16,7 +16,6 @@ import {
 
 import {
   userRow,
-  popup,
 } from '../../../shared/MonitoringUtils';
 
 const MonitoringUser = (props) => {
@@ -55,7 +54,10 @@ const MonitoringUser = (props) => {
   }, [props.user]);
 
   useEffect(() => {
-		setInterval(() => forceUpdate(b => !b), 60 * 1000);  // Refresh every minute to update login since.
+		const handler = setInterval(() => forceUpdate(b => !b), 60 * 1000);  // Refresh every minute to update login since.
+    return () => {
+      clearInterval(handler);
+    };
   }, []);
 
   const loading = (

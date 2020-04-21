@@ -5,7 +5,6 @@ import React, {
 import {
 	Button,
 	Icon,
-	Popup,
   Dimmer,
   Header,
   Loader,
@@ -35,6 +34,7 @@ const MonitoringAdmin = (props) => {
   });
   const [usersToShow, setUsersToShow] = useState(100);
 	const [, forceUpdate] = useState(true);  // Rerender to show progress in time since.
+  const [now, setNow] = useState(0);
 
 	const tableParentRef = (node) => {
 		if (node) {
@@ -77,6 +77,7 @@ const MonitoringAdmin = (props) => {
           }
         });
         setUsers(usersObj);
+        setNow(Number(new Date()));
       } else {
         throw new Error(`Expected users in response, got ${JSON.stringify(data)}`);
       }
@@ -90,69 +91,80 @@ const MonitoringAdmin = (props) => {
   useEffect(() => {
 		updateUsers();
 		updateUsersData();
-		setInterval(() => forceUpdate(b => !b), 60 * 1000);  // Refresh every minute to update login since.
+		const handler = setInterval(() => forceUpdate(b => !b), 60 * 1000);  // Refresh every minute to update login since.
+    return () => {
+      clearInterval(handler);
+    };
   }, []);
 
+  const statsNames = ['oneMin', 'threeMin', 'tenMin'];
+  const audioVideoScore = (audioVideo) => {
+    if (!audioVideo) {
+      return 0;
+    }
+    let ret = 0;
+    if (audioVideo.jitter && audioVideo.jitter.score.value > 0) {
+      ret += 1000*(audioVideo.jitter.score.value);
+    }
+    if (audioVideo.packetsLost && audioVideo.packetsLost.score.value > 0) {
+      ret += audioVideo.packetsLost.score.value;
+    }
+    if (audioVideo.roundTripTime && audioVideo.roundTripTime.score.value > 0) {
+      ret += 100*(audioVideo.roundTripTime.score.value);
+    }
+    return ret;
+  };
+	const usersDataValues = (userId) => {
+    const values = {};
+		if (userId in usersData) {
+			const ud = usersData[userId];
+			if (ud.timestamps && ud.timestamps.length) {
+				values.update = {value: ud.timestamps[0], view: sinceTimestamp(ud.timestamps[0], now)};
+			}
+			for (let [metric, index] of Object.entries(ud.index)) {
+				const metricField = metric.includes('video') ? 'video' : 'audio';
+        if (!(metricField in values)) {
+          values[metricField] = {};
+        }
+				const metricName = metric.split('.').slice(-1)[0];
+        values[metricField][metricName] = {};
+
+				const value = ud.data[index][0];
+				values[metricField][metricName].last = {value, view: shortNumber(value) || ''};
+        if (!isNaN(value)) {
+          ud.stats[index].forEach((stats, statsIndex) => {
+            const stdev = Math.sqrt(stats.dsquared);
+            values[metricField][metricName][statsNames[statsIndex]] = {
+              mean: {value: stats.mean, view: shortNumber(stats.mean)},
+              stdev: {value: stdev, view: shortNumber(stdev)},
+              length: {value: stats.length, view: shortNumber(stats.length)},
+            };
+          });
+          let metricScore = 0;
+          if (values[metricField][metricName].oneMin && values[metricField][metricName].threeMin) {
+            metricScore = values[metricField][metricName].oneMin.mean.value - values[metricField][metricName].threeMin.mean.value;
+          } 
+          values[metricField][metricName].score = {value: metricScore, view: shortNumber(metricScore)};
+        }
+			}
+		}
+    const score = audioVideoScore(values.audio) + audioVideoScore(values.video);
+    values.score = {value: score, view: shortNumber(score)};
+		return values;
+	}
+
   useEffect(() => {
+    console.log('Update view.');
     const view = Object.values(users).map(user => ({
       user,
       stats: usersDataValues(user.id),
     }));
-    setUsersTableView({view, column, direction});
+    setUsersTableView({view, column: '', direction: ''});
   }, [users, usersData]);
 
-	const now = new Date();
-	const usersDataValues = (userId) => {
-		const values = [[''], [''], [''], [''], [''], [''], ['']];
-		if (userId in usersData) {
-			const ud = usersData[userId];
-			if (ud.timestamps && ud.timestamps.length) {
-				values[0] = [ud.timestamps[0], sinceTimestamp(ud.timestamps[0], now)];
-			}
-			for (let [metric, index] of Object.entries(ud.index)) {
-				let valueIndex = 1;
-				let value = ud.data[index][0]
-				if (metric.includes('video')) {
-					valueIndex += 3;
-				}
-				const metricName = metric.split('.').slice(-1)[0];
-				if (metricName === 'packetsLost') {
-					valueIndex++;
-				} else if (metricName === 'roundTripTime') {
-					valueIndex += 2;
-				} else if (metricName === 'jitter' && value !== null) {
-					value = value.toFixed(5);
-				}
-				values[valueIndex][0] = [value, shortNumber(value) || ''];
-        if (!isNaN(values[valueIndex][0][0])) {
-          ud.stats[index].forEach(stats => {
-            const stdev = Math.sqrt(stats.dsquared);
-            values[valueIndex].push([stats.mean, shortNumber(stats.mean)]);
-            values[valueIndex].push([stdev, shortNumber(stdev)]);
-            values[valueIndex].push([stats.length, shortNumber(stats.length)]);
-          });
-        }
-			}
-		}
-		return values;
-	}
-
-	const usersDataTimestamp = (userId) => {
-		return (usersData[userId] && usersData[userId].timestamps && usersData[userId].timestamps[0]) || 0;
-	}
-
-  const compare = (a, b) => {
-    if (a === b) {
-      return 0;
-    } else if (a === null) {
-      return -1;
-    } else if (b === null) {
-      return 1;
-    }
-    return a - b;
-  }
 
   const handleSort = (clickedColumn) => () => {
+    setLoadingCount(prev => prev + 1);
     if (column !== clickedColumn) {
       setUsersTableView({
         column: clickedColumn,
@@ -169,20 +181,28 @@ const MonitoringAdmin = (props) => {
 					} else if (clickedColumn === 'system') {
 						return system(a.user.system).localeCompare(system(b.user.system));
 					} else if (clickedColumn === 'update') {
-						return usersDataTimestamp(a.user.id) - usersDataTimestamp(b.user.id);
-					} else if (clickedColumn.startsWith('audio') || clickedColumn.startsWith('video')) {
-						const valuesA = a.stats;
-						const valuesB = b.stats;
-						let index = clickedColumn.startsWith('audio') ? 1 : 4;
+						return a.stats.update.value - b.stats.update.value;
+					} else if (clickedColumn.startsWith('audio')) {
 						if (clickedColumn.endsWith('jitter')) {
-							return compare(valuesB[index][0][0], valuesA[index][0][0]);
-						} else if (clickedColumn.endsWith('packetslost')) {
-							return compare(valuesB[index+1][0][0], valuesA[index+1][0][0]);
-						} else if (clickedColumn.endsWith('rtt')) {
-							return compare(valuesB[index+2][0][0], valuesA[index+2][0][0]);
+							return ((b.stats.audio && b.stats.audio.jitter.score.value) || 0) - ((a.stats.audio && a.stats.audio.jitter.score.value) || 0);
+						} else if (clickedColumn.endsWith('packetsLost')) {
+							return ((b.stats.audio && b.stats.audio.packetsLost.score.value) || 0) - ((a.stats.audio && a.stats.audio.packetsLost.score.value) || 0);
+						} else if (clickedColumn.endsWith('roundTripTime')) {
+							return ((b.stats.audio && b.stats.audio.roundTripTime.score.value) || 0) - ((a.stats.audio && a.stats.audio.roundTripTime.score.value) || 0);
 						}
-					}
+					} else if (clickedColumn.startsWith('video')) {
+						if (clickedColumn.endsWith('jitter')) {
+							return ((b.stats.video && b.stats.video.jitter.score.value) || 0) - ((a.stats.video && a.stats.video.jitter.score.value) || 0);
+						} else if (clickedColumn.endsWith('packetsLost')) {
+							return ((b.stats.video && b.stats.video.packetsLost.score.value) || 0) - ((a.stats.video && a.stats.video.packetsLost.score.value) || 0);
+						} else if (clickedColumn.endsWith('roundTripTime')) {
+							return ((b.stats.video && b.stats.video.roundTripTime.score.value) || 0) - ((a.stats.video && a.stats.video.roundTripTime.score.value) || 0);
+						}
+          } else if (clickedColumn === 'score') {
+            return a.stats.score.value - b.stats.score.value;
+          }
 					console.error('Should not get here!');
+          return 0;
 				}),
       })
     } else {
@@ -192,6 +212,7 @@ const MonitoringAdmin = (props) => {
 				direction: direction === 'ascending' ? 'descending' : 'ascending',
 			});
 		}
+    setLoadingCount(prev => prev - 1);
   }
 
   const usersTable = (
@@ -199,7 +220,7 @@ const MonitoringAdmin = (props) => {
 			<Table sortable celled>
 				<Table.Header>
 					<Table.Row textAlign='center'>
-						<Table.HeaderCell colSpan="12">
+						<Table.HeaderCell colSpan="13">
               <Button icon onClick={() => { updateUsersData(); updateUsers(); }}><Icon name='refresh' /></Button>
               Showing {Math.min(usersToShow, view.length)} users out of {view.length}
             </Table.HeaderCell>
@@ -223,22 +244,25 @@ const MonitoringAdmin = (props) => {
 						<Table.HeaderCell rowSpan="2"
 															sorted={column === 'update' ? direction : null}
 															onClick={handleSort('update')}>{popup('Update')}</Table.HeaderCell>
+						<Table.HeaderCell rowSpan="2"
+															sorted={column === 'score' ? direction : null}
+															onClick={handleSort('score')}>{popup('Score')}</Table.HeaderCell>
 						<Table.HeaderCell colSpan="3">{popup('Audio')}</Table.HeaderCell>
 						<Table.HeaderCell colSpan="3">{popup('Video')}</Table.HeaderCell>
 					</Table.Row>
 					<Table.Row textAlign='center'>
 						<Table.HeaderCell sorted={column === 'audio.jitter' ? direction : null}
 															onClick={handleSort('audio.jitter')}>{popup('Jitter')}</Table.HeaderCell>
-						<Table.HeaderCell sorted={column === 'audio.packetslost' ? direction : null}
-															onClick={handleSort('audio.packetslost')}>{popup('Packets Lost')}</Table.HeaderCell>
-						<Table.HeaderCell sorted={column === 'audio.rtt' ? direction : null}
-															onClick={handleSort('audio.rtt')}>{popup('RTT')}</Table.HeaderCell>
+						<Table.HeaderCell sorted={column === 'audio.packetsLost' ? direction : null}
+															onClick={handleSort('audio.packetsLost')}>{popup('Packets Lost')}</Table.HeaderCell>
+						<Table.HeaderCell sorted={column === 'audio.roundTripTime' ? direction : null}
+															onClick={handleSort('audio.roundTripTime')}>{popup('Round trip time')}</Table.HeaderCell>
 						<Table.HeaderCell sorted={column === 'video.jitter' ? direction : null}
 															onClick={handleSort('video.jitter')}>{popup('Jitter')}</Table.HeaderCell>
-						<Table.HeaderCell sorted={column === 'video.packetslost' ? direction : null}
-															onClick={handleSort('video.packetslost')}>{popup('Packets Lost')}</Table.HeaderCell>
-						<Table.HeaderCell sorted={column === 'video.rtt' ? direction : null}
-															onClick={handleSort('video.rtt')}>{popup('RTT')}</Table.HeaderCell>
+						<Table.HeaderCell sorted={column === 'video.packetsLost' ? direction : null}
+															onClick={handleSort('video.packetsLost')}>{popup('Packets Lost')}</Table.HeaderCell>
+						<Table.HeaderCell sorted={column === 'video.roundTripTime' ? direction : null}
+															onClick={handleSort('video.roundTripTime')}>{popup('Round trip time')}</Table.HeaderCell>
 					</Table.Row>
 				</Table.Header>
 				<Table.Body>
