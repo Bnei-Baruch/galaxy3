@@ -45,4 +45,14 @@ export const getUser = (cb) =>
             console.log("Error: ",error);
         });
 
+export const userLogin = (url) => {
+    getUser(cb => {
+        if(!cb) {
+            client.signinRedirect({state: url});
+        } else {
+            window.location = url;
+        }
+    });
+};
+
 export default client;

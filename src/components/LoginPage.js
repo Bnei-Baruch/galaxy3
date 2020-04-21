@@ -1,7 +1,10 @@
 import React, { Component } from 'react';
 import {client,getUser} from './UserManager';
-import { Container,Message,Button,Dropdown,Image,Divider } from 'semantic-ui-react';
+import {Container, Message, Button, Dropdown, Image, Divider, Select, Menu, Segment, Grid, Header} from 'semantic-ui-react';
 import logo from './logo.svg';
+import bblogo from './bblogo.png';
+import {mapNameToLanguage, setLanguage} from "../i18n/i18n";
+import {withTranslation} from "react-i18next";
 
 class LoginPage extends Component {
 
@@ -47,11 +50,9 @@ class LoginPage extends Component {
     };
 
     render() {
-
+        const { t, i18n } = this.props;
         const {disabled, loading} = this.state;
-
-        let login = (<Button size='massive' primary onClick={this.userLogin} disabled={disabled} loading={loading}>Login</Button>);
-
+        const rtl = i18n.language === "he" ? "rtl" : "";
         let profile = (
             <Dropdown inline text=''>
                 <Dropdown.Menu>
@@ -62,29 +63,70 @@ class LoginPage extends Component {
             </Dropdown>);
 
         return (
-            <Container textAlign='center' >
+            <Container fluid >
+                <Menu secondary>
+                    <Menu.Item>
+                        <Image src={bblogo} />
+                    </Menu.Item>
+
+                    <Menu.Menu position='right'>
+                        <Menu.Item>
+                            <Select compact
+                                    value={i18n.language}
+                                    options={mapNameToLanguage(i18n.language)}
+                                    onChange={(e, { value }) => {setLanguage(value)}} />
+                        </Menu.Item>
+                        <Menu.Item>
+                            <Button size='massive' color='violet'
+                                    onClick={() => window.open("https://forms.gle/F6Lm2KMLUkU4hrmK8","_blank")}>
+                                {t('loginPage.support')}
+                            </Button>
+                        </Menu.Item>
+                    </Menu.Menu>
+                </Menu>
+            <Container textAlign='center' style={{direction: rtl}} >
                 <br />
                 <Message size='massive'>
                     <Message.Header>
-                        {this.props.user === null ? "Galaxy" : "Welcome, "+this.props.user.username}
+                        {this.props.user === null ? t('loginPage.galaxy') : "Welcome, "+this.props.user.username}
                         {this.props.user === null ? "" : profile}
                     </Message.Header>
-                    <p>The Group Today Is You Tomorrow</p>
-                    {this.props.user === null ? login : this.props.enter}
-                    <Divider horizontal>.</Divider>
+                    <p>{t('loginPage.slogan')}</p>
+                    {this.props.user === null ? "" : this.props.enter}
+
                     {this.props.user === null ?
-                        <Button color='violet' onClick={() => window.open("https://forms.gle/F6Lm2KMLUkU4hrmK8","_blank")} >Support</Button>
+                        <Segment basic>
+                            <Grid columns={2} stackable textAlign='center'>
+                                <Divider vertical />
+
+                                <Grid.Row verticalAlign='bottom'>
+                                    <Grid.Column>
+                                        <Header size='huge' >{t('loginPage.regUsers')}</Header>
+                                        <p style={{fontSize: "1.3em", opacity: '0.0' }}>You can either login and using the system as authorize user</p>
+                                        <br />
+                                        <Button size='massive' primary onClick={this.userLogin} disabled={disabled} loading={loading}>{t('loginPage.login')}</Button>
+                                    </Grid.Column>
+                                    <Grid.Column>
+                                        <Header size='huge'>{t('loginPage.newUsers')}</Header>
+                                        <p style={{fontSize: "1.3em"}}>{t('loginPage.guestMessage1')} <a href='#' onClick={this.userLogin}>{t('loginPage.register')}</a> {t('loginPage.guestMessage2')}</p>
+                                        <br />
+                                        <Button size='massive' primary onClick={() => window.open("https://galaxy.kli.one/guest","_self")} >{t('loginPage.guest')}</Button>
+                                    </Grid.Column>
+                                </Grid.Row>
+                            </Grid>
+                        </Segment>
                         :
                         <div>
+                            <Image size='large' src={logo} centered />
                             <Button primary onClick={() => window.open("http://ktuviot.kbb1.com/three_languages","_blank")} >Workshop Questions</Button>
                             <Button primary onClick={() => window.open("https://bb.kli.one/","_blank")} >BB KLI</Button>
                         </div>
                     }
-                    <Image size='large' src={logo} centered />
                 </Message>
+            </Container>
             </Container>
         );
     }
 }
 
-export default LoginPage;
+export default withTranslation()(LoginPage);

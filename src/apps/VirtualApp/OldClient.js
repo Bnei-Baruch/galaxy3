@@ -28,6 +28,7 @@ import { mapNameToLanguage, setLanguage } from '../../i18n/i18n';
 import { Monitoring } from '../../components/Monitoring';
 import { MonitoringData } from '../../shared/MonitoringData';
 import VirtualStreaming from './VirtualStreaming';
+import LoginMessage from "../../components/LoginMessage";
 
 class OldClient extends Component {
 
@@ -98,7 +99,7 @@ class OldClient extends Component {
 
   componentDidMount() {
     if (isMobile) {
-      window.location = '/userm';
+      window.location = '/guestm';
     } else {
       const user  = Object.assign({}, this.state.user);
       const { t } = this.props;
@@ -1243,6 +1244,7 @@ class OldClient extends Component {
     let l = (<Label key='Carbon' floating size='mini' color='red'>{count}</Label>);
 
     let content = (<div className={classNames('vclient', { 'vclient--chat-open': chatVisible })}>
+      <LoginMessage />
       <div className="vclient__toolbar">
         <Input
           iconPosition='left'

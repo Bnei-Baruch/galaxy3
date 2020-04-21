@@ -36,8 +36,8 @@ class GalaxyStream extends Component {
     checkPermission = (user) => {
         let gxy_group = user.roles.filter(role => role === 'gxy_group').length > 0;
         let gxy_user = user.roles.filter(role => role === 'gxy_user').length > 0;
-        let gxy_public = user.roles.filter(role => role === 'bb_user').length > 0;
-        if (gxy_public) {
+        //let gxy_public = user.roles.filter(role => role === 'bb_user').length > 0;
+        if (gxy_user) {
             client.events.addAccessTokenExpired(() => {
                 console.log("...!TOKEN EXPIRED!...");
                 client.signoutRedirect();
