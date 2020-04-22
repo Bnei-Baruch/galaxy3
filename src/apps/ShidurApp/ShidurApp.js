@@ -7,7 +7,7 @@ import {client} from "../../components/UserManager";
 import LoginPage from "../../components/LoginPage";
 import ShidurToran from "./ShidurToran";
 import UsersQuad from "./UsersQuad";
-import './UsersApp.css'
+import './ShidurApp.css'
 
 
 class ShidurApp extends Component {

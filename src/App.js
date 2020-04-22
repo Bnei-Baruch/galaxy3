@@ -4,7 +4,7 @@ import { I18nextProvider } from 'react-i18next';
 import i18n from 'i18next';
 
 import './i18n/i18n';
-import GalaxyApp from "./apps/GalaxyApp";
+// import GalaxyApp from "./apps/GalaxyApp";
 // import OldClient from './apps/VirtualApp/OldClient';
 // import OldMobileClient from "./apps/MobileApp/OldMobileClient";
 // import MobileClient from "./apps/MobileApp/MobileClient";
@@ -13,7 +13,7 @@ import GalaxyApp from "./apps/GalaxyApp";
 // import GroupClient from "./apps/GroupsApp/GroupClient";
 // import GalaxyStream from "./apps/StreamApp/GalaxyStream";
 // import AdminRoot from "./apps/AdminApp/AdminRoot";
-// import ShidurApp from "./apps/ShidurApp/ShidurApp";
+import ShidurApp from "./apps/ShidurApp/ShidurApp";
 // import SndmanApp from "./apps/SndmanApp/SndmanApp";
 // import AudioOutApp from "./apps/AudioOutApp/AudioOutApp";
 // import SDIOutApp from "./apps/SDIOutApp/SDIOutApp";
@@ -22,7 +22,7 @@ class App extends Component {
   render() {
     return (
       <I18nextProvider i18n={i18n}>
-        <GalaxyApp />
+        {/*<GalaxyApp />*/}
         {/*<OldClient />*/}
         {/*<OldMobileClient />*/}
         {/*<MobileClient/>*/}
@@ -31,7 +31,7 @@ class App extends Component {
         {/*<GroupClient/>*/}
         {/* <GalaxyStream/>*/}
         {/*<AdminRoot />*/}
-        {/*<ShidurApp/>*/}
+        <ShidurApp/>
         {/*<SndmanApp/>*/}
         {/*<AudioOutApp />*/}
         {/*<SDIOutApp />*/}
