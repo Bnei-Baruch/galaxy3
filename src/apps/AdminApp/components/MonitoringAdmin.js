@@ -32,7 +32,8 @@ const MonitoringAdmin = (props) => {
     column: '',
     direction: '',
   });
-  const [usersToShow, setUsersToShow] = useState(100);
+  const [sortingColumn, setSortingColumn] = useState('');
+  const [usersToShow, setUsersToShow] = useState(20);
 	const [, forceUpdate] = useState(true);  // Rerender to show progress in time since.
   const [now, setNow] = useState(0);
 
@@ -154,7 +155,6 @@ const MonitoringAdmin = (props) => {
 	}
 
   useEffect(() => {
-    console.log('Update view.');
     const view = Object.values(users).map(user => ({
       user,
       stats: usersDataValues(user.id),
@@ -163,56 +163,61 @@ const MonitoringAdmin = (props) => {
   }, [users, usersData]);
 
 
+  useEffect(() => {
+    if (sortingColumn) {
+      if (column !== sortingColumn) {
+        setUsersTableView({
+          column: sortingColumn,
+          direction: sortingColumn.startsWith('audio') ||
+            sortingColumn.startsWith('video') ||
+            ['login', 'update'].includes(sortingColumn) ? 'descending' : 'ascending',
+          view: view.sort((a, b) => {
+            if (['group', 'janus'].includes(sortingColumn)) {
+              return a.user[sortingColumn].localeCompare(b.user[sortingColumn]);
+            } else if (sortingColumn === 'name') {
+              return a.user.display.localeCompare(b.user.display);
+            } else if (sortingColumn === 'login') {
+              return a.user.timestamp - b.user.timestamp;
+            } else if (sortingColumn === 'system') {
+              return system(a.user.system).localeCompare(system(b.user.system));
+            } else if (sortingColumn === 'update') {
+              return ((a.stats.update && a.stats.update.value) || 0) - ((b.stats.update && b.stats.update.value) || 0);
+            } else if (sortingColumn.startsWith('audio')) {
+              if (sortingColumn.endsWith('jitter')) {
+                return ((b.stats.audio && b.stats.audio.jitter.score.value) || 0) - ((a.stats.audio && a.stats.audio.jitter.score.value) || 0);
+              } else if (sortingColumn.endsWith('packetsLost')) {
+                return ((b.stats.audio && b.stats.audio.packetsLost.score.value) || 0) - ((a.stats.audio && a.stats.audio.packetsLost.score.value) || 0);
+              } else if (sortingColumn.endsWith('roundTripTime')) {
+                return ((b.stats.audio && b.stats.audio.roundTripTime.score.value) || 0) - ((a.stats.audio && a.stats.audio.roundTripTime.score.value) || 0);
+              }
+            } else if (sortingColumn.startsWith('video')) {
+              if (sortingColumn.endsWith('jitter')) {
+                return ((b.stats.video && b.stats.video.jitter.score.value) || 0) - ((a.stats.video && a.stats.video.jitter.score.value) || 0);
+              } else if (sortingColumn.endsWith('packetsLost')) {
+                return ((b.stats.video && b.stats.video.packetsLost.score.value) || 0) - ((a.stats.video && a.stats.video.packetsLost.score.value) || 0);
+              } else if (sortingColumn.endsWith('roundTripTime')) {
+                return ((b.stats.video && b.stats.video.roundTripTime.score.value) || 0) - ((a.stats.video && a.stats.video.roundTripTime.score.value) || 0);
+              }
+            } else if (sortingColumn === 'score') {
+              return a.stats.score.value - b.stats.score.value;
+            }
+            console.error('Should not get here!');
+            return 0;
+          }),
+        });
+      } else {
+        setUsersTableView({
+          view: view.reverse(),
+          column,
+          direction: direction === 'ascending' ? 'descending' : 'ascending',
+        });
+      }
+    }
+    setSortingColumn('');
+  }, [sortingColumn]);
+
   const handleSort = (clickedColumn) => () => {
-    setLoadingCount(prev => prev + 1);
-    if (column !== clickedColumn) {
-      setUsersTableView({
-        column: clickedColumn,
-        direction: clickedColumn.startsWith('audio') ||
-          clickedColumn.startsWith('video') ||
-          ['login', 'update'].includes(clickedColumn) ? 'descending' : 'ascending',
-        view: view.sort((a, b) => {
-					if (['group', 'janus'].includes(clickedColumn)) {
-						return a.user[clickedColumn].localeCompare(b.user[clickedColumn]);
-					} else if (clickedColumn === 'name') {
-						return a.user.display.localeCompare(b.user.display);
-					} else if (clickedColumn === 'login') {
-						return a.user.timestamp - b.user.timestamp;
-					} else if (clickedColumn === 'system') {
-						return system(a.user.system).localeCompare(system(b.user.system));
-					} else if (clickedColumn === 'update') {
-						return a.stats.update.value - b.stats.update.value;
-					} else if (clickedColumn.startsWith('audio')) {
-						if (clickedColumn.endsWith('jitter')) {
-							return ((b.stats.audio && b.stats.audio.jitter.score.value) || 0) - ((a.stats.audio && a.stats.audio.jitter.score.value) || 0);
-						} else if (clickedColumn.endsWith('packetsLost')) {
-							return ((b.stats.audio && b.stats.audio.packetsLost.score.value) || 0) - ((a.stats.audio && a.stats.audio.packetsLost.score.value) || 0);
-						} else if (clickedColumn.endsWith('roundTripTime')) {
-							return ((b.stats.audio && b.stats.audio.roundTripTime.score.value) || 0) - ((a.stats.audio && a.stats.audio.roundTripTime.score.value) || 0);
-						}
-					} else if (clickedColumn.startsWith('video')) {
-						if (clickedColumn.endsWith('jitter')) {
-							return ((b.stats.video && b.stats.video.jitter.score.value) || 0) - ((a.stats.video && a.stats.video.jitter.score.value) || 0);
-						} else if (clickedColumn.endsWith('packetsLost')) {
-							return ((b.stats.video && b.stats.video.packetsLost.score.value) || 0) - ((a.stats.video && a.stats.video.packetsLost.score.value) || 0);
-						} else if (clickedColumn.endsWith('roundTripTime')) {
-							return ((b.stats.video && b.stats.video.roundTripTime.score.value) || 0) - ((a.stats.video && a.stats.video.roundTripTime.score.value) || 0);
-						}
-          } else if (clickedColumn === 'score') {
-            return a.stats.score.value - b.stats.score.value;
-          }
-					console.error('Should not get here!');
-          return 0;
-				}),
-      })
-    } else {
-			setUsersTableView({
-				view: view.reverse(),
-				column,
-				direction: direction === 'ascending' ? 'descending' : 'ascending',
-			});
-		}
-    setLoadingCount(prev => prev - 1);
+    setSortingColumn(clickedColumn);
   }
 
   const usersTable = (
@@ -287,7 +292,7 @@ const MonitoringAdmin = (props) => {
   return (
 		<div>
 			{fetchingError === '' ? null : <Header color='red'>Error: {fetchingError}</Header>}
-			{loadingCount !== 0 ? loading: null}
+			{loadingCount !== 0 || sortingColumn ? loading: null}
 			{view.length ? usersTable : null}
 		</div>
   );
