@@ -3,7 +3,7 @@ import {Janus} from "../../lib/janus";
 import {
   Button,
   Grid,
-	Menu,
+  Menu,
   Icon,
   List,
   Popup,
@@ -28,7 +28,7 @@ import MonitoringUser from "./components/MonitoringUser";
 class AdminRoot extends Component {
 
     state = {
-				activeTab: 0,
+        activeTab: 0,
         audio: null,
         chatRoomsInitialized: false,
         current_room: "",
@@ -49,7 +49,7 @@ class AdminRoot extends Component {
         rooms: [],
         user: null,
         users: {},
-				usersTabs: [],
+        usersTabs: [],
     };
 
     componentDidMount() {
@@ -62,20 +62,20 @@ class AdminRoot extends Component {
         Object.values(this.state.gateways).forEach(x => x.destroy());
     };
 
-		shouldComponentUpdate(nextProps, nextState) {
-			const {
-				activeTab,
-				gatewaysInitialized,
-				user,
-				usersTabs,
-			} = this.state;
-			return user === null ||
-						 gatewaysInitialized === false ||
-						 activeTab === 1 ||
-						 nextState.activeTab === 1 ||
-						 activeTab !== nextState.activeTab ||
-						 nextState.usersTabs.length !== usersTabs.length;
-		}
+    shouldComponentUpdate(nextProps, nextState) {
+      const {
+        activeTab,
+        gatewaysInitialized,
+        user,
+        usersTabs,
+      } = this.state;
+      return user === null ||
+             gatewaysInitialized === false ||
+             activeTab === 1 ||
+             nextState.activeTab === 1 ||
+             activeTab !== nextState.activeTab ||
+             nextState.usersTabs.length !== usersTabs.length;
+    }
 
     checkPermission = (user) => {
         const roles = new Set(user.roles || []);
@@ -630,40 +630,40 @@ class AdminRoot extends Component {
     };
 
   addUserTab(user, stats) {
-		const { usersTabs } = this.state;
+    const { usersTabs } = this.state;
     if (!usersTabs.find(u => u.id === user.id)) {
-			const newUsersTabs = usersTabs.slice();
-			newUsersTabs.push({user, stats});
-			this.setState({usersTabs: newUsersTabs, activeTab: 2 + newUsersTabs.length - 1});
+      const newUsersTabs = usersTabs.slice();
+      newUsersTabs.push({user, stats});
+      this.setState({usersTabs: newUsersTabs, activeTab: 2 + newUsersTabs.length - 1});
     }
   }
 
-	removeUserTab(index) {
-		const { usersTabs } = this.state;
+  removeUserTab(index) {
+    const { usersTabs } = this.state;
     if (index < usersTabs.length) {
-			const newUsersTabs = usersTabs.slice();
-			newUsersTabs.splice(index, 1);
-			this.setState({usersTabs: newUsersTabs, activeTab: 0});
+      const newUsersTabs = usersTabs.slice();
+      newUsersTabs.splice(index, 1);
+      this.setState({usersTabs: newUsersTabs, activeTab: 0});
     }
-	}
+  }
 
   render() {
       const {
-				activeTab,
-				current_room,
-				feed_id,
-				feed_info,
-				feed_rtcp,
-				feed_user,
-				feeds,
-				gateways,
-				gatewaysInitialized,
-				rooms,
-				user,
-				users,
-				usersTabs,
-			  chatRoomsInitialized,
-			} = this.state;
+        activeTab,
+        current_room,
+        feed_id,
+        feed_info,
+        feed_rtcp,
+        feed_user,
+        feeds,
+        gateways,
+        gatewaysInitialized,
+        rooms,
+        user,
+        users,
+        usersTabs,
+        chatRoomsInitialized,
+      } = this.state;
 
       if (!!user && !gatewaysInitialized) {
           return "Initializing connections to janus instances...";
@@ -873,22 +873,22 @@ class AdminRoot extends Component {
       const panes = [
         { menuItem: 'Monitor', render: () => <Tab.Pane><MonitoringAdmin addUserTab={(user, stats) => this.addUserTab(user, stats)}/></Tab.Pane> },
         { menuItem: 'Admin', render: () => <Tab.Pane>{adminContent}</Tab.Pane> },
-				...usersTabs.map(({user, stats}, index) => ({
-					menuItem: (
-						<Menu.Item key={user.id}>
-							{user.display || user.name}&nbsp;
-							<Icon name='window close' style={{cursor: 'pointer'}} onClick={(e) => { e.stopPropagation(); this.removeUserTab(index); }} />
-						</Menu.Item>
-					),
-					render: () => <Tab.Pane><MonitoringUser user={user} stats={stats} /></Tab.Pane>,
-				})),
+        ...usersTabs.map(({user, stats}, index) => ({
+          menuItem: (
+            <Menu.Item key={user.id}>
+              {user.display || user.name}&nbsp;
+              <Icon name='window close' style={{cursor: 'pointer'}} onClick={(e) => { e.stopPropagation(); this.removeUserTab(index); }} />
+            </Menu.Item>
+          ),
+          render: () => <Tab.Pane><MonitoringUser user={user} stats={stats} /></Tab.Pane>,
+        })),
       ];
 
       const content = (
         <Tab panes={panes}
-						 activeIndex={activeTab || 0}
-						 onTabChange={(e, {activeIndex}) => this.setState({activeTab: activeIndex})}
-						 renderActiveOnly={true} />
+             activeIndex={activeTab || 0}
+             onTabChange={(e, {activeIndex}) => this.setState({activeTab: activeIndex})}
+             renderActiveOnly={true} />
       );
 
       return (
