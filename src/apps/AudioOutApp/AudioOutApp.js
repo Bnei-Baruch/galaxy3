@@ -57,15 +57,13 @@ class AudioOutApp extends Component {
         for(let i=0; i<gxy.length; i++) {
             let {GxyJanus} = this.state;
             initJanus(janus => {
+                // Right now we going to use gxy3 for service protocol
+                if(gxy[i] === "gxy3")
+                    this.initService(janus, user);
                 if(GxyJanus[gxy[i]].janus)
                     GxyJanus[gxy[i]].janus.destroy();
                 GxyJanus[gxy[i]].janus = janus;
                 user.id = "audout-" + gxy[i];
-
-                // Right now we going to use gxy3 for service protocol
-                if(gxy[i] === "gxy3")
-                    this.initService(janus, user);
-
                 initGxyProtocol(janus, user, protocol => {
                     GxyJanus[gxy[i]].protocol = protocol;
                     this.setState({...GxyJanus[gxy[i]]});
