@@ -1,10 +1,10 @@
 import React, {
-	useState,
-	useEffect,
+  useState,
+  useEffect,
 } from 'react';
 import {
-	Button,
-	Icon,
+  Button,
+  Icon,
   Dimmer,
   Header,
   Loader,
@@ -26,7 +26,7 @@ const MonitoringAdmin = (props) => {
   const [fetchingError, setFetchingError] = useState('');
 
   const [users, setUsers] = useState({});
-	const [usersData, setUsersData] = useState({});
+  const [usersData, setUsersData] = useState({});
   const [{view, column, direction}, setUsersTableView] = useState({
     view: [],
     column: '',
@@ -34,23 +34,23 @@ const MonitoringAdmin = (props) => {
   });
   const [sortingColumn, setSortingColumn] = useState('');
   const [usersToShow, setUsersToShow] = useState(20);
-	const [, forceUpdate] = useState(true);  // Rerender to show progress in time since.
+  const [, forceUpdate] = useState(true);  // Rerender to show progress in time since.
   const [now, setNow] = useState(0);
 
-	const tableParentRef = (node) => {
-		if (node) {
-			const tableHeaderTop = node.querySelector('thead').getBoundingClientRect().top;
-			const ths = node.querySelectorAll('thead th')
-			ths.forEach(th => {
+  const tableParentRef = (node) => {
+    if (node) {
+      const tableHeaderTop = node.querySelector('thead').getBoundingClientRect().top;
+      const ths = node.querySelectorAll('thead th')
+      ths.forEach(th => {
         if (th.style.position !== 'sticky') {
           th.style.top = th.getBoundingClientRect().top - tableHeaderTop + "px";
           th.style.position = 'sticky';
         }
-			});
-		}
+      });
+    }
   };
 
-	const updateUsersData = () => {
+  const updateUsersData = () => {
     setLoadingCount(prev => prev + 1);
     fetchData('users_data').then(data => {
       if (data.users_data) {
@@ -63,9 +63,9 @@ const MonitoringAdmin = (props) => {
     }).finally(() => {
       setLoadingCount(prev => prev - 1);
     });
-	};
+  };
 
-	const updateUsers = () => {
+  const updateUsers = () => {
     setLoadingCount(prev => prev + 1);
     fetchData('users').then(data => {
       if (data.users) {
@@ -82,17 +82,17 @@ const MonitoringAdmin = (props) => {
       } else {
         throw new Error(`Expected users in response, got ${JSON.stringify(data)}`);
       }
-		}).catch(error => {
+    }).catch(error => {
       setFetchingError(error.toString());
     }).finally(() => {
       setLoadingCount(prev => prev - 1);
     });
-	}
+  }
 
   useEffect(() => {
-		updateUsers();
-		updateUsersData();
-		const handler = setInterval(() => forceUpdate(b => !b), 60 * 1000);  // Refresh every minute to update login since.
+    updateUsers();
+    updateUsersData();
+    const handler = setInterval(() => forceUpdate(b => !b), 60 * 1000);  // Refresh every minute to update login since.
     return () => {
       clearInterval(handler);
     };
@@ -115,23 +115,23 @@ const MonitoringAdmin = (props) => {
     }
     return ret;
   };
-	const usersDataValues = (userId) => {
+  const usersDataValues = (userId) => {
     const values = {};
-		if (userId in usersData) {
-			const ud = usersData[userId];
-			if (ud.timestamps && ud.timestamps.length) {
-				values.update = {value: ud.timestamps[0], view: sinceTimestamp(ud.timestamps[0], now)};
-			}
-			for (let [metric, index] of Object.entries(ud.index)) {
-				const metricField = metric.includes('video') ? 'video' : 'audio';
+    if (userId in usersData) {
+      const ud = usersData[userId];
+      if (ud.timestamps && ud.timestamps.length) {
+        values.update = {value: ud.timestamps[0], view: sinceTimestamp(ud.timestamps[0], now)};
+      }
+      for (let [metric, index] of Object.entries(ud.index)) {
+        const metricField = metric.includes('video') ? 'video' : 'audio';
         if (!(metricField in values)) {
           values[metricField] = {};
         }
-				const metricName = metric.split('.').slice(-1)[0];
+        const metricName = metric.split('.').slice(-1)[0];
         values[metricField][metricName] = {};
 
-				const value = ud.data[index][0];
-				values[metricField][metricName].last = {value, view: shortNumber(value) || ''};
+        const value = ud.data[index][0];
+        values[metricField][metricName].last = {value, view: shortNumber(value) || ''};
         if (!isNaN(value)) {
           ud.stats[index].forEach((stats, statsIndex) => {
             const stdev = Math.sqrt(stats.dsquared);
@@ -147,12 +147,12 @@ const MonitoringAdmin = (props) => {
           } 
           values[metricField][metricName].score = {value: metricScore, view: shortNumber(metricScore)};
         }
-			}
-		}
+      }
+    }
     const score = audioVideoScore(values.audio) + audioVideoScore(values.video);
     values.score = {value: score, view: shortNumber(score)};
-		return values;
-	}
+    return values;
+  }
 
   useEffect(() => {
     const view = Object.values(users).map(user => ({
@@ -221,58 +221,58 @@ const MonitoringAdmin = (props) => {
   }
 
   const usersTable = (
-		<div ref={tableParentRef}>
-			<Table sortable celled>
-				<Table.Header>
-					<Table.Row textAlign='center'>
-						<Table.HeaderCell colSpan="13">
+    <div ref={tableParentRef}>
+      <Table sortable celled>
+        <Table.Header>
+          <Table.Row textAlign='center'>
+            <Table.HeaderCell colSpan="13">
               <Button icon onClick={() => { updateUsersData(); updateUsers(); }}><Icon name='refresh' /></Button>
               Showing {Math.min(usersToShow, view.length)} users out of {view.length}
             </Table.HeaderCell>
-					</Table.Row>
-					<Table.Row textAlign='center'>
-						<Table.HeaderCell rowSpan="2"
-															sorted={column === 'name' ? direction : null}
-															onClick={handleSort('name')}>{popup('Name')}</Table.HeaderCell>
-						<Table.HeaderCell rowSpan="2"
-															sorted={column === 'group' ? direction : null}
-															onClick={handleSort('group')}>{popup('Group')}</Table.HeaderCell>
-						<Table.HeaderCell rowSpan="2"
-															sorted={column === 'janus' ? direction : null}
-															onClick={handleSort('janus')}>{popup('Janus')}</Table.HeaderCell>
-						<Table.HeaderCell rowSpan="2"
-															sorted={column === 'login' ? direction : null}
-															onClick={handleSort('login')}>{popup('Login')}</Table.HeaderCell>
-						<Table.HeaderCell rowSpan="2"
-															sorted={column === 'system' ? direction : null}
-															onClick={handleSort('system')}>{popup('System')}</Table.HeaderCell>
-						<Table.HeaderCell rowSpan="2"
-															sorted={column === 'update' ? direction : null}
-															onClick={handleSort('update')}>{popup('Update')}</Table.HeaderCell>
-						<Table.HeaderCell rowSpan="2"
-															sorted={column === 'score' ? direction : null}
-															onClick={handleSort('score')}>{popup('Score')}</Table.HeaderCell>
-						<Table.HeaderCell colSpan="3">{popup('Audio')}</Table.HeaderCell>
-						<Table.HeaderCell colSpan="3">{popup('Video')}</Table.HeaderCell>
-					</Table.Row>
-					<Table.Row textAlign='center'>
-						<Table.HeaderCell sorted={column === 'audio.jitter' ? direction : null}
-															onClick={handleSort('audio.jitter')}>{popup('Jitter')}</Table.HeaderCell>
-						<Table.HeaderCell sorted={column === 'audio.packetsLost' ? direction : null}
-															onClick={handleSort('audio.packetsLost')}>{popup('Packets Lost')}</Table.HeaderCell>
-						<Table.HeaderCell sorted={column === 'audio.roundTripTime' ? direction : null}
-															onClick={handleSort('audio.roundTripTime')}>{popup('Round trip time')}</Table.HeaderCell>
-						<Table.HeaderCell sorted={column === 'video.jitter' ? direction : null}
-															onClick={handleSort('video.jitter')}>{popup('Jitter')}</Table.HeaderCell>
-						<Table.HeaderCell sorted={column === 'video.packetsLost' ? direction : null}
-															onClick={handleSort('video.packetsLost')}>{popup('Packets Lost')}</Table.HeaderCell>
-						<Table.HeaderCell sorted={column === 'video.roundTripTime' ? direction : null}
-															onClick={handleSort('video.roundTripTime')}>{popup('Round trip time')}</Table.HeaderCell>
-					</Table.Row>
-				</Table.Header>
-				<Table.Body>
-					{view.slice(0, usersToShow).map(({user, stats}, index) => userRow(user, stats, now, () => props.addUserTab(user, stats)))}
-				</Table.Body>
+          </Table.Row>
+          <Table.Row textAlign='center'>
+            <Table.HeaderCell rowSpan="2"
+                              sorted={column === 'name' ? direction : null}
+                              onClick={handleSort('name')}>{popup('Name')}</Table.HeaderCell>
+            <Table.HeaderCell rowSpan="2"
+                              sorted={column === 'group' ? direction : null}
+                              onClick={handleSort('group')}>{popup('Group')}</Table.HeaderCell>
+            <Table.HeaderCell rowSpan="2"
+                              sorted={column === 'janus' ? direction : null}
+                              onClick={handleSort('janus')}>{popup('Janus')}</Table.HeaderCell>
+            <Table.HeaderCell rowSpan="2"
+                              sorted={column === 'login' ? direction : null}
+                              onClick={handleSort('login')}>{popup('Login')}</Table.HeaderCell>
+            <Table.HeaderCell rowSpan="2"
+                              sorted={column === 'system' ? direction : null}
+                              onClick={handleSort('system')}>{popup('System')}</Table.HeaderCell>
+            <Table.HeaderCell rowSpan="2"
+                              sorted={column === 'update' ? direction : null}
+                              onClick={handleSort('update')}>{popup('Update')}</Table.HeaderCell>
+            <Table.HeaderCell rowSpan="2"
+                              sorted={column === 'score' ? direction : null}
+                              onClick={handleSort('score')}>{popup('Score')}</Table.HeaderCell>
+            <Table.HeaderCell colSpan="3">{popup('Audio')}</Table.HeaderCell>
+            <Table.HeaderCell colSpan="3">{popup('Video')}</Table.HeaderCell>
+          </Table.Row>
+          <Table.Row textAlign='center'>
+            <Table.HeaderCell sorted={column === 'audio.jitter' ? direction : null}
+                              onClick={handleSort('audio.jitter')}>{popup('Jitter')}</Table.HeaderCell>
+            <Table.HeaderCell sorted={column === 'audio.packetsLost' ? direction : null}
+                              onClick={handleSort('audio.packetsLost')}>{popup('Packets Lost')}</Table.HeaderCell>
+            <Table.HeaderCell sorted={column === 'audio.roundTripTime' ? direction : null}
+                              onClick={handleSort('audio.roundTripTime')}>{popup('Round trip time')}</Table.HeaderCell>
+            <Table.HeaderCell sorted={column === 'video.jitter' ? direction : null}
+                              onClick={handleSort('video.jitter')}>{popup('Jitter')}</Table.HeaderCell>
+            <Table.HeaderCell sorted={column === 'video.packetsLost' ? direction : null}
+                              onClick={handleSort('video.packetsLost')}>{popup('Packets Lost')}</Table.HeaderCell>
+            <Table.HeaderCell sorted={column === 'video.roundTripTime' ? direction : null}
+                              onClick={handleSort('video.roundTripTime')}>{popup('Round trip time')}</Table.HeaderCell>
+          </Table.Row>
+        </Table.Header>
+        <Table.Body>
+          {view.slice(0, usersToShow).map(({user, stats}, index) => userRow(user, stats, now, () => props.addUserTab(user, stats)))}
+        </Table.Body>
         { usersToShow >= view.length ? null : (
           <Table.Footer>
             <Table.Row textAlign='center'>
@@ -280,8 +280,8 @@ const MonitoringAdmin = (props) => {
             </Table.Row>
           </Table.Footer>)
         }
-			</Table>
-		</div>
+      </Table>
+    </div>
   );
 
   const loading = (
@@ -290,11 +290,11 @@ const MonitoringAdmin = (props) => {
     </Dimmer>);
 
   return (
-		<div>
-			{fetchingError === '' ? null : <Header color='red'>Error: {fetchingError}</Header>}
-			{loadingCount !== 0 || sortingColumn ? loading: null}
-			{view.length ? usersTable : null}
-		</div>
+    <div>
+      {fetchingError === '' ? null : <Header color='red'>Error: {fetchingError}</Header>}
+      {loadingCount !== 0 || sortingColumn ? loading: null}
+      {view.length ? usersTable : null}
+    </div>
   );
 }
 

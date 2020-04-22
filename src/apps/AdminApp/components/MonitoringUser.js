@@ -1,6 +1,6 @@
 import React, {
-	useState,
-	useEffect,
+  useState,
+  useEffect,
 } from 'react';
 
 import {
@@ -22,7 +22,7 @@ const MonitoringUser = (props) => {
   const [loadingCount, setLoadingCount] = useState(0);
   const [userData, setUserData] = useState({});
   const [fetchingError, setFetchingError] = useState('');
-	const [, forceUpdate] = useState(true);  // Rerender to show progress in time since.
+  const [, forceUpdate] = useState(true);  // Rerender to show progress in time since.
 
   const fetchUser = (onUserData) => {
     setLoadingCount(prev => prev + 1);
@@ -37,7 +37,7 @@ const MonitoringUser = (props) => {
         throw new Error(`Fetch error: ${response.url} ${response.status} ${response.statusText}`);
       }
     }).then((data) => {
-			onUserData(data);
+      onUserData(data);
     })
     .catch((error) => {
       console.error('Fetching monitoring users data error:', error);
@@ -54,7 +54,7 @@ const MonitoringUser = (props) => {
   }, [props.user]);
 
   useEffect(() => {
-		const handler = setInterval(() => forceUpdate(b => !b), 60 * 1000);  // Refresh every minute to update login since.
+    const handler = setInterval(() => forceUpdate(b => !b), 60 * 1000);  // Refresh every minute to update login since.
     return () => {
       clearInterval(handler);
     };
@@ -75,18 +75,18 @@ const MonitoringUser = (props) => {
     }
   };
 
-	const now = new Date();
+  const now = new Date();
 
   return (
-		<div>
-			{fetchingError === '' ? null : <Header color='red'>Error: {fetchingError}</Header>}
-			{loadingCount !== 0 ? loading: null}
+    <div>
+      {fetchingError === '' ? null : <Header color='red'>Error: {fetchingError}</Header>}
+      {loadingCount !== 0 ? loading: null}
       <Table>
         <Table.Body>
           {userRow(props.user, props.stats, now)}
         </Table.Body>
       </Table>
-			{objectToTable(props.user, 'user')}
+      {objectToTable(props.user, 'user')}
       {objectToTable(userData, 'data')}
     </div>
   );
