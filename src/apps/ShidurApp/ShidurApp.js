@@ -89,7 +89,6 @@ class ShidurApp extends Component {
                 if(GxyJanus[gxy[i]].janus)
                     GxyJanus[gxy[i]].janus.destroy();
                 GxyJanus[gxy[i]].janus = janus;
-                user.id = "shidur-" + gxy[i];
                 initGxyProtocol(janus, user, protocol => {
                     GxyJanus[gxy[i]].protocol = protocol;
                     this.setState({...GxyJanus[gxy[i]]});
