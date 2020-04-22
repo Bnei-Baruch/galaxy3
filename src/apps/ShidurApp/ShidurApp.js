@@ -122,26 +122,26 @@ class ShidurApp extends Component {
             }
         }
 
-        if(data.type === "question") {
-            const {room, status} = data;
-            setTimeout(() => {
-                this.col1.setQuestion(room, status);
-                this.col2.setQuestion(room, status);
-                this.col3.setQuestion(room, status);
-                this.col4.setQuestion(room, status);
-            }, 3000);
-        }
+        // if(data.type === "question") {
+        //     const {room, status} = data;
+        //     setTimeout(() => {
+        //         this.col1.setQuestion(room, status);
+        //         this.col2.setQuestion(room, status);
+        //         this.col3.setQuestion(room, status);
+        //         this.col4.setQuestion(room, status);
+        //     }, 3000);
+        // }
 
         if(data.type === "leave" && users[data.id]) {
-            let user = users[data.id];
-            if(user.room && user.question) {
-                setTimeout(() => {
-                    this.col1.setQuestion(user.room, false);
-                    this.col2.setQuestion(user.room, false);
-                    this.col3.setQuestion(user.room, false);
-                    this.col4.setQuestion(user.room, false);
-                }, 3000);
-            }
+            // let user = users[data.id];
+            // if(user.room && user.question) {
+            //     setTimeout(() => {
+            //         this.col1.setQuestion(user.room, false);
+            //         this.col2.setQuestion(user.room, false);
+            //         this.col3.setQuestion(user.room, false);
+            //         this.col4.setQuestion(user.room, false);
+            //     }, 3000);
+            // }
             delete users[data.id];
             this.setState({users});
         }

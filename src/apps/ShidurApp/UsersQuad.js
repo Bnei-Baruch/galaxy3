@@ -67,24 +67,24 @@ class UsersQuad extends Component {
     };
 
 
-    setQuestion = (room) => {
-        let {vquad,col} = this.state;
-        let {rooms} = this.props;
-        for(let i=0; i<4; i++) {
-            if(vquad[i] && vquad[i].room === room) {
-                let group = rooms.find(g => g.room === room);
-                let qs = group ? group.questions : false;
-                if(vquad[i].questions !== qs) {
-                    vquad[i].questions = qs;
-                    this.setState({vquad});
-                    putData(`galaxy/qids/q`+col, {vquad}, (cb) => {
-                        Janus.log(":: Save to state: ",cb);
-                    });
-                }
-                break;
-            }
-        }
-    };
+    // setQuestion = (room) => {
+    //     let {vquad,col} = this.state;
+    //     let {rooms} = this.props;
+    //     for(let i=0; i<4; i++) {
+    //         if(vquad[i] && vquad[i].room === room) {
+    //             let group = rooms.find(g => g.room === room);
+    //             let qs = group ? group.questions : false;
+    //             if(vquad[i].questions !== qs) {
+    //                 vquad[i].questions = qs;
+    //                 this.setState({vquad});
+    //                 putData(`galaxy/qids/q`+col, {vquad}, (cb) => {
+    //                     Janus.log(":: Save to state: ",cb);
+    //                 });
+    //             }
+    //             break;
+    //         }
+    //     }
+    // };
 
     // setQuestion = (room, status) => {
     //     let {vquad,col} = this.state;
@@ -270,7 +270,7 @@ class UsersQuad extends Component {
 
   render() {
       const {full_feed,fullscr,col,vquad,question} = this.state;
-      const {groups,group,next_button,presets} = this.props;
+      const {groups,rooms,next_button,presets} = this.props;
       const q = (<div className="question">
           <svg viewBox="0 0 50 50">
               <text x="25" y="25" textAnchor="middle" alignmentBaseline="central" dominantBaseline="central">&#xF128;</text>
@@ -279,7 +279,8 @@ class UsersQuad extends Component {
 
       let program = vquad.map((g,i) => {
           if (groups.length === 0) return false;
-          let qst = g && g.questions;
+          //let qst = g && g.questions;
+          let qst = rooms.find(q => q.room === g.room && q.questions);
           let qf = fullscr && full_feed === i && question;
           let ff = fullscr && full_feed === i && !question;
           let name = g ? g.description : "";
