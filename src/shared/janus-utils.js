@@ -428,11 +428,12 @@ class GxyJanus {
         });
     };
 
-    detachVideoRoom = () => {
+    detachVideoRoom = (noRequest = true) => {
         return new Promise((resolve, reject) => {
             if (this.videoroom) {
                 this.log('[videoroom] detach');
                 this.videoroom.detach({
+                    noRequest,
                     success: () => {
                         this.debug("[videoroom] detach success");
                         resolve();
@@ -449,7 +450,7 @@ class GxyJanus {
     };
 
     videoRoomJoin = (room, user, ptype = "publisher") => {
-        return this.send("videoroom", "join room", this.videoroom,{
+        return this.send("videoroom", "join room", this.videoroom, {
             request: "join",
             room,
             ptype,
@@ -458,7 +459,7 @@ class GxyJanus {
     };
 
     videoRoomLeave = (room) => {
-        return this.send("videoroom", "leave room", this.videoroom,{
+        return this.send("videoroom", "leave room", this.videoroom, {
             request: "leave",
             room
         });
@@ -471,7 +472,7 @@ class GxyJanus {
                 opaqueId: "remotefeed_user",
                 success: (handle) => {
                     this.remoteFeed = handle;
-                    this.log("[remoteFeed] attach success", this.remoteFeed.getId() );
+                    this.log("[remoteFeed] attach success", this.remoteFeed.getId());
                     resolve(handle);
                 },
                 error: (err) => {
