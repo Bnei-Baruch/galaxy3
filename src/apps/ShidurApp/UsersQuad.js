@@ -270,7 +270,7 @@ class UsersQuad extends Component {
 
   render() {
       const {full_feed,fullscr,col,vquad,question} = this.state;
-      const {groups,rooms,next_button,presets} = this.props;
+      const {groups,group,rooms,next_button,presets} = this.props;
       const q = (<div className="question">
           <svg viewBox="0 0 50 50">
               <text x="25" y="25" textAnchor="middle" alignmentBaseline="central" dominantBaseline="central">&#xF128;</text>
