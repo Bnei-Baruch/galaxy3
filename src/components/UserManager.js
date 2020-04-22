@@ -2,8 +2,7 @@ import { Log as oidclog, UserManager } from 'oidc-client';
 import {KJUR} from 'jsrsasign';
 
 const AUTH_URL = 'https://accounts.kbb1.com/auth/realms/main';
-//export const BASE_URL = process.env.NODE_ENV === 'production' ? process.env.REACT_APP_GXY_URL : 'http://localhost:3000/';
-export const BASE_URL = 'https://bbdev6.kbb1.com:4446/';
+export const BASE_URL = process.env.NODE_ENV === 'production' ? process.env.REACT_APP_GXY_URL : 'http://localhost:3000/';
 
 oidclog.logger = console;
 oidclog.level  = 0;
