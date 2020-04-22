@@ -165,10 +165,10 @@ class UsersQuad extends Component {
     };
 
     sdiAction = (action, status, i, group, qst) => {
-        const {user} = this.props;
+        const {user,service} = this.props;
         const {col} = this.state;
         let msg = {type: "sdi-"+action, status, room: null, col, i, group, qst};
-        sendProtocolMessage(this.props.GxyJanus.gxy3.protocol, user, msg);
+        sendProtocolMessage(service, user, msg, true);
     };
 
     checkFullScreen = () => {

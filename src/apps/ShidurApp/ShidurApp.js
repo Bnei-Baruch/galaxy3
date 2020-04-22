@@ -19,6 +19,7 @@ class ShidurApp extends Component {
             gxy2: {janus: null, protocol: null},
             gxy3: {janus: null, protocol: null},
         },
+        service: null,
         group: "",
         groups: [],
         groups_queue: 0,
@@ -58,36 +59,6 @@ class ShidurApp extends Component {
         }
     };
 
-    initGalaxy = (user,gxy) => {
-        for(let i=0; i<gxy.length; i++) {
-            let {GxyJanus} = this.state;
-            initJanus(janus => {
-                if(GxyJanus[gxy[i]].janus)
-                    GxyJanus[gxy[i]].janus.destroy();
-                GxyJanus[gxy[i]].janus = janus;
-                if(gxy[i] !== "gxy3")
-                    user.id = "shidur-" + gxy[i];
-                initGxyProtocol(janus, user, protocol => {
-                    GxyJanus[gxy[i]].protocol = protocol;
-                    this.setState({...GxyJanus[gxy[i]]});
-                }, ondata => {
-                    Janus.log(i + " :: protocol public message: ", ondata);
-                    if(ondata.type === "error" && ondata.error_code === 420) {
-                        console.error(ondata.error + " - Reload after 10 seconds");
-                        this.state.GxyJanus[gxy[i]].protocol.hangup();
-                        setTimeout(() => {
-                            this.initGalaxy(user,[gxy[i]]);
-                        }, 10000);
-                    }
-                    this.onProtocolData(ondata, gxy[i]);
-                });
-            },er => {
-                alert(gxy[i] + ": " + er);
-                this.initGalaxy(user,[gxy[i]]);
-            }, gxy[i]);
-        }
-    };
-
     getRoomList = () => {
         let {disabled_rooms,mode} = this.state;
         getState('galaxy/rooms', (rooms) => {
@@ -108,6 +79,56 @@ class ShidurApp extends Component {
         });
     };
 
+    initGalaxy = (user,gxy) => {
+        for(let i=0; i<gxy.length; i++) {
+            let {GxyJanus} = this.state;
+            initJanus(janus => {
+                if(GxyJanus[gxy[i]].janus)
+                    GxyJanus[gxy[i]].janus.destroy();
+                GxyJanus[gxy[i]].janus = janus;
+                user.id = "shidur-" + gxy[i];
+
+                // Right now we going to use gxy3 for service protocol
+                if(gxy[i] === "gxy3")
+                    this.initService(janus, user);
+
+                initGxyProtocol(janus, user, protocol => {
+                    GxyJanus[gxy[i]].protocol = protocol;
+                    this.setState({...GxyJanus[gxy[i]]});
+                }, ondata => {
+                    Janus.log(i + " :: protocol public message: ", ondata);
+                    if(ondata.type === "error" && ondata.error_code === 420) {
+                        console.error(ondata.error + " - Reload after 10 seconds");
+                        this.state.GxyJanus[gxy[i]].protocol.hangup();
+                        setTimeout(() => {
+                            this.initGalaxy(user,[gxy[i]]);
+                        }, 10000);
+                    }
+                    this.onProtocolData(ondata, gxy[i]);
+                }, false);
+            },er => {
+                alert(gxy[i] + ": " + er);
+                this.initGalaxy(user,[gxy[i]]);
+            }, gxy[i]);
+        }
+    };
+
+    initService = (janus, user) => {
+        initGxyProtocol(janus, user, service => {
+            this.setState({service});
+        }, ondata => {
+            Janus.log(" :: Service message: ", ondata);
+            if(ondata.type === "error" && ondata.error_code === 420) {
+                console.error(ondata.error + " - Reload after 10 seconds");
+                this.state.service.hangup();
+                setTimeout(() => {
+                    this.initService(janus,user);
+                }, 10000);
+            }
+            this.onServiceData(ondata);
+        }, true);
+    };
+
     onProtocolData = (data, inst) => {
         let {users} = this.state;
 
@@ -126,7 +147,9 @@ class ShidurApp extends Component {
             delete users[data.id];
             this.setState({users});
         }
+    };
 
+    onServiceData = (data) => {
         if(data.type === "event") {
             delete data.type;
             this.setState({...data});

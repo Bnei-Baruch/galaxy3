@@ -15,10 +15,12 @@ class SndmanApp extends Component {
 
     state = {
         GxyJanus: {
-            gxy1: {janus: null, protocol: null, fwdhandle: null},
-            gxy2: {janus: null, protocol: null, fwdhandle: null},
-            gxy3: {janus: null, protocol: null, fwdhandle: null},
+            gxy1: {janus: null, protocol: null},
+            gxy2: {janus: null, protocol: null},
+            gxy3: {janus: null, protocol: null},
         },
+        fwdhandle: null,
+        service: null,
         group: "",
         groups: [],
         groups_queue: 0,
@@ -60,8 +62,12 @@ class SndmanApp extends Component {
                 if(GxyJanus[gxy[i]].janus)
                     GxyJanus[gxy[i]].janus.destroy();
                 GxyJanus[gxy[i]].janus = janus;
-                if(gxy[i] !== "gxy3")
-                    user.id = "sndman-" + gxy[i];
+                user.id = "sndman-" + gxy[i];
+
+                // Right now we going to use gxy3 for service protocol
+                if(gxy[i] === "gxy3")
+                    this.initService(janus, user);
+
                 initGxyProtocol(janus, user, protocol => {
                     GxyJanus[gxy[i]].protocol = protocol;
                     this.setState({...GxyJanus[gxy[i]]});
@@ -73,14 +79,9 @@ class SndmanApp extends Component {
                         setTimeout(() => {
                             this.initGalaxy(user,[gxy[i]]);
                         }, 10000);
-                    } else if(ondata.type === "joined" && gxy[i] === "gxy3") {
-                        initDataForward(janus, fwdhandle => {
-                            GxyJanus[gxy[i]].fwdhandle = fwdhandle;
-                            this.setState({...GxyJanus[gxy[i]]});
-                        })
                     }
                     this.onProtocolData(ondata, gxy[i]);
-                });
+                }, false);
             },er => {
                 console.error(gxy[i] + ": " + er);
                 setTimeout(() => {
@@ -90,8 +91,26 @@ class SndmanApp extends Component {
         }
     };
 
-    onProtocolData = (data, inst) => {
-        let {users} = this.state;
+    initService = (janus, user) => {
+        initDataForward(janus, fwdhandle => {
+            this.setState({fwdhandle});
+        })
+        initGxyProtocol(janus, user, service => {
+            this.setState({service});
+        }, ondata => {
+            Janus.log(" :: Service message: ", ondata);
+            if(ondata.type === "error" && ondata.error_code === 420) {
+                console.error(ondata.error + " - Reload after 10 seconds");
+                this.state.service.hangup();
+                setTimeout(() => {
+                    this.initService(janus,user);
+                }, 10000);
+            }
+            this.onServiceData(ondata);
+        }, true);
+    };
+
+    onServiceData = (data) => {
         let {col, group, i, status} = data;
 
         // Shidur action
@@ -100,6 +119,19 @@ class SndmanApp extends Component {
         } else if(data.type === "sdi-fullscr_group" && !status) {
             this["col"+col].toFourGroup(i,group);
         }
+
+        if(data.type === "event") {
+            delete data.type;
+            this.setState({...data});
+        }
+
+        if(data.type === "sdi-restart_sndman") {
+            window.location.reload();
+        }
+    };
+
+    onProtocolData = (data, inst) => {
+        let {users} = this.state;
 
         // Set status in users list
         if(data.type.match(/^(camera|question|sound_test)$/)) {
@@ -115,15 +147,6 @@ class SndmanApp extends Component {
         if(data.type === "leave" && users[data.id]) {
             delete users[data.id];
             this.setState({users});
-        }
-
-        if(data.type === "event") {
-            delete data.type;
-            this.setState({...data});
-        }
-
-        if(data.type === "sdi-restart_sndman") {
-            window.location.reload();
         }
     };
 

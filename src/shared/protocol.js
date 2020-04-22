@@ -1,13 +1,13 @@
 import {Janus} from "../lib/janus";
-import {PROTOCOL_ROOM, SDIOUT_ID, SHIDUR_ID, SNDMAN_ID, STORAN_ID} from "./consts";
+import {SERVICE_ROOM, PROTOCOL_ROOM, SDIOUT_ID, SHIDUR_ID, SNDMAN_ID, STORAN_ID} from "./consts";
 import {getDateString} from "./tools";
 
-const attachGxyProtocol = (protocol, user) => {
+const attachGxyProtocol = (protocol, user, service) => {
     let transaction = Janus.randomString(12);
     let register = {
         textroom: "join",
         transaction: transaction,
-        room: PROTOCOL_ROOM,
+        room: service ? SERVICE_ROOM : PROTOCOL_ROOM,
         username: user.id || user.sub,
         display: user.display
     };
@@ -19,7 +19,7 @@ const attachGxyProtocol = (protocol, user) => {
     });
 };
 
-export const initGxyProtocol = (janus,user,callback,ondata) => {
+export const initGxyProtocol = (janus,user,callback,ondata,service) => {
     let protocol = null;
     janus.attach(
         {
@@ -67,7 +67,7 @@ export const initGxyProtocol = (janus,user,callback,ondata) => {
             },
             ondataopen: () => {
                 Janus.log("The DataChannel is available!");
-                attachGxyProtocol(protocol,user);
+                attachGxyProtocol(protocol,user,service);
             },
             ondata: (data) => {
                 Janus.debug("We got data from the DataChannel! " + data);
@@ -193,13 +193,13 @@ const onProtocolData = (data,user,ondata) => {
     }
 };
 
-export const sendProtocolMessage = (protocol,user,msg) => {
+export const sendProtocolMessage = (protocol,user,msg,service) => {
     //let msg = {user, text: text};
     let message = {
         ack: false,
         textroom: "message",
         transaction: Janus.randomString(12),
-        room: PROTOCOL_ROOM,
+        room: service ? SERVICE_ROOM : PROTOCOL_ROOM,
         text: JSON.stringify(msg),
     };
     // Note: messages are always acknowledged by default. This means that you'll
