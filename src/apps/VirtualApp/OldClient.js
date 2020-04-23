@@ -28,6 +28,7 @@ import { mapNameToLanguage, setLanguage } from '../../i18n/i18n';
 import { Monitoring } from '../../components/Monitoring';
 import { MonitoringData } from '../../shared/MonitoringData';
 import VirtualStreaming from './VirtualStreaming';
+import VirtualStreamingJanus from './VirtualStreamingJanus';
 import LoginMessage from "../../components/LoginMessage";
 
 class OldClient extends Component {
@@ -80,8 +81,13 @@ class OldClient extends Component {
     monitoringData: new MonitoringData(),
     numberOfVirtualUsers: localStorage.getItem('number_of_virtual_users') || '1',
     currentLayout: localStorage.getItem('currentLayout') || 'double',
-    detachedSource: false,
+    attachedSource: true,
     sourceLoading: true,
+    virtualStreamingJanus: new VirtualStreamingJanus(() => this.virtualStreamingInitialized()),
+  }
+
+  virtualStreamingInitialized() {
+    this.setState({sourceLoading: false});
   }
 
   componentDidUpdate(prevProps, prevState) {
@@ -124,8 +130,13 @@ class OldClient extends Component {
         alert(t('oldClient.browserNotSupported'));
         window.location = 'https://galaxy.kli.one';
       }
+      this.state.virtualStreamingJanus.init();
     }
   };
+
+  componentWillUnmount() {
+    this.state.virtualStreamingJanus.destroy();
+  }
 
   initClient = (user, error) => {
     const { t } = this.props;
@@ -597,8 +608,8 @@ class OldClient extends Component {
             users[display.id]      = display;
             users[display.id].rfid = id;
             subscription.push({
-              feed: id,	// This is mandatory
-              //mid: stream.mid		// This is optional (all streams, if missing)
+              feed: id,  // This is mandatory
+              //mid: stream.mid    // This is optional (all streams, if missing)
             });
           }
           this.setState({ feeds, feedStreams, users });
@@ -669,8 +680,8 @@ class OldClient extends Component {
             users[display.id]      = display;
             users[display.id].rfid = id;
             subscription.push({
-              feed: id,	// This is mandatory
-              //mid: stream.mid		// This is optional (all streams, if missing)
+              feed: id,  // This is mandatory
+              //mid: stream.mid    // This is optional (all streams, if missing)
             });
           }
           feeds.push(feed[0]);
@@ -783,7 +794,7 @@ class OldClient extends Component {
                 jsep: jsep,
                 // Add data:true here if you want to subscribe to datachannels as well
                 // (obviously only works if the publisher offered them in the first place)
-                media: { audioSend: false, videoSend: false, data: true },	// We want recvonly audio/video
+                media: { audioSend: false, videoSend: false, data: true },  // We want recvonly audio/video
                 success: (jsep) => {
                   Janus.debug('Got SDP!');
                   Janus.debug(jsep);
@@ -1027,27 +1038,29 @@ class OldClient extends Component {
   };
 
   showShidur = () => {
-    const { shidur } = this.state;
+    const { virtualStreamingJanus, shidur } = this.state;
     const stateUpdate = {
       shidur: !shidur,
     };
-    // Set source loading when shidur initializes.
-    if (!shidur) {
+    if (shidur) {
+      virtualStreamingJanus.destroy();
+    } else {
+      virtualStreamingJanus.init();
       stateUpdate.sourceLoading = true;
     }
     this.setState(stateUpdate);
   };
 
   updateLayout = (currentLayout) => {
-    this.setState({ currentLayout, sourceLoading: true }, () => {
+    this.setState({ currentLayout }, () => {
       localStorage.setItem('currentLayout', currentLayout);
     });
   }
 
-	// TODO: Why was removed?!?!
+  // TODO: Why was removed?!?!
   onNewMsg = (private_message) => {
-		console.log('onNewMsg', private_message);
-		// Was removed. Why?
+    console.log('onNewMsg', private_message);
+    // Was removed. Why?
     // this.setState({ count: this.state.count + 1 });
   };
 
@@ -1057,94 +1070,94 @@ class OldClient extends Component {
     });
   };
 
-	renderLocalMedia = (width, height, index) => {
-		const { username_value, user, cammuted, question, muted } = this.state;
+  renderLocalMedia = (width, height, index) => {
+    const { username_value, user, cammuted, question, muted } = this.state;
 
-		return (<div className="video" key={index}>
-			<div className={classNames('video__overlay')}>
-				{question ?
-					<div className="question">
-						<svg viewBox="0 0 50 50">
-							<text x="25" y="25" textAnchor="middle"
-										alignmentBaseline="central"
-										dominantBaseline="central">&#xF128;</text>
-						</svg>
-					</div>
-					:
-					''
-				}
-				<div className="video__title">
-					{muted ? <Icon name="microphone slash" size="small"
-												 color="red" /> : ''}{username_value || user.name}
-				</div>
-			</div>
-			<svg className={classNames('nowebcam', { 'hidden': !cammuted })} viewBox="0 0 32 18"
-					 preserveAspectRatio="xMidYMid meet">
-				<text x="16" y="9" textAnchor="middle" alignmentBaseline="central"
-							dominantBaseline="central">&#xf2bd;</text>
-			</svg>
-			<video
-				className={classNames('mirror', { 'hidden': cammuted })}
-				ref="localVideo"
-				id="localVideo"
-				width={width}
-				height={height}
-				autoPlay={true}
-				controls={false}
-				muted={true}
-				playsInline={true} />
-		</div>);
-	}
+    return (<div className="video" key={index}>
+      <div className={classNames('video__overlay')}>
+        {question ?
+          <div className="question">
+            <svg viewBox="0 0 50 50">
+              <text x="25" y="25" textAnchor="middle"
+                    alignmentBaseline="central"
+                    dominantBaseline="central">&#xF128;</text>
+            </svg>
+          </div>
+          :
+          ''
+        }
+        <div className="video__title">
+          {muted ? <Icon name="microphone slash" size="small"
+                         color="red" /> : ''}{username_value || user.name}
+        </div>
+      </div>
+      <svg className={classNames('nowebcam', { 'hidden': !cammuted })} viewBox="0 0 32 18"
+           preserveAspectRatio="xMidYMid meet">
+        <text x="16" y="9" textAnchor="middle" alignmentBaseline="central"
+              dominantBaseline="central">&#xf2bd;</text>
+      </svg>
+      <video
+        className={classNames('mirror', { 'hidden': cammuted })}
+        ref="localVideo"
+        id="localVideo"
+        width={width}
+        height={height}
+        autoPlay={true}
+        controls={false}
+        muted={true}
+        playsInline={true} />
+    </div>);
+  }
 
-	renderMedia = (feed, width, height) => {
-		const { id, talk, question, cammute, display: { display } } = feed;
+  renderMedia = (feed, width, height) => {
+    const { id, talk, question, cammute, display: { display } } = feed;
 
-		return (<div className="video"
-								 key={'v' + id}
-								 ref={'video' + id}
-								 id={'video' + id}>
-			<div className={classNames('video__overlay', { 'talk-frame': talk })}>
-				{question ? <div className="question">
-					<svg viewBox="0 0 50 50">
-						<text x="25" y="25" textAnchor="middle" alignmentBaseline="central" dominantBaseline="central">&#xF128;</text>
-					</svg>
-				</div> : ''}
-				<div className="video__title">{!talk ? <Icon name="microphone slash" size="small" color="red" /> : ''}{display}</div>
-			</div>
-			<svg className={classNames('nowebcam', { 'hidden': !cammute })} viewBox="0 0 32 18" preserveAspectRatio="xMidYMid meet">
-				<text x="16" y="9" textAnchor="middle" alignmentBaseline="central" dominantBaseline="central">&#xf2bd;</text>
-			</svg>
-			<video
-				key={'v' + id}
-				ref={'remoteVideo' + id}
-				id={'remoteVideo' + id}
-				width={width}
-				height={height}
-				autoPlay={true}
-				controls={false}
-				muted={true}
-				playsInline={true} />
-			<audio
-				key={'a' + id}
-				ref={'remoteAudio' + id}
-				id={'remoteAudio' + id}
-				autoPlay={true}
-				controls={false}
-				playsInline={true} />
-		</div>);
-	}
+    return (<div className="video"
+                 key={'v' + id}
+                 ref={'video' + id}
+                 id={'video' + id}>
+      <div className={classNames('video__overlay', { 'talk-frame': talk })}>
+        {question ? <div className="question">
+          <svg viewBox="0 0 50 50">
+            <text x="25" y="25" textAnchor="middle" alignmentBaseline="central" dominantBaseline="central">&#xF128;</text>
+          </svg>
+        </div> : ''}
+        <div className="video__title">{!talk ? <Icon name="microphone slash" size="small" color="red" /> : ''}{display}</div>
+      </div>
+      <svg className={classNames('nowebcam', { 'hidden': !cammute })} viewBox="0 0 32 18" preserveAspectRatio="xMidYMid meet">
+        <text x="16" y="9" textAnchor="middle" alignmentBaseline="central" dominantBaseline="central">&#xf2bd;</text>
+      </svg>
+      <video
+        key={'v' + id}
+        ref={'remoteVideo' + id}
+        id={'remoteVideo' + id}
+        width={width}
+        height={height}
+        autoPlay={true}
+        controls={false}
+        muted={true}
+        playsInline={true} />
+      <audio
+        key={'a' + id}
+        ref={'remoteAudio' + id}
+        id={'remoteAudio' + id}
+        autoPlay={true}
+        controls={false}
+        playsInline={true} />
+    </div>);
+  }
 
   render() {
     const {
+      attachedSource,
+      currentLayout,
       audio,
       audio_device,
       audio_devices,
       cammuted,
       chatVisible,
       count,
-			currentLayout,
       delay,
-			detachedSource,
       feeds,
       geoinfo,
       janus,
@@ -1152,7 +1165,7 @@ class OldClient extends Component {
       monitoringData,
       muted,
       myid,
-			numberOfVirtualUsers,
+      numberOfVirtualUsers,
       question,
       room,
       rooms,
@@ -1166,16 +1179,14 @@ class OldClient extends Component {
       video_device,
       video_devices,
       video_setting,
+      virtualStreamingJanus,
       women,
     } = this.state;
-
-		console.log(this.state);
-
 
     const { t, i18n } = this.props;
     const width       = '134';
     const height      = '100';
-		const layout      = (room === '' || !shidur) ? 'equal' : currentLayout;
+    const layout      = (room === '' || !shidur || !attachedSource) ? 'equal' : currentLayout;
 
     //let iOS = ['iPad', 'iPhone', 'iPod'].indexOf(navigator.platform) >= 0;
 
@@ -1194,14 +1205,14 @@ class OldClient extends Component {
 
     let source = room !== '' && shidur &&
       <VirtualStreaming
+        virtualStreamingJanus={virtualStreamingJanus}
+        attached={attachedSource}
+
         setDetached={() => {
-          this.setState({ detachedSource: true });
+          this.setState({ attachedSource: false });
         }}
         setAttached={() => {
-          this.setState({ detachedSource: false });
-        }}
-        setLoading={(loading) => {
-          this.setState({ sourceLoading: loading });
+          this.setState({ attachedSource: true });
         }}
       />;
 
@@ -1221,22 +1232,22 @@ class OldClient extends Component {
       otherFeedHasQuestion   = otherFeedHasQuestion || (question && id !== myid);
       if (!localPushed && feed.display.timestamp >= user.timestamp) {
         localPushed = true;
-				for (let i = 0; i < parseInt(numberOfVirtualUsers, 10); i++) {
-					result.push(this.renderLocalMedia(width, height, i));
-				}
+        for (let i = 0; i < parseInt(numberOfVirtualUsers, 10); i++) {
+          result.push(this.renderLocalMedia(width, height, i));
+        }
       }
       result.push(this.renderMedia(feed, width, height));
       return result;
     }, []);
     if (!localPushed) {
-			for (let i = 0; i < parseInt(numberOfVirtualUsers, 10); i++) {
-				videos.push(this.renderLocalMedia(width, height, i));
-			}
+      for (let i = 0; i < parseInt(numberOfVirtualUsers, 10); i++) {
+        videos.push(this.renderLocalMedia(width, height, i));
+      }
     }
 
     let noOfVideos = videos.length;
     if (room !== '') {
-      if (shidur && !detachedSource && layout !== 'split') {
+      if (shidur && attachedSource) {
         noOfVideos += 1; // + Source
       }
     }
@@ -1307,25 +1318,25 @@ class OldClient extends Component {
             <Icon color={question ? 'green' : ''} name='question' />
             {t('oldClient.askQuestion')}
           </Menu.Item>
-					<Menu.Item onClick={this.showShidur} disabled={room === '' || sourceLoading}>
+          <Menu.Item onClick={this.showShidur} disabled={room === '' || sourceLoading}>
             <Icon name="tv" />
-						{shidur ? t('oldClient.closeBroadcast') : t('oldClient.openBroadcast')}
+            {shidur ? t('oldClient.closeBroadcast') : t('oldClient.openBroadcast')}
           </Menu.Item>
-					<Popup
-						trigger={<Menu.Item disabled={room === '' || !shidur || sourceLoading} icon={{ className:`icon--custom ${layoutIcon}`}} name="Layout" />}
-						disabled={room === '' || !shidur}
-						on='click'
-						position='bottom center'
-					>
-						{/* Update the icon above to current layout */}
-						<Popup.Content>
-							<Button.Group>
-								<Button  onClick={() => this.updateLayout('double')} active={layout === 'double'} disabled={sourceLoading} icon={{className:'icon--custom layout-double'}} /> {/* Double first */}
-								<Button  onClick={() => this.updateLayout('split')} active={layout === 'split'} disabled={sourceLoading} icon={{className:'icon--custom layout-split'}} /> {/* Split */}
-								<Button  onClick={() => this.updateLayout('equal')} active={layout === 'equal'} disabled={sourceLoading} icon={{className:'icon--custom layout-equal'}} /> {/* Equal */}
-							</Button.Group>
-						</Popup.Content>
-					</Popup>
+          <Popup
+            trigger={<Menu.Item disabled={room === '' || !shidur || sourceLoading} icon={{ className:`icon--custom ${layoutIcon}`}} name="Layout" />}
+            disabled={room === '' || !shidur || !attachedSource}
+            on='click'
+            position='bottom center'
+          >
+            {/* Update the icon above to current layout */}
+            <Popup.Content>
+              <Button.Group>
+                <Button  onClick={() => this.updateLayout('double')} active={layout === 'double'} disabled={sourceLoading} icon={{className:'icon--custom layout-double'}} /> {/* Double first */}
+                <Button  onClick={() => this.updateLayout('split')} active={layout === 'split'} disabled={sourceLoading} icon={{className:'icon--custom layout-split'}} /> {/* Split */}
+                <Button  onClick={() => this.updateLayout('equal')} active={layout === 'equal'} disabled={sourceLoading} icon={{className:'icon--custom layout-equal'}} /> {/* Equal */}
+              </Button.Group>
+            </Popup.Content>
+          </Popup>
         </Menu>
         <Menu icon='labeled' secondary size="mini">
           {!localAudioTrack ?
@@ -1397,7 +1408,7 @@ class OldClient extends Component {
           no-of-videos-${noOfVideos}
           layout--${layout}
           broadcast--${room !== '' && shidur ? 'on' : 'off'}
-          ${detachedSource ? ' broadcast--popup' : 'broadcast--inline'}
+          ${!attachedSource ? ' broadcast--popup' : 'broadcast--inline'}
          `}>
 
           {/* ${layout === 'equal' ? ' broadcast--equal' : ''} */}
@@ -1415,9 +1426,8 @@ class OldClient extends Component {
           <div className="videos-panel">
             {/* <div className="videos"> */}
               <div className="videos__wrapper">
-                {layout === 'equal' && source}
-                {layout === 'double' && source}
-								{videos}
+                {(layout === 'equal' || layout === 'double') && source}
+                {videos}
               </div>
             {/* </div> */}
           </div>
