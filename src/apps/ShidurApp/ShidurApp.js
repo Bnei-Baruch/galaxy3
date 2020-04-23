@@ -7,7 +7,7 @@ import {client} from "../../components/UserManager";
 import LoginPage from "../../components/LoginPage";
 import ShidurToran from "./ShidurToran";
 import UsersQuad from "./UsersQuad";
-import './UsersApp.css'
+import './ShidurApp.css'
 
 
 class ShidurApp extends Component {
@@ -19,6 +19,7 @@ class ShidurApp extends Component {
             gxy2: {janus: null, protocol: null},
             gxy3: {janus: null, protocol: null},
         },
+        service: null,
         group: "",
         groups: [],
         groups_queue: 0,
@@ -58,36 +59,6 @@ class ShidurApp extends Component {
         }
     };
 
-    initGalaxy = (user,gxy) => {
-        for(let i=0; i<gxy.length; i++) {
-            let {GxyJanus} = this.state;
-            initJanus(janus => {
-                if(GxyJanus[gxy[i]].janus)
-                    GxyJanus[gxy[i]].janus.destroy();
-                GxyJanus[gxy[i]].janus = janus;
-                if(gxy[i] !== "gxy3")
-                    user.id = "shidur-" + gxy[i];
-                initGxyProtocol(janus, user, protocol => {
-                    GxyJanus[gxy[i]].protocol = protocol;
-                    this.setState({...GxyJanus[gxy[i]]});
-                }, ondata => {
-                    Janus.log(i + " :: protocol public message: ", ondata);
-                    if(ondata.type === "error" && ondata.error_code === 420) {
-                        console.error(ondata.error + " - Reload after 10 seconds");
-                        this.state.GxyJanus[gxy[i]].protocol.hangup();
-                        setTimeout(() => {
-                            this.initGalaxy(user,[gxy[i]]);
-                        }, 10000);
-                    }
-                    this.onProtocolData(ondata, gxy[i]);
-                });
-            },er => {
-                alert(gxy[i] + ": " + er);
-                this.initGalaxy(user,[gxy[i]]);
-            }, gxy[i]);
-        }
-    };
-
     getRoomList = () => {
         let {disabled_rooms,mode} = this.state;
         getState('galaxy/rooms', (rooms) => {
@@ -108,6 +79,53 @@ class ShidurApp extends Component {
         });
     };
 
+    initGalaxy = (user,gxy) => {
+        for(let i=0; i<gxy.length; i++) {
+            let {GxyJanus} = this.state;
+            initJanus(janus => {
+                // Right now we going to use gxy3 for service protocol
+                if(gxy[i] === "gxy3")
+                    this.initService(janus, user);
+                if(GxyJanus[gxy[i]].janus)
+                    GxyJanus[gxy[i]].janus.destroy();
+                GxyJanus[gxy[i]].janus = janus;
+                initGxyProtocol(janus, user, protocol => {
+                    GxyJanus[gxy[i]].protocol = protocol;
+                    this.setState({...GxyJanus[gxy[i]]});
+                }, ondata => {
+                    Janus.log(i + " :: protocol public message: ", ondata);
+                    if(ondata.type === "error" && ondata.error_code === 420) {
+                        console.error(ondata.error + " - Reload after 10 seconds");
+                        this.state.GxyJanus[gxy[i]].protocol.hangup();
+                        setTimeout(() => {
+                            this.initGalaxy(user,[gxy[i]]);
+                        }, 10000);
+                    }
+                    this.onProtocolData(ondata, gxy[i]);
+                }, false);
+            },er => {
+                alert(gxy[i] + ": " + er);
+                this.initGalaxy(user,[gxy[i]]);
+            }, gxy[i]);
+        }
+    };
+
+    initService = (janus, user) => {
+        initGxyProtocol(janus, user, service => {
+            this.setState({service});
+        }, ondata => {
+            Janus.log(" :: Service message: ", ondata);
+            if(ondata.type === "error" && ondata.error_code === 420) {
+                console.error(ondata.error + " - Reload after 10 seconds");
+                this.state.service.hangup();
+                setTimeout(() => {
+                    this.initService(janus,user);
+                }, 10000);
+            }
+            this.onServiceData(ondata);
+        }, true);
+    };
+
     onProtocolData = (data, inst) => {
         let {users} = this.state;
 
@@ -122,30 +140,13 @@ class ShidurApp extends Component {
             }
         }
 
-        if(data.type === "question") {
-            const {room, status} = data;
-            setTimeout(() => {
-                this.col1.setQuestion(room, status);
-                this.col2.setQuestion(room, status);
-                this.col3.setQuestion(room, status);
-                this.col4.setQuestion(room, status);
-            }, 3000);
-        }
-
         if(data.type === "leave" && users[data.id]) {
-            let user = users[data.id];
-            if(user.room && user.question) {
-                setTimeout(() => {
-                    this.col1.setQuestion(user.room, false);
-                    this.col2.setQuestion(user.room, false);
-                    this.col3.setQuestion(user.room, false);
-                    this.col4.setQuestion(user.room, false);
-                }, 3000);
-            }
             delete users[data.id];
             this.setState({users});
         }
+    };
 
+    onServiceData = (data) => {
         if(data.type === "event") {
             delete data.type;
             this.setState({...data});

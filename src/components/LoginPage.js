@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React, { Component,Fragment } from 'react';
 import {client,getUser} from './UserManager';
 import {Container, Message, Button, Dropdown, Image, Divider, Select, Menu, Segment, Grid, Header} from 'semantic-ui-react';
 import logo from './logo.svg';
@@ -21,6 +21,7 @@ class LoginPage extends Component {
         getUser(user => {
             if(user) {
                 client.querySessionStatus().then(() => {
+                    this.setState({loading: false});
                     this.props.checkPermission(user);
                 }).catch((error) => {
                     console.log("querySessionStatus: ", error);
@@ -62,7 +63,19 @@ class LoginPage extends Component {
                 </Dropdown.Menu>
             </Dropdown>);
 
-        return (
+        let login = (
+            <Container textAlign='center' >
+                <br /><br /><br /><br /><br /><br /><br />
+                <Message size='massive'>
+                    <Message.Header>{t('loginPage.galaxy')}</Message.Header>
+                    <p>{t('loginPage.slogan')}</p>
+                    <Button size='massive' primary disabled={disabled} loading={loading}>{t('loginPage.login')}</Button>
+                    {/*<Image size='large' src={logo} centered />*/}
+                </Message>
+            </Container>
+        );
+
+        let main = (
             <Container fluid >
                 <Menu secondary>
                     <Menu.Item>
@@ -84,47 +97,53 @@ class LoginPage extends Component {
                         </Menu.Item>
                     </Menu.Menu>
                 </Menu>
-            <Container textAlign='center' style={{direction: rtl}} >
-                <br />
-                <Message size='massive'>
-                    <Message.Header>
-                        {this.props.user === null ? t('loginPage.galaxy') : "Welcome, "+this.props.user.username}
-                        {this.props.user === null ? "" : profile}
-                    </Message.Header>
-                    <p>{t('loginPage.slogan')}</p>
-                    {this.props.user === null ? "" : this.props.enter}
+                <Container textAlign='center' style={{direction: rtl}} >
+                    <br />
+                    <Message size='massive'>
+                        <Message.Header>
+                            {this.props.user === null ? t('loginPage.galaxy') : "Welcome, "+this.props.user.username}
+                            {this.props.user === null ? "" : profile}
+                        </Message.Header>
+                        <p>{t('loginPage.slogan')}</p>
+                        {this.props.user === null ? "" : this.props.enter}
 
-                    {this.props.user === null ?
-                        <Segment basic>
-                            <Grid columns={2} stackable textAlign='center'>
-                                <Divider vertical />
+                        {this.props.user === null ?
+                            <Segment basic>
+                                <Grid columns={2} stackable textAlign='center'>
+                                    <Divider vertical />
 
-                                <Grid.Row verticalAlign='bottom'>
-                                    <Grid.Column>
-                                        <Header size='huge' >{t('loginPage.regUsers')}</Header>
-                                        <p style={{fontSize: "1.3em", opacity: '0.0' }}>You can either login and using the system as authorize user</p>
-                                        <br />
-                                        <Button size='massive' primary onClick={this.userLogin} disabled={disabled} loading={loading}>{t('loginPage.login')}</Button>
-                                    </Grid.Column>
-                                    <Grid.Column>
-                                        <Header size='huge'>{t('loginPage.newUsers')}</Header>
-                                        <p style={{fontSize: "1.3em"}}>{t('loginPage.guestMessage1')} <a href='#' onClick={this.userLogin}>{t('loginPage.register')}</a> {t('loginPage.guestMessage2')}</p>
-                                        <br />
-                                        <Button size='massive' primary onClick={() => window.open("https://galaxy.kli.one/guest","_self")} >{t('loginPage.guest')}</Button>
-                                    </Grid.Column>
-                                </Grid.Row>
-                            </Grid>
-                        </Segment>
-                        :
-                        <div>
-                            <Image size='large' src={logo} centered />
-                            <Button primary onClick={() => window.open("http://ktuviot.kbb1.com/three_languages","_blank")} >Workshop Questions</Button>
-                            <Button primary onClick={() => window.open("https://bb.kli.one/","_blank")} >BB KLI</Button>
-                        </div>
-                    }
-                </Message>
+                                    <Grid.Row verticalAlign='bottom'>
+                                        <Grid.Column>
+                                            <Header size='huge' >{t('loginPage.regUsers')}</Header>
+                                            <p style={{fontSize: "1.3em", opacity: '0.0' }}>You can either login and using the system as authorize user</p>
+                                            <br />
+                                            <Button size='massive' primary onClick={this.userLogin} disabled={disabled} loading={loading}>{t('loginPage.login')}</Button>
+                                        </Grid.Column>
+                                        <Grid.Column>
+                                            <Header size='huge'>{t('loginPage.newUsers')}</Header>
+                                            <p style={{fontSize: "1.3em"}}>{t('loginPage.guestMessage1')} <a href='#' onClick={this.userLogin}>{t('loginPage.register')}</a> {t('loginPage.guestMessage2')}</p>
+                                            <br />
+                                            <Button size='massive' primary onClick={() => window.open("https://galaxy.kli.one/guest","_self")} >{t('loginPage.guest')}</Button>
+                                        </Grid.Column>
+                                    </Grid.Row>
+                                </Grid>
+                            </Segment>
+                            :
+                            <div>
+                                <Image size='large' src={logo} centered />
+                                <Button primary onClick={() => window.open("http://ktuviot.kbb1.com/three_languages","_blank")} >Workshop Questions</Button>
+                                <Button primary onClick={() => window.open("https://bb.kli.one/","_blank")} >BB KLI</Button>
+                            </div>
+                        }
+                    </Message>
+                </Container>
             </Container>
-            </Container>
+        );
+
+        return (
+            <Fragment>
+                {loading ? login : main}
+            </Fragment>
         );
     }
 }

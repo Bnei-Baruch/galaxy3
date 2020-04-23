@@ -38,10 +38,6 @@ class GalaxyStream extends Component {
         let gxy_user = user.roles.filter(role => role === 'gxy_user').length > 0;
         //let gxy_public = user.roles.filter(role => role === 'bb_user').length > 0;
         if (gxy_user) {
-            client.events.addAccessTokenExpired(() => {
-                console.log("...!TOKEN EXPIRED!...");
-                client.signoutRedirect();
-            });
             delete user.roles;
             user.role = gxy_group ? "group" : gxy_user ? "user" : "public";
             this.initStream(user);

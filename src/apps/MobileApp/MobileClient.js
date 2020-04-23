@@ -91,10 +91,6 @@ class MobileClient extends Component {
     checkPermission = (user) => {
         let gxy_user = user.roles.filter(role => role === 'gxy_user').length > 0;
         if (gxy_user) {
-            client.events.addAccessTokenExpired(() => {
-                console.log("...!TOKEN EXPIRED!...");
-                client.signoutRedirect();
-            });
             delete user.roles;
             user.role = "user";
             this.checkClient(user);
@@ -1374,7 +1370,7 @@ class MobileClient extends Component {
 
         return (
             <Fragment>
-                {user ? content : login}
+                {user && isMobile ? content : isMobile ? login : ""}
             </Fragment>
         );
     }

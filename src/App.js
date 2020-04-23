@@ -8,12 +8,12 @@ import './i18n/i18n';
 // import OldClient from './apps/VirtualApp/OldClient';
 // import OldMobileClient from "./apps/MobileApp/OldMobileClient";
 // import MobileClient from "./apps/MobileApp/MobileClient";
-import VirtualClient from "./apps/VirtualApp/VirtualClient";
+// import VirtualClient from "./apps/VirtualApp/VirtualClient";
 // import VirtualStreaming from "./apps/VirtualApp/VirtualStreaming";
 // import GroupClient from "./apps/GroupsApp/GroupClient";
 // import GalaxyStream from "./apps/StreamApp/GalaxyStream";
 // import AdminRoot from "./apps/AdminApp/AdminRoot";
-// import ShidurApp from "./apps/ShidurApp/ShidurApp";
+import ShidurApp from "./apps/ShidurApp/ShidurApp";
 // import SndmanApp from "./apps/SndmanApp/SndmanApp";
 // import AudioOutApp from "./apps/AudioOutApp/AudioOutApp";
 // import SDIOutApp from "./apps/SDIOutApp/SDIOutApp";
@@ -26,12 +26,12 @@ class App extends Component {
         {/*<OldClient />*/}
         {/*<OldMobileClient />*/}
         {/*<MobileClient/>*/}
-        <VirtualClient />
+        {/*<VirtualClient />*/}
         {/* <VirtualStreaming/>*/}
         {/*<GroupClient/>*/}
         {/* <GalaxyStream/>*/}
         {/*<AdminRoot />*/}
-        {/*<ShidurApp/>*/}
+        <ShidurApp/>
         {/*<SndmanApp/>*/}
         {/*<AudioOutApp />*/}
         {/*<SDIOutApp />*/}

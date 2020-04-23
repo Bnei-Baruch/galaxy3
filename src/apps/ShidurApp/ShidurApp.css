@@ -1,36 +1,154 @@
-.info-panel {
-    text-align: left;
-    height:230px;
+.virtual {
+    position: absolute!important;
+    right: 0px!important;
+    padding-right: 3rem!important;
+    width: 75% !important;
+}
+
+.vquad2 {
+    right: 2rem!important;
+}
+
+.vquad3 {
+    right: 1rem!important;
+}
+
+.vtoran {
+    position: absolute!important;
+    right: 20px!important;
+    width: 475px;
+}
+
+.videos-panel {
+    width: 100%;
+    height: 100%;
+    flex-direction: column;
+    display: flex;
+    background:#000;
+    padding: 0.3em;
+    flex: 1 0 100%;
+    transition: .2s all linear;
+}
+
+.virtual_segment {
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+.ingest_segment{
+    display: flex;
+    align-items: center;
+    padding: .8rem .5rem;
+    flex-wrap:wrap;
+}
+
+.ingest_segment > .menu,
+.ingest_segment >.input {
+    margin: .2rem .5rem !important;
+}
+.ingest_segment .menu:nth-child(2) {
+    flex: 1 0 auto;
+}
+.videos_segment {
+    flex: 1 0 auto;
+    display: flex;
+}
+
+.video-wrapper {
+    display: flex;
+    background: #000;
+    padding: 1.6em;
+    flex: 1 0 100%;
+    transition: .2s all linear;
+
+}
+.virtual_segment--chat-open .video-wrapper{
+    flex: 1 0 calc(100% - 400px);
+}
+.chat-wrapper {
+    flex: 0 0 400px;
+    padding: 0 10px 10px 10px;
+    display: flex;
+    flex-direction: column;
+}
+
+.ui.selection.dropdown .menu {
+    max-height: 30rem;
+}
+
+.talk {
+    border: 1px solid yellow;
+}
+
+.mirror {
+    -webkit-transform: scaleX(-1);
+    transform: scaleX(-1);
+}
+
+.hidden {
+    display: none;
+}
+
+/*.select_device {*/
+    /*min-width: 10em!important;*/
+/*}*/
+
+.vumeter {
+    width: 15px;
+    height: 35px;
+    top: 150px;
+    left: 45%;
+    text-align: center;
+    margin-left: 5px;
+    border: 1px solid #a5e4b5;
+}
+
+.ui.massive.menu {
+    font-size: 1.28571429rem;
+}
+
+.admin_table {
+    cursor: pointer!important;
+}
+
+.messages_list {
     overflow-y:scroll;
     flex: 1 0 auto;
-    /*min-width: 935px;*/
-    /*min-height: 17em!important;*/
+
+    /* top:0px; left:0px;
+    width:100%; height:400px; */
 }
 
-.info-buttons {
-    text-align: center;
-    min-width: 935px;
-}
-
-.queue_counter {
-    font-size: 1.5em;
-    color: powderblue;
-}
-
-.group_list {
-    overflow-y:scroll;
-    top:0px; left:0px;
-    width:102%; height:350px;
-}
-
-.disabled_groups {
-    overflow-y:scroll;
-    top:0px; left:0px;
-    width:102%; height:270px;
-}
-
-.preview_conteiner {
+.preview_segment {
+    width: 430px;
+    height: 250px;
     cursor: pointer!important;
-    width: 460px;
-    height: 290px;
+    background-color: silver!important;
+}
+
+.program_segment {
+    width: 430px;
+    height: 250px;
+    background-color: silver!important;
+}
+
+.users_container {
+    width: 490px;
+    /*height: 920px;*/
+}
+
+.shidur_overlay {
+    font-family: "Liberation Serif";
+    line-height: 1.1285em;
+    position: absolute;
+    right: 50px;
+    color: #FFF;
+    text-align: center;
+    font-size: 20px;
+    background-color: blue;
+    width: auto;
+    padding: 0px 10px;
+    z-index: 1;
+    float: right !important;
 }

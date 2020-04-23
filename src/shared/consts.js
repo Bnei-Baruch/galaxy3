@@ -1,6 +1,7 @@
 export const MAX_FEEDS = 20;
 export const DATA_PORT = 5102;
 export const PROTOCOL_ROOM = 1000;
+export const SERVICE_ROOM = 1001;
 export const GROUPS_ROOM = 1234;
 export const SHIDUR_ID = "4ab867e5-46f9-47b9-bd6d-47a6df784d92";
 export const SNDMAN_ID = "720f133f-b8e2-49a8-a148-7bd80763ae55";

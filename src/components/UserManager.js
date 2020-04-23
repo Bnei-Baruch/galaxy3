@@ -26,9 +26,18 @@ client.events.addAccessTokenExpiring(() => {
     console.log("...RENEW TOKEN...");
 });
 
+client.events.addAccessTokenExpired(() => {
+    console.log("...!TOKEN EXPIRED!...");
+    //client.signoutRedirect();
+});
+
 client.events.addUserSignedOut(() => {
     console.log("...LOGOUT EVENT...");
     //client.signoutRedirect();
+});
+
+client.events.addSilentRenewError((error) =>{
+    console.error("Silent Renew Error: " + error)
 });
 
 export const getUser = (cb) =>
