@@ -45,6 +45,9 @@ export const shortNumber = (number) => {
   if (isNaN(number)) {
     return number;
   }
+  if (number < SMALL_FLOAT) {
+    return '0';
+  }
   const str = String(number);
   const dotIdx = str.indexOf('.');
   if (dotIdx === -1) {
@@ -146,36 +149,36 @@ const statTable = (stats) => {
     }
   }
   return (
-    <Table textAlign='center' style={{padding: '1px', border: 'none', backgroundColor: color}}>
-      <Table.Body>
-        <Table.Row style={{padding: '1px'}}>
-          <Table.Cell colSpan="3" style={{padding: '1px'}}>
+    <table style={{padding: '1px', border: 'none', backgroundColor: color}}>
+      <tbody>
+        <tr style={{padding: '1px'}}>
+          <td colSpan="3" style={{padding: '1px'}}>
             {!stats.last ? '' :
             <div style={{display: 'flex', justifyContent: 'space-evenly'}}>
               <div>{popup(stats.last.view, `${stats.last.value} last value from user`)}</div>
-              <div>&#916;{popup(stats.score.view, `${stats.score.value} Average diff between last minute and last 3 mintues.`)}</div>
+              <div style={{marginLeft: '2px', whiteSpace: 'nowrap'}}>&#916;{popup(stats.score.view, `${stats.score.value} Average diff between last minute and last 3 mintues.`)}</div>
             </div>}
-          </Table.Cell>
-        </Table.Row>
-        {!stats.oneMin ? null :
-        <Table.Row style={{padding: '1px'}}>
-          <Table.Cell style={{padding: '1px'}}>{popup(stats.oneMin.mean.view, `${stats.oneMin.mean.value} average over 1 minute`)}</Table.Cell>
-          <Table.Cell style={{padding: '1px'}}>{popup(stats.oneMin.stdev.view, `${stats.oneMin.stdev.value} stdev over 1 minute`)}</Table.Cell>
-          <Table.Cell style={{padding: '1px'}}>{popup(stats.oneMin.length.view, `${stats.oneMin.length.value} number of samples for 1 minute`)}</Table.Cell>
-        </Table.Row>}
-        {!stats.threeMin ? null :
-        <Table.Row style={{padding: '1px'}}>
-          <Table.Cell style={{padding: '1px'}}>{popup(stats.threeMin.mean.view, `${stats.threeMin.mean.value} average over 3 minutes`)}</Table.Cell>
-          <Table.Cell style={{padding: '1px'}}>{popup(stats.threeMin.stdev.view, `${stats.threeMin.stdev.value} stdev over 3 minutes`)}</Table.Cell>
-          <Table.Cell style={{padding: '1px'}}>{popup(stats.threeMin.length.view, `${stats.threeMin.length.value} number of samples for 3 minutes`)}</Table.Cell>
-        </Table.Row>}
-        {!stats.tenMin ? null :
-        <Table.Row style={{padding: '1px'}}>
-          <Table.Cell style={{padding: '1px'}}>{popup(stats.tenMin.mean.view, `${stats.tenMin.mean.value} average over 10 minute`)}</Table.Cell>
-          <Table.Cell style={{padding: '1px'}}>{popup(stats.tenMin.stdev.view, `${stats.tenMin.stdev.value} stdev over 10 minute`)}</Table.Cell>
-          <Table.Cell style={{padding: '1px'}}>{popup(stats.tenMin.length.view, `${stats.tenMin.length.value} number of samples for 10 minute`)}</Table.Cell>
-        </Table.Row>}
-     </Table.Body>
-    </Table>
+          </td>
+        </tr>
+        {true || !stats.oneMin ? null :
+        <tr style={{padding: '1px'}}>
+          <td style={{padding: '1px'}}>{popup(stats.oneMin.mean.view, `${stats.oneMin.mean.value} average over 1 minute`)}</td>
+          <td style={{padding: '1px'}}>{popup(stats.oneMin.stdev.view, `${stats.oneMin.stdev.value} stdev over 1 minute`)}</td>
+          <td style={{padding: '1px'}}>{popup(stats.oneMin.length.view, `${stats.oneMin.length.value} number of samples for 1 minute`)}</td>
+        </tr>}
+        {true || !stats.threeMin ? null :
+        <tr style={{padding: '1px'}}>
+          <td style={{padding: '1px'}}>{popup(stats.threeMin.mean.view, `${stats.threeMin.mean.value} average over 3 minutes`)}</td>
+          <td style={{padding: '1px'}}>{popup(stats.threeMin.stdev.view, `${stats.threeMin.stdev.value} stdev over 3 minutes`)}</td>
+          <td style={{padding: '1px'}}>{popup(stats.threeMin.length.view, `${stats.threeMin.length.value} number of samples for 3 minutes`)}</td>
+        </tr>}
+        {true || !stats.tenMin ? null :
+        <tr style={{padding: '1px'}}>
+          <td style={{padding: '1px'}}>{popup(stats.tenMin.mean.view, `${stats.tenMin.mean.value} average over 10 minute`)}</td>
+          <td style={{padding: '1px'}}>{popup(stats.tenMin.stdev.view, `${stats.tenMin.stdev.value} stdev over 10 minute`)}</td>
+          <td style={{padding: '1px'}}>{popup(stats.tenMin.length.view, `${stats.tenMin.length.value} number of samples for 10 minute`)}</td>
+        </tr>}
+     </tbody>
+    </table>
   );
 };
