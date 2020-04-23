@@ -28,7 +28,7 @@ const LoginMessage = () => {
   const popup = (
       <Modal open size='small'>
         <Modal.Content>
-          <h1>WARNING! Press ok and all wil be ok</h1>
+          <h1 style={{ direction: rtl }}>{t('loginMessage.popupMessage1')} <a href='#' onClick={() => userLogin('https://galaxy.kli.one/user')} >{t('loginMessage.register2')}</a> {t('loginMessage.popupMessage2')}</h1>
         </Modal.Content>
         <Modal.Actions>
           <Button color='green' onClick={() => setOpen(false)} >
