@@ -1,4 +1,5 @@
 import {Janus} from "../lib/janus";
+import Raven from 'raven-js';
 import {
     JANUS_ADMIN_GXY,
     JANUS_ADMIN_VRT,
@@ -10,6 +11,14 @@ import {
     WFDB_STATE,
     WFRP_STATE
 } from "./consts";
+
+export const logException = (ex, context) => {
+    Raven.captureException(ex, {
+        extra: context
+    });
+    /*eslint no-console:0*/
+    //window.console && console.error && console.error(ex);
+}
 
 
 export const initJanus = (cb,er,gxy) => {
@@ -25,10 +34,12 @@ export const initJanus = (cb,er,gxy) => {
                 },
                 error: (error) => {
                     Janus.error(error);
+                    logException(" :: Janus Error :: " + error)
                     er(error);
                 },
                 destroyed: () => {
                     Janus.error(" :: Janus destroyed :: ");
+                    logException(" :: Janus destroyed :: ")
                 }
             });
         }

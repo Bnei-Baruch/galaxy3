@@ -9,7 +9,7 @@ import {
   geoInfo,
   getDevicesStream,
   getState,
-  initJanus,
+  initJanus, logException,
   micLevel,
   testDevices,
   testMic,
@@ -333,6 +333,7 @@ class OldClient extends Component {
       if (count >= 10) {
         clearInterval(chk);
         this.exitRoom(false);
+        logException("ICE State disconnectde")
         alert(this.props.t('oldClient.networkSettingsChanged'));
         window.location.reload();
       }
@@ -362,6 +363,7 @@ class OldClient extends Component {
         if (count >= 10) {
           clearInterval(chk);
           this.exitRoom(false);
+          logException("Janus stop receive Video")
           alert(t('oldClient.serverStoppedReceiveOurMedia'));
         }
       }, 3000);
@@ -395,6 +397,7 @@ class OldClient extends Component {
           if (question) {
             this.handleQuestion();
           }
+          logException("Janus stop receive Audio")
           alert(t('oldClient.serverStoppedReceiveOurAudio'));
         }
       }, 3000);
@@ -436,6 +439,7 @@ class OldClient extends Component {
       },
       error: (error) => {
         Janus.log('Error attaching plugin: ' + error);
+        logException('Error attaching plugin: ' + error)
       },
       consentDialog: (on) => {
         Janus.debug('Consent dialog should be ' + (on ? 'on' : 'off') + ' now');
@@ -542,6 +546,7 @@ class OldClient extends Component {
           this.publishOwnFeed(false);
         } else {
           Janus.error('WebRTC error... ' + JSON.stringify(error));
+          logException('WebRTC error: ' + JSON.stringify(error))
         }
       }
     });
@@ -705,6 +710,7 @@ class OldClient extends Component {
             Janus.log('This is a no such room');
           } else {
             Janus.log(msg['error']);
+            logException(msg['error'])
           }
         }
       }
@@ -737,6 +743,7 @@ class OldClient extends Component {
         },
         error: (error) => {
           Janus.error('  -- Error attaching plugin...', error);
+          logException(' Error attaching RemoteFeed...' + error)
         },
         iceState: (state) => {
           Janus.log('ICE state (remote feed) changed to ' + state);
@@ -795,6 +802,7 @@ class OldClient extends Component {
                 error: (error) => {
                   Janus.error('WebRTC error:', error);
                   Janus.debug('WebRTC error... ' + JSON.stringify(error));
+                  logException(' Error attaching RemoteFeed...' + JSON.stringify(error))
                 }
               });
           }

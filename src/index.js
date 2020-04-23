@@ -1,8 +1,13 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
+import * as Sentry from '@sentry/browser';
+import Raven from 'raven-js';
 import './index.css';
 import App from './App';
+
 import * as serviceWorker from './serviceWorker';
+Sentry.init({dsn: "https://b14000318f6940d7b0bebe7fd5587fc8@sentry.kli.one/2"});
+Raven.config('https://b14000318f6940d7b0bebe7fd5587fc8@sentry.kli.one/2').install()
 
 ReactDOM.render(<App />, document.getElementById('root'));
 
