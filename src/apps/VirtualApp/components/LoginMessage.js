@@ -38,14 +38,14 @@ const LoginMessage = () => {
       </Modal>
   )
 
-  return visible && open
+  return visible
     ? (
       <Container textAlign='center' className="login-message">
         <Message icon visible negative size='huge' onDismiss={() => setVisible(false)} className={rtl ? 'rtl' : 'ltr'}>
           <Message.Content>
             <Grid celled>
               {row}
-              {popup}
+              {open ? popup : null}
             </Grid>
           </Message.Content>
         </Message>
