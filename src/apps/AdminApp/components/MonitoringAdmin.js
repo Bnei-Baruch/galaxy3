@@ -158,10 +158,43 @@ const MonitoringAdmin = (props) => {
     const view = Object.values(users).map(user => ({
       user,
       stats: usersDataValues(user.id),
-    }));
-    setUsersTableView({view, column: '', direction: ''});
+    })).sort(sortView('score'));
+    setUsersTableView({view, column: 'score', direction: 'descending'});
   }, [users, usersData]);
 
+  const sortView = columnToSort => (a, b) => {
+    if (['group', 'janus'].includes(columnToSort)) {
+      return a.user[columnToSort].localeCompare(b.user[columnToSort]);
+    } else if (columnToSort === 'name') {
+      return a.user.display.localeCompare(b.user.display);
+    } else if (columnToSort === 'login') {
+      return a.user.timestamp - b.user.timestamp;
+    } else if (columnToSort === 'system') {
+      return system(a.user.system).localeCompare(system(b.user.system));
+    } else if (columnToSort === 'update') {
+      return ((a.stats.update && a.stats.update.value) || 0) - ((b.stats.update && b.stats.update.value) || 0);
+    } else if (columnToSort.startsWith('audio')) {
+      if (columnToSort.endsWith('jitter')) {
+        return ((b.stats.audio && b.stats.audio.jitter.score.value) || 0) - ((a.stats.audio && a.stats.audio.jitter.score.value) || 0);
+      } else if (columnToSort.endsWith('packetsLost')) {
+        return ((b.stats.audio && b.stats.audio.packetsLost.score.value) || 0) - ((a.stats.audio && a.stats.audio.packetsLost.score.value) || 0);
+      } else if (columnToSort.endsWith('roundTripTime')) {
+        return ((b.stats.audio && b.stats.audio.roundTripTime.score.value) || 0) - ((a.stats.audio && a.stats.audio.roundTripTime.score.value) || 0);
+      }
+    } else if (columnToSort.startsWith('video')) {
+      if (columnToSort.endsWith('jitter')) {
+        return ((b.stats.video && b.stats.video.jitter.score.value) || 0) - ((a.stats.video && a.stats.video.jitter.score.value) || 0);
+      } else if (columnToSort.endsWith('packetsLost')) {
+        return ((b.stats.video && b.stats.video.packetsLost.score.value) || 0) - ((a.stats.video && a.stats.video.packetsLost.score.value) || 0);
+      } else if (columnToSort.endsWith('roundTripTime')) {
+        return ((b.stats.video && b.stats.video.roundTripTime.score.value) || 0) - ((a.stats.video && a.stats.video.roundTripTime.score.value) || 0);
+      }
+    } else if (columnToSort === 'score') {
+      return b.stats.score.value - a.stats.score.value;
+    }
+    console.error('Should not get here!');
+    return 0;
+  };
 
   useEffect(() => {
     if (sortingColumn) {
@@ -170,40 +203,8 @@ const MonitoringAdmin = (props) => {
           column: sortingColumn,
           direction: sortingColumn.startsWith('audio') ||
             sortingColumn.startsWith('video') ||
-            ['login', 'update'].includes(sortingColumn) ? 'descending' : 'ascending',
-          view: view.sort((a, b) => {
-            if (['group', 'janus'].includes(sortingColumn)) {
-              return a.user[sortingColumn].localeCompare(b.user[sortingColumn]);
-            } else if (sortingColumn === 'name') {
-              return a.user.display.localeCompare(b.user.display);
-            } else if (sortingColumn === 'login') {
-              return a.user.timestamp - b.user.timestamp;
-            } else if (sortingColumn === 'system') {
-              return system(a.user.system).localeCompare(system(b.user.system));
-            } else if (sortingColumn === 'update') {
-              return ((a.stats.update && a.stats.update.value) || 0) - ((b.stats.update && b.stats.update.value) || 0);
-            } else if (sortingColumn.startsWith('audio')) {
-              if (sortingColumn.endsWith('jitter')) {
-                return ((b.stats.audio && b.stats.audio.jitter.score.value) || 0) - ((a.stats.audio && a.stats.audio.jitter.score.value) || 0);
-              } else if (sortingColumn.endsWith('packetsLost')) {
-                return ((b.stats.audio && b.stats.audio.packetsLost.score.value) || 0) - ((a.stats.audio && a.stats.audio.packetsLost.score.value) || 0);
-              } else if (sortingColumn.endsWith('roundTripTime')) {
-                return ((b.stats.audio && b.stats.audio.roundTripTime.score.value) || 0) - ((a.stats.audio && a.stats.audio.roundTripTime.score.value) || 0);
-              }
-            } else if (sortingColumn.startsWith('video')) {
-              if (sortingColumn.endsWith('jitter')) {
-                return ((b.stats.video && b.stats.video.jitter.score.value) || 0) - ((a.stats.video && a.stats.video.jitter.score.value) || 0);
-              } else if (sortingColumn.endsWith('packetsLost')) {
-                return ((b.stats.video && b.stats.video.packetsLost.score.value) || 0) - ((a.stats.video && a.stats.video.packetsLost.score.value) || 0);
-              } else if (sortingColumn.endsWith('roundTripTime')) {
-                return ((b.stats.video && b.stats.video.roundTripTime.score.value) || 0) - ((a.stats.video && a.stats.video.roundTripTime.score.value) || 0);
-              }
-            } else if (sortingColumn === 'score') {
-              return a.stats.score.value - b.stats.score.value;
-            }
-            console.error('Should not get here!');
-            return 0;
-          }),
+            ['login', 'update', 'score'].includes(sortingColumn) ? 'descending' : 'ascending',
+          view: view.sort(sortView(sortingColumn)),
         });
       } else {
         setUsersTableView({
