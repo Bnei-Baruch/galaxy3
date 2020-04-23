@@ -60,7 +60,7 @@ export const resources = {
         login: 'LOGIN',
         loginWarning1: 'You are using the system as a guest. In order to help us  keep the system secured we kindly ask you to ',
         loginWarning2: 'and start using it safely. If you already did it just click the login button.',
-        popupMessage1: 'Please note, as of 1.5.2020, the system will no longer allow guest access, please ',
+        popupMessage1: 'Please note, as of 1st of May 2020, the system will no longer allow guest access, please ',
         popupMessage2: 'and help us maintain a secure system.',
       },
     },
