@@ -9,7 +9,7 @@ import {
   geoInfo,
   getDevicesStream,
   getState,
-  initJanus, logException,
+  initJanus,
   micLevel,
   testDevices,
   testMic,
@@ -28,6 +28,7 @@ import { Monitoring } from '../../components/Monitoring';
 import { MonitoringData } from '../../shared/MonitoringData';
 import {client} from "../../components/UserManager";
 import LoginPage from "../../components/LoginPage";
+import * as Sentry from '@sentry/browser';
 
 class OldClient extends Component {
 
@@ -142,6 +143,7 @@ class OldClient extends Component {
         this.chat.initChat(janus);
         this.initVideoRoom(error);
       } else {
+        Sentry.captureException("Unified Plan NOT Supported");
         alert(t('oldClient.unifiedPlanNotSupported'));
         this.setState({ audio_device: null });
       }
@@ -333,7 +335,7 @@ class OldClient extends Component {
       if (count >= 10) {
         clearInterval(chk);
         this.exitRoom(false);
-        logException("ICE State disconnectde")
+        Sentry.captureException("ICE State disconnectde")
         alert(this.props.t('oldClient.networkSettingsChanged'));
         window.location.reload();
       }
@@ -363,7 +365,7 @@ class OldClient extends Component {
         if (count >= 10) {
           clearInterval(chk);
           this.exitRoom(false);
-          logException("Janus stop receive Video")
+          Sentry.captureException("Janus stop receive Video")
           alert(t('oldClient.serverStoppedReceiveOurMedia'));
         }
       }, 3000);
@@ -397,7 +399,7 @@ class OldClient extends Component {
           if (question) {
             this.handleQuestion();
           }
-          logException("Janus stop receive Audio")
+          Sentry.captureException("Janus stop receive Audio")
           alert(t('oldClient.serverStoppedReceiveOurAudio'));
         }
       }, 3000);
@@ -439,7 +441,7 @@ class OldClient extends Component {
       },
       error: (error) => {
         Janus.log('Error attaching plugin: ' + error);
-        logException('Error attaching plugin: ' + error)
+        Sentry.captureException('Error attaching plugin: ' + error)
       },
       consentDialog: (on) => {
         Janus.debug('Consent dialog should be ' + (on ? 'on' : 'off') + ' now');
@@ -546,7 +548,7 @@ class OldClient extends Component {
           this.publishOwnFeed(false);
         } else {
           Janus.error('WebRTC error... ' + JSON.stringify(error));
-          logException('WebRTC error: ' + JSON.stringify(error))
+          Sentry.captureException('WebRTC error: ' + JSON.stringify(error))
         }
       }
     });
@@ -710,7 +712,7 @@ class OldClient extends Component {
             Janus.log('This is a no such room');
           } else {
             Janus.log(msg['error']);
-            logException(msg['error'])
+            Sentry.captureException(msg['error'])
           }
         }
       }
@@ -743,7 +745,7 @@ class OldClient extends Component {
         },
         error: (error) => {
           Janus.error('  -- Error attaching plugin...', error);
-          logException(' Error attaching RemoteFeed...' + error)
+          Sentry.captureException(' Error attaching RemoteFeed...' + error)
         },
         iceState: (state) => {
           Janus.log('ICE state (remote feed) changed to ' + state);
@@ -762,6 +764,7 @@ class OldClient extends Component {
           Janus.log('Event: ' + event);
           if (msg['error'] !== undefined && msg['error'] !== null) {
             Janus.debug('-- ERROR: ' + msg['error']);
+            Sentry.captureException("Remote Feed Msg Error: " + msg['error']);
           } else if (event !== undefined && event !== null) {
             if (event === 'attached') {
               this.setState({ creatingFeed: false });
@@ -802,7 +805,7 @@ class OldClient extends Component {
                 error: (error) => {
                   Janus.error('WebRTC error:', error);
                   Janus.debug('WebRTC error... ' + JSON.stringify(error));
-                  logException(' Error attaching RemoteFeed...' + JSON.stringify(error))
+                  Sentry.captureException(' Error attaching RemoteFeed...' + JSON.stringify(error))
                 }
               });
           }

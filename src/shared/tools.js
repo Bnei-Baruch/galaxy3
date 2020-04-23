@@ -1,5 +1,5 @@
 import {Janus} from "../lib/janus";
-import Raven from 'raven-js';
+import * as Sentry from '@sentry/browser';
 import {
     JANUS_ADMIN_GXY,
     JANUS_ADMIN_VRT,
@@ -11,15 +11,6 @@ import {
     WFDB_STATE,
     WFRP_STATE
 } from "./consts";
-
-export const logException = (ex, context) => {
-    Raven.captureException(ex, {
-        extra: context
-    });
-    /*eslint no-console:0*/
-    //window.console && console.error && console.error(ex);
-}
-
 
 export const initJanus = (cb,er,gxy) => {
     Janus.init({
@@ -34,12 +25,12 @@ export const initJanus = (cb,er,gxy) => {
                 },
                 error: (error) => {
                     Janus.error(error);
-                    logException(" :: Janus Error :: " + error)
+                    Sentry.captureException(error);
                     er(error);
                 },
                 destroyed: () => {
                     Janus.error(" :: Janus destroyed :: ");
-                    logException(" :: Janus destroyed :: ")
+                    Sentry.captureException(" :: Janus destroyed :: ");
                 }
             });
         }
@@ -293,6 +284,7 @@ export const testDevices = (video,audio,cb) => {
     navigator.mediaDevices.getUserMedia({ audio: audio, video: video }).then(stream => {
         cb(stream);
     }, function (e) {
+        Sentry.captureException("Get Device Failed: " + e.name);
         var message;
         switch (e.name) {
             case 'NotFoundError':

@@ -5,6 +5,7 @@ import logo from './logo.svg';
 import bblogo from './bblogo.png';
 import {mapNameToLanguage, setLanguage} from "../i18n/i18n";
 import {withTranslation} from "react-i18next";
+import * as Sentry from '@sentry/browser';
 
 class LoginPage extends Component {
 
@@ -25,6 +26,7 @@ class LoginPage extends Component {
                     this.props.checkPermission(user);
                 }).catch((error) => {
                     console.log("querySessionStatus: ", error);
+                    Sentry.captureException("Login querySessionStatus: " + error);
                     alert("We detect wrong browser cookies settings");
                     client.signoutRedirect();
                 });
@@ -36,6 +38,7 @@ class LoginPage extends Component {
                         if(user) this.appLogin();
                     }).catch((error) => {
                         console.log("SigninSilent error: ", error);
+                        Sentry.captureException("Login SigninSilent error: " + error);
                         this.setState({disabled: false, loading: false});
                     });
                 });
