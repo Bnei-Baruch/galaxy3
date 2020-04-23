@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { Button, Container, Grid, Icon, Message } from 'semantic-ui-react';
+import {Button, Container, Grid, Icon, Message, Modal} from 'semantic-ui-react';
 import { useTranslation } from 'react-i18next';
-import {userLogin} from "./UserManager";
+import {userLogin} from "../../../components/UserManager";
 
 const LoginMessage = () => {
   const [visible, setVisible] = useState(true);
+  const [open, setOpen] = useState(true);
   const { t, i18n }           = useTranslation();
   const rtl                   = i18n.language === 'he' ? 'rtl' : '';
 
@@ -24,13 +25,27 @@ const LoginMessage = () => {
       : <Grid.Row reversed>{firstColumn}{secondColumn}</Grid.Row>
   );
 
-  return visible
+  const popup = (
+      <Modal open size='small'>
+        <Modal.Content>
+          <h1>WARNING! Press ok and all wil be ok</h1>
+        </Modal.Content>
+        <Modal.Actions>
+          <Button color='green' onClick={() => setOpen(false)} >
+            <Icon name='checkmark' /> Ok
+          </Button>
+        </Modal.Actions>
+      </Modal>
+  )
+
+  return visible && open
     ? (
       <Container textAlign='center' className="login-message">
         <Message icon visible negative size='huge' onDismiss={() => setVisible(false)} className={rtl ? 'rtl' : 'ltr'}>
           <Message.Content>
             <Grid celled>
               {row}
+              {popup}
             </Grid>
           </Message.Content>
         </Message>

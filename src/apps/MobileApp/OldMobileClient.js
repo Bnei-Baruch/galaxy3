@@ -27,7 +27,7 @@ import { isMobile } from 'react-device-detect';
 
 import { Monitoring } from '../../components/Monitoring';
 import { MonitoringData } from '../../shared/MonitoringData';
-import LoginMessage from "../../components/LoginMessage";
+import LoginMessage from "../VirtualApp/components/LoginMessage";
 
 class OldMobileClient extends Component {
 

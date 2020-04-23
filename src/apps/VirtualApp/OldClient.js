@@ -27,7 +27,7 @@ import { withTranslation } from 'react-i18next';
 import { mapNameToLanguage, setLanguage } from '../../i18n/i18n';
 import { Monitoring } from '../../components/Monitoring';
 import { MonitoringData } from '../../shared/MonitoringData';
-import LoginMessage from "../../components/LoginMessage";
+import LoginMessage from "./components/LoginMessage";
 
 class OldClient extends Component {
 
