@@ -8,9 +8,11 @@ import {
   Dimmer,
   Header,
   Loader,
+  Search,
   Table,
 } from 'semantic-ui-react';
 
+import './MonitoringAdmin.css';
 import {
   fetchData,
   popup,
@@ -27,6 +29,15 @@ const MonitoringAdmin = (props) => {
 
   const [users, setUsers] = useState({});
   const [usersData, setUsersData] = useState({});
+  const [{fullView, filterOptions}, setFullView] = useState({
+    filterView:[],
+    filterOptions: {
+      name: [],
+      group: [],
+    },
+  });
+  console.log('FILTER_OPTIONS', filterOptions);
+  const [filters, setFilters] = useState({});
   const [{view, column, direction}, setUsersTableView] = useState({
     view: [],
     column: '',
@@ -155,12 +166,72 @@ const MonitoringAdmin = (props) => {
   }
 
   useEffect(() => {
-    const view = Object.values(users).map(user => ({
+    const filterOptions = {
+      name: [],
+      group: [],
+    };
+
+    const nameSet = new Set();
+    const groupSet = new Set();
+
+    const newFullView = Object.values(users).map(user => ({
       user,
       stats: usersDataValues(user.id),
     })).sort(sortView('score'));
-    setUsersTableView({view, column: 'score', direction: 'descending'});
+
+    newFullView.forEach(({user, stats}) => {
+      if (!nameSet.has(user.display)) {
+        nameSet.add(user.display);
+        filterOptions.name.push({title: user.display});
+      }
+      if (!groupSet.has(user.group)) {
+        groupSet.add(user.group);
+        filterOptions.group.push({title: user.group});
+      }
+    });
+
+    setFullView({fullView: newFullView, filterOptions});
+    setUsersTableView({view: newFullView, column: 'score', direction: 'descending'});
   }, [users, usersData]);
+
+  const filterView = ({user, stats}) => {
+    for (const [name, re] of Object.entries(filters)) {
+      if (name === 'name') {
+        return re.test(user.display);
+      } else if (name === 'group') {
+        return re.test(user.group);
+      }
+    }
+    //console.log(user, stats);
+    return true;
+  }
+
+  const updateFilter = (name, value) => {
+    const valueRe = new RegExp(value);
+    console.log(name, value, filters);
+    if (!(name in filters) || filters[name].source !== value) {
+      const newFilters = Object.assign({}, filters);
+      if (!(name in filters)) {
+        if (value) {
+          newFilters[name] = valueRe;
+        }
+      } else {
+        if (!value) {
+          delete newFilters[name];  // Remove filter for empty value.
+        } else {
+          newFilters[name] = valueRe;
+        }
+      }
+      setFilters(newFilters);
+    }
+  }
+
+  useEffect(() => {
+    if (fullView) {
+      const filtered = fullView.slice().filter(filterView);
+      setUsersTableView({view: filtered, column, direction});
+    }
+  }, [filters]);
 
   const sortView = columnToSort => (a, b) => {
     if (['group', 'janus'].includes(columnToSort)) {
@@ -228,13 +299,15 @@ const MonitoringAdmin = (props) => {
           <Table.Row textAlign='center'>
             <Table.HeaderCell colSpan="13">
               <Button icon onClick={() => { updateUsersData(); updateUsers(); }}><Icon name='refresh' /></Button>
-              Showing {Math.min(usersToShow, view.length)} users out of {view.length}
+              Showing {Math.min(usersToShow, ((view && view.length) || 0))} users out of (filtered: {((view && view.length) || 0)}, total: {((fullView && fullView.length) || 0)})
             </Table.HeaderCell>
           </Table.Row>
           <Table.Row textAlign='center'>
             <Table.HeaderCell rowSpan="2"
                               sorted={column === 'name' ? direction : null}
-                              onClick={handleSort('name')}>{popup('Name')}</Table.HeaderCell>
+                              onClick={handleSort('name')}>
+              {popup('Name')}
+            </Table.HeaderCell>
             <Table.HeaderCell rowSpan="2"
                               sorted={column === 'group' ? direction : null}
                               onClick={handleSort('group')}>{popup('Group')}</Table.HeaderCell>
@@ -270,6 +343,24 @@ const MonitoringAdmin = (props) => {
             <Table.HeaderCell sorted={column === 'video.roundTripTime' ? direction : null}
                               onClick={handleSort('video.roundTripTime')}>{popup('Round trip time')}</Table.HeaderCell>
           </Table.Row>
+          <Table.Row>
+            <Table.HeaderCell>
+              <Search className='monitoring-search'
+                minCharacters={0}
+                onResultSelect={(e, search) => updateFilter('name', `^${search.result.title}$`)}
+                onSearchChange={(e, search) => updateFilter('name', search.value)}
+                results={filterOptions.name.filter(name => !filters.name || filters.name.test(name.title))}
+              />
+            </Table.HeaderCell>
+            <Table.HeaderCell>
+              <Search className='monitoring-search'
+                minCharacters={0}
+                onResultSelect={(e, search) => updateFilter('group', `^${search.result.title}$`)}
+                onSearchChange={(e, search) => updateFilter('group', search.value)}
+                results={filterOptions.group.filter(group => !filters.group || filters.group.test(group.title))}
+              />
+            </Table.HeaderCell>
+          </Table.Row>
         </Table.Header>
         <Table.Body>
           {view.slice(0, usersToShow).map(({user, stats}, index) => userRow(user, stats, now, () => props.addUserTab(user, stats)))}
@@ -294,7 +385,7 @@ const MonitoringAdmin = (props) => {
     <div>
       {fetchingError === '' ? null : <Header color='red'>Error: {fetchingError}</Header>}
       {loadingCount !== 0 || sortingColumn ? loading: null}
-      {view.length ? usersTable : null}
+      {fullView && fullView.length ? usersTable : null}
     </div>
   );
 }
