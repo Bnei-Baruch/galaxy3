@@ -34,9 +34,9 @@ const MonitoringAdmin = (props) => {
     filterOptions: {
       name: [],
       group: [],
+      system: [],
     },
   });
-  console.log('FILTER_OPTIONS', filterOptions);
   const [filters, setFilters] = useState({});
   const [{view, column, direction}, setUsersTableView] = useState({
     view: [],
@@ -169,10 +169,12 @@ const MonitoringAdmin = (props) => {
     const filterOptions = {
       name: [],
       group: [],
+      system: [],
     };
 
     const nameSet = new Set();
     const groupSet = new Set();
+    const systemSet = new Set();
 
     const newFullView = Object.values(users).map(user => ({
       user,
@@ -188,6 +190,11 @@ const MonitoringAdmin = (props) => {
         groupSet.add(user.group);
         filterOptions.group.push({title: user.group});
       }
+      const s = system(user.system);
+      if (!systemSet.has(s)) {
+        systemSet.add(s);
+        filterOptions.system.push({title: s});
+      }
     });
 
     setFullView({fullView: newFullView, filterOptions});
@@ -200,14 +207,17 @@ const MonitoringAdmin = (props) => {
         return re.test(user.display);
       } else if (name === 'group') {
         return re.test(user.group);
+      } else if (name === 'system') {
+        return re.test(system(user.system));
       }
+
     }
     //console.log(user, stats);
     return true;
   }
 
   const updateFilter = (name, value) => {
-    const valueRe = new RegExp(value);
+    const valueRe = new RegExp(value, 'i');
     console.log(name, value, filters);
     if (!(name in filters) || filters[name].source !== value) {
       const newFilters = Object.assign({}, filters);
@@ -358,6 +368,18 @@ const MonitoringAdmin = (props) => {
                 onResultSelect={(e, search) => updateFilter('group', `^${search.result.title}$`)}
                 onSearchChange={(e, search) => updateFilter('group', search.value)}
                 results={filterOptions.group.filter(group => !filters.group || filters.group.test(group.title))}
+              />
+            </Table.HeaderCell>
+            <Table.HeaderCell>
+            </Table.HeaderCell>
+            <Table.HeaderCell>
+            </Table.HeaderCell>
+            <Table.HeaderCell>
+              <Search className='monitoring-search'
+                minCharacters={0}
+                onResultSelect={(e, search) => updateFilter('system', `^${search.result.title}$`)}
+                onSearchChange={(e, search) => updateFilter('system', search.value)}
+                results={filterOptions.system.filter(system => !filters.system || filters.system.test(system.title))}
               />
             </Table.HeaderCell>
           </Table.Row>
