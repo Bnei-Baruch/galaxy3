@@ -295,7 +295,8 @@ export const testDevices = (video,audio,cb) => {
     navigator.mediaDevices.getUserMedia({ audio: audio, video: video }).then(stream => {
         cb(stream);
     }, function (e) {
-        Sentry.captureException("Get Device Failed: " + e.name);
+        Sentry.captureException("Device Failed: " + e.name);
+        reportToSentry("Device Failed: " + e.name, {source: "device",audio,video})
         var message;
         switch (e.name) {
             case 'NotFoundError':

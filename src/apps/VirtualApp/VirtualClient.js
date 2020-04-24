@@ -172,6 +172,7 @@ class OldClient extends Component {
         this.setState({ video_devices, audio_devices });
         this.setDevice(video_id, audio_id, video_setting);
       } else if (video) {
+        reportToSentry("Video Device Failed", {source: "device",video: false})
         alert(t('oldClient.videoNotDetected'));
         this.setState({ cammuted: true, video_device: null });
         //Try to get video fail reason
@@ -183,6 +184,7 @@ class OldClient extends Component {
         Janus.log(' :: Trying to get audio only');
         this.initDevices(false);
       } else {
+        reportToSentry("Audio Device Failed", {source: "device",audio: false})
         //Try to get audio fail reason
         testDevices(false, true, steam => {
         });
