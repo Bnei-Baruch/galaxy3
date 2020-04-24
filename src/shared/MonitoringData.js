@@ -12,7 +12,6 @@ const INITIAL_STORE_INTERVAL = 5 * ONE_MINUTE_IN_MS;
 const INITIAL_SAMPLE_INTERVAL = FIVE_SECONDS_IN_MS;
 const MAX_EXPONENTIAL_BACKOFF_MS = 10 * ONE_MINUTE_IN_MS;
 
-
 export const MonitoringData = class {
   constructor() {
     // Connection and user info.
