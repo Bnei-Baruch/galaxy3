@@ -1,5 +1,5 @@
 import {Janus} from "../lib/janus";
-import {DATA_PORT, JANUS_STR_HOST_PL, JANUS_STR_HOST_GR, JANUS_STR_HOST_UK, SECRET} from "./consts";
+import {DATA_PORT, JANUS_STR_HOST_GR, JANUS_STR_HOST_PL, JANUS_STR_HOST_UK, SECRET} from "./consts";
 
 let data_forward = {};
 let myid;
@@ -14,7 +14,18 @@ export const initDataForward = (janus, callback) => {
             Janus.log(fwdhandle);
             Janus.log("Plugin attached! (" + fwdhandle.getPlugin() + ", id=" + fwdhandle.getId() + ")");
             Janus.log("  -- Forward manager");
-            let register = { "request": "join", "room": 1000, "ptype": "publisher", "display": "forward" };
+            const register = {
+                request: "join",
+                room: 1000,
+                ptype: "publisher",
+                display: JSON.stringify({
+                    id: "forward",
+                    display: "forward",
+                    room: 1000,
+                    session: janus.getSessionId(),
+                    handle: fwdhandle.getId(),
+                })
+            };
             fwdhandle.send({"message": register});
         },
         error: (error) => {

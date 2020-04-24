@@ -476,10 +476,10 @@ class OldClient extends Component {
         if (!women) {
           videoroom.muteAudio();
         }
-        if (track.kind === 'video') {
+        if (on && track && track.kind === 'video') {
           this.setState({localVideoTrack: track});
         }
-        if (track.kind === 'audio') {
+        if (on && track && track.kind === 'audio') {
           this.setState({localAudioTrack: track});
         }
       },
