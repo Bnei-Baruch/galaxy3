@@ -71,8 +71,8 @@ class AdminRoot extends Component {
       } = this.state;
       return user === null ||
              gatewaysInitialized === false ||
-             activeTab === 1 ||
-             nextState.activeTab === 1 ||
+             activeTab === 0 ||
+             nextState.activeTab === 0 ||
              activeTab !== nextState.activeTab ||
              nextState.usersTabs.length !== usersTabs.length;
     }
@@ -643,7 +643,7 @@ class AdminRoot extends Component {
     if (index < usersTabs.length) {
       const newUsersTabs = usersTabs.slice();
       newUsersTabs.splice(index, 1);
-      this.setState({usersTabs: newUsersTabs, activeTab: 0});
+      this.setState({usersTabs: newUsersTabs, activeTab: 1});
     }
   }
 
@@ -871,9 +871,11 @@ class AdminRoot extends Component {
       );
 
       const panes = [
-        { menuItem: 'Monitor', render: () => <Tab.Pane><MonitoringAdmin addUserTab={(user, stats) => this.addUserTab(user, stats)}/></Tab.Pane> },
         { menuItem: 'Admin', render: () => <Tab.Pane>{adminContent}</Tab.Pane> },
-        ...usersTabs.map(({user, stats}, index) => ({
+      ];
+      if (this.isAllowed('root')) {
+        panes.push({ menuItem: 'Monitor', render: () => <Tab.Pane><MonitoringAdmin addUserTab={(user, stats) => this.addUserTab(user, stats)}/></Tab.Pane> });
+        usersTabs.forEach(({user, stats}, index) => panes.push({
           menuItem: (
             <Menu.Item key={user.id}>
               {user.display || user.name}&nbsp;
@@ -881,8 +883,8 @@ class AdminRoot extends Component {
             </Menu.Item>
           ),
           render: () => <Tab.Pane><MonitoringUser user={user} stats={stats} /></Tab.Pane>,
-        })),
-      ];
+        }));
+      }
 
       const content = (
         <Tab panes={panes}
