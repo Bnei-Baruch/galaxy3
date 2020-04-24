@@ -1,4 +1,5 @@
 import {Janus} from "../lib/janus";
+import * as Sentry from '@sentry/browser';
 import {
     JANUS_ADMIN_GXY,
     JANUS_ADMIN_VRT,
@@ -10,7 +11,6 @@ import {
     WFDB_STATE,
     WFRP_STATE
 } from "./consts";
-
 
 export const initJanus = (cb,er,gxy) => {
     Janus.init({
@@ -25,6 +25,7 @@ export const initJanus = (cb,er,gxy) => {
                 },
                 error: (error) => {
                     Janus.error(error);
+                    reportToSentry(error, {source: "janus",janus: gxy})
                     er(error);
                 },
                 destroyed: () => {
@@ -34,6 +35,18 @@ export const initJanus = (cb,er,gxy) => {
         }
     })
 };
+
+export const reportToSentry = (title, data, level) => {
+    level = level || 'info';
+    data  = data  || {};
+    Sentry.withScope(scope => {
+        Object.keys(data).forEach((key) => {
+            scope.setExtra(key, data[key]);
+        });
+        scope.setLevel(level);
+        Sentry.captureMessage(title);
+    });
+}
 
 export const joinChatRoom = (textroom, roomid, user) => {
     let transaction = Janus.randomString(12);
@@ -282,6 +295,7 @@ export const testDevices = (video,audio,cb) => {
     navigator.mediaDevices.getUserMedia({ audio: audio, video: video }).then(stream => {
         cb(stream);
     }, function (e) {
+        reportToSentry("Device Failed: " + e.name, {source: "device",audio,video})
         var message;
         switch (e.name) {
             case 'NotFoundError':
