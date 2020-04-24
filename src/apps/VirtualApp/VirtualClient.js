@@ -943,6 +943,8 @@ class OldClient extends Component {
     user.timestamp  = Date.now();
     this.setState({ user });
     localStorage.setItem('username', user.display);
+    if(JSON.parse(localStorage.getItem("guest")))
+      user.role = "guest";
     initGxyProtocol(janus, user, protocol => {
       this.setState({ protocol });
       // Send question event if before join it was true
@@ -979,6 +981,7 @@ class OldClient extends Component {
       } else if (type === 'client-disconnect' && user.id === id) {
         this.exitRoom(false);
       } else if(type === "client-kicked" && user.id === id) {
+        localStorage.setItem("guest", true);
         client.signoutRedirect();
       } else if (type === 'client-question' && user.id === id) {
         this.handleQuestion();
@@ -1002,12 +1005,13 @@ class OldClient extends Component {
     const user                         = Object.assign({}, this.state.user);
     localStorage.setItem('question', !question);
     user.question = !question;
-    let msg = { type: 'question', status: !question, room, user };
-    sendProtocolMessage(protocol, user, msg);
-    this.setState({ user, question: !question, delay: true });
     setTimeout(() => {
       this.setState({ delay: false });
     }, 3000);
+    if(user.role === "guest") return;
+    let msg = { type: 'question', status: !question, room, user };
+    sendProtocolMessage(protocol, user, msg);
+    this.setState({ user, question: !question, delay: true });
     this.sendDataMessage('question', !question);
   };
 
@@ -1028,6 +1032,7 @@ class OldClient extends Component {
     setTimeout(() => {
       this.setState({ delay: false });
     }, 3000);
+    if(user.role === "guest") return;
     this.sendDataMessage('camera', this.state.cammuted);
     user.camera = cammuted;
     // Send to protocol camera status event

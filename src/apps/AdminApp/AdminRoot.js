@@ -86,8 +86,8 @@ class AdminRoot extends Component {
             role = "root";
         } else if (roles.has("gxy_admin")) {
             role = "admin";
-        } else if (roles.has("gxy_guest")) {
-            role = "guest";
+        } else if (roles.has("gxy_viewer")) {
+            role = "viewer";
         }
 
         if (role) {
@@ -115,8 +115,8 @@ class AdminRoot extends Component {
                 return role === "root";
             case "admin":
                 return role === "admin" || role === "root";
-            case "guest":
-                return role === "guest" || role === "admin" || role === "root";
+            case "viewer":
+                return role === "viewer" || role === "admin" || role === "root";
             default:
                 return false;
         }
@@ -195,9 +195,8 @@ class AdminRoot extends Component {
                     console.log("[Admin] Got Publishers (joined)", list);
 
                     // Filter service feeds and sort by timestamp
-                    let fr = "user";
                     let feeds = list.sort((a, b) => JSON.parse(a.display).timestamp - JSON.parse(b.display).timestamp)
-                        .filter(feeder => JSON.parse(feeder.display).role === fr && feeder.video_codec !== 'none');
+                        .filter(feeder => JSON.parse(feeder.display).role.match(/^(user|guest)$/) && feeder.video_codec !== 'none');
 
                     console.log("[Admin] available feeds", feeds);
                     const subscription = [];
@@ -223,7 +222,7 @@ class AdminRoot extends Component {
                         subscription.push(subst);
                     }
                     this.setState({feeds, feedStreams, users});
-                    if (subscription.length > 0 && fr === "user")
+                    if (subscription.length > 0)
                         this.subscribeTo(subscription, gateway.name);
                 }
             } else if (event === "talking") {
@@ -266,11 +265,10 @@ class AdminRoot extends Component {
 
                     let {feeds, feedStreams, users} = this.state;
                     let subscription = [];
-                    let fr = "user";
                     for (let f in feed) {
                         let id = feed[f]["id"];
                         let display = JSON.parse(feed[f]["display"]);
-                        if (display.role !== fr)
+                        if (!display.role.match(/^(user|guest)$/))
                             return;
                         let streams = feed[f]["streams"];
                         feed[f].display = display;
@@ -295,7 +293,7 @@ class AdminRoot extends Component {
                         return 0;
                     });
                     this.setState({feeds, feedStreams, users});
-                    if (subscription.length > 0 && fr === "user")
+                    if (subscription.length > 0)
                         this.subscribeTo(subscription, gateway.name);
                 } else if (msg["leaving"] !== undefined && msg["leaving"] !== null) {
                     // One of the publishers has gone away?
