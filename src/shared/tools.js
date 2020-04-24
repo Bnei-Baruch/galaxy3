@@ -25,17 +25,28 @@ export const initJanus = (cb,er,gxy) => {
                 },
                 error: (error) => {
                     Janus.error(error);
-                    Sentry.captureException(error);
+                    reportToSentry(error, {source: "janus",janus: gxy})
                     er(error);
                 },
                 destroyed: () => {
                     Janus.error(" :: Janus destroyed :: ");
-                    Sentry.captureException(" :: Janus destroyed :: ");
                 }
             });
         }
     })
 };
+
+export const reportToSentry = (title, data, level) => {
+    level = level || 'info';
+    data  = data  || {};
+    Sentry.withScope(scope => {
+        Object.keys(data).forEach((key) => {
+            scope.setExtra(key, data[key]);
+        });
+        scope.setLevel(level);
+        Sentry.captureMessage(title);
+    });
+}
 
 export const joinChatRoom = (textroom, roomid, user) => {
     let transaction = Janus.randomString(12);

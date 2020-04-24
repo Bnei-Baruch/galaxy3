@@ -1,11 +1,12 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import * as Sentry from '@sentry/browser';
+import {SENTRY_KEY} from './shared/consts';
 import './index.css';
 import App from './App';
 
 import * as serviceWorker from './serviceWorker';
-Sentry.init({dsn: "https://b14000318f6940d7b0bebe7fd5587fc8@sentry.kli.one/2"});
+Sentry.init({dsn: `https://${SENTRY_KEY}@sentry.kli.one/2`});
 
 ReactDOM.render(<App />, document.getElementById('root'));
 

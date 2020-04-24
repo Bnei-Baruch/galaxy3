@@ -10,7 +10,7 @@ import {
   getDevicesStream,
   getState,
   initJanus,
-  micLevel,
+  micLevel, reportToSentry,
   testDevices,
   testMic,
 } from '../../shared/tools';
@@ -28,7 +28,6 @@ import { Monitoring } from '../../components/Monitoring';
 import { MonitoringData } from '../../shared/MonitoringData';
 import {client} from "../../components/UserManager";
 import LoginPage from "../../components/LoginPage";
-import * as Sentry from '@sentry/browser';
 
 class OldClient extends Component {
 
@@ -143,7 +142,6 @@ class OldClient extends Component {
         this.chat.initChat(janus);
         this.initVideoRoom(error);
       } else {
-        Sentry.captureException("Unified Plan NOT Supported");
         alert(t('oldClient.unifiedPlanNotSupported'));
         this.setState({ audio_device: null });
       }
@@ -335,7 +333,7 @@ class OldClient extends Component {
       if (count >= 10) {
         clearInterval(chk);
         this.exitRoom(false);
-        Sentry.captureException("ICE State disconnectde")
+        reportToSentry("ICE State disconnected",{source: "ice"})
         alert(this.props.t('oldClient.networkSettingsChanged'));
         window.location.reload();
       }
@@ -365,7 +363,7 @@ class OldClient extends Component {
         if (count >= 10) {
           clearInterval(chk);
           this.exitRoom(false);
-          Sentry.captureException("Janus stop receive Video")
+          reportToSentry("Video stopped",{source: "media"})
           alert(t('oldClient.serverStoppedReceiveOurMedia'));
         }
       }, 3000);
@@ -399,7 +397,7 @@ class OldClient extends Component {
           if (question) {
             this.handleQuestion();
           }
-          Sentry.captureException("Janus stop receive Audio")
+          reportToSentry("Audio stopped",{source: "media"})
           alert(t('oldClient.serverStoppedReceiveOurAudio'));
         }
       }, 3000);
@@ -441,7 +439,7 @@ class OldClient extends Component {
       },
       error: (error) => {
         Janus.log('Error attaching plugin: ' + error);
-        Sentry.captureException('Error attaching plugin: ' + error)
+        reportToSentry(error,{source: "videoroom"})
       },
       consentDialog: (on) => {
         Janus.debug('Consent dialog should be ' + (on ? 'on' : 'off') + ' now');
@@ -548,7 +546,7 @@ class OldClient extends Component {
           this.publishOwnFeed(false);
         } else {
           Janus.error('WebRTC error... ' + JSON.stringify(error));
-          Sentry.captureException('WebRTC error: ' + JSON.stringify(error))
+          reportToSentry(JSON.stringify(error),{source: "webrtc"})
         }
       }
     });
@@ -712,7 +710,7 @@ class OldClient extends Component {
             Janus.log('This is a no such room');
           } else {
             Janus.log(msg['error']);
-            Sentry.captureException(msg['error'])
+            reportToSentry(msg['error'],{source: "videoroom"})
           }
         }
       }
@@ -745,7 +743,7 @@ class OldClient extends Component {
         },
         error: (error) => {
           Janus.error('  -- Error attaching plugin...', error);
-          Sentry.captureException(' Error attaching RemoteFeed...' + error)
+          reportToSentry(error,{source: "remotefeed"})
         },
         iceState: (state) => {
           Janus.log('ICE state (remote feed) changed to ' + state);
@@ -764,7 +762,7 @@ class OldClient extends Component {
           Janus.log('Event: ' + event);
           if (msg['error'] !== undefined && msg['error'] !== null) {
             Janus.debug('-- ERROR: ' + msg['error']);
-            Sentry.captureException("Remote Feed Msg Error: " + msg['error']);
+            reportToSentry(msg['error'],{source: "remotefeed"})
           } else if (event !== undefined && event !== null) {
             if (event === 'attached') {
               this.setState({ creatingFeed: false });
@@ -805,7 +803,7 @@ class OldClient extends Component {
                 error: (error) => {
                   Janus.error('WebRTC error:', error);
                   Janus.debug('WebRTC error... ' + JSON.stringify(error));
-                  Sentry.captureException(' Error attaching RemoteFeed...' + JSON.stringify(error))
+                  reportToSentry(JSON.stringify(error),{source: "remotefeed"})
                 }
               });
           }
