@@ -151,6 +151,7 @@ class VirtualStreaming extends Component {
               icon={null}
               selectOnBlur={false}
               trigger={<button>{video_option ? `${video_option.description}` : ''}</button>}
+              className="video-selection"
               >
               <Dropdown.Menu className='controls__dropdown'>
                 {videos_options2.map((option, i) => {
@@ -181,22 +182,27 @@ class VirtualStreaming extends Component {
               scrolling
               icon={null}
               selectOnBlur={false}
-              trigger={<button>{audio_option ? `${audio_option.text}` : ''}</button>}
+                trigger={<button>{audio_option.icon ? <Icon name={audio_option.icon}/> : ''}{audio_option.text ? `${audio_option.text}` : ''}</button>}
+              className="audio-selection"
               >
               <Dropdown.Menu className='controls__dropdown'>
                 {audiog_options2.map((option, i) => {
                   if (option.divider === true) return (<Dropdown.Divider key={i}/>);
                   if (option.header === true) return (
                     <Dropdown.Header className='ui blue' icon={option.icon} key={i}>
+                      <Icon name={option.icon}/>
+                      <div>
                       {option.text}
-                      {(option.description ? <Header as='div' size='tiny' color='grey' content={option.description} /> : '')}
+                      <br/>
+                      {(option.description ? <Header as='span' size='tiny' color='grey' content={option.description} /> : '')}
+                      </div>
                     </Dropdown.Header>
                   );
                   return (
                     <Dropdown.Item
                       key={i}
                       text={option.text}
-                      icon={option.icon}
+                      // icon={option.icon}
                       flag={option.flag}
                       description={option.description}
                       action={option.action}
@@ -210,7 +216,7 @@ class VirtualStreaming extends Component {
             <button onClick={this.audioMute}>
               <Icon name={muted ? 'volume off' : 'volume up'}/>
             </button>
-            {/* <VolumeSlider volume={this.setVolume} /> */}
+            <VolumeSlider volume={this.setVolume} />
             <div className="controls__spacer"></div>
             <button onClick={this.toggleFullScreen}>
               <Icon name="expand"/>

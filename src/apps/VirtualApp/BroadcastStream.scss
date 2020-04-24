@@ -113,6 +113,24 @@
   //   }
   // }  
 }
-// .video--broadcast .ui.scrolling.dropdown .menu {
+.audio-selection {
+  button .icon {
+    margin-right: 8px!important;
+  }
+  div.header {
+    display: flex;
+    .icon {
+      margin-left: -2px;
+      margin-right:10px;
+      color: rgba(0,0,0,0.87);
+    }
+  }
+}
+.video-selection .item{
+  display: flex!important;
+  flex-direction:row-reverse;
+  justify-content: space-between;
 //   max-height: 10vh;
-// }
+
+}
+
