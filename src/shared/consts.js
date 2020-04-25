@@ -45,11 +45,13 @@ export const vsettings_list = [
     { key: 3, text: '640 x 360, 30 fps', value: {width: 640, height: 360, fps: 30} },
 ];
 
+export const NO_VIDEO_OPTION_VALUE = -1;
+
 export const videos_options = [
     { key: 1, text: '240p', value: 11 },
     { key: 2, text: '360p', value: 1 },
     { key: 3, text: '720p', value: 16 },
-    { key: 4, text: 'NoVideo', value: 3 },
+    { key: 4, text: 'NoVideo', value: NO_VIDEO_OPTION_VALUE },
 ];
 
 export const videos_options2 = [
@@ -57,7 +59,7 @@ export const videos_options2 = [
     { key: 2, text: 'Medium quality', description:"360p", value: 1 },
     { key: 3, text: 'High quality', description:"720p", value: 16 },
     {divider:true},
-    { key: 4, text: 'No Video', description:"Audio only", value: 3 },
+    { key: 4, text: 'No Video', description:"Audio only", value: NO_VIDEO_OPTION_VALUE },
 ];
 export const audiog_options2 = [
     

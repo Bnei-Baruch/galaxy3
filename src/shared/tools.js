@@ -14,7 +14,7 @@ import {
 
 export const initJanus = (cb,er,gxy) => {
     Janus.init({
-        debug: process.env.NODE_ENV !== 'production' ? ["log","error"] : ["error"],
+        debug: process.env.NODE_ENV !== 'production' ? [/*"log",*/"error"] : ["error"],
         callback: () => {
             let janus = new Janus({
                 server: gxy === "gxy1" ? JANUS_SRV_GXY1 : gxy === "gxy2" ? JANUS_SRV_GXY2 : JANUS_SRV_GXY3,

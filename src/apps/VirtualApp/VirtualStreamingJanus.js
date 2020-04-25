@@ -6,11 +6,12 @@ import {
   STUN_SRV_STR,
   gxycol,
   trllang,
+  NO_VIDEO_OPTION_VALUE,
 } from '../../shared/consts';
 
 export default class VirtualStreamingJanus {
 
-  constructor(onSuccess) {
+  constructor(onInitialized) {
     this.janus = null;
     this.videoJanusStream = null;
     this.audioJanusStream = null;
@@ -28,67 +29,79 @@ export default class VirtualStreamingJanus {
     this.videoElement = null;
     this.trlAudioElement = null;
 
-    this.onSuccess = onSuccess;
+    this.onInitialized = onInitialized;
   }
 
-  onSuccess_() {
-    this.attach_();
-    if (this.videoJanusStream && this.audioJanusStream && this.dataJanusStream && this.trlAudioJanusStream &&
-      this.videoMediaStream && this.trlAudioMediaStream && this.audioMediaStream) {
-      if (this.onSuccess()) {
-        this.onSuccess();
-      }
+  onInitialized_() {
+    if (this.onInitialized && (this.videos === NO_VIDEO_OPTION_VALUE || this.videoJanusStream) && this.trlAudioJanusStream && this.audioJanusStream &&
+        this.dataJanusStream && (this.videos === NO_VIDEO_OPTION_VALUE || this.videoMediaStream) && this.trlAudioMediaStream && this.audioMediaStream) {
+      this.onInitialized();
     }
   }
 
-  attach_() {
-    if (this.videoJanusStream && this.audioJanusStream && this.dataJanusStream && this.trlAudioJanusStream &&
-      this.videoMediaStream && this.trlAudioMediaStream && this.audioMediaStream &&
-      this.videoElement && this.trlAudioElement && this.audioElement) {
-    Janus.attachMediaStream(this.videoElement, this.videoMediaStream);
-    Janus.attachMediaStream(this.trlAudioElement, this.trlAudioMediaStream);
-    Janus.attachMediaStream(this.audioElement, this.audioMediaStream);
-    }
+  detachVideo_() {
+    this.videoJanusStream = null;
+    this.videoMediaStream = null;
   }
 
   detach_() {
-    this.videoJanusStream = null;
+    this.detachVideo_();
     this.audioJanusStream = null;
     this.trlAudioJanusStream = null;
     this.dataJanusStream = null;
-    this.videoMediaStream = null;
     this.audioMediaStream = null;
     this.trlAudioMediaStream = null;
   }
 
-  reAttachAudioStream(audioElement) {
-    Janus.reattachMediaStream(audioElement, this.audioElement);
-    this.audioElement = audioElement;
-  }
-
-  reAttachTrlStream(trlAudioElement) {
-    Janus.reattachMediaStream(trlAudioElement, this.trlAudioElement);
-    this.videoElement = trlAudioElement;
-  }
-
-  reAttachVideoStream(videoElement) {
-    Janus.reattachMediaStream(videoElement, this.videoElement);
-    this.videoElement = videoElement;
-  }
-
   attachVideoStream(videoElement) {
-    this.videoElement = videoElement;
-    return this.attach_();
+    if (videoElement && videoElement !== this.videoElement) {
+      this.attachVideoStream_(videoElement, this.videoElement);
+      this.videoElement = videoElement;
+    }
+  }
+
+  attachVideoStream_(next, prev) {
+    if (next) {
+      if (prev && next !== prev) {
+        Janus.reattachMediaStream(next, prev);
+      } else if (this.videoMediaStream) {
+        Janus.attachMediaStream(next, this.videoMediaStream);
+      }
+    }
   }
 
   attachAudioStream(audioElement) {
-    this.audioElement = audioElement;
-    return this.attach_();
+    if (audioElement && audioElement !== this.audioElement) {
+      this.attachAudioStream_(audioElement, this.audioElement);
+      this.audioElement = audioElement;
+    }
+  }
+
+  attachAudioStream_(next, prev) {
+    if (next) {
+      if (prev && next !== prev) {
+        Janus.reattachMediaStream(next, prev);
+      } else if (this.audioMediaStream) {
+        Janus.attachMediaStream(next, this.audioMediaStream);
+      }
+    }
   }
 
   attachTrlAudioStream(trlAudioElement) {
-    this.trlAudioElement = trlAudioElement;
-    return this.attach_();
+    if (trlAudioElement && trlAudioElement !== this.trlAudioElement) {
+      this.attachTrlAudioStream_(trlAudioElement, this.trlAudioElement);
+      this.trlAudioElement = trlAudioElement;
+    }
+  }
+
+  attachTrlAudioStream_(next, prev) {
+    if (next) {
+      if (prev && next !== prev) {
+        Janus.reattachMediaStream(next, prev);
+      } else if (this.trlAudioMediaStream) {
+        Janus.attachMediaStream(next, this.trlAudioMediaStream);
+      }
+    }
   }
 
   init() {
@@ -102,16 +115,21 @@ export default class VirtualStreamingJanus {
       }
     })
     .catch(e => {
-      console.log('Failed geting geoInfo', e);
       return Promise.reject(`Cannotinitialize Janus, failed getting geoInfo: ${e}`);
     });
   }
 
   destroy() {
     if (this.janus) {
-      this.videoElement.srcObject = null;
-      this.audioElement.srcObject = null;
-      this.trlAudioElement.srcObject = null;
+      if (this.videoElement) {
+        this.videoElement.srcObject = null;
+      }
+      if (this.audioElement) {
+        this.audioElement.srcObject = null;
+      }
+      if (this.trlAudioElement) {
+        this.trlAudioElement.srcObject = null;
+      }
       this.janus.destroy();
       this.janus = null;
       this.detach_();
@@ -121,14 +139,16 @@ export default class VirtualStreamingJanus {
   initJanus_(server) {
     this.destroy();
     Janus.init({
-      debug: process.env.NODE_ENV !== 'production' ? ['log', 'error'] : ['error'],
+      debug: process.env.NODE_ENV !== 'production' ? [/*'log'*/, 'warn', 'error'] : ['error'],
       callback: () => {
         this.janus = new Janus({
           server: server,
           iceServers: [{ urls: STUN_SRV_STR }],
           success: () => {
             Janus.log(' :: Connected to JANUS');
-            this.initVideoStream(this.janus);
+            if (this.videos !== NO_VIDEO_OPTION_VALUE) {
+              this.initVideoStream(this.janus);
+            }
             this.initDataStream(this.janus);
             this.initAudioStream(this.janus);
             let id = trllang[localStorage.getItem('vrt_langtext')] || 301;
@@ -155,45 +175,41 @@ export default class VirtualStreamingJanus {
       plugin: 'janus.plugin.streaming',
       opaqueId: 'videostream-' + Janus.randomString(12),
       success: (videoJanusStream) => {
-        Janus.log(videoJanusStream);
         // this.setState({ videostream });
         this.videoJanusStream = videoJanusStream;
         videoJanusStream.send({ message: { request: 'watch', id: this.videos } });
-        this.onSuccess_();
       },
       error: (error) => {
-        Janus.log('Error attaching plugin: ' + error);
+        Janus.warn('Error attaching plugin: ' + error);
       },
       iceState: (state) => {
-        Janus.log('ICE state changed to ' + state);
+        Janus.warn('ICE state changed to ' + state);
       },
       webrtcState: (on) => {
-        Janus.log('Janus says our WebRTC PeerConnection is ' + (on ? 'up' : 'down') + ' now');
+        Janus.warn('Janus says our WebRTC PeerConnection is ' + (on ? 'up' : 'down') + ' now');
       },
       slowLink: (uplink, lost, mid) => {
-        Janus.log('Janus reports problems ' + (uplink ? 'sending' : 'receiving') +
+        Janus.warn('Janus reports problems ' + (uplink ? 'sending' : 'receiving') +
           ' packets on mid ' + mid + ' (' + lost + ' lost packets)');
       },
       onmessage: (msg, jsep) => {
         this.onStreamingMessage(this.videoJanusStream, msg, jsep, false);
       },
       onremotetrack: (track, mid, on) => {
-        Janus.debug(' ::: Got a remote video track event :::');
-        Janus.debug('Remote video track (mid=' + mid + ') ' + (on ? 'added' : 'removed') + ':', track);
+        Janus.warn(' ::: Got a remote video track event :::');
+        Janus.warn('Remote video track (mid=' + mid + ') ' + (on ? 'added' : 'removed') + ':', track);
         if (!on) {
           return;
         }
         let stream = new MediaStream();
         stream.addTrack(track.clone());
-        //this.setState({ video_stream: stream });
         this.videoMediaStream = stream;
-        Janus.log('Created remote video stream:', stream);
-        //let video = this.refs.remoteVideo;
-        //Janus.attachMediaStream(video, stream);
-        this.onSuccess_();
+        Janus.warn('Created remote video stream:', stream);
+        this.attachVideoStream_(this.videoElement, /* reattach= */ false);
+        this.onInitialized_();
       },
       oncleanup: () => {
-        Janus.log('Got a cleanup notification');
+        Janus.warn('Got a cleanup notification');
       }
     });
   };
@@ -203,10 +219,8 @@ export default class VirtualStreamingJanus {
       plugin: 'janus.plugin.streaming',
       opaqueId: 'audiostream-' + Janus.randomString(12),
       success: (audioJanusStream) => {
-        Janus.log(audioJanusStream);
         this.audioJanusStream = audioJanusStream;
         audioJanusStream.send({ message: { request: 'watch', id: this.audios } });
-        this.onSuccess_();
       },
       error: (error) => {
         Janus.log('Error attaching plugin: ' + error);
@@ -225,19 +239,17 @@ export default class VirtualStreamingJanus {
         this.onStreamingMessage(this.audioJanusStream, msg, jsep, false);
       },
       onremotetrack: (track, mid, on) => {
-        Janus.debug(' ::: Got a remote audio track event :::');
-        Janus.debug('Remote audio track (mid=' + mid + ') ' + (on ? 'added' : 'removed') + ':', track);
+        Janus.log(' ::: Got a remote audio track event :::');
+        Janus.log('Remote audio track (mid=' + mid + ') ' + (on ? 'added' : 'removed') + ':', track);
         if (!on) {
           return;
         }
         let stream = new MediaStream();
         stream.addTrack(track.clone());
-        //this.setState({ audio_stream: stream });
         this.audioMediaStream = stream;
         Janus.log('Created remote audio stream:', stream);
-        //let audio = this.refs.remoteAudio;
-        //Janus.attachMediaStream(audio, stream);
-        this.onSuccess_();
+        this.attachAudioStream_(this.videoElement, /* reattach= */ false);
+        this.onInitialized_();
       },
       oncleanup: () => {
         Janus.log('Got a cleanup notification');
@@ -250,10 +262,9 @@ export default class VirtualStreamingJanus {
       plugin: 'janus.plugin.streaming',
       opaqueId: 'datastream-' + Janus.randomString(12),
       success: (dataJanusStream) => {
-        Janus.log(dataJanusStream);
         this.dataJanusStream = dataJanusStream;
         dataJanusStream.send({ 'message': { request: 'watch', id: 101 } });
-        this.onSuccess_();
+        this.onInitialized_();
       },
       error: (error) => {
         Janus.log('Error attaching plugin: ' + error);
@@ -293,10 +304,8 @@ export default class VirtualStreamingJanus {
       plugin: 'janus.plugin.streaming',
       opaqueId: 'trlstream-' + Janus.randomString(12),
       success: (trlJanusStream) => {
-        Janus.log(trlJanusStream);
         this.trlAudioJanusStream = trlJanusStream;
         trlJanusStream.send({ message: { request: 'watch', id: streamId } });
-        this.onSuccess_();
       },
       error: (error) => {
         Janus.log('Error attaching plugin: ' + error);
@@ -315,19 +324,17 @@ export default class VirtualStreamingJanus {
         this.onStreamingMessage(this.trlAudioJanusStream, msg, jsep, false);
       },
       onremotetrack: (track, mid, on) => {
-        Janus.debug(' ::: Got a remote audio track event :::');
-        Janus.debug('Remote audio track (mid=' + mid + ') ' + (on ? 'added' : 'removed') + ':', track);
+        Janus.log(' ::: Got a remote audio translation track event :::');
+        Janus.log('Remote audio track (mid=' + mid + ') ' + (on ? 'added' : 'removed') + ':', track);
         if (!on) {
           return;
         }
         let stream = new MediaStream();
         stream.addTrack(track.clone());
-        //this.setState({ trlAudio_stream: stream });
         this.trlAudioMediaStream = stream;
         Janus.log('Created remote audio stream:', stream);
-        //let audio = this.refs.trlAudio;
-        //Janus.attachMediaStream(audio, stream);
-        this.onSuccess_();
+        this.attachTrlAudioStream_(this.trlAudioElement, /* reattach= */ false);
+        this.onInitialized_();
       },
       oncleanup: () => {
         Janus.log('Got a cleanup notification');
@@ -351,7 +358,7 @@ export default class VirtualStreamingJanus {
           handle.send({ message: body, jsep: jsep });
         },
         customizeSdp: (jsep) => {
-          Janus.debug(':: Modify original SDP: ', jsep);
+          Janus.log(':: Modify original SDP: ', jsep);
           jsep.sdp = jsep.sdp.replace(/a=fmtp:111 minptime=10;useinbandfec=1\r\n/g, 'a=fmtp:111 minptime=10;useinbandfec=1;stereo=1;sprop-stereo=1\r\n');
         },
         error: (error) => {
@@ -414,7 +421,16 @@ export default class VirtualStreamingJanus {
 
   setVideo = (videos) => {
     this.videos = videos;
-    this.videoJanusStream.send({ message: { request: 'switch', id: videos } });
+    if (videos === NO_VIDEO_OPTION_VALUE) {
+      this.videoJanusStream.detach();
+      this.detachVideo_();
+    } else {
+      if (this.videoJanusStream) {
+        this.videoJanusStream.send({ message: { request: 'switch', id: videos } });
+      } else {
+        this.initVideoStream(this.janus);
+      }
+    }
     localStorage.setItem('vrt_video', videos);
   };
 
@@ -425,11 +441,5 @@ export default class VirtualStreamingJanus {
     }
     localStorage.setItem('vrt_lang', audios);
     localStorage.setItem('vrt_langtext', text);
-  };
-
-  audioMute = (mute) => {
-    if (this.audioJanusStream) {
-      mute ? this.audioJanusStream.muteAudio() : this.audioJanusStream.unmuteAudio();
-    }
   };
 };

@@ -83,6 +83,7 @@ class OldClient extends Component {
     currentLayout: localStorage.getItem('currentLayout') || 'double',
     attachedSource: true,
     sourceLoading: true,
+    sourceMuted: false,
     virtualStreamingJanus: new VirtualStreamingJanus(() => this.virtualStreamingInitialized()),
   }
 
@@ -1180,6 +1181,7 @@ class OldClient extends Component {
       selftest,
       shidur,
       sourceLoading,
+      sourceMuted,
       tested,
       user,
       username_value,
@@ -1214,7 +1216,11 @@ class OldClient extends Component {
       <VirtualStreaming
         virtualStreamingJanus={virtualStreamingJanus}
         attached={attachedSource}
+        muted={sourceMuted}
 
+        setMutedUnmuted={() => {
+          this.setState({ sourceMuted: !sourceMuted });
+        }}
         setDetached={() => {
           this.setState({ attachedSource: false });
         }}
@@ -1330,7 +1336,7 @@ class OldClient extends Component {
             {shidur ? t('oldClient.closeBroadcast') : t('oldClient.openBroadcast')}
           </Menu.Item>
           <Popup
-            trigger={<Menu.Item disabled={room === '' || !shidur || sourceLoading} icon={{ className:`icon--custom ${layoutIcon}`}} name="Layout" />}
+            trigger={<Menu.Item disabled={room === '' || !shidur || sourceLoading || !attachedSource} icon={{ className:`icon--custom ${layoutIcon}`}} name="Layout" />}
             disabled={room === '' || !shidur || !attachedSource}
             on='click'
             position='bottom center'

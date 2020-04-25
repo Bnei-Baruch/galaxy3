@@ -1,12 +1,15 @@
 import React, { Component, Fragment } from 'react';
-import { Label, Button, Select, Dropdown, Header, Icon } from 'semantic-ui-react';
+import {
+  Label,
+  Dropdown,
+  Header,
+  Icon,
+} from 'semantic-ui-react';
 import VolumeSlider from "../../components/VolumeSlider";
 import NewWindow from 'react-new-window';
 import {
-  videos_options,
   videos_options2,
   audiog_options2,
-  audiog_options,
 } from '../../shared/consts';
 // import '../StreamApp/GalaxyStream.css';
 import './BroadcastStream.scss';
@@ -17,42 +20,20 @@ class VirtualStreaming extends Component {
     videos: Number(localStorage.getItem('vrt_video')) || 1,
     audios: Number(localStorage.getItem('vrt_lang')) || 15,
     room: Number(localStorage.getItem('room')) || null,
-    muted: false,
     user: {},
     cssFixInterval: null,
   };
 
   audioRef(ref) {
-    if (ref && (!this.remoteAudio || this.remoteAudio !== ref)) {
-      if (!this.remoteAudio) {
-        this.props.virtualStreamingJanus.attachAudioStream(ref);
-      } else {
-        this.props.virtualStreamingJanus.reAttachAudioStream(ref);
-      }
-      this.remoteAudio = ref;
-    }
+    this.props.virtualStreamingJanus.attachAudioStream(ref);
   }
 
   trlAudioRef(ref) {
-    if (ref && (!this.trlAudio || this.trlAudio !== ref)) {
-      if (!this.trlAudio) {
-        this.props.virtualStreamingJanus.attachTrlAudioStream(ref);
-      } else {
-        this.props.virtualStreamingJanus.reAttachTrlAudioStream(ref);
-      }
-      this.trlAudio = ref;
-    }
+    this.props.virtualStreamingJanus.attachTrlAudioStream(ref);
   }
 
   videoRef(ref) {
-    if (ref && (!this.remoteVideo || this.remoteVideo !== ref)) {
-      if (!this.remoteVideo) {
-        this.props.virtualStreamingJanus.attachVideoStream(ref);
-      } else {
-        this.props.virtualStreamingJanus.reAttachVideoStream(ref);
-      }
-      this.remoteVideo = ref;
-    }
+    this.props.virtualStreamingJanus.attachVideoStream(ref);
   }
 
   componentDidMount() {
@@ -78,13 +59,13 @@ class VirtualStreaming extends Component {
   };
 
   setVolume = (value) => {
-    this.remoteAudio.volume = value;
+    if (this.props.virtualStreamingJanus && this.props.virtualStreamingJanus.audioElement) {
+      this.props.virtualStreamingJanus.audioElement.volume = value;
+    }
   };
 
-  audioMute = () => {
-    const { muted } = this.state;
-    this.props.virtualStreamingJanus.audioMute(!muted);
-    this.setState({muted: !muted});
+  audioMuteUnmute = () => {
+    this.props.setMutedUnmuted();
   };
 
   toggleFullScreen = () => {
@@ -111,8 +92,15 @@ class VirtualStreaming extends Component {
   };
 
   setVideo(videos) {
+    console.log('setVideo', videos);
     this.setState({videos});
     this.props.virtualStreamingJanus.setVideo(videos);
+
+    //setTimeout(() => {
+    //  console.log('Reattaching!');
+    //  this.props.virtualStreamingJanus.reAttachVideoStream(this.remoteVideo);
+    //}, 5000);
+
   }
 
   setAudio(audios, text) {
@@ -123,11 +111,11 @@ class VirtualStreaming extends Component {
   render() {
     const {
       attached,
+      muted,
     } = this.props;
     const {
       videos,
       audios,
-      muted,
       talking,
       room,
     } = this.state;
@@ -213,7 +201,7 @@ class VirtualStreaming extends Component {
               </Dropdown.Menu>
             </Dropdown>
 
-            <button onClick={this.audioMute}>
+            <button onClick={this.audioMuteUnmute}>
               <Icon name={muted ? 'volume off' : 'volume up'}/>
             </button>
             <VolumeSlider volume={this.setVolume} />
