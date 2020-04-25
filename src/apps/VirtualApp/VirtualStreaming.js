@@ -5,7 +5,6 @@ import {
   Header,
   Icon,
 } from 'semantic-ui-react';
-import VolumeSlider from "../../components/VolumeSlider";
 import NewWindow from 'react-new-window';
 import {
   videos_options2,
@@ -13,6 +12,7 @@ import {
 } from '../../shared/consts';
 // import '../StreamApp/GalaxyStream.css';
 import './BroadcastStream.scss';
+import Volume from './components/Volume'
 
 class VirtualStreaming extends Component {
 
@@ -56,16 +56,6 @@ class VirtualStreaming extends Component {
     if (this.state.cssFixInterval) {
       clearInterval(this.state.cssFixInterval);
     }
-  };
-
-  setVolume = (value) => {
-    if (this.props.virtualStreamingJanus && this.props.virtualStreamingJanus.audioElement) {
-      this.props.virtualStreamingJanus.audioElement.volume = value;
-    }
-  };
-
-  audioMuteUnmute = () => {
-    this.props.setMutedUnmuted();
   };
 
   toggleFullScreen = () => {
@@ -170,7 +160,7 @@ class VirtualStreaming extends Component {
               scrolling
               icon={null}
               selectOnBlur={false}
-                trigger={<button>{audio_option.icon ? <Icon name={audio_option.icon}/> : ''}{audio_option.text ? `${audio_option.text}` : ''}</button>}
+							trigger={<button>{audio_option.icon ? <Icon name={audio_option.icon}/> : ''}{audio_option.text ? `${audio_option.text}` : ''}</button>}
               className="audio-selection"
               >
               <Dropdown.Menu className='controls__dropdown'>
@@ -201,10 +191,7 @@ class VirtualStreaming extends Component {
               </Dropdown.Menu>
             </Dropdown>
 
-            <button onClick={this.audioMuteUnmute}>
-              <Icon name={muted ? 'volume off' : 'volume up'}/>
-            </button>
-            <VolumeSlider volume={this.setVolume} />
+						<Volume media={this.props.virtualStreamingJanus.audioElement} />
             <div className="controls__spacer"></div>
             <button onClick={this.toggleFullScreen}>
               <Icon name="expand"/>

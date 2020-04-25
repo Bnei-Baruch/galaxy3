@@ -1276,7 +1276,7 @@ class OldClient extends Component {
           value={username_value}
           onChange={(v, { value }) => this.setState({ username_value: value })}
           action>
-          <input iconPosition='left' disabled={!!localAudioTrack} />
+          <input iconposition='left' disabled={!!localAudioTrack} />
           <Icon name='user circle' />
           <Select
             search

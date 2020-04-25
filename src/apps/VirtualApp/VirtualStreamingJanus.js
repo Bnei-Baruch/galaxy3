@@ -139,7 +139,7 @@ export default class VirtualStreamingJanus {
   initJanus_(server) {
     this.destroy();
     Janus.init({
-      debug: process.env.NODE_ENV !== 'production' ? [/*'log'*/, 'warn', 'error'] : ['error'],
+      debug: process.env.NODE_ENV !== 'production' ? [/*'log', 'warn',*/ 'error'] : ['error'],
       callback: () => {
         this.janus = new Janus({
           server: server,
