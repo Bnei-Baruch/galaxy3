@@ -1,5 +1,6 @@
 import { Log as oidclog, UserManager } from 'oidc-client';
 import {KJUR} from 'jsrsasign';
+import {reportToSentry} from "../shared/tools";
 
 const AUTH_URL = 'https://accounts.kbb1.com/auth/realms/main';
 export const BASE_URL = process.env.NODE_ENV === 'production' ? process.env.REACT_APP_GXY_URL : 'http://localhost:3000/';
@@ -26,8 +27,9 @@ client.events.addAccessTokenExpiring(() => {
     console.log("...RENEW TOKEN...");
 });
 
-client.events.addAccessTokenExpired(() => {
+client.events.addAccessTokenExpired((data) => {
     console.log("...!TOKEN EXPIRED!...");
+    reportToSentry("TOKEN EXPIRED: " + data,{source: "login"});
     //client.signoutRedirect();
 });
 
@@ -37,7 +39,8 @@ client.events.addUserSignedOut(() => {
 });
 
 client.events.addSilentRenewError((error) =>{
-    console.error("Silent Renew Error: " + error)
+    console.error("Silent Renew Error: " + error);
+    reportToSentry("Silent Renew Error: " + error,{source: "login"});
 });
 
 export const getUser = (cb) =>
@@ -52,6 +55,7 @@ export const getUser = (cb) =>
     })
         .catch((error) => {
             console.log("Error: ",error);
+            reportToSentry("Get User Error: " + error,{source: "login"})
         });
 
 export const userLogin = (url) => {

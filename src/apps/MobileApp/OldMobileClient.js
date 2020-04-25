@@ -27,7 +27,7 @@ import { isMobile } from 'react-device-detect';
 
 import { Monitoring } from '../../components/Monitoring';
 import { MonitoringData } from '../../shared/MonitoringData';
-import LoginMessage from "../../components/LoginMessage";
+import LoginMessage from "../VirtualApp/components/LoginMessage";
 
 class OldMobileClient extends Component {
 
@@ -970,6 +970,8 @@ class OldMobileClient extends Component {
         user.group = name;
         user.camera = video_device !== null;
         user.timestamp = Date.now();
+        if(JSON.parse(localStorage.getItem("guest")))
+            user.role = "guest";
         initGxyProtocol(janus, user, protocol => {
             this.setState({protocol});
             // Send question event if before join it was true
@@ -997,6 +999,9 @@ class OldMobileClient extends Component {
                 window.location.reload();
             } else if(type === "client-disconnect" && user.id === id) {
                 this.exitRoom();
+            } else if(type === "client-kicked" && user.id === id) {
+                localStorage.setItem("guest", true);
+                this.exitRoom(false);
             } else if(type === "client-question" && user.id === id) {
                 this.handleQuestion();
             } else if(type === "client-mute" && user.id === id) {
@@ -1044,12 +1049,13 @@ class OldMobileClient extends Component {
         let {protocol, user, room, question} = this.state;
         localStorage.setItem("question", !question);
         user.question = !question;
-        let msg = {type: "question", status: !question, room, user};
-        sendProtocolMessage(protocol, user, msg );
         this.setState({question: !question, delay: true});
         setTimeout(() => {
             this.setState({delay: false});
         }, 3000);
+        if(user.role === "guest") return;
+        let msg = {type: "question", status: !question, room, user};
+        sendProtocolMessage(protocol, user, msg );
     };
 
     camMute = () => {
@@ -1059,6 +1065,7 @@ class OldMobileClient extends Component {
         setTimeout(() => {
             this.setState({delay: false});
         }, 3000);
+        if(user.role === "guest") return;
         this.sendDataMessage("camera", this.state.cammuted);
         // Send to protocol camera status event
         let msg = { type: "camera", status: cammuted, room, user};

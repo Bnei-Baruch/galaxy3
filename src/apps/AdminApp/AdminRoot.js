@@ -1,6 +1,16 @@
 import React, {Component} from 'react';
 import {Janus} from "../../lib/janus";
-import {Button, Grid, Icon, List, Popup, Segment, Table} from "semantic-ui-react";
+import {
+  Button,
+  Grid,
+  Menu,
+  Icon,
+  List,
+  Popup,
+  Segment,
+  Tab,
+  Table,
+} from "semantic-ui-react";
 import {getState} from "../../shared/tools";
 import './AdminRoot.css';
 import './AdminRootVideo.scss'
@@ -12,30 +22,34 @@ import LoginPage from "../../components/LoginPage";
 import GxyJanus from "../../shared/janus-utils";
 import ChatBox from "./components/ChatBox";
 import RoomManager from "./components/RoomManager";
+import MonitoringAdmin from "./components/MonitoringAdmin";
+import MonitoringUser from "./components/MonitoringUser";
 
 class AdminRoot extends Component {
 
     state = {
-        gateways: {},
-        gatewaysInitialized: false,
+        activeTab: 0,
+        audio: null,
         chatRoomsInitialized: false,
+        current_room: "",
         feedStreams: {},
-        mids: [],
-        feeds: [],
-        rooms: [],
         feed_id: null,
         feed_info: null,
-        feed_user: null,
-        feed_talk: false,
         feed_rtcp: {},
-        current_room: "",
+        feed_talk: false,
+        feed_user: null,
+        feeds: [],
+        gateways: {},
+        gatewaysInitialized: false,
+        mids: [],
+        muted: true,
         myid: null,
         mypvtid: null,
         mystream: null,
-        audio: null,
-        muted: true,
+        rooms: [],
         user: null,
         users: {},
+        usersTabs: [],
     };
 
     componentDidMount() {
@@ -45,8 +59,23 @@ class AdminRoot extends Component {
     };
 
     componentWillUnmount() {
-        this.state.gateways.forEach(x => x.destroy());
+        Object.values(this.state.gateways).forEach(x => x.destroy());
     };
+
+    shouldComponentUpdate(nextProps, nextState) {
+      const {
+        activeTab,
+        gatewaysInitialized,
+        user,
+        usersTabs,
+      } = this.state;
+      return user === null ||
+             gatewaysInitialized === false ||
+             activeTab === 0 ||
+             nextState.activeTab === 0 ||
+             activeTab !== nextState.activeTab ||
+             nextState.usersTabs.length !== usersTabs.length;
+    }
 
     checkPermission = (user) => {
         const roles = new Set(user.roles || []);
@@ -57,8 +86,8 @@ class AdminRoot extends Component {
             role = "root";
         } else if (roles.has("gxy_admin")) {
             role = "admin";
-        } else if (roles.has("gxy_guest")) {
-            role = "guest";
+        } else if (roles.has("gxy_viewer")) {
+            role = "viewer";
         }
 
         if (role) {
@@ -86,8 +115,8 @@ class AdminRoot extends Component {
                 return role === "root";
             case "admin":
                 return role === "admin" || role === "root";
-            case "guest":
-                return role === "guest" || role === "admin" || role === "root";
+            case "viewer":
+                return role === "viewer" || role === "admin" || role === "root";
             default:
                 return false;
         }
@@ -125,7 +154,7 @@ class AdminRoot extends Component {
             this.getRoomsState();
             if (this.state.feed_user)
                 this.getFeedInfo()
-        }, 3000);
+        }, 10*1000);
     };
 
     getRoomsState = () => {
@@ -166,9 +195,8 @@ class AdminRoot extends Component {
                     console.log("[Admin] Got Publishers (joined)", list);
 
                     // Filter service feeds and sort by timestamp
-                    let fr = "user";
                     let feeds = list.sort((a, b) => JSON.parse(a.display).timestamp - JSON.parse(b.display).timestamp)
-                        .filter(feeder => JSON.parse(feeder.display).role === fr && feeder.video_codec !== 'none');
+                        .filter(feeder => JSON.parse(feeder.display).role.match(/^(user|guest)$/) && feeder.video_codec !== 'none');
 
                     console.log("[Admin] available feeds", feeds);
                     const subscription = [];
@@ -194,7 +222,7 @@ class AdminRoot extends Component {
                         subscription.push(subst);
                     }
                     this.setState({feeds, feedStreams, users});
-                    if (subscription.length > 0 && fr === "user")
+                    if (subscription.length > 0)
                         this.subscribeTo(subscription, gateway.name);
                 }
             } else if (event === "talking") {
@@ -237,11 +265,10 @@ class AdminRoot extends Component {
 
                     let {feeds, feedStreams, users} = this.state;
                     let subscription = [];
-                    let fr = "user";
                     for (let f in feed) {
                         let id = feed[f]["id"];
                         let display = JSON.parse(feed[f]["display"]);
-                        if (display.role !== fr)
+                        if (!display.role.match(/^(user|guest)$/))
                             return;
                         let streams = feed[f]["streams"];
                         feed[f].display = display;
@@ -266,7 +293,7 @@ class AdminRoot extends Component {
                         return 0;
                     });
                     this.setState({feeds, feedStreams, users});
-                    if (subscription.length > 0 && fr === "user")
+                    if (subscription.length > 0)
                         this.subscribeTo(subscription, gateway.name);
                 } else if (msg["leaving"] !== undefined && msg["leaving"] !== null) {
                     // One of the publishers has gone away?
@@ -600,248 +627,276 @@ class AdminRoot extends Component {
         this.setState({chatRoomsInitialized: true});
     };
 
-    render() {
-        const {rooms, current_room, user, feeds, feed_id, feed_info, feed_user, feed_rtcp, users, gateways, gatewaysInitialized, chatRoomsInitialized} = this.state;
-
-        if (!!user && !gatewaysInitialized) {
-            return "Initializing connections to janus instances...";
-        }
-
-        const width = "134";
-        const height = "100";
-        const autoPlay = true;
-        const controls = false;
-        const muted = true;
-
-        const f = (<Icon name='volume up'/>);
-        const q = (<Icon color='red' name='help'/>);
-        const v = (<Icon name='checkmark'/>);
-        //const x = (<Icon name='close' />);
-
-        let rooms_grid = rooms.map((data, i) => {
-            const {room, num_users, description, questions} = data;
-            return (
-                <Table.Row active={current_room === room}
-                           key={i} onClick={() => this.joinRoom(data, i)}>
-                    <Table.Cell width={5}>{questions ? q : ""}{description}</Table.Cell>
-                    <Table.Cell width={1}>{num_users}</Table.Cell>
-                </Table.Row>
-            )
-        });
-
-        let users_grid = feeds.map((feed, i) => {
-            if (feed) {
-                let qt = users[feed.display.id].question;
-                let st = users[feed.display.id].sound_test;
-                return (
-                    <Table.Row active={feed.id === this.state.feed_id} key={i} onClick={() => this.getUserInfo(feed)}>
-                        <Table.Cell width={10}>{qt ? q : ""}{feed.display.display}</Table.Cell>
-                        <Table.Cell positive={st} width={1}>{st ? v : ""}</Table.Cell>
-                    </Table.Row>
-                )
-            }
-        });
-
-        let videos = this.state.feeds.map((feed) => {
-            if (feed) {
-                let id = feed.id;
-                let talk = feed.talk;
-                let selected = id === feed_id;
-                return (
-                    <div className="video"
-                         key={"v" + id}
-                         ref={"video" + id}
-                         id={"video" + id}>
-                        <div className={classNames('video__overlay', {'talk': talk}, {'selected': selected})}/>
-                        <video key={id}
-                               ref={"remoteVideo" + id}
-                               id={"remoteVideo" + id}
-                               width={width}
-                               height={height}
-                               autoPlay={autoPlay}
-                               controls={controls}
-                               muted={muted}
-                               playsInline={true}/>
-                        {
-                            this.withAudio() ?
-                                <audio
-                                    key={"a" + id}
-                                    ref={"remoteAudio" + id}
-                                    id={"remoteAudio" + id}
-                                    autoPlay={autoPlay}
-                                    controls={controls}
-                                    playsInline={true}/>
-                                : null
-                        }
-                    </div>
-                );
-            }
-            return true;
-        });
-
-        let login = (<LoginPage user={user} checkPermission={this.checkPermission}/>);
-
-        let content = (
-            <Segment className="virtual_segment" color='blue' raised>
-
-                {
-                    this.isAllowed("admin") ?
-                        <Segment textAlign='center' className="ingest_segment">
-                            <Button color='blue' icon='sound' onClick={() => this.sendRemoteCommand("sound_test")}/>
-                            <Popup
-                                trigger={<Button positive icon='info' onClick={this.getFeedInfo}/>}
-                                position='bottom left'
-                                content={
-                                    <List as='ul'>
-                                        <List.Item as='li'>System
-                                            <List.List as='ul'>
-                                                <List.Item
-                                                    as='li'>OS: {feed_info ? feed_info.os.toString() : ""}</List.Item>
-                                                <List.Item
-                                                    as='li'>Browser: {feed_info ? feed_info.name : ""}</List.Item>
-                                                <List.Item
-                                                    as='li'>Version: {feed_info ? feed_info.version : ""}</List.Item>
-                                            </List.List>
-                                        </List.Item>
-                                        <List.Item as='li'>Video
-                                            <List.List as='ul'>
-                                                <List.Item
-                                                    as='li'>in-link-quality: {feed_rtcp.video ? feed_rtcp.video["in-link-quality"] : ""}</List.Item>
-                                                <List.Item
-                                                    as='li'>in-media-link-quality: {feed_rtcp.video ? feed_rtcp.video["in-media-link-quality"] : ""}</List.Item>
-                                                <List.Item
-                                                    as='li'>jitter-local: {feed_rtcp.video ? feed_rtcp.video["jitter-local"] : ""}</List.Item>
-                                                <List.Item
-                                                    as='li'>jitter-remote: {feed_rtcp.video ? feed_rtcp.video["jitter-remote"] : ""}</List.Item>
-                                                <List.Item
-                                                    as='li'>lost: {feed_rtcp.video ? feed_rtcp.video["lost"] : ""}</List.Item>
-                                            </List.List>
-                                        </List.Item>
-                                        <List.Item as='li'>Audio
-                                            <List.List as='ul'>
-                                                <List.Item
-                                                    as='li'>in-link-quality: {feed_rtcp.audio ? feed_rtcp.audio["in-link-quality"] : ""}</List.Item>
-                                                <List.Item
-                                                    as='li'>in-media-link-quality: {feed_rtcp.audio ? feed_rtcp.audio["in-media-link-quality"] : ""}</List.Item>
-                                                <List.Item
-                                                    as='li'>jitter-local: {feed_rtcp.audio ? feed_rtcp.audio["jitter-local"] : ""}</List.Item>
-                                                <List.Item
-                                                    as='li'>jitter-remote: {feed_rtcp.audio ? feed_rtcp.audio["jitter-remote"] : ""}</List.Item>
-                                                <List.Item
-                                                    as='li'>lost: {feed_rtcp.audio ? feed_rtcp.audio["lost"] : ""}</List.Item>
-                                            </List.List>
-                                        </List.Item>
-                                    </List>
-                                }
-                                on='click'
-                                hideOnScroll
-                            />
-
-                            {
-                                this.isAllowed("root") && chatRoomsInitialized ?
-                                    <RoomManager gateways={gateways}/>
-                                    : null
-                            }
-
-                        </Segment>
-                        : null
-                }
-
-                <Grid>
-                    <Grid.Row stretched columns='equal'>
-                        <Grid.Column width={4}>
-                            <Segment.Group>
-                                {
-                                    this.isAllowed("root") ?
-                                        <Segment textAlign='center'>
-                                            <Popup trigger={<Button negative icon='user x'
-                                                                    onClick={() => this.sendRemoteCommand("client-kicked")}/>}
-                                                   content='Kick' inverted/>
-                                            <Popup trigger={<Button color="brown" icon='sync alternate' alt="test"
-                                                                    onClick={() => this.sendRemoteCommand("client-reconnect")}/>}
-                                                   content='Reconnect' inverted/>
-                                            <Popup trigger={<Button color="olive" icon='redo alternate'
-                                                                    onClick={() => this.sendRemoteCommand("client-reload")}/>}
-                                                   content='Reload page(LOST FEED HERE!)' inverted/>
-                                            <Popup trigger={<Button color="teal" icon='microphone'
-                                                                    onClick={() => this.sendRemoteCommand("client-mute")}/>}
-                                                   content='Mic Mute/Unmute' inverted/>
-                                            <Popup trigger={<Button color="pink" icon='eye'
-                                                                    onClick={() => this.sendRemoteCommand("video-mute")}/>}
-                                                   content='Cam Mute/Unmute' inverted/>
-                                            <Popup trigger={<Button color="blue" icon='power off'
-                                                                    onClick={() => this.sendRemoteCommand("client-disconnect")}/>}
-                                                   content='Disconnect(LOST FEED HERE!)' inverted/>
-                                            <Popup trigger={<Button color="yellow" icon='question'
-                                                                    onClick={() => this.sendRemoteCommand("client-question")}/>}
-                                                   content='Set/Unset question' inverted/>
-                                        </Segment>
-                                        : null
-                                }
-
-                                <Segment textAlign='center' className="group_list" raised>
-                                    <Table selectable compact='very' basic structured className="admin_table"
-                                           unstackable>
-                                        <Table.Body>
-                                            <Table.Row disabled positive>
-                                                <Table.Cell colSpan={3} textAlign='center'>Users:</Table.Cell>
-                                            </Table.Row>
-                                            <Table.Row disabled>
-                                                <Table.Cell width={10}>Title</Table.Cell>
-                                                <Table.Cell width={1}>ST</Table.Cell>
-                                            </Table.Row>
-                                            {users_grid}
-                                        </Table.Body>
-                                    </Table>
-                                </Segment>
-                            </Segment.Group>
-                        </Grid.Column>
-                        <Grid.Column largeScreen={9}>
-                            <div className="videos-panel">
-                                <div className="videos">
-                                    <div className="videos__wrapper">
-                                        {videos}
-                                    </div>
-                                </div>
-                            </div>
-                        </Grid.Column>
-                        <Grid.Column width={3}>
-
-                            <Segment textAlign='center' className="group_list" raised>
-                                <Table selectable compact='very' basic structured className="admin_table" unstackable>
-                                    <Table.Body>
-                                        <Table.Row disabled positive>
-                                            <Table.Cell colSpan={2} textAlign='center'>Rooms:</Table.Cell>
-                                        </Table.Row>
-                                        {rooms_grid}
-                                    </Table.Body>
-                                </Table>
-                            </Segment>
-
-                        </Grid.Column>
-                    </Grid.Row>
-                </Grid>
-
-                {
-                    this.isAllowed("admin") ?
-                        <ChatBox user={user}
-                                 rooms={rooms}
-                                 selected_room={current_room}
-                                 selected_user={feed_user}
-                                 gateways={gateways}
-                                 onChatRoomsInitialized={this.onChatRoomsInitialized}/>
-                        : null
-                }
-
-            </Segment>
-        );
-
-        return (
-            <div>
-                {user ? content : login}
-            </div>
-        );
+  addUserTab(user, stats) {
+    const { usersTabs } = this.state;
+    if (!usersTabs.find(u => u.id === user.id)) {
+      const newUsersTabs = usersTabs.slice();
+      newUsersTabs.push({user, stats});
+      this.setState({usersTabs: newUsersTabs, activeTab: 2 + newUsersTabs.length - 1});
     }
+  }
+
+  removeUserTab(index) {
+    const { usersTabs } = this.state;
+    if (index < usersTabs.length) {
+      const newUsersTabs = usersTabs.slice();
+      newUsersTabs.splice(index, 1);
+      this.setState({usersTabs: newUsersTabs, activeTab: 1});
+    }
+  }
+
+  render() {
+      const {
+        activeTab,
+        current_room,
+        feed_id,
+        feed_info,
+        feed_rtcp,
+        feed_user,
+        feeds,
+        gateways,
+        gatewaysInitialized,
+        rooms,
+        user,
+        users,
+        usersTabs,
+        chatRoomsInitialized,
+      } = this.state;
+
+      if (!!user && !gatewaysInitialized) {
+          return "Initializing connections to janus instances...";
+      }
+
+      const width = "134";
+      const height = "100";
+      const autoPlay = true;
+      const controls = false;
+      const muted = true;
+
+      const f = (<Icon name='volume up' />);
+      const q = (<Icon color='red' name='help' />);
+      const v = (<Icon name='checkmark' />);
+      //const x = (<Icon name='close' />);
+
+      let rooms_grid = rooms.map((data,i) => {
+          const {room, num_users, description, questions} = data;
+          return (
+              <Table.Row active={current_room === room}
+                         key={i} onClick={() => this.joinRoom(data, i)} >
+                  <Table.Cell width={5}>{questions ? q : ""}{description}</Table.Cell>
+                  <Table.Cell width={1}>{num_users}</Table.Cell>
+              </Table.Row>
+          )
+      });
+
+      let users_grid = feeds.map((feed,i) => {
+          if(feed) {
+              let qt = users[feed.display.id].question;
+              let st = users[feed.display.id].sound_test;
+              return (
+                  <Table.Row active={feed.id === this.state.feed_id} key={i} onClick={() => this.getUserInfo(feed)} >
+                      <Table.Cell width={10}>{qt ? q : ""}{feed.display.display}</Table.Cell>
+                      <Table.Cell positive={st} width={1}>{st ? v : ""}</Table.Cell>
+                  </Table.Row>
+              )
+          }
+      });
+
+      let videos = this.state.feeds.map((feed) => {
+          if(feed) {
+              let id = feed.id;
+              let talk = feed.talk;
+              let selected = id === feed_id;
+              return (
+                  <div className="video"
+                       key={"v" + id}
+                       ref={"video" + id}
+                       id={"video" + id}>
+                      <div className={classNames('video__overlay', {'talk': talk}, {'selected': selected})}/>
+                      <video key={id}
+                             ref={"remoteVideo" + id}
+                             id={"remoteVideo" + id}
+                             width={width}
+                             height={height}
+                             autoPlay={autoPlay}
+                             controls={controls}
+                             muted={muted}
+                             playsInline={true}/>
+                      {
+                          this.withAudio() ?
+                              <audio
+                                  key={"a" + id}
+                                  ref={"remoteAudio" + id}
+                                  id={"remoteAudio" + id}
+                                  autoPlay={autoPlay}
+                                  controls={controls}
+                                  playsInline={true}/>
+                              : null
+                      }
+                  </div>
+              );
+          }
+          return true;
+      });
+
+      let login = (<LoginPage user={user} checkPermission={this.checkPermission} />);
+
+      let adminContent = (
+          <Segment className="virtual_segment" color='blue' raised>
+
+              {
+                  this.isAllowed("admin") ?
+                      <Segment textAlign='center' className="ingest_segment">
+                          <Button color='blue' icon='sound' onClick={() => this.sendRemoteCommand("sound_test")} />
+                          <Popup
+                              trigger={<Button positive icon='info' onClick={this.getFeedInfo} />}
+                              position='bottom left'
+                              content={
+                                  <List as='ul'>
+                                      <List.Item as='li'>System
+                                          <List.List as='ul'>
+                                              <List.Item as='li'>OS: {feed_info ? feed_info.os.toString() : ""}</List.Item>
+                                              <List.Item as='li'>Browser: {feed_info ? feed_info.name : ""}</List.Item>
+                                              <List.Item as='li'>Version: {feed_info ? feed_info.version : ""}</List.Item>
+                                          </List.List>
+                                      </List.Item>
+                                      <List.Item as='li'>Video
+                                          <List.List as='ul'>
+                                              <List.Item as='li'>in-link-quality: {feed_rtcp.video ? feed_rtcp.video["in-link-quality"] : ""}</List.Item>
+                                              <List.Item as='li'>in-media-link-quality: {feed_rtcp.video ? feed_rtcp.video["in-media-link-quality"] : ""}</List.Item>
+                                              <List.Item as='li'>jitter-local: {feed_rtcp.video ? feed_rtcp.video["jitter-local"] : ""}</List.Item>
+                                              <List.Item as='li'>jitter-remote: {feed_rtcp.video ? feed_rtcp.video["jitter-remote"] : ""}</List.Item>
+                                              <List.Item as='li'>lost: {feed_rtcp.video ? feed_rtcp.video["lost"] : ""}</List.Item>
+                                          </List.List>
+                                      </List.Item>
+                                      <List.Item as='li'>Audio
+                                          <List.List as='ul'>
+                                              <List.Item as='li'>in-link-quality: {feed_rtcp.audio ? feed_rtcp.audio["in-link-quality"] : ""}</List.Item>
+                                              <List.Item as='li'>in-media-link-quality: {feed_rtcp.audio ? feed_rtcp.audio["in-media-link-quality"] : ""}</List.Item>
+                                              <List.Item as='li'>jitter-local: {feed_rtcp.audio ? feed_rtcp.audio["jitter-local"] : ""}</List.Item>
+                                              <List.Item as='li'>jitter-remote: {feed_rtcp.audio ? feed_rtcp.audio["jitter-remote"] : ""}</List.Item>
+                                              <List.Item as='li'>lost: {feed_rtcp.audio ? feed_rtcp.audio["lost"] : ""}</List.Item>
+                                          </List.List>
+                                      </List.Item>
+                                  </List>
+                              }
+                              on='click'
+                              hideOnScroll
+                          />
+
+                          {
+                              this.isAllowed("root") && chatRoomsInitialized ?
+                                  <RoomManager gateways={gateways}/>
+                                  : null
+                          }
+
+                      </Segment>
+                      : null
+              }
+
+              <Grid>
+                  <Grid.Row stretched columns='equal'>
+                      <Grid.Column width={4}>
+                          <Segment.Group>
+                              {
+                                  this.isAllowed("root") ?
+                                      <Segment textAlign='center'>
+                                          <Popup trigger={<Button negative icon='user x' onClick={() => this.sendRemoteCommand("client-kicked")} />} content='Kick' inverted />
+                                          <Popup trigger={<Button color="brown" icon='sync alternate' alt="test" onClick={() => this.sendRemoteCommand("client-reconnect")} />} content='Reconnect' inverted />
+                                          <Popup trigger={<Button color="olive" icon='redo alternate' onClick={() => this.sendRemoteCommand("client-reload")} />} content='Reload page(LOST FEED HERE!)' inverted />
+                                          <Popup trigger={<Button color="teal" icon='microphone' onClick={() => this.sendRemoteCommand("client-mute")} />} content='Mic Mute/Unmute' inverted />
+                                          <Popup trigger={<Button color="pink" icon='eye' onClick={() => this.sendRemoteCommand("video-mute")} />} content='Cam Mute/Unmute' inverted />
+                                          <Popup trigger={<Button color="blue" icon='power off' onClick={() => this.sendRemoteCommand("client-disconnect")} />} content='Disconnect(LOST FEED HERE!)' inverted />
+                                          <Popup trigger={<Button color="yellow" icon='question' onClick={() => this.sendRemoteCommand("client-question")} />} content='Set/Unset question' inverted />
+                                      </Segment>
+                                      : null
+                              }
+
+                              <Segment textAlign='center' className="group_list" raised>
+                                  <Table selectable compact='very' basic structured className="admin_table" unstackable>
+                                      <Table.Body>
+                                          <Table.Row disabled positive>
+                                              <Table.Cell colSpan={3} textAlign='center'>Users:</Table.Cell>
+                                          </Table.Row>
+                                          <Table.Row disabled>
+                                              <Table.Cell width={10}>Title</Table.Cell>
+                                              <Table.Cell width={1}>ST</Table.Cell>
+                                          </Table.Row>
+                                          {users_grid}
+                                      </Table.Body>
+                                  </Table>
+                              </Segment>
+                          </Segment.Group>
+                      </Grid.Column>
+                      <Grid.Column largeScreen={9}>
+                          <div className="videos-panel">
+                              <div className="videos">
+                                  <div className="videos__wrapper">
+                                      {videos}
+                                  </div>
+                              </div>
+                          </div>
+                      </Grid.Column>
+                      <Grid.Column width={3}>
+
+                          <Segment textAlign='center' className="group_list" raised>
+                              <Table selectable compact='very' basic structured className="admin_table" unstackable>
+                                  <Table.Body>
+                                      <Table.Row disabled positive>
+                                          <Table.Cell colSpan={2} textAlign='center'>Rooms:</Table.Cell>
+                                      </Table.Row>
+                                      {rooms_grid}
+                                  </Table.Body>
+                              </Table>
+                          </Segment>
+
+                      </Grid.Column>
+                  </Grid.Row>
+              </Grid>
+
+              {
+                  this.isAllowed("admin") ?
+                      <ChatBox user={user}
+                               rooms={rooms}
+                               selected_room={current_room}
+                               selected_user={feed_user}
+                               gateways={gateways}
+                               onChatRoomsInitialized={this.onChatRoomsInitialized}/>
+                      : null
+              }
+
+          </Segment>
+      );
+
+      const panes = [
+        { menuItem: 'Admin', render: () => <Tab.Pane>{adminContent}</Tab.Pane> },
+      ];
+      if (this.isAllowed('root')) {
+        panes.push({ menuItem: 'Monitor', render: () => <Tab.Pane><MonitoringAdmin addUserTab={(user, stats) => this.addUserTab(user, stats)}/></Tab.Pane> });
+        usersTabs.forEach(({user, stats}, index) => panes.push({
+          menuItem: (
+            <Menu.Item key={user.id}>
+              {user.display || user.name}&nbsp;
+              <Icon name='window close' style={{cursor: 'pointer'}} onClick={(e) => { e.stopPropagation(); this.removeUserTab(index); }} />
+            </Menu.Item>
+          ),
+          render: () => <Tab.Pane><MonitoringUser user={user} stats={stats} /></Tab.Pane>,
+        }));
+      }
+
+      const content = (
+        <Tab panes={panes}
+             activeIndex={activeTab || 0}
+             onTabChange={(e, {activeIndex}) => this.setState({activeTab: activeIndex})}
+             renderActiveOnly={true} />
+      );
+
+      return (
+          <div>
+              {user ? content : login}
+          </div>
+      );
+  }
 }
 
 export default AdminRoot;

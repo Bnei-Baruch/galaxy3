@@ -4,6 +4,7 @@
   "private": true,
   "homepage": ".",
   "dependencies": {
+    "@sentry/browser": "^5.15.5",
     "classnames": "^2.2.6",
     "eqcss": "^1.9.1",
     "i18next": "^19.3.4",
@@ -23,6 +24,7 @@
     "semantic-ui-css": "^2.4.0",
     "semantic-ui-react": "^0.88.2",
     "swipe-js-iso": "^2.1.5",
+    "ua-parser-js": "^0.7.21",
     "webrtc-adapter": "^6.4.0"
   },
   "scripts": {

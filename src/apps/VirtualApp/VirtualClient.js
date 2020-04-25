@@ -10,7 +10,7 @@ import {
   getDevicesStream,
   getState,
   initJanus,
-  micLevel,
+  micLevel, reportToSentry,
   testDevices,
   testMic,
 } from '../../shared/tools';
@@ -172,6 +172,7 @@ class OldClient extends Component {
         this.setState({ video_devices, audio_devices });
         this.setDevice(video_id, audio_id, video_setting);
       } else if (video) {
+        reportToSentry("Video Device Failed", {source: "device",video: false})
         alert(t('oldClient.videoNotDetected'));
         this.setState({ cammuted: true, video_device: null });
         //Try to get video fail reason
@@ -183,6 +184,7 @@ class OldClient extends Component {
         Janus.log(' :: Trying to get audio only');
         this.initDevices(false);
       } else {
+        reportToSentry("Audio Device Failed", {source: "device",audio: false})
         //Try to get audio fail reason
         testDevices(false, true, steam => {
         });
@@ -333,6 +335,7 @@ class OldClient extends Component {
       if (count >= 10) {
         clearInterval(chk);
         this.exitRoom(false);
+        reportToSentry("ICE State disconnected",{source: "ice"})
         alert(this.props.t('oldClient.networkSettingsChanged'));
         window.location.reload();
       }
@@ -362,6 +365,7 @@ class OldClient extends Component {
         if (count >= 10) {
           clearInterval(chk);
           this.exitRoom(false);
+          reportToSentry("Video stopped",{source: "media"})
           alert(t('oldClient.serverStoppedReceiveOurMedia'));
         }
       }, 3000);
@@ -395,6 +399,7 @@ class OldClient extends Component {
           if (question) {
             this.handleQuestion();
           }
+          reportToSentry("Audio stopped",{source: "media"})
           alert(t('oldClient.serverStoppedReceiveOurAudio'));
         }
       }, 3000);
@@ -436,6 +441,7 @@ class OldClient extends Component {
       },
       error: (error) => {
         Janus.log('Error attaching plugin: ' + error);
+        reportToSentry(error,{source: "videoroom"})
       },
       consentDialog: (on) => {
         Janus.debug('Consent dialog should be ' + (on ? 'on' : 'off') + ' now');
@@ -472,10 +478,10 @@ class OldClient extends Component {
         if (!women) {
           videoroom.muteAudio();
         }
-        if (track.kind === 'video') {
+        if (on && track && track.kind === 'video') {
           this.setState({localVideoTrack: track});
         }
-        if (track.kind === 'audio') {
+        if (on && track && track.kind === 'audio') {
           this.setState({localAudioTrack: track});
         }
       },
@@ -542,6 +548,7 @@ class OldClient extends Component {
           this.publishOwnFeed(false);
         } else {
           Janus.error('WebRTC error... ' + JSON.stringify(error));
+          reportToSentry(JSON.stringify(error),{source: "webrtc"})
         }
       }
     });
@@ -705,6 +712,7 @@ class OldClient extends Component {
             Janus.log('This is a no such room');
           } else {
             Janus.log(msg['error']);
+            reportToSentry(msg['error'],{source: "videoroom"})
           }
         }
       }
@@ -737,6 +745,7 @@ class OldClient extends Component {
         },
         error: (error) => {
           Janus.error('  -- Error attaching plugin...', error);
+          reportToSentry(error,{source: "remotefeed"})
         },
         iceState: (state) => {
           Janus.log('ICE state (remote feed) changed to ' + state);
@@ -755,6 +764,7 @@ class OldClient extends Component {
           Janus.log('Event: ' + event);
           if (msg['error'] !== undefined && msg['error'] !== null) {
             Janus.debug('-- ERROR: ' + msg['error']);
+            reportToSentry(msg['error'],{source: "remotefeed"})
           } else if (event !== undefined && event !== null) {
             if (event === 'attached') {
               this.setState({ creatingFeed: false });
@@ -795,6 +805,7 @@ class OldClient extends Component {
                 error: (error) => {
                   Janus.error('WebRTC error:', error);
                   Janus.debug('WebRTC error... ' + JSON.stringify(error));
+                  reportToSentry(JSON.stringify(error),{source: "remotefeed"})
                 }
               });
           }
@@ -932,6 +943,8 @@ class OldClient extends Component {
     user.timestamp  = Date.now();
     this.setState({ user });
     localStorage.setItem('username', user.display);
+    if(JSON.parse(localStorage.getItem("guest")))
+      user.role = "guest";
     initGxyProtocol(janus, user, protocol => {
       this.setState({ protocol });
       // Send question event if before join it was true
@@ -968,6 +981,7 @@ class OldClient extends Component {
       } else if (type === 'client-disconnect' && user.id === id) {
         this.exitRoom(false);
       } else if(type === "client-kicked" && user.id === id) {
+        localStorage.setItem("guest", true);
         client.signoutRedirect();
       } else if (type === 'client-question' && user.id === id) {
         this.handleQuestion();
@@ -991,12 +1005,13 @@ class OldClient extends Component {
     const user                         = Object.assign({}, this.state.user);
     localStorage.setItem('question', !question);
     user.question = !question;
-    let msg = { type: 'question', status: !question, room, user };
-    sendProtocolMessage(protocol, user, msg);
-    this.setState({ user, question: !question, delay: true });
     setTimeout(() => {
       this.setState({ delay: false });
     }, 3000);
+    if(user.role === "guest") return;
+    let msg = { type: 'question', status: !question, room, user };
+    sendProtocolMessage(protocol, user, msg);
+    this.setState({ user, question: !question, delay: true });
     this.sendDataMessage('question', !question);
   };
 
@@ -1017,6 +1032,7 @@ class OldClient extends Component {
     setTimeout(() => {
       this.setState({ delay: false });
     }, 3000);
+    if(user.role === "guest") return;
     this.sendDataMessage('camera', this.state.cammuted);
     user.camera = cammuted;
     // Send to protocol camera status event
