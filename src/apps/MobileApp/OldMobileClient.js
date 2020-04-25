@@ -65,7 +65,7 @@ class OldMobileClient extends Component {
         user: {
             email: null,
             id: localStorage.getItem("uuid") || genUUID(),
-            role: "user",
+            role: "guest",
             name: "user-"+Janus.randomString(4),
             username: null,
         },
@@ -510,7 +510,7 @@ class OldMobileClient extends Component {
                 if(msg["publishers"] !== undefined && msg["publishers"] !== null) {
                     let list = msg["publishers"];
                     //FIXME: Tmp fix for black screen in room caoused by feed with video_codec = none
-                    let feeds = list.filter(feeder => JSON.parse(feeder.display).role === "user" && feeder.video_codec !== "none");
+                    let feeds = list.filter(feeder => JSON.parse(feeder.display).role.match(/^(user|guest)$/) && feeder.video_codec !== "none");
                     let {feedStreams,users} = this.state;
                     Janus.log(":: Got Pulbishers list: ", feeds);
                     if(feeds.length > 15) {
@@ -591,7 +591,7 @@ class OldMobileClient extends Component {
                     for(let f in feed) {
                         let id = feed[f]["id"];
                         let display = JSON.parse(feed[f]["display"]);
-                        if(display.role !== "user")
+                        if(!display.role.match(/^(user|guest)$/))
                             return;
                         let streams = feed[f]["streams"];
                         let video = streams.filter(v => v.type === "video").length === 0;
@@ -970,8 +970,8 @@ class OldMobileClient extends Component {
         user.group = name;
         user.camera = video_device !== null;
         user.timestamp = Date.now();
-        if(JSON.parse(localStorage.getItem("guest")))
-            user.role = "guest";
+        if(JSON.parse(localStorage.getItem("ghost")))
+            user.role = "ghost";
         initGxyProtocol(janus, user, protocol => {
             this.setState({protocol});
             // Send question event if before join it was true
@@ -1000,7 +1000,7 @@ class OldMobileClient extends Component {
             } else if(type === "client-disconnect" && user.id === id) {
                 this.exitRoom();
             } else if(type === "client-kicked" && user.id === id) {
-                localStorage.setItem("guest", true);
+                localStorage.setItem("ghost", true);
                 this.exitRoom(false);
             } else if(type === "client-question" && user.id === id) {
                 this.handleQuestion();
@@ -1053,7 +1053,7 @@ class OldMobileClient extends Component {
         setTimeout(() => {
             this.setState({delay: false});
         }, 3000);
-        if(user.role === "guest") return;
+        if(user.role === "ghost") return;
         let msg = {type: "question", status: !question, room, user};
         sendProtocolMessage(protocol, user, msg );
     };
@@ -1065,7 +1065,7 @@ class OldMobileClient extends Component {
         setTimeout(() => {
             this.setState({delay: false});
         }, 3000);
-        if(user.role === "guest") return;
+        if(user.role === "ghost") return;
         this.sendDataMessage("camera", this.state.cammuted);
         // Send to protocol camera status event
         let msg = { type: "camera", status: cammuted, room, user};
