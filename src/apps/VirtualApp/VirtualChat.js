@@ -151,7 +151,7 @@ class VirtualChat extends Component {
 
   sendChatMessage = () => {
     let { input_value, user, from, room_chat, support_msgs } = this.state;
-    if (user.role !== "user" || input_value === '') {
+    if (!user.role.match(/^(user|guest)$/) || input_value === '') {
       return;
     }
     let msg     = { user, text: input_value };
