@@ -38,7 +38,6 @@ class LoginPage extends Component {
                         if(user) this.appLogin();
                     }).catch((error) => {
                         console.log("SigninSilent error: ", error);
-                        reportToSentry("SigninSilent: " + error,{source: "login"});
                         this.setState({disabled: false, loading: false});
                     });
                 });
@@ -126,7 +125,7 @@ class LoginPage extends Component {
                                             <Header size='huge'>{t('loginPage.newUsers')}</Header>
                                             <p style={{fontSize: "1.3em"}}>{t('loginPage.guestMessage1')} <a href='#' onClick={this.userLogin}>{t('loginPage.register')}</a> {t('loginPage.guestMessage2')}</p>
                                             <br />
-                                            <Button size='massive' primary onClick={() => window.open("https://galaxy.kli.one/guest","_self")} >{t('loginPage.guest')}</Button>
+                                            <Button size='massive' primary onClick={() => window.open("guest","_self")} >{t('loginPage.guest')}</Button>
                                         </Grid.Column>
                                     </Grid.Row>
                                 </Grid>
