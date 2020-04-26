@@ -51,7 +51,7 @@ class UsersQuadSndman extends Component {
             talk,
             name: user.display,
             ip: user.ip,
-            col: "4",
+            col: 4,
             room: user.room,
         });
         Janus.log(":: Sending message: ", message);
