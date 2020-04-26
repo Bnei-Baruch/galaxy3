@@ -198,7 +198,7 @@ const MonitoringAdmin = (props) => {
     });
 
     setFullView({fullView: newFullView, filterOptions});
-    setUsersTableView({view: newFullView, column: 'score', direction: 'descending'});
+    setUsersTableView({view: newFullView.slice().filter(filterView), column: 'score', direction: 'descending'});
   }, [users, usersData]);
 
   const filterView = ({user, stats}) => {
