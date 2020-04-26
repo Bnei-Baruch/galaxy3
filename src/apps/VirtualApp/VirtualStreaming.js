@@ -82,15 +82,8 @@ class VirtualStreaming extends Component {
   };
 
   setVideo(videos) {
-    console.log('setVideo', videos);
     this.setState({videos});
     this.props.virtualStreamingJanus.setVideo(videos);
-
-    //setTimeout(() => {
-    //  console.log('Reattaching!');
-    //  this.props.virtualStreamingJanus.reAttachVideoStream(this.remoteVideo);
-    //}, 5000);
-
   }
 
   setAudio(audios, text) {
@@ -101,7 +94,6 @@ class VirtualStreaming extends Component {
   render() {
     const {
       attached,
-      muted,
     } = this.props;
     const {
       videos,
@@ -227,18 +219,6 @@ class VirtualStreaming extends Component {
             {inLine}
           </NewWindow>
         }
-        <audio ref={(ref) => this.audioRef(ref)}
-               id="remoteAudio"
-               autoPlay={true}
-               controls={false}
-               muted={muted}
-               playsInline={true} />
-        <audio ref={(ref) => this.trlAudioRef(ref)}
-               id="trlAudio"
-               autoPlay={true}
-               controls={false}
-               muted={true}
-               playsInline={true} />
       </Fragment>
     );
   }

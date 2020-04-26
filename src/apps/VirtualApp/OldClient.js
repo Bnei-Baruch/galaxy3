@@ -83,7 +83,6 @@ class OldClient extends Component {
     currentLayout: localStorage.getItem('currentLayout') || 'double',
     attachedSource: true,
     sourceLoading: true,
-    sourceMuted: false,
     virtualStreamingJanus: new VirtualStreamingJanus(() => this.virtualStreamingInitialized()),
   }
 
@@ -1159,7 +1158,6 @@ class OldClient extends Component {
     const {
       attachedSource,
       currentLayout,
-      audio,
       audio_device,
       audio_devices,
       cammuted,
@@ -1167,7 +1165,6 @@ class OldClient extends Component {
       count,
       delay,
       feeds,
-      geoinfo,
       janus,
       localAudioTrack,
       monitoringData,
@@ -1181,7 +1178,6 @@ class OldClient extends Component {
       selftest,
       shidur,
       sourceLoading,
-      sourceMuted,
       tested,
       user,
       username_value,
@@ -1216,11 +1212,6 @@ class OldClient extends Component {
       <VirtualStreaming
         virtualStreamingJanus={virtualStreamingJanus}
         attached={attachedSource}
-        muted={sourceMuted}
-
-        setMutedUnmuted={() => {
-          this.setState({ sourceMuted: !sourceMuted });
-        }}
         setDetached={() => {
           this.setState({ attachedSource: false });
         }}
@@ -1328,7 +1319,7 @@ class OldClient extends Component {
           <Menu.Item
             disabled
             onClick={this.handleQuestion}>
-            <Icon color={question ? 'green' : ''} name='question' />
+            <Icon {...(question ? {color: 'green'} : {})} name='question' />
             {t('oldClient.askQuestion')}
           </Menu.Item>
           <Menu.Item onClick={this.showShidur} disabled={room === '' || sourceLoading}>

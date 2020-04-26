@@ -25,9 +25,17 @@ export default class VirtualStreamingJanus {
     this.mixvolume = null;
     this.talking = null;
 
-    this.audioElement = null;
     this.videoElement = null;
-    this.trlAudioElement = null;
+    this.audioElement = new Audio();
+		this.audioElement.autoplay = true;
+		this.audioElement.controls = false;
+		this.audioElement.muted = false;
+		this.audioElement.playinline = true;
+    this.trlAudioElement = new Audio();
+		this.trlAudioElement.autoplay = true;
+		this.trlAudioElement.controls = false;
+		this.trlAudioElement.muted = true;
+		this.trlAudioElement.playinline = true;
 
     this.onInitialized = onInitialized;
   }
@@ -70,13 +78,6 @@ export default class VirtualStreamingJanus {
     }
   }
 
-  attachAudioStream(audioElement) {
-    if (audioElement && audioElement !== this.audioElement) {
-      this.attachAudioStream_(audioElement, this.audioElement);
-      this.audioElement = audioElement;
-    }
-  }
-
   attachAudioStream_(next, prev) {
     if (next) {
       if (prev && next !== prev) {
@@ -84,13 +85,6 @@ export default class VirtualStreamingJanus {
       } else if (this.audioMediaStream) {
         Janus.attachMediaStream(next, this.audioMediaStream);
       }
-    }
-  }
-
-  attachTrlAudioStream(trlAudioElement) {
-    if (trlAudioElement && trlAudioElement !== this.trlAudioElement) {
-      this.attachTrlAudioStream_(trlAudioElement, this.trlAudioElement);
-      this.trlAudioElement = trlAudioElement;
     }
   }
 
@@ -248,7 +242,7 @@ export default class VirtualStreamingJanus {
         stream.addTrack(track.clone());
         this.audioMediaStream = stream;
         Janus.log('Created remote audio stream:', stream);
-        this.attachAudioStream_(this.videoElement, /* reattach= */ false);
+        this.attachAudioStream_(this.audioElement, /* reattach= */ false);
         this.onInitialized_();
       },
       oncleanup: () => {

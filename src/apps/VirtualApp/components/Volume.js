@@ -3,7 +3,7 @@ import { Icon } from 'semantic-ui-react';
 
 import './Volume.css';
 
-const Volume = ({ upward = true, media, onVolumeChange, onMuteUnmute }) => {
+const Volume = ({ media }) => {
   const [element, setElement]           = useState(null);
   const [volumeHover, setVolumeHover]   = useState(false);
   const [wasMouseDown, setWasMouseDown] = useState(false);
@@ -18,7 +18,7 @@ const Volume = ({ upward = true, media, onVolumeChange, onMuteUnmute }) => {
 			documentElem.addEventListener('touchmove', handleMove, { passive: false });
 			documentElem.addEventListener('mouseup', handleEnd, { passive: false });
 			documentElem.addEventListener('touchend', handleEnd, { passive: false });
-			window.addEventListener('beforeunload', handleClose);
+			window.addEventListener('beforeunload', handleClose, { passive: false });
 			return () => {
 				documentElem.removeEventListener('mousemove', handleMove);
 				documentElem.removeEventListener('touchmove', handleMove);
@@ -38,7 +38,6 @@ const Volume = ({ upward = true, media, onVolumeChange, onMuteUnmute }) => {
     const { top, bottom } = element.getBoundingClientRect();
     const offset          = Math.min(Math.max(0, clientY - top), bottom - top);
     const newVolume       = 1 - (offset / (bottom - top));
-		console.log('setVolume', newVolume);
     media.volume = newVolume;
 		setVolumeState(newVolume);
 		if (newVolume > 0 && media && media.muted) {
@@ -104,8 +103,8 @@ const Volume = ({ upward = true, media, onVolumeChange, onMuteUnmute }) => {
   };
 
   const volumePopoverStyle = {
-    bottom: upward ? '100%' : 'auto',
-    top: upward ? 'auto' : '100%',
+    bottom: '100%',
+    top: 'auto',
     visibility: volumeHover || wasMouseDown ? 'visible' : 'hidden',
   };
 
@@ -169,7 +168,8 @@ const Volume = ({ upward = true, media, onVolumeChange, onMuteUnmute }) => {
 const arePropsEqual = (props, nextProps) => {
   const { media } = props;
 
-	return media === nextProps.media;
+	const ret = media === nextProps.media;
+	return ret;
 };
 
 export default React.memo(Volume, arePropsEqual);
