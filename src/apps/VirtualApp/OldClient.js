@@ -1283,6 +1283,7 @@ class OldClient extends Component {
             <Button primary icon='sign-in' disabled={delay || !selected_room || !audio_device}
                     onClick={this.joinRoom} /> : ''}
         </Input>
+        { !(new URL(window.location.href).searchParams.has('deb')) ? null : (
         <Input>
           <Select placeholder='number of virtual users' options={[
             { value: '1', text: '1' },
@@ -1307,7 +1308,7 @@ class OldClient extends Component {
             localStorage.setItem('number_of_virtual_users', value);
           }}>
           </Select>
-        </Input>
+        </Input>)}
         <Menu icon='labeled' secondary size="mini">
           <Menu.Item disabled={!localAudioTrack}
                      onClick={() => this.setState({ chatVisible: !chatVisible, chatMessagesCount: 0 })}>
