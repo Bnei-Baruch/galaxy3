@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React, {Component} from 'react';
 import {Button, Icon, Label, Segment} from "semantic-ui-react";
 import './UsersQuadSndman.scss'
 import UsersHandleSndman from "./UsersHandleSndman";
@@ -47,9 +47,15 @@ class UsersQuadSndman extends Component {
     };
 
     sendMessage = (user, talk, inst) => {
-        let message = `{"talk":${talk},"name":"${user.display}","ip":"${user.ip}","col":4,"room":${user.room}}`;
-        Janus.log(":: Sending message: ",message);
-        this.props.fwdhandle.data({ text: message });
+        const message = JSON.stringify({
+            talk,
+            name: user.display,
+            ip: user.ip,
+            col: "4",
+            room: user.room,
+        });
+        Janus.log(":: Sending message: ", message);
+        this.props.fwdhandle.data({text: message});
     };
 
     forwardStream = (full_group) => {
