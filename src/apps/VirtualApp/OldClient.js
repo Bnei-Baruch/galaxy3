@@ -34,7 +34,7 @@ import LoginMessage from "./components/LoginMessage";
 class OldClient extends Component {
 
   state = {
-    count: 0,
+    chatMessagesCount: 0,
     creatingFeed: false,
     delay: false,
     audioContext: null,
@@ -306,6 +306,7 @@ class OldClient extends Component {
       remoteFeed: null,
       room: '',
       selected_room: (reconnect ? room : ''),
+			chatMessagesCount: 0,
     });
     protocol.data({
       text: JSON.stringify(pl),
@@ -1064,11 +1065,9 @@ class OldClient extends Component {
     });
   }
 
-  // TODO: Why was removed?!?!
-  onNewMsg = (private_message) => {
-    console.log('onNewMsg', private_message);
-    // Was removed. Why?
-    // this.setState({ count: this.state.count + 1 });
+  onChatMessage = () => {
+		console.log('onChatMessage');
+    this.setState({ chatMessagesCount: this.state.chatMessagesCount + 1 });
   };
 
   mapDevices = (devices) => {
@@ -1157,12 +1156,12 @@ class OldClient extends Component {
   render() {
     const {
       attachedSource,
-      currentLayout,
       audio_device,
       audio_devices,
       cammuted,
+			chatMessagesCount,
       chatVisible,
-      count,
+      currentLayout,
       delay,
       feeds,
       janus,
@@ -1256,7 +1255,7 @@ class OldClient extends Component {
       }
     }
 
-    let l = (<Label key='Carbon' floating size='mini' color='red'>{count}</Label>);
+    const chatCountLabel = (<Label key='Carbon' floating size='mini' color='red'>{chatMessagesCount}</Label>);
 
     let content = (<div className={classNames('vclient', { 'vclient--chat-open': chatVisible })}>
       <LoginMessage />
@@ -1311,10 +1310,10 @@ class OldClient extends Component {
         </Input>
         <Menu icon='labeled' secondary size="mini">
           <Menu.Item disabled={!localAudioTrack}
-                     onClick={() => this.setState({ chatVisible: !chatVisible, count: 0 })}>
+                     onClick={() => this.setState({ chatVisible: !chatVisible, chatMessagesCount: 0 })}>
             <Icon name="comments" />
             {t(chatVisible ? 'oldClient.closeChat' : 'oldClient.openChat')}
-            {count > 0 ? l : ''}
+            {chatMessagesCount > 0 ? chatCountLabel : ''}
           </Menu.Item>
           <Menu.Item
             disabled
@@ -1444,7 +1443,7 @@ class OldClient extends Component {
             janus={janus}
             room={room}
             user={user}
-            onNewMsg={this.onNewMsg} />
+            onNewMsg={this.onChatMessage} />
         </div>
       </div>
     </div>);
