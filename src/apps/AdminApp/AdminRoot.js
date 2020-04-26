@@ -196,7 +196,7 @@ class AdminRoot extends Component {
 
                     // Filter service feeds and sort by timestamp
                     let feeds = list.sort((a, b) => JSON.parse(a.display).timestamp - JSON.parse(b.display).timestamp)
-                        .filter(feeder => JSON.parse(feeder.display).role.match(/^(user|guest)$/) && feeder.video_codec !== 'none');
+                        .filter(feeder => JSON.parse(feeder.display).role.match(/^(user|guest|ghost)$/) && feeder.video_codec !== 'none');
 
                     console.log("[Admin] available feeds", feeds);
                     const subscription = [];
@@ -268,7 +268,7 @@ class AdminRoot extends Component {
                     for (let f in feed) {
                         let id = feed[f]["id"];
                         let display = JSON.parse(feed[f]["display"]);
-                        if (!display.role.match(/^(user|guest)$/))
+                        if (!display.role.match(/^(user|guest|ghost)$/))
                             return;
                         let streams = feed[f]["streams"];
                         feed[f].display = display;
