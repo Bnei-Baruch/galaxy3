@@ -29,7 +29,7 @@ export default class VirtualStreamingJanus {
     this.audioElement = new Audio();
 		this.audioElement.autoplay = true;
 		this.audioElement.controls = false;
-		this.audioElement.muted = false;
+		this.audioElement.muted = true;
 		this.audioElement.playinline = true;
     this.trlAudioElement = new Audio();
 		this.trlAudioElement.autoplay = true;
