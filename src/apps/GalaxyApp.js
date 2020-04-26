@@ -2,6 +2,7 @@ import React, { Component, Fragment } from 'react';
 import {Button} from "semantic-ui-react";
 import LoginPage from '../components/LoginPage';
 import {client} from "../components/UserManager";
+import {withTranslation} from "react-i18next";
 
 class GalaxyApp extends Component {
 
@@ -11,13 +12,18 @@ class GalaxyApp extends Component {
     };
 
     checkPermission = (user) => {
+        const {t} = this.props;
         let gxy = user.roles.filter(role => /gxy_/.test(role));
-        let gxy_user = gxy.length === 0
+        let pending_approval = user.roles.filter(role => role === 'pending_approval').length > 0;
+        let gxy_user = gxy.length === 0;
         console.log(gxy)
         if(!gxy_user && gxy.length > 1) {
             this.setState({user, roles: user.roles});
         } else if(!gxy_user && gxy.length === 1 && gxy[0] === "gxy_user") {
             window.location = '/user';
+        } else if(pending_approval) {
+            alert(t('galaxyApp.pendingApproval'));
+            client.signoutRedirect();
         } else {
             alert("Access denied.");
             client.signoutRedirect();
@@ -44,4 +50,4 @@ class GalaxyApp extends Component {
     }
 }
 
-export default GalaxyApp;
+export default withTranslation()(GalaxyApp);
