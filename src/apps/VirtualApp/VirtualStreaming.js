@@ -188,6 +188,7 @@ class VirtualStreaming extends Component {
               </button>
             }
           </div>
+          <Label className='talk' size='massive' color='red'><Icon name='microphone' />On</Label>
         </div>
         <div className='mediaplayer' ref="mediaplayer">
           <video ref={(ref) => this.videoRef(ref)}

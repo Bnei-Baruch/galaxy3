@@ -21,6 +21,7 @@
     position: absolute;
     width: 100%;
     z-index: 1;
+    
 }
 
 .volume-popover__wrapper {
@@ -30,6 +31,10 @@
     flex-direction: column-reverse;
     margin: 1rem 0;
     width: 6px;
+    
+}
+.volume-popover__wrapper:focus{
+    outline: none;
 }
 
 .volume-popover__bar.is-full {

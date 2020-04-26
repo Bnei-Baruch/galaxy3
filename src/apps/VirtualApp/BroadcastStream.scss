@@ -23,13 +23,52 @@
     // bottom:0;
     // width: 100%;
     // left:0;
+    .controls {
+      animation-name: opacityOn;
+      animation-duration: 800ms;
+      animation-delay: 5s;
+      animation-fill-mode: forwards;
+      // animation-iteration-count: 1;
+    }
+    &:hover {
+      .controls {
+        animation-direction: reverse;
+        // animation-fill-mode: backwards;
+        // animation-name: opacityOff;
+        // animation-duration: 800ms;
+        animation-delay: 0;
+        // animation-delay: 5s;
+        // animation-fill-mode: forwards;
+        // animation-iteration-count: 1;
+        // opacity:1!important;
+      }
+    }
   }
 
 }
+
+@keyframes opacityOn {
+    0% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 0;
+    }
+}
+@keyframes opacityOff {
+  0% {
+      opacity: 0;
+  }
+  100% {
+      opacity: 1;
+  }
+}
+
+
 .controls{
 
     align-items: flex-start;
-    background: linear-gradient(to top, rgb(34, 34, 34), rgba(34, 34, 34, .85));
+    // background: linear-gradient(to top, rgb(34, 34, 34), rgba(34, 34, 34, .85));
     background: rgba(34, 34, 34, .85);
     color: #fff;
     direction: ltr;
@@ -41,14 +80,10 @@
     width: 100%;
     bottom: 0;
     transition: opacity .25s, top .25s;
+    // opacity: 0;
 
     * {
       color: inherit;
-    }
-
-    &--is-fade {
-      opacity: 0;
-      top: 64px;
     }
 
     .buttons-wrapper {
