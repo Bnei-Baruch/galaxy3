@@ -2,7 +2,7 @@
 import pako from 'pako';
 import {
   MONITORING_BACKEND,
-} from "./consts";
+} from "./env";
 
 const ONE_SECOND_IN_MS = 1000;
 const ONE_MINUTE_IN_MS = 60 * 1000;
@@ -75,7 +75,7 @@ export const MonitoringData = class {
 
   stopMonitoring() {
     if (this.monitorIntervalId) {
-      clearInterval(this.monitorIntervalId); 
+      clearInterval(this.monitorIntervalId);
       this.monitorIntervalId = 0;
     }
   }
@@ -180,7 +180,7 @@ export const MonitoringData = class {
           });
         }
       }));
-      
+
       Promise.all(getStatsPromises).then(() => {
         this.forEachMonitor_(datas, defaultTimestamp);
       });
