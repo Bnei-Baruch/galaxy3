@@ -4,11 +4,11 @@ import { I18nextProvider } from 'react-i18next';
 import i18n from 'i18next';
 
 import './i18n/i18n';
-import GalaxyApp from "./apps/GalaxyApp";
+// import GalaxyApp from "./apps/GalaxyApp";
 // import OldClient from './apps/VirtualApp/OldClient';
 // import OldMobileClient from "./apps/MobileApp/OldMobileClient";
 // import MobileClient from "./apps/MobileApp/MobileClient";
-// import VirtualClient from "./apps/VirtualApp/VirtualClient";
+import VirtualClient from "./apps/VirtualApp/VirtualClient";
 // import VirtualStreaming from "./apps/VirtualApp/VirtualStreaming";
 // import GroupClient from "./apps/GroupsApp/GroupClient";
 // import GalaxyStream from "./apps/StreamApp/GalaxyStream";
@@ -22,11 +22,11 @@ class App extends Component {
   render() {
     return (
       <I18nextProvider i18n={i18n}>
-        <GalaxyApp />
+        {/*<GalaxyApp />*/}
         {/*<OldClient />*/}
         {/*<OldMobileClient />*/}
         {/*<MobileClient/>*/}
-        {/*<VirtualClient />*/}
+        <VirtualClient />
         {/* <VirtualStreaming/>*/}
         {/* <GroupClient/> */}
         {/* <GalaxyStream/>*/}

@@ -93,8 +93,13 @@ class OldClient extends Component {
   };
 
   checkPermission = (user) => {
+    const {t} = this.props;
     let gxy_user = user.roles.filter(role => role === 'gxy_user').length > 0;
-    if (gxy_user) {
+    let pending_approval = user.roles.filter(role => role === 'pending_approval').length > 0;
+    if (pending_approval) {
+      alert(t('galaxyApp.pendingApproval'));
+      client.signoutRedirect();
+    } else if (gxy_user) {
       delete user.roles;
       user.role = "user";
       this.checkClient(user);

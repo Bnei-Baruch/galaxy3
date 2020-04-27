@@ -117,15 +117,15 @@ class LoginPage extends Component {
                                     <Grid.Row verticalAlign='bottom'>
                                         <Grid.Column>
                                             <Header size='huge' >{t('loginPage.regUsers')}</Header>
-                                            <p style={{fontSize: "1.3em", opacity: '0.0' }}>You can either login and using the system as authorize user</p>
+                                            {/*<p style={{fontSize: "1.3em", opacity: '0.0' }}>You can either login and using the system as authorize user</p>*/}
                                             <br />
                                             <Button size='massive' primary onClick={this.userLogin} disabled={disabled} loading={loading}>{t('loginPage.login')}</Button>
                                         </Grid.Column>
                                         <Grid.Column>
                                             <Header size='huge'>{t('loginPage.newUsers')}</Header>
-                                            <p style={{fontSize: "1.3em"}}>{t('loginPage.guestMessage1')} <a href='#' onClick={this.userLogin}>{t('loginPage.register')}</a> {t('loginPage.guestMessage2')}</p>
+                                            {/*<p style={{fontSize: "1.3em"}}>{t('loginPage.guestMessage1')} <a href='#' onClick={this.userLogin}>{t('loginPage.register')}</a> {t('loginPage.guestMessage2')}</p>*/}
                                             <br />
-                                            <Button size='massive' primary onClick={() => window.open("guest","_self")} >{t('loginPage.guest')}</Button>
+                                            <Button size='massive' primary onClick={this.userLogin} >{t('loginPage.register')}</Button>
                                         </Grid.Column>
                                     </Grid.Row>
                                 </Grid>
