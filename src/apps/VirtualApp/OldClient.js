@@ -1311,7 +1311,7 @@ class OldClient extends Component {
             {shidur ? t('oldClient.closeBroadcast') : t('oldClient.openBroadcast')}
           </Menu.Item>
           <Popup
-            trigger={<Menu.Item disabled={room === '' || !shidur || sourceLoading || !attachedSource} icon={{ className:`icon--custom ${layoutIcon}`}}>{t('oldClient.layout')}</Menu.Item>}
+            trigger={<Menu.Item disabled={room === '' || !shidur || sourceLoading || !attachedSource} icon={{className:`icon--custom ${layoutIcon}`}} name={t('oldClient.layout')} />}
             disabled={room === '' || !shidur || !attachedSource}
             on='click'
             position='bottom center'
