@@ -1,13 +1,6 @@
 import { Janus } from '../../lib/janus';
-import {
-  GEO_IP_INFO,
-  JANUS_SRV_STR3,
-  JANUS_SRV_STR4,
-  STUN_SRV_STR,
-  gxycol,
-  trllang,
-  NO_VIDEO_OPTION_VALUE,
-} from '../../shared/consts';
+import {gxycol, trllang, NO_VIDEO_OPTION_VALUE,} from '../../shared/consts';
+import { GEO_IP_INFO,JANUS_SRV_STR3, JANUS_SRV_STR4, STUN_SRV_STR, } from '../../shared/env';
 
 export default class VirtualStreamingJanus {
 

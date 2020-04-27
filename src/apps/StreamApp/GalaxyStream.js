@@ -1,17 +1,10 @@
-import React, { Component } from 'react';
-import { Janus } from "../../lib/janus";
+import React, {Component} from 'react';
+import {Janus} from "../../lib/janus";
 import {client} from "../../components/UserManager";
-import { Segment, Menu, Select, Button, Grid, Label, Icon} from 'semantic-ui-react';
+import {Button, Grid, Icon, Label, Menu, Segment, Select} from 'semantic-ui-react';
 import VolumeSlider from "../../components/VolumeSlider";
-import {
-    videos_options,
-    audiog_options,
-    gxycol,
-    trllang,
-    JANUS_SRV_STR3,
-    JANUS_SRV_STR4,
-    STUN_SRV_STR, GEO_IP_INFO,
-} from "../../shared/consts";
+import {audiog_options, gxycol, trllang, videos_options,} from "../../shared/consts";
+import {GEO_IP_INFO, JANUS_SRV_STR3, JANUS_SRV_STR4, STUN_SRV_STR,} from "../../shared/env";
 import LoginPage from "../../components/LoginPage";
 import './GalaxyStream.css'
 

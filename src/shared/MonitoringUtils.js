@@ -1,15 +1,7 @@
 import React from 'react';
-
-import {
-  Table,
-  Popup,
-} from 'semantic-ui-react';
-
+import {Popup, Table} from 'semantic-ui-react';
 import parser from 'ua-parser-js';
-
-import {
-  MONITORING_BACKEND,
-} from "./consts";
+import {MONITORING_BACKEND} from "./env";
 
 export const system = (userAgent) => {
   const ua = new parser(userAgent);
@@ -36,7 +28,7 @@ export const sinceTimestamp = (ms, now) => {
   const loginDate = new Date(ms);
   const diff = now - loginDate;
   const minutes = pad(parseInt((diff / (1000 * 60)) % 60, 10), 2);
-  const hours = parseInt(diff / (1000 * 3600), 10); 
+  const hours = parseInt(diff / (1000 * 3600), 10);
   return `${hours}h:${minutes}m`;
 };
 
