@@ -65,7 +65,7 @@ class VirtualClient extends Component {
     protocol: null,
     user: null,
     users: {},
-    username_value: localStorage.getItem('username') || '',
+    username_value: '',
     chatVisible: false,
     question: false,
     geoinfo: false,
