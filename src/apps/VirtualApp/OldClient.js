@@ -91,6 +91,19 @@ class OldClient extends Component {
   }
 
   componentDidUpdate(prevProps, prevState) {
+    if (this.state.shidur && !prevState.shidur && !this.state.sourceLoading && this.room) {
+      console.log('unmute1!', this.state.shidur, prevState.shidur, this.state.sourceLoading, prevState.sourceLoading, this.state.room, prevState.room);
+      this.state.virtualStreamingJanus.audioElement.muted = false;
+    }
+    if (!this.state.sourceLoading && prevState.sourceLoading && this.state.shidur && this.room) {
+      console.log('unmute2!', this.state.shidur, prevState.shidur, this.state.sourceLoading, prevState.sourceLoading, this.state.room, prevState.room);
+      this.state.virtualStreamingJanus.audioElement.muted = false;
+    }
+    if (this.state.room && !prevState.room && this.state.shidur && !this.sourceLoading) {
+      console.log('unmute3!', this.state.shidur, prevState.shidur, this.state.sourceLoading, prevState.sourceLoading, this.state.room, prevState.room);
+      this.state.virtualStreamingJanus.audioElement.muted = false;
+    }
+
     if (this.state.videoroom !== prevState.videoroom ||
       this.state.localVideoTrack !== prevState.localVideoTrack ||
       this.state.localAudioTrack !== prevState.localAudioTrack ||

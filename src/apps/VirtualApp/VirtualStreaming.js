@@ -29,7 +29,6 @@ class VirtualStreaming extends Component {
   }
 
   componentDidMount() {
-		this.props.virtualStreamingJanus.audioElement.muted = false;
     this.setState({cssFixInterval: setInterval(() => this.cssFix(), 500)});
   };
 
@@ -46,7 +45,6 @@ class VirtualStreaming extends Component {
   }
 
   componentWillUnmount() {
-		this.props.virtualStreamingJanus.audioElement.muted = true;
     if (this.state.cssFixInterval) {
       clearInterval(this.state.cssFixInterval);
     }
