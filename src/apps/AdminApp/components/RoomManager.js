@@ -1,7 +1,8 @@
 import React, {Component} from 'react';
 import {Button, Input, Menu, Message, Select} from "semantic-ui-react";
 import {Janus} from "../../../lib/janus";
-import {JANUS_GATEWAYS, SECRET} from "../../../shared/consts";
+import {JANUS_GATEWAYS} from "../../../shared/consts";
+import {SECRET} from "../../../shared/env";
 
 const bitrate_options = [
     {key: 0, text: '64Kb/s', value: 64000},

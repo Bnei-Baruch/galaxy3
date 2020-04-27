@@ -20,7 +20,8 @@ import 'eqcss'
 //import MobileChat from "./MobileChat";
 import {initGxyProtocol, sendProtocolMessage} from "../../shared/protocol";
 import MobileStreaming from "./MobileStreaming";
-import {GEO_IP_INFO, PROTOCOL_ROOM, vsettings_list} from "../../shared/consts";
+import {PROTOCOL_ROOM, vsettings_list} from "../../shared/consts";
+import {GEO_IP_INFO} from "../../shared/env";
 import platform from "platform";
 import { isMobile } from 'react-device-detect';
 

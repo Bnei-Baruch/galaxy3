@@ -1,5 +1,6 @@
 import {Janus} from "../lib/janus";
-import {DATA_PORT, JANUS_STR_HOST_GR, JANUS_STR_HOST_PL, JANUS_STR_HOST_UK, SECRET} from "./consts";
+import {DATA_PORT} from "./consts";
+import {JANUS_STR_HOST_GR, JANUS_STR_HOST_PL, JANUS_STR_HOST_UK, SECRET} from "./env";
 
 let data_forward = {};
 let myid;

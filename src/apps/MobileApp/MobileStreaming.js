@@ -2,7 +2,8 @@ import React, { Component } from 'react';
 import { Janus } from "../../lib/janus";
 import { Segment, Menu, Select, Button } from 'semantic-ui-react';
 //import VolumeSlider from "../../components/VolumeSlider";
-import {videos_options, audiog_options, gxycol, trllang, STUN_SRV_STR, JANUS_SRV_STR3, JANUS_SRV_STR4, GEO_IP_INFO} from "../../shared/consts";
+import {videos_options, audiog_options, gxycol, trllang} from "../../shared/consts";
+import {STUN_SRV_STR, JANUS_SRV_STR3, JANUS_SRV_STR4, GEO_IP_INFO} from "../../shared/env";
 
 class MobileStreaming extends Component {
 
