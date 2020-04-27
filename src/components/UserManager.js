@@ -7,6 +7,7 @@ export const BASE_URL = process.env.NODE_ENV === 'production' ? process.env.REAC
 
 oidclog.logger = console;
 oidclog.level  = 0;
+let user_mgr = null;
 
 const userManagerConfig = {
     authority: AUTH_URL,
@@ -29,7 +30,7 @@ client.events.addAccessTokenExpiring(() => {
 
 client.events.addAccessTokenExpired((data) => {
     console.log("...!TOKEN EXPIRED!...");
-    reportToSentry("TOKEN EXPIRED: " + data,{source: "login"});
+    reportToSentry("TOKEN EXPIRED: " + data,{source: "login"}, user_mgr, "warning");
     //client.signoutRedirect();
 });
 
@@ -40,7 +41,7 @@ client.events.addUserSignedOut(() => {
 
 client.events.addSilentRenewError((error) =>{
     console.error("Silent Renew Error: " + error);
-    reportToSentry("Silent Renew Error: " + error,{source: "login"});
+    reportToSentry("Silent Renew Error: " + error,{source: "login"}, user_mgr, "warning");
 });
 
 export const getUser = (cb) =>
@@ -50,12 +51,13 @@ export const getUser = (cb) =>
             let roles = at.payloadObj.realm_access.roles;
             const {sub,given_name,name,email,group,title} = user.profile;
             user = {id: sub, username: given_name, name, title: title || given_name, group, email, roles}
+            user_mgr = user;
         }
         cb(user)
     })
         .catch((error) => {
             console.log("Error: ",error);
-            reportToSentry("Get User Error: " + error,{source: "login"})
+            reportToSentry("Get User Error: " + error,{source: "login"}, null,"warning")
         });
 
 export default client;
