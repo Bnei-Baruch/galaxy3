@@ -1,4 +1,5 @@
 import {Janus} from "../lib/janus";
+import {PROTOCOL_ROOM, SDIOUT_ID, SHIDUR_ID, SNDMAN_ID, STORAN_ID,} from "./consts";
 import {
     ADMIN_SECRET,
     JANUS_ADMIN_GXY1,
@@ -7,13 +8,8 @@ import {
     JANUS_SRV_GXY1,
     JANUS_SRV_GXY2,
     JANUS_SRV_GXY3,
-    PROTOCOL_ROOM,
-    SDIOUT_ID,
-    SHIDUR_ID,
-    SNDMAN_ID,
-    STORAN_ID,
     STUN_SRV_GXY
-} from "./consts";
+} from "./env";
 import {getDateString} from "./tools";
 
 class GxyJanus {

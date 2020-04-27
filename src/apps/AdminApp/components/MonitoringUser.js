@@ -1,22 +1,7 @@
-import React, {
-  useState,
-  useEffect,
-} from 'react';
-
-import {
-  Dimmer,
-  Header,
-  Loader,
-  Table,
-} from 'semantic-ui-react';
-
-import {
-  MONITORING_BACKEND,
-} from '../../../shared/consts';
-
-import {
-  userRow,
-} from '../../../shared/MonitoringUtils';
+import React, {useEffect, useState} from 'react';
+import {Dimmer, Header, Loader, Table} from 'semantic-ui-react';
+import {MONITORING_BACKEND} from '../../../shared/env';
+import {userRow} from '../../../shared/MonitoringUtils';
 
 const MonitoringUser = (props) => {
   const [loadingCount, setLoadingCount] = useState(0);

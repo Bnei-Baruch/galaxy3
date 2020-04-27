@@ -8,36 +8,9 @@ export const SHIDUR_ID = "4ab867e5-46f9-47b9-bd6d-47a6df784d92";
 export const SNDMAN_ID = "720f133f-b8e2-49a8-a148-7bd80763ae55";
 export const SDIOUT_ID = "91966d26-0777-4179-9773-d7cd5456a5ed";
 export const STORAN_ID = "28c8d37e-d86f-4c8c-9f89-f3b92e81f13e";
-export const SENTRY_KEY = process.env.REACT_APP_SENTRY_KEY;
-export const GEO_IP_INFO = process.env.REACT_APP_GEO_IP_INFO;
-export const DANTE_IN_IP = process.env.REACT_APP_DANTE_IN_IP;
-export const WFRP_STATE = process.env.REACT_APP_WFRP_STATE;
-export const WFDB_STATE = process.env.REACT_APP_WFDB_STATE;
-export const STUN_SRV_STR = process.env.REACT_APP_STUN_SRV_STR;
-export const STUN_SRV_GXY = process.env.REACT_APP_STUN_SRV_GXY;
-export const ADMIN_SECRET = process.env.REACT_APP_ADMIN_SECRET;
-export const SECRET = process.env.REACT_APP_SECRET;
-export const JANUS_SRV_GXY1 = process.env.REACT_APP_JANUS_SRV_GXY1;
-export const JANUS_SRV_GXY2 = process.env.REACT_APP_JANUS_SRV_GXY2;
-export const JANUS_SRV_GXY3 = process.env.REACT_APP_JANUS_SRV_GXY3;
-export const JANUS_ADMIN_VRT = process.env.REACT_APP_ADMIN_SRV_VRT;
-export const JANUS_ADMIN_GXY = process.env.REACT_APP_ADMIN_SRV_GXY;
-export const JANUS_ADMIN_GXY1 = process.env.REACT_APP_ADMIN_SRV_GXY1;
-export const JANUS_ADMIN_GXY2 = process.env.REACT_APP_ADMIN_SRV_GXY2;
-export const JANUS_ADMIN_GXY3 = process.env.REACT_APP_ADMIN_SRV_GXY3;
-export const JANUS_SRV_STR1 = process.env.REACT_APP_JANUS_SRV_STR1;
-export const JANUS_SRV_STR2 = process.env.REACT_APP_JANUS_SRV_STR2;
-export const JANUS_SRV_STR3 = process.env.REACT_APP_JANUS_SRV_STR3;
-export const JANUS_SRV_STR4 = process.env.REACT_APP_JANUS_SRV_STR4;
-export const JANUS_STR_HOST_IL = process.env.REACT_APP_JANUS_HOST_IL;
-export const JANUS_STR_HOST_PL = process.env.REACT_APP_JANUS_HOST_PL;
-export const JANUS_STR_HOST_GR = process.env.REACT_APP_JANUS_HOST_GR;
-export const JANUS_STR_HOST_UK = process.env.REACT_APP_JANUS_HOST_UK;
 
 export const JANUS_GATEWAYS = ["gxy1", "gxy2", "gxy3"];
 // TODO (edo): put all janus instance configs in a single object
-
-export const MONITORING_BACKEND = process.env.REACT_APP_MONITORING_BACKEND;
 
 export const vsettings_list = [
     { key: 0, text: '320 x 180, 15 fps', value: {width: 320, height: 180, fps: 15}},
