@@ -1169,11 +1169,12 @@ class VirtualClient extends Component {
       audio_device,
       audio_devices,
       cammuted,
-			chatMessagesCount,
+      chatMessagesCount,
       chatVisible,
       currentLayout,
       delay,
       feeds,
+      geoinfo,
       janus,
       localAudioTrack,
       monitoringData,
@@ -1189,7 +1190,6 @@ class VirtualClient extends Component {
       sourceLoading,
       tested,
       user,
-      username_value,
       video_device,
       video_devices,
       video_setting,
@@ -1321,7 +1321,7 @@ class VirtualClient extends Component {
             {chatMessagesCount > 0 ? chatCountLabel : ''}
           </Menu.Item>
           <Menu.Item
-            disabled
+            disabled={video_device === null || !geoinfo || !localAudioTrack || delay || otherFeedHasQuestion}
             onClick={this.handleQuestion}>
             <Icon {...(question ? {color: 'green'} : {})} name='question' />
             {t('oldClient.askQuestion')}
