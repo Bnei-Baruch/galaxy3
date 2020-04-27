@@ -316,22 +316,6 @@ class OldClient extends Component {
     });
   };
 
-  getFeedsList = (rooms, user) => {
-    //TODO: Need solution to show count without service users in room list
-    // rooms.forEach((room,i) => {
-    //     if(room.num_participants > 0) {
-    //         videoroom.send({
-    //             message: {request: "listparticipants", "room": room.room},
-    //             success: (data) => {
-    //                 let count = data.participants.filter(p => JSON.parse(p.display).role === "user");
-    //                 rooms[i].num_participants = count.length;
-    //                 this.setState({rooms});
-    //             }
-    //         });
-    //     }
-    // })
-  };
-
   iceState = () => {
     let count = 0;
     let chk   = setInterval(() => {
@@ -1327,7 +1311,7 @@ class OldClient extends Component {
             {shidur ? t('oldClient.closeBroadcast') : t('oldClient.openBroadcast')}
           </Menu.Item>
           <Popup
-            trigger={<Menu.Item disabled={room === '' || !shidur || sourceLoading || !attachedSource} icon={{ className:`icon--custom ${layoutIcon}`}}>t('oldClient.layout')</Menu.Item>}
+            trigger={<Menu.Item disabled={room === '' || !shidur || sourceLoading || !attachedSource} icon={{ className:`icon--custom ${layoutIcon}`}}>{t('oldClient.layout')}</Menu.Item>}
             disabled={room === '' || !shidur || !attachedSource}
             on='click'
             position='bottom center'
