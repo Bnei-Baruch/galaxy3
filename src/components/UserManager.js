@@ -58,14 +58,4 @@ export const getUser = (cb) =>
             reportToSentry("Get User Error: " + error,{source: "login"})
         });
 
-export const userLogin = (url) => {
-    getUser(cb => {
-        if(!cb) {
-            client.signinRedirect({state: url});
-        } else {
-            window.location = url;
-        }
-    });
-};
-
 export default client;
