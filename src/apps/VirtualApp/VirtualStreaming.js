@@ -22,6 +22,7 @@ class VirtualStreaming extends Component {
     room: Number(localStorage.getItem('room')) || null,
     user: {},
     cssFixInterval: null,
+    talking: false,
   };
 
   videoRef(ref) {
@@ -29,6 +30,7 @@ class VirtualStreaming extends Component {
   }
 
   componentDidMount() {
+    this.props.virtualStreamingJanus.onTalking((talking) => this.setState({talking}));
     this.setState({cssFixInterval: setInterval(() => this.cssFix(), 500)});
   };
 
@@ -89,9 +91,10 @@ class VirtualStreaming extends Component {
       virtualStreamingJanus,
     } = this.props;
     const {
-      videos,
       audios,
       room,
+      talking,
+      videos,
     } = this.state;
 
     if (!room) {
@@ -168,7 +171,7 @@ class VirtualStreaming extends Component {
                       flag={option.flag}
                       description={option.description}
                       action={option.action}
-                      onClick={() => this.setAudio(option.value, option.text)}
+                      onClick={() => this.setAudio(option.value, option.eng_text)}
                     />
                   );
                 })}
@@ -186,7 +189,7 @@ class VirtualStreaming extends Component {
               </button>
             }
           </div>
-          {virtualStreamingJanus.talking && <Label className='talk' size='massive' color='red'>Icon name='microphone' />On</Label>}
+          {talking && <Label className='talk' size='massive' color='red'><Icon name='microphone' />On</Label>}
         </div>
         <div className='mediaplayer' ref="mediaplayer">
           <video ref={(ref) => this.videoRef(ref)}

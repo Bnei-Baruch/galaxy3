@@ -39,6 +39,7 @@ export default class VirtualStreamingJanus {
 		this.trlAudioElement.playinline = true;
 
     this.onInitialized = onInitialized;
+    this.onTalkingCallback = null;
   }
 
   onInitialized_() {
@@ -97,6 +98,10 @@ export default class VirtualStreamingJanus {
         Janus.attachMediaStream(next, this.trlAudioMediaStream);
       }
     }
+  }
+
+  onTalking(callback) {
+    this.onTalkingCallback = callback;
   }
 
   init() {
@@ -165,12 +170,10 @@ export default class VirtualStreamingJanus {
   };
 
   initVideoStream = (janus) => {
-    //let { videos } = this.state;
     janus.attach({
       plugin: 'janus.plugin.streaming',
       opaqueId: 'videostream-' + Janus.randomString(12),
       success: (videoJanusStream) => {
-        // this.setState({ videostream });
         this.videoJanusStream = videoJanusStream;
         videoJanusStream.send({ message: { request: 'watch', id: this.videos } });
       },
@@ -378,6 +381,7 @@ export default class VirtualStreamingJanus {
       console.log(' :: Switch STR Stream: ', gxycol[col]);
       this.audioJanusStream.send({'message': { 'request': 'switch', 'id': gxycol[col]}});
       const id = trllang[localStorage.getItem('vrt_langtext')];
+      console.log('AAAA', localStorage.getItem('vrt_langtext'), id);
       if (name.match(/^(New York|Toronto)$/) || !id) {
         console.log(' :: Not TRL Stream attach');
       } else {
@@ -397,6 +401,9 @@ export default class VirtualStreamingJanus {
       this.trlAudioElement.muted = true;
       this.talking = null;
       this.mixvolume = null;
+    }
+    if (this.onTalkingCallback) {
+      this.onTalkingCallback(this.talking);
     }
   };
 
