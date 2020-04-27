@@ -334,6 +334,7 @@ class VirtualClient extends Component {
       selected_room: (reconnect ? room : ''),
 			chatMessagesCount: 0,
     });
+    this.state.virtualStreamingJanus.audioElement.muted = true;
     protocol.data({
       text: JSON.stringify(pl),
       success: () => {
