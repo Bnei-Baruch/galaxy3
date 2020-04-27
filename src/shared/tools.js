@@ -22,7 +22,6 @@ export const initJanus = (cb,er,gxy) => {
                 },
                 error: (error) => {
                     Janus.error(error);
-                    reportToSentry(error, {source: "janus",janus: gxy})
                     er(error);
                 },
                 destroyed: () => {
@@ -33,7 +32,7 @@ export const initJanus = (cb,er,gxy) => {
     })
 };
 
-export const reportToSentry = (title, data, level) => {
+export const reportToSentry = (title, data, user, level) => {
     level = level || 'info';
     data  = data  || {};
     Sentry.withScope(scope => {
@@ -41,6 +40,10 @@ export const reportToSentry = (title, data, level) => {
             scope.setExtra(key, data[key]);
         });
         scope.setLevel(level);
+        if(user) {
+            const {id,username,email} = user;
+            Sentry.setUser({id,username,email});
+        }
         Sentry.captureMessage(title);
     });
 }
