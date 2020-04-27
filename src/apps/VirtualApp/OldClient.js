@@ -1234,7 +1234,7 @@ class OldClient extends Component {
 
     let noOfVideos = videos.length;
     if (room !== '') {
-      if (shidur && attachedSource) {
+      if (shidur && attachedSource && ['double', 'equal'].includes(layout)) {
         noOfVideos += 1; // + Source
       }
     }
