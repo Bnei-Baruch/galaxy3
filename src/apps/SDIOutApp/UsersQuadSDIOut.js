@@ -1,24 +1,17 @@
 import React, { Component } from 'react';
 import {Segment} from "semantic-ui-react";
 import UsersHandleSDIOut from "./UsersHandleSDIOut";
-import {getState} from "../../shared/tools";
 
 class UsersQuadSDIOut extends Component {
 
     state = {
         col: null,
-        vquad: [null,null,null,null],
     };
 
     componentDidMount() {
         let { index } = this.props;
         let col = index === 0 ? 1 : index === 4 ? 2 : index === 8 ? 3 : index === 12 ? 4 : null;
         this.setState({col});
-        setInterval(() => {
-            getState(`galaxy/program/q`+col, ({vquad}) => {
-                this.setState({vquad});
-            });
-        }, 1000);
     };
 
     toFullGroup = (i,g) => {
@@ -30,7 +23,8 @@ class UsersQuadSDIOut extends Component {
     };
 
   render() {
-      const {full_feed,fullscr,vquad} = this.state;
+      const {full_feed,fullscr} = this.state;
+      const {vquad = [null,null,null,null]} = this.props;
 
       let program = vquad.map((g,i) => {
           let qst = g && g.questions;

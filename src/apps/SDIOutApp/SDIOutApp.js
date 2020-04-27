@@ -6,7 +6,7 @@ import './SDIOutApp.css';
 import './UsersSDIOut.css'
 import './UsersQuadSDIOut.scss'
 import {initGxyProtocol} from "../../shared/protocol";
-import {SDIOUT_ID} from "../../shared/consts";
+//import {SDIOUT_ID} from "../../shared/consts";
 import UsersHandleSDIOut from "./UsersHandleSDIOut";
 import UsersQuadSDIOut from "./UsersQuadSDIOut";
 
@@ -33,20 +33,41 @@ class SDIOutApp extends Component {
             handle: 0,
             role: "sdiout",
             display: "sdiout",
-            id: SDIOUT_ID,
+            //id: SDIOUT_ID,
+            id: "SDIOUT_ID",
             name: "sdiout"
         },
+        qids: [],
         users: {},
         shidur: false,
     };
 
     componentDidMount() {
-        let {user} = this.state;
-        getState('galaxy/users', (users) => {
-            this.setState({users});
-            let gxy = ["gxy1","gxy2","gxy3"]
-            this.initGalaxy(user,gxy);
-        });
+        let {user,users} = this.state;
+        setInterval(() => {
+            getState(`galaxy/qids`, (qids) => {
+                this.setState({qids});
+                for(let i in qids) {
+                    for(let q=0; q<qids[i].vquad.length; q++) {
+                        //console.log(qids[i].vquad[q].users)
+                        if(qids[i].vquad[q].users) {
+                            for(let u=0; u<qids[i].vquad[q].users.length; q++) {
+                                let user = qids[i].vquad[q].users[u];
+                                users[user.id] = user;
+                                //console.log(user)
+                            }
+                        }
+                    }
+                }
+            });
+        }, 1000);
+        let gxy = ["gxy1","gxy2","gxy3"]
+        this.initGalaxy(user,gxy);
+        // getState('galaxy/users', (users) => {
+        //     this.setState({users});
+        //     let gxy = ["gxy1","gxy2","gxy3"]
+        //     this.initGalaxy(user,gxy);
+        // });
     };
 
     componentWillUnmount() {
@@ -65,20 +86,20 @@ class SDIOutApp extends Component {
                 if(GxyJanus[gxy[i]].janus)
                     GxyJanus[gxy[i]].janus.destroy();
                 GxyJanus[gxy[i]].janus = janus;
-                initGxyProtocol(janus, user, protocol => {
-                    GxyJanus[gxy[i]].protocol = protocol;
-                    this.setState({...GxyJanus[gxy[i]]});
-                }, ondata => {
-                    Janus.log(i + " :: protocol public message: ", ondata);
-                    if(ondata.type === "error" && ondata.error_code === 420) {
-                        console.error(ondata.error + " - Reload after 10 seconds");
-                        this.state.GxyJanus[gxy[i]].protocol.hangup();
-                        setTimeout(() => {
-                            this.initGalaxy(user,[gxy[i]]);
-                        }, 10000);
-                    }
-                    this.onProtocolData(ondata, gxy[i]);
-                }, false);
+                // initGxyProtocol(janus, user, protocol => {
+                //     GxyJanus[gxy[i]].protocol = protocol;
+                //     this.setState({...GxyJanus[gxy[i]]});
+                // }, ondata => {
+                //     Janus.log(i + " :: protocol public message: ", ondata);
+                //     if(ondata.type === "error" && ondata.error_code === 420) {
+                //         console.error(ondata.error + " - Reload after 10 seconds");
+                //         this.state.GxyJanus[gxy[i]].protocol.hangup();
+                //         setTimeout(() => {
+                //             this.initGalaxy(user,[gxy[i]]);
+                //         }, 10000);
+                //     }
+                //     this.onProtocolData(ondata, gxy[i]);
+                // }, false);
             },er => {
                 console.error(gxy[i] + ": " + er);
                 setTimeout(() => {
@@ -138,36 +159,36 @@ class SDIOutApp extends Component {
         }
     };
 
-    onProtocolData = (data, inst) => {
-        let {users} = this.state;
-
-        // Set status in users list
-        if(data.type && data.type.match(/^(camera|question|sound_test)$/)) {
-            if(users[data.user.id]) {
-                users[data.user.id][data.type] = data.status;
-                this.setState({users});
-            } else {
-                users[data.user.id] = {[data.type]: data.status};
-                this.setState({users});
-            }
-        }
-
-        if(data.type && data.type === "camera") {
-            this.setState({ce: data.user});
-        }
-
-        if(data.type && data.type === "leave" && users[data.id]) {
-            delete users[data.id];
-            this.setState({users});
-        }
-    };
+    // onProtocolData = (data, inst) => {
+    //     let {users} = this.state;
+    //
+    //     // Set status in users list
+    //     if(data.type && data.type.match(/^(camera|question|sound_test)$/)) {
+    //         if(users[data.user.id]) {
+    //             users[data.user.id][data.type] = data.status;
+    //             this.setState({users});
+    //         } else {
+    //             users[data.user.id] = {[data.type]: data.status};
+    //             this.setState({users});
+    //         }
+    //     }
+    //
+    //     if(data.type && data.type === "camera") {
+    //         this.setState({ce: data.user});
+    //     }
+    //
+    //     if(data.type && data.type === "leave" && users[data.id]) {
+    //         delete users[data.id];
+    //         this.setState({users});
+    //     }
+    // };
 
     setProps = (props) => {
         this.setState({...props})
     };
 
     render() {
-        let {group} = this.state;
+        let {group,qids} = this.state;
         // let qst = g && g.questions;
         let name = group && group.description;
 
@@ -176,18 +197,18 @@ class SDIOutApp extends Component {
             <Grid columns={2} className="sdi_container">
                 <Grid.Row>
                     <Grid.Column>
-                        <UsersQuadSDIOut index={0} {...this.state} ref={col => {this.col1 = col;}} setProps={this.setProps} />
+                        <UsersQuadSDIOut index={0} {...qids.q1} {...this.state} ref={col => {this.col1 = col;}} setProps={this.setProps} />
                     </Grid.Column>
                     <Grid.Column>
-                        <UsersQuadSDIOut index={4} {...this.state} ref={col => {this.col2 = col;}} setProps={this.setProps} />
+                        <UsersQuadSDIOut index={4} {...qids.q2} {...this.state} ref={col => {this.col2 = col;}} setProps={this.setProps} />
                     </Grid.Column>
                 </Grid.Row>
                 <Grid.Row>
                     <Grid.Column>
-                        <UsersQuadSDIOut index={8} {...this.state} ref={col => {this.col3 = col;}} setProps={this.setProps} />
+                        <UsersQuadSDIOut index={8} {...qids.q3} {...this.state} ref={col => {this.col3 = col;}} setProps={this.setProps} />
                     </Grid.Column>
                     <Grid.Column>
-                        <UsersQuadSDIOut index={12} {...this.state} ref={col => {this.col4 = col;}} setProps={this.setProps} />
+                        <UsersQuadSDIOut index={12} {...qids.q4} {...this.state} ref={col => {this.col4 = col;}} setProps={this.setProps} />
                     </Grid.Column>
                 </Grid.Row>
                 <Grid.Row>
