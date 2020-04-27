@@ -55,7 +55,7 @@ const Volume = ({ media }) => {
 			setVolumeState(0);
 		} else {
 			if (media.volume === 0) {
-				media.volume = 0.5;
+				media.volume = 0.6;  // Default volume.
 			}
 			setVolumeState(media.volume);
 		}

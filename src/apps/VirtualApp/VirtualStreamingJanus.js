@@ -31,6 +31,7 @@ export default class VirtualStreamingJanus {
 		this.audioElement.controls = false;
 		this.audioElement.muted = true;
 		this.audioElement.playinline = true;
+    this.audioElement.volume = 0.6;  // Default volume.
     this.trlAudioElement = new Audio();
 		this.trlAudioElement.autoplay = true;
 		this.trlAudioElement.controls = false;
@@ -348,8 +349,7 @@ export default class VirtualStreamingJanus {
         media: { audioSend: false, videoSend: false, data: initdata },
         success: (jsep) => {
           Janus.log('Got SDP!', jsep);
-          let body = { request: 'start' };
-          handle.send({ message: body, jsep: jsep });
+          handle.send({ message: { request: 'start' }, jsep: jsep });
         },
         customizeSdp: (jsep) => {
           Janus.log(':: Modify original SDP: ', jsep);
@@ -372,17 +372,16 @@ export default class VirtualStreamingJanus {
   streamGalaxy = (talk, col, name) => {
     if (talk) {
       this.mixvolume = this.audioElement.volume;
+      this.talking = true;
       this.trlAudioElement.volume = this.mixvolume;
       this.trlAudioElement.muted = false;
-      let body = { 'request': 'switch', 'id': gxycol[col] };
       console.log(' :: Switch STR Stream: ', gxycol[col]);
-      this.audioJanusStream.send({ 'message': body });
-      let id = trllang[localStorage.getItem('vrt_langtext')];
+      this.audioJanusStream.send({'message': { 'request': 'switch', 'id': gxycol[col]}});
+      const id = trllang[localStorage.getItem('vrt_langtext')];
       if (name.match(/^(New York|Toronto)$/) || !id) {
         console.log(' :: Not TRL Stream attach');
       } else {
-        let body = { 'request': 'switch', 'id': id };
-        this.trlAudioJanusStream.send({ 'message': body });
+        this.trlAudioJanusStream.send({'message': { 'request': 'switch', 'id': id }});
         this.talking = setInterval(this.ducerMixaudio, 200);
         console.log(' :: Init TRL Stream: ', localStorage.getItem('vrt_langtext'), id);
       }
@@ -391,13 +390,13 @@ export default class VirtualStreamingJanus {
       Janus.log('Stop talking');
       clearInterval(this.talking);
       this.audioElement.volume = this.mixvolume;
-      let id = Number(localStorage.getItem('vrt_lang')) || 15;
-      let abody = { 'request': 'switch', 'id': id };
+      const id = Number(localStorage.getItem('vrt_lang')) || 15;
       console.log(' :: Switch STR Stream: ', localStorage.getItem('vrt_lang'), id);
-      this.audioJanusStream.send({ 'message': abody });
+      this.audioJanusStream.send({'message': { 'request': 'switch', 'id': id }});
       console.log(' :: Stop TRL Stream: ');
       this.trlAudioElement.muted = true;
       this.talking = null;
+      this.mixvolume = null;
     }
   };
 

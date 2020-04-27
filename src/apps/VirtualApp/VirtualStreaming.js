@@ -88,11 +88,11 @@ class VirtualStreaming extends Component {
   render() {
     const {
       attached,
+      virtualStreamingJanus,
     } = this.props;
     const {
       videos,
       audios,
-      talking,
       room,
     } = this.state;
 
@@ -177,7 +177,7 @@ class VirtualStreaming extends Component {
               </Dropdown.Menu>
             </Dropdown>
 
-						<Volume media={this.props.virtualStreamingJanus.audioElement} />
+						<Volume media={virtualStreamingJanus.audioElement} />
             <div className="controls__spacer"></div>
             <button onClick={this.toggleFullScreen}>
               <Icon name="expand"/>
@@ -188,7 +188,7 @@ class VirtualStreaming extends Component {
               </button>
             }
           </div>
-          <Label className='talk' size='massive' color='red'><Icon name='microphone' />On</Label>
+          {virtualStreamingJanus.talking && <Label className='talk' size='massive' color='red'>Icon name='microphone' />On</Label>}
         </div>
         <div className='mediaplayer' ref="mediaplayer">
           <video ref={(ref) => this.videoRef(ref)}
@@ -199,7 +199,6 @@ class VirtualStreaming extends Component {
                  controls={false}
                  muted={true}
                  playsInline={true} />
-          {talking && <Label className='talk' size='massive' color='red'>Icon name='microphone' />On</Label>}
         </div>
       </div>
     );
