@@ -1,12 +1,9 @@
 import {Janus} from "../lib/janus";
 import * as Sentry from '@sentry/browser';
 import {
-    JANUS_ADMIN_GXY,
-    JANUS_ADMIN_VRT,
     JANUS_SRV_GXY3,
     JANUS_SRV_GXY2,
     JANUS_SRV_GXY1,
-    ADMIN_SECRET,
     STUN_SRV_GXY,
     WFDB_STATE,
     WFRP_STATE
@@ -57,50 +54,6 @@ export const joinChatRoom = (textroom, roomid, user) => {
         username: user.id,
         display: user.display
     };
-    // myusername = username;
-    // transactions[transaction] = function(response) {
-    //     if(response["textroom"] === "error") {
-    //         // Something went wrong
-    //         if(response["error_code"] === 417) {
-    //             // This is a "no such room" error: give a more meaningful description
-    //             bootbox.alert(
-    //                 "<p>Apparently room <code>" + myroom + "</code> (the one this demo uses as a test room) " +
-    //                 "does not exist...</p><p>Do you have an updated <code>janus.plugin.textroom.cfg</code> " +
-    //                 "configuration file? If not, make sure you copy the details of room <code>" + myroom + "</code> " +
-    //                 "from that sample in your current configuration file, then restart Janus and try again."
-    //             );
-    //         } else {
-    //             bootbox.alert(response["error"]);
-    //         }
-    //         $('#username').removeAttr('disabled').val("");
-    //         $('#register').removeAttr('disabled').click(registerUsername);
-    //         return;
-    //     }
-    //     // We're in
-    //     $('#roomjoin').hide();
-    //     $('#room').removeClass('hide').show();
-    //     $('#participant').removeClass('hide').html(myusername).show();
-    //     $('#chatroom').css('height', ($(window).height()-420)+"px");
-    //     $('#datasend').removeAttr('disabled');
-    //     // Any participants already in?
-    //     Janus.log("Participants:", response.participants);
-    //     if(response.participants && response.participants.length > 0) {
-    //         for(var i in response.participants) {
-    //             var p = response.participants[i];
-    //             participants[p.username] = p.display ? p.display : p.username;
-    //             if(p.username !== myid && $('#rp' + p.username).length === 0) {
-    //                 // Add to the participants list
-    //                 $('#list').append('<li id="rp' + p.username + '" class="list-group-item">' + participants[p.username] + '</li>');
-    //                 $('#rp' + p.username).css('cursor', 'pointer').click(function() {
-    //                     var username = $(this).attr('id').split("rp")[1];
-    //                     sendPrivateMsg(username);
-    //                 });
-    //             }
-    //             $('#chatroom').append('<p style="color: green;">[' + getDateString() + '] <i>' + participants[p.username] + ' joined</i></p>');
-    //             $('#chatroom').get(0).scrollTop = $('#chatroom').get(0).scrollHeight;
-    //         }
-    //     }
-    // };
     textroom.data({
         text: JSON.stringify(register),
         error: (reason) => {
@@ -359,56 +312,6 @@ export const geoInfo = (url,cb) => fetch(`${url}`)
     }
 })
     .catch(ex => console.log(`get geoInfo`, ex));
-
-// export const getSessions = (cb) => {
-//     let request = { "janus": "list_sessions", "transaction": Janus.randomString(12), "admin_secret": ADMIN_SECRET };
-//     getData(JANUS_ADMIN,request,(json) => {
-//         let sessions = json["sessions"];
-//         cb(sessions);
-//     })
-// };
-//
-// export const getHandles = (session,cb) => {
-//     if(session === null || session === undefined)
-//         return;
-//     let request = { "janus": "list_handles", "transaction": Janus.randomString(12), "admin_secret": ADMIN_SECRET };
-//     getData(`${JANUS_ADMIN}/${session}`,request,(json) => {
-//         let handles = json["handles"];
-//         cb(handles);
-//     })
-// };
-//
-// export const getHandleInfo = (session, handle,cb) => {
-//     if(handle === null || handle === undefined)
-//         return;
-//     let request = { "janus": "handle_info", "transaction": Janus.randomString(12), "admin_secret": ADMIN_SECRET };
-//     getData(`${JANUS_ADMIN}/${session}/${handle}`,request,(json) => {
-//         let handleInfo = json["info"];
-//         if(handleInfo.opaque_id === "videoroom_user" && handleInfo["plugin_specific"]["type"] === "publisher") {
-//             let g = handleInfo["plugin_specific"]["display"];
-//             let ip = handleInfo.streams["0"].components["0"]["selected-pair"].split(" ")[3].split(":")[0];
-//             let json = {name: g, ip: ip};
-//             cb(json);
-//         }
-//     })
-// };
-
-export const getPublisherInfo = (session,handle,cb,mlt) => {
-    if(handle === null || handle === undefined)
-        return;
-    let JANUS_ADMIN = mlt ? JANUS_ADMIN_GXY : JANUS_ADMIN_VRT;
-    let request = { "janus": "handle_info", "transaction": Janus.randomString(12), "admin_secret": ADMIN_SECRET };
-    getData(`${JANUS_ADMIN}/${session}/${handle}`,request,(json) => {
-        cb(json);
-    })
-};
-
-export const getPluginInfo = (request,cb) => {
-    let req = { "janus": "message_plugin", "transaction": Janus.randomString(12), "admin_secret": ADMIN_SECRET, plugin: "janus.plugin.videoroom", request};
-    getData(`${JANUS_ADMIN_GXY}`,req,(json) => {
-        cb(json);
-    })
-};
 
 export const recordAudio = (stream) =>
     new Promise(async resolve => {

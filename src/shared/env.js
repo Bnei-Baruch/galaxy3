@@ -1,6 +1,5 @@
 export const SENTRY_KEY = process.env.REACT_APP_SENTRY_KEY;
 export const GEO_IP_INFO = process.env.REACT_APP_GEO_IP_INFO;
-export const DANTE_IN_IP = process.env.REACT_APP_DANTE_IN_IP;
 export const WFRP_STATE = process.env.REACT_APP_WFRP_STATE;
 export const WFDB_STATE = process.env.REACT_APP_WFDB_STATE;
 export const STUN_SRV_STR = process.env.REACT_APP_STUN_SRV_STR;
@@ -10,8 +9,6 @@ export const SECRET = process.env.REACT_APP_SECRET;
 export const JANUS_SRV_GXY1 = process.env.REACT_APP_JANUS_SRV_GXY1;
 export const JANUS_SRV_GXY2 = process.env.REACT_APP_JANUS_SRV_GXY2;
 export const JANUS_SRV_GXY3 = process.env.REACT_APP_JANUS_SRV_GXY3;
-export const JANUS_ADMIN_VRT = process.env.REACT_APP_ADMIN_SRV_VRT;
-export const JANUS_ADMIN_GXY = process.env.REACT_APP_ADMIN_SRV_GXY;
 export const JANUS_ADMIN_GXY1 = process.env.REACT_APP_ADMIN_SRV_GXY1;
 export const JANUS_ADMIN_GXY2 = process.env.REACT_APP_ADMIN_SRV_GXY2;
 export const JANUS_ADMIN_GXY3 = process.env.REACT_APP_ADMIN_SRV_GXY3;
