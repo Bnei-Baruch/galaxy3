@@ -5,10 +5,10 @@ import i18n from 'i18next';
 
 import './i18n/i18n';
 // import GalaxyApp from "./apps/GalaxyApp";
-// import OldClient from './apps/VirtualApp/OldClient';
+import OldClient from './apps/VirtualApp/OldClient';
 // import OldMobileClient from "./apps/MobileApp/OldMobileClient";
 // import MobileClient from "./apps/MobileApp/MobileClient";
-import VirtualClient from "./apps/VirtualApp/VirtualClient";
+// import VirtualClient from "./apps/VirtualApp/VirtualClient";
 // import VirtualStreaming from "./apps/VirtualApp/VirtualStreaming";
 // import GalaxyStream from "./apps/StreamApp/GalaxyStream";
 // import AdminRoot from "./apps/AdminApp/AdminRoot";
@@ -22,10 +22,10 @@ class App extends Component {
     return (
       <I18nextProvider i18n={i18n}>
         {/*<GalaxyApp />*/}
-        {/*<OldClient />*/}
+        <OldClient />
         {/*<OldMobileClient />*/}
         {/*<MobileClient/>*/}
-        <VirtualClient />
+        {/*<VirtualClient />*/}
         {/* <VirtualStreaming/>*/}
         {/* <GalaxyStream/>*/}
         {/*<AdminRoot />*/}

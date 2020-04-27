@@ -20,7 +20,8 @@ import './CustomIcons.scss';
 import 'eqcss';
 import VirtualChat from './VirtualChat';
 import { initGxyProtocol, sendProtocolMessage } from '../../shared/protocol';
-import { GEO_IP_INFO, PROTOCOL_ROOM, vsettings_list } from '../../shared/consts';
+import { PROTOCOL_ROOM, vsettings_list } from '../../shared/consts';
+import { GEO_IP_INFO } from '../../shared/env';
 import platform from 'platform';
 import { Help } from './components/Help';
 import { withTranslation } from 'react-i18next';
@@ -29,7 +30,6 @@ import { Monitoring } from '../../components/Monitoring';
 import { MonitoringData } from '../../shared/MonitoringData';
 import VirtualStreaming from './VirtualStreaming';
 import VirtualStreamingJanus from './VirtualStreamingJanus';
-import LoginMessage from "./components/LoginMessage";
 
 class OldClient extends Component {
 
@@ -1255,7 +1255,6 @@ class OldClient extends Component {
     const chatCountLabel = (<Label key='Carbon' floating size='mini' color='red'>{chatMessagesCount}</Label>);
 
     let content = (<div className={classNames('vclient', { 'vclient--chat-open': chatVisible })}>
-      <LoginMessage />
       <div className="vclient__toolbar">
         <Input
           iconPosition='left'
