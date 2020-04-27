@@ -10,7 +10,7 @@ import {
     STUN_SRV_GXY,
     WFDB_STATE,
     WFRP_STATE
-} from "./consts";
+} from "./env";
 
 export const initJanus = (cb,er,gxy) => {
     Janus.init({

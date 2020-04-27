@@ -2,7 +2,8 @@ import React, { Component } from 'react';
 import { Janus } from "../../lib/janus";
 import {Segment, Icon, Button, Label} from "semantic-ui-react";
 import './SndmanGroups.css'
-import {GROUPS_ROOM, DANTE_IN_IP, SECRET} from "../../shared/consts";
+import {GROUPS_ROOM} from "../../shared/consts";
+import {DANTE_IN_IP, SECRET} from "../../shared/env";
 
 class SndmanGroups extends Component {
 
