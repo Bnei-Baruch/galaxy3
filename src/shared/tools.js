@@ -247,11 +247,11 @@ export const getDevicesStream = (audioid,videoid,video_setting,cb) => {
     });
 };
 
-export const testDevices = (video,audio,cb) => {
+export const testDevices = (video,audio,user,cb) => {
     navigator.mediaDevices.getUserMedia({ audio: audio, video: video }).then(stream => {
         cb(stream);
     }, function (e) {
-        reportToSentry("Device Failed: " + e.name, {source: "device",audio,video})
+        reportToSentry((video ? "Video" : "Audio") + " Device Failed: " + e.name, {source: "device",audio,video}, user)
         var message;
         switch (e.name) {
             case 'NotFoundError':
