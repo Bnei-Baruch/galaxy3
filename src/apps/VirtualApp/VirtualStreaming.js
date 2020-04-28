@@ -23,6 +23,7 @@ class VirtualStreaming extends Component {
     user: {},
     cssFixInterval: null,
     talking: false,
+    fullScreen: false,
   };
 
   videoRef(ref) {
@@ -53,14 +54,32 @@ class VirtualStreaming extends Component {
   };
 
   toggleFullScreen = () => {
-    let vid = this.refs.mediaplayer;
-    if (vid.requestFullScreen) {
-      vid.requestFullScreen();
-    } else if (vid.webkitRequestFullScreen) {
-      vid.webkitRequestFullScreen();
-    } else if (vid.mozRequestFullScreen) {
-      vid.mozRequestFullScreen();
+    const {fullScreen} = this.state;
+    let vid = this.refs.video0;
+    if (fullScreen) {
+			if (vid.ownerDocument.exitFullscreen) {
+				console.log('1exit full screen');
+				vid.ownerDocument.exitFullscreen();
+			} else if (vid.ownerDocument.webkitExitFullscreen) {
+				console.log('2exit full screen');
+				vid.ownerDocument.webkitExitFullscreen();
+			} else if (vid.ownerDocument.mozCancelFullScreen) {
+				console.log('3exit full screen');
+				vid.ownerDocument.mozCancelFullScreen();
+			}
+    } else {
+      if (vid.requestFullScreen) {
+				console.log('1request full screen');
+        vid.requestFullScreen();
+      } else if (vid.webkitRequestFullScreen) {
+				console.log('2request full screen');
+        vid.webkitRequestFullScreen();
+      } else if (vid.mozRequestFullScreen) {
+				console.log('3request full screen');
+        vid.mozRequestFullScreen();
+      }
     }
+    this.setState({fullScreen: !fullScreen})
   };
 
   toggleNewWindow = () => {
@@ -91,6 +110,7 @@ class VirtualStreaming extends Component {
       virtualStreamingJanus,
     } = this.props;
     const {
+			fullScreen,
       audios,
       room,
       talking,
@@ -181,7 +201,7 @@ class VirtualStreaming extends Component {
 						<Volume media={virtualStreamingJanus.audioElement} />
             <div className="controls__spacer"></div>
             <button onClick={this.toggleFullScreen}>
-              <Icon name="expand"/>
+              <Icon name={fullScreen ? 'compress' : 'expand'} />
             </button>
             {!attached ? null :
               <button onClick={this.toggleNewWindow}>
@@ -191,7 +211,7 @@ class VirtualStreaming extends Component {
           </div>
           {talking && <Label className='talk' size='massive' color='red'><Icon name='microphone' />On</Label>}
         </div>
-        <div className='mediaplayer' ref="mediaplayer">
+        <div className='mediaplayer'>
           <video ref={(ref) => this.videoRef(ref)}
                  id="remoteVideo"
                  width="134"
