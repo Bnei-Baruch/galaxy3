@@ -7,7 +7,7 @@ import App from './App';
 
 import * as serviceWorker from './serviceWorker';
 
-Sentry.init({dsn: `https://${SENTRY_KEY}@sentry.kli.one/2`});
+//Sentry.init({dsn: `https://${SENTRY_KEY}@sentry.kli.one/2`});
 
 ReactDOM.render(<App />, document.getElementById('root'));
 

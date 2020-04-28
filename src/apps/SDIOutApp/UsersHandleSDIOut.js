@@ -18,8 +18,13 @@ class UsersHandleSDIOut extends Component {
 
     componentDidUpdate(prevProps) {
         let {g,ce} = this.props;
-        let {room} = this.state;
+        let {room,users} = this.state;
         if(g && JSON.stringify(g) !== JSON.stringify(prevProps.g) && g.room !== room) {
+            for(let i=0; i<g.users.length; i++) {
+                let user = g.users[i];
+                users[user.id] = user;
+                //console.log(user)
+            }
             if(room) {
                 this.exitVideoRoom(room, () =>{
                     this.initVideoRoom(g.room, g.janus);
@@ -108,7 +113,6 @@ class UsersHandleSDIOut extends Component {
                     let feeds         = list.sort((a, b) => JSON.parse(a.display).timestamp - JSON.parse(b.display).timestamp)
                         .filter(feeder => JSON.parse(feeder.display).role === 'user' && feeder.video_codec !== 'none');
                     let {feedStreams} = this.state;
-                    let {users} = this.props;
                     Janus.log(":: Got Pulbishers list: ", feeds);
                     Janus.debug("Got a list of available publishers/feeds:");
                     let subscription = [];
@@ -129,12 +133,10 @@ class UsersHandleSDIOut extends Component {
                             }
                         }
                         feedStreams[id] = {id, display, streams};
-                        users[display.id] = {...display, ...users[display.id], rfid: id};
                         subscription.push(subst);
                     }
-                    this.setState({feeds, feedStreams, users});
+                    this.setState({feeds, feedStreams});
                     if (subscription.length > 0) {
-                        this.props.setProps({users});
                         this.subscribeTo(subscription, inst);
                     }
                 }
@@ -174,7 +176,6 @@ class UsersHandleSDIOut extends Component {
                 } else if(msg["publishers"] !== undefined && msg["publishers"] !== null) {
                     let feed = msg["publishers"];
                     let {feeds,feedStreams} = this.state;
-                    let {users} = this.props;
                     Janus.debug("Got a list of available publishers/feeds:");
                     let subscription = [];
                     for(let f in feed) {
@@ -194,14 +195,12 @@ class UsersHandleSDIOut extends Component {
                             }
                         }
                         feedStreams[id] = {id, display, streams};
-                        users[display.id] = {...display, ...users[display.id], rfid: id};
                         subscription.push(subst);
                     }
                     feeds.push(feed[0]);
-                    this.setState({feeds,feedStreams,users});
+                    this.setState({feeds,feedStreams});
                     if(subscription.length > 0) {
                         this.subscribeTo(subscription, inst);
-                        this.props.setProps({users});
                     }
                 } else if(msg["leaving"] !== undefined && msg["leaving"] !== null) {
                     let leaving = msg["leaving"];
@@ -360,8 +359,7 @@ class UsersHandleSDIOut extends Component {
     };
 
   render() {
-      const {feeds} = this.state;
-      const {users} = this.props;
+      const {feeds,users} = this.state;
       const width = "400";
       const height = "300";
       const autoPlay = true;

@@ -47,18 +47,6 @@ class SDIOutApp extends Component {
         setInterval(() => {
             getState(`galaxy/qids`, (qids) => {
                 this.setState({qids});
-                for(let i in qids) {
-                    for(let q=0; q<qids[i].vquad.length; q++) {
-                        //console.log(qids[i].vquad[q].users)
-                        if(qids[i].vquad[q].users) {
-                            for(let u=0; u<qids[i].vquad[q].users.length; q++) {
-                                let user = qids[i].vquad[q].users[u];
-                                users[user.id] = user;
-                                //console.log(user)
-                            }
-                        }
-                    }
-                }
             });
         }, 1000);
         let gxy = ["gxy1","gxy2","gxy3"]
