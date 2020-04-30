@@ -1283,6 +1283,7 @@ class VirtualClient extends Component {
       <div className="vclient__toolbar">
         <Input>
           <Select
+            className = "room-selection"
             search
             disabled={audio_device === null || !!localAudioTrack}
             error={!selected_room}
@@ -1292,9 +1293,9 @@ class VirtualClient extends Component {
             noResultsMessage={t('oldClient.noResultsFound')}
             //onClick={this.getRoomList}
             onChange={(e, { value }) => this.selectRoom(value)} />
-          {localAudioTrack ? <Button negative icon='sign-out' onClick={() => this.exitRoom(false)} /> : ''}
+          {localAudioTrack ? <Button attached='right' negative icon='sign-out' onClick={() => this.exitRoom(false)} /> : ''}
           {!localAudioTrack ?
-            <Button primary icon='sign-in' disabled={delay || !selected_room || !audio_device}
+            <Button attached='right' primary icon='sign-in' disabled={delay || !selected_room || !audio_device}
                     onClick={this.joinRoom} /> : ''}
         </Input>
         { !(new URL(window.location.href).searchParams.has('deb')) ? null : (

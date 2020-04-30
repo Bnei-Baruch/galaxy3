@@ -8,7 +8,9 @@
     height: 100vh;
     display: flex;
     flex-direction: column;
-
+    .room-selection {
+        border-radius:.28571429rem 0 0 .28571429rem!important;
+    }
     &__toolbar {
         display: flex;
         align-items: center;
