@@ -1,16 +1,16 @@
 import React, {Component, Fragment} from 'react';
 import NewWindow from 'react-new-window';
-import { Janus } from '../../lib/janus';
+import {Janus} from '../../lib/janus';
 import classNames from 'classnames';
-import { isMobile } from 'react-device-detect';
+import {isMobile} from 'react-device-detect';
 import {Button, Dropdown, Icon, Input, Label, Menu, Popup, Select} from 'semantic-ui-react';
 import {
   checkNotification,
   geoInfo,
   getDevicesStream,
-  getState,
   initJanus,
-  micLevel, reportToSentry,
+  micLevel,
+  reportToSentry,
   testDevices,
   testMic,
 } from '../../shared/tools';
@@ -18,15 +18,16 @@ import './VirtualClient.scss';
 import './VideoConteiner.scss';
 import 'eqcss';
 import VirtualChat from './VirtualChat';
-import { initGxyProtocol, sendProtocolMessage } from '../../shared/protocol';
-import { PROTOCOL_ROOM, vsettings_list } from '../../shared/consts';
-import { GEO_IP_INFO } from '../../shared/env';
+import {initGxyProtocol, sendProtocolMessage} from '../../shared/protocol';
+import {PROTOCOL_ROOM, vsettings_list} from '../../shared/consts';
+import {GEO_IP_INFO} from '../../shared/env';
 import platform from 'platform';
-import { Help } from './components/Help';
-import { withTranslation } from 'react-i18next';
-import { mapNameToLanguage, setLanguage } from '../../i18n/i18n';
-import { Monitoring } from '../../components/Monitoring';
-import { MonitoringData } from '../../shared/MonitoringData';
+import {Help} from './components/Help';
+import {withTranslation} from 'react-i18next';
+import {mapNameToLanguage, setLanguage} from '../../i18n/i18n';
+import {Monitoring} from '../../components/Monitoring';
+import {MonitoringData} from '../../shared/MonitoringData';
+import api from '../../shared/Api';
 import {client} from "../../components/UserManager";
 import LoginPage from "../../components/LoginPage";
 
@@ -125,9 +126,43 @@ class OldClient extends Component {
         if (!data) {
           alert(t('oldClient.failGeoInfo'));
         }
-        this.setState({ geoinfo: !!data, user }, () => {
-          this.getRoomList(user);
-        });
+        this.setState({ geoinfo: !!data, user });
+
+        api.setAccessToken(user.access_token);
+        client.events.addUserLoaded((user) => api.setAccessToken(user.access_token));
+        client.events.addUserUnloaded(() => api.setAccessToken(null));
+
+        api.fetchConfig()
+            .then(data => {
+              this.setState({
+                gatewaysConfig: data.gateways,
+                iceServers: data.ice_servers,
+              });
+            })
+            .catch( err => {
+              console.error('[VirtualClient] api.fetchConfig', err);
+            })
+            .then(() => (api.fetchAvailableRooms()))
+            .then(data => {
+              const { rooms } = data;
+              this.setState({ rooms });
+
+              const { selected_room } = this.state;
+              if (selected_room !== '') {
+                const room = rooms.find(r => r.room === selected_room);
+                if (room) {
+                  const name = room.description;
+                  user.room     = selected_room;
+                  user.janus    = room.janus;
+                  user.group    = name;
+                  this.setState({ name });
+                }
+                this.initClient(user, false);
+              }
+            })
+            .catch( err => {
+              console.error('[VirtualClient] api.fetchAvailableRooms', err);
+            })
       });
     } else {
       alert(t('oldClient.browserNotSupported'));
@@ -140,6 +175,11 @@ class OldClient extends Component {
     if (this.state.janus) {
       this.state.janus.destroy();
     }
+
+    const {gatewaysConfig, iceServers} = this.state;
+    const gatewayConfig = gatewaysConfig.rooms[user.janus];
+    const ice = iceServers.rooms.map((urls) => ({urls}));
+
     initJanus(janus => {
       // Check if unified plan supported
       if (Janus.unifiedPlan) {
@@ -156,7 +196,7 @@ class OldClient extends Component {
       // setTimeout(() => {
       //     this.initClient(user,er);
       // }, 5000);
-    }, user.janus);
+    }, gatewayConfig.url, ice);
   };
 
   initDevices = (video) => {
@@ -248,24 +288,6 @@ class OldClient extends Component {
         }, 1000);
       }
     }, 1000);
-  };
-
-  getRoomList = (user) => {
-    getState('galaxy/groups', (groups) => {
-      let rooms = groups.rooms;
-      const { selected_room } = this.state;
-      //let rooms                      = groups.filter(r => /W\./i.test(r.description) === women);
-      this.setState({ rooms });
-      if (selected_room !== '') {
-        const room = rooms.find(r => r.room === selected_room);
-        const name = room.description;
-        user.room     = selected_room;
-        user.janus    = room.janus;
-        user.group    = name;
-        this.setState({ name });
-        this.initClient(user, false);
-      }
-    });
   };
 
   selectRoom = (roomid) => {
