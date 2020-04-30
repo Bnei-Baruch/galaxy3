@@ -193,6 +193,7 @@ class OldClient extends Component {
       }
     }, er => {
       console.log(er);
+      reportToSentry(error, {source: "janus",janus: user.janus, user})
       // setTimeout(() => {
       //     this.initClient(user,er);
       // }, 5000);
@@ -218,22 +219,18 @@ class OldClient extends Component {
         this.setState({ video_devices, audio_devices });
         this.setDevice(video_id, audio_id, video_setting);
       } else if (video) {
-        reportToSentry("Video Device Failed", {source: "device",video: false})
         alert(t('oldClient.videoNotDetected'));
         this.setState({ cammuted: true, video_device: null });
         //Try to get video fail reason
-        testDevices(true, false, steam => {
-        });
+        testDevices(true, false, this.state.user, steam => {});
         // Right now if we get some problem with video device the - enumerateDevices()
         // back empty array, so we need to call this once more with video:false
         // to get audio device only
         Janus.log(' :: Trying to get audio only');
         this.initDevices(false);
       } else {
-        reportToSentry("Audio Device Failed", {source: "device",audio: false})
         //Try to get audio fail reason
-        testDevices(false, true, steam => {
-        });
+        testDevices(false, true, this.state.user, steam => {});
         alert(t('oldClient.noInputDevices'));
         //FIXME: What we going to do in this case?
         this.setState({ audio_device: null });
@@ -363,7 +360,7 @@ class OldClient extends Component {
       if (count >= 10) {
         clearInterval(chk);
         this.exitRoom(false);
-        reportToSentry("ICE State disconnected",{source: "ice"})
+        reportToSentry("ICE State disconnected",{source: "ice"}, this.state.user);
         alert(this.props.t('oldClient.networkSettingsChanged'));
         window.location.reload();
       }
@@ -393,7 +390,7 @@ class OldClient extends Component {
         if (count >= 10) {
           clearInterval(chk);
           this.exitRoom(false);
-          reportToSentry("Video stopped",{source: "media"})
+          reportToSentry("Video stopped",{source: "media"}, this.state.user);
           alert(t('oldClient.serverStoppedReceiveOurMedia'));
         }
       }, 3000);
@@ -427,7 +424,7 @@ class OldClient extends Component {
           if (question) {
             this.handleQuestion();
           }
-          reportToSentry("Audio stopped",{source: "media"})
+          reportToSentry("Audio stopped",{source: "media"}, this.state.user);
           alert(t('oldClient.serverStoppedReceiveOurAudio'));
         }
       }, 3000);
@@ -469,7 +466,7 @@ class OldClient extends Component {
       },
       error: (error) => {
         Janus.log('Error attaching plugin: ' + error);
-        reportToSentry(error,{source: "videoroom"})
+        reportToSentry(error,{source: "videoroom"}, this.state.user);
       },
       consentDialog: (on) => {
         Janus.debug('Consent dialog should be ' + (on ? 'on' : 'off') + ' now');
@@ -576,7 +573,7 @@ class OldClient extends Component {
           this.publishOwnFeed(false);
         } else {
           Janus.error('WebRTC error... ' + JSON.stringify(error));
-          reportToSentry(JSON.stringify(error),{source: "webrtc"})
+          reportToSentry(JSON.stringify(error),{source: "webrtc"}, this.state.user);
         }
       }
     });
@@ -740,7 +737,7 @@ class OldClient extends Component {
             Janus.log('This is a no such room');
           } else {
             Janus.log(msg['error']);
-            reportToSentry(msg['error'],{source: "videoroom"})
+            reportToSentry(msg['error'],{source: "videoroom"}, this.state.user);
           }
         }
       }
@@ -773,7 +770,7 @@ class OldClient extends Component {
         },
         error: (error) => {
           Janus.error('  -- Error attaching plugin...', error);
-          reportToSentry(error,{source: "remotefeed"})
+          reportToSentry(error,{source: "remotefeed"}, this.state.user);
         },
         iceState: (state) => {
           Janus.log('ICE state (remote feed) changed to ' + state);
@@ -792,7 +789,7 @@ class OldClient extends Component {
           Janus.log('Event: ' + event);
           if (msg['error'] !== undefined && msg['error'] !== null) {
             Janus.debug('-- ERROR: ' + msg['error']);
-            reportToSentry(msg['error'],{source: "remotefeed"})
+            reportToSentry(msg['error'],{source: "remotefeed"}, this.state.user);
           } else if (event !== undefined && event !== null) {
             if (event === 'attached') {
               this.setState({ creatingFeed: false });
@@ -833,7 +830,7 @@ class OldClient extends Component {
                 error: (error) => {
                   Janus.error('WebRTC error:', error);
                   Janus.debug('WebRTC error... ' + JSON.stringify(error));
-                  reportToSentry(JSON.stringify(error),{source: "remotefeed"})
+                  reportToSentry(JSON.stringify(error),{source: "remotefeed"}, this.state.user);
                 }
               });
           }

@@ -15,7 +15,6 @@ export const initJanus = (cb,er,gxy,iceServers=[{urls: STUN_SRV_GXY}]) => {
                 },
                 error: (error) => {
                     Janus.error(error);
-                    reportToSentry(error, {source: "janus",janus: gxy})
                     er(error);
                 },
                 destroyed: () => {
@@ -26,7 +25,7 @@ export const initJanus = (cb,er,gxy,iceServers=[{urls: STUN_SRV_GXY}]) => {
     })
 };
 
-export const reportToSentry = (title, data, level) => {
+export const reportToSentry = (title, data, user, level) => {
     level = level || 'info';
     data  = data  || {};
     Sentry.withScope(scope => {
@@ -34,6 +33,10 @@ export const reportToSentry = (title, data, level) => {
             scope.setExtra(key, data[key]);
         });
         scope.setLevel(level);
+        if(user) {
+            const {id,username,email} = user;
+            Sentry.setUser({id,username,email});
+        }
         Sentry.captureMessage(title);
     });
 }
@@ -237,11 +240,11 @@ export const getDevicesStream = (audioid,videoid,video_setting,cb) => {
     });
 };
 
-export const testDevices = (video,audio,cb) => {
+export const testDevices = (video,audio,user,cb) => {
     navigator.mediaDevices.getUserMedia({ audio: audio, video: video }).then(stream => {
         cb(stream);
     }, function (e) {
-        reportToSentry("Device Failed: " + e.name, {source: "device",audio,video})
+        reportToSentry((video ? "Video" : "Audio") + " Device Failed: " + e.name, {source: "device",audio,video}, user)
         var message;
         switch (e.name) {
             case 'NotFoundError':

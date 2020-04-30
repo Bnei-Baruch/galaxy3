@@ -26,7 +26,7 @@ class LoginPage extends Component {
                     this.props.checkPermission(user);
                 }).catch((error) => {
                     console.log("querySessionStatus: ", error);
-                    reportToSentry("querySessionStatus: " + error,{source: "login"});
+                    reportToSentry("querySessionStatus: " + error,{source: "login"}, user, "warning");
                     alert("We detect wrong browser cookies settings");
                     client.signoutRedirect();
                 });

@@ -7,6 +7,7 @@ const AUTH_URL = 'https://accounts.kbb1.com/auth/realms/main';
 
 oidclog.logger = console;
 oidclog.level  = 0;
+let user_mgr = null;
 
 const userManagerConfig = {
     authority: AUTH_URL,
@@ -29,7 +30,7 @@ client.events.addAccessTokenExpiring(() => {
 
 client.events.addAccessTokenExpired((data) => {
     console.log("...!TOKEN EXPIRED!...");
-    reportToSentry("TOKEN EXPIRED: " + data,{source: "login"});
+    reportToSentry("TOKEN EXPIRED: " + data,{source: "login"}, user_mgr, "warning");
     //client.signoutRedirect();
 });
 
@@ -40,7 +41,7 @@ client.events.addUserSignedOut(() => {
 
 client.events.addSilentRenewError((error) =>{
     console.error("Silent Renew Error: " + error);
-    reportToSentry("Silent Renew Error: " + error,{source: "login"});
+    reportToSentry("Silent Renew Error: " + error,{source: "login"}, user_mgr, "warning");
 });
 
 export const getUser = (cb) =>
@@ -59,12 +60,13 @@ export const getUser = (cb) =>
                 roles,
                 access_token: user.access_token
             }
+            user_mgr = user;
         }
         cb(user)
     })
         .catch((error) => {
             console.log("Error: ",error);
-            reportToSentry("Get User Error: " + error,{source: "login"})
+            reportToSentry("Get User Error: " + error,{source: "login"}, null,"warning")
         });
 
 export default client;
