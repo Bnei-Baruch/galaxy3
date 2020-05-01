@@ -27,6 +27,7 @@ import { isMobile } from 'react-device-detect';
 
 import { Monitoring } from '../../components/Monitoring';
 import { MonitoringData } from '../../shared/MonitoringData';
+import api from '../../shared/Api';
 import {client} from "../../components/UserManager";
 import LoginPage from "../../components/LoginPage";
 
@@ -74,6 +75,8 @@ class MobileClient extends Component {
         women: window.location.pathname === "/women/",
         card: 0,
         monitoringData: new MonitoringData(),
+        gatewaysConfig: {},
+        iceServers: {},
     };
 
     componentDidUpdate(prevProps, prevState) {
@@ -128,10 +131,43 @@ class MobileClient extends Component {
                 if (!data) {
                     alert("Failed to get Geo Info");
                 }
+                this.setState({ geoinfo: !!data, user });
 
-                this.setState({ geoinfo: !!data, user }, () => {
-                    this.getRoomList(user);
-                });
+                api.setAccessToken(user.access_token);
+                client.events.addUserLoaded((user) => api.setAccessToken(user.access_token));
+                client.events.addUserUnloaded(() => api.setAccessToken(null));
+
+                api.fetchConfig()
+                    .then(data => {
+                        this.setState({
+                            gatewaysConfig: data.gateways,
+                            iceServers: data.ice_servers,
+                        });
+                    })
+                    .catch( err => {
+                        console.error('[MobileClient] api.fetchConfig', err);
+                    })
+                    .then(() => (api.fetchAvailableRooms()))
+                    .then(data => {
+                        const { rooms } = data;
+                        this.setState({ rooms });
+
+                        const { selected_room } = this.state;
+                        if (selected_room !== '') {
+                            const room = rooms.find(r => r.room === selected_room);
+                            if (room) {
+                                const name = room.description;
+                                user.room     = selected_room;
+                                user.janus    = room.janus;
+                                user.group    = name;
+                                this.setState({ name });
+                            }
+                            this.initClient(user, false);
+                        }
+                    })
+                    .catch( err => {
+                        console.error('[MobileClient] api.fetchAvailableRooms', err);
+                    })
             });
         } else {
             alert("Browser not supported");
@@ -143,6 +179,11 @@ class MobileClient extends Component {
         const { t } = this.props;
         if(this.state.janus)
             this.state.janus.destroy();
+
+        const {gatewaysConfig, iceServers} = this.state;
+        const gatewayConfig = gatewaysConfig.rooms[user.janus];
+        const ice = iceServers.rooms.map((urls) => ({urls}));
+
         initJanus(janus => {
             // Check if unified plan supported
             if (Janus.unifiedPlan) {
@@ -159,7 +200,7 @@ class MobileClient extends Component {
             // setTimeout(() => {
             //     this.initClient(user,er);
             // }, 5000);
-        }, user.janus);
+        }, gatewayConfig.url, ice);
     };
 
     initDevices = (video) => {
@@ -245,24 +286,6 @@ class MobileClient extends Component {
                 },1000);
             }
         },1000);
-    };
-
-    getRoomList = (user) => {
-        getState('galaxy/groups', (groups) => {
-            let rooms = groups.rooms;
-            const { selected_room } = this.state;
-            //let rooms                      = groups.filter(r => /W\./i.test(r.description) === women);
-            this.setState({ rooms });
-            if (selected_room !== '') {
-                const room = rooms.find(r => r.room === selected_room);
-                const name = room.description;
-                user.room     = selected_room;
-                user.janus    = room.janus;
-                user.group    = name;
-                this.setState({ name });
-                this.initClient(user, false);
-            }
-        });
     };
 
     selectRoom = (roomid) => {

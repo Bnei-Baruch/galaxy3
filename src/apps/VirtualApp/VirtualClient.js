@@ -73,6 +73,8 @@ class OldClient extends Component {
     support: false,
     women: window.location.pathname === '/women/',
     monitoringData: new MonitoringData(),
+    gatewaysConfig: {},
+    iceServers: {},
   };
 
   componentDidUpdate(prevProps, prevState) {
