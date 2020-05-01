@@ -58,24 +58,18 @@ class VirtualStreaming extends Component {
     let vid = this.refs.video0;
     if (fullScreen) {
 			if (vid.ownerDocument.exitFullscreen) {
-				console.log('1exit full screen');
 				vid.ownerDocument.exitFullscreen();
 			} else if (vid.ownerDocument.webkitExitFullscreen) {
-				console.log('2exit full screen');
 				vid.ownerDocument.webkitExitFullscreen();
 			} else if (vid.ownerDocument.mozCancelFullScreen) {
-				console.log('3exit full screen');
 				vid.ownerDocument.mozCancelFullScreen();
 			}
     } else {
       if (vid.requestFullScreen) {
-				console.log('1request full screen');
         vid.requestFullScreen();
       } else if (vid.webkitRequestFullScreen) {
-				console.log('2request full screen');
         vid.webkitRequestFullScreen();
       } else if (vid.mozRequestFullScreen) {
-				console.log('3request full screen');
         vid.mozRequestFullScreen();
       }
     }
@@ -107,6 +101,7 @@ class VirtualStreaming extends Component {
   render() {
     const {
       attached,
+      closeShidur,
       virtualStreamingJanus,
     } = this.props;
     const {
@@ -131,7 +126,7 @@ class VirtualStreaming extends Component {
           <div className="controls">
             <div className="controls__top">
             <button>
-                <Icon name='close' />
+                <Icon name='close' onClick={closeShidur}/>
               </button>
             </div>
             <div className="controls__bottom">

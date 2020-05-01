@@ -88,15 +88,12 @@ class VirtualClient extends Component {
 
   componentDidUpdate(prevProps, prevState) {
     if (this.state.shidur && !prevState.shidur && !this.state.sourceLoading && this.room) {
-      console.log('unmute1!', this.state.shidur, prevState.shidur, this.state.sourceLoading, prevState.sourceLoading, this.state.room, prevState.room);
       this.state.virtualStreamingJanus.audioElement.muted = false;
     }
     if (!this.state.sourceLoading && prevState.sourceLoading && this.state.shidur && this.room) {
-      console.log('unmute2!', this.state.shidur, prevState.shidur, this.state.sourceLoading, prevState.sourceLoading, this.state.room, prevState.room);
       this.state.virtualStreamingJanus.audioElement.muted = false;
     }
     if (this.state.room && !prevState.room && this.state.shidur && !this.sourceLoading) {
-      console.log('unmute3!', this.state.shidur, prevState.shidur, this.state.sourceLoading, prevState.sourceLoading, this.state.room, prevState.room);
       this.state.virtualStreamingJanus.audioElement.muted = false;
     }
 
@@ -1065,7 +1062,7 @@ class VirtualClient extends Component {
     this.setState({ muted: !muted });
   };
 
-  showShidur = () => {
+  toggleShidur = () => {
     const { virtualStreamingJanus, shidur } = this.state;
     const stateUpdate = {
       shidur: !shidur,
@@ -1086,7 +1083,6 @@ class VirtualClient extends Component {
   }
 
   onChatMessage = () => {
-		console.log('onChatMessage');
     this.setState({ chatMessagesCount: this.state.chatMessagesCount + 1 });
   };
 
@@ -1231,6 +1227,7 @@ class VirtualClient extends Component {
       <VirtualStreaming
         virtualStreamingJanus={virtualStreamingJanus}
         attached={attachedSource}
+        closeShidur={this.toggleShidur}
         setDetached={() => {
           this.setState({ attachedSource: false });
         }}
@@ -1337,7 +1334,7 @@ class VirtualClient extends Component {
             <Icon {...(question ? {color: 'green'} : {})} name='question' />
             {t('oldClient.askQuestion')}
           </Menu.Item>
-          <Menu.Item onClick={this.showShidur} disabled={room === '' || sourceLoading}>
+          <Menu.Item onClick={this.toggleShidur} disabled={room === '' || sourceLoading}>
             <Icon name="tv" />
             {shidur ? t('oldClient.closeBroadcast') : t('oldClient.openBroadcast')}
           </Menu.Item>
