@@ -15,6 +15,10 @@ import './BroadcastStream.scss';
 import Volume from './components/Volume'
 
 class VirtualStreaming extends Component {
+  constructor(props) {
+    super(props);
+    this.handleFullScreenChange = this.handleFullScreenChange.bind(this);
+  }
 
   state = {
     videos: Number(localStorage.getItem('vrt_video')) || 1,
@@ -28,6 +32,18 @@ class VirtualStreaming extends Component {
 
   videoRef(ref) {
     this.props.virtualStreamingJanus.attachVideoStream(ref);
+  }
+
+  setVideoWrapperRef(ref) {
+    if (ref && ref !== this.videoWrapper) {
+      this.videoWrapper = ref;
+      this.videoWrapper.ownerDocument.defaultView.removeEventListener('resize', this.handleFullScreenChange);
+      this.videoWrapper.ownerDocument.defaultView.addEventListener('resize', this.handleFullScreenChange);
+    }
+  }
+
+  handleFullScreenChange() {
+    this.setState({fullScreen: this.isFullScreen()});
   }
 
   componentDidMount() {
@@ -51,29 +67,35 @@ class VirtualStreaming extends Component {
     if (this.state.cssFixInterval) {
       clearInterval(this.state.cssFixInterval);
     }
+    if (this.videoWrapper) {
+      this.videoWrapper.ownerDocument.defaultView.removeEventListener('resize', this.handleFullScreenChange);
+    }
+  };
+
+  isFullScreen = () => {
+    return !!this.videoWrapper && (this.videoWrapper.ownerDocument.fullscreenElement
+      || this.videoWrapper.ownerDocument.mozFullScreenElemen
+      || this.videoWrapper.ownerDocument.webkitFullscreenElement);
   };
 
   toggleFullScreen = () => {
-    const {fullScreen} = this.state;
-    let vid = this.refs.video0;
-    if (fullScreen) {
-			if (vid.ownerDocument.exitFullscreen) {
-				vid.ownerDocument.exitFullscreen();
-			} else if (vid.ownerDocument.webkitExitFullscreen) {
-				vid.ownerDocument.webkitExitFullscreen();
-			} else if (vid.ownerDocument.mozCancelFullScreen) {
-				vid.ownerDocument.mozCancelFullScreen();
+    if (this.state.fullScreen) {
+			if (this.videoWrapper.ownerDocument.exitFullscreen) {
+				this.videoWrapper.ownerDocument.exitFullscreen();
+			} else if (this.videoWrapper.ownerDocument.webkitExitFullscreen) {
+				this.videoWrapper.ownerDocument.webkitExitFullscreen();
+			} else if (this.videoWrapper.ownerDocument.mozCancelFullScreen) {
+				this.videoWrapper.ownerDocument.mozCancelFullScreen();
 			}
     } else {
-      if (vid.requestFullScreen) {
-        vid.requestFullScreen();
-      } else if (vid.webkitRequestFullScreen) {
-        vid.webkitRequestFullScreen();
-      } else if (vid.mozRequestFullScreen) {
-        vid.mozRequestFullScreen();
+      if (this.videoWrapper.requestFullScreen) {
+        this.videoWrapper.requestFullScreen();
+      } else if (this.videoWrapper.webkitRequestFullScreen) {
+        this.videoWrapper.webkitRequestFullScreen();
+      } else if (this.videoWrapper.mozRequestFullScreen) {
+        this.videoWrapper.mozRequestFullScreen();
       }
     }
-    this.setState({fullScreen: !fullScreen})
   };
 
   toggleNewWindow = () => {
@@ -105,8 +127,8 @@ class VirtualStreaming extends Component {
       virtualStreamingJanus,
     } = this.props;
     const {
-			fullScreen,
       audios,
+      fullScreen,
       room,
       talking,
       videos,
@@ -120,7 +142,7 @@ class VirtualStreaming extends Component {
     const audio_option = audiog_options2.find((option) => option.value === audios);
 
     const inLine = (
-      <div className="video video--broadcast" key='v0' ref='video0' id='video0'
+      <div className="video video--broadcast" key='v0' ref={(ref) => this.setVideoWrapperRef(ref)} id='video0'
            style={{height: !attached ? '100%' : null, width: !attached ? '100%' : null}}>
         <div className="video__overlay">
           <div className="controls">
