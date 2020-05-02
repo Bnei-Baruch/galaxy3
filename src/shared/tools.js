@@ -355,7 +355,8 @@ export const testMic = async (stream) => {
 };
 
 export const takeImage = (stream, user) => {
-    console.log(stream)
+    if(typeof (window.ImageCapture) === "undefined")
+        return
     const track = stream.getVideoTracks()[0];
     let imageCapture = new ImageCapture(track);
     imageCapture.takePhoto().then(blob => {
@@ -363,22 +364,15 @@ export const takeImage = (stream, user) => {
         reader.onload = () => {
             let dataUrl = reader.result;
             let base64 = dataUrl.split(',')[1];
-            let request = {
-                userName: user.title,
-                userId: user.id,
-                roomName: user.group,
-                roomId: user.room,
-                image: base64, // base64
-
-            }
-            wkliEnter(request);
-            //cb(base64);
+            wkliEnter(base64, user);
         };
         reader.readAsDataURL(blob);
     })
 }
 
-const wkliEnter = (request) => {
+const wkliEnter = (base64, user) => {
+    const {title,id,group,room} = user;
+    let request = {userName: title, userId: id, roomName: group, roomId: room, image: base64};
     fetch(`${WKLI_ENTER}`,{
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
@@ -388,10 +382,12 @@ const wkliEnter = (request) => {
             return response.json().then(data => console.log(" :: Send Image: ", data));
         }
     })
-        .catch(ex => Janus.log(`Error Send Image:`, ex));
+        .catch(ex => console.log(`Error Send Image:`, ex));
 }
 
 export const wkliLeave = (user) => {
+    if(typeof (window.ImageCapture) === "undefined")
+        return
     let request = {userId: user.id};
     fetch(`${WKLI_LEAVE}`,{
         method: 'POST',
@@ -402,5 +398,5 @@ export const wkliLeave = (user) => {
             return response.json().then(data => console.log(" :: Leave User: ", data));
         }
     })
-        .catch(ex => Janus.log(`Leave User:`, ex));
+        .catch(ex => console.log(`Leave User:`, ex));
 }
