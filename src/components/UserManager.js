@@ -46,18 +46,27 @@ client.events.addSilentRenewError((error) =>{
 
 export const getUser = (cb) =>
     client.getUser().then((user) => {
+        console.log('getUser', user);
         if(user) {
             let at = KJUR.jws.JWS.parse(user.access_token);
             let roles = at.payloadObj.realm_access.roles;
             const {sub,given_name,name,email,group,title} = user.profile;
-            user = {id: sub, username: given_name, name, title: title || given_name, group, email, roles}
+            user = {
+              access_token: user.access_token,
+              email,
+              group,
+              id: sub,
+              name,
+              roles,
+              title: title || given_name,
+              username: given_name,
+            };
             user_mgr = user;
         }
-        cb(user)
-    })
-        .catch((error) => {
-            console.log("Error: ",error);
-            reportToSentry("Get User Error: " + error,{source: "login"}, null,"warning")
-        });
+        cb(user);
+    }).catch((error) => {
+      console.log("Error: ",error);
+      reportToSentry("Get User Error: " + error, {source: "login"}, null, "warning");
+    });
 
 export default client;
