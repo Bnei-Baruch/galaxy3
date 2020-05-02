@@ -14,7 +14,7 @@ export default class VirtualStreamingJanus {
     this.audioMediaStream = null;
     this.trlAudioMediaStream = null;
     this.videos = Number(localStorage.getItem('vrt_video')) || 1;
-    this.audios = Number(localStorage.getItem('vrt_lang')) || 15;
+    this.audios = Number(localStorage.getItem('vrt_lang')) || 2;
     this.mixvolume = null;
     this.talking = null;
 
