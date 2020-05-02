@@ -6,7 +6,7 @@ import {
     JANUS_SRV_GXY1,
     STUN_SRV_GXY,
     WFDB_STATE,
-    WFRP_STATE
+    WFRP_STATE, WKLI_ENTER, WKLI_LEAVE
 } from "./env";
 
 export const initJanus = (cb,er,gxy) => {
@@ -354,7 +354,9 @@ export const testMic = async (stream) => {
     await sleep(10000);
 };
 
-export const takeImage = (stream, cb) => {
+export const takeImage = (stream, user) => {
+    if(typeof (window.ImageCapture) === "undefined")
+        return
     const track = stream.getVideoTracks()[0];
     let imageCapture = new ImageCapture(track);
     imageCapture.takePhoto().then(blob => {
@@ -362,8 +364,39 @@ export const takeImage = (stream, cb) => {
         reader.onload = () => {
             let dataUrl = reader.result;
             let base64 = dataUrl.split(',')[1];
-            cb(base64);
+            wkliEnter(base64, user);
         };
         reader.readAsDataURL(blob);
     })
+}
+
+const wkliEnter = (base64, user) => {
+    const {title,id,group,room} = user;
+    let request = {userName: title, userId: id, roomName: group, roomId: room, image: base64};
+    fetch(`${WKLI_ENTER}`,{
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body:  JSON.stringify(request)
+    }).then((response) => {
+        if (response.ok) {
+            return response.json().then(data => console.log(" :: Send Image: ", data));
+        }
+    })
+        .catch(ex => console.log(`Error Send Image:`, ex));
+}
+
+export const wkliLeave = (user) => {
+    if(typeof (window.ImageCapture) === "undefined")
+        return
+    let request = {userId: user.id};
+    fetch(`${WKLI_LEAVE}`,{
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body:  JSON.stringify(request)
+    }).then((response) => {
+        if (response.ok) {
+            return response.json().then(data => console.log(" :: Leave User: ", data));
+        }
+    })
+        .catch(ex => console.log(`Leave User:`, ex));
 }

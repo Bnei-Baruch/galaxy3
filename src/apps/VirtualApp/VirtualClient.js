@@ -9,10 +9,9 @@ import {
   getDevicesStream,
   getState,
   initJanus,
-  micLevel,
-  reportToSentry,
+  micLevel, reportToSentry, takeImage,
   testDevices,
-  testMic,
+  testMic, wkliLeave,
 } from '../../shared/tools';
 import './VirtualClient.scss';
 import './VideoConteiner.scss';
@@ -57,6 +56,7 @@ class VirtualClient extends Component {
     remoteFeed: null,
     myid: null,
     mypvtid: null,
+    mystream: null,
     localVideoTrack: null,
     localAudioTrack: null,
     mids: [],
@@ -237,6 +237,7 @@ class VirtualClient extends Component {
         Janus.log(' :: Going to check Devices: ');
         getDevicesStream(audio_device, video_device, video_setting, stream => {
           Janus.log(' :: Check Devices: ', stream);
+          this.setState({mystream: stream})
           let myvideo = this.refs.localVideo;
           Janus.attachMediaStream(myvideo, stream);
           if (this.state.audioContext) {
@@ -309,7 +310,8 @@ class VirtualClient extends Component {
   };
 
   exitRoom = (reconnect) => {
-    let { videoroom, remoteFeed, protocol, room } = this.state;
+    let { videoroom, remoteFeed, protocol, room, user } = this.state;
+    wkliLeave(user);
     let leave                                     = { request: 'leave' };
     if (remoteFeed) {
       remoteFeed.send({ 'message': leave });
@@ -957,6 +959,10 @@ class VirtualClient extends Component {
     user.camera     = video_device !== null;
     user.sound_test = reconnect ? JSON.parse(localStorage.getItem('sound_test')) : false;
     user.timestamp  = Date.now();
+    if(video_device) {
+      const {mystream} = this.state;
+      takeImage(mystream, user);
+    }
     this.setState({ user });
     localStorage.setItem('username', user.display);
     if(JSON.parse(localStorage.getItem("ghost")))
