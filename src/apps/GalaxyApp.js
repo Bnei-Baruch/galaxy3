@@ -1,8 +1,15 @@
-import React, { Component, Fragment } from 'react';
-import {Button} from "semantic-ui-react";
+import React, {
+  Component,
+  Fragment,
+} from 'react';
+import {
+  Button,
+	Grid,
+} from "semantic-ui-react";
 import LoginPage from '../components/LoginPage';
 import {client} from "../components/UserManager";
 import {withTranslation} from "react-i18next";
+import SendFriendEmail from './VirtualApp/components/SendFriendEmail';
 
 class GalaxyApp extends Component {
 
@@ -11,19 +18,20 @@ class GalaxyApp extends Component {
         roles: [],
     };
 
+    pendingApproval = (user) => user && !!user.roles.find(role => role === 'pending_approval');
+
     checkPermission = (user) => {
-        const {t} = this.props;
-        let gxy = user.roles.filter(role => /gxy_/.test(role));
-        let pending_approval = user.roles.filter(role => role === 'pending_approval').length > 0;
-        let gxy_user = gxy.length === 0;
-        console.log(gxy)
-        if(!gxy_user && gxy.length > 1) {
+        const gxy = user.roles.filter(role => /gxy_/.test(role));
+        const pending_approval = this.pendingApproval(user);
+        const gxy_user = gxy.length === 0;
+        console.log('user', user);
+        console.log('gxy', gxy);
+        console.log('pending_approval', pending_approval);
+        if((!gxy_user && gxy.length > 1) || pending_approval) {
             this.setState({user, roles: user.roles});
-        } else if(!gxy_user && gxy.length === 1 && gxy[0] === "gxy_user") {
-            window.location = '/user';
-        } else if(pending_approval) {
-            alert(t('galaxyApp.pendingApproval'));
-            client.signoutRedirect();
+        } else if (!gxy_user && gxy.length === 1 && gxy[0] === "gxy_user" && !pending_approval) {
+            alert('/user');
+            // window.location = '/user';
         } else {
             alert("Access denied.");
             client.signoutRedirect();
@@ -33,18 +41,47 @@ class GalaxyApp extends Component {
     render() {
         const {user, roles} = this.state;
 
-        const opt = roles.map((role,i) => {
-            //if(role === "bb_user") return (<Button key={i} size='massive' color='green' onClick={() => window.open("https://galaxy.kli.one/stream")} >Stream</Button>);
-            if(role === "gxy_user") return (<Button key={i} size='massive' color='green' onClick={() => window.open("user","_self")} >Galaxy</Button>);
-            if(role === "gxy_shidur") return (<Button key={i} size='massive' color='green' onClick={() => window.open("shidur","_self")} >Shidur</Button>);
-            if(role === "gxy_sndman") return (<Button key={i} size='massive' color='green' onClick={() => window.open("sndman","_self")} >SoundMan</Button>);
-            if(role.match(/^(gxy_admin|gxy_root|gxy_viewer)$/)) return (<Button key={i} size='massive' color='green' onClick={() => window.open("admin","_self")} >Admin</Button>);
+        const options = roles.map((role, i) => {
+            if(role === "gxy_user") {
+							return (<Button key={i} size='massive' color='blue' onClick={() => window.open("user","_self")}>
+								{this.pendingApproval(user) ? 'Continue as Guest' : 'Galaxy'}
+							</Button>);
+						}
+            if(role === "gxy_shidur") {
+							return (<Button key={i} size='massive' color='blue' onClick={() => window.open("shidur","_self")}>
+								Shidur
+							</Button>);
+						}
+            if(role === "gxy_sndman") {
+							return (<Button key={i} size='massive' color='blue' onClick={() => window.open("sndman","_self")}>
+								SoundMan
+							</Button>);
+						}
+            if(role.match(/^(gxy_admin|gxy_root|gxy_viewer)$/)) {
+							return (<Button key={i} size='massive' color='blue' onClick={() => window.open("admin","_self")}>
+								Admin
+							</Button>);
+						}
             return false;
-        });
+        }).filter(element => element);
+
+				const approval = this.pendingApproval(user);
+        const enter = (
+					<Grid columns={approval ? 2 : 1} divided>
+						<Grid.Row>
+							{!approval ? null : <Grid.Column>
+								<SendFriendEmail user={user} />
+							</Grid.Column>}
+							<Grid.Column style={{display: 'flex', justifyContent: 'center', alignItems: 'center'}}>
+								{options}
+							</Grid.Column>
+						</Grid.Row>
+					</Grid>
+				);
 
         return (
             <Fragment>
-                <LoginPage user={user} enter={opt} checkPermission={this.checkPermission} />
+                <LoginPage user={user} enter={enter} checkPermission={this.checkPermission} />
             </Fragment>
         );
     }

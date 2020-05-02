@@ -32,6 +32,7 @@ export const resources = {
         videoSettings: 'Video Settings:',
         noResultsFound: 'No results found.',
         settings: 'Settings',
+				welcomeGuest: 'Welcome to Galaxy. You are now registered as a guest. We will need to verify your account. In the meantime you will be granted partial access permissions: You will be able to join any room, see who is inside and watch the broadcast. You will not be able to participate in the workshops or ask questions during a live lesson. Please help us verify your account as soon as possible by filling out the form at the top of the page.',
       },
       feedback: {
         feedbackHelp: 'Feedback/Help',
@@ -67,6 +68,8 @@ export const resources = {
       },
       galaxyApp: {
         pendingApproval: 'Thank you for registering to Galaxy. Your account will be verified in the next few days. You will be able to use the system afterwards.',
+        verifyAccount: 'You successfully registered to Galaxy. We will need to verify your account with one of your friends. Please provide an email address of a friend that can verify he knows you. If you don’t have such information right now, you will be granted partial guest access.',
+				typeFriendEmail: 'Type the email',
       },
     },
   },
@@ -103,6 +106,7 @@ export const resources = {
         videoSettings: 'Ajustes de video:',
         noResultsFound: 'No se han encontrado resultados.',
         settings: 'Configuración',
+				welcomeGuest: 'Bienvenido al Galaxy. Ahora está registrado como invitado. Tendremos que verificar su cuenta. Mientras tanto, se le otorgará permiso de acceso parcial: podrá unirse a cualquier sala, ver quién está adentro y ver la transmisión. No podrá participar en los talleres o hacer preguntas durante una lección en vivo, ayúdenos a verificar su cuenta lo antes posible completando el formulario en la parte superior de la página.',
       },
       feedback: {
         feedbackHelp: 'Comentarios/Ayuda',
@@ -138,6 +142,8 @@ export const resources = {
       },
       galaxyApp: {
         pendingApproval: 'Gracias por registrarte en Galaxy. Su cuenta será verificada en los próximos días. Podrá utilizar el sistema después.',
+        verifyAccount: 'You successfully registered to Galaxy. We will need to verify your account with one of your friends. Please provide an email address of a friend that can verify he knows you. If you don’t have such information right now, you will be granted partial guest access.',
+				typeFriendEmail: 'Type the email',
       },
     },
   },
@@ -174,6 +180,7 @@ export const resources = {
         videoSettings: 'הגדרות וידאו',
         noResultsFound: 'לא נמצאו תוצאות',
         settings: 'הגדרות',
+				welcomeGuest: 'ברוך הבא לגלקסי. אתה רשום במערכת כאורח. עד האישור תקבל הרשאות גישה חלקיות: תוכל להצטרף לכל חדר, לראות מי נמצא בחדר ולצפות בשידור. לא תוכל להשתתף בסדנא או לשאול שאלות במהלך השיעור החי. אנא עזור לנו לאמת את חשבונך בהקדם האפשרי על ידי מילוי הטופס בראש העמוד.',
       },
       feedback: {
         feedbackHelp: 'משוב/עזרה',
@@ -209,6 +216,8 @@ export const resources = {
       },
       galaxyApp: {
         pendingApproval: 'תודה שנרשמת למערכת הגלאקסי. הרשמתך תבדק ותאושר בימים הקרובים. לאחר מכן תוכל להשתמש במערכת.',
+        verifyAccount: 'נרשמת לגלקסי בהצלחה . עלינו לאמת את חשבונך עם אחד החברים שלך שיוכל לאשר שהוא מכיר אותך. אנא מלא למטה כתובת דואר אלקטרוני של חבר שיוכל לאשר אותך. אם אין לך מידע זה, תינתן לך גישה חלקית של אורח למערכת.נרשמת לגלקסי בהצלחה . עלינו לאמת את חשבונך עם אחד החברים שלך שיוכל לאשר שהוא מכיר אותך. אנא מלא למטה כתובת דואר אלקטרוני של חבר שיוכל לאשר אותך. אם אין לך מידע זה, תינתן לך גישה חלקית של אורח למערכת.',
+				typeFriendEmail: 'Type the email',
       },
     },
   },
@@ -245,6 +254,7 @@ export const resources = {
         videoSettings: 'Параметры видео:',
         noResultsFound: 'Ничего не найдено',
         settings: 'Настройки',
+				welcomeGuest: 'Добро пожаловать в Galaxy. Вы записаны в системе в качестве гостя. До полного разрешения, Вы получите право частичного использования системы: Вы сможете присоединиться к любой комнате, видеть кто находится в комнате  и смотреть трансляцию. Вы не сможете участвовать в семинаре и задавать вопросы в прямом эфире. Пожалуйста, помогите нам подтвердить Ваш аккаунт, как можно быстрее, с помощью заполнения анкеты на заглавной странице.',
       },
       feedback: {
         feedbackHelp: 'Фидбек/Помощь',
@@ -280,6 +290,8 @@ export const resources = {
       },
       galaxyApp: {
         pendingApproval: 'Спасибо за регистрацию в Galaxy. Ваша учетная запись будет проверена в ближайшие несколько дней. Вы сможете использовать систему впоследствии.',
+        verifyAccount: 'You successfully registered to Galaxy. We will need to verify your account with one of your friends. Please provide an email address of a friend that can verify he knows you. If you don’t have such information right now, you will be granted partial guest access.',
+				typeFriendEmail: 'Type the email',
       },
     },
   },

@@ -2,7 +2,18 @@ import React, {Component, Fragment} from 'react';
 import { Janus } from '../../lib/janus';
 import classNames from 'classnames';
 import { isMobile } from 'react-device-detect';
-import {Button, Dropdown, Icon, Input, Label, Menu, Popup, Select} from 'semantic-ui-react';
+import {
+  Button,
+  Dropdown,
+  Header,
+  Icon,
+  Input,
+  Label,
+  Menu,
+  Modal,
+  Popup,
+  Select,
+} from 'semantic-ui-react';
 import {
   checkNotification,
   geoInfo,
@@ -31,6 +42,7 @@ import VirtualStreaming from './VirtualStreaming';
 import VirtualStreamingJanus from './VirtualStreamingJanus';
 import {client} from "../../components/UserManager";
 import LoginPage from "../../components/LoginPage";
+import SendFriendEmail from './components/SendFriendEmail';
 
 class VirtualClient extends Component {
 
@@ -80,7 +92,7 @@ class VirtualClient extends Component {
     attachedSource: true,
     sourceLoading: true,
     virtualStreamingJanus: new VirtualStreamingJanus(() => this.virtualStreamingInitialized()),
-  }
+  };
 
   virtualStreamingInitialized() {
     this.setState({sourceLoading: false});
@@ -116,15 +128,13 @@ class VirtualClient extends Component {
   };
 
   checkPermission = (user) => {
-    const {t} = this.props;
-    let gxy_user = user.roles.filter(role => role === 'gxy_user').length > 0;
+    let gxy_user = user.roles.find(role => role === 'gxy_user');
     let pending_approval = user.roles.filter(role => role === 'pending_approval').length > 0;
-    if (pending_approval) {
-      alert(t('galaxyApp.pendingApproval'));
-      client.signoutRedirect();
-    } else if (gxy_user) {
+    console.log('gxy_user', gxy_user);
+    console.log('VC USER', user)
+    if (gxy_user || pending_approval) {
       delete user.roles;
-      user.role = "user";
+      user.role = pending_approval ? 'guest' : 'user';
       this.checkClient(user);
     } else {
       alert("Access denied!");
@@ -1202,6 +1212,8 @@ class VirtualClient extends Component {
       sourceLoading,
       tested,
       user,
+      showVerificationEmailSent,
+			guestModalOpen,
       video_device,
       video_devices,
       video_setting,
@@ -1282,7 +1294,27 @@ class VirtualClient extends Component {
 
     let login = (<LoginPage user={user} checkPermission={this.checkPermission} />);
 
+    const guestMessage = false && (showVerificationEmailSent || !user || user.role !== 'guest') ? null : (
+			<SendFriendEmail user={user} />
+    );
+
+		console.log(guestModalOpen);
+    const guestModal = !guestModalOpen ? null : (
+      <Modal open={true}>
+        <Modal.Content>
+          <Header>{t('oldClient.welcomeGuest')}</Header>
+        </Modal.Content>
+        <Modal.Actions>
+          <Button color='green' onClick={() => this.setState({guestModalOpen: false})}>
+						OK
+          </Button>
+        </Modal.Actions>
+      </Modal>
+    );
+
     let content = (<div className={classNames('vclient', { 'vclient--chat-open': chatVisible })}>
+      {guestMessage}
+			{guestModal}
       <div className="vclient__toolbar">
         <Input>
           <Select

@@ -21,3 +21,4 @@ export const WKLI_ENTER = process.env.REACT_APP_WKLI_ENTER;
 export const WKLI_LEAVE = process.env.REACT_APP_WKLI_LEAVE;
 
 export const MONITORING_BACKEND = process.env.REACT_APP_MONITORING_BACKEND;
+export const AUTH_API_BACKEND = process.env.REACT_APP_AUTH_API_BACKEND
