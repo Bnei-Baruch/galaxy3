@@ -6,12 +6,12 @@ import {
     JANUS_SRV_GXY1,
     STUN_SRV_GXY,
     WFDB_STATE,
-    WFRP_STATE
+    WFRP_STATE, WKLI_ENTER, WKLI_LEAVE
 } from "./env";
 
 export const initJanus = (cb,er,gxy) => {
     Janus.init({
-        debug: process.env.NODE_ENV !== 'production' ? ["log","error"] : ["error"],
+        debug: process.env.NODE_ENV !== 'production' ? [/*"log",*/"error"] : ["error"],
         callback: () => {
             let janus = new Janus({
                 server: gxy === "gxy1" ? JANUS_SRV_GXY1 : gxy === "gxy2" ? JANUS_SRV_GXY2 : JANUS_SRV_GXY3,
@@ -22,7 +22,6 @@ export const initJanus = (cb,er,gxy) => {
                 },
                 error: (error) => {
                     Janus.error(error);
-                    reportToSentry(error, {source: "janus",janus: gxy})
                     er(error);
                 },
                 destroyed: () => {
@@ -33,7 +32,7 @@ export const initJanus = (cb,er,gxy) => {
     })
 };
 
-export const reportToSentry = (title, data, level) => {
+export const reportToSentry = (title, data, user, level) => {
     level = level || 'info';
     data  = data  || {};
     Sentry.withScope(scope => {
@@ -41,6 +40,10 @@ export const reportToSentry = (title, data, level) => {
             scope.setExtra(key, data[key]);
         });
         scope.setLevel(level);
+        if(user) {
+            const {id,username,email} = user;
+            Sentry.setUser({id,username,email});
+        }
         Sentry.captureMessage(title);
     });
 }
@@ -244,11 +247,11 @@ export const getDevicesStream = (audioid,videoid,video_setting,cb) => {
     });
 };
 
-export const testDevices = (video,audio,cb) => {
+export const testDevices = (video,audio,user,cb) => {
     navigator.mediaDevices.getUserMedia({ audio: audio, video: video }).then(stream => {
         cb(stream);
     }, function (e) {
-        reportToSentry("Device Failed: " + e.name, {source: "device",audio,video})
+        reportToSentry((video ? "Video" : "Audio") + " Device Failed: " + e.name, {source: "device",audio,video}, user)
         var message;
         switch (e.name) {
             case 'NotFoundError':
@@ -351,7 +354,9 @@ export const testMic = async (stream) => {
     await sleep(10000);
 };
 
-export const takeImage = (stream, cb) => {
+export const takeImage = (stream, user) => {
+    if(typeof (window.ImageCapture) === "undefined")
+        return
     const track = stream.getVideoTracks()[0];
     let imageCapture = new ImageCapture(track);
     imageCapture.takePhoto().then(blob => {
@@ -359,8 +364,39 @@ export const takeImage = (stream, cb) => {
         reader.onload = () => {
             let dataUrl = reader.result;
             let base64 = dataUrl.split(',')[1];
-            cb(base64);
+            wkliEnter(base64, user);
         };
         reader.readAsDataURL(blob);
     })
+}
+
+const wkliEnter = (base64, user) => {
+    const {title,id,group,room} = user;
+    let request = {userName: title, userId: id, roomName: group, roomId: room, image: base64};
+    fetch(`${WKLI_ENTER}`,{
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body:  JSON.stringify(request)
+    }).then((response) => {
+        if (response.ok) {
+            return response.json().then(data => console.log(" :: Send Image: ", data));
+        }
+    })
+        .catch(ex => console.log(`Error Send Image:`, ex));
+}
+
+export const wkliLeave = (user) => {
+    if(typeof (window.ImageCapture) === "undefined")
+        return
+    let request = {userId: user.id};
+    fetch(`${WKLI_LEAVE}`,{
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body:  JSON.stringify(request)
+    }).then((response) => {
+        if (response.ok) {
+            return response.json().then(data => console.log(" :: Leave User: ", data));
+        }
+    })
+        .catch(ex => console.log(`Leave User:`, ex));
 }
