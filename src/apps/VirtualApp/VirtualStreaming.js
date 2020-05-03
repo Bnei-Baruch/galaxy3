@@ -22,7 +22,7 @@ class VirtualStreaming extends Component {
 
   state = {
     videos: Number(localStorage.getItem('vrt_video')) || 1,
-    audios: Number(localStorage.getItem('vrt_lang')) || 15,
+    audios: Number(localStorage.getItem('vrt_lang')) || 2,
     room: Number(localStorage.getItem('room')) || null,
     user: {},
     cssFixInterval: null,
