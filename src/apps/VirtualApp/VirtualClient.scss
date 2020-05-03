@@ -14,12 +14,18 @@
     &__toolbar {
         display: flex;
         align-items: center;
-        padding: .8rem .5rem;
+        // padding: .8rem .5rem;
         flex-wrap:wrap;
 
         & > .menu,
         & > .input {
-            margin: .2rem .5rem !important;
+            margin: .15rem .5rem !important;
+        }
+        & > .menu {
+            .item {
+                padding:.5rem !important;
+                margin: 0 !important;
+            }
         }
 
         .menu:nth-child(2) {
