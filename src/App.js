@@ -3,8 +3,6 @@ import 'semantic-ui-css/semantic.min.css';
 import { I18nextProvider } from 'react-i18next';
 import i18n from 'i18next';
 
-// kuku
-
 import './i18n/i18n';
 // import GalaxyApp from "./apps/GalaxyApp";
 // import MobileClient from "./apps/MobileApp/MobileClient";
