@@ -20,7 +20,7 @@ import 'eqcss';
 import VirtualChat from './VirtualChat';
 import { initGxyProtocol, sendProtocolMessage } from '../../shared/protocol';
 import { PROTOCOL_ROOM, vsettings_list } from '../../shared/consts';
-import { GEO_IP_INFO } from '../../shared/env';
+import {GEO_IP_INFO, SENTRY_KEY} from '../../shared/env';
 import platform from 'platform';
 import { Help } from './components/Help';
 import { withTranslation } from 'react-i18next';
@@ -31,6 +31,7 @@ import VirtualStreaming from './VirtualStreaming';
 import VirtualStreamingJanus from './VirtualStreamingJanus';
 import {client} from "../../components/UserManager";
 import LoginPage from "../../components/LoginPage";
+import * as Sentry from "@sentry/browser";
 
 class VirtualClient extends Component {
 
@@ -110,6 +111,7 @@ class VirtualClient extends Component {
   }
 
   componentDidMount() {
+    Sentry.init({dsn: `https://${SENTRY_KEY}@sentry.kli.one/2`});
     if (isMobile) {
       window.location = '/userm';
     }

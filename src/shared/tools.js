@@ -377,12 +377,7 @@ const wkliEnter = (base64, user) => {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body:  JSON.stringify(request)
-    }).then((response) => {
-        if (response.ok) {
-            return response.json().then(data => console.log(" :: Send Image: ", data));
-        }
-    })
-        .catch(ex => console.log(`Error Send Image:`, ex));
+    }).then().catch(ex => console.log(`Error Send Image:`, ex));
 }
 
 export const wkliLeave = (user) => {
@@ -393,10 +388,5 @@ export const wkliLeave = (user) => {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body:  JSON.stringify(request)
-    }).then((response) => {
-        if (response.ok) {
-            return response.json().then(data => console.log(" :: Leave User: ", data));
-        }
-    })
-        .catch(ex => console.log(`Leave User:`, ex));
+    }).then().catch(ex => console.log(`Leave User:`, ex));
 }
