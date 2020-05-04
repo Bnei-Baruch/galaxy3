@@ -49,14 +49,30 @@ export const getUser = (cb) =>
         console.log('getUser', user);
         if(user) {
             let at = KJUR.jws.JWS.parse(user.access_token);
-            let roles = at.payloadObj.realm_access.roles;
-            const {sub,given_name,name,email,group,title} = user.profile;
+            console.log('AT', at);
+            const {
+              realm_access: {roles},
+              request,
+              timestamp: request_timestamp,
+              pending,
+            } = at.payloadObj;
+            const {
+              email,
+              given_name,
+              group,
+              name,
+              sub,
+              title,
+            } = user.profile;
             user = {
               access_token: user.access_token,
               email,
               group,
               id: sub,
               name,
+              pending,
+              request,
+              request_timestamp,
               roles,
               title: title || given_name,
               username: given_name,
