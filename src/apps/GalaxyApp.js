@@ -9,7 +9,7 @@ import {
 import LoginPage from '../components/LoginPage';
 import {client} from "../components/UserManager";
 import {withTranslation} from "react-i18next";
-import SendFriendEmail from './VirtualApp/components/SendFriendEmail';
+import VerifyAccount from './VirtualApp/components/VerifyAccount';
 
 class GalaxyApp extends Component {
 
@@ -21,21 +21,22 @@ class GalaxyApp extends Component {
     pendingApproval = (user) => user && !!user.roles.find(role => role === 'pending_approval');
 
     checkPermission = (user) => {
-        const gxy = user.roles.filter(role => /gxy_/.test(role));
-        const pending_approval = this.pendingApproval(user);
-        const gxy_user = gxy.length === 0;
-        console.log('user', user);
-        console.log('gxy', gxy);
-        console.log('pending_approval', pending_approval);
-        if((!gxy_user && gxy.length > 1) || pending_approval) {
-            this.setState({user, roles: user.roles});
-        } else if (!gxy_user && gxy.length === 1 && gxy[0] === "gxy_user" && !pending_approval) {
-            alert('/user');
-            // window.location = '/user';
-        } else {
-            alert("Access denied.");
-            client.signoutRedirect();
-        }
+      console.log('USER checkPermission', user);
+      const gxy = user.roles.filter(role => /gxy_/.test(role));
+      const pending_approval = this.pendingApproval(user);
+      const gxy_user = gxy.length === 0;
+      console.log('user', user);
+      console.log('gxy', gxy);
+      console.log('pending_approval', pending_approval);
+      if((!gxy_user && gxy.length > 1) || pending_approval) {
+          this.setState({user, roles: user.roles});
+      } else if (!gxy_user && gxy.length === 1 && gxy[0] === "gxy_user" && !pending_approval) {
+          alert('/user');
+          // window.location = '/user';
+      } else {
+          alert("Access denied.");
+          client.signoutRedirect();
+      }
     };
 
     render() {
@@ -70,7 +71,7 @@ class GalaxyApp extends Component {
 					<Grid columns={approval ? 2 : 1} divided>
 						<Grid.Row>
 							{!approval ? null : <Grid.Column>
-								<SendFriendEmail user={user} />
+								<VerifyAccount user={user} />
 							</Grid.Column>}
 							<Grid.Column style={{display: 'flex', justifyContent: 'center', alignItems: 'center'}}>
 								{options}

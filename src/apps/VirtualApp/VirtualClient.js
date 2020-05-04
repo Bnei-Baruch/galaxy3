@@ -5,12 +5,10 @@ import { isMobile } from 'react-device-detect';
 import {
   Button,
   Dropdown,
-  Header,
   Icon,
   Input,
   Label,
   Menu,
-  Modal,
   Popup,
   Select,
 } from 'semantic-ui-react';
@@ -43,7 +41,7 @@ import VirtualStreamingJanus from './VirtualStreamingJanus';
 import {client} from "../../components/UserManager";
 import LoginPage from "../../components/LoginPage";
 import * as Sentry from "@sentry/browser";
-import SendFriendEmail from './components/SendFriendEmail';
+import VerifyAccount from './components/VerifyAccount';
 
 class VirtualClient extends Component {
 
@@ -1214,8 +1212,6 @@ class VirtualClient extends Component {
       sourceLoading,
       tested,
       user,
-      showVerificationEmailSent,
-			guestModalOpen,
       video_device,
       video_devices,
       video_setting,
@@ -1296,27 +1292,8 @@ class VirtualClient extends Component {
 
     let login = (<LoginPage user={user} checkPermission={this.checkPermission} />);
 
-    const guestMessage = false && (showVerificationEmailSent || !user || user.role !== 'guest') ? null : (
-			<SendFriendEmail user={user} />
-    );
-
-		console.log(guestModalOpen);
-    const guestModal = !guestModalOpen ? null : (
-      <Modal open={true}>
-        <Modal.Content>
-          <Header>{t('oldClient.welcomeGuest')}</Header>
-        </Modal.Content>
-        <Modal.Actions>
-          <Button color='green' onClick={() => this.setState({guestModalOpen: false})}>
-						OK
-          </Button>
-        </Modal.Actions>
-      </Modal>
-    );
-
     let content = (<div className={classNames('vclient', { 'vclient--chat-open': chatVisible })}>
-      {guestMessage}
-			{guestModal}
+			<VerifyAccount user={user} />
       <div className="vclient__toolbar">
         <Input>
           <Select
