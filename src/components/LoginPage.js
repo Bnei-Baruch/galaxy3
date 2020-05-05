@@ -87,8 +87,6 @@ class LoginPage extends Component {
             </Container>
         );
 
-        console.log('USER!', this.props.user);
-
         let main = (
             <Container fluid >
                 <Menu secondary>
