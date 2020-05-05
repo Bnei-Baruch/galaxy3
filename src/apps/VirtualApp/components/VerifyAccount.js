@@ -12,6 +12,7 @@ import { useTranslation } from 'react-i18next';
 import {
   AUTH_API_BACKEND,
 } from "../../../shared/env";
+import {silentSignin} from "../../../components/UserManager";
 
 
 const EMAIL_RE = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
@@ -22,8 +23,10 @@ const SendFriendEmail = (props) => {
   const {user, user: {access_token}} = props;
   const [email, setEmail] = useState('');
   const valid = useMemo(() => emailValid(email), [email]);
+  const [requestSent, setRequestSent] = useState(false);
   const [closedModal, setClosedModal] = useState(false);
   const [pendingState, setPendingState] = useState({});
+  const [error, setError] = useState('');
 
   useEffect(() => {
     if (user.pending && user.pending.length) {
@@ -55,6 +58,9 @@ const SendFriendEmail = (props) => {
           }
         }).then((data) => {
           console.log('Data', data);
+          if (data && data.result === 'success') {
+            silentSignin();  // Update user data from oidc. Same as renew signin after 10 minutes.
+          }
         })
         .catch((error) => {
           console.error('Verify error:', error);
@@ -62,8 +68,6 @@ const SendFriendEmail = (props) => {
       }
     }
   }
-
-  console.log('USER', user);
 
   const askFriendToVerify = () => {
     if (valid) {
@@ -75,11 +79,18 @@ const SendFriendEmail = (props) => {
       }).then((response) => {
         if (response.ok) {
           return response.json();
+        } else if (response.status === 404) {
+          setError(t('galaxyApp.requestedVerificationBadEmailPopup'));
         } else {
           throw new Error(`Fetch error: ${response.status}`);
         }
       }).then((data) => {
         console.log('Data', data);
+        if (data && data.result === 'success') {
+          setRequestSent(true);
+          setClosedModal(false);
+          silentSignin();  // Update user data from oidc. Same as renew signin after 10 minutes.
+        }
       })
       .catch((error) => {
         console.error('Request error:', error);
@@ -87,24 +98,26 @@ const SendFriendEmail = (props) => {
     }
   };
 
-  if (user && user.role === 'guest' && (!user.request || user.request.length === 0)) {
-    return (<Segment textAlign="center" style={{backgroundColor: 'lightyellow'}}>
-      <Header style={{textAlign: 'justify'}}>{t('galaxyApp.welcomeGuest')}</Header>
+  const ret = [];
+  if (!requestSent && user && user.role === 'guest' && (!user.request || user.request.length === 0)) {
+    ret.push(<Segment textAlign="center" style={{backgroundColor: 'lightyellow'}}>
+      <Header style={{textAlign: 'justify'}}>{t('galaxyApp.welcomeGuestForm')}</Header>
       <Input action={{
                color: 'green',
                content: 'Send',
                onClick: askFriendToVerify,
              }}
-             error={email && !valid}
+             error={!!email && !valid}
              onChange={e => setEmail(e.target.value)}
              placeholder={t('galaxyApp.typeFriendEmail')} />
     </Segment>);
   }
 
+  console.log('RENDER', user.role, 'closedModal', closedModal, 'requestSent', requestSent, 'user.request', user.request, 'user.pending', user.pending);
   if (user && user.role === 'guest' && !closedModal) {
-    return (<Modal open={true}>
+    ret.push(<Modal open={true}>
       <Modal.Content>
-        <Header>{user.request ? t('galaxyApp.welcomeGuestRequested') : t('galaxyApp.welcomeGuest')}</Header>
+        <Header>{(user.request || requestSent) ? t('galaxyApp.welcomeGuestPopupRequested') : t('galaxyApp.welcomeGuestPopup')}</Header>
       </Modal.Content>
       <Modal.Actions>
         <Button color='green' onClick={() => setClosedModal(true)}>OK</Button>
@@ -113,9 +126,9 @@ const SendFriendEmail = (props) => {
   }
 
   if (user && user.role === 'user' && user.pending && user.pending.length && !closedModal) {
-    return (<Modal open={true}>
-      <Modal.Content>
-        <Header>Hello {user.title}</Header>
+    ret.push(<Modal open={true}>
+      <Modal.Content textAlign="center">
+        <Header>{t('galaxyApp.approveVerificationHeader').replace('[UserFirstName]', user.title)}</Header>
         <Table>
           <Table.Header>
             <Table.Row>
@@ -125,7 +138,7 @@ const SendFriendEmail = (props) => {
             </Table.Row>
           </Table.Header>
           <Table.Body>
-            {user.pending.map((pendingEmail) => (<Table.Row>
+            {user.pending.map((pendingEmail, index) => (<Table.Row key={index}>
               <Table.Cell>{pendingEmail}</Table.Cell>
               <Table.Cell>
                 <Checkbox checked={pendingState[pendingEmail] === 'approve'}
@@ -148,7 +161,19 @@ const SendFriendEmail = (props) => {
       </Modal.Actions>
     </Modal>);
   }
-  return null;
+
+  if (error) {
+    ret.push(<Modal open={true}>
+      <Modal.Content>
+        <Header>{error}</Header>
+      </Modal.Content>
+      <Modal.Actions>
+        <Button onClick={() => setError('')}>Close</Button>
+      </Modal.Actions>
+    </Modal>);
+  }
+
+  return ret.length ? ret : null;
 };
 
 export default SendFriendEmail;

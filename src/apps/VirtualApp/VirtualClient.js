@@ -38,7 +38,7 @@ import { Monitoring } from '../../components/Monitoring';
 import { MonitoringData } from '../../shared/MonitoringData';
 import VirtualStreaming from './VirtualStreaming';
 import VirtualStreamingJanus from './VirtualStreamingJanus';
-import {client} from "../../components/UserManager";
+import {client, buildUserObject} from "../../components/UserManager";
 import LoginPage from "../../components/LoginPage";
 import * as Sentry from "@sentry/browser";
 import VerifyAccount from './components/VerifyAccount';
@@ -125,24 +125,32 @@ class VirtualClient extends Component {
     if (isMobile) {
       window.location = '/userm';
     }
+    // When renew singin happends, every 10 minutes, we want to fetch new
+    // user info including permissiong and attributes and apply it to client.
+    // For example guest user may become regular user after approval.
+    client.events.addUserLoaded((oidcUser) => {
+      const user = buildUserObject(oidcUser);
+      this.recheckPermission(user);
+    });
   };
 
-  checkPermission = (user) => {
+  checkPermission = (user) => this.checkPermissions_(user, true);
+  recheckPermission = (user) => this.checkPermissions_(user, false);
+
+  checkPermissions_ = (user, firstTime) => {
     let gxy_user = user.roles.find(role => role === 'gxy_user');
     let pending_approval = user.roles.filter(role => role === 'pending_approval').length > 0;
-    console.log('gxy_user', gxy_user);
-    console.log('VC USER', user)
     if (gxy_user || pending_approval) {
       delete user.roles;
       user.role = pending_approval ? 'guest' : 'user';
-      this.checkClient(user);
+      this.checkClient(user, firstTime);
     } else {
       alert("Access denied!");
       client.signoutRedirect();
     }
   };
 
-  checkClient = (user) => {
+  checkClient = (user, firstTime) => {
     const { t } = this.props;
     localStorage.setItem('question', false);
     localStorage.setItem('sound_test', false);
@@ -150,7 +158,11 @@ class VirtualClient extends Component {
     checkNotification();
     let system  = navigator.userAgent;
     let browser = platform.parse(system);
-    if (/Safari|Firefox|Chrome/.test(browser.name)) {
+    if (!(/Safari|Firefox|Chrome/.test(browser.name))) {
+      alert(t('oldClient.browserNotSupported'));
+      window.location = 'https://galaxy.kli.one';
+    }
+    if (firstTime) {
       geoInfo(`${GEO_IP_INFO}`, data => {
         user.ip     = data ? data.ip : '127.0.0.1';
         user.system = system;
@@ -161,11 +173,8 @@ class VirtualClient extends Component {
           this.getRoomList(user);
         });
       });
-    } else {
-      alert(t('oldClient.browserNotSupported'));
-      window.location = 'https://galaxy.kli.one';
+      this.state.virtualStreamingJanus.init();
     }
-    this.state.virtualStreamingJanus.init();
   }
 
   componentWillUnmount() {

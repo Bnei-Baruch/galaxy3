@@ -21,13 +21,9 @@ class GalaxyApp extends Component {
     pendingApproval = (user) => user && !!user.roles.find(role => role === 'pending_approval');
 
     checkPermission = (user) => {
-      console.log('USER checkPermission', user);
       const gxy = user.roles.filter(role => /gxy_/.test(role));
       const pending_approval = this.pendingApproval(user);
       const gxy_user = gxy.length === 0;
-      console.log('user', user);
-      console.log('gxy', gxy);
-      console.log('pending_approval', pending_approval);
       if((!gxy_user && gxy.length > 1) || pending_approval) {
           this.setState({user, roles: user.roles});
       } else if (!gxy_user && gxy.length === 1 && gxy[0] === "gxy_user" && !pending_approval) {
