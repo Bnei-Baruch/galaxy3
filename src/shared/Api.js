@@ -14,6 +14,9 @@ class Api {
     fetchAvailableRooms = () =>
         this.logAndParse('fetch available rooms', fetch(this.urlFor('/groups'), this.defaultOptions()));
 
+    fetchActiveRooms = () =>
+        this.logAndParse('fetch active rooms', fetch(this.urlFor('/rooms'), this.defaultOptions()));
+
     fetchUsers = () =>
         this.logAndParse('fetch users', fetch(this.urlFor('/users'), this.defaultOptions()));
 

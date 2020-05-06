@@ -57,7 +57,7 @@ class SndmanApp extends Component {
         const gateways = GxyJanus.makeGateways("rooms");
         this.setState({gateways});
 
-        Promise.all(Object.values(gateways).map(gateway => (this.initGateway(user, gateway))))
+        return Promise.all(Object.values(gateways).map(gateway => (this.initGateway(user, gateway))))
             .then(() => {
                 console.log("[Sndman] gateways initialization complete");
                 this.setState({gatewaysInitialized: true});

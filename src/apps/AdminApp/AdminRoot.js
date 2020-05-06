@@ -1,20 +1,8 @@
 import React, {Component} from 'react';
 import {Janus} from "../../lib/janus";
-import {
-  Button,
-  Grid,
-  Menu,
-  Icon,
-  List,
-  Popup,
-  Segment,
-  Tab,
-  Table,
-} from "semantic-ui-react";
-import {getState} from "../../shared/tools";
+import {Button, Grid, Icon, List, Menu, Popup, Segment, Tab, Table,} from "semantic-ui-react";
 import './AdminRoot.css';
 import './AdminRootVideo.scss'
-import {JANUS_GATEWAYS} from "../../shared/consts";
 import classNames from "classnames";
 import platform from "platform";
 import {client} from "../../components/UserManager";
@@ -24,6 +12,7 @@ import ChatBox from "./components/ChatBox";
 import RoomManager from "./components/RoomManager";
 import MonitoringAdmin from "./components/MonitoringAdmin";
 import MonitoringUser from "./components/MonitoringUser";
+import api from "../../shared/Api";
 
 class AdminRoot extends Component {
 
@@ -50,12 +39,6 @@ class AdminRoot extends Component {
         user: null,
         users: {},
         usersTabs: [],
-    };
-
-    componentDidMount() {
-        getState('galaxy/users', (users) => {
-            this.setState({users});
-        });
     };
 
     componentWillUnmount() {
@@ -93,9 +76,7 @@ class AdminRoot extends Component {
             console.log("[Admin] checkPermission role is", role);
             delete user.roles;
             user.role = role;
-            this.setState({user}, () => {
-                this.initAdminRoot(user);
-            });
+            this.initApp(user);
         } else {
             alert("Access denied!");
             client.signoutRedirect();
@@ -123,43 +104,63 @@ class AdminRoot extends Component {
 
     withAudio = () => (this.isAllowed("admin"));
 
-    initAdminRoot = (user) => {
-        const gateways = {};
-        JANUS_GATEWAYS.forEach(inst => {
-            gateways[inst] = new GxyJanus(inst);
-        });
+    initApp = (user) => {
+        this.setState({user});
+
+        api.setAccessToken(user.access_token);
+        client.events.addUserLoaded((user) => api.setAccessToken(user.access_token));
+        client.events.addUserUnloaded(() => api.setAccessToken(null));
+
+        api.fetchConfig()
+            .then(data => {
+                GxyJanus.setGlobalConfig(data);
+            })
+            .then(api.fetchUsers)
+            .then(data => {
+                this.setState({users: data});
+            })
+            .then(() => this.initGateways(user))
+            .then(() => this.pollRooms());
+    }
+
+    initGateways = (user) => {
+        const gateways = GxyJanus.makeGateways("rooms");
         this.setState({gateways});
 
-        Promise.all(Object.values(gateways).map(gateway => {
-            console.log("Initializing", gateway.name);
-            return gateway.init()
-                .then(() => {
-                    if (this.isAllowed("admin")) {
-                        return gateway.initGxyProtocol(user, data => this.onProtocolData(gateway, data))
-                    }
-                })
-        })).then(() => {
-            console.log("[Admin] gateways initialization complete");
-            this.setState({gatewaysInitialized: true});
-        });
-
-        setInterval(() => {
-            this.getRoomsState();
-            if (this.state.feed_user)
-                this.getFeedInfo()
-        }, 10*1000);
-    };
-
-    getRoomsState = () => {
-        getState('galaxy/rooms', (rooms) => {
-            rooms.sort((a, b) => {
-                if (a.description > b.description) return 1;
-                if (a.description < b.description) return -1;
-                return 0;
+        return Promise.all(Object.values(gateways).map(gateway => (this.initGateway(user, gateway))))
+            .then(() => {
+                console.log("[Admin] gateways initialization complete");
+                this.setState({gatewaysInitialized: true});
             });
-            this.setState({rooms});
-        });
     };
+
+    initGateway = (user, gateway) => {
+        console.log("[Admin] initializing gateway", gateway.name);
+
+        return gateway.init()
+            .then(() => {
+                if (this.isAllowed("admin")) {
+                    return gateway.initGxyProtocol(user, data => this.onProtocolData(gateway, data))
+                }
+            });
+    }
+
+    pollRooms = () => {
+        this.fetchRooms();
+        setInterval(this.fetchRooms, 10 * 1000)
+    }
+
+    fetchRooms = () => {
+        api.fetchActiveRooms()
+            .then((data) => {
+                data.sort((a, b) => {
+                    if (a.description > b.description) return 1;
+                    if (a.description < b.description) return -1;
+                    return 0;
+                });
+                this.setState({rooms: data});
+            })
+    }
 
     newVideoRoom = (gateway, room) => {
         console.log("[Admin] newVideoRoom", room);
