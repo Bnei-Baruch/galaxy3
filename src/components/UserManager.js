@@ -44,6 +44,8 @@ client.events.addSilentRenewError((error) =>{
     reportToSentry("Silent Renew Error: " + error,{source: "login"}, user_mgr, "warning");
 });
 
+export const pendingApproval = (user) => user && !!user.roles.find(role => role === 'pending_approval');
+
 export const buildUserObject = (oidcUser) => {
   if (!oidcUser) {
     return oidcUser;
@@ -76,6 +78,7 @@ export const buildUserObject = (oidcUser) => {
     title: title || given_name,
     username: given_name,
   };
+  user.role = pendingApproval(user) ? 'ghost' : 'user';
   user_mgr = user;
   return user;
 }

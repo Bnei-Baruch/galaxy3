@@ -7,7 +7,7 @@ import {
 	Grid,
 } from "semantic-ui-react";
 import LoginPage from '../components/LoginPage';
-import {client} from "../components/UserManager";
+import {buildUserObject, client, pendingApproval} from "../components/UserManager";
 import {withTranslation} from "react-i18next";
 import VerifyAccount from './VirtualApp/components/VerifyAccount';
 
@@ -18,17 +18,24 @@ class GalaxyApp extends Component {
         roles: [],
     };
 
-    pendingApproval = (user) => user && !!user.roles.find(role => role === 'pending_approval');
+    componentDidMount() {
+      // When renew singin happends, every 10 minutes, we want to fetch new
+      // user info including permissiong and attributes and apply it to client.
+      // For example guest user may become regular user after approval.
+      client.events.addUserLoaded((oidcUser) => {
+        const user = buildUserObject(oidcUser);
+        this.checkPermission(user);
+      });
+    };
 
     checkPermission = (user) => {
       const gxy = user.roles.filter(role => /gxy_/.test(role));
-      const pending_approval = this.pendingApproval(user);
+      const pending_approval = pendingApproval(user);
       const gxy_user = gxy.length === 0;
       if((!gxy_user && gxy.length > 1) || pending_approval) {
           this.setState({user, roles: user.roles});
       } else if (!gxy_user && gxy.length === 1 && gxy[0] === "gxy_user" && !pending_approval) {
-          alert('/user');
-          // window.location = '/user';
+          window.location = '/user';
       } else {
           alert("Access denied.");
           client.signoutRedirect();
@@ -37,11 +44,13 @@ class GalaxyApp extends Component {
 
     render() {
         const {user, roles} = this.state;
+				const approval = pendingApproval(user);
+        const requested = user && user.request && !!user.request.length;
 
         const options = roles.map((role, i) => {
-            if(role === "gxy_user") {
+            if(role === "gxy_user" || role === "pending_approval") {
 							return (<Button key={i} size='massive' color='blue' onClick={() => window.open("user","_self")}>
-								{this.pendingApproval(user) ? 'Continue as Guest' : 'Galaxy'}
+								{approval ? 'Continue as Guest' : 'Galaxy'}
 							</Button>);
 						}
             if(role === "gxy_shidur") {
@@ -62,12 +71,11 @@ class GalaxyApp extends Component {
             return false;
         }).filter(element => element);
 
-				const approval = this.pendingApproval(user);
         const enter = (
-					<Grid columns={approval ? 2 : 1} divided>
+					<Grid columns={(!approval || requested) ? 1 : 2} divided>
 						<Grid.Row>
-							{!approval ? null : <Grid.Column>
-								<VerifyAccount user={user} />
+							{(!approval || requested) ? null : <Grid.Column>
+								<VerifyAccount user={user} loginPage={true} />
 							</Grid.Column>}
 							<Grid.Column style={{display: 'flex', justifyContent: 'center', alignItems: 'center'}}>
 								{options}

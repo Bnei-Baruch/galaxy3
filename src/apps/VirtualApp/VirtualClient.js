@@ -141,8 +141,6 @@ class VirtualClient extends Component {
     let gxy_user = user.roles.find(role => role === 'gxy_user');
     let pending_approval = user.roles.filter(role => role === 'pending_approval').length > 0;
     if (gxy_user || pending_approval) {
-      delete user.roles;
-      user.role = pending_approval ? 'guest' : 'user';
       this.checkClient(user, firstTime);
     } else {
       alert("Access denied!");
@@ -1302,7 +1300,7 @@ class VirtualClient extends Component {
     let login = (<LoginPage user={user} checkPermission={this.checkPermission} />);
 
     let content = (<div className={classNames('vclient', { 'vclient--chat-open': chatVisible })}>
-			<VerifyAccount user={user} />
+			<VerifyAccount user={user} loginPage={false} />
       <div className="vclient__toolbar">
         <Input>
           <Select

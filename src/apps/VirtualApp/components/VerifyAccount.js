@@ -18,7 +18,8 @@ import {silentSignin} from "../../../components/UserManager";
 const EMAIL_RE = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
 const emailValid = (email) => !!EMAIL_RE.test(String(email).toLowerCase());
 
-const SendFriendEmail = (props) => {
+const VerifyAccount = (props) => {
+  const {loginPage} = props;
   const {t} = useTranslation();
   const {user, user: {access_token}} = props;
   const [email, setEmail] = useState('');
@@ -98,8 +99,9 @@ const SendFriendEmail = (props) => {
     }
   };
 
+  console.log('RENDER', user.role, 'closedModal', closedModal, 'requestSent', requestSent, 'user.request', user.request, 'user.pending', user.pending, 'USER', user);
   const ret = [];
-  if (!requestSent && user && user.role === 'guest' && (!user.request || user.request.length === 0)) {
+  if (!requestSent && user && user.role === 'ghost' && (!user.request || user.request.length === 0)) {
     ret.push(<Segment textAlign="center" style={{backgroundColor: 'lightyellow'}}>
       <Header style={{textAlign: 'justify'}}>{t('galaxyApp.welcomeGuestForm')}</Header>
       <Input action={{
@@ -113,11 +115,10 @@ const SendFriendEmail = (props) => {
     </Segment>);
   }
 
-  console.log('RENDER', user.role, 'closedModal', closedModal, 'requestSent', requestSent, 'user.request', user.request, 'user.pending', user.pending);
-  if (user && user.role === 'guest' && !closedModal) {
+  if (requestSent && user && user.role === 'ghost' && !closedModal) {
     ret.push(<Modal open={true}>
       <Modal.Content>
-        <Header>{(user.request || requestSent) ? t('galaxyApp.welcomeGuestPopupRequested') : t('galaxyApp.welcomeGuestPopup')}</Header>
+        <Header>{t('galaxyApp.requestedVerificationPopup')}</Header>
       </Modal.Content>
       <Modal.Actions>
         <Button color='green' onClick={() => setClosedModal(true)}>OK</Button>
@@ -125,7 +126,18 @@ const SendFriendEmail = (props) => {
     </Modal>);
   }
 
-  if (user && user.role === 'user' && user.pending && user.pending.length && !closedModal) {
+  if (!loginPage && !requestSent && user && user.role === 'ghost' && !closedModal) {
+    ret.push(<Modal open={true}>
+      <Modal.Content>
+        <Header>{(user.request) ? t('galaxyApp.welcomeGuestPopupRequested') : t('galaxyApp.welcomeGuestPopup')}</Header>
+      </Modal.Content>
+      <Modal.Actions>
+        <Button color='green' onClick={() => setClosedModal(true)}>OK</Button>
+      </Modal.Actions>
+    </Modal>);
+  }
+
+  if (!loginPage && user && user.role === 'user' && user.pending && user.pending.length && !closedModal) {
     ret.push(<Modal open={true}>
       <Modal.Content textAlign="center">
         <Header>{t('galaxyApp.approveVerificationHeader').replace('[UserFirstName]', user.title)}</Header>
@@ -176,4 +188,4 @@ const SendFriendEmail = (props) => {
   return ret.length ? ret : null;
 };
 
-export default SendFriendEmail;
+export default VerifyAccount;
