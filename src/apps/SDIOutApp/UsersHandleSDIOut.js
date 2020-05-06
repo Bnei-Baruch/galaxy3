@@ -1,5 +1,7 @@
 import React, {Component} from 'react';
-import './UsersHandleSDIOut.scss'
+//import './UsersHandleSDIOut.scss'
+import './VideoConteiner.scss'
+import 'eqcss';
 import { Janus } from "../../lib/janus";
 import classNames from "classnames";
 
@@ -13,13 +15,14 @@ class UsersHandleSDIOut extends Component {
         room: "",
         users: {},
         myid: null,
-        mystream: null
+        mystream: null,
+        num_videos: 0
     };
 
     componentDidUpdate(prevProps) {
-        let {g,ce} = this.props;
+        let {g} = this.props;
         let {room,users} = this.state;
-        if(g && JSON.stringify(g) !== JSON.stringify(prevProps.g) && g.room !== room) {
+        if(g && g.room !== room) {
             for(let i=0; i<g.users.length; i++) {
                 let user = g.users[i];
                 users[user.id] = user;
@@ -33,11 +36,14 @@ class UsersHandleSDIOut extends Component {
                 this.initVideoRoom(g.room, g.janus);
             }
         }
-        if(ce && JSON.stringify(ce) !== JSON.stringify(prevProps.ce) && ce.room === room && ce.camera) {
-            let {feedStreams} = this.state;
-            let remotevideo = this.refs["pv" + ce.rfid];
-            if(remotevideo && feedStreams[ce.rfid] && feedStreams[ce.rfid].stream)
-                Janus.attachMediaStream(remotevideo, feedStreams[ce.rfid].stream);
+        if(g && JSON.stringify(g) !== JSON.stringify(prevProps.g)) {
+            let cam_on = g.users.filter(u => u.camera);
+            this.setState({num_videos: cam_on.length});
+            for(let i=0; i<g.users.length; i++) {
+                let user = g.users[i];
+                users[user.id] = user;
+                //console.log(user)
+            }
         }
     }
 
@@ -359,7 +365,7 @@ class UsersHandleSDIOut extends Component {
     };
 
   render() {
-      const {feeds,users} = this.state;
+      const {feeds,users,num_videos} = this.state;
       const width = "400";
       const height = "300";
       const autoPlay = true;
@@ -369,12 +375,12 @@ class UsersHandleSDIOut extends Component {
 
       let program_feeds = feeds.map((feed) => {
           let camera = users[feed.display.id] && users[feed.display.id].camera !== false;
-          if(feed && camera) {
+          if(feed) {
               let id = feed.id;
               let talk = feed.talk;
               //let question = users[feed.display.id] && users[feed.display.id].question;
               //let st = users[feed.display.id] && users[feed.display.id].sound_test;
-              return (<div className="video"
+              return (<div className={classNames('video', {'hidden' : !camera})}
                            key={"prov" + id}
                            ref={"provideo" + id}
                            id={"provideo" + id}>
@@ -402,6 +408,8 @@ class UsersHandleSDIOut extends Component {
       });
 
       return (
+          // <div className="vclient__main">
+          <div className={`vclient__main-wrapper no-of-videos-${num_videos} layout--equal broadcast--off`} >
           <div className="videos-panel">
               <div className="videos">
                   <div className="videos__wrapper">
@@ -409,6 +417,8 @@ class UsersHandleSDIOut extends Component {
                   </div>
               </div>
           </div>
+          </div>
+          // </div>
       );
   }
 }
