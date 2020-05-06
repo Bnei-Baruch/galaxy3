@@ -19,7 +19,7 @@ const EMAIL_RE = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@
 const emailValid = (email) => !!EMAIL_RE.test(String(email).toLowerCase());
 
 const VerifyAccount = (props) => {
-  const {loginPage} = props;
+  const {loginPage, i18n} = props;
   const {t} = useTranslation();
   const {user, user: {access_token}} = props;
   const [email, setEmail] = useState('');
@@ -28,6 +28,8 @@ const VerifyAccount = (props) => {
   const [closedModal, setClosedModal] = useState(false);
   const [pendingState, setPendingState] = useState({});
   const [error, setError] = useState('');
+  const direction = i18n.language === 'he' ? 'rtl' : '';
+  const textAlign = i18n.language === 'he' ? 'right' : '';
 
   useEffect(() => {
     if (user.pending && user.pending.length) {
@@ -58,7 +60,6 @@ const VerifyAccount = (props) => {
             throw new Error(`Fetch error: ${response.status}`);
           }
         }).then((data) => {
-          console.log('Data', data);
           if (data && data.result === 'success') {
             silentSignin();  // Update user data from oidc. Same as renew signin after 10 minutes.
           }
@@ -86,7 +87,6 @@ const VerifyAccount = (props) => {
           throw new Error(`Fetch error: ${response.status}`);
         }
       }).then((data) => {
-        console.log('Data', data);
         if (data && data.result === 'success') {
           setRequestSent(true);
           setClosedModal(false);
@@ -99,24 +99,20 @@ const VerifyAccount = (props) => {
     }
   };
 
-  console.log('RENDER', user.role, 'closedModal', closedModal, 'requestSent', requestSent, 'user.request', user.request, 'user.pending', user.pending, 'USER', user);
+  // console.log('RENDER', user.role, 'closedModal', closedModal, 'requestSent', requestSent, 'user.request', user.request, 'user.pending', user.pending, 'USER', user);
   const ret = [];
   if (!requestSent && user && user.role === 'ghost' && (!user.request || user.request.length === 0)) {
-    ret.push(<Segment textAlign="center" style={{backgroundColor: 'lightyellow'}}>
+    ret.push(<Segment textAlign="center" style={{backgroundColor: 'lightyellow', direction}}>
       <Header style={{textAlign: 'justify'}}>{t('galaxyApp.welcomeGuestForm')}</Header>
-      <Input action={{
-               color: 'green',
-               content: 'Send',
-               onClick: askFriendToVerify,
-             }}
-             error={!!email && !valid}
+      <Input error={!!email && !valid}
              onChange={e => setEmail(e.target.value)}
              placeholder={t('galaxyApp.typeFriendEmail')} />
+      <Button color="green" style={{margin: '2px'}} onClick={askFriendToVerify}>Send</Button>
     </Segment>);
   }
 
   if (requestSent && user && user.role === 'ghost' && !closedModal) {
-    ret.push(<Modal open={true}>
+    ret.push(<Modal open={true} style={{direction, textAlign}}>
       <Modal.Content>
         <Header>{t('galaxyApp.requestedVerificationPopup')}</Header>
       </Modal.Content>
@@ -127,7 +123,7 @@ const VerifyAccount = (props) => {
   }
 
   if (!loginPage && !requestSent && user && user.role === 'ghost' && !closedModal) {
-    ret.push(<Modal open={true}>
+    ret.push(<Modal open={true} style={{direction, textAlign}}>
       <Modal.Content>
         <Header>{(user.request) ? t('galaxyApp.welcomeGuestPopupRequested') : t('galaxyApp.welcomeGuestPopup')}</Header>
       </Modal.Content>
@@ -138,7 +134,7 @@ const VerifyAccount = (props) => {
   }
 
   if (!loginPage && user && user.role === 'user' && user.pending && user.pending.length && !closedModal) {
-    ret.push(<Modal open={true}>
+    ret.push(<Modal open={true} style={{direction, textAlign}}>
       <Modal.Content textAlign="center">
         <Header>{t('galaxyApp.approveVerificationHeader').replace('[UserFirstName]', user.title)}</Header>
         <Table>
@@ -175,7 +171,7 @@ const VerifyAccount = (props) => {
   }
 
   if (error) {
-    ret.push(<Modal open={true}>
+    ret.push(<Modal open={true} style={{direction, textAlign}}>
       <Modal.Content>
         <Header>{error}</Header>
       </Modal.Content>

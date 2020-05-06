@@ -3,7 +3,8 @@ import {client,getUser} from './UserManager';
 import {
 	Button,
 	Container,
-	Dropdown,
+  Divider,
+  Dropdown,
 	Grid,
 	Header,
 	Image,
@@ -16,6 +17,8 @@ import bblogo from './bblogo.png';
 import {mapNameToLanguage, setLanguage} from "../i18n/i18n";
 import {withTranslation} from "react-i18next";
 import {reportToSentry} from "../shared/tools";
+
+import './LoginPage.css';
 
 class LoginPage extends Component {
 
@@ -65,7 +68,7 @@ class LoginPage extends Component {
     render() {
         const { t, i18n } = this.props;
         const {disabled, loading} = this.state;
-        const rtl = i18n.language === "he" ? "rtl" : "";
+        const direction = i18n.language === "he" ? "rtl" : "";
         let profile = (
             <Dropdown inline text=''>
                 <Dropdown.Menu>
@@ -109,7 +112,7 @@ class LoginPage extends Component {
                         </Menu.Item>
                     </Menu.Menu>
                 </Menu>
-                <Container textAlign='center' style={{direction: rtl}} >
+                <Container textAlign='center' style={{direction}} >
                     <br />
                     <Message size='massive'>
                         <Message.Header>
@@ -121,7 +124,8 @@ class LoginPage extends Component {
 
                         {this.props.user === null ?
                             <Segment basic>
-                                <Grid columns={2} stackable divided textAlign='center'>
+                                <Grid columns={2} stackable textAlign='center'>
+                                    <Divider className="whole-divider" vertical />
                                     <Grid.Row verticalAlign='bottom'>
                                         <Grid.Column>
                                             <Header size='huge' >{t('loginPage.regUsers')}</Header>

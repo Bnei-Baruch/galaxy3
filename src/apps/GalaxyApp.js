@@ -4,6 +4,7 @@ import React, {
 } from 'react';
 import {
   Button,
+  Divider,
 	Grid,
 } from "semantic-ui-react";
 import LoginPage from '../components/LoginPage';
@@ -43,6 +44,7 @@ class GalaxyApp extends Component {
     };
 
     render() {
+        const {i18n} = this.props;
         const {user, roles} = this.state;
 				const approval = pendingApproval(user);
         const requested = user && user.request && !!user.request.length;
@@ -72,10 +74,11 @@ class GalaxyApp extends Component {
         }).filter(element => element);
 
         const enter = (
-					<Grid columns={(!approval || requested) ? 1 : 2} divided>
+					<Grid columns={(!approval || requested) ? 1 : 2}>
 						<Grid.Row>
+              <Divider className="whole-divider" vertical />
 							{(!approval || requested) ? null : <Grid.Column>
-								<VerifyAccount user={user} loginPage={true} />
+								<VerifyAccount user={user} loginPage={true} i18n={i18n}/>
 							</Grid.Column>}
 							<Grid.Column style={{display: 'flex', justifyContent: 'center', alignItems: 'center'}}>
 								{options}
