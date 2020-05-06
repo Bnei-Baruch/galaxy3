@@ -23,11 +23,11 @@ class UsersHandleSDIOut extends Component {
         let {g} = this.props;
         let {room,users} = this.state;
         if(g && g.room !== room) {
-            for(let i=0; i<g.users.length; i++) {
-                let user = g.users[i];
-                users[user.id] = user;
-                //console.log(user)
-            }
+            // for(let i=0; i<g.users.length; i++) {
+            //     let user = g.users[i];
+            //     users[user.id] = user;
+            //     //console.log(user)
+            // }
             if(room) {
                 this.exitVideoRoom(room, () =>{
                     this.initVideoRoom(g.room, g.janus);
@@ -36,15 +36,15 @@ class UsersHandleSDIOut extends Component {
                 this.initVideoRoom(g.room, g.janus);
             }
         }
-        if(g && JSON.stringify(g) !== JSON.stringify(prevProps.g)) {
-            let cam_on = g.users.filter(u => u.camera);
-            this.setState({num_videos: cam_on.length});
-            for(let i=0; i<g.users.length; i++) {
-                let user = g.users[i];
-                users[user.id] = user;
-                //console.log(user)
-            }
-        }
+        // if(g && JSON.stringify(g) !== JSON.stringify(prevProps.g)) {
+        //     let cam_on = g.users.filter(u => u.camera);
+        //     //this.setState({num_videos: cam_on.length});
+        //     for(let i=0; i<g.users.length; i++) {
+        //         let user = g.users[i];
+        //         users[user.id] = user;
+        //         //console.log(user)
+        //     }
+        // }
     }
 
     componentWillUnmount() {
@@ -366,6 +366,7 @@ class UsersHandleSDIOut extends Component {
 
   render() {
       const {feeds,users,num_videos} = this.state;
+      const {g} = this.props;
       const width = "400";
       const height = "300";
       const autoPlay = true;
@@ -374,13 +375,15 @@ class UsersHandleSDIOut extends Component {
       //const q = (<b style={{color: 'red', fontSize: '20px', fontFamily: 'Verdana', fontWeight: 'bold'}}>?</b>);
 
       let program_feeds = feeds.map((feed) => {
-          let camera = users[feed.display.id] && users[feed.display.id].camera !== false;
+          //let camera = users[feed.display.id] && users[feed.display.id].camera !== false;
+          let camera = g.users.filter(u => feed.id === u.rfid && u.camera).length > 0;
+          //let camera = true
           if(feed) {
               let id = feed.id;
               let talk = feed.talk;
               //let question = users[feed.display.id] && users[feed.display.id].question;
               //let st = users[feed.display.id] && users[feed.display.id].sound_test;
-              return (<div className={classNames('video', {'hidden' : !camera})}
+              return (<div className={camera ? 'video' : 'hidden'}
                            key={"prov" + id}
                            ref={"provideo" + id}
                            id={"provideo" + id}>
