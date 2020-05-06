@@ -123,7 +123,9 @@ export default class VirtualStreamingJanus {
       if (this.trlAudioElement) {
         this.trlAudioElement.srcObject = null;
       }
-      this.janus.destroy();
+      if (janus.destroy && typeof janus.destroy === 'function') {
+        this.janus.destroy();
+      }
       this.janus = null;
       this.detach_();
     }
