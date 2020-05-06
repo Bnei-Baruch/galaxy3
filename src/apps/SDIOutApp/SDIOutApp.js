@@ -38,6 +38,7 @@ class SDIOutApp extends Component {
             name: "sdiout"
         },
         qids: [],
+        qcol: 0,
         users: {},
         shidur: false,
     };
@@ -119,6 +120,7 @@ class SDIOutApp extends Component {
 
         if(data.type === "sdi-fullscr_group" && status) {
             if(qst) {
+                this.setState({qcol: col})
                 if(room) {
                     this.users.exitVideoRoom(this.state.room, () => {
                         this.users.initVideoRoom(group.room, group.janus);
@@ -176,7 +178,7 @@ class SDIOutApp extends Component {
     };
 
     render() {
-        let {group,qids} = this.state;
+        let {group,qids,qcol} = this.state;
         // let qst = g && g.questions;
         let name = group && group.description;
 
@@ -206,7 +208,7 @@ class SDIOutApp extends Component {
                                 <div className="video_full">
                                     {/*{group && group.questions ? <div className="qst_fullscreentitle">?</div> : ""}*/}
                                     <div className="fullscrvideo_title" >{name}</div>
-                                    <UsersHandleSDIOut ref={users => {this.users = users;}} {...this.state} setProps={this.setProps} />
+                                    <UsersHandleSDIOut {...qids["q"+qcol]} ref={users => {this.users = users;}} {...this.state} setProps={this.setProps} />
                                 </div>
                             </div>
                         </Segment>

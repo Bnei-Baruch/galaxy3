@@ -15,8 +15,7 @@ class UsersHandleSDIOut extends Component {
         room: "",
         users: {},
         myid: null,
-        mystream: null,
-        num_videos: 0
+        mystream: null
     };
 
     componentDidUpdate(prevProps) {
@@ -365,13 +364,14 @@ class UsersHandleSDIOut extends Component {
     };
 
   render() {
-      const {feeds,users,num_videos} = this.state;
+      const {feeds,users} = this.state;
       const {g} = this.props;
       const width = "400";
       const height = "300";
       const autoPlay = true;
       const controls = false;
       const muted = true;
+      const num_videos = g && g.users.filter(u =>  u.camera).length
       //const q = (<b style={{color: 'red', fontSize: '20px', fontFamily: 'Verdana', fontWeight: 'bold'}}>?</b>);
 
       let program_feeds = feeds.map((feed) => {
