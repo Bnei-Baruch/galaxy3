@@ -1,113 +1,95 @@
-import React, { Component } from 'react';
-import { Janus } from "../../lib/janus";
-import {getState, initJanus} from "../../shared/tools";
+import React, {Component} from 'react';
 import './SndmanApp.css';
 import './UsersSndman.css'
-import {initGxyProtocol} from "../../shared/protocol";
+import api from '../../shared/Api';
 import {client} from "../../components/UserManager";
 import LoginPage from "../../components/LoginPage";
-import {initDataForward} from "../../shared/forward";
 import {Grid} from "semantic-ui-react";
 import UsersQuadSndman from "./UsersQuadSndman";
+import GxyJanus from "../../shared/janus-utils";
 
 
 class SndmanApp extends Component {
 
     state = {
-        GxyJanus: {
-            gxy1: {janus: null, protocol: null},
-            gxy2: {janus: null, protocol: null},
-            gxy3: {janus: null, protocol: null},
-        },
-        fwdhandle: null,
-        service: null,
-        group: "",
-        groups: [],
-        groups_queue: 0,
-        round: 0,
-        rooms: [],
-        disabled_rooms: [],
         user: null,
         users: {},
-        shidur: false,
+        gateways: {},
+        gatewaysInitialized: false,
     };
 
     componentWillUnmount() {
-        this.state.GxyJanus.gxy1.janus.destroy();
-        this.state.GxyJanus.gxy2.janus.destroy();
-        this.state.GxyJanus.gxy3.janus.destroy();
+        Object.values(this.state.gateways).forEach(x => x.destroy());
     };
 
     checkPermission = (user) => {
-        let gxy_group = user.roles.filter(role => role === 'gxy_sndman').length > 0;
-        if (gxy_group) {
+        const allowed = user.roles.filter(role => role === 'gxy_sndman').length > 0;
+        if (allowed) {
             delete user.roles;
             user.role = "sndman";
             user.session = 0;
-            getState('galaxy/users', (users) => {
-                this.setState({user,users});
-                let gxy = ["gxy1","gxy2","gxy3"]
-                this.initGalaxy(user,gxy);
-            });
+            this.initApp(user);
         } else {
             alert("Access denied!");
             client.signoutRedirect();
         }
     };
 
-    initGalaxy = (user,gxy) => {
-        for(let i=0; i<gxy.length; i++) {
-            let {GxyJanus} = this.state;
-            initJanus(janus => {
-                // Right now we going to use gxy3 for service protocol
-                if(gxy[i] === "gxy3")
-                    this.initService(janus, user);
-                if(GxyJanus[gxy[i]].janus)
-                    GxyJanus[gxy[i]].janus.destroy();
-                GxyJanus[gxy[i]].janus = janus;
-                initGxyProtocol(janus, user, protocol => {
-                    GxyJanus[gxy[i]].protocol = protocol;
-                    this.setState({...GxyJanus[gxy[i]]});
-                }, ondata => {
-                    Janus.log(i + " :: protocol public message: ", ondata);
-                    if(ondata.type === "error" && ondata.error_code === 420) {
-                        console.error(ondata.error + " - Reload after 10 seconds");
-                        this.state.GxyJanus[gxy[i]].protocol.hangup();
-                        setTimeout(() => {
-                            this.initGalaxy(user,[gxy[i]]);
-                        }, 10000);
-                    }
-                    this.onProtocolData(ondata, gxy[i]);
-                }, false);
-            },er => {
-                console.error(gxy[i] + ": " + er);
-                setTimeout(() => {
-                    this.initGalaxy(user,[gxy[i]]);
-                }, 10000);
-            }, gxy[i]);
+    initApp = (user) => {
+        this.setState({user});
+
+        api.setAccessToken(user.access_token);
+        client.events.addUserLoaded((user) => api.setAccessToken(user.access_token));
+        client.events.addUserUnloaded(() => api.setAccessToken(null));
+
+        api.fetchConfig()
+            .then(data => {
+                GxyJanus.setGlobalConfig(data);
+            })
+            .then(api.fetchUsers)
+            .then(data => {
+                this.setState({users: data});
+            })
+            .then(() => this.initGateways(user))
+    }
+
+    initGateways = (user) => {
+        const gateways = GxyJanus.makeGateways("rooms");
+        this.setState({gateways});
+
+        Promise.all(Object.values(gateways).map(gateway => (this.initGateway(user, gateway))))
+            .then(() => {
+                console.log("[Sndman] gateways initialization complete");
+                this.setState({gatewaysInitialized: true});
+            });
+    }
+
+    initGateway = (user, gateway) => {
+        console.log("[Sndman] initializing gateway", gateway.name);
+
+        // we re-initialize the whole gateway on protocols error
+        gateway.destroy();
+
+        return gateway.init()
+            .then(() => {
+                return gateway.initGxyProtocol(user, data => this.onProtocolData(gateway, data))
+                    .then(() => {
+                        if (gateway.name === "gxy3") {
+                            return gateway.initServiceProtocol(user, data => this.onServiceData(gateway, data))
+                                .then(gateway.initForward)
+                        }
+                    });
+            });
+    }
+
+    onServiceData = (gateway, data) => {
+        if (data.type === "error" && data.error_code === 420) {
+            console.error("[Sndman] service error message (reloading in 10 seconds)", data.error);
+            setTimeout(() => {
+                this.initGateway(this.state.user, gateway);
+            }, 10000);
         }
-    };
 
-    initService = (janus, user) => {
-        initDataForward(janus, fwdhandle => {
-            this.setState({fwdhandle});
-        })
-        initGxyProtocol(janus, user, service => {
-            this.setState({service});
-        }, ondata => {
-            Janus.log(" :: Service message: ", ondata);
-            if(ondata.type === "error" && ondata.error_code === 420) {
-                console.error(ondata.error + " - Reload after 10 seconds");
-                this.state.service.hangup();
-                setTimeout(() => {
-                    this.initService(janus,user);
-                }, 10000);
-            }
-            this.onServiceData(ondata);
-        }, true);
-    };
-
-    onServiceData = (data) => {
         let {col, group, i, status} = data;
 
         // Shidur action
@@ -127,7 +109,14 @@ class SndmanApp extends Component {
         }
     };
 
-    onProtocolData = (data, inst) => {
+    onProtocolData = (gateway, data) => {
+        if (data.type === "error" && data.error_code === 420) {
+            console.error("[Sndman] protocol error message (reloading in 10 seconds)", data.error);
+            setTimeout(() => {
+                this.initGateway(this.state.user, gateway);
+            }, 10000);
+        }
+
         let {users} = this.state;
 
         // Set status in users list
@@ -151,9 +140,12 @@ class SndmanApp extends Component {
         this.setState({...props})
     };
 
-
     render() {
-        const {user} = this.state;
+        const {user, gatewaysInitialized} = this.state;
+
+        if (!!user && !gatewaysInitialized) {
+            return "Initializing connections to janus instances...";
+        }
 
         let login = (<LoginPage user={user} checkPermission={this.checkPermission} />);
         let content = (

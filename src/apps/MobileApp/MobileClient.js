@@ -9,7 +9,6 @@ import {
   checkNotification,
   geoInfo,
   getDevicesStream,
-  getState,
   initJanus,
   testDevices,
   testMic,

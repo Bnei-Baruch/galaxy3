@@ -2,9 +2,7 @@ import React, {Component} from 'react';
 import {Button, Icon, Label, Segment} from "semantic-ui-react";
 import './UsersQuadSndman.scss'
 import UsersHandleSndman from "./UsersHandleSndman";
-import {getState} from "../../shared/tools";
-import {Janus} from "../../lib/janus";
-import {sendProtocolMessage} from "../../shared/protocol";
+import api from '../../shared/Api';
 
 class UsersQuadSndman extends Component {
 
@@ -22,9 +20,8 @@ class UsersQuadSndman extends Component {
         this.setState({col});
         document.addEventListener("keydown", this.onKeyPressed);
         setInterval(() => {
-            getState(`galaxy/qids/q`+col, ({vquad}) => {
-                this.setState({vquad});
-            });
+            api.fetchQuad(col)
+                .then(data => this.setState({vquad: data.vquad}))
         }, 1000);
     };
 
@@ -46,16 +43,15 @@ class UsersQuadSndman extends Component {
         }, 2000);
     };
 
-    sendMessage = (user, talk, inst) => {
-        const message = JSON.stringify({
+    sendMessage = (user, talk) => {
+        const gateway = this.props.gateways["gxy3"];
+        gateway.forwardMessage({
             talk,
             name: user.display,
             ip: user.ip,
             col: 4,
             room: user.room,
         });
-        Janus.log(":: Sending message: ", message);
-        this.props.fwdhandle.data({text: message});
     };
 
     forwardStream = (full_group) => {
@@ -70,41 +66,43 @@ class UsersQuadSndman extends Component {
         // fix5: put delay between start/stop request switch (It's still hacky we actually need callback from sendMessage)
         // fix6: put delay on stop request from shidur if start forward request still in progress
         if(forward) {
-            Janus.log(" :: Stop forward from room: ", room);
+            console.info("[Sndman] Stop forward", room);
             this.setDelay();
             feeds.forEach((feed,i) => {
                 if (feed) {
                     // FIXME: if we change sources on client based on room id (not ip) we send message only once?
-                    this.sendMessage(feed, false, janus);
+                    this.sendMessage(feed, false);
                 }
             });
             this.micMute(false, room, janus);
             this.setState({feeds: [], forward: false});
         } else if(fullscr) {
-            Janus.log(" :: Start forward from room: ", room);
+            console.info("[Sndman] Start forward", room);
             this.setDelay();
-            getState(`galaxy/room/${room}`, (data) => {
-                let {users} = data;
-                users.forEach((user,i) => {
-                    if (user && user.rfid) {
-                        this.sendMessage(user, true, janus);
-                    } else {
-                        Janus.error("Forward failed for user: " + user + " in room: " + room, data)
-                    }
-                });
-                this.setState({feeds: users, forward: true});
-                this.micMute(true, room, janus);
-            });
+            api.fetchRoom(room)
+                .then(data => {
+                    const {users} = data;
+                    users.forEach((user) => {
+                        // TODO (edo): why not simply send to all users ?!
+                        if (user && user.rfid) {
+                            this.sendMessage(user, true);
+                        } else {
+                            console.error("Forward failed for user: " + user + " in room: " + room, data)
+                        }
+                    });
+                    this.setState({feeds: users, forward: true});
+                    this.micMute(true, room, janus);
+            })
         }
     };
 
     fullScreenGroup = (i,full_group) => {
-        console.log(":: Make Full Screen Group: ",full_group);
+        console.info("[Sndman] make full screen", full_group);
         this.setState({fullscr: true, full_feed: i, full_group});
     };
 
     toFourGroup = (i,full_group) => {
-        Janus.log(":: Back to four: ");
+        console.info("[Sndman] back to four", full_group);
         const {forward,forward_request} = this.state;
         this.setState({fullscr: false});
         if(forward_request) {
@@ -117,10 +115,11 @@ class UsersQuadSndman extends Component {
     };
 
     micMute = (status, room, inst) => {
-        const {service,user} = this.props;
-        let msg = {type: "audio-out", status, room, col:null, i:null, feed:null};
-        sendProtocolMessage(this.props.GxyJanus[inst].protocol, user, msg );
-        sendProtocolMessage(service, user, msg, true );
+        const msg = {type: "audio-out", status, room, col: null, i: null, feed: null};
+
+        const {gateways} = this.props;
+        gateways[inst].sendProtocolMessage(msg);
+        gateways["gxy3"].sendServiceMessage(msg);
     };
 
   render() {

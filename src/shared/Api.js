@@ -4,6 +4,8 @@ class Api {
 
     constructor() {
         this.accessToken = null;
+        this.username = null;
+        this.password = null;
     }
 
     fetchConfig = () =>
@@ -12,13 +14,27 @@ class Api {
     fetchAvailableRooms = () =>
         this.logAndParse('fetch available rooms', fetch(this.urlFor('/groups'), this.defaultOptions()));
 
+    fetchUsers = () =>
+        this.logAndParse('fetch users', fetch(this.urlFor('/users'), this.defaultOptions()));
+
+    fetchQuad = (col) =>
+        this.logAndParse(`fetch quad ${col}`, fetch(this.urlFor(`/qids/q${col}`), this.defaultOptions()));
+
+    fetchRoom = (id) =>
+        this.logAndParse(`fetch room ${id}`, fetch(this.urlFor(`/room/${id}`), this.defaultOptions()));
+
     urlFor = (path) => (API_BACKEND + path)
 
-    defaultOptions = () => ({
-        headers: {
-            'Authorization': `Bearer ${this.accessToken}`,
-        }
-    })
+    defaultOptions = () => {
+        const auth = this.accessToken ?
+            `Bearer ${this.accessToken}` :
+            `Basic ${btoa(`${this.username}:${this.password}`)}`;
+        return {
+            headers: {
+                'Authorization': auth,
+            }
+        };
+    };
 
     logAndParse = (action, fetchPromise) => {
         return fetchPromise
@@ -29,12 +45,17 @@ class Api {
             })
             .catch(err => {
                 console.error(`[API] ${action} error`, err);
-                return err;
+                throw err;
             });
     }
 
     setAccessToken = (token) => {
         this.accessToken = token;
+    }
+
+    setBasicAuth = (username, password) => {
+        this.username = username;
+        this.password = password;
     }
 }
 

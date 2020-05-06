@@ -106,14 +106,14 @@ class OldClient extends Component {
     } else if (gxy_user) {
       delete user.roles;
       user.role = "user";
-      this.checkClient(user);
+      this.initApp(user);
     } else {
       alert("Access denied!");
       client.signoutRedirect();
     }
   };
 
-  checkClient = (user) => {
+  initApp = (user) => {
     const { t } = this.props;
     localStorage.setItem('question', false);
     localStorage.setItem('sound_test', false);
@@ -141,9 +141,6 @@ class OldClient extends Component {
                 iceServers: data.ice_servers,
               });
             })
-            .catch( err => {
-              console.error('[VirtualClient] api.fetchConfig', err);
-            })
             .then(() => (api.fetchAvailableRooms()))
             .then(data => {
               const { rooms } = data;
@@ -161,9 +158,6 @@ class OldClient extends Component {
                 }
                 this.initClient(user, false);
               }
-            })
-            .catch( err => {
-              console.error('[VirtualClient] api.fetchAvailableRooms', err);
             })
       });
     } else {

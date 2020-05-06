@@ -80,7 +80,6 @@ class AdminRoot extends Component {
     checkPermission = (user) => {
         const roles = new Set(user.roles || []);
 
-        // let role = "root";
         let role = null;
         if (roles.has("gxy_root")) {
             role = "root";
@@ -136,14 +135,8 @@ class AdminRoot extends Component {
             return gateway.init()
                 .then(() => {
                     if (this.isAllowed("admin")) {
-                        gateway.initGxyProtocol(user, data => this.onProtocolData(gateway, data))
-                            .catch(err => {
-                                console.error("[Admin] gateway.initGxyProtocol error", gateway.name, err);
-                            });
+                        return gateway.initGxyProtocol(user, data => this.onProtocolData(gateway, data))
                     }
-                })
-                .catch(err => {
-                    console.error("[Admin] gateway.init error", gateway.name, err);
                 })
         })).then(() => {
             console.log("[Admin] gateways initialization complete");
@@ -502,7 +495,7 @@ class AdminRoot extends Component {
     };
 
     sendRemoteCommand = (command_type) => {
-        const {gateways, feed_user, user} = this.state;
+        const {gateways, feed_user} = this.state;
         if (!feed_user) {
             alert("Choose user");
             return;
@@ -513,9 +506,8 @@ class AdminRoot extends Component {
         }
 
         const gateway = gateways[feed_user.janus];
-        gateway.sendProtocolMessage(user, {type: command_type, status: true, id: feed_user.id, user: feed_user})
+        gateway.sendProtocolMessage({type: command_type, status: true, id: feed_user.id, user: feed_user})
             .catch(alert);
-
     };
 
     joinRoom = (data, i) => {
