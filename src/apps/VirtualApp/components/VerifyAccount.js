@@ -107,7 +107,7 @@ const VerifyAccount = (props) => {
       <Input error={!!email && !valid}
              onChange={e => setEmail(e.target.value)}
              placeholder={t('galaxyApp.typeFriendEmail')} />
-      <Button color="green" style={{margin: '2px'}} onClick={askFriendToVerify}>Send</Button>
+      <Button color="green" style={{margin: '2px'}} onClick={askFriendToVerify}>{t('virtualChat.send')}</Button>
     </Segment>);
   }
 
@@ -117,7 +117,7 @@ const VerifyAccount = (props) => {
         <Header>{t('galaxyApp.requestedVerificationPopup')}</Header>
       </Modal.Content>
       <Modal.Actions>
-        <Button color='green' onClick={() => setClosedModal(true)}>OK</Button>
+        <Button color='green' onClick={() => setClosedModal(true)}>{t('galaxyApp.ok')}</Button>
       </Modal.Actions>
     </Modal>);
   }
@@ -128,7 +128,7 @@ const VerifyAccount = (props) => {
         <Header>{(user.request) ? t('galaxyApp.welcomeGuestPopupRequested') : t('galaxyApp.welcomeGuestPopup')}</Header>
       </Modal.Content>
       <Modal.Actions>
-        <Button color='green' onClick={() => setClosedModal(true)}>OK</Button>
+        <Button color='green' onClick={() => setClosedModal(true)}>{t('galaxyApp.ok')}</Button>
       </Modal.Actions>
     </Modal>);
   }
@@ -164,8 +164,8 @@ const VerifyAccount = (props) => {
         <Button color='green' onClick={() => {
           applyPendingStates();
           setClosedModal(true);
-        }}>OK</Button>
-        <Button onClick={() => setClosedModal(true)}>Cancel</Button>
+        }}>{t('galaxyApp.ok')}</Button>
+        <Button onClick={() => setClosedModal(true)}>{t('galaxyApp.cancel')}</Button>
       </Modal.Actions>
     </Modal>);
   }
@@ -176,7 +176,7 @@ const VerifyAccount = (props) => {
         <Header>{error}</Header>
       </Modal.Content>
       <Modal.Actions>
-        <Button onClick={() => setError('')}>Close</Button>
+        <Button onClick={() => setError('')}>{t('galaxyApp.close')}</Button>
       </Modal.Actions>
     </Modal>);
   }
