@@ -45,7 +45,7 @@ export const resources = {
         enterMessage: 'Type your message',
       },
       loginPage: {
-        support: 'Support',
+        support: 'Help',
         galaxy: 'Galaxy',
         slogan: 'The Group Today Is You Tomorrow',
         regUsers: 'Registered Users',
@@ -131,7 +131,7 @@ export const resources = {
         enterMessage: 'Escriba su mensaje',
       },
       loginPage: {
-        support: 'Soporte',
+        support: 'Ayuda',
         galaxy: 'Galaxy',
         slogan: 'El grupo hoy eres tú mañana',
         regUsers: 'Usuarios registrados',
@@ -217,7 +217,7 @@ export const resources = {
         enterMessage: 'הקלד/י את ההודעה',
       },
       loginPage: {
-        support: 'תמיכה',
+        support: 'עזרה',
         galaxy: 'גלאקסי',
         slogan: 'הקבוצה היום זה אתה מחר',
         regUsers: 'משתמשים רשומים',
@@ -303,7 +303,7 @@ export const resources = {
         enterMessage: 'Введите сообщение',
       },
       loginPage: {
-        support: 'Поддержка',
+        support: 'Помощь',
         galaxy: 'Галакси',
         slogan: 'Группа сегодня – это ты завтра',
         regUsers: 'Зарегистрированные пользователи',
