@@ -4,9 +4,11 @@ import {client} from "../../components/UserManager";
 import {Button, Grid, Icon, Label, Menu, Segment, Select} from 'semantic-ui-react';
 import VolumeSlider from "../../components/VolumeSlider";
 import {audiog_options, gxycol, trllang, videos_options,} from "../../shared/consts";
-import {GEO_IP_INFO, JANUS_SRV_STR3, JANUS_SRV_STR4, STUN_SRV_STR,} from "../../shared/env";
+import {GEO_IP_INFO} from "../../shared/env";
 import LoginPage from "../../components/LoginPage";
 import './GalaxyStream.css'
+import api from "../../shared/Api";
+import GxyJanus from "../../shared/janus-utils";
 
 
 class GalaxyStream extends Component {
@@ -33,7 +35,7 @@ class GalaxyStream extends Component {
         if (gxy_user) {
             delete user.roles;
             user.role = gxy_group ? "group" : gxy_user ? "user" : "public";
-            this.initStream(user);
+            this.initApp(user);
         } else {
             alert("Access denied!");
             client.signoutRedirect();
@@ -44,17 +46,22 @@ class GalaxyStream extends Component {
         this.state.janus.destroy();
     };
 
-    initStream = () => {
+    initApp = (user) => {
         fetch(`${GEO_IP_INFO}`)
             .then((response) => {
                 if (response.ok) {
                     return response.json().then(
                         info => {
-                            let {user} = this.state;
-                            this.setState({user: {...info,...user}});
                             localStorage.setItem("gxy_extip", info.ip);
-                            let server = info && info.country === "IL" ? `${JANUS_SRV_STR4}` : `${JANUS_SRV_STR3}`;
-                            this.initJanus(server);
+                            this.setState({user: {...info,...user}});
+
+                            api.setAccessToken(user.access_token);
+                            client.events.addUserLoaded((user) => api.setAccessToken(user.access_token));
+                            client.events.addUserUnloaded(() => api.setAccessToken(null));
+
+                            api.fetchConfig()
+                                .then(data => GxyJanus.setGlobalConfig(data))
+                                .then(() => this.initJanus(info.country))
                         }
                     );
                 }
@@ -62,15 +69,19 @@ class GalaxyStream extends Component {
             .catch(ex => console.log(`get geoInfo`, ex));
     };
 
-    initJanus = (server) => {
+    initJanus = (country) => {
         if(this.state.janus)
             this.state.janus.destroy();
+
+        const gateway = country === "IL" ? 'str4' : 'str3';
+        const config = GxyJanus.instanceConfig(gateway);
+
         Janus.init({
             debug: process.env.NODE_ENV !== 'production' ? ["log", "error"] : ["error"],
             callback: () => {
                 let janus = new Janus({
-                    server: server,
-                    iceServers: [{urls: STUN_SRV_STR}],
+                    server: config.url,
+                    iceServers: config.iceServers,
                     success: () => {
                         Janus.log(" :: Connected to JANUS");
                         this.setState({janus});
