@@ -43,13 +43,9 @@ class SndmanApp extends Component {
         client.events.addUserUnloaded(() => api.setAccessToken(null));
 
         api.fetchConfig()
-            .then(data => {
-                GxyJanus.setGlobalConfig(data);
-            })
+            .then(data => GxyJanus.setGlobalConfig(data))
             .then(api.fetchUsers)
-            .then(data => {
-                this.setState({users: data});
-            })
+            .then(data => this.setState({users: data}))
             .then(() => this.initGateways(user))
     }
 

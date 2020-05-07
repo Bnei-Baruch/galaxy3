@@ -52,7 +52,7 @@ class GxyJanus {
                 admin= JANUS_ADMIN_GXY3;
                 break;
             default:
-                throw new Error(`Unknown janus instance ${name}`);
+                break;
         }
 
         return {

@@ -1,6 +1,6 @@
 import { Janus } from '../../lib/janus';
 import {gxycol, trllang, NO_VIDEO_OPTION_VALUE,} from '../../shared/consts';
-import { GEO_IP_INFO,JANUS_SRV_STR3, JANUS_SRV_STR4, STUN_SRV_STR, } from '../../shared/env';
+import GxyJanus from "../../shared/janus-utils";
 
 export default class VirtualStreamingJanus {
 
@@ -20,24 +20,30 @@ export default class VirtualStreamingJanus {
 
     this.videoElement = null;
     this.audioElement = new Audio();
-		this.audioElement.autoplay = true;
-		this.audioElement.controls = false;
-		this.audioElement.muted = true;
-		this.audioElement.playinline = true;
+    this.audioElement.autoplay = true;
+    this.audioElement.controls = false;
+    this.audioElement.muted = true;
+    this.audioElement.playinline = true;
     this.audioElement.volume = 0.6;  // Default volume.
     this.trlAudioElement = new Audio();
-		this.trlAudioElement.autoplay = true;
-		this.trlAudioElement.controls = false;
-		this.trlAudioElement.muted = true;
-		this.trlAudioElement.playinline = true;
+    this.trlAudioElement.autoplay = true;
+    this.trlAudioElement.controls = false;
+    this.trlAudioElement.muted = true;
+    this.trlAudioElement.playinline = true;
 
     this.onInitialized = onInitialized;
     this.onTalkingCallback = null;
   }
 
   onInitialized_() {
-    if (this.onInitialized && (this.videos === NO_VIDEO_OPTION_VALUE || this.videoJanusStream) && this.trlAudioJanusStream && this.audioJanusStream &&
-        this.dataJanusStream && (this.videos === NO_VIDEO_OPTION_VALUE || this.videoMediaStream) && this.trlAudioMediaStream && this.audioMediaStream) {
+    if (this.onInitialized &&
+        (this.videos === NO_VIDEO_OPTION_VALUE || this.videoJanusStream) &&
+        this.trlAudioJanusStream &&
+        this.audioJanusStream &&
+        this.dataJanusStream &&
+        (this.videos === NO_VIDEO_OPTION_VALUE || this.videoMediaStream) &&
+        this.trlAudioMediaStream &&
+        this.audioMediaStream) {
       this.onInitialized();
     }
   }
@@ -97,19 +103,9 @@ export default class VirtualStreamingJanus {
     this.onTalkingCallback = callback;
   }
 
-  init() {
-    return fetch(`${GEO_IP_INFO}`).then((response) => {
-      if (response.ok) {
-        return response.json().then(info => {
-          localStorage.setItem('vrt_extip', info.ip);
-          let server = info && info.country === "IL" ? `${JANUS_SRV_STR4}` : `${JANUS_SRV_STR3}`;
-          this.initJanus_(server);
-        });
-      }
-    })
-    .catch(e => {
-      return Promise.reject(`Cannotinitialize Janus, failed getting geoInfo: ${e}`);
-    });
+  init(ip, country) {
+    localStorage.setItem('vrt_extip', ip);
+    this.initJanus_(country);
   }
 
   destroy() {
@@ -129,14 +125,18 @@ export default class VirtualStreamingJanus {
     }
   }
 
-  initJanus_(server) {
+  initJanus_(country) {
     this.destroy();
+
+    const gateway = country === "IL" ? 'str4' : 'str3';
+    const config = GxyJanus.instanceConfig(gateway);
+
     Janus.init({
       debug: process.env.NODE_ENV !== 'production' ? [/*'log', 'warn',*/ 'error'] : ['error'],
       callback: () => {
         this.janus = new Janus({
-          server: server,
-          iceServers: [{ urls: STUN_SRV_STR }],
+          server: config.url,
+          iceServers: config.iceServers,
           success: () => {
             Janus.log(' :: Connected to JANUS');
             if (this.videos !== NO_VIDEO_OPTION_VALUE) {
@@ -147,12 +147,12 @@ export default class VirtualStreamingJanus {
             let id = trllang[localStorage.getItem('vrt_langtext')] || 301;
             this.initTranslationStream(id);
           },
-          error: (error) => {
-            Janus.log(JSON.stringify(error));
+          error: (err) => {
+            Janus.log(JSON.stringify(err));
             setTimeout(() => {
-              this.initJanus_();
+              this.initJanus_(country);
             }, 5000);
-            console.log('RELOAD ON ERROR', error);
+            console.error('RELOAD ON ERROR', err);
           },
           destroyed: () => {
             Janus.log('Janus handle successfully destroyed.');
