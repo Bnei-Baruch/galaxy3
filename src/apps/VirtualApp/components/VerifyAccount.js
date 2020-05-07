@@ -105,7 +105,7 @@ const VerifyAccount = (props) => {
   const ret = [];
   if (!formClosed && !requestSent && user && user.role === 'ghost' && (!user.request || user.request.length === 0)) {
     ret.push(<Segment textAlign="center" style={{backgroundColor: loginPage ? '' : 'lightyellow', direction}} basic={loginPage}>
-      <Header style={{fontWeight: 'normal', textAlign: 'justify', marginBottom: loginPage ? '10px' : ''}}>{loginPage ? t('galaxyApp.verifyAccount') : t('galaxyApp.welcomeGuestForm')}</Header>
+      <Header style={{fontWeight: 'normal', textAlign: 'center', marginBottom: loginPage ? '10px' : ''}}>{loginPage ? t('galaxyApp.verifyAccount') : t('galaxyApp.welcomeGuestForm')}</Header>
       <Input error={!!email && !valid}
              onChange={e => setEmail(e.target.value)}
              placeholder={t('galaxyApp.typeFriendEmail')} />
