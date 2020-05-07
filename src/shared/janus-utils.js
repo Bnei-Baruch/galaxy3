@@ -1,6 +1,6 @@
 import {Janus} from "../lib/janus";
 import {DATA_PORT, PROTOCOL_ROOM, SDIOUT_ID, SERVICE_ROOM, SHIDUR_ID, SNDMAN_ID, STORAN_ID,} from "./consts";
-import {ADMIN_SECRET, SECRET, JANUS_ADMIN_GXY1, JANUS_ADMIN_GXY2, JANUS_ADMIN_GXY3} from "./env";
+import {ADMIN_SECRET, JANUS_ADMIN_GXY1, JANUS_ADMIN_GXY2, JANUS_ADMIN_GXY3, SECRET} from "./env";
 import {getDateString} from "./tools";
 
 class GxyJanus {
@@ -658,16 +658,16 @@ class GxyJanus {
                 webrtcState: (on) => {
                     this.log("[forward] Janus says our WebRTC PeerConnection is " + (on ? "up" : "down") + " now");
                     GxyJanus.gatewayNames("streaming").forEach((name) => {
-                            this.send("forward", `rtp_forward to [${name}]`, this.forward, {
-                                request: "rtp_forward",
-                                host: GxyJanus.instanceConfig(name).url,
-                                publisher_id: this.forwardPublisherID,
-                                room: 1000,
-                                secret: SECRET,
-                                "data_port": DATA_PORT
-                            });
-                        }
-                    )
+                        const url = new URL(GxyJanus.instanceConfig(name).url);
+                        this.send("forward", `rtp_forward to [${name}]`, this.forward, {
+                            request: "rtp_forward",
+                            host: url.host,
+                            publisher_id: this.forwardPublisherID,
+                            room: 1000,
+                            secret: SECRET,
+                            "data_port": DATA_PORT
+                        });
+                    });
                 },
                 onmessage: (msg, jsep) => {
                     this.debug("[forward] message", msg);
