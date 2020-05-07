@@ -20,8 +20,6 @@ class App extends Component {
     return (
       <I18nextProvider i18n={i18n}>
         {/*<GalaxyApp />*/}
-        {/*<OldClient />*/}
-        {/*<OldMobileClient />*/}
         {/*<MobileClient/>*/}
         <VirtualClient />
         {/* <VirtualStreaming/>*/}

@@ -17,7 +17,7 @@
     "react-device-detect": "^1.6.2",
     "react-dom": "^16.12.0",
     "react-i18next": "^11.3.4",
-    "react-new-window": "^0.0.9",
+    "react-new-window": "Hinaser/react-new-window#npm-fix-external-font-not-loaded",
     "react-rangeslider": "^2.2.0",
     "react-scripts": "3.4.0",
     "react-swipe": "^6.0.4",

@@ -1,457 +1,268 @@
-import React, {Component} from 'react';
-import {Janus} from "../../lib/janus";
-import {Button, Grid, Icon, Label, Menu, Segment, Select} from 'semantic-ui-react';
-import VolumeSlider from "../../components/VolumeSlider";
-import {audiog_options, gxycol, trllang, videos_options,} from "../../shared/consts";
-import {GEO_IP_INFO, JANUS_SRV_STR3, JANUS_SRV_STR4, STUN_SRV_STR} from "../../shared/env";
-import '../StreamApp/GalaxyStream.css'
-
+import React, { Component, Fragment } from 'react';
+import {
+  Label,
+  Dropdown,
+  Header,
+  Icon,
+} from 'semantic-ui-react';
+import NewWindow from 'react-new-window';
+import {
+  videos_options2,
+  audiog_options2,
+} from '../../shared/consts';
+// import '../StreamApp/GalaxyStream.css';
+import './BroadcastStream.scss';
+import Volume from './components/Volume'
 
 class VirtualStreaming extends Component {
+  constructor(props) {
+    super(props);
+    this.handleFullScreenChange = this.handleFullScreenChange.bind(this);
+  }
 
-    state = {
-        janus: null,
-        videostream: null,
-        audiostream: null,
-        datastream: null,
-        audio: null,
-        videos: Number(localStorage.getItem("vrt_video")) || 1,
-        audios: Number(localStorage.getItem("vrt_lang")) || 15,
-        room: Number(localStorage.getItem("room")) || null,
-        muted: true,
-        mixvolume: null,
-        user: {},
-        talking: null,
-    };
+  state = {
+    videos: Number(localStorage.getItem('vrt_video')) || 1,
+    audios: Number(localStorage.getItem('vrt_lang')) || 2,
+    room: Number(localStorage.getItem('room')) || null,
+    user: {},
+    cssFixInterval: null,
+    talking: false,
+    fullScreen: false,
+  };
 
-    componentDidMount() {
-        if(this.state.room) {
-            fetch(`${GEO_IP_INFO}`)
-                .then((response) => {
-                    if (response.ok) {
-                        return response.json().then(
-                            info => {
-                                let {user} = this.state;
-                                this.setState({user: {...info,...user}});
-                                localStorage.setItem("vrt_extip", info.ip);
-                                let server = info && info.country === "IL" ? `${JANUS_SRV_STR4}` : `${JANUS_SRV_STR3}`;
-                                this.initJanus(server);
-                            }
-                        );
-                    }
-                })
-                .catch(ex => console.log(`get geoInfo`, ex));
-        }
-    };
+  videoRef(ref) {
+    this.props.virtualStreamingJanus.attachVideoStream(ref);
+  }
 
-    componentWillUnmount() {
-        this.state.janus.destroy();
-    };
-
-    initJanus = (server) => {
-        if(this.state.janus)
-            this.state.janus.destroy();
-        Janus.init({
-            debug: process.env.NODE_ENV !== 'production' ? ["log", "error"] : ["error"],
-            callback: () => {
-                let janus = new Janus({
-                    server: server,
-                    iceServers: [{urls: STUN_SRV_STR}],
-                    success: () => {
-                        Janus.log(" :: Connected to JANUS");
-                        this.setState({janus});
-                        this.initVideoStream(janus);
-                        this.initDataStream(janus);
-                        //this.initAudioStream(janus);
-                    },
-                    error: (error) => {
-                        Janus.log(error);
-                        setTimeout(() => {
-                            window.location.reload();
-                        }, 5000);
-                    },
-                    destroyed: () => {
-                        Janus.log("kill");
-                        setTimeout(() => {
-                            window.location.reload();
-                        }, 5000);
-                    }
-                });
-            }
-        })
-    };
-
-    initVideoStream = (janus) => {
-        let {videos} = this.state;
-        janus.attach({
-            plugin: "janus.plugin.streaming",
-            opaqueId: "videostream-"+Janus.randomString(12),
-            success: (videostream) => {
-                Janus.log(videostream);
-                this.setState({videostream});
-                videostream.send({message: {request: "watch", id: videos}});
-            },
-            error: (error) => {
-                Janus.log("Error attaching plugin: " + error);
-            },
-            iceState: (state) => {
-                Janus.log("ICE state changed to " + state);
-            },
-            webrtcState: (on) => {
-                Janus.log("Janus says our WebRTC PeerConnection is " + (on ? "up" : "down") + " now");
-            },
-            slowLink: (uplink, lost, mid) => {
-                Janus.log("Janus reports problems " + (uplink ? "sending" : "receiving") +
-                    " packets on mid " + mid + " (" + lost + " lost packets)");
-            },
-            onmessage: (msg, jsep) => {
-                this.onStreamingMessage(this.state.videostream, msg, jsep, false);
-            },
-            onremotetrack: (track, mid, on) => {
-                Janus.debug(" ::: Got a remote video track event :::");
-                Janus.debug("Remote video track (mid=" + mid + ") " + (on ? "added" : "removed") + ":", track);
-                if(!on) return;
-                let stream = new MediaStream();
-                stream.addTrack(track.clone());
-                this.setState({video_stream: stream});
-                Janus.log("Created remote video stream:", stream);
-                let video = this.refs.remoteVideo;
-                Janus.attachMediaStream(video, stream);
-            },
-            oncleanup: () => {
-                Janus.log("Got a cleanup notification");
-            }
-        });
-    };
-
-    initAudioStream = (janus) => {
-        let {audios} = this.state;
-        janus.attach({
-            plugin: "janus.plugin.streaming",
-            opaqueId: "audiostream-"+Janus.randomString(12),
-            success: (audiostream) => {
-                Janus.log(audiostream);
-                this.setState({audiostream});
-                audiostream.send({message: {request: "watch", id: audios}});
-            },
-            error: (error) => {
-                Janus.log("Error attaching plugin: " + error);
-            },
-            iceState: (state) => {
-                Janus.log("ICE state changed to " + state);
-            },
-            webrtcState: (on) => {
-                Janus.log("Janus says our WebRTC PeerConnection is " + (on ? "up" : "down") + " now");
-            },
-            slowLink: (uplink, lost, mid) => {
-                Janus.log("Janus reports problems " + (uplink ? "sending" : "receiving") +
-                    " packets on mid " + mid + " (" + lost + " lost packets)");
-            },
-            onmessage: (msg, jsep) => {
-                this.onStreamingMessage(this.state.audiostream, msg, jsep, false);
-            },
-            onremotetrack: (track, mid, on) => {
-                Janus.debug(" ::: Got a remote audio track event :::");
-                Janus.debug("Remote audio track (mid=" + mid + ") " + (on ? "added" : "removed") + ":", track);
-                if(!on) return;
-                let stream = new MediaStream();
-                stream.addTrack(track.clone());
-                this.setState({audio_stream: stream});
-                Janus.log("Created remote audio stream:", stream);
-                let audio = this.refs.remoteAudio;
-                Janus.attachMediaStream(audio, stream);
-            },
-            oncleanup: () => {
-                Janus.log("Got a cleanup notification");
-            }
-        });
-    };
-
-    initDataStream(janus) {
-        janus.attach({
-            plugin: "janus.plugin.streaming",
-            opaqueId: "datastream-"+Janus.randomString(12),
-            success: (datastream) => {
-                Janus.log(datastream);
-                this.setState({datastream});
-                let body = { request: "watch", id: 101 };
-                datastream.send({"message": body});
-            },
-            error: (error) => {
-                Janus.log("Error attaching plugin: " + error);
-            },
-            onmessage: (msg, jsep) => {
-                this.onStreamingMessage(this.state.datastream, msg, jsep, true);
-            },
-            ondataopen: () => {
-                Janus.log("The DataStreamChannel is available!");
-            },
-            ondata: (data) => {
-                let json = JSON.parse(data);
-                Janus.log("We got data from the DataStreamChannel! ", json);
-                this.checkData(json);
-            },
-            onremotestream: (stream) => {
-                Janus.log("Got a remote stream!", stream);
-            },
-            oncleanup: () => {
-                Janus.log("Got a cleanup notification");
-            }
-        });
-    };
-
-    initTranslationStream = (streamId) => {
-        let {janus} = this.state;
-        janus.attach({
-            plugin: "janus.plugin.streaming",
-            opaqueId: "trlstream-"+Janus.randomString(12),
-            success: (trlstream) => {
-                Janus.log(trlstream);
-                this.setState({trlstream});
-                trlstream.send({message: {request: "watch", id: streamId}});
-            },
-            error: (error) => {
-                Janus.log("Error attaching plugin: " + error);
-            },
-            iceState: (state) => {
-                Janus.log("ICE state changed to " + state);
-            },
-            webrtcState: (on) => {
-                Janus.log("Janus says our WebRTC PeerConnection is " + (on ? "up" : "down") + " now");
-            },
-            slowLink: (uplink, lost, mid) => {
-                Janus.log("Janus reports problems " + (uplink ? "sending" : "receiving") +
-                    " packets on mid " + mid + " (" + lost + " lost packets)");
-            },
-            onmessage: (msg, jsep) => {
-                this.onStreamingMessage(this.state.trlstream, msg, jsep, false);
-            },
-            onremotetrack: (track, mid, on) => {
-                Janus.debug(" ::: Got a remote audio track event :::");
-                Janus.debug("Remote audio track (mid=" + mid + ") " + (on ? "added" : "removed") + ":", track);
-                if(!on) return;
-                let stream = new MediaStream();
-                stream.addTrack(track.clone());
-                this.setState({trlaudio_stream: stream});
-                Janus.log("Created remote audio stream:", stream);
-                let audio = this.refs.trlAudio;
-                Janus.attachMediaStream(audio, stream);
-            },
-            oncleanup: () => {
-                Janus.log("Got a cleanup notification");
-            }
-        });
-    };
-
-    onStreamingMessage = (handle, msg, jsep, initdata) => {
-        Janus.log("Got a message", msg);
-
-        if(jsep !== undefined && jsep !== null) {
-            Janus.log("Handling SDP as well...", jsep);
-
-            // Answer
-            handle.createAnswer({
-                jsep: jsep,
-                media: { audioSend: false, videoSend: false, data: initdata },
-                success: (jsep) => {
-                    Janus.log("Got SDP!", jsep);
-                    let body = { request: "start" };
-                    handle.send({message: body, jsep: jsep});
-                },
-                customizeSdp: (jsep) => {
-                    Janus.debug(":: Modify original SDP: ",jsep);
-                    jsep.sdp = jsep.sdp.replace(/a=fmtp:111 minptime=10;useinbandfec=1\r\n/g, 'a=fmtp:111 minptime=10;useinbandfec=1;stereo=1;sprop-stereo=1\r\n');
-                },
-                error: (error) => {
-                    Janus.log("WebRTC error: " + error);
-                }
-            });
-        }
-    };
-
-    checkData = (json) => {
-        let {talk,col,name,ip} = json;
-        if(localStorage.getItem("vrt_extip") === ip)
-            this.streamGalaxy(talk,col,name);
-    };
-
-    streamGalaxy = (talk,col,name) => {
-        if(talk) {
-            let mixvolume = this.refs.remoteAudio.volume;
-            this.setState({mixvolume, talking: true});
-            let trlaudio = this.refs.trlAudio;
-            trlaudio.volume = mixvolume;
-            trlaudio.muted = false;
-            let body = { "request": "switch", "id": gxycol[col] };
-            console.log(" :: Switch STR Stream: ",gxycol[col]);
-            this.state.audiostream.send({"message": body});
-            let id = trllang[localStorage.getItem("vrt_langtext")];
-            if(name.match(/^(New York|Toronto)$/) || !id) {
-                console.log(" :: Not TRL Stream attach")
-            } else {
-                let body = { "request": "switch", "id": id };
-                this.state.trlstream.send({"message": body});
-                let talking = setInterval(this.ducerMixaudio, 200);
-                this.setState({talking});
-                console.log(" :: Init TRL Stream: ",localStorage.getItem("vrt_langtext"),id)
-            }
-            Janus.log("You now talking");
-        } else if(this.state.talking) {
-            Janus.log("Stop talking");
-            clearInterval(this.state.talking);
-            this.refs.remoteAudio.volume = this.state.mixvolume;
-            let id = Number(localStorage.getItem("vrt_lang")) || 15;
-            let abody = { "request": "switch", "id": id};
-            console.log(" :: Switch STR Stream: ",localStorage.getItem("vrt_lang"), id);
-            this.state.audiostream.send({"message": abody});
-            console.log(" :: Stop TRL Stream: ");
-            let trlaudio = this.refs.trlAudio;
-            trlaudio.muted = true;
-            this.setState({talking: null});
-        }
-    };
-
-    ducerMixaudio = () => {
-        this.state.trlstream.getVolume(null, volume => {
-            let audio = this.refs.remoteAudio;
-            let trl_volume = this.state.mixvolume*0.05;
-            if (volume > 0.05) {
-                audio.volume = trl_volume;
-            } else if (audio.volume + 0.01 <= this.state.mixvolume) {
-                audio.volume = audio.volume + 0.01;
-            }
-            //console.log(":: Trl level: " + volume + " :: Current mixvolume: " + audio.volume + " :: Original mixvolume: " + this.state.mixvolume)
-        });
-    };
-
-    setVideo = (videos) => {
-        this.setState({videos});
-        this.state.videostream.send({message: { request: "switch", id: videos }});
-        localStorage.setItem("vrt_video", videos);
-    };
-
-    setAudio = (audios,options) => {
-        let text = options.filter(k => k.value === audios)[0].text;
-        this.setState({audios});
-        if(this.state.audiostream)
-            this.state.audiostream.send({message: {request: "switch", id: audios}});
-        localStorage.setItem("vrt_lang", audios);
-        localStorage.setItem("vrt_langtext", text);
-    };
-
-    setVolume = (value) => {
-        this.refs.remoteAudio.volume = value;
-    };
-
-    audioMute = () => {
-        const {janus,audiostream,muted} = this.state;
-        this.setState({muted: !muted});
-        if(audiostream) {
-            muted ? audiostream.muteAudio() : audiostream.unmuteAudio()
-        } else {
-            this.initAudioStream(janus);
-            let id = trllang[localStorage.getItem("vrt_langtext")] || 301;
-            this.initTranslationStream(id);
-        }
-    };
-
-    toggleFullScreen = () => {
-        let vid = this.refs.mediaplayer;
-        if(vid.requestFullScreen){
-            vid.requestFullScreen();
-        } else if(vid.webkitRequestFullScreen){
-            vid.webkitRequestFullScreen();
-        } else if(vid.mozRequestFullScreen){
-            vid.mozRequestFullScreen();
-        }
-    };
-
-
-    render() {
-
-        const {videos, audios, muted, talking} = this.state;
-
-        if(!this.state.room) {
-
-            return (<b> :: THIS PAGE CAN NOT BE OPENED DIRECTLY ::</b>);
-
-        } else {
-
-            return (
-
-                <Segment compact secondary>
-                    <Segment textAlign='center' className="ingest_segment" raised>
-                        <Menu secondary>
-                            <Menu.Item>
-                                <Select
-                                    compact
-                                    error={!videos}
-                                    placeholder="Video:"
-                                    value={videos}
-                                    options={videos_options}
-                                    onChange={(e, {value}) => this.setVideo(value)}/>
-                            </Menu.Item>
-                            <Menu.Item>
-                                <Select
-                                    compact={false}
-                                    scrolling={false}
-                                    error={!audios}
-                                    placeholder="Audio:"
-                                    value={audios}
-                                    options={audiog_options}
-                                    onChange={(e, {value, options}) => this.setAudio(value, options)}/>
-                            </Menu.Item>
-                            <canvas ref="canvas1" id="canvas1" width="25" height="50"/>
-                        </Menu>
-                    </Segment>
-                    <Segment>
-                        <div className='mediaplayer' ref="mediaplayer" >
-                        <video ref="remoteVideo"
-                               id="remoteVideo"
-                               width="100%"
-                               height="100%"
-                               autoPlay={true}
-                               controls={false}
-                               muted={true}
-                               playsInline={true}/>
-                            {talking ? <Label className='talk' size='massive' color='red' >
-                                <Icon name='microphone' />On
-                            </Label> : ''}
-                        </div>
-                        <audio ref="remoteAudio"
-                               id="remoteAudio"
-                               autoPlay={true}
-                               controls={false}
-                               muted={muted}
-                               playsInline={true}/>
-                        <audio ref="trlAudio"
-                               id="trlAudio"
-                               autoPlay={true}
-                               controls={false}
-                               muted={true}
-                            // muted={muted}
-                               playsInline={true}/>
-                    </Segment>
-                    <Grid columns={3}>
-                        <Grid.Column width={2}>
-                            <Button color='blue'
-                                    icon='expand arrows alternate'
-                                    onClick={this.toggleFullScreen}/>
-                        </Grid.Column>
-                        <Grid.Column width={12}>
-                            <VolumeSlider volume={this.setVolume}/>
-                        </Grid.Column>
-                        <Grid.Column width={1}>
-                            <Button positive={!muted}
-                                    negative={muted}
-                                    icon={muted ? "volume off" : "volume up"}
-                                    onClick={this.audioMute}/>
-                        </Grid.Column>
-                    </Grid>
-                </Segment>
-            );
-        }
+  setVideoWrapperRef(ref) {
+    if (ref && ref !== this.videoWrapper) {
+      this.videoWrapper = ref;
+      this.videoWrapper.ownerDocument.defaultView.removeEventListener('resize', this.handleFullScreenChange);
+      this.videoWrapper.ownerDocument.defaultView.addEventListener('resize', this.handleFullScreenChange);
     }
+  }
+
+  handleFullScreenChange() {
+    this.setState({fullScreen: this.isFullScreen()});
+  }
+
+  componentDidMount() {
+    this.props.virtualStreamingJanus.onTalking((talking) => this.setState({talking}));
+    this.setState({cssFixInterval: setInterval(() => this.cssFix(), 500)});
+  };
+
+  cssFix() {
+    const d = document.getElementsByClassName('controls__dropdown');
+    if (d){
+      const o = document.getElementById('video0');
+      if (o) {
+        Array.from(d).forEach(x => {
+          x.style.maxHeight = `${o.offsetHeight-50}px`;
+        });
+      }
+    }
+  }
+
+  componentWillUnmount() {
+    if (this.state.cssFixInterval) {
+      clearInterval(this.state.cssFixInterval);
+    }
+    if (this.videoWrapper) {
+      this.videoWrapper.ownerDocument.defaultView.removeEventListener('resize', this.handleFullScreenChange);
+    }
+  };
+
+  isFullScreen = () => {
+    return !!this.videoWrapper && (this.videoWrapper.ownerDocument.fullscreenElement
+      || this.videoWrapper.ownerDocument.mozFullScreenElemen
+      || this.videoWrapper.ownerDocument.webkitFullscreenElement);
+  };
+
+  toggleFullScreen = () => {
+    if (this.state.fullScreen) {
+			if (this.videoWrapper.ownerDocument.exitFullscreen) {
+				this.videoWrapper.ownerDocument.exitFullscreen();
+			} else if (this.videoWrapper.ownerDocument.webkitExitFullscreen) {
+				this.videoWrapper.ownerDocument.webkitExitFullscreen();
+			} else if (this.videoWrapper.ownerDocument.mozCancelFullScreen) {
+				this.videoWrapper.ownerDocument.mozCancelFullScreen();
+			}
+    } else {
+      if (this.videoWrapper.requestFullScreen) {
+        this.videoWrapper.requestFullScreen();
+      } else if (this.videoWrapper.webkitRequestFullScreen) {
+        this.videoWrapper.webkitRequestFullScreen();
+      } else if (this.videoWrapper.mozRequestFullScreen) {
+        this.videoWrapper.mozRequestFullScreen();
+      }
+    }
+  };
+
+  toggleNewWindow = () => {
+    this.props.attached ? this.props.setDetached() : this.props.setAttached();
+  };
+
+  onUnload = () => {
+    this.props.setAttached();
+  };
+
+  onBlock = () => {
+    alert('You browser is blocking our popup! You need to allow it');
+  };
+
+  setVideo(videos) {
+    this.setState({videos});
+    this.props.virtualStreamingJanus.setVideo(videos);
+  }
+
+  setAudio(audios, text) {
+    this.setState({audios});
+    this.props.virtualStreamingJanus.setAudio(audios, text);
+  }
+
+  render() {
+    const {
+      attached,
+      closeShidur,
+      virtualStreamingJanus,
+    } = this.props;
+    const {
+      audios,
+      fullScreen,
+      room,
+      talking,
+      videos,
+    } = this.state;
+
+    if (!room) {
+      return (<b> :: THIS PAGE CAN NOT BE OPENED DIRECTLY ::</b>);
+    }
+
+    const video_option = videos_options2.find((option) => option.value === videos);
+    const audio_option = audiog_options2.find((option) => option.value === audios);
+
+    const inLine = (
+      <div className="video video--broadcast" key='v0' ref={(ref) => this.setVideoWrapperRef(ref)} id='video0'
+           style={{height: !attached ? '100%' : null, width: !attached ? '100%' : null}}>
+        <div className="video__overlay">
+          <div className="controls">
+            <div className="controls__top">
+            <button>
+                <Icon name='close' onClick={closeShidur}/>
+              </button>
+            </div>
+            <div className="controls__bottom">
+                            <Dropdown
+                upward
+                floating
+                scrolling
+                icon={null}
+                selectOnBlur={false}
+                trigger={<button>{video_option ? `${video_option.description}` : ''}</button>}
+                className="video-selection"
+                >
+                <Dropdown.Menu className='controls__dropdown'>
+                  {videos_options2.map((option, i) => {
+                    if (option.divider === true) return (<Dropdown.Divider key={i}/>);
+                    if (option.header === true) return (
+                      <Dropdown.Header className='ui blue' icon={option.icon}>
+                          {option.text}
+                          {(option.description ? <Header as='div' size='tiny' color='grey' content={option.description} /> : '')}
+                        </Dropdown.Header>
+                    );
+                    return (
+                      <Dropdown.Item
+                      key={i}
+                      text={option.text}
+                      selected={option.value === videos}
+                      icon={option.icon}
+                      description={option.description}
+                      action={option.action}
+                      onClick={() => this.setVideo(option.value)}
+                      />
+                      );
+                    })}
+                </Dropdown.Menu>
+              </Dropdown>
+                
+              <Dropdown
+                upward
+                floating
+                scrolling
+                icon={null}
+                selectOnBlur={false}
+                trigger={<button>{audio_option.icon ? <Icon name={audio_option.icon}/> : ''}{audio_option.text ? `${audio_option.text}` : ''}</button>}
+                className="audio-selection"
+                >
+                <Dropdown.Menu className='controls__dropdown'>
+                  {audiog_options2.map((option, i) => {
+                    if (option.divider === true) return (<Dropdown.Divider key={i}/>);
+                    if (option.header === true) return (
+                      <Dropdown.Header className='ui blue' icon={option.icon} key={i}>
+                        <Icon name={option.icon}/>
+                        <div>
+                        {option.text}
+                        <br/>
+                        {(option.description ? <Header as='span' size='tiny' color='grey' content={option.description} /> : '')}
+                        </div>
+                      </Dropdown.Header>
+                    );
+                    return (
+                      <Dropdown.Item
+                        key={i}
+                        text={option.text}
+                        selected={option.value === audios}
+                        // icon={option.icon}
+                        flag={option.flag}
+                        description={option.description}
+                        action={option.action}
+                        onClick={() => this.setAudio(option.value, option.eng_text)}
+                      />
+                    );
+                  })}
+                </Dropdown.Menu>
+              </Dropdown>
+
+              <Volume media={virtualStreamingJanus.audioElement} />
+              <div className="controls__spacer"></div>
+              <button onClick={this.toggleFullScreen}>
+                <Icon name={fullScreen ? 'compress' : 'expand'} />
+              </button>
+              {!attached ? null :
+                <button onClick={this.toggleNewWindow}>
+                  <Icon name="external square"/>
+                </button>
+              }
+            </div>
+          </div>
+          {talking && <Label className='talk' size='massive' color='red'><Icon name='microphone' />On</Label>}
+        </div>
+        <div className='mediaplayer'>
+          <video ref={(ref) => this.videoRef(ref)}
+                 id="remoteVideo"
+                 width="134"
+                 height="100"
+                 autoPlay={true}
+                 controls={false}
+                 muted={true}
+                 playsInline={true} />
+        </div>
+      </div>
+    );
+
+    return (
+      <Fragment>
+        {attached && inLine}
+        {!attached && 
+          <NewWindow
+            features={{ width: '725', height: '635', left: '200', top: '200', location: 'no' }}
+            title='V4G' onUnload={this.onUnload} onBlock={this.onBlock}>
+            {inLine}
+          </NewWindow>
+        }
+      </Fragment>
+    );
+  }
 }
 
 export default VirtualStreaming;

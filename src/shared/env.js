@@ -24,6 +24,8 @@ export const JANUS_SRV_STR4 = process.env.REACT_APP_JANUS_SRV_STR4;
 export const JANUS_STR_HOST_PL = process.env.REACT_APP_JANUS_HOST_PL;
 export const JANUS_STR_HOST_GR = process.env.REACT_APP_JANUS_HOST_GR;
 export const JANUS_STR_HOST_UK = process.env.REACT_APP_JANUS_HOST_UK;
+export const WKLI_ENTER = process.env.REACT_APP_WKLI_ENTER;
+export const WKLI_LEAVE = process.env.REACT_APP_WKLI_LEAVE;
 
 export const API_BACKEND = process.env.REACT_APP_API_BACKEND;
 export const MONITORING_BACKEND = process.env.REACT_APP_MONITORING_BACKEND;

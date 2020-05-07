@@ -1,8 +1,7 @@
 import React, {Component, Fragment} from 'react';
-import NewWindow from 'react-new-window';
-import {Janus} from '../../lib/janus';
+import { Janus } from '../../lib/janus';
 import classNames from 'classnames';
-import {isMobile} from 'react-device-detect';
+import { isMobile } from 'react-device-detect';
 import {Button, Dropdown, Icon, Input, Label, Menu, Popup, Select} from 'semantic-ui-react';
 import {
   checkNotification,
@@ -11,16 +10,19 @@ import {
   initJanus,
   micLevel,
   reportToSentry,
+  takeImage,
   testDevices,
   testMic,
+  wkliLeave,
 } from '../../shared/tools';
 import './VirtualClient.scss';
 import './VideoConteiner.scss';
+import './CustomIcons.scss';
 import 'eqcss';
 import VirtualChat from './VirtualChat';
-import {initGxyProtocol, sendProtocolMessage} from '../../shared/protocol';
-import {PROTOCOL_ROOM, vsettings_list} from '../../shared/consts';
-import {GEO_IP_INFO} from '../../shared/env';
+import { initGxyProtocol, sendProtocolMessage } from '../../shared/protocol';
+import { PROTOCOL_ROOM, vsettings_list } from '../../shared/consts';
+import {GEO_IP_INFO, SENTRY_KEY} from '../../shared/env';
 import platform from 'platform';
 import {Help} from './components/Help';
 import {withTranslation} from 'react-i18next';
@@ -28,13 +30,16 @@ import {mapNameToLanguage, setLanguage} from '../../i18n/i18n';
 import {Monitoring} from '../../components/Monitoring';
 import {MonitoringData} from '../../shared/MonitoringData';
 import api from '../../shared/Api';
+import VirtualStreaming from './VirtualStreaming';
+import VirtualStreamingJanus from './VirtualStreamingJanus';
 import {client} from "../../components/UserManager";
 import LoginPage from "../../components/LoginPage";
+import * as Sentry from "@sentry/browser";
 
-class OldClient extends Component {
+class VirtualClient extends Component {
 
   state = {
-    count: 0,
+    chatMessagesCount: 0,
     creatingFeed: false,
     delay: false,
     audioContext: null,
@@ -55,16 +60,17 @@ class OldClient extends Component {
     remoteFeed: null,
     myid: null,
     mypvtid: null,
+    mystream: null,
     localVideoTrack: null,
     localAudioTrack: null,
     mids: [],
     muted: false,
     cammuted: false,
-    shidur: false,
+    shidur: true,
     protocol: null,
     user: null,
     users: {},
-    username_value: "",
+    username_value: '',
     chatVisible: false,
     question: false,
     geoinfo: false,
@@ -75,9 +81,28 @@ class OldClient extends Component {
     monitoringData: new MonitoringData(),
     gatewaysConfig: {},
     iceServers: {},
+    numberOfVirtualUsers: localStorage.getItem('number_of_virtual_users') || '1',
+    currentLayout: localStorage.getItem('currentLayout') || 'double',
+    attachedSource: true,
+    sourceLoading: true,
+    virtualStreamingJanus: new VirtualStreamingJanus(() => this.virtualStreamingInitialized()),
   };
 
+  virtualStreamingInitialized() {
+    this.setState({sourceLoading: false});
+  }
+
   componentDidUpdate(prevProps, prevState) {
+    if (this.state.shidur && !prevState.shidur && !this.state.sourceLoading && this.room) {
+      this.state.virtualStreamingJanus.audioElement.muted = false;
+    }
+    if (!this.state.sourceLoading && prevState.sourceLoading && this.state.shidur && this.room) {
+      this.state.virtualStreamingJanus.audioElement.muted = false;
+    }
+    if (this.state.room && !prevState.room && this.state.shidur && !this.sourceLoading) {
+      this.state.virtualStreamingJanus.audioElement.muted = false;
+    }
+
     if (this.state.videoroom !== prevState.videoroom ||
       this.state.localVideoTrack !== prevState.localVideoTrack ||
       this.state.localAudioTrack !== prevState.localAudioTrack ||
@@ -91,6 +116,7 @@ class OldClient extends Component {
   }
 
   componentDidMount() {
+    Sentry.init({dsn: `https://${SENTRY_KEY}@sentry.kli.one/2`});
     if (isMobile) {
       window.location = '/userm';
     }
@@ -164,6 +190,11 @@ class OldClient extends Component {
       alert(t('oldClient.browserNotSupported'));
       window.location = 'https://galaxy.kli.one';
     }
+    this.state.virtualStreamingJanus.init();
+  }
+
+  componentWillUnmount() {
+    this.state.virtualStreamingJanus.destroy();
   }
 
   initClient = (user, error) => {
@@ -246,6 +277,7 @@ class OldClient extends Component {
         Janus.log(' :: Going to check Devices: ');
         getDevicesStream(audio_device, video_device, video_setting, stream => {
           Janus.log(' :: Check Devices: ', stream);
+          this.setState({mystream: stream})
           let myvideo = this.refs.localVideo;
           Janus.attachMediaStream(myvideo, stream);
           if (this.state.audioContext) {
@@ -300,7 +332,8 @@ class OldClient extends Component {
   };
 
   exitRoom = (reconnect) => {
-    let { videoroom, remoteFeed, protocol, room } = this.state;
+    let { videoroom, remoteFeed, protocol, room, user } = this.state;
+    wkliLeave(user);
     let leave                                     = { request: 'leave' };
     if (remoteFeed) {
       remoteFeed.send({ 'message': leave });
@@ -320,29 +353,15 @@ class OldClient extends Component {
       remoteFeed: null,
       room: '',
       selected_room: (reconnect ? room : ''),
+      chatMessagesCount: 0,
     });
+    this.state.virtualStreamingJanus.audioElement.muted = true;
     protocol.data({
       text: JSON.stringify(pl),
       success: () => {
         this.initVideoRoom(reconnect);
       }
     });
-  };
-
-  getFeedsList = (rooms, user) => {
-    //TODO: Need solution to show count without service users in room list
-    // rooms.forEach((room,i) => {
-    //     if(room.num_participants > 0) {
-    //         videoroom.send({
-    //             message: {request: "listparticipants", "room": room.room},
-    //             success: (data) => {
-    //                 let count = data.participants.filter(p => JSON.parse(p.display).role === "user");
-    //                 rooms[i].num_participants = count.length;
-    //                 this.setState({rooms});
-    //             }
-    //         });
-    //     }
-    // })
   };
 
   iceState = () => {
@@ -499,10 +518,10 @@ class OldClient extends Component {
         if (!women) {
           videoroom.muteAudio();
         }
-        if (on && track && track.kind === 'video') {
+        if (track.kind === 'video') {
           this.setState({localVideoTrack: track});
         }
-        if (on && track && track.kind === 'audio') {
+        if (track.kind === 'audio') {
           this.setState({localAudioTrack: track});
         }
       },
@@ -627,8 +646,8 @@ class OldClient extends Component {
             users[display.id]      = display;
             users[display.id].rfid = id;
             subscription.push({
-              feed: id,	// This is mandatory
-              //mid: stream.mid		// This is optional (all streams, if missing)
+              feed: id,  // This is mandatory
+              //mid: stream.mid    // This is optional (all streams, if missing)
             });
           }
           this.setState({ feeds, feedStreams, users });
@@ -699,8 +718,8 @@ class OldClient extends Component {
             users[display.id]      = display;
             users[display.id].rfid = id;
             subscription.push({
-              feed: id,	// This is mandatory
-              //mid: stream.mid		// This is optional (all streams, if missing)
+              feed: id,  // This is mandatory
+              //mid: stream.mid    // This is optional (all streams, if missing)
             });
           }
           feeds.push(feed[0]);
@@ -816,7 +835,7 @@ class OldClient extends Component {
                 jsep: jsep,
                 // Add data:true here if you want to subscribe to datachannels as well
                 // (obviously only works if the publisher offered them in the first place)
-                media: { audioSend: false, videoSend: false, data: true },	// We want recvonly audio/video
+                media: { audioSend: false, videoSend: false, data: true },  // We want recvonly audio/video
                 success: (jsep) => {
                   Janus.debug('Got SDP!');
                   Janus.debug(jsep);
@@ -962,6 +981,10 @@ class OldClient extends Component {
     user.camera     = video_device !== null;
     user.sound_test = reconnect ? JSON.parse(localStorage.getItem('sound_test')) : false;
     user.timestamp  = Date.now();
+    if(video_device) {
+      const {mystream} = this.state;
+      takeImage(mystream, user);
+    }
     this.setState({ user });
     localStorage.setItem('username', user.display);
     if(JSON.parse(localStorage.getItem("ghost")))
@@ -1067,20 +1090,28 @@ class OldClient extends Component {
     this.setState({ muted: !muted });
   };
 
-  showShidur = () => {
-    this.setState({ shidur: !this.state.shidur });
+  toggleShidur = () => {
+    const { virtualStreamingJanus, shidur } = this.state;
+    const stateUpdate = {
+      shidur: !shidur,
+    };
+    if (shidur) {
+      virtualStreamingJanus.destroy();
+    } else {
+      virtualStreamingJanus.init();
+      stateUpdate.sourceLoading = true;
+    }
+    this.setState(stateUpdate);
   };
 
-  onUnload = () => {
-    this.setState({ shidur: false });
-  };
+  updateLayout = (currentLayout) => {
+    this.setState({ currentLayout }, () => {
+      localStorage.setItem('currentLayout', currentLayout);
+    });
+  }
 
-  onBlock = () => {
-    alert(this.props.t('oldClient.popupBlock'));
-  };
-
-  onNewMsg = (private_message) => {
-    this.setState({ count: this.state.count + 1 });
+  onChatMessage = () => {
+    this.setState({ chatMessagesCount: this.state.chatMessagesCount + 1 });
   };
 
   mapDevices = (devices) => {
@@ -1089,11 +1120,10 @@ class OldClient extends Component {
     });
   };
 
-  renderLocalMedia = (width, height) => {
-    const { username_value, cammuted, question, muted } = this.state;
+  renderLocalMedia = (width, height, index) => {
+    const { username_value, user, cammuted, question, muted } = this.state;
 
-    return (<div className="video"
-                 key={'localMedia'}>
+    return (<div className="video" key={index}>
       <div className={classNames('video__overlay')}>
         {question ?
           <div className="question">
@@ -1118,70 +1148,64 @@ class OldClient extends Component {
       </svg>
       <video
         className={classNames('mirror', { 'hidden': cammuted })}
-        ref={'localVideo'}
-        id={'localVideo'}
+        ref="localVideo"
+        id="localVideo"
         width={width}
         height={height}
         autoPlay={true}
         controls={false}
         muted={true}
         playsInline={true} />
-
     </div>);
   };
 
   renderMedia = (feed, width, height) => {
     const { id, talk, question, cammute, display: { display } } = feed;
 
-    return (
-      <div className="video"
-           key={'v' + id}
-           ref={'video' + id}
-           id={'video' + id}>
-        <div className={classNames('video__overlay', { 'talk': talk })}>
-          {question ? <div className="question">
-            <svg viewBox="0 0 50 50">
-              <text x="25" y="25" textAnchor="middle" alignmentBaseline="central"
-                    dominantBaseline="central">&#xF128;</text>
-            </svg>
-          </div> : ''}
-          <div className="video__title">{!talk ?
-            <Icon name="microphone slash" size="small" color="red" /> : ''}{display}</div>
-        </div>
-        <svg className={classNames('nowebcam', { 'hidden': !cammute })} viewBox="0 0 32 18"
-             preserveAspectRatio="xMidYMid meet">
-          <text x="16" y="9" textAnchor="middle" alignmentBaseline="central"
-                dominantBaseline="central">&#xf2bd;</text>
-        </svg>
-        <video
-          key={'v' + id}
-          ref={'remoteVideo' + id}
-          id={'remoteVideo' + id}
-          width={width}
-          height={height}
-          autoPlay={true}
-          controls={false}
-          muted={true}
-          playsInline={true} />
-        <audio
-          key={'a' + id}
-          ref={'remoteAudio' + id}
-          id={'remoteAudio' + id}
-          autoPlay={true}
-          controls={false}
-          playsInline={true} />
+    return (<div className="video"
+                 key={'v' + id}
+                 ref={'video' + id}
+                 id={'video' + id}>
+      <div className={classNames('video__overlay', { 'talk-frame': talk })}>
+        {question ? <div className="question">
+          <svg viewBox="0 0 50 50">
+            <text x="25" y="25" textAnchor="middle" alignmentBaseline="central" dominantBaseline="central">&#xF128;</text>
+          </svg>
+        </div> : ''}
+        <div className="video__title">{!talk ? <Icon name="microphone slash" size="small" color="red" /> : ''}{display}</div>
       </div>
-    );
-  };
+      <svg className={classNames('nowebcam', { 'hidden': !cammute })} viewBox="0 0 32 18" preserveAspectRatio="xMidYMid meet">
+        <text x="16" y="9" textAnchor="middle" alignmentBaseline="central" dominantBaseline="central">&#xf2bd;</text>
+      </svg>
+      <video
+        key={'v' + id}
+        ref={'remoteVideo' + id}
+        id={'remoteVideo' + id}
+        width={width}
+        height={height}
+        autoPlay={true}
+        controls={false}
+        muted={true}
+        playsInline={true} />
+      <audio
+        key={'a' + id}
+        ref={'remoteAudio' + id}
+        id={'remoteAudio' + id}
+        autoPlay={true}
+        controls={false}
+        playsInline={true} />
+    </div>);
+  }
 
   render() {
     const {
-      audio,
+      attachedSource,
       audio_device,
       audio_devices,
       cammuted,
+      chatMessagesCount,
       chatVisible,
-      count,
+      currentLayout,
       delay,
       feeds,
       geoinfo,
@@ -1190,23 +1214,55 @@ class OldClient extends Component {
       monitoringData,
       muted,
       myid,
+      numberOfVirtualUsers,
       question,
       room,
       rooms,
       selected_room,
       selftest,
       shidur,
+      sourceLoading,
       tested,
       user,
       video_device,
       video_devices,
       video_setting,
+      virtualStreamingJanus,
       women,
     } = this.state;
 
     const { t, i18n } = this.props;
     const width       = '134';
     const height      = '100';
+    const layout      = (room === '' || !shidur || !attachedSource) ? 'equal' : currentLayout;
+
+    //let iOS = ['iPad', 'iPhone', 'iPod'].indexOf(navigator.platform) >= 0;
+
+    let layoutIcon;
+    switch (layout) {
+    case 'double':
+      layoutIcon = 'layout-double';
+      break;
+    case 'split':
+      layoutIcon = 'layout-split';
+      break;
+    default:
+      layoutIcon = 'layout-equal';
+      break;
+    }
+
+    let source = room !== '' && shidur &&
+      <VirtualStreaming
+        virtualStreamingJanus={virtualStreamingJanus}
+        attached={attachedSource}
+        closeShidur={this.toggleShidur}
+        setDetached={() => {
+          this.setState({ attachedSource: false });
+        }}
+        setAttached={() => {
+          this.setState({ attachedSource: true });
+        }}
+      />;
 
     let rooms_list = rooms.map((data, i) => {
       const { room, description } = data;
@@ -1222,20 +1278,29 @@ class OldClient extends Component {
     let videos = feeds.filter(feed => feed).reduce((result, feed) => {
       const { question, id } = feed;
       otherFeedHasQuestion   = otherFeedHasQuestion || (question && id !== myid);
-
       if (!localPushed && feed.display.timestamp >= user.timestamp) {
         localPushed = true;
-        result.push(this.renderLocalMedia(width, height));
+        for (let i = 0; i < parseInt(numberOfVirtualUsers, 10); i++) {
+          result.push(this.renderLocalMedia(width, height, i));
+        }
       }
       result.push(this.renderMedia(feed, width, height));
       return result;
     }, []);
-
     if (!localPushed) {
-      videos.push(this.renderLocalMedia(width, height));
+      for (let i = 0; i < parseInt(numberOfVirtualUsers, 10); i++) {
+        videos.push(this.renderLocalMedia(width, height, i));
+      }
     }
 
-    let l = (<Label key='Carbon' floating size='mini' color='red'>{count}</Label>);
+    let noOfVideos = videos.length;
+    if (room !== '') {
+      if (shidur && attachedSource && ['double', 'equal'].includes(layout)) {
+        noOfVideos += 1; // + Source
+      }
+    }
+
+    const chatCountLabel = (<Label key='Carbon' floating size='mini' color='red'>{chatMessagesCount}</Label>);
 
     let login = (<LoginPage user={user} checkPermission={this.checkPermission} />);
 
@@ -1243,6 +1308,7 @@ class OldClient extends Component {
       <div className="vclient__toolbar">
         <Input>
           <Select
+            className = "room-selection"
             search
             disabled={audio_device === null || !!localAudioTrack}
             error={!selected_room}
@@ -1252,36 +1318,69 @@ class OldClient extends Component {
             noResultsMessage={t('oldClient.noResultsFound')}
             //onClick={this.getRoomList}
             onChange={(e, { value }) => this.selectRoom(value)} />
-          {localAudioTrack ? <Button negative icon='sign-out' onClick={() => this.exitRoom(false)} /> : ''}
+          {localAudioTrack ? <Button attached='right' negative icon='sign-out' onClick={() => this.exitRoom(false)} /> : ''}
           {!localAudioTrack ?
-            <Button primary icon='sign-in' disabled={delay || !selected_room || !audio_device}
+            <Button attached='right' primary icon='sign-in' disabled={delay || !selected_room || !audio_device}
                     onClick={this.joinRoom} /> : ''}
         </Input>
+        { !(new URL(window.location.href).searchParams.has('deb')) ? null : (
+        <Input>
+          <Select placeholder='number of virtual users' options={[
+            { value: '1', text: '1' },
+            { value: '2', text: '2' },
+            { value: '3', text: '3' },
+            { value: '4', text: '4' },
+            { value: '5', text: '5' },
+            { value: '6', text: '6' },
+            { value: '7', text: '7' },
+            { value: '8', text: '8' },
+            { value: '9', text: '9' },
+            { value: '10', text: '10' },
+            { value: '11', text: '11' },
+            { value: '12', text: '12' },
+            { value: '13', text: '13' },
+            { value: '14', text: '14' },
+            { value: '15', text: '15' },
+            { value: '16', text: '16' },
+            { value: '17', text: '17' },
+          ]} value={numberOfVirtualUsers} onChange={(e, { value }) => {
+            this.setState({ numberOfVirtualUsers: value });
+            localStorage.setItem('number_of_virtual_users', value);
+          }}>
+          </Select>
+        </Input>)}
         <Menu icon='labeled' secondary size="mini">
           <Menu.Item disabled={!localAudioTrack}
-                     onClick={() => this.setState({ chatVisible: !chatVisible, count: 0 })}>
+                     onClick={() => this.setState({ chatVisible: !chatVisible, chatMessagesCount: 0 })}>
             <Icon name="comments" />
             {t(chatVisible ? 'oldClient.closeChat' : 'oldClient.openChat')}
-            {count > 0 ? l : ''}
+            {chatMessagesCount > 0 ? chatCountLabel : ''}
           </Menu.Item>
           <Menu.Item
-            disabled={!audio || video_device === null || !geoinfo || !localAudioTrack || delay || otherFeedHasQuestion}
+            disabled={video_device === null || !geoinfo || !localAudioTrack || delay || otherFeedHasQuestion}
             onClick={this.handleQuestion}>
-            <Icon color={question ? 'green' : ''} name='question' />
+            <Icon {...(question ? {color: 'green'} : {})} name='question' />
             {t('oldClient.askQuestion')}
           </Menu.Item>
-          <Menu.Item disabled={shidur} onClick={this.showShidur}>
+          <Menu.Item onClick={this.toggleShidur} disabled={room === '' || sourceLoading}>
             <Icon name="tv" />
-            {t('oldClient.openBroadcast')}
-            {shidur ?
-              <NewWindow
-                url='https://galaxy.kli.one/stream'
-                features={{ width: '725', height: '635', left: '200', top: '200', location: 'no' }}
-                title='V4G' onUnload={this.onUnload} onBlock={this.onBlock}>
-              </NewWindow> :
-              null
-            }
+            {shidur ? t('oldClient.closeBroadcast') : t('oldClient.openBroadcast')}
           </Menu.Item>
+          <Popup
+            trigger={<Menu.Item disabled={room === '' || !shidur || sourceLoading || !attachedSource} icon={{className:`icon--custom ${layoutIcon}`}} name={t('oldClient.layout')} />}
+            disabled={room === '' || !shidur || !attachedSource}
+            on='click'
+            position='bottom center'
+          >
+            {/* Update the icon above to current layout */}
+            <Popup.Content>
+              <Button.Group>
+                <Button  onClick={() => this.updateLayout('double')} active={layout === 'double'} disabled={sourceLoading} icon={{className:'icon--custom layout-double'}} /> {/* Double first */}
+                <Button  onClick={() => this.updateLayout('split')} active={layout === 'split'} disabled={sourceLoading} icon={{className:'icon--custom layout-split'}} /> {/* Split */}
+                <Button  onClick={() => this.updateLayout('equal')} active={layout === 'equal'} disabled={sourceLoading} icon={{className:'icon--custom layout-equal'}} /> {/* Equal */}
+              </Button.Group>
+            </Popup.Content>
+          </Popup>
         </Menu>
         <Menu icon='labeled' secondary size="mini">
           {!localAudioTrack ?
@@ -1302,6 +1401,16 @@ class OldClient extends Component {
             <Icon color={cammuted ? 'red' : ''} name={!cammuted ? 'eye' : 'eye slash'} />
             {t(cammuted ? 'oldClient.startVideo' : 'oldClient.stopVideo')}
           </Menu.Item>
+          {/*<Menu.Item>*/}
+          {/*  <Select*/}
+          {/*    compact*/}
+          {/*    value={i18n.language}*/}
+          {/*    options={mapNameToLanguage(i18n.language)}*/}
+          {/*    onChange={(e, { value }) => {*/}
+          {/*      setLanguage(value);*/}
+          {/*      this.setState({ selftest: t('oldClient.selfAudioTest') });*/}
+          {/*    }} />*/}
+          {/*</Menu.Item>*/}
           <Popup
             trigger={<Menu.Item icon="setting" name={t('oldClient.settings')} />}
             on='click'
@@ -1355,13 +1464,33 @@ class OldClient extends Component {
       <div className="vclient__main" onDoubleClick={() => this.setState({
         chatVisible: !chatVisible
       })}>
-        <div className="vclient__main-wrapper">
+        <div className={`
+          vclient__main-wrapper
+          no-of-videos-${noOfVideos}
+          layout--${layout}
+          broadcast--${room !== '' && shidur ? 'on' : 'off'}
+          ${!attachedSource ? ' broadcast--popup' : 'broadcast--inline'}
+         `}>
+
+          {/* ${layout === 'equal' ? ' broadcast--equal' : ''} */}
+          {/* ${layout === 'double' ? ' broadcast--double' : ''} */}
+          {/* ${layout === 'split' ? ' broadcast--split' : ''} */}
+
+          <div className="broadcast-panel">
+            {/* <div className="videos"> */}
+              <div className="broadcast__wrapper">
+                {layout === 'split' && source}
+              </div>
+            {/* </div> */}
+          </div>
+
           <div className="videos-panel">
-            <div className="videos">
+            {/* <div className="videos"> */}
               <div className="videos__wrapper">
+                {(layout === 'equal' || layout === 'double') && source}
                 {videos}
               </div>
-            </div>
+            {/* </div> */}
           </div>
           <VirtualChat
             t={t}
@@ -1372,17 +1501,17 @@ class OldClient extends Component {
             janus={janus}
             room={room}
             user={user}
-            onNewMsg={this.onNewMsg} />
+            onNewMsg={this.onChatMessage} />
         </div>
       </div>
     </div>);
 
     return (
-      <Fragment>
-        {user && !isMobile ? content : !isMobile ? login : ""}
-      </Fragment>
+        <Fragment>
+          {user && !isMobile ? content : !isMobile ? login : ""}
+        </Fragment>
     );
   }
 }
 
-export default withTranslation()(OldClient);
+export default withTranslation()(VirtualClient);

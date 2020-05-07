@@ -1,274 +1,265 @@
-// Quantity queries
-// 1. Last Simple Selector
-@function _last-simple-selector($selector) {
-    $parsed: selector-parse($selector);
-
-    @if length($parsed) > 1 {
-      @error '`#{$selector}` contains #{length($parsed)} selectors and the `_last-simple-selector()`function accepts only 1.';
-    }
-    $last-simple-selector: nth(nth($parsed, 1), -1);
-
-    @return $last-simple-selector;
+@function list-remove($list, $index) {
+	$newList: ();
+	@for $i from 1 through length($list) {
+		@if $i != $index {
+			$newList: append($newList, nth($list,$i), 'space');
+		}
+	}
+	@return $newList;
+}
+@function list-sort($list) {
+	$sortedlist: ();
+	@while length($list) > 0 {
+		$value: nth($list,1);
+		@each $item in $list {
+			@if $item > $value {
+				$value: $item;
+			}
+		}
+		$sortedlist: append($sortedlist, $value, 'space');
+		$list: list-remove($list, index($list, $value));
+	}
+	@return $sortedlist;
 }
 
-// 2. Build Quantity Selector
-@function _build-quantity-selector($selector-append, $last-selector) {
-    $quantity-selector: ();
-
-    @each $s in & {
-        $last-simple-selector: '~' + if($last-selector, $last-selector, _last-simple-selector($s));
-        $sel: selector-append($s, $selector-append);
-        $sel2: selector-nest($sel, $last-simple-selector);
-        $quantity-selector: append($quantity-selector, $sel, 'comma');
-        $quantity-selector: append($quantity-selector, $sel2 , 'comma');
-    }
-
-    @return $quantity-selector;
-}
-
-// 6. Exactly
-@mixin exactly($count, $selector: null) {
-    $selector-append: ':nth-last-child(#{$count}):first-child';
-
-    @if type-of($count) != 'number' or not unitless($count) or $count < 1 {
-        @error '`#{$count}` is not a valid number for `exactly`';
-    }
-
-    @if $selector != null and (type-of($selector) != 'string' or length($selector) > 1) {
-        @error '`#{$selector}` is not a valid selector for `exactly`';
-    }
-
-    $exactly-selector: _build-quantity-selector($selector-append, $selector);
-
-
-    @at-root #{$exactly-selector} {
-        @content;
-    }
+@function map-sort($map) {
+	$keys: list-sort(map-keys($map));
+	$sortedMap: ();
+	@each $key in $keys {
+		$sortedMap: map-merge($sortedMap, ($key: map-get($map, $key)));
+	}
+	@return $sortedMap;
 }
 
 //////////////////////////////////////////////
 
 
-*, *:before, *:after{
-    box-sizing: border-box;
+*,
+*:before,
+*:after {
+	box-sizing: border-box;
 }
 
 .title {
-    font-family: "Liberation Serif";
-    font-size: 45px;
-    text-align: right;
-    margin-bottom: .1em;
-    margin-top: .2em;
-    span {
-        display: inline-block;
-        background: blue;
-        line-height: 1.1em;
-        color: white;
-        padding: 0 .7em;
-    }
+	font-family: "Liberation Serif";
+	font-size: 45px;
+	text-align: right;
+	margin-bottom: .1em;
+	margin-top: .2em;
+
+	span {
+		display: inline-block;
+		background: blue;
+		line-height: 1.1em;
+		color: white;
+		padding: 0 .7em;
+	}
 }
-.videos{
-    flex: 1 1 auto;
-    position:relative;
-    // margin: -1px;
-&__wrapper {
-    display: flex;
-    
-    position:absolute;
-    justify-content: center;
-    align-items: center;
-    align-content: center;
-    // display: grid;
-    // grid-template-columns: repeat( 120,  1fr );
-    // grid-template-rows: repeat(120, percentage(1/120));
-    overflow: hidden;
-    height: 100%;
-    width: 100%;
- }
-}
+
+	// flex: 1 1 auto;
+	// position: relative;
+
+	// margin: -1px;
+.videos__wrapper {
+		// display: flex;
+
+		position: absolute;
+		display: grid;
+		grid-auto-flow: column;
+		// justify-content: center;
+		// align-items: center;
+		// align-content: center;
+		// display: grid;
+		// grid-template-columns: repeat( 120,  1fr );
+		// grid-template-rows: repeat(120, percentage(1/120));
+		grid-gap: 2px;
+		overflow: hidden;
+		top: 2px;
+		right: 2px;
+		left: 2px;
+		bottom: 2px;
+
+		// width: 100%;
+	}
+
 
 .video {
-    flex-grow: 0;
-    flex-shrink: 1;
-    height: percentage(1/1);
-    position: relative;
-    // margin: 1px;
-    background: rgba(34, 34, 34, 1);
-    border: 2px solid #000;
-    overflow:hidden;
-    @for $i from 1 to 16 {
-      @include exactly($i){
-        flex-basis: percentage(1/$i)
-      }
-    }
-    &__overlay {
-        position: absolute;
-        width: 100%;
-        height: 100%;
-        z-index: 1;
-        &.talk{
-            border:4px solid rgba(yellow,.6);
-        }
-    }
-    .nowebcam {
-        top:0;
-        position: absolute;
-        fill: #fff;
-        font-family: Icons;
-        font-size: .8rem;
-        object-fit: contain;
-        width: 100%;
-        height: 100%;
-    }
-    .question {
-        &:before {
-            display: block;
-            content: "";
-            padding-top: 100%;
-        }
-        position: absolute;
-        top:50%;
-        left:50%;
-        transform: translate(-50% , -50%);
-        max-width: 30%;
-        width: 400px;
-        min-width: 60px;
-        background:rgba(34, 34, 34, .9);
-        border-radius: 10%;
-        border: 6px solid white;
-        // animation: blinker 1s linear infinite;
-        font-family: Icons;
-        svg {
-            position: absolute;
-            top:0;
-            left:0;
-            font-size: 2.5rem;
-            fill:white;
-        }
+	grid-row: span 1;
+	grid-column: span 1;
+	// height: percentage(1/1);
+	position: relative;
+	// margin: 1px;
+	background: rgba(34, 34, 34, 1);
+	// border: 2px solid #000;
+	// overflow: hidden;
 
-    }
-    
-    &__title {
-        position: absolute;
-        bottom: 0;
-        left: 0;
-        padding: .7rem 1rem;
-        background:rgba(34, 34, 34, .9);
-        font-size: 1.4rem;
-        color:white;
-        // border-radius: 4px;
-        line-height: 1;
-        text-shadow: 0 2px 1px rgba(0,0,0,.7);
-        .icon{
-            margin-right:1rem;
-            position: relative;
-            top: -.09rem;
-        }
-        // color:yellow;
-    }
-    video {
-        object-fit: contain;
-        width: 100%;
-        height: 100%;
-    }
+ 
+	&__overlay {
+		position: absolute;
+		width: 100%;
+		height: 100%;
+		z-index: 1;
+
+		&.talk-frame {
+			border: 4px solid rgba(yellow, .6);
+		}
+	}
+
+	.nowebcam {
+		top: 0;
+		position: absolute;
+		fill: #fff;
+		font-family: Icons;
+		font-size: .8rem;
+		object-fit: contain;
+		width: 100%;
+		height: 100%;
+	}
+
+	.question {
+		&:before {
+			display: block;
+			content: "";
+			padding-top: 100%;
+		}
+
+		position: absolute;
+		top:50%;
+		left:50%;
+		transform: translate(-50%, -50%);
+		max-width: 30%;
+		width: 400px;
+		min-width: 60px;
+		background:rgba(34, 34, 34, .9);
+		border-radius: 10%;
+		border: 6px solid white;
+		// animation: blinker 1s linear infinite;
+		font-family: Icons;
+
+		svg {
+			position: absolute;
+			top: 0;
+			left: 0;
+			font-size: 2.5rem;
+			fill: white;
+		}
+
+	}
+
+	&__title {
+		position: absolute;
+		bottom: 0;
+		left: 0;
+		padding: .7rem 1rem;
+		background: rgba(34, 34, 34, .9);
+		font-size: 1rem;
+		color: white;
+		// border-radius: 4px;
+		line-height: 1;
+		text-shadow: 0 2px 1px rgba(0, 0, 0, .7);
+
+		.icon {
+			margin-right: .7rem;
+			position: relative;
+			top: -.09rem;
+		}
+
+		// color:yellow;
+	}
+
+	video {
+		object-fit: contain;
+		width: 100%;
+		height: 100%;
+	}
 }
+
 $vw : 16;
 $vh: 9;
 
 
 @keyframes blinker {
-    50% {
-      opacity: 0;
-    }
+	50% {
+		opacity: 0;
+	}
 }
-// 2 elements
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*2}/#{$vh*2}){:self{flex-wrap: wrap;.video{@include exactly(2){flex-basis: percentage(1/1); height: percentage(1/2);}}}}
 
-// 3 elements
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*3}/#{$vh*2}){:self{flex-wrap: wrap;.video{@include exactly(3){flex-basis: percentage(1/2); height: percentage(1/2);}}}}
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*2}/#{$vh*3}){:self{flex-wrap: wrap;.video{@include exactly(3){flex-basis: percentage(1/1); height: percentage(1/3);}}}}
+$all: ();
+@for $i from 2 through 17 {
+	@for $x from ($i - 1)  through 1 {
+		// $keyname: #{$vw*($x+1)}/#{$vh*ceil($i/$x)};
+		$keyname: ($vw*($x+1))/($vh*ceil($i/$x));
+		@if map-has-key($all, $keyname) {
+			$list2update: map-get($all, $keyname);
+			$list2update: append($list2update, ($i,$x));
+			$key2update: ($keyname: $list2update);
+			$all: map-merge($all , $key2update);
+		}@else{
+			$key2add: ($keyname: (($i,$x),()));
+			$all: map-merge($all, $key2add);
+		}
+	}
+}
 
-// 4 elements
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*4}/#{$vh*2}){:self{flex-wrap: wrap;.video{@include exactly(4){flex-basis: percentage(1/2); height: percentage(1/2);}}}}
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*2}/#{$vh*4}){:self{flex-wrap: wrap;.video{@include exactly(4){flex-basis: percentage(1/1); height: percentage(1/4);}}}}
 
-// 5 elements
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*5}/#{$vh*2}){:self{flex-wrap: wrap;.video{@include exactly(5){flex-basis: percentage(1/3); height: percentage(1/2);}}}}
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*3}/#{$vh*3}){:self{flex-wrap: wrap;.video{@include exactly(5){flex-basis: percentage(1/2); height: percentage(1/3);}}}}
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*2}/#{$vh*5}){:self{flex-wrap: wrap;.video{@include exactly(5){flex-basis: percentage(1/1); height: percentage(1/5);}}}}
 
-// 6 elements
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*6}/#{$vh*2}){:self{flex-wrap: wrap;.video{@include exactly(6){flex-basis: percentage(1/3); height: percentage(1/2);}}}}
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*3}/#{$vh*3}){:self{flex-wrap: wrap;.video{@include exactly(6){flex-basis: percentage(1/2); height: percentage(1/3);}}}}
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*2}/#{$vh*6}){:self{flex-wrap: wrap;.video{@include exactly(6){flex-basis: percentage(1/1); height: percentage(1/6);}}}}
 
-// 7 elements
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*7}/#{$vh*2}){:self{flex-wrap: wrap;.video{@include exactly(7){flex-basis: percentage(1/4); height: percentage(1/2);}}}}
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*4}/#{$vh*3}){:self{flex-wrap: wrap;.video{@include exactly(7){flex-basis: percentage(1/3); height: percentage(1/3);}}}}
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*3}/#{$vh*4}){:self{flex-wrap: wrap;.video{@include exactly(7){flex-basis: percentage(1/2); height: percentage(1/4);}}}}
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*2}/#{$vh*7}){:self{flex-wrap: wrap;.video{@include exactly(7){flex-basis: percentage(1/1); height: percentage(1/7);}}}}
+$all: map-sort($all);
 
-// 8 elements
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*8}/#{$vh*2}){:self{flex-wrap: wrap;.video{@include exactly(8){flex-basis: percentage(1/4); height: percentage(1/2);}}}}
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*4}/#{$vh*3}){:self{flex-wrap: wrap;.video{@include exactly(8){flex-basis: percentage(1/3); height: percentage(1/3);}}}}
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*3}/#{$vh*4}){:self{flex-wrap: wrap;.video{@include exactly(8){flex-basis: percentage(1/2); height: percentage(1/4);}}}}
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*2}/#{$vh*8}){:self{flex-wrap: wrap;.video{@include exactly(8){flex-basis: percentage(1/1); height: percentage(1/8);}}}}
+body:before {
+	// content: "#{$all}";
 
-// 9 elements
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*9}/#{$vh*2}){:self{flex-wrap: wrap;.video{@include exactly(9){flex-basis: percentage(1/5); height: percentage(1/2);}}}}
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*5}/#{$vh*3}){:self{flex-wrap: wrap;.video{@include exactly(9){flex-basis: percentage(1/3); height: percentage(1/3);}}}}
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*3}/#{$vh*5}){:self{flex-wrap: wrap;.video{@include exactly(9){flex-basis: percentage(1/2); height: percentage(1/5);}}}}
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*2}/#{$vh*9}){:self{flex-wrap: wrap;.video{@include exactly(9){flex-basis: percentage(1/1); height: percentage(1/9);}}}}
+}
+@each $ratio, $values in $all {
+	$i: nth(nth($values, 1),1);
+	$x: nth(nth($values, 1),2);
+	$querymax: #{$vw*($x+1)}/#{$vh*ceil($i/$x)};
+	// $querymin: #{$vw*($x - 1)}/#{$vh*ceil($i/$x)};
+	@element .videos__wrapper and (max-aspect-ratio: #{$querymax}){
+		@each $pair in $values {
+			@if length($pair) > 0 {
+				$i: nth($pair, 1);
+				$x: nth($pair, 2);
+				.no-of-videos-#{$i} {
+					:self {
+						grid-auto-flow: row;
+						grid-template-columns: repeat(#{$x}, minmax(0, 1fr));
+						grid-template-rows: repeat(#{ceil($i/$x)}, minmax(0, 1fr));
+					}
+					&.layout--double {
+						:self{
+							&:before {
+								// content: "#{ceil($i/$x)}";
+							}
+						}
+						$h: ceil($i/$x);
+						@if $x != 1{
 
-// 10 elements
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*10}/#{$vh*2}){:self{flex-wrap: wrap;.video{@include exactly(10){flex-basis: percentage(1/5); height: percentage(1/2);}}}}
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*5}/#{$vh*3}){:self{flex-wrap: wrap;.video{@include exactly(10){flex-basis: percentage(1/4); height: percentage(1/3);}}}}
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*3}/#{$vh*5}){:self{flex-wrap: wrap;.video{@include exactly(10){flex-basis: percentage(1/2); height: percentage(1/5);}}}}
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*2}/#{$vh*10}){:self{flex-wrap: wrap;.video{@include exactly(10){flex-basis: percentage(1/1); height: percentage(1/10);}}}}
+							$i: $i+3;
+							.video:first-child {
 
-// 11 elements
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*11}/#{$vh*2}){:self{flex-wrap: wrap;.video{@include exactly(11){flex-basis: percentage(1/6); height: percentage(1/2);}}}}
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*6}/#{$vh*3}){:self{flex-wrap: wrap;.video{@include exactly(11){flex-basis: percentage(1/4); height: percentage(1/3);}}}}
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*4}/#{$vh*4}){:self{flex-wrap: wrap;.video{@include exactly(11){flex-basis: percentage(1/3); height: percentage(1/4);}}}}
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*3}/#{$vh*6}){:self{flex-wrap: wrap;.video{@include exactly(11){flex-basis: percentage(1/2); height: percentage(1/6);}}}}
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*2}/#{$vh*11}){:self{flex-wrap: wrap;.video{@include exactly(11){flex-basis: percentage(1/1); height: percentage(1/11);}}}}
+								grid-column: span 2;
+								grid-row: span 2;
+							}
+						}@else{
 
-// 12 elements
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*12}/#{$vh*2}){:self{flex-wrap: wrap;.video{@include exactly(12){flex-basis: percentage(1/6);height: percentage(1/2);}}}}
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*6}/#{$vh*3}){:self{flex-wrap: wrap;.video{@include exactly(12){flex-basis: percentage(1/4);height: percentage(1/3);}}}}
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*4}/#{$vh*4}){:self{flex-wrap: wrap;.video{@include exactly(12){flex-basis: percentage(1/3);height: percentage(1/4);}}}}
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*3}/#{$vh*6}){:self{flex-wrap: wrap;.video{@include exactly(12){flex-basis: percentage(1/2);height: percentage(1/6);}}}}
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*2}/#{$vh*12}){:self{flex-wrap: wrap;.video{@include exactly(12){flex-basis: percentage(1/1);height: percentage(1/12);}}}}
+							.video:first-child {
 
-// 13 elements
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*13}/#{$vh*2}){:self{flex-wrap: wrap;.video{@include exactly(13){flex-basis: percentage(1/7);height: percentage(1/2);}}}}
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*7}/#{$vh*3}){:self{flex-wrap: wrap;.video{@include exactly(13){flex-basis: percentage(1/5);height: percentage(1/3);}}}}
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*5}/#{$vh*4}){:self{flex-wrap: wrap;.video{@include exactly(13){flex-basis: percentage(1/4);height: percentage(1/4);}}}}
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*4}/#{$vh*5}){:self{flex-wrap: wrap;.video{@include exactly(13){flex-basis: percentage(1/3);height: percentage(1/5);}}}}
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*3}/#{$vh*7}){:self{flex-wrap: wrap;.video{@include exactly(13){flex-basis: percentage(1/2);height: percentage(1/7);}}}}
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*2}/#{$vh*13}){:self{flex-wrap: wrap;.video{@include exactly(13){flex-basis: percentage(1/1);height: percentage(1/13);}}}}
+								grid-column: span 1!important;
+								grid-row: span 1!important;
+							}						
+						}
+						:self {
+							grid-template-columns: repeat(#{$x}, minmax(0, 1fr));
+							grid-template-rows: repeat(#{ceil($i/$x)}, minmax(0, 1fr));
+						}
+					}
+				}
+			}
+		}
+	}
+}
+.layout--double {
+// // .broadcast--on.broadcast--inline.layout--double {
 
-// 14 elements
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*14}/#{$vh*2}){:self{flex-wrap: wrap;.video{@include exactly(14){flex-basis: percentage(1/7);height: percentage(1/2);}}}}
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*7}/#{$vh*3}){:self{flex-wrap: wrap;.video{@include exactly(14){flex-basis: percentage(1/5);height: percentage(1/3);}}}}
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*5}/#{$vh*4}){:self{flex-wrap: wrap;.video{@include exactly(14){flex-basis: percentage(1/4);height: percentage(1/4);}}}}
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*4}/#{$vh*5}){:self{flex-wrap: wrap;.video{@include exactly(14){flex-basis: percentage(1/3);height: percentage(1/5);}}}}
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*3}/#{$vh*7}){:self{flex-wrap: wrap;.video{@include exactly(14){flex-basis: percentage(1/2);height: percentage(1/7);}}}}
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*2}/#{$vh*14}){:self{flex-wrap: wrap;.video{@include exactly(14){flex-basis: percentage(1/1);height: percentage(1/14);}}}}
-
-// 15 elements
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*15}/#{$vh*2}){:self{flex-wrap: wrap;.video{@include exactly(15){flex-basis: percentage(1/8);height: percentage(1/2);}}}}
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*8}/#{$vh*3}){:self{flex-wrap: wrap;.video{@include exactly(15){flex-basis: percentage(1/5);height: percentage(1/3);}}}}
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*5}/#{$vh*4}){:self{flex-wrap: wrap;.video{@include exactly(15){flex-basis: percentage(1/4);height: percentage(1/4);}}}}
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*4}/#{$vh*5}){:self{flex-wrap: wrap;.video{@include exactly(15){flex-basis: percentage(1/3);height: percentage(1/5);}}}}
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*3}/#{$vh*8}){:self{flex-wrap: wrap;.video{@include exactly(15){flex-basis: percentage(1/2);height: percentage(1/8);}}}}
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*2}/#{$vh*15}){:self{flex-wrap: wrap;.video{@include exactly(15){flex-basis: percentage(1/1);height: percentage(1/15);}}}}
-    
-// 16 elements
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*16}/#{$vh*2}){:self{flex-wrap: wrap;.video{@include exactly(16){flex-basis: percentage(1/8);height: percentage(1/2);}}}}
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*8}/#{$vh*3}){:self{flex-wrap: wrap;.video{@include exactly(16){flex-basis: percentage(1/6);height: percentage(1/3);}}}}
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*6}/#{$vh*4}){:self{flex-wrap: wrap;.video{@include exactly(16){flex-basis: percentage(1/4);height: percentage(1/4);}}}}
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*4}/#{$vh*6}){:self{flex-wrap: wrap;.video{@include exactly(16){flex-basis: percentage(1/3);height: percentage(1/6);}}}}
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*3}/#{$vh*8}){:self{flex-wrap: wrap;.video{@include exactly(16){flex-basis: percentage(1/2);height: percentage(1/8);}}}}
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*2}/#{$vh*16}){:self{flex-wrap: wrap;.video{@include exactly(16){flex-basis: percentage(1/1);height: percentage(1/16);}}}}
-
+}
