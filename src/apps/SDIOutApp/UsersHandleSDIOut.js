@@ -9,41 +9,32 @@ class UsersHandleSDIOut extends Component {
 
     state = {
         feeds: [],
-        feedStreams: {},
         mids: [],
         name: "",
         room: "",
-        users: {},
         myid: null,
-        mystream: null
+        mystream: null,
+        num_videos: 0
     };
 
     componentDidUpdate(prevProps) {
         let {g} = this.props;
-        let {room,users} = this.state;
+        let {room} = this.state;
         if(g && g.room !== room) {
-            // for(let i=0; i<g.users.length; i++) {
-            //     let user = g.users[i];
-            //     users[user.id] = user;
-            //     //console.log(user)
-            // }
-            if(room) {
-                this.exitVideoRoom(room, () =>{
+            this.setState({room: g.room}, () => {
+                if(room) {
+                    this.exitVideoRoom(room, () =>{
+                        this.initVideoRoom(g.room, g.janus);
+                    });
+                } else {
                     this.initVideoRoom(g.room, g.janus);
-                });
-            } else {
-                this.initVideoRoom(g.room, g.janus);
-            }
+                }
+            })
         }
-        // if(g && JSON.stringify(g) !== JSON.stringify(prevProps.g)) {
-        //     let cam_on = g.users.filter(u => u.camera);
-        //     //this.setState({num_videos: cam_on.length});
-        //     for(let i=0; i<g.users.length; i++) {
-        //         let user = g.users[i];
-        //         users[user.id] = user;
-        //         //console.log(user)
-        //     }
-        // }
+        if(g && JSON.stringify(g) !== JSON.stringify(prevProps.g)) {
+            const num_videos = g && g.users.filter(u =>  u.camera).length
+            this.setState({num_videos})
+        }
     }
 
     componentWillUnmount() {
@@ -56,7 +47,7 @@ class UsersHandleSDIOut extends Component {
             opaqueId: "preview_shidur",
             success: (videoroom) => {
                 Janus.log(videoroom);
-                this.setState({room: roomid, videoroom, remoteFeed: null});
+                this.setState({videoroom, remoteFeed: null});
                 Janus.log("Plugin attached! (" + videoroom.getPlugin() + ", id=" + videoroom.getId() + ")");
                 Janus.log("  -- This is a publisher/manager");
                 let {user} = this.props;
@@ -117,7 +108,6 @@ class UsersHandleSDIOut extends Component {
                     //FIXME: Tmp fix for black screen in room caoused by feed with video_codec = none
                     let feeds         = list.sort((a, b) => JSON.parse(a.display).timestamp - JSON.parse(b.display).timestamp)
                         .filter(feeder => JSON.parse(feeder.display).role === 'user' && feeder.video_codec !== 'none');
-                    let {feedStreams} = this.state;
                     Janus.log(":: Got Pulbishers list: ", feeds);
                     Janus.debug("Got a list of available publishers/feeds:");
                     let subscription = [];
@@ -137,10 +127,9 @@ class UsersHandleSDIOut extends Component {
                                 subst.mid = stream.mid;
                             }
                         }
-                        feedStreams[id] = {id, display, streams};
                         subscription.push(subst);
                     }
-                    this.setState({feeds, feedStreams});
+                    this.setState({feeds});
                     if (subscription.length > 0) {
                         this.subscribeTo(subscription, inst);
                     }
@@ -168,7 +157,7 @@ class UsersHandleSDIOut extends Component {
             } else if(event === "destroyed") {
                 Janus.warn("The room has been destroyed!");
             } else if(event === "event") {
-                let {feedStreams,user,myid} = this.state;
+                let {user,myid} = this.state;
                 if(msg["streams"] !== undefined && msg["streams"] !== null) {
                     let streams = msg["streams"];
                     for (let i in streams) {
@@ -176,11 +165,9 @@ class UsersHandleSDIOut extends Component {
                         stream["id"] = myid;
                         stream["display"] = user;
                     }
-                    feedStreams[myid] = {id: myid, display: user, streams: streams};
-                    this.setState({feedStreams})
                 } else if(msg["publishers"] !== undefined && msg["publishers"] !== null) {
                     let feed = msg["publishers"];
-                    let {feeds,feedStreams} = this.state;
+                    let {feeds} = this.state;
                     Janus.debug("Got a list of available publishers/feeds:");
                     let subscription = [];
                     for(let f in feed) {
@@ -199,11 +186,10 @@ class UsersHandleSDIOut extends Component {
                                 subst.mid = stream.mid;
                             }
                         }
-                        feedStreams[id] = {id, display, streams};
                         subscription.push(subst);
                     }
                     feeds.push(feed[0]);
-                    this.setState({feeds,feedStreams});
+                    this.setState({feeds});
                     if(subscription.length > 0) {
                         this.subscribeTo(subscription, inst);
                     }
@@ -304,13 +290,11 @@ class UsersHandleSDIOut extends Component {
                     }
                 },
                 onremotetrack: (track, mid, on) => {
-                    let {mids,feedStreams} = this.state;
+                    let {mids} = this.state;
                     let feed = mids[mid].feed_id;
                     if(track.kind === "video" && on) {
                         let stream = new MediaStream();
                         stream.addTrack(track.clone());
-                        feedStreams[feed].stream = stream;
-                        this.setState({feedStreams});
                         let remotevideo = this.refs["pv" + feed];
                         if(remotevideo)
                             Janus.attachMediaStream(remotevideo, stream);
@@ -346,32 +330,29 @@ class UsersHandleSDIOut extends Component {
     };
 
     unsubscribeFrom = (id) => {
-        let {feeds,users,feedStreams} = this.state;
+        let {feeds} = this.state;
         let {remoteFeed} = this.state;
         for (let i=0; i<feeds.length; i++) {
             if (feeds[i].id === id) {
                 Janus.log("Feed " + feeds[i] + " (" + id + ") has left the room, detaching");
-                delete users[feeds[i].display.id];
-                delete feedStreams[id];
                 feeds.splice(i, 1);
                 let unsubscribe = {request: "unsubscribe", streams: [{ feed: id }]};
                 if(remoteFeed !== null)
                     remoteFeed.send({ message: unsubscribe });
-                this.setState({feeds,users,feedStreams});
+                this.setState({feeds});
                 break
             }
         }
     };
 
   render() {
-      const {feeds,users} = this.state;
+      const {feeds,num_videos} = this.state;
       const {g} = this.props;
       const width = "400";
       const height = "300";
       const autoPlay = true;
       const controls = false;
       const muted = true;
-      const num_videos = g && g.users.filter(u =>  u.camera).length
       //const q = (<b style={{color: 'red', fontSize: '20px', fontFamily: 'Verdana', fontWeight: 'bold'}}>?</b>);
 
       let program_feeds = feeds.map((feed) => {
@@ -395,7 +376,7 @@ class UsersHandleSDIOut extends Component {
                       {/*    {st ? <Icon name="checkmark" size="small" color="green"/> : ''}*/}
                       {/*</div>:''}*/}
                   </div>
-                  <video className={talk ? "talk" : ""}
+                  <video
                          key={id}
                          ref={"pv" + id}
                          id={"pv" + id}

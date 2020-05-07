@@ -14,7 +14,7 @@ import UsersQuadSDIOut from "./UsersQuadSDIOut";
 class SDIOutApp extends Component {
 
     state = {
-        ce: null,
+        qg: null,
         group: null,
         room: null,
         GxyJanus: {
@@ -44,7 +44,7 @@ class SDIOutApp extends Component {
     };
 
     componentDidMount() {
-        let {user,users} = this.state;
+        let {user} = this.state;
         setInterval(() => {
             getState(`galaxy/qids`, (qids) => {
                 this.setState({qids});
@@ -52,11 +52,6 @@ class SDIOutApp extends Component {
         }, 1000);
         let gxy = ["gxy1","gxy2","gxy3"]
         this.initGalaxy(user,gxy);
-        // getState('galaxy/users', (users) => {
-        //     this.setState({users});
-        //     let gxy = ["gxy1","gxy2","gxy3"]
-        //     this.initGalaxy(user,gxy);
-        // });
     };
 
     componentWillUnmount() {
@@ -75,20 +70,6 @@ class SDIOutApp extends Component {
                 if(GxyJanus[gxy[i]].janus)
                     GxyJanus[gxy[i]].janus.destroy();
                 GxyJanus[gxy[i]].janus = janus;
-                // initGxyProtocol(janus, user, protocol => {
-                //     GxyJanus[gxy[i]].protocol = protocol;
-                //     this.setState({...GxyJanus[gxy[i]]});
-                // }, ondata => {
-                //     Janus.log(i + " :: protocol public message: ", ondata);
-                //     if(ondata.type === "error" && ondata.error_code === 420) {
-                //         console.error(ondata.error + " - Reload after 10 seconds");
-                //         this.state.GxyJanus[gxy[i]].protocol.hangup();
-                //         setTimeout(() => {
-                //             this.initGalaxy(user,[gxy[i]]);
-                //         }, 10000);
-                //     }
-                //     this.onProtocolData(ondata, gxy[i]);
-                // }, false);
             },er => {
                 console.error(gxy[i] + ": " + er);
                 setTimeout(() => {
@@ -120,7 +101,7 @@ class SDIOutApp extends Component {
 
         if(data.type === "sdi-fullscr_group" && status) {
             if(qst) {
-                this.setState({qcol: col})
+                this.setState({qg: this.state.qids["q"+col].vquad[i]})
                 if(room) {
                     this.users.exitVideoRoom(this.state.room, () => {
                         this.users.initVideoRoom(group.room, group.janus);
@@ -149,36 +130,12 @@ class SDIOutApp extends Component {
         }
     };
 
-    // onProtocolData = (data, inst) => {
-    //     let {users} = this.state;
-    //
-    //     // Set status in users list
-    //     if(data.type && data.type.match(/^(camera|question|sound_test)$/)) {
-    //         if(users[data.user.id]) {
-    //             users[data.user.id][data.type] = data.status;
-    //             this.setState({users});
-    //         } else {
-    //             users[data.user.id] = {[data.type]: data.status};
-    //             this.setState({users});
-    //         }
-    //     }
-    //
-    //     if(data.type && data.type === "camera") {
-    //         this.setState({ce: data.user});
-    //     }
-    //
-    //     if(data.type && data.type === "leave" && users[data.id]) {
-    //         delete users[data.id];
-    //         this.setState({users});
-    //     }
-    // };
-
     setProps = (props) => {
         this.setState({...props})
     };
 
     render() {
-        let {group,qids,qcol} = this.state;
+        let {group,qids,qg} = this.state;
         // let qst = g && g.questions;
         let name = group && group.description;
 
@@ -208,7 +165,7 @@ class SDIOutApp extends Component {
                                 <div className="video_full">
                                     {/*{group && group.questions ? <div className="qst_fullscreentitle">?</div> : ""}*/}
                                     <div className="fullscrvideo_title" >{name}</div>
-                                    <UsersHandleSDIOut {...qids["q"+qcol]} ref={users => {this.users = users;}} {...this.state} setProps={this.setProps} />
+                                    <UsersHandleSDIOut g={qg} ref={users => {this.users = users;}} {...this.state} setProps={this.setProps} />
                                 </div>
                             </div>
                         </Segment>
