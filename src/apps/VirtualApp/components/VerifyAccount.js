@@ -3,6 +3,7 @@ import {
   Button,
   Checkbox,
   Header,
+  Icon,
   Input,
   Modal,
   Segment,
@@ -28,6 +29,7 @@ const VerifyAccount = (props) => {
   const [closedModal, setClosedModal] = useState(false);
   const [pendingState, setPendingState] = useState({});
   const [error, setError] = useState('');
+  const [formClosed, setFormClosed] = useState(false);
   const direction = i18n.language === 'he' ? 'rtl' : '';
   const textAlign = i18n.language === 'he' ? 'right' : '';
 
@@ -99,19 +101,20 @@ const VerifyAccount = (props) => {
     }
   };
 
-  // console.log('RENDER', user.role, 'closedModal', closedModal, 'requestSent', requestSent, 'user.request', user.request, 'user.pending', user.pending, 'USER', user);
+  console.log('RENDER', user.role, 'closedModal', closedModal, 'requestSent', requestSent, 'user.request', user.request, 'user.pending', user.pending, 'USER', user);
   const ret = [];
-  if (!requestSent && user && user.role === 'ghost' && (!user.request || user.request.length === 0)) {
-    ret.push(<Segment textAlign="center" style={{backgroundColor: 'lightyellow', direction}}>
-      <Header style={{textAlign: 'justify'}}>{t('galaxyApp.welcomeGuestForm')}</Header>
+  if (!formClosed && !requestSent && user && user.role === 'ghost' && (!user.request || user.request.length === 0)) {
+    ret.push(<Segment textAlign="center" style={{backgroundColor: loginPage ? '' : 'lightyellow', direction}} basic={loginPage}>
+      <Header style={{fontWeight: 'normal', textAlign: 'justify', marginBottom: loginPage ? '10px' : ''}}>{loginPage ? t('galaxyApp.verifyAccount') : t('galaxyApp.welcomeGuestForm')}</Header>
       <Input error={!!email && !valid}
              onChange={e => setEmail(e.target.value)}
              placeholder={t('galaxyApp.typeFriendEmail')} />
       <Button color="green" style={{margin: '2px'}} onClick={askFriendToVerify}>{t('virtualChat.send')}</Button>
+      {loginPage ? null : <Icon name="close" style={{cursor: 'pointer', position: 'absolute', top: '5px', right: '5px'}} onClick={() => setFormClosed(true)} />}
     </Segment>);
   }
 
-  if (requestSent && user && user.role === 'ghost' && !closedModal) {
+  if (!loginPage && requestSent && user && user.role === 'ghost' && !closedModal) {
     ret.push(<Modal open={true} style={{direction, textAlign}}>
       <Modal.Content>
         <Header>{t('galaxyApp.requestedVerificationPopup')}</Header>

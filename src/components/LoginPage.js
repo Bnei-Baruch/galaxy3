@@ -13,7 +13,7 @@ import {
 	Segment,
 	Select,
 } from 'semantic-ui-react';
-import bblogo from './bblogo.png';
+import bblogo from './logo.png';
 import {mapNameToLanguage, setLanguage} from "../i18n/i18n";
 import {withTranslation} from "react-i18next";
 import {reportToSentry} from "../shared/tools";
@@ -94,7 +94,11 @@ class LoginPage extends Component {
             <Container fluid >
                 <Menu secondary>
                     <Menu.Item>
-                        <Image src={bblogo} />
+                        <Image src={bblogo} style={{height: '9em', objectFit: 'contain', objectPosition: '18px 0'}} />
+                        <div>
+                          <div style={{fontSize: 'x-large', color: '#00c6d2', whiteSpace: 'nowrap'}}>{t('loginPage.logoOurConnection')}</div>
+                          <div style={{fontSize: 'xx-large', color: '#00457c'}}>{t('loginPage.logoNetwork')}</div>
+                        </div>
                     </Menu.Item>
 
                     <Menu.Menu position='right'>
@@ -116,7 +120,7 @@ class LoginPage extends Component {
                     <br />
                     <Message size='massive'>
                         <Message.Header>
-                            {this.props.user === null ? t('loginPage.galaxy') : "Welcome, "+this.props.user.username}
+                            {this.props.user === null ? t('loginPage.galaxy') : t('loginPage.welcomeUser').replace('[UserFirstName]', this.props.user.username)}
                             {this.props.user === null ? "" : profile}
                         </Message.Header>
                         <p>{t('loginPage.slogan')}</p>

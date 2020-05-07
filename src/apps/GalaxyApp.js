@@ -30,12 +30,13 @@ class GalaxyApp extends Component {
     };
 
     checkPermission = (user) => {
-      const gxy = user.roles.filter(role => /gxy_/.test(role));
-      const pending_approval = pendingApproval(user);
-      const gxy_user = gxy.length === 0;
-      if((!gxy_user && gxy.length > 1) || pending_approval) {
+      const approval = pendingApproval(user);
+      const options = this.options(user.roles, approval);
+      const requested = this.requested(user);
+      console.log('checkPermission', user.role, approval, options, this.requested(user), user);
+      if(options.length > 1 || (approval && !requested)) {
           this.setState({user, roles: user.roles});
-      } else if (!gxy_user && gxy.length === 1 && gxy[0] === "gxy_user" && !pending_approval) {
+      } else if (requested || options.length === 1) {
           window.location = '/user';
       } else {
           alert("Access denied.");
@@ -43,35 +44,42 @@ class GalaxyApp extends Component {
       }
     };
 
+    requested(user) {
+      return user && !!user.request && !!user.request.length;
+    }
+
+    options(roles, approval) {
+      const {t} = this.props;
+      return roles.map((role, i) => {
+        if(role === "gxy_user" || role === "pending_approval") {
+          return (<Button key={i} size='massive' color='blue' onClick={() => window.open("user","_self")}>
+            {approval ? t('galaxyApp.continueAsGuest') : 'Galaxy'}
+          </Button>);
+        }
+        if(role === "gxy_shidur") {
+          return (<Button key={i} size='massive' color='blue' onClick={() => window.open("shidur","_self")}>
+            Shidur
+          </Button>);
+        }
+        if(role === "gxy_sndman") {
+          return (<Button key={i} size='massive' color='blue' onClick={() => window.open("sndman","_self")}>
+            SoundMan
+          </Button>);
+        }
+        if(role.match(/^(gxy_admin|gxy_root|gxy_viewer)$/)) {
+          return (<Button key={i} size='massive' color='blue' onClick={() => window.open("admin","_self")}>
+            Admin
+          </Button>);
+        }
+        return false;
+      }).filter(element => element);
+    }
+
     render() {
-        const {i18n} = this.props;
+        const {i18n, t} = this.props;
         const {user, roles} = this.state;
 				const approval = pendingApproval(user);
-        const requested = user && user.request && !!user.request.length;
-
-        const options = roles.map((role, i) => {
-            if(role === "gxy_user" || role === "pending_approval") {
-							return (<Button key={i} size='massive' color='green' onClick={() => window.open("user","_self")}>
-								{approval ? 'Continue as Guest' : 'Galaxy'}
-							</Button>);
-						}
-            if(role === "gxy_shidur") {
-							return (<Button key={i} size='massive' color='green' onClick={() => window.open("shidur","_self")}>
-								Shidur
-							</Button>);
-						}
-            if(role === "gxy_sndman") {
-							return (<Button key={i} size='massive' color='green' onClick={() => window.open("sndman","_self")}>
-								SoundMan
-							</Button>);
-						}
-            if(role.match(/^(gxy_admin|gxy_root|gxy_viewer)$/)) {
-							return (<Button key={i} size='massive' color='green' onClick={() => window.open("admin","_self")}>
-								Admin
-							</Button>);
-						}
-            return false;
-        }).filter(element => element);
+        const requested = this.requested(user);
 
         const enter = (
 					<Grid columns={(!approval || requested) ? 1 : 2}>
@@ -81,7 +89,7 @@ class GalaxyApp extends Component {
 								<VerifyAccount user={user} loginPage={true} i18n={i18n}/>
 							</Grid.Column>}
 							<Grid.Column style={{display: 'flex', justifyContent: 'center', alignItems: 'center'}}>
-								{options}
+								{this.options(roles, approval)}
 							</Grid.Column>
 						</Grid.Row>
 					</Grid>
