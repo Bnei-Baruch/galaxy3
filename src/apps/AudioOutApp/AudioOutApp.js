@@ -1,31 +1,20 @@
-import React, { Component } from 'react';
-import { Janus } from "../../lib/janus";
+import React, {Component, Fragment} from 'react';
+import {Janus} from "../../lib/janus";
 import {Segment} from "semantic-ui-react";
-import {getState, initJanus} from "../../shared/tools";
 import './AudioOutApp.css';
 import './UsersAudioOut.css'
-import {initGxyProtocol} from "../../shared/protocol";
 import UsersHandleAudioOut from "./UsersHandleAudioOut";
+import api from "../../shared/Api";
+import {API_BACKEND_PASSWORD, API_BACKEND_USERNAME} from "../../shared/env";
+import GxyJanus from "../../shared/janus-utils";
 
 
 class AudioOutApp extends Component {
 
     state = {
         audio: false,
-        ce: null,
         group: null,
         room: null,
-        GxyJanus: {
-            gxy1: {janus: null, protocol: null},
-            gxy2: {janus: null, protocol: null},
-            gxy3: {janus: null, protocol: null},
-        },
-        service: null,
-        mids: [],
-        gxyhandle: null,
-        myid: null,
-        mypvtid: null,
-        mystream: null,
         user: {
             session: 0,
             handle: 0,
@@ -35,100 +24,108 @@ class AudioOutApp extends Component {
             name: "audioout"
         },
         users: {},
-        shidur: false,
+        gatewaysInitialized: false,
+        appInitError: null,
     };
 
     componentDidMount() {
-        let {user} = this.state;
-        getState('galaxy/users', (users) => {
-            this.setState({users});
-            let gxy = ["gxy1","gxy2","gxy3"]
-            this.initGalaxy(user,gxy);
-        });
+        this.initApp();
     };
 
     componentWillUnmount() {
-        this.state.GxyJanus.gxy1.janus.destroy();
-        this.state.GxyJanus.gxy2.janus.destroy();
-        this.state.GxyJanus.gxy3.janus.destroy();
+        Object.values(this.state.gateways).forEach(x => x.destroy());
     };
 
-    initGalaxy = (user,gxy) => {
-        for(let i=0; i<gxy.length; i++) {
-            let {GxyJanus} = this.state;
-            initJanus(janus => {
-                // Right now we going to use gxy3 for service protocol
-                if(gxy[i] === "gxy3")
-                    this.initService(janus, user);
-                if(GxyJanus[gxy[i]].janus)
-                    GxyJanus[gxy[i]].janus.destroy();
-                GxyJanus[gxy[i]].janus = janus;
-                initGxyProtocol(janus, user, protocol => {
-                    GxyJanus[gxy[i]].protocol = protocol;
-                    this.setState({...GxyJanus[gxy[i]]});
-                }, ondata => {
-                    Janus.log(i + " :: protocol public message: ", ondata);
-                    if(ondata.type === "error" && ondata.error_code === 420) {
-                        console.error(ondata.error + " - Reload after 10 seconds");
-                        this.state.GxyJanus[gxy[i]].protocol.hangup();
-                        setTimeout(() => {
-                            this.initGalaxy(user,[gxy[i]]);
-                        }, 10000);
-                    }
-                    this.onProtocolData(ondata, gxy[i]);
-                });
-            },er => {
-                console.error(gxy[i] + ": " + er);
+    initApp = () => {
+        api.setBasicAuth(API_BACKEND_USERNAME, API_BACKEND_PASSWORD);
+
+        api.fetchConfig()
+            .then(data => GxyJanus.setGlobalConfig(data))
+            .then(api.fetchUsers)
+            .then(data => this.setState({users: data}))
+            .then(this.initGateways)
+            .catch(err => {
+                console.error("[AudioOut] error initializing app", err);
+                this.setState({appInitError: err});
+            });
+    }
+
+    initGateways = () => {
+        const gateways = GxyJanus.makeGateways("rooms");
+        this.setState({gateways});
+
+        return Promise.all(Object.values(gateways).map(gateway => (this.initGateway(gateway))))
+            .then(() => {
+                console.log("[AudioOut] gateways initialization complete");
+                this.setState({gatewaysInitialized: true});
+            });
+    }
+
+    initGateway = (gateway) => {
+        console.log("[AudioOut] initializing gateway", gateway.name);
+
+        // we re-initialize the whole gateway on protocols error
+        gateway.destroy();
+
+        const {user} = this.state;
+        return gateway.init()
+            .then(() => {
+                return gateway.initGxyProtocol(user, data => this.onProtocolData(gateway, data))
+                    .then(() => {
+                        if (gateway.name === "gxy3") {
+                            return gateway.initServiceProtocol(user, data => this.onServiceData(gateway, data))
+                        }
+                    });
+            })
+            .catch(err => {
+                console.error("[AudioOut] error initializing gateway", gateway.name, err);
                 setTimeout(() => {
-                    this.initGalaxy(user,[gxy[i]]);
+                    this.initGateway(gateway);
                 }, 10000);
-            }, gxy[i]);
+            });
+    }
+
+    onServiceData = (gateway, data) => {
+        if (data.type === "error" && data.error_code === 420) {
+            console.error("[AudioOut] service error message (reloading in 10 seconds)", data.error);
+            setTimeout(() => {
+                this.initGateway(gateway);
+            }, 10000);
         }
-    };
 
-    initService = (janus, user) => {
-        initGxyProtocol(janus, user, service => {
-            this.setState({service});
-        }, ondata => {
-            Janus.log(" :: Service message: ", ondata);
-            if(ondata.type === "error" && ondata.error_code === 420) {
-                console.error(ondata.error + " - Reload after 10 seconds");
-                this.state.service.hangup();
-                setTimeout(() => {
-                    this.initService(janus,user);
-                }, 10000);
-            }
-            this.onServiceData(ondata);
-        }, true);
-    };
+        const {room, group, status, qst} = data;
 
-    onServiceData = (data) => {
-        Janus.log(" :: Got Shidur Action: ", data);
-        let {room, col, feed, group, i, status, qst} = data;
-
-        if(data.type === "sdi-fullscr_group" && status && qst) {
+        if (data.type === "sdi-fullscr_group" && status && qst) {
             this.setState({group, room});
             this.users.initVideoRoom(group.room, group.janus);
-        } else if(data.type === "sdi-fullscr_group" && !status && qst) {
-            if(this.state.group && this.state.group.room) {
-                this.users.exitVideoRoom(this.state.group.room, () =>{});
+        } else if (data.type === "sdi-fullscr_group" && !status && qst) {
+            if (this.state.group && this.state.group.room) {
+                this.users.exitVideoRoom(this.state.group.room, () => {
+                });
             }
-        } else if(data.type === "sdi-restart_sdiout") {
+        } else if (data.type === "sdi-restart_sdiout") {
             window.location.reload();
-        } else if(data.type === "audio-out") {
+        } else if (data.type === "audio-out") {
             this.setState({audio: status});
-        } else if(data.type === "event") {
+        } else if (data.type === "event") {
             delete data.type;
             this.setState({...data});
         }
     };
 
-    onProtocolData = (data, inst) => {
+    onProtocolData = (gateway, data) => {
+        if (data.type === "error" && data.error_code === 420) {
+            console.error("[AudioOut] protocol error message (reloading in 10 seconds)", data.error);
+            setTimeout(() => {
+                this.initGateway(gateway);
+            }, 10000);
+        }
+
         let {users} = this.state;
 
         // Set status in users list
-        if(data.type && data.type.match(/^(question|sound_test)$/)) {
-            if(users[data.user.id]) {
+        if (data.type && data.type.match(/^(question|sound_test)$/)) {
+            if (users[data.user.id]) {
                 users[data.user.id][data.type] = data.status;
                 this.setState({users});
             } else {
@@ -137,7 +134,7 @@ class AudioOutApp extends Component {
             }
         }
 
-        if(data.type && data.type === "leave" && users[data.id]) {
+        if (data.type && data.type === "leave" && users[data.id]) {
             delete users[data.id];
             this.setState({users});
         }
@@ -148,15 +145,31 @@ class AudioOutApp extends Component {
     };
 
     render() {
-        let {group} = this.state;
-        let name = group && group.description;
+        const {group, appInitError, gatewaysInitialized} = this.state;
+
+        if (appInitError) {
+            return (
+                <Fragment>
+                    <h1>Error Initializing Application</h1>
+                    {`${appInitError}`}
+                </Fragment>
+            );
+        }
+
+        if (!gatewaysInitialized) {
+            return "Initializing WebRTC gateways...";
+        }
+
+        const name = group && group.description;
 
         return (
             <Segment className="preview_sdi">
                 <div className="usersvideo_grid">
                     <div className="video_full">
-                        <div className="title" >{name}</div>
-                        <UsersHandleAudioOut ref={users => {this.users = users;}} {...this.state} setProps={this.setProps} />
+                        <div className="title">{name}</div>
+                        <UsersHandleAudioOut ref={users => {
+                            this.users = users;
+                        }} {...this.state} setProps={this.setProps}/>
                     </div>
                 </div>
             </Segment>

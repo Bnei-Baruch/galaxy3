@@ -1,39 +1,81 @@
 import {Janus} from "../lib/janus";
-import {PROTOCOL_ROOM, SDIOUT_ID, SHIDUR_ID, SNDMAN_ID, STORAN_ID,} from "./consts";
-import {
-    ADMIN_SECRET,
-    JANUS_ADMIN_GXY1,
-    JANUS_ADMIN_GXY2,
-    JANUS_ADMIN_GXY3,
-    JANUS_SRV_GXY1,
-    JANUS_SRV_GXY2,
-    JANUS_SRV_GXY3,
-    STUN_SRV_GXY
-} from "./env";
+import {DATA_PORT, PROTOCOL_ROOM, SDIOUT_ID, SERVICE_ROOM, SHIDUR_ID, SNDMAN_ID, STORAN_ID,} from "./consts";
+import {ADMIN_SECRET, JANUS_ADMIN_GXY1, JANUS_ADMIN_GXY2, JANUS_ADMIN_GXY3, SECRET} from "./env";
 import {getDateString} from "./tools";
 
 class GxyJanus {
 
+    static globalConfig = {};
+
     constructor(name) {
         this.name = name;
+        this.reset();
+    }
+
+    reset = () => {
         this.gateway = null;
         this.chatroom = null;
         this.protocol = null;
+        this.serviceProtocol = null;
         this.videoroom = null;
         this.remoteFeed = null;
+        this.forward = null;
+        this.forwardPublisherID = null;
+    }
+
+    static setGlobalConfig = (config) => {
+        GxyJanus.globalConfig = config;
     }
 
     static instanceConfig = (name) => {
+        let gateway = null;
+        Object.entries(GxyJanus.globalConfig.gateways).forEach(([type, gateways]) => {
+            if (!gateway) {
+                gateway = gateways[name];
+            }
+        })
+
+        if (!gateway) {
+            throw new Error(`unknown gateway ${name}`);
+        }
+
+        // TODO: remove this ugly hack once api is fully authed
+        let admin;
         switch (name) {
             case "gxy1":
-                return {server: JANUS_SRV_GXY1, admin: JANUS_ADMIN_GXY1};
+                admin= JANUS_ADMIN_GXY1;
+                break;
             case "gxy2":
-                return {server: JANUS_SRV_GXY2, admin: JANUS_ADMIN_GXY2};
+                admin= JANUS_ADMIN_GXY2;
+                break;
             case "gxy3":
-                return {server: JANUS_SRV_GXY3, admin: JANUS_ADMIN_GXY3};
+                admin= JANUS_ADMIN_GXY3;
+                break;
             default:
-                throw new Error(`Unknown janus instance ${name}`);
+                break;
         }
+
+        return {
+            ...gateway,
+            iceServers: GxyJanus.globalConfig.ice_servers[gateway.type].map(url => ({urls: url})),
+            admin,
+        }
+
+    };
+
+    static gatewayNames = (type = "rooms") => (
+        Object.keys(GxyJanus.globalConfig.gateways[type])
+    );
+
+    static makeGateways = (type = "rooms") => (
+        GxyJanus.gatewayNames(type).reduce((obj, name) => {
+            obj[name] = new GxyJanus(name);
+            return obj;
+        }, {})
+    );
+
+    static protocolRoom = (name) => {
+        return name === "protocol" ? PROTOCOL_ROOM : SERVICE_ROOM;
     };
 
     init = () => {
@@ -41,22 +83,20 @@ class GxyJanus {
             Janus.init({
                 debug: process.env.NODE_ENV !== 'production' ? ["log", "warn", "error"] : ["warn", "error"],
                 callback: () => {
-                    const config = GxyJanus.instanceConfig(this.name);
+                    const config = this.getConfig();
                     this.gateway = new Janus({
-                        server: config.server,
-                        ...{
-                            iceServers: [{urls: STUN_SRV_GXY}],
-                            success: () => {
-                                this.log("Connected to JANUS");
-                                resolve();
-                            },
-                            error: (err) => {
-                                this.error("Janus.init error", err);
-                                reject(err);
-                            },
-                            destroyed: () => {
-                                this.error(":: Janus destroyed ::");
-                            }
+                        server: config.url,
+                        iceServers: config.iceServers,
+                        success: () => {
+                            this.log("Connected to JANUS");
+                            resolve();
+                        },
+                        error: (err) => {
+                            this.error("Janus.init error", err);
+                            reject(err);
+                        },
+                        destroyed: () => {
+                            this.error(":: Janus destroyed ::");
                         }
                     });
                 }
@@ -65,7 +105,22 @@ class GxyJanus {
     };
 
     destroy = () => {
-        this.gateway.destroy();
+        [
+            this.chatroom,
+            this.protocol,
+            this.serviceProtocol,
+            this.videoroom,
+            this.remoteFeed,
+            this.forward
+        ].forEach(handle => {
+            if (!!handle) {
+                handle.hangup();
+            }
+        })
+        if (!!this.gateway) {
+            this.gateway.destroy();
+        }
+        this.reset();
     };
 
     debug = (...args) => {
@@ -83,6 +138,8 @@ class GxyJanus {
     error = (...args) => {
         console.error(`[${this.name}]`, ...args)
     };
+
+    getConfig = () => (GxyJanus.instanceConfig(this.name));
 
     initChatRoom = (ondata) => {
         return new Promise((resolve, reject) => {
@@ -184,72 +241,87 @@ class GxyJanus {
     };
 
     initGxyProtocol = (user, ondata) => {
+        return this.initProtocol("protocol", user, ondata, (handle) => {
+            this.protocol = handle;
+        });
+    };
+
+    initServiceProtocol = (user, ondata) => {
+        return this.initProtocol("service", user, ondata, (handle) => {
+            this.serviceProtocol = handle;
+        });
+    };
+
+    protocolHandle = (name) => {
+        return name === "protocol" ? this.protocol : this.serviceProtocol;
+    };
+
+    initProtocol = (name, user, ondata, onSuccess) => {
         return new Promise((resolve, reject) => {
             this.gateway.attach(
                 {
                     plugin: "janus.plugin.textroom",
-                    opaqueId: "gxy_protocol",
+                    opaqueId: `gxy_${name}`,
                     success: (handle) => {
-                        this.protocol = handle;
-                        this.log("[protocol] attach success", this.protocol.getId());
-                        this.send("protocol", "setup", this.protocol, {request: "setup"})
+                        onSuccess(handle);
+                        this.log(`[${name}] attach success`, handle.getId());
+                        this.send(name, "setup", handle, {request: "setup"})
                             .then(resolve)
                             .catch(reject);
                     },
                     error: (err) => {
-                        this.error("[protocol] attach error", err);
+                        this.error(`[${name}] attach error`, err);
                         reject(err);
                     },
                     webrtcState: (on) => {
-                        this.log("[protocol] Janus says our WebRTC PeerConnection is " + (on ? "up" : "down") + " now");
+                        this.log(`[${name}] Janus says our WebRTC PeerConnection is ${on ? "up" : "down"} now`);
                     },
                     onmessage: (msg, jsep) => {
-                        this.debug("[protocol] message ", msg);
+                        this.debug(`[${name}] message`, msg);
                         if (msg["error"] !== undefined && msg["error"] !== null) {
-                            this.error("[protocol] message error", msg);
-                            alert("protocol message error: " + msg["error"]);
+                            this.error(`[${name}] message error`, msg);
+                            alert(`[${name}] message error: ${msg["error"]}`);
                         }
                         if (jsep !== undefined && jsep !== null) {
                             // Answer
-                            this.protocol.createAnswer(
-                                {
-                                    jsep: jsep,
-                                    media: {audio: false, video: false, data: true},  // We only use datachannels
-                                    success: (jsep) => {
-                                        this.debug("[protocol] Got SDP!", jsep);
-                                        this.send("protocol", "ack jsep", this.protocol, {request: "ack"}, {jsep});
-                                    },
-                                    error: (err) => {
-                                        this.error("[protocol] createAnswer error", err);
-                                        alert("protocol WebRTC createAnswer error: " + JSON.stringify(err));
-                                    }
-                                })
-                            ;
+                            const handle = this.protocolHandle(name);
+                            handle.createAnswer({
+                                jsep: jsep,
+                                media: {audio: false, video: false, data: true},  // We only use datachannels
+                                success: (jsep) => {
+                                    this.debug(`[${name}] Got SDP!`, jsep);
+                                    this.send(name, "ack jsep", handle, {request: "ack"}, {jsep});
+                                },
+                                error: (err) => {
+                                    this.error(`[${name}] createAnswer error`, err);
+                                    alert(`[${name}] WebRTC createAnswer error: ${JSON.stringify(err)}`);
+                                }
+                            });
                         }
                     },
                     ondataopen: () => {
-                        this.log("[protocol] DataChannel is available. Joining in");
-                        this.data("protocol", this.protocol, {
+                        this.log(`[${name}] DataChannel is available. Joining in`);
+                        this.data(name, this.protocolHandle(name), {
                             textroom: "join",
                             transaction: Janus.randomString(12),
-                            room: PROTOCOL_ROOM,
+                            room: GxyJanus.protocolRoom(name),
                             username: user.id || user.sub,
                             display: user.display
                         });
                     },
                     ondata: (data) => {
-                        this.debug("[protocol] data ", data);
-                        this.onProtocolData(data, user, ondata);
+                        this.debug(`[${name}] data `, data);
+                        this.onProtocolData(name, user, data, ondata);
                     },
                     oncleanup: () => {
-                        this.warn("[protocol] ::: Got a cleanup notification :::");
+                        this.warn(`[${name}] ::: Got a cleanup notification :::`);
                     }
                 }
             );
         });
     };
 
-    onProtocolData = (data, user, ondata) => {
+    onProtocolData = (name, user, data, ondata) => {
         let json = JSON.parse(data);
         let what = json["textroom"];
         if (what === "message") {
@@ -262,7 +334,7 @@ class GxyJanus {
             let whisper = json["whisper"];
             if (whisper === true) {
                 // Private message
-                this.log("[protocol] private message", dateString, from, msg)
+                this.log(`[${name}] private message`, dateString, from, msg)
             } else {
                 // Public message
                 let message = JSON.parse(msg);
@@ -271,30 +343,30 @@ class GxyJanus {
             }
         } else if (what === "success") {
             if (json.participants) {
-                this.log("[protocol] Got Users: ", json, user);
+                this.log(`[${name}] Got Users: `, json, user);
                 let shidur = json.participants.find(c => c.username === SHIDUR_ID);
                 let storan = json.participants.find(c => c.username === STORAN_ID);
                 let sndman = json.participants.find(c => c.username === SNDMAN_ID);
                 let sdiout = json.participants.find(c => c.username === SDIOUT_ID);
 
                 if (shidur) {
-                    this.log("[protocol] :: Support Online ::");
+                    this.log(`[${name}] :: Support Online ::`);
                 } else {
-                    this.log("[protocol] :: Support Offline ::");
+                    this.log(`[${name}] :: Support Offline ::`);
                 }
 
                 if (storan && (user.id === SDIOUT_ID || user.id === SNDMAN_ID)) {
-                    this.log("[protocol] :: Shidur " + (sndman ? "Online" : "Offline") + " ::");
+                    this.log(`[${name}] :: Shidur ${storan ? "Online" : "Offline"} ::`);
                     ondata({type: "event", shidur: storan.username === STORAN_ID})
                 }
 
                 if (sndman && user.id === STORAN_ID) {
-                    this.log("[protocol] :: SoundMan " + (sndman ? "Online" : "Offline") + " ::");
+                    this.log(`[${name}] :: SoundMan ${sndman ? "Online" : "Offline"} ::`);
                     ondata({type: "event", sndman: sndman.username === SNDMAN_ID})
                 }
 
                 if (sdiout && user.id === STORAN_ID) {
-                    this.log("[protocol] :: SdiOut " + (sdiout ? "Online" : "Offline") + "  ::");
+                    this.log(`[${name}] :: SDIOut ${sdiout ? "Online" : "Offline"} ::`);
                     ondata({type: "event", sdiout: sdiout.username === SDIOUT_ID})
                 }
             }
@@ -302,43 +374,43 @@ class GxyJanus {
             // Somebody joined
             let username = json["username"];
             let display = json["display"];
-            this.log("[protocol] Somebody joined - username: " + username + " : display: " + display);
+            this.log(`[${name}] Somebody joined - username: ${username} display: ${display}`);
             if (username === SHIDUR_ID) {
-                this.log("[protocol] :: Support Enter ::");
+                this.log(`[${name}] :: Support Enter ::`);
             }
 
             if (username === SNDMAN_ID && user.id === STORAN_ID) {
-                this.log("[protocol] :: SoundMan Enter ::");
+                this.log(`[${name}] :: SoundMan Enter ::`);
                 ondata({type: "event", sndman: true})
             }
 
             if (username === SDIOUT_ID && user.id === STORAN_ID) {
-                this.log("[protocol] :: SdiOut Enter ::");
+                this.log(`[${name}] :: SdiOut Enter ::`);
                 ondata({type: "event", sdiout: true})
             }
 
             if (username === user.id) {
-                this.log("[protocol] :: IT's me ::");
+                this.log(`[${name}] :: IT's me ::`);
                 ondata({type: "joined"})
             }
         } else if (what === "leave") {
             // Somebody left
             let username = json["username"];
             //var when = new Date();
-            this.log("[protocol] Somebody left - username: " + username + " : Time: " + getDateString());
+            this.log(`[${name}] Somebody left - username: ${username} Time: ${getDateString()}`);
             ondata({type: "leave", id: username});
 
             if (username === SHIDUR_ID) {
-                this.log("[protocol] :: Support Left ::");
+                this.log(`[${name}] :: Support Left ::`);
             }
 
             if (username === SNDMAN_ID && user.id === STORAN_ID) {
-                this.log("[protocol] :: SoundMan Left ::");
+                this.log(`[${name}] :: SoundMan Left ::`);
                 ondata({type: "event", sndman: false})
             }
 
             if (username === SDIOUT_ID && user.id === STORAN_ID) {
-                this.log("[protocol] :: SdiOut Left ::");
+                this.log(`[${name}] :: SdiOut Left ::`);
                 ondata({type: "event", sdiout: false})
             }
         } else if (what === "kicked") {
@@ -346,21 +418,31 @@ class GxyJanus {
             // var username = json["username"];
         } else if (what === "destroyed") {
             let room = json["room"];
-            this.warn("[protocol] room destroyed", room)
+            this.warn(`[${name}] room destroyed`, room)
         } else if (what === "error") {
-            this.error("[protocol] error", json);
+            this.error(`[${name}] error`, json);
             let error = json["error"];
             let error_code = json["error_code"];
             ondata({type: "error", error, error_code})
         }
     };
 
-    sendProtocolMessage = (user, msg) => {
+    sendProtocolMessage = (msg) => {
         return this.data("protocol", this.protocol, {
             ack: false,
             textroom: "message",
             transaction: Janus.randomString(12),
             room: PROTOCOL_ROOM,
+            text: JSON.stringify(msg),
+        });
+    };
+
+    sendServiceMessage = (msg) => {
+        return this.data("service", this.serviceProtocol, {
+            ack: false,
+            textroom: "message",
+            transaction: Janus.randomString(12),
+            room: SERVICE_ROOM,
             text: JSON.stringify(msg),
         });
     };
@@ -392,7 +474,7 @@ class GxyJanus {
                     if (callbacks.webrtcState) callbacks.webrtcState(on);
                 },
                 slowLink: (uplink, lost, mid) => {
-                    this.log("[videoroom] Janus reports problems " + (uplink ? "sending" : "receiving") +
+                    this.warn("[videoroom] Janus reports problems " + (uplink ? "sending" : "receiving") +
                         " packets on mid " + mid + " (" + lost + " lost packets)");
                     if (callbacks.slowLink) callbacks.slowLink(uplink, lost, mid);
                 },
@@ -484,7 +566,7 @@ class GxyJanus {
                     if (callbacks.webrtcState) callbacks.webrtcState(on);
                 },
                 slowLink: (uplink, lost, mid) => {
-                    this.log("[remoteFeed] Janus reports problems " + (uplink ? "sending" : "receiving") +
+                    this.warn("[remoteFeed] Janus reports problems " + (uplink ? "sending" : "receiving") +
                         " packets on mid " + mid + " (" + lost + " lost packets)");
                     if (callbacks.slowLink) callbacks.slowLink(uplink, lost, mid);
                 },
@@ -537,6 +619,112 @@ class GxyJanus {
                 resolve();
             }
         });
+    };
+
+    initForward = () => {
+        return new Promise((resolve, reject) => {
+            this.gateway.attach({
+                plugin: "janus.plugin.videoroom",
+                opaqueId: "forward",
+                success: (handle) => {
+                    this.forward = handle;
+                    this.log("[forward] attached success", this.forward.getId());
+
+                    this.send("forward", "join", this.forward, {
+                        request: "join",
+                        room: 1000,
+                        ptype: "publisher",
+                        display: JSON.stringify({
+                            id: "forward",
+                            display: "forward",
+                            room: 1000,
+                            session: this.gateway.getSessionId(),
+                            handle: this.forward.getId(),
+                        })
+                    })
+                        .then(resolve)
+                        .catch(reject);
+                },
+                error: (err) => {
+                    this.error("[forward] attach error", err);
+                    reject(err);
+                },
+                consentDialog: (on) => {
+                    this.debug("[forward] Consent dialog should be " + (on ? "on" : "off") + " now");
+                },
+                mediaState: (medium, on) => {
+                    this.log("[forward] Janus " + (on ? "started" : "stopped") + " receiving our " + medium);
+                },
+                webrtcState: (on) => {
+                    this.log("[forward] Janus says our WebRTC PeerConnection is " + (on ? "up" : "down") + " now");
+                    GxyJanus.gatewayNames("streaming").forEach((name) => {
+                        const url = new URL(GxyJanus.instanceConfig(name).url);
+                        this.send("forward", `rtp_forward to [${name}]`, this.forward, {
+                            request: "rtp_forward",
+                            host: url.host,
+                            publisher_id: this.forwardPublisherID,
+                            room: 1000,
+                            secret: SECRET,
+                            "data_port": DATA_PORT
+                        });
+                    });
+                },
+                onmessage: (msg, jsep) => {
+                    this.debug("[forward] message", msg);
+                    const event = msg["videoroom"];
+                    if (event !== undefined && event !== null) {
+                        if (event === "joined") {
+                            this.forwardPublisherID = msg["id"]
+                            this.log(`[forward] Successfully joined room ${msg["room"]} with ID ${this.forwardPublisherID}`);
+                            this.forward.createOffer({
+                                media: {audio: false, video: false, data: true},
+                                simulcast: false,
+                                success: (jsep) => {
+                                    this.send("forward", "configure", this.forward, {
+                                        request: "configure",
+                                        audio: false,
+                                        video: false,
+                                        data: true
+                                    }, {jsep});
+                                },
+                                error: (err) => {
+                                    this.error("[forward] WebRTC error", err);
+                                }
+                            });
+                        } else if (msg["unpublished"] !== undefined && msg["unpublished"] !== null) {
+                            const unpublished = msg["unpublished"];
+                            this.log("[forward] publisher left", unpublished);
+                            if (unpublished === 'ok') {
+                                this.forward.hangup();
+                            }
+                        } else if (msg["error"] !== undefined && msg["error"] !== null) {
+                            this.error("[forward] message error", msg["error"]);
+                            alert(`[forward] message error: ${msg["error"]}`);
+                        }
+                    }
+                    if (jsep !== undefined && jsep !== null) {
+                        this.debug("[forward] Handling SDP as well...", jsep);
+                        this.forward.handleRemoteJsep({jsep});
+                    }
+                },
+                onlocalstream: (mystream) => {
+                    this.debug("[forward] ::: Got a local stream :::");
+                },
+                ondataopen: () => {
+                    this.log("[forward] The DataChannel is available!");
+                },
+                ondata: (data) => {
+                    this.warn("[forward] ::: data from the DataChannel! :::", data);
+                },
+                oncleanup: () => {
+                    this.log("[forward] cleanup");
+                }
+            })
+        });
+    }
+
+    forwardMessage = (msg) => {
+        return this.data("forward", this.forward, msg);
     };
 
     send = (component, action, handle, message, extraParams = {}) => {
@@ -592,7 +780,7 @@ class GxyJanus {
     };
 
     getData = (path, params = {}) => {
-        const config = GxyJanus.instanceConfig(this.name);
+        const config = this.getConfig();
         const url = `${config.admin}${path}`;
         const payload = {
             ...{transaction: Janus.randomString(12)},

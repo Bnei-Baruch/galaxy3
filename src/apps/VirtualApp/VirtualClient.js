@@ -1,37 +1,41 @@
 import React, {Component, Fragment} from 'react';
-import { Janus } from '../../lib/janus';
+import {Janus} from '../../lib/janus';
 import classNames from 'classnames';
-import { isMobile } from 'react-device-detect';
+import {isMobile} from 'react-device-detect';
 import {Button, Dropdown, Icon, Input, Label, Menu, Popup, Select} from 'semantic-ui-react';
 import {
   checkNotification,
   geoInfo,
   getDevicesStream,
-  getState,
   initJanus,
-  micLevel, reportToSentry, takeImage,
+  micLevel,
+  reportToSentry,
+  takeImage,
   testDevices,
-  testMic, wkliLeave,
+  testMic,
+  wkliLeave,
 } from '../../shared/tools';
 import './VirtualClient.scss';
 import './VideoConteiner.scss';
 import './CustomIcons.scss';
 import 'eqcss';
 import VirtualChat from './VirtualChat';
-import { initGxyProtocol, sendProtocolMessage } from '../../shared/protocol';
-import { PROTOCOL_ROOM, vsettings_list } from '../../shared/consts';
+import {initGxyProtocol, sendProtocolMessage} from '../../shared/protocol';
+import {PROTOCOL_ROOM, vsettings_list} from '../../shared/consts';
 import {GEO_IP_INFO, SENTRY_KEY} from '../../shared/env';
 import platform from 'platform';
-import { Help } from './components/Help';
-import { withTranslation } from 'react-i18next';
-import { mapNameToLanguage, setLanguage } from '../../i18n/i18n';
-import { Monitoring } from '../../components/Monitoring';
-import { MonitoringData } from '../../shared/MonitoringData';
+import {Help} from './components/Help';
+import {withTranslation} from 'react-i18next';
+import {mapNameToLanguage, setLanguage} from '../../i18n/i18n';
+import {Monitoring} from '../../components/Monitoring';
+import {MonitoringData} from '../../shared/MonitoringData';
+import api from '../../shared/Api';
 import VirtualStreaming from './VirtualStreaming';
 import VirtualStreamingJanus from './VirtualStreamingJanus';
 import {client} from "../../components/UserManager";
 import LoginPage from "../../components/LoginPage";
 import * as Sentry from "@sentry/browser";
+import GxyJanus from "../../shared/janus-utils";
 
 class VirtualClient extends Component {
 
@@ -81,7 +85,8 @@ class VirtualClient extends Component {
     attachedSource: true,
     sourceLoading: true,
     virtualStreamingJanus: new VirtualStreamingJanus(() => this.virtualStreamingInitialized()),
-  }
+    appInitError: null,
+  };
 
   virtualStreamingInitialized() {
     this.setState({sourceLoading: false});
@@ -115,7 +120,11 @@ class VirtualClient extends Component {
     if (isMobile) {
       window.location = '/userm';
     }
-  };
+  }
+
+  componentWillUnmount() {
+    this.state.virtualStreamingJanus.destroy();
+  }
 
   checkPermission = (user) => {
     const {t} = this.props;
@@ -127,14 +136,14 @@ class VirtualClient extends Component {
     } else if (gxy_user) {
       delete user.roles;
       user.role = "user";
-      this.checkClient(user);
+      this.initApp(user);
     } else {
       alert("Access denied!");
       client.signoutRedirect();
     }
   };
 
-  checkClient = (user) => {
+  initApp = (user) => {
     const { t } = this.props;
     localStorage.setItem('question', false);
     localStorage.setItem('sound_test', false);
@@ -144,24 +153,48 @@ class VirtualClient extends Component {
     let browser = platform.parse(system);
     if (/Safari|Firefox|Chrome/.test(browser.name)) {
       geoInfo(`${GEO_IP_INFO}`, data => {
-        user.ip     = data ? data.ip : '127.0.0.1';
+        user.ip = data ? data.ip : '127.0.0.1';
+        user.country = data.country;
         user.system = system;
         if (!data) {
           alert(t('oldClient.failGeoInfo'));
+          this.setState({appInitError: "Error fetching geo info"});
         }
-        this.setState({ geoinfo: !!data, user }, () => {
-          this.getRoomList(user);
-        });
+        this.setState({ geoinfo: !!data, user });
+
+        api.setAccessToken(user.access_token);
+        client.events.addUserLoaded((user) => api.setAccessToken(user.access_token));
+        client.events.addUserUnloaded(() => api.setAccessToken(null));
+
+        api.fetchConfig()
+            .then(data => GxyJanus.setGlobalConfig(data))
+            .then(api.fetchAvailableRooms)
+            .then(data => {
+              const {rooms} = data;
+              this.setState({rooms});
+
+              const {selected_room} = this.state;
+              if (selected_room !== '') {
+                const room = rooms.find(r => r.room === selected_room);
+                if (room) {
+                  const name = room.description;
+                  user.room = selected_room;
+                  user.janus = room.janus;
+                  user.group = name;
+                  this.setState({name});
+                }
+                this.initClient(user, false);
+              }
+            })
+            .catch(err => {
+              console.error("[VirtualClient] error initializing app", err);
+              this.setState({appInitError: err});
+            });
       });
     } else {
       alert(t('oldClient.browserNotSupported'));
       window.location = 'https://galaxy.kli.one';
     }
-    this.state.virtualStreamingJanus.init();
-  }
-
-  componentWillUnmount() {
-    this.state.virtualStreamingJanus.destroy();
   }
 
   initClient = (user, error) => {
@@ -169,6 +202,8 @@ class VirtualClient extends Component {
     if (this.state.janus) {
       this.state.janus.destroy();
     }
+
+    const config = GxyJanus.instanceConfig(user.janus);
     initJanus(janus => {
       // Check if unified plan supported
       if (Janus.unifiedPlan) {
@@ -180,13 +215,13 @@ class VirtualClient extends Component {
         alert(t('oldClient.unifiedPlanNotSupported'));
         this.setState({ audio_device: null });
       }
-    }, er => {
-      console.log(er);
+    }, err => {
+      console.error("[VirtualClient] error initializing janus", err);
       reportToSentry(error, {source: "janus",janus: user.janus, user})
-      // setTimeout(() => {
-      //     this.initClient(user,er);
-      // }, 5000);
-    }, user.janus);
+    }, config.url, config.iceServers);
+
+    const {ip, country} = user;
+    this.state.virtualStreamingJanus.init(ip, country);
   };
 
   initDevices = (video) => {
@@ -277,24 +312,6 @@ class VirtualClient extends Component {
     }, 1000);
   };
 
-  getRoomList = (user) => {
-    getState('galaxy/groups', (groups) => {
-      let rooms = groups.rooms;
-      const { selected_room } = this.state;
-      //let rooms                      = groups.filter(r => /W\./i.test(r.description) === women);
-      this.setState({ rooms });
-      if (selected_room !== '') {
-        const room = rooms.find(r => r.room === selected_room);
-        const name = room.description;
-        user.room     = selected_room;
-        user.janus    = room.janus;
-        user.group    = name;
-        this.setState({ name });
-        this.initClient(user, false);
-      }
-    });
-  };
-
   selectRoom = (roomid) => {
     const { rooms } = this.state;
     const user      = Object.assign({}, this.state.user);
@@ -333,7 +350,7 @@ class VirtualClient extends Component {
       remoteFeed: null,
       room: '',
       selected_room: (reconnect ? room : ''),
-			chatMessagesCount: 0,
+      chatMessagesCount: 0,
     });
     this.state.virtualStreamingJanus.audioElement.muted = true;
     protocol.data({
@@ -1137,7 +1154,7 @@ class VirtualClient extends Component {
         muted={true}
         playsInline={true} />
     </div>);
-  }
+  };
 
   renderMedia = (feed, width, height) => {
     const { id, talk, question, cammute, display: { display } } = feed;
@@ -1209,7 +1226,17 @@ class VirtualClient extends Component {
       video_setting,
       virtualStreamingJanus,
       women,
+      appInitError,
     } = this.state;
+
+    if (appInitError) {
+      return (
+          <Fragment>
+            <h1>Error Initializing Application</h1>
+            {`${appInitError}`}
+          </Fragment>
+      );
+    }
 
     const { t, i18n } = this.props;
     const width       = '134';

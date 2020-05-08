@@ -1,19 +1,11 @@
 import React, {Component, Fragment} from 'react';
 //import NewWindow from 'react-new-window';
-import { Janus } from "../../lib/janus";
+import {Janus} from "../../lib/janus";
 import classNames from 'classnames';
 import ReactSwipe from 'react-swipe';
 
-import {Menu, Select, Button, Input, Label, Icon, Popup, Dropdown} from "semantic-ui-react";
-import {
-  checkNotification,
-  geoInfo,
-  getDevicesStream,
-  getState,
-  initJanus,
-  testDevices,
-  testMic,
-} from "../../shared/tools";
+import {Button, Dropdown, Icon, Input, Label, Menu, Popup, Select} from "semantic-ui-react";
+import {checkNotification, geoInfo, getDevicesStream, initJanus, testDevices, testMic,} from "../../shared/tools";
 import './MobileClient.scss'
 import './MobileConteiner.scss'
 import 'eqcss'
@@ -25,10 +17,12 @@ import {GEO_IP_INFO} from "../../shared/env";
 import platform from "platform";
 import { isMobile } from 'react-device-detect';
 
-import { Monitoring } from '../../components/Monitoring';
-import { MonitoringData } from '../../shared/MonitoringData';
+import {Monitoring} from '../../components/Monitoring';
+import {MonitoringData} from '../../shared/MonitoringData';
+import api from '../../shared/Api';
 import {client} from "../../components/UserManager";
 import LoginPage from "../../components/LoginPage";
+import GxyJanus from "../../shared/janus-utils";
 
 class MobileClient extends Component {
 
@@ -74,6 +68,8 @@ class MobileClient extends Component {
         women: window.location.pathname === "/women/",
         card: 0,
         monitoringData: new MonitoringData(),
+        appInitialized: false,
+        appInitError: null,
     };
 
     componentDidUpdate(prevProps, prevState) {
@@ -99,7 +95,7 @@ class MobileClient extends Component {
         } else if (gxy_user) {
             delete user.roles;
             user.role = "user";
-            this.checkClient(user);
+            this.initApp(user);
         } else {
             alert("Access denied!");
             client.signoutRedirect();
@@ -113,7 +109,7 @@ class MobileClient extends Component {
         }
     };
 
-    checkClient = (user) => {
+    initApp = (user) => {
         const { t } = this.props;
         localStorage.setItem('question', false);
         localStorage.setItem('sound_test', false);
@@ -124,14 +120,43 @@ class MobileClient extends Component {
         if (/Safari|Firefox|Chrome/.test(browser.name)) {
             geoInfo(`${GEO_IP_INFO}`, data => {
                 user.ip = data ? data.ip : '127.0.0.1';
+                user.country = data.country;
                 user.system = system;
                 if (!data) {
                     alert("Failed to get Geo Info");
+                    this.setState({appInitError: "Error fetching geo info"});
                 }
+                this.setState({ geoinfo: !!data, user });
 
-                this.setState({ geoinfo: !!data, user }, () => {
-                    this.getRoomList(user);
-                });
+                api.setAccessToken(user.access_token);
+                client.events.addUserLoaded((user) => api.setAccessToken(user.access_token));
+                client.events.addUserUnloaded(() => api.setAccessToken(null));
+
+                api.fetchConfig()
+                    .then(data => GxyJanus.setGlobalConfig(data))
+                    .then(api.fetchAvailableRooms)
+                    .then(data => {
+                        const {rooms} = data;
+                        this.setState({rooms});
+
+                        const {selected_room} = this.state;
+                        if (selected_room !== '') {
+                            const room = rooms.find(r => r.room === selected_room);
+                            if (room) {
+                                const name = room.description;
+                                user.room = selected_room;
+                                user.janus = room.janus;
+                                user.group = name;
+                                this.setState({name});
+                            }
+                            this.initClient(user, false);
+                        }
+                    })
+                    .then(() => this.setState({appInitialized: true}))
+                    .catch(err => {
+                        console.error("[MobileClient] error initializing app", err);
+                        this.setState({appInitError: err});
+                    });
             });
         } else {
             alert("Browser not supported");
@@ -143,6 +168,8 @@ class MobileClient extends Component {
         const { t } = this.props;
         if(this.state.janus)
             this.state.janus.destroy();
+
+        const config = GxyJanus.instanceConfig(user.janus);
         initJanus(janus => {
             // Check if unified plan supported
             if (Janus.unifiedPlan) {
@@ -154,12 +181,9 @@ class MobileClient extends Component {
                 alert("Unified Plan is NOT supported");
                 this.setState({ audio_device: null });
             }
-        }, er => {
-            console.log(er);
-            // setTimeout(() => {
-            //     this.initClient(user,er);
-            // }, 5000);
-        }, user.janus);
+        }, err => {
+            console.error("[MobileClient] error initializing janus", err);
+        }, config.url, config.iceServers);
     };
 
     initDevices = (video) => {
@@ -245,24 +269,6 @@ class MobileClient extends Component {
                 },1000);
             }
         },1000);
-    };
-
-    getRoomList = (user) => {
-        getState('galaxy/groups', (groups) => {
-            let rooms = groups.rooms;
-            const { selected_room } = this.state;
-            //let rooms                      = groups.filter(r => /W\./i.test(r.description) === women);
-            this.setState({ rooms });
-            if (selected_room !== '') {
-                const room = rooms.find(r => r.room === selected_room);
-                const name = room.description;
-                user.room     = selected_room;
-                user.janus    = room.janus;
-                user.group    = name;
-                this.setState({ name });
-                this.initClient(user, false);
-            }
-        });
     };
 
     selectRoom = (roomid) => {
@@ -1125,7 +1131,19 @@ class MobileClient extends Component {
           video_devices,
           video_setting,
           women,
+            appInitialized,
+            appInitError,
         } = this.state;
+
+        if (appInitError) {
+            return (
+                <Fragment>
+                    <h1>Error Initializing Application</h1>
+                    {`${appInitError}`}
+                </Fragment>
+            );
+        }
+
         const width = "134";
         const height = "100";
         const autoPlay = true;
@@ -1368,10 +1386,19 @@ class MobileClient extends Component {
                         </div>
 
                     </div>
-                    <div><MobileStreaming
-                        ref={stream => {this.stream = stream;}}
-                        prev={() => reactSwipeEl.prev()}
-                    /></div>
+                    {
+                        appInitialized ?
+                            <div>
+                                <MobileStreaming
+                                    ref={stream => {this.stream = stream;}}
+                                    prev={() => reactSwipeEl.prev()}
+                                    ip={user.ip}
+                                    country={user.country}
+                                />
+                            </div>
+                            : null
+                    }
+
                     {/*<div>PANE 3</div>*/}
                 </ReactSwipe>
                 {/*<button onClick={() => reactSwipeEl.next()}>Next</button>*/}
