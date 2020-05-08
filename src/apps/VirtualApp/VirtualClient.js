@@ -85,6 +85,7 @@ class VirtualClient extends Component {
     attachedSource: true,
     sourceLoading: true,
     virtualStreamingJanus: new VirtualStreamingJanus(() => this.virtualStreamingInitialized()),
+    appInitError: null,
   };
 
   virtualStreamingInitialized() {
@@ -157,6 +158,7 @@ class VirtualClient extends Component {
         user.system = system;
         if (!data) {
           alert(t('oldClient.failGeoInfo'));
+          this.setState({appInitError: "Error fetching geo info"});
         }
         this.setState({ geoinfo: !!data, user });
 
@@ -184,6 +186,10 @@ class VirtualClient extends Component {
                 this.initClient(user, false);
               }
             })
+            .catch(err => {
+              console.error("[VirtualClient] error initializing app", err);
+              this.setState({appInitError: err});
+            });
       });
     } else {
       alert(t('oldClient.browserNotSupported'));
@@ -1220,7 +1226,17 @@ class VirtualClient extends Component {
       video_setting,
       virtualStreamingJanus,
       women,
+      appInitError,
     } = this.state;
+
+    if (appInitError) {
+      return (
+          <Fragment>
+            <h1>Error Initializing Application</h1>
+            {`${appInitError}`}
+          </Fragment>
+      );
+    }
 
     const { t, i18n } = this.props;
     const width       = '134';

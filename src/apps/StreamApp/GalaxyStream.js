@@ -1,4 +1,4 @@
-import React, {Component} from 'react';
+import React, {Component, Fragment} from 'react';
 import {Janus} from "../../lib/janus";
 import {client} from "../../components/UserManager";
 import {Button, Grid, Icon, Label, Menu, Segment, Select} from 'semantic-ui-react';
@@ -26,6 +26,7 @@ class GalaxyStream extends Component {
         mixvolume: null,
         user: null,
         talking: null,
+        appInitError: null,
     };
 
     checkPermission = (user) => {
@@ -62,8 +63,14 @@ class GalaxyStream extends Component {
                             api.fetchConfig()
                                 .then(data => GxyJanus.setGlobalConfig(data))
                                 .then(() => this.initJanus(info.country))
+                                .catch(err => {
+                                    console.error("[GalaxyStream] error initializing app", err);
+                                    this.setState({appInitError: err});
+                                });
                         }
                     );
+                } else {
+                    this.setState({appInitError: "Error fetching geo info"});
                 }
             })
             .catch(ex => console.log(`get geoInfo`, ex));
@@ -393,8 +400,16 @@ class GalaxyStream extends Component {
 
 
     render() {
+        const {videos, audios, muted, user, talking, appInitError} = this.state;
 
-        const {videos, audios, muted, user, talking} = this.state;
+        if (appInitError) {
+            return (
+                <Fragment>
+                    <h1>Error Initializing Application</h1>
+                    {`${appInitError}`}
+                </Fragment>
+            );
+        }
 
         let login = (<LoginPage user={user} checkPermission={this.checkPermission} />);
         let content = (

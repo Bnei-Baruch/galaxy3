@@ -1,4 +1,4 @@
-import React, {Component} from 'react';
+import React, {Component, Fragment} from 'react';
 import './SndmanApp.css';
 import './UsersSndman.css'
 import api from '../../shared/Api';
@@ -16,6 +16,7 @@ class SndmanApp extends Component {
         users: {},
         gateways: {},
         gatewaysInitialized: false,
+        appInitError: null,
     };
 
     componentWillUnmount() {
@@ -47,6 +48,10 @@ class SndmanApp extends Component {
             .then(api.fetchUsers)
             .then(data => this.setState({users: data}))
             .then(() => this.initGateways(user))
+            .catch(err => {
+                console.error("[Sndman] error initializing app", err);
+                this.setState({appInitError: err});
+            });
     }
 
     initGateways = (user) => {
@@ -143,7 +148,16 @@ class SndmanApp extends Component {
     };
 
     render() {
-        const {user, gatewaysInitialized} = this.state;
+        const {user, gatewaysInitialized, appInitError} = this.state;
+
+        if (appInitError) {
+            return (
+                <Fragment>
+                    <h1>Error Initializing Application</h1>
+                    {`${appInitError}`}
+                </Fragment>
+            );
+        }
 
         if (!!user && !gatewaysInitialized) {
             return "Initializing connections to janus instances...";

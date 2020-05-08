@@ -47,7 +47,7 @@ class AudioOutApp extends Component {
             .catch(err => {
                 console.error("[AudioOut] error initializing app", err);
                 this.setState({appInitError: err});
-            })
+            });
     }
 
     initGateways = () => {
@@ -150,7 +150,7 @@ class AudioOutApp extends Component {
         if (appInitError) {
             return (
                 <Fragment>
-                    <h1>Error initializing Application</h1>
+                    <h1>Error Initializing Application</h1>
                     {`${appInitError}`}
                 </Fragment>
             );

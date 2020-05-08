@@ -1,4 +1,4 @@
-import React, {Component} from 'react';
+import React, {Component, Fragment} from 'react';
 import {Janus} from "../../lib/janus";
 import {Button, Grid, Icon, List, Menu, Popup, Segment, Tab, Table,} from "semantic-ui-react";
 import './AdminRoot.css';
@@ -39,6 +39,7 @@ class AdminRoot extends Component {
         user: null,
         users: {},
         usersTabs: [],
+        appInitError: null,
     };
 
     componentWillUnmount() {
@@ -116,7 +117,11 @@ class AdminRoot extends Component {
             .then(api.fetchUsers)
             .then(data => this.setState({users: data}))
             .then(() => this.initGateways(user))
-            .then(this.pollRooms);
+            .then(this.pollRooms)
+            .catch(err => {
+                console.error("[Admin] error initializing app", err);
+                this.setState({appInitError: err});
+            });
     }
 
     initGateways = (user) => {
@@ -155,6 +160,9 @@ class AdminRoot extends Component {
                     return 0;
                 });
                 this.setState({rooms: data});
+            })
+            .catch(err => {
+                console.error("[Admin] error fetching active rooms", err);
             })
     }
 
@@ -650,7 +658,17 @@ class AdminRoot extends Component {
         users,
         usersTabs,
         chatRoomsInitialized,
+          appInitError,
       } = this.state;
+
+      if (appInitError) {
+          return (
+              <Fragment>
+                  <h1>Error Initializing Application</h1>
+                  {`${appInitError}`}
+              </Fragment>
+          );
+      }
 
       if (!!user && !gatewaysInitialized) {
           return "Initializing connections to janus instances...";

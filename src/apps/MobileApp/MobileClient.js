@@ -69,6 +69,7 @@ class MobileClient extends Component {
         card: 0,
         monitoringData: new MonitoringData(),
         appInitialized: false,
+        appInitError: null,
     };
 
     componentDidUpdate(prevProps, prevState) {
@@ -123,6 +124,7 @@ class MobileClient extends Component {
                 user.system = system;
                 if (!data) {
                     alert("Failed to get Geo Info");
+                    this.setState({appInitError: "Error fetching geo info"});
                 }
                 this.setState({ geoinfo: !!data, user });
 
@@ -151,6 +153,10 @@ class MobileClient extends Component {
                         }
                     })
                     .then(() => this.setState({appInitialized: true}))
+                    .catch(err => {
+                        console.error("[MobileClient] error initializing app", err);
+                        this.setState({appInitError: err});
+                    });
             });
         } else {
             alert("Browser not supported");
@@ -1126,7 +1132,18 @@ class MobileClient extends Component {
           video_setting,
           women,
             appInitialized,
+            appInitError,
         } = this.state;
+
+        if (appInitError) {
+            return (
+                <Fragment>
+                    <h1>Error Initializing Application</h1>
+                    {`${appInitError}`}
+                </Fragment>
+            );
+        }
+
         const width = "134";
         const height = "100";
         const autoPlay = true;

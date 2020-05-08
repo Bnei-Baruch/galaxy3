@@ -22,6 +22,9 @@ class UsersQuadSndman extends Component {
         setInterval(() => {
             api.fetchQuad(col)
                 .then(data => this.setState({vquad: data.vquad}))
+                .catch(err => {
+                    console.error("[Sndman] error fetching quad state", col, err);
+                });
         }, 1000);
     };
 
@@ -92,7 +95,10 @@ class UsersQuadSndman extends Component {
                     });
                     this.setState({feeds: users, forward: true});
                     this.micMute(true, room, janus);
-            })
+                })
+                .catch(err => {
+                    console.error("[Sndman] error fetching room state", room, err);
+                });
         }
     };
 
