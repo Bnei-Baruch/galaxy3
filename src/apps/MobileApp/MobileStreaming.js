@@ -3,7 +3,7 @@ import { Janus } from "../../lib/janus";
 import { Segment, Menu, Select, Button } from 'semantic-ui-react';
 //import VolumeSlider from "../../components/VolumeSlider";
 import {videos_options, audiog_options, gxycol, trllang} from "../../shared/consts";
-import {STUN_SRV_STR, JANUS_SRV_STR3, JANUS_SRV_STR4, GEO_IP_INFO} from "../../shared/env";
+import GxyJanus from "../../shared/janus-utils";
 
 class MobileStreaming extends Component {
 
@@ -23,21 +23,9 @@ class MobileStreaming extends Component {
     };
 
     componentDidMount() {
-        fetch(`${GEO_IP_INFO}`)
-            .then((response) => {
-                if (response.ok) {
-                    return response.json().then(
-                        info => {
-                            let {user} = this.state;
-                            this.setState({user: {...info,...user}});
-                            localStorage.setItem("mob_extip", info.ip);
-                            let server = info && info.country === "IL" ? `${JANUS_SRV_STR4}` : `${JANUS_SRV_STR3}`;
-                            this.initJanus(server);
-                        }
-                    );
-                }
-            })
-            .catch(ex => console.log(`get geoInfo`, ex));
+        const {ip, country} = this.props;
+        localStorage.setItem("mob_extip", ip);
+        this.initJanus(country);
     };
 
     componentWillUnmount() {
@@ -45,15 +33,19 @@ class MobileStreaming extends Component {
             this.state.janus.destroy();
     };
 
-    initJanus = (server) => {
+    initJanus = (country) => {
         if(this.state.janus)
             this.state.janus.destroy();
+
+        const gateway = country === "IL" ? 'str4' : 'str3';
+        const config = GxyJanus.instanceConfig(gateway);
+
         Janus.init({
             debug: ["error"],
             callback: () => {
                 let janus = new Janus({
-                    server: server,
-                    iceServers: [{urls: STUN_SRV_STR}],
+                    server: config.url,
+                    iceServers: config.iceServers,
                     success: () => {
                         Janus.log(" :: Connected to JANUS");
                         this.setState({janus});
@@ -61,8 +53,12 @@ class MobileStreaming extends Component {
                         this.initDataStream(janus);
                         //this.initAudioStream(janus);
                     },
-                    error: (error) => {
-                        Janus.log(error);
+                    error: (err) => {
+                        Janus.log(err);
+                        setTimeout(() => {
+                            this.initJanus_(country);
+                        }, 5000);
+                        console.error('RELOAD ON ERROR', err);
                     },
                     destroyed: () => {
                         Janus.log("kill");
