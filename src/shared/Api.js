@@ -32,6 +32,7 @@ class Api {
         const auth = this.accessToken ?
             `Bearer ${this.accessToken}` :
             `Basic ${btoa(`${this.username}:${this.password}`)}`;
+
         return {
             headers: {
                 'Authorization': auth,
@@ -41,14 +42,19 @@ class Api {
 
     logAndParse = (action, fetchPromise) => {
         return fetchPromise
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw Error(response.statusText);
+                }
+                return response.json();
+            })
             .then(data => {
                 console.debug(`[API] ${action} success`, data);
                 return data;
             })
             .catch(err => {
                 console.error(`[API] ${action} error`, err);
-                throw err;
+                return Promise.reject(err);
             });
     }
 

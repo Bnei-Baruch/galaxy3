@@ -75,6 +75,12 @@ class SndmanApp extends Component {
                                 .then(gateway.initForward)
                         }
                     });
+            })
+            .catch(err => {
+                console.error("[Sndman] error initializing gateway", gateway.name, err);
+                setTimeout(() => {
+                    this.initGateway(user, gateway);
+                }, 10000);
             });
     }
 
