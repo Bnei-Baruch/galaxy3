@@ -1,12 +1,12 @@
-import React, { Component } from 'react';
-import { Janus } from "../../lib/janus";
+import React, {Component, Fragment} from 'react';
 import {Grid, Segment} from "semantic-ui-react";
-import {getState, initJanus} from "../../shared/tools";
 import './SDIOutApp.css';
 import './UsersSDIOut.css'
 import './UsersQuadSDIOut.scss'
-import {initGxyProtocol} from "../../shared/protocol";
+import api from "../../shared/Api";
 import {SDIOUT_ID} from "../../shared/consts";
+import {API_BACKEND_PASSWORD, API_BACKEND_USERNAME} from "../../shared/env";
+import GxyJanus from "../../shared/janus-utils";
 import UsersHandleSDIOut from "./UsersHandleSDIOut";
 import UsersQuadSDIOut from "./UsersQuadSDIOut";
 
@@ -17,17 +17,6 @@ class SDIOutApp extends Component {
         ce: null,
         group: null,
         room: null,
-        GxyJanus: {
-            gxy1: {janus: null, protocol: null},
-            gxy2: {janus: null, protocol: null},
-            gxy3: {janus: null, protocol: null},
-        },
-        service: null,
-        mids: [],
-        gxyhandle: null,
-        myid: null,
-        mypvtid: null,
-        mystream: null,
         user: {
             session: 0,
             handle: 0,
@@ -37,76 +26,77 @@ class SDIOutApp extends Component {
             name: "sdiout"
         },
         users: {},
-        shidur: false,
+        gateways: {},
+        gatewaysInitialized: false,
+        appInitError: null,
     };
 
     componentDidMount() {
-        let {user} = this.state;
-        getState('galaxy/users', (users) => {
-            this.setState({users});
-            let gxy = ["gxy1","gxy2","gxy3"]
-            this.initGalaxy(user,gxy);
-        });
+        this.initApp();
     };
 
     componentWillUnmount() {
-        this.state.GxyJanus.gxy1.janus.destroy();
-        this.state.GxyJanus.gxy2.janus.destroy();
-        this.state.GxyJanus.gxy3.janus.destroy();
+        Object.values(this.state.gateways).forEach(x => x.destroy());
     };
 
-    initGalaxy = (user,gxy) => {
-        for(let i=0; i<gxy.length; i++) {
-            let {GxyJanus} = this.state;
-            initJanus(janus => {
-                // Right now we going to use gxy3 for service protocol
-                if(gxy[i] === "gxy3")
-                    this.initService(janus, user);
-                if(GxyJanus[gxy[i]].janus)
-                    GxyJanus[gxy[i]].janus.destroy();
-                GxyJanus[gxy[i]].janus = janus;
-                initGxyProtocol(janus, user, protocol => {
-                    GxyJanus[gxy[i]].protocol = protocol;
-                    this.setState({...GxyJanus[gxy[i]]});
-                }, ondata => {
-                    Janus.log(i + " :: protocol public message: ", ondata);
-                    if(ondata.type === "error" && ondata.error_code === 420) {
-                        console.error(ondata.error + " - Reload after 10 seconds");
-                        this.state.GxyJanus[gxy[i]].protocol.hangup();
-                        setTimeout(() => {
-                            this.initGalaxy(user,[gxy[i]]);
-                        }, 10000);
+    initApp = () => {
+        api.setBasicAuth(API_BACKEND_USERNAME, API_BACKEND_PASSWORD);
+
+        api.fetchConfig()
+            .then(data => GxyJanus.setGlobalConfig(data))
+            .then(api.fetchUsers)
+            .then(data => this.setState({users: data}))
+            .then(this.initGateways)
+            .catch(err => {
+                console.error("[SDIOut] error initializing app", err);
+                this.setState({appInitError: err});
+            });
+    }
+
+    initGateways = () => {
+        const gateways = GxyJanus.makeGateways("rooms");
+        this.setState({gateways});
+
+        return Promise.all(Object.values(gateways).map(gateway => (this.initGateway(gateway))))
+            .then(() => {
+                console.log("[SDIOut] gateways initialization complete");
+                this.setState({gatewaysInitialized: true});
+            });
                     }
-                    this.onProtocolData(ondata, gxy[i]);
-                }, false);
-            },er => {
-                console.error(gxy[i] + ": " + er);
+
+    initGateway = (gateway) => {
+        console.log("[SDIOut] initializing gateway", gateway.name);
+
+        // we re-initialize the whole gateway on protocols error
+        gateway.destroy();
+
+        const {user} = this.state;
+        return gateway.init()
+            .then(() => {
+                return gateway.initGxyProtocol(user, data => this.onProtocolData(gateway, data))
+                    .then(() => {
+                        if (gateway.name === "gxy3") {
+                            return gateway.initServiceProtocol(user, data => this.onServiceData(gateway, data))
+                        }
+                    });
+            })
+            .catch(err => {
+                console.error("[SDIOut] error initializing gateway", gateway.name, err);
                 setTimeout(() => {
-                    this.initGalaxy(user,[gxy[i]]);
+                    this.initGateway(gateway);
                 }, 10000);
-            }, gxy[i]);
-        }
+            });
     };
 
-    initService = (janus, user) => {
-        initGxyProtocol(janus, user, service => {
-            this.setState({service});
-        }, ondata => {
-            Janus.log(" :: Service message: ", ondata);
-            if(ondata.type === "error" && ondata.error_code === 420) {
-                console.error(ondata.error + " - Reload after 10 seconds");
-                this.state.service.hangup();
+    onServiceData = (gateway, data) => {
+        if (data.type === "error" && data.error_code === 420) {
+            console.error("[SDIOut] service error message (reloading in 10 seconds)", data.error);
                 setTimeout(() => {
-                    this.initService(janus,user);
+                this.initGateway(gateway);
                 }, 10000);
             }
-            this.onServiceData(ondata);
-        }, true);
-    };
 
-    onServiceData = (data) => {
-        Janus.log(" :: Got Shidur Action: ", data);
-        let {room, col, feed, group, i, status, qst} = data;
+        const {room, col, feed, group, i, status, qst} = data;
 
         if(data.type === "sdi-fullscr_group" && status) {
             if(qst) {
@@ -138,7 +128,14 @@ class SDIOutApp extends Component {
         }
     };
 
-    onProtocolData = (data, inst) => {
+    onProtocolData = (gateway, data) => {
+        if (data.type === "error" && data.error_code === 420) {
+            console.error("[SDIOut] protocol error message (reloading in 10 seconds)", data.error);
+            setTimeout(() => {
+                this.initGateway(gateway);
+            }, 10000);
+        }
+
         let {users} = this.state;
 
         // Set status in users list
@@ -167,12 +164,24 @@ class SDIOutApp extends Component {
     };
 
     render() {
-        let {group} = this.state;
-        // let qst = g && g.questions;
-        let name = group && group.description;
+        const {group, appInitError, gatewaysInitialized} = this.state;
+
+        if (appInitError) {
+        return (
+                <Fragment>
+                    <h1>Error Initializing Application</h1>
+                    {`${appInitError}`}
+                </Fragment>
+            );
+        }
+
+        if (!gatewaysInitialized) {
+            return "Initializing WebRTC gateways...";
+        }
+
+        const name = group && group.description;
 
         return (
-
             <Grid columns={2} className="sdi_container">
                 <Grid.Row>
                     <Grid.Column>
