@@ -76,7 +76,7 @@ class GalaxyApp extends Component {
     }
 
     render() {
-        const {i18n, t} = this.props;
+        const {i18n} = this.props;
         const {user, roles} = this.state;
 				const approval = pendingApproval(user);
         const requested = this.requested(user);

@@ -68,7 +68,7 @@ class LoginPage extends Component {
     render() {
         const { t, i18n } = this.props;
         const {disabled, loading} = this.state;
-        const direction = i18n.language === "he" ? "rtl" : "";
+        const direction = i18n.language === 'he' ? 'rtl' : '';
         let profile = (
             <Dropdown inline text=''>
                 <Dropdown.Menu>
@@ -92,7 +92,7 @@ class LoginPage extends Component {
 
         let main = (
             <Container fluid >
-                <Menu secondary>
+                <Menu secondary style={{direction}}>
                     <Menu.Item>
                         <Image src={bblogo} style={{height: '8em', objectFit: 'contain', objectPosition: '14px 0'}} />
                         <div>
@@ -101,7 +101,7 @@ class LoginPage extends Component {
                         </div>
                     </Menu.Item>
 
-                    <Menu.Menu position='right'>
+                    <Menu.Menu style={{display: 'flex', marginRight: i18n.language === 'he' ? 'auto' : '', marginLeft: i18n.language === 'he' ? '' : 'auto'}}>
                         <Menu.Item>
                             <Select compact
                                     value={i18n.language}
