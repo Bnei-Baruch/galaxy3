@@ -209,7 +209,6 @@ class VirtualClient extends Component {
               this.setState({appInitError: err});
             });
       });
-      this.state.virtualStreamingJanus.init();
     }
   }
 
