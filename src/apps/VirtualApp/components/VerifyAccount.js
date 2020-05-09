@@ -105,7 +105,13 @@ const VerifyAccount = (props) => {
   const ret = [];
   if (!formClosed && !requestSent && user && user.role === 'ghost' && (!user.request || user.request.length === 0)) {
     ret.push(<Segment textAlign="center" style={{backgroundColor: loginPage ? '' : 'lightyellow', direction}} basic={loginPage}>
-      <Header style={{fontWeight: 'normal', textAlign: 'center', marginBottom: loginPage ? '10px' : ''}}>{loginPage ? t('galaxyApp.verifyAccount') : t('galaxyApp.welcomeGuestForm')}</Header>
+      <Header style={{fontWeight: 'normal',
+                      maxWidth: '1300px',
+                      margin: 'auto',
+                      textAlign: loginPage ? (i18n.language === 'he' ? 'right' : 'left') : 'center',
+                      marginBottom: loginPage ? '10px' : ''}}>
+        {loginPage ? t('galaxyApp.verifyAccount') : t('galaxyApp.welcomeGuestForm')}
+      </Header>
       <Input error={!!email && !valid}
              onChange={e => setEmail(e.target.value)}
              placeholder={t('galaxyApp.typeFriendEmail')} />
@@ -138,14 +144,14 @@ const VerifyAccount = (props) => {
 
   if (!loginPage && user && user.role === 'user' && user.pending && user.pending.length && !closedModal) {
     ret.push(<Modal open={true} style={{direction, textAlign}}>
-      <Modal.Content textAlign="center">
+      <Modal.Content textAlign='center'>
         <Header>{t('galaxyApp.approveVerificationHeader').replace('[UserFirstName]', user.title)}</Header>
-        <Table>
+        <Table style={{textAlign}}>
           <Table.Header>
             <Table.Row>
-              <Table.Cell>Email</Table.Cell>
-              <Table.Cell>Verify</Table.Cell>
-              <Table.Cell>Ignore</Table.Cell>
+              <Table.Cell>{t('galaxyApp.approveVerificationEmail')}</Table.Cell>
+              <Table.Cell>{t('galaxyApp.approveVerificationVerify')}</Table.Cell>
+              <Table.Cell>{t('galaxyApp.approveVerificationIgnore')}</Table.Cell>
             </Table.Row>
           </Table.Header>
           <Table.Body>
