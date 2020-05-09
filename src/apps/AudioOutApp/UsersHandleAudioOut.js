@@ -243,7 +243,7 @@ class UsersHandleAudioOut extends Component {
                     gateway.log(`[room ${roomid}] [remoteFeed] ICE state changed to`, state);
                 },
                 webrtcState: (on) => {
-                    gateway.log(`[room ${roomid}] [remoteFeed] Janus says this WebRTC PeerConnection is $on ? "up" : "down"} now`);
+                    gateway.log(`[room ${roomid}] [remoteFeed] Janus says this WebRTC PeerConnection is ${on ? "up" : "down"} now`);
                 },
                 slowLink: (uplink, nacks) => {
                     gateway.warn(`[room ${roomid}] [remoteFeed] Janus reports problems ` + (uplink ? "sending" : "receiving") +

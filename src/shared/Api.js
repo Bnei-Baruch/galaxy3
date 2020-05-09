@@ -17,14 +17,24 @@ class Api {
     fetchActiveRooms = () =>
         this.logAndParse('fetch active rooms', fetch(this.urlFor('/rooms'), this.defaultOptions()));
 
+    fetchRoom = (id) =>
+        this.logAndParse(`fetch room ${id}`, fetch(this.urlFor(`/room/${id}`), this.defaultOptions()));
+
     fetchUsers = () =>
         this.logAndParse('fetch users', fetch(this.urlFor('/users'), this.defaultOptions()));
 
     fetchQuad = (col) =>
         this.logAndParse(`fetch quad ${col}`, fetch(this.urlFor(`/qids/q${col}`), this.defaultOptions()));
 
-    fetchRoom = (id) =>
-        this.logAndParse(`fetch room ${id}`, fetch(this.urlFor(`/room/${id}`), this.defaultOptions()));
+    updateQuad = (col, data) => {
+        const options = {
+            ...this.defaultOptions(),
+            method: 'PUT',
+            body: JSON.stringify(data),
+        };
+        options.headers['Content-Type'] = 'application/json';
+        return this.logAndParse(`update quad ${col}`, fetch(this.urlFor(`/qids/q${col}`), options));
+    }
 
     urlFor = (path) => (API_BACKEND + path)
 

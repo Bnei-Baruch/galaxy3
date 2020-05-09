@@ -1,9 +1,9 @@
-import React, {Component} from 'react';
+import React, {Component, Fragment} from 'react';
 import {Janus} from "../../lib/janus";
 import {Grid} from "semantic-ui-react";
-import {getDateString, getState, initJanus} from "../../shared/tools";
-import {initGxyProtocol} from "../../shared/protocol";
+import api from '../../shared/Api';
 import {client} from "../../components/UserManager";
+import GxyJanus from "../../shared/janus-utils";
 import LoginPage from "../../components/LoginPage";
 import ShidurToran from "./ShidurToran";
 import UsersQuad from "./UsersQuad";
@@ -14,12 +14,6 @@ class ShidurApp extends Component {
 
     state = {
         ce: null,
-        GxyJanus: {
-            gxy1: {janus: null, protocol: null},
-            gxy2: {janus: null, protocol: null},
-            gxy3: {janus: null, protocol: null},
-        },
-        service: null,
         group: "",
         groups: [],
         groups_queue: 0,
@@ -30,103 +24,142 @@ class ShidurApp extends Component {
         disabled_rooms: [],
         user: null,
         users: {},
+        gateways: {},
+        gatewaysInitialized: false,
+        appInitError: null,
         presets: {1:[],2:[],3:[],4:[]},
         sdiout: false,
         sndman: false,
     };
 
     componentWillUnmount() {
-        this.state.GxyJanus.gxy1.janus.destroy();
-        this.state.GxyJanus.gxy2.janus.destroy();
-        this.state.GxyJanus.gxy3.janus.destroy();
+        Object.values(this.state.gateways).forEach(x => x.destroy());
     };
 
     checkPermission = (user) => {
-        let gxy_group = user.roles.filter(role => role === 'gxy_shidur').length > 0;
-        if (gxy_group) {
+        const allowed = user.roles.filter(role => role === 'gxy_shidur').length > 0;
+        if (allowed) {
             delete user.roles;
             user.role = "shidur";
             user.session = 0;
-            getState('galaxy/users', (users) => {
-                this.setState({user,users});
-                setInterval(() => this.getRoomList(), 2000 );
-                let gxy = ["gxy1","gxy2","gxy3"]
-                this.initGalaxy(user,gxy);
-            });
+            this.initApp(user);
         } else {
             alert("Access denied!");
             client.signoutRedirect();
         }
     };
 
-    getRoomList = () => {
-        let {disabled_rooms,mode} = this.state;
-        getState('galaxy/rooms', (rooms) => {
-            if(mode === "nashim") {
-                rooms = rooms.filter(r => r.description.match(/^W /));
-            } else if(mode === "gvarim") {
-                rooms = rooms.filter(r => !r.description.match(/^W /));
-            } else if(mode === "beyahad") {
-                this.setState({mode: ""})
-            }
-            let groups = rooms.filter((room) => room.janus !== "" && !disabled_rooms.find(droom => room.room === droom.room));
-            disabled_rooms = rooms.filter((room) => room.janus !== "" && !groups.find(droom => room.room === droom.room));
-            this.setState({rooms,groups,disabled_rooms});
-            let quads = [...this.col1.state.vquad,...this.col2.state.vquad,...this.col3.state.vquad,...this.col4.state.vquad];
-            let list = groups.filter((room) => !quads.find(droom => droom && room.room === droom.room));
-            let questions = list.filter(room => room.questions);
-            this.setState({questions});
-        });
+    initApp = (user) => {
+        this.setState({user});
+
+        api.setAccessToken(user.access_token);
+        client.events.addUserLoaded((user) => api.setAccessToken(user.access_token));
+        client.events.addUserUnloaded(() => api.setAccessToken(null));
+
+        api.fetchConfig()
+            .then(data => GxyJanus.setGlobalConfig(data))
+            .then(api.fetchUsers)
+            .then(data => this.setState({users: data}))
+            .then(() => this.initGateways(user))
+            .then(this.pollRooms)
+            .catch(err => {
+                console.error("[Shidur] error initializing app", err);
+                this.setState({appInitError: err});
+            });
+    }
+
+    initGateways = (user) => {
+        const gateways = GxyJanus.makeGateways("rooms");
+        this.setState({gateways});
+
+        return Promise.all(Object.values(gateways).map(gateway => (this.initGateway(user, gateway))))
+            .then(() => {
+                console.log("[Shidur] gateways initialization complete");
+                this.setState({gatewaysInitialized: true});
+            });
     };
 
-    initGalaxy = (user,gxy) => {
-        for(let i=0; i<gxy.length; i++) {
-            let {GxyJanus} = this.state;
-            initJanus(janus => {
-                // Right now we going to use gxy3 for service protocol
-                if(gxy[i] === "gxy3")
-                    this.initService(janus, user);
-                if(GxyJanus[gxy[i]].janus)
-                    GxyJanus[gxy[i]].janus.destroy();
-                GxyJanus[gxy[i]].janus = janus;
-                initGxyProtocol(janus, user, protocol => {
-                    GxyJanus[gxy[i]].protocol = protocol;
-                    this.setState({...GxyJanus[gxy[i]]});
-                }, ondata => {
-                    Janus.log(i + " :: protocol public message: ", ondata);
-                    if(ondata.type === "error" && ondata.error_code === 420) {
-                        console.error(ondata.error + " - Reload after 10 seconds");
-                        this.state.GxyJanus[gxy[i]].protocol.hangup();
-                        setTimeout(() => {
-                            this.initGalaxy(user,[gxy[i]]);
-                        }, 10000);
-                    }
-                    this.onProtocolData(ondata, gxy[i]);
-                }, false);
-            },er => {
-                alert(gxy[i] + ": " + er);
-                this.initGalaxy(user,[gxy[i]]);
-            }, gxy[i]);
+    initGateway = (user, gateway) => {
+        console.log("[Shidur] initializing gateway", gateway.name);
+
+        // we re-initialize the whole gateway on protocols error
+        gateway.destroy();
+
+        return gateway.init()
+            .then(() => {
+                return gateway.initGxyProtocol(user, data => this.onProtocolData(gateway, data))
+                    .then(() => {
+                        if (gateway.name === "gxy3") {
+                            return gateway.initServiceProtocol(user, data => this.onServiceData(gateway, data))
+                        }
+                    });
+            })
+            .catch(err => {
+                console.error("[Shidur] error initializing gateway", gateway.name, err);
+                setTimeout(() => {
+                    this.initGateway(user, gateway);
+                }, 10000);
+            });
+    }
+
+    pollRooms = () => {
+        this.fetchRooms();
+        setInterval(this.fetchRooms, 2 * 1000)
+    }
+
+    fetchRooms = () => {
+        let {disabled_rooms,mode} = this.state;
+        api.fetchActiveRooms()
+            .then((data) => {
+                let rooms = data;
+                if(mode === "nashim") {
+                    rooms = rooms.filter(r => r.description.match(/^W /));
+                } else if(mode === "gvarim") {
+                    rooms = rooms.filter(r => !r.description.match(/^W /));
+                } else if(mode === "beyahad") {
+                    this.setState({mode: ""})
+                }
+                let groups = rooms.filter((room) => room.janus !== "" && !disabled_rooms.find(droom => room.room === droom.room));
+                disabled_rooms = rooms.filter((room) => room.janus !== "" && !groups.find(droom => room.room === droom.room));
+                this.setState({rooms,groups,disabled_rooms});
+                let quads = [...this.col1.state.vquad,...this.col2.state.vquad,...this.col3.state.vquad,...this.col4.state.vquad];
+                let list = groups.filter((room) => !quads.find(droom => droom && room.room === droom.room));
+                let questions = list.filter(room => room.questions);
+                this.setState({questions});
+            })
+            .catch(err => {
+                console.error("[Shidur] error fetching active rooms", err);
+            })
+    }
+
+    onServiceData = (gateway, data) => {
+        if (data.type === "error" && data.error_code === 420) {
+            console.error("[Shidur] service error message (reloading in 10 seconds)", data.error);
+            setTimeout(() => {
+                this.initGateway(this.state.user, gateway);
+            }, 10000);
+        }
+
+        if(data.type === "event") {
+            delete data.type;
+            this.setState({...data});
+            if(data.sdiout || data.sndman) {
+                setTimeout(() => {
+                    Janus.log(":: Check Full Screen state :: ");
+                    this.checkFullScreen();
+                }, 3000);
+            }
         }
     };
 
-    initService = (janus, user) => {
-        initGxyProtocol(janus, user, service => {
-            this.setState({service});
-        }, ondata => {
-            Janus.log(" :: Service message: ", ondata);
-            if(ondata.type === "error" && ondata.error_code === 420) {
-                console.error(ondata.error + " - Reload after 10 seconds");
-                this.state.service.hangup();
-                setTimeout(() => {
-                    this.initService(janus,user);
-                }, 10000);
-            }
-            this.onServiceData(ondata);
-        }, true);
-    };
+    onProtocolData = (gateway, data) => {
+        if (data.type === "error" && data.error_code === 420) {
+            console.error("[Shidur] protocol error message (reloading in 10 seconds)", data.error);
+            setTimeout(() => {
+                this.initGateway(this.state.user, gateway);
+            }, 10000);
+        }
 
-    onProtocolData = (data, inst) => {
         let {users} = this.state;
 
         // Set status in users list
@@ -143,19 +176,6 @@ class ShidurApp extends Component {
         if(data.type === "leave" && users[data.id]) {
             delete users[data.id];
             this.setState({users});
-        }
-    };
-
-    onServiceData = (data) => {
-        if(data.type === "event") {
-            delete data.type;
-            this.setState({...data});
-            if(data.sdiout || data.sndman) {
-                setTimeout(() => {
-                    Janus.log(":: Check Full Screen state :: ");
-                    this.checkFullScreen();
-                }, 3000);
-            }
         }
     };
 
@@ -184,18 +204,21 @@ class ShidurApp extends Component {
         this.setState({...props})
     };
 
-
-    actionLog = (user, text) => {
-        let {log_list} = this.state;
-        let time = getDateString();
-        let log = {time, user, text};
-        log_list.push(log);
-        this.setState({log_list});
-    };
-
     render() {
+        const {user, gatewaysInitialized, appInitError} = this.state;
 
-        const {user} = this.state;
+        if (appInitError) {
+            return (
+                <Fragment>
+                    <h1>Error Initializing Application</h1>
+                    {`${appInitError}`}
+                </Fragment>
+            );
+        }
+
+        if (!!user && !gatewaysInitialized) {
+            return "Initializing connections to janus instances...";
+        }
 
         let login = (<LoginPage user={user} checkPermission={this.checkPermission} />);
 
@@ -217,7 +240,7 @@ class ShidurApp extends Component {
                                 <UsersQuad index={12} {...this.state} ref={col4 => {this.col4 = col4;}} setProps={this.setProps} />
                             </Grid.Column>
                         </Grid.Row>
-                        <ShidurToran {...this.state} setProps={this.setProps} nextInQueue={this.nextInQueue} gerGroups={this.getRoomList} />
+                        <ShidurToran {...this.state} setProps={this.setProps} nextInQueue={this.nextInQueue} />
                     </Grid>
                 </Grid.Column>
             </Grid>

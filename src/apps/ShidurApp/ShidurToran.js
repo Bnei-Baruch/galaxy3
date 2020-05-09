@@ -1,7 +1,5 @@
 import React, {Component} from 'react';
-import {Janus} from "../../lib/janus";
 import {Grid, Label, Message, Segment, Table, Button, Dropdown, Popup} from "semantic-ui-react";
-import {sendProtocolMessage} from "../../shared/protocol";
 import './ShidurToran.scss';
 import UsersPreview from "./UsersPreview";
 
@@ -26,7 +24,7 @@ class ShidurToran extends Component {
 
     selectGroup = (group, i) => {
         if(this.state.delay) return;
-        Janus.log(group, i);
+        console.log(group, i);
         this.setState({pg: group, open: true});
         group.queue = i;
         this.props.setProps({group});
@@ -58,7 +56,6 @@ class ShidurToran extends Component {
         disabled_rooms.push(data);
         this.props.setProps({disabled_rooms});
         this.setDelay();
-        //this.props.gerGroups();
     };
 
     restoreRoom = (e, data, i) => {
@@ -71,7 +68,6 @@ class ShidurToran extends Component {
                     disabled_rooms.splice(i, 1);
                     this.props.setProps({disabled_rooms});
                     this.setDelay();
-                    //this.props.gerGroups();
                 }
             }
         }
@@ -120,7 +116,7 @@ class ShidurToran extends Component {
         presets[p].push(group);
         this.props.setProps({presets});
 
-        Janus.log(presets)
+        console.log(presets)
     };
 
     previewQuestion = () => {
@@ -130,10 +126,10 @@ class ShidurToran extends Component {
     };
 
     sdiAction = (action, status, i, feed) => {
-        const { service, user, index } = this.props;
+        const { gateways, index } = this.props;
         let col = index === 0 ? 1 : index === 4 ? 2 : index === 8 ? 3 : index === 12 ? 4 : null;
         let msg = { type: "sdi-"+action, status, room: null, col, i, feed};
-        sendProtocolMessage(service, user, msg, true);
+        gateways["gxy3"].sendServiceMessage(msg);
     };
 
     setDelay = () => {
