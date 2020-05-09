@@ -94,7 +94,7 @@ class LoginPage extends Component {
             <Container fluid >
                 <Menu secondary style={{direction}}>
                     <Menu.Item>
-                        <Image src={bblogo} style={{height: '8em', objectFit: 'contain', objectPosition: '14px 0'}} />
+                        <Image src={bblogo} style={{height: '8em', objectFit: 'contain', objectPosition: i18n.language === 'he' ? '-14px 0' : '14px 0'}} />
                         <div>
                           <div style={{fontSize: 'medium', color: '#00c6d2', whiteSpace: 'nowrap'}}>{t('loginPage.logoOurConnection')}</div>
                           <div style={{fontSize: 'large', color: '#00457c'}}>{t('loginPage.logoNetwork')}</div>
