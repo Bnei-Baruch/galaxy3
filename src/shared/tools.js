@@ -1,21 +1,15 @@
 import {Janus} from "../lib/janus";
 import * as Sentry from '@sentry/browser';
-import {
-    JANUS_SRV_GXY3,
-    JANUS_SRV_GXY2,
-    JANUS_SRV_GXY1,
-    STUN_SRV_GXY,
-    WFDB_STATE,
-    WFRP_STATE, WKLI_ENTER, WKLI_LEAVE
+import {JANUS_SRV_GXY1, JANUS_SRV_GXY2, JANUS_SRV_GXY3, STUN_SRV_GXY, WFDB_STATE, WFRP_STATE, WKLI_ENTER, WKLI_LEAVE
 } from "./env";
 
-export const initJanus = (cb,er,gxy) => {
+export const initJanus = (cb,er,gxy,iceServers=[{urls: STUN_SRV_GXY}]) => {
     Janus.init({
         debug: process.env.NODE_ENV !== 'production' ? ["log","error"] : ["error"],
         callback: () => {
             let janus = new Janus({
-                server: gxy === "gxy1" ? JANUS_SRV_GXY1 : gxy === "gxy2" ? JANUS_SRV_GXY2 : JANUS_SRV_GXY3,
-                iceServers: [{urls: STUN_SRV_GXY}],
+                server: gxy === "gxy1" ? JANUS_SRV_GXY1 : gxy === "gxy2" ? JANUS_SRV_GXY2 : gxy === "gxy3" ? JANUS_SRV_GXY3: gxy,
+                iceServers,
                 success: () => {
                     Janus.log(" :: Connected to JANUS");
                     cb(janus);
@@ -377,12 +371,7 @@ const wkliEnter = (base64, user) => {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body:  JSON.stringify(request)
-    }).then((response) => {
-        if (response.ok) {
-            return response.json().then(data => console.log(" :: Send Image: ", data));
-        }
-    })
-        .catch(ex => console.log(`Error Send Image:`, ex));
+    }).then().catch(ex => console.log(`Error Send Image:`, ex));
 }
 
 export const wkliLeave = (user) => {
@@ -393,10 +382,5 @@ export const wkliLeave = (user) => {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body:  JSON.stringify(request)
-    }).then((response) => {
-        if (response.ok) {
-            return response.json().then(data => console.log(" :: Leave User: ", data));
-        }
-    })
-        .catch(ex => console.log(`Leave User:`, ex));
+    }).then().catch(ex => console.log(`Leave User:`, ex));
 }

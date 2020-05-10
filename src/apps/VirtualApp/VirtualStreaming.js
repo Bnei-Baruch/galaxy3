@@ -174,6 +174,7 @@ class VirtualStreaming extends Component {
                       <Dropdown.Item
                       key={i}
                       text={option.text}
+                      selected={option.value === videos}
                       icon={option.icon}
                       description={option.description}
                       action={option.action}
@@ -210,6 +211,7 @@ class VirtualStreaming extends Component {
                       <Dropdown.Item
                         key={i}
                         text={option.text}
+                        selected={option.value === audios}
                         // icon={option.icon}
                         flag={option.flag}
                         description={option.description}

@@ -146,7 +146,7 @@ class ChatBox extends Component {
 
         const gateway = gateways[room_data.janus];
         const msg = {type: "chat-broadcast", room: selected_room, user, text: input_value};
-        gateway.sendProtocolMessage(null, msg)
+        gateway.sendProtocolMessage(msg)
             .then(() => {
                 msg.time = getDateString();
                 msg.to = "all";
