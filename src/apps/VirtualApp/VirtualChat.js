@@ -237,20 +237,20 @@ class VirtualChat extends Component {
     let room_msgs = messages.map((msg, i) => {
       let { user, time, text } = msg;
       return (
-        <div key={i} style={{direction: isRTLString(text) ? 'rtl' : 'ltr'}}><p>
+        <p key={i} style={{direction: isRTLString(text) ? 'rtl' : 'ltr'}}><span style={{display: 'block'}}>
           <i style={{ color: 'grey' }}>{time}</i> -
           <b style={{ color: user.role === 'admin' ? 'red' : 'blue' }}>{user.display}</b>:
-        </p>{textWithLinks(text)}</div>
+        </span>{textWithLinks(text)}</p>
       );
     });
 
     let admin_msgs = support_msgs.map((msg, i) => {
       let { user, time, text } = msg;
       return (
-        <div key={i} style={{direction: isRTLString(text) ? 'rtl' : 'ltr'}}><p>
+        <p key={i} style={{direction: isRTLString(text) ? 'rtl' : 'ltr'}}><span style={{display: 'block'}}>
           <i style={{ color: 'grey' }}>{time}</i> -
           <b style={{ color: user.role === 'admin' ? 'red' : 'blue' }}>{user.role === 'admin' ? user.username : user.display}</b>:
-        </p>{textWithLinks(text)}</div>
+        </span>{textWithLinks(text)}</p>
       );
     });
 
