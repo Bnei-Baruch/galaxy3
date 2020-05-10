@@ -63,7 +63,7 @@
 .fullscrvideo_title {
     // font-family: "Liberation Serif";
     // line-height: 1.2285em;
-    position: absolute;
+    position: relative;
     right: 0;
     left:0;
     color: #FFF;
@@ -76,10 +76,10 @@
     padding: 0px 10px;
     // float: right !important;
     z-index: 2;
-    + .videos-panel {
+    + .vclient__main-wrapper {
         // background:red;
         height: calc(100% - 60px);
-        margin-top:60px;
+        //margin-top:60px;
     }
 }
 

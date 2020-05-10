@@ -357,7 +357,7 @@ class UsersHandleSDIOut extends Component {
 
       let program_feeds = feeds.map((feed) => {
           //let camera = users[feed.display.id] && users[feed.display.id].camera !== false;
-          let camera = g.users.filter(u => feed.id === u.rfid && u.camera).length > 0;
+          let camera = !!g.users.find(u => feed.id === u.rfid && u.camera);
           //let camera = true
           if(feed) {
               let id = feed.id;
@@ -365,7 +365,7 @@ class UsersHandleSDIOut extends Component {
               //let question = users[feed.display.id] && users[feed.display.id].question;
               //let st = users[feed.display.id] && users[feed.display.id].sound_test;
               return (<div className={camera ? 'video' : 'hidden'}
-                           key={"prov" + id}
+                           //key={"prov" + id}
                            ref={"provideo" + id}
                            id={"provideo" + id}>
                   <div className={classNames('video__overlay', {'talk' : talk})}>
