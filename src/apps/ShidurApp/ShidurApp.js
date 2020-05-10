@@ -1,5 +1,4 @@
 import React, {Component, Fragment} from 'react';
-import {Janus} from "../../lib/janus";
 import {Grid} from "semantic-ui-react";
 import api from '../../shared/Api';
 import {client} from "../../components/UserManager";
@@ -145,7 +144,7 @@ class ShidurApp extends Component {
             this.setState({...data});
             if(data.sdiout || data.sndman) {
                 setTimeout(() => {
-                    Janus.log(":: Check Full Screen state :: ");
+                    console.log("[Shidur] :: Check Full Screen state :: ");
                     this.checkFullScreen();
                 }, 3000);
             }
@@ -184,7 +183,7 @@ class ShidurApp extends Component {
         groups_queue++;
         if(groups_queue >= groups.length) {
             // End round here!
-            Janus.log(" -- ROUND END --");
+            console.log("[Shidur] -- ROUND END --");
             groups_queue = 0;
             round++;
             this.setState({groups_queue,round});
