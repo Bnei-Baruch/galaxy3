@@ -1,4 +1,7 @@
-import {API_BACKEND} from "./env";
+import {
+  API_BACKEND,
+  AUTH_API_BACKEND,
+} from "./env";
 
 class Api {
 
@@ -26,7 +29,14 @@ class Api {
     fetchRoom = (id) =>
         this.logAndParse(`fetch room ${id}`, fetch(this.urlFor(`/room/${id}`), this.defaultOptions()));
 
+    verifyUser = (pendingEmail, action) => 
+        this.logAndParse(`verify user ${pendingEmail}, ${action}`, fetch(this.authUrlFor(`/verify?email=${pendingEmail}&action=${action}`), this.defaultOptions()));
+
+    requestToVerify = (email) => 
+        this.logAndParse(`request to verify user ${email}`, fetch(this.authUrlFor(`/request?email=${email}`), this.defaultOptions()));
+
     urlFor = (path) => (API_BACKEND + path)
+    authUrlFor = (path) => (AUTH_API_BACKEND + path)
 
     defaultOptions = () => {
         const auth = this.accessToken ?
@@ -59,6 +69,7 @@ class Api {
     }
 
     setAccessToken = (token) => {
+        console.log('setAccessToken', token);
         this.accessToken = token;
     }
 

@@ -169,17 +169,17 @@ class VirtualClient extends Component {
       alert(t('oldClient.browserNotSupported'));
       window.location = 'https://galaxy.kli.one';
     }
-    if (firstTime) {
-      geoInfo(`${GEO_IP_INFO}`, data => {
-        user.ip = data ? data.ip : '127.0.0.1';
-        user.country = data.country;
-        user.system = system;
-        if (!data) {
-          alert(t('oldClient.failGeoInfo'));
-          this.setState({appInitError: "Error fetching geo info"});
-        }
-        this.setState({ geoinfo: !!data, user });
+    geoInfo(`${GEO_IP_INFO}`, data => {
+      user.ip = data ? data.ip : '127.0.0.1';
+      user.country = data.country;
+      user.system = system;
+      if (!data) {
+        alert(t('oldClient.failGeoInfo'));
+        this.setState({appInitError: "Error fetching geo info"});
+      }
+      this.setState({ geoinfo: !!data, user });
 
+      if (firstTime) {
         api.setAccessToken(user.access_token);
         client.events.addUserLoaded((user) => api.setAccessToken(user.access_token));
         client.events.addUserUnloaded(() => api.setAccessToken(null));
@@ -208,8 +208,8 @@ class VirtualClient extends Component {
               console.error("[VirtualClient] error initializing app", err);
               this.setState({appInitError: err});
             });
-      });
-    }
+      }
+    });
   }
 
   initClient = (user, error) => {

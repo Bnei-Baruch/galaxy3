@@ -10,10 +10,8 @@ import {
   Table,
 } from 'semantic-ui-react';
 import { useTranslation } from 'react-i18next';
-import {
-  AUTH_API_BACKEND,
-} from "../../../shared/env";
 import {silentSignin} from "../../../components/UserManager";
+import api from '../../../shared/Api';
 
 
 const EMAIL_RE = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
@@ -49,25 +47,12 @@ const VerifyAccount = (props) => {
 
   const applyPendingStates = () => {
     for (let [pendingEmail, state] of Object.entries(pendingState)) {
+
       if (['ignore', 'approve'].includes(state)) {
-        fetch(`${AUTH_API_BACKEND}/verify?email=${pendingEmail}&action=${state}`, {
-          headers: {
-            'Authorization': `bearer ${access_token}`,
-            'Content-Type': 'application/json',
-          },
-        }).then((response) => {
-          if (response.ok) {
-            return response.json();
-          } else {
-            throw new Error(`Fetch error: ${response.status}`);
-          }
-        }).then((data) => {
+        api.verifyUser(pendingEmail, state).then((data) => {
           if (data && data.result === 'success') {
             silentSignin();  // Update user data from oidc. Same as renew signin after 10 minutes.
           }
-        })
-        .catch((error) => {
-          console.error('Verify error:', error);
         });
       }
     }
@@ -75,28 +60,16 @@ const VerifyAccount = (props) => {
 
   const askFriendToVerify = () => {
     if (valid) {
-      fetch(`${AUTH_API_BACKEND}/request?email=${email}`, {
-        headers: {
-          'Authorization': `bearer ${access_token}`,
-          'Content-Type': 'application/json',
-        },
-      }).then((response) => {
-        if (response.ok) {
-          return response.json();
-        } else if (response.status === 404) {
-          setError(t('galaxyApp.requestedVerificationBadEmailPopup'));
-        } else {
-          throw new Error(`Fetch error: ${response.status}`);
-        }
-      }).then((data) => {
+      api.requestToVerify(email).then((data) => {
         if (data && data.result === 'success') {
           setRequestSent(true);
           setClosedModal(false);
           silentSignin();  // Update user data from oidc. Same as renew signin after 10 minutes.
         }
-      })
-      .catch((error) => {
+      }).catch((error) => {
         console.error('Request error:', error);
+        //} else if (response.status === 404) {
+        //  setError(t('galaxyApp.requestedVerificationBadEmailPopup'));
       });
     }
   };
