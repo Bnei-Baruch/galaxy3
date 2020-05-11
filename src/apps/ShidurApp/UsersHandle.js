@@ -35,39 +35,41 @@ class UsersHandle extends Component {
         this.exitVideoRoom(this.state.room, () =>{})
     };
 
-    initVideoRoom = (roomid, isnt) => {
-        this.props.GxyJanus[isnt].janus.attach({
+    initVideoRoom = (roomid, inst) => {
+        const gateway = this.props.gateways[inst];
+        gateway.gateway.attach({
             plugin: "janus.plugin.videoroom",
             opaqueId: "preview_shidur",
             success: (videoroom) => {
-                Janus.log(videoroom);
+                gateway.log(`[room ${roomid}] attach success`, videoroom.getId());
                 this.setState({room: roomid, videoroom, remoteFeed: null});
-                Janus.log("Plugin attached! (" + videoroom.getPlugin() + ", id=" + videoroom.getId() + ")");
-                Janus.log("  -- This is a publisher/manager");
                 let {user} = this.props;
                 let register = { "request": "join", "room": roomid, "ptype": "publisher", "display": JSON.stringify(user) };
                 videoroom.send({"message": register});
             },
-            error: (error) => {
-                Janus.log("Error attaching plugin: " + error);
+            error: (err) => {
+                gateway.error(`[room ${roomid}] attach error`, err);
             },
             consentDialog: (on) => {
-                Janus.debug("Consent dialog should be " + (on ? "on" : "off") + " now");
+                gateway.debug(`[room ${roomid}] consent dialog should be ${on ? "on" : "off"} now`);
             },
             mediaState: (medium, on) => {
-                Janus.log("Janus " + (on ? "started" : "stopped") + " receiving our " + medium);
+                gateway.log(`[room ${roomid}] Janus ${on ? "started" : "stopped"} receiving our ${medium}`);
             },
             webrtcState: (on) => {
-                Janus.log("Janus says our WebRTC PeerConnection is " + (on ? "up" : "down") + " now");
+                gateway.log(`[room ${roomid}] Janus says our WebRTC PeerConnection is ${on ? "up" : "down"} now`);
+            },
+            slowLink: (uplink, lost, mid) => {
+                gateway.warn(`[room ${roomid}] Janus reports problems ${(uplink ? "sending" : "receiving")} packets on mid ${mid} (${lost} lost packets)`);
             },
             onmessage: (msg, jsep) => {
-                this.onMessage(msg, jsep, isnt);
+                this.onMessage(gateway, roomid, msg, jsep);
             },
             onlocalstream: (mystream) => {
-                Janus.debug(" ::: Got a local stream :::", mystream);
+                gateway.log(`[room ${roomid}] ::: Got a local stream :::`, mystream);
             },
             oncleanup: () => {
-                Janus.log(" ::: Got a cleanup notification: we are unpublished now :::");
+                gateway.log(`[room ${roomid}] ::: Got a cleanup notification: we are unpublished now :::`);
             }
         });
     };
@@ -76,7 +78,7 @@ class UsersHandle extends Component {
         if(this.state.videoroom) {
             let leave_room = {request : "leave", "room": roomid};
             this.state.videoroom.send({"message": leave_room,
-                success: (data) => {
+                success: () => {
                     this.state.videoroom.detach();
                     if(this.state.remoteFeed)
                         this.state.remoteFeed.detach();
@@ -86,17 +88,15 @@ class UsersHandle extends Component {
         }
     };
 
-
-    onMessage = (msg, jsep, isnt) => {
-        Janus.debug(" ::: Got a message (publisher) :::");
-        Janus.debug(msg);
+    onMessage = (gateway, roomid, msg, jsep) => {
+        gateway.debug(`[room ${roomid}] ::: Got a message (publisher) :::`, msg);
         let event = msg["videoroom"];
         if(event !== undefined && event !== null) {
             if(event === "joined") {
                 let myid = msg["id"];
                 let mypvtid = msg["private_id"];
                 this.setState({myid ,mypvtid});
-                Janus.log("Successfully joined room " + msg["room"] + " with ID " + myid);
+                console.debug(`[Shidur] [room ${roomid}] Successfully joined room`, myid);
                 if(msg["publishers"] !== undefined && msg["publishers"] !== null) {
                     let list = msg["publishers"];
                     //FIXME: Tmp fix for black screen in room caoused by feed with video_codec = none
@@ -104,8 +104,7 @@ class UsersHandle extends Component {
                         .filter(feeder => JSON.parse(feeder.display).role === 'user' && feeder.video_codec !== 'none');
                     let {feedStreams} = this.state;
                     let {users} = this.props;
-                    Janus.log(":: Got Pulbishers list: ", feeds);
-                    Janus.debug("Got a list of available publishers/feeds:");
+                    console.log(`[Shidur] [room ${roomid}] :: Got publishers list: `, feeds);
                     let subscription = [];
                     for(let f in feeds) {
                         let id = feeds[f]["id"];
@@ -129,11 +128,11 @@ class UsersHandle extends Component {
                     this.setState({feeds,feedStreams,users});
                     if(subscription.length > 0) {
                         this.props.setProps({users});
-                        this.subscribeTo(subscription, isnt);
+                        this.subscribeTo(gateway, roomid, subscription);
                     }
                 }
             } else if(event === "destroyed") {
-                Janus.warn("The room has been destroyed!");
+                console.warn(`[Shidur] [room ${roomid}] room destroyed!`);
             } else if(event === "event") {
                 let {feedStreams,user,myid} = this.state;
                 if(msg["streams"] !== undefined && msg["streams"] !== null) {
@@ -149,7 +148,7 @@ class UsersHandle extends Component {
                     let feed = msg["publishers"];
                     let {feeds,feedStreams} = this.state;
                     let {users} = this.props;
-                    Janus.debug("Got a list of available publishers/feeds:");
+                    gateway.log(`[Shidur] [room ${roomid}] :: Got publishers list: `, feeds);
                     let subscription = [];
                     for(let f in feed) {
                         let id = feed[f]["id"];
@@ -174,17 +173,17 @@ class UsersHandle extends Component {
                     feeds.push(feed[0]);
                     this.setState({feeds,feedStreams,users});
                     if(subscription.length > 0) {
-                        this.subscribeTo(subscription, isnt);
+                        this.subscribeTo(gateway, roomid, subscription);
                         this.props.setProps({users});
                     }
                 } else if(msg["leaving"] !== undefined && msg["leaving"] !== null) {
                     let leaving = msg["leaving"];
-                    Janus.log("Publisher left: " + leaving);
+                    console.log(`[Shidur] [room ${roomid}] Publisher left`, leaving);
                     this.unsubscribeFrom(leaving);
 
                 } else if(msg["unpublished"] !== undefined && msg["unpublished"] !== null) {
                     let unpublished = msg["unpublished"];
-                    Janus.log("Publisher left: " + unpublished);
+                    console.log(`[Shidur] [room ${roomid}] Publisher left`, unpublished);
                     if(unpublished === 'ok') {
                         this.state.videoroom.hangup();
                         return;
@@ -193,51 +192,51 @@ class UsersHandle extends Component {
 
                 } else if(msg["error"] !== undefined && msg["error"] !== null) {
                     if(msg["error_code"] === 426) {
-                        Janus.log("This is a no such room");
+                        console.error(`[Shidur] [room ${roomid}] no such room`);
                     } else {
-                        Janus.log(msg["error"]);
+                        console.error(`[Shidur] [room ${roomid}] no such room`, msg["error"]);
                     }
                 }
             }
         }
         if(jsep !== undefined && jsep !== null) {
-            Janus.debug("Handling SDP as well...");
-            Janus.debug(jsep);
-            this.state.videoroom.handleRemoteJsep({jsep: jsep});
+            gateway.debug(`[room ${roomid}] Handling SDP as well...`, jsep);
+            this.state.videoroom.handleRemoteJsep({jsep});
         }
     };
 
-    newRemoteFeed = (subscription, inst) => {
-        this.props.GxyJanus[inst].janus.attach(
+    newRemoteFeed = (gateway, roomid, subscription) => {
+        gateway.gateway.attach(
             {
                 plugin: "janus.plugin.videoroom",
                 opaqueId: "remotefeed_user",
                 success: (pluginHandle) => {
+                    gateway.log(`[room ${roomid}] [remoteFeed] attach success`, pluginHandle.getId());
                     let remoteFeed = pluginHandle;
                     this.setState({remoteFeed, creatingFeed: false});
                     let subscribe = {request: "join", room: this.state.room, ptype: "subscriber", streams: subscription};
                     remoteFeed.send({ message: subscribe });
                 },
-                error: (error) => {
-                    Janus.error("  -- Error attaching plugin...", error);
+                error: (err) => {
+                    gateway.error(`[room ${roomid}] [remoteFeed] attach error`, err);
                 },
                 iceState: (state) => {
-                    Janus.log("ICE state (remote feed) changed to " + state);
+                    gateway.log(`[room ${roomid}] [remoteFeed] ICE state changed to`, state);
                 },
                 webrtcState: (on) => {
-                    Janus.log("Janus says this WebRTC PeerConnection (remote feed) is " + (on ? "up" : "down") + " now");
+                    gateway.log(`[room ${roomid}] [remoteFeed] Janus says this WebRTC PeerConnection is ${on ? "up" : "down"} now`);
                 },
                 slowLink: (uplink, nacks) => {
-                    Janus.warn("Janus reports problems " + (uplink ? "sending" : "receiving") +
+                    gateway.warn(`[room ${roomid}] [remoteFeed] Janus reports problems ` + (uplink ? "sending" : "receiving") +
                         " packets on this PeerConnection (remote feed, " + nacks + " NACKs/s " + (uplink ? "received" : "sent") + ")");
                 },
                 onmessage: (msg, jsep) => {
                     let event = msg["videoroom"];
                     if(msg["error"] !== undefined && msg["error"] !== null) {
-                        Janus.debug("-- ERROR: " + msg["error"]);
+                        console.error(`[Shidur] [room ${roomid}] [remoteFeed] error`, msg["error"]);
                     } else if(event !== undefined && event !== null) {
                         if(event === "attached") {
-                            Janus.log("Successfully attached to feed in room " + msg["room"]);
+                            console.debug(`[Shidur] [room ${roomid}] [remoteFeed] successfully attached to feed in room`);
                         } else if(event === "event") {
                             // Check if we got an event on a simulcast-related event from this publisher
                         } else {
@@ -253,22 +252,19 @@ class UsersHandle extends Component {
                         this.setState({mids});
                     }
                     if(jsep !== undefined && jsep !== null) {
-                        Janus.debug("Handling SDP as well...");
-                        Janus.debug(jsep);
+                        gateway.debug(`[room ${roomid}] [remoteFeed] Handling SDP as well...`, jsep);
                         // Answer and attach
                         this.state.remoteFeed.createAnswer(
                             {
                                 jsep: jsep,
                                 media: { audioSend: false, videoSend: false },
                                 success: (jsep) => {
-                                    Janus.debug("Got SDP!");
-                                    Janus.debug(jsep);
+                                    gateway.debug(`[room ${roomid}] [remoteFeed] Got SDP!`, jsep);
                                     let body = { request: "start", room: this.state.room };
                                     this.state.remoteFeed.send({ message: body, jsep: jsep });
                                 },
-                                error: (error) => {
-                                    Janus.error("WebRTC error:", error);
-                                    Janus.debug("WebRTC error... " + JSON.stringify(error));
+                                error: (err) => {
+                                    gateway.error(`[room ${roomid}][remoteFeed]  WebRTC error`, err);
                                 }
                             });
                     }
@@ -286,18 +282,18 @@ class UsersHandle extends Component {
                     }
                 },
                 ondataopen: (data) => {
-                    Janus.log("The DataChannel is available!(feed)");
+                    gateway.debug(`[room ${roomid}] [remoteFeed] The DataChannel is available!`);
                 },
                 ondata: (data) => {
-                    Janus.debug("We got data from the DataChannel! (feed) " + data);
+                    gateway.debug(`[room ${roomid}] [remoteFeed] We got data from the DataChannel!`, data);
                 },
                 oncleanup: () => {
-                    Janus.log(" ::: Got a cleanup notification (remote feed) :::");
+                    gateway.debug(`[room ${roomid}] [remoteFeed] ::: Got a cleanup notification :::`);
                 }
             });
     };
 
-    subscribeTo = (subscription, inst) => {
+    subscribeTo = (gateway, roomid, subscription) => {
         if (this.state.remoteFeed) {
             this.state.remoteFeed.send({message:
                     {request: "subscribe", streams: subscription}
@@ -306,11 +302,11 @@ class UsersHandle extends Component {
         }
         if (this.state.creatingFeed) {
             setTimeout(() => {
-                this.subscribeTo(subscription, inst);
+                this.subscribeTo(gateway, roomid, subscription);
             }, 500);
         } else {
             this.setState({creatingFeed: true});
-            this.newRemoteFeed(subscription, inst);
+            this.newRemoteFeed(gateway, roomid, subscription);
         }
     };
 
@@ -319,7 +315,7 @@ class UsersHandle extends Component {
         let {remoteFeed} = this.state;
         for (let i=0; i<feeds.length; i++) {
             if (feeds[i].id === id) {
-                Janus.log("Feed " + feeds[i] + " (" + id + ") has left the room, detaching");
+                console.log("[Shidur] Feed " + feeds[i] + " (" + id + ") has left the room, detaching");
                 delete users[feeds[i].display.id];
                 delete feedStreams[id];
                 feeds.splice(i, 1);
