@@ -365,7 +365,7 @@ class UsersHandleSDIOut extends Component {
               //let question = users[feed.display.id] && users[feed.display.id].question;
               //let st = users[feed.display.id] && users[feed.display.id].sound_test;
               return (<div className={camera ? 'video' : 'hidden'}
-                           //key={"prov" + id}
+                           key={"prov" + id}
                            ref={"provideo" + id}
                            id={"provideo" + id}>
                   <div className={classNames('video__overlay', {'talk' : talk})}>

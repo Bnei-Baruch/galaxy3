@@ -3,7 +3,6 @@ import { Janus } from "../../lib/janus";
 import {Grid, Segment} from "semantic-ui-react";
 import {getState, initJanus} from "../../shared/tools";
 import './SDIOutApp.css';
-import './UsersSDIOut.css'
 import './UsersQuadSDIOut.scss'
 import {initGxyProtocol} from "../../shared/protocol";
 //import {SDIOUT_ID} from "../../shared/consts";
