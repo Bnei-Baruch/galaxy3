@@ -10,15 +10,15 @@ import {
   Table,
 } from 'semantic-ui-react';
 import { useTranslation } from 'react-i18next';
-import {silentSignin} from "../../../components/UserManager";
 import api from '../../../shared/Api';
+import {getUserRemote} from "../../../components/UserManager";
 
 
 const EMAIL_RE = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
 const emailValid = (email) => !!EMAIL_RE.test(String(email).toLowerCase());
 
 const VerifyAccount = (props) => {
-  const {loginPage, i18n} = props;
+  const {loginPage, i18n, onUserUpdate} = props;
   const {t} = useTranslation();
   const {user, user: {access_token}} = props;
   const [email, setEmail] = useState('');
@@ -51,7 +51,7 @@ const VerifyAccount = (props) => {
       if (['ignore', 'approve'].includes(state)) {
         api.verifyUser(pendingEmail, state).then((data) => {
           if (data && data.result === 'success') {
-            silentSignin();  // Update user data from oidc. Same as renew signin after 10 minutes.
+            getUserRemote((user) => onUserUpdate(user));
           }
         });
       }
@@ -64,7 +64,7 @@ const VerifyAccount = (props) => {
         if (data && data.result === 'success') {
           setRequestSent(true);
           setClosedModal(false);
-          silentSignin();  // Update user data from oidc. Same as renew signin after 10 minutes.
+          getUserRemote((user) => onUserUpdate(user));
         }
       }).catch((error) => {
         console.error('Request error:', error);

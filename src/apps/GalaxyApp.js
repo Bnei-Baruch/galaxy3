@@ -8,9 +8,10 @@ import {
 	Grid,
 } from "semantic-ui-react";
 import LoginPage from '../components/LoginPage';
-import {buildUserObject, client, pendingApproval} from "../components/UserManager";
+import {client, pendingApproval} from "../components/UserManager";
 import {withTranslation} from "react-i18next";
 import VerifyAccount from './VirtualApp/components/VerifyAccount';
+import api from '../shared/Api';
 
 class GalaxyApp extends Component {
 
@@ -20,16 +21,12 @@ class GalaxyApp extends Component {
     };
 
     componentDidMount() {
-      // When renew singin happends, every 10 minutes, we want to fetch new
-      // user info including permissiong and attributes and apply it to client.
-      // For example guest user may become regular user after approval.
-      client.events.addUserLoaded((oidcUser) => {
-        const user = buildUserObject(oidcUser);
-        this.checkPermission(user);
-      });
-    };
+      client.events.addUserLoaded((user) => api.setAccessToken(user.access_token));
+      client.events.addUserUnloaded(() => api.setAccessToken(null));
+    }
 
     checkPermission = (user) => {
+      api.setAccessToken(user.access_token);
       const approval = pendingApproval(user);
       const options = this.options(user.roles, approval);
       const requested = this.requested(user);
@@ -86,7 +83,7 @@ class GalaxyApp extends Component {
 						<Grid.Row>
               <Divider className="whole-divider" vertical />
 							{(!approval || requested) ? null : <Grid.Column>
-								<VerifyAccount user={user} loginPage={true} i18n={i18n}/>
+								<VerifyAccount user={user} loginPage={true} i18n={i18n} onUserUpdate={(user) => this.checkPermission(user)} />
 							</Grid.Column>}
 							<Grid.Column style={{display: 'flex', justifyContent: 'center', alignItems: 'center'}}>
 								{this.options(roles, approval)}

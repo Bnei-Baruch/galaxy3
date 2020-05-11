@@ -130,13 +130,6 @@ class VirtualClient extends Component {
     if (isMobile) {
       window.location = '/userm';
     }
-    // When renew singin happends, every 10 minutes, we want to fetch new
-    // user info including permissiong and attributes and apply it to client.
-    // For example guest user may become regular user after approval.
-    client.events.addUserLoaded((oidcUser) => {
-      const user = buildUserObject(oidcUser);
-      this.recheckPermission(user);
-    });
   }
 
   componentWillUnmount() {
@@ -1327,7 +1320,7 @@ class VirtualClient extends Component {
     let login = (<LoginPage user={user} checkPermission={this.checkPermission} />);
 
     let content = (<div className={classNames('vclient', { 'vclient--chat-open': chatVisible })}>
-			<VerifyAccount user={user} loginPage={false} i18n={i18n} />
+			<VerifyAccount user={user} loginPage={false} i18n={i18n} onUserUpdate={(user) => this.recheckPermission(user)} />
       <div className="vclient__toolbar">
         <Input>
           <Select

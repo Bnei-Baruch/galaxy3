@@ -2,6 +2,7 @@ import {Log as oidclog, UserManager} from 'oidc-client';
 import {KJUR} from 'jsrsasign';
 import {BASE_URL} from "../shared/env";
 import {reportToSentry} from "../shared/tools";
+import api from '../shared/Api';
 
 const AUTH_URL = 'https://accounts.kbb1.com/auth/realms/main';
 
@@ -80,9 +81,11 @@ export const buildUserObject = (oidcUser) => {
   };
   user.role = pendingApproval(user) ? 'ghost' : 'user';
   user_mgr = user;
+  console.log('USER getUser', oidcUser, at, user);
   return user;
 }
 
+// Runs cb on local user info.
 export const getUser = (cb) => {
   return client.getUser().then((user) => {
     cb(buildUserObject(user));
@@ -92,10 +95,32 @@ export const getUser = (cb) => {
   });
 };
 
-export const silentSignin = () => {
-  return client.signinSilent().catch((error) => {
-    console.log('Error silent signin:', error);
+// Fetch remote user info.
+export const getUserRemote = (cb) => {
+  // Due to difference in local and remote user structure we get local user info,
+  // then remote user info and merge only few required fields.
+  getUser((user) => {
+    api.fetchUserInfo().then((remoteUser) => {
+      console.log('USER getUserRemote', remoteUser);
+      const updatedUser = Object.assign({}, user);  // Shallow copy.
+      if (remoteUser.attributes) {
+        if (remoteUser.attributes.request) {
+          updatedUser.request = remoteUser.attributes.request;
+        }
+        if (remoteUser.attributes.timestamp) {
+          updatedUser.request_timestamp = remoteUser.attributes.timestamp;
+        }
+        if (remoteUser.attributes.pending) {
+          updatedUser.pending = remoteUser.attributes.pending;
+        }
+      }
+      console.log('USER getUserRemote', updatedUser);
+      cb(updatedUser);
+    }).catch((error) => {
+      console.log("Error: ",error);
+      reportToSentry("fetch user info Error: " + error, {source: "getUserRemote"}, null, "warning");
+    });
   });
-}
+};
 
 export default client;

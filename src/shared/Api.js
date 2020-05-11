@@ -35,6 +35,9 @@ class Api {
     requestToVerify = (email) => 
         this.logAndParse(`request to verify user ${email}`, fetch(this.authUrlFor(`/request?email=${email}`), this.defaultOptions()));
 
+    fetchUserInfo = () => 
+        this.logAndParse(`refresh user info`, fetch(this.authUrlFor('/my_info'), this.defaultOptions()));
+
     urlFor = (path) => (API_BACKEND + path)
     authUrlFor = (path) => (AUTH_API_BACKEND + path)
 
