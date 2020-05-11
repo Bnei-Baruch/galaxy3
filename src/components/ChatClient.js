@@ -153,10 +153,10 @@ class ChatClient extends Component {
         let list_msgs = messages.map((msg,i) => {
             let {user,time,text} = msg;
             return (
-                <div key={i}><p>
+                <p key={i}><span style={{display: 'block'}}>
                     <i style={{color: 'grey'}}>{time}</i> -
                     <b style={{color: user.role === "admin" ? 'red' : 'blue'}}>{user.display}</b>:
-                </p>{text}</div>
+                </span>{text}</p>
             );
         });
 
