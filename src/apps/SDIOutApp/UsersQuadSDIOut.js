@@ -1,12 +1,11 @@
 import React, { Component } from 'react';
 import {Segment} from "semantic-ui-react";
 import UsersHandleSDIOut from "./UsersHandleSDIOut";
-import {getState} from "../../shared/tools";
+import api from '../../shared/Api';
 
 class UsersQuadSDIOut extends Component {
 
     state = {
-        col: null,
         vquad: [null,null,null,null],
     };
 
@@ -15,9 +14,11 @@ class UsersQuadSDIOut extends Component {
         let col = index === 0 ? 1 : index === 4 ? 2 : index === 8 ? 3 : index === 12 ? 4 : null;
         this.setState({col});
         setInterval(() => {
-            getState(`galaxy/program/q`+col, ({vquad}) => {
-                this.setState({vquad});
-            });
+            api.fetchQuad(col)
+                .then(data => this.setState({vquad: data.vquad}))
+                .catch(err => {
+                    console.error("[SDIOut] error fetching quad state", col, err);
+                });
         }, 1000);
     };
 

@@ -7,8 +7,6 @@ export const BASE_URL = ENV === 'production' ?
 export const SENTRY_KEY = process.env.REACT_APP_SENTRY_KEY;
 
 export const GEO_IP_INFO = process.env.REACT_APP_GEO_IP_INFO;
-export const WFRP_STATE = process.env.REACT_APP_WFRP_STATE;
-export const WFDB_STATE = process.env.REACT_APP_WFDB_STATE;
 export const STUN_SRV_GXY = process.env.REACT_APP_STUN_SRV_GXY;
 export const ADMIN_SECRET = process.env.REACT_APP_ADMIN_SECRET;
 export const SECRET = process.env.REACT_APP_SECRET;
@@ -27,4 +25,3 @@ export const API_BACKEND_USERNAME = process.env.REACT_APP_API_BACKEND_USERNAME;
 export const API_BACKEND_PASSWORD = process.env.REACT_APP_API_BACKEND_PASSWORD;
 
 export const MONITORING_BACKEND = process.env.REACT_APP_MONITORING_BACKEND;
-
