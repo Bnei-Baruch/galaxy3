@@ -37,42 +37,8 @@ body {
     flex-wrap:wrap;
 }
 
-.ingest_segment > .menu,
-.ingest_segment >.input {
-    margin: .2rem .5rem !important;
-}
-.ingest_segment .menu:nth-child(2) {
-    flex: 1 0 auto;
-}
-.videos_segment {
-    flex: 1 0 auto;
-    display: flex;
-}
-
-.video-wrapper {
-    display: flex;
-    background: #000;
-    padding: 1.6em;
-    flex: 1 0 100%;
-    transition: .2s all linear;
-
-}
-.virtual_segment--chat-open .video-wrapper{
-    flex: 1 0 calc(100% - 400px);
-}
-.chat-wrapper {
-    flex: 0 0 400px;
-    padding: 0 10px 10px 10px;
-    display: flex;
-    flex-direction: column;
-}
-
-.ui.selection.dropdown .menu {
-    max-height: 30rem;
-}
-
 .talk {
-    border: 1px solid yellow;
+    border: 2px solid yellow;
 }
 
 .mirror {

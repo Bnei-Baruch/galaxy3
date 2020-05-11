@@ -26,6 +26,9 @@ class Api {
     fetchQuad = (col) =>
         this.logAndParse(`fetch quad ${col}`, fetch(this.urlFor(`/qids/q${col}`), this.defaultOptions()));
 
+    fetchProgram = (col) =>
+        this.logAndParse(`fetch program ${col}`, fetch(this.urlFor(`/qids`), this.defaultOptions()));
+
     updateQuad = (col, data) => {
         const options = {
             ...this.defaultOptions(),

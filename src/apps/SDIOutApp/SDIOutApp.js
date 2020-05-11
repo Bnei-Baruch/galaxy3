@@ -4,7 +4,6 @@ import './SDIOutApp.css';
 import './UsersQuadSDIOut.scss'
 //import {SDIOUT_ID} from "../../shared/consts";
 import api from "../../shared/Api";
-import {SDIOUT_ID} from "../../shared/consts";
 import {API_BACKEND_PASSWORD, API_BACKEND_USERNAME} from "../../shared/env";
 import GxyJanus from "../../shared/janus-utils";
 import UsersHandleSDIOut from "./UsersHandleSDIOut";
@@ -28,13 +27,19 @@ class SDIOutApp extends Component {
         },
         qids: [],
         qcol: 0,
-        users: {},
         gateways: {},
         gatewaysInitialized: false,
         appInitError: null,
     };
 
     componentDidMount() {
+        setInterval(() => {
+            api.fetchProgram()
+                .then(qids => this.setState({qids}))
+                .catch(err => {
+                    console.error("[SDIOut] error fetching quad state", err);
+                });
+        }, 1000);
         this.initApp();
     };
 
@@ -47,8 +52,6 @@ class SDIOutApp extends Component {
 
         api.fetchConfig()
             .then(data => GxyJanus.setGlobalConfig(data))
-            .then(api.fetchUsers)
-            .then(data => this.setState({users: data}))
             .then(this.initGateways)
             .catch(err => {
                 console.error("[SDIOut] error initializing app", err);
@@ -76,12 +79,9 @@ class SDIOutApp extends Component {
         const {user} = this.state;
         return gateway.init()
             .then(() => {
-                return gateway.initGxyProtocol(user, data => this.onProtocolData(gateway, data))
-                    .then(() => {
-                        if (gateway.name === "gxy3") {
-                            return gateway.initServiceProtocol(user, data => this.onServiceData(gateway, data))
-                        }
-                    });
+                if (gateway.name === "gxy3") {
+                    return gateway.initServiceProtocol(user, data => this.onServiceData(gateway, data))
+                }
             })
             .catch(err => {
                 console.error("[SDIOut] error initializing gateway", gateway.name, err);
