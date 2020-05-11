@@ -18,9 +18,8 @@ const EMAIL_RE = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@
 const emailValid = (email) => !!EMAIL_RE.test(String(email).toLowerCase());
 
 const VerifyAccount = (props) => {
-  const {loginPage, i18n, onUserUpdate} = props;
+  const {user, loginPage, i18n, onUserUpdate} = props;
   const {t} = useTranslation();
-  const {user, user: {access_token}} = props;
   const [email, setEmail] = useState('');
   const valid = useMemo(() => emailValid(email), [email]);
   const [requestSent, setRequestSent] = useState(false);

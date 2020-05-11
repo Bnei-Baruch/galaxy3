@@ -41,7 +41,7 @@ import {MonitoringData} from '../../shared/MonitoringData';
 import api from '../../shared/Api';
 import VirtualStreaming from './VirtualStreaming';
 import VirtualStreamingJanus from './VirtualStreamingJanus';
-import {client, buildUserObject} from "../../components/UserManager";
+import {client} from "../../components/UserManager";
 import LoginPage from "../../components/LoginPage";
 import * as Sentry from "@sentry/browser";
 import VerifyAccount from './components/VerifyAccount';
