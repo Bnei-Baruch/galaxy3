@@ -46,6 +46,7 @@ import LoginPage from "../../components/LoginPage";
 import * as Sentry from "@sentry/browser";
 import VerifyAccount from './components/VerifyAccount';
 import GxyJanus from "../../shared/janus-utils";
+import {getUserRemote} from "../../components/UserManager";
 
 class VirtualClient extends Component {
 
@@ -200,6 +201,11 @@ class VirtualClient extends Component {
             .catch(err => {
               console.error("[VirtualClient] error initializing app", err);
               this.setState({appInitError: err});
+            }).then(() => {
+              // If user is ghost, after login check if attributes were updated.
+              if (user.role === 'ghost') {
+                getUserRemote((user) => this.recheckPermission(user));
+              }
             });
       }
     });
