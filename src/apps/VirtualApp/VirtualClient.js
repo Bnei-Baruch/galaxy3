@@ -137,7 +137,15 @@ class VirtualClient extends Component {
     this.state.virtualStreamingJanus.destroy();
   }
 
-  checkPermission = (user) => this.checkPermissions_(user, true);
+  checkPermission = (user) => {
+    // If user is ghost, after login check if attributes were updated.
+    if (user.role === 'ghost') {
+      api.setAccessToken(user.access_token);
+      getUserRemote((user) => this.checkPermissions_(user, true));
+    } else {
+      this.checkPermissions_(user, true);
+    }
+  }
   recheckPermission = (user) => this.checkPermissions_(user, false);
 
   checkPermissions_ = (user, firstTime) => {
@@ -201,11 +209,6 @@ class VirtualClient extends Component {
             .catch(err => {
               console.error("[VirtualClient] error initializing app", err);
               this.setState({appInitError: err});
-            }).then(() => {
-              // If user is ghost, after login check if attributes were updated.
-              if (user.role === 'ghost') {
-                getUserRemote((user) => this.recheckPermission(user));
-              }
             });
       }
     });
