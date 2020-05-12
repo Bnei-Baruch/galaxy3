@@ -43,7 +43,7 @@ class Api {
         this.logAndParse(`verify user ${pendingEmail}, ${action}`, fetch(this.authUrlFor(`/verify?email=${pendingEmail}&action=${action}`), this.defaultOptions()));
 
     requestToVerify = (email) => 
-        this.logAndParse(`request to verify user ${email}`, fetch(this.authUrlFor(`/request?email=${email}`), this.defaultOptions()));
+        this.logAndParse(`request to verify user ${email}`, fetch(this.authUrlFor(`/request?email=${email}`), this.defaultOptions()), /* responseOnError= */ true);
 
     fetchUserInfo = () => 
         this.logAndParse(`refresh user info`, fetch(this.authUrlFor('/my_info'), this.defaultOptions()));
@@ -63,11 +63,11 @@ class Api {
         };
     };
 
-    logAndParse = (action, fetchPromise) => {
+    logAndParse = (action, fetchPromise, responseOnError = false) => {
         return fetchPromise
             .then(response => {
                 if (!response.ok) {
-                    throw Error(response.statusText);
+                    return Promise.reject(response);
                 }
                 return response.json();
             })
@@ -75,9 +75,12 @@ class Api {
                 console.debug(`[API] ${action} success`, data);
                 return data;
             })
-            .catch(err => {
-                console.error(`[API] ${action} error`, err);
-                return Promise.reject(err);
+            .catch(response => {
+                console.error(`[API] ${action} error`, response.statusText);
+                if (responseOnError) {
+                  return Promise.reject(response);
+                }
+                return Promise.reject(Error(response.statusText));
             });
     }
 

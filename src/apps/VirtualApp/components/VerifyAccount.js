@@ -65,10 +65,10 @@ const VerifyAccount = (props) => {
           setClosedModal(false);
           getUserRemote((user) => onUserUpdate(user));
         }
-      }).catch((error) => {
-        console.error('Request error:', error);
-        //} else if (response.status === 404) {
-        //  setError(t('galaxyApp.requestedVerificationBadEmailPopup'));
+      }).catch((response) => {
+        if (response.status === 404) {
+          setError(t('galaxyApp.requestedVerificationBadEmailPopup'));
+        }
       });
     }
   };
