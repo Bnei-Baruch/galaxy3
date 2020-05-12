@@ -2,6 +2,7 @@ import React, {Component} from 'react';
 import {Grid, Label, Message, Segment, Table, Button, Dropdown, Popup} from "semantic-ui-react";
 import './ShidurToran.scss';
 import UsersPreview from "./UsersPreview";
+import {RESET_VOTE} from "../../shared/env";
 
 
 class ShidurToran extends Component {
@@ -145,6 +146,15 @@ class ShidurToran extends Component {
         this.sdiAction("vote", !this.state.vote, 1, null);
     };
 
+    resetVote = () => {
+        let request = {auth: "alexmizrachi"};
+        fetch(`${RESET_VOTE}`,{
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body:  JSON.stringify(request)
+        }).then().catch(ex => console.log(`Reset Vote`, ex));
+    }
+
     render() {
 
         const {group,disabled_rooms,groups,groups_queue,questions,presets,users,sdiout,sndman,mode} = this.props;
@@ -272,6 +282,7 @@ class ShidurToran extends Component {
                     <Segment textAlign='center' >
                         <Button.Group attached='bottom' size='mini' >
                             <Button color='green' onClick={this.handleVote} >{vote ? 'Hide' : 'Show'} Vote</Button>
+                            <Button color='blue' onClick={this.resetVote} >Reset Vote</Button>
                         </Button.Group>
                     </Segment>
                 </Grid.Column>
