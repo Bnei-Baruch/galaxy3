@@ -32,6 +32,7 @@ export const resources = {
         videoSettings: 'Video Settings:',
         noResultsFound: 'No results found.',
         settings: 'Settings',
+        vote: 'Vote',
       },
       feedback: {
         feedbackHelp: 'Feedback/Help',
@@ -103,6 +104,7 @@ export const resources = {
         videoSettings: 'Ajustes de video:',
         noResultsFound: 'No se han encontrado resultados.',
         settings: 'Configuración',
+        vote: 'Vote',
       },
       feedback: {
         feedbackHelp: 'Comentarios/Ayuda',
@@ -174,6 +176,7 @@ export const resources = {
         videoSettings: 'הגדרות וידאו',
         noResultsFound: 'לא נמצאו תוצאות',
         settings: 'הגדרות',
+        vote: 'Vote',
       },
       feedback: {
         feedbackHelp: 'משוב/עזרה',
@@ -245,6 +248,7 @@ export const resources = {
         videoSettings: 'Параметры видео:',
         noResultsFound: 'Ничего не найдено',
         settings: 'Настройки',
+        vote: 'Vote',
       },
       feedback: {
         feedbackHelp: 'Фидбек/Помощь',
