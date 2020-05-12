@@ -8,7 +8,7 @@ import {
 	Grid,
 } from "semantic-ui-react";
 import LoginPage from '../components/LoginPage';
-import {client, pendingApproval} from "../components/UserManager";
+import {client, getUserRemote, pendingApproval} from "../components/UserManager";
 import {withTranslation} from "react-i18next";
 import VerifyAccount from './VirtualApp/components/VerifyAccount';
 import api from '../shared/Api';
@@ -27,6 +27,14 @@ class GalaxyApp extends Component {
 
     checkPermission = (user) => {
       api.setAccessToken(user.access_token);
+      if (user.role === 'ghost') {
+        getUserRemote((user) => this.checkPermission_(user));
+      } else {
+        this.checkPermission_(user);
+      }
+    }
+
+    checkPermission_ = (user) => {
       const approval = pendingApproval(user);
       const options = this.options(user.roles, approval);
       const requested = this.requested(user);
