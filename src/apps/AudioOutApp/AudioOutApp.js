@@ -24,6 +24,7 @@ class AudioOutApp extends Component {
             name: "audioout"
         },
         users: {},
+        gateways: {},
         gatewaysInitialized: false,
         appInitError: null,
     };
@@ -83,7 +84,7 @@ class AudioOutApp extends Component {
                     this.initGateway(gateway);
                 }, 10000);
             });
-    }
+    };
 
     onServiceData = (gateway, data) => {
         if (data.type === "error" && data.error_code === 420) {

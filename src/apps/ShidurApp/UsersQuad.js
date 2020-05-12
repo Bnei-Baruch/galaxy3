@@ -1,10 +1,8 @@
 import React, { Component } from 'react';
-import { Janus } from "../../lib/janus";
 import {Segment, Icon, Button} from "semantic-ui-react";
 import './UsersQuad.scss'
-import {sendProtocolMessage} from "../../shared/protocol";
 import UsersHandle from "./UsersHandle";
-import {putData} from "../../shared/tools";
+import api from '../../shared/Api';
 import {getStore, setStore} from "../../shared/store";
 
 class UsersQuad extends Component {
@@ -26,7 +24,7 @@ class UsersQuad extends Component {
         let {vquad,col} = this.state;
         if(groups.length > prevProps.groups.length) {
             let res = groups.filter(o => !prevProps.groups.some(v => v.room === o.room))[0];
-            Janus.log(" :: Group enter in queue: ", res);
+            console.log("[Shidur] :: Group enter in queue: ", res);
             if(vquad[0] === null && groups.length > index+4) {
                 setTimeout(() => {
                     this.switchFour();
@@ -34,7 +32,7 @@ class UsersQuad extends Component {
             }
         } else if(groups.length < prevProps.groups.length) {
             let res = prevProps.groups.filter(o => !groups.some(v => v.room === o.room))[0];
-            Janus.log(" :: Group exit from queue: ", res);
+            console.log("[Shidur] :: Group exit from queue: ", res);
             for(let i=0; i<4; i++) {
                 if(vquad[i] && vquad[i].room === res.room) {
                     // Check question state
@@ -93,7 +91,7 @@ class UsersQuad extends Component {
             // Next in queue
             if(groups_queue >= groups.length) {
                 // End round here!
-                Janus.log(" -- ROUND END --");
+                console.log("[Shidur] -- ROUND END --");
                 groups_queue = 0;
                 round++;
             }
@@ -103,11 +101,8 @@ class UsersQuad extends Component {
         }
 
         this.setState({vquad});
-
-        // Save state
-        putData(`galaxy/qids/q`+col, {vquad}, (cb) => {
-            Janus.log(":: Save to state: ",cb);
-        });
+        api.updateQuad(col, {vquad})
+            .catch(err => console.error("[Shidur] error updating quad state", col, err))
     };
 
     switchFour = () => {
@@ -118,13 +113,13 @@ class UsersQuad extends Component {
 
             // Don't switch if nobody in queue
             if(i === groups.length) {
-                Janus.log("Queue is END");
+                console.log("[Shidur] Queue is END");
                 break;
             }
 
             if(groups_queue >= groups.length) {
                 // End round here!
-                Janus.log(" -- ROUND END --");
+                console.log("[Shidur] -- ROUND END --");
                 groups_queue = 0;
                 round++;
                 this.props.setProps({groups_queue,round});
@@ -141,10 +136,8 @@ class UsersQuad extends Component {
             this.props.setProps({groups_queue: 0});
         }
 
-        // Save state
-        putData(`galaxy/qids/q`+col, {vquad}, (cb) => {
-            Janus.log(":: Save to state: ",cb);
-        });
+        api.updateQuad(col, {vquad})
+            .catch(err => console.error("[Shidur] error updating quad state", col, err))
     };
 
     setPreset = () => {
@@ -158,23 +151,21 @@ class UsersQuad extends Component {
         }
         this.setState({vquad});
 
-        // Save state
-        putData(`galaxy/qids/q`+col, {vquad}, (cb) => {
-            Janus.log(":: Save to state: ",cb);
-        });
+        api.updateQuad(col, {vquad})
+            .catch(err => console.error("[Shidur] error updating quad state", col, err))
     };
 
     sdiAction = (action, status, i, group, qst) => {
-        const {user,service} = this.props;
+        const {gateways} = this.props;
         const {col} = this.state;
         let msg = {type: "sdi-"+action, status, room: null, col, i, group, qst};
-        sendProtocolMessage(service, user, msg, true);
+        gateways["gxy3"].sendServiceMessage(msg);
     };
 
     checkFullScreen = () => {
         let {fullscr,full_feed,vquad,question} = this.state;
         if(fullscr) {
-            Janus.log(":: Group: " + full_feed + " , sending sdi-action...");
+            console.log("[Shidur] :: Group: " + full_feed + " , sending sdi-action...");
             this.sdiAction("fullscr_group" , true, full_feed, vquad[full_feed], question);
         }
     };
@@ -221,13 +212,13 @@ class UsersQuad extends Component {
     };
 
     toFullGroup = (i,g,q) => {
-        Janus.log(":: Make Full Screen Group: ",g);
+        console.log("[Shidur]:: Make Full Screen Group: ",g);
         this.setState({fullscr: true, full_feed: i, question: q});
         this.sdiAction("fullscr_group" , true, i, g, q);
     };
 
     toFourGroup = (i,g,cb,q) => {
-        Janus.log(":: Back to four: ");
+        console.log("[Shidur]:: Back to four: ");
         this.sdiAction("fullscr_group" , false, i, g, q);
         this.setState({fullscr: false, full_feed: null, question: false}, () => {
             cb();

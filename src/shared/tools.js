@@ -1,6 +1,6 @@
 import {Janus} from "../lib/janus";
 import * as Sentry from '@sentry/browser';
-import {JANUS_SRV_GXY1, JANUS_SRV_GXY2, JANUS_SRV_GXY3, STUN_SRV_GXY, WFDB_STATE, WFRP_STATE, WKLI_ENTER, WKLI_LEAVE
+import {JANUS_SRV_GXY1, JANUS_SRV_GXY2, JANUS_SRV_GXY3, STUN_SRV_GXY, WKLI_ENTER, WKLI_LEAVE
 } from "./env";
 
 export const initJanus = (cb,er,gxy,iceServers=[{urls: STUN_SRV_GXY}]) => {
@@ -265,40 +265,6 @@ export const testDevices = (video,audio,user,cb) => {
         Janus.log(message);
     });
 };
-
-export const getState = (path, cb) => fetch(`${WFRP_STATE}/${path}`)
-    .then((response) => {
-        if (response.ok) {
-            return response.json().then(data => cb(data));
-        } else {
-            let data = {};
-            cb(data);
-        }
-    })
-    .catch(ex => Janus.log(`get ${path}`, ex));
-
-export const putData = (path, data, cb) => fetch(`${WFDB_STATE}/${path}`, {
-    method: 'PUT',
-    headers: {'Content-Type': 'application/json'},
-    body:  JSON.stringify(data)
-})
-    .then((response) => {
-        if (response.ok) {
-            return response.json().then(respond => cb(respond));
-        }
-    })
-    .catch(ex => Janus.log("Put Data error:", ex));
-
-export const getData = (url, request, cb) => fetch(`${url}`,{
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body:  JSON.stringify(request)
-    }).then((response) => {
-        if (response.ok) {
-            return response.json().then(data => cb(data));
-        }
-    })
-    .catch(ex => Janus.log(`get ${url}`, ex));
 
 export const geoInfo = (url,cb) => fetch(`${url}`)
     .then((response) => {
