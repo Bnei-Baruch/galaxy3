@@ -142,7 +142,7 @@ class ShidurToran extends Component {
 
     handleVote = () => {
         this.setState({vote: !this.state.vote});
-        this.sdiAction("sdi-vote", !this.state.vote, 1, null);
+        this.sdiAction("vote", !this.state.vote, 1, null);
     };
 
     render() {
