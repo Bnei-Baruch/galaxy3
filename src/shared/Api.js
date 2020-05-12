@@ -80,7 +80,7 @@ class Api {
                 if (responseOnError) {
                   return Promise.reject(response);
                 }
-                return Promise.reject(Error(response.statusText));
+                return Promise.reject(response.statusText);
             });
     }
 
