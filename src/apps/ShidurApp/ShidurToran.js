@@ -13,6 +13,7 @@ class ShidurToran extends Component {
         open: false,
         sorted_feeds: [],
         pg: null,
+        vote: false,
     };
 
     componentDidUpdate(prevProps) {
@@ -139,10 +140,15 @@ class ShidurToran extends Component {
         }, 3000);
     };
 
+    handleVote = () => {
+        this.setState({vote: !this.state.vote});
+        this.sdiAction("sdi-vote", !this.state.vote, 1, null);
+    };
+
     render() {
 
         const {group,disabled_rooms,groups,groups_queue,questions,presets,users,sdiout,sndman,mode} = this.props;
-        const {open,delay} = this.state;
+        const {open,delay,vote} = this.state;
         const q = (<b style={{color: 'red', fontSize: '20px', fontFamily: 'Verdana', fontWeight: 'bold'}}>?</b>);
         const next_group = groups[groups_queue] ? groups[groups_queue].description : groups[0] ? groups[0].description : "";
         const ng = groups[groups_queue] || null;
@@ -262,6 +268,11 @@ class ShidurToran extends Component {
                                 <div className="shidur_overlay"><span>{group ? group.description : ""}</span></div>
                                 <UsersPreview pg={this.state.pg} {...this.props} closePopup={this.closePopup} />
                                 </Segment> : ""}
+                    </Segment>
+                    <Segment textAlign='center' >
+                        <Button.Group attached='bottom' size='mini' >
+                            <Button color='green' onClick={this.handleVote} >{vote ? 'Hide' : 'Show'} Vote</Button>
+                        </Button.Group>
                     </Segment>
                 </Grid.Column>
                 <Grid.Column>

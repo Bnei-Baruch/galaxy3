@@ -10,10 +10,10 @@ import './i18n/i18n';
 // import VirtualStreaming from "./apps/VirtualApp/VirtualStreaming";
 // import GalaxyStream from "./apps/StreamApp/GalaxyStream";
 // import AdminRoot from "./apps/AdminApp/AdminRoot";
-// import ShidurApp from "./apps/ShidurApp/ShidurApp";
+import ShidurApp from "./apps/ShidurApp/ShidurApp";
 // import SndmanApp from "./apps/SndmanApp/SndmanApp";
 // import AudioOutApp from "./apps/AudioOutApp/AudioOutApp";
-import SDIOutApp from "./apps/SDIOutApp/SDIOutApp";
+// import SDIOutApp from "./apps/SDIOutApp/SDIOutApp";
 
 class App extends Component {
   render() {
@@ -25,10 +25,10 @@ class App extends Component {
         {/* <VirtualStreaming/>*/}
         {/* <GalaxyStream/>*/}
         {/*<AdminRoot />*/}
-        {/*<ShidurApp/>*/}
+        <ShidurApp/>
         {/*<SndmanApp/>*/}
         {/*<AudioOutApp />*/}
-        <SDIOutApp />
+        {/*<SDIOutApp />*/}
       </I18nextProvider>
     );
   }
