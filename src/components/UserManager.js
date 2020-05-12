@@ -103,17 +103,9 @@ export const getUserRemote = (cb) => {
     api.fetchUserInfo().then((remoteUser) => {
       console.log('USER getUserRemote', remoteUser);
       const updatedUser = Object.assign({}, user);  // Shallow copy.
-      if (remoteUser.attributes) {
-        if (remoteUser.attributes.request) {
-          updatedUser.request = remoteUser.attributes.request;
-        }
-        if (remoteUser.attributes.timestamp) {
-          updatedUser.request_timestamp = remoteUser.attributes.timestamp;
-        }
-        if (remoteUser.attributes.pending) {
-          updatedUser.pending = remoteUser.attributes.pending;
-        }
-      }
+      updatedUser.request = remoteUser.attributes && remoteUser.attributes.request || undefined;
+      updatedUser.request_timestamp = remoteUser.attributes && remoteUser.attributes.timestamp || undefined;
+      updatedUser.pending = remoteUser.attributes && remoteUser.attributes.pending || undefined;
       console.log('USER getUserRemote', updatedUser);
       cb(updatedUser);
     }).catch((error) => {

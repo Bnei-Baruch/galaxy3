@@ -139,7 +139,7 @@ class VirtualClient extends Component {
 
   checkPermission = (user) => {
     // If user is ghost, after login check if attributes were updated.
-    if (user.role === 'ghost') {
+    if (user.role === 'ghost' || (user.pending && user.pending.length)) {
       api.setAccessToken(user.access_token);
       getUserRemote((user) => this.checkPermissions_(user, true));
     } else {
