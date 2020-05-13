@@ -1,35 +1,35 @@
-@function list-remove($list, $index) {
-	$newList: ();
-	@for $i from 1 through length($list) {
-		@if $i != $index {
-			$newList: append($newList, nth($list,$i), 'space');
-		}
-	}
-	@return $newList;
-}
-@function list-sort($list) {
-	$sortedlist: ();
-	@while length($list) > 0 {
-		$value: nth($list,1);
-		@each $item in $list {
-			@if $item > $value {
-				$value: $item;
-			}
-		}
-		$sortedlist: append($sortedlist, $value, 'space');
-		$list: list-remove($list, index($list, $value));
-	}
-	@return $sortedlist;
-}
+// @function list-remove($list, $index) {
+// 	$newList: ();
+// 	@for $i from 1 through length($list) {
+// 		@if $i != $index {
+// 			$newList: append($newList, nth($list,$i), 'space');
+// 		}
+// 	}
+// 	@return $newList;
+// }
+// @function list-sort($list) {
+// 	$sortedlist: ();
+// 	@while length($list) > 0 {
+// 		$value: nth($list,1);
+// 		@each $item in $list {
+// 			@if $item > $value {
+// 				$value: $item;
+// 			}
+// 		}
+// 		$sortedlist: append($sortedlist, $value, 'space');
+// 		$list: list-remove($list, index($list, $value));
+// 	}
+// 	@return $sortedlist;
+// }
 
-@function map-sort($map) {
-	$keys: list-sort(map-keys($map));
-	$sortedMap: ();
-	@each $key in $keys {
-		$sortedMap: map-merge($sortedMap, ($key: map-get($map, $key)));
-	}
-	@return $sortedMap;
-}
+// @function map-sort($map) {
+// 	$keys: list-sort(map-keys($map));
+// 	$sortedMap: ();
+// 	@each $key in $keys {
+// 		$sortedMap: map-merge($sortedMap, ($key: map-get($map, $key)));
+// 	}
+// 	@return $sortedMap;
+// }
 
 //////////////////////////////////////////////
 
@@ -90,7 +90,7 @@
 
 		position: absolute;
 		display: grid;
-		grid-auto-flow: column;
+		grid-auto-flow: row;
 		// justify-content: center;
 		// align-items: center;
 		// align-content: center;
@@ -209,82 +209,33 @@ $vh: 9;
 	}
 }
 
-$all: ();
-@for $i from 2 through 17 {
-	@for $x from ($i - 1)  through 1 {
-		// $keyname: #{$vw*($x+1)}/#{$vh*ceil($i/$x)};
-		$keyname: ($vw*($x+1))/($vh*ceil($i/$x));
-		@if map-has-key($all, $keyname) {
-			$list2update: map-get($all, $keyname);
-			$list2update: append($list2update, ($i,$x));
-			$key2update: ($keyname: $list2update);
-			$all: map-merge($all , $key2update);
-		}@else{
-			$key2add: ($keyname: (($i,$x),()));
-			$all: map-merge($all, $key2add);
-		}
+.videos__wrapper{
+	.no-of-videos-1 &{
+		grid-template-columns: repeat(1, minmax(0, 1fr));
+		grid-template-rows: repeat(1, minmax(0, 1fr));
 	}
-}
-
-
-
-
-$all: map-sort($all);
-
-body:before {
-	// content: "#{$all}";
-
-}
-@each $ratio, $values in $all {
-	$i: nth(nth($values, 1),1);
-	$x: nth(nth($values, 1),2);
-	$querymax: #{$vw*($x+1)}/#{$vh*ceil($i/$x)};
-	// $querymin: #{$vw*($x - 1)}/#{$vh*ceil($i/$x)};
-	@element .videos__wrapper and (max-aspect-ratio: #{$querymax}){
-		@each $pair in $values {
-			@if length($pair) > 0 {
-				$i: nth($pair, 1);
-				$x: nth($pair, 2);
-				.no-of-videos-#{$i} {
-					:self {
-						grid-auto-flow: row;
-						grid-template-columns: repeat(#{$x}, minmax(0, 1fr));
-						grid-template-rows: repeat(#{ceil($i/$x)}, minmax(0, 1fr));
-					}
-					&.layout--double {
-						:self{
-							&:before {
-								// content: "#{ceil($i/$x)}";
-							}
-						}
-						$h: ceil($i/$x);
-						@if $x != 1{
-
-							$i: $i+3;
-							.video:first-child {
-
-								grid-column: span 2;
-								grid-row: span 2;
-							}
-						}@else{
-
-							.video:first-child {
-
-								grid-column: span 1!important;
-								grid-row: span 1!important;
-							}						
-						}
-						:self {
-							grid-template-columns: repeat(#{$x}, minmax(0, 1fr));
-							grid-template-rows: repeat(#{ceil($i/$x)}, minmax(0, 1fr));
-						}
-					}
-				}
-			}
-		}
+	.no-of-videos-2 &{
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		grid-template-rows: repeat(1, minmax(0, 1fr));
 	}
-}
-.layout--double {
-// // .broadcast--on.broadcast--inline.layout--double {
-
+	.no-of-videos-4 &, .no-of-videos-3 &{
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		grid-template-rows: repeat(2, minmax(0, 1fr));
+	}
+	.no-of-videos-5 &, .no-of-videos-6 &{
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+		grid-template-rows: repeat(2, minmax(0, 1fr));
+	}
+	.no-of-videos-7 &, .no-of-videos-8 &, .no-of-videos-9 &{
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+		grid-template-rows: repeat(3, minmax(0, 1fr));
+	}
+	.no-of-videos-10 &, .no-of-videos-11 &, .no-of-videos-12 &{
+		grid-template-columns: repeat(4, minmax(0, 1fr));
+		grid-template-rows: repeat(3, minmax(0, 1fr));
+	}
+	.no-of-videos-13 &, .no-of-videos-14 &, .no-of-videos-15 &, .no-of-videos-16 &{
+		grid-template-columns: repeat(4, minmax(0, 1fr));
+		grid-template-rows: repeat(4, minmax(0, 1fr));
+	}
 }

@@ -26,7 +26,7 @@
 }
 
 .video_full {
-    background-color: #444;
+    // background-color: #444;
     color: #fff;
     font-size: 150%;
     position:relative;
@@ -40,8 +40,8 @@
     position: absolute;
     // right: 65px;
     line-height: 40px;;
-    right:0;
-    top:0;
+    right:2px;
+    top:2px;
     color: #FFF;
     text-align: center;
     font-size: 30px;
@@ -60,14 +60,15 @@
     // font-family: "Liberation Serif";
     // line-height: 1.2285em;
     position: relative;
-    right: 0;
-    left:0;
+    // right: 0;
+    // left:0;
+    margin: 0 2px;
     color: #FFF;
-    text-align: center;
+    
     font-size: 45px;
     line-height: 60px;
     background-color: #2185d0;
-    text-align:right;
+    text-align:left;
     // width: auto;
     padding: 0px 10px;
     // float: right !important;
@@ -143,11 +144,11 @@
     height: 40px;
     // padding: 0px 5px;
     // float: right!important;
-    right: 0;
-    top: 0;
+    right: 2px;
+    top: 2px;
     z-index: 2;
     + .video_title {
-        right: 40px;
+        right: 42px;
         
     }
 }
@@ -167,11 +168,11 @@
     width: 60px;
     // padding: 0px 5px;
     // float: left !important;
-    right: 0;
+    right: 2px;
     top: 0;
     z-index: 2;
     + .fullscrvideo_title {
-        right:63px;
+        margin-right:62px;
     }
 
 }

@@ -1,7 +1,7 @@
 import React, {Component} from 'react';
 //import './UsersHandleSDIOut.scss'
 import './VideoConteiner.scss'
-import 'eqcss';
+// import 'eqcss';
 import { Janus } from "../../lib/janus";
 import classNames from "classnames";
 
