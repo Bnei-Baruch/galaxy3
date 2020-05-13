@@ -17,6 +17,12 @@ class UsersHandleSDIOut extends Component {
         num_videos: 0
     };
 
+    componentDidMount() {
+        let {g} = this.props;
+        const num_videos = g && g.users.filter(u =>  u.camera).length;
+        this.setState({num_videos});
+    }
+
     componentDidUpdate(prevProps) {
         let {g} = this.props;
         let {room} = this.state;
