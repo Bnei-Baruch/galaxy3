@@ -10,7 +10,7 @@ import './MobileClient.scss'
 import './MobileConteiner.scss'
 import 'eqcss'
 //import MobileChat from "./MobileChat";
-import {initGxyProtocol, sendProtocolMessage} from "../../shared/protocol";
+import {initGxyProtocol} from "../../shared/protocol";
 import MobileStreaming from "./MobileStreaming";
 import {PROTOCOL_ROOM, vsettings_list} from "../../shared/consts";
 import {GEO_IP_INFO} from "../../shared/env";
@@ -517,14 +517,16 @@ class MobileClient extends Component {
         let event = msg["videoroom"];
         if(event !== undefined && event !== null) {
             if(event === "joined") {
-                let {user,selected_room,protocol,video_device} = this.state;
+                let {user,video_device} = this.state;
                 let myid = msg["id"];
                 let mypvtid = msg["private_id"];
                 user.rfid = myid;
                 this.setState({user,myid ,mypvtid});
-                let pmsg = { type: "enter", status: true, room: selected_room, user};
+                //let pmsg = { type: "enter", status: true, room: selected_room, user};
                 Janus.log("Successfully joined room " + msg["room"] + " with ID " + myid);
-                sendProtocolMessage(protocol, user, pmsg);
+                //sendProtocolMessage(protocol, user, pmsg);
+                api.updateUser(user.id, user)
+                    .catch(err => console.error("[User] error updating user state", user.id, err))
                 this.publishOwnFeed(video_device !== null);
                 // Any new feed to attach to?
                 if(msg["publishers"] !== undefined && msg["publishers"] !== null) {
@@ -997,9 +999,11 @@ class MobileClient extends Component {
             // Send question event if before join it was true
             if(reconnect && JSON.parse(localStorage.getItem("question"))) {
                 user.question = true;
-                let msg = { type: "question", status: true, room: selected_room, user};
+                //let msg = { type: "question", status: true, room: selected_room, user};
                 setTimeout(() => {
-                    sendProtocolMessage(protocol, user, msg );
+                    //sendProtocolMessage(protocol, user, msg );
+                    api.updateUser(user.id, user)
+                        .catch(err => console.error("[User] error updating user state", user.id, err))
                 }, 5000);
             }
         }, ondata => {
@@ -1066,20 +1070,22 @@ class MobileClient extends Component {
 
     handleQuestion = () => {
         //TODO: only when shidur user is online will be avelable send question event, so we need to add check
-        let {protocol, user, room, question} = this.state;
+        let {user, question} = this.state;
         localStorage.setItem("question", !question);
         user.question = !question;
         setTimeout(() => {
             this.setState({delay: false});
         }, 3000);
         if(user.role === "ghost") return;
-        let msg = {type: "question", status: !question, room, user};
-        sendProtocolMessage(protocol, user, msg );
+        //let msg = {type: "question", status: !question, room, user};
+        //sendProtocolMessage(protocol, user, msg );
+        api.updateUser(user.id, user)
+            .catch(err => console.error("[User] error updating user state", user.id, err))
         this.setState({question: !question, delay: true});
     };
 
     camMute = () => {
-        let {videoroom,cammuted,protocol,user,room} = this.state;
+        let {videoroom,cammuted,user} = this.state;
         cammuted ? videoroom.unmuteVideo() : videoroom.muteVideo();
         this.setState({cammuted: !cammuted, delay: true});
         setTimeout(() => {
@@ -1088,8 +1094,10 @@ class MobileClient extends Component {
         if(user.role === "ghost") return;
         this.sendDataMessage("camera", this.state.cammuted);
         // Send to protocol camera status event
-        let msg = { type: "camera", status: cammuted, room, user};
-        sendProtocolMessage(protocol, user, msg );
+        //let msg = { type: "camera", status: cammuted, room, user};
+        //sendProtocolMessage(protocol, user, msg );
+        api.updateUser(user.id, user)
+            .catch(err => console.error("[User] error updating user state", user.id, err))
     };
 
     micMute = () => {

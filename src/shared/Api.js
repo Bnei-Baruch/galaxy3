@@ -39,6 +39,16 @@ class Api {
         return this.logAndParse(`update quad ${col}`, fetch(this.urlFor(`/qids/q${col}`), options));
     }
 
+    updateUser = (id, data) => {
+        const options = {
+            ...this.defaultOptions(),
+            method: 'PUT',
+            body: JSON.stringify(data),
+        };
+        options.headers['Content-Type'] = 'application/json';
+        return this.logAndParse(`update user ${id}`, fetch(this.urlFor(`/users/${id}`), options));
+    }
+
     urlFor = (path) => (API_BACKEND + path)
 
     defaultOptions = () => {

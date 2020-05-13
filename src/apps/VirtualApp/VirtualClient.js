@@ -20,7 +20,7 @@ import './VideoConteiner.scss';
 import './CustomIcons.scss';
 import 'eqcss';
 import VirtualChat from './VirtualChat';
-import {initGxyProtocol, sendProtocolMessage} from '../../shared/protocol';
+import {initGxyProtocol} from '../../shared/protocol';
 import {PROTOCOL_ROOM, vsettings_list} from '../../shared/consts';
 import {GEO_IP_INFO, SENTRY_KEY} from '../../shared/env';
 import platform from 'platform';
@@ -598,15 +598,17 @@ class VirtualClient extends Component {
     let event = msg['videoroom'];
     if (event !== undefined && event !== null) {
       if (event === 'joined') {
-        let { selected_room, protocol, video_device } = this.state;
-        const user                                    = Object.assign({}, this.state.user);
-        let myid                                      = msg['id'];
-        let mypvtid                                   = msg['private_id'];
-        user.rfid                                     = myid;
+        let { video_device } = this.state;
+        const user = Object.assign({}, this.state.user);
+        let myid = msg['id'];
+        let mypvtid = msg['private_id'];
+        user.rfid = myid;
         this.setState({ user, myid, mypvtid });
-        let pmsg = { type: 'enter', status: true, room: selected_room, user };
+        //let pmsg = { type: 'enter', status: true, room: selected_room, user };
         Janus.log('Successfully joined room ' + msg['room'] + ' with ID ' + myid);
-        sendProtocolMessage(protocol, user, pmsg);
+        //sendProtocolMessage(protocol, user, pmsg);
+        api.updateUser(user.id, user)
+            .catch(err => console.error("[User] error updating user state", user.id, err))
         this.publishOwnFeed(video_device !== null);
         // Any new feed to attach to?
         if (msg['publishers'] !== undefined && msg['publishers'] !== null) {
@@ -992,9 +994,11 @@ class VirtualClient extends Component {
       if (reconnect && JSON.parse(localStorage.getItem('question'))) {
         user.question = true;
         this.setState({ user });
-        let msg = { type: 'question', status: true, room: selected_room, user };
+        //let msg = { type: 'question', status: true, room: selected_room, user };
         setTimeout(() => {
-          sendProtocolMessage(protocol, user, msg);
+          //sendProtocolMessage(protocol, user, msg);
+          api.updateUser(user.id, user)
+              .catch(err => console.error("[User] error updating user state", user.id, err))
         }, 5000);
       }
     }, ondata => {
@@ -1042,7 +1046,7 @@ class VirtualClient extends Component {
 
   handleQuestion = () => {
     //TODO: only when shidur user is online will be avelable send question event, so we need to add check
-    const { protocol, room, question } = this.state;
+    const { question } = this.state;
     const user                         = Object.assign({}, this.state.user);
     localStorage.setItem('question', !question);
     user.question = !question;
@@ -1050,8 +1054,10 @@ class VirtualClient extends Component {
       this.setState({ delay: false });
     }, 3000);
     if(user.role === "ghost") return;
-    let msg = { type: 'question', status: !question, room, user };
-    sendProtocolMessage(protocol, user, msg);
+    //let msg = { type: 'question', status: !question, room, user };
+    //sendProtocolMessage(protocol, user, msg);
+    api.updateUser(user.id, user)
+        .catch(err => console.error("[User] error updating user state", user.id, err))
     this.setState({ user, question: !question, delay: true });
     this.sendDataMessage('question', !question);
   };
@@ -1066,7 +1072,7 @@ class VirtualClient extends Component {
   };
 
   camMute = () => {
-    let { videoroom, cammuted, protocol, room } = this.state;
+    let { videoroom, cammuted } = this.state;
     const user = Object.assign({}, this.state.user);
     cammuted ? videoroom.unmuteVideo() : videoroom.muteVideo();
     this.setState({ cammuted: !cammuted, delay: true });
@@ -1077,8 +1083,10 @@ class VirtualClient extends Component {
     this.sendDataMessage('camera', this.state.cammuted);
     user.camera = cammuted;
     // Send to protocol camera status event
-    let msg = { type: 'camera', status: cammuted, room, user };
-    sendProtocolMessage(protocol, user, msg);
+    //let msg = { type: 'camera', status: cammuted, room, user };
+    //sendProtocolMessage(protocol, user, msg);
+    api.updateUser(user.id, user)
+        .catch(err => console.error("[User] error updating user state", user.id, err))
   };
 
   micMute = () => {
