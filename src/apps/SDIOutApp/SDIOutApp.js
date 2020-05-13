@@ -30,6 +30,7 @@ class SDIOutApp extends Component {
         gateways: {},
         gatewaysInitialized: false,
         appInitError: null,
+        vote: false,
     };
 
     componentDidMount() {
@@ -124,6 +125,8 @@ class SDIOutApp extends Component {
             } else {
                 this["col"+col].toFourGroup(i,feed);
             }
+        } else if(data.type === "sdi-vote") {
+            this.setState({vote: status});
         } else if(data.type === "sdi-restart_sdiout") {
             window.location.reload();
         } else if(data.type === "event") {
@@ -137,7 +140,7 @@ class SDIOutApp extends Component {
     };
 
     render() {
-        let {appInitError, gatewaysInitialized,group,qids,qg} = this.state;
+        let {vote,appInitError, gatewaysInitialized,group,qids,qg} = this.state;
         // let qst = g && g.questions;
         let name = group && group.description;
 
@@ -177,9 +180,15 @@ class SDIOutApp extends Component {
                         <Segment className="preview_sdi">
                             <div className="usersvideo_grid">
                                 <div className="video_full">
-                                    {/*{group && group.questions ? <div className="qst_fullscreentitle">?</div> : ""}*/}
-                                    <div className="fullscrvideo_title" >{name}</div>
-                                    <UsersHandleSDIOut g={qg} ref={users => {this.users = users;}} {...this.state} setProps={this.setProps} />
+                                    {vote ?
+                                        <iframe src='https://vote.kli.one' width="100%" height="100%" frameBorder="0" />
+                                    :
+                                        <Fragment>
+                                        {/*{group && group.questions ? <div className="qst_fullscreentitle">?</div> : ""}*/}
+                                        <div className="fullscrvideo_title" >{name}</div>
+                                        <UsersHandleSDIOut g={qg} ref={users => {this.users = users;}} {...this.state} setProps={this.setProps} />
+                                        </Fragment>
+                                    }
                                 </div>
                             </div>
                         </Segment>
