@@ -8,11 +8,30 @@ class Api {
         this.password = null;
     }
 
+    static makeParams = params => (
+        `${Object.entries(params)
+            .filter(([_, v]) => v !== undefined && v !== null)
+            .map((pair) => {
+                const key   = pair[0];
+                const value = pair[1];
+                if (Array.isArray(value)) {
+                    return value.map(val => `${key}=${Api.encode(val)}`).join('&');
+                }
+                return `${key}=${Api.encode(value)}`;
+            })
+            //can happen if parameter value is empty array
+            .filter(p => p !== '')
+            .join('&')}`
+    );
+
+    static encode = encodeURIComponent;
+
     fetchConfig = () =>
         this.logAndParse('fetch config', fetch(this.urlFor('/v2/config'), this.defaultOptions()));
 
-    fetchAvailableRooms = () =>
-        this.logAndParse('fetch available rooms', fetch(this.urlFor('/groups'), this.defaultOptions()));
+    fetchAvailableRooms = (params = {}) =>
+        this.logAndParse('fetch available rooms',
+            fetch(`${this.urlFor('/groups')}?${Api.makeParams(params)}`, this.defaultOptions()));
 
     fetchActiveRooms = () =>
         this.logAndParse('fetch active rooms', fetch(this.urlFor('/rooms'), this.defaultOptions()));
