@@ -12,7 +12,6 @@ class UsersPreview extends Component {
         mids: [],
         name: "",
         room: "",
-        users: {},
         myid: null,
         mystream: null
     };

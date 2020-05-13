@@ -22,7 +22,6 @@ class ShidurApp extends Component {
         rooms: [],
         disabled_rooms: [],
         user: null,
-        users: {},
         gateways: {},
         gatewaysInitialized: false,
         appInitError: null,
@@ -57,8 +56,6 @@ class ShidurApp extends Component {
 
         api.fetchConfig()
             .then(data => GxyJanus.setGlobalConfig(data))
-            .then(api.fetchUsers)
-            .then(data => this.setState({users: data}))
             .then(() => this.initGateways(user))
             .then(this.pollRooms)
             .catch(err => {
@@ -86,12 +83,9 @@ class ShidurApp extends Component {
 
         return gateway.init()
             .then(() => {
-                return gateway.initGxyProtocol(user, data => this.onProtocolData(gateway, data))
-                    .then(() => {
-                        if (gateway.name === "gxy3") {
-                            return gateway.initServiceProtocol(user, data => this.onServiceData(gateway, data))
-                        }
-                    });
+                if (gateway.name === "gxy3") {
+                    return gateway.initServiceProtocol(user, data => this.onServiceData(gateway, data))
+                }
             })
             .catch(err => {
                 console.error("[Shidur] error initializing gateway", gateway.name, err);
@@ -148,33 +142,6 @@ class ShidurApp extends Component {
                     this.checkFullScreen();
                 }, 3000);
             }
-        }
-    };
-
-    onProtocolData = (gateway, data) => {
-        if (data.type === "error" && data.error_code === 420) {
-            console.error("[Shidur] protocol error message (reloading in 10 seconds)", data.error);
-            setTimeout(() => {
-                this.initGateway(this.state.user, gateway);
-            }, 10000);
-        }
-
-        let {users} = this.state;
-
-        // Set status in users list
-        if(data.type.match(/^(camera|question|sound_test)$/)) {
-            if(users[data.user.id]) {
-                users[data.user.id][data.type] = data.status;
-                this.setState({users});
-            } else {
-                users[data.user.id] = {[data.type]: data.status};
-                this.setState({users});
-            }
-        }
-
-        if(data.type === "leave" && users[data.id]) {
-            delete users[data.id];
-            this.setState({users});
         }
     };
 
