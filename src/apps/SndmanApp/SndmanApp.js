@@ -13,7 +13,6 @@ class SndmanApp extends Component {
 
     state = {
         user: null,
-        users: {},
         gateways: {},
         gatewaysInitialized: false,
         appInitError: null,
@@ -45,8 +44,6 @@ class SndmanApp extends Component {
 
         api.fetchConfig()
             .then(data => GxyJanus.setGlobalConfig(data))
-            .then(api.fetchUsers)
-            .then(data => this.setState({users: data}))
             .then(() => this.initGateways(user))
             .catch(err => {
                 console.error("[Sndman] error initializing app", err);
@@ -124,23 +121,23 @@ class SndmanApp extends Component {
             }, 10000);
         }
 
-        let {users} = this.state;
-
-        // Set status in users list
-        if(data.type.match(/^(camera|question|sound_test)$/)) {
-            if(users[data.user.id]) {
-                users[data.user.id][data.type] = data.status;
-                this.setState({users});
-            } else {
-                users[data.user.id] = {[data.type]: data.status};
-                this.setState({users});
-            }
-        }
-
-        if(data.type === "leave" && users[data.id]) {
-            delete users[data.id];
-            this.setState({users});
-        }
+        // let {users} = this.state;
+        //
+        // // Set status in users list
+        // if(data.type.match(/^(camera|question|sound_test)$/)) {
+        //     if(users[data.user.id]) {
+        //         users[data.user.id][data.type] = data.status;
+        //         this.setState({users});
+        //     } else {
+        //         users[data.user.id] = {[data.type]: data.status};
+        //         this.setState({users});
+        //     }
+        // }
+        //
+        // if(data.type === "leave" && users[data.id]) {
+        //     delete users[data.id];
+        //     this.setState({users});
+        // }
     };
 
     setProps = (props) => {

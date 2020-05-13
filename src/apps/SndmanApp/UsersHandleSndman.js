@@ -7,11 +7,9 @@ class UsersHandleSndman extends Component {
 
     state = {
         feeds: [],
-        feedStreams: {},
         mids: [],
         name: "",
         room: "",
-        users: {},
         myid: null,
         mystream: null
     };
@@ -101,8 +99,6 @@ class UsersHandleSndman extends Component {
                     //FIXME: Tmp fix for black screen in room caoused by feed with video_codec = none
                     let feeds         = list.sort((a, b) => JSON.parse(a.display).timestamp - JSON.parse(b.display).timestamp)
                         .filter(feeder => JSON.parse(feeder.display).role === 'user' && feeder.video_codec !== 'none');
-                    let {feedStreams} = this.state;
-                    let {users} = this.props;
                     console.log(`[Sndman] [room ${roomid}] :: Got publishers list: `, feeds);
                     let subscription = [];
                     for (let f in feeds) {
@@ -121,13 +117,10 @@ class UsersHandleSndman extends Component {
                                 subst.mid = stream.mid;
                             }
                         }
-                        feedStreams[id] = {id, display, streams};
-                        users[display.id] = {...display, ...users[display.id], rfid: id};
                         subscription.push(subst);
                     }
-                    this.setState({feeds, feedStreams, users});
+                    this.setState({feeds});
                     if (subscription.length > 0) {
-                        this.props.setProps({users});
                         this.subscribeTo(gateway, roomid, subscription);
                     }
                 }
@@ -154,7 +147,7 @@ class UsersHandleSndman extends Component {
             } else if(event === "destroyed") {
                 console.warn(`[Sndman] [room ${roomid}] room destroyed!`);
             } else if(event === "event") {
-                let {feedStreams,user,myid} = this.state;
+                let {user,myid} = this.state;
                 if(msg["streams"] !== undefined && msg["streams"] !== null) {
                     let streams = msg["streams"];
                     for (let i in streams) {
@@ -162,12 +155,9 @@ class UsersHandleSndman extends Component {
                         stream["id"] = myid;
                         stream["display"] = user;
                     }
-                    feedStreams[myid] = {id: myid, display: user, streams: streams};
-                    this.setState({feedStreams})
                 } else if(msg["publishers"] !== undefined && msg["publishers"] !== null) {
                     let feed = msg["publishers"];
-                    let {feeds,feedStreams} = this.state;
-                    let {users} = this.props;
+                    let {feeds} = this.state;
                     gateway.log(`[Sndman] [room ${roomid}] :: Got publishers list: `, feeds);
                     let subscription = [];
                     for(let f in feed) {
@@ -186,15 +176,12 @@ class UsersHandleSndman extends Component {
                                 subst.mid = stream.mid;
                             }
                         }
-                        feedStreams[id] = {id, display, streams};
-                        users[display.id] = {...display, ...users[display.id], rfid: id};
                         subscription.push(subst);
                     }
                     feeds.push(feed[0]);
-                    this.setState({feeds,feedStreams,users});
+                    this.setState({feeds});
                     if(subscription.length > 0) {
                         this.subscribeTo(gateway, roomid, subscription);
-                        this.props.setProps({users});
                     }
                 } else if(msg["leaving"] !== undefined && msg["leaving"] !== null) {
                     let leaving = msg["leaving"];
@@ -290,13 +277,11 @@ class UsersHandleSndman extends Component {
                     }
                 },
                 onremotetrack: (track, mid, on) => {
-                    let {mids,feedStreams} = this.state;
+                    let {mids} = this.state;
                     let feed = mids[mid].feed_id;
                     if(track.kind === "video" && on) {
                         let stream = new MediaStream();
                         stream.addTrack(track.clone());
-                        feedStreams[feed].stream = stream;
-                        this.setState({feedStreams});
                         let remotevideo = this.refs["pv" + feed];
                         Janus.attachMediaStream(remotevideo, stream);
                     }
@@ -331,18 +316,16 @@ class UsersHandleSndman extends Component {
     };
 
     unsubscribeFrom = (id) => {
-        let {feeds,users,feedStreams} = this.state;
+        let {feeds} = this.state;
         let {remoteFeed} = this.state;
         for (let i=0; i<feeds.length; i++) {
             if (feeds[i].id === id) {
                 console.log("[Sndman] Feed " + feeds[i] + " (" + id + ") has left the room, detaching");
-                delete users[feeds[i].display.id];
-                delete feedStreams[id];
                 feeds.splice(i, 1);
                 let unsubscribe = {request: "unsubscribe", streams: [{ feed: id }]};
                 if(remoteFeed !== null)
                     remoteFeed.send({ message: unsubscribe });
-                this.setState({feeds,users,feedStreams});
+                this.setState({feeds});
                 break
             }
         }
