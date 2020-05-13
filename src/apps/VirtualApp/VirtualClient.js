@@ -1379,12 +1379,24 @@ class VirtualClient extends Component {
             on='click'
             position='bottom center'
           >
-            {/* Update the icon above to current layout */}
             <Popup.Content>
               <Button.Group>
                 <Button  onClick={() => this.updateLayout('double')} active={layout === 'double'} disabled={sourceLoading} icon={{className:'icon--custom layout-double'}} /> {/* Double first */}
                 <Button  onClick={() => this.updateLayout('split')} active={layout === 'split'} disabled={sourceLoading} icon={{className:'icon--custom layout-split'}} /> {/* Split */}
                 <Button  onClick={() => this.updateLayout('equal')} active={layout === 'equal'} disabled={sourceLoading} icon={{className:'icon--custom layout-equal'}} /> {/* Equal */}
+              </Button.Group>
+            </Popup.Content>
+          </Popup>
+          <Popup
+            trigger={<Menu.Item disabled={!user || !user.id || room === ''} icon='hand paper outline' name={t('oldClient.vote')} />}
+            disabled={!user || !user.id || room === ''}
+            on='click'
+            position='bottom center'
+          >
+            <Popup.Content>
+              <Button.Group>
+                <iframe src={`https://vote.kli.one/button.html?answerId=1&userId=${user && user.id}`} width="40px" height="36px" frameBorder="0"></iframe>
+                <iframe src={`https://vote.kli.one/button.html?answerId=2&userId=${user && user.id}`} width="40px" height="36px" frameBorder="0"></iframe>
               </Button.Group>
             </Popup.Content>
           </Popup>
