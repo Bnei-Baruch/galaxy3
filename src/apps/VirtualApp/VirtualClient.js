@@ -1088,14 +1088,15 @@ class VirtualClient extends Component {
   };
 
   toggleShidur = () => {
-    const { virtualStreamingJanus, shidur } = this.state;
+    const { virtualStreamingJanus, shidur, user } = this.state;
     const stateUpdate = {
       shidur: !shidur,
     };
     if (shidur) {
       virtualStreamingJanus.destroy();
     } else {
-      virtualStreamingJanus.init();
+      const {ip, country} = user;
+      virtualStreamingJanus.init(ip, country);
       stateUpdate.sourceLoading = true;
     }
     this.setState(stateUpdate);
