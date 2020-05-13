@@ -168,7 +168,7 @@ class VirtualClient extends Component {
 
         api.fetchConfig()
             .then(data => GxyJanus.setGlobalConfig(data))
-            .then(api.fetchAvailableRooms)
+            .then(() => (api.fetchAvailableRooms({with_num_users: true})))
             .then(data => {
               const {rooms} = data;
               this.setState({rooms});
@@ -1272,9 +1272,8 @@ class VirtualClient extends Component {
       />;
 
     let rooms_list = rooms.map((data, i) => {
-      const { room, description } = data;
-      return ({ key: i, text: description, value: room });
-      //return ({ key: i, text: description, value: room, description: num_participants.toString() });
+      const { room, description, num_users } = data;
+      return ({ key: i, text: description, description: num_users, value: room });
     });
 
     let adevices_list = this.mapDevices(audio_devices);
