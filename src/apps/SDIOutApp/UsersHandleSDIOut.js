@@ -1,5 +1,4 @@
 import React, {Component} from 'react';
-//import './UsersHandleSDIOut.scss'
 import './VideoConteiner.scss'
 // import 'eqcss';
 import { Janus } from "../../lib/janus";
@@ -358,14 +357,10 @@ class UsersHandleSDIOut extends Component {
       //const q = (<b style={{color: 'red', fontSize: '20px', fontFamily: 'Verdana', fontWeight: 'bold'}}>?</b>);
 
       let program_feeds = feeds.map((feed) => {
-          //let camera = users[feed.display.id] && users[feed.display.id].camera !== false;
           let camera = !!g.users.find(u => feed.id === u.rfid && u.camera);
-          //let camera = true
           if(feed) {
               let id = feed.id;
               let talk = feed.talk;
-              //let question = users[feed.display.id] && users[feed.display.id].question;
-              //let st = users[feed.display.id] && users[feed.display.id].sound_test;
               return (<div className={camera ? 'video' : 'hidden'}
                            key={"prov" + id}
                            ref={"provideo" + id}
@@ -394,17 +389,15 @@ class UsersHandleSDIOut extends Component {
       });
 
       return (
-          // <div className="vclient__main">
           <div className={`vclient__main-wrapper no-of-videos-${num_videos} layout--equal broadcast--off`} >
-          <div className="videos-panel">
-              <div className="videos">
-                  <div className="videos__wrapper">
-                      {program_feeds}
+              <div className="videos-panel">
+                  <div className="videos">
+                      <div className="videos__wrapper">
+                          {program_feeds}
+                      </div>
                   </div>
               </div>
           </div>
-          </div>
-          // </div>
       );
   }
 }

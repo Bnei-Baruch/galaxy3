@@ -135,12 +135,8 @@ class SDIOutApp extends Component {
         }
     };
 
-    setProps = (props) => {
-        this.setState({...props})
-    };
-
     render() {
-        let {vote,appInitError, gatewaysInitialized,group,qids,qg} = this.state;
+        let {vote,appInitError, gatewaysInitialized,group,qids,qg,gateways} = this.state;
         // let qst = g && g.questions;
         let name = group && group.description;
 
@@ -161,18 +157,18 @@ class SDIOutApp extends Component {
             <Grid columns={2} className="sdi_container">
                 <Grid.Row>
                     <Grid.Column>
-                        <UsersQuadSDIOut index={0} {...qids.q1} {...this.state} ref={col => {this.col1 = col;}} setProps={this.setProps} />
+                        <UsersQuadSDIOut index={0} {...qids.q1} gateways={gateways} ref={col => {this.col1 = col;}} />
                     </Grid.Column>
                     <Grid.Column>
-                        <UsersQuadSDIOut index={4} {...qids.q2} {...this.state} ref={col => {this.col2 = col;}} setProps={this.setProps} />
+                        <UsersQuadSDIOut index={4} {...qids.q2} gateways={gateways} ref={col => {this.col2 = col;}} />
                     </Grid.Column>
                 </Grid.Row>
                 <Grid.Row>
                     <Grid.Column>
-                        <UsersQuadSDIOut index={8} {...qids.q3} {...this.state} ref={col => {this.col3 = col;}} setProps={this.setProps} />
+                        <UsersQuadSDIOut index={8} {...qids.q3} gateways={gateways} ref={col => {this.col3 = col;}} />
                     </Grid.Column>
                     <Grid.Column>
-                        <UsersQuadSDIOut index={12} {...qids.q4} {...this.state} ref={col => {this.col4 = col;}} setProps={this.setProps} />
+                        <UsersQuadSDIOut index={12} {...qids.q4} gateways={gateways} ref={col => {this.col4 = col;}} />
                     </Grid.Column>
                 </Grid.Row>
                 <Grid.Row>
@@ -186,7 +182,7 @@ class SDIOutApp extends Component {
                                         <Fragment>
                                         {/*{group && group.questions ? <div className="qst_fullscreentitle">?</div> : ""}*/}
                                         <div className="fullscrvideo_title" >{name}</div>
-                                        <UsersHandleSDIOut g={qg} ref={users => {this.users = users;}} {...this.state} setProps={this.setProps} />
+                                        <UsersHandleSDIOut g={qg} gateways={gateways} ref={users => {this.users = users;}} />
                                         </Fragment>
                                     }
                                 </div>

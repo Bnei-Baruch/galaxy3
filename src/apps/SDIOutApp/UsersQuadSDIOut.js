@@ -29,7 +29,6 @@ class UsersQuadSDIOut extends Component {
       let program = vquad.map((g,i) => {
           let qst = g && g.questions;
           let name = g ? g.description : "";
-          //let room = groups[g] ? groups[g].room : "";
           return (
               <div className={fullscr && full_feed === i ? "video_full" : fullscr && full_feed !== i ? "hidden" : "usersvideo_box"}
                    key={"pr" + i} >
