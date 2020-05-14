@@ -141,7 +141,7 @@ class UsersHandleSDIOut extends Component {
             } else if(event === "talking") {
                 let {feeds} = this.state;
                 let id = msg["id"];
-                console.log(`[SDIOut] [room ${roomid}] started talking`, id);
+                console.debug(`[SDIOut] [room ${roomid}] started talking`, id);
                 for(let i=0; i<feeds.length; i++) {
                     if(feeds[i] && feeds[i].id === id) {
                         feeds[i].talk = true;
@@ -151,7 +151,7 @@ class UsersHandleSDIOut extends Component {
             } else if(event === "stopped-talking") {
                 let {feeds} = this.state;
                 let id = msg["id"];
-                console.log(`[SDIOut] [room ${roomid}] stopped talking`, id);
+                console.debug(`[SDIOut] [room ${roomid}] stopped talking`, id);
                 for(let i=0; i<feeds.length; i++) {
                     if(feeds[i] && feeds[i].id === id) {
                         feeds[i].talk = false;
@@ -171,8 +171,8 @@ class UsersHandleSDIOut extends Component {
                     }
                 } else if(msg["publishers"] !== undefined && msg["publishers"] !== null) {
                     let feed = msg["publishers"];
+                    console.log(`[SDIOut] [room ${roomid}] :: Publisher enter: `, feed);
                     let {feeds} = this.state;
-                    gateway.log(`[SDIOut] [room ${roomid}] :: Got publishers list: `, feeds);
                     let subscription = [];
                     for(let f in feed) {
                         let id = feed[f]["id"];
