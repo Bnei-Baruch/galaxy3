@@ -744,7 +744,7 @@ class AdminRoot extends Component {
               {
                   this.isAllowed("admin") ?
                       <Segment textAlign='center' className="ingest_segment">
-                          <Button color='blue' icon='sound' onClick={() => this.sendRemoteCommand("sound_test")} />
+                          {/*<Button color='blue' icon='sound' onClick={() => this.sendRemoteCommand("sound_test")} />*/}
                           <Popup
                               trigger={<Button positive icon='info' onClick={this.getFeedInfo} />}
                               position='bottom left'
