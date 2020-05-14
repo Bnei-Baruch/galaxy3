@@ -1046,6 +1046,11 @@ class MobileClient extends Component {
         //this.chat.exitChatRoom(room);
         let pl = {textroom : "leave", transaction: Janus.randomString(12),"room": PROTOCOL_ROOM};
         localStorage.setItem("question", false);
+        api.fetchAvailableRooms({with_num_users: true})
+            .then(data => {
+                const {rooms} = data;
+                this.setState({rooms});
+            });
         this.setState({
           cammuted: false,
           feeds: [],
