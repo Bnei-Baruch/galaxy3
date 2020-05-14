@@ -126,7 +126,9 @@ class SDIOutApp extends Component {
                 this["col"+col].toFourGroup(i,feed);
             }
         } else if(data.type === "sdi-vote") {
-            this.setState({vote: status});
+            if(this.state.group)
+                return
+            this.setState({vote: status, qg: null});
         } else if(data.type === "sdi-restart_sdiout") {
             window.location.reload();
         } else if(data.type === "event") {
