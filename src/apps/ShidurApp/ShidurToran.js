@@ -157,7 +157,7 @@ class ShidurToran extends Component {
 
     render() {
 
-        const {group,disabled_rooms,groups,groups_queue,questions,presets,sdiout,sndman,mode} = this.props;
+        const {group,disabled_rooms,groups,groups_queue,questions,presets,sdiout,sndman,mode,users_count} = this.props;
         const {open,delay,vote} = this.state;
         const q = (<b style={{color: 'red', fontSize: '20px', fontFamily: 'Verdana', fontWeight: 'bold'}}>?</b>);
         const next_group = groups[groups_queue] ? groups[groups_queue].description : groups[0] ? groups[0].description : "";
@@ -242,7 +242,7 @@ class ShidurToran extends Component {
                 <Grid.Column>
                     <Segment attached textAlign='center' >
                         <Label attached='top right' color='green' >
-                            Users: {}
+                            Users: {users_count}
                         </Label>
                         <Dropdown className='select_group'
                                   placeholder='Search..'

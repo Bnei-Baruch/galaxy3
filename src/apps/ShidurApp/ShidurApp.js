@@ -28,6 +28,7 @@ class ShidurApp extends Component {
         presets: {1:[],2:[],3:[],4:[]},
         sdiout: false,
         sndman: false,
+        users_count: 0,
     };
 
     componentWillUnmount() {
@@ -104,6 +105,7 @@ class ShidurApp extends Component {
         let {disabled_rooms,mode} = this.state;
         api.fetchActiveRooms()
             .then((data) => {
+                const users_count = data.map(r => r.num_users).reduce((su, cur) => su + cur, 0);
                 let rooms = data;
                 if(mode === "nashim") {
                     rooms = rooms.filter(r => r.description.match(/^W /));
@@ -118,7 +120,7 @@ class ShidurApp extends Component {
                 let quads = [...this.col1.state.vquad,...this.col2.state.vquad,...this.col3.state.vquad,...this.col4.state.vquad];
                 let list = groups.filter((room) => !quads.find(droom => droom && room.room === droom.room));
                 let questions = list.filter(room => room.questions);
-                this.setState({questions});
+                this.setState({questions,users_count});
             })
             .catch(err => {
                 console.error("[Shidur] error fetching active rooms", err);

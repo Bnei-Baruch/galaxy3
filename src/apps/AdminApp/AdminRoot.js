@@ -40,6 +40,7 @@ class AdminRoot extends Component {
         user: null,
         usersTabs: [],
         appInitError: null,
+        users_count: 0,
     };
 
     componentWillUnmount() {
@@ -152,6 +153,7 @@ class AdminRoot extends Component {
     fetchRooms = () => {
         api.fetchActiveRooms()
             .then((data) => {
+                const users_count = data.map(r => r.num_users).reduce((su, cur) => su + cur, 0);
                 const {current_room} = this.state;
                 let users = current_room ? data.find(r => r.room === current_room).users : [];
                 data.sort((a, b) => {
@@ -159,7 +161,7 @@ class AdminRoot extends Component {
                     if (a.description < b.description) return -1;
                     return 0;
                 });
-                this.setState({rooms: data, users});
+                this.setState({rooms: data, users, users_count});
             })
             .catch(err => {
                 console.error("[Admin] error fetching active rooms", err);
@@ -645,6 +647,7 @@ class AdminRoot extends Component {
         rooms,
         user,
         usersTabs,
+          users_count,
         chatRoomsInitialized,
           appInitError,
       } = this.state;
@@ -840,7 +843,8 @@ class AdminRoot extends Component {
                               <Table selectable compact='very' basic structured className="admin_table" unstackable>
                                   <Table.Body>
                                       <Table.Row disabled positive>
-                                          <Table.Cell colSpan={2} textAlign='center'>Rooms:</Table.Cell>
+                                          <Table.Cell width={5} >Rooms</Table.Cell>
+                                          <Table.Cell width={1} >{users_count}</Table.Cell>
                                       </Table.Row>
                                       {rooms_grid}
                                   </Table.Body>
