@@ -68,6 +68,8 @@ export const resources = {
       },
       galaxyApp: {
         pendingApproval: 'Thank you for registering to Galaxy. Your account will be verified in the next few days. You will be able to use the system afterwards.',
+        terms: 'Galaxy Terms of Use',
+        close: 'close',
       },
     },
   },
@@ -140,6 +142,8 @@ export const resources = {
       },
       galaxyApp: {
         pendingApproval: 'Gracias por registrarte en Galaxy. Su cuenta será verificada en los próximos días. Podrá utilizar el sistema después.',
+        terms: 'Términos de uso de Galaxy',
+        close: 'Cerrar',
       },
     },
   },
@@ -212,6 +216,8 @@ export const resources = {
       },
       galaxyApp: {
         pendingApproval: 'תודה שנרשמת למערכת הגלאקסי. הרשמתך תבדק ותאושר בימים הקרובים. לאחר מכן תוכל להשתמש במערכת.',
+        terms: 'תנאי השימוש במערכת גלאקסי',
+        close: 'סגור',
       },
     },
   },
@@ -284,6 +290,8 @@ export const resources = {
       },
       galaxyApp: {
         pendingApproval: 'Спасибо за регистрацию в Galaxy. Ваша учетная запись будет проверена в ближайшие несколько дней. Вы сможете использовать систему впоследствии.',
+        terms: 'Условия использования системы Галакси',
+        close: 'Закрыть',
       },
     },
   },
