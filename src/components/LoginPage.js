@@ -6,6 +6,7 @@ import bblogo from './bblogo.png';
 import {mapNameToLanguage, setLanguage} from "../i18n/i18n";
 import {withTranslation} from "react-i18next";
 import {reportToSentry} from "../shared/tools";
+import {Terms} from "./Terms";
 
 class LoginPage extends Component {
 
@@ -145,6 +146,7 @@ class LoginPage extends Component {
         return (
             <Fragment>
                 {loading ? login : main}
+                <Terms />
             </Fragment>
         );
     }
