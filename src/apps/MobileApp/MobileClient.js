@@ -522,9 +522,7 @@ class MobileClient extends Component {
                 let mypvtid = msg["private_id"];
                 user.rfid = myid;
                 this.setState({user,myid ,mypvtid});
-                //let pmsg = { type: "enter", status: true, room: selected_room, user};
                 Janus.log("Successfully joined room " + msg["room"] + " with ID " + myid);
-                //sendProtocolMessage(protocol, user, pmsg);
                 api.updateUser(user.id, user)
                     .catch(err => console.error("[User] error updating user state", user.id, err))
                 this.publishOwnFeed(video_device !== null);
@@ -999,9 +997,7 @@ class MobileClient extends Component {
             // Send question event if before join it was true
             if(reconnect && JSON.parse(localStorage.getItem("question"))) {
                 user.question = true;
-                //let msg = { type: "question", status: true, room: selected_room, user};
                 setTimeout(() => {
-                    //sendProtocolMessage(protocol, user, msg );
                     api.updateUser(user.id, user)
                         .catch(err => console.error("[User] error updating user state", user.id, err))
                 }, 5000);
@@ -1082,8 +1078,6 @@ class MobileClient extends Component {
             this.setState({delay: false});
         }, 3000);
         if(user.role === "ghost") return;
-        //let msg = {type: "question", status: !question, room, user};
-        //sendProtocolMessage(protocol, user, msg );
         api.updateUser(user.id, user)
             .catch(err => console.error("[User] error updating user state", user.id, err))
         this.setState({question: !question, delay: true});
@@ -1098,9 +1092,6 @@ class MobileClient extends Component {
         }, 3000);
         if(user.role === "ghost") return;
         this.sendDataMessage("camera", this.state.cammuted);
-        // Send to protocol camera status event
-        //let msg = { type: "camera", status: cammuted, room, user};
-        //sendProtocolMessage(protocol, user, msg );
         api.updateUser(user.id, user)
             .catch(err => console.error("[User] error updating user state", user.id, err))
     };

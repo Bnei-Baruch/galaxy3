@@ -609,9 +609,7 @@ class VirtualClient extends Component {
         let mypvtid = msg['private_id'];
         user.rfid = myid;
         this.setState({ user, myid, mypvtid });
-        //let pmsg = { type: 'enter', status: true, room: selected_room, user };
         Janus.log('Successfully joined room ' + msg['room'] + ' with ID ' + myid);
-        //sendProtocolMessage(protocol, user, pmsg);
         api.updateUser(user.id, user)
             .catch(err => console.error("[User] error updating user state", user.id, err))
         this.publishOwnFeed(video_device !== null);
@@ -999,9 +997,7 @@ class VirtualClient extends Component {
       if (reconnect && JSON.parse(localStorage.getItem('question'))) {
         user.question = true;
         this.setState({ user });
-        //let msg = { type: 'question', status: true, room: selected_room, user };
         setTimeout(() => {
-          //sendProtocolMessage(protocol, user, msg);
           api.updateUser(user.id, user)
               .catch(err => console.error("[User] error updating user state", user.id, err))
         }, 5000);
@@ -1059,8 +1055,6 @@ class VirtualClient extends Component {
       this.setState({ delay: false });
     }, 3000);
     if(user.role === "ghost") return;
-    //let msg = { type: 'question', status: !question, room, user };
-    //sendProtocolMessage(protocol, user, msg);
     api.updateUser(user.id, user)
         .catch(err => console.error("[User] error updating user state", user.id, err))
     this.setState({ user, question: !question, delay: true });
@@ -1087,9 +1081,6 @@ class VirtualClient extends Component {
     if(user.role === "ghost") return;
     this.sendDataMessage('camera', this.state.cammuted);
     user.camera = cammuted;
-    // Send to protocol camera status event
-    //let msg = { type: 'camera', status: cammuted, room, user };
-    //sendProtocolMessage(protocol, user, msg);
     api.updateUser(user.id, user)
         .catch(err => console.error("[User] error updating user state", user.id, err))
   };
@@ -1132,7 +1123,7 @@ class VirtualClient extends Component {
   };
 
   renderLocalMedia = (width, height, index) => {
-    const { username_value, user, cammuted, question, muted } = this.state;
+    const { username_value, cammuted, question, muted } = this.state;
 
     return (<div className="video" key={index}>
       <div className={classNames('video__overlay')}>
@@ -1256,8 +1247,6 @@ class VirtualClient extends Component {
     const width       = '134';
     const height      = '100';
     const layout      = (room === '' || !shidur || !attachedSource) ? 'equal' : currentLayout;
-
-    //let iOS = ['iPad', 'iPhone', 'iPod'].indexOf(navigator.platform) >= 0;
 
     let layoutIcon;
     switch (layout) {
