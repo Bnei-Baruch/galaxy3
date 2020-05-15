@@ -13,6 +13,7 @@ import {
 // import '../StreamApp/GalaxyStream.css';
 import './BroadcastStream.scss';
 import Volume from './components/Volume'
+import {withTranslation} from "react-i18next";
 
 class VirtualStreaming extends Component {
   constructor(props) {
@@ -125,6 +126,7 @@ class VirtualStreaming extends Component {
       attached,
       closeShidur,
       virtualStreamingJanus,
+      t,
     } = this.props;
     const {
       audios,
@@ -166,17 +168,17 @@ class VirtualStreaming extends Component {
                     if (option.divider === true) return (<Dropdown.Divider key={i}/>);
                     if (option.header === true) return (
                       <Dropdown.Header className='ui blue' icon={option.icon}>
-                          {option.text}
-                          {(option.description ? <Header as='div' size='tiny' color='grey' content={option.description} /> : '')}
+                          {t(option.text)}
+                          {(option.description ? <Header as='div' size='tiny' color='grey' content={t(option.description)} /> : '')}
                         </Dropdown.Header>
                     );
                     return (
                       <Dropdown.Item
                       key={i}
-                      text={option.text}
+                      text={t(option.text)}
                       selected={option.value === videos}
                       icon={option.icon}
-                      description={option.description}
+                      description={t(option.description)}
                       action={option.action}
                       onClick={() => this.setVideo(option.value)}
                       />
@@ -201,9 +203,9 @@ class VirtualStreaming extends Component {
                       <Dropdown.Header className='ui blue' icon={option.icon} key={i}>
                         <Icon name={option.icon}/>
                         <div>
-                        {option.text}
+                        {t(option.text)}
                         <br/>
-                        {(option.description ? <Header as='span' size='tiny' color='grey' content={option.description} /> : '')}
+                        {(option.description ? <Header as='span' size='tiny' color='grey' content={t(option.description)} /> : '')}
                         </div>
                       </Dropdown.Header>
                     );
@@ -265,4 +267,4 @@ class VirtualStreaming extends Component {
   }
 }
 
-export default VirtualStreaming;
+export default withTranslation()(VirtualStreaming);
