@@ -25,7 +25,7 @@ export const Terms = (props) => {
 
   return (
     <div style={{width: '100%', position: 'absolute', display: 'flex', justifyContent: 'center', bottom: '20px'}}>
-      <a href="#" onClick={() => setOpen(true)}>{t('galaxyApp.terms')}</a>
+      <a href="javascript:void(0)" onClick={() => setOpen(true)}>{t('galaxyApp.terms')}</a>
       {!open ? null :
         <Modal open={true} style={{direction, textAlign}}>
           <Modal.Content style={{height: '500px'}}>
