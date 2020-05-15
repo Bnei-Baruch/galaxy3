@@ -29,7 +29,7 @@ export const Terms = (props) => {
       {!open ? null :
         <Modal open={true} style={{direction, textAlign}}>
           <Modal.Content style={{height: '500px'}}>
-            <iframe frameBorder="0" width="100%" height="100%" src={src}></iframe>
+            <iframe frameBorder="0" width="100%" height="100%" src={src} title={t('galaxyApp.terms')}></iframe>
           </Modal.Content>
           <Modal.Actions style={{textAlign: textAlignReverse}}>
             <Button color='green' onClick={() => setOpen(false)}>{t('galaxyApp.close')}</Button>
