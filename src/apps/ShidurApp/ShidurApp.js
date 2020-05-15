@@ -22,13 +22,13 @@ class ShidurApp extends Component {
         rooms: [],
         disabled_rooms: [],
         user: null,
-        users: {},
         gateways: {},
         gatewaysInitialized: false,
         appInitError: null,
         presets: {1:[],2:[],3:[],4:[]},
         sdiout: false,
         sndman: false,
+        users_count: 0,
     };
 
     componentWillUnmount() {
@@ -57,8 +57,6 @@ class ShidurApp extends Component {
 
         api.fetchConfig()
             .then(data => GxyJanus.setGlobalConfig(data))
-            .then(api.fetchUsers)
-            .then(data => this.setState({users: data}))
             .then(() => this.initGateways(user))
             .then(this.pollRooms)
             .catch(err => {
@@ -86,12 +84,9 @@ class ShidurApp extends Component {
 
         return gateway.init()
             .then(() => {
-                return gateway.initGxyProtocol(user, data => this.onProtocolData(gateway, data))
-                    .then(() => {
-                        if (gateway.name === "gxy3") {
-                            return gateway.initServiceProtocol(user, data => this.onServiceData(gateway, data))
-                        }
-                    });
+                if (gateway.name === "gxy3") {
+                    return gateway.initServiceProtocol(user, data => this.onServiceData(gateway, data))
+                }
             })
             .catch(err => {
                 console.error("[Shidur] error initializing gateway", gateway.name, err);
@@ -110,6 +105,7 @@ class ShidurApp extends Component {
         let {disabled_rooms,mode} = this.state;
         api.fetchActiveRooms()
             .then((data) => {
+                const users_count = data.map(r => r.num_users).reduce((su, cur) => su + cur, 0);
                 let rooms = data;
                 if(mode === "nashim") {
                     rooms = rooms.filter(r => r.description.match(/^W /));
@@ -124,7 +120,7 @@ class ShidurApp extends Component {
                 let quads = [...this.col1.state.vquad,...this.col2.state.vquad,...this.col3.state.vquad,...this.col4.state.vquad];
                 let list = groups.filter((room) => !quads.find(droom => droom && room.room === droom.room));
                 let questions = list.filter(room => room.questions);
-                this.setState({questions});
+                this.setState({questions,users_count});
             })
             .catch(err => {
                 console.error("[Shidur] error fetching active rooms", err);
@@ -148,33 +144,6 @@ class ShidurApp extends Component {
                     this.checkFullScreen();
                 }, 3000);
             }
-        }
-    };
-
-    onProtocolData = (gateway, data) => {
-        if (data.type === "error" && data.error_code === 420) {
-            console.error("[Shidur] protocol error message (reloading in 10 seconds)", data.error);
-            setTimeout(() => {
-                this.initGateway(this.state.user, gateway);
-            }, 10000);
-        }
-
-        let {users} = this.state;
-
-        // Set status in users list
-        if(data.type.match(/^(camera|question|sound_test)$/)) {
-            if(users[data.user.id]) {
-                users[data.user.id][data.type] = data.status;
-                this.setState({users});
-            } else {
-                users[data.user.id] = {[data.type]: data.status};
-                this.setState({users});
-            }
-        }
-
-        if(data.type === "leave" && users[data.id]) {
-            delete users[data.id];
-            this.setState({users});
         }
     };
 

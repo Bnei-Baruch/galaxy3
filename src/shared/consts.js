@@ -28,15 +28,15 @@ export const videos_options = [
 ];
 
 export const videos_options2 = [
-    { key: 1, text: 'Low quality', description:"240p", value: 11 },
-    { key: 2, text: 'Medium quality', description:"360p", value: 1 },
-    { key: 3, text: 'High quality', description:"720p", value: 16 },
+    { key: 1, text: 'oldClient.lowQuality', description:"240p", value: 11 },
+    { key: 2, text: 'oldClient.mediumQuality', description:"360p", value: 1 },
+    { key: 3, text: 'oldClient.highQuality', description:"720p", value: 16 },
     {divider:true},
-    { key: 4, text: 'No Video', description:"Audio only", value: NO_VIDEO_OPTION_VALUE },
+    { key: 4, text: 'oldClient.noVideo', description:"oldClient.audioOnly", value: NO_VIDEO_OPTION_VALUE },
 ];
 export const audiog_options2 = [
     
-    { header: true, text: 'Stream for workshop', description:'(focus group is muted)', icon: 'group'},
+    { header: true, text: 'oldClient.streamForWorkshop', description:'oldClient.streamForWorkshopDescription', icon: 'group'},
     { key: 2, value: 2, flag: 'il', icon:'group', eng_text: 'Hebrew', text:'עברית' },
     { key: 3, value: 3, flag: 'ru', icon:'group', eng_text: 'Russian', text:'Русский' },
     { key: 4, value: 4, flag: 'us', icon:'group', eng_text: 'English', text:'English' },
@@ -45,7 +45,7 @@ export const audiog_options2 = [
     { key: 8, value: 8, flag: 'it', icon:'group', eng_text: 'Italian', text:'Italiano' },
     { key: 7, value: 7, flag: 'de', icon:'group', eng_text: 'German', text:'Deutsch' },
     {divider:true},
-    { header: true, text: 'Source stream', description:'(focus group is on)', icon: 'crosshairs'},
+    { header: true, text: 'oldClient.sourceStream', description:'oldClient.sourceStreamDescription', icon: 'crosshairs'},
     { key: 'he', value: 15, flag: 'il', icon:'crosshairs', eng_text: 'Hebrew', text:'עברית' },
     { key: 'ru', value: 23, flag: 'ru', icon:'crosshairs', eng_text: 'Russian', text:'Русский' },
     { key: 'en', value: 24, flag: 'us', icon:'crosshairs', eng_text: 'English', text:'English' },
@@ -74,7 +74,7 @@ export const audiog_options2 = [
     { key: 'in', value: 59, flag: 'in', icon:'crosshairs', eng_text: 'Hindi', text: 'हिन्दी' },
     { key: 'ir', value: 60, flag: 'ir', icon:'crosshairs', eng_text: 'Persian', text: 'فارسی' },
     {divider:true},
-    { header: true, text: 'Dual languages stream', description:'(focus group is muted)', icon: 'group'},
+    { header: true, text: 'oldClient.dualLnaguagesStream', description:'oldClient.dualLnaguagesStreamDescription', icon: 'group'},
     { key: 'heru', value: 10, icon:'group', eng_text: 'Heb-Rus', text:'Русский-עברית' },
     { key: 'heen', value: 17, icon:'group', eng_text: 'Heb-Eng', text:'English-עברית' },
 ];

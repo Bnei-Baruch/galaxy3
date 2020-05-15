@@ -1,5 +1,6 @@
 import React, {Component} from 'react';
-import './UsersHandleSDIOut.scss'
+import './VideoConteiner.scss'
+// import 'eqcss';
 import { Janus } from "../../lib/janus";
 import classNames from "classnames";
 
@@ -7,31 +8,37 @@ class UsersHandleSDIOut extends Component {
 
     state = {
         feeds: [],
-        feedStreams: {},
         mids: [],
         name: "",
         room: "",
-        users: {},
         myid: null,
+        mystream: null,
+        num_videos: 0
     };
 
+    componentDidMount() {
+        let {g} = this.props;
+        const num_videos = g && g.users.filter(u =>  u.camera).length;
+        this.setState({num_videos});
+    }
+
     componentDidUpdate(prevProps) {
-        let {g,ce} = this.props;
+        let {g} = this.props;
         let {room} = this.state;
-        if(g && JSON.stringify(g) !== JSON.stringify(prevProps.g) && g.room !== room) {
-            if(room) {
-                this.exitVideoRoom(room, () =>{
+        if(g && g.room !== room) {
+            this.setState({room: g.room}, () => {
+                if(room) {
+                    this.exitVideoRoom(room, () =>{
+                        this.initVideoRoom(g.room, g.janus);
+                    });
+                } else {
                     this.initVideoRoom(g.room, g.janus);
-                });
-            } else {
-                this.initVideoRoom(g.room, g.janus);
-            }
+                }
+            })
         }
-        if(ce && JSON.stringify(ce) !== JSON.stringify(prevProps.ce) && ce.room === room && ce.camera) {
-            let {feedStreams} = this.state;
-            let remotevideo = this.refs["pv" + ce.rfid];
-            if(remotevideo && feedStreams[ce.rfid] && feedStreams[ce.rfid].stream)
-                Janus.attachMediaStream(remotevideo, feedStreams[ce.rfid].stream);
+        if(g && JSON.stringify(g) !== JSON.stringify(prevProps.g)) {
+            const num_videos = g && g.users.filter(u =>  u.camera).length
+            this.setState({num_videos})
         }
     }
 
@@ -46,7 +53,7 @@ class UsersHandleSDIOut extends Component {
             opaqueId: "preview_shidur",
             success: (videoroom) => {
                 gateway.log(`[room ${roomid}] attach success`, videoroom.getId());
-                this.setState({room: roomid, videoroom, remoteFeed: null});
+                this.setState({videoroom, remoteFeed: null});
                 let {user} = this.props;
                 let register = { "request": "join", "room": roomid, "ptype": "publisher", "display": JSON.stringify(user) };
                 videoroom.send({"message": register});
@@ -106,8 +113,6 @@ class UsersHandleSDIOut extends Component {
                     //FIXME: Tmp fix for black screen in room caoused by feed with video_codec = none
                     let feeds         = list.sort((a, b) => JSON.parse(a.display).timestamp - JSON.parse(b.display).timestamp)
                         .filter(feeder => JSON.parse(feeder.display).role === 'user' && feeder.video_codec !== 'none');
-                    let {feedStreams} = this.state;
-                    let {users} = this.props;
                     console.log(`[SDIOut] [room ${roomid}] :: Got publishers list: `, feeds);
                     let subscription = [];
                     for (let f in feeds) {
@@ -126,20 +131,17 @@ class UsersHandleSDIOut extends Component {
                                 subst.mid = stream.mid;
                             }
                         }
-                        feedStreams[id] = {id, display, streams};
-                        users[display.id] = {...display, ...users[display.id], rfid: id};
                         subscription.push(subst);
                     }
-                    this.setState({feeds, feedStreams, users});
+                    this.setState({feeds});
                     if (subscription.length > 0) {
-                        this.props.setProps({users});
                         this.subscribeTo(gateway, roomid, subscription);
                     }
                 }
             } else if(event === "talking") {
                 let {feeds} = this.state;
                 let id = msg["id"];
-                console.log(`[SDIOut] [room ${roomid}] started talking`, id);
+                console.debug(`[SDIOut] [room ${roomid}] started talking`, id);
                 for(let i=0; i<feeds.length; i++) {
                     if(feeds[i] && feeds[i].id === id) {
                         feeds[i].talk = true;
@@ -149,7 +151,7 @@ class UsersHandleSDIOut extends Component {
             } else if(event === "stopped-talking") {
                 let {feeds} = this.state;
                 let id = msg["id"];
-                console.log(`[SDIOut] [room ${roomid}] stopped talking`, id);
+                console.debug(`[SDIOut] [room ${roomid}] stopped talking`, id);
                 for(let i=0; i<feeds.length; i++) {
                     if(feeds[i] && feeds[i].id === id) {
                         feeds[i].talk = false;
@@ -159,7 +161,7 @@ class UsersHandleSDIOut extends Component {
             } else if(event === "destroyed") {
                 console.warn(`[SDIOut] [room ${roomid}] room destroyed!`);
             } else if(event === "event") {
-                let {feedStreams,user,myid} = this.state;
+                let {user,myid} = this.state;
                 if(msg["streams"] !== undefined && msg["streams"] !== null) {
                     let streams = msg["streams"];
                     for (let i in streams) {
@@ -167,13 +169,10 @@ class UsersHandleSDIOut extends Component {
                         stream["id"] = myid;
                         stream["display"] = user;
                     }
-                    feedStreams[myid] = {id: myid, display: user, streams: streams};
-                    this.setState({feedStreams})
                 } else if(msg["publishers"] !== undefined && msg["publishers"] !== null) {
                     let feed = msg["publishers"];
-                    let {feeds,feedStreams} = this.state;
-                    let {users} = this.props;
-                    gateway.log(`[SDIOut] [room ${roomid}] :: Got publishers list: `, feeds);
+                    console.log(`[SDIOut] [room ${roomid}] :: Publisher enter: `, feed);
+                    let {feeds} = this.state;
                     let subscription = [];
                     for(let f in feed) {
                         let id = feed[f]["id"];
@@ -191,15 +190,12 @@ class UsersHandleSDIOut extends Component {
                                 subst.mid = stream.mid;
                             }
                         }
-                        feedStreams[id] = {id, display, streams};
-                        users[display.id] = {...display, ...users[display.id], rfid: id};
                         subscription.push(subst);
                     }
                     feeds.push(feed[0]);
-                    this.setState({feeds,feedStreams,users});
+                    this.setState({feeds});
                     if(subscription.length > 0) {
                         this.subscribeTo(gateway, roomid, subscription);
-                        this.props.setProps({users});
                     }
                 } else if(msg["leaving"] !== undefined && msg["leaving"] !== null) {
                     let leaving = msg["leaving"];
@@ -295,13 +291,11 @@ class UsersHandleSDIOut extends Component {
                     }
                 },
                 onremotetrack: (track, mid, on) => {
-                    let {mids,feedStreams} = this.state;
+                    let {mids} = this.state;
                     let feed = mids[mid].feed_id;
                     if(track.kind === "video" && on) {
                         let stream = new MediaStream();
                         stream.addTrack(track.clone());
-                        feedStreams[feed].stream = stream;
-                        this.setState({feedStreams});
                         let remotevideo = this.refs["pv" + feed];
                         if(remotevideo)
                             Janus.attachMediaStream(remotevideo, stream);
@@ -337,26 +331,24 @@ class UsersHandleSDIOut extends Component {
     };
 
     unsubscribeFrom = (id) => {
-        let {feeds,users,feedStreams} = this.state;
+        let {feeds} = this.state;
         let {remoteFeed} = this.state;
         for (let i=0; i<feeds.length; i++) {
             if (feeds[i].id === id) {
                 console.log("[SDIOut] Feed " + feeds[i] + " (" + id + ") has left the room, detaching");
-                delete users[feeds[i].display.id];
-                delete feedStreams[id];
                 feeds.splice(i, 1);
                 let unsubscribe = {request: "unsubscribe", streams: [{ feed: id }]};
                 if(remoteFeed !== null)
                     remoteFeed.send({ message: unsubscribe });
-                this.setState({feeds,users,feedStreams});
+                this.setState({feeds});
                 break
             }
         }
     };
 
   render() {
-      const {feeds} = this.state;
-      const {users} = this.props;
+      const {feeds,num_videos} = this.state;
+      const {g} = this.props;
       const width = "400";
       const height = "300";
       const autoPlay = true;
@@ -365,13 +357,11 @@ class UsersHandleSDIOut extends Component {
       //const q = (<b style={{color: 'red', fontSize: '20px', fontFamily: 'Verdana', fontWeight: 'bold'}}>?</b>);
 
       let program_feeds = feeds.map((feed) => {
-          let camera = users[feed.display.id] && users[feed.display.id].camera !== false;
-          if(feed && camera) {
+          let camera = !!g.users.find(u => feed.id === u.rfid && u.camera);
+          if(feed) {
               let id = feed.id;
               let talk = feed.talk;
-              //let question = users[feed.display.id] && users[feed.display.id].question;
-              //let st = users[feed.display.id] && users[feed.display.id].sound_test;
-              return (<div className="video"
+              return (<div className={camera ? 'video' : 'hidden'}
                            key={"prov" + id}
                            ref={"provideo" + id}
                            id={"provideo" + id}>
@@ -383,7 +373,7 @@ class UsersHandleSDIOut extends Component {
                       {/*    {st ? <Icon name="checkmark" size="small" color="green"/> : ''}*/}
                       {/*</div>:''}*/}
                   </div>
-                  <video className={talk ? "talk" : ""}
+                  <video
                          key={id}
                          ref={"pv" + id}
                          id={"pv" + id}
@@ -399,10 +389,12 @@ class UsersHandleSDIOut extends Component {
       });
 
       return (
-          <div className="videos-panel">
-              <div className="videos">
-                  <div className="videos__wrapper">
-                      {program_feeds}
+          <div className={`vclient__main-wrapper no-of-videos-${num_videos} layout--equal broadcast--off`} >
+              <div className="videos-panel">
+                  <div className="videos">
+                      <div className="videos__wrapper">
+                          {program_feeds}
+                      </div>
                   </div>
               </div>
           </div>

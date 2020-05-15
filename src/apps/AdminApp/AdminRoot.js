@@ -36,10 +36,11 @@ class AdminRoot extends Component {
         mypvtid: null,
         mystream: null,
         rooms: [],
+        users: [],
         user: null,
-        users: {},
         usersTabs: [],
         appInitError: null,
+        users_count: 0,
     };
 
     componentWillUnmount() {
@@ -114,8 +115,6 @@ class AdminRoot extends Component {
 
         api.fetchConfig()
             .then(data => GxyJanus.setGlobalConfig(data))
-            .then(api.fetchUsers)
-            .then(data => this.setState({users: data}))
             .then(() => this.initGateways(user))
             .then(this.pollRooms)
             .catch(err => {
@@ -154,12 +153,15 @@ class AdminRoot extends Component {
     fetchRooms = () => {
         api.fetchActiveRooms()
             .then((data) => {
+                const users_count = data.map(r => r.num_users).reduce((su, cur) => su + cur, 0);
+                const {current_room} = this.state;
+                let users = current_room ? data.find(r => r.room === current_room).users : [];
                 data.sort((a, b) => {
                     if (a.description > b.description) return 1;
                     if (a.description < b.description) return -1;
                     return 0;
                 });
-                this.setState({rooms: data});
+                this.setState({rooms: data, users, users_count});
             })
             .catch(err => {
                 console.error("[Admin] error fetching active rooms", err);
@@ -188,7 +190,6 @@ class AdminRoot extends Component {
 
                 // Any new feed to attach to?
                 if (msg["publishers"] !== undefined && msg["publishers"] !== null) {
-                    let {feedStreams, users} = this.state;
                     let list = msg["publishers"];
                     console.log("[Admin] Got Publishers (joined)", list);
 
@@ -215,11 +216,9 @@ class AdminRoot extends Component {
                                 subst.mid = stream.mid;
                             }
                         }
-                        feedStreams[id] = {id, display, streams};
-                        users[display.id] = {...display, ...users[display.id], rfid: id};
                         subscription.push(subst);
                     }
-                    this.setState({feeds, feedStreams, users});
+                    this.setState({feeds});
                     if (subscription.length > 0)
                         this.subscribeTo(subscription, gateway.name);
                 }
@@ -247,7 +246,7 @@ class AdminRoot extends Component {
                 console.warn("[Admin] The room has been destroyed!");
             } else if (event === "event") {
                 // Any info on our streams or a new feed to attach to?
-                let {feedStreams, user, myid} = this.state;
+                let {user, myid} = this.state;
                 if (msg["streams"] !== undefined && msg["streams"] !== null) {
                     let streams = msg["streams"];
                     for (let i in streams) {
@@ -255,13 +254,11 @@ class AdminRoot extends Component {
                         stream["id"] = myid;
                         stream["display"] = user;
                     }
-                    feedStreams[myid] = {id: myid, display: user, streams: streams};
-                    this.setState({feedStreams})
                 } else if (msg["publishers"] !== undefined && msg["publishers"] !== null) {
                     let feed = msg["publishers"];
                     console.log("[Admin] Got Publishers (event)", feed);
 
-                    let {feeds, feedStreams, users} = this.state;
+                    let {feeds} = this.state;
                     let subscription = [];
                     for (let f in feed) {
                         let id = feed[f]["id"];
@@ -280,8 +277,6 @@ class AdminRoot extends Component {
                                 subst.mid = stream.mid;
                             }
                         }
-                        feedStreams[id] = {id, display, streams};
-                        users[display.id] = {...display, ...users[display.id], rfid: id};
                         subscription.push(subst);
                     }
                     feeds.push(feed[0]);
@@ -290,7 +285,7 @@ class AdminRoot extends Component {
                         if (a.display.username < b.display.username) return -1;
                         return 0;
                     });
-                    this.setState({feeds, feedStreams, users});
+                    this.setState({feeds});
                     if (subscription.length > 0)
                         this.subscribeTo(subscription, gateway.name);
                 } else if (msg["leaving"] !== undefined && msg["leaving"] !== null) {
@@ -369,7 +364,7 @@ class AdminRoot extends Component {
             },
             onremotetrack: (track, mid, on) => {
                 // Which publisher are we getting on this mid?
-                let {mids, feedStreams} = this.state;
+                let {mids} = this.state;
                 let feed = mids[mid].feed_id;
                 console.log("[Admin] This track is coming from feed " + feed + ":", mid);
                 // If we're here, a new track was added
@@ -378,8 +373,6 @@ class AdminRoot extends Component {
                     let stream = new MediaStream();
                     stream.addTrack(track.clone());
                     console.log("[Admin] Created remote audio stream:", stream);
-                    feedStreams[feed].audio_stream = stream;
-                    this.setState({feedStreams});
                     let remoteaudio = this.refs["remoteAudio" + feed];
                     Janus.attachMediaStream(remoteaudio, stream);
                 } else if (track.kind === "video" && on) {
@@ -387,8 +380,6 @@ class AdminRoot extends Component {
                     let stream = new MediaStream();
                     stream.addTrack(track.clone());
                     console.log("[Admin] Created remote video stream:", stream);
-                    feedStreams[feed].video_stream = stream;
-                    this.setState({feedStreams});
                     let remotevideo = this.refs["remoteVideo" + feed];
                     Janus.attachMediaStream(remotevideo, stream);
                 } else if (track.kind === "data") {
@@ -444,7 +435,7 @@ class AdminRoot extends Component {
 
     unsubscribeFrom = (id, inst) => {
         console.log("[Admin] unsubscribeFrom", inst, id);
-        const {feeds, users, feed_user, gateways} = this.state;
+        const {feeds, feed_user, gateways} = this.state;
         const gateway = gateways[inst];
         for (let i = 0; i < feeds.length; i++) {
             if (feeds[i].id === id) {
@@ -470,33 +461,33 @@ class AdminRoot extends Component {
                     this.setState({feed_user: null});
                 }
 
-                this.setState({feeds, users});
+                this.setState({feeds});
                 break
             }
         }
     };
 
     onProtocolData = (gateway, data) => {
-        let {users} = this.state;
-
-        // Set status in users list
-        if (data.type.match(/^(camera|question|sound_test)$/)) {
-            gateway.log("[protocol] user", data.type, data.status, data.user.id);
-            if (users[data.user.id]) {
-                users[data.user.id][data.type] = data.status;
-                this.setState({users});
-            } else {
-                users[data.user.id] = {[data.type]: data.status};
-                this.setState({users});
-            }
-        }
-
-        // Save user on enter
-        if (data.type.match(/^(enter)$/)) {
-            gateway.log("[protocol] user entered", data.user);
-            users[data.user.id] = data.user;
-            this.setState({users});
-        }
+        // let {users} = this.state;
+        //
+        // // Set status in users list
+        // if (data.type.match(/^(camera|question|sound_test)$/)) {
+        //     gateway.log("[protocol] user", data.type, data.status, data.user.id);
+        //     if (users[data.user.id]) {
+        //         users[data.user.id][data.type] = data.status;
+        //         this.setState({users});
+        //     } else {
+        //         users[data.user.id] = {[data.type]: data.status};
+        //         this.setState({users});
+        //     }
+        // }
+        //
+        // // Save user on enter
+        // if (data.type.match(/^(enter)$/)) {
+        //     gateway.log("[protocol] user entered", data.user);
+        //     users[data.user.id] = data.user;
+        //     this.setState({users});
+        // }
     };
 
     sendRemoteCommand = (command_type) => {
@@ -596,9 +587,8 @@ class AdminRoot extends Component {
     getUserInfo = (feed) => {
         console.log("[Admin] getUserInfo", feed);
         const {display, id} = feed;
-        const {users} = this.state;
         const feed_info = display.system ? platform.parse(display.system) : null;
-        const feed_user = {...display, ...users[display.id]};
+        const feed_user = {...display};
         this.setState({feed_id: id, feed_user, feed_info});
     };
 
@@ -651,12 +641,13 @@ class AdminRoot extends Component {
         feed_rtcp,
         feed_user,
         feeds,
+        users,
         gateways,
         gatewaysInitialized,
         rooms,
         user,
-        users,
         usersTabs,
+          users_count,
         chatRoomsInitialized,
           appInitError,
       } = this.state;
@@ -680,9 +671,9 @@ class AdminRoot extends Component {
       const controls = false;
       const muted = true;
 
-      const f = (<Icon name='volume up' />);
+      //const f = (<Icon name='volume up' />);
       const q = (<Icon color='red' name='help' />);
-      const v = (<Icon name='checkmark' />);
+      //const v = (<Icon name='checkmark' />);
       //const x = (<Icon name='close' />);
 
       let rooms_grid = rooms.map((data,i) => {
@@ -698,12 +689,14 @@ class AdminRoot extends Component {
 
       let users_grid = feeds.map((feed,i) => {
           if(feed) {
-              let qt = users[feed.display.id].question;
-              let st = users[feed.display.id].sound_test;
+              //let qt = users[feed.display.id].question;
+              //let st = users[feed.display.id].sound_test;
+              let qt = !!users.find(u => feed.id === u.rfid && u.question);
               return (
                   <Table.Row active={feed.id === this.state.feed_id} key={i} onClick={() => this.getUserInfo(feed)} >
                       <Table.Cell width={10}>{qt ? q : ""}{feed.display.display}</Table.Cell>
-                      <Table.Cell positive={st} width={1}>{st ? v : ""}</Table.Cell>
+                      {/*<Table.Cell positive={st} width={1}>{st ? v : ""}</Table.Cell>*/}
+                      <Table.Cell width={1}></Table.Cell>
                   </Table.Row>
               )
           }
@@ -754,7 +747,7 @@ class AdminRoot extends Component {
               {
                   this.isAllowed("admin") ?
                       <Segment textAlign='center' className="ingest_segment">
-                          <Button color='blue' icon='sound' onClick={() => this.sendRemoteCommand("sound_test")} />
+                          {/*<Button color='blue' icon='sound' onClick={() => this.sendRemoteCommand("sound_test")} />*/}
                           <Popup
                               trigger={<Button positive icon='info' onClick={this.getFeedInfo} />}
                               position='bottom left'
@@ -850,7 +843,8 @@ class AdminRoot extends Component {
                               <Table selectable compact='very' basic structured className="admin_table" unstackable>
                                   <Table.Body>
                                       <Table.Row disabled positive>
-                                          <Table.Cell colSpan={2} textAlign='center'>Rooms:</Table.Cell>
+                                          <Table.Cell width={5} >Rooms</Table.Cell>
+                                          <Table.Cell width={1} >{users_count}</Table.Cell>
                                       </Table.Row>
                                       {rooms_grid}
                                   </Table.Body>

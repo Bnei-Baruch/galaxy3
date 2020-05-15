@@ -1,0 +1,241 @@
+// @function list-remove($list, $index) {
+// 	$newList: ();
+// 	@for $i from 1 through length($list) {
+// 		@if $i != $index {
+// 			$newList: append($newList, nth($list,$i), 'space');
+// 		}
+// 	}
+// 	@return $newList;
+// }
+// @function list-sort($list) {
+// 	$sortedlist: ();
+// 	@while length($list) > 0 {
+// 		$value: nth($list,1);
+// 		@each $item in $list {
+// 			@if $item > $value {
+// 				$value: $item;
+// 			}
+// 		}
+// 		$sortedlist: append($sortedlist, $value, 'space');
+// 		$list: list-remove($list, index($list, $value));
+// 	}
+// 	@return $sortedlist;
+// }
+
+// @function map-sort($map) {
+// 	$keys: list-sort(map-keys($map));
+// 	$sortedMap: ();
+// 	@each $key in $keys {
+// 		$sortedMap: map-merge($sortedMap, ($key: map-get($map, $key)));
+// 	}
+// 	@return $sortedMap;
+// }
+
+//////////////////////////////////////////////
+
+.vclient {
+	width: 100vw;
+	height: 100vh;
+	display: flex;
+	flex-direction: column;
+	.room-selection {
+		border-radius:.28571429rem 0 0 .28571429rem!important;
+	}
+
+	&__main {
+		flex: 1 0 auto;
+		display: flex;
+		position: relative;
+		//overflow: hidden;
+	}
+
+	&__main-wrapper {
+		position: absolute;
+		height: 100%;
+		width: 100%;
+		display: flex;
+	}
+
+}
+
+
+*,
+*:before,
+*:after {
+	box-sizing: border-box;
+}
+
+.title {
+	font-family: "Liberation Serif";
+	font-size: 45px;
+	text-align: right;
+	margin-bottom: .1em;
+	margin-top: .2em;
+
+	span {
+		display: inline-block;
+		background: blue;
+		line-height: 1.1em;
+		color: white;
+		padding: 0 .7em;
+	}
+}
+
+	// flex: 1 1 auto;
+	// position: relative;
+
+	// margin: -1px;
+.videos__wrapper {
+		// display: flex;
+
+		position: absolute;
+		display: grid;
+		grid-auto-flow: row;
+		// justify-content: center;
+		// align-items: center;
+		// align-content: center;
+		// display: grid;
+		// grid-template-columns: repeat( 120,  1fr );
+		// grid-template-rows: repeat(120, percentage(1/120));
+		grid-gap: 2px;
+		overflow: hidden;
+		top: 2px;
+		right: 2px;
+		left: 2px;
+		bottom: 2px;
+
+		// width: 100%;
+	}
+
+
+.video {
+	grid-row: span 1;
+	grid-column: span 1;
+	// height: percentage(1/1);
+	position: relative;
+	// margin: 1px;
+	background: rgba(34, 34, 34, 1);
+	// border: 2px solid #000;
+	// overflow: hidden;
+
+ 
+	&__overlay {
+		position: absolute;
+		width: 100%;
+		height: 100%;
+		z-index: 1;
+
+		&.talk-frame {
+			border: 4px solid rgba(yellow, .6);
+		}
+	}
+
+	.nowebcam {
+		top: 0;
+		position: absolute;
+		fill: #fff;
+		font-family: Icons;
+		font-size: .8rem;
+		object-fit: contain;
+		width: 100%;
+		height: 100%;
+	}
+
+	.question {
+		&:before {
+			display: block;
+			content: "";
+			padding-top: 100%;
+		}
+
+		position: absolute;
+		top:50%;
+		left:50%;
+		transform: translate(-50%, -50%);
+		max-width: 30%;
+		width: 400px;
+		min-width: 60px;
+		background:rgba(34, 34, 34, .9);
+		border-radius: 10%;
+		border: 6px solid white;
+		// animation: blinker 1s linear infinite;
+		font-family: Icons;
+
+		svg {
+			position: absolute;
+			top: 0;
+			left: 0;
+			font-size: 2.5rem;
+			fill: white;
+		}
+
+	}
+
+	&__title {
+		position: absolute;
+		bottom: 0;
+		left: 0;
+		padding: .7rem 1rem;
+		background: rgba(34, 34, 34, .9);
+		font-size: 1rem;
+		color: white;
+		// border-radius: 4px;
+		line-height: 1;
+		text-shadow: 0 2px 1px rgba(0, 0, 0, .7);
+
+		.icon {
+			margin-right: .7rem;
+			position: relative;
+			top: -.09rem;
+		}
+
+		// color:yellow;
+	}
+
+	video {
+		object-fit: contain;
+		width: 100%;
+		height: 100%;
+	}
+}
+
+$vw : 16;
+$vh: 9;
+
+
+@keyframes blinker {
+	50% {
+		opacity: 0;
+	}
+}
+
+.videos__wrapper{
+	.no-of-videos-1 &{
+		grid-template-columns: repeat(1, minmax(0, 1fr));
+		grid-template-rows: repeat(1, minmax(0, 1fr));
+	}
+	.no-of-videos-2 &{
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		grid-template-rows: repeat(1, minmax(0, 1fr));
+	}
+	.no-of-videos-4 &, .no-of-videos-3 &{
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		grid-template-rows: repeat(2, minmax(0, 1fr));
+	}
+	.no-of-videos-5 &, .no-of-videos-6 &{
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+		grid-template-rows: repeat(2, minmax(0, 1fr));
+	}
+	.no-of-videos-7 &, .no-of-videos-8 &, .no-of-videos-9 &{
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+		grid-template-rows: repeat(3, minmax(0, 1fr));
+	}
+	.no-of-videos-10 &, .no-of-videos-11 &, .no-of-videos-12 &{
+		grid-template-columns: repeat(4, minmax(0, 1fr));
+		grid-template-rows: repeat(3, minmax(0, 1fr));
+	}
+	.no-of-videos-13 &, .no-of-videos-14 &, .no-of-videos-15 &, .no-of-videos-16 &{
+		grid-template-columns: repeat(4, minmax(0, 1fr));
+		grid-template-rows: repeat(4, minmax(0, 1fr));
+	}
+}

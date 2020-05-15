@@ -1,18 +1,16 @@
 import React, {Component} from 'react';
 import './UsersHandle.scss'
 import { Janus } from "../../lib/janus";
-import {Icon} from "semantic-ui-react";
+//import {Icon} from "semantic-ui-react";
 import classNames from "classnames";
 
 class UsersHandle extends Component {
 
     state = {
         feeds: [],
-        feedStreams: {},
         mids: [],
         name: "",
         room: "",
-        users: {},
         myid: null,
         mystream: null
     };
@@ -102,8 +100,6 @@ class UsersHandle extends Component {
                     //FIXME: Tmp fix for black screen in room caoused by feed with video_codec = none
                     let feeds         = list.sort((a, b) => JSON.parse(a.display).timestamp - JSON.parse(b.display).timestamp)
                         .filter(feeder => JSON.parse(feeder.display).role === 'user' && feeder.video_codec !== 'none');
-                    let {feedStreams} = this.state;
-                    let {users} = this.props;
                     console.log(`[Shidur] [room ${roomid}] :: Got publishers list: `, feeds);
                     let subscription = [];
                     for(let f in feeds) {
@@ -121,20 +117,17 @@ class UsersHandle extends Component {
                                 subst.mid = stream.mid;
                             }
                         }
-                        feedStreams[id] = {id, display, streams};
-                        users[display.id] = {...display, ...users[display.id], rfid: id};
                         subscription.push(subst);
                     }
-                    this.setState({feeds,feedStreams,users});
+                    this.setState({feeds});
                     if(subscription.length > 0) {
-                        this.props.setProps({users});
                         this.subscribeTo(gateway, roomid, subscription);
                     }
                 }
             } else if(event === "destroyed") {
                 console.warn(`[Shidur] [room ${roomid}] room destroyed!`);
             } else if(event === "event") {
-                let {feedStreams,user,myid} = this.state;
+                let {user,myid} = this.state;
                 if(msg["streams"] !== undefined && msg["streams"] !== null) {
                     let streams = msg["streams"];
                     for (let i in streams) {
@@ -142,12 +135,9 @@ class UsersHandle extends Component {
                         stream["id"] = myid;
                         stream["display"] = user;
                     }
-                    feedStreams[myid] = {id: myid, display: user, streams: streams};
-                    this.setState({feedStreams})
                 } else if(msg["publishers"] !== undefined && msg["publishers"] !== null) {
                     let feed = msg["publishers"];
-                    let {feeds,feedStreams} = this.state;
-                    let {users} = this.props;
+                    let {feeds} = this.state;
                     gateway.log(`[Shidur] [room ${roomid}] :: Got publishers list: `, feeds);
                     let subscription = [];
                     for(let f in feed) {
@@ -166,15 +156,12 @@ class UsersHandle extends Component {
                                 subst.mid = stream.mid;
                             }
                         }
-                        feedStreams[id] = {id, display, streams};
-                        users[display.id] = {...display, ...users[display.id], rfid: id};
                         subscription.push(subst);
                     }
                     feeds.push(feed[0]);
-                    this.setState({feeds,feedStreams,users});
+                    this.setState({feeds});
                     if(subscription.length > 0) {
                         this.subscribeTo(gateway, roomid, subscription);
-                        this.props.setProps({users});
                     }
                 } else if(msg["leaving"] !== undefined && msg["leaving"] !== null) {
                     let leaving = msg["leaving"];
@@ -270,13 +257,11 @@ class UsersHandle extends Component {
                     }
                 },
                 onremotetrack: (track, mid, on) => {
-                    let {mids,feedStreams} = this.state;
+                    let {mids} = this.state;
                     let feed = mids[mid].feed_id;
                     if(track.kind === "video" && on) {
                         let stream = new MediaStream();
                         stream.addTrack(track.clone());
-                        feedStreams[feed].stream = stream;
-                        this.setState({feedStreams});
                         let remotevideo = this.refs["pv" + feed];
                         Janus.attachMediaStream(remotevideo, stream);
                     }
@@ -311,18 +296,16 @@ class UsersHandle extends Component {
     };
 
     unsubscribeFrom = (id) => {
-        let {feeds,users,feedStreams} = this.state;
+        let {feeds} = this.state;
         let {remoteFeed} = this.state;
         for (let i=0; i<feeds.length; i++) {
             if (feeds[i].id === id) {
                 console.log("[Shidur] Feed " + feeds[i] + " (" + id + ") has left the room, detaching");
-                delete users[feeds[i].display.id];
-                delete feedStreams[id];
                 feeds.splice(i, 1);
                 let unsubscribe = {request: "unsubscribe", streams: [{ feed: id }]};
                 if(remoteFeed !== null)
                     remoteFeed.send({ message: unsubscribe });
-                this.setState({feeds,users,feedStreams});
+                this.setState({feeds});
                 break
             }
         }
@@ -330,7 +313,6 @@ class UsersHandle extends Component {
 
   render() {
       const {feeds} = this.state;
-      const {users} = this.props;
       const width = "400";
       const height = "300";
       const autoPlay = true;
@@ -343,19 +325,19 @@ class UsersHandle extends Component {
           if(feed) {
               let id = feed.id;
               let talk = feed.talk;
-              let question = users[feed.display.id] && users[feed.display.id].question;
-              let st = users[feed.display.id] && users[feed.display.id].sound_test;
+              //let question = users[feed.display.id] && users[feed.display.id].question;
+              //let st = users[feed.display.id] && users[feed.display.id].sound_test;
               return (<div className="video"
                            key={"prov" + id}
                            ref={"provideo" + id}
                            id={"provideo" + id}>
                   <div className={classNames('video__overlay', {'talk' : talk})}>
-                      {question ? <div className="question">
-                          <svg viewBox="0 0 50 50">
-                              <text x="25" y="25" textAnchor="middle" alignmentBaseline="central" dominantBaseline="central">&#xF128;</text>
-                          </svg>
-                          {st ? <Icon name="checkmark" size="small" color="green"/> : ''}
-                      </div>:''}
+                      {/*{question ? <div className="question">*/}
+                      {/*    <svg viewBox="0 0 50 50">*/}
+                      {/*        <text x="25" y="25" textAnchor="middle" alignmentBaseline="central" dominantBaseline="central">&#xF128;</text>*/}
+                      {/*    </svg>*/}
+                      {/*    {st ? <Icon name="checkmark" size="small" color="green"/> : ''}*/}
+                      {/*</div>:''}*/}
                   </div>
                   <video className={talk ? "talk" : ""}
                          key={id}

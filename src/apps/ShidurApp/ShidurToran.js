@@ -2,6 +2,7 @@ import React, {Component} from 'react';
 import {Grid, Label, Message, Segment, Table, Button, Dropdown, Popup} from "semantic-ui-react";
 import './ShidurToran.scss';
 import UsersPreview from "./UsersPreview";
+import {RESET_VOTE} from "../../shared/env";
 
 
 class ShidurToran extends Component {
@@ -13,6 +14,7 @@ class ShidurToran extends Component {
         open: false,
         sorted_feeds: [],
         pg: null,
+        vote: false,
     };
 
     componentDidUpdate(prevProps) {
@@ -139,10 +141,24 @@ class ShidurToran extends Component {
         }, 3000);
     };
 
+    handleVote = () => {
+        this.setState({vote: !this.state.vote});
+        this.sdiAction("vote", !this.state.vote, 1, null);
+    };
+
+    resetVote = () => {
+        let request = {auth: "alexmizrachi"};
+        fetch(`${RESET_VOTE}`,{
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body:  JSON.stringify(request)
+        }).then().catch(ex => console.log(`Reset Vote`, ex));
+    }
+
     render() {
 
-        const {group,disabled_rooms,groups,groups_queue,questions,presets,users,sdiout,sndman,mode} = this.props;
-        const {open,delay} = this.state;
+        const {group,disabled_rooms,groups,groups_queue,questions,presets,sdiout,sndman,mode,users_count} = this.props;
+        const {open,delay,vote} = this.state;
         const q = (<b style={{color: 'red', fontSize: '20px', fontFamily: 'Verdana', fontWeight: 'bold'}}>?</b>);
         const next_group = groups[groups_queue] ? groups[groups_queue].description : groups[0] ? groups[0].description : "";
         const ng = groups[groups_queue] || null;
@@ -226,7 +242,7 @@ class ShidurToran extends Component {
                 <Grid.Column>
                     <Segment attached textAlign='center' >
                         <Label attached='top right' color='green' >
-                            Users: {Object.keys(users).length}
+                            Users: {users_count}
                         </Label>
                         <Dropdown className='select_group'
                                   placeholder='Search..'
@@ -262,6 +278,12 @@ class ShidurToran extends Component {
                                 <div className="shidur_overlay"><span>{group ? group.description : ""}</span></div>
                                 <UsersPreview pg={this.state.pg} {...this.props} closePopup={this.closePopup} />
                                 </Segment> : ""}
+                    </Segment>
+                    <Segment textAlign='center' >
+                        <Button.Group attached='bottom' size='mini' >
+                            <Button color='green' onClick={this.handleVote} >{vote ? 'Hide' : 'Show'} Vote</Button>
+                            <Button color='blue' onClick={this.resetVote} >Reset Vote</Button>
+                        </Button.Group>
                     </Segment>
                 </Grid.Column>
                 <Grid.Column>

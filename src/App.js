@@ -19,7 +19,7 @@ class App extends Component {
   render() {
     return (
       <I18nextProvider i18n={i18n}>
-        {/*<GalaxyApp />*/}
+        {/*{<GalaxyApp />}*/}
         {/*<MobileClient/>*/}
         {<VirtualClient />}
         {/* <VirtualStreaming/>*/}

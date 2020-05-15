@@ -17,6 +17,7 @@ import bblogo from './logo.png';
 import {mapNameToLanguage, setLanguage} from "../i18n/i18n";
 import {withTranslation} from "react-i18next";
 import {reportToSentry} from "../shared/tools";
+import {Terms} from "./Terms";
 
 import './LoginPage.css';
 
@@ -160,6 +161,7 @@ class LoginPage extends Component {
         return (
             <Fragment>
                 {loading ? login : main}
+                <Terms />
             </Fragment>
         );
     }

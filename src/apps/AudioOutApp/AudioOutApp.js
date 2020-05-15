@@ -23,7 +23,6 @@ class AudioOutApp extends Component {
             id: Janus.randomString(10),
             name: "audioout"
         },
-        users: {},
         gateways: {},
         gatewaysInitialized: false,
         appInitError: null,
@@ -71,12 +70,9 @@ class AudioOutApp extends Component {
         const {user} = this.state;
         return gateway.init()
             .then(() => {
-                return gateway.initGxyProtocol(user, data => this.onProtocolData(gateway, data))
-                    .then(() => {
-                        if (gateway.name === "gxy3") {
-                            return gateway.initServiceProtocol(user, data => this.onServiceData(gateway, data))
-                        }
-                    });
+                if (gateway.name === "gxy3") {
+                    return gateway.initServiceProtocol(user, data => this.onServiceData(gateway, data))
+                }
             })
             .catch(err => {
                 console.error("[AudioOut] error initializing gateway", gateway.name, err);
@@ -111,33 +107,6 @@ class AudioOutApp extends Component {
         } else if (data.type === "event") {
             delete data.type;
             this.setState({...data});
-        }
-    };
-
-    onProtocolData = (gateway, data) => {
-        if (data.type === "error" && data.error_code === 420) {
-            console.error("[AudioOut] protocol error message (reloading in 10 seconds)", data.error);
-            setTimeout(() => {
-                this.initGateway(gateway);
-            }, 10000);
-        }
-
-        let {users} = this.state;
-
-        // Set status in users list
-        if (data.type && data.type.match(/^(question|sound_test)$/)) {
-            if (users[data.user.id]) {
-                users[data.user.id][data.type] = data.status;
-                this.setState({users});
-            } else {
-                users[data.user.id] = {[data.type]: data.status};
-                this.setState({users});
-            }
-        }
-
-        if (data.type && data.type === "leave" && users[data.id]) {
-            delete users[data.id];
-            this.setState({users});
         }
     };
 

@@ -1,10 +1,9 @@
 import React, {Component, Fragment} from 'react';
 import {Grid, Segment} from "semantic-ui-react";
 import './SDIOutApp.css';
-import './UsersSDIOut.css'
 import './UsersQuadSDIOut.scss'
+//import {SDIOUT_ID} from "../../shared/consts";
 import api from "../../shared/Api";
-import {SDIOUT_ID} from "../../shared/consts";
 import {API_BACKEND_PASSWORD, API_BACKEND_USERNAME} from "../../shared/env";
 import GxyJanus from "../../shared/janus-utils";
 import UsersHandleSDIOut from "./UsersHandleSDIOut";
@@ -14,7 +13,7 @@ import UsersQuadSDIOut from "./UsersQuadSDIOut";
 class SDIOutApp extends Component {
 
     state = {
-        ce: null,
+        qg: null,
         group: null,
         room: null,
         user: {
@@ -22,16 +21,26 @@ class SDIOutApp extends Component {
             handle: 0,
             role: "sdiout",
             display: "sdiout",
-            id: SDIOUT_ID,
+            //id: SDIOUT_ID,
+            id: "SDIOUT_ID",
             name: "sdiout"
         },
-        users: {},
+        qids: [],
+        qcol: 0,
         gateways: {},
         gatewaysInitialized: false,
         appInitError: null,
+        vote: false,
     };
 
     componentDidMount() {
+        setInterval(() => {
+            api.fetchProgram()
+                .then(qids => this.setState({qids}))
+                .catch(err => {
+                    console.error("[SDIOut] error fetching quad state", err);
+                });
+        }, 1000);
         this.initApp();
     };
 
@@ -44,8 +53,6 @@ class SDIOutApp extends Component {
 
         api.fetchConfig()
             .then(data => GxyJanus.setGlobalConfig(data))
-            .then(api.fetchUsers)
-            .then(data => this.setState({users: data}))
             .then(this.initGateways)
             .catch(err => {
                 console.error("[SDIOut] error initializing app", err);
@@ -73,12 +80,9 @@ class SDIOutApp extends Component {
         const {user} = this.state;
         return gateway.init()
             .then(() => {
-                return gateway.initGxyProtocol(user, data => this.onProtocolData(gateway, data))
-                    .then(() => {
-                        if (gateway.name === "gxy3") {
-                            return gateway.initServiceProtocol(user, data => this.onServiceData(gateway, data))
-                        }
-                    });
+                if (gateway.name === "gxy3") {
+                    return gateway.initServiceProtocol(user, data => this.onServiceData(gateway, data))
+                }
             })
             .catch(err => {
                 console.error("[SDIOut] error initializing gateway", gateway.name, err);
@@ -100,6 +104,7 @@ class SDIOutApp extends Component {
 
         if(data.type === "sdi-fullscr_group" && status) {
             if(qst) {
+                this.setState({qg: this.state.qids["q"+col].vquad[i]})
                 if(room) {
                     this.users.exitVideoRoom(this.state.room, () => {
                         this.users.initVideoRoom(group.room, group.janus);
@@ -120,6 +125,10 @@ class SDIOutApp extends Component {
             } else {
                 this["col"+col].toFourGroup(i,feed);
             }
+        } else if(data.type === "sdi-vote") {
+            if(this.state.group)
+                return
+            this.setState({vote: status, qg: null});
         } else if(data.type === "sdi-restart_sdiout") {
             window.location.reload();
         } else if(data.type === "event") {
@@ -128,43 +137,10 @@ class SDIOutApp extends Component {
         }
     };
 
-    onProtocolData = (gateway, data) => {
-        if (data.type === "error" && data.error_code === 420) {
-            console.error("[SDIOut] protocol error message (reloading in 10 seconds)", data.error);
-            setTimeout(() => {
-                this.initGateway(gateway);
-            }, 10000);
-        }
-
-        let {users} = this.state;
-
-        // Set status in users list
-        if(data.type && data.type.match(/^(camera|question|sound_test)$/)) {
-            if(users[data.user.id]) {
-                users[data.user.id][data.type] = data.status;
-                this.setState({users});
-            } else {
-                users[data.user.id] = {[data.type]: data.status};
-                this.setState({users});
-            }
-        }
-
-        if(data.type && data.type === "camera") {
-            this.setState({ce: data.user});
-        }
-
-        if(data.type && data.type === "leave" && users[data.id]) {
-            delete users[data.id];
-            this.setState({users});
-        }
-    };
-
-    setProps = (props) => {
-        this.setState({...props})
-    };
-
     render() {
-        const {group, appInitError, gatewaysInitialized} = this.state;
+        let {vote,appInitError, gatewaysInitialized,group,qids,qg,gateways} = this.state;
+        // let qst = g && g.questions;
+        let name = group && group.description;
 
         if (appInitError) {
         return (
@@ -179,24 +155,22 @@ class SDIOutApp extends Component {
             return "Initializing WebRTC gateways...";
         }
 
-        const name = group && group.description;
-
         return (
             <Grid columns={2} className="sdi_container">
                 <Grid.Row>
                     <Grid.Column>
-                        <UsersQuadSDIOut index={0} {...this.state} ref={col => {this.col1 = col;}} setProps={this.setProps} />
+                        <UsersQuadSDIOut index={0} {...qids.q1} gateways={gateways} ref={col => {this.col1 = col;}} />
                     </Grid.Column>
                     <Grid.Column>
-                        <UsersQuadSDIOut index={4} {...this.state} ref={col => {this.col2 = col;}} setProps={this.setProps} />
+                        <UsersQuadSDIOut index={4} {...qids.q2} gateways={gateways} ref={col => {this.col2 = col;}} />
                     </Grid.Column>
                 </Grid.Row>
                 <Grid.Row>
                     <Grid.Column>
-                        <UsersQuadSDIOut index={8} {...this.state} ref={col => {this.col3 = col;}} setProps={this.setProps} />
+                        <UsersQuadSDIOut index={8} {...qids.q3} gateways={gateways} ref={col => {this.col3 = col;}} />
                     </Grid.Column>
                     <Grid.Column>
-                        <UsersQuadSDIOut index={12} {...this.state} ref={col => {this.col4 = col;}} setProps={this.setProps} />
+                        <UsersQuadSDIOut index={12} {...qids.q4} gateways={gateways} ref={col => {this.col4 = col;}} />
                     </Grid.Column>
                 </Grid.Row>
                 <Grid.Row>
@@ -204,9 +178,15 @@ class SDIOutApp extends Component {
                         <Segment className="preview_sdi">
                             <div className="usersvideo_grid">
                                 <div className="video_full">
-                                    {/*{group && group.questions ? <div className="qst_fullscreentitle">?</div> : ""}*/}
-                                    <div className="fullscrvideo_title" >{name}</div>
-                                    <UsersHandleSDIOut ref={users => {this.users = users;}} {...this.state} setProps={this.setProps} />
+                                    {vote ?
+                                        <iframe src='https://vote.kli.one' width="100%" height="100%" frameBorder="0" />
+                                    :
+                                        <Fragment>
+                                        {/*{group && group.questions ? <div className="qst_fullscreentitle">?</div> : ""}*/}
+                                        <div className="fullscrvideo_title" >{name}</div>
+                                        <UsersHandleSDIOut g={qg} gateways={gateways} ref={users => {this.users = users;}} />
+                                        </Fragment>
+                                    }
                                 </div>
                             </div>
                         </Segment>

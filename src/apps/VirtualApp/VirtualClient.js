@@ -29,7 +29,7 @@ import './VideoConteiner.scss';
 import './CustomIcons.scss';
 import 'eqcss';
 import VirtualChat from './VirtualChat';
-import {initGxyProtocol, sendProtocolMessage} from '../../shared/protocol';
+import {initGxyProtocol} from '../../shared/protocol';
 import {PROTOCOL_ROOM, vsettings_list} from '../../shared/consts';
 import {GEO_IP_INFO, SENTRY_KEY} from '../../shared/env';
 import platform from 'platform';
@@ -89,7 +89,6 @@ class VirtualClient extends Component {
     selftest: this.props.t('oldClient.selfAudioTest'),
     tested: false,
     support: false,
-    women: window.location.pathname === '/women/',
     monitoringData: new MonitoringData(),
     numberOfVirtualUsers: localStorage.getItem('number_of_virtual_users') || '1',
     currentLayout: localStorage.getItem('currentLayout') || 'double',
@@ -188,7 +187,7 @@ class VirtualClient extends Component {
 
         api.fetchConfig()
             .then(data => GxyJanus.setGlobalConfig(data))
-            .then(api.fetchAvailableRooms)
+            .then(() => (api.fetchAvailableRooms({with_num_users: true})))
             .then(data => {
               const {rooms} = data;
               this.setState({rooms});
@@ -356,6 +355,11 @@ class VirtualClient extends Component {
     this.chat.exitChatRoom(room);
     let pl = { textroom: 'leave', transaction: Janus.randomString(12), 'room': PROTOCOL_ROOM };
     localStorage.setItem('question', false);
+    api.fetchAvailableRooms({with_num_users: true})
+      .then(data => {
+        const {rooms} = data;
+        this.setState({rooms});
+      });
     this.setState({
       cammuted: false,
       feeds: [],
@@ -528,10 +532,8 @@ class VirtualClient extends Component {
       onlocaltrack: (track, on) => {
         Janus.log(' ::: Got a local track event :::');
         Janus.log('Local track ' + (on ? 'added' : 'removed') + ':', track);
-        let { videoroom, women } = this.state;
-        if (!women) {
-          videoroom.muteAudio();
-        }
+        let { videoroom } = this.state;
+        videoroom.muteAudio();
         if (track.kind === 'video') {
           this.setState({localVideoTrack: track});
         }
@@ -615,15 +617,15 @@ class VirtualClient extends Component {
     let event = msg['videoroom'];
     if (event !== undefined && event !== null) {
       if (event === 'joined') {
-        let { selected_room, protocol, video_device } = this.state;
-        const user                                    = Object.assign({}, this.state.user);
-        let myid                                      = msg['id'];
-        let mypvtid                                   = msg['private_id'];
-        user.rfid                                     = myid;
+        let { video_device } = this.state;
+        const user = Object.assign({}, this.state.user);
+        let myid = msg['id'];
+        let mypvtid = msg['private_id'];
+        user.rfid = myid;
         this.setState({ user, myid, mypvtid });
-        let pmsg = { type: 'enter', status: true, room: selected_room, user };
         Janus.log('Successfully joined room ' + msg['room'] + ' with ID ' + myid);
-        sendProtocolMessage(protocol, user, pmsg);
+        api.updateUser(user.id, user)
+            .catch(err => console.error("[User] error updating user state", user.id, err))
         this.publishOwnFeed(video_device !== null);
         // Any new feed to attach to?
         if (msg['publishers'] !== undefined && msg['publishers'] !== null) {
@@ -985,7 +987,7 @@ class VirtualClient extends Component {
     setTimeout(() => {
       this.setState({ delay: false });
     }, 3000);
-    let { janus, videoroom, selected_room, username_value, women, tested, video_device } = this.state;
+    let { janus, videoroom, selected_room, username_value, tested, video_device } = this.state;
     let user                                                                             = Object.assign({}, this.state.user);
     localStorage.setItem('room', selected_room);
     //This name will see other users
@@ -1009,9 +1011,9 @@ class VirtualClient extends Component {
       if (reconnect && JSON.parse(localStorage.getItem('question'))) {
         user.question = true;
         this.setState({ user });
-        let msg = { type: 'question', status: true, room: selected_room, user };
         setTimeout(() => {
-          sendProtocolMessage(protocol, user, msg);
+          api.updateUser(user.id, user)
+              .catch(err => console.error("[User] error updating user state", user.id, err))
         }, 5000);
       }
     }, ondata => {
@@ -1028,7 +1030,7 @@ class VirtualClient extends Component {
           'display': JSON.stringify(user)
         };
         videoroom.send({ 'message': register });
-        this.setState({ user, muted: !women, room: selected_room });
+        this.setState({ user, muted: true, room: selected_room });
         this.chat.initChatRoom(user, selected_room);
       } else if (type === 'chat-broadcast' && room === selected_room) {
         this.chat.showSupportMessage(ondata);
@@ -1059,7 +1061,7 @@ class VirtualClient extends Component {
 
   handleQuestion = () => {
     //TODO: only when shidur user is online will be avelable send question event, so we need to add check
-    const { protocol, room, question } = this.state;
+    const { question } = this.state;
     const user                         = Object.assign({}, this.state.user);
     localStorage.setItem('question', !question);
     user.question = !question;
@@ -1067,8 +1069,8 @@ class VirtualClient extends Component {
       this.setState({ delay: false });
     }, 3000);
     if(user.role === "ghost") return;
-    let msg = { type: 'question', status: !question, room, user };
-    sendProtocolMessage(protocol, user, msg);
+    api.updateUser(user.id, user)
+        .catch(err => console.error("[User] error updating user state", user.id, err))
     this.setState({ user, question: !question, delay: true });
     this.sendDataMessage('question', !question);
   };
@@ -1083,7 +1085,7 @@ class VirtualClient extends Component {
   };
 
   camMute = () => {
-    let { videoroom, cammuted, protocol, room } = this.state;
+    let { videoroom, cammuted } = this.state;
     const user = Object.assign({}, this.state.user);
     cammuted ? videoroom.unmuteVideo() : videoroom.muteVideo();
     this.setState({ cammuted: !cammuted, delay: true });
@@ -1093,9 +1095,8 @@ class VirtualClient extends Component {
     if(user.role === "ghost") return;
     this.sendDataMessage('camera', this.state.cammuted);
     user.camera = cammuted;
-    // Send to protocol camera status event
-    let msg = { type: 'camera', status: cammuted, room, user };
-    sendProtocolMessage(protocol, user, msg);
+    api.updateUser(user.id, user)
+        .catch(err => console.error("[User] error updating user state", user.id, err))
   };
 
   micMute = () => {
@@ -1105,14 +1106,15 @@ class VirtualClient extends Component {
   };
 
   toggleShidur = () => {
-    const { virtualStreamingJanus, shidur } = this.state;
+    const { virtualStreamingJanus, shidur, user } = this.state;
     const stateUpdate = {
       shidur: !shidur,
     };
     if (shidur) {
       virtualStreamingJanus.destroy();
     } else {
-      virtualStreamingJanus.init();
+      const {ip, country} = user;
+      virtualStreamingJanus.init(ip, country);
       stateUpdate.sourceLoading = true;
     }
     this.setState(stateUpdate);
@@ -1135,7 +1137,7 @@ class VirtualClient extends Component {
   };
 
   renderLocalMedia = (width, height, index) => {
-    const { username_value, user, cammuted, question, muted } = this.state;
+    const { username_value, cammuted, question, muted } = this.state;
 
     return (<div className="video" key={index}>
       <div className={classNames('video__overlay')}>
@@ -1242,7 +1244,6 @@ class VirtualClient extends Component {
       video_devices,
       video_setting,
       virtualStreamingJanus,
-      women,
       appInitError,
     } = this.state;
 
@@ -1259,8 +1260,6 @@ class VirtualClient extends Component {
     const width       = '134';
     const height      = '100';
     const layout      = (room === '' || !shidur || !attachedSource) ? 'equal' : currentLayout;
-
-    //let iOS = ['iPad', 'iPhone', 'iPod'].indexOf(navigator.platform) >= 0;
 
     let layoutIcon;
     switch (layout) {
@@ -1289,9 +1288,8 @@ class VirtualClient extends Component {
       />;
 
     let rooms_list = rooms.map((data, i) => {
-      const { room, description } = data;
-      return ({ key: i, text: description, value: room });
-      //return ({ key: i, text: description, value: room, description: num_participants.toString() });
+      const { room, description, num_users } = data;
+      return ({ key: i, text: description, description: num_users, value: room });
     });
 
     let adevices_list = this.mapDevices(audio_devices);
@@ -1397,12 +1395,24 @@ class VirtualClient extends Component {
             on='click'
             position='bottom center'
           >
-            {/* Update the icon above to current layout */}
             <Popup.Content>
               <Button.Group>
                 <Button  onClick={() => this.updateLayout('double')} active={layout === 'double'} disabled={sourceLoading} icon={{className:'icon--custom layout-double'}} /> {/* Double first */}
                 <Button  onClick={() => this.updateLayout('split')} active={layout === 'split'} disabled={sourceLoading} icon={{className:'icon--custom layout-split'}} /> {/* Split */}
                 <Button  onClick={() => this.updateLayout('equal')} active={layout === 'equal'} disabled={sourceLoading} icon={{className:'icon--custom layout-equal'}} /> {/* Equal */}
+              </Button.Group>
+            </Popup.Content>
+          </Popup>
+          <Popup
+            trigger={<Menu.Item disabled={!user || !user.id || room === ''} icon='hand paper outline' name={t('oldClient.vote')} />}
+            disabled={!user || !user.id || room === ''}
+            on='click'
+            position='bottom center'
+          >
+            <Popup.Content>
+              <Button.Group>
+                <iframe src={`https://vote.kli.one/button.html?answerId=1&userId=${user && user.id}`} width="40px" height="36px" frameBorder="0"></iframe>
+                <iframe src={`https://vote.kli.one/button.html?answerId=2&userId=${user && user.id}`} width="40px" height="36px" frameBorder="0"></iframe>
               </Button.Group>
             </Popup.Content>
           </Popup>
@@ -1416,7 +1426,7 @@ class VirtualClient extends Component {
               {selftest}
             </Menu.Item>
             : ''}
-          <Menu.Item disabled={women || !localAudioTrack} onClick={this.micMute} className="mute-button">
+          <Menu.Item disabled={!localAudioTrack} onClick={this.micMute} className="mute-button">
             <canvas className={muted ? 'hidden' : 'vumeter'} ref="canvas1" id="canvas1" width="15"
                     height="35" />
             <Icon color={muted ? 'red' : ''} name={!muted ? 'microphone' : 'microphone slash'} />

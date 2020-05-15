@@ -11,11 +11,30 @@ class Api {
         this.password = null;
     }
 
+    static makeParams = params => (
+        `${Object.entries(params)
+            .filter(([_, v]) => v !== undefined && v !== null)
+            .map((pair) => {
+                const key   = pair[0];
+                const value = pair[1];
+                if (Array.isArray(value)) {
+                    return value.map(val => `${key}=${Api.encode(val)}`).join('&');
+                }
+                return `${key}=${Api.encode(value)}`;
+            })
+            //can happen if parameter value is empty array
+            .filter(p => p !== '')
+            .join('&')}`
+    );
+
+    static encode = encodeURIComponent;
+
     fetchConfig = () =>
         this.logAndParse('fetch config', fetch(this.urlFor('/v2/config'), this.defaultOptions()));
 
-    fetchAvailableRooms = () =>
-        this.logAndParse('fetch available rooms', fetch(this.urlFor('/groups'), this.defaultOptions()));
+    fetchAvailableRooms = (params = {}) =>
+        this.logAndParse('fetch available rooms',
+            fetch(`${this.urlFor('/groups')}?${Api.makeParams(params)}`, this.defaultOptions()));
 
     fetchActiveRooms = () =>
         this.logAndParse('fetch active rooms', fetch(this.urlFor('/rooms'), this.defaultOptions()));
@@ -29,6 +48,9 @@ class Api {
     fetchQuad = (col) =>
         this.logAndParse(`fetch quad ${col}`, fetch(this.urlFor(`/qids/q${col}`), this.defaultOptions()));
 
+    fetchProgram = () =>
+        this.logAndParse('fetch program', fetch(this.urlFor('/qids'), this.defaultOptions()));
+
     updateQuad = (col, data) => {
         const options = {
             ...this.defaultOptions(),
@@ -39,13 +61,23 @@ class Api {
         return this.logAndParse(`update quad ${col}`, fetch(this.urlFor(`/qids/q${col}`), options));
     }
 
-    verifyUser = (pendingEmail, action) => 
+    updateUser = (id, data) => {
+        const options = {
+            ...this.defaultOptions(),
+            method: 'PUT',
+            body: JSON.stringify(data),
+        };
+        options.headers['Content-Type'] = 'application/json';
+        return this.logAndParse(`update user ${id}`, fetch(this.urlFor(`/users/${id}`), options));
+    }
+
+    verifyUser = (pendingEmail, action) =>
         this.logAndParse(`verify user ${pendingEmail}, ${action}`, fetch(this.authUrlFor(`/verify?email=${pendingEmail}&action=${action}`), this.defaultOptions()));
 
-    requestToVerify = (email) => 
+    requestToVerify = (email) =>
         this.logAndParse(`request to verify user ${email}`, fetch(this.authUrlFor(`/request?email=${email}`), this.defaultOptions()), /* responseOnError= */ true);
 
-    fetchUserInfo = () => 
+    fetchUserInfo = () =>
         this.logAndParse(`refresh user info`, fetch(this.authUrlFor('/my_info'), this.defaultOptions()));
 
     urlFor = (path) => (API_BACKEND + path)
