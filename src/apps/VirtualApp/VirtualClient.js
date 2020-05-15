@@ -78,7 +78,6 @@ class VirtualClient extends Component {
     selftest: this.props.t('oldClient.selfAudioTest'),
     tested: false,
     support: false,
-    women: window.location.pathname === '/women/',
     monitoringData: new MonitoringData(),
     numberOfVirtualUsers: localStorage.getItem('number_of_virtual_users') || '1',
     currentLayout: localStorage.getItem('currentLayout') || 'double',
@@ -516,10 +515,8 @@ class VirtualClient extends Component {
       onlocaltrack: (track, on) => {
         Janus.log(' ::: Got a local track event :::');
         Janus.log('Local track ' + (on ? 'added' : 'removed') + ':', track);
-        let { videoroom, women } = this.state;
-        if (!women) {
-          videoroom.muteAudio();
-        }
+        let { videoroom } = this.state;
+        videoroom.muteAudio();
         if (track.kind === 'video') {
           this.setState({localVideoTrack: track});
         }
@@ -973,7 +970,7 @@ class VirtualClient extends Component {
     setTimeout(() => {
       this.setState({ delay: false });
     }, 3000);
-    let { janus, videoroom, selected_room, username_value, women, tested, video_device } = this.state;
+    let { janus, videoroom, selected_room, username_value, tested, video_device } = this.state;
     let user                                                                             = Object.assign({}, this.state.user);
     localStorage.setItem('room', selected_room);
     //This name will see other users
@@ -1016,7 +1013,7 @@ class VirtualClient extends Component {
           'display': JSON.stringify(user)
         };
         videoroom.send({ 'message': register });
-        this.setState({ user, muted: !women, room: selected_room });
+        this.setState({ user, muted: true, room: selected_room });
         this.chat.initChatRoom(user, selected_room);
       } else if (type === 'chat-broadcast' && room === selected_room) {
         this.chat.showSupportMessage(ondata);
@@ -1230,7 +1227,6 @@ class VirtualClient extends Component {
       video_devices,
       video_setting,
       virtualStreamingJanus,
-      women,
       appInitError,
     } = this.state;
 
@@ -1412,7 +1408,7 @@ class VirtualClient extends Component {
               {selftest}
             </Menu.Item>
             : ''}
-          <Menu.Item disabled={women || !localAudioTrack} onClick={this.micMute} className="mute-button">
+          <Menu.Item disabled={!localAudioTrack} onClick={this.micMute} className="mute-button">
             <canvas className={muted ? 'hidden' : 'vumeter'} ref="canvas1" id="canvas1" width="15"
                     height="35" />
             <Icon color={muted ? 'red' : ''} name={!muted ? 'microphone' : 'microphone slash'} />
