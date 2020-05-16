@@ -3,10 +3,11 @@ import {client,getUser} from './UserManager';
 import {Container, Message, Button, Dropdown, Image, Divider, Select, Menu, Segment, Grid, Header} from 'semantic-ui-react';
 import logo from './logo.svg';
 import bblogo from './bblogo.png';
-import {mapNameToLanguage, setLanguage} from "../i18n/i18n";
+import {languagesOptions, setLanguage} from "../i18n/i18n";
 import {withTranslation} from "react-i18next";
 import {reportToSentry} from "../shared/tools";
 import {Terms} from "./Terms";
+import {Profile} from "./Profile";
 
 class LoginPage extends Component {
 
@@ -57,14 +58,6 @@ class LoginPage extends Component {
         const { t, i18n } = this.props;
         const {disabled, loading} = this.state;
         const rtl = i18n.language === "he" ? "rtl" : "";
-        let profile = (
-            <Dropdown inline text=''>
-                <Dropdown.Menu>
-                    <Dropdown.Item content='Profile:' disabled />
-                    <Dropdown.Item text='My Account' onClick={() => window.open("https://accounts.kbb1.com/auth/realms/main/account", "_blank")} />
-                    <Dropdown.Item text='Sign Out' onClick={() => client.signoutRedirect()} />
-                </Dropdown.Menu>
-            </Dropdown>);
 
         let login = (
             <Container textAlign='center' >
@@ -89,7 +82,7 @@ class LoginPage extends Component {
                         <Menu.Item>
                             <Select compact
                                     value={i18n.language}
-                                    options={mapNameToLanguage(i18n.language)}
+                                    options={languagesOptions}
                                     onChange={(e, { value }) => {setLanguage(value)}} />
                         </Menu.Item>
                         <Menu.Item>
@@ -104,8 +97,8 @@ class LoginPage extends Component {
                     <br />
                     <Message size='massive'>
                         <Message.Header>
-                            {this.props.user === null ? t('loginPage.galaxy') : "Welcome, "+this.props.user.username}
-                            {this.props.user === null ? "" : profile}
+                            {this.props.user === null ? t('loginPage.galaxy') : "Welcome, " + this.props.user.username}
+                            {this.props.user === null ? "" : <Profile client={client} />}
                         </Message.Header>
                         <p>{t('loginPage.slogan')}</p>
                         {this.props.user === null ? "" : this.props.enter}

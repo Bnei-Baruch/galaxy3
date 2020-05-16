@@ -14,42 +14,12 @@ export const setLanguage = value => {
   localStorage.setItem('lng', value);
 };
 
-const languages = new Map([
-  ['en',
-    [
-      { key: 'en', value: 'en', text: 'English', },
-      { key: 'es', value: 'es', text: 'Spanish', },
-      { key: 'he', value: 'he', text: 'Hebrew', },
-      { key: 'ru', value: 'ru', text: 'Russian', },
-    ]
-  ],
-  ['es',
-    [
-      { key: 'en', value: 'en', text: 'Ingles', },
-      { key: 'es', value: 'es', text: 'Español', },
-      { key: 'he', value: 'he', text: 'Hebreo', },
-      { key: 'ru', value: 'ru', text: 'Ruso', },
-    ]
-  ],
-  ['he',
-    [
-      { key: 'en', value: 'en', text: 'אנגלית', },
-      { key: 'es', value: 'es', text: 'ספרדית', },
-      { key: 'he', value: 'he', text: 'עברית', },
-      { key: 'ru', value: 'ru', text: 'רוסית', },
-    ]
-  ],
-  ['ru',
-    [
-      { key: 'en', value: 'en', text: 'Английский', },
-      { key: 'es', value: 'es', text: 'Испанский', },
-      { key: 'he', value: 'he', text: 'Иврит', },
-      { key: 'ru', value: 'ru', text: 'Русский', },
-    ]
-  ],
-]);
-
-export const mapNameToLanguage = name => languages.get(name) || 'en';
+export const languagesOptions = [
+  { key: 'en', value: 'en', text: 'English', },
+  { key: 'es', value: 'es', text: 'Español', },
+  { key: 'he', value: 'he', text: 'עברית', },
+  { key: 'ru', value: 'ru', text: 'Русский', },
+];
 
 // instance for client side
 i18n
