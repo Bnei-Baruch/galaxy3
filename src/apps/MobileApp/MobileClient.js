@@ -22,6 +22,7 @@ import {MonitoringData} from '../../shared/MonitoringData';
 import api from '../../shared/Api';
 import {client} from "../../components/UserManager";
 import LoginPage from "../../components/LoginPage";
+import {Profile} from "../../components/Profile";
 import GxyJanus from "../../shared/janus-utils";
 
 class MobileClient extends Component {
@@ -1303,13 +1304,7 @@ class MobileClient extends Component {
                                             <Popup.Content>
                                                 <Button className='select_device' fluid>
                                                     <Icon name='user circle'/>
-                                                    <Dropdown inline text={this.state.username_value}>
-                                                        <Dropdown.Menu>
-                                                            <Dropdown.Item content='Profile:' disabled />
-                                                            <Dropdown.Item text='My Account' onClick={() => window.open("https://accounts.kbb1.com/auth/realms/main/account", "_blank")} />
-                                                            <Dropdown.Item text='Sign Out' onClick={() => client.signoutRedirect()} />
-                                                        </Dropdown.Menu>
-                                                    </Dropdown>
+                                                    <Profile title={this.state.username_value} client={client} />
                                                 </Button>
                                                 <Select className='select_device'
                                                         disabled={!!localAudioTrack}

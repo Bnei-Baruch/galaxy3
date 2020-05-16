@@ -44,6 +44,9 @@ export const resources = {
         highQuality: 'High quality',
         noVideo: 'No Video',
         audioOnly: 'Audio only',
+        profile: 'Profile:',
+        myAccount: 'My Account',
+        signOut: 'Sign Out',
       },
       feedback: {
         feedbackHelp: 'Feedback/Help',
@@ -129,6 +132,9 @@ export const resources = {
         highQuality: 'Alta calidad',
         noVideo: 'Sin vídeo',
         audioOnly: 'Solo audio',
+        profile: 'Perfil:',
+        myAccount: 'Mi cuenta',
+        signOut: 'Desconectar',
       },
       feedback: {
         feedbackHelp: 'Comentarios/Ayuda',
@@ -214,6 +220,9 @@ export const resources = {
         highQuality: 'איכות גבוה',
         noVideo: 'ללא וידיאו',
         audioOnly: 'שמע בלבד',
+        profile: 'פרופיל:',
+        myAccount: 'החשבון שלי',
+        signOut: 'יציאה',
       },
       feedback: {
         feedbackHelp: 'משוב/עזרה',
@@ -299,6 +308,9 @@ export const resources = {
         highQuality: 'Высокое качество',
         noVideo: 'Без видео',
         audioOnly: 'Только аудио',
+        profile: 'Профиль:',
+        myAccount: 'Мои данные',
+        signOut: 'Выход',
       },
       feedback: {
         feedbackHelp: 'Фидбек/Помощь',

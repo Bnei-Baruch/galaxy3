@@ -26,7 +26,7 @@ import {GEO_IP_INFO, SENTRY_KEY} from '../../shared/env';
 import platform from 'platform';
 import {Help} from './components/Help';
 import {withTranslation} from 'react-i18next';
-import {mapNameToLanguage, setLanguage} from '../../i18n/i18n';
+import {languagesOptions, setLanguage} from '../../i18n/i18n';
 import {Monitoring} from '../../components/Monitoring';
 import {MonitoringData} from '../../shared/MonitoringData';
 import api from '../../shared/Api';
@@ -34,6 +34,7 @@ import VirtualStreaming from './VirtualStreaming';
 import VirtualStreamingJanus from './VirtualStreamingJanus';
 import {client} from "../../components/UserManager";
 import LoginPage from "../../components/LoginPage";
+import {Profile} from "../../components/Profile";
 import * as Sentry from "@sentry/browser";
 import GxyJanus from "../../shared/janus-utils";
 
@@ -971,7 +972,7 @@ class VirtualClient extends Component {
       this.setState({ delay: false });
     }, 3000);
     let { janus, videoroom, selected_room, username_value, tested, video_device } = this.state;
-    let user                                                                             = Object.assign({}, this.state.user);
+    let user = Object.assign({}, this.state.user);
     localStorage.setItem('room', selected_room);
     //This name will see other users
     user.display    = username_value || user.name;
@@ -1422,7 +1423,7 @@ class VirtualClient extends Component {
           {/*  <Select*/}
           {/*    compact*/}
           {/*    value={i18n.language}*/}
-          {/*    options={mapNameToLanguage(i18n.language)}*/}
+          {/*    options={languagesOptions}*/}
           {/*    onChange={(e, { value }) => {*/}
           {/*      setLanguage(value);*/}
           {/*      this.setState({ selftest: t('oldClient.selfAudioTest') });*/}
@@ -1436,13 +1437,7 @@ class VirtualClient extends Component {
             <Popup.Content>
               <Button size='huge' fluid>
                 <Icon name='user circle'/>
-                <Dropdown inline text={this.state.username_value}>
-                  <Dropdown.Menu>
-                    <Dropdown.Item content='Profile:' disabled />
-                    <Dropdown.Item text='My Account' onClick={() => window.open("https://accounts.kbb1.com/auth/realms/main/account", "_blank")} />
-                    <Dropdown.Item text='Sign Out' onClick={() => client.signoutRedirect()} />
-                  </Dropdown.Menu>
-                </Dropdown>
+                <Profile title={user && user.username} client={client} />
               </Button>
               <Select className='select_device'
                       disabled={!!localAudioTrack}
@@ -1467,7 +1462,7 @@ class VirtualClient extends Component {
                       onChange={(e, { value }) => this.setDevice(video_device, audio_device, value)} />
               <Select className='select_device'
                       value={i18n.language}
-                      options={mapNameToLanguage(i18n.language)}
+                      options={languagesOptions}
                       onChange={(e, { value }) => {
                         setLanguage(value);
                         this.setState({ selftest: t('oldClient.selfAudioTest') });
