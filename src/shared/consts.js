@@ -56,7 +56,7 @@ export const audiog_options2 = [
     { key: 'tr', value: 42, flag: 'tr', icon:'crosshairs', eng_text: 'Turkish', text:'Türkçe' },
     { key: 'pt', value: 41, flag: 'pt', icon:'crosshairs', eng_text: 'Portuguese', text:'Português' },
     { key: 'bg', value: 43, flag: 'bg', icon:'crosshairs', eng_text: 'Bulgarian', text:'Български' },
-    { key: 'ka', value: 44, flag: 'ge', icon:'crosshairs', eng_text: 'Georgian', text:'ქაბალა' },
+    { key: 'ka', value: 44, flag: 'ge', icon:'crosshairs', eng_text: 'Georgian', text:'ქართული' },
     { key: 'ro', value: 45, flag: 'ro', icon:'crosshairs', eng_text: 'Romanian', text:'Romanian' },
     { key: 'hu', value: 46, flag: 'hu', icon:'crosshairs', eng_text: 'Hungarian', text:'Magyar' },
     { key: 'sv', value: 47, flag: 'se', icon:'crosshairs', eng_text: 'Swedish', text:'Svenska' },

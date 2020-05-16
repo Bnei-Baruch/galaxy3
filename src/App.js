@@ -21,7 +21,7 @@ class App extends Component {
       <I18nextProvider i18n={i18n}>
         {/*{<GalaxyApp />}*/}
         {/*<MobileClient/>*/}
-        <VirtualClient />
+        {<VirtualClient />}
         {/* <VirtualStreaming/>*/}
         {/* <GalaxyStream/>*/}
         {/*<AdminRoot />*/}

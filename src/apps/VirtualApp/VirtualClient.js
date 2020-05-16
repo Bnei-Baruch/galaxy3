@@ -1,8 +1,17 @@
 import React, {Component, Fragment} from 'react';
 import {Janus} from '../../lib/janus';
 import classNames from 'classnames';
-import {isMobile} from 'react-device-detect';
-import {Button, Dropdown, Icon, Input, Label, Menu, Popup, Select} from 'semantic-ui-react';
+import { isMobile } from 'react-device-detect';
+import {
+  Button,
+  Dropdown,
+  Icon,
+  Input,
+  Label,
+  Menu,
+  Popup,
+  Select,
+} from 'semantic-ui-react';
 import {
   checkNotification,
   geoInfo,
@@ -36,7 +45,9 @@ import {client} from "../../components/UserManager";
 import LoginPage from "../../components/LoginPage";
 import {Profile} from "../../components/Profile";
 import * as Sentry from "@sentry/browser";
+import VerifyAccount from './components/VerifyAccount';
 import GxyJanus from "../../shared/janus-utils";
+import {getUserRemote} from "../../components/UserManager";
 
 class VirtualClient extends Component {
 
@@ -127,23 +138,28 @@ class VirtualClient extends Component {
   }
 
   checkPermission = (user) => {
-    const {t} = this.props;
-    let gxy_user = user.roles.filter(role => role === 'gxy_user').length > 0;
+    // If user is ghost, after login check if attributes were updated.
+    if (user.role === 'ghost' || (user.pending && user.pending.length)) {
+      api.setAccessToken(user.access_token);
+      getUserRemote((user) => this.checkPermissions_(user, true));
+    } else {
+      this.checkPermissions_(user, true);
+    }
+  }
+  recheckPermission = (user) => this.checkPermissions_(user, false);
+
+  checkPermissions_ = (user, firstTime) => {
+    let gxy_user = user.roles.find(role => role === 'gxy_user');
     let pending_approval = user.roles.filter(role => role === 'pending_approval').length > 0;
-    if (pending_approval) {
-      alert(t('galaxyApp.pendingApproval'));
-      client.signoutRedirect();
-    } else if (gxy_user) {
-      delete user.roles;
-      user.role = "user";
-      this.initApp(user);
+    if (gxy_user || pending_approval) {
+      this.initApp(user, firstTime);
     } else {
       alert("Access denied!");
       client.signoutRedirect();
     }
   };
 
-  initApp = (user) => {
+  initApp = (user, firstTime) => {
     const { t } = this.props;
     localStorage.setItem('question', false);
     localStorage.setItem('sound_test', false);
@@ -151,17 +167,21 @@ class VirtualClient extends Component {
     checkNotification();
     let system  = navigator.userAgent;
     let browser = platform.parse(system);
-    if (/Safari|Firefox|Chrome/.test(browser.name)) {
-      geoInfo(`${GEO_IP_INFO}`, data => {
-        user.ip = data ? data.ip : '127.0.0.1';
-        user.country = data.country;
-        user.system = system;
-        if (!data) {
-          alert(t('oldClient.failGeoInfo'));
-          this.setState({appInitError: "Error fetching geo info"});
-        }
-        this.setState({ geoinfo: !!data, user });
+    if (!(/Safari|Firefox|Chrome/.test(browser.name))) {
+      alert(t('oldClient.browserNotSupported'));
+      window.location = 'https://galaxy.kli.one';
+    }
+    geoInfo(`${GEO_IP_INFO}`, data => {
+      user.ip = data ? data.ip : '127.0.0.1';
+      user.country = data.country;
+      user.system = system;
+      if (!data) {
+        alert(t('oldClient.failGeoInfo'));
+        this.setState({appInitError: "Error fetching geo info"});
+      }
+      this.setState({ geoinfo: !!data, user });
 
+      if (firstTime) {
         api.setAccessToken(user.access_token);
         client.events.addUserLoaded((user) => api.setAccessToken(user.access_token));
         client.events.addUserUnloaded(() => api.setAccessToken(null));
@@ -190,11 +210,8 @@ class VirtualClient extends Component {
               console.error("[VirtualClient] error initializing app", err);
               this.setState({appInitError: err});
             });
-      });
-    } else {
-      alert(t('oldClient.browserNotSupported'));
-      window.location = 'https://galaxy.kli.one';
-    }
+      }
+    });
   }
 
   initClient = (user, error) => {
@@ -1311,6 +1328,7 @@ class VirtualClient extends Component {
     let login = (<LoginPage user={user} checkPermission={this.checkPermission} />);
 
     let content = (<div className={classNames('vclient', { 'vclient--chat-open': chatVisible })}>
+			<VerifyAccount user={user} loginPage={false} i18n={i18n} onUserUpdate={(user) => this.recheckPermission(user)} />
       <div className="vclient__toolbar">
         <Input>
           <Select

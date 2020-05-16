@@ -1,0 +1,8 @@
+.whole-divider::before {
+  height: calc(100%) !important;
+}
+
+.whole-divider::after {
+  height: calc(100%) !important;
+}
+

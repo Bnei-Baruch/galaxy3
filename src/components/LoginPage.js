@@ -1,13 +1,25 @@
 import React, { Component,Fragment } from 'react';
 import {client,getUser} from './UserManager';
-import {Container, Message, Button, Dropdown, Image, Divider, Select, Menu, Segment, Grid, Header} from 'semantic-ui-react';
-import logo from './logo.svg';
-import bblogo from './bblogo.png';
-import {languagesOptions, setLanguage} from "../i18n/i18n";
+import {
+	Button,
+	Container,
+    Divider,
+	Grid,
+	Header,
+	Image,
+	Menu,
+	Message,
+	Segment,
+	Select,
+} from 'semantic-ui-react';
+import bblogo from './logo.png';
+import {mapNameToLanguage, setLanguage} from "../i18n/i18n";
 import {withTranslation} from "react-i18next";
 import {reportToSentry} from "../shared/tools";
 import {Terms} from "./Terms";
 import {Profile} from "./Profile";
+
+import './LoginPage.css';
 
 class LoginPage extends Component {
 
@@ -29,7 +41,7 @@ class LoginPage extends Component {
                 }).catch((error) => {
                     console.log("querySessionStatus: ", error);
                     reportToSentry("querySessionStatus: " + error,{source: "login"}, user, "warning");
-                    alert("We detect wrong browser cookies settings");
+                    alert(`We detect wrong browser cookies settings: ${error}`);
                     client.signoutRedirect();
                 });
             } else {
@@ -57,7 +69,7 @@ class LoginPage extends Component {
     render() {
         const { t, i18n } = this.props;
         const {disabled, loading} = this.state;
-        const rtl = i18n.language === "he" ? "rtl" : "";
+        const direction = i18n.language === 'he' ? 'rtl' : '';
 
         let login = (
             <Container textAlign='center' >
@@ -73,16 +85,20 @@ class LoginPage extends Component {
 
         let main = (
             <Container fluid >
-                <Menu secondary>
+                <Menu secondary style={{direction}}>
                     <Menu.Item>
-                        <Image src={bblogo} />
+                        <Image src={bblogo} style={{height: '8em', objectFit: 'contain', objectPosition: i18n.language === 'he' ? '-14px 0' : '14px 0'}} />
+                        <div>
+                          <div style={{fontSize: 'medium', color: '#00c6d2', whiteSpace: 'nowrap'}}>{t('loginPage.logoOurConnection')}</div>
+                          <div style={{fontSize: 'large', color: '#00457c'}}>{t('loginPage.logoNetwork')}</div>
+                        </div>
                     </Menu.Item>
 
-                    <Menu.Menu position='right'>
+                    <Menu.Menu style={{display: 'flex', marginRight: i18n.language === 'he' ? 'auto' : '', marginLeft: i18n.language === 'he' ? '' : 'auto'}}>
                         <Menu.Item>
                             <Select compact
                                     value={i18n.language}
-                                    options={languagesOptions}
+                                    options={mapNameToLanguage(i18n.language)}
                                     onChange={(e, { value }) => {setLanguage(value)}} />
                         </Menu.Item>
                         <Menu.Item>
@@ -93,7 +109,7 @@ class LoginPage extends Component {
                         </Menu.Item>
                     </Menu.Menu>
                 </Menu>
-                <Container textAlign='center' style={{direction: rtl}} >
+                <Container textAlign='center' style={{direction}} >
                     <br />
                     <Message size='massive'>
                         <Message.Header>
@@ -106,8 +122,7 @@ class LoginPage extends Component {
                         {this.props.user === null ?
                             <Segment basic>
                                 <Grid columns={2} stackable textAlign='center'>
-                                    <Divider vertical />
-
+                                    <Divider className="whole-divider" vertical />
                                     <Grid.Row verticalAlign='bottom'>
                                         <Grid.Column>
                                             <Header size='huge' >{t('loginPage.regUsers')}</Header>
@@ -125,11 +140,10 @@ class LoginPage extends Component {
                                 </Grid>
                             </Segment>
                             :
-                            <div>
-                                <Image size='large' src={logo} centered />
+                            <Segment basic>
                                 <Button primary onClick={() => window.open("http://ktuviot.kbb1.com/three_languages","_blank")} >Workshop Questions</Button>
                                 <Button primary onClick={() => window.open("https://bb.kli.one/","_blank")} >BB KLI</Button>
-                            </div>
+                            </Segment>
                         }
                     </Message>
                 </Container>
