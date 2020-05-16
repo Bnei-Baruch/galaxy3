@@ -13,7 +13,7 @@ import {
 	Select,
 } from 'semantic-ui-react';
 import bblogo from './logo.png';
-import {mapNameToLanguage, setLanguage} from "../i18n/i18n";
+import {languagesOptions,setLanguage} from "../i18n/i18n";
 import {withTranslation} from "react-i18next";
 import {reportToSentry} from "../shared/tools";
 import {Terms} from "./Terms";
@@ -98,7 +98,7 @@ class LoginPage extends Component {
                         <Menu.Item>
                             <Select compact
                                     value={i18n.language}
-                                    options={mapNameToLanguage(i18n.language)}
+                                    options={languagesOptions}
                                     onChange={(e, { value }) => {setLanguage(value)}} />
                         </Menu.Item>
                         <Menu.Item>
