@@ -57,22 +57,22 @@ class GalaxyApp extends Component {
       const {t} = this.props;
       return roles.map((role, i) => {
         if(role === "gxy_user" || role === "pending_approval") {
-          return (<Button key={i} size='massive' color='blue' onClick={() => window.open("user","_self")}>
+          return (<Button key={i} size='massive' color='green' onClick={() => window.open("user","_self")}>
             {approval ? t('galaxyApp.continueAsGuest') : 'Galaxy'}
           </Button>);
         }
         if(role === "gxy_shidur") {
-          return (<Button key={i} size='massive' color='blue' onClick={() => window.open("shidur","_self")}>
+          return (<Button key={i} size='massive' color='green' onClick={() => window.open("shidur","_self")}>
             Shidur
           </Button>);
         }
         if(role === "gxy_sndman") {
-          return (<Button key={i} size='massive' color='blue' onClick={() => window.open("sndman","_self")}>
+          return (<Button key={i} size='massive' color='green' onClick={() => window.open("sndman","_self")}>
             SoundMan
           </Button>);
         }
         if(role.match(/^(gxy_admin|gxy_root|gxy_viewer)$/)) {
-          return (<Button key={i} size='massive' color='blue' onClick={() => window.open("admin","_self")}>
+          return (<Button key={i} size='massive' color='green' onClick={() => window.open("admin","_self")}>
             Admin
           </Button>);
         }
@@ -83,22 +83,22 @@ class GalaxyApp extends Component {
     render() {
         const {i18n} = this.props;
         const {user, roles} = this.state;
-				const approval = pendingApproval(user);
+        const approval = pendingApproval(user);
         const requested = this.requested(user);
 
         const enter = (
-					<Grid columns={(!approval || requested) ? 1 : 2}>
-						<Grid.Row>
-              <Divider className="whole-divider" vertical />
-							{(!approval || requested) ? null : <Grid.Column>
-								<VerifyAccount user={user} loginPage={true} i18n={i18n} onUserUpdate={(user) => this.checkPermission(user)} />
-							</Grid.Column>}
-							<Grid.Column style={{display: 'flex', justifyContent: 'center', alignItems: 'center'}}>
-								{this.options(roles, approval)}
-							</Grid.Column>
-						</Grid.Row>
-					</Grid>
-				);
+            <Grid columns={(!approval || requested) ? 1 : 2}>
+                <Grid.Row>
+                    <Divider className="whole-divider" vertical />
+                    {(!approval || requested) ? null : <Grid.Column>
+                        <VerifyAccount user={user} loginPage={true} i18n={i18n} onUserUpdate={(user) => this.checkPermission(user)} />
+                    </Grid.Column>}
+                    <Grid.Column style={{display: 'flex', justifyContent: 'center', alignItems: 'center'}}>
+                        {this.options(roles, approval)}
+                    </Grid.Column>
+                </Grid.Row>
+            </Grid>
+        );
 
         return (
             <Fragment>
