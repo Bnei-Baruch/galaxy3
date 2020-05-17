@@ -232,7 +232,28 @@
     height: 250px;
     background-color: silver!important;
 }
+.dots {
+    position: absolute;
+    bottom: 0;
+}
+.right-arrow {
+    z-index: 1;
+    position: absolute;
+    right: 0;
+    top: 50%;
+}
 
+.left-arrow {
+    z-index: 1;
+    position: absolute;
+    left: 0;
+    top:50%;
+}
+
+
+.react-carousel-dots-dot.active{
+    background-color:blue;
+}
 .segment_conteiner {
     width: 460px;
     height: 920px;

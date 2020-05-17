@@ -4,6 +4,8 @@ import {Janus} from "../../lib/janus";
 import classNames from 'classnames';
 import ReactSwipe from 'react-swipe';
 
+import Dots from 'react-carousel-dots';
+import { right } from 'semantic-ui-react';
 import {Button, Dropdown, Icon, Input, Label, Menu, Popup, Select} from "semantic-ui-react";
 import {checkNotification, geoInfo, getDevicesStream, initJanus, testDevices, testMic,} from "../../shared/tools";
 import './MobileClient.scss'
@@ -29,7 +31,7 @@ class MobileClient extends Component {
 
     state = {
         count: 0,
-        index: 4,
+        index: 2,
         creatingFeed: false,
         delay: false,
         audioContext: null,
@@ -54,6 +56,7 @@ class MobileClient extends Component {
         localAudioTrack: null,
         mids: [],
         video_mids: [],
+        showed_mids:[],
         muted: false,
         cammuted: false,
         shidur: false,
@@ -714,7 +717,7 @@ class MobileClient extends Component {
                     }
                     if(msg["streams"]) {
                         // Update map of subscriptions by mid
-                        let {mids,video_mids,feedStreams} = this.state;
+                        let {mids,video_mids,feedStreams,showed_mids,feeds} = this.state;
                         let m = 0;
                         for(let i in msg["streams"]) {
                             let sub_mid = msg["streams"][i];
@@ -728,8 +731,19 @@ class MobileClient extends Component {
                                 m++
                             }
                         }
-                        this.setState({mids,video_mids,feedStreams});
-                    }
+                   
+                     
+                    //go over all feeds and find if it has only audio
+                   
+                    showed_mids= (msg["streams"].filter(e => e.type === "audio" && feeds.some(item => item.id === e.feed_id && item.streams.length ===2)));
+                        
+                    showed_mids = video_mids.concat(showed_mids);
+                    
+                    Janus.log("switch got streams subscribed ",showed_mids,"and feedstream: ",feedStreams);
+
+                    this.setState({mids,video_mids,feedStreams,showed_mids});
+                }
+            
                     if(jsep !== undefined && jsep !== null) {
                         Janus.debug("Handling SDP as well...");
                         Janus.debug(jsep);
@@ -874,7 +888,7 @@ class MobileClient extends Component {
         let {round,video_mids} = this.state;
 
         // Switch to next feed if Quad full
-        if(feeds.length >= 4) {
+        if(feeds.length >= 2) {
             Janus.log(" :: Let's check mids - ", video_mids);
             video_mids.forEach((mid,i) => {
                 Janus.debug(" :: mids iteration - ", i, mid);
@@ -894,7 +908,7 @@ class MobileClient extends Component {
                     this.subscribeTo(streams);
                 }
             })
-        } else if(feeds.length < 4) {
+        } else if(feeds.length < 2) {
             Janus.log(" :: Clean up Quad");
             for (let i=0; i<video_mids.length; i++) {
                 if(!video_mids[i].active) {
@@ -905,11 +919,16 @@ class MobileClient extends Component {
         }
     };
 
-    switchFour = () => {
+    switchFour = (isForward) => {
         Janus.log(" :: Switch");
-        let {feeds,index,video_mids} = this.state;
-
-        if(feeds.length < 5)
+        let {feeds,index,video_mids,showed_mids} = this.state;
+        Janus.log("Index start: "+index);
+        if(!isForward && index>=4)
+         index = index-4;
+         else if(!isForward)
+            return;
+         
+        if(feeds.length < 2)
             return;
 
         if(index === feeds.length) {
@@ -922,7 +941,7 @@ class MobileClient extends Component {
         let streams = [];
         let m = 0;
 
-        for(let i=index; i<feeds.length && m<4; i++) {
+        for(let i=index; i<feeds.length && m<2; i++) {
 
             Janus.log(" :: ITer: ", i ,feeds[i]);
 
@@ -934,16 +953,18 @@ class MobileClient extends Component {
                 m = 0;
                 break;
             }
-
-            let sub_mid = video_mids[m].mid;
+            debugger;
+            let sub_mid = showed_mids[m].mid;
             let feed = feeds[i].id;
-            streams.push({feed, mid: "1", sub_mid});
+            if(showed_mids[m].type === "video" )
+                streams.push({feed, mid: "1", sub_mid});
+         
             index++;
             m++;
         }
 
         this.setState({index});
-
+        Janus.log("Index end: "+index);
         Janus.log(" :: Going to switch four: ", streams);
         let switch_four = {request: "switch", streams};
         this.state.remoteFeed.send ({"message": switch_four,
@@ -1172,8 +1193,8 @@ class MobileClient extends Component {
             return ({ key: i, text: label, value: deviceId})
         });
 
-        let videos = this.state.video_mids.map((mid,i) => {
-            if(mid && i < 4) {
+        let videos = this.state.showed_mids.map((mid,i) => {
+            if(mid && i <2) {
                 if(mid.active) {
                     let feed = this.state.feeds.find(f => f.id === mid.feed_id);
                     //let id = feed.id;
@@ -1336,9 +1357,9 @@ class MobileClient extends Component {
                             <div basic className="vclient__main">
                                 <div className="vclient__main-wrapper">
                                     <div className="videos-panel">
-                                        <div className="videos" onClick={this.switchFour}>
+                                        <div className="videos" >
                                             <div className="videos__wrapper">
-                                                {!!localAudioTrack ? "" :
+                                                {/* {!!localAudioTrack ? "" : */}
                                                     <div className="video">
                                                         <div className={classNames('video__overlay')}>
                                                             {question ?
@@ -1366,10 +1387,28 @@ class MobileClient extends Component {
                                                             muted={true}
                                                             playsInline={true}/>
 
-                                                    </div>}
+                                                    </div>
+                                                    {/* } */}
                                                 {videos}
+                                                    {videos.length>0? 
+                                                    <div  class="dots">
+                                                    <Dots  length={this.state.feeds.length/2} active={(this.state.index)/2-1} />
+                                                    </div>
+                                                    :""}
                                             </div>
+                                        </div> 
+                                        {videos.length>0 ?
+                                        <div class="right-arrow" onClick={()=>this.switchFour(true)}>
+                                                    <Icon name='chevron right' color='blue' size='huge' />
+
                                         </div>
+                                        :""}
+                                         {videos.length>0? 
+                                        <div class="left-arrow" onClick={()=>this.switchFour(false)}>
+                                        <Icon name='chevron left' color='blue' size='huge' />
+
+                                        </div>
+                                          :""  }
                                     </div>
                                     {audios}
                                     {/*<MobileChat*/}
