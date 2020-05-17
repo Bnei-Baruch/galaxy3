@@ -104,23 +104,13 @@ class SDIOutApp extends Component {
 
         if(data.type === "sdi-fullscr_group" && status) {
             if(qst) {
-                this.setState({qg: this.state.qids["q"+col].vquad[i]})
-                if(room) {
-                    this.users.exitVideoRoom(this.state.room, () => {
-                        this.users.initVideoRoom(group.room, group.janus);
-                        this.setState({group, room});
-                    });
-                } else {
-                    this.users.initVideoRoom(group.room, group.janus);
-                    this.setState({group, room});
-                }
+                this.setState({group, room, qg: this.state.qids["q"+col].vquad[i]})
             } else {
                 this["col"+col].toFullGroup(i,feed);
             }
         } else if(data.type === "sdi-fullscr_group" && !status) {
             let {col, feed, i} = data;
             if(qst) {
-                this.users.exitVideoRoom(this.state.room, () => {});
                 this.setState({group: null, room: null});
             } else {
                 this["col"+col].toFourGroup(i,feed);
@@ -184,7 +174,7 @@ class SDIOutApp extends Component {
                                         <Fragment>
                                         {/*{group && group.questions ? <div className="qst_fullscreentitle">?</div> : ""}*/}
                                         <div className="fullscrvideo_title" >{name}</div>
-                                        <UsersHandleSDIOut g={qg} gateways={gateways} ref={users => {this.users = users;}} />
+                                        <UsersHandleSDIOut key={"q5"} g={qg} group={group} index={13} gateways={gateways} />
                                         </Fragment>
                                     }
                                 </div>

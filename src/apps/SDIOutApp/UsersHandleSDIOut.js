@@ -1,6 +1,5 @@
 import React, {Component} from 'react';
 import './VideoConteiner.scss'
-// import 'eqcss';
 import { Janus } from "../../lib/janus";
 import classNames from "classnames";
 
@@ -23,12 +22,22 @@ class UsersHandleSDIOut extends Component {
     }
 
     componentDidUpdate(prevProps) {
-        let {g} = this.props;
+        let {g,index,group} = this.props;
         let {room} = this.state;
-        if(g && g.room !== room) {
+        if(g && index === 13 && g.room === room && group === null) {
+            this.setState({room: ""}, () => {
+                this.exitVideoRoom(room, () => {});
+            })
+        }
+        if(g && index === 13 && g.room !== room && group) {
+            this.setState({room: g.room}, () => {
+                this.initVideoRoom(g.room, g.janus);
+            })
+        }
+        if(g && g.room !== room && index !== 13) {
             this.setState({room: g.room}, () => {
                 if(room) {
-                    this.exitVideoRoom(room, () =>{
+                    this.exitVideoRoom(room, () => {
                         this.initVideoRoom(g.room, g.janus);
                     });
                 } else {
