@@ -1024,12 +1024,9 @@ class VirtualClient extends Component {
         alert(this.props.t('oldClient.error') + ondata.error);
         this.state.protocol.hangup();
       } else if (type === 'joined') {
-        let register = {
-          'request': 'join',
-          'room': selected_room,
-          'ptype': 'publisher',
-          'display': JSON.stringify(user)
-        };
+        const {id,timestamp,role,display} = user;
+        const d = {id,timestamp,role,display};
+        let register = {'request': 'join', 'room': selected_room, 'ptype': 'publisher', 'display': JSON.stringify(d)};
         videoroom.send({ 'message': register });
         this.setState({ user, muted: true, room: selected_room });
         this.chat.initChatRoom(user, selected_room);
