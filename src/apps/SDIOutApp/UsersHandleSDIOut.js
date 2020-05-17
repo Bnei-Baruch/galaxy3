@@ -24,11 +24,6 @@ class UsersHandleSDIOut extends Component {
     componentDidUpdate(prevProps) {
         let {g,index,group} = this.props;
         let {room} = this.state;
-        if(g && index === 13 && g.room === room && group === null) {
-            this.setState({room: ""}, () => {
-                this.exitVideoRoom(room, () => {});
-            })
-        }
         if(g && index === 13 && g.room !== room && group) {
             this.setState({room: g.room}, () => {
                 this.initVideoRoom(g.room, g.janus);
