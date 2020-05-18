@@ -73,7 +73,7 @@ const VerifyAccount = (props) => {
     }
   };
 
-  console.log('RENDER', user.role, 'closedModal', closedModal, 'requestSent', requestSent, 'user.request', user.request, 'user.pending', user.pending, 'USER', user);
+  //console.log('RENDER', user.role, 'closedModal', closedModal, 'requestSent', requestSent, 'user.request', user.request, 'user.pending', user.pending, 'USER', user);
   const ret = [];
   if (!formClosed && !requestSent && user && user.role === 'ghost' && (!user.request || user.request.length === 0)) {
     ret.push(<Segment textAlign="center" style={{backgroundColor: loginPage ? '' : 'lightyellow', direction}} basic={loginPage}>
