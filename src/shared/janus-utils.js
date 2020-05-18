@@ -3,11 +3,12 @@ import {DATA_PORT, PROTOCOL_ROOM, SDIOUT_ID, SERVICE_ROOM, SHIDUR_ID, SNDMAN_ID,
 import {ADMIN_SECRET, JANUS_ADMIN_GXY1, JANUS_ADMIN_GXY2, JANUS_ADMIN_GXY3, SECRET} from "./env";
 import {getDateString} from "./tools";
 
-class GxyJanus {
+class GxyJanus extends EventTarget {
 
     static globalConfig = {};
 
     constructor(name) {
+        super();
         this.name = name;
         this.reset();
     }
@@ -21,6 +22,7 @@ class GxyJanus {
         this.remoteFeed = null;
         this.forward = null;
         this.forwardPublisherID = null;
+        this.stopReinit = false;
     }
 
     static setGlobalConfig = (config) => {
@@ -43,13 +45,13 @@ class GxyJanus {
         let admin;
         switch (name) {
             case "gxy1":
-                admin= JANUS_ADMIN_GXY1;
+                admin = JANUS_ADMIN_GXY1;
                 break;
             case "gxy2":
-                admin= JANUS_ADMIN_GXY2;
+                admin = JANUS_ADMIN_GXY2;
                 break;
             case "gxy3":
-                admin= JANUS_ADMIN_GXY3;
+                admin = JANUS_ADMIN_GXY3;
                 break;
             default:
                 break;
@@ -94,6 +96,9 @@ class GxyJanus {
                         error: (err) => {
                             this.error("Janus.init error", err);
                             reject(err);
+                            if (this.gateway.getSessionId()) {
+                                this.reconnect();
+                            }
                         },
                         destroyed: () => {
                             this.error(":: Janus destroyed ::");
@@ -122,6 +127,48 @@ class GxyJanus {
         }
         this.reset();
     };
+
+    // default value for attempts here should be the same as the gateway session reclaim interval
+    reconnect = (attempts = 5) => {
+        if (attempts > 0) {
+            this.info("reconnecting", attempts);
+            this.gateway.reconnect({
+                success: () => {
+                    this.info("reconnect success");
+                    this.dispatchEvent(new Event('reconnect'));
+                },
+                error: (err) => {
+                    this.error("reconnect error", err);
+                    setTimeout(() => this.reconnect(attempts - 1), 1000);
+                },
+            });
+        } else {
+            this.dispatchEvent(new Event('reconnect_failure'));
+            this.reinit();
+        }
+    }
+
+    // this will try to reconnect forever. Use stopReInit() to stop.
+    // user is expected to reload window after some time.
+    reinit = (attempt = 1) => {
+        this.info("re-init", attempt);
+        this.reset();
+        this.init()
+            .then(() => this.dispatchEvent(new Event('reinit')))
+            .catch((err) => {
+                this.error("re-init error", err);
+                this.dispatchEvent(new CustomEvent('reinit_failure', {detail: attempt}));
+                if (this.stopReinit) {
+                    this.info("reinit was stopped", attempt);
+                } else {
+                    setTimeout(() => this.reinit(attempt + 1), 1000 * attempt);
+                }
+            })
+    }
+
+    stopReInit = () => {
+        this.stopReinit = true;
+    }
 
     debug = (...args) => {
         console.debug(`[${this.name}]`, ...args)

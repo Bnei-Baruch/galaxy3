@@ -129,20 +129,41 @@ class AdminRoot extends Component {
 
         return Promise.all(Object.values(gateways).map(gateway => (this.initGateway(user, gateway))))
             .then(() => {
-                console.log("[Admin] gateways initialization complete");
+                console.info("[Admin] gateways initialization complete");
                 this.setState({gatewaysInitialized: true});
             });
     };
 
     initGateway = (user, gateway) => {
-        console.log("[Admin] initializing gateway", gateway.name);
+        console.info("[Admin] initializing gateway", gateway.name);
+
+        gateway.addEventListener("reinit", () => {
+                this.postInitGateway(user, gateway)
+                    .catch(err => {
+                        console.error("[Admin] postInitGateway error after reinit. Reloading", gateway.name, err);
+                        window.location.reload();
+                    });
+            }
+        );
+
+        gateway.addEventListener("reinit_failure", (e) => {
+            if (e.detail > 10) {
+                console.error("[Admin] too many reinit_failure. Reloading", gateway.name, e);
+                window.location.reload();
+            }
+        });
 
         return gateway.init()
-            .then(() => {
-                if (this.isAllowed("admin")) {
-                    return gateway.initGxyProtocol(user, data => this.onProtocolData(gateway, data))
-                }
-            });
+            .then(() => this.postInitGateway(user, gateway));
+    }
+
+    postInitGateway = (user, gateway) => {
+        console.info("[Admin] gateway post initialization", gateway.name);
+        if (this.isAllowed("admin")) {
+            return gateway.initGxyProtocol(user, data => this.onProtocolData(gateway, data))
+        } else {
+            return Promise.resolve();
+        }
     }
 
     pollRooms = () => {
