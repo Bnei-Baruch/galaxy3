@@ -65,9 +65,9 @@ it('messaged delivery guaranteed', (done) => {
 
 it('slow user, retry few times', (done) => {
   const gdm = new GuaranteeDeliveryManager(
-    /* maxDelay= */ 2000, /* retryDelay= */ 500, /* intervalsDelay =*/ 100);
-  const userA = new User(/* messageSendDelay= */ 700);
-  const userB = new User(/* messageSendDelay= */ 700);
+    /* maxDelay= */ 200, /* retryDelay= */ 50, /* intervalsDelay =*/ 10);
+  const userA = new User(/* messageSendDelay= */ 70);
+  const userB = new User(/* messageSendDelay= */ 70);
 
   let retries = 0;
   let received = 0;
@@ -118,9 +118,9 @@ it('slow user, retry few times', (done) => {
 
 it('very slow user, fail eventually', (done) => {
   const gdm = new GuaranteeDeliveryManager(
-    /* maxDelay= */ 2000, /* retryDelay= */ 500, /* intervalsDelay =*/ 100);
-  const userA = new User(/* messageSendDelay= */ 1200);
-  const userB = new User(/* messageSendDelay= */ 1200);
+    /* maxDelay= */ 200, /* retryDelay= */ 50, /* intervalsDelay =*/ 10);
+  const userA = new User(/* messageSendDelay= */ 120);
+  const userB = new User(/* messageSendDelay= */ 120);
 
   let retries = 0;
   let received = 0;
