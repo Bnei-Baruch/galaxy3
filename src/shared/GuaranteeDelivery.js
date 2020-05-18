@@ -7,6 +7,7 @@ const INTERVALS_DELAY = 100;       // 100ms.
 const ACK_FIELD = '__gack__';
 const RETRY_FIELD = '__gretry__';
 const TRANSACTION_FIELD = 'transaction';
+export const DEADLINE_EXCEEDED = 'DEADLINE_EXCEEDED';
 
 // Class for sending and receiving messages that we validate they were eventually received. If not we raise an error after MAX_DELAY.
 export class GuaranteeDeliveryManager {
@@ -36,8 +37,8 @@ export class GuaranteeDeliveryManager {
       if (interval > this.maxDelay) {
         // Failed sending message on timeout. Delete and reject.
         this.pending.delete(transaction);
-        state.delivery.reject();  // Note that if reject is computation heavy action, our timings might be not accurate.
-      } else if (now - state.sent >= (state.message[RETRY_FIELD]+ 1) * this.retryDelay) {
+        state.delivery.reject({reason: DEADLINE_EXCEEDED, message: state.message});  // Note that if reject is computation heavy action, our timings might be not accurate.
+      } else if (now - state.sent >= (state.message[RETRY_FIELD] + 1) * this.retryDelay) {
         // We should retry.
         state.message[RETRY_FIELD]++;
         state.sendMessage(state.message);
@@ -109,7 +110,7 @@ export class GuaranteeDeliveryManager {
 
   // @param {!Object} message
   // @param {function(!Object)} sendMessage
-  // @return {!Promise}  <==== Resolve only once when received, Resolve with numm on any
+  // @return {!Promise}  <==== Resolve only once when received, Resolve with null on any
   // consecutive times the same message received. Reject on errors.
   acceptGuaranteeMessage(message, sendAckBack) {
     if (!(RETRY_FIELD in message)) {
