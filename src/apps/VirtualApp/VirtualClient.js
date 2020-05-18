@@ -86,6 +86,7 @@ class VirtualClient extends Component {
     sourceLoading: true,
     virtualStreamingJanus: new VirtualStreamingJanus(() => this.virtualStreamingInitialized()),
     appInitError: null,
+    upval: null,
   };
 
   virtualStreamingInitialized() {
@@ -102,7 +103,6 @@ class VirtualClient extends Component {
     if (this.state.room && !prevState.room && this.state.shidur && !this.sourceLoading) {
       this.state.virtualStreamingJanus.audioElement.muted = false;
     }
-
     if (this.state.videoroom !== prevState.videoroom ||
       this.state.localVideoTrack !== prevState.localVideoTrack ||
       this.state.localAudioTrack !== prevState.localAudioTrack ||
@@ -116,7 +116,7 @@ class VirtualClient extends Component {
   }
 
   componentDidMount() {
-    //Sentry.init({dsn: `https://${SENTRY_KEY}@sentry.kli.one/2`});
+    Sentry.init({dsn: `https://${SENTRY_KEY}@sentry.kli.one/2`});
     if (isMobile) {
       window.location = '/userm';
     }
@@ -335,8 +335,9 @@ class VirtualClient extends Component {
   };
 
   exitRoom = (reconnect) => {
-    let { videoroom, remoteFeed, protocol, room, user } = this.state;
-    wkliLeave(user);
+    let { videoroom, remoteFeed, protocol, room } = this.state;
+    wkliLeave(this.state.user);
+    clearInterval(this.state.upval);
     let leave                                     = { request: 'leave' };
     if (remoteFeed) {
       remoteFeed.send({ 'message': leave });
@@ -362,6 +363,7 @@ class VirtualClient extends Component {
       room: '',
       selected_room: (reconnect ? room : ''),
       chatMessagesCount: 0,
+      upval: null,
     });
     this.state.virtualStreamingJanus.audioElement.muted = true;
     protocol.data({
@@ -965,8 +967,17 @@ class VirtualClient extends Component {
     user.sound_test = reconnect ? JSON.parse(localStorage.getItem('sound_test')) : false;
     user.timestamp  = Date.now();
     if(video_device) {
-      const {mystream} = this.state;
-      takeImage(mystream, user);
+      if(this.state.upval) {
+        clearInterval(this.state.upval);
+      }
+      takeImage(this.state.mystream, user);
+      let upval = setInterval(() => {
+        const {mystream} = this.state;
+        if(mystream) {
+          takeImage(mystream, user);
+        }
+      }, 10*60000);
+      this.setState({upval});
     }
     this.setState({ user });
     localStorage.setItem('username', user.display);

@@ -7,7 +7,7 @@ import api from '../shared/Api';
 const AUTH_URL = 'https://accounts.kbb1.com/auth/realms/main';
 
 oidclog.logger = console;
-oidclog.level = 4;
+oidclog.level = 0;
 let user_mgr = null;
 
 const userManagerConfig = {
