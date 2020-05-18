@@ -59,7 +59,6 @@ class MobileClient extends Component {
         shidur: false,
         protocol: null,
         user: null,
-        users: {},
         username_value: "",
         visible: false,
         question: false,
@@ -287,22 +286,6 @@ class MobileClient extends Component {
         this.initClient(user, false);
     };
 
-    getFeedsList = (rooms) => {
-        //TODO: Need solution to show count without service users in room list
-        // rooms.forEach((room,i) => {
-        //     if(room.num_participants > 0) {
-        //         videoroom.send({
-        //             message: {request: "listparticipants", "room": room.room},
-        //             success: (data) => {
-        //                 let count = data.participants.filter(p => JSON.parse(p.display).role === "user");
-        //                 rooms[i].num_participants = count.length;
-        //                 this.setState({rooms});
-        //             }
-        //         });
-        //     }
-        // })
-    };
-
     iceState = () => {
         let count = 0;
         let chk = setInterval(() => {
@@ -463,11 +446,10 @@ class MobileClient extends Component {
     };
 
     onRoomData = (data) => {
-        let {feeds,users} = this.state;
-        let rfid = users[data.id].rfid;
+        let {feeds} = this.state;
         let camera = data.camera;
         for (let i = 0; i < feeds.length; i++) {
-            if (feeds[i] && feeds[i].id === rfid) {
+            if (feeds[i] && feeds[i].id === data.rfid) {
                 feeds[i].cammute = !camera;
                 this.setState({feeds});
                 break
@@ -532,7 +514,7 @@ class MobileClient extends Component {
                     let list = msg["publishers"];
                     //FIXME: Tmp fix for black screen in room caoused by feed with video_codec = none
                     let feeds = list.filter(feeder => JSON.parse(feeder.display).role.match(/^(user|guest)$/) && feeder.video_codec !== "none");
-                    let {feedStreams,users} = this.state;
+                    let {feedStreams} = this.state;
                     Janus.log(":: Got Pulbishers list: ", feeds);
                     if(feeds.length > 15) {
                         alert("Max users in this room is reached");
@@ -560,11 +542,9 @@ class MobileClient extends Component {
                             }
                         }
                         feedStreams[id] = {id, display, streams};
-                        users[display.id] = display;
-                        users[display.id].rfid = id;
                         subscription.push(subst);
                     }
-                    this.setState({feeds,feedStreams,users});
+                    this.setState({feeds,feedStreams});
                     if(subscription.length > 0)
                         this.subscribeTo(subscription);
                 }
@@ -605,7 +585,7 @@ class MobileClient extends Component {
                     this.setState({feedStreams})
                 } else if(msg["publishers"] !== undefined && msg["publishers"] !== null) {
                     let feed = msg["publishers"];
-                    let {feeds,feedStreams,users} = this.state;
+                    let {feeds,feedStreams} = this.state;
                     Janus.debug("Got a list of available publishers/feeds:");
                     Janus.log(feed);
                     let subscription = [];
@@ -628,12 +608,10 @@ class MobileClient extends Component {
                             }
                         }
                         feedStreams[id] = {id, display, streams};
-                        users[display.id] = display;
-                        users[display.id].rfid = id;
                         subscription.push(subst);
                     }
                     feeds.push(feed[0]);
-                    this.setState({feeds,feedStreams,users});
+                    this.setState({feeds,feedStreams});
                     this.subscribeTo(subscription);
                 } else if(msg["leaving"] !== undefined && msg["leaving"] !== null) {
                     // One of the publishers has gone away?
@@ -834,12 +812,11 @@ class MobileClient extends Component {
 
     unsubscribeFrom = (id) => {
         // Unsubscribe from this publisher
-        let {feeds,remoteFeed,users,feedStreams,index} = this.state;
+        let {feeds,remoteFeed,feedStreams,index} = this.state;
         for (let i=0; i<feeds.length; i++) {
             if (feeds[i].id === id) {
                 Janus.log("Feed " + feeds[i] + " (" + id + ") has left the room, detaching");
                 //TODO: remove mids
-                delete users[feeds[i].display.id];
                 //delete feedStreams[id];
                 feeds.splice(i, 1);
 
@@ -864,7 +841,7 @@ class MobileClient extends Component {
                     this.fillQuad(id,feeds,index);
                 }, 500);
 
-                this.setState({feeds,users,feedStreams});
+                this.setState({feeds,feedStreams});
                 break
             }
         }
@@ -953,21 +930,6 @@ class MobileClient extends Component {
         })
     };
 
-    onProtocolData = (data) => {
-        //TODO: Need to add transaction handle (filter and acknowledge)
-        let {room,feeds,users,user} = this.state;
-        if (data.type === "question" && data.room === room && user.id !== data.user.id) {
-            let rfid = users[data.user.id].rfid;
-            for (let i = 0; i < feeds.length; i++) {
-                if (feeds[i] && feeds[i].id === rfid) {
-                    feeds[i].question = data.status;
-                    break
-                }
-            }
-            this.setState({feeds});
-        }
-    };
-
     sendDataMessage = (key,value) => {
         let {videoroom,user} = this.state;
         user[key] = value;
@@ -1010,7 +972,9 @@ class MobileClient extends Component {
                 alert(ondata.error);
                 this.state.protocol.hangup();
             } else if(ondata.type === "joined") {
-                let register = { "request": "join", "room": selected_room, "ptype": "publisher", "display": JSON.stringify(user) };
+                const {id,timestamp,role,display} = user;
+                const d = {id,timestamp,role,display};
+                let register = {"request": "join", "room": selected_room, "ptype": "publisher", "display": JSON.stringify(d)};
                 videoroom.send({"message": register});
                 this.setState({user, muted: !women, room: selected_room});
                 //this.chat.initChatRoom(user,selected_room);
@@ -1030,7 +994,6 @@ class MobileClient extends Component {
             } else if(type === "video-mute" && user.id === id) {
                 this.camMute();
             }
-            this.onProtocolData(ondata);
         });
     };
 
