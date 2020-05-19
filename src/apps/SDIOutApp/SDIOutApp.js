@@ -36,7 +36,13 @@ class SDIOutApp extends Component {
     componentDidMount() {
         setInterval(() => {
             api.fetchProgram()
-                .then(qids => this.setState({qids}))
+                .then(qids => {
+                    this.setState({qids});
+                    if(this.state.qg) {
+                        const {col, i} = this.state;
+                        this.setState({qg: this.state.qids["q"+col].vquad[i]})
+                    }
+                })
                 .catch(err => {
                     console.error("[SDIOut] error fetching quad state", err);
                 });
@@ -104,24 +110,14 @@ class SDIOutApp extends Component {
 
         if(data.type === "sdi-fullscr_group" && status) {
             if(qst) {
-                this.setState({qg: this.state.qids["q"+col].vquad[i]})
-                if(room) {
-                    this.users.exitVideoRoom(this.state.room, () => {
-                        this.users.initVideoRoom(group.room, group.janus);
-                        this.setState({group, room});
-                    });
-                } else {
-                    this.users.initVideoRoom(group.room, group.janus);
-                    this.setState({group, room});
-                }
+                this.setState({col, i, group, room, qg: this.state.qids["q"+col].vquad[i]})
             } else {
                 this["col"+col].toFullGroup(i,feed);
             }
         } else if(data.type === "sdi-fullscr_group" && !status) {
             let {col, feed, i} = data;
             if(qst) {
-                this.users.exitVideoRoom(this.state.room, () => {});
-                this.setState({group: null, room: null});
+                this.setState({group: null, room: null, qg: null});
             } else {
                 this["col"+col].toFourGroup(i,feed);
             }
@@ -181,11 +177,11 @@ class SDIOutApp extends Component {
                                     {vote ?
                                         <iframe src='https://vote.kli.one' width="100%" height="100%" frameBorder="0" />
                                     :
-                                        <Fragment>
+                                        qg ? <Fragment>
                                         {/*{group && group.questions ? <div className="qst_fullscreentitle">?</div> : ""}*/}
                                         <div className="fullscrvideo_title" >{name}</div>
-                                        <UsersHandleSDIOut g={qg} gateways={gateways} ref={users => {this.users = users;}} />
-                                        </Fragment>
+                                        <UsersHandleSDIOut key={"q5"} g={qg} group={group} index={13} gateways={gateways} />
+                                        </Fragment> : ""
                                     }
                                 </div>
                             </div>

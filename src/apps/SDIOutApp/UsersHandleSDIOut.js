@@ -1,6 +1,5 @@
 import React, {Component} from 'react';
 import './VideoConteiner.scss'
-// import 'eqcss';
 import { Janus } from "../../lib/janus";
 import classNames from "classnames";
 
@@ -18,17 +17,23 @@ class UsersHandleSDIOut extends Component {
 
     componentDidMount() {
         let {g} = this.props;
-        const num_videos = g && g.users.filter(u =>  u.camera).length;
+        let num_videos = g && g.users.filter(u =>  u.camera).length;
+        if(num_videos > 16) num_videos = 16;
         this.setState({num_videos});
     }
 
     componentDidUpdate(prevProps) {
-        let {g} = this.props;
+        let {g,index,group} = this.props;
         let {room} = this.state;
-        if(g && g.room !== room) {
+        if(g && index === 13 && g.room !== room && group) {
+            this.setState({room: g.room}, () => {
+                this.initVideoRoom(g.room, g.janus);
+            })
+        }
+        if(g && g.room !== room && index !== 13) {
             this.setState({room: g.room}, () => {
                 if(room) {
-                    this.exitVideoRoom(room, () =>{
+                    this.exitVideoRoom(room, () => {
                         this.initVideoRoom(g.room, g.janus);
                     });
                 } else {
@@ -37,7 +42,8 @@ class UsersHandleSDIOut extends Component {
             })
         }
         if(g && JSON.stringify(g) !== JSON.stringify(prevProps.g)) {
-            const num_videos = g && g.users.filter(u =>  u.camera).length
+            let num_videos = g && g.users.filter(u =>  u.camera).length
+            if(num_videos > 16) num_videos = 16;
             this.setState({num_videos})
         }
     }

@@ -18,6 +18,7 @@ const userManagerConfig = {
     scope: 'profile',
     post_logout_redirect_uri: `${BASE_URL}`,
     automaticSilentRenew: true,
+    silentRequestTimeout: 30000,
     silent_redirect_uri: `${BASE_URL}/silent_renew.html`,
     filterProtocolClaims: true,
     loadUserInfo: true,
@@ -32,7 +33,7 @@ client.events.addAccessTokenExpiring(() => {
 client.events.addAccessTokenExpired((data) => {
     console.log("...!TOKEN EXPIRED!...");
     reportToSentry("TOKEN EXPIRED: " + data,{source: "login"}, user_mgr, "warning");
-    //client.signoutRedirect();
+    client.signoutRedirect();
 });
 
 client.events.addUserSignedOut(() => {
@@ -81,7 +82,7 @@ export const buildUserObject = (oidcUser) => {
   };
   user.role = pendingApproval(user) ? 'ghost' : 'user';
   user_mgr = user;
-  console.log('USER getUser', oidcUser, at, user);
+  //console.log('USER getUser', oidcUser, at, user);
   return user;
 }
 
@@ -101,7 +102,7 @@ export const getUserRemote = (cb) => {
   // then remote user info and merge only few required fields.
   getUser((user) => {
     api.fetchUserInfo().then((remoteUser) => {
-      console.log('USER getUserRemote', remoteUser);
+      //console.log('USER getUserRemote', remoteUser);
       const updatedUser = Object.assign({}, user);  // Shallow copy.
       updatedUser.request = remoteUser.attributes && remoteUser.attributes.request || undefined;
       updatedUser.request_timestamp = remoteUser.attributes && remoteUser.attributes.timestamp || undefined;
