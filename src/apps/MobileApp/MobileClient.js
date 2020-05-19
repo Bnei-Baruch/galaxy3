@@ -31,7 +31,7 @@ class MobileClient extends Component {
 
     state = {
         count: 0,
-        index: 2,
+        index: 3,
         creatingFeed: false,
         delay: false,
         audioContext: null,
@@ -865,7 +865,7 @@ class MobileClient extends Component {
         let {round,video_mids} = this.state;
 
         // Switch to next feed if Quad full
-        if(feeds.length >= 2) {
+        if(feeds.length >= 3) {
             Janus.log(" :: Let's check mids - ", video_mids);
             video_mids.forEach((mid,i) => {
                 Janus.debug(" :: mids iteration - ", i, mid);
@@ -885,7 +885,7 @@ class MobileClient extends Component {
                     this.subscribeTo(streams);
                 }
             })
-        } else if(feeds.length < 2) {
+        } else if(feeds.length < 3) {
             Janus.log(" :: Clean up Quad");
             for (let i=0; i<video_mids.length; i++) {
                 if(!video_mids[i].active) {
@@ -900,13 +900,15 @@ class MobileClient extends Component {
         Janus.log(" :: Switch");
         let {feeds,index,video_mids,showed_mids} = this.state;
         Janus.log("Index start: "+index);
-        if(!isForward && index>=4)
-         index = index-4;
-         else if(!isForward)
-            return;
+        
          
-        if(feeds.length < 2)
+        if(feeds.length < 3)
             return;
+
+        if(!isForward && index>=3)
+         index = index-3;
+        else if(!isForward)
+          return;
 
         if(index === feeds.length) {
             // End round here!
@@ -918,7 +920,7 @@ class MobileClient extends Component {
         let streams = [];
         let m = 0;
 
-        for(let i=index; i<feeds.length && m<2; i++) {
+        for(let i=index; i<feeds.length && m<3; i++) {
 
             Janus.log(" :: ITer: ", i ,feeds[i]);
 
@@ -1046,12 +1048,16 @@ class MobileClient extends Component {
           selected_room: (reconnect ? room : ""),
           video_device: null,
           video_mids: [],
+          showed_mids: [],
+         
         });
         protocol.data({text: JSON.stringify(pl),
             success: () => {
                 this.initVideoRoom(reconnect);
             }
         });
+        this.stream.audioMute();
+        this.stream.videoMute();
     };
 
     handleQuestion = () => {
@@ -1157,7 +1163,7 @@ class MobileClient extends Component {
         });
 
         let videos = this.state.showed_mids.map((mid,i) => {
-            if(mid && i <2) {
+            if(mid && i <3) {
                 if(mid.active) {
                     let feed = this.state.feeds.find(f => f.id === mid.feed_id);
                     //let id = feed.id;
@@ -1355,7 +1361,7 @@ class MobileClient extends Component {
                                                 {videos}
                                                     {videos.length>0? 
                                                     <div  class="dots">
-                                                    <Dots  length={this.state.feeds.length/2} active={(this.state.index)/2-1} />
+                                                    <Dots  length={Math.floor(this.state.feeds.length/3)+1} active={(Math.ceil(this.state.index/3)-1)} />
                                                     </div>
                                                     :""}
                                             </div>
