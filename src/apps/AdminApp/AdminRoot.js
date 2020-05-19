@@ -744,7 +744,7 @@ class AdminRoot extends Component {
       let login = (<LoginPage user={user} checkPermission={this.checkPermission} />);
 
       let adminContent = (
-          <Segment className="virtual_segment" color='blue' raised>
+          <Fragment>
 
               {
                   this.isAllowed("admin") ?
@@ -797,9 +797,9 @@ class AdminRoot extends Component {
               }
 
               <Grid>
-                  <Grid.Row stretched columns='equal'>
+                  <Grid.Row columns='equal'>
                       <Grid.Column width={4}>
-                          <Segment.Group>
+                          <Segment.Group className="group_list">
                               {
                                   this.isAllowed("root") ?
                                       <Segment textAlign='center'>
@@ -814,7 +814,7 @@ class AdminRoot extends Component {
                                       : null
                               }
 
-                              <Segment textAlign='center' className="group_list" raised>
+                              <Segment textAlign='center' raised>
                                   <Table selectable compact='very' basic structured className="admin_table" unstackable>
                                       <Table.Body>
                                           <Table.Row disabled positive>
@@ -868,7 +868,7 @@ class AdminRoot extends Component {
                       : null
               }
 
-          </Segment>
+          </Fragment>
       );
 
       const panes = [
@@ -888,7 +888,7 @@ class AdminRoot extends Component {
       }
 
       const content = (
-        <Tab panes={panes}
+        <Tab menu={{ secondary: true, pointing: true, color: "blue" }} panes={panes}
              activeIndex={activeTab || 0}
              onTabChange={(e, {activeIndex}) => this.setState({activeTab: activeIndex})}
              renderActiveOnly={true} />
