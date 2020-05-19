@@ -21,6 +21,7 @@
     align-items: center;
     padding: .8rem .5rem;
     flex-wrap:wrap;
+    height: 86px;
 }
 
 .ingest_segment > .menu,

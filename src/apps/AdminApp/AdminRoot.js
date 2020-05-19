@@ -1,6 +1,6 @@
 import React, {Component, Fragment} from 'react';
 import {Janus} from "../../lib/janus";
-import {Button, Grid, Icon, List, Menu, Popup, Segment, Tab, Table,} from "semantic-ui-react";
+import {Button, Grid, Icon, List, Menu, Popup, Segment, Tab, Table, Label} from "semantic-ui-react";
 import './AdminRoot.css';
 import './AdminRootVideo.scss'
 import classNames from "classnames";
@@ -42,6 +42,10 @@ class AdminRoot extends Component {
         usersTabs: [],
         appInitError: null,
         users_count: 0,
+        gxy1_count: 0,
+        gxy2_count: 0,
+        gxy3_count: 0,
+        gxy4_count: 0,
     };
 
     componentWillUnmount() {
@@ -155,6 +159,10 @@ class AdminRoot extends Component {
         api.fetchActiveRooms()
             .then((data) => {
                 const users_count = data.map(r => r.num_users).reduce((su, cur) => su + cur, 0);
+                const gxy1_count = data.filter(r => r.janus === "gxy1").map(r => r.num_users).reduce((su, cur) => su + cur, 0);
+                const gxy2_count = data.filter(r => r.janus === "gxy2").map(r => r.num_users).reduce((su, cur) => su + cur, 0);
+                const gxy3_count = data.filter(r => r.janus === "gxy3").map(r => r.num_users).reduce((su, cur) => su + cur, 0);
+                const gxy4_count = data.filter(r => r.janus === "gxy4").map(r => r.num_users).reduce((su, cur) => su + cur, 0);
                 const {current_room} = this.state;
                 let users = current_room ? data.find(r => r.room === current_room).users : [];
                 data.sort((a, b) => {
@@ -162,7 +170,7 @@ class AdminRoot extends Component {
                     if (a.description < b.description) return -1;
                     return 0;
                 });
-                this.setState({rooms: data, users, users_count});
+                this.setState({rooms: data, users, users_count, gxy1_count, gxy2_count, gxy3_count, gxy4_count});
             })
             .catch(err => {
                 console.error("[Admin] error fetching active rooms", err);
@@ -650,6 +658,10 @@ class AdminRoot extends Component {
         user,
         usersTabs,
           users_count,
+          gxy1_count,
+          gxy2_count,
+          gxy3_count,
+          gxy4_count,
         chatRoomsInitialized,
           appInitError,
       } = this.state;
@@ -785,7 +797,14 @@ class AdminRoot extends Component {
                               on='click'
                               hideOnScroll
                           />
-
+                          <Label attached='top right'>
+                              <List>
+                                  <List.Item>GXY1: {gxy1_count}</List.Item>
+                                  <List.Item>GXY2: {gxy2_count}</List.Item>
+                                  <List.Item>GXY3: {gxy3_count}</List.Item>
+                                  <List.Item>GXY4: {gxy4_count}</List.Item>
+                              </List>
+                          </Label>
                           {
                               this.isAllowed("root") && chatRoomsInitialized ?
                                   <RoomManager gateways={gateways}/>
