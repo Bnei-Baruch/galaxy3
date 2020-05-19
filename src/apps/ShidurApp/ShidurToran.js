@@ -32,11 +32,13 @@ class ShidurToran extends Component {
         this.props.setProps({group});
     };
 
-    closePopup = ({disable=false}={}) => {
+    closePopup = ({disable=false}={}, next) => {
+        const g = next || this.props.group;
         if (disable) {
-            this.disableRoom(this.props.group);
+            this.disableRoom(g);
         }
-        this.props.setProps({group: null});
+        if(!next)
+            this.props.setProps({group: null});
     };
 
     handleDisableRoom = (e, data) => {
@@ -218,7 +220,7 @@ class ShidurToran extends Component {
                         {ng ?
                         <Segment className="group_segment" color='blue'>
                                 <div className="shidur_overlay"><span>{ng.description}</span></div>
-                                <UsersPreview pg={ng} {...this.props} next />
+                                <UsersPreview pg={ng} {...this.props} next closePopup={this.closePopup} />
                         </Segment>
                             : ""}
                     </Segment>

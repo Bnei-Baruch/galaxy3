@@ -194,18 +194,25 @@ class UsersPreview extends Component {
           <div className="videos-panel">
               <div className="videos">
                   {this.props.next ?
-                      <Button className='close_button'
-                              size='mini'
-                              color='green'
-                              icon='share'
-                              onClick={this.props.nextInQueue} />
+                      <div>
+                          <Button className='close_button'
+                                  size='mini'
+                                  color='red'
+                                  icon='close'
+                                  onClick={() => this.props.closePopup({disable: true}, this.props.pg)} />
+                          <Button className='hide_button'
+                                  size='mini'
+                                  color='green'
+                                  icon='share'
+                                  onClick={this.props.nextInQueue} />
+                      </div>
                               :
                       <div>
                           <Button className='close_button'
                                   size='mini'
                                   color='red'
                                   icon='close'
-                                  onClick={() => this.props.closePopup({disable: true})} />
+                                  onClick={() => this.props.closePopup({disable: true}, false)} />
                           <Button className='hide_button'
                                   size='mini'
                                   color='orange'

@@ -114,11 +114,11 @@ class ShidurApp extends Component {
                 } else if(mode === "beyahad") {
                     this.setState({mode: ""})
                 }
-                let groups = rooms.filter((room) => room.janus !== "" && !disabled_rooms.find(droom => room.room === droom.room));
-                disabled_rooms = rooms.filter((room) => room.janus !== "" && !groups.find(droom => room.room === droom.room));
+                let groups = rooms.filter(r => !disabled_rooms.find(d => r.room === d.room));
+                disabled_rooms = rooms.filter(r => !groups.find(g => r.room === g.room));
                 this.setState({rooms,groups,disabled_rooms});
                 let quads = [...this.col1.state.vquad,...this.col2.state.vquad,...this.col3.state.vquad,...this.col4.state.vquad];
-                let list = groups.filter((room) => !quads.find(droom => droom && room.room === droom.room));
+                let list = groups.filter(r => !quads.find(q => q && r.room === q.room));
                 let questions = list.filter(room => room.questions);
                 this.setState({questions,users_count});
             })
