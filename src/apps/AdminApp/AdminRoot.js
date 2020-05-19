@@ -21,6 +21,7 @@ class AdminRoot extends Component {
         audio: null,
         chatRoomsInitialized: false,
         current_room: "",
+        current_janus: "",
         feedStreams: {},
         feed_id: null,
         feed_info: null,
@@ -512,7 +513,7 @@ class AdminRoot extends Component {
     };
 
     sendRemoteCommand = (command_type) => {
-        const {gateways, feed_user} = this.state;
+        const {gateways, feed_user, current_janus} = this.state;
         if (!feed_user) {
             alert("Choose user");
             return;
@@ -522,7 +523,7 @@ class AdminRoot extends Component {
             feed_user.sound_test = true;
         }
 
-        const gateway = gateways[feed_user.janus];
+        const gateway = gateways[current_janus];
         gateway.sendProtocolMessage({type: command_type, status: true, id: feed_user.id, user: feed_user})
             .catch(alert);
     };
@@ -551,6 +552,7 @@ class AdminRoot extends Component {
             .then(() => {
                 this.setState({
                     current_room: room,
+                    current_janus: inst,
                     feeds: [],
                     feed_user: null,
                     feed_id: null
@@ -763,7 +765,7 @@ class AdminRoot extends Component {
       let login = (<LoginPage user={user} checkPermission={this.checkPermission} />);
 
       let adminContent = (
-          <Segment className="virtual_segment" color='blue' raised>
+          <Fragment>
 
               {
                   this.isAllowed("admin") ?
@@ -816,9 +818,9 @@ class AdminRoot extends Component {
               }
 
               <Grid>
-                  <Grid.Row stretched columns='equal'>
+                  <Grid.Row columns='equal'>
                       <Grid.Column width={4}>
-                          <Segment.Group>
+                          <Segment.Group className="group_list">
                               {
                                   this.isAllowed("root") ?
                                       <Segment textAlign='center'>
@@ -833,7 +835,7 @@ class AdminRoot extends Component {
                                       : null
                               }
 
-                              <Segment textAlign='center' className="group_list" raised>
+                              <Segment textAlign='center' raised>
                                   <Table selectable compact='very' basic structured className="admin_table" unstackable>
                                       <Table.Body>
                                           <Table.Row disabled positive>
@@ -887,7 +889,7 @@ class AdminRoot extends Component {
                       : null
               }
 
-          </Segment>
+          </Fragment>
       );
 
       const panes = [
@@ -907,7 +909,7 @@ class AdminRoot extends Component {
       }
 
       const content = (
-        <Tab panes={panes}
+        <Tab menu={{ secondary: true, pointing: true, color: "blue" }} panes={panes}
              activeIndex={activeTab || 0}
              onTabChange={(e, {activeIndex}) => this.setState({activeTab: activeIndex})}
              renderActiveOnly={true} />

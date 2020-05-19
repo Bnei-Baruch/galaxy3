@@ -2,16 +2,7 @@ import React, {Component, Fragment} from 'react';
 import {Janus} from '../../lib/janus';
 import classNames from 'classnames';
 import { isMobile } from 'react-device-detect';
-import {
-  Button,
-  Dropdown,
-  Icon,
-  Input,
-  Label,
-  Menu,
-  Popup,
-  Select,
-} from 'semantic-ui-react';
+import {Button, Icon, Input, Label, Menu, Popup, Select,} from 'semantic-ui-react';
 import {
   checkNotification,
   geoInfo,
@@ -65,7 +56,6 @@ class VirtualClient extends Component {
     video: null,
     janus: null,
     feeds: [],
-    feedStreams: {},
     rooms: [],
     room: '',
     selected_room: parseInt(localStorage.getItem('room'), 10) || '',
@@ -82,7 +72,6 @@ class VirtualClient extends Component {
     shidur: true,
     protocol: null,
     user: null,
-    users: {},
     username_value: '',
     chatVisible: false,
     question: false,
@@ -97,6 +86,7 @@ class VirtualClient extends Component {
     sourceLoading: true,
     virtualStreamingJanus: new VirtualStreamingJanus(() => this.virtualStreamingInitialized()),
     appInitError: null,
+    upval: null,
   };
 
   virtualStreamingInitialized() {
@@ -113,7 +103,6 @@ class VirtualClient extends Component {
     if (this.state.room && !prevState.room && this.state.shidur && !this.sourceLoading) {
       this.state.virtualStreamingJanus.audioElement.muted = false;
     }
-
     if (this.state.videoroom !== prevState.videoroom ||
       this.state.localVideoTrack !== prevState.localVideoTrack ||
       this.state.localAudioTrack !== prevState.localAudioTrack ||
@@ -346,8 +335,9 @@ class VirtualClient extends Component {
   };
 
   exitRoom = (reconnect) => {
-    let { videoroom, remoteFeed, protocol, room, user } = this.state;
-    wkliLeave(user);
+    let { videoroom, remoteFeed, protocol, room } = this.state;
+    wkliLeave(this.state.user);
+    clearInterval(this.state.upval);
     let leave                                     = { request: 'leave' };
     if (remoteFeed) {
       remoteFeed.send({ 'message': leave });
@@ -373,6 +363,7 @@ class VirtualClient extends Component {
       room: '',
       selected_room: (reconnect ? room : ''),
       chatMessagesCount: 0,
+      upval: null,
     });
     this.state.virtualStreamingJanus.audioElement.muted = true;
     protocol.data({
@@ -558,13 +549,11 @@ class VirtualClient extends Component {
   };
 
   onRoomData = (data) => {
-    let { users } = this.state;
     const feeds   = Object.assign([], this.state.feeds);
-    let rfid      = users[data.id].rfid;
     let camera    = data.camera;
     let question  = data.question;
     for (let i = 0; i < feeds.length; i++) {
-      if (feeds[i] && feeds[i].id === rfid) {
+      if (feeds[i] && feeds[i].id === data.rfid) {
         feeds[i].cammute  = !camera;
         feeds[i].question = question;
         this.setState({ feeds });
@@ -634,8 +623,6 @@ class VirtualClient extends Component {
           //FIXME:  Tmp fix for black screen in room caoused by feed with video_codec = none
           let feeds         = list.sort((a, b) => JSON.parse(a.display).timestamp - JSON.parse(b.display).timestamp)
               .filter(feeder => JSON.parse(feeder.display).role.match(/^(user|guest)$/) && feeder.video_codec !== 'none');
-          const feedStreams = Object.assign([], this.state.feedStreams);
-          const users       = Object.assign([], this.state.users);
 
           Janus.log(':: Got Pulbishers list: ', feeds);
           if (feeds.length > 15) {
@@ -659,15 +646,12 @@ class VirtualClient extends Component {
               stream['id']      = id;
               stream['display'] = display;
             }
-            feedStreams[id]        = { id, display, streams };
-            users[display.id]      = display;
-            users[display.id].rfid = id;
             subscription.push({
               feed: id,  // This is mandatory
               //mid: stream.mid    // This is optional (all streams, if missing)
             });
           }
-          this.setState({ feeds, feedStreams, users });
+          this.setState({feeds});
           if (subscription.length > 0) {
             this.subscribeTo(subscription);
           }
@@ -699,7 +683,6 @@ class VirtualClient extends Component {
 
         // Any info on our streams or a new feed to attach to?
         let { user, myid } = this.state;
-        const feedStreams  = Object.assign([], this.state.feedStreams);
         if (msg['streams'] !== undefined && msg['streams'] !== null) {
           let streams = msg['streams'];
           for (let i in streams) {
@@ -707,12 +690,10 @@ class VirtualClient extends Component {
             stream['id']      = myid;
             stream['display'] = user;
           }
-          feedStreams[myid] = { id: myid, display: user, streams };
-          this.setState({ feedStreams });
+          console.log("MY STREAM: ",streams)
         } else if (msg['publishers'] !== undefined && msg['publishers'] !== null) {
           let feed    = Object.assign({}, msg['publishers']);
           const feeds = Object.assign([], this.state.feeds);
-          const users = Object.assign([], this.state.users);
           Janus.debug('Got a list of available publishers/feeds:');
           Janus.log(feed);
           let subscription = [];
@@ -731,16 +712,13 @@ class VirtualClient extends Component {
               stream['id']      = id;
               stream['display'] = display;
             }
-            feedStreams[id]        = { id, display, streams };
-            users[display.id]      = display;
-            users[display.id].rfid = id;
             subscription.push({
               feed: id,  // This is mandatory
               //mid: stream.mid    // This is optional (all streams, if missing)
             });
           }
           feeds.push(feed[0]);
-          this.setState({ feeds, feedStreams, users });
+          this.setState({ feeds });
           if (subscription.length > 0) {
             this.subscribeTo(subscription);
             // Send question event for new feed
@@ -878,7 +856,6 @@ class VirtualClient extends Component {
           Janus.log('Remote track (mid=' + mid + ') ' + (on ? 'added' : 'removed') + ':', track);
           // Which publisher are we getting on this mid?
           let { mids }      = this.state;
-          const feedStreams = Object.assign([], this.state.feedStreams);
           let feed          = mids[mid].feed_id;
           Janus.log(' >> This track is coming from feed ' + feed + ':', mid);
           // If we're here, a new track was added
@@ -887,8 +864,6 @@ class VirtualClient extends Component {
             let stream = new MediaStream();
             stream.addTrack(track.clone());
             Janus.log('Created remote audio stream:', stream);
-            feedStreams[feed].audio_stream = stream;
-            this.setState({ feedStreams });
             let remoteaudio = this.refs['remoteAudio' + feed];
             Janus.attachMediaStream(remoteaudio, stream);
           } else if (track.kind === 'video' && on) {
@@ -896,8 +871,6 @@ class VirtualClient extends Component {
             let stream = new MediaStream();
             stream.addTrack(track.clone());
             Janus.log('Created remote video stream:', stream);
-            feedStreams[feed].video_stream = stream;
-            this.setState({ feedStreams });
             let remotevideo = this.refs['remoteVideo' + feed];
             Janus.attachMediaStream(remotevideo, stream);
           } else if (track.kind === 'data') {
@@ -949,14 +922,9 @@ class VirtualClient extends Component {
     // Unsubscribe from this publisher
     const { remoteFeed } = this.state;
     const feeds          = Object.assign([], this.state.feeds);
-    const users          = Object.assign([], this.state.users);
-    const feedStreams    = Object.assign([], this.state.feedStreams);
     for (let i = 0; i < feeds.length; i++) {
       if (feeds[i].id === id) {
         Janus.log('Feed ' + feeds[i] + ' (' + id + ') has left the room, detaching');
-        //TODO: remove mids
-        delete users[feeds[i].display.id];
-        delete feedStreams[id];
         feeds.splice(i, 1);
         // Send an unsubscribe request
         let unsubscribe = {
@@ -966,7 +934,7 @@ class VirtualClient extends Component {
         if (remoteFeed !== null) {
           remoteFeed.send({ message: unsubscribe });
         }
-        this.setState({ feeds, users, feedStreams });
+        this.setState({feeds});
         break;
       }
     }
@@ -999,8 +967,17 @@ class VirtualClient extends Component {
     user.sound_test = reconnect ? JSON.parse(localStorage.getItem('sound_test')) : false;
     user.timestamp  = Date.now();
     if(video_device) {
-      const {mystream} = this.state;
-      takeImage(mystream, user);
+      if(this.state.upval) {
+        clearInterval(this.state.upval);
+      }
+      takeImage(this.state.mystream, user);
+      let upval = setInterval(() => {
+        const {mystream} = this.state;
+        if(mystream) {
+          takeImage(mystream, user);
+        }
+      }, 10*60000);
+      this.setState({upval});
     }
     this.setState({ user });
     localStorage.setItem('username', user.display);
@@ -1024,12 +1001,9 @@ class VirtualClient extends Component {
         alert(this.props.t('oldClient.error') + ondata.error);
         this.state.protocol.hangup();
       } else if (type === 'joined') {
-        let register = {
-          'request': 'join',
-          'room': selected_room,
-          'ptype': 'publisher',
-          'display': JSON.stringify(user)
-        };
+        const {id,timestamp,role,display} = user;
+        const d = {id,timestamp,role,display};
+        let register = {'request': 'join', 'room': selected_room, 'ptype': 'publisher', 'display': JSON.stringify(d)};
         videoroom.send({ 'message': register });
         this.setState({ user, muted: true, room: selected_room });
         this.chat.initChatRoom(user, selected_room);
