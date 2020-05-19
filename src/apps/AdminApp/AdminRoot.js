@@ -21,6 +21,7 @@ class AdminRoot extends Component {
         audio: null,
         chatRoomsInitialized: false,
         current_room: "",
+        current_janus: "",
         feedStreams: {},
         feed_id: null,
         feed_info: null,
@@ -491,7 +492,7 @@ class AdminRoot extends Component {
     };
 
     sendRemoteCommand = (command_type) => {
-        const {gateways, feed_user} = this.state;
+        const {gateways, feed_user, current_janus} = this.state;
         if (!feed_user) {
             alert("Choose user");
             return;
@@ -501,7 +502,7 @@ class AdminRoot extends Component {
             feed_user.sound_test = true;
         }
 
-        const gateway = gateways[feed_user.janus];
+        const gateway = gateways[current_janus];
         gateway.sendProtocolMessage({type: command_type, status: true, id: feed_user.id, user: feed_user})
             .catch(alert);
     };
@@ -530,6 +531,7 @@ class AdminRoot extends Component {
             .then(() => {
                 this.setState({
                     current_room: room,
+                    current_janus: inst,
                     feeds: [],
                     feed_user: null,
                     feed_id: null
