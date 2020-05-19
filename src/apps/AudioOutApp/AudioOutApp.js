@@ -37,56 +37,67 @@ class AudioOutApp extends Component {
     };
 
     initApp = () => {
+        const {user} = this.state;
         api.setBasicAuth(API_BACKEND_USERNAME, API_BACKEND_PASSWORD);
 
         api.fetchConfig()
             .then(data => GxyJanus.setGlobalConfig(data))
-            .then(api.fetchUsers)
-            .then(data => this.setState({users: data}))
-            .then(this.initGateways)
+            .then(() => this.initGateways(user))
             .catch(err => {
                 console.error("[AudioOut] error initializing app", err);
                 this.setState({appInitError: err});
             });
     }
 
-    initGateways = () => {
+    initGateways = (user) => {
         const gateways = GxyJanus.makeGateways("rooms");
         this.setState({gateways});
 
-        return Promise.all(Object.values(gateways).map(gateway => (this.initGateway(gateway))))
+        return Promise.all(Object.values(gateways).map(gateway => (this.initGateway(user, gateway))))
             .then(() => {
                 console.log("[AudioOut] gateways initialization complete");
                 this.setState({gatewaysInitialized: true});
             });
     }
 
-    initGateway = (gateway) => {
+    initGateway = (user, gateway) => {
         console.log("[AudioOut] initializing gateway", gateway.name);
 
-        // we re-initialize the whole gateway on protocols error
-        gateway.destroy();
+        gateway.addEventListener("reinit", () => {
+                this.postInitGateway(user, gateway)
+                    .catch(err => {
+                        console.error("[AudioOut] postInitGateway error after reinit. Reloading", gateway.name, err);
+                        window.location.reload();
+                    });
+            }
+        );
 
-        const {user} = this.state;
+        gateway.addEventListener("reinit_failure", (e) => {
+            if (e.detail > 10) {
+                console.error("[AudioOut] too many reinit_failure. Reloading", gateway.name, e);
+                window.location.reload();
+            }
+        });
+
         return gateway.init()
-            .then(() => {
-                if (gateway.name === "gxy3") {
-                    return gateway.initServiceProtocol(user, data => this.onServiceData(gateway, data))
-                }
-            })
-            .catch(err => {
-                console.error("[AudioOut] error initializing gateway", gateway.name, err);
-                setTimeout(() => {
-                    this.initGateway(gateway);
-                }, 10000);
-            });
+            .then(() => this.postInitGateway(user, gateway));
+    }
+
+    postInitGateway = (user, gateway) => {
+        console.log("[AudioOut] initializing gateway", gateway.name);
+
+        if (gateway.name === "gxy3") {
+            return gateway.initServiceProtocol(user, data => this.onServiceData(gateway, data, user))
+        } else {
+            return Promise.resolve();
+        }
     };
 
-    onServiceData = (gateway, data) => {
+    onServiceData = (gateway, data, user) => {
         if (data.type === "error" && data.error_code === 420) {
             console.error("[AudioOut] service error message (reloading in 10 seconds)", data.error);
             setTimeout(() => {
-                this.initGateway(gateway);
+                this.initGateway(user, gateway);
             }, 10000);
         }
 
