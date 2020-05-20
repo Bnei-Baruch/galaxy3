@@ -8,6 +8,7 @@ import {RESET_VOTE} from "../../shared/env";
 class ShidurToran extends Component {
 
     state = {
+        galaxy_mode: "lesson",
         delay: false,
         index: 0,
         group: null,
@@ -48,8 +49,20 @@ class ShidurToran extends Component {
         }
     };
 
-    shidurMode = (mode) => {
-        this.props.setProps({mode});
+    handlePreviewRoom = (e, data) => {
+        e.preventDefault();
+        if (e.type === 'contextmenu') {
+            this.allowRoom(data);
+        }
+    };
+
+    shidurMode = (shidur_mode) => {
+        this.props.setProps({shidur_mode});
+    };
+
+    galaxyMode = (galaxy_mode) => {
+        //this.props.setProps({galaxy_mode});
+        this.setState({galaxy_mode})
     };
 
     disableRoom = (data) => {
@@ -60,6 +73,14 @@ class ShidurToran extends Component {
         disabled_rooms.push(data);
         this.props.setProps({disabled_rooms});
         this.setDelay();
+    };
+
+    allowRoom = (data) => {
+        let {groups} = this.props;
+        let group = groups.find(r => r.room === data.room);
+        if (group) return;
+        groups.push(data);
+        this.props.setProps({groups});
     };
 
     restoreRoom = (e, data, i) => {
@@ -159,13 +180,32 @@ class ShidurToran extends Component {
 
     render() {
 
-        const {group,disabled_rooms,groups,groups_queue,questions,presets,sdiout,sndman,mode,users_count} = this.props;
-        const {open,delay,vote} = this.state;
+        const {group,pre_groups,disabled_rooms,groups,groups_queue,questions,presets,sdiout,sndman,shidur_mode,users_count} = this.props;
+        const {open,delay,vote,galaxy_mode} = this.state;
         const q = (<b style={{color: 'red', fontSize: '20px', fontFamily: 'Verdana', fontWeight: 'bold'}}>?</b>);
         const next_group = groups[groups_queue] ? groups[groups_queue].description : groups[0] ? groups[0].description : "";
         const ng = groups[groups_queue] || null;
 
-        let rooms_list = groups.map((data,i) => {
+        let rooms_list = pre_groups.map((data,i) => {
+            const {room, num_users, description, questions} = data;
+            const active = group && group.room === room;
+            const pr = false
+            const p = pr ? (<Label size='mini' color='teal' >4</Label>) : "";
+            return (
+                <Table.Row positive={group && group.description === description}
+                           className={active ? 'active' : 'no'}
+                           key={room}
+                           onClick={() => this.selectGroup(data, i)}
+                           onContextMenu={(e) => this.handlePreviewRoom(e, data)} >
+                    <Table.Cell width={5}>{description}</Table.Cell>
+                    <Table.Cell width={1}>{p}</Table.Cell>
+                    <Table.Cell width={1}>{num_users}</Table.Cell>
+                    <Table.Cell width={1}>{questions ? q : ""}</Table.Cell>
+                </Table.Row>
+            )
+        });
+
+        let groups_list = groups.map((data,i) => {
             const {room, num_users, description, questions} = data;
             const next = data.description === next_group;
             const active = group && group.room === room;
@@ -264,7 +304,7 @@ class ShidurToran extends Component {
                     <Segment textAlign='center' className="group_list" raised disabled={delay} >
                         <Table selectable compact='very' basic structured className="admin_table" unstackable>
                             <Table.Body>
-                                {rooms_list}
+                                {groups_list}
                             </Table.Body>
                         </Table>
                     </Segment>
@@ -290,14 +330,18 @@ class ShidurToran extends Component {
                 </Grid.Column>
                 <Grid.Column>
                     <Button.Group attached='top' size='mini' >
-                        <Button disabled={mode === "gvarim"} color='teal' content='Gvarim' onClick={() => this.shidurMode("gvarim")} />
-                        <Button disabled={mode === "nashim"} color='teal' content='Nashim' onClick={() => this.shidurMode("nashim")} />
-                        <Button disabled={mode === "beyahad" || mode === ""} color='teal' content='Beyahad' onClick={() => this.shidurMode("beyahad")} />
+                        <Button disabled={galaxy_mode === "lesson"} color='grey' content='Preview' onClick={() => this.galaxyMode("lesson")} />
+                        <Button disabled={galaxy_mode === "shidur"} color='grey' content='Disabled' onClick={() => this.galaxyMode("shidur")} />
+                    </Button.Group>
+                    <Button.Group attached='top' size='mini' >
+                        <Button disabled={shidur_mode === "gvarim"} color='teal' content='Gvarim' onClick={() => this.shidurMode("gvarim")} />
+                        <Button disabled={shidur_mode === "nashim"} color='teal' content='Nashim' onClick={() => this.shidurMode("nashim")} />
+                        <Button disabled={shidur_mode === "beyahad" || shidur_mode === ""} color='teal' content='Beyahad' onClick={() => this.shidurMode("beyahad")} />
                     </Button.Group>
                     <Segment attached textAlign='center' className="disabled_groups">
                         <Table selectable compact='very' basic structured className="admin_table" unstackable>
                             <Table.Body>
-                                {disabled_list}
+                                {galaxy_mode === "lesson" ? rooms_list : disabled_list}
                             </Table.Body>
                         </Table>
                     </Segment>
