@@ -1,6 +1,6 @@
 import {Janus} from "../lib/janus";
 import {DATA_PORT, PROTOCOL_ROOM, SDIOUT_ID, SERVICE_ROOM, SHIDUR_ID, SNDMAN_ID, STORAN_ID,} from "./consts";
-import {ADMIN_SECRET, JANUS_ADMIN_GXY1, JANUS_ADMIN_GXY2, JANUS_ADMIN_GXY3, SECRET} from "./env";
+import {ADMIN_SECRET, JANUS_ADMIN_GXY1, JANUS_ADMIN_GXY2, JANUS_ADMIN_GXY3, JANUS_ADMIN_GXY4, SECRET} from "./env";
 import {getDateString} from "./tools";
 
 class GxyJanus {
@@ -50,6 +50,9 @@ class GxyJanus {
                 break;
             case "gxy3":
                 admin= JANUS_ADMIN_GXY3;
+                break;
+            case "gxy4":
+                admin= JANUS_ADMIN_GXY4;
                 break;
             default:
                 break;

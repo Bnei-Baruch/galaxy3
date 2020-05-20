@@ -158,13 +158,14 @@ class AdminRoot extends Component {
     fetchRooms = () => {
         api.fetchActiveRooms()
             .then((data) => {
+                const {current_room} = this.state;
                 const users_count = data.map(r => r.num_users).reduce((su, cur) => su + cur, 0);
                 const gxy1_count = data.filter(r => r.janus === "gxy1").map(r => r.num_users).reduce((su, cur) => su + cur, 0);
                 const gxy2_count = data.filter(r => r.janus === "gxy2").map(r => r.num_users).reduce((su, cur) => su + cur, 0);
                 const gxy3_count = data.filter(r => r.janus === "gxy3").map(r => r.num_users).reduce((su, cur) => su + cur, 0);
                 const gxy4_count = data.filter(r => r.janus === "gxy4").map(r => r.num_users).reduce((su, cur) => su + cur, 0);
-                const {current_room} = this.state;
-                let users = current_room ? data.find(r => r.room === current_room).users : [];
+                const room = data.find(r => r.room === current_room);
+                let users = current_room && room ? room.users : [];
                 data.sort((a, b) => {
                     if (a.description > b.description) return 1;
                     if (a.description < b.description) return -1;
@@ -524,6 +525,7 @@ class AdminRoot extends Component {
             return;
 
         console.log("[Admin] joinRoom", room, inst);
+        this.setState({users: rooms[i].users})
 
         let promise;
 
@@ -594,12 +596,12 @@ class AdminRoot extends Component {
         return Promise.all(promises);
     };
 
-    getUserInfo = (feed) => {
-        console.log("[Admin] getUserInfo", feed);
-        const {display, id} = feed;
-        const feed_info = display.system ? platform.parse(display.system) : null;
-        const feed_user = {...display};
-        this.setState({feed_id: id, feed_user, feed_info});
+    getUserInfo = (feed_user) => {
+        console.log("[Admin] getUserInfo", feed_user);
+        if(feed_user) {
+            const feed_info = feed_user.system ? platform.parse(feed_user.system) : null;
+            this.setState({feed_id: feed_user.rfid, feed_user, feed_info});
+        }
     };
 
     getFeedInfo = () => {
@@ -705,9 +707,10 @@ class AdminRoot extends Component {
           if(feed) {
               //let qt = users[feed.display.id].question;
               //let st = users[feed.display.id].sound_test;
-              let qt = !!users.find(u => feed.id === u.rfid && u.question);
+              let feed_user = users.find(u => feed.id === u.rfid);
+              let qt = feed_user && !!feed_user.question;
               return (
-                  <Table.Row active={feed.id === this.state.feed_id} key={i} onClick={() => this.getUserInfo(feed)} >
+                  <Table.Row active={feed.id === this.state.feed_id} key={i} onClick={() => this.getUserInfo(feed_user)} >
                       <Table.Cell width={10}>{qt ? q : ""}{feed.display.display}</Table.Cell>
                       {/*<Table.Cell positive={st} width={1}>{st ? v : ""}</Table.Cell>*/}
                       <Table.Cell width={1}></Table.Cell>

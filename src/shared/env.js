@@ -13,9 +13,11 @@ export const SECRET = process.env.REACT_APP_SECRET;
 export const JANUS_SRV_GXY1 = process.env.REACT_APP_JANUS_SRV_GXY1;
 export const JANUS_SRV_GXY2 = process.env.REACT_APP_JANUS_SRV_GXY2;
 export const JANUS_SRV_GXY3 = process.env.REACT_APP_JANUS_SRV_GXY3;
+export const JANUS_SRV_GXY4 = process.env.REACT_APP_JANUS_SRV_GXY4;
 export const JANUS_ADMIN_GXY1 = process.env.REACT_APP_ADMIN_SRV_GXY1;
 export const JANUS_ADMIN_GXY2 = process.env.REACT_APP_ADMIN_SRV_GXY2;
 export const JANUS_ADMIN_GXY3 = process.env.REACT_APP_ADMIN_SRV_GXY3;
+export const JANUS_ADMIN_GXY4 = process.env.REACT_APP_ADMIN_SRV_GXY4;
 
 export const WKLI_ENTER = process.env.REACT_APP_WKLI_ENTER;
 export const WKLI_LEAVE = process.env.REACT_APP_WKLI_LEAVE;
