@@ -20,13 +20,11 @@ class GalaxyApp extends Component {
         roles: [],
     };
 
-    componentDidMount() {
+    checkPermission = (user, access_token) => {
+      api.setAccessToken(access_token);
       client.events.addUserLoaded((user) => api.setAccessToken(user.access_token));
       client.events.addUserUnloaded(() => api.setAccessToken(null));
-    }
 
-    checkPermission = (user) => {
-      api.setAccessToken(user.access_token);
       if (user.role === 'ghost') {
         getUserRemote((user) => this.checkPermission_(user));
       } else {

@@ -50,7 +50,7 @@ export const pendingApproval = (user) => user && !!user.roles.find(role => role 
 
 export const buildUserObject = (oidcUser) => {
   if (!oidcUser) {
-    return oidcUser;
+    return {user: oidcUser};
   }
   const at = KJUR.jws.JWS.parse(oidcUser.access_token);
   const {
@@ -68,7 +68,6 @@ export const buildUserObject = (oidcUser) => {
     title,
   } = oidcUser.profile;
   const user = {
-    access_token: oidcUser.access_token,
     email,
     group,
     id: sub,
@@ -82,8 +81,7 @@ export const buildUserObject = (oidcUser) => {
   };
   user.role = pendingApproval(user) ? 'ghost' : 'user';
   user_mgr = user;
-  //console.log('USER getUser', oidcUser, at, user);
-  return user;
+  return {user, access_token: oidcUser.access_token};
 }
 
 // Runs cb on local user info.
@@ -100,7 +98,7 @@ export const getUser = (cb) => {
 export const getUserRemote = (cb) => {
   // Due to difference in local and remote user structure we get local user info,
   // then remote user info and merge only few required fields.
-  getUser((user) => {
+  getUser(({user}) => {
     api.fetchUserInfo().then((remoteUser) => {
       //console.log('USER getUserRemote', remoteUser);
       const updatedUser = Object.assign({}, user);  // Shallow copy.

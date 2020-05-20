@@ -35,23 +35,23 @@ class ShidurApp extends Component {
         Object.values(this.state.gateways).forEach(x => x.destroy());
     };
 
-    checkPermission = (user) => {
+    checkPermission = (user, access_token) => {
         const allowed = user.roles.filter(role => role === 'gxy_shidur').length > 0;
         if (allowed) {
             delete user.roles;
             user.role = "shidur";
             user.session = 0;
-            this.initApp(user);
+            this.initApp(user, access_token);
         } else {
             alert("Access denied!");
             client.signoutRedirect();
         }
     };
 
-    initApp = (user) => {
+    initApp = (user, access_token) => {
         this.setState({user});
 
-        api.setAccessToken(user.access_token);
+        api.setAccessToken(access_token);
         client.events.addUserLoaded((user) => api.setAccessToken(user.access_token));
         client.events.addUserUnloaded(() => api.setAccessToken(null));
 

@@ -1,6 +1,6 @@
 import React, {Component, Fragment} from 'react';
 import {Janus} from "../../lib/janus";
-import {Button, Grid, Icon, List, Menu, Popup, Segment, Tab, Table,} from "semantic-ui-react";
+import {Button, Grid, Icon, List, Menu, Popup, Segment, Tab, Table, Label} from "semantic-ui-react";
 import './AdminRoot.css';
 import './AdminRootVideo.scss'
 import classNames from "classnames";
@@ -42,6 +42,10 @@ class AdminRoot extends Component {
         usersTabs: [],
         appInitError: null,
         users_count: 0,
+        gxy1_count: 0,
+        gxy2_count: 0,
+        gxy3_count: 0,
+        gxy4_count: 0,
     };
 
     componentWillUnmount() {
@@ -63,7 +67,7 @@ class AdminRoot extends Component {
              nextState.usersTabs.length !== usersTabs.length;
     }
 
-    checkPermission = (user) => {
+    checkPermission = (user, access_token) => {
         const roles = new Set(user.roles || []);
 
         let role = null;
@@ -79,7 +83,7 @@ class AdminRoot extends Component {
             console.log("[Admin] checkPermission role is", role);
             delete user.roles;
             user.role = role;
-            this.initApp(user);
+            this.initApp(user, access_token);
         } else {
             alert("Access denied!");
             client.signoutRedirect();
@@ -107,10 +111,10 @@ class AdminRoot extends Component {
 
     withAudio = () => (this.isAllowed("admin"));
 
-    initApp = (user) => {
+    initApp = (user, access_token) => {
         this.setState({user});
 
-        api.setAccessToken(user.access_token);
+        api.setAccessToken(access_token);
         client.events.addUserLoaded((user) => api.setAccessToken(user.access_token));
         client.events.addUserUnloaded(() => api.setAccessToken(null));
 
@@ -175,15 +179,20 @@ class AdminRoot extends Component {
     fetchRooms = () => {
         api.fetchActiveRooms()
             .then((data) => {
-                const users_count = data.map(r => r.num_users).reduce((su, cur) => su + cur, 0);
                 const {current_room} = this.state;
-                let users = current_room ? data.find(r => r.room === current_room).users : [];
+                const users_count = data.map(r => r.num_users).reduce((su, cur) => su + cur, 0);
+                const gxy1_count = data.filter(r => r.janus === "gxy1").map(r => r.num_users).reduce((su, cur) => su + cur, 0);
+                const gxy2_count = data.filter(r => r.janus === "gxy2").map(r => r.num_users).reduce((su, cur) => su + cur, 0);
+                const gxy3_count = data.filter(r => r.janus === "gxy3").map(r => r.num_users).reduce((su, cur) => su + cur, 0);
+                const gxy4_count = data.filter(r => r.janus === "gxy4").map(r => r.num_users).reduce((su, cur) => su + cur, 0);
+                const room = data.find(r => r.room === current_room);
+                let users = current_room && room ? room.users : [];
                 data.sort((a, b) => {
                     if (a.description > b.description) return 1;
                     if (a.description < b.description) return -1;
                     return 0;
                 });
-                this.setState({rooms: data, users, users_count});
+                this.setState({rooms: data, users, users_count, gxy1_count, gxy2_count, gxy3_count, gxy4_count});
             })
             .catch(err => {
                 console.error("[Admin] error fetching active rooms", err);
@@ -537,6 +546,7 @@ class AdminRoot extends Component {
             return;
 
         console.log("[Admin] joinRoom", room, inst);
+        this.setState({users: rooms[i].users})
 
         let promise;
 
@@ -607,12 +617,12 @@ class AdminRoot extends Component {
         return Promise.all(promises);
     };
 
-    getUserInfo = (feed) => {
-        console.log("[Admin] getUserInfo", feed);
-        const {display, id} = feed;
-        const feed_info = display.system ? platform.parse(display.system) : null;
-        const feed_user = {...display};
-        this.setState({feed_id: id, feed_user, feed_info});
+    getUserInfo = (feed_user) => {
+        console.log("[Admin] getUserInfo", feed_user);
+        if(feed_user) {
+            const feed_info = feed_user.system ? platform.parse(feed_user.system) : null;
+            this.setState({feed_id: feed_user.rfid, feed_user, feed_info});
+        }
     };
 
     getFeedInfo = () => {
@@ -671,6 +681,10 @@ class AdminRoot extends Component {
         user,
         usersTabs,
           users_count,
+          gxy1_count,
+          gxy2_count,
+          gxy3_count,
+          gxy4_count,
         chatRoomsInitialized,
           appInitError,
       } = this.state;
@@ -714,9 +728,10 @@ class AdminRoot extends Component {
           if(feed) {
               //let qt = users[feed.display.id].question;
               //let st = users[feed.display.id].sound_test;
-              let qt = !!users.find(u => feed.id === u.rfid && u.question);
+              let feed_user = users.find(u => feed.id === u.rfid);
+              let qt = feed_user && !!feed_user.question;
               return (
-                  <Table.Row active={feed.id === this.state.feed_id} key={i} onClick={() => this.getUserInfo(feed)} >
+                  <Table.Row active={feed.id === this.state.feed_id} key={i} onClick={() => this.getUserInfo(feed_user)} >
                       <Table.Cell width={10}>{qt ? q : ""}{feed.display.display}</Table.Cell>
                       {/*<Table.Cell positive={st} width={1}>{st ? v : ""}</Table.Cell>*/}
                       <Table.Cell width={1}></Table.Cell>
@@ -806,7 +821,14 @@ class AdminRoot extends Component {
                               on='click'
                               hideOnScroll
                           />
-
+                          <Label attached='top right'>
+                              <List>
+                                  <List.Item>GXY1: {gxy1_count}</List.Item>
+                                  <List.Item>GXY2: {gxy2_count}</List.Item>
+                                  <List.Item>GXY3: {gxy3_count}</List.Item>
+                                  <List.Item>GXY4: {gxy4_count}</List.Item>
+                              </List>
+                          </Label>
                           {
                               this.isAllowed("root") && chatRoomsInitialized ?
                                   <RoomManager gateways={gateways}/>
