@@ -1,4 +1,5 @@
 import {
+	AUTH_URL,
   API_BACKEND,
   AUTH_API_BACKEND,
 } from "./env";
@@ -6,7 +7,6 @@ import {
 class Api {
 
     constructor() {
-        this.accessToken = null;
         this.username = null;
         this.password = null;
     }
@@ -28,6 +28,12 @@ class Api {
     );
 
     static encode = encodeURIComponent;
+
+    static getAccessToken = () => {
+        let jwt = sessionStorage.getItem(`oidc.user:${AUTH_URL}:galaxy`);
+        let json = JSON.parse(jwt);
+        return json.access_token;
+    };
 
     fetchConfig = () =>
         this.logAndParse('fetch config', fetch(this.urlFor('/v2/config'), this.defaultOptions()));
@@ -84,8 +90,9 @@ class Api {
     authUrlFor = (path) => (AUTH_API_BACKEND + path)
 
     defaultOptions = () => {
-        const auth = this.accessToken ?
-            `Bearer ${this.accessToken}` :
+        const accessToken = Api.getAccessToken();
+        const auth = accessToken ?
+            `Bearer ${accessToken}` :
             `Basic ${btoa(`${this.username}:${this.password}`)}`;
 
         return {
@@ -111,11 +118,6 @@ class Api {
           console.error(`[API] ${action} error`, err);
           return Promise.reject(err);
         });
-    }
-
-    setAccessToken = (token) => {
-        //console.log('setAccessToken', token);
-        this.accessToken = token;
     }
 
     setBasicAuth = (username, password) => {

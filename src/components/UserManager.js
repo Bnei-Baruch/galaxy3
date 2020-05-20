@@ -1,10 +1,8 @@
 import {Log as oidclog, UserManager} from 'oidc-client';
 import {KJUR} from 'jsrsasign';
-import {BASE_URL} from "../shared/env";
+import {AUTH_URL, BASE_URL} from "../shared/env";
 import {reportToSentry} from "../shared/tools";
 import api from '../shared/Api';
-
-const AUTH_URL = 'https://accounts.kbb1.com/auth/realms/main';
 
 oidclog.logger = console;
 oidclog.level = 0;
@@ -68,7 +66,6 @@ export const buildUserObject = (oidcUser) => {
     title,
   } = oidcUser.profile;
   const user = {
-    access_token: oidcUser.access_token,
     email,
     group,
     id: sub,

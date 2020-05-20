@@ -129,7 +129,6 @@ class VirtualClient extends Component {
   checkPermission = (user) => {
     // If user is ghost, after login check if attributes were updated.
     if (user.role === 'ghost' || (user.pending && user.pending.length)) {
-      api.setAccessToken(user.access_token);
       getUserRemote((user) => this.checkPermissions_(user, true));
     } else {
       this.checkPermissions_(user, true);
@@ -171,10 +170,6 @@ class VirtualClient extends Component {
       this.setState({ geoinfo: !!data, user });
 
       if (firstTime) {
-        api.setAccessToken(user.access_token);
-        client.events.addUserLoaded((user) => api.setAccessToken(user.access_token));
-        client.events.addUserUnloaded(() => api.setAccessToken(null));
-
         api.fetchConfig()
             .then(data => GxyJanus.setGlobalConfig(data))
             .then(() => (api.fetchAvailableRooms({with_num_users: true})))

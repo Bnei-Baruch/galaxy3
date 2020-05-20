@@ -128,10 +128,6 @@ class MobileClient extends Component {
                 }
                 this.setState({ geoinfo: !!data, user });
 
-                api.setAccessToken(user.access_token);
-                client.events.addUserLoaded((user) => api.setAccessToken(user.access_token));
-                client.events.addUserUnloaded(() => api.setAccessToken(null));
-
                 api.fetchConfig()
                     .then(data => GxyJanus.setGlobalConfig(data))
                     .then(() => (api.fetchAvailableRooms({with_num_users: true})))
