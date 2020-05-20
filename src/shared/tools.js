@@ -1,15 +1,14 @@
 import {Janus} from "../lib/janus";
 import * as Sentry from '@sentry/browser';
-import {JANUS_SRV_GXY1, JANUS_SRV_GXY2, JANUS_SRV_GXY3, JANUS_SRV_GXY4, STUN_SRV_GXY, WKLI_ENTER, WKLI_LEAVE
+import {STUN_SRV_GXY, WKLI_ENTER, WKLI_LEAVE
 } from "./env";
 
-export const initJanus = (cb,er,gxy,iceServers=[{urls: STUN_SRV_GXY}]) => {
+export const initJanus = (cb,er,server,iceServers=[{urls: STUN_SRV_GXY}]) => {
     Janus.init({
         debug: process.env.NODE_ENV !== 'production' ? ["log","error"] : ["error"],
         callback: () => {
             let janus = new Janus({
-                server: gxy === "gxy1" ? JANUS_SRV_GXY1 : gxy === "gxy2" ? JANUS_SRV_GXY2 : gxy === "gxy3" ? JANUS_SRV_GXY3 : gxy === "gxy4" ? JANUS_SRV_GXY4 : JANUS_SRV_GXY3,
-                iceServers,
+                server, iceServers,
                 success: () => {
                     Janus.log(" :: Connected to JANUS");
                     cb(janus);
