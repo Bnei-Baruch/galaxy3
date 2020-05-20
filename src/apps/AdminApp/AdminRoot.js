@@ -67,7 +67,7 @@ class AdminRoot extends Component {
              nextState.usersTabs.length !== usersTabs.length;
     }
 
-    checkPermission = (user) => {
+    checkPermission = (user, access_token) => {
         const roles = new Set(user.roles || []);
 
         let role = null;
@@ -83,7 +83,7 @@ class AdminRoot extends Component {
             console.log("[Admin] checkPermission role is", role);
             delete user.roles;
             user.role = role;
-            this.initApp(user);
+            this.initApp(user, access_token);
         } else {
             alert("Access denied!");
             client.signoutRedirect();
@@ -111,10 +111,10 @@ class AdminRoot extends Component {
 
     withAudio = () => (this.isAllowed("admin"));
 
-    initApp = (user) => {
+    initApp = (user, access_token) => {
         this.setState({user});
 
-        api.setAccessToken(user.access_token);
+        api.setAccessToken(access_token);
         client.events.addUserLoaded((user) => api.setAccessToken(user.access_token));
         client.events.addUserUnloaded(() => api.setAccessToken(null));
 

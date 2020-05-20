@@ -29,14 +29,14 @@ class GalaxyStream extends Component {
         appInitError: null,
     };
 
-    checkPermission = (user) => {
+    checkPermission = (user, access_token) => {
         let gxy_group = user.roles.filter(role => role === 'gxy_group').length > 0;
         let gxy_user = user.roles.filter(role => role === 'gxy_user').length > 0;
         //let gxy_public = user.roles.filter(role => role === 'bb_user').length > 0;
         if (gxy_user) {
             delete user.roles;
             user.role = gxy_group ? "group" : gxy_user ? "user" : "public";
-            this.initApp(user);
+            this.initApp(user, access_token);
         } else {
             alert("Access denied!");
             client.signoutRedirect();
@@ -47,7 +47,7 @@ class GalaxyStream extends Component {
         this.state.janus.destroy();
     };
 
-    initApp = (user) => {
+    initApp = (user, access_token) => {
         fetch(`${GEO_IP_INFO}`)
             .then((response) => {
                 if (response.ok) {
@@ -56,7 +56,7 @@ class GalaxyStream extends Component {
                             localStorage.setItem("gxy_extip", info.ip);
                             this.setState({user: {...info,...user}});
 
-                            api.setAccessToken(user.access_token);
+                            api.setAccessToken(access_token);
                             client.events.addUserLoaded((user) => api.setAccessToken(user.access_token));
                             client.events.addUserUnloaded(() => api.setAccessToken(null));
 

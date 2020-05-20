@@ -33,11 +33,11 @@ class LoginPage extends Component {
     };
 
     appLogin = () => {
-        getUser(user => {
+        getUser(({user, access_token}) => {
             if(user) {
                 client.querySessionStatus().then(() => {
                     this.setState({loading: false});
-                    this.props.checkPermission(user);
+                    this.props.checkPermission(user, access_token);
                 }).catch((error) => {
                     console.log("querySessionStatus: ", error);
                     reportToSentry("querySessionStatus: " + error,{source: "login"}, user, "warning");
@@ -61,8 +61,8 @@ class LoginPage extends Component {
 
     userLogin = () => {
         this.setState({disabled: true, loading: true});
-        getUser(cb => {
-            if(!cb) client.signinRedirect({state: window.location.href});
+        getUser(({user}) => {
+            if(!user) client.signinRedirect({state: window.location.href});
         });
     };
 

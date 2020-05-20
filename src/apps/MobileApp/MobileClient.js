@@ -85,7 +85,7 @@ class MobileClient extends Component {
       }
     };
 
-    checkPermission = (user) => {
+    checkPermission = (user, access_token) => {
         const {t} = this.props;
         let gxy_user = user.roles.filter(role => role === 'gxy_user').length > 0;
         let pending_approval = user.roles.filter(role => role === 'pending_approval').length > 0;
@@ -95,7 +95,7 @@ class MobileClient extends Component {
         } else if (gxy_user) {
             delete user.roles;
             user.role = "user";
-            this.initApp(user);
+            this.initApp(user, access_token);
         } else {
             alert("Access denied!");
             client.signoutRedirect();
@@ -109,7 +109,7 @@ class MobileClient extends Component {
         }
     };
 
-    initApp = (user) => {
+    initApp = (user, access_token) => {
         const { t } = this.props;
         localStorage.setItem('question', false);
         localStorage.setItem('sound_test', false);
@@ -128,7 +128,7 @@ class MobileClient extends Component {
                 }
                 this.setState({ geoinfo: !!data, user });
 
-                api.setAccessToken(user.access_token);
+                api.setAccessToken(access_token);
                 client.events.addUserLoaded((user) => api.setAccessToken(user.access_token));
                 client.events.addUserUnloaded(() => api.setAccessToken(null));
 
