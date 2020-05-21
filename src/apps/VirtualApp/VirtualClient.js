@@ -39,7 +39,7 @@ import * as Sentry from "@sentry/browser";
 import VerifyAccount from './components/VerifyAccount';
 import GxyJanus from "../../shared/janus-utils";
 import {getUserRemote} from "../../components/UserManager";
-import {addLostStat} from "./components/NetStatus";
+import {addLostStat, getLostStat} from "./components/NetStatus";
 
 class VirtualClient extends Component {
 
@@ -88,6 +88,7 @@ class VirtualClient extends Component {
     virtualStreamingJanus: new VirtualStreamingJanus(() => this.virtualStreamingInitialized()),
     appInitError: null,
     upval: null,
+    net_status: 1,
   };
 
   virtualStreamingInitialized() {
@@ -121,6 +122,13 @@ class VirtualClient extends Component {
     if (isMobile) {
       window.location = '/userm';
     }
+    setInterval(() => {
+      const {net_status} = this.state;
+      const cur_status = getLostStat();
+      console.log(cur_status)
+      if(net_status !== cur_status)
+        this.setState({net_status: cur_status})
+    }, 5000);
   }
 
   componentWillUnmount() {

@@ -27,7 +27,7 @@ export const addLostStat = (lost) => {
         }
 
         status = list.map(r => r.lost).reduce((s, c) => s + c, 0);
-        console.log(list, status)
+        console.log(list)
 
     }, 1000);
 }
