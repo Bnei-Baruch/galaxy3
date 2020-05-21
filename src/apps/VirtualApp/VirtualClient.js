@@ -39,6 +39,7 @@ import * as Sentry from "@sentry/browser";
 import VerifyAccount from './components/VerifyAccount';
 import GxyJanus from "../../shared/janus-utils";
 import {getUserRemote} from "../../components/UserManager";
+import {addLostStat} from "./components/NetStatus";
 
 class VirtualClient extends Component {
 
@@ -516,6 +517,7 @@ class VirtualClient extends Component {
       slowLink: (uplink, lost, mid) => {
         Janus.log('Janus reports problems ' + (uplink ? 'sending' : 'receiving') +
           ' packets on mid ' + mid + ' (' + lost + ' lost packets)');
+        addLostStat(lost);
       },
       onmessage: (msg, jsep) => {
         this.onMessage(this.state.videoroom, msg, jsep, false);
