@@ -125,7 +125,6 @@ class VirtualClient extends Component {
     setInterval(() => {
       const {net_status} = this.state;
       const cur_status = getLostStat();
-      console.log(cur_status)
       if(net_status !== cur_status)
         this.setState({net_status: cur_status})
     }, 5000);
@@ -1229,6 +1228,7 @@ class VirtualClient extends Component {
       video_setting,
       virtualStreamingJanus,
       appInitError,
+      net_status,
     } = this.state;
 
     if (appInitError) {
@@ -1473,6 +1473,7 @@ class VirtualClient extends Component {
           <Help t={t} />
           <Monitoring monitoringData={monitoringData} />
         </Menu>
+        <Label color={net_status === 2 ? 'yellow' : net_status === 3 ? 'red' : 'green'} icon='wifi' corner='right' />
       </div>
       <div className="vclient__main" onDoubleClick={() => this.setState({
         chatVisible: !chatVisible
