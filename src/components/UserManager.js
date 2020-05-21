@@ -38,7 +38,7 @@ client.events.addAccessTokenExpired((data) => {
 
 client.events.addUserSignedOut(() => {
     console.log("...LOGOUT EVENT...");
-    //client.signoutRedirect();
+    client.signoutRedirect();
 });
 
 client.events.addSilentRenewError((error) =>{
