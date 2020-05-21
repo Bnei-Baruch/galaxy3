@@ -1,8 +1,8 @@
 import { Janus } from "./../lib/janus";
 
-const MAX_DELAY = 5 * 1000;  // 5 seconds.
-const RETRY_DELAY = 500;     // 0.5 seconds.
-const INTERVALS_DELAY = 100;       // 100ms.
+export const MAX_DELAY = 5 * 1000;  // 5 seconds.
+export const RETRY_DELAY = 500;     // 0.5 seconds.
+export const INTERVALS_DELAY = 100; // 100ms.
 
 const ACK_FIELD = '__gack__';
 const RETRY_FIELD = '__gretry__';
@@ -115,6 +115,7 @@ export class GuaranteeDeliveryManager {
   acceptGuaranteeMessage(message, sendAckBack) {
     if (!(RETRY_FIELD in message)) {
       // This is a regular non-guarantee message, resolve right away.
+      console.log(`${RETRY_FIELD} not found in `, message);
       return Promise.resolve(message);
     }
     if (!(TRANSACTION_FIELD in message)) {

@@ -46,7 +46,7 @@ it('messaged delivery guaranteed', (done) => {
       console.log('messaged delivery guaranteed - UserB onMessage', message);
     }).catch((error) => {
       console.log('messaged delivery guaranteed - UserB Failed receiving message', error);
-    })
+    });
   });
 
   // User A to send guarantee message to user B.
