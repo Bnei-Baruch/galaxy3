@@ -1,98 +1,75 @@
-import {Log as oidclog, UserManager} from 'oidc-client';
-import {KJUR} from 'jsrsasign';
-import {BASE_URL} from "../shared/env";
+import Keycloak from 'keycloak-js';
 import {reportToSentry} from "../shared/tools";
 import api from '../shared/Api';
 
-const AUTH_URL = 'https://accounts.kbb1.com/auth/realms/main';
-
-oidclog.logger = console;
-oidclog.level = 0;
-let user_mgr = null;
-
 const userManagerConfig = {
-    authority: AUTH_URL,
-    client_id: 'galaxy',
-    redirect_uri: `${BASE_URL}`,
-    response_type: 'token id_token',
-    scope: 'profile',
-    post_logout_redirect_uri: `${BASE_URL}`,
-    automaticSilentRenew: true,
-    silentRequestTimeout: 30000,
-    silent_redirect_uri: `${BASE_URL}/silent_renew.html`,
-    filterProtocolClaims: true,
-    loadUserInfo: true,
-};
-
-export const client = new UserManager(userManagerConfig);
-
-client.events.addAccessTokenExpiring(() => {
-    console.log("...RENEW TOKEN...");
-});
-
-client.events.addAccessTokenExpired((data) => {
-    console.log("...!TOKEN EXPIRED!...");
-    reportToSentry("TOKEN EXPIRED: " + data,{source: "login"}, user_mgr, "warning");
-    client.signoutRedirect();
-});
-
-client.events.addUserSignedOut(() => {
-    console.log("...LOGOUT EVENT...");
-    client.signoutRedirect();
-});
-
-client.events.addSilentRenewError((error) =>{
-    console.error("Silent Renew Error: " + error);
-    reportToSentry("Silent Renew Error: " + error,{source: "login"}, user_mgr, "warning");
-});
-
-export const pendingApproval = (user) => user && !!user.roles.find(role => role === 'pending_approval');
-
-export const buildUserObject = (oidcUser) => {
-  if (!oidcUser) {
-    return {user: oidcUser};
-  }
-  const at = KJUR.jws.JWS.parse(oidcUser.access_token);
-  const {
-    realm_access: {roles},
-    request,
-    timestamp: request_timestamp,
-    pending,
-  } = at.payloadObj;
-  const {
-    email,
-    given_name,
-    group,
-    name,
-    sub,
-    title,
-  } = oidcUser.profile;
-  const user = {
-    email,
-    group,
-    id: sub,
-    name,
-    pending,
-    request,
-    request_timestamp,
-    roles,
-    title: title || given_name,
-    username: given_name,
-  };
-  user.role = pendingApproval(user) ? 'ghost' : 'user';
-  user_mgr = user;
-  return {user, access_token: oidcUser.access_token};
+    url: 'https://accounts.kbb1.com/auth',
+    realm: 'main',
+    clientId: 'galaxy',
+    enableLogging: true,
 }
 
-// Runs cb on local user info.
-export const getUser = (cb) => {
-  return client.getUser().then((user) => {
-    cb(buildUserObject(user));
-  }).catch((error) => {
-    console.log("Error: ",error);
-    reportToSentry("Get User Error: " + error, {source: "login"}, null, "warning");
-  });
+export const kc = new Keycloak(userManagerConfig);
+console.log(kc)
+
+kc.onTokenExpired = () => {
+    console.log('Token Expired');
+    kc.updateToken(70)
+        .then((refreshed) => {
+            if (refreshed) {
+                console.log(kc)
+                api.setAccessToken(kc.token);
+            } else {
+                api.setAccessToken(null);
+                kc.logout()
+            }
+        })
+        .catch((err) => console.log(err));
 };
+
+export const getUser = (callback) => {
+    kc.init({onLoad: 'check-sso', checkLoginIframe: false})
+        .then((authenticated) => {
+            if (authenticated) {
+                const {realm_access: {roles}, request, timestamp: request_timestamp, pending,email, given_name, group, name, sub, title} = kc.tokenParsed;
+                const user = {email, group, id: sub, name, pending, request, request_timestamp, roles, title: title || given_name, username: given_name};
+                //const {sub,given_name,name,email,group,title} = user.profile;
+                api.setAccessToken(kc.token);
+                callback(user, kc.token)
+            } else {
+                callback(null)
+            }
+        })
+        .catch((err) => console.log(err));
+};
+
+
+// export const buildUserObject = (oidcUser) => {
+//   if (!oidcUser) {
+//     return {user: oidcUser};
+//   }
+//   console.log(oidcUser)
+//   const at = KJUR.jws.JWS.parse(oidcUser.access_token);
+//   console.log(at)
+//   const {realm_access: {roles}, request, timestamp: request_timestamp, pending,email, given_name, group, name, sub, title} = at.payloadObj;
+//   //const {email, given_name, group, name, sub, title,} = oidcUser.profile;
+//   const user = {email, group, id: sub, name, pending, request, request_timestamp, roles, title: title || given_name, username: given_name,};
+//   user.role = pendingApproval(user) ? 'ghost' : 'user';
+//   user_mgr = user;
+//   return {user, access_token: oidcUser.access_token};
+// }
+//
+// // Runs cb on local user info.
+// export const getUser = (cb) => {
+//   return client.getUser().then((user) => {
+//     cb(buildUserObject(user));
+//   }).catch((error) => {
+//     console.log("Error: ",error);
+//     reportToSentry("Get User Error: " + error, {source: "login"}, null, "warning");
+//   });
+// };
+//
+
 
 // Fetch remote user info.
 export const getUserRemote = (cb) => {
@@ -114,4 +91,4 @@ export const getUserRemote = (cb) => {
   });
 };
 
-export default client;
+export default kc;

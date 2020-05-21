@@ -6,7 +6,7 @@ import {
 
 
 export const Profile = (props) => {
-  const {title = '', client} = props;
+  const {title = '',kc} = props;
   const {t} = useTranslation();
 
   return (
@@ -14,7 +14,7 @@ export const Profile = (props) => {
         <Dropdown.Menu>
             <Dropdown.Item content={t('oldClient.profile')} disabled />
             <Dropdown.Item text={t('oldClient.myAccount')} onClick={() => window.open("https://accounts.kbb1.com/auth/realms/main/account", "_blank")} />
-            <Dropdown.Item text={t('oldClient.signOut')} onClick={() => client.signoutRedirect()} />
+            <Dropdown.Item text={t('oldClient.signOut')} onClick={() => kc.logout()} />
         </Dropdown.Menu>
     </Dropdown>
   );

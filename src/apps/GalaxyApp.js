@@ -1,14 +1,7 @@
-import React, {
-  Component,
-  Fragment,
-} from 'react';
-import {
-  Button,
-  Divider,
-	Grid,
-} from "semantic-ui-react";
+import React, {Component, Fragment,} from 'react';
+import {Button, Divider, Grid,} from "semantic-ui-react";
 import LoginPage from '../components/LoginPage';
-import {client, getUserRemote, pendingApproval} from "../components/UserManager";
+import {kc, getUserRemote} from "../components/UserManager";
 import {withTranslation} from "react-i18next";
 import VerifyAccount from './VirtualApp/components/VerifyAccount';
 import api from '../shared/Api';
@@ -20,11 +13,7 @@ class GalaxyApp extends Component {
         roles: [],
     };
 
-    checkPermission = (user, access_token) => {
-      api.setAccessToken(access_token);
-      client.events.addUserLoaded((user) => api.setAccessToken(user.access_token));
-      client.events.addUserUnloaded(() => api.setAccessToken(null));
-
+    checkPermission = (user) => {
       if (user.role === 'ghost') {
         getUserRemote((user) => this.checkPermission_(user));
       } else {
@@ -33,25 +22,25 @@ class GalaxyApp extends Component {
     }
 
     checkPermission_ = (user) => {
-      const approval = pendingApproval(user);
+      const approval = kc.hasRealmRole("pending_approval")
       const options = this.options(user.roles, approval);
       const requested = this.requested(user);
       console.log('checkPermission', user.role, approval, options, this.requested(user), user);
       if(options.length > 1 || (approval && !requested)) {
           this.setState({user, roles: user.roles});
       } else if (requested || options.length === 1) {
-          window.location = '/user';
+          //window.location = '/user';
       } else {
           alert("Access denied.");
-          client.signoutRedirect();
+          kc.logout();
       }
     };
 
-    requested(user) {
+    requested = (user) => {
       return user && !!user.request && !!user.request.length;
     }
 
-    options(roles, approval) {
+    options = (roles, approval) => {
       const {t} = this.props;
       return roles.map((role, i) => {
         if(role === "gxy_user" || role === "pending_approval") {
@@ -81,7 +70,7 @@ class GalaxyApp extends Component {
     render() {
         const {i18n} = this.props;
         const {user, roles} = this.state;
-        const approval = pendingApproval(user);
+        const approval = kc.hasRealmRole("pending_approval");
         const requested = this.requested(user);
 
         const enter = (

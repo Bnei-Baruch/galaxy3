@@ -1,17 +1,6 @@
 import React, { Component,Fragment } from 'react';
-import {client,getUser} from './UserManager';
-import {
-	Button,
-	Container,
-    Divider,
-	Grid,
-	Header,
-	Image,
-	Menu,
-	Message,
-	Segment,
-	Select,
-} from 'semantic-ui-react';
+import {kc, getUser} from './UserManager';
+import {Button, Container, Divider, Grid, Header, Image, Menu, Message, Segment, Select,} from 'semantic-ui-react';
 import bblogo from './logo.png';
 import {languagesOptions,setLanguage} from "../i18n/i18n";
 import {withTranslation} from "react-i18next";
@@ -33,37 +22,20 @@ class LoginPage extends Component {
     };
 
     appLogin = () => {
-        getUser(({user, access_token}) => {
+        getUser((user) => {
             if(user) {
-                client.querySessionStatus().then(() => {
-                    this.setState({loading: false});
-                    this.props.checkPermission(user, access_token);
-                }).catch((error) => {
-                    console.log("querySessionStatus: ", error);
-                    reportToSentry("querySessionStatus: " + error,{source: "login"}, user, "warning");
-                    alert(`We detect wrong browser cookies settings: ${error}`);
-                    client.signoutRedirect();
-                });
+                console.log("got user: ", user)
+                this.setState({loading: false});
+                this.props.checkPermission(user);
             } else {
-                client.signinRedirectCallback().then((user) => {
-                    if(user.state) window.location = user.state;
-                }).catch(() => {
-                    client.signinSilent().then(user => {
-                        if(user) this.appLogin();
-                    }).catch((error) => {
-                        console.log("SigninSilent error: ", error);
-                        this.setState({disabled: false, loading: false});
-                    });
-                });
+                this.setState({disabled: false, loading: false});
             }
         });
     };
 
     userLogin = () => {
         this.setState({disabled: true, loading: true});
-        getUser(({user}) => {
-            if(!user) client.signinRedirect({state: window.location.href});
-        });
+        kc.login({redirectUri: window.location.href});
     };
 
     render() {
@@ -114,7 +86,8 @@ class LoginPage extends Component {
                     <Message size='massive'>
                         <Message.Header>
                             {this.props.user === null ? t('loginPage.galaxy') : "Welcome, " + this.props.user.username}
-                            {this.props.user === null ? "" : <Profile client={client} />}
+                            {this.props.user === null ? "" : <Profile kc={kc} />}
+
                         </Message.Header>
                         <p>{t('loginPage.slogan')}</p>
                         {this.props.user === null ? "" : this.props.enter}
