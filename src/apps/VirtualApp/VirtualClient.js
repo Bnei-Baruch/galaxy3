@@ -32,7 +32,7 @@ import {MonitoringData} from '../../shared/MonitoringData';
 import api from '../../shared/Api';
 import VirtualStreaming from './VirtualStreaming';
 import VirtualStreamingJanus from './VirtualStreamingJanus';
-import {client} from "../../components/UserManager";
+import {kc} from "../../components/UserManager";
 import LoginPage from "../../components/LoginPage";
 import {Profile} from "../../components/Profile";
 import * as Sentry from "@sentry/browser";
@@ -116,7 +116,7 @@ class VirtualClient extends Component {
   }
 
   componentDidMount() {
-    //Sentry.init({dsn: `https://${SENTRY_KEY}@sentry.kli.one/2`});
+    Sentry.init({dsn: `https://${SENTRY_KEY}@sentry.kli.one/2`});
     if (isMobile) {
       window.location = '/userm';
     }
@@ -126,12 +126,9 @@ class VirtualClient extends Component {
     this.state.virtualStreamingJanus.destroy();
   }
 
-  checkPermission = (user, access_token) => {
-    api.setAccessToken(access_token);
-    client.events.addUserLoaded((user) => api.setAccessToken(user.access_token));
-    client.events.addUserUnloaded(() => api.setAccessToken(null));
-
+  checkPermission = (user) => {
     // If user is ghost, after login check if attributes were updated.
+    user.role = kc.hasRealmRole("pending_approval") ? 'ghost' : 'user';
     if (user.role === 'ghost' || (user.pending && user.pending.length)) {
       getUserRemote((user) => this.checkPermissions_(user, true));
     } else {
@@ -141,13 +138,13 @@ class VirtualClient extends Component {
   recheckPermission = (user) => this.checkPermissions_(user, false);
 
   checkPermissions_ = (user, firstTime) => {
-    let gxy_user = user.roles.find(role => role === 'gxy_user');
-    let pending_approval = user.roles.filter(role => role === 'pending_approval').length > 0;
+    let gxy_user = kc.hasRealmRole("gxy_user");
+    let pending_approval = kc.hasRealmRole("pending_approval");
     if (gxy_user || pending_approval) {
       this.initApp(user, firstTime);
     } else {
       alert("Access denied!");
-      client.signoutRedirect();
+      kc.logout();
     }
   };
 
@@ -1016,7 +1013,7 @@ class VirtualClient extends Component {
         this.exitRoom(false);
       } else if(type === "client-kicked" && user.id === id) {
         localStorage.setItem("ghost", true);
-        client.signoutRedirect();
+        kc.logout();
       } else if (type === 'client-question' && user.id === id) {
         this.handleQuestion();
       } else if (type === 'client-mute' && user.id === id) {
@@ -1428,7 +1425,7 @@ class VirtualClient extends Component {
             <Popup.Content>
               <Button size='huge' fluid>
                 <Icon name='user circle'/>
-                <Profile title={user && user.username} client={client} />
+                <Profile title={user && user.username} kc={kc} />
               </Button>
               <Select className='select_device'
                       disabled={!!localAudioTrack}

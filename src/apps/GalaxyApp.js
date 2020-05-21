@@ -4,7 +4,6 @@ import LoginPage from '../components/LoginPage';
 import {kc, getUserRemote} from "../components/UserManager";
 import {withTranslation} from "react-i18next";
 import VerifyAccount from './VirtualApp/components/VerifyAccount';
-import api from '../shared/Api';
 
 class GalaxyApp extends Component {
 
@@ -14,6 +13,7 @@ class GalaxyApp extends Component {
     };
 
     checkPermission = (user) => {
+      user.role = kc.hasRealmRole("pending_approval") ? 'ghost' : 'user';
       if (user.role === 'ghost') {
         getUserRemote((user) => this.checkPermission_(user));
       } else {
@@ -22,14 +22,13 @@ class GalaxyApp extends Component {
     }
 
     checkPermission_ = (user) => {
-      const approval = kc.hasRealmRole("pending_approval")
+      const approval = kc.hasRealmRole("pending_approval");
       const options = this.options(user.roles, approval);
       const requested = this.requested(user);
-      console.log('checkPermission', user.role, approval, options, this.requested(user), user);
       if(options.length > 1 || (approval && !requested)) {
           this.setState({user, roles: user.roles});
-      } else if (requested || options.length === 1) {
-          //window.location = '/user';
+      } else if(requested || options.length === 1) {
+          window.location = '/user';
       } else {
           alert("Access denied.");
           kc.logout();

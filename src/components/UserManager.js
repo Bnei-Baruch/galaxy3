@@ -7,7 +7,7 @@ const userManagerConfig = {
     realm: 'main',
     clientId: 'galaxy',
     enableLogging: true,
-}
+};
 
 export const kc = new Keycloak(userManagerConfig);
 console.log(kc)
@@ -30,45 +30,18 @@ kc.onTokenExpired = () => {
 export const getUser = (callback) => {
     kc.init({onLoad: 'check-sso', checkLoginIframe: false})
         .then((authenticated) => {
-            if (authenticated) {
+            if(authenticated) {
                 const {realm_access: {roles}, request, timestamp: request_timestamp, pending,email, given_name, group, name, sub, title} = kc.tokenParsed;
                 const user = {email, group, id: sub, name, pending, request, request_timestamp, roles, title: title || given_name, username: given_name};
                 //const {sub,given_name,name,email,group,title} = user.profile;
                 api.setAccessToken(kc.token);
-                callback(user, kc.token)
+                callback(user)
             } else {
                 callback(null)
             }
         })
         .catch((err) => console.log(err));
 };
-
-
-// export const buildUserObject = (oidcUser) => {
-//   if (!oidcUser) {
-//     return {user: oidcUser};
-//   }
-//   console.log(oidcUser)
-//   const at = KJUR.jws.JWS.parse(oidcUser.access_token);
-//   console.log(at)
-//   const {realm_access: {roles}, request, timestamp: request_timestamp, pending,email, given_name, group, name, sub, title} = at.payloadObj;
-//   //const {email, given_name, group, name, sub, title,} = oidcUser.profile;
-//   const user = {email, group, id: sub, name, pending, request, request_timestamp, roles, title: title || given_name, username: given_name,};
-//   user.role = pendingApproval(user) ? 'ghost' : 'user';
-//   user_mgr = user;
-//   return {user, access_token: oidcUser.access_token};
-// }
-//
-// // Runs cb on local user info.
-// export const getUser = (cb) => {
-//   return client.getUser().then((user) => {
-//     cb(buildUserObject(user));
-//   }).catch((error) => {
-//     console.log("Error: ",error);
-//     reportToSentry("Get User Error: " + error, {source: "login"}, null, "warning");
-//   });
-// };
-//
 
 
 // Fetch remote user info.
