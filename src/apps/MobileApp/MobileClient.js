@@ -24,6 +24,7 @@ import {client} from "../../components/UserManager";
 import LoginPage from "../../components/LoginPage";
 import {Profile} from "../../components/Profile";
 import GxyJanus from "../../shared/janus-utils";
+import {addLostStat, getLostStat} from "../VirtualApp/components/NetStatus";
 
 class MobileClient extends Component {
 
@@ -70,6 +71,7 @@ class MobileClient extends Component {
         monitoringData: new MonitoringData(),
         appInitialized: false,
         appInitError: null,
+        net_status: 1,
     };
 
     componentDidUpdate(prevProps, prevState) {
@@ -107,6 +109,12 @@ class MobileClient extends Component {
             window.location = '/user/';
             return;
         }
+        setInterval(() => {
+            const {net_status} = this.state;
+            const cur_status = getLostStat();
+            if(net_status !== cur_status)
+                this.setState({net_status: cur_status})
+        }, 5000);
     };
 
     initApp = (user, access_token) => {
@@ -414,6 +422,7 @@ class MobileClient extends Component {
             slowLink: (uplink, lost, mid) => {
                 Janus.log("Janus reports problems " + (uplink ? "sending" : "receiving") +
                     " packets on mid " + mid + " (" + lost + " lost packets)");
+                addLostStat(lost);
             },
             onmessage: (msg, jsep) => {
                 this.onMessage(this.state.videoroom, msg, jsep, false);
@@ -1101,6 +1110,7 @@ class MobileClient extends Component {
           women,
             appInitialized,
             appInitError,
+            net_status
         } = this.state;
 
         if (appInitError) {
@@ -1345,7 +1355,8 @@ class MobileClient extends Component {
                                 </div>
                             </div>
                         </div>
-
+                        { !(new URL(window.location.href).searchParams.has('lost')) ? null :
+                            (<Label color={net_status === 2 ? 'yellow' : net_status === 3 ? 'red' : 'green'} icon='wifi' corner='right' />)}
                     </div>
                     {
                         appInitialized ?
