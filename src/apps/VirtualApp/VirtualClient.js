@@ -38,6 +38,8 @@ import {Profile} from "../../components/Profile";
 import * as Sentry from "@sentry/browser";
 import VerifyAccount from './components/VerifyAccount';
 import GxyJanus from "../../shared/janus-utils";
+import {getUserRemote} from "../../components/UserManager";
+import {addLostStat, getLostStat} from "./components/NetStatus";
 
 class VirtualClient extends Component {
 
@@ -86,6 +88,7 @@ class VirtualClient extends Component {
     virtualStreamingJanus: new VirtualStreamingJanus(() => this.virtualStreamingInitialized()),
     appInitError: null,
     upval: null,
+    net_status: 1,
   };
 
   virtualStreamingInitialized() {
@@ -119,6 +122,12 @@ class VirtualClient extends Component {
     if (isMobile) {
       window.location = '/userm';
     }
+    setInterval(() => {
+      const {net_status} = this.state;
+      const cur_status = getLostStat();
+      if(net_status !== cur_status)
+        this.setState({net_status: cur_status})
+    }, 5000);
   }
 
   componentWillUnmount() {
@@ -500,6 +509,7 @@ class VirtualClient extends Component {
       slowLink: (uplink, lost, mid) => {
         Janus.log('Janus reports problems ' + (uplink ? 'sending' : 'receiving') +
           ' packets on mid ' + mid + ' (' + lost + ' lost packets)');
+        addLostStat(lost);
       },
       onmessage: (msg, jsep) => {
         this.onMessage(this.state.videoroom, msg, jsep, false);
@@ -1203,6 +1213,7 @@ class VirtualClient extends Component {
       video_setting,
       virtualStreamingJanus,
       appInitError,
+      net_status,
     } = this.state;
 
     if (appInitError) {
@@ -1447,6 +1458,8 @@ class VirtualClient extends Component {
           <Help t={t} />
           <Monitoring monitoringData={monitoringData} />
         </Menu>
+        { !(new URL(window.location.href).searchParams.has('lost')) ? null :
+            (<Label color={net_status === 2 ? 'yellow' : net_status === 3 ? 'red' : 'green'} icon='wifi' corner='right' />)}
       </div>
       <div className="vclient__main" onDoubleClick={() => this.setState({
         chatVisible: !chatVisible
