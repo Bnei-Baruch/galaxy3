@@ -1,6 +1,6 @@
 import React, {Component, Fragment} from 'react';
 import {Janus} from "../../lib/janus";
-import {client} from "../../components/UserManager";
+import {kc} from "../../components/UserManager";
 import {Button, Grid, Icon, Label, Menu, Segment, Select} from 'semantic-ui-react';
 import VolumeSlider from "../../components/VolumeSlider";
 import {audiog_options, gxycol, trllang, videos_options,} from "../../shared/consts";
@@ -29,17 +29,16 @@ class GalaxyStream extends Component {
         appInitError: null,
     };
 
-    checkPermission = (user, access_token) => {
-        let gxy_group = user.roles.filter(role => role === 'gxy_group').length > 0;
-        let gxy_user = user.roles.filter(role => role === 'gxy_user').length > 0;
-        //let gxy_public = user.roles.filter(role => role === 'bb_user').length > 0;
+    checkPermission = (user) => {
+        const gxy_group = kc.hasRealmRole("gxy_group");
+        const gxy_user = kc.hasRealmRole("gxy_user");
         if (gxy_user) {
             delete user.roles;
             user.role = gxy_group ? "group" : gxy_user ? "user" : "public";
-            this.initApp(user, access_token);
+            this.initApp(user);
         } else {
             alert("Access denied!");
-            client.signoutRedirect();
+            kc.logout();
         }
     };
 
@@ -47,7 +46,7 @@ class GalaxyStream extends Component {
         this.state.janus.destroy();
     };
 
-    initApp = (user, access_token) => {
+    initApp = (user) => {
         fetch(`${GEO_IP_INFO}`)
             .then((response) => {
                 if (response.ok) {
@@ -55,11 +54,6 @@ class GalaxyStream extends Component {
                         info => {
                             localStorage.setItem("gxy_extip", info.ip);
                             this.setState({user: {...info,...user}});
-
-                            api.setAccessToken(access_token);
-                            client.events.addUserLoaded((user) => api.setAccessToken(user.access_token));
-                            client.events.addUserUnloaded(() => api.setAccessToken(null));
-
                             api.fetchConfig()
                                 .then(data => GxyJanus.setGlobalConfig(data))
                                 .then(() => this.initJanus(info.country))
