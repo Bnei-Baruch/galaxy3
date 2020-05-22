@@ -52,11 +52,12 @@
 		right: 2px;
 		left: 2px;
 		bottom: 2px;
+
+		background: rgba(34, 34, 34, 1);
 	}
 
 .video {
 	position: relative;
-	background: rgba(34, 34, 34, 1);
 	
 	&__overlay {
 		position: absolute;
