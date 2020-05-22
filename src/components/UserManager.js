@@ -10,21 +10,18 @@ const userManagerConfig = {
 };
 
 export const kc = new Keycloak(userManagerConfig);
-console.log(kc)
 
 kc.onTokenExpired = () => {
-    console.log('Renew token..');
     kc.updateToken(70)
         .then(refreshed => {
             if (refreshed) {
-                console.log(kc);
                 api.setAccessToken(kc.token);
             } else {
                 console.log('Token is still valid?..');
             }
         })
         .catch(err => {
-            console.log("Refresh token failed: " + err);
+            console.error("Refresh token failed");
             api.setAccessToken(null);
             kc.logout();
         });
