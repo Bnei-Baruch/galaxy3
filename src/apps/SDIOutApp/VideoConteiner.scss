@@ -1,38 +1,3 @@
-// @function list-remove($list, $index) {
-// 	$newList: ();
-// 	@for $i from 1 through length($list) {
-// 		@if $i != $index {
-// 			$newList: append($newList, nth($list,$i), 'space');
-// 		}
-// 	}
-// 	@return $newList;
-// }
-// @function list-sort($list) {
-// 	$sortedlist: ();
-// 	@while length($list) > 0 {
-// 		$value: nth($list,1);
-// 		@each $item in $list {
-// 			@if $item > $value {
-// 				$value: $item;
-// 			}
-// 		}
-// 		$sortedlist: append($sortedlist, $value, 'space');
-// 		$list: list-remove($list, index($list, $value));
-// 	}
-// 	@return $sortedlist;
-// }
-
-// @function map-sort($map) {
-// 	$keys: list-sort(map-keys($map));
-// 	$sortedMap: ();
-// 	@each $key in $keys {
-// 		$sortedMap: map-merge($sortedMap, ($key: map-get($map, $key)));
-// 	}
-// 	@return $sortedMap;
-// }
-
-//////////////////////////////////////////////
-
 .vclient {
 	width: 100vw;
 	height: 100vh;
@@ -46,7 +11,6 @@
 		flex: 1 0 auto;
 		display: flex;
 		position: relative;
-		//overflow: hidden;
 	}
 
 	&__main-wrapper {
@@ -81,44 +45,20 @@
 	}
 }
 
-	// flex: 1 1 auto;
-	// position: relative;
-
-	// margin: -1px;
 .videos__wrapper {
-		// display: flex;
-
 		position: absolute;
-		display: grid;
-		grid-auto-flow: row;
-		// justify-content: center;
-		// align-items: center;
-		// align-content: center;
-		// display: grid;
-		// grid-template-columns: repeat( 120,  1fr );
-		// grid-template-rows: repeat(120, percentage(1/120));
-		grid-gap: 2px;
 		overflow: hidden;
 		top: 2px;
 		right: 2px;
 		left: 2px;
 		bottom: 2px;
 
-		// width: 100%;
+		background: rgba(34, 34, 34, 1);
 	}
 
-
 .video {
-	grid-row: span 1;
-	grid-column: span 1;
-	// height: percentage(1/1);
 	position: relative;
-	// margin: 1px;
-	background: rgba(34, 34, 34, 1);
-	// border: 2px solid #000;
-	// overflow: hidden;
-
- 
+	
 	&__overlay {
 		position: absolute;
 		width: 100%;
@@ -209,33 +149,37 @@ $vh: 9;
 	}
 }
 
-.videos__wrapper{
-	.no-of-videos-1 &{
-		grid-template-columns: repeat(1, minmax(0, 1fr));
-		grid-template-rows: repeat(1, minmax(0, 1fr));
+.videos__wrapper {
+	display:flex;
+	flex-wrap: wrap-reverse;
+	.video_full &{
+		justify-content: center;
 	}
-	.no-of-videos-2 &{
-		grid-template-columns: repeat(2, minmax(0, 1fr));
-		grid-template-rows: repeat(1, minmax(0, 1fr));
+}
+.no-of-videos- {
+	&1 {
+		.video {flex: 0 0 percentage(1/1);}
 	}
-	.no-of-videos-4 &, .no-of-videos-3 &{
-		grid-template-columns: repeat(2, minmax(0, 1fr));
-		grid-template-rows: repeat(2, minmax(0, 1fr));
+	&2, &3, &4 {
+		.video {flex: 0 0 percentage(1/2);}
 	}
-	.no-of-videos-5 &, .no-of-videos-6 &{
-		grid-template-columns: repeat(3, minmax(0, 1fr));
-		grid-template-rows: repeat(2, minmax(0, 1fr));
+	&5, &6, &7, &8, &9 {
+		.video {flex: 0 0 percentage(1/3);}
 	}
-	.no-of-videos-7 &, .no-of-videos-8 &, .no-of-videos-9 &{
-		grid-template-columns: repeat(3, minmax(0, 1fr));
-		grid-template-rows: repeat(3, minmax(0, 1fr));
+	&10, &11, &12, &13, &14, &15, &16 {
+		.video {flex: 0 0 percentage(1/4);}
 	}
-	.no-of-videos-10 &, .no-of-videos-11 &, .no-of-videos-12 &{
-		grid-template-columns: repeat(4, minmax(0, 1fr));
-		grid-template-rows: repeat(3, minmax(0, 1fr));
+// ---------------
+	&1, &2 {
+		.video {height: percentage(1/1);}
 	}
-	.no-of-videos-13 &, .no-of-videos-14 &, .no-of-videos-15 &, .no-of-videos-16 &{
-		grid-template-columns: repeat(4, minmax(0, 1fr));
-		grid-template-rows: repeat(4, minmax(0, 1fr));
+	&3, &4, &5, &6 {
+		.video {height: percentage(1/2);}
+	}
+	&7, &8, &9, &10, &11, &12 {
+		.video {height: percentage(1/3);}
+	}
+	&13, &14, &15, &16{
+		.video {height: percentage(1/4);}
 	}
 }
