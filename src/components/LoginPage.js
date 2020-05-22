@@ -13,7 +13,7 @@ import {
 	Select,
 } from 'semantic-ui-react';
 import bblogo from './logo.png';
-import {languagesOptions,setLanguage} from "../i18n/i18n";
+import {languagesOptions, setLanguage} from "../i18n/i18n";
 import {withTranslation} from "react-i18next";
 import {reportToSentry} from "../shared/tools";
 import {Terms} from "./Terms";

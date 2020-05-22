@@ -10,6 +10,7 @@ import {
 import LoginPage from '../components/LoginPage';
 import {client, getUserRemote, pendingApproval} from "../components/UserManager";
 import {withTranslation} from "react-i18next";
+import {languagesOptions, setLanguage} from "../i18n/i18n";
 import VerifyAccount from './VirtualApp/components/VerifyAccount';
 import api from '../shared/Api';
 
@@ -19,6 +20,18 @@ class GalaxyApp extends Component {
         user: null,
         roles: [],
     };
+
+    componentDidMount() {
+      const url = new URL(window.location.href);
+      if (url.searchParams.has('lang')) {
+        const lang = url.searchParams.get('lang');
+        if (languagesOptions.find((option) => option.value === lang) !== null) {
+          setLanguage(lang);
+          url.searchParams.delete('lang');
+          window.history.pushState({}, document.title, url.href);
+        }
+      }
+    }
 
     checkPermission = (user, access_token) => {
       api.setAccessToken(access_token);
