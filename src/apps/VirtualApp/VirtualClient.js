@@ -38,7 +38,6 @@ import {Profile} from "../../components/Profile";
 import * as Sentry from "@sentry/browser";
 import VerifyAccount from './components/VerifyAccount';
 import GxyJanus from "../../shared/janus-utils";
-import {getUserRemote} from "../../components/UserManager";
 
 class VirtualClient extends Component {
 
@@ -127,28 +126,18 @@ class VirtualClient extends Component {
   }
 
   checkPermission = (user) => {
-    // If user is ghost, after login check if attributes were updated.
-    user.role = kc.hasRealmRole("pending_approval") ? 'ghost' : 'user';
-    if (user.role === 'ghost' || (user.pending && user.pending.length)) {
-      getUserRemote((user) => this.checkPermissions_(user, true));
-    } else {
-      this.checkPermissions_(user, true);
-    }
-  }
-  recheckPermission = (user) => this.checkPermissions_(user, false);
-
-  checkPermissions_ = (user, firstTime) => {
-    let gxy_user = kc.hasRealmRole("gxy_user");
     let pending_approval = kc.hasRealmRole("pending_approval");
+    let gxy_user = kc.hasRealmRole("gxy_user");
+    user.role = pending_approval ? 'ghost' : 'user';
     if (gxy_user || pending_approval) {
-      this.initApp(user, firstTime);
+      this.initApp(user);
     } else {
       alert("Access denied!");
       kc.logout();
     }
-  };
+  }
 
-  initApp = (user, firstTime) => {
+  initApp = (user) => {
     const { t } = this.props;
     localStorage.setItem('question', false);
     localStorage.setItem('sound_test', false);
@@ -170,32 +159,30 @@ class VirtualClient extends Component {
       }
       this.setState({ geoinfo: !!data, user });
 
-      if (firstTime) {
-        api.fetchConfig()
-            .then(data => GxyJanus.setGlobalConfig(data))
-            .then(() => (api.fetchAvailableRooms({with_num_users: true})))
-            .then(data => {
-              const {rooms} = data;
-              this.setState({rooms});
+      api.fetchConfig()
+          .then(data => GxyJanus.setGlobalConfig(data))
+          .then(() => (api.fetchAvailableRooms({with_num_users: true})))
+          .then(data => {
+            const {rooms} = data;
+            this.setState({rooms});
 
-              const {selected_room} = this.state;
-              if (selected_room !== '') {
-                const room = rooms.find(r => r.room === selected_room);
-                if (room) {
-                  const name = room.description;
-                  user.room = selected_room;
-                  user.janus = room.janus;
-                  user.group = name;
-                  this.setState({name});
-                }
-                this.initClient(user, false);
+            const {selected_room} = this.state;
+            if (selected_room !== '') {
+              const room = rooms.find(r => r.room === selected_room);
+              if (room) {
+                const name = room.description;
+                user.room = selected_room;
+                user.janus = room.janus;
+                user.group = name;
+                this.setState({name});
               }
-            })
-            .catch(err => {
-              console.error("[VirtualClient] error initializing app", err);
-              this.setState({appInitError: err});
-            });
-      }
+              this.initClient(user, false);
+            }
+          })
+          .catch(err => {
+            console.error("[VirtualClient] error initializing app", err);
+            this.setState({appInitError: err});
+          });
     });
   }
 

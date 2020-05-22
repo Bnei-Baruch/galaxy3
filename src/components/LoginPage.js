@@ -4,7 +4,6 @@ import {Button, Container, Divider, Grid, Header, Image, Menu, Message, Segment,
 import bblogo from './logo.png';
 import {languagesOptions,setLanguage} from "../i18n/i18n";
 import {withTranslation} from "react-i18next";
-import {reportToSentry} from "../shared/tools";
 import {Terms} from "./Terms";
 import {Profile} from "./Profile";
 

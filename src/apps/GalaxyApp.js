@@ -1,7 +1,7 @@
 import React, {Component, Fragment,} from 'react';
 import {Button, Divider, Grid,} from "semantic-ui-react";
 import LoginPage from '../components/LoginPage';
-import {kc, getUserRemote} from "../components/UserManager";
+import {kc} from "../components/UserManager";
 import {withTranslation} from "react-i18next";
 import VerifyAccount from './VirtualApp/components/VerifyAccount';
 
@@ -13,57 +13,49 @@ class GalaxyApp extends Component {
     };
 
     checkPermission = (user) => {
-      user.role = kc.hasRealmRole("pending_approval") ? 'ghost' : 'user';
-      if (user.role === 'ghost') {
-        getUserRemote((user) => this.checkPermission_(user));
-      } else {
-        this.checkPermission_(user);
-      }
+        const approval = kc.hasRealmRole("pending_approval");
+        const options = this.options(user.roles, approval);
+        user.role = approval ? 'ghost' : 'user';
+        const requested = this.requested(user);
+        if(options.length > 1 || (approval && !requested)) {
+            this.setState({user, roles: user.roles});
+        } else if(requested || options.length === 1) {
+            window.location = '/user';
+        } else {
+            alert("Access denied.");
+            kc.logout();
+        }
     }
 
-    checkPermission_ = (user) => {
-      const approval = kc.hasRealmRole("pending_approval");
-      const options = this.options(user.roles, approval);
-      const requested = this.requested(user);
-      if(options.length > 1 || (approval && !requested)) {
-          this.setState({user, roles: user.roles});
-      } else if(requested || options.length === 1) {
-          window.location = '/user';
-      } else {
-          alert("Access denied.");
-          kc.logout();
-      }
-    };
-
     requested = (user) => {
-      return user && !!user.request && !!user.request.length;
+        return user && !!user.request && !!user.request.length;
     }
 
     options = (roles, approval) => {
-      const {t} = this.props;
-      return roles.map((role, i) => {
-        if(role === "gxy_user" || role === "pending_approval") {
-          return (<Button key={i} size='massive' color='green' onClick={() => window.open("user","_self")}>
-            {approval ? t('galaxyApp.continueAsGuest') : 'Galaxy'}
-          </Button>);
-        }
-        if(role === "gxy_shidur") {
-          return (<Button key={i} size='massive' color='green' onClick={() => window.open("shidur","_self")}>
-            Shidur
-          </Button>);
-        }
-        if(role === "gxy_sndman") {
-          return (<Button key={i} size='massive' color='green' onClick={() => window.open("sndman","_self")}>
-            SoundMan
-          </Button>);
-        }
-        if(role.match(/^(gxy_admin|gxy_root|gxy_viewer)$/)) {
-          return (<Button key={i} size='massive' color='green' onClick={() => window.open("admin","_self")}>
-            Admin
-          </Button>);
-        }
-        return false;
-      }).filter(element => element);
+        const {t} = this.props;
+        return roles.map((role, i) => {
+            if(role === "gxy_user" || role === "pending_approval") {
+                return (<Button key={i} size='massive' color='green' onClick={() => window.open("user","_self")}>
+                    {approval ? t('galaxyApp.continueAsGuest') : 'Galaxy'}
+                </Button>);
+            }
+            if(role === "gxy_shidur") {
+                return (<Button key={i} size='massive' color='green' onClick={() => window.open("shidur","_self")}>
+                    Shidur
+                </Button>);
+            }
+            if(role === "gxy_sndman") {
+                return (<Button key={i} size='massive' color='green' onClick={() => window.open("sndman","_self")}>
+                    SoundMan
+                </Button>);
+            }
+            if(role.match(/^(gxy_admin|gxy_root|gxy_viewer)$/)) {
+                return (<Button key={i} size='massive' color='green' onClick={() => window.open("admin","_self")}>
+                    Admin
+                </Button>);
+            }
+            return false;
+        }).filter(element => element);
     }
 
     render() {
