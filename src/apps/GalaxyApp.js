@@ -10,11 +10,13 @@ class GalaxyApp extends Component {
     state = {
         user: null,
         roles: [],
+        options: 0,
     };
 
     checkPermission = (user) => {
         const approval = kc.hasRealmRole("pending_approval");
         const options = this.options(user.roles, approval);
+        this.setState({options: options.length});
         user.role = approval ? 'ghost' : 'user';
         const requested = this.requested(user);
         if(options.length > 1 || (approval && !requested)) {
@@ -60,15 +62,16 @@ class GalaxyApp extends Component {
 
     render() {
         const {i18n} = this.props;
-        const {user, roles} = this.state;
+        const {user, roles, options} = this.state;
         const approval = kc.hasRealmRole("pending_approval");
         const requested = this.requested(user);
 
         const enter = (
             <Grid columns={(!approval || requested) ? 1 : 2}>
                 <Grid.Row>
-                    <Divider className="whole-divider" vertical />
-                    {(!approval || requested) ? null : <Grid.Column>
+                    {user && options > 1 ? null : <Divider className="whole-divider" vertical />}
+                    {(!approval || requested) ? null :
+                        <Grid.Column>
                         <VerifyAccount user={user} loginPage={true} i18n={i18n} onUserUpdate={(user) => this.checkPermission(user)} />
                     </Grid.Column>}
                     <Grid.Column style={{display: 'flex', justifyContent: 'center', alignItems: 'center'}}>
