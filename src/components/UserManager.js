@@ -13,18 +13,21 @@ export const kc = new Keycloak(userManagerConfig);
 console.log(kc)
 
 kc.onTokenExpired = () => {
-    console.log('Token Expired');
+    console.log('Renew token..');
     kc.updateToken(70)
-        .then((refreshed) => {
+        .then(refreshed => {
             if (refreshed) {
-                console.log(kc)
+                console.log(kc);
                 api.setAccessToken(kc.token);
             } else {
-                api.setAccessToken(null);
-                kc.logout()
+                console.log('Token is still valid?..');
             }
         })
-        .catch((err) => console.log(err));
+        .catch(err => {
+            console.log("Refresh token failed: " + err);
+            api.setAccessToken(null);
+            kc.logout();
+        });
 };
 
 export const getUser = (callback) => {
@@ -32,7 +35,7 @@ export const getUser = (callback) => {
         onLoad: 'check-sso',
         checkLoginIframe: false,
         flow: 'standard',
-    }).then((authenticated) => {
+    }).then(authenticated => {
             if(authenticated) {
                 kc.loadUserProfile().then(profile => {
                     const {realm_access: {roles},sub,given_name,name,email} = kc.tokenParsed;
