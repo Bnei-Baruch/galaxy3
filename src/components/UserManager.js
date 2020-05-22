@@ -32,9 +32,11 @@ export const getUser = (callback) => {
         onLoad: 'check-sso',
         checkLoginIframe: false,
         flow: 'standard',
+        pkceMethod: 'S256',
     }).then(authenticated => {
-            if(authenticated) {
-                kc.loadUserProfile().then(profile => {
+        if(authenticated) {
+            kc.loadUserProfile()
+                .then(profile => {
                     const {realm_access: {roles},sub,given_name,name,email} = kc.tokenParsed;
                     const {pending, request, timestamp: request_timestamp,group,title} = profile.attributes;
                     const user = {
@@ -44,11 +46,10 @@ export const getUser = (callback) => {
                     api.setAccessToken(kc.token);
                     callback(user)
                 })
-            } else {
-                callback(null)
-            }
-        })
-        .catch((err) => console.log(err));
+        } else {
+            callback(null)
+        }
+    }).catch((err) => console.log(err));
 };
 
 export default kc;
