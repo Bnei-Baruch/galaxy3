@@ -12,45 +12,38 @@ const userManagerConfig = {
 export const kc = new Keycloak(userManagerConfig);
 
 kc.onTokenExpired = () => {
-    let retry = 0;
-    let chk = setInterval(() => {
-        retry++;
-        if(retry < 5) {
-            console.debug("Refresh retry: " + retry);
-            renewToken(token => {
-                if(token) {
-                    console.debug("-- Refreshed --");
-                    clearInterval(chk);
-                    api.setAccessToken(token);
-                }
-            })
-        }
-        if(retry >= 5) {
-            console.error("Refresh retry: " + retry + " - failed");
-            clearInterval(chk);
-            kc.clearToken();
-        }
-    }, 5000);
+    console.debug(" -- Renew token -- ");
+    renewToken(0);
 };
 
 kc.onAuthLogout = () => {
-    console.error("-- Detect clearToken --");
+    console.debug("-- Detect clearToken --");
     api.setAccessToken(null);
     kc.logout();
 }
 
-const renewToken = (callback) => {
+const renewToken = (retry) => {
     kc.updateToken(70)
         .then(refreshed => {
             if(refreshed) {
-                callback(kc.token)
+                console.debug("-- Refreshed --");
+                api.setAccessToken(kc.token);
             } else {
                 console.warn('Token is still valid?..');
             }
         })
         .catch(err => {
-            console.error("Refresh token failed");
-            callback(null)
+            retry++;
+            if(retry > 5) {
+                console.error("Refresh retry: failed");
+                console.debug("-- Refresh Failed --");
+                kc.clearToken();
+            } else {
+                setTimeout(() => {
+                    console.error("Refresh retry: " + retry);
+                    renewToken(retry);
+                }, 10000);
+            }
         });
 }
 
