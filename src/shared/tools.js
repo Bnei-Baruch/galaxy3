@@ -322,7 +322,8 @@ export const takeImage = (stream, user) => {
         reportToSentry("Track is not ready for capture", {source: "image"}, user);
         return;
     }
-    imageCapture.takePhoto().then(blob => {
+    const photoSettings = {imageWidth: 640, imageHeight: 480};
+    imageCapture.takePhoto(photoSettings).then(blob => {
         let reader = new FileReader();
         reader.onload = () => {
             let dataUrl = reader.result;
