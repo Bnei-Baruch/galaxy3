@@ -1,117 +1,75 @@
-import {Log as oidclog, UserManager} from 'oidc-client';
-import {KJUR} from 'jsrsasign';
-import {BASE_URL} from "../shared/env";
-import {reportToSentry} from "../shared/tools";
+import Keycloak from 'keycloak-js';
 import api from '../shared/Api';
 
-const AUTH_URL = 'https://accounts.kbb1.com/auth/realms/main';
-
-oidclog.logger = console;
-oidclog.level = 0;
-let user_mgr = null;
-
 const userManagerConfig = {
-    authority: AUTH_URL,
-    client_id: 'galaxy',
-    redirect_uri: `${BASE_URL}`,
-    response_type: 'token id_token',
+    url: 'https://accounts.kbb1.com/auth',
+    realm: 'main',
+    clientId: 'galaxy',
     scope: 'profile',
-    post_logout_redirect_uri: `${BASE_URL}`,
-    automaticSilentRenew: true,
-    silentRequestTimeout: 30000,
-    silent_redirect_uri: `${BASE_URL}/silent_renew.html`,
-    filterProtocolClaims: true,
-    loadUserInfo: true,
+    enableLogging: true,
 };
 
-export const client = new UserManager(userManagerConfig);
+export const kc = new Keycloak(userManagerConfig);
 
-client.events.addAccessTokenExpiring(() => {
-    console.log("...RENEW TOKEN...");
-});
+kc.onTokenExpired = () => {
+    console.debug(" -- Renew token -- ");
+    renewToken(0);
+};
 
-client.events.addAccessTokenExpired((data) => {
-    console.log("...!TOKEN EXPIRED!...");
-    reportToSentry("TOKEN EXPIRED: " + data,{source: "login"}, user_mgr, "warning");
-    client.signoutRedirect();
-});
-
-client.events.addUserSignedOut(() => {
-    console.log("...LOGOUT EVENT...");
-    client.signoutRedirect();
-});
-
-client.events.addSilentRenewError((error) =>{
-    console.error("Silent Renew Error: " + error);
-    reportToSentry("Silent Renew Error: " + error,{source: "login"}, user_mgr, "warning");
-});
-
-export const pendingApproval = (user) => user && !!user.roles.find(role => role === 'pending_approval');
-
-export const buildUserObject = (oidcUser) => {
-  if (!oidcUser) {
-    return {user: oidcUser};
-  }
-  const at = KJUR.jws.JWS.parse(oidcUser.access_token);
-  const {
-    realm_access: {roles},
-    request,
-    timestamp: request_timestamp,
-    pending,
-  } = at.payloadObj;
-  const {
-    email,
-    given_name,
-    group,
-    name,
-    sub,
-    title,
-  } = oidcUser.profile;
-  const user = {
-    email,
-    group,
-    id: sub,
-    name,
-    pending,
-    request,
-    request_timestamp,
-    roles,
-    title: title || given_name,
-    username: given_name,
-  };
-  user.role = pendingApproval(user) ? 'ghost' : 'user';
-  user_mgr = user;
-  return {user, access_token: oidcUser.access_token};
+kc.onAuthLogout = () => {
+    console.debug("-- Detect clearToken --");
+    api.setAccessToken(null);
+    kc.logout();
 }
 
-// Runs cb on local user info.
-export const getUser = (cb) => {
-  return client.getUser().then((user) => {
-    cb(buildUserObject(user));
-  }).catch((error) => {
-    console.log("Error: ",error);
-    reportToSentry("Get User Error: " + error, {source: "login"}, null, "warning");
-  });
+const renewToken = (retry) => {
+    kc.updateToken(70)
+        .then(refreshed => {
+            if(refreshed) {
+                console.debug("-- Refreshed --");
+                api.setAccessToken(kc.token);
+            } else {
+                console.warn('Token is still valid?..');
+            }
+        })
+        .catch(err => {
+            retry++;
+            if(retry > 5) {
+                console.error("Refresh retry: failed");
+                console.debug("-- Refresh Failed --");
+                kc.clearToken();
+            } else {
+                setTimeout(() => {
+                    console.error("Refresh retry: " + retry);
+                    renewToken(retry);
+                }, 10000);
+            }
+        });
+}
+
+export const getUser = (callback) => {
+    kc.init({
+        onLoad: 'check-sso',
+        checkLoginIframe: false,
+        flow: 'standard',
+        pkceMethod: 'S256',
+    }).then(authenticated => {
+        if(authenticated) {
+            kc.loadUserProfile()
+                .then(profile => {
+                    const {realm_access: {roles},sub,given_name,name,email} = kc.tokenParsed;
+                    const {pending, request, timestamp: request_timestamp,group,title} = profile.attributes;
+                    const user = {
+                        id: sub, title: title ? title[0] : given_name, username: given_name,
+                        email, group: group ? group[0] : undefined, name, pending, request, request_timestamp, roles,
+                    };
+                    api.setAccessToken(kc.token);
+                    callback(user)
+                })
+        } else {
+            callback(null)
+        }
+    }).catch((err) => console.log(err));
 };
 
-// Fetch remote user info.
-export const getUserRemote = (cb) => {
-  // Due to difference in local and remote user structure we get local user info,
-  // then remote user info and merge only few required fields.
-  getUser(({user}) => {
-    api.fetchUserInfo().then((remoteUser) => {
-      //console.log('USER getUserRemote', remoteUser);
-      const updatedUser = Object.assign({}, user);  // Shallow copy.
-      updatedUser.request = remoteUser.attributes && remoteUser.attributes.request || undefined;
-      updatedUser.request_timestamp = remoteUser.attributes && remoteUser.attributes.timestamp || undefined;
-      updatedUser.pending = remoteUser.attributes && remoteUser.attributes.pending || undefined;
-      console.log('USER getUserRemote', updatedUser);
-      cb(updatedUser);
-    }).catch((error) => {
-      console.log("Error: ",error);
-      reportToSentry("fetch user info Error: " + error, {source: "getUserRemote"}, null, "warning");
-    });
-  });
-};
-
-export default client;
+export default kc;

@@ -5,7 +5,7 @@ import './AdminRoot.css';
 import './AdminRootVideo.scss'
 import classNames from "classnames";
 import platform from "platform";
-import {client} from "../../components/UserManager";
+import {kc} from "../../components/UserManager";
 import LoginPage from "../../components/LoginPage";
 import GxyJanus from "../../shared/janus-utils";
 import ChatBox from "./components/ChatBox";
@@ -67,7 +67,7 @@ class AdminRoot extends Component {
              nextState.usersTabs.length !== usersTabs.length;
     }
 
-    checkPermission = (user, access_token) => {
+    checkPermission = (user) => {
         const roles = new Set(user.roles || []);
 
         let role = null;
@@ -83,10 +83,10 @@ class AdminRoot extends Component {
             console.log("[Admin] checkPermission role is", role);
             delete user.roles;
             user.role = role;
-            this.initApp(user, access_token);
+            this.initApp(user);
         } else {
             alert("Access denied!");
-            client.signoutRedirect();
+            kc.logout();
         }
     };
 
@@ -111,12 +111,8 @@ class AdminRoot extends Component {
 
     withAudio = () => (this.isAllowed("admin"));
 
-    initApp = (user, access_token) => {
+    initApp = (user) => {
         this.setState({user});
-
-        api.setAccessToken(access_token);
-        client.events.addUserLoaded((user) => api.setAccessToken(user.access_token));
-        client.events.addUserUnloaded(() => api.setAccessToken(null));
 
         api.fetchConfig()
             .then(data => GxyJanus.setGlobalConfig(data))

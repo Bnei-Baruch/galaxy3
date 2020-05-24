@@ -1,7 +1,7 @@
 import React, {Component, Fragment} from 'react';
 import {Grid} from "semantic-ui-react";
 import api from '../../shared/Api';
-import {client} from "../../components/UserManager";
+import {kc} from "../../components/UserManager";
 import GxyJanus from "../../shared/janus-utils";
 import LoginPage from "../../components/LoginPage";
 import ShidurToran from "./ShidurToran";
@@ -37,26 +37,21 @@ class ShidurApp extends Component {
         Object.values(this.state.gateways).forEach(x => x.destroy());
     };
 
-    checkPermission = (user, access_token) => {
-        const allowed = user.roles.filter(role => role === 'gxy_shidur').length > 0;
+    checkPermission = (user) => {
+        const allowed = kc.hasRealmRole("gxy_shidur");
         if (allowed) {
             delete user.roles;
             user.role = "shidur";
             user.session = 0;
-            this.initApp(user, access_token);
+            this.initApp(user);
         } else {
             alert("Access denied!");
-            client.signoutRedirect();
+            kc.logout();
         }
     };
 
-    initApp = (user, access_token) => {
+    initApp = (user) => {
         this.setState({user});
-
-        api.setAccessToken(access_token);
-        client.events.addUserLoaded((user) => api.setAccessToken(user.access_token));
-        client.events.addUserUnloaded(() => api.setAccessToken(null));
-
         api.fetchConfig()
             .then(data => GxyJanus.setGlobalConfig(data))
             .then(() => this.initGateways(user))

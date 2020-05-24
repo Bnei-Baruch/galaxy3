@@ -11,7 +11,7 @@ import {
 } from 'semantic-ui-react';
 import { useTranslation } from 'react-i18next';
 import api from '../../../shared/Api';
-import {getUserRemote} from "../../../components/UserManager";
+import {getUser} from "../../../components/UserManager";
 
 
 const EMAIL_RE = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
@@ -50,7 +50,7 @@ const VerifyAccount = (props) => {
       if (['ignore', 'approve'].includes(state)) {
         api.verifyUser(pendingEmail, state).then((data) => {
           if (data && data.result === 'success') {
-            getUserRemote((user) => onUserUpdate(user));
+            getUser((user) => onUserUpdate(user));
           }
         });
       }
@@ -63,7 +63,7 @@ const VerifyAccount = (props) => {
         if (data && data.result === 'success') {
           setRequestSent(true);
           setClosedModal(false);
-          getUserRemote((user) => onUserUpdate(user));
+          getUser((user) => onUserUpdate(user));
         }
       }).catch((error) => {
         if (error.message === 'Not Found') {

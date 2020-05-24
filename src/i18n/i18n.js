@@ -33,7 +33,7 @@ i18n
     ns: ['common'],
     defaultNS: 'common',
 
-    debug: true,
+    debug: false,
 
     interpolation: {
       escapeValue: false, // react already safes from xss

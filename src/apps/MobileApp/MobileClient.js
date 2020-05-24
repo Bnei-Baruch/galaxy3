@@ -20,10 +20,11 @@ import { isMobile } from 'react-device-detect';
 import {Monitoring} from '../../components/Monitoring';
 import {MonitoringData} from '../../shared/MonitoringData';
 import api from '../../shared/Api';
-import {client} from "../../components/UserManager";
+import {kc} from "../../components/UserManager";
 import LoginPage from "../../components/LoginPage";
 import {Profile} from "../../components/Profile";
 import GxyJanus from "../../shared/janus-utils";
+import {addLostStat, getLostStat} from "../VirtualApp/components/NetStatus";
 
 class MobileClient extends Component {
 
@@ -70,6 +71,7 @@ class MobileClient extends Component {
         monitoringData: new MonitoringData(),
         appInitialized: false,
         appInitError: null,
+        net_status: 1,
     };
 
     componentDidUpdate(prevProps, prevState) {
@@ -85,32 +87,32 @@ class MobileClient extends Component {
       }
     };
 
-    checkPermission = (user, access_token) => {
-        const {t} = this.props;
-        let gxy_user = user.roles.filter(role => role === 'gxy_user').length > 0;
-        let pending_approval = user.roles.filter(role => role === 'pending_approval').length > 0;
-        if (pending_approval) {
-            alert(t('galaxyApp.pendingApproval'));
-            client.signoutRedirect();
-        } else if (gxy_user) {
-            delete user.roles;
-            user.role = "user";
-            this.initApp(user, access_token);
+    checkPermission = (user) => {
+        let pending_approval = kc.hasRealmRole("pending_approval");
+        let gxy_user = kc.hasRealmRole("gxy_user");
+        user.role = pending_approval ? 'ghost' : 'user';
+        if (gxy_user || pending_approval) {
+            this.initApp(user);
         } else {
             alert("Access denied!");
-            client.signoutRedirect();
+            kc.logout();
         }
-    };
+    }
 
     componentDidMount() {
         if(!isMobile && window.location.href.indexOf("userm") > -1) {
             window.location = '/user/';
             return;
         }
+        setInterval(() => {
+            const {net_status} = this.state;
+            const cur_status = getLostStat();
+            if(net_status !== cur_status)
+                this.setState({net_status: cur_status})
+        }, 5000);
     };
 
-    initApp = (user, access_token) => {
-        const { t } = this.props;
+    initApp = (user) => {
         localStorage.setItem('question', false);
         localStorage.setItem('sound_test', false);
         localStorage.setItem('uuid', user.id);
@@ -127,10 +129,6 @@ class MobileClient extends Component {
                     this.setState({appInitError: "Error fetching geo info"});
                 }
                 this.setState({ geoinfo: !!data, user });
-
-                api.setAccessToken(access_token);
-                client.events.addUserLoaded((user) => api.setAccessToken(user.access_token));
-                client.events.addUserUnloaded(() => api.setAccessToken(null));
 
                 api.fetchConfig()
                     .then(data => GxyJanus.setGlobalConfig(data))
@@ -414,6 +412,7 @@ class MobileClient extends Component {
             slowLink: (uplink, lost, mid) => {
                 Janus.log("Janus reports problems " + (uplink ? "sending" : "receiving") +
                     " packets on mid " + mid + " (" + lost + " lost packets)");
+                addLostStat(lost);
             },
             onmessage: (msg, jsep) => {
                 this.onMessage(this.state.videoroom, msg, jsep, false);
@@ -986,7 +985,7 @@ class MobileClient extends Component {
                 this.exitRoom();
             } else if(type === "client-kicked" && user.id === id) {
                 localStorage.setItem("ghost", true);
-                client.signoutRedirect();
+                kc.logout();
             } else if(type === "client-question" && user.id === id) {
                 this.handleQuestion();
             } else if(type === "client-mute" && user.id === id) {
@@ -1101,6 +1100,7 @@ class MobileClient extends Component {
           women,
             appInitialized,
             appInitError,
+            net_status
         } = this.state;
 
         if (appInitError) {
@@ -1267,7 +1267,7 @@ class MobileClient extends Component {
                                             <Popup.Content>
                                                 <Button className='select_device' fluid>
                                                     <Icon name='user circle'/>
-                                                    <Profile title={this.state.username_value} client={client} />
+                                                    <Profile title={this.state.username_value} kc={kc} />
                                                 </Button>
                                                 <Select className='select_device'
                                                         disabled={!!localAudioTrack}
@@ -1345,7 +1345,8 @@ class MobileClient extends Component {
                                 </div>
                             </div>
                         </div>
-
+                        { !(new URL(window.location.href).searchParams.has('lost')) ? null :
+                            (<Label color={net_status === 2 ? 'yellow' : net_status === 3 ? 'red' : 'green'} icon='wifi' corner='right' />)}
                     </div>
                     {
                         appInitialized ?

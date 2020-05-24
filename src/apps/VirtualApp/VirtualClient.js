@@ -32,13 +32,14 @@ import {MonitoringData} from '../../shared/MonitoringData';
 import api from '../../shared/Api';
 import VirtualStreaming from './VirtualStreaming';
 import VirtualStreamingJanus from './VirtualStreamingJanus';
-import {client} from "../../components/UserManager";
+import {kc} from "../../components/UserManager";
 import LoginPage from "../../components/LoginPage";
 import {Profile} from "../../components/Profile";
 import * as Sentry from "@sentry/browser";
 import VerifyAccount from './components/VerifyAccount';
 import GxyJanus from "../../shared/janus-utils";
 import {getUserRemote} from "../../components/UserManager";
+import {addLostStat, getLostStat} from "./components/NetStatus";
 
 class VirtualClient extends Component {
 
@@ -87,6 +88,7 @@ class VirtualClient extends Component {
     virtualStreamingJanus: new VirtualStreamingJanus(() => this.virtualStreamingInitialized()),
     appInitError: null,
     upval: null,
+    net_status: 1,
   };
 
   virtualStreamingInitialized() {
@@ -120,38 +122,31 @@ class VirtualClient extends Component {
     if (isMobile) {
       window.location = '/userm';
     }
+    setInterval(() => {
+      const {net_status} = this.state;
+      const cur_status = getLostStat();
+      if(net_status !== cur_status)
+        this.setState({net_status: cur_status})
+    }, 5000);
   }
 
   componentWillUnmount() {
     this.state.virtualStreamingJanus.destroy();
   }
 
-  checkPermission = (user, access_token) => {
-    api.setAccessToken(access_token);
-    client.events.addUserLoaded((user) => api.setAccessToken(user.access_token));
-    client.events.addUserUnloaded(() => api.setAccessToken(null));
-
-    // If user is ghost, after login check if attributes were updated.
-    if (user.role === 'ghost' || (user.pending && user.pending.length)) {
-      getUserRemote((user) => this.checkPermissions_(user, true));
-    } else {
-      this.checkPermissions_(user, true);
-    }
-  }
-  recheckPermission = (user) => this.checkPermissions_(user, false);
-
-  checkPermissions_ = (user, firstTime) => {
-    let gxy_user = user.roles.find(role => role === 'gxy_user');
-    let pending_approval = user.roles.filter(role => role === 'pending_approval').length > 0;
+  checkPermission = (user) => {
+    let pending_approval = kc.hasRealmRole("pending_approval");
+    let gxy_user = kc.hasRealmRole("gxy_user");
+    user.role = pending_approval ? 'ghost' : 'user';
     if (gxy_user || pending_approval) {
-      this.initApp(user, firstTime);
+      this.initApp(user);
     } else {
       alert("Access denied!");
-      client.signoutRedirect();
+      kc.logout();
     }
-  };
+  }
 
-  initApp = (user, firstTime) => {
+  initApp = (user) => {
     const { t } = this.props;
     localStorage.setItem('question', false);
     localStorage.setItem('sound_test', false);
@@ -173,32 +168,30 @@ class VirtualClient extends Component {
       }
       this.setState({ geoinfo: !!data, user });
 
-      if (firstTime) {
-        api.fetchConfig()
-            .then(data => GxyJanus.setGlobalConfig(data))
-            .then(() => (api.fetchAvailableRooms({with_num_users: true})))
-            .then(data => {
-              const {rooms} = data;
-              this.setState({rooms});
+      api.fetchConfig()
+          .then(data => GxyJanus.setGlobalConfig(data))
+          .then(() => (api.fetchAvailableRooms({with_num_users: true})))
+          .then(data => {
+            const {rooms} = data;
+            this.setState({rooms});
 
-              const {selected_room} = this.state;
-              if (selected_room !== '') {
-                const room = rooms.find(r => r.room === selected_room);
-                if (room) {
-                  const name = room.description;
-                  user.room = selected_room;
-                  user.janus = room.janus;
-                  user.group = name;
-                  this.setState({name});
-                }
-                this.initClient(user, false);
+            const {selected_room} = this.state;
+            if (selected_room !== '') {
+              const room = rooms.find(r => r.room === selected_room);
+              if (room) {
+                const name = room.description;
+                user.room = selected_room;
+                user.janus = room.janus;
+                user.group = name;
+                this.setState({name});
               }
-            })
-            .catch(err => {
-              console.error("[VirtualClient] error initializing app", err);
-              this.setState({appInitError: err});
-            });
-      }
+              this.initClient(user, false);
+            }
+          })
+          .catch(err => {
+            console.error("[VirtualClient] error initializing app", err);
+            this.setState({appInitError: err});
+          });
     });
   }
 
@@ -516,6 +509,7 @@ class VirtualClient extends Component {
       slowLink: (uplink, lost, mid) => {
         Janus.log('Janus reports problems ' + (uplink ? 'sending' : 'receiving') +
           ' packets on mid ' + mid + ' (' + lost + ' lost packets)');
+        addLostStat(lost);
       },
       onmessage: (msg, jsep) => {
         this.onMessage(this.state.videoroom, msg, jsep, false);
@@ -1016,7 +1010,7 @@ class VirtualClient extends Component {
         this.exitRoom(false);
       } else if(type === "client-kicked" && user.id === id) {
         localStorage.setItem("ghost", true);
-        client.signoutRedirect();
+        kc.logout();
       } else if (type === 'client-question' && user.id === id) {
         this.handleQuestion();
       } else if (type === 'client-mute' && user.id === id) {
@@ -1219,6 +1213,7 @@ class VirtualClient extends Component {
       video_setting,
       virtualStreamingJanus,
       appInitError,
+      net_status,
     } = this.state;
 
     if (appInitError) {
@@ -1428,7 +1423,7 @@ class VirtualClient extends Component {
             <Popup.Content>
               <Button size='huge' fluid>
                 <Icon name='user circle'/>
-                <Profile title={user && user.username} client={client} />
+                <Profile title={user && user.username} kc={kc} />
               </Button>
               <Select className='select_device'
                       disabled={!!localAudioTrack}
@@ -1463,6 +1458,8 @@ class VirtualClient extends Component {
           <Help t={t} />
           <Monitoring monitoringData={monitoringData} />
         </Menu>
+        { !(new URL(window.location.href).searchParams.has('lost')) ? null :
+            (<Label color={net_status === 2 ? 'yellow' : net_status === 3 ? 'red' : 'green'} icon='wifi' corner='right' />)}
       </div>
       <div className="vclient__main" onDoubleClick={() => this.setState({
         chatVisible: !chatVisible
