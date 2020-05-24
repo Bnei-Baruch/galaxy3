@@ -124,11 +124,12 @@ class VirtualClient extends Component {
     setInterval(() => {
       const {net_status,user} = this.state;
       const cur_status = getLostStat();
-      if(net_status !== cur_status)
+      if (net_status !== cur_status) {
         this.setState({net_status: cur_status});
-        if(cur_status === 3) {
+        if (cur_status === 3) {
           reportToSentry("Bad network status", {source: "network"}, user);
         }
+      }
     }, 5000);
   }
 
@@ -149,12 +150,12 @@ class VirtualClient extends Component {
   }
 
   initApp = (user) => {
-    const { t } = this.props;
+    const {t} = this.props;
     localStorage.setItem('question', false);
     localStorage.setItem('sound_test', false);
     localStorage.setItem('uuid', user.id);
     checkNotification();
-    let system  = navigator.userAgent;
+    let system = navigator.userAgent;
     let browser = platform.parse(system);
     if (!(/Safari|Firefox|Chrome/.test(browser.name))) {
       alert(t('oldClient.browserNotSupported'));
@@ -168,7 +169,7 @@ class VirtualClient extends Component {
         alert(t('oldClient.failGeoInfo'));
         this.setState({appInitError: "Error fetching geo info"});
       }
-      this.setState({ geoinfo: !!data, user });
+      this.setState({geoinfo: !!data, user});
 
       api.fetchConfig()
           .then(data => GxyJanus.setGlobalConfig(data))
@@ -198,7 +199,7 @@ class VirtualClient extends Component {
   }
 
   initClient = (user, error) => {
-    const { t } = this.props;
+    const {t} = this.props;
     if (this.state.janus) {
       this.state.janus.destroy();
     }
@@ -225,26 +226,26 @@ class VirtualClient extends Component {
   };
 
   initDevices = (video) => {
-    const { t } = this.props;
+    const {t} = this.props;
     Janus.listDevices(devices => {
       if (devices.length > 0) {
         let audio_devices = devices.filter(device => device.kind === 'audioinput');
         let video_devices = video ? devices.filter(device => device.kind === 'videoinput') : [];
         // Be sure device still exist
-        let video_device  = localStorage.getItem('video_device');
-        let audio_device  = localStorage.getItem('audio_device');
+        let video_device = localStorage.getItem('video_device');
+        let audio_device = localStorage.getItem('audio_device');
         let video_setting = JSON.parse(localStorage.getItem('video_setting')) || this.state.video_setting;
-        let achk          = audio_devices.filter(a => a.deviceId === audio_device).length > 0;
-        let vchk          = video_devices.filter(v => v.deviceId === video_device).length > 0;
-        let video_id      = video ? (video_device !== '' && vchk ? video_device : video_devices[0].deviceId) : null;
-        let audio_id      = audio_device !== '' && achk ? audio_device : audio_devices[0].deviceId;
+        let achk = audio_devices.filter(a => a.deviceId === audio_device).length > 0;
+        let vchk = video_devices.filter(v => v.deviceId === video_device).length > 0;
+        let video_id = video ? (video_device !== '' && vchk ? video_device : video_devices[0].deviceId) : null;
+        let audio_id = audio_device !== '' && achk ? audio_device : audio_devices[0].deviceId;
         Janus.log(' :: Got Video devices: ', video_devices);
         Janus.log(' :: Got Audio devices: ', audio_devices);
-        this.setState({ video_devices, audio_devices });
+        this.setState({video_devices, audio_devices});
         this.setDevice(video_id, audio_id, video_setting);
       } else if (video) {
         alert(t('oldClient.videoNotDetected'));
-        this.setState({ cammuted: true, video_device: null });
+        this.setState({cammuted: true, video_device: null});
         //Try to get video fail reason
         testDevices(true, false, this.state.user, steam => {});
         // Right now if we get some problem with video device the - enumerateDevices()
@@ -257,9 +258,9 @@ class VirtualClient extends Component {
         testDevices(false, true, this.state.user, steam => {});
         alert(t('oldClient.noInputDevices'));
         //FIXME: What we going to do in this case?
-        this.setState({ audio_device: null });
+        this.setState({audio_device: null});
       }
-    }, { audio: true, video: video });
+    }, {audio: true, video: video});
   };
 
   setDevice = (video_device, audio_device, video_setting) => {
@@ -289,18 +290,17 @@ class VirtualClient extends Component {
   };
 
   selfTest = () => {
-    const { t } = this.props;
+    const {t} = this.props;
     this.setState({ selftest: t('oldClient.recording') + 9 });
     testMic(this.state.stream);
-
     let rect = 9;
-    let rec  = setInterval(() => {
+    let rec = setInterval(() => {
       rect--;
       this.setState({ selftest: t('oldClient.recording') + rect });
       if (rect <= 0) {
         clearInterval(rec);
         let playt = 11;
-        let play  = setInterval(() => {
+        let play = setInterval(() => {
           playt--;
           this.setState({ selftest: t('oldClient.playing') + playt });
           if (playt <= 0) {
@@ -313,32 +313,32 @@ class VirtualClient extends Component {
   };
 
   selectRoom = (roomid) => {
-    const { rooms } = this.state;
-    const user      = Object.assign({}, this.state.user);
-    const room      = rooms.find(r => r.room === roomid);
-    const name      = room.description;
+    const {rooms} = this.state;
+    const user = Object.assign({}, this.state.user);
+    const room = rooms.find(r => r.room === roomid);
+    const name = room.description;
     if (this.state.room === roomid) {
       return;
     }
-    this.setState({ selected_room: roomid, name });
-    user.room       = roomid;
-    user.group      = name;
-    user.janus      = room.janus;
-    this.setState({ delay: true });
+    this.setState({selected_room: roomid, name});
+    user.room = roomid;
+    user.group = name;
+    user.janus = room.janus;
+    this.setState({delay: true});
     this.initClient(user, false);
   };
 
   exitRoom = (reconnect) => {
-    let { videoroom, remoteFeed, protocol, room } = this.state;
+    let {videoroom, remoteFeed, protocol, room} = this.state;
     wkliLeave(this.state.user);
     clearInterval(this.state.upval);
-    let leave                                     = { request: 'leave' };
+    let leave = {request: 'leave'};
     if (remoteFeed) {
-      remoteFeed.send({ 'message': leave });
+      remoteFeed.send({'message': leave});
     }
-    videoroom.send({ 'message': leave });
+    videoroom.send({'message': leave});
     this.chat.exitChatRoom(room);
-    let pl = { textroom: 'leave', transaction: Janus.randomString(12), 'room': PROTOCOL_ROOM };
+    let pl = {textroom: 'leave', transaction: Janus.randomString(12), 'room': PROTOCOL_ROOM};
     localStorage.setItem('question', false);
     api.fetchAvailableRooms({with_num_users: true})
       .then(data => {
@@ -370,9 +370,9 @@ class VirtualClient extends Component {
 
   iceState = () => {
     let count = 0;
-    let chk   = setInterval(() => {
+    let chk = setInterval(() => {
       count++;
-      let { ice } = this.state;
+      let {ice} = this.state;
       if (count < 11 && ice === 'connected') {
         clearInterval(chk);
       }
@@ -387,13 +387,13 @@ class VirtualClient extends Component {
   };
 
   mediaState = (media) => {
-    const { t } = this.props;
+    const {t} = this.props;
     // Handle video
     if (media === 'video') {
       let count = 0;
-      let chk   = setInterval(() => {
+      let chk = setInterval(() => {
         count++;
-        let { video, ice } = this.state;
+        let {video, ice} = this.state;
 
         // Video is back stop counter
         if (count < 11 && video) {
@@ -418,9 +418,9 @@ class VirtualClient extends Component {
     //Handle audio
     if (media === 'audio') {
       let count = 0;
-      let chk   = setInterval(() => {
+      let chk = setInterval(() => {
         count++;
-        let { audio, video, ice, question } = this.state;
+        let {audio, video, ice, question} = this.state;
 
         // Audio is back stop counter
         if (count < 11 && audio) {
@@ -480,7 +480,7 @@ class VirtualClient extends Component {
         if (reconnect) {
           setTimeout(() => {
             this.joinRoom(reconnect);
-          }, 5000);
+          },5000);
         }
       },
       error: (error) => {
@@ -519,7 +519,7 @@ class VirtualClient extends Component {
       onlocaltrack: (track, on) => {
         Janus.log(' ::: Got a local track event :::');
         Janus.log('Local track ' + (on ? 'added' : 'removed') + ':', track);
-        let { videoroom } = this.state;
+        let {videoroom} = this.state;
         videoroom.muteAudio();
         if (track.kind === 'video') {
           this.setState({localVideoTrack: track});
@@ -544,12 +544,12 @@ class VirtualClient extends Component {
   };
 
   onRoomData = (data) => {
-    const feeds   = Object.assign([], this.state.feeds);
-    let camera    = data.camera;
-    let question  = data.question;
+    const feeds = Object.assign([], this.state.feeds);
+    let camera = data.camera;
+    let question = data.question;
     for (let i = 0; i < feeds.length; i++) {
       if (feeds[i] && feeds[i].id === data.rfid) {
-        feeds[i].cammute  = !camera;
+        feeds[i].cammute = !camera;
         feeds[i].question = question;
         this.setState({ feeds });
         break;
@@ -558,10 +558,10 @@ class VirtualClient extends Component {
   };
 
   publishOwnFeed = (useVideo) => {
-    let { videoroom, audio_device, video_device, video_setting } = this.state;
-    const width                                                  = video_setting.width;
-    const height                                                 = video_setting.height;
-    const ideal                                                  = video_setting.fps;
+    let {videoroom, audio_device, video_device, video_setting} = this.state;
+    const width = video_setting.width;
+    const height = video_setting.height;
+    const ideal = video_setting.fps;
     videoroom.createOffer({
       media: {
         audioRecv: false, videoRecv: false, audioSend: true, videoSend: useVideo,
@@ -595,8 +595,8 @@ class VirtualClient extends Component {
     });
   };
 
-  onMessage = (videoroom, msg, jsep, initdata) => {
-    const { t } = this.props;
+  onMessage = (videoroom, msg, jsep) => {
+    const {t} = this.props;
     Janus.log(' ::: Got a message (publisher) :::');
     Janus.log(msg);
     let event = msg['videoroom'];
@@ -607,18 +607,17 @@ class VirtualClient extends Component {
         let myid = msg['id'];
         let mypvtid = msg['private_id'];
         user.rfid = myid;
-        this.setState({ user, myid, mypvtid });
+        this.setState({user, myid, mypvtid});
         Janus.log('Successfully joined room ' + msg['room'] + ' with ID ' + myid);
         api.updateUser(user.id, user)
             .catch(err => console.error("[User] error updating user state", user.id, err))
         this.publishOwnFeed(video_device !== null);
         // Any new feed to attach to?
         if (msg['publishers'] !== undefined && msg['publishers'] !== null) {
-          let list          = Object.assign([], msg['publishers']);
+          let list = Object.assign([], msg['publishers']);
           //FIXME:  Tmp fix for black screen in room caoused by feed with video_codec = none
-          let feeds         = list.sort((a, b) => JSON.parse(a.display).timestamp - JSON.parse(b.display).timestamp)
+          let feeds = list.sort((a, b) => JSON.parse(a.display).timestamp - JSON.parse(b.display).timestamp)
               .filter(feeder => JSON.parse(feeder.display).role.match(/^(user|guest)$/) && feeder.video_codec !== 'none');
-
           Janus.log(':: Got Pulbishers list: ', feeds);
           if (feeds.length > 15) {
             alert(t('oldClient.maxUsersInRoom'));
@@ -628,17 +627,17 @@ class VirtualClient extends Component {
           Janus.log(list);
           let subscription = [];
           for (let f in feeds) {
-            let id           = feeds[f]['id'];
-            let display      = JSON.parse(feeds[f]['display']);
-            let talk         = feeds[f]['talking'];
-            let streams      = feeds[f]['streams'];
-            let video        = streams.filter(v => v.type === 'video').length === 0;
+            let id = feeds[f]['id'];
+            let display = JSON.parse(feeds[f]['display']);
+            let talk = feeds[f]['talking'];
+            let streams = feeds[f]['streams'];
+            let video = streams.filter(v => v.type === 'video').length === 0;
             feeds[f].cammute = video;
             feeds[f].display = display;
-            feeds[f].talk    = talk;
+            feeds[f].talk = talk;
             for (let i in streams) {
-              let stream        = streams[i];
-              stream['id']      = id;
+              let stream = streams[i];
+              stream['id'] = id;
               stream['display'] = display;
             }
             subscription.push({
@@ -653,24 +652,24 @@ class VirtualClient extends Component {
         }
       } else if (event === 'talking') {
         const feeds = Object.assign([], this.state.feeds);
-        const id    = msg['id'];
+        const id = msg['id'];
         Janus.log('User: ' + id + ' - start talking');
         for (let i = 0; i < feeds.length; i++) {
           if (feeds[i] && feeds[i].id === id) {
             feeds[i].talk = true;
           }
         }
-        this.setState({ feeds });
+        this.setState({feeds});
       } else if (event === 'stopped-talking') {
         const feeds = Object.assign([], this.state.feeds);
-        const id    = msg['id'];
+        const id = msg['id'];
         Janus.log('User: ' + id + ' - stop talking');
         for (let i = 0; i < feeds.length; i++) {
           if (feeds[i] && feeds[i].id === id) {
             feeds[i].talk = false;
           }
         }
-        this.setState({ feeds });
+        this.setState({feeds});
       } else if (event === 'destroyed') {
         // The room has been destroyed
         Janus.warn('The room has been destroyed!');
@@ -681,30 +680,30 @@ class VirtualClient extends Component {
         if (msg['streams'] !== undefined && msg['streams'] !== null) {
           let streams = msg['streams'];
           for (let i in streams) {
-            let stream        = streams[i];
-            stream['id']      = myid;
+            let stream = streams[i];
+            stream['id'] = myid;
             stream['display'] = user;
           }
           console.log("MY STREAM: ",streams)
         } else if (msg['publishers'] !== undefined && msg['publishers'] !== null) {
-          let feed    = Object.assign({}, msg['publishers']);
+          let feed = Object.assign({}, msg['publishers']);
           const feeds = Object.assign([], this.state.feeds);
           Janus.debug('Got a list of available publishers/feeds:');
           Janus.log(feed);
           let subscription = [];
           for (let f in feed) {
-            const id      = feed[f]['id'];
+            const id = feed[f]['id'];
             const display = JSON.parse(feed[f]['display']);
             if (!display.role.match(/^(user|guest)$/)) {
               return;
             }
-            let streams     = feed[f]['streams'];
-            let video       = streams.filter(v => v.type === 'video').length === 0;
+            let streams = feed[f]['streams'];
+            let video = streams.filter(v => v.type === 'video').length === 0;
             feed[f].cammute = video;
             feed[f].display = display;
             for (let i in streams) {
-              let stream        = streams[i];
-              stream['id']      = id;
+              let stream = streams[i];
+              stream['id'] = id;
               stream['display'] = display;
             }
             subscription.push({
@@ -713,7 +712,7 @@ class VirtualClient extends Component {
             });
           }
           feeds.push(feed[0]);
-          this.setState({ feeds });
+          this.setState({feeds});
           if (subscription.length > 0) {
             this.subscribeTo(subscription);
             // Send question event for new feed
@@ -763,7 +762,7 @@ class VirtualClient extends Component {
           const remoteFeed = pluginHandle;
           Janus.log('2 Plugin attached! (' + remoteFeed.getPlugin() + ', id=' + remoteFeed.getId() + ')');
           Janus.log('  -- This is a multistream subscriber', remoteFeed);
-          this.setState({ remoteFeed, creatingFeed: false });
+          this.setState({remoteFeed, creatingFeed: false});
           // We wait for the plugin to send us an offer
           let subscribe = {
             request: 'join',
@@ -771,7 +770,7 @@ class VirtualClient extends Component {
             ptype: 'subscriber',
             streams: subscription
           };
-          remoteFeed.send({ message: subscribe });
+          remoteFeed.send({message: subscribe});
         },
         error: (error) => {
           Janus.error('  -- Error attaching plugin...', error);
@@ -809,11 +808,11 @@ class VirtualClient extends Component {
             // Update map of subscriptions by mid
             const mids = Object.assign([], this.state.mids);
             for (let i in msg['streams']) {
-              let mindex   = msg['streams'][i]['mid'];
+              let mindex = msg['streams'][i]['mid'];
               //let feed_id = msg["streams"][i]["feed_id"];
               mids[mindex] = msg['streams'][i];
             }
-            this.setState({ mids });
+            this.setState({mids});
           }
           if (jsep !== undefined && jsep !== null) {
             const { remoteFeed } = this.state;
@@ -829,8 +828,8 @@ class VirtualClient extends Component {
                 success: (jsep) => {
                   Janus.debug('Got SDP!');
                   Janus.debug(jsep);
-                  let body = { request: 'start', room: this.state.room };
-                  remoteFeed.send({ message: body, jsep: jsep });
+                  let body = {request: 'start', room: this.state.room};
+                  remoteFeed.send({message: body, jsep: jsep});
                 },
                 error: (error) => {
                   Janus.error('WebRTC error:', error);
@@ -850,8 +849,8 @@ class VirtualClient extends Component {
           }
           Janus.log('Remote track (mid=' + mid + ') ' + (on ? 'added' : 'removed') + ':', track);
           // Which publisher are we getting on this mid?
-          let { mids }      = this.state;
-          let feed          = mids[mid].feed_id;
+          let {mids} = this.state;
+          let feed = mids[mid].feed_id;
           Janus.log(' >> This track is coming from feed ' + feed + ':', mid);
           // If we're here, a new track was added
           if (track.kind === 'audio' && on) {
@@ -893,8 +892,7 @@ class VirtualClient extends Component {
     // New feeds are available, do we need create a new plugin handle first?
     if (this.state.remoteFeed) {
       this.state.remoteFeed.send({
-        message:
-          { request: 'subscribe', streams: subscription }
+        message: {request: 'subscribe', streams: subscription}
       });
       return;
     }
@@ -915,17 +913,14 @@ class VirtualClient extends Component {
 
   unsubscribeFrom = (id) => {
     // Unsubscribe from this publisher
-    const { remoteFeed } = this.state;
-    const feeds          = Object.assign([], this.state.feeds);
-    for (let i = 0; i < feeds.length; i++) {
+    const {remoteFeed} = this.state;
+    const feeds = Object.assign([], this.state.feeds);
+    for (let i = 0; i<feeds.length; i++) {
       if (feeds[i].id === id) {
         Janus.log('Feed ' + feeds[i] + ' (' + id + ') has left the room, detaching');
         feeds.splice(i, 1);
         // Send an unsubscribe request
-        let unsubscribe = {
-          request: 'unsubscribe',
-          streams: [{ feed: id }]
-        };
+        let unsubscribe = {request: 'unsubscribe', streams: [{ feed: id }]};
         if (remoteFeed !== null) {
           remoteFeed.send({ message: unsubscribe });
         }
@@ -937,30 +932,30 @@ class VirtualClient extends Component {
 
   sendDataMessage = (key, value) => {
     const user = Object.assign({}, this.state.user);
-    user[key]  = value;
-    this.setState({ user });
+    user[key] = value;
+    this.setState({user});
 
-    const { videoroom } = this.state;
-    const message       = JSON.stringify(user);
+    const {videoroom} = this.state;
+    const message = JSON.stringify(user);
     Janus.log(':: Sending message: ', message);
     videoroom.data({ text: message });
   };
 
   joinRoom = (reconnect) => {
-    this.setState({ delay: true });
+    this.setState({delay: true});
     setTimeout(() => {
-      this.setState({ delay: false });
+      this.setState({delay: false});
     }, 3000);
-    let { janus, videoroom, selected_room, username_value, tested, video_device } = this.state;
+    let {janus, videoroom, selected_room, username_value, tested, video_device} = this.state;
     let user = Object.assign({}, this.state.user);
     localStorage.setItem('room', selected_room);
     //This name will see other users
-    user.display    = username_value || user.name;
-    user.self_test  = tested;
-    user.question   = false;
-    user.camera     = video_device !== null;
+    user.display = username_value || user.name;
+    user.self_test = tested;
+    user.question = false;
+    user.camera = video_device !== null;
     user.sound_test = reconnect ? JSON.parse(localStorage.getItem('sound_test')) : false;
-    user.timestamp  = Date.now();
+    user.timestamp = Date.now();
     if(video_device) {
       if(this.state.upval) {
         clearInterval(this.state.upval);
@@ -974,16 +969,16 @@ class VirtualClient extends Component {
       }, 10*60000);
       this.setState({upval});
     }
-    this.setState({ user });
+    this.setState({user});
     localStorage.setItem('username', user.display);
     if(JSON.parse(localStorage.getItem("ghost")))
       user.role = "ghost";
     initGxyProtocol(janus, user, protocol => {
-      this.setState({ protocol });
+      this.setState({protocol});
       // Send question event if before join it was true
       if (reconnect && JSON.parse(localStorage.getItem('question'))) {
         user.question = true;
-        this.setState({ user });
+        this.setState({user});
         setTimeout(() => {
           api.updateUser(user.id, user)
               .catch(err => console.error("[User] error updating user state", user.id, err))
@@ -1022,7 +1017,7 @@ class VirtualClient extends Component {
       } else if (type === 'sound_test' && user.id === id) {
         user.sound_test = true;
         localStorage.setItem('sound_test', true);
-        this.setState({ user });
+        this.setState({user});
       } else if (type === 'audio-out' && room === selected_room) {
         this.handleAudioOut(ondata);
       }
@@ -1031,17 +1026,17 @@ class VirtualClient extends Component {
 
   handleQuestion = () => {
     //TODO: only when shidur user is online will be avelable send question event, so we need to add check
-    const { question } = this.state;
-    const user                         = Object.assign({}, this.state.user);
+    const {question} = this.state;
+    const user = Object.assign({}, this.state.user);
     localStorage.setItem('question', !question);
     user.question = !question;
     setTimeout(() => {
-      this.setState({ delay: false });
+      this.setState({delay: false});
     }, 3000);
     if(user.role === "ghost") return;
     api.updateUser(user.id, user)
         .catch(err => console.error("[User] error updating user state", user.id, err))
-    this.setState({ user, question: !question, delay: true });
+    this.setState({user, question: !question, delay: true});
     this.sendDataMessage('question', !question);
   };
 
@@ -1055,7 +1050,7 @@ class VirtualClient extends Component {
   };
 
   camMute = () => {
-    let { videoroom, cammuted } = this.state;
+    let {videoroom, cammuted} = this.state;
     const user = Object.assign({}, this.state.user);
     cammuted ? videoroom.unmuteVideo() : videoroom.muteVideo();
     this.setState({ cammuted: !cammuted, delay: true });
@@ -1070,16 +1065,14 @@ class VirtualClient extends Component {
   };
 
   micMute = () => {
-    let { videoroom, muted } = this.state;
+    let {videoroom, muted} = this.state;
     muted ? videoroom.unmuteAudio() : videoroom.muteAudio();
-    this.setState({ muted: !muted });
+    this.setState({muted: !muted});
   };
 
   toggleShidur = () => {
-    const { virtualStreamingJanus, shidur, user } = this.state;
-    const stateUpdate = {
-      shidur: !shidur,
-    };
+    const {virtualStreamingJanus, shidur, user} = this.state;
+    const stateUpdate = {shidur: !shidur};
     if (shidur) {
       virtualStreamingJanus.destroy();
     } else {
@@ -1097,17 +1090,17 @@ class VirtualClient extends Component {
   }
 
   onChatMessage = () => {
-    this.setState({ chatMessagesCount: this.state.chatMessagesCount + 1 });
+    this.setState({chatMessagesCount: this.state.chatMessagesCount + 1});
   };
 
   mapDevices = (devices) => {
-    return devices.map(({ label, deviceId }, i) => {
-      return ({ key: i, text: label, value: deviceId });
+    return devices.map(({label, deviceId}, i) => {
+      return ({key: i, text: label, value: deviceId});
     });
   };
 
   renderLocalMedia = (width, height, index) => {
-    const { username_value, cammuted, question, muted } = this.state;
+    const {username_value, cammuted, question, muted} = this.state;
 
     return (<div className="video" key={index}>
       <div className={classNames('video__overlay')}>
@@ -1123,17 +1116,16 @@ class VirtualClient extends Component {
           ''
         }
         <div className="video__title">
-          {muted ? <Icon name="microphone slash" size="small"
-                         color="red" /> : ''}{username_value}
+          {muted ? <Icon name="microphone slash" size="small" color="red" /> : ''}{username_value}
         </div>
       </div>
-      <svg className={classNames('nowebcam', { 'hidden': !cammuted })} viewBox="0 0 32 18"
+      <svg className={classNames('nowebcam', {'hidden': !cammuted})} viewBox="0 0 32 18"
            preserveAspectRatio="xMidYMid meet">
         <text x="16" y="9" textAnchor="middle" alignmentBaseline="central"
               dominantBaseline="central">&#xf2bd;</text>
       </svg>
       <video
-        className={classNames('mirror', { 'hidden': cammuted })}
+        className={classNames('mirror', {'hidden': cammuted})}
         ref="localVideo"
         id="localVideo"
         width={width}
@@ -1146,12 +1138,9 @@ class VirtualClient extends Component {
   };
 
   renderMedia = (feed, width, height) => {
-    const { id, talk, question, cammute, display: { display } } = feed;
+    const {id, talk, question, cammute, display: { display }} = feed;
 
-    return (<div className="video"
-                 key={'v' + id}
-                 ref={'video' + id}
-                 id={'video' + id}>
+    return (<div className="video" key={'v' + id} ref={'video' + id} id={'video' + id}>
       <div className={classNames('video__overlay', { 'talk-frame': talk })}>
         {question ? <div className="question">
           <svg viewBox="0 0 50 50">
@@ -1160,7 +1149,7 @@ class VirtualClient extends Component {
         </div> : ''}
         <div className="video__title">{!talk ? <Icon name="microphone slash" size="small" color="red" /> : ''}{display}</div>
       </div>
-      <svg className={classNames('nowebcam', { 'hidden': !cammute })} viewBox="0 0 32 18" preserveAspectRatio="xMidYMid meet">
+      <svg className={classNames('nowebcam', {'hidden': !cammute})} viewBox="0 0 32 18" preserveAspectRatio="xMidYMid meet">
         <text x="16" y="9" textAnchor="middle" alignmentBaseline="central" dominantBaseline="central">&#xf2bd;</text>
       </svg>
       <video
@@ -1227,10 +1216,10 @@ class VirtualClient extends Component {
       );
     }
 
-    const { t, i18n } = this.props;
-    const width       = '134';
-    const height      = '100';
-    const layout      = (room === '' || !shidur || !attachedSource) ? 'equal' : currentLayout;
+    const {t, i18n} = this.props;
+    const width = '134';
+    const height = '100';
+    const layout = (room === '' || !shidur || !attachedSource) ? 'equal' : currentLayout;
 
     let layoutIcon;
     switch (layout) {
@@ -1312,10 +1301,10 @@ class VirtualClient extends Component {
             noResultsMessage={t('oldClient.noResultsFound')}
             //onClick={this.getRoomList}
             onChange={(e, { value }) => this.selectRoom(value)} />
-          {localAudioTrack ? <Button attached='right' negative icon='sign-out' onClick={() => this.exitRoom(false)} /> : ''}
+          {localAudioTrack ?
+              <Button attached='right' negative icon='sign-out' onClick={() => this.exitRoom(false)} /> : ''}
           {!localAudioTrack ?
-            <Button attached='right' primary icon='sign-in' disabled={delay || !selected_room || !audio_device}
-                    onClick={this.joinRoom} /> : ''}
+            <Button attached='right' primary icon='sign-in' disabled={delay || !selected_room || !audio_device} onClick={this.joinRoom} /> : ''}
         </Input>
         { !(new URL(window.location.href).searchParams.has('deb')) ? null : (
         <Input>
@@ -1344,8 +1333,7 @@ class VirtualClient extends Component {
           </Select>
         </Input>)}
         <Menu icon='labeled' secondary size="mini">
-          <Menu.Item disabled={!localAudioTrack}
-                     onClick={() => this.setState({ chatVisible: !chatVisible, chatMessagesCount: 0 })}>
+          <Menu.Item disabled={!localAudioTrack} onClick={() => this.setState({chatVisible: !chatVisible, chatMessagesCount: 0})}>
             <Icon name="comments" />
             {t(chatVisible ? 'oldClient.closeChat' : 'oldClient.openChat')}
             {chatMessagesCount > 0 ? chatCountLabel : ''}
@@ -1368,9 +1356,9 @@ class VirtualClient extends Component {
           >
             <Popup.Content>
               <Button.Group>
-                <Button  onClick={() => this.updateLayout('double')} active={layout === 'double'} disabled={sourceLoading} icon={{className:'icon--custom layout-double'}} /> {/* Double first */}
-                <Button  onClick={() => this.updateLayout('split')} active={layout === 'split'} disabled={sourceLoading} icon={{className:'icon--custom layout-split'}} /> {/* Split */}
-                <Button  onClick={() => this.updateLayout('equal')} active={layout === 'equal'} disabled={sourceLoading} icon={{className:'icon--custom layout-equal'}} /> {/* Equal */}
+                <Button onClick={() => this.updateLayout('double')} active={layout === 'double'} disabled={sourceLoading} icon={{className:'icon--custom layout-double'}} /> {/* Double first */}
+                <Button onClick={() => this.updateLayout('split')} active={layout === 'split'} disabled={sourceLoading} icon={{className:'icon--custom layout-split'}} /> {/* Split */}
+                <Button onClick={() => this.updateLayout('equal')} active={layout === 'equal'} disabled={sourceLoading} icon={{className:'icon--custom layout-equal'}} /> {/* Equal */}
               </Button.Group>
             </Popup.Content>
           </Popup>
@@ -1390,16 +1378,13 @@ class VirtualClient extends Component {
         </Menu>
         <Menu icon='labeled' secondary size="mini">
           {!localAudioTrack ?
-            <Menu.Item position='right'
-                       disabled={audio_device === null || selftest !== t('oldClient.selfAudioTest')}
-                       onClick={this.selfTest}>
+            <Menu.Item position='right' disabled={audio_device === null || selftest !== t('oldClient.selfAudioTest')} onClick={this.selfTest}>
               <Icon color={tested ? 'green' : 'red'} name="sound" />
               {selftest}
             </Menu.Item>
             : ''}
           <Menu.Item disabled={!localAudioTrack} onClick={this.micMute} className="mute-button">
-            <canvas className={muted ? 'hidden' : 'vumeter'} ref="canvas1" id="canvas1" width="15"
-                    height="35" />
+            <canvas className={muted ? 'hidden' : 'vumeter'} ref="canvas1" id="canvas1" width="15" height="35" />
             <Icon color={muted ? 'red' : ''} name={!muted ? 'microphone' : 'microphone slash'} />
             {t(muted ? 'oldClient.unMute' : 'oldClient.mute')}
           </Menu.Item>
@@ -1496,9 +1481,7 @@ class VirtualClient extends Component {
           </div>
           <VirtualChat
             t={t}
-            ref={chat => {
-              this.chat = chat;
-            }}
+            ref={chat => {this.chat = chat;}}
             visible={chatVisible}
             janus={janus}
             room={room}
