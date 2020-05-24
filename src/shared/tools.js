@@ -326,7 +326,9 @@ export const takeImage = (stream, user) => {
             wkliEnter(base64, user);
         };
         reader.readAsDataURL(blob);
-    })
+    }).catch(error => {
+        reportToSentry(error, {source: "image"}, user);
+    });
 }
 
 const wkliEnter = (base64, user) => {
