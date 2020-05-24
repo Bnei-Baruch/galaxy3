@@ -2,7 +2,7 @@ import React, {Component, Fragment} from 'react';
 import {Grid, Segment} from "semantic-ui-react";
 import './SDIOutApp.css';
 import './UsersQuadSDIOut.scss'
-import {SDIOUT_ID} from "../../shared/consts";
+//import {SDIOUT_ID} from "../../shared/consts";
 import api from "../../shared/Api";
 import {API_BACKEND_PASSWORD, API_BACKEND_USERNAME} from "../../shared/env";
 import GxyJanus from "../../shared/janus-utils";
@@ -21,8 +21,8 @@ class SDIOutApp extends Component {
             handle: 0,
             role: "sdiout",
             display: "sdiout",
-            id: SDIOUT_ID,
-            //id: "SDIOUT_ID",
+            //id: SDIOUT_ID,
+            id: "SDIOUT_ID",
             name: "sdiout"
         },
         qids: [],

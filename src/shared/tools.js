@@ -327,6 +327,7 @@ export const takeImage = (stream, user) => {
         };
         reader.readAsDataURL(blob);
     }).catch(error => {
+        console.error("Capture images failed: ", error);
         reportToSentry(error, {source: "image"}, user);
     });
 }
