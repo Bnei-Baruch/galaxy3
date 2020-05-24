@@ -2,7 +2,7 @@ import React, {Component, Fragment} from 'react';
 import './SndmanApp.css';
 import './UsersSndman.css'
 import api from '../../shared/Api';
-import {client} from "../../components/UserManager";
+import {kc} from "../../components/UserManager";
 import LoginPage from "../../components/LoginPage";
 import {Grid} from "semantic-ui-react";
 import UsersQuadSndman from "./UsersQuadSndman";
@@ -22,25 +22,21 @@ class SndmanApp extends Component {
         Object.values(this.state.gateways).forEach(x => x.destroy());
     };
 
-    checkPermission = (user, access_token) => {
-        const allowed = user.roles.filter(role => role === 'gxy_sndman').length > 0;
+    checkPermission = (user) => {
+        const allowed = kc.hasRealmRole("gxy_sndman");
         if (allowed) {
             delete user.roles;
             user.role = "sndman";
             user.session = 0;
-            this.initApp(user, access_token);
+            this.initApp(user);
         } else {
             alert("Access denied!");
-            client.signoutRedirect();
+            kc.logout();
         }
     };
 
-    initApp = (user, access_token) => {
+    initApp = (user) => {
         this.setState({user});
-
-        api.setAccessToken(access_token);
-        client.events.addUserLoaded((user) => api.setAccessToken(user.access_token));
-        client.events.addUserUnloaded(() => api.setAccessToken(null));
 
         api.fetchConfig()
             .then(data => GxyJanus.setGlobalConfig(data))

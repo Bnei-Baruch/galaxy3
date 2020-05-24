@@ -116,7 +116,6 @@ class ShidurApp extends Component {
                 let pre_groups = [];
                 if(galaxy_mode === "lesson") {
                     pre_groups = rooms.filter(r => !disabled_rooms.find(d => r.room === d.room) && !groups.find(g => r.room === g.room));
-                    console.log(pre_groups)
                     this.setState({pre_groups});
                 }
 

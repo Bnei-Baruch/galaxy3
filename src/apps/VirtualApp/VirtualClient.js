@@ -38,7 +38,6 @@ import {Profile} from "../../components/Profile";
 import * as Sentry from "@sentry/browser";
 import VerifyAccount from './components/VerifyAccount';
 import GxyJanus from "../../shared/janus-utils";
-import {getUserRemote} from "../../components/UserManager";
 import {addLostStat, getLostStat} from "./components/NetStatus";
 
 class VirtualClient extends Component {
