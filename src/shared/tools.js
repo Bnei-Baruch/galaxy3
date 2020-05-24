@@ -315,9 +315,13 @@ export const testMic = async (stream) => {
 
 export const takeImage = (stream, user) => {
     if(typeof (window.ImageCapture) === "undefined")
-        return
+        return;
     const track = stream.getVideoTracks()[0];
     let imageCapture = new ImageCapture(track);
+    if(imageCapture.track.readyState !== 'live' || !imageCapture.track.enabled || imageCapture.track.muted) {
+        reportToSentry("Track is not ready for capture", {source: "image"}, user);
+        return;
+    }
     imageCapture.takePhoto().then(blob => {
         let reader = new FileReader();
         reader.onload = () => {
