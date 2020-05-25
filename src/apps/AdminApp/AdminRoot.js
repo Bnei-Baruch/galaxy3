@@ -231,7 +231,7 @@ class AdminRoot extends Component {
                 let mypvtid = msg["private_id"];
                 this.setState({myid, mypvtid});
                 console.log("[Admin] Successfully joined room " + msg["room"] + " with ID " + myid + " on " + gateway.name);
-                //this.publishOwnFeed(gateway);
+                this.publishOwnFeed(gateway);
                 // Any new feed to attach to?
                 if (msg["publishers"] !== undefined && msg["publishers"] !== null) {
                     let list = msg["publishers"];
@@ -550,6 +550,15 @@ class AdminRoot extends Component {
             .catch(alert);
     };
 
+    sendDataMessage = (msg) => {
+        const {gateways, feed_user, current_janus} = this.state;
+        const gateway = gateways[current_janus];
+        const cmd = {type: msg, rcmd: true, id: feed_user.id}
+        const message = JSON.stringify(cmd);
+        console.log(':: Sending message: ', message);
+        gateway.videoroom.data({ text: message });
+    };
+
     joinRoom = (data, i) => {
         console.log("[Admin] joinRoom", data, i);
         const {rooms, user, current_room} = this.state;
@@ -863,7 +872,8 @@ class AdminRoot extends Component {
                                           <Popup trigger={<Button color="brown" icon='sync alternate' alt="test" onClick={() => this.sendRemoteCommand("client-reconnect")} />} content='Reconnect' inverted />
                                           <Popup trigger={<Button color="olive" icon='redo alternate' onClick={() => this.sendRemoteCommand("client-reload")} />} content='Reload page(LOST FEED HERE!)' inverted />
                                           <Popup trigger={<Button color="teal" icon='microphone' onClick={() => this.sendRemoteCommand("client-mute")} />} content='Mic Mute/Unmute' inverted />
-                                          <Popup trigger={<Button color="pink" icon='eye' onClick={() => this.sendRemoteCommand("video-mute")} />} content='Cam Mute/Unmute' inverted />
+                                          {/*<Popup trigger={<Button color="pink" icon='eye' onClick={() => this.sendRemoteCommand("video-mute")} />} content='Cam Mute/Unmute' inverted />*/}
+                                          <Popup trigger={<Button color="pink" icon='eye' onClick={() => this.sendDataMessage("video-mute")} />} content='Cam Mute/Unmute' inverted />
                                           <Popup trigger={<Button color="blue" icon='power off' onClick={() => this.sendRemoteCommand("client-disconnect")} />} content='Disconnect(LOST FEED HERE!)' inverted />
                                           <Popup trigger={<Button color="yellow" icon='question' onClick={() => this.sendRemoteCommand("client-question")} />} content='Set/Unset question' inverted />
                                       </Segment>

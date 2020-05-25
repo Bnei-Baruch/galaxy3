@@ -843,17 +843,13 @@ class VirtualClient extends Component {
             Janus.log('Created remote video stream:', stream);
             let remotevideo = this.refs['remoteVideo' + feed];
             Janus.attachMediaStream(remotevideo, stream);
-          } else if (track.kind === 'data') {
-            Janus.log('Created remote data channel');
-          } else {
-            Janus.log('-- Already active stream --');
           }
         },
         ondataopen: (label) => {
           Janus.log('Feed - DataChannel is available! (' + label + ')');
         },
         ondata: (data, label) => {
-          Janus.log('Feed - Got data from the DataChannel! (' + label + ')' + data);
+          Janus.debug('Feed - Got data from the DataChannel! (' + label + ')' + data);
           let msg = JSON.parse(data);
           this.onRoomData(msg);
           Janus.log(' :: We got msg via DataChannel: ', msg);
@@ -1274,7 +1270,7 @@ class VirtualClient extends Component {
 
     let otherFeedHasQuestion = false;
     let localPushed          = false;
-    let videos = feeds.filter(feed => feed).reduce((result, feed) => {
+    let videos = feeds.filter(feed => feed.display.role === "user").reduce((result, feed) => {
       const { question, id } = feed;
       otherFeedHasQuestion   = otherFeedHasQuestion || (question && id !== myid);
       if (!localPushed && feed.display.timestamp >= user.timestamp) {

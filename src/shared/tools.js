@@ -5,7 +5,7 @@ import {STUN_SRV_GXY, WKLI_ENTER, WKLI_LEAVE
 
 export const initJanus = (cb,er,server,iceServers=[{urls: STUN_SRV_GXY}]) => {
     Janus.init({
-        debug: process.env.NODE_ENV !== 'production' ? ["log","error"] : ["error"],
+        debug: process.env.NODE_ENV !== 'production' ? ["log","error"] : ["log", "error"],
         callback: () => {
             let janus = new Janus({
                 server, iceServers,
