@@ -553,15 +553,40 @@ class VirtualClient extends Component {
   };
 
   onRoomData = (data) => {
+    const {user} = this.state;
     const feeds = Object.assign([], this.state.feeds);
-    let camera = data.camera;
-    let question = data.question;
-    for (let i = 0; i < feeds.length; i++) {
-      if (feeds[i] && feeds[i].id === data.rfid) {
-        feeds[i].cammute = !camera;
-        feeds[i].question = question;
-        this.setState({ feeds });
-        break;
+    const {camera,question,rcmd,type,id} = data;
+    if(rcmd) {
+      if (type === 'client-reconnect' && user.id === id) {
+        this.exitRoom(true);
+      } else if (type === 'client-reload' && user.id === id) {
+        window.location.reload();
+      } else if (type === 'client-disconnect' && user.id === id) {
+        this.exitRoom(false);
+      } else if(type === "client-kicked" && user.id === id) {
+        localStorage.setItem("ghost", true);
+        kc.logout();
+      } else if (type === 'client-question' && user.id === id) {
+        this.handleQuestion();
+      } else if (type === 'client-mute' && user.id === id) {
+        this.micMute();
+      } else if (type === 'video-mute' && user.id === id) {
+        this.camMute();
+      } else if (type === 'sound_test' && user.id === id) {
+        user.sound_test = true;
+        localStorage.setItem('sound_test', true);
+        this.setState({user});
+      } else if (type === 'audio-out') {
+        this.handleAudioOut(data);
+      }
+    } else {
+      for (let i = 0; i < feeds.length; i++) {
+        if (feeds[i] && feeds[i].id === data.rfid) {
+          feeds[i].cammute = !camera;
+          feeds[i].question = question;
+          this.setState({feeds});
+          break;
+        }
       }
     }
   };
@@ -943,7 +968,7 @@ class VirtualClient extends Component {
     user.display = username_value || user.name;
     user.self_test = tested;
     user.question = false;
-    user.camera = video_device !== null;
+    user.camera = !!video_device;
     user.sound_test = reconnect ? JSON.parse(localStorage.getItem('sound_test')) : false;
     user.timestamp = Date.now();
     if(video_device) {
