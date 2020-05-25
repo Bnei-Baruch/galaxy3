@@ -65,6 +65,12 @@ class UsersHandleSndman extends Component {
             onlocalstream: (mystream) => {
                 gateway.log(`[room ${roomid}] ::: Got a local stream :::`, mystream);
             },
+            ondataopen: (label) => {
+                Janus.log('Publisher - DataChannel is available! (' + label + ')');
+            },
+            ondata: (data, label) => {
+                Janus.log('Publisher - Got data from the DataChannel! (' + label + ')' + data);
+            },
             oncleanup: () => {
                 gateway.log(`[room ${roomid}] ::: Got a cleanup notification: we are unpublished now :::`);
             }
@@ -303,11 +309,12 @@ class UsersHandleSndman extends Component {
                         Janus.attachMediaStream(remotevideo, stream);
                     }
                 },
-                ondataopen: (data) => {
-                    gateway.debug(`[room ${roomid}] [remoteFeed] The DataChannel is available!`);
+                ondataopen: (label) => {
+                    Janus.log('Feed - DataChannel is available! (' + label + ')');
                 },
-                ondata: (data) => {
-                    gateway.debug(`[room ${roomid}] [remoteFeed] We got data from the DataChannel!`, data);
+                ondata: (data, label) => {
+                    Janus.debug('Feed - Got data from the DataChannel! (' + label + ')' + data);
+                    Janus.log(' :: We got msg via DataChannel: ');
                 },
                 oncleanup: () => {
                     gateway.debug(`[room ${roomid}] [remoteFeed] ::: Got a cleanup notification :::`);

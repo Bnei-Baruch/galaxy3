@@ -120,12 +120,20 @@ class UsersQuadSndman extends Component {
         }
     };
 
+    sendDataMessage = (room) => {
+        const cmd = {type: "audio-out", rcmd: true, status: true}
+        const message = JSON.stringify(cmd);
+        console.log(':: Sending message: ', message);
+        this["cmd"+room].state.videoroom.data({ text: message });
+    };
+
     micMute = (status, room, inst) => {
         const msg = {type: "audio-out", status, room, col: null, i: null, feed: null};
 
         const {gateways} = this.props;
         //TODO: We need send data in room channel
-        gateways[inst].sendProtocolMessage(msg);
+        //gateways[inst].sendProtocolMessage(msg);
+        this.sendDataMessage(room, status);
         gateways["gxy3"].sendServiceMessage(msg);
     };
 
@@ -141,13 +149,16 @@ class UsersQuadSndman extends Component {
           let qst = g && g.questions;
           let name = g ? g.description : "";
           //let room = groups[g] ? groups[g].room : "";
-          return (
-              <div className={fullscr && full_feed === i ? "video_full" : fullscr && full_feed !== i ? "hidden" : "usersvideo_box"}
-                   key={"pr" + i} >
-                  <div className={fullscr ? "fullscrvideo_title" : "video_title"} >{name}</div>
-                  {qst ? q : ""}
-                  <UsersHandleSndman key={"q"+i} g={g} index={i} {...this.props} />
-              </div>);
+          if(g && g.room) {
+              return (
+                  <div className={fullscr && full_feed === i ? "video_full" : fullscr && full_feed !== i ? "hidden" : "usersvideo_box"}
+                       key={"pr" + i} >
+                      <div className={fullscr ? "fullscrvideo_title" : "video_title"} >{name}</div>
+                      {qst ? q : ""}
+                      <UsersHandleSndman key={"q"+i} g={g} index={i} ref={cmd => {this["cmd"+g.room] = cmd;}} {...this.props} />
+                  </div>);
+          }
+
       });
 
       return (
@@ -164,6 +175,13 @@ class UsersQuadSndman extends Component {
                       negative={forward}
                       onKeyDown={(e) => this.onKeyPressed(e)}
                       onClick={() => this.forwardStream(full_group)}>
+                  <Icon size='large' name={forward ? 'microphone' : 'microphone slash' } />
+                  <Label attached='top left' color='grey'>{this.state.col}</Label>
+              </Button>
+              <Button className='fours_button'
+                  //disabled={!fullscr || forward_request}
+                      attached='bottom'
+                      onClick={() => this.sendDataMessage(2136)}>
                   <Icon size='large' name={forward ? 'microphone' : 'microphone slash' } />
                   <Label attached='top left' color='grey'>{this.state.col}</Label>
               </Button>
