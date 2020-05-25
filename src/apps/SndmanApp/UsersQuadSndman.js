@@ -58,7 +58,7 @@ class UsersQuadSndman extends Component {
     };
 
     forwardStream = (full_group) => {
-        const {fullscr,forward,feeds} = this.state;
+        const {fullscr,forward} = this.state;
         let {room,janus} = full_group;
         //FIXME: This is really problem place we call start forward from one place and stop from two placed
         // and we depend on callback from request and fullscreen state and feed info.
@@ -71,34 +71,36 @@ class UsersQuadSndman extends Component {
         if(forward) {
             console.info("[Sndman] Stop forward", room);
             this.setDelay();
-            feeds.forEach((feed,i) => {
-                if (feed) {
-                    // FIXME: if we change sources on client based on room id (not ip) we send message only once?
-                    this.sendMessage(feed, false);
-                }
-            });
+            // feeds.forEach((feed,i) => {
+            //     if (feed) {
+            //         // FIXME: if we change sources on client based on room id (not ip) we send message only once?
+            //         this.sendMessage(feed, false);
+            //     }
+            // });
             this.micMute(false, room, janus);
-            this.setState({feeds: [], forward: false});
+            this.setState({forward: false});
         } else if(fullscr) {
             console.info("[Sndman] Start forward", room);
             this.setDelay();
-            api.fetchRoom(room)
-                .then(data => {
-                    const {users} = data;
-                    users.forEach((user) => {
-                        // TODO (edo): why not simply send to all users ?!
-                        if (user && user.rfid) {
-                            this.sendMessage(user, true);
-                        } else {
-                            console.error("Forward failed for user: " + user + " in room: " + room, data)
-                        }
-                    });
-                    this.setState({feeds: users, forward: true});
-                    this.micMute(true, room, janus);
-                })
-                .catch(err => {
-                    console.error("[Sndman] error fetching room state", room, err);
-                });
+            this.setState({forward: true});
+            this.micMute(true, room, janus);
+            // api.fetchRoom(room)
+            //     .then(data => {
+            //         const {users} = data;
+            //         users.forEach((user) => {
+            //             // TODO (edo): why not simply send to all users ?!
+            //             if (user && user.rfid) {
+            //                 this.sendMessage(user, true);
+            //             } else {
+            //                 console.error("Forward failed for user: " + user + " in room: " + room, data)
+            //             }
+            //         });
+            //         this.setState({feeds: users, forward: true});
+            //         this.micMute(true, room, janus);
+            //     })
+            //     .catch(err => {
+            //         console.error("[Sndman] error fetching room state", room, err);
+            //     });
         }
     };
 
@@ -120,8 +122,8 @@ class UsersQuadSndman extends Component {
         }
     };
 
-    sendDataMessage = (room) => {
-        const cmd = {type: "audio-out", rcmd: true, status: true}
+    sendDataMessage = (room, status) => {
+        const cmd = {type: "audio-out", rcmd: true, status}
         const message = JSON.stringify(cmd);
         console.log(':: Sending message: ', message);
         this["cmd"+room].state.videoroom.data({ text: message });
@@ -175,13 +177,6 @@ class UsersQuadSndman extends Component {
                       negative={forward}
                       onKeyDown={(e) => this.onKeyPressed(e)}
                       onClick={() => this.forwardStream(full_group)}>
-                  <Icon size='large' name={forward ? 'microphone' : 'microphone slash' } />
-                  <Label attached='top left' color='grey'>{this.state.col}</Label>
-              </Button>
-              <Button className='fours_button'
-                  //disabled={!fullscr || forward_request}
-                      attached='bottom'
-                      onClick={() => this.sendDataMessage(2136)}>
                   <Icon size='large' name={forward ? 'microphone' : 'microphone slash' } />
                   <Label attached='top left' color='grey'>{this.state.col}</Label>
               </Button>
