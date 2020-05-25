@@ -262,7 +262,7 @@ class VirtualClient extends Component {
           //Try to get audio fail reason
           //testDevices(false, true, this.state.user, steam => {});
           Janus.log(' :: Trying to get video only');
-          this.initDevices(false, true);
+          this.initDevices(false, false);
       } else {
         alert(t('oldClient.noInputDevices'));
         this.setState({cammuted: true, video_device: null, audio_device: null});
@@ -844,10 +844,10 @@ class VirtualClient extends Component {
     for (let f in feeds) {
       let feed = feeds[f];
       let {id,streams} = feed;
-      feed.cammute = false;
       feed.video = !!streams.find(v => v.type === 'video' && v.codec === "h264");
       feed.audio = !!streams.find(a => a.type === 'audio' && a.codec === "opus");
       feed.data = !!streams.find(d => d.type === 'data');
+      feed.cammute = !feed.video;
       for (let i in streams) {
         let stream = streams[i];
         const video = stream.type === "video" && stream.codec === "h264";
@@ -1195,6 +1195,7 @@ class VirtualClient extends Component {
       virtualStreamingJanus,
       appInitError,
       net_status,
+      remoteFeed,
     } = this.state;
 
     if (appInitError) {
@@ -1291,9 +1292,9 @@ class VirtualClient extends Component {
             noResultsMessage={t('oldClient.noResultsFound')}
             //onClick={this.getRoomList}
             onChange={(e, { value }) => this.selectRoom(value)} />
-          {localAudioTrack ?
+          {remoteFeed ?
               <Button attached='right' negative icon='sign-out' onClick={() => this.exitRoom(false)} /> : ''}
-          {!localAudioTrack ?
+          {!remoteFeed ?
             <Button attached='right' primary icon='sign-in' disabled={delay || !selected_room} onClick={this.joinRoom} /> : ''}
         </Input>
         { !(new URL(window.location.href).searchParams.has('deb')) ? null : (
