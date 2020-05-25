@@ -13,6 +13,7 @@ import RoomManager from "./components/RoomManager";
 import MonitoringAdmin from "./components/MonitoringAdmin";
 import MonitoringUser from "./components/MonitoringUser";
 import api from "../../shared/Api";
+import {reportToSentry} from "../../shared/tools";
 
 class AdminRoot extends Component {
 
@@ -205,6 +206,22 @@ class AdminRoot extends Component {
         });
     };
 
+    publishOwnFeed = (gateway) => {
+        gateway.videoroom.createOffer({
+            media: {audio: false, video: false, data: true},
+            simulcast: false,
+            success: (jsep) => {
+                Janus.debug('Got publisher SDP!');
+                Janus.debug(jsep);
+                let publish = { request: 'configure', audio: false, video: false, data: true };
+                gateway.videoroom.send({ 'message': publish, 'jsep': jsep });
+            },
+            error: (error) => {
+                Janus.error('WebRTC error:', error);
+            }
+        });
+    };
+
     onVideoroomMessage = (gateway, msg, jsep) => {
         const event = msg["videoroom"];
         if (event !== undefined && event !== null) {
@@ -214,7 +231,7 @@ class AdminRoot extends Component {
                 let mypvtid = msg["private_id"];
                 this.setState({myid, mypvtid});
                 console.log("[Admin] Successfully joined room " + msg["room"] + " with ID " + myid + " on " + gateway.name);
-
+                //this.publishOwnFeed(gateway);
                 // Any new feed to attach to?
                 if (msg["publishers"] !== undefined && msg["publishers"] !== null) {
                     let list = msg["publishers"];

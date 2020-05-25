@@ -117,7 +117,7 @@ class VirtualClient extends Component {
   }
 
   componentDidMount() {
-    Sentry.init({dsn: `https://${SENTRY_KEY}@sentry.kli.one/2`});
+    //Sentry.init({dsn: `https://${SENTRY_KEY}@sentry.kli.one/2`});
     if (isMobile) {
       window.location = '/userm';
     }
@@ -617,7 +617,7 @@ class VirtualClient extends Component {
           let list = Object.assign([], msg['publishers']);
           //FIXME:  Tmp fix for black screen in room caoused by feed with video_codec = none
           let feeds = list.sort((a, b) => JSON.parse(a.display).timestamp - JSON.parse(b.display).timestamp)
-              .filter(feeder => JSON.parse(feeder.display).role.match(/^(user|guest)$/) && feeder.video_codec !== 'none');
+              .filter(feeder => !JSON.parse(feeder.display).role.match(/^(ghost)$/) && feeder.video_codec !== 'none');
           Janus.log(':: Got Pulbishers list: ', feeds);
           if (feeds.length > 15) {
             alert(t('oldClient.maxUsersInRoom'));
@@ -694,7 +694,7 @@ class VirtualClient extends Component {
           for (let f in feed) {
             const id = feed[f]['id'];
             const display = JSON.parse(feed[f]['display']);
-            if (!display.role.match(/^(user|guest)$/)) {
+            if (!display.role.match(/^(ghost)$/)) {
               return;
             }
             let streams = feed[f]['streams'];

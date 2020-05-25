@@ -85,6 +85,22 @@ class UsersHandleSndman extends Component {
         }
     };
 
+    publishOwnFeed = () => {
+        this.state.videoroom.createOffer({
+            media: {audio: false, video: false, data: true},
+            simulcast: false,
+            success: (jsep) => {
+                Janus.debug('Got publisher SDP!');
+                Janus.debug(jsep);
+                let publish = { request: 'configure', audio: false, video: false, data: true };
+                this.state.videoroom.send({ 'message': publish, 'jsep': jsep });
+            },
+            error: (error) => {
+                Janus.error('WebRTC error:', error);
+            }
+        });
+    };
+
     onMessage = (gateway, roomid, msg, jsep) => {
         gateway.debug(`[room ${roomid}] ::: Got a message (publisher) :::`, msg);
         let event = msg["videoroom"];
@@ -94,6 +110,7 @@ class UsersHandleSndman extends Component {
                 let mypvtid = msg["private_id"];
                 this.setState({myid, mypvtid});
                 console.debug(`[Sndman] [room ${roomid}] Successfully joined room`, myid);
+                this.publishOwnFeed();
                 if (msg["publishers"] !== undefined && msg["publishers"] !== null) {
                     let list = msg["publishers"];
                     //FIXME: Tmp fix for black screen in room caoused by feed with video_codec = none
