@@ -225,9 +225,10 @@ class VirtualClient extends Component {
     this.state.virtualStreamingJanus.init(ip, country);
   };
 
-  initDevices = (video) => {
+  initDevices = (audio, video) => {
     const {t} = this.props;
     Janus.listDevices(devices => {
+      console.log("Got devices: ", devices)
       if (devices.length > 0) {
         let audio_devices = devices.filter(device => device.kind === 'audioinput');
         let video_devices = video ? devices.filter(device => device.kind === 'videoinput') : [];
@@ -243,24 +244,30 @@ class VirtualClient extends Component {
         Janus.log(' :: Got Audio devices: ', audio_devices);
         this.setState({video_devices, audio_devices});
         this.setDevice(video_id, audio_id, video_setting);
-      } else if (video) {
+      } else if (video && audio) {
+        // Right now if we get some problem with video device the - enumerateDevices()
+        // back empty array, so we need to call this once more with video/audio: true/false
+        // to get single device only
+        this.initDevices(false, true);
+      } else if (video && !audio) {
         alert(t('oldClient.videoNotDetected'));
         this.setState({cammuted: true, video_device: null});
         //Try to get video fail reason
-        testDevices(true, false, this.state.user, steam => {});
-        // Right now if we get some problem with video device the - enumerateDevices()
-        // back empty array, so we need to call this once more with video:false
-        // to get audio device only
+        //testDevices(true, false, this.state.user, steam => {});
         Janus.log(' :: Trying to get audio only');
-        this.initDevices(false);
+        this.initDevices(true, false);
+      } else if (!video && audio) {
+          alert('audio device not detected');
+          this.setState({audio_device: null});
+          //Try to get audio fail reason
+          //testDevices(false, true, this.state.user, steam => {});
+          Janus.log(' :: Trying to get video only');
+          this.initDevices(false, true);
       } else {
-        //Try to get audio fail reason
-        testDevices(false, true, this.state.user, steam => {});
         alert(t('oldClient.noInputDevices'));
-        //FIXME: What we going to do in this case?
-        this.setState({audio_device: null});
+        this.setState({cammuted: true, video_device: null, audio_device: null});
       }
-    }, {audio: true, video: video});
+    }, {audio, video});
   };
 
   setDevice = (video_device, audio_device, video_setting) => {
@@ -281,9 +288,11 @@ class VirtualClient extends Component {
           if (this.state.audioContext) {
             this.state.audioContext.close();
           }
-          micLevel(stream, this.refs.canvas1, audioContext => {
-            this.setState({ audioContext, stream });
-          });
+          if(audio_device) {
+            micLevel(stream, this.refs.canvas1, audioContext => {
+              this.setState({ audioContext, stream });
+            });
+          }
         });
       }
     }
@@ -476,7 +485,7 @@ class VirtualClient extends Component {
           protocol: null,
           delay: false,
         });
-        this.initDevices(true);
+        this.initDevices(true,true);
         if (reconnect) {
           setTimeout(() => {
             this.joinRoom(reconnect);
@@ -557,30 +566,20 @@ class VirtualClient extends Component {
     }
   };
 
-  publishOwnFeed = (useVideo) => {
+  publishOwnFeed = (useVideo, useAudio) => {
     let {videoroom, audio_device, video_device, video_setting} = this.state;
     const width = video_setting.width;
     const height = video_setting.height;
     const ideal = video_setting.fps;
+    const video = useVideo ? {width, height, frameRate: {ideal, min: 1}, deviceId: {exact: video_device}} : '';
+    const audio = useAudio ? {deviceId: {exact: audio_device}} : '';
     videoroom.createOffer({
-      media: {
-        audioRecv: false, videoRecv: false, audioSend: true, videoSend: useVideo,
-        audio: {
-          //autoGainControl: false, echoCancellation: false, highpassFilter: false, noiseSuppression: false,
-          deviceId: { exact: audio_device }
-        },
-        video: {
-          width, height,
-          frameRate: { ideal, min: 1 },
-          deviceId: { exact: video_device }
-        },
-        data: true
-      },
+      media: {audioRecv: false, videoRecv: false, audioSend: useAudio, videoSend: useVideo, audio, video, data: true},
       simulcast: false,
       success: (jsep) => {
         Janus.debug('Got publisher SDP!');
         Janus.debug(jsep);
-        let publish = { request: 'configure', audio: true, video: useVideo, data: true };
+        let publish = { request: 'configure', audio: useAudio, video: useVideo, data: true };
         videoroom.send({ 'message': publish, 'jsep': jsep });
       },
       error: (error) => {
@@ -602,7 +601,7 @@ class VirtualClient extends Component {
     let event = msg['videoroom'];
     if (event !== undefined && event !== null) {
       if (event === 'joined') {
-        let {video_device} = this.state;
+        let {video_device,audio_device} = this.state;
         const user = Object.assign({}, this.state.user);
         let myid = msg['id'];
         let mypvtid = msg['private_id'];
@@ -611,7 +610,7 @@ class VirtualClient extends Component {
         Janus.log('Successfully joined room ' + msg['room'] + ' with ID ' + myid);
         api.updateUser(user.id, user)
             .catch(err => console.error("[User] error updating user state", user.id, err))
-        this.publishOwnFeed(video_device !== null);
+        this.publishOwnFeed(video_device !== null, audio_device !== null);
 
         // Any new feed to attach to?
         if (msg['publishers'] !== undefined && msg['publishers'] !== null) {
@@ -1284,7 +1283,7 @@ class VirtualClient extends Component {
           <Select
             className = "room-selection"
             search
-            disabled={audio_device === null || !!localAudioTrack}
+            //disabled={audio_device === null || !!localAudioTrack}
             error={!selected_room}
             placeholder={t('oldClient.selectRoom')}
             value={selected_room}
@@ -1295,7 +1294,7 @@ class VirtualClient extends Component {
           {localAudioTrack ?
               <Button attached='right' negative icon='sign-out' onClick={() => this.exitRoom(false)} /> : ''}
           {!localAudioTrack ?
-            <Button attached='right' primary icon='sign-in' disabled={delay || !selected_room || !audio_device} onClick={this.joinRoom} /> : ''}
+            <Button attached='right' primary icon='sign-in' disabled={delay || !selected_room} onClick={this.joinRoom} /> : ''}
         </Input>
         { !(new URL(window.location.href).searchParams.has('deb')) ? null : (
         <Input>
@@ -1330,7 +1329,7 @@ class VirtualClient extends Component {
             {chatMessagesCount > 0 ? chatCountLabel : ''}
           </Menu.Item>
           <Menu.Item
-            disabled={video_device === null || !geoinfo || !localAudioTrack || delay || otherFeedHasQuestion}
+            disabled={audio_device === null || !geoinfo || !localAudioTrack || delay || otherFeedHasQuestion}
             onClick={this.handleQuestion}>
             <Icon {...(question ? {color: 'green'} : {})} name='question' />
             {t('oldClient.askQuestion')}
