@@ -568,13 +568,18 @@ class VirtualClient extends Component {
 
   publishOwnFeed = (useVideo, useAudio) => {
     let {videoroom, audio_device, video_device, video_setting} = this.state;
-    const width = video_setting.width;
-    const height = video_setting.height;
-    const ideal = video_setting.fps;
-    const video = useVideo ? {width, height, frameRate: {ideal, min: 1}, deviceId: {exact: video_device}} : '';
-    const audio = useAudio ? {deviceId: {exact: audio_device}} : '';
+    let offer = {audioRecv: false, videoRecv: false, audioSend: useAudio, videoSend: useVideo, data: true};
+    if(useVideo) {
+      const width = video_setting.width;
+      const height = video_setting.height;
+      const ideal = video_setting.fps;
+      offer.video = {width, height, frameRate: {ideal, min: 1}, deviceId: {exact: video_device}};
+    }
+    if(useAudio) {
+      offer.audio = {deviceId: {exact: audio_device}};
+    }
     videoroom.createOffer({
-      media: {audioRecv: false, videoRecv: false, audioSend: useAudio, videoSend: useVideo, audio, video, data: true},
+      media: offer,
       simulcast: false,
       success: (jsep) => {
         Janus.debug('Got publisher SDP!');
@@ -584,12 +589,7 @@ class VirtualClient extends Component {
       },
       error: (error) => {
         Janus.error('WebRTC error:', error);
-        if (useVideo) {
-          this.publishOwnFeed(false);
-        } else {
-          Janus.error('WebRTC error... ' + JSON.stringify(error));
-          reportToSentry(JSON.stringify(error),{source: "webrtc"}, this.state.user);
-        }
+        reportToSentry(JSON.stringify(error),{source: "webrtc"}, this.state.user);
       }
     });
   };
@@ -610,7 +610,7 @@ class VirtualClient extends Component {
         Janus.log('Successfully joined room ' + msg['room'] + ' with ID ' + myid);
         api.updateUser(user.id, user)
             .catch(err => console.error("[User] error updating user state", user.id, err))
-        this.publishOwnFeed(video_device !== null, audio_device !== null);
+        this.publishOwnFeed(!!video_device, !!audio_device);
 
         // Any new feed to attach to?
         if (msg['publishers'] !== undefined && msg['publishers'] !== null) {
@@ -1175,6 +1175,7 @@ class VirtualClient extends Component {
       feeds,
       geoinfo,
       janus,
+      localVideoTrack,
       localAudioTrack,
       monitoringData,
       muted,
@@ -1330,7 +1331,7 @@ class VirtualClient extends Component {
             {chatMessagesCount > 0 ? chatCountLabel : ''}
           </Menu.Item>
           <Menu.Item
-            disabled={audio_device === null || !geoinfo || !localAudioTrack || delay || otherFeedHasQuestion}
+            disabled={!audio_device || !geoinfo || !localAudioTrack || delay || otherFeedHasQuestion}
             onClick={this.handleQuestion}>
             <Icon {...(question ? {color: 'green'} : {})} name='question' />
             {t('oldClient.askQuestion')}
@@ -1369,7 +1370,7 @@ class VirtualClient extends Component {
         </Menu>
         <Menu icon='labeled' secondary size="mini">
           {!localAudioTrack ?
-            <Menu.Item position='right' disabled={audio_device === null || selftest !== t('oldClient.selfAudioTest')} onClick={this.selfTest}>
+            <Menu.Item position='right' disabled={!localAudioTrack || selftest !== t('oldClient.selfAudioTest')} onClick={this.selfTest}>
               <Icon color={tested ? 'green' : 'red'} name="sound" />
               {selftest}
             </Menu.Item>
@@ -1379,7 +1380,7 @@ class VirtualClient extends Component {
             <Icon color={muted ? 'red' : ''} name={!muted ? 'microphone' : 'microphone slash'} />
             {t(muted ? 'oldClient.unMute' : 'oldClient.mute')}
           </Menu.Item>
-          <Menu.Item disabled={video_device === null || !localAudioTrack || delay} onClick={this.camMute}>
+          <Menu.Item disabled={video_device === null || !localVideoTrack || delay} onClick={this.camMute}>
             <Icon color={cammuted ? 'red' : ''} name={!cammuted ? 'eye' : 'eye slash'} />
             {t(cammuted ? 'oldClient.startVideo' : 'oldClient.stopVideo')}
           </Menu.Item>
@@ -1404,21 +1405,21 @@ class VirtualClient extends Component {
                 <Profile title={user && user.username} kc={kc} />
               </Button>
               <Select className='select_device'
-                      disabled={!!localAudioTrack}
+                      disabled={!!remoteFeed}
                       error={!audio_device}
                       placeholder={t('oldClient.selectDevice')}
                       value={audio_device}
                       options={adevices_list}
                       onChange={(e, { value }) => this.setDevice(video_device, value, video_setting)} />
               <Select className='select_device'
-                      disabled={!!localAudioTrack}
+                      disabled={!!remoteFeed}
                       error={!video_device}
                       placeholder={t('oldClient.selectDevice')}
                       value={video_device}
                       options={vdevices_list}
                       onChange={(e, { value }) => this.setDevice(value, audio_device, video_setting)} />
               <Select className='select_device'
-                      disabled={!!localAudioTrack}
+                      disabled={!!remoteFeed}
                       error={!video_device}
                       placeholder={t('oldClient.videoSettings')}
                       value={video_setting}
