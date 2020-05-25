@@ -602,7 +602,7 @@ class VirtualClient extends Component {
     let event = msg['videoroom'];
     if (event !== undefined && event !== null) {
       if (event === 'joined') {
-        let { video_device } = this.state;
+        let {video_device} = this.state;
         const user = Object.assign({}, this.state.user);
         let myid = msg['id'];
         let mypvtid = msg['private_id'];
@@ -612,43 +612,24 @@ class VirtualClient extends Component {
         api.updateUser(user.id, user)
             .catch(err => console.error("[User] error updating user state", user.id, err))
         this.publishOwnFeed(video_device !== null);
+
         // Any new feed to attach to?
         if (msg['publishers'] !== undefined && msg['publishers'] !== null) {
-          let list = Object.assign([], msg['publishers']);
-          //FIXME:  Tmp fix for black screen in room caoused by feed with video_codec = none
-          let feeds = list.sort((a, b) => JSON.parse(a.display).timestamp - JSON.parse(b.display).timestamp)
-              .filter(feeder => !JSON.parse(feeder.display).role.match(/^(ghost)$/) && feeder.video_codec !== 'none');
+          //FIXME: display property is JSON write now, let parse it in one place
+          let list = msg['publishers'].filter(l => l.display = (JSON.parse(l.display)));
+          let feeds = list.sort((a, b) => a.display.timestamp - b.display.timestamp).filter(f => !f.display.role.match(/^(ghost|guest)$/));
           Janus.log(':: Got Pulbishers list: ', feeds);
-          if (feeds.length > 15) {
+
+          // Feeds count with user role
+          let feeds_count = feeds.filter(f => f.display.role === "user").length;
+          if (feeds_count > 15) {
             alert(t('oldClient.maxUsersInRoom'));
-            window.location.reload();
+            this.exitRoom(false);
           }
+
           Janus.debug('Got a list of available publishers/feeds:');
           Janus.log(list);
-          let subscription = [];
-          for (let f in feeds) {
-            let id = feeds[f]['id'];
-            let display = JSON.parse(feeds[f]['display']);
-            let talk = feeds[f]['talking'];
-            let streams = feeds[f]['streams'];
-            let video = streams.filter(v => v.type === 'video').length === 0;
-            feeds[f].cammute = video;
-            feeds[f].display = display;
-            feeds[f].talk = talk;
-            for (let i in streams) {
-              let stream = streams[i];
-              stream['id'] = id;
-              stream['display'] = display;
-            }
-            subscription.push({
-              feed: id,  // This is mandatory
-              //mid: stream.mid    // This is optional (all streams, if missing)
-            });
-          }
-          this.setState({feeds});
-          if (subscription.length > 0) {
-            this.subscribeTo(subscription);
-          }
+          this.makeSubscription(feeds, false);
         }
       } else if (event === 'talking') {
         const feeds = Object.assign([], this.state.feeds);
@@ -656,7 +637,7 @@ class VirtualClient extends Component {
         Janus.log('User: ' + id + ' - start talking');
         for (let i = 0; i < feeds.length; i++) {
           if (feeds[i] && feeds[i].id === id) {
-            feeds[i].talk = true;
+            feeds[i].talking = true;
           }
         }
         this.setState({feeds});
@@ -666,7 +647,7 @@ class VirtualClient extends Component {
         Janus.log('User: ' + id + ' - stop talking');
         for (let i = 0; i < feeds.length; i++) {
           if (feeds[i] && feeds[i].id === id) {
-            feeds[i].talk = false;
+            feeds[i].talking = false;
           }
         }
         this.setState({feeds});
@@ -684,44 +665,15 @@ class VirtualClient extends Component {
             stream['id'] = myid;
             stream['display'] = user;
           }
-          console.log("MY STREAM: ",streams)
+          //console.log("MY STREAM: ",streams)
         } else if (msg['publishers'] !== undefined && msg['publishers'] !== null) {
-          let feed = Object.assign({}, msg['publishers']);
-          const feeds = Object.assign([], this.state.feeds);
-          Janus.debug('Got a list of available publishers/feeds:');
-          Janus.log(feed);
-          let subscription = [];
-          for (let f in feed) {
-            const id = feed[f]['id'];
-            const display = JSON.parse(feed[f]['display']);
-            if (!display.role.match(/^(ghost)$/)) {
-              return;
-            }
-            let streams = feed[f]['streams'];
-            let video = streams.filter(v => v.type === 'video').length === 0;
-            feed[f].cammute = video;
-            feed[f].display = display;
-            for (let i in streams) {
-              let stream = streams[i];
-              stream['id'] = id;
-              stream['display'] = display;
-            }
-            subscription.push({
-              feed: id,  // This is mandatory
-              //mid: stream.mid    // This is optional (all streams, if missing)
-            });
-          }
-          feeds.push(feed[0]);
-          this.setState({feeds});
-          if (subscription.length > 0) {
-            this.subscribeTo(subscription);
-            // Send question event for new feed
-            setTimeout(() => {
-              if (this.state.question) {
-                this.sendDataMessage('question', true);
-              }
-            }, 3000);
-          }
+          let feeds = msg['publishers'].filter(l => l.display = (JSON.parse(l.display)));
+
+          Janus.debug('New list of available publishers/feeds:');
+          Janus.debug(feeds);
+
+          this.makeSubscription(feeds, true);
+
         } else if (msg['leaving'] !== undefined && msg['leaving'] !== null) {
           // One of the publishers has gone away?
           const leaving = msg['leaving'];
@@ -887,6 +839,45 @@ class VirtualClient extends Component {
         }
       });
   };
+
+  makeSubscription = (feeds, new_feed) => {
+    let subscription = [];
+    for (let f in feeds) {
+      let feed = feeds[f];
+      let {id,streams} = feed;
+      feed.cammute = false;
+      feed.video = !!streams.find(v => v.type === 'video' && v.codec === "h264");
+      feed.audio = !!streams.find(a => a.type === 'audio' && a.codec === "opus");
+      feed.data = !!streams.find(d => d.type === 'data');
+      for (let i in streams) {
+        let stream = streams[i];
+        const video = stream.type === "video" && stream.codec === "h264";
+        const audio = stream.type === "audio" && stream.codec === "opus";
+        const data = stream.type === "data";
+        if (video) {
+          subscription.push({feed: id, mid: stream.mid});
+        }
+        if (audio) {
+          subscription.push({feed: id, mid: stream.mid});
+        }
+        if (data) {
+          subscription.push({feed: id, mid: stream.mid});
+        }
+      }
+    }
+    this.setState({feeds:[...this.state.feeds,...feeds]});
+    if (subscription.length > 0) {
+      this.subscribeTo(subscription);
+      if(new_feed) {
+        // Send question event for new feed
+        setTimeout(() => {
+          if (this.state.question) {
+            this.sendDataMessage('question', true);
+          }
+        }, 3000);
+      }
+    }
+  }
 
   subscribeTo = (subscription) => {
     // New feeds are available, do we need create a new plugin handle first?
@@ -1138,16 +1129,16 @@ class VirtualClient extends Component {
   };
 
   renderMedia = (feed, width, height) => {
-    const {id, talk, question, cammute, display: { display }} = feed;
+    const {id, talking, question, cammute, display: { display }} = feed;
 
     return (<div className="video" key={'v' + id} ref={'video' + id} id={'video' + id}>
-      <div className={classNames('video__overlay', { 'talk-frame': talk })}>
+      <div className={classNames('video__overlay', { 'talk-frame': talking })}>
         {question ? <div className="question">
           <svg viewBox="0 0 50 50">
             <text x="25" y="25" textAnchor="middle" alignmentBaseline="central" dominantBaseline="central">&#xF128;</text>
           </svg>
         </div> : ''}
-        <div className="video__title">{!talk ? <Icon name="microphone slash" size="small" color="red" /> : ''}{display}</div>
+        <div className="video__title">{!talking ? <Icon name="microphone slash" size="small" color="red" /> : ''}{display}</div>
       </div>
       <svg className={classNames('nowebcam', {'hidden': !cammute})} viewBox="0 0 32 18" preserveAspectRatio="xMidYMid meet">
         <text x="16" y="9" textAnchor="middle" alignmentBaseline="central" dominantBaseline="central">&#xf2bd;</text>
