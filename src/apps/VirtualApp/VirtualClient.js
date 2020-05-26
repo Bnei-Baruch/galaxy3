@@ -1326,6 +1326,15 @@ class VirtualClient extends Component {
             { value: '15', text: '15' },
             { value: '16', text: '16' },
             { value: '17', text: '17' },
+            { value: '18', text: '18' },
+            { value: '19', text: '19' },
+            { value: '20', text: '20' },
+            { value: '21', text: '21' },
+            { value: '22', text: '22' },
+            { value: '23', text: '23' },
+            { value: '24', text: '24' },
+            { value: '25', text: '25' },
+            
           ]} value={numberOfVirtualUsers} onChange={(e, { value }) => {
             this.setState({ numberOfVirtualUsers: value });
             localStorage.setItem('number_of_virtual_users', value);
