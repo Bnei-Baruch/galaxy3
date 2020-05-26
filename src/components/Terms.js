@@ -1,5 +1,6 @@
 import React, {
   useState,
+  useEffect,
 } from 'react';
 import {
   Button,
@@ -14,6 +15,15 @@ export const Terms = (props) => {
   const direction = i18n.language === 'he' ? 'rtl' : '';
   const textAlign = i18n.language === 'he' ? 'right' : '';
   const textAlignReverse = i18n.language === 'he' ? 'left' : '';
+  
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    if (url.searchParams.has('terms')) {
+      setOpen(true);
+      url.searchParams.delete('terms');
+      window.history.pushState({}, document.title, url.href);
+    }
+  });
 
   const terms = {
     'en': '2PACX-1vRGxXGLrshOu57ifcb2bgCOnIhsgZAAnb_zXjiweD6XEre_s-hK7fa0Flx_FxUBsFK7unny6-1LNtH6',

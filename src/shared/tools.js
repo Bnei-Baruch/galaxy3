@@ -1,15 +1,14 @@
 import {Janus} from "../lib/janus";
 import * as Sentry from '@sentry/browser';
-import {JANUS_SRV_GXY1, JANUS_SRV_GXY2, JANUS_SRV_GXY3, STUN_SRV_GXY, WKLI_ENTER, WKLI_LEAVE
+import {STUN_SRV_GXY, WKLI_ENTER, WKLI_LEAVE
 } from "./env";
 
-export const initJanus = (cb,er,gxy,iceServers=[{urls: STUN_SRV_GXY}]) => {
+export const initJanus = (cb,er,server,iceServers=[{urls: STUN_SRV_GXY}]) => {
     Janus.init({
         debug: process.env.NODE_ENV !== 'production' ? ["log","error"] : ["error"],
         callback: () => {
             let janus = new Janus({
-                server: gxy === "gxy1" ? JANUS_SRV_GXY1 : gxy === "gxy2" ? JANUS_SRV_GXY2 : gxy === "gxy3" ? JANUS_SRV_GXY3: gxy,
-                iceServers,
+                server, iceServers,
                 success: () => {
                     Janus.log(" :: Connected to JANUS");
                     cb(janus);
@@ -316,10 +315,15 @@ export const testMic = async (stream) => {
 
 export const takeImage = (stream, user) => {
     if(typeof (window.ImageCapture) === "undefined")
-        return
+        return;
     const track = stream.getVideoTracks()[0];
     let imageCapture = new ImageCapture(track);
-    imageCapture.takePhoto().then(blob => {
+    if(imageCapture.track.readyState !== 'live' || !imageCapture.track.enabled || imageCapture.track.muted) {
+        reportToSentry("Track is not ready for capture", {source: "image"}, user);
+        return;
+    }
+    const photoSettings = {imageWidth: 640, imageHeight: 480};
+    imageCapture.takePhoto(photoSettings).then(blob => {
         let reader = new FileReader();
         reader.onload = () => {
             let dataUrl = reader.result;
@@ -327,7 +331,10 @@ export const takeImage = (stream, user) => {
             wkliEnter(base64, user);
         };
         reader.readAsDataURL(blob);
-    })
+    }).catch(error => {
+        console.error("Capture images failed: ", error);
+        reportToSentry(error, {source: "image"}, user);
+    });
 }
 
 const wkliEnter = (base64, user) => {

@@ -1,11 +1,11 @@
 import React, {Component, Fragment} from 'react';
 import {Janus} from "../../lib/janus";
-import {Button, Grid, Icon, List, Menu, Popup, Segment, Tab, Table,} from "semantic-ui-react";
+import {Button, Grid, Icon, List, Menu, Popup, Segment, Tab, Table, Label} from "semantic-ui-react";
 import './AdminRoot.css';
 import './AdminRootVideo.scss'
 import classNames from "classnames";
 import platform from "platform";
-import {client} from "../../components/UserManager";
+import {kc} from "../../components/UserManager";
 import LoginPage from "../../components/LoginPage";
 import GxyJanus from "../../shared/janus-utils";
 import ChatBox from "./components/ChatBox";
@@ -21,6 +21,7 @@ class AdminRoot extends Component {
         audio: null,
         chatRoomsInitialized: false,
         current_room: "",
+        current_janus: "",
         feedStreams: {},
         feed_id: null,
         feed_info: null,
@@ -41,6 +42,10 @@ class AdminRoot extends Component {
         usersTabs: [],
         appInitError: null,
         users_count: 0,
+        gxy1_count: 0,
+        gxy2_count: 0,
+        gxy3_count: 0,
+        gxy4_count: 0,
     };
 
     componentWillUnmount() {
@@ -81,7 +86,7 @@ class AdminRoot extends Component {
             this.initApp(user);
         } else {
             alert("Access denied!");
-            client.signoutRedirect();
+            kc.logout();
         }
     };
 
@@ -109,10 +114,6 @@ class AdminRoot extends Component {
     initApp = (user) => {
         this.setState({user});
 
-        api.setAccessToken(user.access_token);
-        client.events.addUserLoaded((user) => api.setAccessToken(user.access_token));
-        client.events.addUserUnloaded(() => api.setAccessToken(null));
-
         api.fetchConfig()
             .then(data => GxyJanus.setGlobalConfig(data))
             .then(() => this.initGateways(user))
@@ -129,20 +130,41 @@ class AdminRoot extends Component {
 
         return Promise.all(Object.values(gateways).map(gateway => (this.initGateway(user, gateway))))
             .then(() => {
-                console.log("[Admin] gateways initialization complete");
+                console.info("[Admin] gateways initialization complete");
                 this.setState({gatewaysInitialized: true});
             });
     };
 
     initGateway = (user, gateway) => {
-        console.log("[Admin] initializing gateway", gateway.name);
+        console.info("[Admin] initializing gateway", gateway.name);
+
+        gateway.addEventListener("reinit", () => {
+                this.postInitGateway(user, gateway)
+                    .catch(err => {
+                        console.error("[Admin] postInitGateway error after reinit. Reloading", gateway.name, err);
+                        window.location.reload();
+                    });
+            }
+        );
+
+        gateway.addEventListener("reinit_failure", (e) => {
+            if (e.detail > 10) {
+                console.error("[Admin] too many reinit_failure. Reloading", gateway.name, e);
+                window.location.reload();
+            }
+        });
 
         return gateway.init()
-            .then(() => {
-                if (this.isAllowed("admin")) {
-                    return gateway.initGxyProtocol(user, data => this.onProtocolData(gateway, data))
-                }
-            });
+            .then(() => this.postInitGateway(user, gateway));
+    }
+
+    postInitGateway = (user, gateway) => {
+        console.info("[Admin] gateway post initialization", gateway.name);
+        if (this.isAllowed("admin")) {
+            return gateway.initGxyProtocol(user, data => this.onProtocolData(gateway, data))
+        } else {
+            return Promise.resolve();
+        }
     }
 
     pollRooms = () => {
@@ -153,15 +175,20 @@ class AdminRoot extends Component {
     fetchRooms = () => {
         api.fetchActiveRooms()
             .then((data) => {
-                const users_count = data.map(r => r.num_users).reduce((su, cur) => su + cur, 0);
                 const {current_room} = this.state;
-                let users = current_room ? data.find(r => r.room === current_room).users : [];
+                const users_count = data.map(r => r.num_users).reduce((su, cur) => su + cur, 0);
+                const gxy1_count = data.filter(r => r.janus === "gxy1").map(r => r.num_users).reduce((su, cur) => su + cur, 0);
+                const gxy2_count = data.filter(r => r.janus === "gxy2").map(r => r.num_users).reduce((su, cur) => su + cur, 0);
+                const gxy3_count = data.filter(r => r.janus === "gxy3").map(r => r.num_users).reduce((su, cur) => su + cur, 0);
+                const gxy4_count = data.filter(r => r.janus === "gxy4").map(r => r.num_users).reduce((su, cur) => su + cur, 0);
+                const room = data.find(r => r.room === current_room);
+                let users = current_room && room ? room.users : [];
                 data.sort((a, b) => {
                     if (a.description > b.description) return 1;
                     if (a.description < b.description) return -1;
                     return 0;
                 });
-                this.setState({rooms: data, users, users_count});
+                this.setState({rooms: data, users, users_count, gxy1_count, gxy2_count, gxy3_count, gxy4_count});
             })
             .catch(err => {
                 console.error("[Admin] error fetching active rooms", err);
@@ -491,7 +518,7 @@ class AdminRoot extends Component {
     };
 
     sendRemoteCommand = (command_type) => {
-        const {gateways, feed_user} = this.state;
+        const {gateways, feed_user, current_janus} = this.state;
         if (!feed_user) {
             alert("Choose user");
             return;
@@ -501,7 +528,7 @@ class AdminRoot extends Component {
             feed_user.sound_test = true;
         }
 
-        const gateway = gateways[feed_user.janus];
+        const gateway = gateways[current_janus];
         gateway.sendProtocolMessage({type: command_type, status: true, id: feed_user.id, user: feed_user})
             .catch(alert);
     };
@@ -515,6 +542,7 @@ class AdminRoot extends Component {
             return;
 
         console.log("[Admin] joinRoom", room, inst);
+        this.setState({users: rooms[i].users})
 
         let promise;
 
@@ -530,6 +558,7 @@ class AdminRoot extends Component {
             .then(() => {
                 this.setState({
                     current_room: room,
+                    current_janus: inst,
                     feeds: [],
                     feed_user: null,
                     feed_id: null
@@ -584,12 +613,12 @@ class AdminRoot extends Component {
         return Promise.all(promises);
     };
 
-    getUserInfo = (feed) => {
-        console.log("[Admin] getUserInfo", feed);
-        const {display, id} = feed;
-        const feed_info = display.system ? platform.parse(display.system) : null;
-        const feed_user = {...display};
-        this.setState({feed_id: id, feed_user, feed_info});
+    getUserInfo = (feed_user) => {
+        console.log("[Admin] getUserInfo", feed_user);
+        if(feed_user) {
+            const feed_info = feed_user.system ? platform.parse(feed_user.system) : null;
+            this.setState({feed_id: feed_user.rfid, feed_user, feed_info});
+        }
     };
 
     getFeedInfo = () => {
@@ -648,6 +677,10 @@ class AdminRoot extends Component {
         user,
         usersTabs,
           users_count,
+          gxy1_count,
+          gxy2_count,
+          gxy3_count,
+          gxy4_count,
         chatRoomsInitialized,
           appInitError,
       } = this.state;
@@ -691,9 +724,10 @@ class AdminRoot extends Component {
           if(feed) {
               //let qt = users[feed.display.id].question;
               //let st = users[feed.display.id].sound_test;
-              let qt = !!users.find(u => feed.id === u.rfid && u.question);
+              let feed_user = users.find(u => feed.id === u.rfid);
+              let qt = feed_user && !!feed_user.question;
               return (
-                  <Table.Row active={feed.id === this.state.feed_id} key={i} onClick={() => this.getUserInfo(feed)} >
+                  <Table.Row active={feed.id === this.state.feed_id} key={i} onClick={() => this.getUserInfo(feed_user)} >
                       <Table.Cell width={10}>{qt ? q : ""}{feed.display.display}</Table.Cell>
                       {/*<Table.Cell positive={st} width={1}>{st ? v : ""}</Table.Cell>*/}
                       <Table.Cell width={1}></Table.Cell>
@@ -742,7 +776,7 @@ class AdminRoot extends Component {
       let login = (<LoginPage user={user} checkPermission={this.checkPermission} />);
 
       let adminContent = (
-          <Segment className="virtual_segment" color='blue' raised>
+          <Fragment>
 
               {
                   this.isAllowed("admin") ?
@@ -783,7 +817,14 @@ class AdminRoot extends Component {
                               on='click'
                               hideOnScroll
                           />
-
+                          <Label attached='top right'>
+                              <List>
+                                  <List.Item>GXY1: {gxy1_count}</List.Item>
+                                  <List.Item>GXY2: {gxy2_count}</List.Item>
+                                  <List.Item>GXY3: {gxy3_count}</List.Item>
+                                  <List.Item>GXY4: {gxy4_count}</List.Item>
+                              </List>
+                          </Label>
                           {
                               this.isAllowed("root") && chatRoomsInitialized ?
                                   <RoomManager gateways={gateways}/>
@@ -795,9 +836,9 @@ class AdminRoot extends Component {
               }
 
               <Grid>
-                  <Grid.Row stretched columns='equal'>
+                  <Grid.Row columns='equal'>
                       <Grid.Column width={4}>
-                          <Segment.Group>
+                          <Segment.Group className="group_list">
                               {
                                   this.isAllowed("root") ?
                                       <Segment textAlign='center'>
@@ -812,7 +853,7 @@ class AdminRoot extends Component {
                                       : null
                               }
 
-                              <Segment textAlign='center' className="group_list" raised>
+                              <Segment textAlign='center' raised>
                                   <Table selectable compact='very' basic structured className="admin_table" unstackable>
                                       <Table.Body>
                                           <Table.Row disabled positive>
@@ -866,7 +907,7 @@ class AdminRoot extends Component {
                       : null
               }
 
-          </Segment>
+          </Fragment>
       );
 
       const panes = [
@@ -886,7 +927,7 @@ class AdminRoot extends Component {
       }
 
       const content = (
-        <Tab panes={panes}
+        <Tab menu={{ secondary: true, pointing: true, color: "blue" }} panes={panes}
              activeIndex={activeTab || 0}
              onTabChange={(e, {activeIndex}) => this.setState({activeTab: activeIndex})}
              renderActiveOnly={true} />

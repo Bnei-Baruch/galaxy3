@@ -114,7 +114,6 @@ class Api {
     }
 
     setAccessToken = (token) => {
-        //console.log('setAccessToken', token);
         this.accessToken = token;
     }
 

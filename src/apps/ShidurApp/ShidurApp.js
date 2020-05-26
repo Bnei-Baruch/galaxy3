@@ -1,7 +1,7 @@
 import React, {Component, Fragment} from 'react';
 import {Grid} from "semantic-ui-react";
 import api from '../../shared/Api';
-import {client} from "../../components/UserManager";
+import {kc} from "../../components/UserManager";
 import GxyJanus from "../../shared/janus-utils";
 import LoginPage from "../../components/LoginPage";
 import ShidurToran from "./ShidurToran";
@@ -16,11 +16,13 @@ class ShidurApp extends Component {
         group: "",
         groups: [],
         groups_queue: 0,
-        mode: "",
+        shidur_mode: "",
+        galaxy_mode: "lesson",
         round: 0,
         questions: [],
         rooms: [],
         disabled_rooms: [],
+        pre_groups: [],
         user: null,
         gateways: {},
         gatewaysInitialized: false,
@@ -36,7 +38,7 @@ class ShidurApp extends Component {
     };
 
     checkPermission = (user) => {
-        const allowed = user.roles.filter(role => role === 'gxy_shidur').length > 0;
+        const allowed = kc.hasRealmRole("gxy_shidur");
         if (allowed) {
             delete user.roles;
             user.role = "shidur";
@@ -44,17 +46,12 @@ class ShidurApp extends Component {
             this.initApp(user);
         } else {
             alert("Access denied!");
-            client.signoutRedirect();
+            kc.logout();
         }
     };
 
     initApp = (user) => {
         this.setState({user});
-
-        api.setAccessToken(user.access_token);
-        client.events.addUserLoaded((user) => api.setAccessToken(user.access_token));
-        client.events.addUserUnloaded(() => api.setAccessToken(null));
-
         api.fetchConfig()
             .then(data => GxyJanus.setGlobalConfig(data))
             .then(() => this.initGateways(user))
@@ -102,23 +99,31 @@ class ShidurApp extends Component {
     }
 
     fetchRooms = () => {
-        let {disabled_rooms,mode} = this.state;
+        let {disabled_rooms,groups,shidur_mode,galaxy_mode} = this.state;
         api.fetchActiveRooms()
             .then((data) => {
                 const users_count = data.map(r => r.num_users).reduce((su, cur) => su + cur, 0);
+
                 let rooms = data;
-                if(mode === "nashim") {
+                if(shidur_mode === "nashim") {
                     rooms = rooms.filter(r => r.description.match(/^W /));
-                } else if(mode === "gvarim") {
+                } else if(shidur_mode === "gvarim") {
                     rooms = rooms.filter(r => !r.description.match(/^W /));
-                } else if(mode === "beyahad") {
-                    this.setState({mode: ""})
+                } else if(shidur_mode === "beyahad") {
+                    this.setState({shidur_mode: ""})
                 }
-                let groups = rooms.filter((room) => room.janus !== "" && !disabled_rooms.find(droom => room.room === droom.room));
-                disabled_rooms = rooms.filter((room) => room.janus !== "" && !groups.find(droom => room.room === droom.room));
+
+                let pre_groups = [];
+                if(galaxy_mode === "lesson") {
+                    pre_groups = rooms.filter(r => !disabled_rooms.find(d => r.room === d.room) && !groups.find(g => r.room === g.room));
+                    this.setState({pre_groups});
+                }
+
+                groups = rooms.filter(r => !disabled_rooms.find(d => r.room === d.room) && !pre_groups.find(d => r.room === d.room));
+                disabled_rooms = rooms.filter(r => !groups.find(g => r.room === g.room) && !pre_groups.find(d => r.room === d.room));
                 this.setState({rooms,groups,disabled_rooms});
                 let quads = [...this.col1.state.vquad,...this.col2.state.vquad,...this.col3.state.vquad,...this.col4.state.vquad];
-                let list = groups.filter((room) => !quads.find(droom => droom && room.room === droom.room));
+                let list = groups.filter(r => !quads.find(q => q && r.room === q.room));
                 let questions = list.filter(room => room.questions);
                 this.setState({questions,users_count});
             })
