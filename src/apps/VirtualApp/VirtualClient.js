@@ -646,7 +646,7 @@ class VirtualClient extends Component {
 
           // Feeds count with user role
           let feeds_count = feeds.filter(f => f.display.role === "user").length;
-          if (feeds_count > 15) {
+          if (feeds_count > 25) {
             alert(t('oldClient.maxUsersInRoom'));
             this.exitRoom(false);
           }
