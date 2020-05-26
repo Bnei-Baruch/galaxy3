@@ -6,11 +6,11 @@ import i18n from 'i18next';
 import './i18n/i18n';
 // import GalaxyApp from "./apps/GalaxyApp";
 // import MobileClient from "./apps/MobileApp/MobileClient";
-// import VirtualClient from "./apps/VirtualApp/VirtualClient";
+import VirtualClient from "./apps/VirtualApp/VirtualClient";
 // import GalaxyStream from "./apps/StreamApp/GalaxyStream";
 // import AdminRoot from "./apps/AdminApp/AdminRoot";
 // import ShidurApp from "./apps/ShidurApp/ShidurApp";
-import SndmanApp from "./apps/SndmanApp/SndmanApp";
+// import SndmanApp from "./apps/SndmanApp/SndmanApp";
 // import AudioOutApp from "./apps/AudioOutApp/AudioOutApp";
 // import SDIOutApp from "./apps/SDIOutApp/SDIOutApp";
 
@@ -20,11 +20,11 @@ class App extends Component {
       <I18nextProvider i18n={i18n}>
         {/*{<GalaxyApp />}*/}
         {/*<MobileClient />*/}
-        {/*<VirtualClient />*/}
+        <VirtualClient />
         {/*<GalaxyStream/>*/}
         {/*<AdminRoot />*/}
         {/*<ShidurApp />*/}
-        <SndmanApp />
+        {/*<SndmanApp />*/}
         {/*<AudioOutApp />*/}
         {/*<SDIOutApp />*/}
       </I18nextProvider>
