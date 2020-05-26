@@ -122,11 +122,12 @@ class UsersQuadSndman extends Component {
         }
     };
 
-    sendDataMessage = (room, status) => {
+    sendDataMessage = (status) => {
+        const {col,full_feed} = this.state;
         const cmd = {type: "audio-out", rcmd: true, status}
         const message = JSON.stringify(cmd);
         console.log(':: Sending message: ', message);
-        this["cmd"+room].state.videoroom.data({ text: message });
+        this["cmd"+col+full_feed].state.videoroom.data({ text: message });
     };
 
     micMute = (status, room, inst) => {
@@ -135,12 +136,12 @@ class UsersQuadSndman extends Component {
         const {gateways} = this.props;
         //TODO: We need send data in room channel
         //gateways[inst].sendProtocolMessage(msg);
-        this.sendDataMessage(room, status);
+        this.sendDataMessage(status);
         gateways["gxy3"].sendServiceMessage(msg);
     };
 
   render() {
-      const {full_group,full_feed,fullscr,vquad,forward,forward_request} = this.state;
+      const {full_group,full_feed,fullscr,vquad,forward,forward_request,col} = this.state;
       const q = (<div className="question">
           <svg viewBox="0 0 50 50">
               <text x="25" y="25" textAnchor="middle" alignmentBaseline="central" dominantBaseline="central">&#xF128;</text>
@@ -151,15 +152,13 @@ class UsersQuadSndman extends Component {
           let qst = g && g.questions;
           let name = g ? g.description : "";
           //let room = groups[g] ? groups[g].room : "";
-          if(g && g.room) {
-              return (
-                  <div className={fullscr && full_feed === i ? "video_full" : fullscr && full_feed !== i ? "hidden" : "usersvideo_box"}
-                       key={"pr" + i} >
-                      <div className={fullscr ? "fullscrvideo_title" : "video_title"} >{name}</div>
-                      {qst ? q : ""}
-                      <UsersHandleSndman key={"q"+i} g={g} index={i} ref={cmd => {this["cmd"+g.room] = cmd;}} {...this.props} />
-                  </div>);
-          }
+          return (
+              <div className={fullscr && full_feed === i ? "video_full" : fullscr && full_feed !== i ? "hidden" : "usersvideo_box"}
+                   key={"pr" + i} >
+                  <div className={fullscr ? "fullscrvideo_title" : "video_title"} >{name}</div>
+                  {qst ? q : ""}
+                  <UsersHandleSndman key={"q"+i} g={g} index={i} ref={cmd => {this["cmd"+col+i] = cmd;}} {...this.props} />
+              </div>);
 
       });
 

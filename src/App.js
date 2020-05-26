@@ -9,8 +9,8 @@ import './i18n/i18n';
 // import VirtualClient from "./apps/VirtualApp/VirtualClient";
 // import GalaxyStream from "./apps/StreamApp/GalaxyStream";
 // import AdminRoot from "./apps/AdminApp/AdminRoot";
-import ShidurApp from "./apps/ShidurApp/ShidurApp";
-// import SndmanApp from "./apps/SndmanApp/SndmanApp";
+// import ShidurApp from "./apps/ShidurApp/ShidurApp";
+import SndmanApp from "./apps/SndmanApp/SndmanApp";
 // import AudioOutApp from "./apps/AudioOutApp/AudioOutApp";
 // import SDIOutApp from "./apps/SDIOutApp/SDIOutApp";
 
@@ -23,8 +23,8 @@ class App extends Component {
         {/*<VirtualClient />*/}
         {/*<GalaxyStream/>*/}
         {/*<AdminRoot />*/}
-        <ShidurApp />
-        {/*<SndmanApp />*/}
+        {/*<ShidurApp />*/}
+        <SndmanApp />
         {/*<AudioOutApp />*/}
         {/*<SDIOutApp />*/}
       </I18nextProvider>
