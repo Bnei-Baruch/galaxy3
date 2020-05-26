@@ -897,10 +897,12 @@ class AdminRoot extends Component {
                           </Segment.Group>
                       </Grid.Column>
                       <Grid.Column largeScreen={9}>
-                          <div className="videos-panel">
-                              <div className="videos">
-                                  <div className="videos__wrapper">
-                                      {videos}
+                          <div className={`vclient__main-wrapper no-of-videos-${feeds.length} layout--equal broadcast--off`} >
+                              <div className="videos-panel">
+                                  <div className="videos">
+                                      <div className="videos__wrapper">
+                                          {videos}
+                                      </div>
                                   </div>
                               </div>
                           </div>
