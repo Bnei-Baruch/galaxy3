@@ -1218,7 +1218,6 @@ class VirtualClient extends Component {
       virtualStreamingJanus,
       appInitError,
       net_status,
-      remoteFeed,
     } = this.state;
 
     if (appInitError) {
@@ -1315,9 +1314,9 @@ class VirtualClient extends Component {
             noResultsMessage={t('oldClient.noResultsFound')}
             //onClick={this.getRoomList}
             onChange={(e, { value }) => this.selectRoom(value)} />
-          {remoteFeed ?
+          {room ?
               <Button attached='right' negative icon='sign-out' onClick={() => this.exitRoom(false)} /> : ''}
-          {!remoteFeed ?
+          {!room ?
             <Button attached='right' primary icon='sign-in' disabled={delay || !selected_room} onClick={this.joinRoom} /> : ''}
         </Input>
         { !(new URL(window.location.href).searchParams.has('deb')) ? null : (
@@ -1436,21 +1435,21 @@ class VirtualClient extends Component {
                 <Profile title={user && user.username} kc={kc} />
               </Button>
               <Select className='select_device'
-                      disabled={!!remoteFeed}
+                      disabled={!!room}
                       error={!audio_device}
                       placeholder={t('oldClient.selectDevice')}
                       value={audio_device}
                       options={adevices_list}
                       onChange={(e, { value }) => this.setDevice(video_device, value, video_setting)} />
               <Select className='select_device'
-                      disabled={!!remoteFeed}
+                      disabled={!!room}
                       error={!video_device}
                       placeholder={t('oldClient.selectDevice')}
                       value={video_device}
                       options={vdevices_list}
                       onChange={(e, { value }) => this.setDevice(value, audio_device, video_setting)} />
               <Select className='select_device'
-                      disabled={!!remoteFeed}
+                      disabled={!!room}
                       error={!video_device}
                       placeholder={t('oldClient.videoSettings')}
                       value={video_setting}
