@@ -829,6 +829,11 @@ class GxyJanus extends EventTarget {
         return this.getData(`/${session}/${handle}`, {janus: "handle_info"});
     };
 
+    sendPluginMessage = (request) => {
+        let message = {janus: "message_plugin", plugin: "janus.plugin.videoroom", request};
+        return this.getData(`/`, message);
+    };
+
     getData = (path, params = {}) => {
         const config = this.getConfig();
         const url = `${config.admin}${path}`;
