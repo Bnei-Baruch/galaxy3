@@ -106,10 +106,10 @@ class MobileClient extends Component {
     };
 
     componentDidMount() {
-        if(!isMobile && window.location.href.indexOf("userm") > -1) {
-            window.location = '/user/';
-            return;
-        }
+        // if(!isMobile && window.location.href.indexOf("userm") > -1) {
+        //     window.location = '/user/';
+        //     return;
+        // }
     };
 
     initApp = (user) => {
@@ -151,8 +151,8 @@ class MobileClient extends Component {
                                 user.janus = room.janus;
                                 user.group = name;
                                 this.setState({name});
+                                this.initClient(user, false);
                             }
-                            this.initClient(user, false);
                         }
                     })
                     .then(() => this.setState({appInitialized: true}))
@@ -236,17 +236,17 @@ class MobileClient extends Component {
                 localStorage.setItem("audio_device", audio_device);
                 localStorage.setItem("video_setting", JSON.stringify(video_setting));
                 Janus.log(" :: Going to check Devices: ");
-                getDevicesStream(audio_device,video_device,video_setting,stream => {
-                    Janus.log(" :: Check Devices: ", stream);
-                    let myvideo = this.refs.localVideo;
-                    Janus.attachMediaStream(myvideo, stream);
-                    // if(this.state.audioContext) {
-                    //     this.state.audioContext.close();
-                    // }
-                    // micLevel(stream ,this.refs.canvas1,audioContext => {
-                    //     this.setState({audioContext, stream});
-                    // });
-                })
+                // getDevicesStream(audio_device,video_device,video_setting,stream => {
+                //     Janus.log(" :: Check Devices: ", stream);
+                //     let myvideo = this.refs.localVideo;
+                //     //Janus.attachMediaStream(myvideo, stream);
+                //     // if(this.state.audioContext) {
+                //     //     this.state.audioContext.close();
+                //     // }
+                //     // micLevel(stream ,this.refs.canvas1,audioContext => {
+                //     //     this.setState({audioContext, stream});
+                //     // });
+                // })
             }
         }
     };
@@ -427,6 +427,10 @@ class MobileClient extends Component {
               let {videoroom,women} = this.state;
               if(!women) videoroom.muteAudio();
               if (on && track && track.kind === 'video') {
+                  let stream = new MediaStream();
+                  stream.addTrack(track.clone());
+                  let myvideo = this.refs.localVideo;
+                  Janus.attachMediaStream(myvideo, stream);
                 this.setState({localVideoTrack: track});
               }
               if (on && track && track.kind === 'audio') {
@@ -1414,7 +1418,8 @@ class MobileClient extends Component {
 
         return (
             <Fragment>
-                {user && isMobile ? content : isMobile ? login : ""}
+                {/*{user && isMobile ? content : isMobile ? login : ""}*/}
+                {user ? content : login}
             </Fragment>
         );
     }
