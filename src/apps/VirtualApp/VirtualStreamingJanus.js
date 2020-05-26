@@ -144,7 +144,7 @@ export default class VirtualStreamingJanus {
             if (this.videos !== NO_VIDEO_OPTION_VALUE) {
               this.initVideoStream(this.janus);
             }
-            this.initDataStream(this.janus);
+            //this.initDataStream(this.janus);
             this.initAudioStream(this.janus);
             let id = trllang[localStorage.getItem('vrt_langtext')] || 301;
             this.initTranslationStream(id);
