@@ -930,11 +930,7 @@ class VirtualClient extends Component {
     }
   };
 
-  sendDataMessage = (key, value) => {
-    const user = Object.assign({}, this.state.user);
-    user[key] = value;
-    this.setState({user});
-
+  sendDataMessage = (user) => {
     const {videoroom} = this.state;
     const message = JSON.stringify(user);
     Janus.log(':: Sending message: ', message);
@@ -1039,7 +1035,7 @@ class VirtualClient extends Component {
           if(data.result === "success") {
             localStorage.setItem('question', !question);
             this.setState({user, question: !question});
-            this.sendDataMessage('question', !question);
+            this.sendDataMessage(user);
           }
         })
         .catch(err => console.error("[User] error updating user state", user.id, err))
@@ -1065,7 +1061,7 @@ class VirtualClient extends Component {
           if(data.result === "success") {
             cammuted ? videoroom.unmuteVideo() : videoroom.muteVideo();
             this.setState({user, cammuted: !cammuted});
-            this.sendDataMessage('camera', this.state.cammuted);
+            this.sendDataMessage(user);
           }
         })
         .catch(err => console.error("[User] error updating user state", user.id, err))
