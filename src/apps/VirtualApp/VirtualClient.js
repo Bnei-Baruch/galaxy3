@@ -953,10 +953,7 @@ class VirtualClient extends Component {
   };
 
   joinRoom = (reconnect) => {
-    this.setState({delay: true});
-    setTimeout(() => {
-      this.setState({delay: false});
-    }, 3000);
+    this.makeDelay();
     let {janus, videoroom, selected_room, username_value, tested, video_device} = this.state;
     let user = Object.assign({}, this.state.user);
     localStorage.setItem('room', selected_room);
@@ -1035,20 +1032,28 @@ class VirtualClient extends Component {
     });
   };
 
-  handleQuestion = () => {
-    //TODO: only when shidur user is online will be avelable send question event, so we need to add check
-    const {question} = this.state;
-    const user = Object.assign({}, this.state.user);
-    localStorage.setItem('question', !question);
-    user.question = !question;
+  makeDelay = () => {
+    this.setState({delay: true});
     setTimeout(() => {
       this.setState({delay: false});
     }, 3000);
+  };
+
+  handleQuestion = () => {
+    const {question} = this.state;
+    const user = Object.assign({}, this.state.user);
     if(user.role === "ghost") return;
+    this.makeDelay();
+    user.question = !question;
     api.updateUser(user.id, user)
+        .then(data => {
+          if(data.result === "success") {
+            localStorage.setItem('question', !question);
+            this.setState({user, question: !question});
+            this.sendDataMessage('question', !question);
+          }
+        })
         .catch(err => console.error("[User] error updating user state", user.id, err))
-    this.setState({user, question: !question, delay: true});
-    this.sendDataMessage('question', !question);
   };
 
   handleAudioOut = (data) => {
@@ -1064,15 +1069,17 @@ class VirtualClient extends Component {
   camMute = () => {
     let {videoroom, cammuted} = this.state;
     const user = Object.assign({}, this.state.user);
-    cammuted ? videoroom.unmuteVideo() : videoroom.muteVideo();
-    this.setState({ cammuted: !cammuted, delay: true });
-    setTimeout(() => {
-      this.setState({ delay: false });
-    }, 3000);
     if(user.role === "ghost") return;
-    this.sendDataMessage('camera', this.state.cammuted);
+    this.makeDelay();
     user.camera = cammuted;
     api.updateUser(user.id, user)
+        .then(data => {
+          if(data.result === "success") {
+            cammuted ? videoroom.unmuteVideo() : videoroom.muteVideo();
+            this.setState({user, cammuted: !cammuted});
+            this.sendDataMessage('camera', this.state.cammuted);
+          }
+        })
         .catch(err => console.error("[User] error updating user state", user.id, err))
   };
 
