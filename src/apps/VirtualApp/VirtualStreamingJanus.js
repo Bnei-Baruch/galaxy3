@@ -9,7 +9,7 @@ export default class VirtualStreamingJanus {
     this.videoJanusStream = null;
     this.audioJanusStream = null;
     this.trlAudioJanusStream = null;
-    this.dataJanusStream = null;
+    //this.dataJanusStream = null;
     this.videoMediaStream = null;
     this.audioMediaStream = null;
     this.trlAudioMediaStream = null;
@@ -40,7 +40,7 @@ export default class VirtualStreamingJanus {
         (this.videos === NO_VIDEO_OPTION_VALUE || this.videoJanusStream) &&
         this.trlAudioJanusStream &&
         this.audioJanusStream &&
-        this.dataJanusStream &&
+        //this.dataJanusStream &&
         (this.videos === NO_VIDEO_OPTION_VALUE || this.videoMediaStream) &&
         this.trlAudioMediaStream &&
         this.audioMediaStream) {
@@ -57,7 +57,7 @@ export default class VirtualStreamingJanus {
     this.detachVideo_();
     this.audioJanusStream = null;
     this.trlAudioJanusStream = null;
-    this.dataJanusStream = null;
+    //this.dataJanusStream = null;
     this.audioMediaStream = null;
     this.trlAudioMediaStream = null;
   }
@@ -144,7 +144,7 @@ export default class VirtualStreamingJanus {
             if (this.videos !== NO_VIDEO_OPTION_VALUE) {
               this.initVideoStream(this.janus);
             }
-            this.initDataStream(this.janus);
+            //this.initDataStream(this.janus);
             this.initAudioStream(this.janus);
             let id = trllang[localStorage.getItem('vrt_langtext')] || 301;
             this.initTranslationStream(id);

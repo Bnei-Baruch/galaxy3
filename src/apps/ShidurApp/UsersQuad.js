@@ -24,7 +24,7 @@ class UsersQuad extends Component {
         let {vquad,col} = this.state;
         if(groups.length > prevProps.groups.length) {
             let res = groups.filter(o => !prevProps.groups.some(v => v.room === o.room))[0];
-            console.log("[Shidur] :: Group enter in queue: ", res);
+            console.debug("[Shidur] :: Group enter in queue: ", res);
             if(vquad[0] === null && groups.length > index+4) {
                 setTimeout(() => {
                     this.switchFour();
@@ -32,7 +32,7 @@ class UsersQuad extends Component {
             }
         } else if(groups.length < prevProps.groups.length) {
             let res = prevProps.groups.filter(o => !groups.some(v => v.room === o.room))[0];
-            console.log("[Shidur] :: Group exit from queue: ", res);
+            console.debug("[Shidur] :: Group exit from queue: ", res);
             for(let i=0; i<4; i++) {
                 if(vquad[i] && vquad[i].room === res.room) {
                     // Check question state

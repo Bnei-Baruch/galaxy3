@@ -17,7 +17,7 @@ class ShidurApp extends Component {
         groups: [],
         groups_queue: 0,
         shidur_mode: "",
-        galaxy_mode: "lesson",
+        preview_mode: true,
         round: 0,
         questions: [],
         rooms: [],
@@ -99,7 +99,7 @@ class ShidurApp extends Component {
     }
 
     fetchRooms = () => {
-        let {disabled_rooms,groups,shidur_mode,galaxy_mode} = this.state;
+        let {disabled_rooms,groups,shidur_mode,preview_mode} = this.state;
         api.fetchActiveRooms()
             .then((data) => {
                 const users_count = data.map(r => r.num_users).reduce((su, cur) => su + cur, 0);
@@ -114,8 +114,11 @@ class ShidurApp extends Component {
                 }
 
                 let pre_groups = [];
-                if(galaxy_mode === "lesson") {
+                if(preview_mode) {
                     pre_groups = rooms.filter(r => !disabled_rooms.find(d => r.room === d.room) && !groups.find(g => r.room === g.room));
+                    this.setState({pre_groups});
+                } else {
+                    pre_groups = [];
                     this.setState({pre_groups});
                 }
 

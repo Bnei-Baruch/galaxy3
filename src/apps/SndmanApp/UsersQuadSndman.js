@@ -58,7 +58,7 @@ class UsersQuadSndman extends Component {
     };
 
     forwardStream = (full_group) => {
-        const {fullscr,forward,feeds} = this.state;
+        const {fullscr,forward} = this.state;
         let {room,janus} = full_group;
         //FIXME: This is really problem place we call start forward from one place and stop from two placed
         // and we depend on callback from request and fullscreen state and feed info.
@@ -71,34 +71,36 @@ class UsersQuadSndman extends Component {
         if(forward) {
             console.info("[Sndman] Stop forward", room);
             this.setDelay();
-            feeds.forEach((feed,i) => {
-                if (feed) {
-                    // FIXME: if we change sources on client based on room id (not ip) we send message only once?
-                    this.sendMessage(feed, false);
-                }
-            });
+            // feeds.forEach((feed,i) => {
+            //     if (feed) {
+            //         // FIXME: if we change sources on client based on room id (not ip) we send message only once?
+            //         this.sendMessage(feed, false);
+            //     }
+            // });
             this.micMute(false, room, janus);
-            this.setState({feeds: [], forward: false});
+            this.setState({forward: false});
         } else if(fullscr) {
             console.info("[Sndman] Start forward", room);
             this.setDelay();
-            api.fetchRoom(room)
-                .then(data => {
-                    const {users} = data;
-                    users.forEach((user) => {
-                        // TODO (edo): why not simply send to all users ?!
-                        if (user && user.rfid) {
-                            this.sendMessage(user, true);
-                        } else {
-                            console.error("Forward failed for user: " + user + " in room: " + room, data)
-                        }
-                    });
-                    this.setState({feeds: users, forward: true});
-                    this.micMute(true, room, janus);
-                })
-                .catch(err => {
-                    console.error("[Sndman] error fetching room state", room, err);
-                });
+            this.setState({forward: true});
+            this.micMute(true, room, janus);
+            // api.fetchRoom(room)
+            //     .then(data => {
+            //         const {users} = data;
+            //         users.forEach((user) => {
+            //             // TODO (edo): why not simply send to all users ?!
+            //             if (user && user.rfid) {
+            //                 this.sendMessage(user, true);
+            //             } else {
+            //                 console.error("Forward failed for user: " + user + " in room: " + room, data)
+            //             }
+            //         });
+            //         this.setState({feeds: users, forward: true});
+            //         this.micMute(true, room, janus);
+            //     })
+            //     .catch(err => {
+            //         console.error("[Sndman] error fetching room state", room, err);
+            //     });
         }
     };
 
@@ -120,17 +122,26 @@ class UsersQuadSndman extends Component {
         }
     };
 
+    sendDataMessage = (status) => {
+        const {col,full_feed} = this.state;
+        const cmd = {type: "audio-out", rcmd: true, status}
+        const message = JSON.stringify(cmd);
+        console.log(':: Sending message: ', message);
+        this["cmd"+col+full_feed].state.videoroom.data({ text: message });
+    };
+
     micMute = (status, room, inst) => {
         const msg = {type: "audio-out", status, room, col: null, i: null, feed: null};
 
         const {gateways} = this.props;
         //TODO: We need send data in room channel
-        gateways[inst].sendProtocolMessage(msg);
+        //gateways[inst].sendProtocolMessage(msg);
+        this.sendDataMessage(status);
         gateways["gxy3"].sendServiceMessage(msg);
     };
 
   render() {
-      const {full_group,full_feed,fullscr,vquad,forward,forward_request} = this.state;
+      const {full_group,full_feed,fullscr,vquad,forward,forward_request,col} = this.state;
       const q = (<div className="question">
           <svg viewBox="0 0 50 50">
               <text x="25" y="25" textAnchor="middle" alignmentBaseline="central" dominantBaseline="central">&#xF128;</text>
@@ -146,8 +157,9 @@ class UsersQuadSndman extends Component {
                    key={"pr" + i} >
                   <div className={fullscr ? "fullscrvideo_title" : "video_title"} >{name}</div>
                   {qst ? q : ""}
-                  <UsersHandleSndman key={"q"+i} g={g} index={i} {...this.props} />
+                  <UsersHandleSndman key={"q"+i} g={g} index={i} ref={cmd => {this["cmd"+col+i] = cmd;}} {...this.props} />
               </div>);
+
       });
 
       return (

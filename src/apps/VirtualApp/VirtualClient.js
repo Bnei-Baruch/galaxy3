@@ -117,7 +117,7 @@ class VirtualClient extends Component {
   }
 
   componentDidMount() {
-    Sentry.init({dsn: `https://${SENTRY_KEY}@sentry.kli.one/2`});
+    //Sentry.init({dsn: `https://${SENTRY_KEY}@sentry.kli.one/2`});
     if (isMobile) {
       window.location = '/userm';
     }
@@ -225,9 +225,10 @@ class VirtualClient extends Component {
     this.state.virtualStreamingJanus.init(ip, country);
   };
 
-  initDevices = (video) => {
+  initDevices = (audio, video) => {
     const {t} = this.props;
     Janus.listDevices(devices => {
+      console.log("Got devices: ", devices)
       if (devices.length > 0) {
         let audio_devices = devices.filter(device => device.kind === 'audioinput');
         let video_devices = video ? devices.filter(device => device.kind === 'videoinput') : [];
@@ -243,24 +244,30 @@ class VirtualClient extends Component {
         Janus.log(' :: Got Audio devices: ', audio_devices);
         this.setState({video_devices, audio_devices});
         this.setDevice(video_id, audio_id, video_setting);
-      } else if (video) {
+      } else if (video && audio) {
+        // Right now if we get some problem with video device the - enumerateDevices()
+        // back empty array, so we need to call this once more with video/audio: true/false
+        // to get single device only
+        this.initDevices(false, true);
+      } else if (video && !audio) {
         alert(t('oldClient.videoNotDetected'));
         this.setState({cammuted: true, video_device: null});
         //Try to get video fail reason
-        testDevices(true, false, this.state.user, steam => {});
-        // Right now if we get some problem with video device the - enumerateDevices()
-        // back empty array, so we need to call this once more with video:false
-        // to get audio device only
+        //testDevices(true, false, this.state.user, steam => {});
         Janus.log(' :: Trying to get audio only');
-        this.initDevices(false);
+        this.initDevices(true, false);
+      } else if (!video && audio) {
+          alert('audio device not detected');
+          this.setState({audio_device: null});
+          //Try to get audio fail reason
+          //testDevices(false, true, this.state.user, steam => {});
+          Janus.log(' :: Trying to get video only');
+          this.initDevices(false, false);
       } else {
-        //Try to get audio fail reason
-        testDevices(false, true, this.state.user, steam => {});
         alert(t('oldClient.noInputDevices'));
-        //FIXME: What we going to do in this case?
-        this.setState({audio_device: null});
+        this.setState({cammuted: true, video_device: null, audio_device: null});
       }
-    }, {audio: true, video: video});
+    }, {audio, video});
   };
 
   setDevice = (video_device, audio_device, video_setting) => {
@@ -281,9 +288,11 @@ class VirtualClient extends Component {
           if (this.state.audioContext) {
             this.state.audioContext.close();
           }
-          micLevel(stream, this.refs.canvas1, audioContext => {
-            this.setState({ audioContext, stream });
-          });
+          if(audio_device) {
+            micLevel(stream, this.refs.canvas1, audioContext => {
+              this.setState({ audioContext, stream });
+            });
+          }
         });
       }
     }
@@ -476,7 +485,7 @@ class VirtualClient extends Component {
           protocol: null,
           delay: false,
         });
-        this.initDevices(true);
+        this.initDevices(true,true);
         if (reconnect) {
           setTimeout(() => {
             this.joinRoom(reconnect);
@@ -544,53 +553,68 @@ class VirtualClient extends Component {
   };
 
   onRoomData = (data) => {
+    const {user} = this.state;
     const feeds = Object.assign([], this.state.feeds);
-    let camera = data.camera;
-    let question = data.question;
-    for (let i = 0; i < feeds.length; i++) {
-      if (feeds[i] && feeds[i].id === data.rfid) {
-        feeds[i].cammute = !camera;
-        feeds[i].question = question;
-        this.setState({ feeds });
-        break;
+    const {camera,question,rcmd,type,id} = data;
+    if(rcmd) {
+      if (type === 'client-reconnect' && user.id === id) {
+        this.exitRoom(true);
+      } else if (type === 'client-reload' && user.id === id) {
+        window.location.reload();
+      } else if (type === 'client-disconnect' && user.id === id) {
+        this.exitRoom(false);
+      } else if(type === "client-kicked" && user.id === id) {
+        localStorage.setItem("ghost", true);
+        kc.logout();
+      } else if (type === 'client-question' && user.id === id) {
+        this.handleQuestion();
+      } else if (type === 'client-mute' && user.id === id) {
+        this.micMute();
+      } else if (type === 'video-mute' && user.id === id) {
+        this.camMute();
+      } else if (type === 'sound_test' && user.id === id) {
+        user.sound_test = true;
+        localStorage.setItem('sound_test', true);
+        this.setState({user});
+      } else if (type === 'audio-out') {
+        this.handleAudioOut(data);
+      }
+    } else {
+      for (let i = 0; i < feeds.length; i++) {
+        if (feeds[i] && feeds[i].id === data.rfid) {
+          feeds[i].cammute = !camera;
+          feeds[i].question = question;
+          this.setState({feeds});
+          break;
+        }
       }
     }
   };
 
-  publishOwnFeed = (useVideo) => {
+  publishOwnFeed = (useVideo, useAudio) => {
     let {videoroom, audio_device, video_device, video_setting} = this.state;
-    const width = video_setting.width;
-    const height = video_setting.height;
-    const ideal = video_setting.fps;
+    let offer = {audioRecv: false, videoRecv: false, audioSend: useAudio, videoSend: useVideo, data: true};
+    if(useVideo) {
+      const width = video_setting.width;
+      const height = video_setting.height;
+      const ideal = video_setting.fps;
+      offer.video = {width, height, frameRate: {ideal, min: 1}, deviceId: {exact: video_device}};
+    }
+    if(useAudio) {
+      offer.audio = {deviceId: {exact: audio_device}};
+    }
     videoroom.createOffer({
-      media: {
-        audioRecv: false, videoRecv: false, audioSend: true, videoSend: useVideo,
-        audio: {
-          //autoGainControl: false, echoCancellation: false, highpassFilter: false, noiseSuppression: false,
-          deviceId: { exact: audio_device }
-        },
-        video: {
-          width, height,
-          frameRate: { ideal, min: 1 },
-          deviceId: { exact: video_device }
-        },
-        data: true
-      },
+      media: offer,
       simulcast: false,
       success: (jsep) => {
         Janus.debug('Got publisher SDP!');
         Janus.debug(jsep);
-        let publish = { request: 'configure', audio: true, video: useVideo, data: true };
+        let publish = { request: 'configure', audio: useAudio, video: useVideo, data: true };
         videoroom.send({ 'message': publish, 'jsep': jsep });
       },
       error: (error) => {
         Janus.error('WebRTC error:', error);
-        if (useVideo) {
-          this.publishOwnFeed(false);
-        } else {
-          Janus.error('WebRTC error... ' + JSON.stringify(error));
-          reportToSentry(JSON.stringify(error),{source: "webrtc"}, this.state.user);
-        }
+        reportToSentry(JSON.stringify(error),{source: "webrtc"}, this.state.user);
       }
     });
   };
@@ -602,7 +626,7 @@ class VirtualClient extends Component {
     let event = msg['videoroom'];
     if (event !== undefined && event !== null) {
       if (event === 'joined') {
-        let { video_device } = this.state;
+        let {video_device,audio_device} = this.state;
         const user = Object.assign({}, this.state.user);
         let myid = msg['id'];
         let mypvtid = msg['private_id'];
@@ -611,44 +635,25 @@ class VirtualClient extends Component {
         Janus.log('Successfully joined room ' + msg['room'] + ' with ID ' + myid);
         api.updateUser(user.id, user)
             .catch(err => console.error("[User] error updating user state", user.id, err))
-        this.publishOwnFeed(video_device !== null);
+        this.publishOwnFeed(!!video_device, !!audio_device);
+
         // Any new feed to attach to?
         if (msg['publishers'] !== undefined && msg['publishers'] !== null) {
-          let list = Object.assign([], msg['publishers']);
-          //FIXME:  Tmp fix for black screen in room caoused by feed with video_codec = none
-          let feeds = list.sort((a, b) => JSON.parse(a.display).timestamp - JSON.parse(b.display).timestamp)
-              .filter(feeder => JSON.parse(feeder.display).role.match(/^(user|guest)$/) && feeder.video_codec !== 'none');
+          //FIXME: display property is JSON write now, let parse it in one place
+          let list = msg['publishers'].filter(l => l.display = (JSON.parse(l.display)));
+          let feeds = list.sort((a, b) => a.display.timestamp - b.display.timestamp).filter(f => !f.display.role.match(/^(ghost|guest)$/));
           Janus.log(':: Got Pulbishers list: ', feeds);
-          if (feeds.length > 15) {
+
+          // Feeds count with user role
+          let feeds_count = feeds.filter(f => f.display.role === "user").length;
+          if (feeds_count > 25) {
             alert(t('oldClient.maxUsersInRoom'));
-            window.location.reload();
+            this.exitRoom(false);
           }
+
           Janus.debug('Got a list of available publishers/feeds:');
           Janus.log(list);
-          let subscription = [];
-          for (let f in feeds) {
-            let id = feeds[f]['id'];
-            let display = JSON.parse(feeds[f]['display']);
-            let talk = feeds[f]['talking'];
-            let streams = feeds[f]['streams'];
-            let video = streams.filter(v => v.type === 'video').length === 0;
-            feeds[f].cammute = video;
-            feeds[f].display = display;
-            feeds[f].talk = talk;
-            for (let i in streams) {
-              let stream = streams[i];
-              stream['id'] = id;
-              stream['display'] = display;
-            }
-            subscription.push({
-              feed: id,  // This is mandatory
-              //mid: stream.mid    // This is optional (all streams, if missing)
-            });
-          }
-          this.setState({feeds});
-          if (subscription.length > 0) {
-            this.subscribeTo(subscription);
-          }
+          this.makeSubscription(feeds, false);
         }
       } else if (event === 'talking') {
         const feeds = Object.assign([], this.state.feeds);
@@ -656,7 +661,7 @@ class VirtualClient extends Component {
         Janus.log('User: ' + id + ' - start talking');
         for (let i = 0; i < feeds.length; i++) {
           if (feeds[i] && feeds[i].id === id) {
-            feeds[i].talk = true;
+            feeds[i].talking = true;
           }
         }
         this.setState({feeds});
@@ -666,7 +671,7 @@ class VirtualClient extends Component {
         Janus.log('User: ' + id + ' - stop talking');
         for (let i = 0; i < feeds.length; i++) {
           if (feeds[i] && feeds[i].id === id) {
-            feeds[i].talk = false;
+            feeds[i].talking = false;
           }
         }
         this.setState({feeds});
@@ -684,44 +689,15 @@ class VirtualClient extends Component {
             stream['id'] = myid;
             stream['display'] = user;
           }
-          console.log("MY STREAM: ",streams)
+          //console.log("MY STREAM: ",streams)
         } else if (msg['publishers'] !== undefined && msg['publishers'] !== null) {
-          let feed = Object.assign({}, msg['publishers']);
-          const feeds = Object.assign([], this.state.feeds);
-          Janus.debug('Got a list of available publishers/feeds:');
-          Janus.log(feed);
-          let subscription = [];
-          for (let f in feed) {
-            const id = feed[f]['id'];
-            const display = JSON.parse(feed[f]['display']);
-            if (!display.role.match(/^(user|guest)$/)) {
-              return;
-            }
-            let streams = feed[f]['streams'];
-            let video = streams.filter(v => v.type === 'video').length === 0;
-            feed[f].cammute = video;
-            feed[f].display = display;
-            for (let i in streams) {
-              let stream = streams[i];
-              stream['id'] = id;
-              stream['display'] = display;
-            }
-            subscription.push({
-              feed: id,  // This is mandatory
-              //mid: stream.mid    // This is optional (all streams, if missing)
-            });
-          }
-          feeds.push(feed[0]);
-          this.setState({feeds});
-          if (subscription.length > 0) {
-            this.subscribeTo(subscription);
-            // Send question event for new feed
-            setTimeout(() => {
-              if (this.state.question) {
-                this.sendDataMessage('question', true);
-              }
-            }, 3000);
-          }
+          let feeds = msg['publishers'].filter(l => l.display = (JSON.parse(l.display)));
+
+          Janus.debug('New list of available publishers/feeds:');
+          Janus.debug(feeds);
+
+          this.makeSubscription(feeds, true);
+
         } else if (msg['leaving'] !== undefined && msg['leaving'] !== null) {
           // One of the publishers has gone away?
           const leaving = msg['leaving'];
@@ -867,17 +843,13 @@ class VirtualClient extends Component {
             Janus.log('Created remote video stream:', stream);
             let remotevideo = this.refs['remoteVideo' + feed];
             Janus.attachMediaStream(remotevideo, stream);
-          } else if (track.kind === 'data') {
-            Janus.log('Created remote data channel');
-          } else {
-            Janus.log('-- Already active stream --');
           }
         },
         ondataopen: (label) => {
           Janus.log('Feed - DataChannel is available! (' + label + ')');
         },
         ondata: (data, label) => {
-          Janus.log('Feed - Got data from the DataChannel! (' + label + ')' + data);
+          Janus.debug('Feed - Got data from the DataChannel! (' + label + ')' + data);
           let msg = JSON.parse(data);
           this.onRoomData(msg);
           Janus.log(' :: We got msg via DataChannel: ', msg);
@@ -887,6 +859,45 @@ class VirtualClient extends Component {
         }
       });
   };
+
+  makeSubscription = (feeds, new_feed) => {
+    let subscription = [];
+    for (let f in feeds) {
+      let feed = feeds[f];
+      let {id,streams} = feed;
+      feed.video = !!streams.find(v => v.type === 'video' && v.codec === "h264");
+      feed.audio = !!streams.find(a => a.type === 'audio' && a.codec === "opus");
+      feed.data = !!streams.find(d => d.type === 'data');
+      feed.cammute = !feed.video;
+      for (let i in streams) {
+        let stream = streams[i];
+        const video = stream.type === "video" && stream.codec === "h264";
+        const audio = stream.type === "audio" && stream.codec === "opus";
+        const data = stream.type === "data";
+        if (video) {
+          subscription.push({feed: id, mid: stream.mid});
+        }
+        if (audio) {
+          subscription.push({feed: id, mid: stream.mid});
+        }
+        if (data) {
+          subscription.push({feed: id, mid: stream.mid});
+        }
+      }
+    }
+    this.setState({feeds:[...this.state.feeds,...feeds]});
+    if (subscription.length > 0) {
+      this.subscribeTo(subscription);
+      if(new_feed) {
+        // Send question event for new feed
+        setTimeout(() => {
+          if (this.state.question) {
+            this.sendDataMessage('question', true);
+          }
+        }, 3000);
+      }
+    }
+  }
 
   subscribeTo = (subscription) => {
     // New feeds are available, do we need create a new plugin handle first?
@@ -930,11 +941,7 @@ class VirtualClient extends Component {
     }
   };
 
-  sendDataMessage = (key, value) => {
-    const user = Object.assign({}, this.state.user);
-    user[key] = value;
-    this.setState({user});
-
+  sendDataMessage = (user) => {
     const {videoroom} = this.state;
     const message = JSON.stringify(user);
     Janus.log(':: Sending message: ', message);
@@ -942,10 +949,7 @@ class VirtualClient extends Component {
   };
 
   joinRoom = (reconnect) => {
-    this.setState({delay: true});
-    setTimeout(() => {
-      this.setState({delay: false});
-    }, 3000);
+    this.makeDelay();
     let {janus, videoroom, selected_room, username_value, tested, video_device} = this.state;
     let user = Object.assign({}, this.state.user);
     localStorage.setItem('room', selected_room);
@@ -953,7 +957,7 @@ class VirtualClient extends Component {
     user.display = username_value || user.name;
     user.self_test = tested;
     user.question = false;
-    user.camera = video_device !== null;
+    user.camera = !!video_device;
     user.sound_test = reconnect ? JSON.parse(localStorage.getItem('sound_test')) : false;
     user.timestamp = Date.now();
     if(video_device) {
@@ -1024,23 +1028,32 @@ class VirtualClient extends Component {
     });
   };
 
-  handleQuestion = () => {
-    //TODO: only when shidur user is online will be avelable send question event, so we need to add check
-    const {question} = this.state;
-    const user = Object.assign({}, this.state.user);
-    localStorage.setItem('question', !question);
-    user.question = !question;
+  makeDelay = () => {
+    this.setState({delay: true});
     setTimeout(() => {
       this.setState({delay: false});
     }, 3000);
+  };
+
+  handleQuestion = () => {
+    const {question} = this.state;
+    const user = Object.assign({}, this.state.user);
     if(user.role === "ghost") return;
+    this.makeDelay();
+    user.question = !question;
     api.updateUser(user.id, user)
+        .then(data => {
+          if(data.result === "success") {
+            localStorage.setItem('question', !question);
+            this.setState({user, question: !question});
+            this.sendDataMessage(user);
+          }
+        })
         .catch(err => console.error("[User] error updating user state", user.id, err))
-    this.setState({user, question: !question, delay: true});
-    this.sendDataMessage('question', !question);
   };
 
   handleAudioOut = (data) => {
+    this.state.virtualStreamingJanus.streamGalaxy(data.status, 4, "");
     if (data.status) {
       // remove question mark when sndman unmute our room
       if (this.state.question) {
@@ -1052,15 +1065,17 @@ class VirtualClient extends Component {
   camMute = () => {
     let {videoroom, cammuted} = this.state;
     const user = Object.assign({}, this.state.user);
-    cammuted ? videoroom.unmuteVideo() : videoroom.muteVideo();
-    this.setState({ cammuted: !cammuted, delay: true });
-    setTimeout(() => {
-      this.setState({ delay: false });
-    }, 3000);
     if(user.role === "ghost") return;
-    this.sendDataMessage('camera', this.state.cammuted);
+    this.makeDelay();
     user.camera = cammuted;
     api.updateUser(user.id, user)
+        .then(data => {
+          if(data.result === "success") {
+            cammuted ? videoroom.unmuteVideo() : videoroom.muteVideo();
+            this.setState({user, cammuted: !cammuted});
+            this.sendDataMessage(user);
+          }
+        })
         .catch(err => console.error("[User] error updating user state", user.id, err))
   };
 
@@ -1138,16 +1153,16 @@ class VirtualClient extends Component {
   };
 
   renderMedia = (feed, width, height) => {
-    const {id, talk, question, cammute, display: { display }} = feed;
+    const {id, talking, question, cammute, display: { display }} = feed;
 
     return (<div className="video" key={'v' + id} ref={'video' + id} id={'video' + id}>
-      <div className={classNames('video__overlay', { 'talk-frame': talk })}>
+      <div className={classNames('video__overlay', { 'talk-frame': talking })}>
         {question ? <div className="question">
           <svg viewBox="0 0 50 50">
             <text x="25" y="25" textAnchor="middle" alignmentBaseline="central" dominantBaseline="central">&#xF128;</text>
           </svg>
         </div> : ''}
-        <div className="video__title">{!talk ? <Icon name="microphone slash" size="small" color="red" /> : ''}{display}</div>
+        <div className="video__title">{!talking ? <Icon name="microphone slash" size="small" color="red" /> : ''}{display}</div>
       </div>
       <svg className={classNames('nowebcam', {'hidden': !cammute})} viewBox="0 0 32 18" preserveAspectRatio="xMidYMid meet">
         <text x="16" y="9" textAnchor="middle" alignmentBaseline="central" dominantBaseline="central">&#xf2bd;</text>
@@ -1185,6 +1200,7 @@ class VirtualClient extends Component {
       feeds,
       geoinfo,
       janus,
+      localVideoTrack,
       localAudioTrack,
       monitoringData,
       muted,
@@ -1257,7 +1273,7 @@ class VirtualClient extends Component {
 
     let otherFeedHasQuestion = false;
     let localPushed          = false;
-    let videos = feeds.filter(feed => feed).reduce((result, feed) => {
+    let videos = feeds.filter(feed => feed.display.role === "user").reduce((result, feed) => {
       const { question, id } = feed;
       otherFeedHasQuestion   = otherFeedHasQuestion || (question && id !== myid);
       if (!localPushed && feed.display.timestamp >= user.timestamp) {
@@ -1293,7 +1309,7 @@ class VirtualClient extends Component {
           <Select
             className = "room-selection"
             search
-            disabled={audio_device === null || !!localAudioTrack}
+            //disabled={audio_device === null || !!localAudioTrack}
             error={!selected_room}
             placeholder={t('oldClient.selectRoom')}
             value={selected_room}
@@ -1301,10 +1317,10 @@ class VirtualClient extends Component {
             noResultsMessage={t('oldClient.noResultsFound')}
             //onClick={this.getRoomList}
             onChange={(e, { value }) => this.selectRoom(value)} />
-          {localAudioTrack ?
+          {room ?
               <Button attached='right' negative icon='sign-out' onClick={() => this.exitRoom(false)} /> : ''}
-          {!localAudioTrack ?
-            <Button attached='right' primary icon='sign-in' disabled={delay || !selected_room || !audio_device} onClick={this.joinRoom} /> : ''}
+          {!room ?
+            <Button attached='right' primary icon='sign-in' disabled={delay || !selected_room} onClick={this.joinRoom} /> : ''}
         </Input>
         { !(new URL(window.location.href).searchParams.has('deb')) ? null : (
         <Input>
@@ -1326,6 +1342,15 @@ class VirtualClient extends Component {
             { value: '15', text: '15' },
             { value: '16', text: '16' },
             { value: '17', text: '17' },
+            { value: '18', text: '18' },
+            { value: '19', text: '19' },
+            { value: '20', text: '20' },
+            { value: '21', text: '21' },
+            { value: '22', text: '22' },
+            { value: '23', text: '23' },
+            { value: '24', text: '24' },
+            { value: '25', text: '25' },
+            
           ]} value={numberOfVirtualUsers} onChange={(e, { value }) => {
             this.setState({ numberOfVirtualUsers: value });
             localStorage.setItem('number_of_virtual_users', value);
@@ -1339,7 +1364,7 @@ class VirtualClient extends Component {
             {chatMessagesCount > 0 ? chatCountLabel : ''}
           </Menu.Item>
           <Menu.Item
-            disabled={video_device === null || !geoinfo || !localAudioTrack || delay || otherFeedHasQuestion}
+            disabled={!audio_device || !geoinfo || !localAudioTrack || delay || otherFeedHasQuestion}
             onClick={this.handleQuestion}>
             <Icon {...(question ? {color: 'green'} : {})} name='question' />
             {t('oldClient.askQuestion')}
@@ -1378,7 +1403,7 @@ class VirtualClient extends Component {
         </Menu>
         <Menu icon='labeled' secondary size="mini">
           {!localAudioTrack ?
-            <Menu.Item position='right' disabled={audio_device === null || selftest !== t('oldClient.selfAudioTest')} onClick={this.selfTest}>
+            <Menu.Item position='right' disabled={!localAudioTrack || selftest !== t('oldClient.selfAudioTest')} onClick={this.selfTest}>
               <Icon color={tested ? 'green' : 'red'} name="sound" />
               {selftest}
             </Menu.Item>
@@ -1388,7 +1413,7 @@ class VirtualClient extends Component {
             <Icon color={muted ? 'red' : ''} name={!muted ? 'microphone' : 'microphone slash'} />
             {t(muted ? 'oldClient.unMute' : 'oldClient.mute')}
           </Menu.Item>
-          <Menu.Item disabled={video_device === null || !localAudioTrack || delay} onClick={this.camMute}>
+          <Menu.Item disabled={video_device === null || !localVideoTrack || delay} onClick={this.camMute}>
             <Icon color={cammuted ? 'red' : ''} name={!cammuted ? 'eye' : 'eye slash'} />
             {t(cammuted ? 'oldClient.startVideo' : 'oldClient.stopVideo')}
           </Menu.Item>
@@ -1413,21 +1438,21 @@ class VirtualClient extends Component {
                 <Profile title={user && user.username} kc={kc} />
               </Button>
               <Select className='select_device'
-                      disabled={!!localAudioTrack}
+                      disabled={!!room}
                       error={!audio_device}
                       placeholder={t('oldClient.selectDevice')}
                       value={audio_device}
                       options={adevices_list}
                       onChange={(e, { value }) => this.setDevice(video_device, value, video_setting)} />
               <Select className='select_device'
-                      disabled={!!localAudioTrack}
+                      disabled={!!room}
                       error={!video_device}
                       placeholder={t('oldClient.selectDevice')}
                       value={video_device}
                       options={vdevices_list}
                       onChange={(e, { value }) => this.setDevice(value, audio_device, video_setting)} />
               <Select className='select_device'
-                      disabled={!!localAudioTrack}
+                      disabled={!!room}
                       error={!video_device}
                       placeholder={t('oldClient.videoSettings')}
                       value={video_setting}
