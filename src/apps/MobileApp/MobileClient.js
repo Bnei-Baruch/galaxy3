@@ -517,42 +517,19 @@ class MobileClient extends Component {
                 this.publishOwnFeed(video_device !== null);
                 // Any new feed to attach to?
                 if(msg["publishers"] !== undefined && msg["publishers"] !== null) {
-                    let list = msg["publishers"];
-                    //FIXME: Tmp fix for black screen in room caoused by feed with video_codec = none
-                    let feeds = list.filter(feeder => JSON.parse(feeder.display).role.match(/^(user|guest)$/) && feeder.video_codec !== "none");
-                    let {feedStreams} = this.state;
-                    Janus.log(":: Got Pulbishers list: ", feeds);
-                    if(feeds.length > 15) {
+                    //FIXME: display property is JSON write now, let parse it in one place
+                    let list = msg['publishers'].filter(l => l.display = (JSON.parse(l.display)));
+                    let feeds = list.sort((a, b) => a.display.timestamp - b.display.timestamp).filter(f => !f.display.role.match(/^(ghost|guest)$/));
+                    Janus.log(':: Got Pulbishers list: ', feeds);
+
+                    // Feeds count with user role
+                    let feeds_count = feeds.filter(f => f.display.role === "user").length;
+                    if (feeds_count > 25) {
                         alert("Max users in this room is reached");
-                        window.location.reload();
+                        this.exitRoom(false);
                     }
-                    Janus.debug("Got a list of available publishers/feeds:");
-                    Janus.log(list);
-                    let subscription = [];
-                    for(let f in feeds) {
-                        let id = feeds[f]["id"];
-                        let display = JSON.parse(feeds[f]["display"]);
-                        let talk = feeds[f]["talking"];
-                        let streams = feeds[f]["streams"];
-                        let video = streams.filter(v => v.type === "video").length === 0;
-                        feeds[f].cammute = video;
-                        feeds[f].display = display;
-                        feeds[f].talk = talk;
-                        let subst = {feed: id};
-                        for (let i in streams) {
-                            let stream = streams[i];
-                            stream["id"] = id;
-                            stream["display"] = display;
-                            if(subscription.length > 3) {
-                                subst.mid = "0";
-                            }
-                        }
-                        feedStreams[id] = {id, display, streams};
-                        subscription.push(subst);
-                    }
-                    this.setState({feeds,feedStreams});
-                    if(subscription.length > 0)
-                        this.subscribeTo(subscription);
+
+                    this.makeSubscription(feeds, false);
                 }
             } else if(event === "talking") {
                 let {feeds} = this.state;
@@ -560,7 +537,7 @@ class MobileClient extends Component {
                 Janus.log("User: "+id+" - start talking");
                 for(let i=0; i<feeds.length; i++) {
                     if(feeds[i] && feeds[i].id === id) {
-                        feeds[i].talk = true;
+                        feeds[i].taking = true;
                     }
                 }
                 this.setState({feeds});
@@ -570,7 +547,7 @@ class MobileClient extends Component {
                 Janus.log("User: "+id+" - stop talking");
                 for(let i=0; i<feeds.length; i++) {
                     if(feeds[i] && feeds[i].id === id) {
-                        feeds[i].talk = false;
+                        feeds[i].taking = false;
                     }
                 }
                 this.setState({feeds});
@@ -590,35 +567,9 @@ class MobileClient extends Component {
                     feedStreams[myid] = {id: myid, display: user, streams: streams};
                     this.setState({feedStreams})
                 } else if(msg["publishers"] !== undefined && msg["publishers"] !== null) {
-                    let feed = msg["publishers"];
-                    let {feeds,feedStreams} = this.state;
-                    Janus.debug("Got a list of available publishers/feeds:");
-                    Janus.log(feed);
-                    let subscription = [];
-                    for(let f in feed) {
-                        let id = feed[f]["id"];
-                        let display = JSON.parse(feed[f]["display"]);
-                        if(display.role.match(/^(user|guest)$/))
-                            return;
-                        let streams = feed[f]["streams"];
-                        let video = streams.filter(v => v.type === "video").length === 0;
-                        feed[f].cammute = video;
-                        feed[f].display = display;
-                        let subst = {feed: id};
-                        for (let i in streams) {
-                            let stream = streams[i];
-                            stream["id"] = id;
-                            stream["display"] = display;
-                            if(feeds.length > 3) {
-                                subst.mid = "0";
-                            }
-                        }
-                        feedStreams[id] = {id, display, streams};
-                        subscription.push(subst);
-                    }
-                    feeds.push(feed[0]);
-                    this.setState({feeds,feedStreams});
-                    this.subscribeTo(subscription);
+                    let feeds = msg['publishers'].filter(l => l.display = (JSON.parse(l.display)));
+                    Janus.debug('New list of available publishers/feeds:', feeds);
+                    this.makeSubscription(feeds, true);
                 } else if(msg["leaving"] !== undefined && msg["leaving"] !== null) {
                     // One of the publishers has gone away?
                     var leaving = msg["leaving"];
@@ -802,6 +753,48 @@ class MobileClient extends Component {
                 }
             });
     };
+
+    makeSubscription = (feeds, new_feed) => {
+        let {feedStreams} = this.state;
+        let subscription = [];
+        for (let f in feeds) {
+            let feed = feeds[f];
+            let {id,streams} = feed;
+            feed.video = !!streams.find(v => v.type === 'video' && v.codec === "h264");
+            feed.audio = !!streams.find(a => a.type === 'audio' && a.codec === "opus");
+            feed.data = !!streams.find(d => d.type === 'data');
+            feed.cammute = !feed.video;
+            for (let i in streams) {
+                let stream = streams[i];
+                const video = stream.type === "video" && stream.codec === "h264";
+                const audio = stream.type === "audio" && stream.codec === "opus";
+                const data = stream.type === "data";
+                if (video && subscription.length < 4) {
+                    subscription.push({feed: id, mid: stream.mid});
+                }
+                if (audio) {
+                    subscription.push({feed: id, mid: stream.mid});
+                }
+                if (data) {
+                    subscription.push({feed: id, mid: stream.mid});
+                }
+            }
+            feedStreams[id] = {id, display: feed.display, streams};
+        }
+        this.setState({feeds:[...this.state.feeds,...feeds], feedStreams});
+        if (subscription.length > 0) {
+            this.subscribeTo(subscription);
+            //FIXME: Write now questions is disabled
+            // if(new_feed) {
+            //     // Send question event for new feed
+            //     setTimeout(() => {
+            //         if (this.state.question) {
+            //             this.sendDataMessage('question', true);
+            //         }
+            //     }, 3000);
+            // }
+        }
+    }
 
     subscribeTo = (subscription) => {
         // New feeds are available, do we need create a new plugin handle first?
@@ -1171,7 +1164,7 @@ class MobileClient extends Component {
                 if(mid.active) {
                     let feed = this.state.feeds.find(f => f.id === mid.feed_id);
                     //let id = feed.id;
-                    let talk = feed ? feed.talk : false;
+                    let taking = feed ? feed.taking : false;
                     let question = feed ? feed.question : false;
                     let cammute = feed ? feed.cammute : false;
                     let display_name = feed ? feed.display.display : "";
@@ -1179,14 +1172,14 @@ class MobileClient extends Component {
                                  key={"vk" + i}
                                  ref={"video" + i}
                                  id={"video" + i}>
-                        <div className={classNames('video__overlay', {'talk': talk})}>
+                        <div className={classNames('video__overlay', {'talk': taking})}>
                             {question ? <div className="question">
                                 <svg viewBox="0 0 50 50">
                                     <text x="25" y="25" textAnchor="middle" alignmentBaseline="central"
                                           dominantBaseline="central">&#xF128;</text>
                                 </svg>
                             </div> : ''}
-                            <div className="video__title">{!talk ?
+                            <div className="video__title">{!taking ?
                                 <Icon name="microphone slash" size="small" color="red"/> : ''}{display_name}</div>
                         </div>
                         <svg className={classNames('nowebcam', {'hidden': !cammute})} viewBox="0 0 32 18"
