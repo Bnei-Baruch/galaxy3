@@ -5,13 +5,15 @@ export const RETRY_DELAY = 500;     // 0.5 seconds.
 export const INTERVALS_DELAY = 100; // 100ms.
 
 const ACK_FIELD = '__gack__';
+const FROM_FIELD = '__from__';
+const TO_ACK_FIELD = '__to_ack__';
 const RETRY_FIELD = '__gretry__';
 const TRANSACTION_FIELD = 'transaction';
 export const DEADLINE_EXCEEDED = 'DEADLINE_EXCEEDED';
 
 // Class for sending and receiving messages that we validate they were eventually received. If not we raise an error after MAX_DELAY.
 export class GuaranteeDeliveryManager {
-	constructor(maxDelay, retryDelay, intervalsDelay) {
+	constructor(userId, maxDelay, retryDelay, intervalsDelay) {
     this.maxDelay = maxDelay;
     this.retryDelay = retryDelay;
     this.intervalsDelay = intervalsDelay;
@@ -26,6 +28,11 @@ export class GuaranteeDeliveryManager {
 
     // Process pending messages status.
     this.intervalIdentifier = setInterval(() => this.iterate_(), this.intervalsDelay);
+
+    if (!userId) {
+      throw new Error(`Unique userId has to be set for GuaranteeDeliveryManager, got [${userId}].`);
+    }
+    this.userId = userId;
 	}
 
   // Iterate over exising pending messages and retries them if needed, when max delay
@@ -35,6 +42,7 @@ export class GuaranteeDeliveryManager {
     for (let [transaction, state] of this.pending) {
       const interval = now - state.sent;
       if (interval > this.maxDelay) {
+        console.log('Did not get all ack as required', state.ack);
         // Failed sending message on timeout. Delete and reject.
         this.pending.delete(transaction);
         state.delivery.reject({reason: DEADLINE_EXCEEDED, message: state.message});  // Note that if reject is computation heavy action, our timings might be not accurate.
@@ -58,9 +66,10 @@ export class GuaranteeDeliveryManager {
 
   // Send message that guarantee to arrive within MAX_DELAY or notify on timeout.
   // @param {!Object} message
+  // @param {!Array<string>} toAck List of userIds that are expected to ack. If empty will expect any non-self user to ack.
   // @param {function(!Object)} sendMessage
   // @return {!Promise}  <====  Resolve for success, reject for failure.
-  sendGuaranteeMessage(message, sendMessage) {
+  sendGuaranteeMessage(message, toAck, sendMessage) {
     // Make sure we have unique key in each message. Potentially use existing transaction.
     if (!(TRANSACTION_FIELD in message)) {
       message[TRANSACTION_FIELD] = Janus.randomString(12);
@@ -70,17 +79,24 @@ export class GuaranteeDeliveryManager {
       return Promise.reject(new Error('Error, not expected new message with same transaction.', message));
     }
     message[RETRY_FIELD] = 0;
+    message[TO_ACK_FIELD] = toAck;
+    message[FROM_FIELD] = this.userId;
     const delivery = {};
     const ret = new Promise((resolve, reject) => {
       delivery.resolve = resolve;
       delivery.reject = reject;
     });
+    const ack = toAck.reduce((ack, userId) => {
+      ack[userId] = false;
+      return ack;
+    }, {});
     this.pending.set(message[TRANSACTION_FIELD], {
       delivery,
       sent: Number(new Date()),
       retries: 0,
       sendMessage,
       message,
+      ack,
     });
     sendMessage(message);
     return ret;
@@ -88,24 +104,35 @@ export class GuaranteeDeliveryManager {
 
   // Check if ack message was received, handle it.
   // @param {!Object} message
-  // @returns {boolean} true if successfull ack was received, false if any other message.
+  // @returns {boolean} true if ack was received, false if any other message.
   checkForAck(message) {
     if (!(ACK_FIELD in message)) {
       return false;
     }
     const transaction = message[ACK_FIELD];
     if (this.pending.has(transaction)) {
-      const {delivery} = this.pending.get(transaction);
-      this.pending.delete(transaction);
-      delivery.resolve();
+      const {delivery, ack} = this.pending.get(transaction);
+      const userId = message[FROM_FIELD];
+      if (!userId) {
+        console.error(`This should never happen, expecting userId in ack, got [${userId}].`);
+        return true;  // Don't ack.
+      }
+      if (Object.keys(ack).length !== 0) {
+        if (userId in ack) {
+          ack[userId] = true;
+        }
+      } else if (this.userId === userId) {
+        return true; // Don't ack yourself.
+      }
+      if (Object.entries(ack).every(([ackUserId, acked]) => acked)) {
+        console.log('Message acked, resolving.', ack);
+        this.pending.delete(transaction);
+        delivery.resolve();
+      }
       return true;
     }
-  }
-
-  // Use this when message is read by many subscribers and we are expecting
-  // back many acks (validation) that message was received.
-  sendMultiGuaranteeMessage(message, numOfExpectedAcks, sendMessage) {
-    throw new Error('Not implemented');
+    // Ack message but not for me.
+    return true;
   }
 
   // @param {!Object} message
@@ -118,12 +145,22 @@ export class GuaranteeDeliveryManager {
       console.log(`${RETRY_FIELD} not found in `, message);
       return Promise.resolve(message);
     }
-    if (!(TRANSACTION_FIELD in message)) {
-      return Promise.reject(`All guarantee messages expect to have ${TRANSACTION_FIELD} field`);
+    [TRANSACTION_FIELD, FROM_FIELD].forEach((field) => {
+      if (!(field in message)) {
+        return Promise.reject(`All guarantee messages expect to have ${field} field.`);
+      }
+    });
+    const ack = {
+      [ACK_FIELD]: message[TRANSACTION_FIELD],
+      [FROM_FIELD]: this.userId,
+    };
+    // Sent ack back if toAck field is not set and I'm not sending ack to myself or
+    // my userId explicitly set in the toAck field (event if this is me).
+    const toAck = (TO_ACK_FIELD in message && message[TO_ACK_FIELD]) || [];
+    if ((toAck.length === 0 && this.userId !== message[FROM_FIELD]) ||
+        toAck.includes(this.userId)) {
+      sendAckBack(ack);
     }
-    const ack = {};
-    ack[ACK_FIELD] = message[TRANSACTION_FIELD];
-    sendAckBack(ack);
     if (this.accepted.has(message[TRANSACTION_FIELD])) {
       // Already resolved his message, skip.
       return Promise.resolve(null);
