@@ -757,7 +757,7 @@ class MobileClient extends Component {
     makeSubscription = (feeds, new_feed) => {
         let {feedStreams} = this.state;
         let subscription = [];
-        for (let f in feeds) {
+        for (let f=0; f<feeds.length; f++) {
             let feed = feeds[f];
             let {id,streams} = feed;
             feed.video = !!streams.find(v => v.type === 'video' && v.codec === "h264");
@@ -769,8 +769,16 @@ class MobileClient extends Component {
                 const video = stream.type === "video" && stream.codec === "h264";
                 const audio = stream.type === "audio" && stream.codec === "opus";
                 const data = stream.type === "data";
-                if (video && subscription.length < 4) {
-                    subscription.push({feed: id, mid: stream.mid});
+                if(new_feed) {
+                    // We subscribe for video to fill 3 slots
+                    if (video && this.state.feeds.length < 4) {
+                        subscription.push({feed: id, mid: stream.mid});
+                    }
+                } else {
+                    // We subscribe for video to fill 3 slots
+                    if (video && f < 4) {
+                        subscription.push({feed: id, mid: stream.mid});
+                    }
                 }
                 if (audio) {
                     subscription.push({feed: id, mid: stream.mid});
