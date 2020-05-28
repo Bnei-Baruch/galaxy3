@@ -521,11 +521,13 @@ class VirtualClient extends Component {
         Janus.log('Local track ' + (on ? 'added' : 'removed') + ':', track);
         let {videoroom} = this.state;
         videoroom.muteAudio();
-        if (track.kind === 'video') {
-          this.setState({localVideoTrack: track});
-        }
-        if (track.kind === 'audio') {
-          this.setState({localAudioTrack: track});
+        if(track && track.kind) {
+          if (track.kind === 'video') {
+            this.setState({localVideoTrack: track});
+          }
+          if (track.kind === 'audio') {
+            this.setState({localAudioTrack: track});
+          }
         }
       },
       onremotestream: (stream) => {

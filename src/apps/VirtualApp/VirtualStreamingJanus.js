@@ -403,15 +403,17 @@ export default class VirtualStreamingJanus {
   };
 
   ducerMixaudio = () => {
-    this.trlAudioJanusStream.getVolume(null, volume => {
-      let audio      = this.audioElement;
-      let trl_volume = this.mixvolume * 0.05;
-      if (volume > 0.05) {
-        audio.volume = trl_volume;
-      } else if (audio.volume + 0.01 <= this.mixvolume) {
-        audio.volume = audio.volume + 0.01;
-      }
-    });
+    if(this.trlAudioJanusStream) {
+      this.trlAudioJanusStream.getVolume(null, volume => {
+        let audio      = this.audioElement;
+        let trl_volume = this.mixvolume * 0.05;
+        if (volume > 0.05) {
+          audio.volume = trl_volume;
+        } else if (audio.volume + 0.01 <= this.mixvolume) {
+          audio.volume = audio.volume + 0.01;
+        }
+      });
+    }
   };
 
   setVideo = (videos) => {
