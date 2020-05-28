@@ -169,15 +169,8 @@ class ShidurToran extends Component {
     }
 
     sdiAction = (action, status, i, feed) => {
-<<<<<<< Updated upstream
-        const { gateways, index } = this.props;
-        let col = index === 0 ? 1 : index === 4 ? 2 : index === 8 ? 3 : index === 12 ? 4 : null;
-        let msg = { type: "sdi-"+action, status, room: null, col, i, feed};
-        gateways["gxy3"].sendServiceMessage(msg);
-=======
         const { gateways } = this.props;
-        gateways[GXY3].sendServiceMessage(this.sdiActionMessage_(action, status, i, feed));
->>>>>>> Stashed changes
+        gateways["gxy3"].sendServiceMessage(this.sdiActionMessage_(action, status, i, feed));
     };
 
     sdiGuaranteeAction = (action, status, i, feed, toAck) => {
@@ -186,7 +179,7 @@ class ShidurToran extends Component {
       gdm.sendGuaranteeMessage(
         this.sdiActionMessage_(action, status, i, feed),
         toAck,
-        (msg) => gateways[GXY3].sendServiceMessage(msg)).
+        (msg) => gateways["gxy3"].sendServiceMessage(msg)).
       then(() => {
         console.log(`${action} delivered to ${toAck}.`);
       }).catch((error) => {

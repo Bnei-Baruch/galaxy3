@@ -3,12 +3,6 @@ import { Janus } from '../../lib/janus';
 import { Button, Input, Message } from 'semantic-ui-react';
 import { getDateString, initChatRoom, joinChatRoom, notifyMe } from '../../shared/tools';
 import { SHIDUR_ID } from '../../shared/consts';
-import {
-  GuaranteeDeliveryManager,
-  INTERVALS_DELAY,
-  MAX_DELAY,
-  RETRY_DELAY,
-} from '../../shared/GuaranteeDelivery';
 
 class VirtualChat extends Component {
 
@@ -19,8 +13,6 @@ class VirtualChat extends Component {
     support_msgs: [],
     room_chat: true,
     from: null,
-    // TODO: Share one delivery manager for all required components?
-    gdm: new GuaranteeDeliveryManager(MAX_DELAY, RETRY_DELAY, INTERVALS_DELAY),
   };
 
   static getDerivedStateFromProps(props, state) {
@@ -100,43 +92,29 @@ class VirtualChat extends Component {
         Janus.log('-:: It\'s private message: ' + dateString + ' : ' + from + ' : ' + msg);
         let { support_msgs } = this.state;
         let message          = JSON.parse(msg);
-        if (this.state.gdm.checkForAck(message)) {
-          return;  // ack message accepted don’t handle.
+        message.time         = dateString;
+        support_msgs.push(message);
+        this.setState({ support_msgs, from });
+        if (this.props.visible) {
+          this.scrollToBottom();
+        } else {
+          notifyMe('Shidur', message.text, true);
+          this.setState({ room_chat: false });
+          this.props.onNewMsg(true);
         }
-        this.state.gdm.acceptGuaranteeMessage(message, (msg) => this.sendChatMessage_(msg)).then((message) => {
-          message.time         = dateString;
-          support_msgs.push(message);
-          this.setState({ support_msgs, from });
-          if (this.props.visible) {
-            this.scrollToBottom();
-          } else {
-            notifyMe('Shidur', message.text, true);
-            this.setState({ room_chat: false });
-            this.props.onNewMsg(true);
-          }
-        }).catch((error) => {
-          console.log('Failed receiving private message', error);
-        });
       } else {
         // Public message
         let { messages } = this.state;
         let message      = JSON.parse(msg);
-        if (this.state.gdm.checkForAck(message)) {
-          return;  // ack message accepted don’t handle.
+        message.time     = dateString;
+        Janus.log('-:: It\'s public message: ' + message);
+        messages.push(message);
+        this.setState({ messages });
+        if (this.props.visible) {
+          this.scrollToBottom();
+        } else {
+          this.props.onNewMsg();
         }
-        this.state.gdm.acceptGuaranteeMessage(message, (msg) => this.sendChatMessage_(msg)).then((message) => {
-          message.time     = dateString;
-          Janus.log('-:: It\'s public message: ' + message);
-          messages.push(message);
-          this.setState({ messages });
-          if (this.props.visible) {
-            this.scrollToBottom();
-          } else {
-            this.props.onNewMsg();
-          }
-        }).catch((error) => {
-          console.log('Failed receiving public message', error);
-        });
       }
     } else if (what === 'join') {
       // Somebody joined
@@ -172,36 +150,13 @@ class VirtualChat extends Component {
   };
 
   sendChatMessage = () => {
-    const { input_value, user: {role, display, username} } = this.state;
-    if (!role.match(/^(user|guest)$/) || input_value === '') {
+    let { input_value, user, from, room_chat, support_msgs } = this.state;
+    if (!user.role.match(/^(user|guest)$/) || input_value === '') {
       return;
     }
-    const msg = { user: {role, display, username}, text: input_value };
-    const onError = (reason) => {
-      alert(reason);
-    };
-    const onSuccess = (msg) => {
-      const { room_chat, support_msgs } = this.state;
-      Janus.log(':: Message sent ::');
-      this.setState({ input_value: '' });
-      if (!room_chat) {
-        support_msgs.push(msg);
-        this.setState({ support_msgs });
-      }
-    }
-    this.state.gdm.sendGuaranteeMessage(msg, (m) => this.sendChatMessage_(m)).then(() => {
-      console.log('Sent success!');
-      onSuccess(msg);
-    }).catch(({reason, message}) => {
-      console.log('Send error', reason, message);
-      onError(reason);
-    });
-  }
-
-  sendChatMessage_ = (msg, onError = null, onSuccess = null) => {
-    const { from, room_chat } = this.state;
-    const pvt = room_chat ? '' : from ? { 'to': from } : { 'to': `${SHIDUR_ID}` };
-    const message = {
+    let msg     = { user, text: input_value };
+    let pvt     = room_chat ? '' : from ? { 'to': from } : { 'to': `${SHIDUR_ID}` };
+    let message = {
       ack: false,
       textroom: 'message',
       transaction: Janus.randomString(12),
@@ -211,14 +166,22 @@ class VirtualChat extends Component {
     };
     // Note: messages are always acknowledged by default. This means that you'll
     // always receive a confirmation back that the message has been received by the
-    // server and forwarded to the recipients (but necessary received by recipients).
-    // If you do not want this to happen, just add an ack:false property to the
-    // message above, and server won't send you a response (meaning you just have
-    // to hope it succeeded).
+    // server and forwarded to the recipients. If you do not want this to happen,
+    // just add an ack:false property to the message above, and server won't send
+    // you a response (meaning you just have to hope it succeeded).
     this.state.chatroom.data({
       text: JSON.stringify(message),
-      error: onError,
-      success: () => onSuccess && onSuccess(msg),
+      error: (reason) => {
+        alert(reason);
+      },
+      success: () => {
+        Janus.log(':: Message sent ::');
+        this.setState({ input_value: '' });
+        if (!room_chat) {
+          support_msgs.push(msg);
+          this.setState({ support_msgs });
+        }
+      }
     });
   };
 
