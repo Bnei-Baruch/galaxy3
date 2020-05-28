@@ -134,9 +134,9 @@ class UsersQuadSndman extends Component {
         const msg = {type: "audio-out", status, room, col: null, i: null, feed: null};
 
         const {gateways} = this.props;
-        //TODO: We need send data in room channel
-        //gateways[inst].sendProtocolMessage(msg);
-        this.sendDataMessage(status);
+        //TODO: Send data in room channel
+        //this.sendDataMessage(status);
+        gateways[inst].sendProtocolMessage(msg);
         gateways["gxy3"].sendServiceMessage(msg);
     };
 
