@@ -92,6 +92,7 @@ class GxyJanus extends EventTarget {
                     this.gateway = new Janus({
                         server: config.url,
                         iceServers: config.iceServers,
+                        token: config.token,
                         success: () => {
                             this.log("Connected to JANUS");
                             resolve();

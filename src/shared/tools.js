@@ -3,12 +3,14 @@ import * as Sentry from '@sentry/browser';
 import {STUN_SRV_GXY, WKLI_ENTER, WKLI_LEAVE
 } from "./env";
 
-export const initJanus = (cb,er,server,iceServers=[{urls: STUN_SRV_GXY}]) => {
+export const initJanus = (cb,er,server,token="",iceServers=[{urls: STUN_SRV_GXY}]) => {
     Janus.init({
         debug: process.env.NODE_ENV !== 'production' ? ["log","error"] : ["error"],
         callback: () => {
             let janus = new Janus({
-                server, iceServers,
+                server,
+                token,
+                iceServers,
                 success: () => {
                     Janus.log(" :: Connected to JANUS");
                     cb(janus);
