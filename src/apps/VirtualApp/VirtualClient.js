@@ -955,12 +955,9 @@ class VirtualClient extends Component {
       if(this.state.upval) {
         clearInterval(this.state.upval);
       }
-      takeImage(this.state.mystream, user);
+      takeImage(user);
       let upval = setInterval(() => {
-        const {mystream} = this.state;
-        if(mystream) {
-          takeImage(mystream, user);
-        }
+        takeImage(user);
       }, 10*60000);
       this.setState({upval});
     }

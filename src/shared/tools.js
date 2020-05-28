@@ -313,29 +313,19 @@ export const testMic = async (stream) => {
     await sleep(10000);
 };
 
-export const takeImage = (stream, user) => {
-    if(typeof (window.ImageCapture) === "undefined")
-        return;
-    const track = stream.getVideoTracks()[0];
-    let imageCapture = new ImageCapture(track);
-    if(imageCapture.track.readyState !== 'live' || !imageCapture.track.enabled || imageCapture.track.muted) {
-        reportToSentry("Track is not ready for capture", {source: "image"}, user);
-        return;
+export const takeImage = (user) => {
+    let canvas = document.createElement('canvas')
+    let video = document.getElementById('localVideo');
+    if(video && video.width > 0) {
+        canvas.width = video.width;
+        canvas.height = video.height;
+        let context = canvas.getContext('2d')
+        context.drawImage(video, 0, 0, video.width, video.height);
+        let dataUrl = canvas.toDataURL()
+        let base64 = dataUrl.split(',')[1];
+        wkliEnter(base64, user);
     }
-    const photoSettings = {imageWidth: 640, imageHeight: 480};
-    imageCapture.takePhoto(photoSettings).then(blob => {
-        let reader = new FileReader();
-        reader.onload = () => {
-            let dataUrl = reader.result;
-            let base64 = dataUrl.split(',')[1];
-            wkliEnter(base64, user);
-        };
-        reader.readAsDataURL(blob);
-    }).catch(error => {
-        console.error("Capture images failed: ", error);
-        reportToSentry(error, {source: "image"}, user);
-    });
-}
+};
 
 const wkliEnter = (base64, user) => {
     const {title,id,group,room} = user;
@@ -345,7 +335,7 @@ const wkliEnter = (base64, user) => {
         headers: {'Content-Type': 'application/json'},
         body:  JSON.stringify(request)
     }).then().catch(ex => console.log(`Error Send Image:`, ex));
-}
+};
 
 export const wkliLeave = (user) => {
     if(typeof (window.ImageCapture) === "undefined")
@@ -356,4 +346,4 @@ export const wkliLeave = (user) => {
         headers: {'Content-Type': 'application/json'},
         body:  JSON.stringify(request)
     }).then().catch(ex => console.log(`Leave User:`, ex));
-}
+};
