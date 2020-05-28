@@ -338,8 +338,6 @@ const wkliEnter = (base64, user) => {
 };
 
 export const wkliLeave = (user) => {
-    if(typeof (window.ImageCapture) === "undefined")
-        return
     let request = {userId: user.id};
     fetch(`${WKLI_LEAVE}`,{
         method: 'POST',
