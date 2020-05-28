@@ -13,7 +13,7 @@ export const DEADLINE_EXCEEDED = 'DEADLINE_EXCEEDED';
 
 // Class for sending and receiving messages that we validate they were eventually received. If not we raise an error after MAX_DELAY.
 export class GuaranteeDeliveryManager {
-	constructor(userId, maxDelay, retryDelay, intervalsDelay) {
+	constructor(userId, maxDelay = MAX_DELAY, retryDelay = RETRY_DELAY, intervalsDelay = INTERVALS_DELAY) {
     this.maxDelay = maxDelay;
     this.retryDelay = retryDelay;
     this.intervalsDelay = intervalsDelay;

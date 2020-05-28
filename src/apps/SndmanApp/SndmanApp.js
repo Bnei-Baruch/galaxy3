@@ -7,6 +7,8 @@ import LoginPage from "../../components/LoginPage";
 import {Grid} from "semantic-ui-react";
 import UsersQuadSndman from "./UsersQuadSndman";
 import GxyJanus from "../../shared/janus-utils";
+import {SNDMAN_ID} from "../../shared/consts"
+import {GuaranteeDeliveryManager} from '../../shared/GuaranteeDelivery';
 
 
 class SndmanApp extends Component {
@@ -16,6 +18,7 @@ class SndmanApp extends Component {
         gateways: {},
         gatewaysInitialized: false,
         appInitError: null,
+        gdm: new GuaranteeDeliveryManager(SNDMAN_ID),
     };
 
     componentWillUnmount() {
@@ -82,6 +85,7 @@ class SndmanApp extends Component {
     }
 
     onServiceData = (gateway, data) => {
+<<<<<<< Updated upstream
         if (data.type === "error" && data.error_code === 420) {
             console.error("[Sndman] service error message (reloading in 10 seconds)", data.error);
             setTimeout(() => {
@@ -105,7 +109,47 @@ class SndmanApp extends Component {
 
         if(data.type === "sdi-restart_sndman") {
             window.location.reload();
+=======
+        const { gdm } = this.state;
+        if (gdm.checkForAck(data)) {
+          // Ack received, do nothing.
+          return;
+>>>>>>> Stashed changes
         }
+        gdm.acceptGuaranteeMessage(data, (msg) => gateway.sendServiceMessage(msg)).then((data) => {
+          if (data === null) {
+            console.log('Message received more then once.');
+            return;
+          }
+
+          if (data.type === "error" && data.error_code === 420) {
+              console.error("[Sndman] service error message (reloading in 10 seconds)", data.error);
+              setTimeout(() => {
+                  this.initGateway(this.state.user, gateway);
+              }, 10000);
+          }
+
+          let {col, group, i, status} = data;
+
+          // Shidur action
+          if(data.type === "sdi-fullscr_group" && status) {
+              this["col"+col].fullScreenGroup(i,group);
+          } else if(data.type === "sdi-fullscr_group" && !status) {
+              this["col"+col].toFourGroup(i,group);
+          }
+
+          if(data.type === "event") {
+              delete data.type;
+              this.setState({...data});
+          }
+
+          if(data.type === "sdi-restart_sndman") {
+              alert('reload');
+              // window.location.reload();
+          }
+        }).catch((error) => {
+          console.error(`Failed receiving ${data}: ${error}`);
+        });
     };
 
     onProtocolData = (gateway, data) => {

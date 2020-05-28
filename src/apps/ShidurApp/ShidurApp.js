@@ -31,6 +31,7 @@ class ShidurApp extends Component {
         sdiout: false,
         sndman: false,
         users_count: 0,
+        shidurToranOnServiceData: null,
     };
 
     componentWillUnmount() {
@@ -141,6 +142,7 @@ class ShidurApp extends Component {
             setTimeout(() => {
                 this.initGateway(this.state.user, gateway);
             }, 10000);
+            return;
         }
 
         if(data.type === "event") {
@@ -152,6 +154,11 @@ class ShidurApp extends Component {
                     this.checkFullScreen();
                 }, 3000);
             }
+            return;
+        }
+
+        if (this.state.shidurToranOnServiceData) {
+          this.state.shidurToranOnServiceData(gateway, data);
         }
     };
 
