@@ -46,37 +46,13 @@ class UsersQuadSndman extends Component {
         }, 2000);
     };
 
-    sendMessage = (user, talk) => {
-        const gateway = this.props.gateways["gxy3"];
-        gateway.forwardMessage({
-            talk,
-            name: user.display,
-            ip: user.ip,
-            col: 4,
-            room: user.room,
-        });
-    };
-
     forwardStream = (full_group) => {
         const {fullscr,forward} = this.state;
         let {room,janus} = full_group;
-        //FIXME: This is really problem place we call start forward from one place and stop from two placed
-        // and we depend on callback from request and fullscreen state and feed info.
-        // fix1: we take now feed info from state only in render and pass as param to needed functions
-        // fix2: don't limit stop forward with fullscreen state it's will be limit only for start forward
-        // fix3: set forward state after success request callback (send message to client must be here as well)
-        // fix4: add start forward request progress state
-        // fix5: put delay between start/stop request switch (It's still hacky we actually need callback from sendMessage)
-        // fix6: put delay on stop request from shidur if start forward request still in progress
+        // Here we call start forward from one place and stop from two placed and we depend on fullscreen state.
         if(forward) {
             console.info("[Sndman] Stop forward", room);
             this.setDelay();
-            // feeds.forEach((feed,i) => {
-            //     if (feed) {
-            //         // FIXME: if we change sources on client based on room id (not ip) we send message only once?
-            //         this.sendMessage(feed, false);
-            //     }
-            // });
             this.micMute(false, room, janus);
             this.setState({forward: false});
         } else if(fullscr) {
@@ -84,23 +60,6 @@ class UsersQuadSndman extends Component {
             this.setDelay();
             this.setState({forward: true});
             this.micMute(true, room, janus);
-            // api.fetchRoom(room)
-            //     .then(data => {
-            //         const {users} = data;
-            //         users.forEach((user) => {
-            //             // TODO (edo): why not simply send to all users ?!
-            //             if (user && user.rfid) {
-            //                 this.sendMessage(user, true);
-            //             } else {
-            //                 console.error("Forward failed for user: " + user + " in room: " + room, data)
-            //             }
-            //         });
-            //         this.setState({feeds: users, forward: true});
-            //         this.micMute(true, room, janus);
-            //     })
-            //     .catch(err => {
-            //         console.error("[Sndman] error fetching room state", room, err);
-            //     });
         }
     };
 
