@@ -47,6 +47,7 @@ class AdminRoot extends Component {
         gxy2_count: 0,
         gxy3_count: 0,
         gxy4_count: 0,
+        command_status: true,
     };
 
     componentWillUnmount() {
@@ -535,7 +536,7 @@ class AdminRoot extends Component {
     };
 
     sendRemoteCommand = (command_type) => {
-        const {gateways, feed_user, current_janus} = this.state;
+        const {gateways, feed_user, current_janus, current_room, command_status} = this.state;
         if (!feed_user) {
             alert("Choose user");
             return;
@@ -546,8 +547,12 @@ class AdminRoot extends Component {
         }
 
         const gateway = gateways[current_janus];
-        gateway.sendProtocolMessage({type: command_type, status: true, id: feed_user.id, user: feed_user})
+        gateway.sendProtocolMessage({type: command_type, room: current_room, status: command_status, id: feed_user.id, user: feed_user})
             .catch(alert);
+
+        if (command_type === "audio-out") {
+            this.setState({command_status: !command_status})
+        }
     };
 
     sendDataMessage = (msg) => {
@@ -587,7 +592,8 @@ class AdminRoot extends Component {
                     current_janus: inst,
                     feeds: [],
                     feed_user: null,
-                    feed_id: null
+                    feed_id: null,
+                    command_status: true,
                 });
 
                 const gateway = this.state.gateways[inst];
@@ -709,6 +715,7 @@ class AdminRoot extends Component {
           gxy4_count,
         chatRoomsInitialized,
           appInitError,
+          command_status,
       } = this.state;
 
       if (appInitError) {
@@ -873,10 +880,10 @@ class AdminRoot extends Component {
                                           <Popup trigger={<Button color="olive" icon='redo alternate' onClick={() => this.sendRemoteCommand("client-reload")} />} content='Reload page(LOST FEED HERE!)' inverted />
                                           <Popup trigger={<Button color="teal" icon='microphone' onClick={() => this.sendRemoteCommand("client-mute")} />} content='Mic Mute/Unmute' inverted />
                                           <Popup trigger={<Button color="pink" icon='eye' onClick={() => this.sendRemoteCommand("video-mute")} />} content='Cam Mute/Unmute' inverted />
+                                          <Popup trigger={<Button color="orange" icon={command_status ? 'volume off' : 'volume up'} onClick={() => this.sendRemoteCommand("audio-out")} />} content='Talk event' inverted />
                                           {/*<Popup trigger={<Button color="pink" icon='eye' onClick={() => this.sendDataMessage("video-mute")} />} content='Cam Mute/Unmute' inverted />*/}
                                           <Popup trigger={<Button color="blue" icon='power off' onClick={() => this.sendRemoteCommand("client-disconnect")} />} content='Disconnect(LOST FEED HERE!)' inverted />
                                           <Popup trigger={<Button color="yellow" icon='question' onClick={() => this.sendRemoteCommand("client-question")} />} content='Set/Unset question' inverted />
-                                          <Popup trigger={<Button color="orange" icon='volume up' onClick={() => this.sendRemoteCommand("audio-out")} />} content='Talk event' inverted />
                                       </Segment>
                                       : null
                               }
