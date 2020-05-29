@@ -122,13 +122,10 @@ class VirtualClient extends Component {
       window.location = '/userm';
     }
     setInterval(() => {
-      const {net_status,user} = this.state;
+      const {net_status} = this.state;
       const cur_status = getLostStat();
       if (net_status !== cur_status) {
         this.setState({net_status: cur_status});
-        if (cur_status === 3) {
-          reportToSentry("Bad network status", {source: "network"}, user);
-        }
       }
     }, 5000);
   }
@@ -1289,7 +1286,7 @@ class VirtualClient extends Component {
     let login = (<LoginPage user={user} checkPermission={this.checkPermission} />);
 
     let content = (<div className={classNames('vclient', { 'vclient--chat-open': chatVisible })}>
-			<VerifyAccount user={user} loginPage={false} i18n={i18n} onUserUpdate={(user) => this.recheckPermission(user)} />
+			<VerifyAccount user={user} loginPage={false} i18n={i18n} />
       <div className="vclient__toolbar">
         <Input>
           <Select
