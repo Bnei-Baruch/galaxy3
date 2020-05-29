@@ -5,7 +5,7 @@ import { isMobile } from 'react-device-detect';
 import {Button, Icon, Input, Label, Menu, Popup, Select,} from 'semantic-ui-react';
 import {
   checkNotification,
-  geoInfo,
+  geoInfo, getDevices, getDevicesList,
   getDevicesStream,
   initJanus,
   micLevel,
@@ -158,6 +158,9 @@ class VirtualClient extends Component {
       alert(t('oldClient.browserNotSupported'));
       window.location = 'https://galaxy.kli.one';
     }
+
+    getDevicesList((a,v,ar,vr) => console.log(a,v,ar,vr));
+
     geoInfo(`${GEO_IP_INFO}`, data => {
       user.ip = data ? data.ip : '127.0.0.1';
       user.country = data.country;
@@ -185,7 +188,7 @@ class VirtualClient extends Component {
                 user.group = name;
                 this.setState({name});
               }
-              this.initClient(user, false);
+              //this.initClient(user, false);
             }
           })
           .catch(err => {

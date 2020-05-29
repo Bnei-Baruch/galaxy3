@@ -229,6 +229,33 @@ export const checkNotification = () => {
     }
 };
 
+const checkDevices = (audio,video) => {
+    return navigator.mediaDevices.getUserMedia({audio, video})
+        .then(data => ([data, undefined]))
+        .catch(error => Promise.resolve([undefined, error.message]));
+};
+
+export const getDevicesList = async(callback) => {
+    let audio_devices,video_devices,audio_error = null,video_error = null
+    let [stream, devices_error] = await checkDevices(true, true);
+    let devices = await navigator.mediaDevices.enumerateDevices()
+    audio_devices = devices.filter(a => a.deviceId !== "" && a.kind === 'audioinput');
+    video_devices = devices.filter(v => v.deviceId !== "" && v.kind === 'videoinput');
+
+    if(audio_devices.length === 0) {
+        [stream, audio_error] = await checkDevices(true,false);
+        devices = await navigator.mediaDevices.enumerateDevices()
+        audio_devices = devices.filter(a => a.deviceId !== "" && a.kind === 'audioinput');
+    }
+    if(video_devices.length === 0) {
+        [stream, video_error] = await checkDevices(false,true);
+        devices = await navigator.mediaDevices.enumerateDevices()
+        video_devices = devices.filter(v => v.deviceId !== "" && v.kind === 'videoinput');
+    }
+
+    callback(audio_devices, video_devices, audio_error, video_error)
+};
+
 export const getDevicesStream = (audioid,videoid,video_setting,cb) => {
     const width = video_setting.width;
     const height = video_setting.height;
