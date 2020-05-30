@@ -122,13 +122,10 @@ class VirtualClient extends Component {
       window.location = '/userm';
     }
     setInterval(() => {
-      const {net_status,user} = this.state;
+      const {net_status} = this.state;
       const cur_status = getLostStat();
       if (net_status !== cur_status) {
         this.setState({net_status: cur_status});
-        if (cur_status === 3) {
-          reportToSentry("Bad network status", {source: "network"}, user);
-        }
       }
     }, 5000);
   }
@@ -530,11 +527,13 @@ class VirtualClient extends Component {
         Janus.log('Local track ' + (on ? 'added' : 'removed') + ':', track);
         let {videoroom} = this.state;
         videoroom.muteAudio();
-        if (track.kind === 'video') {
-          this.setState({localVideoTrack: track});
-        }
-        if (track.kind === 'audio') {
-          this.setState({localAudioTrack: track});
+        if(track && track.kind) {
+          if (track.kind === 'video') {
+            this.setState({localVideoTrack: track});
+          }
+          if (track.kind === 'audio') {
+            this.setState({localAudioTrack: track});
+          }
         }
       },
       onremotestream: (stream) => {
@@ -964,12 +963,9 @@ class VirtualClient extends Component {
       if(this.state.upval) {
         clearInterval(this.state.upval);
       }
-      takeImage(this.state.mystream, user);
+      takeImage(user);
       let upval = setInterval(() => {
-        const {mystream} = this.state;
-        if(mystream) {
-          takeImage(mystream, user);
-        }
+        takeImage(user);
       }, 10*60000);
       this.setState({upval});
     }
@@ -1303,7 +1299,7 @@ class VirtualClient extends Component {
     let login = (<LoginPage user={user} checkPermission={this.checkPermission} />);
 
     let content = (<div className={classNames('vclient', { 'vclient--chat-open': chatVisible })}>
-			<VerifyAccount user={user} loginPage={false} i18n={i18n} onUserUpdate={(user) => this.recheckPermission(user)} />
+			<VerifyAccount user={user} loginPage={false} i18n={i18n} />
       <div className="vclient__toolbar">
         <Input>
           <Select

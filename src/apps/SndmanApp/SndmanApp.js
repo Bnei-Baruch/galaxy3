@@ -70,7 +70,6 @@ class SndmanApp extends Component {
                     .then(() => {
                         if (gateway.name === "gxy3") {
                             return gateway.initServiceProtocol(user, data => this.onServiceData(gateway, data))
-                                .then(gateway.initForward)
                         }
                     });
             })
@@ -116,24 +115,6 @@ class SndmanApp extends Component {
                 this.initGateway(this.state.user, gateway);
             }, 10000);
         }
-
-        // let {users} = this.state;
-        //
-        // // Set status in users list
-        // if(data.type.match(/^(camera|question|sound_test)$/)) {
-        //     if(users[data.user.id]) {
-        //         users[data.user.id][data.type] = data.status;
-        //         this.setState({users});
-        //     } else {
-        //         users[data.user.id] = {[data.type]: data.status};
-        //         this.setState({users});
-        //     }
-        // }
-        //
-        // if(data.type === "leave" && users[data.id]) {
-        //     delete users[data.id];
-        //     this.setState({users});
-        // }
     };
 
     setProps = (props) => {
