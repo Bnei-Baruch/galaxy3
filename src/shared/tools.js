@@ -231,9 +231,9 @@ export const checkNotification = () => {
     }
 };
 
-export const getMediaStream = (audio,video,setting = { width: 320, height: 180, ideal: 15 },audioid,videoid) => {
+export const getMediaStream = (audio, video, setting, audioid, videoid) => {
     const {width,height,ideal} = setting;
-    video = videoid ? {width, height, frameRate: {ideal, min: 1}, deviceId: {exact: videoid}} : video;
+    video = videoid ? {width, height, frameRate: {ideal, min: 1}, deviceId: {exact: videoid}} : {width, height, frameRate: {ideal, min: 1}};
     audio = audioid ? {deviceId: {exact: audioid}} : audio;
     return navigator.mediaDevices.getUserMedia({audio, video})
         .then(data => ([data, null]))
@@ -244,13 +244,14 @@ export const getMedia = async (media) => {
     const {audio, video} = media;
     let error = null;
     let devices = [];
-    [video.stream, error] = await getMediaStream(true, true);
+    [video.stream, error] = await getMediaStream(true, true, video.setting);
 
     if(error) {
+        //Get only audio
         [audio.stream, audio.error] = await getMediaStream(true, false);
         devices = await navigator.mediaDevices.enumerateDevices()
         audio.devices = devices.filter(a => a.deviceId !== "" && a.kind === 'audioinput');
-
+        //Get only video
         [video.stream, video.error] = await getMediaStream(false, true);
         devices = await navigator.mediaDevices.enumerateDevices()
         video.devices = devices.filter(v => v.deviceId !== "" && v.kind === 'videoinput');
@@ -272,17 +273,6 @@ export const getMedia = async (media) => {
     }
 
     return media
-};
-
-export const getDevicesStream = (audioid,videoid,video_setting,cb) => {
-    const width = video_setting.width;
-    const height = video_setting.height;
-    const ideal = video_setting.fps;
-    let video = videoid ? {width, height, frameRate: {ideal, min: 1}, deviceId: {exact: videoid}} : "";
-    let audio = audioid ? {deviceId: {exact: audioid}} : "";
-    navigator.mediaDevices.getUserMedia({ audio: audio, video: video }).then(stream => {
-        cb(stream);
-    });
 };
 
 export const geoInfo = (url,cb) => fetch(`${url}`)

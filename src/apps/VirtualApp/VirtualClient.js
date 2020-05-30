@@ -324,7 +324,7 @@ class VirtualClient extends Component {
     let {media} = this.state;
     if(video_device === media.video.video_device)
       return
-    getMediaStream(false,true, media.video.settings,null,video_device)
+    getMediaStream(false,true, media.video.setting,null,video_device)
         .then(stream => {
           media.video.stream = stream[0];
           media.video.video_device = video_device;
