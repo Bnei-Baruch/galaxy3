@@ -181,7 +181,7 @@ class MobileClient extends Component {
             }
         }, err => {
             console.error("[MobileClient] error initializing janus", err);
-        }, config.url, config.iceServers);
+        }, config.url, config.token, config.iceServers);
     };
 
     initDevices = (video) => {
