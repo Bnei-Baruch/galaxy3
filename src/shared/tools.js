@@ -231,31 +231,47 @@ export const checkNotification = () => {
     }
 };
 
-const checkDevices = (audio,video) => {
+export const getMediaStream = (audio,video,setting = { width: 320, height: 180, ideal: 15 },audioid,videoid) => {
+    const {width,height,ideal} = setting;
+    video = videoid ? {width, height, frameRate: {ideal, min: 1}, deviceId: {exact: videoid}} : video;
+    audio = audioid ? {deviceId: {exact: audioid}} : audio;
     return navigator.mediaDevices.getUserMedia({audio, video})
-        .then(data => ([data, undefined]))
-        .catch(error => Promise.resolve([undefined, error.message]));
+        .then(data => ([data, null]))
+        .catch(error => Promise.resolve([null, error.message]));
 };
 
-export const getDevicesList = async(callback) => {
-    let audio_devices,video_devices,audio_error = null,video_error = null
-    let [stream, devices_error] = await checkDevices(true, true);
-    let devices = await navigator.mediaDevices.enumerateDevices()
-    audio_devices = devices.filter(a => a.deviceId !== "" && a.kind === 'audioinput');
-    video_devices = devices.filter(v => v.deviceId !== "" && v.kind === 'videoinput');
+export const getMedia = async (media) => {
+    const {audio, video} = media;
+    let error = null;
+    let devices = [];
+    [video.stream, error] = await getMediaStream(true, true);
 
-    if(audio_devices.length === 0) {
-        [stream, audio_error] = await checkDevices(true,false);
+    if(error) {
+        [audio.stream, audio.error] = await getMediaStream(true, false);
         devices = await navigator.mediaDevices.enumerateDevices()
-        audio_devices = devices.filter(a => a.deviceId !== "" && a.kind === 'audioinput');
-    }
-    if(video_devices.length === 0) {
-        [stream, video_error] = await checkDevices(false,true);
+        audio.devices = devices.filter(a => a.deviceId !== "" && a.kind === 'audioinput');
+
+        [video.stream, video.error] = await getMediaStream(false, true);
         devices = await navigator.mediaDevices.enumerateDevices()
-        video_devices = devices.filter(v => v.deviceId !== "" && v.kind === 'videoinput');
+        video.devices = devices.filter(v => v.deviceId !== "" && v.kind === 'videoinput');
+    } else {
+        devices = await navigator.mediaDevices.enumerateDevices()
+        audio.devices = devices.filter(a => a.deviceId !== "" && a.kind === 'audioinput');
+        video.devices = devices.filter(v => v.deviceId !== "" && v.kind === 'videoinput');
+        audio.stream = video.stream;
     }
 
-    callback(audio_devices, video_devices, audio_error, video_error)
+    if(audio.devices[0]) {
+        let audio_device = localStorage.getItem('audio_device');
+        audio.audio_device = audio_device || audio.devices[0].deviceId;
+    }
+
+    if(video.devices[0]) {
+        let video_device = localStorage.getItem('video_device');
+        video.video_device = video_device || video.devices[0].deviceId;
+    }
+
+    return media
 };
 
 export const getDevicesStream = (audioid,videoid,video_setting,cb) => {
@@ -266,31 +282,6 @@ export const getDevicesStream = (audioid,videoid,video_setting,cb) => {
     let audio = audioid ? {deviceId: {exact: audioid}} : "";
     navigator.mediaDevices.getUserMedia({ audio: audio, video: video }).then(stream => {
         cb(stream);
-    });
-};
-
-export const testDevices = (video,audio,user,cb) => {
-    navigator.mediaDevices.getUserMedia({ audio: audio, video: video }).then(stream => {
-        cb(stream);
-    }, function (e) {
-        reportToSentry((video ? "Video" : "Audio") + " Device Failed: " + e.name, {source: "device",audio,video}, user)
-        var message;
-        switch (e.name) {
-            case 'NotFoundError':
-            case 'DevicesNotFoundError':
-                message = 'No input devices found.';
-                break;
-            case 'SourceUnavailableError':
-                message = 'Your input device is busy';
-                break;
-            case 'PermissionDeniedError':
-            case 'SecurityError':
-                message = 'Permission denied!';
-                break;
-            default: Janus.log('Permission devices usage is Rejected! You must grant it.', e);
-                return;
-        }
-        Janus.log(message);
     });
 };
 
