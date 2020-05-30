@@ -219,7 +219,7 @@ class VirtualClient extends Component {
     }, err => {
       console.error("[VirtualClient] error initializing janus", err);
       reportToSentry(error, {source: "janus",janus: user.janus, user})
-    }, config.url, config.iceServers);
+    }, config.url, config.token, config.iceServers);
 
     const {ip, country} = user;
     this.state.virtualStreamingJanus.init(ip, country);
