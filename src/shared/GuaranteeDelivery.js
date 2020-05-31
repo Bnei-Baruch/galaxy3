@@ -69,7 +69,7 @@ export class GuaranteeDeliveryManager {
   // @param {!Array<string>} toAck List of userIds that are expected to ack. If empty will expect any non-self user to ack.
   // @param {function(!Object)} sendMessage
   // @return {!Promise}  <====  Resolve for success, reject for failure.
-  sendGuaranteeMessage(message, toAck, sendMessage) {
+  send(message, toAck, sendMessage) {
     // Make sure we have unique key in each message. Potentially use existing transaction.
     if (!(TRANSACTION_FIELD in message)) {
       message[TRANSACTION_FIELD] = Janus.randomString(12);
@@ -105,7 +105,7 @@ export class GuaranteeDeliveryManager {
   // Check if ack message was received, handle it.
   // @param {!Object} message
   // @returns {boolean} true if ack was received, false if any other message.
-  checkForAck(message) {
+  checkAck(message) {
     if (!(ACK_FIELD in message)) {
       return false;
     }
@@ -139,7 +139,7 @@ export class GuaranteeDeliveryManager {
   // @param {function(!Object)} sendMessage
   // @return {!Promise}  <==== Resolve only once when received, Resolve with null on any
   // consecutive times the same message received. Reject on errors.
-  acceptGuaranteeMessage(message, sendAckBack) {
+  accept(message, sendAckBack) {
     if (!(RETRY_FIELD in message)) {
       // This is a regular non-guarantee message, resolve right away.
       console.log(`${RETRY_FIELD} not found in `, message);

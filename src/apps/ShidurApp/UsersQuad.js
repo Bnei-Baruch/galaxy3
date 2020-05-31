@@ -102,7 +102,7 @@ class UsersQuad extends Component {
 
         this.setState({vquad});
         api.updateQuad(col, {vquad})
-            .catch(err => console.error("[Shidur] error updating quad state", col, err))
+           .catch(err => console.error("[Shidur] error updating quad state", col, err))
     };
 
     switchFour = () => {
@@ -159,7 +159,7 @@ class UsersQuad extends Component {
         const {gateways} = this.props;
         const {col} = this.state;
         let msg = {type: "sdi-"+action, status, room: null, col, i, group, qst};
-        gateways["gxy3"].sendServiceMessage(msg);
+        gateways[GXY3].sendServiceMessage(msg);
     };
 
     checkFullScreen = () => {

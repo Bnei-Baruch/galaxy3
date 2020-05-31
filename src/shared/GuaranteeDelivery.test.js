@@ -32,7 +32,7 @@ it('messaged delivery guaranteed', (done) => {
 
   userA.setOnMessageCallback((message) => {
     // User A receives message.
-    if (gdmA.checkForAck(message)) {
+    if (gdmA.checkAck(message)) {
       return;  // ack message accepted don’t handle.
     }
     // Any other message...
@@ -40,7 +40,7 @@ it('messaged delivery guaranteed', (done) => {
   });
 
   userB.setOnMessageCallback((message) => {
-    gdmB.acceptGuaranteeMessage(message, (msg) => userA.send(Object.assign({}, msg))).then((message) => {
+    gdmB.accept(message, (msg) => userA.send(Object.assign({}, msg))).then((message) => {
       if (message === null) {
         console.log('messaged delivery guaranteed - UserB Already received this message, skip.', message);
         return;
@@ -53,7 +53,7 @@ it('messaged delivery guaranteed', (done) => {
 
   // User A to send guarantee message to user B.
   const theMessage = {test: 'messaged delivery guaranteed'};
-  gdmA.sendGuaranteeMessage(Object.assign({}, theMessage), /* toAck= */ [], (msg) => userB.send(Object.assign({}, msg))).then(() => {
+  gdmA.send(Object.assign({}, theMessage), /* toAck= */ [], (msg) => userB.send(Object.assign({}, msg))).then(() => {
     console.log('messaged delivery guaranteed - UserA success', theMessage);
     expect(true).toBe(true);
     done();
@@ -80,7 +80,7 @@ it('slow user, retry few times', (done) => {
 
   userA.setOnMessageCallback((message) => {
     // User A receives message.
-    if (gdmA.checkForAck(message)) {
+    if (gdmA.checkAck(message)) {
       ackReceived++;
       return;  // ack message accepted don’t handle.
     }
@@ -89,7 +89,7 @@ it('slow user, retry few times', (done) => {
   });
 
   userB.setOnMessageCallback((message) => {
-    gdmB.acceptGuaranteeMessage(message, (msg) => { ackSent++; userA.send(Object.assign({}, msg)); }).then((message) => {
+    gdmB.accept(message, (msg) => { ackSent++; userA.send(Object.assign({}, msg)); }).then((message) => {
       received++;
       if (message === null) {
         receivedNull++;
@@ -104,7 +104,7 @@ it('slow user, retry few times', (done) => {
 
   // User A to send guarantee message to user B.
   const theMessage = {test: 'slow user, retry few times'};
-  gdmA.sendGuaranteeMessage(Object.assign({}, theMessage), /* toAck= */ [], (msg) => { retries++; userB.send(Object.assign({}, msg)); }).then(() => {
+  gdmA.send(Object.assign({}, theMessage), /* toAck= */ [], (msg) => { retries++; userB.send(Object.assign({}, msg)); }).then(() => {
     console.log('slow user, retry few times - UserA success', theMessage);
     expect(retries).toBe(3);
     expect(received).toBe(2);
@@ -135,7 +135,7 @@ it('very slow user, fail eventually', (done) => {
 
   userA.setOnMessageCallback((message) => {
     // User A receives message.
-    if (gdmA.checkForAck(message)) {
+    if (gdmA.checkAck(message)) {
       ackReceived++;
       return;  // ack message accepted don’t handle.
     }
@@ -144,7 +144,7 @@ it('very slow user, fail eventually', (done) => {
   });
 
   userB.setOnMessageCallback((message) => {
-    gdmB.acceptGuaranteeMessage(message, (msg) => { ackSent++; userA.send(Object.assign({}, msg)); }).then((message) => {
+    gdmB.accept(message, (msg) => { ackSent++; userA.send(Object.assign({}, msg)); }).then((message) => {
       received++;
       if (message === null) {
         receivedNull++;
@@ -159,7 +159,7 @@ it('very slow user, fail eventually', (done) => {
 
   // User A to send guarantee message to user B.
   const theMessage = {test: 'very slow user, fail eventually'};
-  gdmA.sendGuaranteeMessage(Object.assign({}, theMessage), /* toAck= */ [], (msg) => { retries++; userB.send(Object.assign({}, msg)); }).then(() => {
+  gdmA.send(Object.assign({}, theMessage), /* toAck= */ [], (msg) => { retries++; userB.send(Object.assign({}, msg)); }).then(() => {
     console.log('very slow user, fail eventually - UserA success', theMessage);
     expect(true).toBe(false);  // Should not get here.
     done();
@@ -183,7 +183,7 @@ it('cannot implicitly ack myself', (done) => {
 
   userA.setOnMessageCallback((message) => {
     // User A receives message.
-    if (gdm.checkForAck(message)) {
+    if (gdm.checkAck(message)) {
       return;  // ack message accepted don’t handle.
     }
     // Any other message...
@@ -191,7 +191,7 @@ it('cannot implicitly ack myself', (done) => {
   });
 
   userB.setOnMessageCallback((message) => {
-    gdm.acceptGuaranteeMessage(message, (msg) => userA.send(Object.assign({}, msg))).then((message) => {
+    gdm.accept(message, (msg) => userA.send(Object.assign({}, msg))).then((message) => {
       if (message === null) {
         console.log('cannot implicitly ack myself - UserB Already received this message, skip.', message);
         return;
@@ -204,7 +204,7 @@ it('cannot implicitly ack myself', (done) => {
 
   // User A to send guarantee message to user B.
   const theMessage = {test: 'cannot implicitly ack myself'};
-  gdm.sendGuaranteeMessage(Object.assign({}, theMessage), /* toAck= */ [], (msg) => userB.send(Object.assign({}, msg))).then(() => {
+  gdm.send(Object.assign({}, theMessage), /* toAck= */ [], (msg) => userB.send(Object.assign({}, msg))).then(() => {
     console.log('cannot implicitly ack myself - UserA success', theMessage);
     expect(true).toBe(false);
     done();
@@ -223,7 +223,7 @@ it('can explicitl ack myself', (done) => {
 
   userA.setOnMessageCallback((message) => {
     // User A receives message.
-    if (gdm.checkForAck(message)) {
+    if (gdm.checkAck(message)) {
       return;  // ack message accepted don’t handle.
     }
     // Any other message...
@@ -231,7 +231,7 @@ it('can explicitl ack myself', (done) => {
   });
 
   userB.setOnMessageCallback((message) => {
-    gdm.acceptGuaranteeMessage(message, (msg) => userA.send(Object.assign({}, msg))).then((message) => {
+    gdm.accept(message, (msg) => userA.send(Object.assign({}, msg))).then((message) => {
       if (message === null) {
         console.log('can explicitl ack myself - UserB Already received this message, skip.', message);
         return;
@@ -244,7 +244,7 @@ it('can explicitl ack myself', (done) => {
 
   // User A to send guarantee message to user B.
   const theMessage = {test: 'can explicitl ack myself'};
-  gdm.sendGuaranteeMessage(Object.assign({}, theMessage), /* toAck= */ ['userA'], (msg) => userB.send(Object.assign({}, msg))).then(() => {
+  gdm.send(Object.assign({}, theMessage), /* toAck= */ ['userA'], (msg) => userB.send(Object.assign({}, msg))).then(() => {
     console.log('can explicitl ack myself - UserA success', theMessage);
     expect(true).toBe(true);  // Can explicitly ack myself.
     done();
@@ -273,18 +273,18 @@ const createRoom = (numUsers) => {
       user: new User(/* messageSendDelay= */ 10),
     };
     room[userId].user.setOnMessageCallback((message) => {
-      if (room[userId].gdm.checkForAck(message)) {
-        console.log('checkForAck, ack accepted', userId);
+      if (room[userId].gdm.checkAck(message)) {
+        console.log('checkAck, ack accepted', userId);
         return;  // ack message accepted don’t handle.
       }
-      room[userId].gdm.acceptGuaranteeMessage(message, sendToAll(room)).then((message) => {
+      room[userId].gdm.accept(message, sendToAll(room)).then((message) => {
         if (message === null) {
-          console.log('acceptGuaranteeMessage received more then once', userId);
+          console.log('accept received more then once', userId);
         } else {
-          console.log('acceptGuaranteeMessage received', userId, message);
+          console.log('accept received', userId, message);
         }
       }).catch((error) => {
-        console.error('acceptGuaranteeMessage failed', userId, error);
+        console.error('accept failed', userId, error);
       });
     });
   }
@@ -294,7 +294,7 @@ const createRoom = (numUsers) => {
 it('messaged delivery guaranteed to many users any', (done) => {
   const room = createRoom(10);
   const theMessage = {test: 'test'};
-  room['user_0'].gdm.sendGuaranteeMessage(Object.assign({}, theMessage), /* toAck= */ [], sendToAll(room)).then(() => {
+  room['user_0'].gdm.send(Object.assign({}, theMessage), /* toAck= */ [], sendToAll(room)).then(() => {
     console.log('messaged delivery guaranteed to many users any', theMessage);
     expect(true).toBe(true);
     done();
@@ -308,7 +308,7 @@ it('messaged delivery guaranteed to many users any', (done) => {
 it('messaged delivery guaranteed to many users - specific user ack', (done) => {
   const room = createRoom(10);
   const theMessage = {test: 'test'};
-  room['user_0'].gdm.sendGuaranteeMessage(Object.assign({}, theMessage), /* toAck= */ ['user_5'], sendToAll(room)).then(() => {
+  room['user_0'].gdm.send(Object.assign({}, theMessage), /* toAck= */ ['user_5'], sendToAll(room)).then(() => {
     console.log('messaged delivery guaranteed to many users - specific user ack', theMessage);
     expect(true).toBe(true);
     done();
@@ -322,7 +322,7 @@ it('messaged delivery guaranteed to many users - specific user ack', (done) => {
 it('messaged delivery guaranteed to many users - some users ack', (done) => {
   const room = createRoom(10);
   const theMessage = {test: 'test'};
-  room['user_0'].gdm.sendGuaranteeMessage(Object.assign({}, theMessage), /* toAck= */ ['user_5', 'user_2', 'user_9'], sendToAll(room)).then(() => {
+  room['user_0'].gdm.send(Object.assign({}, theMessage), /* toAck= */ ['user_5', 'user_2', 'user_9'], sendToAll(room)).then(() => {
     console.log('messaged delivery guaranteed to many users - some users ack', theMessage);
     expect(true).toBe(true);
     done();
@@ -336,7 +336,7 @@ it('messaged delivery guaranteed to many users - some users ack', (done) => {
 it('messaged delivery guaranteed to many users - some users ack - one of them unreachable', (done) => {
   const room = createRoom(10);
   const theMessage = {test: 'test'};
-  room['user_0'].gdm.sendGuaranteeMessage(Object.assign({}, theMessage), /* toAck= */ ['user_5', 'user_2', 'user_9'], sendToAll(room, /* unreachableUsers= */ ['user_2'])).then(() => {
+  room['user_0'].gdm.send(Object.assign({}, theMessage), /* toAck= */ ['user_5', 'user_2', 'user_9'], sendToAll(room, /* unreachableUsers= */ ['user_2'])).then(() => {
     console.log('messaged delivery guaranteed to many users - some users ack - one of them unreachable', theMessage);
     expect(true).toBe(false);  // Should not happen.
     done();

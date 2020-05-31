@@ -86,11 +86,11 @@ class SndmanApp extends Component {
 
     onServiceData = (gateway, data) => {
         const { gdm } = this.state;
-        if (gdm.checkForAck(data)) {
+        if (gdm.checkAck(data)) {
           // Ack received, do nothing.
           return;
         }
-        gdm.acceptGuaranteeMessage(data, (msg) => gateway.sendServiceMessage(msg)).then((data) => {
+        gdm.accept(data, (msg) => gateway.sendServiceMessage(msg)).then((data) => {
           if (data === null) {
             console.log('Message received more then once.');
             return;

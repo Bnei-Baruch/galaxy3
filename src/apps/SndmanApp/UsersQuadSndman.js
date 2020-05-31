@@ -96,7 +96,7 @@ class UsersQuadSndman extends Component {
         //TODO: Send data in room channel
         //this.sendDataMessage(status);
         gateways[inst].sendProtocolMessage(msg);
-        gateways["gxy3"].sendServiceMessage(msg);
+        gateways[GXY3].sendServiceMessage(msg);
     };
 
   render() {

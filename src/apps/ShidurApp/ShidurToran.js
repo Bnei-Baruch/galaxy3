@@ -3,7 +3,7 @@ import {Grid, Label, Message, Segment, Table, Button, Dropdown, Popup} from "sem
 import './ShidurToran.scss';
 import UsersPreview from "./UsersPreview";
 import {RESET_VOTE} from "../../shared/env";
-import {STORAN_ID, SNDMAN_ID} from "../../shared/consts"
+import {STORAN_ID, SDIOUT_ID, SNDMAN_ID} from "../../shared/consts"
 import {GuaranteeDeliveryManager} from '../../shared/GuaranteeDelivery';
 
 
@@ -170,16 +170,16 @@ class ShidurToran extends Component {
 
     sdiAction = (action, status, i, feed) => {
         const { gateways } = this.props;
-        gateways["gxy3"].sendServiceMessage(this.sdiActionMessage_(action, status, i, feed));
+        gateways[GXY3].sendServiceMessage(this.sdiActionMessage_(action, status, i, feed));
     };
 
     sdiGuaranteeAction = (action, status, i, feed, toAck) => {
       const { gateways } = this.props;
       const { gdm } = this.state;
-      gdm.sendGuaranteeMessage(
+      gdm.send(
         this.sdiActionMessage_(action, status, i, feed),
         toAck,
-        (msg) => gateways["gxy3"].sendServiceMessage(msg)).
+        (msg) => gateways[GXY3].sendServiceMessage(msg)).
       then(() => {
         console.log(`${action} delivered to ${toAck}.`);
       }).catch((error) => {
@@ -190,7 +190,7 @@ class ShidurToran extends Component {
     onServiceData = (gateway, data) => {
       console.log('ShidurToran.onServiceData', this, gateway, data);
       const { gdm } = this.state;
-      if (gdm.checkForAck(data)) {
+      if (gdm.checkAck(data)) {
         // Ack received, do nothing.
         return;
       }
@@ -316,7 +316,7 @@ class ShidurToran extends Component {
                         <Button
                             color={sdiout ? "green" : "red"}
                             disabled={!sdiout}
-                            onClick={() => this.sdiAction("restart_sdiout", false, 1, null)}>
+                            onClick={() => this.sdiGuaranteeAction("restart_sdiout", false, 1, null, [SDIOUT_ID])}>
                             SdiOut</Button>
                     </Button.Group>
                 </Grid.Column>
