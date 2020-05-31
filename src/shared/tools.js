@@ -249,6 +249,8 @@ export const getMedia = async (media) => {
     let error = null;
     let devices = [];
 
+    //TODO: Translate exceptions - https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getUserMedia#Exceptions
+
     //Check saved devices in local storage
     let storage_video = localStorage.getItem("video_device");
     let storage_audio = localStorage.getItem("audio_device");
