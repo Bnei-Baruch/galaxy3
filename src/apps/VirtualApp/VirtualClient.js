@@ -62,12 +62,6 @@ class VirtualClient extends Component {
         stream: null,
       },
     },
-    audioContext: null,
-    audio_devices: [],
-    video_devices: [],
-    audio_device: '',
-    video_device: '',
-    video_setting: { width: 320, height: 180, fps: 15 },
     audio: null,
     video: null,
     janus: null,
@@ -248,13 +242,12 @@ class VirtualClient extends Component {
 
           if(audio.error && video.error) {
             alert(t('oldClient.noInputDevices'));
-            this.setState({cammuted: true, video_device: null, audio_device: null});
+            this.setState({cammuted: true});
           } else if(audio.error) {
             alert('audio device not detected');
-            this.setState({audio_device: null});
           } else if(video.error) {
             alert(t('oldClient.videoNotDetected'));
-            this.setState({cammuted: true, video_device: null});
+            this.setState({cammuted: true});
           }
 
           if(video.stream) {
@@ -328,7 +321,7 @@ class VirtualClient extends Component {
   selfTest = () => {
     const {t} = this.props;
     this.setState({ selftest: t('oldClient.recording') + 9 });
-    testMic(this.state.stream);
+    testMic(this.state.media.audio.stream);
     let rect = 9;
     let rec = setInterval(() => {
       rect--;
@@ -1216,8 +1209,6 @@ class VirtualClient extends Component {
   render() {
     const {
       attachedSource,
-      audio_device,
-      audio_devices,
       cammuted,
       chatMessagesCount,
       chatVisible,
@@ -1241,14 +1232,13 @@ class VirtualClient extends Component {
       sourceLoading,
       tested,
       user,
-      video_device,
-      video_devices,
-      video_setting,
       virtualStreamingJanus,
       appInitError,
       net_status,
-        media,
+      media,
     } = this.state;
+    const {video_device} = media.video;
+    const {audio_device} = media.audio;
 
     if (appInitError) {
       return (
@@ -1429,8 +1419,8 @@ class VirtualClient extends Component {
           </Popup>
         </Menu>
         <Menu icon='labeled' secondary size="mini">
-          {!localAudioTrack ?
-            <Menu.Item position='right' disabled={!localAudioTrack || selftest !== t('oldClient.selfAudioTest')} onClick={this.selfTest}>
+          {!!audio_device ?
+            <Menu.Item position='right' disabled={selftest !== t('oldClient.selfAudioTest')} onClick={this.selfTest}>
               <Icon color={tested ? 'green' : 'red'} name="sound" />
               {selftest}
             </Menu.Item>
