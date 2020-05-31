@@ -170,7 +170,7 @@ class ShidurToran extends Component {
 
     sdiAction = (action, status, i, feed) => {
         const { gateways } = this.props;
-        gateways[GXY3].sendServiceMessage(this.sdiActionMessage_(action, status, i, feed));
+        gateways["gxy3"].sendServiceMessage(this.sdiActionMessage_(action, status, i, feed));
     };
 
     sdiGuaranteeAction = (action, status, i, feed, toAck) => {
@@ -179,7 +179,7 @@ class ShidurToran extends Component {
       gdm.send(
         this.sdiActionMessage_(action, status, i, feed),
         toAck,
-        (msg) => gateways[GXY3].sendServiceMessage(msg)).
+        (msg) => gateways["gxy3"].sendServiceMessage(msg)).
       then(() => {
         console.log(`${action} delivered to ${toAck}.`);
       }).catch((error) => {

@@ -159,7 +159,7 @@ class UsersQuad extends Component {
         const {gateways} = this.props;
         const {col} = this.state;
         let msg = {type: "sdi-"+action, status, room: null, col, i, group, qst};
-        gateways[GXY3].sendServiceMessage(msg);
+        gateways["gxy3"].sendServiceMessage(msg);
     };
 
     checkFullScreen = () => {
