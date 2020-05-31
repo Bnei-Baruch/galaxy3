@@ -241,40 +241,55 @@ export const getMediaStream = (audio, video, setting={width: 320, height: 180, i
     audio = audioid ? {deviceId: {exact: audioid}} : audio;
     return navigator.mediaDevices.getUserMedia({audio, video})
         .then(data => ([data, null]))
-        .catch(error => Promise.resolve([null, error.message]));
+        .catch(error => Promise.resolve([null, error.name]));
 };
 
 export const getMedia = async (media) => {
     const {audio, video} = media;
     let error = null;
     let devices = [];
-    [video.stream, error] = await getMediaStream(true, true, video.setting);
+
+    //Check saved devices in local storage
+    let storage_video = localStorage.getItem("video_device");
+    let storage_audio = localStorage.getItem("audio_device");
+    let storage_setting = JSON.parse(localStorage.getItem("video_setting"));
+    video.video_device = !!storage_video ? storage_video : null;
+    audio.audio_device = !!storage_audio ? storage_audio : null;
+    video.setting = !!storage_setting ? storage_setting : video.setting;
+
+    //FIXME: Check saved device and on error retry?
+    [video.stream, error] = await getMediaStream(true, true,
+        video.setting, audio.audio_device, video.video_device);
 
     if(error) {
         //Get only audio
-        [audio.stream, audio.error] = await getMediaStream(true, false, video.setting);
+        [audio.stream, audio.error] = await getMediaStream(true, false,
+            video.setting, audio.audio_device, null);
         devices = await navigator.mediaDevices.enumerateDevices()
-        audio.devices = devices.filter(a => a.deviceId !== "" && a.kind === 'audioinput');
+        audio.devices = devices.filter(a => !!a.deviceId && a.kind === 'audioinput');
+
         //Get only video
-        [video.stream, video.error] = await getMediaStream(false, true, video.setting);
+        [video.stream, video.error] = await getMediaStream(false, true,
+            video.setting, null, video.video_device);
         devices = await navigator.mediaDevices.enumerateDevices()
-        video.devices = devices.filter(v => v.deviceId !== "" && v.kind === 'videoinput');
+        video.devices = devices.filter(v => !!v.deviceId && v.kind === 'videoinput');
     } else {
         devices = await navigator.mediaDevices.enumerateDevices()
-        audio.devices = devices.filter(a => a.deviceId !== "" && a.kind === 'audioinput');
-        video.devices = devices.filter(v => v.deviceId !== "" && v.kind === 'videoinput');
+        audio.devices = devices.filter(a => !!a.deviceId && a.kind === 'audioinput');
+        video.devices = devices.filter(v => !!v.deviceId && v.kind === 'videoinput');
         audio.stream = video.stream;
     }
 
-    //TODO: Check if saved device still exist
-    if(audio.devices[0]) {
-        let audio_device = localStorage.getItem('audio_device');
-        audio.audio_device = audio_device || audio.devices[0].deviceId;
+    if(audio.stream) {
+        audio.audio_device = audio.stream.getAudioTracks()[0].getCapabilities().deviceId
+    } else {
+        audio.audio_device = "";
     }
 
-    if(video.devices[0]) {
-        let video_device = localStorage.getItem('video_device');
-        video.video_device = video_device || video.devices[0].deviceId;
+    if(video.stream) {
+        video.video_device = video.stream.getVideoTracks()[0].getCapabilities().deviceId
+    } else {
+        video.video_device =  "";
     }
 
     return media

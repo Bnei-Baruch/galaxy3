@@ -276,6 +276,7 @@ class VirtualClient extends Component {
     getMediaStream(false,true, video_setting,null, media.video.video_device)
         .then(stream => {
           console.log(stream)
+          localStorage.setItem("video_setting", JSON.stringify(video_setting));
           media.video.stream = stream[0];
           media.video.setting = video_setting;
           let myvideo = this.refs.localVideo;
@@ -291,6 +292,7 @@ class VirtualClient extends Component {
     getMediaStream(false,true, media.video.setting,null,video_device)
         .then(stream => {
           console.log(stream)
+          localStorage.setItem("video_device", video_device);
           media.video.stream = stream[0];
           media.video.video_device = video_device;
           let myvideo = this.refs.localVideo;
@@ -306,6 +308,7 @@ class VirtualClient extends Component {
     getMediaStream(true,false, media.video.setting, audio_device,null)
         .then(stream => {
           console.log(stream)
+          localStorage.setItem("audio_device", audio_device);
           media.audio.stream = stream[0];
           media.audio.audio_device = audio_device;
           if (media.audio.context) {
@@ -614,17 +617,19 @@ class VirtualClient extends Component {
   };
 
   publishOwnFeed = (useVideo, useAudio) => {
-    let {videoroom, audio_device, video_device, video_setting} = this.state;
+    const {videoroom, media} = this.state;
+    const {audio: {audio_device}, video: {setting,video_device}} = media;
     let offer = {audioRecv: false, videoRecv: false, audioSend: useAudio, videoSend: useVideo, data: true};
+
     if(useVideo) {
-      const width = video_setting.width;
-      const height = video_setting.height;
-      const ideal = video_setting.fps;
+      const {width,height,ideal} = setting;
       offer.video = {width, height, frameRate: {ideal, min: 1}, deviceId: {exact: video_device}};
     }
+
     if(useAudio) {
       offer.audio = {deviceId: {exact: audio_device}};
     }
+
     videoroom.createOffer({
       media: offer,
       simulcast: false,
@@ -648,15 +653,17 @@ class VirtualClient extends Component {
     let event = msg['videoroom'];
     if (event !== undefined && event !== null) {
       if (event === 'joined') {
-        let {video_device,audio_device} = this.state;
         const user = Object.assign({}, this.state.user);
         let myid = msg['id'];
         let mypvtid = msg['private_id'];
         user.rfid = myid;
         this.setState({user, myid, mypvtid});
         Janus.log('Successfully joined room ' + msg['room'] + ' with ID ' + myid);
+
         api.updateUser(user.id, user)
             .catch(err => console.error("[User] error updating user state", user.id, err))
+
+        const {media: {audio: {audio_device}, video: {video_device}}} = this.state;
         this.publishOwnFeed(!!video_device, !!audio_device);
 
         // Any new feed to attach to?
