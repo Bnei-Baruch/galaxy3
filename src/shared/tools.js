@@ -251,26 +251,29 @@ export const getMedia = async (media) => {
 
     //TODO: Translate exceptions - https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getUserMedia#Exceptions
 
-    //Check saved devices in local storage
+    // Check saved devices in local storage
     let storage_video = localStorage.getItem("video_device");
     let storage_audio = localStorage.getItem("audio_device");
     let storage_setting = JSON.parse(localStorage.getItem("video_setting"));
     video.video_device = !!storage_video ? storage_video : null;
     audio.audio_device = !!storage_audio ? storage_audio : null;
     video.setting = !!storage_setting ? storage_setting : video.setting;
-
-    //FIXME: Check saved device and on error retry?
     [video.stream, error] = await getMediaStream(true, true,
         video.setting, audio.audio_device, video.video_device);
 
+    // Saved devices failed try with default
+    if(error === "OverconstrainedError") {
+        [video.stream, error] = await getMediaStream(true, true);
+    }
+
     if(error) {
-        //Get only audio
+        // Get only audio
         [audio.stream, audio.error] = await getMediaStream(true, false,
             video.setting, audio.audio_device, null);
         devices = await navigator.mediaDevices.enumerateDevices()
         audio.devices = devices.filter(a => !!a.deviceId && a.kind === 'audioinput');
 
-        //Get only video
+        // Get only video
         [video.stream, video.error] = await getMediaStream(false, true,
             video.setting, null, video.video_device);
         devices = await navigator.mediaDevices.enumerateDevices()
@@ -283,13 +286,14 @@ export const getMedia = async (media) => {
     }
 
     if(audio.stream) {
-        audio.audio_device = audio.stream.getAudioTracks()[0].getCapabilities().deviceId
+        console.log(audio.stream)
+        audio.audio_device = audio.stream.getAudioTracks()[0].getSettings().deviceId
     } else {
         audio.audio_device = "";
     }
 
     if(video.stream) {
-        video.video_device = video.stream.getVideoTracks()[0].getCapabilities().deviceId
+        video.video_device = video.stream.getVideoTracks()[0].getSettings().deviceId
     } else {
         video.video_device =  "";
     }
