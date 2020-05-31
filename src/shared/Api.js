@@ -71,6 +71,10 @@ class Api {
         return this.logAndParse(`update user ${id}`, fetch(this.urlFor(`/users/${id}`), options));
     }
 
+    fetchHandleInfo = (gateway, session_id, handle_id) =>
+        this.logAndParse('fetch handle_info',
+            fetch(this.urlFor(`/admin/gateways/${gateway}/sessions/${session_id}/handles/${handle_id}/info`), this.defaultOptions()));
+
     verifyUser = (pendingEmail, action) =>
         this.logAndParse(`verify user ${pendingEmail}, ${action}`, fetch(this.authUrlFor(`/verify?email=${pendingEmail}&action=${action}`), this.defaultOptions()));
 

@@ -1,6 +1,6 @@
 import React, {Component, Fragment} from 'react';
 import {Janus} from "../../lib/janus";
-import {Button, Grid, Icon, List, Menu, Popup, Segment, Tab, Table, Label} from "semantic-ui-react";
+import {Button, Grid, Icon, Label, List, Menu, Popup, Segment, Tab, Table} from "semantic-ui-react";
 import './AdminRoot.css';
 import './AdminRootVideo.scss'
 import classNames from "classnames";
@@ -13,7 +13,6 @@ import RoomManager from "./components/RoomManager";
 import MonitoringAdmin from "./components/MonitoringAdmin";
 import MonitoringUser from "./components/MonitoringUser";
 import api from "../../shared/Api";
-import {reportToSentry} from "../../shared/tools";
 
 class AdminRoot extends Component {
 
@@ -654,12 +653,11 @@ class AdminRoot extends Component {
     };
 
     getFeedInfo = () => {
-        const {gateways, feed_user} = this.state;
+        const {feed_user} = this.state;
         if (feed_user) {
-            const {session, handle} = this.state.feed_user;
-            if (session && handle) {
-                const gateway = gateways[feed_user.janus];
-                gateway.getPublisherInfo(session, handle)
+            const {janus, session, handle} = this.state.feed_user;
+            if (janus && session && handle) {
+                api.fetchHandleInfo(janus, session, handle)
                     .then(data => {
                             console.debug("[Admin] Publisher info", data);
                             const video = data.info.webrtc.media[1].rtcp.main;
@@ -667,6 +665,7 @@ class AdminRoot extends Component {
                             this.setState({feed_rtcp: {video, audio}});
                         }
                     )
+                    .catch(err => alert("Error fetching handle_info: " + err))
             }
         }
     };
