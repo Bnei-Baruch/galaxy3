@@ -4,6 +4,7 @@ import './UsersQuad.scss'
 import UsersHandle from "./UsersHandle";
 import api from '../../shared/Api';
 import {getStore, setStore} from "../../shared/store";
+import {AUDIOOUT_ID, SDIOUT_ID, SNDMAN_ID} from "../../shared/consts"
 
 class UsersQuad extends Component {
 
@@ -155,18 +156,34 @@ class UsersQuad extends Component {
             .catch(err => console.error("[Shidur] error updating quad state", col, err))
     };
 
+    sdiActionMessage_ = (action, status, i, group, qst) => {
+      const {col} = this.state;
+      return {type: "sdi-"+action, status, room: null, col, i, group, qst};
+    }
+
     sdiAction = (action, status, i, group, qst) => {
         const {gateways} = this.props;
-        const {col} = this.state;
-        let msg = {type: "sdi-"+action, status, room: null, col, i, group, qst};
-        gateways["gxy3"].sendServiceMessage(msg);
+        gateways["gxy3"].sendServiceMessage(this.sdiActionMessage(action, status, i, group, qst));
     };
+
+    sdiGuaranteeAction = (action, status, i, group, qst, toAck) => {
+      const { gateways, gdm } = this.props;
+      gdm.send(
+        this.sdiActionMessage_(action, status, i, group, qst),
+        toAck,
+        (msg) => gateways[GXY3].sendServiceMessage(msg)).
+      then(() => {
+        console.log(`${action} delivered to ${toAck}.`);
+      }).catch((error) => {
+        console.error(`${action} not delivered to ${toAck} due to ${error}`);
+      });
+    }
 
     checkFullScreen = () => {
         let {fullscr,full_feed,vquad,question} = this.state;
         if(fullscr) {
             console.log("[Shidur] :: Group: " + full_feed + " , sending sdi-action...");
-            this.sdiAction("fullscr_group" , true, full_feed, vquad[full_feed], question);
+            this.sdiGuaranteeAction("fullscr_group" , true, full_feed, vquad[full_feed], question, [AUDIOOUT_ID, SDIOUT_ID, SNDMAN_ID]);
         }
     };
 
@@ -214,12 +231,12 @@ class UsersQuad extends Component {
     toFullGroup = (i,g,q) => {
         console.log("[Shidur]:: Make Full Screen Group: ",g);
         this.setState({fullscr: true, full_feed: i, question: q});
-        this.sdiAction("fullscr_group" , true, i, g, q);
+        this.sdiGuaranteeAction("fullscr_group" , true, i, g, q, [AUDIOOUT_ID, SDIOUT_ID, SNDMAN_ID]);
     };
 
     toFourGroup = (i,g,cb,q) => {
         console.log("[Shidur]:: Back to four: ");
-        this.sdiAction("fullscr_group" , false, i, g, q);
+        this.sdiGuaranteeAction("fullscr_group" , false, i, g, q, [AUDIOOUT_ID, SDIOUT_ID, SNDMAN_ID]);
         this.setState({fullscr: false, full_feed: null, question: false}, () => {
             cb();
         });

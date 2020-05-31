@@ -3,8 +3,7 @@ import {Grid, Label, Message, Segment, Table, Button, Dropdown, Popup} from "sem
 import './ShidurToran.scss';
 import UsersPreview from "./UsersPreview";
 import {RESET_VOTE} from "../../shared/env";
-import {STORAN_ID, SDIOUT_ID, SNDMAN_ID} from "../../shared/consts"
-import {GuaranteeDeliveryManager} from '../../shared/GuaranteeDelivery';
+import {SDIOUT_ID, SNDMAN_ID} from "../../shared/consts"
 
 
 class ShidurToran extends Component {
@@ -18,12 +17,7 @@ class ShidurToran extends Component {
         sorted_feeds: [],
         pg: null,
         vote: false,
-        gdm: new GuaranteeDeliveryManager(STORAN_ID),
     };
-
-    componentDidMount() {
-      this.props.setProps({shidurToranOnServiceData: this.onServiceData});
-    }
 
     componentDidUpdate(prevProps) {
         let {group} = this.props;
@@ -174,8 +168,7 @@ class ShidurToran extends Component {
     };
 
     sdiGuaranteeAction = (action, status, i, feed, toAck) => {
-      const { gateways } = this.props;
-      const { gdm } = this.state;
+      const { gateways, gdm } = this.props;
       gdm.send(
         this.sdiActionMessage_(action, status, i, feed),
         toAck,
@@ -185,15 +178,6 @@ class ShidurToran extends Component {
       }).catch((error) => {
         console.error(`${action} not delivered to ${toAck} due to ${error}`);
       });
-    }
-
-    onServiceData = (gateway, data) => {
-      console.log('ShidurToran.onServiceData', this, gateway, data);
-      const { gdm } = this.state;
-      if (gdm.checkAck(data)) {
-        // Ack received, do nothing.
-        return;
-      }
     }
 
     setDelay = () => {
