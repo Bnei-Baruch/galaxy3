@@ -269,19 +269,22 @@ class VirtualClient extends Component {
 
   setVideoSize = (video_setting) => {
     let {media} = this.state;
-    console.log(video_setting)
-    console.log(media.video.setting)
     if(JSON.stringify(video_setting) === JSON.stringify(media.video.setting))
       return
     getMediaStream(false,true, video_setting,null, media.video.video_device)
-        .then(stream => {
-          console.log(stream)
-          localStorage.setItem("video_setting", JSON.stringify(video_setting));
-          media.video.stream = stream[0];
-          media.video.setting = video_setting;
-          let myvideo = this.refs.localVideo;
-          myvideo.srcObject = stream[0];
-          this.setState({media});
+        .then(data => {
+          console.log(data)
+          const [stream, error] = data;
+          if(error) {
+            console.error(error)
+          } else {
+            localStorage.setItem("video_setting", JSON.stringify(video_setting));
+            media.video.stream = stream;
+            media.video.setting = video_setting;
+            let myvideo = this.refs.localVideo;
+            myvideo.srcObject = stream;
+            this.setState({media});
+          }
         })
   };
 
@@ -290,14 +293,19 @@ class VirtualClient extends Component {
     if(video_device === media.video.video_device)
       return
     getMediaStream(false,true, media.video.setting,null,video_device)
-        .then(stream => {
-          console.log(stream)
-          localStorage.setItem("video_device", video_device);
-          media.video.stream = stream[0];
-          media.video.video_device = video_device;
-          let myvideo = this.refs.localVideo;
-          myvideo.srcObject = stream[0];
-          this.setState({media});
+        .then(data => {
+          console.log(data)
+          const [stream, error] = data;
+          if(error) {
+            console.error(error)
+          } else {
+            localStorage.setItem("video_device", video_device);
+            media.video.stream = stream;
+            media.video.video_device = video_device;
+            let myvideo = this.refs.localVideo;
+            myvideo.srcObject = stream;
+            this.setState({media});
+          }
         })
   };
 
@@ -306,18 +314,23 @@ class VirtualClient extends Component {
     if(audio_device === media.audio.audio_device)
       return
     getMediaStream(true,false, media.video.setting, audio_device,null)
-        .then(stream => {
-          console.log(stream)
-          localStorage.setItem("audio_device", audio_device);
-          media.audio.stream = stream[0];
-          media.audio.audio_device = audio_device;
-          if (media.audio.context) {
-            media.audio.context.close()
+        .then(data => {
+          console.log(data)
+          const [stream, error] = data;
+          if(error) {
+            console.error(error)
+          } else {
+            localStorage.setItem("audio_device", audio_device);
+            media.audio.stream = stream;
+            media.audio.audio_device = audio_device;
+            if (media.audio.context) {
+              media.audio.context.close()
+            }
+            micLevel(stream, this.refs.canvas1, audioContext => {
+              media.audio.context = audioContext;
+              this.setState({media});
+            });
           }
-          micLevel(stream[0], this.refs.canvas1, audioContext => {
-            media.audio.context = audioContext;
-            this.setState({media});
-          });
         })
   };
 
