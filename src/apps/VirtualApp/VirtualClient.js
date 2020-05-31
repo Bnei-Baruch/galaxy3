@@ -240,68 +240,39 @@ class VirtualClient extends Component {
   };
 
   initDevices = () => {
+    const {t} = this.props;
     getMedia(this.state.media)
         .then(media => {
-          console.log(media)
-          if(media.video.stream) {
+          console.log("Got media: ", media);
+          const {audio,video} = media;
+
+          if(audio.error && video.error) {
+            alert(t('oldClient.noInputDevices'));
+            this.setState({cammuted: true, video_device: null, audio_device: null});
+          } else if(audio.error) {
+            alert('audio device not detected');
+            this.setState({audio_device: null});
+          } else if(video.error) {
+            alert(t('oldClient.videoNotDetected'));
+            this.setState({cammuted: true, video_device: null});
+          }
+
+          if(video.stream) {
             let myvideo = this.refs.localVideo;
             if(myvideo)
               myvideo.srcObject = media.video.stream;
           }
-          if(media.audio.stream) {
-            micLevel(media.audio.stream, this.refs.canvas1, audioContext => {
-              media.audio.context = audioContext;
+
+          if(audio.stream) {
+            micLevel(audio.stream, this.refs.canvas1, audioContext => {
+              audio.context = audioContext;
               this.setState({media})
             });
           }
+
           this.setState({media})
         });
-  }
-
-  // initDevices = (audio, video) => {
-  //   const {t} = this.props;
-  //   Janus.listDevices(devices => {
-  //     console.log("Got devices: ", devices)
-  //     if (devices.length > 0) {
-  //       let audio_devices = devices.filter(device => device.kind === 'audioinput');
-  //       let video_devices = video ? devices.filter(device => device.kind === 'videoinput') : [];
-  //       // Be sure device still exist
-  //       let video_device = localStorage.getItem('video_device');
-  //       let audio_device = localStorage.getItem('audio_device');
-  //       let video_setting = JSON.parse(localStorage.getItem('video_setting')) || this.state.video_setting;
-  //       let achk = audio_devices.filter(a => a.deviceId === audio_device).length > 0;
-  //       let vchk = video_devices.filter(v => v.deviceId === video_device).length > 0;
-  //       let video_id = video ? (video_device !== '' && vchk ? video_device : video_devices[0].deviceId) : null;
-  //       let audio_id = audio_device !== '' && achk ? audio_device : audio_devices[0].deviceId;
-  //       Janus.log(' :: Got Video devices: ', video_devices);
-  //       Janus.log(' :: Got Audio devices: ', audio_devices);
-  //       this.setState({video_devices, audio_devices});
-  //       this.setDevice(video_id, audio_id, video_setting);
-  //     } else if (video && audio) {
-  //       // Right now if we get some problem with video device the - enumerateDevices()
-  //       // back empty array, so we need to call this once more with video/audio: true/false
-  //       // to get single device only
-  //       this.initDevices(false, true);
-  //     } else if (video && !audio) {
-  //       alert(t('oldClient.videoNotDetected'));
-  //       this.setState({cammuted: true, video_device: null});
-  //       //Try to get video fail reason
-  //       //testDevices(true, false, this.state.user, steam => {});
-  //       Janus.log(' :: Trying to get audio only');
-  //       this.initDevices(true, false);
-  //     } else if (!video && audio) {
-  //         alert('audio device not detected');
-  //         this.setState({audio_device: null});
-  //         //Try to get audio fail reason
-  //         //testDevices(false, true, this.state.user, steam => {});
-  //         Janus.log(' :: Trying to get video only');
-  //         this.initDevices(false, false);
-  //     } else {
-  //       alert(t('oldClient.noInputDevices'));
-  //       this.setState({cammuted: true, video_device: null, audio_device: null});
-  //     }
-  //   }, {audio, video});
-  // };
+  };
 
   setVideoSize = (video_setting) => {
     let {media} = this.state;
@@ -326,6 +297,7 @@ class VirtualClient extends Component {
       return
     getMediaStream(false,true, media.video.setting,null,video_device)
         .then(stream => {
+          console.log(stream)
           media.video.stream = stream[0];
           media.video.video_device = video_device;
           let myvideo = this.refs.localVideo;
@@ -338,8 +310,9 @@ class VirtualClient extends Component {
     let {media} = this.state;
     if(audio_device === media.audio.audio_device)
       return
-    getMediaStream(true,false,undefined,audio_device,null)
+    getMediaStream(true,false, media.video.setting, audio_device,null)
         .then(stream => {
+          console.log(stream)
           media.audio.stream = stream[0];
           media.audio.audio_device = audio_device;
           if (media.audio.context) {

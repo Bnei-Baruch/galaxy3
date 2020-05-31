@@ -231,9 +231,13 @@ export const checkNotification = () => {
     }
 };
 
-export const getMediaStream = (audio, video, setting, audioid, videoid) => {
+export const getMediaStream = (audio, video, setting={width: 320, height: 180, ideal: 15}, audioid, videoid) => {
     const {width,height,ideal} = setting;
-    video = videoid ? {width, height, frameRate: {ideal, min: 1}, deviceId: {exact: videoid}} : {width, height, frameRate: {ideal, min: 1}};
+    if(video && videoid) {
+        video = {width, height, frameRate: {ideal, min: 1}, deviceId: {exact: videoid}};
+    } else if(video && !videoid) {
+        video = {width, height, frameRate: {ideal, min: 1}};
+    }
     audio = audioid ? {deviceId: {exact: audioid}} : audio;
     return navigator.mediaDevices.getUserMedia({audio, video})
         .then(data => ([data, null]))
@@ -248,11 +252,11 @@ export const getMedia = async (media) => {
 
     if(error) {
         //Get only audio
-        [audio.stream, audio.error] = await getMediaStream(true, false);
+        [audio.stream, audio.error] = await getMediaStream(true, false, video.setting);
         devices = await navigator.mediaDevices.enumerateDevices()
         audio.devices = devices.filter(a => a.deviceId !== "" && a.kind === 'audioinput');
         //Get only video
-        [video.stream, video.error] = await getMediaStream(false, true);
+        [video.stream, video.error] = await getMediaStream(false, true, video.setting);
         devices = await navigator.mediaDevices.enumerateDevices()
         video.devices = devices.filter(v => v.deviceId !== "" && v.kind === 'videoinput');
     } else {
@@ -262,6 +266,7 @@ export const getMedia = async (media) => {
         audio.stream = video.stream;
     }
 
+    //TODO: Check if saved device still exist
     if(audio.devices[0]) {
         let audio_device = localStorage.getItem('audio_device');
         audio.audio_device = audio_device || audio.devices[0].deviceId;
