@@ -197,7 +197,6 @@ class MobileClient extends Component {
     };
 
     initDevices = () => {
-        const {t} = this.props;
         getMedia(this.state.media)
             .then(media => {
                 console.log("Got media: ", media);
@@ -347,7 +346,6 @@ class MobileClient extends Component {
                 clearInterval(chk);
                 this.exitRoom(false);
                 alert("Network setting is changed!");
-                window.location.reload();
             }
         },3000);
     };
@@ -373,7 +371,6 @@ class MobileClient extends Component {
                 // Video still not back disconnecting
                 if(count >= 10) {
                     clearInterval(chk);
-                    this.exitRoom(false);
                     alert("Server stopped receiving our media! Check your video device.");
                 }
             },3000);
