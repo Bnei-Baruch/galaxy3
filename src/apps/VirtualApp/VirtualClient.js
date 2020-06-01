@@ -426,7 +426,6 @@ class VirtualClient extends Component {
         this.exitRoom(false);
         reportToSentry("ICE State disconnected",{source: "ice"}, this.state.user);
         alert(this.props.t('oldClient.networkSettingsChanged'));
-        window.location.reload();
       }
     }, 3000);
   };
@@ -453,7 +452,6 @@ class VirtualClient extends Component {
         // Video still not back disconnecting
         if (count >= 10) {
           clearInterval(chk);
-          this.exitRoom(false);
           reportToSentry("Video stopped",{source: "media"}, this.state.user);
           alert(t('oldClient.serverStoppedReceiveOurMedia'));
         }
