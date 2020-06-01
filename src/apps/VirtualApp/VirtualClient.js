@@ -384,6 +384,7 @@ class VirtualClient extends Component {
     videoroom.send({'message': leave});
     this.chat.exitChatRoom(room);
     let pl = {textroom: 'leave', transaction: Janus.randomString(12), 'room': PROTOCOL_ROOM};
+    protocol.data({text: JSON.stringify(pl)});
     localStorage.setItem('question', false);
     api.fetchAvailableRooms({with_num_users: true})
       .then(data => {
@@ -405,12 +406,7 @@ class VirtualClient extends Component {
       upval: null,
     });
     this.state.virtualStreamingJanus.audioElement.muted = true;
-    protocol.data({
-      text: JSON.stringify(pl),
-      success: () => {
-        this.initVideoRoom(reconnect);
-      }
-    });
+    this.initVideoRoom(reconnect);
   };
 
   iceState = () => {
