@@ -117,12 +117,12 @@ class MobileClient extends Component {
             window.location = '/user/';
             return;
         }
-        setInterval(() => {
-            const {net_status} = this.state;
-            const cur_status = getLostStat();
-            if(net_status !== cur_status)
-                this.setState({net_status: cur_status})
-        }, 5000);
+        // setInterval(() => {
+        //     const {net_status} = this.state;
+        //     const cur_status = getLostStat();
+        //     if(net_status !== cur_status)
+        //         this.setState({net_status: cur_status})
+        // }, 5000);
     };
 
     initApp = (user) => {
@@ -459,7 +459,7 @@ class MobileClient extends Component {
             slowLink: (uplink, lost, mid) => {
                 Janus.log("Janus reports problems " + (uplink ? "sending" : "receiving") +
                     " packets on mid " + mid + " (" + lost + " lost packets)");
-                addLostStat(lost);
+                //addLostStat(lost);
             },
             onmessage: (msg, jsep) => {
                 this.onMessage(this.state.videoroom, msg, jsep, false);
