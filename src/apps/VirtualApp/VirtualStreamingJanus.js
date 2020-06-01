@@ -338,7 +338,7 @@ export default class VirtualStreamingJanus {
   onStreamingMessage = (handle, msg, jsep, initdata) => {
     Janus.log('Got a message', msg);
 
-    if (jsep !== undefined && jsep !== null) {
+    if (handle !== null && jsep !== undefined && jsep !== null) {
       Janus.log('Handling SDP as well...', jsep);
 
       // Answer
@@ -374,13 +374,17 @@ export default class VirtualStreamingJanus {
       this.trlAudioElement.volume = this.mixvolume;
       this.trlAudioElement.muted = false;
       console.log(' :: Switch STR Stream: ', gxycol[col]);
-      this.audioJanusStream.send({'message': { 'request': 'switch', 'id': gxycol[col]}});
+      if (this.audioJanusStream) {
+        this.audioJanusStream.send({'message': { 'request': 'switch', 'id': gxycol[col]}});
+      }
       const id = trllang[localStorage.getItem('vrt_langtext')];
       console.log(':: Select TRL: ', localStorage.getItem('vrt_langtext'), id);
       if (!id) {
         console.log(' :: Not TRL Stream attach');
       } else {
-        this.trlAudioJanusStream.send({'message': { 'request': 'switch', 'id': id }});
+        if (this.trlAudioJanusStream) {
+          this.trlAudioJanusStream.send({'message': { 'request': 'switch', 'id': id }});
+        }
         this.talking = setInterval(this.ducerMixaudio, 200);
         console.log(' :: Init TRL Stream: ', localStorage.getItem('vrt_langtext'), id);
       }
@@ -391,7 +395,9 @@ export default class VirtualStreamingJanus {
       this.audioElement.volume = this.mixvolume;
       const id = Number(localStorage.getItem('vrt_lang')) || 15;
       console.log(' :: Switch STR Stream: ', localStorage.getItem('vrt_lang'), id);
-      this.audioJanusStream.send({'message': { 'request': 'switch', 'id': id }});
+      if (this.audioJanusStream) {
+        this.audioJanusStream.send({'message': { 'request': 'switch', 'id': id }});
+      }
       console.log(' :: Stop TRL Stream: ');
       this.trlAudioElement.muted = true;
       this.talking = null;
