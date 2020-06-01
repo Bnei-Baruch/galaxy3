@@ -985,7 +985,8 @@ class VirtualClient extends Component {
 
   joinRoom = (reconnect) => {
     this.makeDelay();
-    let {janus, videoroom, selected_room, username_value, tested, video_device} = this.state;
+    let {janus, videoroom, selected_room, username_value, tested, media} = this.state;
+    const {video: {video_device}} = media;
     let user = Object.assign({}, this.state.user);
     localStorage.setItem('room', selected_room);
     //This name will see other users

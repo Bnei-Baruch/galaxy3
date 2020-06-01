@@ -1036,11 +1036,9 @@ class MobileClient extends Component {
     };
 
     joinRoom = (reconnect) => {
-        this.setState({delay: true});
-        setTimeout(() => {
-            this.setState({delay: false});
-        }, 3000);
-        let {janus, videoroom, selected_room, user, username_value, women, name, video_device} = this.state;
+        this.makeDelay();
+        let {janus, videoroom, selected_room, user, username_value, women, name, media} = this.state;
+        const {video: {video_device}} = media;
         localStorage.setItem("room", selected_room);
         //This name will see other users
         user.display = username_value || user.name;
