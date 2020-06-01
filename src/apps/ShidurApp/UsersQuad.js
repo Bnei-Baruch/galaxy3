@@ -171,7 +171,7 @@ class UsersQuad extends Component {
       gdm.send(
         this.sdiActionMessage_(action, status, i, group, qst),
         toAck,
-        (msg) => gateways[GXY3].sendServiceMessage(msg)).
+        (msg) => gateways["gxy3"].sendServiceMessage(msg)).
       then(() => {
         console.log(`${action} delivered to ${toAck}.`);
       }).catch((error) => {
