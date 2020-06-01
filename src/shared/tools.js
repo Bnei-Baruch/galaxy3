@@ -231,40 +231,74 @@ export const checkNotification = () => {
     }
 };
 
-export const getDevicesStream = (audioid,videoid,video_setting,cb) => {
-    const width = video_setting.width;
-    const height = video_setting.height;
-    const ideal = video_setting.fps;
-    let video = videoid ? {width, height, frameRate: {ideal, min: 1}, deviceId: {exact: videoid}} : "";
-    let audio = audioid ? {deviceId: {exact: audioid}} : "";
-    navigator.mediaDevices.getUserMedia({ audio: audio, video: video }).then(stream => {
-        cb(stream);
-    });
+export const getMediaStream = (audio, video, setting={width: 320, height: 180, ideal: 15}, audioid, videoid) => {
+    const {width,height,ideal} = setting;
+    if(video && videoid) {
+        video = {width, height, frameRate: {ideal, min: 1}, deviceId: {exact: videoid}};
+    } else if(video && !videoid) {
+        video = {width, height, frameRate: {ideal, min: 1}};
+    }
+    audio = audioid ? {deviceId: {exact: audioid}} : audio;
+    return navigator.mediaDevices.getUserMedia({audio, video})
+        .then(data => ([data, null]))
+        .catch(error => Promise.resolve([null, error.name]));
 };
 
-export const testDevices = (video,audio,user,cb) => {
-    navigator.mediaDevices.getUserMedia({ audio: audio, video: video }).then(stream => {
-        cb(stream);
-    }, function (e) {
-        reportToSentry((video ? "Video" : "Audio") + " Device Failed: " + e.name, {source: "device",audio,video}, user)
-        var message;
-        switch (e.name) {
-            case 'NotFoundError':
-            case 'DevicesNotFoundError':
-                message = 'No input devices found.';
-                break;
-            case 'SourceUnavailableError':
-                message = 'Your input device is busy';
-                break;
-            case 'PermissionDeniedError':
-            case 'SecurityError':
-                message = 'Permission denied!';
-                break;
-            default: Janus.log('Permission devices usage is Rejected! You must grant it.', e);
-                return;
-        }
-        Janus.log(message);
-    });
+export const getMedia = async (media) => {
+    const {audio, video} = media;
+    let error = null;
+    let devices = [];
+
+    //TODO: Translate exceptions - https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getUserMedia#Exceptions
+
+    // Check saved devices in local storage
+    let storage_video = localStorage.getItem("video_device");
+    let storage_audio = localStorage.getItem("audio_device");
+    let storage_setting = JSON.parse(localStorage.getItem("video_setting"));
+    video.video_device = !!storage_video ? storage_video : null;
+    audio.audio_device = !!storage_audio ? storage_audio : null;
+    video.setting = !!storage_setting ? storage_setting : video.setting;
+    [video.stream, error] = await getMediaStream(true, true,
+        video.setting, audio.audio_device, video.video_device);
+
+    // Saved devices failed try with default
+    if(error === "OverconstrainedError") {
+        [video.stream, error] = await getMediaStream(true, true);
+    }
+
+    if(error) {
+        // Get only audio
+        [audio.stream, audio.error] = await getMediaStream(true, false,
+            video.setting, audio.audio_device, null);
+        devices = await navigator.mediaDevices.enumerateDevices()
+        audio.devices = devices.filter(a => !!a.deviceId && a.kind === 'audioinput');
+
+        // Get only video
+        [video.stream, video.error] = await getMediaStream(false, true,
+            video.setting, null, video.video_device);
+        devices = await navigator.mediaDevices.enumerateDevices()
+        video.devices = devices.filter(v => !!v.deviceId && v.kind === 'videoinput');
+    } else {
+        devices = await navigator.mediaDevices.enumerateDevices()
+        audio.devices = devices.filter(a => !!a.deviceId && a.kind === 'audioinput');
+        video.devices = devices.filter(v => !!v.deviceId && v.kind === 'videoinput');
+        audio.stream = video.stream;
+    }
+
+    if(audio.stream) {
+        console.log(audio.stream)
+        audio.audio_device = audio.stream.getAudioTracks()[0].getSettings().deviceId
+    } else {
+        audio.audio_device = "";
+    }
+
+    if(video.stream) {
+        video.video_device = video.stream.getVideoTracks()[0].getSettings().deviceId
+    } else {
+        video.video_device =  "";
+    }
+
+    return media
 };
 
 export const geoInfo = (url,cb) => fetch(`${url}`)
