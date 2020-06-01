@@ -1439,8 +1439,8 @@ class VirtualClient extends Component {
           </Popup>
         </Menu>
         <Menu icon='labeled' secondary size="mini">
-          {!!audio_device ?
-            <Menu.Item position='right' disabled={selftest !== t('oldClient.selfAudioTest')} onClick={this.selfTest}>
+          {!room ?
+            <Menu.Item position='right' disabled={!audio_device || selftest !== t('oldClient.selfAudioTest')} onClick={this.selfTest}>
               <Icon color={tested ? 'green' : 'red'} name="sound" />
               {selftest}
             </Menu.Item>
