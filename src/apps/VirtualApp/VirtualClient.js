@@ -164,20 +164,16 @@ class VirtualClient extends Component {
     localStorage.setItem('uuid', user.id);
     checkNotification();
     let system = navigator.userAgent;
+    user.system = system;
     let browser = platform.parse(system);
     if (!(/Safari|Firefox|Chrome/.test(browser.name))) {
       alert(t('oldClient.browserNotSupported'));
-      window.location = 'https://galaxy.kli.one';
+      return
     }
 
     geoInfo(`${GEO_IP_INFO}`, data => {
-      user.ip = data ? data.ip : '127.0.0.1';
-      user.country = data.country;
-      user.system = system;
-      if (!data) {
-        alert(t('oldClient.failGeoInfo'));
-        this.setState({appInitError: "Error fetching geo info"});
-      }
+      user.ip = data && data.ip ? data.ip : '127.0.0.1';
+      user.country = data && data.country ? data.country : 'XX';
       this.setState({geoinfo: !!data, user});
 
       api.fetchConfig()

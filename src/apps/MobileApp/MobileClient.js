@@ -132,16 +132,12 @@ class MobileClient extends Component {
         localStorage.setItem('uuid', user.id);
         checkNotification();
         let system  = navigator.userAgent;
+        user.system = system;
         let browser = platform.parse(system);
         if (/Safari|Firefox|Chrome/.test(browser.name)) {
             geoInfo(`${GEO_IP_INFO}`, data => {
-                user.ip = data ? data.ip : '127.0.0.1';
-                user.country = data.country;
-                user.system = system;
-                if (!data) {
-                    alert("Failed to get Geo Info");
-                    this.setState({appInitError: "Error fetching geo info"});
-                }
+                user.ip = data && data.ip ? data.ip : '127.0.0.1';
+                user.country = data && data.country ? data.country : 'XX';
                 this.setState({ geoinfo: !!data, user });
 
                 api.fetchConfig()
@@ -172,7 +168,6 @@ class MobileClient extends Component {
             });
         } else {
             alert("Browser not supported");
-            window.location = 'https://galaxy.kli.one';
         }
     };
 
