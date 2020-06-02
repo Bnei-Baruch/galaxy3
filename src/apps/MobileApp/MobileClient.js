@@ -185,7 +185,8 @@ class MobileClient extends Component {
             // Check if unified plan supported
             if (Janus.unifiedPlan) {
                 user.session = janus.getSessionId();
-                this.setState({janus, user, username_value: user.title});
+                let username_value = !!user.title ? user.title : user.name;
+                this.setState({janus, user, username_value});
                 //this.chat.initChat(janus);
                 this.initVideoRoom(error);
             } else {
@@ -1043,7 +1044,7 @@ class MobileClient extends Component {
         const {video: {video_device}} = media;
         localStorage.setItem("room", selected_room);
         //This name will see other users
-        user.display = username_value || user.name;
+        user.display = username_value;
         localStorage.setItem("username", user.display);
         user.question = false;
         user.room = selected_room;

@@ -218,7 +218,8 @@ class VirtualClient extends Component {
       // Check if unified plan supported
       if (Janus.unifiedPlan) {
         user.session = janus.getSessionId();
-        this.setState({ janus, user, username_value: user.title });
+        let username_value = !!user.title ? user.title : user.name;
+        this.setState({ janus, user, username_value});
         this.chat.initChat(janus);
         this.initVideoRoom(error);
       } else {
@@ -994,7 +995,7 @@ class VirtualClient extends Component {
     let user = Object.assign({}, this.state.user);
     localStorage.setItem('room', selected_room);
     //This name will see other users
-    user.display = username_value || user.name;
+    user.display = username_value;
     user.self_test = tested;
     user.question = false;
     user.camera = !!video_device;
