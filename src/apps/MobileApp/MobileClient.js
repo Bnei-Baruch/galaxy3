@@ -134,41 +134,47 @@ class MobileClient extends Component {
         let system  = navigator.userAgent;
         user.system = system;
         let browser = platform.parse(system);
-        if (/Safari|Firefox|Chrome/.test(browser.name)) {
-            geoInfo(`${GEO_IP_INFO}`, data => {
-                user.ip = data && data.ip ? data.ip : '127.0.0.1';
-                user.country = data && data.country ? data.country : 'XX';
-                this.setState({ geoinfo: !!data, user });
-
-                api.fetchConfig()
-                    .then(data => GxyJanus.setGlobalConfig(data))
-                    .then(() => (api.fetchAvailableRooms({with_num_users: true})))
-                    .then(data => {
-                        const {rooms} = data;
-                        this.setState({rooms});
-                        this.initDevices();
-                        const {selected_room} = this.state;
-                        if (selected_room !== "") {
-                            const room = rooms.find(r => r.room === selected_room);
-                            if (room) {
-                                const name = room.description;
-                                user.room = selected_room;
-                                user.janus = room.janus;
-                                user.group = name;
-                                this.setState({name});
-                            }
-                            this.initClient(user, false);
-                        }
-                    })
-                    .then(() => this.setState({appInitialized: true}))
-                    .catch(err => {
-                        console.error("[MobileClient] error initializing app", err);
-                        this.setState({appInitError: err});
-                    });
-            });
-        } else {
-            alert("Browser not supported");
+        if (!/Safari/.test(browser.name) && browser.os.family === "iOS") {
+            alert("Only Safari browser supported on iOS system");
+            return
         }
+
+        if (!/Chrome/.test(browser.name) && browser.os.family === "Android") {
+            alert("Only Chrome browser supported on Android system");
+            return
+        }
+
+        geoInfo(`${GEO_IP_INFO}`, data => {
+            user.ip = data && data.ip ? data.ip : '127.0.0.1';
+            user.country = data && data.country ? data.country : 'XX';
+            this.setState({ geoinfo: !!data, user });
+
+            api.fetchConfig()
+                .then(data => GxyJanus.setGlobalConfig(data))
+                .then(() => (api.fetchAvailableRooms({with_num_users: true})))
+                .then(data => {
+                    const {rooms} = data;
+                    this.setState({rooms});
+                    this.initDevices();
+                    const {selected_room} = this.state;
+                    if (selected_room !== "") {
+                        const room = rooms.find(r => r.room === selected_room);
+                        if (room) {
+                            const name = room.description;
+                            user.room = selected_room;
+                            user.janus = room.janus;
+                            user.group = name;
+                            this.setState({name});
+                        }
+                        this.initClient(user, false);
+                    }
+                })
+                .then(() => this.setState({appInitialized: true}))
+                .catch(err => {
+                    console.error("[MobileClient] error initializing app", err);
+                    this.setState({appInitError: err});
+                });
+        });
     };
 
     initClient = (user,error) => {
