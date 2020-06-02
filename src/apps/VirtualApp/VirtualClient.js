@@ -1,11 +1,12 @@
 import React, {Component, Fragment} from 'react';
 import {Janus} from '../../lib/janus';
 import classNames from 'classnames';
-import { isMobile } from 'react-device-detect';
+import {isMobile} from 'react-device-detect';
 import {Button, Icon, Input, Label, Menu, Popup, Select,} from 'semantic-ui-react';
 import {
   checkNotification,
-  geoInfo, getMedia,
+  geoInfo,
+  getMedia,
   getMediaStream,
   initJanus,
   micLevel,
@@ -97,6 +98,7 @@ class VirtualClient extends Component {
     appInitError: null,
     upval: null,
     net_status: 1,
+    keepalive: null,
   };
 
   virtualStreamingInitialized() {
@@ -405,6 +407,7 @@ class VirtualClient extends Component {
       upval: null,
     });
     this.state.virtualStreamingJanus.audioElement.muted = true;
+    this.clearKeepAlive();
     this.initVideoRoom(reconnect);
   };
 
@@ -667,7 +670,8 @@ class VirtualClient extends Component {
         Janus.log('Successfully joined room ' + msg['room'] + ' with ID ' + myid);
 
         api.updateUser(user.id, user)
-            .catch(err => console.error("[User] error updating user state", user.id, err))
+            .catch(err => console.error("[User] error updating user state", user.id, err));
+        this.keepAlive();
 
         const {media: {audio: {audio_device}, video: {video_device}}} = this.state;
         this.publishOwnFeed(!!video_device, !!audio_device);
@@ -1061,6 +1065,34 @@ class VirtualClient extends Component {
     });
   };
 
+  keepAlive = () => {
+    // send every 2 seconds
+    this.setState({keepalive: setInterval(this.sendKeepAlive, 2*1000)});
+
+    // after 20 seconds, increase interval from 2 to 30 seconds.
+    setTimeout(() => {
+      this.clearKeepAlive();
+      this.setState({keepalive: setInterval(this.sendKeepAlive, 30*1000)});
+    }, 20*1000);
+  };
+
+  sendKeepAlive = () => {
+    console.info("[User] sendKeepAlive", new Date());
+    const {user, janus} = this.state;
+    if (user && janus && janus.isConnected() && user.session && user.handle) {
+      api.updateUser(user.id, user)
+          .catch(err => console.error("[User] error sending keepalive", user.id, err));
+    }
+  };
+
+  clearKeepAlive = () => {
+    const {keepalive} = this.state;
+    if (keepalive) {
+      clearInterval(keepalive);
+    }
+    this.setState({keepalive: null});
+  }
+
   makeDelay = () => {
     this.setState({delay: true});
     setTimeout(() => {
@@ -1381,7 +1413,7 @@ class VirtualClient extends Component {
             { value: '23', text: '23' },
             { value: '24', text: '24' },
             { value: '25', text: '25' },
-            
+
           ]} value={numberOfVirtualUsers} onChange={(e, { value }) => {
             this.setState({ numberOfVirtualUsers: value });
             localStorage.setItem('number_of_virtual_users', value);
