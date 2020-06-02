@@ -85,6 +85,7 @@ class MobileClient extends Component {
         appInitialized: false,
         appInitError: null,
         net_status: 1,
+        keepalive: null,
     };
 
     componentDidUpdate(prevProps, prevState) {
@@ -581,7 +582,8 @@ class MobileClient extends Component {
                 Janus.log("Successfully joined room " + msg["room"] + " with ID " + myid);
 
                 api.updateUser(user.id, user)
-                    .catch(err => console.error("[User] error updating user state", user.id, err))
+                    .catch(err => console.error("[User] error updating user state", user.id, err));
+                this.keepAlive();
 
                 const {media: {audio: {audio_device}, video: {video_device}}} = this.state;
                 this.publishOwnFeed(!!video_device, !!audio_device);
@@ -1124,11 +1126,40 @@ class MobileClient extends Component {
           showed_mids: [],
 
         });
+        this.clearKeepAlive();
         this.initVideoRoom(reconnect);
         if(!this.stream.state.muted)
             this.stream.audioMute();
         this.stream.videoMute();
     };
+
+    keepAlive = () => {
+        // send every 2 seconds
+        this.setState({keepalive: setInterval(this.sendKeepAlive, 2*1000)});
+
+        // after 20 seconds, increase interval from 2 to 30 seconds.
+        setTimeout(() => {
+            this.clearKeepAlive();
+            this.setState({keepalive: setInterval(this.sendKeepAlive, 30*1000)});
+        }, 20*1000);
+    };
+
+    sendKeepAlive = () => {
+        console.info("[User] sendKeepAlive", new Date());
+        const {user, janus} = this.state;
+        if (user && janus && janus.isConnected() && user.session && user.handle) {
+            api.updateUser(user.id, user)
+                .catch(err => console.error("[User] error sending keepalive", user.id, err));
+        }
+    };
+
+    clearKeepAlive = () => {
+        const {keepalive} = this.state;
+        if (keepalive) {
+            clearInterval(keepalive);
+        }
+        this.setState({keepalive: null});
+    }
 
     makeDelay = () => {
         this.setState({delay: true});
