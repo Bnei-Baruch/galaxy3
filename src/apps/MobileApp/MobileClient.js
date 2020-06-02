@@ -79,7 +79,6 @@ class MobileClient extends Component {
         selftest: "Self Audio Test",
         tested: false,
         support: false,
-        women: window.location.pathname === "/women/",
         card: 0,
         monitoringData: new MonitoringData(),
         appInitialized: false,
@@ -192,7 +191,6 @@ class MobileClient extends Component {
                 this.initVideoRoom(error);
             } else {
                 alert("Unified Plan is NOT supported");
-                this.setState({ audio_device: null });
             }
         }, err => {
             console.error("[MobileClient] error initializing janus", err);
@@ -470,8 +468,8 @@ class MobileClient extends Component {
             onlocaltrack: (track, on) => {
               Janus.log(" ::: Got a local track event :::");
               Janus.log("Local track " + (on ? "added" : "removed") + ":", track);
-              let {videoroom,women} = this.state;
-              if(!women) videoroom.muteAudio();
+              let {videoroom} = this.state;
+              videoroom.muteAudio();
               if (on && track && track.kind === 'video') {
                   let stream = new MediaStream();
                   stream.addTrack(track.clone());
@@ -1041,7 +1039,7 @@ class MobileClient extends Component {
 
     joinRoom = (reconnect) => {
         this.makeDelay();
-        let {janus, videoroom, selected_room, user, username_value, women, name, media} = this.state;
+        let {janus, videoroom, selected_room, user, username_value, name, media} = this.state;
         const {video: {video_device}} = media;
         localStorage.setItem("room", selected_room);
         //This name will see other users
@@ -1075,7 +1073,7 @@ class MobileClient extends Component {
                 const d = {id,timestamp,role,display};
                 let register = {"request": "join", "room": selected_room, "ptype": "publisher", "display": JSON.stringify(d)};
                 videoroom.send({"message": register});
-                this.setState({user, muted: !women, room: selected_room});
+                this.setState({user, muted: true, room: selected_room});
                 //this.chat.initChatRoom(user,selected_room);
             } else if(type === "client-reconnect" && user.id === id) {
                 this.exitRoom(true);
@@ -1236,7 +1234,6 @@ class MobileClient extends Component {
           selected_room,
           selftest,
             room,
-          women,
             appInitialized,
             appInitError,
             net_status,
@@ -1390,7 +1387,7 @@ class MobileClient extends Component {
                                     {/*<Icon color={tested ? 'green' : 'red'} name="sound" />*/}
                                     {/*{selftest}*/}
                                     {/*</Menu.Item>*/}
-                                    <Menu.Item disabled={women || !localAudioTrack} onClick={this.micMute} className="mute-button">
+                                    <Menu.Item disabled={!localAudioTrack} onClick={this.micMute} className="mute-button">
                                         <canvas className={muted ? 'hidden' : 'vumeter'} ref="canvas1" id="canvas1" width="15" height="35" />
                                         <Icon color={muted ? "red" : "green"} name={!muted ? "microphone" : "microphone slash"} />
                                         {!muted ? "Mute" : "Unmute"}
