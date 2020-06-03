@@ -191,37 +191,39 @@ class UsersPreview extends Component {
       });
 
       return (
-          <div className="videos-panel">
-              <div className="videos">
-                  {this.props.next ?
-                      <div>
-                          <Button className='close_button'
-                                  size='mini'
-                                  color='red'
-                                  icon='close'
-                                  onClick={() => this.props.closePopup({disable: true}, this.props.pg)} />
-                          <Button className='hide_button'
-                                  size='mini'
-                                  color='green'
-                                  icon='share'
-                                  onClick={this.props.nextInQueue} />
+          <div className={`vclient__main-wrapper no-of-videos-${mids.length} layout--equal broadcast--off`} >
+              <div className="videos-panel">
+                  <div className="videos">
+                      {this.props.next ?
+                          <div>
+                              <Button className='close_button'
+                                      size='mini'
+                                      color='red'
+                                      icon='close'
+                                      onClick={() => this.props.closePopup({disable: true}, this.props.pg)} />
+                              <Button className='hide_button'
+                                      size='mini'
+                                      color='green'
+                                      icon='share'
+                                      onClick={this.props.nextInQueue} />
+                          </div>
+                          :
+                          <div>
+                              <Button className='close_button'
+                                      size='mini'
+                                      color='red'
+                                      icon='close'
+                                      onClick={() => this.props.closePopup({disable: true}, false)} />
+                              <Button className='hide_button'
+                                      size='mini'
+                                      color='orange'
+                                      icon='window minimize'
+                                      onClick={() => this.props.closePopup()} />
+                          </div>
+                      }
+                      <div className="videos__wrapper">
+                          {program_feeds}
                       </div>
-                              :
-                      <div>
-                          <Button className='close_button'
-                                  size='mini'
-                                  color='red'
-                                  icon='close'
-                                  onClick={() => this.props.closePopup({disable: true}, false)} />
-                          <Button className='hide_button'
-                                  size='mini'
-                                  color='orange'
-                                  icon='window minimize'
-                                  onClick={() => this.props.closePopup()} />
-                      </div>
-                  }
-                  <div className="videos__wrapper">
-                      {program_feeds}
                   </div>
               </div>
           </div>

@@ -8,8 +8,10 @@ let status = 0;
 
 export const addLostStat = (lost) => {
 
-    const now = Date.now();
-    list.push({ timestamp: now, lost: lost });
+    if(status < 700) {
+        const now = Date.now();
+        list.push({ timestamp: now, lost: lost });
+    }
 
     if(chk) return;
 

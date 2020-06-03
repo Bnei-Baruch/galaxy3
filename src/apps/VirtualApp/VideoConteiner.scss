@@ -185,7 +185,7 @@ $vh: 9;
 }
 
 $all: ();
-@for $i from 2 through 17 {
+@for $i from 2 through 26 {
 	@for $x from ($i - 1)  through 1 {
 		// $keyname: #{$vw*($x+1)}/#{$vh*ceil($i/$x)};
 		$keyname: ($vw*($x+1))/($vh*ceil($i/$x));

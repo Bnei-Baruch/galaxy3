@@ -65,6 +65,12 @@ class UsersHandleSndman extends Component {
             onlocalstream: (mystream) => {
                 gateway.log(`[room ${roomid}] ::: Got a local stream :::`, mystream);
             },
+            ondataopen: (label) => {
+                Janus.log('Publisher - DataChannel is available! (' + label + ')');
+            },
+            ondata: (data, label) => {
+                Janus.log('Publisher - Got data from the DataChannel! (' + label + ')' + data);
+            },
             oncleanup: () => {
                 gateway.log(`[room ${roomid}] ::: Got a cleanup notification: we are unpublished now :::`);
             }
@@ -85,6 +91,22 @@ class UsersHandleSndman extends Component {
         }
     };
 
+    publishOwnFeed = () => {
+        this.state.videoroom.createOffer({
+            media: {audio: false, video: false, data: true},
+            simulcast: false,
+            success: (jsep) => {
+                Janus.debug('Got publisher SDP!');
+                Janus.debug(jsep);
+                let publish = { request: 'configure', audio: false, video: false, data: true };
+                this.state.videoroom.send({ 'message': publish, 'jsep': jsep });
+            },
+            error: (error) => {
+                Janus.error('WebRTC error:', error);
+            }
+        });
+    };
+
     onMessage = (gateway, roomid, msg, jsep) => {
         gateway.debug(`[room ${roomid}] ::: Got a message (publisher) :::`, msg);
         let event = msg["videoroom"];
@@ -94,6 +116,7 @@ class UsersHandleSndman extends Component {
                 let mypvtid = msg["private_id"];
                 this.setState({myid, mypvtid});
                 console.debug(`[Sndman] [room ${roomid}] Successfully joined room`, myid);
+                this.publishOwnFeed();
                 if (msg["publishers"] !== undefined && msg["publishers"] !== null) {
                     let list = msg["publishers"];
                     //FIXME: Tmp fix for black screen in room caoused by feed with video_codec = none
@@ -286,11 +309,12 @@ class UsersHandleSndman extends Component {
                         Janus.attachMediaStream(remotevideo, stream);
                     }
                 },
-                ondataopen: (data) => {
-                    gateway.debug(`[room ${roomid}] [remoteFeed] The DataChannel is available!`);
+                ondataopen: (label) => {
+                    Janus.log('Feed - DataChannel is available! (' + label + ')');
                 },
-                ondata: (data) => {
-                    gateway.debug(`[room ${roomid}] [remoteFeed] We got data from the DataChannel!`, data);
+                ondata: (data, label) => {
+                    Janus.debug('Feed - Got data from the DataChannel! (' + label + ')' + data);
+                    Janus.log(' :: We got msg via DataChannel: ');
                 },
                 oncleanup: () => {
                     gateway.debug(`[room ${roomid}] [remoteFeed] ::: Got a cleanup notification :::`);
@@ -364,10 +388,12 @@ class UsersHandleSndman extends Component {
       });
 
       return (
-          <div className="videos-panel">
-              <div className="videos">
-                  <div className="videos__wrapper">
-                      {program_feeds}
+          <div className={`vclient__main-wrapper no-of-videos-${feeds.length} layout--equal broadcast--off`} >
+              <div className="videos-panel">
+                  <div className="videos">
+                      <div className="videos__wrapper">
+                          {program_feeds}
+                      </div>
                   </div>
               </div>
           </div>

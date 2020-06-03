@@ -9,7 +9,7 @@ export default class VirtualStreamingJanus {
     this.videoJanusStream = null;
     this.audioJanusStream = null;
     this.trlAudioJanusStream = null;
-    this.dataJanusStream = null;
+    //this.dataJanusStream = null;
     this.videoMediaStream = null;
     this.audioMediaStream = null;
     this.trlAudioMediaStream = null;
@@ -40,7 +40,7 @@ export default class VirtualStreamingJanus {
         (this.videos === NO_VIDEO_OPTION_VALUE || this.videoJanusStream) &&
         this.trlAudioJanusStream &&
         this.audioJanusStream &&
-        this.dataJanusStream &&
+        //this.dataJanusStream &&
         (this.videos === NO_VIDEO_OPTION_VALUE || this.videoMediaStream) &&
         this.trlAudioMediaStream &&
         this.audioMediaStream) {
@@ -57,7 +57,7 @@ export default class VirtualStreamingJanus {
     this.detachVideo_();
     this.audioJanusStream = null;
     this.trlAudioJanusStream = null;
-    this.dataJanusStream = null;
+    //this.dataJanusStream = null;
     this.audioMediaStream = null;
     this.trlAudioMediaStream = null;
   }
@@ -144,7 +144,7 @@ export default class VirtualStreamingJanus {
             if (this.videos !== NO_VIDEO_OPTION_VALUE) {
               this.initVideoStream(this.janus);
             }
-            this.initDataStream(this.janus);
+            //this.initDataStream(this.janus);
             this.initAudioStream(this.janus);
             let id = trllang[localStorage.getItem('vrt_langtext')] || 301;
             this.initTranslationStream(id);
@@ -376,8 +376,8 @@ export default class VirtualStreamingJanus {
       console.log(' :: Switch STR Stream: ', gxycol[col]);
       this.audioJanusStream.send({'message': { 'request': 'switch', 'id': gxycol[col]}});
       const id = trllang[localStorage.getItem('vrt_langtext')];
-      console.log('AAAA', localStorage.getItem('vrt_langtext'), id);
-      if (name.match(/^(New York|Toronto)$/) || !id) {
+      console.log(':: Select TRL: ', localStorage.getItem('vrt_langtext'), id);
+      if (!id) {
         console.log(' :: Not TRL Stream attach');
       } else {
         this.trlAudioJanusStream.send({'message': { 'request': 'switch', 'id': id }});
@@ -403,15 +403,17 @@ export default class VirtualStreamingJanus {
   };
 
   ducerMixaudio = () => {
-    this.trlAudioJanusStream.getVolume(null, volume => {
-      let audio      = this.audioElement;
-      let trl_volume = this.mixvolume * 0.05;
-      if (volume > 0.05) {
-        audio.volume = trl_volume;
-      } else if (audio.volume + 0.01 <= this.mixvolume) {
-        audio.volume = audio.volume + 0.01;
-      }
-    });
+    if(this.trlAudioJanusStream) {
+      this.trlAudioJanusStream.getVolume(null, volume => {
+        let audio      = this.audioElement;
+        let trl_volume = this.mixvolume * 0.05;
+        if (volume > 0.05) {
+          audio.volume = trl_volume;
+        } else if (audio.volume + 0.01 <= this.mixvolume) {
+          audio.volume = audio.volume + 0.01;
+        }
+      });
+    }
   };
 
   setVideo = (videos) => {

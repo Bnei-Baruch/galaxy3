@@ -12,7 +12,7 @@ class UsersHandle extends Component {
         name: "",
         room: "",
         myid: null,
-        mystream: null
+        mystream: null,
     };
 
     componentDidUpdate(prevProps) {
@@ -355,10 +355,12 @@ class UsersHandle extends Component {
       });
 
       return (
-          <div className="videos-panel">
-              <div className="videos">
-                  <div className="videos__wrapper">
-                      {program_feeds}
+          <div className={`vclient__main-wrapper no-of-videos-${feeds.length} layout--equal broadcast--off`} >
+              <div className="videos-panel">
+                  <div className="videos">
+                      <div className="videos__wrapper">
+                          {program_feeds}
+                      </div>
                   </div>
               </div>
           </div>

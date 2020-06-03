@@ -61,8 +61,13 @@ class ShidurToran extends Component {
     };
 
     galaxyMode = (galaxy_mode) => {
-        //this.props.setProps({galaxy_mode});
         this.setState({galaxy_mode})
+    };
+
+    previewMode = (preview_mode) => {
+        const galaxy_mode = preview_mode ? "lesson" : "shidur";
+        this.props.setProps({preview_mode: !preview_mode});
+        this.setState({galaxy_mode});
     };
 
     disableRoom = (data) => {
@@ -180,7 +185,7 @@ class ShidurToran extends Component {
 
     render() {
 
-        const {group,pre_groups,disabled_rooms,groups,groups_queue,questions,presets,sdiout,sndman,shidur_mode,users_count} = this.props;
+        const {group,pre_groups,disabled_rooms,groups,groups_queue,questions,presets,sdiout,sndman,shidur_mode,users_count,preview_mode} = this.props;
         const {open,delay,vote,galaxy_mode} = this.state;
         const q = (<b style={{color: 'red', fontSize: '20px', fontFamily: 'Verdana', fontWeight: 'bold'}}>?</b>);
         const next_group = groups[groups_queue] ? groups[groups_queue].description : groups[0] ? groups[0].description : "";
@@ -345,6 +350,7 @@ class ShidurToran extends Component {
                             </Table.Body>
                         </Table>
                     </Segment>
+                    <Button attached='bottom' size='mini' color='green' content={'Preview ' + (preview_mode ? 'ON' : 'OFF')} onClick={() => this.previewMode(preview_mode)} />
                 </Grid.Column>
             </Grid.Row>
         );

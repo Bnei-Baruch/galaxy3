@@ -92,6 +92,7 @@ class GxyJanus extends EventTarget {
                     this.gateway = new Janus({
                         server: config.url,
                         iceServers: config.iceServers,
+                        token: config.token,
                         success: () => {
                             this.log("Connected to JANUS");
                             resolve();
@@ -827,6 +828,11 @@ class GxyJanus extends EventTarget {
             return;
 
         return this.getData(`/${session}/${handle}`, {janus: "handle_info"});
+    };
+
+    sendPluginMessage = (request) => {
+        let message = {janus: "message_plugin", plugin: "janus.plugin.videoroom", request};
+        return this.getData(`/`, message);
     };
 
     getData = (path, params = {}) => {

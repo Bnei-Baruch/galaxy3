@@ -13,6 +13,7 @@ import RoomManager from "./components/RoomManager";
 import MonitoringAdmin from "./components/MonitoringAdmin";
 import MonitoringUser from "./components/MonitoringUser";
 import api from "../../shared/Api";
+import {reportToSentry} from "../../shared/tools";
 
 class AdminRoot extends Component {
 
@@ -46,6 +47,7 @@ class AdminRoot extends Component {
         gxy2_count: 0,
         gxy3_count: 0,
         gxy4_count: 0,
+        command_status: true,
     };
 
     componentWillUnmount() {
@@ -205,6 +207,22 @@ class AdminRoot extends Component {
         });
     };
 
+    publishOwnFeed = (gateway) => {
+        gateway.videoroom.createOffer({
+            media: {audio: false, video: false, data: true},
+            simulcast: false,
+            success: (jsep) => {
+                Janus.debug('Got publisher SDP!');
+                Janus.debug(jsep);
+                let publish = { request: 'configure', audio: false, video: false, data: true };
+                gateway.videoroom.send({ 'message': publish, 'jsep': jsep });
+            },
+            error: (error) => {
+                Janus.error('WebRTC error:', error);
+            }
+        });
+    };
+
     onVideoroomMessage = (gateway, msg, jsep) => {
         const event = msg["videoroom"];
         if (event !== undefined && event !== null) {
@@ -214,7 +232,7 @@ class AdminRoot extends Component {
                 let mypvtid = msg["private_id"];
                 this.setState({myid, mypvtid});
                 console.log("[Admin] Successfully joined room " + msg["room"] + " with ID " + myid + " on " + gateway.name);
-
+                this.publishOwnFeed(gateway);
                 // Any new feed to attach to?
                 if (msg["publishers"] !== undefined && msg["publishers"] !== null) {
                     let list = msg["publishers"];
@@ -518,7 +536,7 @@ class AdminRoot extends Component {
     };
 
     sendRemoteCommand = (command_type) => {
-        const {gateways, feed_user, current_janus} = this.state;
+        const {gateways, feed_user, current_janus, current_room, command_status} = this.state;
         if (!feed_user) {
             alert("Choose user");
             return;
@@ -529,8 +547,21 @@ class AdminRoot extends Component {
         }
 
         const gateway = gateways[current_janus];
-        gateway.sendProtocolMessage({type: command_type, status: true, id: feed_user.id, user: feed_user})
+        gateway.sendProtocolMessage({type: command_type, room: current_room, status: command_status, id: feed_user.id, user: feed_user})
             .catch(alert);
+
+        if (command_type === "audio-out") {
+            this.setState({command_status: !command_status})
+        }
+    };
+
+    sendDataMessage = (msg) => {
+        const {gateways, feed_user, current_janus} = this.state;
+        const gateway = gateways[current_janus];
+        const cmd = {type: msg, rcmd: true, id: feed_user.id}
+        const message = JSON.stringify(cmd);
+        console.log(':: Sending message: ', message);
+        gateway.videoroom.data({ text: message });
     };
 
     joinRoom = (data, i) => {
@@ -561,7 +592,8 @@ class AdminRoot extends Component {
                     current_janus: inst,
                     feeds: [],
                     feed_user: null,
-                    feed_id: null
+                    feed_id: null,
+                    command_status: true,
                 });
 
                 const gateway = this.state.gateways[inst];
@@ -683,6 +715,7 @@ class AdminRoot extends Component {
           gxy4_count,
         chatRoomsInitialized,
           appInitError,
+          command_status,
       } = this.state;
 
       if (appInitError) {
@@ -847,6 +880,8 @@ class AdminRoot extends Component {
                                           <Popup trigger={<Button color="olive" icon='redo alternate' onClick={() => this.sendRemoteCommand("client-reload")} />} content='Reload page(LOST FEED HERE!)' inverted />
                                           <Popup trigger={<Button color="teal" icon='microphone' onClick={() => this.sendRemoteCommand("client-mute")} />} content='Mic Mute/Unmute' inverted />
                                           <Popup trigger={<Button color="pink" icon='eye' onClick={() => this.sendRemoteCommand("video-mute")} />} content='Cam Mute/Unmute' inverted />
+                                          <Popup trigger={<Button color="orange" icon={command_status ? 'volume off' : 'volume up'} onClick={() => this.sendRemoteCommand("audio-out")} />} content='Talk event' inverted />
+                                          {/*<Popup trigger={<Button color="pink" icon='eye' onClick={() => this.sendDataMessage("video-mute")} />} content='Cam Mute/Unmute' inverted />*/}
                                           <Popup trigger={<Button color="blue" icon='power off' onClick={() => this.sendRemoteCommand("client-disconnect")} />} content='Disconnect(LOST FEED HERE!)' inverted />
                                           <Popup trigger={<Button color="yellow" icon='question' onClick={() => this.sendRemoteCommand("client-question")} />} content='Set/Unset question' inverted />
                                       </Segment>
@@ -870,10 +905,12 @@ class AdminRoot extends Component {
                           </Segment.Group>
                       </Grid.Column>
                       <Grid.Column largeScreen={9}>
-                          <div className="videos-panel">
-                              <div className="videos">
-                                  <div className="videos__wrapper">
-                                      {videos}
+                          <div className={`vclient__main-wrapper no-of-videos-${feeds.length} layout--equal broadcast--off`} >
+                              <div className="videos-panel">
+                                  <div className="videos">
+                                      <div className="videos__wrapper">
+                                          {videos}
+                                      </div>
                                   </div>
                               </div>
                           </div>
