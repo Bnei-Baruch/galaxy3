@@ -9,7 +9,6 @@ export default class VirtualStreamingJanus {
     this.videoJanusStream = null;
     this.audioJanusStream = null;
     this.trlAudioJanusStream = null;
-    //this.dataJanusStream = null;
     this.videoMediaStream = null;
     this.audioMediaStream = null;
     this.trlAudioMediaStream = null;
@@ -35,15 +34,17 @@ export default class VirtualStreamingJanus {
     this.onTalkingCallback = null;
   }
 
+  isInitialized_() {
+    return (this.videos === NO_VIDEO_OPTION_VALUE || this.videoJanusStream) &&
+      this.trlAudioJanusStream &&
+      this.audioJanusStream &&
+      (this.videos === NO_VIDEO_OPTION_VALUE || this.videoMediaStream) &&
+      this.trlAudioMediaStream &&
+      this.audioMediaStream;
+  }
+
   onInitialized_() {
-    if (this.onInitialized &&
-        (this.videos === NO_VIDEO_OPTION_VALUE || this.videoJanusStream) &&
-        this.trlAudioJanusStream &&
-        this.audioJanusStream &&
-        //this.dataJanusStream &&
-        (this.videos === NO_VIDEO_OPTION_VALUE || this.videoMediaStream) &&
-        this.trlAudioMediaStream &&
-        this.audioMediaStream) {
+    if (this.onInitialized && this.isInitialized_()) {
       this.onInitialized();
     }
   }
@@ -57,7 +58,6 @@ export default class VirtualStreamingJanus {
     this.detachVideo_();
     this.audioJanusStream = null;
     this.trlAudioJanusStream = null;
-    //this.dataJanusStream = null;
     this.audioMediaStream = null;
     this.trlAudioMediaStream = null;
   }
@@ -109,6 +109,10 @@ export default class VirtualStreamingJanus {
   }
 
   destroy() {
+    if (this.talking) {
+      clearInterval(this.talking);
+      this.talking = null;
+    }
     if (this.janus) {
       if (this.videoElement) {
         this.videoElement.srcObject = null;
@@ -144,7 +148,6 @@ export default class VirtualStreamingJanus {
             if (this.videos !== NO_VIDEO_OPTION_VALUE) {
               this.initVideoStream(this.janus);
             }
-            //this.initDataStream(this.janus);
             this.initAudioStream(this.janus);
             let id = trllang[localStorage.getItem('vrt_langtext')] || 301;
             this.initTranslationStream(id);
@@ -250,48 +253,6 @@ export default class VirtualStreamingJanus {
     });
   };
 
-  initDataStream(janus) {
-    janus.attach({
-      plugin: 'janus.plugin.streaming',
-      opaqueId: 'datastream-' + Janus.randomString(12),
-      success: (dataJanusStream) => {
-        this.dataJanusStream = dataJanusStream;
-        dataJanusStream.send({ 'message': { request: 'watch', id: 101 } });
-        this.onInitialized_();
-      },
-      error: (error) => {
-        Janus.log('Error attaching plugin: ' + error);
-      },
-      iceState: (state) => {
-        Janus.log('ICE state changed to ' + state);
-      },
-      webrtcState: (on) => {
-        Janus.log('Janus says our WebRTC PeerConnection is ' + (on ? 'up' : 'down') + ' now');
-      },
-      slowLink: (uplink, lost, mid) => {
-        Janus.log('Janus reports problems ' + (uplink ? 'sending' : 'receiving') +
-          ' packets on mid ' + mid + ' (' + lost + ' lost packets)');
-      },
-      onmessage: (msg, jsep) => {
-        this.onStreamingMessage(this.dataJanusStream, msg, jsep, true);
-      },
-      ondataopen: () => {
-        Janus.log('The DataStreamChannel is available!');
-      },
-      ondata: (data) => {
-        let json = JSON.parse(data);
-        Janus.log('We got data from the DataStreamChannel! ', json);
-        this.checkData(json);
-      },
-      onremotestream: (stream) => {
-        Janus.log('Got a remote stream!', stream);
-      },
-      oncleanup: () => {
-        Janus.log('Got a cleanup notification');
-      }
-    });
-  };
-
   initTranslationStream = (streamId) => {
     this.janus.attach({
       plugin: 'janus.plugin.streaming',
@@ -338,7 +299,7 @@ export default class VirtualStreamingJanus {
   onStreamingMessage = (handle, msg, jsep, initdata) => {
     Janus.log('Got a message', msg);
 
-    if (jsep !== undefined && jsep !== null) {
+    if (handle !== null && jsep !== undefined && jsep !== null) {
       Janus.log('Handling SDP as well...', jsep);
 
       // Answer
@@ -360,14 +321,10 @@ export default class VirtualStreamingJanus {
     }
   };
 
-  checkData = (json) => {
-    let { talk, col, name, ip } = json;
-    if (localStorage.getItem('vrt_extip') === ip) {
-      this.streamGalaxy(talk, col, name);
-    }
-  };
-
   streamGalaxy = (talk, col, name) => {
+    if (!this.isInitialized_()) {
+      return;
+    }
     if (talk) {
       this.mixvolume = this.audioElement.volume;
       this.talking = true;
@@ -387,7 +344,9 @@ export default class VirtualStreamingJanus {
       Janus.log('You now talking');
     } else if (this.talking) {
       Janus.log('Stop talking');
-      clearInterval(this.talking);
+      if (this.talking) {
+        clearInterval(this.talking);
+      }
       this.audioElement.volume = this.mixvolume;
       const id = Number(localStorage.getItem('vrt_lang')) || 15;
       console.log(' :: Switch STR Stream: ', localStorage.getItem('vrt_lang'), id);
@@ -403,7 +362,7 @@ export default class VirtualStreamingJanus {
   };
 
   ducerMixaudio = () => {
-    if(this.trlAudioJanusStream) {
+    if(this.isInitialized_()) {
       this.trlAudioJanusStream.getVolume(null, volume => {
         let audio      = this.audioElement;
         let trl_volume = this.mixvolume * 0.05;

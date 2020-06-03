@@ -18,7 +18,7 @@ class UsersHandleSDIOut extends Component {
     componentDidMount() {
         let {g} = this.props;
         let num_videos = g && g.users.filter(u =>  u.camera).length;
-        if(num_videos > 16) num_videos = 16;
+        if(num_videos > 25) num_videos = 25;
         this.setState({num_videos});
     }
 
@@ -43,7 +43,7 @@ class UsersHandleSDIOut extends Component {
         }
         if(g && JSON.stringify(g) !== JSON.stringify(prevProps.g)) {
             let num_videos = g && g.users.filter(u =>  u.camera).length
-            if(num_videos > 16) num_videos = 16;
+            if(num_videos > 25) num_videos = 25;
             this.setState({num_videos})
         }
     }
