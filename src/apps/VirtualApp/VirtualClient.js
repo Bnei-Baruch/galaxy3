@@ -192,8 +192,10 @@ class VirtualClient extends Component {
                 user.janus = room.janus;
                 user.group = name;
                 this.setState({name});
+                this.initClient(user, false);
+              } else {
+                this.setState({selected_room: ''});
               }
-              this.initClient(user, false);
             }
           })
           .catch(err => {
