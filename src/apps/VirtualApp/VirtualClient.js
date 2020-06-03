@@ -535,6 +535,7 @@ class VirtualClient extends Component {
       iceState: (state) => {
         Janus.log('ICE state changed to ' + state);
         this.setState({ ice: state });
+        this.state.monitoringData.onIceState(state);
         if (state === 'disconnected') {
           // FIXME: ICE restart does not work properly, so we will do silent reconnect
           this.iceState();
@@ -551,9 +552,10 @@ class VirtualClient extends Component {
         Janus.log('Janus says our WebRTC PeerConnection is ' + (on ? 'up' : 'down') + ' now');
       },
       slowLink: (uplink, lost, mid) => {
-        Janus.log('Janus reports problems ' + (uplink ? 'sending' : 'receiving') +
-          ' packets on mid ' + mid + ' (' + lost + ' lost packets)');
+        const slowLinkType = uplink ? 'sending' : 'receiving';
+        Janus.log('Janus reports problems ' + slowLinkType + ' packets on mid ' + mid + ' (' + lost + ' lost packets)');
         //addLostStat(lost);
+        this.state.monitoringData.onSlowLink(slowLinkType, lost);
       },
       onmessage: (msg, jsep) => {
         this.onMessage(this.state.videoroom, msg, jsep, false);
