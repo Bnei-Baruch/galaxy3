@@ -1059,8 +1059,7 @@ class MobileClient extends Component {
                 this.initVideoRoom(reconnect);
             }
         });
-        this.stream.audioMute();
-        this.stream.videoMute();
+        this.stream.stopStream();
     };
 
     handleQuestion = () => {

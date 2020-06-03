@@ -344,6 +344,20 @@ class MobileStreaming extends Component {
         vid.webkitEnterFullscreen();
     };
 
+    stopStream = () => {
+        const {videostream,audiostream,videos,janus} = this.state;
+        this.setState({vmuted: true});
+        let request = "pause";
+        videostream.send({message: {request, id: videos}});
+        this.setState({muted: true});
+        if(audiostream) {
+           audiostream.muteAudio();
+        }
+        else {
+            this.initAudioStream(janus);
+        }
+    };
+
 
     render() {
 
