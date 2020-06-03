@@ -377,7 +377,7 @@ class VirtualClient extends Component {
     let {videoroom, remoteFeed, protocol, room} = this.state;
     wkliLeave(this.state.user);
     clearInterval(this.state.upval);
-    let leave = {request: 'leave'};
+    let leave = {request: 'leave', room};
     if (remoteFeed) {
       remoteFeed.send({'message': leave});
     }
@@ -407,7 +407,9 @@ class VirtualClient extends Component {
     });
     this.state.virtualStreamingJanus.audioElement.muted = true;
     //this.clearKeepAlive();
-    this.initVideoRoom(reconnect);
+    setTimeout(() => {
+      this.initVideoRoom(reconnect);
+    }, 2000)
   };
 
   iceState = () => {
@@ -1382,7 +1384,7 @@ class VirtualClient extends Component {
           {room ?
               <Button attached='right' negative icon='sign-out' onClick={() => this.exitRoom(false)} /> : ''}
           {!room ?
-            <Button attached='right' primary icon='sign-in' disabled={delay || !selected_room} onClick={this.joinRoom} /> : ''}
+            <Button attached='right' primary icon='sign-in' disabled={delay || !selected_room} onClick={() => this.joinRoom(false)} /> : ''}
         </Input>
         { !(new URL(window.location.href).searchParams.has('deb')) ? null : (
         <Input>

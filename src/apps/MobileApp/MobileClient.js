@@ -1098,7 +1098,7 @@ class MobileClient extends Component {
 
     exitRoom = (reconnect) => {
         let {videoroom, remoteFeed, protocol, room} = this.state;
-        let leave = {request : "leave"};
+        let leave = {request : "leave", room};
         if(remoteFeed)
             remoteFeed.send({"message": leave});
         videoroom.send({"message": leave});
@@ -1129,10 +1129,12 @@ class MobileClient extends Component {
 
         });
         //this.clearKeepAlive();
-        this.initVideoRoom(reconnect);
         if(!this.stream.state.muted)
             this.stream.audioMute();
         this.stream.videoMute();
+        setTimeout(() => {
+            this.initVideoRoom(reconnect);
+        }, 2000)
     };
 
     keepAlive = () => {
@@ -1372,7 +1374,7 @@ class MobileClient extends Component {
                                     {/*<input disabled={!!localAudioTrack}/>*/}
                                     {/*<Icon name='user circle' />*/}
                                     {!!localAudioTrack ? <Button size='massive' negative icon='sign-out' onClick={() => this.exitRoom(false)} />:""}
-                                    {!localAudioTrack ? <Button size='massive' primary icon='sign-in' disabled={delay||!selected_room||!audio_device} onClick={this.joinRoom} />:""}
+                                    {!localAudioTrack ? <Button size='massive' primary icon='sign-in' disabled={delay||!selected_room||!audio_device} onClick={() => this.joinRoom(false)} />:""}
                                 </Input>
                                 <Menu icon='labeled' secondary size="mini">
                                     {/*<Menu.Item disabled={!localAudioTrack} onClick={() => this.setState({ visible: !this.state.visible, count: 0 })}>*/}
