@@ -34,18 +34,20 @@ export const Terms = (props) => {
   const src = `https://docs.google.com/document/d/e/${terms[i18n.language]}/pub?embedded=true`;
 
   return (
-    <div style={{width: '100%', position: 'absolute', display: 'flex', justifyContent: 'center', bottom: '20px'}}>
-      <a href="javascript:void(0)" onClick={() => setOpen(true)}>{t('galaxyApp.terms')}</a>
-      {!open ? null :
-        <Modal open={true} style={{direction, textAlign}}>
-          <Modal.Content style={{height: '500px'}}>
-            <iframe frameBorder="0" width="100%" height="100%" src={src} title={t('galaxyApp.terms')}></iframe>
-          </Modal.Content>
-          <Modal.Actions style={{textAlign: textAlignReverse}}>
-            <Button color='green' onClick={() => setOpen(false)}>{t('galaxyApp.close')}</Button>
-          </Modal.Actions>
-        </Modal>
-      }
+    <div style={{width: '100%', flex: '1 1 auto', justifyContent: 'center', marginTop: '20px', marginBottom: '10px', display: 'flex'}}>
+      <div style={{width: '100%', marginTop: 'auto', display: 'flex', justifyContent: 'center'}}>
+        <a href="javascript:void(0)" onClick={() => setOpen(true)}>{t('galaxyApp.terms')}</a>
+        {!open ? null :
+          <Modal open={true} style={{direction, textAlign}}>
+            <Modal.Content style={{height: '500px'}}>
+              <iframe frameBorder="0" width="100%" height="100%" src={src} title={t('galaxyApp.terms')}></iframe>
+            </Modal.Content>
+            <Modal.Actions style={{textAlign: textAlignReverse}}>
+              <Button color='green' onClick={() => setOpen(false)}>{t('galaxyApp.close')}</Button>
+            </Modal.Actions>
+          </Modal>
+        }
+      </div>
     </div>
   );
 }

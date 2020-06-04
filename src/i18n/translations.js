@@ -73,6 +73,8 @@ export const resources = {
         welcomeUser: 'Welcome, [UserFirstName]',
         logoOurConnection: 'OUR CONNECTION',
         logoNetwork: 'NETWORK',
+        intro: 'Our Virtual Home, developed by the Bnei Baruch Kabbalah La’am Association, is a worldwide headquarters and virtual space for spiritual advancement, providing an interactive environment that feels like physical learning—watch live lessons, ask questions and receive real-time answers, conduct workshop discussions, and listen to a wide selection of translations.',
+        userFee: 'Pay User Fee',
       },
       loginMessage : {
         register: 'register',
@@ -178,6 +180,8 @@ export const resources = {
         welcomeUser: 'Hola, [UserFirstName]',
         logoOurConnection: 'NUESTRA RED',
         logoNetwork: 'DE CONEXIÓN',
+        intro: 'Nuestro Hogar Virtual, nuestra sede mundial, el lugar para nuestro avance espiritual, es nuestro lugar común construido y desarrollado por la Asociación Bnei Baruj Kabbalah Laam como un centro educativo global que nos permite experimentar un entorno de aprendizaje interactivo lo más cercano posible al aprendizaje físico: ver lecciones en vivo, hacer preguntas y recibir respuestas en tiempo real, realizar talleres y escuchar una amplia selección de traducciones.',
+        userFee: 'Pagar tarifa de usuario',
       },
       loginMessage : {
         register: 'registre',
@@ -283,6 +287,8 @@ export const resources = {
         welcomeUser: 'שלום, [UserFirstName]',
         logoOurConnection: 'מערכת',
         logoNetwork: 'הקשר בינינו',
+        intro: 'הבית הווירטואלי שלנו, המטה העולמי שלנו, המקום להתקדמות הרוחנית שלנו, הוא המקום המשותף שלנו שנבנה ופותח על ידי עמותת בני ברוך קבלה לעם כמרכז חינוכי עולמי, המאפשר לנו לחוות סביבת למידה אינטראקטיבית קרובה ככל האפשר ללימוד פיזי: לצפות בשיעורים חיים, לשאול שאלות ולקבל תשובות בזמן אמת, לערוך דיונים בסדנאות ולהאזין למבחר רחב של תרגומים.',
+        userFee: 'לתשלום עבור השימוש',
       },
       loginMessage : {
         register: 'להרשם',
@@ -388,6 +394,8 @@ export const resources = {
         welcomeUser: 'Здравствуйте, [UserFirstName]',
         logoOurConnection: 'СЕТЬ СВЯЗИ',
         logoNetwork: 'МЕЖДУ НАМИ',
+        intro: 'Виртуальный дом, наша всемирная штаб-квартира - это место, построенное ассоциацией “Бней Барух - Каббала лаАм”, как всемирный образовательный центр, позволяющий учащимся находиться в интерактивной среде обучения, максимально приближенной к физическому обучению. Уроки в живом эфире, вопросы и ответы в режиме реального времени, обсуждения на семинарах - и все это в переводе на десятки языков стран мира с целью нашего общего духовного продвижения.',
+        userFee: 'Внести абонентскую плату',
       },
       loginMessage : {
         register: 'зарегистрироваться',

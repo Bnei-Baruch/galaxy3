@@ -1534,6 +1534,7 @@ class VirtualClient extends Component {
             </Popup.Content>
           </Popup>
           <Help t={t} />
+          <Button primary style={{margin: 'auto'}} onClick={() => window.open('https://membership.kli.one/', '_blank')}>{t('loginPage.userFee')}</Button>
           <Monitoring monitoringData={monitoringData} />
         </Menu>
         { !(new URL(window.location.href).searchParams.has('lost')) ? null :
