@@ -124,25 +124,23 @@ export const initChatRoom = (janus,roomid,handle,cb) => {
 };
 
 export const notifyMe = (title, message, tout) => {
-    if (!Notification) {
-        alert('Desktop notifications not available in your browser. Try Chromium.');
-        return;
-    }
-    if (Notification.permission !== "granted")
-        Notification.requestPermission();
-    else {
-        var notification = new Notification(title+":", {
-            icon: './nlogo.png',
-            body: message,
-            requireInteraction: tout
-        });
-        notification.onclick = function () {
-            window.focus();
-        };
-        notification.onshow = function () {
-            var audio = new Audio('./plucky.mp3');
-            audio.play();
-        };
+    if (!!window.Notification) {
+        if (Notification.permission !== "granted")
+            Notification.requestPermission();
+        else {
+            let notification = new Notification(title + ":", {
+                icon: './nlogo.png',
+                body: message,
+                requireInteraction: tout
+            });
+            notification.onclick = function () {
+                window.focus();
+            };
+            notification.onshow = function () {
+                var audio = new Audio('./plucky.mp3');
+                audio.play();
+            };
+        }
     }
 };
 
@@ -225,8 +223,7 @@ export const micLevel = (stream, canvas, cb) => {
 };
 
 export const checkNotification = () => {
-    var iOS = !!navigator.platform && /iPad|iPhone|iPod/.test(navigator.platform);
-    if ( !iOS && Notification.permission !== "granted") {
+    if ( !!window.Notification && Notification.permission !== "granted") {
         Notification.requestPermission();
     }
 };
