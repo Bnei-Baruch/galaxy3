@@ -1361,7 +1361,7 @@ class MobileClient extends Component {
                                     action>
                                     <Select className='select_room'
                                             search
-                                            disabled={audio_device === null || !!localAudioTrack}
+                                            disabled={!!room}
                                             error={!selected_room}
                                             placeholder=" Select Room: "
                                             value={selected_room}

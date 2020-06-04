@@ -1375,7 +1375,7 @@ class VirtualClient extends Component {
           <Select
             className = "room-selection"
             search
-            //disabled={audio_device === null || !!localAudioTrack}
+            disabled={!!room}
             error={!selected_room}
             placeholder={t('oldClient.selectRoom')}
             value={selected_room}
