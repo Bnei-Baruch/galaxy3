@@ -222,7 +222,6 @@ class VirtualClient extends Component {
         this.initVideoRoom(error);
       } else {
         alert(t('oldClient.unifiedPlanNotSupported'));
-        this.setState({ audio_device: null });
       }
     }, err => {
       console.error("[VirtualClient] error initializing janus", err);
