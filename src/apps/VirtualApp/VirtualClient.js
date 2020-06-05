@@ -82,7 +82,6 @@ class VirtualClient extends Component {
     shidur: true,
     protocol: null,
     user: null,
-    username_value: '',
     chatVisible: false,
     question: false,
     geoinfo: false,
@@ -191,7 +190,6 @@ class VirtualClient extends Component {
                 user.room = selected_room;
                 user.janus = room.janus;
                 user.group = name;
-                this.setState({name});
                 this.initClient(user, false);
               } else {
                 this.setState({selected_room: ''});
@@ -216,8 +214,7 @@ class VirtualClient extends Component {
       // Check if unified plan supported
       if (Janus.unifiedPlan) {
         user.session = janus.getSessionId();
-        let username_value = !!user.title ? user.title : user.name;
-        this.setState({ janus, user, username_value});
+        this.setState({janus, user});
         this.chat.initChat(janus);
         this.initVideoRoom(error);
       } else {
@@ -991,12 +988,10 @@ class VirtualClient extends Component {
 
   joinRoom = (reconnect) => {
     this.makeDelay();
-    let {janus, videoroom, selected_room, username_value, tested, media} = this.state;
+    let {janus, videoroom, selected_room, tested, media} = this.state;
     const {video: {video_device}} = media;
     let user = Object.assign({}, this.state.user);
     localStorage.setItem('room', selected_room);
-    //This name will see other users
-    user.display = username_value;
     user.self_test = tested;
     user.question = false;
     user.camera = !!video_device;
@@ -1013,7 +1008,6 @@ class VirtualClient extends Component {
       this.setState({upval});
     }
     this.setState({user});
-    localStorage.setItem('username', user.display);
     if(JSON.parse(localStorage.getItem("ghost")))
       user.role = "ghost";
     initGxyProtocol(janus, user, protocol => {
@@ -1182,7 +1176,7 @@ class VirtualClient extends Component {
   };
 
   renderLocalMedia = (width, height, index) => {
-    const {username_value, cammuted, question, muted} = this.state;
+    const {user, cammuted, question, muted} = this.state;
 
     return (<div className="video" key={index}>
       <div className={classNames('video__overlay')}>
@@ -1198,7 +1192,7 @@ class VirtualClient extends Component {
           ''
         }
         <div className="video__title">
-          {muted ? <Icon name="microphone slash" size="small" color="red" /> : ''}{username_value}
+          {muted ? <Icon name="microphone slash" size="small" color="red" /> : ''}{user ? user.display : ""}
         </div>
       </div>
       <svg className={classNames('nowebcam', {'hidden': !cammuted})} viewBox="0 0 32 18"
@@ -1500,7 +1494,7 @@ class VirtualClient extends Component {
             <Popup.Content>
               <Button size='huge' fluid>
                 <Icon name='user circle'/>
-                <Profile title={user && user.username} kc={kc} />
+                <Profile title={user && user.display} kc={kc} />
               </Button>
               <Select className='select_device'
                       disabled={!!room}

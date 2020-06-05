@@ -361,8 +361,8 @@ export const takeImage = (user) => {
 };
 
 const wkliEnter = (base64, user) => {
-    const {title,name,id,group,room} = user;
-    let request = {userName: !!title ? title : name, userId: id, roomName: group, roomId: room, image: base64};
+    const {display,id,group,room} = user;
+    let request = {userName: display, userId: id, roomName: group, roomId: room, image: base64};
     fetch(`${WKLI_ENTER}`,{
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
