@@ -67,9 +67,9 @@ export const MonitoringData = class {
     this.localAudioTrack = localAudioTrack;
     this.localVideoTrack = localVideoTrack;
     this.user = Object.assign({
-      cpu: navigator && navigator.hardwareConcurrency || 0,
-      ram: navigator && navigator.deviceMemory || 0,
-      network: navigator && navigator.connection && navigator.connection.type || '',
+      cpu: (navigator && navigator.hardwareConcurrency) || 0,
+      ram: (navigator && navigator.deviceMemory) || 0,
+      network: (navigator && navigator.connection && navigator.connection.type) || '',
     }, user);
   }
 
@@ -280,7 +280,7 @@ export const MonitoringData = class {
     const sentData = this.storedData.map((d, index) => this.sentDataCount++ % 100 === 0 ? d : this.filterData(d, this.spec.metrics_whitelist, ''));
     this.sentDataCount = this.sentDataCount % 100;  // Keep count small.
     // Update user network. We just need the latest and don't want to monitor this.
-    this.user.network = navigator && navigator.connection && navigator.connection.type || '';
+    this.user.network = (navigator && navigator.connection && navigator.connection.type) || '';
     const data = {
       user: this.user,
       data: sentData,

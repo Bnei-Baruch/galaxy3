@@ -1,3 +1,11 @@
 .monitoring-search input {
   width: 100%;
 }
+
+.ui.table thead th {
+  padding: 0.1em 0.1em;
+}
+
+.ui.table td {
+  padding: 0.1em 0.1em;
+}
