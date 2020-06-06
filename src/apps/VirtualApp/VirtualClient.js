@@ -2,7 +2,7 @@ import React, {Component, Fragment} from 'react';
 import {Janus} from '../../lib/janus';
 import classNames from 'classnames';
 import {isMobile} from 'react-device-detect';
-import {Button, Icon, Input, Label, Menu, Popup, Select,} from 'semantic-ui-react';
+import {Button, Icon, Image, Input, Label, Menu, Popup, Select,} from 'semantic-ui-react';
 import {
   checkNotification,
   geoInfo,
@@ -39,6 +39,10 @@ import * as Sentry from "@sentry/browser";
 import VerifyAccount from './components/VerifyAccount';
 import GxyJanus from "../../shared/janus-utils";
 import {addLostStat, getLostStat} from "./components/NetStatus";
+import linkOrange from './link-orange.png';
+import linkGreen from './link-green.png';
+import linkRed from './link-red.png';
+import linkGray from './link-red.png';
 
 class VirtualClient extends Component {
 
@@ -1192,7 +1196,9 @@ class VirtualClient extends Component {
           ''
         }
         <div className="video__title">
-          {muted ? <Icon name="microphone slash" size="small" color="red" /> : ''}{user ? user.display : ""}
+          {muted ? <Icon name="microphone slash" size="small" color="red" style={{verticalAlign: 'middle'}} /> : ''}
+          <div style={{display: 'inline-block', verticalAlign: 'middle'}}>{user ? user.display : ''}</div>
+          <Image src={linkGreen} style={{height: '1.3em', objectFit: 'contain', display: 'inline-block', verticalAlign: 'middle', marginLeft: '0.4em'}} />
         </div>
       </div>
       <svg className={classNames('nowebcam', {'hidden': !cammuted})} viewBox="0 0 32 18"
