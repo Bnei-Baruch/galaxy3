@@ -582,7 +582,7 @@ class MobileClient extends Component {
 
                 api.updateUser(user.id, user)
                     .catch(err => console.error("[User] error updating user state", user.id, err));
-                //this.keepAlive();
+                this.keepAlive();
 
                 const {media: {audio: {audio_device}, video: {video_device}}} = this.state;
                 this.publishOwnFeed(!!video_device, !!audio_device);
@@ -1121,7 +1121,7 @@ class MobileClient extends Component {
           showed_mids: [],
 
         });
-        //this.clearKeepAlive();
+        this.clearKeepAlive();
         if(!this.stream.state.muted)
             this.stream.audioMute();
         this.stream.videoMute();

@@ -402,7 +402,7 @@ class VirtualClient extends Component {
       upval: null,
     });
     this.state.virtualStreamingJanus.audioElement.muted = true;
-    //this.clearKeepAlive();
+    this.clearKeepAlive();
     setTimeout(() => {
       this.initVideoRoom(reconnect);
     }, 2000)
@@ -670,7 +670,7 @@ class VirtualClient extends Component {
 
         api.updateUser(user.id, user)
             .catch(err => console.error("[User] error updating user state", user.id, err));
-        //this.keepAlive();
+        this.keepAlive();
 
         const {media: {audio: {audio_device}, video: {video_device}}} = this.state;
         this.publishOwnFeed(!!video_device, !!audio_device);
