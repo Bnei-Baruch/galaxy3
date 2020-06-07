@@ -82,7 +82,6 @@ class VirtualClient extends Component {
     shidur: true,
     protocol: null,
     user: null,
-    username_value: '',
     chatVisible: false,
     question: false,
     geoinfo: false,
@@ -191,7 +190,6 @@ class VirtualClient extends Component {
                 user.room = selected_room;
                 user.janus = room.janus;
                 user.group = name;
-                this.setState({name});
                 this.initClient(user, false);
               } else {
                 this.setState({selected_room: ''});
@@ -216,13 +214,11 @@ class VirtualClient extends Component {
       // Check if unified plan supported
       if (Janus.unifiedPlan) {
         user.session = janus.getSessionId();
-        let username_value = !!user.title ? user.title : user.name;
-        this.setState({ janus, user, username_value});
+        this.setState({janus, user});
         this.chat.initChat(janus);
         this.initVideoRoom(error);
       } else {
         alert(t('oldClient.unifiedPlanNotSupported'));
-        this.setState({ audio_device: null });
       }
     }, err => {
       console.error("[VirtualClient] error initializing janus", err);
@@ -377,7 +373,7 @@ class VirtualClient extends Component {
     let {videoroom, remoteFeed, protocol, room} = this.state;
     wkliLeave(this.state.user);
     clearInterval(this.state.upval);
-    let leave = {request: 'leave'};
+    let leave = {request: 'leave', room};
     if (remoteFeed) {
       remoteFeed.send({'message': leave});
     }
@@ -406,8 +402,10 @@ class VirtualClient extends Component {
       upval: null,
     });
     this.state.virtualStreamingJanus.audioElement.muted = true;
-    //this.clearKeepAlive();
-    this.initVideoRoom(reconnect);
+    this.clearKeepAlive();
+    setTimeout(() => {
+      this.initVideoRoom(reconnect);
+    }, 2000)
   };
 
   iceState = () => {
@@ -533,6 +531,7 @@ class VirtualClient extends Component {
       iceState: (state) => {
         Janus.log('ICE state changed to ' + state);
         this.setState({ ice: state });
+        this.state.monitoringData.onIceState(state);
         if (state === 'disconnected') {
           // FIXME: ICE restart does not work properly, so we will do silent reconnect
           this.iceState();
@@ -549,9 +548,10 @@ class VirtualClient extends Component {
         Janus.log('Janus says our WebRTC PeerConnection is ' + (on ? 'up' : 'down') + ' now');
       },
       slowLink: (uplink, lost, mid) => {
-        Janus.log('Janus reports problems ' + (uplink ? 'sending' : 'receiving') +
-          ' packets on mid ' + mid + ' (' + lost + ' lost packets)');
+        const slowLinkType = uplink ? 'sending' : 'receiving';
+        Janus.log('Janus reports problems ' + slowLinkType + ' packets on mid ' + mid + ' (' + lost + ' lost packets)');
         //addLostStat(lost);
+        this.state.monitoringData.onSlowLink(slowLinkType, lost);
       },
       onmessage: (msg, jsep) => {
         this.onMessage(this.state.videoroom, msg, jsep, false);
@@ -670,7 +670,7 @@ class VirtualClient extends Component {
 
         api.updateUser(user.id, user)
             .catch(err => console.error("[User] error updating user state", user.id, err));
-        //this.keepAlive();
+        this.keepAlive();
 
         const {media: {audio: {audio_device}, video: {video_device}}} = this.state;
         this.publishOwnFeed(!!video_device, !!audio_device);
@@ -988,12 +988,10 @@ class VirtualClient extends Component {
 
   joinRoom = (reconnect) => {
     this.makeDelay();
-    let {janus, videoroom, selected_room, username_value, tested, media} = this.state;
+    let {janus, videoroom, selected_room, tested, media} = this.state;
     const {video: {video_device}} = media;
     let user = Object.assign({}, this.state.user);
     localStorage.setItem('room', selected_room);
-    //This name will see other users
-    user.display = username_value;
     user.self_test = tested;
     user.question = false;
     user.camera = !!video_device;
@@ -1010,7 +1008,6 @@ class VirtualClient extends Component {
       this.setState({upval});
     }
     this.setState({user});
-    localStorage.setItem('username', user.display);
     if(JSON.parse(localStorage.getItem("ghost")))
       user.role = "ghost";
     initGxyProtocol(janus, user, protocol => {
@@ -1179,7 +1176,7 @@ class VirtualClient extends Component {
   };
 
   renderLocalMedia = (width, height, index) => {
-    const {username_value, cammuted, question, muted} = this.state;
+    const {user, cammuted, question, muted} = this.state;
 
     return (<div className="video" key={index}>
       <div className={classNames('video__overlay')}>
@@ -1195,7 +1192,7 @@ class VirtualClient extends Component {
           ''
         }
         <div className="video__title">
-          {muted ? <Icon name="microphone slash" size="small" color="red" /> : ''}{username_value}
+          {muted ? <Icon name="microphone slash" size="small" color="red" /> : ''}{user ? user.display : ""}
         </div>
       </div>
       <svg className={classNames('nowebcam', {'hidden': !cammuted})} viewBox="0 0 32 18"
@@ -1371,7 +1368,7 @@ class VirtualClient extends Component {
           <Select
             className = "room-selection"
             search
-            //disabled={audio_device === null || !!localAudioTrack}
+            disabled={!!room}
             error={!selected_room}
             placeholder={t('oldClient.selectRoom')}
             value={selected_room}
@@ -1382,7 +1379,7 @@ class VirtualClient extends Component {
           {room ?
               <Button attached='right' negative icon='sign-out' onClick={() => this.exitRoom(false)} /> : ''}
           {!room ?
-            <Button attached='right' primary icon='sign-in' disabled={delay || !selected_room} onClick={this.joinRoom} /> : ''}
+            <Button attached='right' primary icon='sign-in' disabled={delay || !selected_room} onClick={() => this.joinRoom(false)} /> : ''}
         </Input>
         { !(new URL(window.location.href).searchParams.has('deb')) ? null : (
         <Input>
@@ -1497,7 +1494,7 @@ class VirtualClient extends Component {
             <Popup.Content>
               <Button size='huge' fluid>
                 <Icon name='user circle'/>
-                <Profile title={user && user.username} kc={kc} />
+                <Profile title={user && user.display} kc={kc} />
               </Button>
               <Select className='select_device'
                       disabled={!!room}

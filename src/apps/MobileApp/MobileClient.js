@@ -73,7 +73,6 @@ class MobileClient extends Component {
         shidur: false,
         protocol: null,
         user: null,
-        username_value: "",
         visible: false,
         question: false,
         selftest: "Self Audio Test",
@@ -163,7 +162,6 @@ class MobileClient extends Component {
                             user.room = selected_room;
                             user.janus = room.janus;
                             user.group = name;
-                            this.setState({name});
                             this.initClient(user, false);
                         } else {
                             this.setState({selected_room: ""});
@@ -187,8 +185,7 @@ class MobileClient extends Component {
             // Check if unified plan supported
             if (Janus.unifiedPlan) {
                 user.session = janus.getSessionId();
-                let username_value = !!user.title ? user.title : user.name;
-                this.setState({janus, user, username_value});
+                this.setState({janus, user});
                 //this.chat.initChat(janus);
                 this.initVideoRoom(error);
             } else {
@@ -585,7 +582,7 @@ class MobileClient extends Component {
 
                 api.updateUser(user.id, user)
                     .catch(err => console.error("[User] error updating user state", user.id, err));
-                //this.keepAlive();
+                this.keepAlive();
 
                 const {media: {audio: {audio_device}, video: {video_device}}} = this.state;
                 this.publishOwnFeed(!!video_device, !!audio_device);
@@ -1041,15 +1038,11 @@ class MobileClient extends Component {
 
     joinRoom = (reconnect) => {
         this.makeDelay();
-        let {janus, videoroom, selected_room, user, username_value, name, media} = this.state;
+        let {janus, videoroom, selected_room, user, media} = this.state;
         const {video: {video_device}} = media;
         localStorage.setItem("room", selected_room);
-        //This name will see other users
-        user.display = username_value;
-        localStorage.setItem("username", user.display);
         user.question = false;
         user.room = selected_room;
-        user.group = name;
         user.camera = video_device !== null;
         user.timestamp = Date.now();
         if(JSON.parse(localStorage.getItem("ghost")))
@@ -1098,7 +1091,7 @@ class MobileClient extends Component {
 
     exitRoom = (reconnect) => {
         let {videoroom, remoteFeed, protocol, room} = this.state;
-        let leave = {request : "leave"};
+        let leave = {request : "leave", room};
         if(remoteFeed)
             remoteFeed.send({"message": leave});
         videoroom.send({"message": leave});
@@ -1128,9 +1121,13 @@ class MobileClient extends Component {
           showed_mids: [],
 
         });
-        //this.clearKeepAlive();
-        this.initVideoRoom(reconnect);
-        this.stream.stopStream();
+        this.clearKeepAlive();
+        if(!this.stream.state.muted)
+            this.stream.audioMute();
+        this.stream.videoMute();
+        setTimeout(() => {
+            this.initVideoRoom(reconnect);
+        }, 2000)
     };
 
     keepAlive = () => {
@@ -1357,7 +1354,7 @@ class MobileClient extends Component {
                                     action>
                                     <Select className='select_room'
                                             search
-                                            disabled={audio_device === null || !!localAudioTrack}
+                                            disabled={!!room}
                                             error={!selected_room}
                                             placeholder=" Select Room: "
                                             value={selected_room}
@@ -1370,7 +1367,7 @@ class MobileClient extends Component {
                                     {/*<input disabled={!!localAudioTrack}/>*/}
                                     {/*<Icon name='user circle' />*/}
                                     {!!localAudioTrack ? <Button size='massive' negative icon='sign-out' onClick={() => this.exitRoom(false)} />:""}
-                                    {!localAudioTrack ? <Button size='massive' primary icon='sign-in' disabled={delay||!selected_room||!audio_device} onClick={this.joinRoom} />:""}
+                                    {!localAudioTrack ? <Button size='massive' primary icon='sign-in' disabled={delay||!selected_room||!audio_device} onClick={() => this.joinRoom(false)} />:""}
                                 </Input>
                                 <Menu icon='labeled' secondary size="mini">
                                     {/*<Menu.Item disabled={!localAudioTrack} onClick={() => this.setState({ visible: !this.state.visible, count: 0 })}>*/}
@@ -1407,7 +1404,7 @@ class MobileClient extends Component {
                                             <Popup.Content>
                                                 <Button className='select_device' fluid>
                                                     <Icon name='user circle'/>
-                                                    <Profile title={this.state.username_value} kc={kc} />
+                                                    <Profile title={user ? user.display : ""} kc={kc} />
                                                 </Button>
                                                 <Select className='select_device'
                                                         disabled={!!room}
@@ -1452,7 +1449,7 @@ class MobileClient extends Component {
                                                                 ''
                                                             }
                                                             <div className="video__title">
-                                                                {muted ? <Icon name="microphone slash" size="small" color="red"/> : ''}{this.state.username_value}
+                                                                {muted ? <Icon name="microphone slash" size="small" color="red"/> : ''}{user ? user.display : ""}
                                                             </div>
                                                         </div>
                                                         <svg className={classNames('nowebcam',{'hidden':!cammuted})} viewBox="0 0 32 18" preserveAspectRatio="xMidYMid meet" >

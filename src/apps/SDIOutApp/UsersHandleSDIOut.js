@@ -42,7 +42,7 @@ class UsersHandleSDIOut extends Component {
             })
         }
         if(g && JSON.stringify(g) !== JSON.stringify(prevProps.g)) {
-            let num_videos = g && g.users.filter(u =>  u.camera).length
+            let num_videos = g && g.users.filter(u =>  u.camera && u.role === "user").length
             if(num_videos > 25) num_videos = 25;
             this.setState({num_videos})
         }
@@ -147,7 +147,7 @@ class UsersHandleSDIOut extends Component {
             } else if(event === "talking") {
                 let {feeds} = this.state;
                 let id = msg["id"];
-                console.debug(`[SDIOut] [room ${roomid}] started talking`, id);
+                //console.debug(`[SDIOut] [room ${roomid}] started talking`, id);
                 for(let i=0; i<feeds.length; i++) {
                     if(feeds[i] && feeds[i].id === id) {
                         feeds[i].talk = true;
@@ -157,7 +157,7 @@ class UsersHandleSDIOut extends Component {
             } else if(event === "stopped-talking") {
                 let {feeds} = this.state;
                 let id = msg["id"];
-                console.debug(`[SDIOut] [room ${roomid}] stopped talking`, id);
+                //console.debug(`[SDIOut] [room ${roomid}] stopped talking`, id);
                 for(let i=0; i<feeds.length; i++) {
                     if(feeds[i] && feeds[i].id === id) {
                         feeds[i].talk = false;

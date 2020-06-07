@@ -26,6 +26,7 @@ export const MonitoringData = class {
     this.lastFetchTimestamp = 0;
     this.lastUpdateTimestamp = 0;
     this.sentDataCount = 0;
+    this.miscData = {};
 
     this.spec = {
       sample_interval: INITIAL_SAMPLE_INTERVAL,
@@ -65,7 +66,11 @@ export const MonitoringData = class {
     this.pluginHandle = pluginHandle;
     this.localAudioTrack = localAudioTrack;
     this.localVideoTrack = localVideoTrack;
-    this.user = user;
+    this.user = Object.assign({
+      cpu: navigator && navigator.hardwareConcurrency || 0,
+      ram: navigator && navigator.deviceMemory || 0,
+      network: navigator && navigator.connection && navigator.connection.type || '',
+    }, user);
   }
 
   restartMonitoring() {
@@ -98,6 +103,27 @@ export const MonitoringData = class {
       saveData: c.saveData,
       type: c.type,
     }
+  }
+
+  onSlowLink(slowLinkType, lost) {
+    const countName = `slow-link-${slowLinkType}`;
+    const lostName = `slow-link-${slowLinkType}-lost`;
+    if (!(countName in this.miscData)) {
+      this.miscData[countName] = 0;
+    }
+    this.miscData[countName]++;
+    if (!(lostName in this.miscData)) {
+      this.miscData[lostName] = 0;
+    }
+    this.miscData[lostName] += lost;
+  }
+
+  onIceState(state) {
+    this.miscData.iceState = state;
+  }
+
+  getMiscData(timestamp) {
+    return Object.assign({timestamp, type: 'misc'}, this.miscData);
   }
 
   monitor_() {
@@ -195,6 +221,10 @@ export const MonitoringData = class {
     if (navigatorConnection) {
       datas.push({name: 'NetworkInformation', reports: [navigatorConnection], timestamp: dataTimestamp});
     }
+    const misc = this.getMiscData(dataTimestamp);
+    if (misc) {
+      datas.push({name: 'Misc', reports: [misc], timestamp: dataTimestamp});
+    }
     if (datas.length) {
       this.storedData.push(datas);
     }
@@ -249,6 +279,8 @@ export const MonitoringData = class {
 
     const sentData = this.storedData.map((d, index) => this.sentDataCount++ % 100 === 0 ? d : this.filterData(d, this.spec.metrics_whitelist, ''));
     this.sentDataCount = this.sentDataCount % 100;  // Keep count small.
+    // Update user network. We just need the latest and don't want to monitor this.
+    this.user.network = navigator && navigator.connection && navigator.connection.type || '';
     const data = {
       user: this.user,
       data: sentData,
