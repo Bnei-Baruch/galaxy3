@@ -590,7 +590,6 @@ class VirtualClient extends Component {
       } else if (type === 'client-disconnect' && user.id === id) {
         this.exitRoom(false);
       } else if(type === "client-kicked" && user.id === id) {
-        localStorage.setItem("ghost", true);
         kc.logout();
       } else if (type === 'client-question' && user.id === id) {
         this.handleQuestion();
@@ -1001,8 +1000,6 @@ class VirtualClient extends Component {
       this.setState({upval});
     }
     this.setState({user});
-    if(JSON.parse(localStorage.getItem("ghost")))
-      user.role = "ghost";
     initGxyProtocol(janus, user, protocol => {
       this.setState({protocol});
       // Send question event if before join it was true
@@ -1036,7 +1033,6 @@ class VirtualClient extends Component {
       } else if (type === 'client-disconnect' && user.id === id) {
         this.exitRoom(false);
       } else if(type === "client-kicked" && user.id === id) {
-        localStorage.setItem("ghost", true);
         kc.logout();
       } else if (type === 'client-question' && user.id === id) {
         this.handleQuestion();
