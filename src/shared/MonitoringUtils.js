@@ -198,3 +198,84 @@ const statTable = (stats) => {
     </table>
   );
 };
+
+const statsNames = ['oneMin', 'threeMin', 'tenMin'];
+export const audioVideoScore = (audioVideo) => {
+  if (!audioVideo) {
+    return [0, ''];
+  }
+  let score = 0;
+  let formula = '';
+  if (audioVideo.jitter && audioVideo.jitter.score.value > 0) {
+    score += 1000*(audioVideo.jitter.score.value);
+    formula += `1000*jitter(${audioVideo.jitter.score.value})`;
+  }
+  if (audioVideo.packetsLost && audioVideo.packetsLost.score.value > 0) {
+    score += audioVideo.packetsLost.score.value;
+    formula += ` + packet lost(${audioVideo.packetsLost.score.value})`;
+  }
+  if (audioVideo.roundTripTime && audioVideo.roundTripTime.score.value > 0) {
+    score += 100*(audioVideo.roundTripTime.score.value);
+    formula += ` + 100*rTT(${audioVideo.roundTripTime.score.value})`;
+  }
+  return [score, formula];
+};
+
+export const dataValues = (data, now) => {
+  const values = {};
+  if (data.timestamps && data.timestamps.length) {
+    values.update = {value: data.timestamps[0], view: sinceTimestamp(data.timestamps[0], now)};
+  }
+  if (data.index) {
+    for (let [metric, index] of Object.entries(data.index)) {
+      const metricField = metric.includes('Misc') ? 'misc' : (metric.includes('video') ? 'video' : 'audio');
+      if (!(metricField in values)) {
+        values[metricField] = {};
+      }
+      const metricName = metric.split('.').slice(-1)[0];
+      const metricNames = new Map([['slow-link-receiving', 'slowLink'], ['slow-link-receiving-lost', 'slowLinkLost']]);
+      if (metricNames.has(metricName)) {
+        metricName = metricNames.get(metricName);
+      }
+      values[metricField][metricName] = {};
+
+      const value = data.data[index][0];
+      values[metricField][metricName].last = {value, view: shortNumber(value) || ''};
+      let metricScore = 0;
+      if (!isNaN(value)) {
+        data.stats[index].forEach((stats, statsIndex) => {
+          const stdev = Math.sqrt(stats.dsquared);
+          values[metricField][metricName][statsNames[statsIndex]] = {
+            mean: {value: stats.mean, view: shortNumber(stats.mean)},
+            stdev: {value: stdev, view: shortNumber(stdev)},
+            length: {value: stats.length, view: shortNumber(stats.length)},
+          };
+        });
+        if (values[metricField][metricName].oneMin && values[metricField][metricName].threeMin) {
+          metricScore = values[metricField][metricName].oneMin.mean.value - values[metricField][metricName].threeMin.mean.value;
+        } 
+      }
+      values[metricField][metricName].score = {value: metricScore, view: shortNumber(metricScore)};
+    }
+  }
+  let [score, formula] = audioVideoScore(values.audio);
+  let [videoScore, videoFormula] = audioVideoScore(values.video);
+  score += videoScore;
+  formula = `Audio: ${formula} + Video: ${videoFormula}`;
+  if (values.misc && values.misc.iceState && values.misc.iceState.last.value) {
+    if (!['checking', 'completed', 'connected'].includes(values.misc.iceState.last.value)) {
+      score += 100000;  // Ice state disconnected or not connected yet. Slow user!
+      formula += ' + 100K iceState';
+    }
+  }
+  if (values.misc && values.misc.slowLink.score.value) {
+    score += values.misc.slowLink.score.value * 100;
+    formula += ` + 100*slowLink(${values.misc.slowLink.score.value})`;
+  }
+  if (values.misc && values.misc.slowLinkLost.score.value) {
+    score += values.misc.slowLinkLost.score.value * 10;
+    formula += ` + 10*slowLinkLost(${values.misc.slowLinkLost.score.value})`;
+  }
+  values.score = {value: score, view: shortNumber(score), formula};
+  return values;
+}
