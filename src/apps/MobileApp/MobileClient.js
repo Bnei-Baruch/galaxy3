@@ -573,11 +573,11 @@ class MobileClient extends Component {
         let event = msg["videoroom"];
         if(event !== undefined && event !== null) {
             if(event === "joined") {
-                let {user} = this.state;
+                let {user, selected_room} = this.state;
                 let myid = msg["id"];
                 let mypvtid = msg["private_id"];
                 user.rfid = myid;
-                this.setState({user,myid ,mypvtid});
+                this.setState({user, myid ,mypvtid, room: selected_room});
                 Janus.log("Successfully joined room " + msg["room"] + " with ID " + myid);
 
                 api.updateUser(user.id, user)
@@ -1068,7 +1068,7 @@ class MobileClient extends Component {
                 const d = {id,timestamp,role,display};
                 let register = {"request": "join", "room": selected_room, "ptype": "publisher", "display": JSON.stringify(d)};
                 videoroom.send({"message": register});
-                this.setState({user, muted: true, room: selected_room});
+                this.setState({user, muted: true});
                 //this.chat.initChatRoom(user,selected_room);
             } else if(type === "client-reconnect" && user.id === id) {
                 this.exitRoom(true);

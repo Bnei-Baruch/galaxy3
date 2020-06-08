@@ -507,14 +507,7 @@ class VirtualClient extends Component {
         Janus.log('  -- This is a publisher/manager');
         const user  = Object.assign({}, this.state.user);
         user.handle = videoroom.getId();
-        this.setState({
-          videoroom: videoroom,
-          user,
-          remoteFeed: null,
-          protocol: null,
-          delay: false,
-        });
-        //this.initDevices(true,true);
+        this.setState({videoroom, user, remoteFeed: null, protocol: null, delay: false});
         if (reconnect) {
           setTimeout(() => {
             this.joinRoom(reconnect);
@@ -665,7 +658,7 @@ class VirtualClient extends Component {
         let myid = msg['id'];
         let mypvtid = msg['private_id'];
         user.rfid = myid;
-        this.setState({user, myid, mypvtid});
+        this.setState({user, myid, mypvtid, room: this.state.selected_room});
         Janus.log('Successfully joined room ' + msg['room'] + ' with ID ' + myid);
 
         api.updateUser(user.id, user)
@@ -1032,7 +1025,7 @@ class VirtualClient extends Component {
         const d = {id,timestamp,role,display};
         let register = {'request': 'join', 'room': selected_room, 'ptype': 'publisher', 'display': JSON.stringify(d)};
         videoroom.send({ 'message': register });
-        this.setState({ user, muted: true, room: selected_room });
+        this.setState({user, muted: true});
         this.chat.initChatRoom(user, selected_room);
       } else if (type === 'chat-broadcast' && room === selected_room) {
         this.chat.showSupportMessage(ondata);
