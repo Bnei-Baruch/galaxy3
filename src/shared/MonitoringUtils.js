@@ -3,7 +3,8 @@ import {Popup, Table} from 'semantic-ui-react';
 import parser from 'ua-parser-js';
 import {MONITORING_BACKEND} from "./env";
 
-export const system = (userAgent) => {
+export const system = (user) => {
+  const {system: userAgent, ram, cpu, network} = user;
   const ua = new parser(userAgent);
   const {name: browser, major: browserVersion} = ua.getBrowser();
   const {model: device} = ua.getDevice();
@@ -15,6 +16,19 @@ export const system = (userAgent) => {
   ret += `, ${os}`;
   if (osVersion) {
     ret += ` ${osVersion}`;
+  }
+  let ramCpuNetwork = '';
+  if (ram) {
+    ramCpuNetwork += ` ram: ${ram}`;
+  }
+  if (cpu) {
+    ramCpuNetwork += ` cpu: ${cpu}`;
+  }
+  if (network) {
+    ramCpuNetwork += ` ${network}`;
+  }
+  if (ramCpuNetwork.length) {
+    ret += ' - ' + ramCpuNetwork;
   }
   return ret;
 }
@@ -98,12 +112,12 @@ export const userRow = (user, stats, now, onUser) => {
       <Table.Cell>{popup(user.group)}</Table.Cell>
       <Table.Cell>{popup(user.janus)}</Table.Cell>
       <Table.Cell>{popup(sinceTimestamp(user.timestamp, now))}</Table.Cell>
-      <Table.Cell>{popup(system(user.system))}</Table.Cell>
+      <Table.Cell>{popup(system(user))}</Table.Cell>
       <Table.Cell key={'update'}>
         {stats.update && stats.update.value !== undefined && stats.update.value !== null ? popup(stats.update.view) : null}
       </Table.Cell>
       <Table.Cell key={'score'}>
-        {stats.score && stats.score.value !== undefined && stats.score.value !== null ? popup(stats.score.view) : null}
+        {stats.score && stats.score.value !== undefined && stats.score.value !== null ? popup(stats.score.view, stats.score.formula) : null}
       </Table.Cell>
       <Table.Cell key={'audio.jitter'} textAlign='center'>
         {stats.audio && stats.audio.jitter ? statTable(stats.audio.jitter) : null}
@@ -123,13 +137,22 @@ export const userRow = (user, stats, now, onUser) => {
       <Table.Cell key={'video.roundTripTime'} textAlign='center'>
         {stats.video && stats.video.roundTripTime ? statTable(stats.video.roundTripTime) : null}
       </Table.Cell>
+      <Table.Cell key={'misc.iceState'} textAlign='center'>
+        {stats.misc && stats.misc.iceState ? statTable(stats.misc.iceState) : null}
+      </Table.Cell>
+      <Table.Cell key={'misc.slowLink'} textAlign='center'>
+        {stats.misc && stats.misc.slowLink ? statTable(stats.misc.slowLink) : null}
+      </Table.Cell>
+      <Table.Cell key={'misc.slowLinkLost'} textAlign='center'>
+        {stats.misc && stats.misc.slowLinkLost ? statTable(stats.misc.slowLinkLost) : null}
+      </Table.Cell>
     </Table.Row>
   );
 }
 
-const SMALL_FLOAT = 0.00001;
+const SMALL_FLOAT = 0.0001;
 const statTable = (stats) => {
-  if (!stats.last) {
+  if (!stats.last || stats.last.value === null) {
     return null;
   }
   let color = '';
@@ -148,7 +171,8 @@ const statTable = (stats) => {
             {!stats.last ? '' :
             <div style={{display: 'flex', justifyContent: 'space-evenly'}}>
               <div>{popup(stats.last.view, `${stats.last.value} last value from user`)}</div>
-              <div style={{marginLeft: '2px', whiteSpace: 'nowrap'}}>&#916;{popup(stats.score.view, `${stats.score.value} Average diff between last minute and last 3 mintues.`)}</div>
+              {isNaN(stats.last.value) ? null :
+               <div style={{marginLeft: '2px', whiteSpace: 'nowrap'}}>&#916;{popup(stats.score.view, `${stats.score.value} Average diff between last minute and last 3 mintues.`)}</div>}
             </div>}
           </td>
         </tr>
