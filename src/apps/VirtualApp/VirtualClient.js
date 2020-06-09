@@ -222,6 +222,9 @@ class VirtualClient extends Component {
         alert(t('oldClient.unifiedPlanNotSupported'));
       }
     }, err => {
+      this.exitRoom(false, () => {
+        alert(this.props.t('oldClient.networkSettingsChanged'));
+      });
       console.error("[VirtualClient] error initializing janus", err);
     }, config.url, config.token, config.iceServers);
 
@@ -368,51 +371,43 @@ class VirtualClient extends Component {
     this.setState({selected_room, user});
   };
 
-  exitRoom = (reconnect) => {
-    this.makeDelay();
-    let {videoroom, remoteFeed, protocol, room} = this.state;
+  exitRoom = (reconnect, callback) => {
+    this.setState({delay: true})
     wkliLeave(this.state.user);
     clearInterval(this.state.upval);
-
-    if(remoteFeed) remoteFeed.detach();
-    videoroom.send({"message": {request: 'leave', room}});
-    let pl = {textroom: 'leave', transaction: Janus.randomString(12), 'room': PROTOCOL_ROOM};
-    protocol.data({text: JSON.stringify(pl)});
-    this.chat.exitChatRoom(room);
-
+    this.clearKeepAlive();
     localStorage.setItem('question', false);
 
     api.fetchAvailableRooms({with_num_users: true})
-      .then(data => {
-        const {rooms} = data;
-        this.setState({rooms});
-      });
+        .then(data => {
+          const {rooms} = data;
+          this.setState({rooms});
+        });
+
+
+    let {videoroom, remoteFeed, protocol, janus, room} = this.state;
+    if(remoteFeed) remoteFeed.detach();
+    if(videoroom) videoroom.send({"message": {request: 'leave', room}});
+    let pl = {textroom: 'leave', transaction: Janus.randomString(12), 'room': PROTOCOL_ROOM};
+    if(protocol) protocol.data({text: JSON.stringify(pl)});
+    this.chat.exitChatRoom(room);
 
     setTimeout(() => {
-      this.state.videoroom.detach();
-      this.state.protocol.detach();
-      this.state.janus.destroy();
+      if(videoroom) videoroom.detach();
+      if(protocol) protocol.detach();
+      if(janus) janus.destroy();
       this.state.virtualStreamingJanus.audioElement.muted = true;
       this.setState({
-        cammuted: false,
-        feeds: [],
-        localAudioTrack: null,
-        localVideoTrack: null,
-        mids: [],
-        muted: false,
-        question: false,
-        remoteFeed: null,
-        videoroom: null,
-        protocol: null,
-        janus: null,
+        cammuted: false, muted: false, question: false, delay: false,
+        feeds: [], mids: [],
+        localAudioTrack: null, localVideoTrack: null, upval: null,
+        remoteFeed: null, videoroom: null, protocol: null, janus: null,
         room: reconnect ? room : '',
         chatMessagesCount: 0,
-        upval: null,
       });
+      if(typeof callback === "function") callback();
     }, 2000);
-
-    this.clearKeepAlive();
-  };
+  }
 
   iceState = () => {
     let count = 0;
@@ -424,9 +419,10 @@ class VirtualClient extends Component {
       }
       if (count >= 10) {
         clearInterval(chk);
-        this.exitRoom(false);
+        this.exitRoom(false, () => {
+          alert(this.props.t('oldClient.networkSettingsChanged'));
+        });
         reportToSentry("ICE State disconnected",{source: "ice"}, this.state.user);
-        alert(this.props.t('oldClient.networkSettingsChanged'));
       }
     }, 3000);
   };
@@ -1008,15 +1004,24 @@ class VirtualClient extends Component {
       Janus.log('-- :: It\'s protocol public message: ', ondata);
       const { type, error_code, id, room } = ondata;
       if (type === 'error' && error_code === 420) {
-        alert(this.props.t('oldClient.error') + ondata.error);
-        this.exitRoom(false);
+        this.exitRoom(false, () => {
+          alert(this.props.t('oldClient.error') + ondata.error);
+        });
       } else if (type === 'joined') {
         const {id,timestamp,role,display} = user;
         const d = {id,timestamp,role,display};
         let register = {'request': 'join', 'room': selected_room, 'ptype': 'publisher', 'display': JSON.stringify(d)};
-        videoroom.send({ 'message': register });
-        this.setState({user, muted: true});
-        this.chat.initChatRoom(user, selected_room);
+        videoroom.send({"message": register,
+          success: () => {
+            this.setState({user, muted: true});
+            this.chat.initChatRoom(user, selected_room);
+          },
+          error: (error) => {
+            console.error(error);
+            reportToSentry(error,{source: "register"}, this.state.user);
+            this.exitRoom(false);
+          }
+        });
       } else if (type === 'chat-broadcast' && room === selected_room) {
         this.chat.showSupportMessage(ondata);
       } else if (type === 'client-reconnect' && user.id === id) {
@@ -1055,9 +1060,9 @@ class VirtualClient extends Component {
   };
 
   sendKeepAlive = () => {
-    console.info("[User] sendKeepAlive", new Date());
     const {user, janus} = this.state;
     if (user && janus && janus.isConnected() && user.session && user.handle) {
+      console.debug("[User] sendKeepAlive", new Date());
       api.updateUser(user.id, user)
           .catch(err => console.error("[User] error sending keepalive", user.id, err));
     }
@@ -1358,7 +1363,7 @@ class VirtualClient extends Component {
             noResultsMessage={t('oldClient.noResultsFound')}
             //onClick={this.getRoomList}
             onChange={(e, { value }) => this.selectRoom(value)} />
-          {room ? <Button attached='right' negative icon='sign-out' loading={delay} disabled={delay} onClick={() => this.exitRoom(false)} /> : ''}
+          {room ? <Button attached='right' negative icon='sign-out' disabled={delay} onClick={() => this.exitRoom(false)} /> : ''}
           {!room ? <Button attached='right' primary icon='sign-in' loading={delay} disabled={delay || !selected_room} onClick={() => this.initClient(false)} /> : ''}
         </Input>
         { !(new URL(window.location.href).searchParams.has('deb')) ? null : (

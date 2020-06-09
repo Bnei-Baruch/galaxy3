@@ -192,6 +192,9 @@ class MobileClient extends Component {
                 alert("Unified Plan is NOT supported");
             }
         }, err => {
+            this.exitRoom(false, () => {
+                alert(this.props.t('oldClient.networkSettingsChanged'));
+            });
             console.error("[MobileClient] error initializing janus", err);
         }, config.url, config.token, config.iceServers);
     };
@@ -344,8 +347,9 @@ class MobileClient extends Component {
             }
             if(count >= 10) {
                 clearInterval(chk);
-                this.exitRoom(false);
-                alert("Network setting is changed!");
+                this.exitRoom(false, () => {
+                    alert("Lost connection to the server!");
+                });
             }
         },3000);
     };
@@ -1046,15 +1050,23 @@ class MobileClient extends Component {
             Janus.log("-- :: It's protocol public message: ", ondata);
             const {type,error_code,id} = ondata;
             if(ondata.type === "error" && error_code === 420) {
-                alert(ondata.error);
-                this.exitRoom(false);
+                this.exitRoom(false, () => {
+                    alert(this.props.t('oldClient.error') + ondata.error);
+                });
             } else if(ondata.type === "joined") {
                 const {id,timestamp,role,display} = user;
                 const d = {id,timestamp,role,display};
                 let register = {"request": "join", "room": selected_room, "ptype": "publisher", "display": JSON.stringify(d)};
-                videoroom.send({"message": register});
-                this.setState({user, muted: true});
-                //this.chat.initChatRoom(user,selected_room);
+                videoroom.send({"message": register,
+                    success: () => {
+                        this.setState({user, muted: true});
+                        //this.chat.initChatRoom(user, selected_room);
+                    },
+                    error: (error) => {
+                        console.error(error);
+                        this.exitRoom(false);
+                    }
+                });
             } else if(type === "client-reconnect" && user.id === id) {
                 this.exitRoom(true);
             } else if(type === "client-reload" && user.id === id) {
@@ -1074,15 +1086,16 @@ class MobileClient extends Component {
     };
 
     exitRoom = (reconnect) => {
-        this.makeDelay();
-        let {videoroom, remoteFeed, protocol, room} = this.state;
+        this.setState({delay: true})
+        let {videoroom, remoteFeed, protocol, janus, room} = this.state;
         wkliLeave(this.state.user);
         clearInterval(this.state.upval);
+        this.clearKeepAlive();
 
         if(remoteFeed) remoteFeed.detach();
-        videoroom.send({"message": {request: 'leave', room}});
+        if(videoroom) videoroom.send({"message": {request: 'leave', room}});
         let pl = {textroom: 'leave', transaction: Janus.randomString(12), 'room': PROTOCOL_ROOM};
-        protocol.data({text: JSON.stringify(pl)});
+        if(protocol) protocol.data({text: JSON.stringify(pl)});
         //this.chat.exitChatRoom(room);
 
         localStorage.setItem('question', false);
@@ -1094,29 +1107,20 @@ class MobileClient extends Component {
             });
 
         setTimeout(() => {
-            this.state.videoroom.detach();
-            this.state.protocol.detach();
-            this.state.janus.destroy();
+            if(videoroom) videoroom.detach();
+            if(protocol) protocol.detach();
+            if(janus) janus.destroy();
             this.setState({
-                cammuted: false,
-                feeds: [],
-                localAudioTrack: null,
-                localVideoTrack: null,
-                mids: [],
-                muted: false,
-                question: false,
-                remoteFeed: null,
-                videoroom: null,
-                protocol: null,
-                janus: null,
+                cammuted: false, muted: false, question: false, delay: false,
+                feeds: [], mids: [],
+                localAudioTrack: null, localVideoTrack: null, upval: null,
+                remoteFeed: null, videoroom: null, protocol: null, janus: null,
                 room: reconnect ? room : '',
                 chatMessagesCount: 0,
-                upval: null,
             });
         }, 2000);
 
 
-        this.clearKeepAlive();
         if(!this.stream.state.muted)
             this.stream.audioMute();
         this.stream.videoMute();
@@ -1134,9 +1138,9 @@ class MobileClient extends Component {
     };
 
     sendKeepAlive = () => {
-        console.info("[User] sendKeepAlive", new Date());
         const {user, janus} = this.state;
         if (user && janus && janus.isConnected() && user.session && user.handle) {
+            console.debug("[User] sendKeepAlive", new Date());
             api.updateUser(user.id, user)
                 .catch(err => console.error("[User] error sending keepalive", user.id, err));
         }
@@ -1358,7 +1362,7 @@ class MobileClient extends Component {
                                             onChange={(e, {value}) => this.selectRoom(value)} />
                                     {/*<input disabled={!!localAudioTrack}/>*/}
                                     {/*<Icon name='user circle' />*/}
-                                    {room ? <Button size='massive' negative icon='sign-out' loading={delay} disabled={delay} onClick={() => this.exitRoom(false)} />:""}
+                                    {room ? <Button size='massive' negative icon='sign-out' disabled={delay} onClick={() => this.exitRoom(false)} />:""}
                                     {!room ? <Button size='massive' primary icon='sign-in' loading={delay} disabled={delay || !selected_room} onClick={() => this.initClient(false)} />:""}
                                 </Input>
                                 <Menu icon='labeled' secondary size="mini">
