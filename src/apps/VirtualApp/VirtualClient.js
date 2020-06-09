@@ -186,11 +186,9 @@ class VirtualClient extends Component {
             if (selected_room !== '') {
               const room = rooms.find(r => r.room === selected_room);
               if (room) {
-                const name = room.description;
                 user.room = selected_room;
                 user.janus = room.janus;
-                user.group = name;
-                this.initClient(user, false);
+                user.group = room.description;
               } else {
                 this.setState({selected_room: ''});
               }
@@ -203,26 +201,28 @@ class VirtualClient extends Component {
     });
   }
 
-  initClient = (user, error) => {
+  initClient = (error) => {
+    this.setState({delay: true});
+    const user = Object.assign({}, this.state.user);
     const {t} = this.props;
     if (this.state.janus) {
       this.state.janus.destroy();
     }
+
 
     const config = GxyJanus.instanceConfig(user.janus);
     initJanus(janus => {
       // Check if unified plan supported
       if (Janus.unifiedPlan) {
         user.session = janus.getSessionId();
-        this.setState({janus, user});
+        this.setState({janus});
         this.chat.initChat(janus);
-        this.initVideoRoom(error);
+        this.initVideoRoom(error, user);
       } else {
         alert(t('oldClient.unifiedPlanNotSupported'));
       }
     }, err => {
       console.error("[VirtualClient] error initializing janus", err);
-      reportToSentry(error, {source: "janus",janus: user.janus, user})
     }, config.url, config.token, config.iceServers);
 
     const {ip, country} = user;
@@ -353,59 +353,65 @@ class VirtualClient extends Component {
     }, 1000);
   };
 
-  selectRoom = (roomid) => {
+  selectRoom = (selected_room) => {
     const {rooms} = this.state;
     const user = Object.assign({}, this.state.user);
-    const room = rooms.find(r => r.room === roomid);
+    const room = rooms.find(r => r.room === selected_room);
     const name = room.description;
-    if (this.state.room === roomid) {
+    if (this.state.room === selected_room) {
       return;
     }
-    this.setState({selected_room: roomid, name});
-    user.room = roomid;
+    localStorage.setItem('room', selected_room);
+    user.room = selected_room;
     user.group = name;
     user.janus = room.janus;
-    this.setState({delay: true});
-    this.initClient(user, false);
+    this.setState({selected_room, user});
   };
 
   exitRoom = (reconnect) => {
+    this.makeDelay();
     let {videoroom, remoteFeed, protocol, room} = this.state;
     wkliLeave(this.state.user);
     clearInterval(this.state.upval);
-    let leave = {request: 'leave', room};
-    if (remoteFeed) {
-      remoteFeed.send({'message': leave});
-    }
-    videoroom.send({'message': leave});
-    this.chat.exitChatRoom(room);
+
+    if(remoteFeed) remoteFeed.detach();
+    videoroom.send({"message": {request: 'leave', room}});
     let pl = {textroom: 'leave', transaction: Janus.randomString(12), 'room': PROTOCOL_ROOM};
     protocol.data({text: JSON.stringify(pl)});
+    this.chat.exitChatRoom(room);
+
     localStorage.setItem('question', false);
+
     api.fetchAvailableRooms({with_num_users: true})
       .then(data => {
         const {rooms} = data;
         this.setState({rooms});
       });
-    this.setState({
-      cammuted: false,
-      feeds: [],
-      localAudioTrack: null,
-      localVideoTrack: null,
-      mids: [],
-      muted: false,
-      question: false,
-      remoteFeed: null,
-      room: '',
-      selected_room: (reconnect ? room : ''),
-      chatMessagesCount: 0,
-      upval: null,
-    });
-    this.state.virtualStreamingJanus.audioElement.muted = true;
-    this.clearKeepAlive();
+
     setTimeout(() => {
-      this.initVideoRoom(reconnect);
-    }, 2000)
+      this.state.videoroom.detach();
+      this.state.protocol.detach();
+      this.state.janus.destroy();
+      this.state.virtualStreamingJanus.audioElement.muted = true;
+      this.setState({
+        cammuted: false,
+        feeds: [],
+        localAudioTrack: null,
+        localVideoTrack: null,
+        mids: [],
+        muted: false,
+        question: false,
+        remoteFeed: null,
+        videoroom: null,
+        protocol: null,
+        janus: null,
+        room: reconnect ? room : '',
+        chatMessagesCount: 0,
+        upval: null,
+      });
+    }, 2000);
+
+    this.clearKeepAlive();
   };
 
   iceState = () => {
@@ -488,16 +494,7 @@ class VirtualClient extends Component {
     }
   };
 
-  initVideoRoom = (reconnect) => {
-    if (this.state.videoroom) {
-      this.state.videoroom.detach();
-    }
-    if (this.state.remoteFeed) {
-      this.state.remoteFeed.detach();
-    }
-    if (this.state.protocol) {
-      this.state.protocol.detach();
-    }
+  initVideoRoom = (reconnect, user) => {
     this.state.janus.attach({
       plugin: 'janus.plugin.videoroom',
       opaqueId: 'videoroom_user',
@@ -505,14 +502,9 @@ class VirtualClient extends Component {
         Janus.log(' :: My handle: ', videoroom);
         Janus.log('Plugin attached! (' + videoroom.getPlugin() + ', id=' + videoroom.getId() + ')');
         Janus.log('  -- This is a publisher/manager');
-        const user  = Object.assign({}, this.state.user);
         user.handle = videoroom.getId();
-        this.setState({videoroom, user, remoteFeed: null, protocol: null, delay: false});
-        if (reconnect) {
-          setTimeout(() => {
-            this.joinRoom(reconnect);
-          },5000);
-        }
+        this.setState({videoroom});
+        this.joinRoom(reconnect, videoroom, user);
       },
       error: (error) => {
         Janus.log('Error attaching plugin: ' + error);
@@ -656,9 +648,10 @@ class VirtualClient extends Component {
         const user = Object.assign({}, this.state.user);
         let myid = msg['id'];
         let mypvtid = msg['private_id'];
-        user.rfid = myid;
-        this.setState({user, myid, mypvtid, room: this.state.selected_room});
         Janus.log('Successfully joined room ' + msg['room'] + ' with ID ' + myid);
+
+        user.rfid = myid;
+        this.setState({user, myid, mypvtid, room: msg['room'], delay: false});
 
         api.updateUser(user.id, user)
             .catch(err => console.error("[User] error updating user state", user.id, err));
@@ -978,17 +971,15 @@ class VirtualClient extends Component {
     videoroom.data({ text: message });
   };
 
-  joinRoom = (reconnect) => {
-    this.makeDelay();
-    let {janus, videoroom, selected_room, tested, media} = this.state;
+  joinRoom = (reconnect, videoroom, user) => {
+    let {janus, selected_room, tested, media} = this.state;
     const {video: {video_device}} = media;
-    let user = Object.assign({}, this.state.user);
-    localStorage.setItem('room', selected_room);
     user.self_test = tested;
     user.question = false;
     user.camera = !!video_device;
     user.sound_test = reconnect ? JSON.parse(localStorage.getItem('sound_test')) : false;
     user.timestamp = Date.now();
+
     if(video_device) {
       if(this.state.upval) {
         clearInterval(this.state.upval);
@@ -999,7 +990,9 @@ class VirtualClient extends Component {
       }, 10*60000);
       this.setState({upval});
     }
+
     this.setState({user});
+
     initGxyProtocol(janus, user, protocol => {
       this.setState({protocol});
       // Send question event if before join it was true
@@ -1016,7 +1009,7 @@ class VirtualClient extends Component {
       const { type, error_code, id, room } = ondata;
       if (type === 'error' && error_code === 420) {
         alert(this.props.t('oldClient.error') + ondata.error);
-        this.state.protocol.hangup();
+        this.exitRoom(false);
       } else if (type === 'joined') {
         const {id,timestamp,role,display} = user;
         const d = {id,timestamp,role,display};
@@ -1365,10 +1358,8 @@ class VirtualClient extends Component {
             noResultsMessage={t('oldClient.noResultsFound')}
             //onClick={this.getRoomList}
             onChange={(e, { value }) => this.selectRoom(value)} />
-          {room ?
-              <Button attached='right' negative icon='sign-out' onClick={() => this.exitRoom(false)} /> : ''}
-          {!room ?
-            <Button attached='right' primary icon='sign-in' disabled={delay || !selected_room} onClick={() => this.joinRoom(false)} /> : ''}
+          {room ? <Button attached='right' negative icon='sign-out' loading={delay} disabled={delay} onClick={() => this.exitRoom(false)} /> : ''}
+          {!room ? <Button attached='right' primary icon='sign-in' loading={delay} disabled={delay || !selected_room} onClick={() => this.initClient(false)} /> : ''}
         </Input>
         { !(new URL(window.location.href).searchParams.has('deb')) ? null : (
         <Input>
