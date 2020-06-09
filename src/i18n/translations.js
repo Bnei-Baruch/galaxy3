@@ -47,6 +47,7 @@ export const resources = {
         profile: 'Profile:',
         myAccount: 'My Account',
         signOut: 'Sign Out',
+        homerLimud: 'Study Material',
       },
       feedback: {
         feedbackHelp: 'Feedback/Help',
@@ -152,6 +153,7 @@ export const resources = {
         profile: 'Perfil:',
         myAccount: 'Mi cuenta',
         signOut: 'Desconectar',
+        homerLimud: 'Material de estudio',
       },
       feedback: {
         feedbackHelp: 'Comentarios/Ayuda',
@@ -257,6 +259,7 @@ export const resources = {
         profile: 'פרופיל:',
         myAccount: 'החשבון שלי',
         signOut: 'יציאה',
+        homerLimud: 'חומר לימוד',
       },
       feedback: {
         feedbackHelp: 'משוב/עזרה',
@@ -362,6 +365,7 @@ export const resources = {
         profile: 'Профиль:',
         myAccount: 'Мои данные',
         signOut: 'Выход',
+        homerLimud: 'Учебный материал',
       },
       feedback: {
         feedbackHelp: 'Фидбек/Помощь',

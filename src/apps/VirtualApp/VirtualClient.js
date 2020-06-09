@@ -1439,6 +1439,16 @@ class VirtualClient extends Component {
               </Button.Group>
             </Popup.Content>
           </Popup>
+          <Popup
+            trigger={<Menu.Item icon='book' name={t('oldClient.homerLimud')} />}
+            on='click'
+            position='bottom center'
+          >
+            <Popup.Content>
+              <iframe src={`https://groups.google.com/forum/embed/?place=forum/bb-study-materials&showpopout=true&showtabs=false&parenturl=${encodeURIComponent(window.location.href)}`}
+                style={{width: '50em', height: '50em'}} frameBorder="0"></iframe>
+            </Popup.Content>
+          </Popup>
         </Menu>
         <Menu icon='labeled' secondary size="mini">
           {!room ?
