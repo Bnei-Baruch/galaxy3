@@ -1454,7 +1454,7 @@ class VirtualClient extends Component {
             position='bottom center'
           >
             <Popup.Content>
-              <iframe src={`https://groups.google.com/forum/embed/?place=forum/bb-study-materials&showsearch=true&showpopout=true&showtabs=false&parenturl=${encodeURIComponent(window.location.href)}`}
+              <iframe src={`https://groups.google.com/forum/embed/?place=forum/bb-study-materials&showpopout=true&showtabs=false&parenturl=${encodeURIComponent(window.location.href)}`}
                 style={{width: '40em', height: '50em'}} frameBorder="0"></iframe>
             </Popup.Content>
           </Popup>
