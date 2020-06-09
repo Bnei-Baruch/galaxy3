@@ -12,7 +12,7 @@ export const resources = {
         noInputDevices: ' :: No input devices found ::',
         recording: 'Recording...',
         playing: 'Playing...',
-        networkSettingsChanged: 'Network setting have changed!',
+        networkSettingsChanged: 'Lost connection to the server!',
         serverStoppedReceiveOurMedia: 'The server stopped receiving your video! Pls check your camera.',
         serverStoppedReceiveOurAudio: 'The server stopped receiving your audio! Pls check your mic.',
         maxUsersInRoom: 'Max number of users in this room was reached',
@@ -47,6 +47,7 @@ export const resources = {
         profile: 'Profile:',
         myAccount: 'My Account',
         signOut: 'Sign Out',
+        homerLimud: 'Study Material',
       },
       feedback: {
         feedbackHelp: 'Feedback/Help',
@@ -152,6 +153,7 @@ export const resources = {
         profile: 'Perfil:',
         myAccount: 'Mi cuenta',
         signOut: 'Desconectar',
+        homerLimud: 'Material de estudio',
       },
       feedback: {
         feedbackHelp: 'Comentarios/Ayuda',
@@ -257,6 +259,7 @@ export const resources = {
         profile: 'פרופיל:',
         myAccount: 'החשבון שלי',
         signOut: 'יציאה',
+        homerLimud: 'חומר לימוד',
       },
       feedback: {
         feedbackHelp: 'משוב/עזרה',
@@ -327,7 +330,7 @@ export const resources = {
         noInputDevices: ' :: Не найден микрофон ::',
         recording: 'Запись...',
         playing: 'Воспроизведение...',
-        networkSettingsChanged: 'Параметры сети изменились!',
+        networkSettingsChanged: 'Потеряна связь с сервером!',
         serverStoppedReceiveOurMedia: 'Сервер перестал получать ваше видео! Пожалуйста, проверьте вашу камеру.',
         serverStoppedReceiveOurAudio: 'Сервер перестал получать ваше аудио! Пожалуйста, проверьте ваш микрофон.',
         maxUsersInRoom: 'Достигнуто максимальное количество пользователей в этой комнате',
@@ -362,6 +365,7 @@ export const resources = {
         profile: 'Профиль:',
         myAccount: 'Мои данные',
         signOut: 'Выход',
+        homerLimud: 'Учебный материал',
       },
       feedback: {
         feedbackHelp: 'Фидбек/Помощь',
