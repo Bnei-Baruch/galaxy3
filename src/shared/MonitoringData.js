@@ -10,6 +10,10 @@ const ONE_SECOND_IN_MS = 1000;
 const ONE_MINUTE_IN_MS = 60 * 1000;
 const FIVE_SECONDS_IN_MS = 5 * ONE_SECOND_IN_MS;
 
+const FIRST_BUCKET = 5 * ONE_SECOND_IN_MS;
+const MEDIUM_BUCKET = 15 * ONE_SECOND_IN_MS;
+const FULL_BUCKET = 45 * ONE_SECOND_IN_MS;
+
 const INITIAL_STORE_INTERVAL = 5 * ONE_MINUTE_IN_MS;
 const INITIAL_SAMPLE_INTERVAL = FIVE_SECONDS_IN_MS;
 const MAX_EXPONENTIAL_BACKOFF_MS = 10 * ONE_MINUTE_IN_MS;
@@ -50,12 +54,15 @@ export const Stats = class {
 
     const dSquaredIncrement = (value - newMean) * (value - this.mean);
     let newDSquared = (this.dSquared*(this.length-1) + dSquaredIncrement) / this.length;
+    if (isNaN(newDSquared)) {
+      console.log('add newDSquared', newDSquared, this.dSquared, this.length, dSquaredIncrement);
+    }
     if (newDSquared < 0) { 
       // Correcting float inaccuracy.
       if (newDSquared < -0.00001) {
         console.warn(`Add: newDSquared negative: ${newDSquared}. Setting to 0. ${value}, ${timestamp} ${this}`);
       }   
-      newDSquared = 0 
+      newDSquared = 0;
     }
 
     this.mean = newMean;
@@ -92,6 +99,9 @@ export const Stats = class {
 
     const dSquaredIncrement = ((newMean - value) * (value - this.mean));
     let newDSquared = (this.dSquared*(this.length+1) + dSquaredIncrement) / this.length;
+    if (isNaN(newDSquared)) {
+      console.log('remove newDSquared', newDSquared, this.dSquared, this.length, dSquaredIncrement);
+    }
     if (newDSquared < 0) { 
       // Correcting float inaccuracy.
       if (newDSquared < -0.00001) {
@@ -385,16 +395,16 @@ export const MonitoringData = class {
       for (const [key, value] of Object.entries(data)) {
         if (metric.startsWith(`${prefix}.${key}`)) {
           const ret = this.getMetricValue(value, metric, `${prefix}.${key}`);
-          if (ret) {
+          if (ret !== undefined) {
             return ret;
           }
         }
-        // Did not find metric.
-        return undefined;
       }
+      // Did not find metric.
+      return undefined;
     }
     if (metric !== prefix) {
-      console.log(`Expected leaf ${data} to fully match prefix ${prefix} to ${metric}`);
+      // console.log(`Expected leaf ${data} to fully match prefix ${prefix} to ${metric}`);
       return undefined;
     }
     return data;
@@ -412,14 +422,13 @@ export const MonitoringData = class {
       }
     });
     // Remove older then 10 minutes.
-    const last = data[data.length - 1];
-    if (last.length && /* [0] - audio */ last[0].timestamp) {
+    const last = this.scoreData[this.scoreData.length - 1];
+    if (last && last.length && /* [0] - audio */ last[0].timestamp) {
       const lastTimestamp = last[0].timestamp;
       this.scoreData = this.scoreData.filter(d => {
         const timestamp = d[0].timestamp;
-        return timestamp && timestamp >= lastTimestamp - 10 * ONE_MINUTE_IN_MS;
+        return timestamp && timestamp >= lastTimestamp - FULL_BUCKET;
       });
-      console.log('last', last, this.scoreData.length);
       const input = {
         // Last timestamp.
         timestamp: [lastTimestamp],
@@ -436,18 +445,18 @@ export const MonitoringData = class {
             return [d[0].timestamp, this.getMetricValue(d, metric, '')];
           }).forEach(([timestamp, v]) => {
             switch (statIndex) {
-              case 0: // 1 min.
-                if (lastTimestamp - timestamp > ONE_MINUTE_IN_MS) {
+              case 0: // Smallest time bucket.
+                if (lastTimestamp - timestamp > FIRST_BUCKET) {
                   return;  // Skipp add.
                 }
                 break;
-              case 1: // 3 min.
-                if (lastTimestamp - timestamp > 3 * ONE_MINUTE_IN_MS) {
+              case 1: // Medium time bucket.
+                if (lastTimestamp - timestamp > MEDIUM_BUCKET) {
                   return;  // Skipp add.
                 }
                 break;
-              case 2: // 10 min.
-                if (lastTimestamp - timestamp > 10 * ONE_MINUTE_IN_MS) {
+              case 2: // Full time bucket
+                if (lastTimestamp - timestamp > FULL_BUCKET) {
                   return;  // Skipp add.
                 }
                 break;
@@ -458,10 +467,17 @@ export const MonitoringData = class {
         }),
       };
       const values = dataValues(input, lastTimestamp);
-      console.log('input', input, 'values', values);
+      // Keep commented out logs for debugging.
+      // console.log(input, values);
+      // console.log('last', this.scoreData.length, input.data.map(arr => arr[0] === undefined ? 'undefined' : arr[0]).join(' | '));
+      // console.log('score', values.score.value, values.score.formula);
+      // console.log('audio score 1min', values.audio.jitter.oneMin && values.audio.jitter.oneMin.mean.value, values.audio.packetsLost.oneMin && values.audio.packetsLost.oneMin.mean.value, values.audio.roundTripTime.oneMin && values.audio.roundTripTime.oneMin.mean.value);
+      // console.log('audio score 3min', values.audio.jitter.threeMin && values.audio.jitter.threeMin.mean.value, values.audio.packetsLost.threeMin && values.audio.packetsLost.threeMin.mean.value, values.audio.roundTripTime.threeMin && values.audio.roundTripTime.threeMin.mean.value);
+      // console.log('video score 1min', values.video.jitter.oneMin && values.video.jitter.oneMin.mean.value, values.video.packetsLost.oneMin && values.video.packetsLost.oneMin.mean.value, values.video.roundTripTime.oneMin && values.video.roundTripTime.oneMin.mean.value);
+      // console.log('video score 3min', values.video.jitter.threeMin && values.video.jitter.threeMin.mean.value, values.video.packetsLost.threeMin && values.video.packetsLost.threeMin.mean.value, values.video.roundTripTime.threeMin && values.video.roundTripTime.threeMin.mean.value);
       if (this.onStatus) {
         const firstTimestamp = this.scoreData[0][0].timestamp;
-        if (lastTimestamp - firstTimestamp >= 3 * ONE_MINUTE_IN_MS) {
+        if (lastTimestamp - firstTimestamp >= MEDIUM_BUCKET) {
           if (values.score.value < 40) {
             this.onStatus(LINK_STATE_GOOD, values.score.formula);
           } else if (this.score < 10) {
