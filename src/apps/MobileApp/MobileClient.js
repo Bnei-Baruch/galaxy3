@@ -174,7 +174,7 @@ class MobileClient extends Component {
         });
     };
 
-    initClient = (error) => {
+    initClient = (reconnect, retry = 0) => {
         this.setState({delay: true});
         const user = Object.assign({}, this.state.user);
         if(this.state.janus)
@@ -187,16 +187,31 @@ class MobileClient extends Component {
                 user.session = janus.getSessionId();
                 this.setState({janus});
                 //this.chat.initChat(janus);
-                this.initVideoRoom(error, user);
+                this.initVideoRoom(reconnect, user);
             } else {
                 alert("Unified Plan is NOT supported");
             }
         }, err => {
-            this.exitRoom(false, () => {
-                alert(this.props.t('oldClient.networkSettingsChanged'));
+            this.exitRoom(true, () => {
+                console.error("[VirtualClient] error initializing janus", err);
+                this.reinitClient(retry);
             });
-            console.error("[MobileClient] error initializing janus", err);
         }, config.url, config.token, config.iceServers);
+    };
+
+    reinitClient = (retry) => {
+        retry++;
+        console.error("[VirtualClient] reinitializing try: ", retry);
+        if(retry < 10) {
+            setTimeout(() => {
+                this.initClient(true, retry);
+            }, 5000)
+        } else {
+            this.exitRoom(false, () => {
+                console.error("[VirtualClient] reinitializing failed after: " + retry + " retries");
+                alert("Lost connection to the server!");
+            });
+        }
     };
 
     initDevices = () => {
@@ -347,9 +362,9 @@ class MobileClient extends Component {
             }
             if(count >= 10) {
                 clearInterval(chk);
-                this.exitRoom(false, () => {
-                    alert("Lost connection to the server!");
-                });
+                // this.exitRoom(false, () => {
+                //     alert("Lost connection to the server!");
+                // });
             }
         },3000);
     };
@@ -1037,21 +1052,12 @@ class MobileClient extends Component {
         user.timestamp = Date.now();
         initGxyProtocol(janus, user, protocol => {
             this.setState({protocol});
-            // Send question event if before join it was true
-            if(reconnect && JSON.parse(localStorage.getItem("question"))) {
-                user.question = true;
-                this.setState({user});
-                setTimeout(() => {
-                    api.updateUser(user.id, user)
-                        .catch(err => console.error("[User] error updating user state", user.id, err))
-                }, 5000);
-            }
         }, ondata => {
             Janus.log("-- :: It's protocol public message: ", ondata);
             const {type,error_code,id} = ondata;
             if(ondata.type === "error" && error_code === 420) {
                 this.exitRoom(false, () => {
-                    alert(this.props.t('oldClient.error') + ondata.error);
+                    alert(ondata.error);
                 });
             } else if(ondata.type === "joined") {
                 const {id,timestamp,role,display} = user;
@@ -1085,7 +1091,7 @@ class MobileClient extends Component {
         });
     };
 
-    exitRoom = (reconnect) => {
+    exitRoom = (reconnect, callback) => {
         this.setState({delay: true})
         let {videoroom, remoteFeed, protocol, janus, room} = this.state;
         wkliLeave(this.state.user);
@@ -1111,13 +1117,15 @@ class MobileClient extends Component {
             if(protocol) protocol.detach();
             if(janus) janus.destroy();
             this.setState({
-                cammuted: false, muted: false, question: false, delay: false,
+                cammuted: false, muted: false, question: false,
                 feeds: [], mids: [],
                 localAudioTrack: null, localVideoTrack: null, upval: null,
                 remoteFeed: null, videoroom: null, protocol: null, janus: null,
+                delay: reconnect,
                 room: reconnect ? room : '',
                 chatMessagesCount: 0,
             });
+            if(typeof callback === "function") callback();
         }, 2000);
 
 

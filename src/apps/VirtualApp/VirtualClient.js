@@ -201,7 +201,7 @@ class VirtualClient extends Component {
     });
   }
 
-  initClient = (error) => {
+  initClient = (reconnect, retry = 0) => {
     this.setState({delay: true});
     const user = Object.assign({}, this.state.user);
     const {t} = this.props;
@@ -217,19 +217,36 @@ class VirtualClient extends Component {
         user.session = janus.getSessionId();
         this.setState({janus});
         this.chat.initChat(janus);
-        this.initVideoRoom(error, user);
+        this.initVideoRoom(reconnect, user);
       } else {
         alert(t('oldClient.unifiedPlanNotSupported'));
       }
     }, err => {
-      this.exitRoom(false, () => {
-        alert(this.props.t('oldClient.networkSettingsChanged'));
+      this.exitRoom(true, () => {
+        console.error("[VirtualClient] error initializing janus", err);
+        this.reinitClient(retry);
       });
-      console.error("[VirtualClient] error initializing janus", err);
     }, config.url, config.token, config.iceServers);
 
-    const {ip, country} = user;
-    this.state.virtualStreamingJanus.init(ip, country);
+    if(!reconnect) {
+      const {ip, country} = user;
+      this.state.virtualStreamingJanus.init(ip, country);
+    }
+  };
+
+  reinitClient = (retry) => {
+    retry++;
+    console.error("[VirtualClient] reinitializing try: ", retry);
+    if(retry < 10) {
+      setTimeout(() => {
+        this.initClient(true, retry);
+      }, 5000)
+    } else {
+      this.exitRoom(false, () => {
+        console.error("[VirtualClient] reinitializing failed after: " + retry + " retries");
+        alert(this.props.t('oldClient.networkSettingsChanged'));
+      });
+    }
   };
 
   initDevices = () => {
@@ -376,6 +393,7 @@ class VirtualClient extends Component {
     wkliLeave(this.state.user);
     clearInterval(this.state.upval);
     this.clearKeepAlive();
+
     localStorage.setItem('question', false);
 
     api.fetchAvailableRooms({with_num_users: true})
@@ -396,12 +414,13 @@ class VirtualClient extends Component {
       if(videoroom) videoroom.detach();
       if(protocol) protocol.detach();
       if(janus) janus.destroy();
-      this.state.virtualStreamingJanus.audioElement.muted = true;
+      this.state.virtualStreamingJanus.audioElement.muted = !reconnect;
       this.setState({
-        cammuted: false, muted: false, question: false, delay: false,
+        cammuted: false, muted: false, question: false,
         feeds: [], mids: [],
         localAudioTrack: null, localVideoTrack: null, upval: null,
         remoteFeed: null, videoroom: null, protocol: null, janus: null,
+        delay: reconnect,
         room: reconnect ? room : '',
         chatMessagesCount: 0,
       });
@@ -419,9 +438,9 @@ class VirtualClient extends Component {
       }
       if (count >= 10) {
         clearInterval(chk);
-        this.exitRoom(false, () => {
-          alert(this.props.t('oldClient.networkSettingsChanged'));
-        });
+        // this.exitRoom(false, () => {
+        //   alert(this.props.t('oldClient.networkSettingsChanged'));
+        // });
         reportToSentry("ICE State disconnected",{source: "ice"}, this.state.user);
       }
     }, 3000);
@@ -971,9 +990,10 @@ class VirtualClient extends Component {
     let {janus, selected_room, tested, media} = this.state;
     const {video: {video_device}} = media;
     user.self_test = tested;
-    user.question = false;
     user.camera = !!video_device;
     user.sound_test = reconnect ? JSON.parse(localStorage.getItem('sound_test')) : false;
+    //user.question = reconnect ? JSON.parse(localStorage.getItem('question')) : false;
+    user.question = false;
     user.timestamp = Date.now();
 
     if(video_device) {
@@ -991,15 +1011,6 @@ class VirtualClient extends Component {
 
     initGxyProtocol(janus, user, protocol => {
       this.setState({protocol});
-      // Send question event if before join it was true
-      if (reconnect && JSON.parse(localStorage.getItem('question'))) {
-        user.question = true;
-        this.setState({user});
-        setTimeout(() => {
-          api.updateUser(user.id, user)
-              .catch(err => console.error("[User] error updating user state", user.id, err))
-        }, 5000);
-      }
     }, ondata => {
       Janus.log('-- :: It\'s protocol public message: ', ondata);
       const { type, error_code, id, room } = ondata;
