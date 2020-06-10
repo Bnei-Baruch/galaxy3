@@ -469,7 +469,7 @@ export const MonitoringData = class {
       const values = dataValues(input, lastTimestamp);
       // Keep commented out logs for debugging.
       // console.log(input, values);
-      // console.log('last', this.scoreData.length, input.data.map(arr => arr[0] === undefined ? 'undefined' : arr[0]).join(' | '));
+      console.log('last', this.scoreData.length, input.data.map(arr => arr[0] === undefined ? 'undefined' : arr[0]).join(' | '));
       // console.log('score', values.score.value, values.score.formula);
       // console.log('audio score 1min', values.audio.jitter.oneMin && values.audio.jitter.oneMin.mean.value, values.audio.packetsLost.oneMin && values.audio.packetsLost.oneMin.mean.value, values.audio.roundTripTime.oneMin && values.audio.roundTripTime.oneMin.mean.value);
       // console.log('audio score 3min', values.audio.jitter.threeMin && values.audio.jitter.threeMin.mean.value, values.audio.packetsLost.threeMin && values.audio.packetsLost.threeMin.mean.value, values.audio.roundTripTime.threeMin && values.audio.roundTripTime.threeMin.mean.value);
@@ -477,16 +477,18 @@ export const MonitoringData = class {
       // console.log('video score 3min', values.video.jitter.threeMin && values.video.jitter.threeMin.mean.value, values.video.packetsLost.threeMin && values.video.packetsLost.threeMin.mean.value, values.video.roundTripTime.threeMin && values.video.roundTripTime.threeMin.mean.value);
       if (this.onStatus) {
         const firstTimestamp = this.scoreData[0][0].timestamp;
+        const formula = `Score ${values.score.view} = ${values.score.formula}`;
+        console.log('Connection', formula, values.score.value);
         if (lastTimestamp - firstTimestamp >= MEDIUM_BUCKET) {
-          if (values.score.value < 40) {
-            this.onStatus(LINK_STATE_GOOD, values.score.formula);
-          } else if (this.score < 10) {
-            this.onStatus(LINK_STATE_MEDIUM, values.score.formula);
+          if (values.score.value < 10) {
+            this.onStatus(LINK_STATE_GOOD, formula);
+          } else if (values.score.value < 100) {
+            this.onStatus(LINK_STATE_MEDIUM, formula);
           } else {
-            this.onStatus(LINK_STATE_WEAK, values.score.formula);
+            this.onStatus(LINK_STATE_WEAK, formula);
           }
         } else {
-          this.onStatus(LINK_STATE_INIT, values.score.formula);
+          this.onStatus(LINK_STATE_INIT, formula);
         }
       }
     }

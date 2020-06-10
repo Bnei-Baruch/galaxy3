@@ -60,14 +60,14 @@ export const shortNumber = (number) => {
     return str;
   }
   let nonZeros = 0;
-  if (number > 99) {
+  if (number >= 100) {
     return String(Math.round(number * 10)/10);
   }
-  if (number > 9) {
+  if (number >= 10) {
     return String(Math.round(number * 100)/100);
   }
   if (number >= 1) {
-    return String(Math.round(number * 1000)/100);
+    return String(Math.round(number * 1000)/1000);
   }
   let idx = dotIdx
   while (idx + 1 < str.length && nonZeros < 3) {
