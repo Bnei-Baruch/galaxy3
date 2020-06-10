@@ -3,18 +3,7 @@ import {Janus} from '../../lib/janus';
 import classNames from 'classnames';
 import {isMobile} from 'react-device-detect';
 import {Button, Icon, Input, Label, Menu, Popup, Select,} from 'semantic-ui-react';
-import {
-  checkNotification,
-  geoInfo,
-  getMedia,
-  getMediaStream,
-  initJanus,
-  micLevel,
-  reportToSentry,
-  takeImage,
-  testMic,
-  wkliLeave,
-} from '../../shared/tools';
+import {checkNotification, geoInfo, getMedia, getMediaStream, initJanus, micLevel, reportToSentry, takeImage, testMic, wkliLeave,} from '../../shared/tools';
 import './VirtualClient.scss';
 import './VideoConteiner.scss';
 import './CustomIcons.scss';
@@ -38,14 +27,13 @@ import {Profile} from "../../components/Profile";
 import * as Sentry from "@sentry/browser";
 import VerifyAccount from './components/VerifyAccount';
 import GxyJanus from "../../shared/janus-utils";
-import {addLostStat, getLostStat} from "./components/NetStatus";
 
 class VirtualClient extends Component {
 
   state = {
     chatMessagesCount: 0,
     creatingFeed: false,
-    delay: false,
+    delay: true,
     media: {
       audio:{
         context: null,
@@ -84,7 +72,6 @@ class VirtualClient extends Component {
     user: null,
     chatVisible: false,
     question: false,
-    geoinfo: false,
     selftest: this.props.t('oldClient.selfAudioTest'),
     tested: false,
     support: false,
@@ -131,13 +118,6 @@ class VirtualClient extends Component {
     if (isMobile) {
       window.location = '/userm';
     }
-    // setInterval(() => {
-    //   const {net_status} = this.state;
-    //   const cur_status = getLostStat();
-    //   if (net_status !== cur_status) {
-    //     this.setState({net_status: cur_status});
-    //   }
-    // }, 5000);
   }
 
   componentWillUnmount() {
@@ -173,7 +153,7 @@ class VirtualClient extends Component {
     geoInfo(`${GEO_IP_INFO}`, data => {
       user.ip = data && data.ip ? data.ip : '127.0.0.1';
       user.country = data && data.country ? data.country : 'XX';
-      this.setState({geoinfo: !!data, user});
+      this.setState({user});
 
       api.fetchConfig()
           .then(data => GxyJanus.setGlobalConfig(data))
@@ -189,9 +169,12 @@ class VirtualClient extends Component {
                 user.room = selected_room;
                 user.janus = room.janus;
                 user.group = room.description;
+                this.setState({delay: false, user});
               } else {
-                this.setState({selected_room: ''});
+                this.setState({selected_room: '', delay: false});
               }
+            } else {
+              this.setState({delay: false});
             }
           })
           .catch(err => {
@@ -550,7 +533,6 @@ class VirtualClient extends Component {
       slowLink: (uplink, lost, mid) => {
         const slowLinkType = uplink ? 'sending' : 'receiving';
         Janus.log('Janus reports problems ' + slowLinkType + ' packets on mid ' + mid + ' (' + lost + ' lost packets)');
-        //addLostStat(lost);
         this.state.monitoringData.onSlowLink(slowLinkType, lost);
       },
       onmessage: (msg, jsep) => {
@@ -1255,7 +1237,6 @@ class VirtualClient extends Component {
       currentLayout,
       delay,
       feeds,
-      geoinfo,
       janus,
       localVideoTrack,
       localAudioTrack,
@@ -1419,7 +1400,7 @@ class VirtualClient extends Component {
             {chatMessagesCount > 0 ? chatCountLabel : ''}
           </Menu.Item>
           <Menu.Item
-            disabled={!audio_device || !geoinfo || !localAudioTrack || delay || otherFeedHasQuestion}
+            disabled={!audio_device || !localAudioTrack || delay || otherFeedHasQuestion}
             onClick={this.handleQuestion}>
             <Icon {...(question ? {color: 'green'} : {})} name='question' />
             {t('oldClient.askQuestion')}

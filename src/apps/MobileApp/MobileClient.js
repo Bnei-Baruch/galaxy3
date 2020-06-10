@@ -26,7 +26,6 @@ import {kc} from "../../components/UserManager";
 import LoginPage from "../../components/LoginPage";
 import {Profile} from "../../components/Profile";
 import GxyJanus from "../../shared/janus-utils";
-import {addLostStat, getLostStat} from "../VirtualApp/components/NetStatus";
 
 class MobileClient extends Component {
 
@@ -34,7 +33,7 @@ class MobileClient extends Component {
         count: 0,
         index: 3,
         creatingFeed: false,
-        delay: false,
+        delay: true,
         media: {
             audio:{
                 context: null,
@@ -116,12 +115,6 @@ class MobileClient extends Component {
             window.location = '/user/';
             return;
         }
-        // setInterval(() => {
-        //     const {net_status} = this.state;
-        //     const cur_status = getLostStat();
-        //     if(net_status !== cur_status)
-        //         this.setState({net_status: cur_status})
-        // }, 5000);
     };
 
     initApp = (user) => {
@@ -145,7 +138,7 @@ class MobileClient extends Component {
         geoInfo(`${GEO_IP_INFO}`, data => {
             user.ip = data && data.ip ? data.ip : '127.0.0.1';
             user.country = data && data.country ? data.country : 'XX';
-            this.setState({ geoinfo: !!data, user });
+            this.setState({user});
 
             api.fetchConfig()
                 .then(data => GxyJanus.setGlobalConfig(data))
@@ -161,9 +154,12 @@ class MobileClient extends Component {
                             user.room = selected_room;
                             user.janus = room.janus;
                             user.group = room.description;
+                            this.setState({delay: false, user});
                         } else {
-                            this.setState({selected_room: ""});
+                            this.setState({selected_room: "", delay: false});
                         }
+                    } else {
+                        this.setState({delay: false});
                     }
                 })
                 .then(() => this.setState({appInitialized: true}))
@@ -467,7 +463,6 @@ class MobileClient extends Component {
             slowLink: (uplink, lost, mid) => {
                 Janus.log("Janus reports problems " + (uplink ? "sending" : "receiving") +
                     " packets on mid " + mid + " (" + lost + " lost packets)");
-                //addLostStat(lost);
             },
             onmessage: (msg, jsep) => {
                 this.onMessage(this.state.videoroom, msg, jsep, false);
