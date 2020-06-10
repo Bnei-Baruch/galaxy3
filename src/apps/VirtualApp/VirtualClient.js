@@ -977,6 +977,7 @@ class VirtualClient extends Component {
     //user.question = reconnect ? JSON.parse(localStorage.getItem('question')) : false;
     user.question = false;
     user.timestamp = Date.now();
+    this.setState({user, muted: true});
 
     if(video_device) {
       if(this.state.upval) {
@@ -1006,7 +1007,6 @@ class VirtualClient extends Component {
         let register = {'request': 'join', 'room': selected_room, 'ptype': 'publisher', 'display': JSON.stringify(d)};
         videoroom.send({"message": register,
           success: () => {
-            this.setState({user, muted: true});
             this.chat.initChatRoom(user, selected_room);
           },
           error: (error) => {

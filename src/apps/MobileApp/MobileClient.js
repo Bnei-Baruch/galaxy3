@@ -1045,6 +1045,7 @@ class MobileClient extends Component {
         user.question = false;
         user.camera = !!video_device;
         user.timestamp = Date.now();
+        this.setState({user, muted: true});
         initGxyProtocol(janus, user, protocol => {
             this.setState({protocol});
         }, ondata => {
@@ -1060,7 +1061,6 @@ class MobileClient extends Component {
                 let register = {"request": "join", "room": selected_room, "ptype": "publisher", "display": JSON.stringify(d)};
                 videoroom.send({"message": register,
                     success: () => {
-                        this.setState({user, muted: true});
                         //this.chat.initChatRoom(user, selected_room);
                     },
                     error: (error) => {
