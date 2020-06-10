@@ -460,6 +460,8 @@ export const MonitoringData = class {
                   return;  // Skipp add.
                 }
                 break;
+              default:
+                break;
             }
             stat.add(v, timestamp);
           }));
@@ -469,7 +471,7 @@ export const MonitoringData = class {
       const values = dataValues(input, lastTimestamp);
       // Keep commented out logs for debugging.
       // console.log(input, values);
-      console.log('last', this.scoreData.length, input.data.map(arr => arr[0] === undefined ? 'undefined' : arr[0]).join(' | '));
+      // console.log('last', this.scoreData.length, input.data.map(arr => arr[0] === undefined ? 'undefined' : arr[0]).join(' | '));
       // console.log('score', values.score.value, values.score.formula);
       // console.log('audio score 1min', values.audio.jitter.oneMin && values.audio.jitter.oneMin.mean.value, values.audio.packetsLost.oneMin && values.audio.packetsLost.oneMin.mean.value, values.audio.roundTripTime.oneMin && values.audio.roundTripTime.oneMin.mean.value);
       // console.log('audio score 3min', values.audio.jitter.threeMin && values.audio.jitter.threeMin.mean.value, values.audio.packetsLost.threeMin && values.audio.packetsLost.threeMin.mean.value, values.audio.roundTripTime.threeMin && values.audio.roundTripTime.threeMin.mean.value);
@@ -478,7 +480,7 @@ export const MonitoringData = class {
       if (this.onStatus) {
         const firstTimestamp = this.scoreData[0][0].timestamp;
         const formula = `Score ${values.score.view} = ${values.score.formula}`;
-        console.log('Connection', formula, values.score.value);
+        // console.log('Connection', formula, values.score.value);
         if (lastTimestamp - firstTimestamp >= MEDIUM_BUCKET) {
           if (values.score.value < 10) {
             this.onStatus(LINK_STATE_GOOD, formula);

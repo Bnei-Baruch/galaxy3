@@ -130,7 +130,6 @@ class VirtualClient extends Component {
         this.state.localVideoTrack,
         this.state.user);
       this.state.monitoringData.setOnStatus((connectionStatus, connectionStatusMessage) => {
-        console.log('Update status', connectionStatus, connectionStatusMessage);
         this.setState({connectionStatus, connectionStatusMessage});
       });
     }
@@ -1190,8 +1189,6 @@ class VirtualClient extends Component {
 
   renderLocalMedia = (width, height, index) => {
     const {user, cammuted, question, muted} = this.state;
-
-    console.log('renderLocalMedia', this.state.connectionStatus);
 
     return (<div className="video" key={index}>
       <div className={classNames('video__overlay')}>
