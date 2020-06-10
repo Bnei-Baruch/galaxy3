@@ -33,7 +33,7 @@ class LoginPage extends Component {
 
     userLogin = () => {
         this.setState({disabled: true, loading: true});
-        kc.login({redirectUri: window.location.href});
+        kc.login({redirectUri: window.location.href, locale: this.props.i18n.language});
     };
 
     render() {
