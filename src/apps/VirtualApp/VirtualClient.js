@@ -1172,7 +1172,6 @@ class VirtualClient extends Component {
   };
 
   connectionIcon = () => {
-    console.log('ICON', this.state.connectionStatus);
     switch (this.state.connectionStatus) {
       case LINK_STATE_INIT:
         return connectionGray;
