@@ -358,9 +358,10 @@ class MobileClient extends Component {
             }
             if(count >= 10) {
                 clearInterval(chk);
-                // this.exitRoom(false, () => {
-                //     alert("Lost connection to the server!");
-                // });
+                this.exitRoom(true, () => {
+                    console.error("ICE Disconnected");
+                    this.initClient(true);
+                });
             }
         },3000);
     };

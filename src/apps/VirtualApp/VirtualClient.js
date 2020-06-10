@@ -421,9 +421,10 @@ class VirtualClient extends Component {
       }
       if (count >= 10) {
         clearInterval(chk);
-        // this.exitRoom(false, () => {
-        //   alert(this.props.t('oldClient.networkSettingsChanged'));
-        // });
+        this.exitRoom(true, () => {
+          console.error("ICE Disconnected");
+          this.initClient(true);
+        });
         reportToSentry("ICE State disconnected",{source: "ice"}, this.state.user);
       }
     }, 3000);
