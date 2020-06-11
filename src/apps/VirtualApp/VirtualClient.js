@@ -17,7 +17,7 @@ import {Help} from './components/Help';
 import {withTranslation} from 'react-i18next';
 import {languagesOptions, setLanguage} from '../../i18n/i18n';
 import {Monitoring} from '../../components/Monitoring';
-import {MonitoringData} from '../../shared/MonitoringData';
+import {MonitoringData, LINK_STATE_INIT, LINK_STATE_GOOD, LINK_STATE_MEDIUM, LINK_STATE_WEAK} from '../../shared/MonitoringData';
 import api from '../../shared/Api';
 import VirtualStreaming from './VirtualStreaming';
 import VirtualStreamingJanus from './VirtualStreamingJanus';
@@ -27,6 +27,10 @@ import {Profile} from "../../components/Profile";
 import * as Sentry from "@sentry/browser";
 import VerifyAccount from './components/VerifyAccount';
 import GxyJanus from "../../shared/janus-utils";
+import connectionOrange from './connection-orange.png';
+import connectionWhite from './connection-white.png';
+import connectionRed from './connection-red.png';
+import connectionGray from './connection-gray.png';
 
 class VirtualClient extends Component {
 
@@ -76,6 +80,8 @@ class VirtualClient extends Component {
     tested: false,
     support: false,
     monitoringData: new MonitoringData(),
+    connectionStatus: '',
+    connectionStatusMessage: '',
     numberOfVirtualUsers: localStorage.getItem('number_of_virtual_users') || '1',
     currentLayout: localStorage.getItem('currentLayout') || 'double',
     attachedSource: true,
@@ -110,6 +116,9 @@ class VirtualClient extends Component {
         this.state.localAudioTrack,
         this.state.localVideoTrack,
         this.state.user);
+      this.state.monitoringData.setOnStatus((connectionStatus, connectionStatusMessage) => {
+        this.setState({connectionStatus, connectionStatusMessage});
+      });
     }
   }
 
@@ -1156,6 +1165,21 @@ class VirtualClient extends Component {
     });
   };
 
+  connectionIcon = () => {
+    switch (this.state.connectionStatus) {
+      case LINK_STATE_INIT:
+        return connectionGray;
+      case LINK_STATE_GOOD:
+        return connectionWhite;
+      case LINK_STATE_MEDIUM:
+        return connectionOrange;
+      case LINK_STATE_WEAK:
+        return connectionRed;
+      default:
+        return connectionGray;
+    }
+  }
+
   renderLocalMedia = (width, height, index) => {
     const {user, cammuted, question, muted} = this.state;
 
@@ -1173,7 +1197,13 @@ class VirtualClient extends Component {
           ''
         }
         <div className="video__title">
-          {muted ? <Icon name="microphone slash" size="small" color="red" /> : ''}{user ? user.display : ""}
+          {muted ? <Icon name="microphone slash" size="small" color="red" style={{verticalAlign: 'middle'}} /> : ''}
+          <div style={{display: 'inline-block', verticalAlign: 'middle'}}>{user ? user.display : ''}</div>
+          <Popup
+            trigger={<Image src={this.connectionIcon()} style={{height: '1em', objectFit: 'contain', display: 'inline-block', verticalAlign: 'middle', marginLeft: '0.4em'}} />}
+            content={this.state.connectionStatusMessage || '...'}
+            hideOnScroll
+          />
         </div>
       </div>
       <svg className={classNames('nowebcam', {'hidden': !cammuted})} viewBox="0 0 32 18"
