@@ -134,5 +134,7 @@ export const trllang = {
         "Bulgarian": 310,
         "Romanian": 312,
         "Lithuanian": 315,
-        "Ukrainian": 322
+        "Ukrainian": 322,
+        "Heb-Eng": 303,
+        "Heb-Rus": 302,
 };
