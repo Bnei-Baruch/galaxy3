@@ -3,18 +3,7 @@ import {Janus} from '../../lib/janus';
 import classNames from 'classnames';
 import {isMobile} from 'react-device-detect';
 import {Button, Icon, Input, Label, Menu, Popup, Select,} from 'semantic-ui-react';
-import {
-  checkNotification,
-  geoInfo,
-  getMedia,
-  getMediaStream,
-  initJanus,
-  micLevel,
-  reportToSentry,
-  takeImage,
-  testMic,
-  wkliLeave,
-} from '../../shared/tools';
+import {checkNotification, geoInfo, getMedia, getMediaStream, initJanus, micLevel, reportToSentry, takeImage, testMic, wkliLeave,} from '../../shared/tools';
 import './VirtualClient.scss';
 import './VideoConteiner.scss';
 import './CustomIcons.scss';
@@ -38,14 +27,13 @@ import {Profile} from "../../components/Profile";
 import * as Sentry from "@sentry/browser";
 import VerifyAccount from './components/VerifyAccount';
 import GxyJanus from "../../shared/janus-utils";
-import {addLostStat, getLostStat} from "./components/NetStatus";
 
 class VirtualClient extends Component {
 
   state = {
     chatMessagesCount: 0,
     creatingFeed: false,
-    delay: false,
+    delay: true,
     media: {
       audio:{
         context: null,
@@ -84,7 +72,6 @@ class VirtualClient extends Component {
     user: null,
     chatVisible: false,
     question: false,
-    geoinfo: false,
     selftest: this.props.t('oldClient.selfAudioTest'),
     tested: false,
     support: false,
@@ -131,13 +118,6 @@ class VirtualClient extends Component {
     if (isMobile) {
       window.location = '/userm';
     }
-    // setInterval(() => {
-    //   const {net_status} = this.state;
-    //   const cur_status = getLostStat();
-    //   if (net_status !== cur_status) {
-    //     this.setState({net_status: cur_status});
-    //   }
-    // }, 5000);
   }
 
   componentWillUnmount() {
@@ -173,7 +153,7 @@ class VirtualClient extends Component {
     geoInfo(`${GEO_IP_INFO}`, data => {
       user.ip = data && data.ip ? data.ip : '127.0.0.1';
       user.country = data && data.country ? data.country : 'XX';
-      this.setState({geoinfo: !!data, user});
+      this.setState({user});
 
       api.fetchConfig()
           .then(data => GxyJanus.setGlobalConfig(data))
@@ -189,9 +169,12 @@ class VirtualClient extends Component {
                 user.room = selected_room;
                 user.janus = room.janus;
                 user.group = room.description;
+                this.setState({delay: false, user});
               } else {
-                this.setState({selected_room: ''});
+                this.setState({selected_room: '', delay: false});
               }
+            } else {
+              this.setState({delay: false});
             }
           })
           .catch(err => {
@@ -201,7 +184,7 @@ class VirtualClient extends Component {
     });
   }
 
-  initClient = (error) => {
+  initClient = (reconnect, retry = 0) => {
     this.setState({delay: true});
     const user = Object.assign({}, this.state.user);
     const {t} = this.props;
@@ -217,19 +200,36 @@ class VirtualClient extends Component {
         user.session = janus.getSessionId();
         this.setState({janus});
         this.chat.initChat(janus);
-        this.initVideoRoom(error, user);
+        this.initVideoRoom(reconnect, user);
       } else {
         alert(t('oldClient.unifiedPlanNotSupported'));
       }
     }, err => {
-      this.exitRoom(false, () => {
-        alert(this.props.t('oldClient.networkSettingsChanged'));
+      this.exitRoom(true, () => {
+        console.error("[VirtualClient] error initializing janus", err);
+        this.reinitClient(retry);
       });
-      console.error("[VirtualClient] error initializing janus", err);
     }, config.url, config.token, config.iceServers);
 
-    const {ip, country} = user;
-    this.state.virtualStreamingJanus.init(ip, country);
+    if(!reconnect) {
+      const {ip, country} = user;
+      this.state.virtualStreamingJanus.init(ip, country);
+    }
+  };
+
+  reinitClient = (retry) => {
+    retry++;
+    console.error("[VirtualClient] reinitializing try: ", retry);
+    if(retry < 10) {
+      setTimeout(() => {
+        this.initClient(true, retry);
+      }, 5000)
+    } else {
+      this.exitRoom(false, () => {
+        console.error("[VirtualClient] reinitializing failed after: " + retry + " retries");
+        alert(this.props.t('oldClient.networkSettingsChanged'));
+      });
+    }
   };
 
   initDevices = () => {
@@ -376,6 +376,7 @@ class VirtualClient extends Component {
     wkliLeave(this.state.user);
     clearInterval(this.state.upval);
     this.clearKeepAlive();
+
     localStorage.setItem('question', false);
 
     api.fetchAvailableRooms({with_num_users: true})
@@ -396,12 +397,13 @@ class VirtualClient extends Component {
       if(videoroom) videoroom.detach();
       if(protocol) protocol.detach();
       if(janus) janus.destroy();
-      this.state.virtualStreamingJanus.audioElement.muted = true;
+      this.state.virtualStreamingJanus.audioElement.muted = !reconnect;
       this.setState({
-        cammuted: false, muted: false, question: false, delay: false,
+        cammuted: false, muted: false, question: false,
         feeds: [], mids: [],
         localAudioTrack: null, localVideoTrack: null, upval: null,
         remoteFeed: null, videoroom: null, protocol: null, janus: null,
+        delay: reconnect,
         room: reconnect ? room : '',
         chatMessagesCount: 0,
       });
@@ -419,8 +421,9 @@ class VirtualClient extends Component {
       }
       if (count >= 10) {
         clearInterval(chk);
-        this.exitRoom(false, () => {
-          alert(this.props.t('oldClient.networkSettingsChanged'));
+        this.exitRoom(true, () => {
+          console.error("ICE Disconnected");
+          this.initClient(true);
         });
         reportToSentry("ICE State disconnected",{source: "ice"}, this.state.user);
       }
@@ -531,7 +534,6 @@ class VirtualClient extends Component {
       slowLink: (uplink, lost, mid) => {
         const slowLinkType = uplink ? 'sending' : 'receiving';
         Janus.log('Janus reports problems ' + slowLinkType + ' packets on mid ' + mid + ' (' + lost + ' lost packets)');
-        //addLostStat(lost);
         this.state.monitoringData.onSlowLink(slowLinkType, lost);
       },
       onmessage: (msg, jsep) => {
@@ -971,10 +973,12 @@ class VirtualClient extends Component {
     let {janus, selected_room, tested, media} = this.state;
     const {video: {video_device}} = media;
     user.self_test = tested;
-    user.question = false;
     user.camera = !!video_device;
     user.sound_test = reconnect ? JSON.parse(localStorage.getItem('sound_test')) : false;
+    //user.question = reconnect ? JSON.parse(localStorage.getItem('question')) : false;
+    user.question = false;
     user.timestamp = Date.now();
+    this.setState({user, muted: true});
 
     if(video_device) {
       if(this.state.upval) {
@@ -991,15 +995,6 @@ class VirtualClient extends Component {
 
     initGxyProtocol(janus, user, protocol => {
       this.setState({protocol});
-      // Send question event if before join it was true
-      if (reconnect && JSON.parse(localStorage.getItem('question'))) {
-        user.question = true;
-        this.setState({user});
-        setTimeout(() => {
-          api.updateUser(user.id, user)
-              .catch(err => console.error("[User] error updating user state", user.id, err))
-        }, 5000);
-      }
     }, ondata => {
       Janus.log('-- :: It\'s protocol public message: ', ondata);
       const { type, error_code, id, room } = ondata;
@@ -1013,7 +1008,6 @@ class VirtualClient extends Component {
         let register = {'request': 'join', 'room': selected_room, 'ptype': 'publisher', 'display': JSON.stringify(d)};
         videoroom.send({"message": register,
           success: () => {
-            this.setState({user, muted: true});
             this.chat.initChatRoom(user, selected_room);
           },
           error: (error) => {
@@ -1244,7 +1238,6 @@ class VirtualClient extends Component {
       currentLayout,
       delay,
       feeds,
-      geoinfo,
       janus,
       localVideoTrack,
       localAudioTrack,
@@ -1408,7 +1401,7 @@ class VirtualClient extends Component {
             {chatMessagesCount > 0 ? chatCountLabel : ''}
           </Menu.Item>
           <Menu.Item
-            disabled={!audio_device || !geoinfo || !localAudioTrack || delay || otherFeedHasQuestion}
+            disabled={!audio_device || !localAudioTrack || delay || otherFeedHasQuestion}
             onClick={this.handleQuestion}>
             <Icon {...(question ? {color: 'green'} : {})} name='question' />
             {t('oldClient.askQuestion')}

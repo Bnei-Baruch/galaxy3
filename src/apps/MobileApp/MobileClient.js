@@ -26,7 +26,6 @@ import {kc} from "../../components/UserManager";
 import LoginPage from "../../components/LoginPage";
 import {Profile} from "../../components/Profile";
 import GxyJanus from "../../shared/janus-utils";
-import {addLostStat, getLostStat} from "../VirtualApp/components/NetStatus";
 
 class MobileClient extends Component {
 
@@ -34,7 +33,7 @@ class MobileClient extends Component {
         count: 0,
         index: 3,
         creatingFeed: false,
-        delay: false,
+        delay: true,
         media: {
             audio:{
                 context: null,
@@ -116,12 +115,6 @@ class MobileClient extends Component {
             window.location = '/user/';
             return;
         }
-        // setInterval(() => {
-        //     const {net_status} = this.state;
-        //     const cur_status = getLostStat();
-        //     if(net_status !== cur_status)
-        //         this.setState({net_status: cur_status})
-        // }, 5000);
     };
 
     initApp = (user) => {
@@ -145,7 +138,7 @@ class MobileClient extends Component {
         geoInfo(`${GEO_IP_INFO}`, data => {
             user.ip = data && data.ip ? data.ip : '127.0.0.1';
             user.country = data && data.country ? data.country : 'XX';
-            this.setState({ geoinfo: !!data, user });
+            this.setState({user});
 
             api.fetchConfig()
                 .then(data => GxyJanus.setGlobalConfig(data))
@@ -161,9 +154,12 @@ class MobileClient extends Component {
                             user.room = selected_room;
                             user.janus = room.janus;
                             user.group = room.description;
+                            this.setState({delay: false, user});
                         } else {
-                            this.setState({selected_room: ""});
+                            this.setState({selected_room: "", delay: false});
                         }
+                    } else {
+                        this.setState({delay: false});
                     }
                 })
                 .then(() => this.setState({appInitialized: true}))
@@ -174,7 +170,7 @@ class MobileClient extends Component {
         });
     };
 
-    initClient = (error) => {
+    initClient = (reconnect, retry = 0) => {
         this.setState({delay: true});
         const user = Object.assign({}, this.state.user);
         if(this.state.janus)
@@ -187,16 +183,31 @@ class MobileClient extends Component {
                 user.session = janus.getSessionId();
                 this.setState({janus});
                 //this.chat.initChat(janus);
-                this.initVideoRoom(error, user);
+                this.initVideoRoom(reconnect, user);
             } else {
                 alert("Unified Plan is NOT supported");
             }
         }, err => {
-            this.exitRoom(false, () => {
-                alert(this.props.t('oldClient.networkSettingsChanged'));
+            this.exitRoom(true, () => {
+                console.error("[VirtualClient] error initializing janus", err);
+                this.reinitClient(retry);
             });
-            console.error("[MobileClient] error initializing janus", err);
         }, config.url, config.token, config.iceServers);
+    };
+
+    reinitClient = (retry) => {
+        retry++;
+        console.error("[VirtualClient] reinitializing try: ", retry);
+        if(retry < 10) {
+            setTimeout(() => {
+                this.initClient(true, retry);
+            }, 5000)
+        } else {
+            this.exitRoom(false, () => {
+                console.error("[VirtualClient] reinitializing failed after: " + retry + " retries");
+                alert("Lost connection to the server!");
+            });
+        }
     };
 
     initDevices = () => {
@@ -347,8 +358,9 @@ class MobileClient extends Component {
             }
             if(count >= 10) {
                 clearInterval(chk);
-                this.exitRoom(false, () => {
-                    alert("Lost connection to the server!");
+                this.exitRoom(true, () => {
+                    console.error("ICE Disconnected");
+                    this.initClient(true);
                 });
             }
         },3000);
@@ -452,7 +464,6 @@ class MobileClient extends Component {
             slowLink: (uplink, lost, mid) => {
                 Janus.log("Janus reports problems " + (uplink ? "sending" : "receiving") +
                     " packets on mid " + mid + " (" + lost + " lost packets)");
-                //addLostStat(lost);
             },
             onmessage: (msg, jsep) => {
                 this.onMessage(this.state.videoroom, msg, jsep, false);
@@ -1035,23 +1046,15 @@ class MobileClient extends Component {
         user.question = false;
         user.camera = !!video_device;
         user.timestamp = Date.now();
+        this.setState({user, muted: true});
         initGxyProtocol(janus, user, protocol => {
             this.setState({protocol});
-            // Send question event if before join it was true
-            if(reconnect && JSON.parse(localStorage.getItem("question"))) {
-                user.question = true;
-                this.setState({user});
-                setTimeout(() => {
-                    api.updateUser(user.id, user)
-                        .catch(err => console.error("[User] error updating user state", user.id, err))
-                }, 5000);
-            }
         }, ondata => {
             Janus.log("-- :: It's protocol public message: ", ondata);
             const {type,error_code,id} = ondata;
             if(ondata.type === "error" && error_code === 420) {
                 this.exitRoom(false, () => {
-                    alert(this.props.t('oldClient.error') + ondata.error);
+                    alert(ondata.error);
                 });
             } else if(ondata.type === "joined") {
                 const {id,timestamp,role,display} = user;
@@ -1059,7 +1062,6 @@ class MobileClient extends Component {
                 let register = {"request": "join", "room": selected_room, "ptype": "publisher", "display": JSON.stringify(d)};
                 videoroom.send({"message": register,
                     success: () => {
-                        this.setState({user, muted: true});
                         //this.chat.initChatRoom(user, selected_room);
                     },
                     error: (error) => {
@@ -1085,7 +1087,7 @@ class MobileClient extends Component {
         });
     };
 
-    exitRoom = (reconnect) => {
+    exitRoom = (reconnect, callback) => {
         this.setState({delay: true})
         let {videoroom, remoteFeed, protocol, janus, room} = this.state;
         wkliLeave(this.state.user);
@@ -1111,13 +1113,15 @@ class MobileClient extends Component {
             if(protocol) protocol.detach();
             if(janus) janus.destroy();
             this.setState({
-                cammuted: false, muted: false, question: false, delay: false,
+                cammuted: false, muted: false, question: false,
                 feeds: [], mids: [],
                 localAudioTrack: null, localVideoTrack: null, upval: null,
                 remoteFeed: null, videoroom: null, protocol: null, janus: null,
+                delay: reconnect,
                 room: reconnect ? room : '',
                 chatMessagesCount: 0,
             });
+            if(typeof callback === "function") callback();
         }, 2000);
 
 
