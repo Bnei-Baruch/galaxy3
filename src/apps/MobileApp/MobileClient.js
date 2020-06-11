@@ -83,6 +83,7 @@ class MobileClient extends Component {
         appInitError: null,
         net_status: 1,
         keepalive: null,
+        startSlide:0
     };
 
     componentDidUpdate(prevProps, prevState) {
@@ -1337,11 +1338,12 @@ class MobileClient extends Component {
                 <ReactSwipe
                     className="carousel"
                     swipeOptions={{
-                        startSlide: 0,
+                        startSlide: this.state.startSlide,
                         continuous: false,
                         disableScroll: true,
                         transitionEnd: (index, elem) => {
                             this.handleSwipe(index);
+                            this.state.startSlide = index
                         }
                     }}
                     ref={el => (reactSwipeEl = el)}
