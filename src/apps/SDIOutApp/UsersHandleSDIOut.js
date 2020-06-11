@@ -41,8 +41,8 @@ class UsersHandleSDIOut extends Component {
                 }
             })
         }
-        if(g && JSON.stringify(g) !== JSON.stringify(prevProps.g)) {
-            let num_videos = g && g.users.filter(u =>  u.camera && u.role === "user").length
+        if(g && g.users && JSON.stringify(g) !== JSON.stringify(prevProps.g)) {
+            let num_videos = g.users.filter(u => u.camera && u.role === "user").length
             if(num_videos > 25) num_videos = 25;
             this.setState({num_videos})
         }
