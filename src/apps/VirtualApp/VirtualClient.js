@@ -81,7 +81,6 @@ class VirtualClient extends Component {
     support: false,
     monitoringData: new MonitoringData(),
     connectionStatus: '',
-    connectionStatusMessage: '',
     numberOfVirtualUsers: localStorage.getItem('number_of_virtual_users') || '1',
     currentLayout: localStorage.getItem('currentLayout') || 'double',
     attachedSource: true,
@@ -117,7 +116,7 @@ class VirtualClient extends Component {
         this.state.localVideoTrack,
         this.state.user);
       this.state.monitoringData.setOnStatus((connectionStatus, connectionStatusMessage) => {
-        this.setState({connectionStatus, connectionStatusMessage});
+        this.setState({connectionStatus});
       });
     }
   }
@@ -1199,11 +1198,7 @@ class VirtualClient extends Component {
         <div className="video__title">
           {muted ? <Icon name="microphone slash" size="small" color="red" style={{verticalAlign: 'middle'}} /> : ''}
           <div style={{display: 'inline-block', verticalAlign: 'middle'}}>{user ? user.display : ''}</div>
-          <Popup
-            trigger={<Image src={this.connectionIcon()} style={{height: '1em', objectFit: 'contain', display: 'inline-block', verticalAlign: 'middle', marginLeft: '0.4em'}} />}
-            content={this.state.connectionStatusMessage || '...'}
-            hideOnScroll
-          />
+          <Image src={this.connectionIcon()} style={{height: '1em', objectFit: 'contain', display: 'inline-block', verticalAlign: 'middle', marginLeft: '0.4em'}} />
         </div>
       </div>
       <svg className={classNames('nowebcam', {'hidden': !cammuted})} viewBox="0 0 32 18"

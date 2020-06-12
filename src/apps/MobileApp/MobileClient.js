@@ -6,7 +6,7 @@ import ReactSwipe from 'react-swipe';
 
 import Dots from 'react-carousel-dots';
 import { right } from 'semantic-ui-react';
-import {Button, Icon, Input, Label, Menu, Popup, Select} from "semantic-ui-react";
+import {Button, Icon, Image, Input, Label, Menu, Popup, Select} from "semantic-ui-react";
 import {checkNotification, geoInfo, getMedia, getMediaStream, initJanus, micLevel, testMic, wkliLeave} from "../../shared/tools";
 import './MobileClient.scss'
 import './MobileConteiner.scss'
@@ -20,12 +20,16 @@ import platform from "platform";
 import { isMobile } from 'react-device-detect';
 
 import {Monitoring} from '../../components/Monitoring';
-import {MonitoringData} from '../../shared/MonitoringData';
+import {MonitoringData, LINK_STATE_INIT, LINK_STATE_GOOD, LINK_STATE_MEDIUM, LINK_STATE_WEAK} from '../../shared/MonitoringData';
 import api from '../../shared/Api';
 import {kc} from "../../components/UserManager";
 import LoginPage from "../../components/LoginPage";
 import {Profile} from "../../components/Profile";
 import GxyJanus from "../../shared/janus-utils";
+import connectionOrange from '../VirtualApp/connection-orange.png';
+import connectionWhite from '../VirtualApp/connection-white.png';
+import connectionRed from '../VirtualApp/connection-red.png';
+import connectionGray from '../VirtualApp/connection-gray.png';
 
 class MobileClient extends Component {
 
@@ -79,6 +83,7 @@ class MobileClient extends Component {
         support: false,
         card: 0,
         monitoringData: new MonitoringData(),
+        connectionStatus: '',
         appInitialized: false,
         appInitError: null,
         net_status: 1,
@@ -96,6 +101,9 @@ class MobileClient extends Component {
           this.state.localAudioTrack,
           this.state.localVideoTrack,
           this.state.user);
+        this.state.monitoringData.setOnStatus((connectionStatus, connectionStatusMessage) => {
+          this.setState({connectionStatus});
+        });
       }
     };
 
@@ -1272,6 +1280,21 @@ class MobileClient extends Component {
             return ({ key: i, text: label, value: deviceId})
         });
 
+        let connectionIcon = () => {
+          switch (this.state.connectionStatus) {
+            case LINK_STATE_INIT:
+              return connectionGray;
+            case LINK_STATE_GOOD:
+              return connectionWhite;
+            case LINK_STATE_MEDIUM:
+              return connectionOrange;
+            case LINK_STATE_WEAK:
+              return connectionRed;
+            default:
+              return connectionGray;
+          }
+        }
+
         let videos = this.state.showed_mids.map((mid,i) => {
             if(mid && i <3) {
                 if(mid.active) {
@@ -1451,7 +1474,9 @@ class MobileClient extends Component {
                                                                 ''
                                                             }
                                                             <div className="video__title">
-                                                                {muted ? <Icon name="microphone slash" size="small" color="red"/> : ''}{user ? user.display : ""}
+                                                                {muted ? <Icon name="microphone slash" size="small" color="red"/> : ''}
+                                                                <div style={{display: 'inline-block', verticalAlign: 'middle'}}>{user ? user.display : ""}</div>
+                                                                <Image src={connectionIcon()} style={{height: '1em', objectFit: 'contain', display: 'inline-block', verticalAlign: 'middle', marginLeft: '0.4em'}} />
                                                             </div>
                                                         </div>
                                                         <svg className={classNames('nowebcam',{'hidden':!cammuted})} viewBox="0 0 32 18" preserveAspectRatio="xMidYMid meet" >
