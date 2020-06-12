@@ -14,6 +14,13 @@ export const setLanguage = value => {
   localStorage.setItem('lng', value);
 };
 
+export const kcLocale = lang => {
+  if (lang == 'he') {
+    return 'il';
+  }
+  return lang;
+};
+
 export const languagesOptions = [
   { key: 'en', value: 'en', text: 'English', },
   { key: 'es', value: 'es', text: 'Español', },

@@ -2,7 +2,7 @@ import React, { Component,Fragment } from 'react';
 import {kc, getUser} from './UserManager';
 import {Button, Container, Divider, Grid, Header, Image, Menu, Message, Segment, Select,} from 'semantic-ui-react';
 import bblogo from './logo.png';
-import {languagesOptions, setLanguage} from "../i18n/i18n";
+import {languagesOptions, setLanguage, kcLocale} from "../i18n/i18n";
 import {withTranslation} from "react-i18next";
 import {Terms} from "./Terms";
 import {Profile} from "./Profile";
@@ -33,7 +33,7 @@ class LoginPage extends Component {
 
     userLogin = () => {
         this.setState({disabled: true, loading: true});
-        kc.login({redirectUri: window.location.href, locale: this.props.i18n.language});
+        kc.login({redirectUri: window.location.href, locale: kcLocale(this.props.i18n.language)});
     };
 
     render() {
