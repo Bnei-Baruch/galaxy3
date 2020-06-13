@@ -88,7 +88,6 @@ class MobileClient extends Component {
         appInitError: null,
         net_status: 1,
         keepalive: null,
-        startSlide:0
     };
 
     componentDidUpdate(prevProps, prevState) {
@@ -102,7 +101,9 @@ class MobileClient extends Component {
           this.state.localVideoTrack,
           this.state.user);
         this.state.monitoringData.setOnStatus((connectionStatus, connectionStatusMessage) => {
-          this.setState({connectionStatus});
+          if (this.state.connectionStatus !== connectionStatus) {
+            this.setState({connectionStatus});
+          }
         });
       }
     };
@@ -1361,12 +1362,10 @@ class MobileClient extends Component {
                 <ReactSwipe
                     className="carousel"
                     swipeOptions={{
-                        startSlide: this.state.startSlide,
                         continuous: false,
                         disableScroll: true,
                         transitionEnd: (index, elem) => {
                             this.handleSwipe(index);
-                            this.state.startSlide = index
                         }
                     }}
                     ref={el => (reactSwipeEl = el)}
