@@ -210,7 +210,6 @@ class UsersHandleSDIOut extends Component {
 
                 } else if(msg["unpublished"] !== undefined && msg["unpublished"] !== null) {
                     let unpublished = msg["unpublished"];
-                    console.log(`[SDIOut] [room ${roomid}] Publisher left`, unpublished);
                     if(unpublished === 'ok') {
                         this.state.videoroom.hangup();
                         return;
@@ -363,7 +362,7 @@ class UsersHandleSDIOut extends Component {
       //const q = (<b style={{color: 'red', fontSize: '20px', fontFamily: 'Verdana', fontWeight: 'bold'}}>?</b>);
 
       let program_feeds = feeds.map((feed) => {
-          let camera = !!g.users.find(u => feed.id === u.rfid && u.camera);
+          let camera = g && g.users && !!g.users.find(u => feed.id === u.rfid && u.camera);
           if(feed) {
               let id = feed.id;
               let talk = feed.talk;
