@@ -1124,7 +1124,7 @@ class MobileClient extends Component {
             if(janus) janus.destroy();
             this.setState({
                 cammuted: false, muted: false, question: false,
-                feeds: [], mids: [],
+                feeds: [], mids: [], showed_mids:[],
                 localAudioTrack: null, localVideoTrack: null, upval: null,
                 remoteFeed: null, videoroom: null, protocol: null, janus: null,
                 delay: reconnect,
