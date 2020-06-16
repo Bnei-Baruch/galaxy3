@@ -20,10 +20,8 @@
     "react-new-window": "Hinaser/react-new-window#npm-fix-external-font-not-loaded",
     "react-rangeslider": "^2.2.0",
     "react-scripts": "3.4.0",
-    "react-swipe": "^6.0.4",
     "semantic-ui-css": "^2.4.0",
     "semantic-ui-react": "^0.88.2",
-    "swipe-js-iso": "^2.1.5",
     "ua-parser-js": "^0.7.21",
     "webrtc-adapter": "^6.4.0"
   },
