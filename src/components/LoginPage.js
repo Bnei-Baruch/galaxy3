@@ -126,7 +126,7 @@ class LoginPage extends Component {
                 <Container text textAlign='center' style={{direction, marginTop: '20px', fontSize: '1.5em'}}>
                   <Image src={internet} style={{margin: 'auto', width: '60px'}}></Image>
                   <p style={{marginTop: '15px'}}>{t('loginPage.intro')}</p>
-                  <Button basic color='red' size='large' onClick={() => window.open('https://membership.kli.one/', '_blank')}>{t('loginPage.userFee')}</Button>
+                  <Button basic color='red' size='large' onClick={() => window.open('https://virtualhome.kli.one', '_blank')}>{t('loginPage.userFee')}</Button>
                 </Container>
                 <Terms />
             </Fragment>
