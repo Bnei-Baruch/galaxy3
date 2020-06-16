@@ -1,6 +1,6 @@
-import { Janus } from '../../lib/janus';
-import {gxycol, trllang, NO_VIDEO_OPTION_VALUE,} from '../../shared/consts';
-import GxyJanus from "../../shared/janus-utils";
+import { Janus } from '../lib/janus';
+import {gxycol, trllang, NO_VIDEO_OPTION_VALUE,} from './consts';
+import GxyJanus from "./janus-utils";
 
 export default class VirtualStreamingJanus {
 
