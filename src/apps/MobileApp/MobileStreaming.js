@@ -146,6 +146,7 @@ class MobileStreaming extends Component {
                 this.setState({audio_stream: stream});
                 Janus.log("Created remote audio stream:", stream);
                 let audio = this.refs.remoteAudio;
+                audio.volume = 0.1;
                 Janus.attachMediaStream(audio, stream);
             },
             oncleanup: () => {
