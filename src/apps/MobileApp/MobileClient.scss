@@ -22,10 +22,10 @@
         padding: .8rem .5rem;
         flex-wrap:wrap;
         @include landscape {
-            font-size: 21px;
+            font-size: 1.7rem;
         }
         @include portrait {
-            font-size: 31px;
+            font-size: 2.5rem;
         }
 
         & > .menu,
@@ -35,6 +35,10 @@
 
         .menu:nth-child(2) {
             flex: 1 0 auto;
+        }
+
+        .ui.selection.dropdown {
+            min-width: 12em;
         }
     }
 
@@ -60,29 +64,19 @@
 
 /* TESTING */
 
-.select_room.ui.selection.dropdown .menu {
-    min-width: calc(208% + 3px);
-}
-
 .select_room.ui.selection.dropdown .menu>.item {
     @include landscape {
         font-size: 40px;
         height: 100px;
     }
     @include portrait {
-        font-size: 70px;
-        height: 150px;
+        font-size: 3rem;
+        height: 5.5rem;
     }
 }
 
 .select_room.ui.selection.dropdown .menu {
     max-height: 80rem;
-}
-
-.select_device.ui.selection.dropdown .menu>.item {
-    @include portrait {
-        font-size: 50px;
-    }
 }
 
 .ui.mini.menu {
@@ -96,19 +90,58 @@
 
 .select_device {
     @include landscape {
-        font-size: 25px;
+        font-size: 1.96rem;
     }
     @include portrait {
-        font-size: 50px;
+        font-size: 3.92rem;
     }
 }
 
-.ui.bottom.right.popup {
+.select_device .ui.dropdown .menu {
     @include landscape {
-        font-size: 40px;
+        font-size: 1.5rem;
+        padding: 1rem;
     }
     @include portrait {
-        font-size: 60px;
+        font-size: 3rem;
+        padding: 2rem;
+    }
+
+    & > .item {
+        @include landscape {
+            font-size: 1.5rem;
+            padding: 0.75rem !important;
+        }
+        @include portrait {
+            font-size: 3rem;
+            padding: 1.5rem !important;
+        }
+    }
+}
+
+.select_device.ui.selection.dropdown .menu>.item {
+    @include landscape {
+        font-size: 1.5rem;
+        padding: 0.75rem !important;
+    }
+    @include portrait {
+        font-size: 3rem;
+        padding: 1.5rem !important;
+    }
+}
+
+
+.ui.bottom.right.popup,
+.ui.bottom.left.popup,
+.ui.top.right.popup,
+.ui.top.left.popup,
+{
+    @include landscape {
+        font-size: 1rem;
+    }
+    @include portrait {
+        font-size: 2rem;
+        padding: 1rem;
     }
 }
 
@@ -210,7 +243,7 @@
 }
 
 .ui.massive.menu {
-    font-size: 1.28571429rem;
+    font-size: 2rem;
 }
 
 
@@ -272,4 +305,17 @@
     padding: 0px 10px;
     z-index: 2147483647;
     float: right !important;
+}
+
+
+/* Dirty fixes */
+.login-icon i {
+    width: 100%;
+    font-size: 1.5em;
+    padding-top: 0.16em;
+}
+
+.mediaplayer__volume i {
+  color: white;
+  font-size: 1.5em;
 }
