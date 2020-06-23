@@ -20,11 +20,13 @@ import classNames from "classnames";
 import './BroadcastStream.scss';
 import Volume from './Volume'
 import {withTranslation} from "react-i18next";
+import { isIOS } from 'react-device-detect';
 
 class VirtualStreaming extends Component {
   constructor(props) {
     super(props);
     this.handleFullScreenChange = this.handleFullScreenChange.bind(this);
+    // this.videoStateChanged = this.videoStateChanged.bind(this);
   }
 
   state = {
@@ -35,10 +37,32 @@ class VirtualStreaming extends Component {
     cssFixInterval: null,
     talking: false,
     fullScreen: false,
+		// videoStateChanged: 0,
   };
 
+	/*videoStateChanged(e) {
+		console.log('videoStateChanged', e);
+		if (e && e.type === 'pause' && this.props.audio) {
+			this.props.audio.pause();
+		}
+		if (e && e.type === 'play' && this.props.audio) {
+			this.props.audio.play();
+		}
+		this.setState({videoStateChanged: this.state.videoStateChanged + 1});
+	}*/
+
   videoRef(ref) {
-    this.props.shidurJanus.attachVideoStream(ref);
+		if (ref && ref !== this.video) {
+			/*if (this.video) {
+				this.video.removeEventListener('pause', this.videoStateChanged);
+				this.video.removeEventListener('play', this.videoStateChanged);
+			}*/
+			this.video = ref;
+			/*this.video.addEventListener('pause', this.videoStateChanged);
+			this.video.addEventListener('play', this.videoStateChanged);*/
+			this.props.shidurJanus.attachVideoStream(ref);
+			// this.setState({videoStateChanged: this.state.videoStateChanged + 1});
+		}
   }
 
   setVideoWrapperRef(ref) {
@@ -95,13 +119,15 @@ class VirtualStreaming extends Component {
 				this.videoWrapper.ownerDocument.mozCancelFullScreen();
 			}
     } else {
-      if (this.videoWrapper.requestFullScreen) {
-        this.videoWrapper.requestFullScreen();
-      } else if (this.videoWrapper.webkitRequestFullScreen) {
-        this.videoWrapper.webkitRequestFullScreen();
+      if (this.videoWrapper.requestFullscreen) {
+        this.videoWrapper.requestFullscreen();
+      } else if (this.videoWrapper.webkitRequestFullscreen) {
+        this.videoWrapper.webkitRequestFullscreen();
       } else if (this.videoWrapper.mozRequestFullScreen) {
         this.videoWrapper.mozRequestFullScreen();
-      }
+      } else if (this.video.webkitEnterFullscreen) {
+				this.video.webkitEnterFullscreen();
+			}
     }
   };
 
@@ -115,9 +141,33 @@ class VirtualStreaming extends Component {
     this.props.shidurJanus.setAudio(audios, text);
   }
 
+	localToggleShidur() {
+		const {
+		//	shidur,
+		//	shidurLoading,
+			toggleShidur,
+		} = this.props;
+
+		/*if (!shidurLoading && shidur && this.video && this.video.paused) {
+			this.video.play();
+			if (this.props.audio) {
+				this.props.audio.play();
+			}
+		} else {*/
+			toggleShidur();
+		//}
+	}
+
+	/*isForcedPaused() {
+		const {
+			shidur,
+			shidurLoading,
+		} = this.props;
+	  return !shidurLoading && shidur && this.video && this.video.paused;
+	}*/
+
   render() {
     const {
-      toggleShidur,
 			shidur,
 			shidurLoading,
       shidurJanus,
@@ -144,7 +194,7 @@ class VirtualStreaming extends Component {
           <div className="video video--broadcast" key='v0' id='video0'
                style={{border: 'none', height: '39.3em'}}>
             <div className="center-play">
-							{!shidurLoading && !shidur && <Icon name="play" className="center-play" onClick={toggleShidur} />}
+							{!shidurLoading && !shidur && <Icon name="play" className="center-play" onClick={() => this.localToggleShidur()} />}
 						</div>
             {talking && <Label className='talk' size='massive' color='red'><Icon name='microphone' />On</Label>}
             <div className='mediaplayer'>
@@ -159,7 +209,8 @@ class VirtualStreaming extends Component {
             </div>
           </div>
           <Menu icon='labeled' inverted className={classNames('toolbar', {'full-screen' : fullScreen})}>
-            <Menu.Item onClick={toggleShidur} disabled={shidurLoading || !shidur}>
+            <Menu.Item onClick={() => this.localToggleShidur()}
+											 disabled={shidurLoading || !shidur}>
               <Icon name="stop" />
             </Menu.Item>
             <Menu.Item>
@@ -225,9 +276,9 @@ class VirtualStreaming extends Component {
                 })}
               </Dropdown.Menu>
             </Dropdown>
-            <Menu.Item>
+            {!isIOS && <Menu.Item>
               <Icon name={fullScreen ? 'compress' : 'expand'} onClick={this.toggleFullScreen} style={{fontSize: '1.5em'}}/>
-            </Menu.Item>
+            </Menu.Item>}
           </Menu>
         </div>
       </Fragment>

@@ -263,6 +263,8 @@
 	}
 
   &.ui.labeled.icon.menu .audio-selection {
+		min-width: 8em;
+
 		& .menu .item {
 			font-size: 4rem !important;
 		}
