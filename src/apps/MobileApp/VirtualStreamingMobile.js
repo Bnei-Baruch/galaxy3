@@ -6,6 +6,7 @@ import {
   Header,
   Icon,
   Label,
+	Modal,
   List,
   Menu,
   Popup,
@@ -38,6 +39,8 @@ class VirtualStreaming extends Component {
     talking: false,
     fullScreen: false,
 		// videoStateChanged: 0,
+		videoSelectionOpen: false,
+		audioSelectionOpen: false,
   };
 
 	/*videoStateChanged(e) {
@@ -132,12 +135,12 @@ class VirtualStreaming extends Component {
   };
 
   setVideo(videos) {
-    this.setState({videos});
+    this.setState({videos, videoSelectionOpen: false});
     this.props.shidurJanus.setVideo(videos);
   }
 
   setAudio(audios, text) {
-    this.setState({audios});
+    this.setState({audios, audioSelectionOpen: false});
     this.props.shidurJanus.setAudio(audios, text);
   }
 
@@ -179,6 +182,8 @@ class VirtualStreaming extends Component {
       room,
       talking,
       videos,
+			videoSelectionOpen,
+			audioSelectionOpen,
     } = this.state;
 
     if (!room) {
@@ -216,66 +221,61 @@ class VirtualStreaming extends Component {
             <Menu.Item>
               <Volume media={shidurJanus.audioElement} />
             </Menu.Item>
-            <Dropdown
-              upward
-              floating
-              scrolling
-              icon={null}
-              selectOnBlur={false}
-              trigger={<Menu.Item name={video_option ?
-                            (video_option.value === NO_VIDEO_OPTION_VALUE ?
-                              t(video_option.description) : video_option.description) : ''} />}
-              className="video-selection">
-              <Dropdown.Menu className='controls__dropdown'>
+						{!fullScreen && <Modal className="video-selection"
+									 open={videoSelectionOpen}
+									 onClose={() => this.setState({videoSelectionOpen: false})}
+									 trigger={<Menu.Item onClick={() => this.setState({videoSelectionOpen: true})}
+									 				   				   name={video_option ?
+																			 			 (video_option.value === NO_VIDEO_OPTION_VALUE ?
+																						 	t(video_option.description) : video_option.description) : ''} />}
+									 closeIcon>
+							<List>
                 {videos_options2.map((option, i) => {
-                  if (option.divider === true) return (<Dropdown.Divider key={i}/>);
+                  if (option.divider === true) return (<Divider key={i}/>);
                   return (
-                    <Dropdown.Item
-											key={i}
-											text={t(option.text)}
-											selected={option.value === videos}
-											description={t(option.description)}
-											onClick={() => this.setVideo(option.value)} />
+                    <List.Item key={i} onClick={() => this.setVideo(option.value)}
+															 className={classNames({'selected': option.value === videos})}>
+											<div>{t(option.text)}</div>
+											<div className="description">{t(option.description)}</div>
+										</List.Item>
 									);
 								})}
-              </Dropdown.Menu>
-            </Dropdown>
-            <Dropdown
-              upward
-              floating
-              scrolling
-              icon={null}
-              selectOnBlur={false}
-              trigger={<Menu.Item icon={audio_option.icon ?audio_option.icon : ''} name={audio_option.text ? `${audio_option.text}` : ''} />}
-              className="audio-selection"
-              >
-              <Dropdown.Menu className='controls__dropdown'>
+							</List>
+						</Modal>}
+						{!fullScreen && <Modal className="audio-selection"
+									 open={audioSelectionOpen}
+									 onClose={() => this.setState({audioSelectionOpen: false})}
+									 trigger={<Menu.Item className="audio-selection"
+									 										 onClick={() => this.setState({audioSelectionOpen: true})}
+									 									   icon={audio_option.icon ?audio_option.icon : ''}
+																			 name={audio_option.text ? `${audio_option.text}` : ''} />}
+									 closeIcon>
+							<List>
                 {audiog_options2.map((option, i) => {
-                  if (option.divider === true) return (<Dropdown.Divider key={i}/>);
+                  if (option.divider === true) return (<Divider key={i}/>);
                   if (option.header === true) return (
-                    <Dropdown.Header className='ui blue' icon={option.icon} key={i}>
+                    <List.Header className='ui blue' icon={option.icon} key={i}>
                       <Icon name={option.icon}/>
                       <div>
                       {t(option.text)}
                       <br/>
                       {(option.description ? <Header as='span' size='tiny' color='grey' content={t(option.description)} /> : '')}
                       </div>
-                    </Dropdown.Header>
+                    </List.Header>
                   );
                   return (
-                    <Dropdown.Item
-                      key={i}
-                      text={option.text}
-                      selected={option.value === audios}
-                      //flag={option.flag}
-                      description={option.description}
-                      action={option.action}
-                      onClick={() => this.setAudio(option.value, option.eng_text)}
-                    />
+                    <List.Item
+												key={i}
+												className={classNames({'selected': option.value === audios})}
+												//flag={option.flag}
+												onClick={() => this.setAudio(option.value, option.eng_text)}>
+                      <div>{option.text}</div>
+                      <div className="description">{option.description}</div>
+										</List.Item>
                   );
                 })}
-              </Dropdown.Menu>
-            </Dropdown>
+							</List>
+						</Modal>}
             {!isIOS && <Menu.Item>
               <Icon name={fullScreen ? 'compress' : 'expand'} onClick={this.toggleFullScreen} style={{fontSize: '1.5em'}}/>
             </Menu.Item>}

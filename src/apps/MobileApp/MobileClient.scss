@@ -12,21 +12,36 @@
 
 .vclient {
     width: 100vw;
-    height: 100vh;
     display: flex;
     flex-direction: column;
+
+		@include portrait {
+			height: calc(100vh - 13.2em);
+		}
 
     &__toolbar {
         display: flex;
         align-items: center;
-        padding: .8rem .5rem;
         flex-wrap:wrap;
         @include landscape {
-            font-size: 1.7rem;
+            font-size: 1.6rem;
+						padding: 0;
         }
         @include portrait {
             font-size: 3rem;
+						padding: .8rem .5rem;
         }
+
+				&.bottom {
+					background-color: rgb(125, 125, 125);
+					position: sticky;
+				  bottom: 0;
+					z-index: 8;
+
+					@include portrait {
+						padding-bottom: 1em;
+					}
+				}
 
         & > .menu,
         & > .input {
@@ -38,7 +53,12 @@
         }
 
         .ui.selection.dropdown {
+					@include landscape {
+            min-width: 15em;
+					}
+					@include portrait {
             min-width: 10em;
+					}
         }
     }
 
@@ -50,15 +70,15 @@
     }
 
     &__main-wrapper {
-        position: absolute;
-        height: 100%;
         width: 100%;
         display: flex;
         // border: 2px solid red;
+        @include landscape {
+            height: 36em;
+        }
         @include portrait {
             flex-direction: column;
         }
-
     }
 }
 
@@ -66,8 +86,8 @@
 
 .select_room.ui.selection.dropdown .menu>.item {
     @include landscape {
-        font-size: 40px;
-        height: 100px;
+        font-size: 2rem;
+        height: 4.5rem;
     }
     @include portrait {
         font-size: 4rem;
@@ -76,7 +96,12 @@
 }
 
 .select_room.ui.selection.dropdown .menu {
-    max-height: 80rem;
+		@include landscape {
+			max-height: 31rem;
+		}
+		@include portrait {
+			max-height: 80rem;
+		}
 		min-width: 18em;
 }
 
@@ -90,47 +115,46 @@
 }
 
 .select_device {
+	&.ui.button {
     @include landscape {
-        font-size: 1.96rem;
+        font-size: 2rem;
+				min-width: 28rem;
     }
     @include portrait {
-        font-size: 3.92rem;
+        font-size: 4rem;
+				width: 55rem;
     }
+
+		.dropdown .menu>.item {
+			@include landscape {
+					font-size: 2rem;
+					padding: 0.75rem !important;
+			}
+			@include portrait {
+					font-size: 4rem;
+					padding: 1.5rem !important;
+			}
+		}
+	}
+
+	&.selection.dropdown {
+		@include landscape {
+			font-size: 2rem;
+		}
+		@include portrait {
+			font-size: 4rem;
+		}
+
+		.menu .item {
+			@include landscape {
+				font-size: 2rem;
+			}
+			@include portrait {
+				font-size: 4rem;
+			}
+		}
+	}
 }
-
-.select_device .ui.dropdown .menu {
-    @include landscape {
-        font-size: 1.5rem;
-        padding: 1rem;
-    }
-    @include portrait {
-        font-size: 3rem;
-        padding: 2rem;
-    }
-
-    & > .item {
-        @include landscape {
-            font-size: 1.5rem;
-            padding: 0.75rem !important;
-        }
-        @include portrait {
-            font-size: 3rem;
-            padding: 1.5rem !important;
-        }
-    }
-}
-
-.select_device.ui.selection.dropdown .menu>.item {
-    @include landscape {
-        font-size: 1.5rem;
-        padding: 0.75rem !important;
-    }
-    @include portrait {
-        font-size: 3rem;
-        padding: 1.5rem !important;
-    }
-}
-
 
 .ui.bottom.right.popup,
 .ui.bottom.left.popup,
@@ -244,7 +268,12 @@
 }
 
 .ui.massive.menu {
-    font-size: 2rem;
+	@include landscape {
+			font-size: 1rem;
+	}
+	@include portrait {
+			font-size: 2rem;
+	}
 }
 
 
@@ -312,8 +341,13 @@
 /* Dirty fixes */
 .login-icon i {
     width: 100%;
-    font-size: 1.5em;
-    padding-top: 0.16em;
+		@include landscape {
+			font-size: 1em;
+		}
+		@include portrait {
+			font-size: 1.5em;
+			padding-top: 0.16em;
+		}
 }
 
 .mediaplayer__volume i {

@@ -1384,7 +1384,7 @@ class MobileClient extends Component {
                            on='click'
                            position='bottom right'>
                         <Popup.Content>
-                            <Button className="select_device" size="massive" style={{width: '55rem', fontSize: '3.92rem'}}>
+                            <Button className="select_device" size="massive">
                                 <Icon name="user circle"/>
                                 <Profile title={user ? user.display : ''} kc={kc} />
                             </Button>
@@ -1421,16 +1421,16 @@ class MobileClient extends Component {
                   </Menu>
                 </div>
 
-          <div>
-          {room !== '' ?
-            <VirtualStreamingMobile
-							shidur={shidur}
-							shidurLoading={shidurLoading}
-              shidurJanus={shidurJanus}
-              toggleShidur={this.toggleShidur}
-							audio={this.state.shidurJanus && this.state.shidurJanus.audioElement}
-            /> : null}
-          </div>
+								<div>
+								{room !== '' ?
+									<VirtualStreamingMobile
+										shidur={shidur}
+										shidurLoading={shidurLoading}
+										shidurJanus={shidurJanus}
+										toggleShidur={this.toggleShidur}
+										audio={this.state.shidurJanus && this.state.shidurJanus.audioElement}
+									/> : null}
+								</div>
 
                 <div basic className="vclient__main">
                     <div className="vclient__main-wrapper">
@@ -1497,7 +1497,7 @@ class MobileClient extends Component {
             { !(new URL(window.location.href).searchParams.has('lost')) ? null :
                 (<Label color={net_status === 2 ? 'yellow' : net_status === 3 ? 'red' : 'green'} icon='wifi' corner='right' />)}
           </div>
-                <div className="vclient__toolbar" style={{backgroundColor: 'rgb(125, 125, 125)', paddingBottom: '1em', position: 'sticky', bottom: 0, zIndex: 8}}>
+                <div className={classNames('vclient__toolbar', 'bottom')}>
                     <Menu icon='labeled' size='massive' secondary>
                         <Menu.Item disabled={!localAudioTrack} onClick={this.micMute} className="mute-button">
                             <canvas className={muted ? 'hidden' : 'vumeter'} ref="canvas1" id="canvas1" width="15" height="35" style={{zIndex: 5}} />
