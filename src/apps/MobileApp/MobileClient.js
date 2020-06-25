@@ -86,6 +86,7 @@ class MobileClient extends Component {
         shidur: true,
         shidurLoading: true,
         shidurJanus: new VirtualStreamingJanus(() => this.shidurInitialized()),
+        talking: false,
     };
 
     shidurInitialized() {
@@ -136,6 +137,7 @@ class MobileClient extends Component {
             window.location = '/user/';
             return;
         }
+        this.state.shidurJanus.onTalking((talking) => this.setState({talking}));
     };
 
     componentWillUnmount() {
@@ -1240,6 +1242,7 @@ class MobileClient extends Component {
         media,
         monitoringData,
         muted,
+        myid,
         name,
         net_status,
         question,
@@ -1248,11 +1251,13 @@ class MobileClient extends Component {
         selected_room,
         shidur,
         shidurLoading,
+        talking,
         user,
         shidurJanus,
       } = this.state;
     
       const {video_device} = media.video;
+      const {audio_device} = media.audio;
 
       if (appInitError) {
           return (
@@ -1359,6 +1364,8 @@ class MobileClient extends Component {
           return true;
       });
 
+      const otherFeedHasQuestion = this.state.feeds.some(({question, id}) => question && id !== myid);
+      const questionDisabled = !audio_device || !localAudioTrack || delay || otherFeedHasQuestion;
       const login = (<LoginPage user={user} checkPermission={this.checkPermission} />);
       const openVideoDisabled = video_device === null || !localAudioTrack || delay;
       const content = (
@@ -1390,9 +1397,9 @@ class MobileClient extends Component {
                             </Button>
                             <Select className='select_device'
                                     disabled={!!room}
-                                    error={!media.audio.audio_device}
+                                    error={!audio_device}
                                     placeholder={t('oldClient.selectDevice')}
-                                    value={media.audio.audio_device}
+                                    value={audio_device}
                                     options={adevices_list}
                                     onChange={(e, { value }) => this.setAudioDevice(value)} />
                             <Select className='select_device'
@@ -1419,6 +1426,11 @@ class MobileClient extends Component {
                         </Popup.Content>
                     </Popup>
                   </Menu>
+                </div>
+
+                <div style={{height: '0px', zIndex: 1, position: 'sticky', top: 0}}>
+                  {talking && <Label className='talk' size='massive' color='red' style={{margin: '0.4rem'}}>
+                    <Icon name='microphone' />On</Label>}
                 </div>
 
 								<div>
@@ -1497,26 +1509,29 @@ class MobileClient extends Component {
             { !(new URL(window.location.href).searchParams.has('lost')) ? null :
                 (<Label color={net_status === 2 ? 'yellow' : net_status === 3 ? 'red' : 'green'} icon='wifi' corner='right' />)}
           </div>
-                <div className={classNames('vclient__toolbar', 'bottom')}>
-                    <Menu icon='labeled' size='massive' secondary>
-                        <Menu.Item disabled={!localAudioTrack} onClick={this.micMute} className="mute-button">
-                            <canvas className={muted ? 'hidden' : 'vumeter'} ref="canvas1" id="canvas1" width="15" height="35" style={{zIndex: 5}} />
-                            <Icon color={muted ? "red" : "green"} name={!muted ? "microphone" : "microphone slash"} style={{zIndex: 8}}/>
-                            <span style={{zIndex: 8, color: !localAudioTrack ? 'rgba(40, 40, 40, 0.3)' : 'white'}}>
-                              {t(muted ? 'oldClient.unMute' : 'oldClient.mute')}
-                            </span>
-                        </Menu.Item>
-                        <Menu.Item disabled={openVideoDisabled} onClick={this.camMute}>
-                            <Icon name={!cammuted ? "eye" : "eye slash"} style={{color: openVideoDisabled ? '' : (cammuted ? 'red' : 'white')}} />
-                            <span style={{color: openVideoDisabled ? 'rgba(40, 40, 40, 0.3)' : 'white'}}>
-                              {t(cammuted ? 'oldClient.startVideo' : 'oldClient.stopVideo')}
-                            </span>
-                        </Menu.Item>
-                        <Monitoring monitoringData={monitoringData} />
-                    </Menu>
-                </div>
-
-
+          <div className={classNames('vclient__toolbar', 'bottom')}>
+              <Menu icon='labeled' size='massive' secondary>
+                  <Menu.Item disabled={!localAudioTrack} onClick={this.micMute} className="mute-button">
+                      <canvas className={muted ? 'hidden' : 'vumeter'} ref="canvas1" id="canvas1" width="15" height="35" style={{zIndex: 5}} />
+                      <Icon color={muted ? "red" : "green"} name={!muted ? "microphone" : "microphone slash"} style={{zIndex: 8}}/>
+                      <span style={{zIndex: 8}}>
+                        {t(muted ? 'oldClient.unMute' : 'oldClient.mute')}
+                      </span>
+                  </Menu.Item>
+                  <Menu.Item disabled={openVideoDisabled} onClick={this.camMute}>
+                      <Icon name={!cammuted ? "eye" : "eye slash"}
+                            style={{color: openVideoDisabled ? null : (cammuted ? 'red' : 'white')}} />
+                      <span>{t(cammuted ? 'oldClient.startVideo' : 'oldClient.stopVideo')}</span>
+                  </Menu.Item>
+                  <Menu.Item disabled={questionDisabled} onClick={this.handleQuestion}>
+                    <Icon name='question' style={{color: question ? 'green' : null}} />
+                    <span>
+                      {t('oldClient.askQuestion')}
+                    </span>
+                  </Menu.Item>
+                  <Monitoring monitoringData={monitoringData} />
+              </Menu>
+          </div>
         </div>
       );
 

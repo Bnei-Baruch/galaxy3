@@ -36,7 +36,6 @@ class VirtualStreaming extends Component {
     room: Number(localStorage.getItem('room')) || null,
     user: {},
     cssFixInterval: null,
-    talking: false,
     fullScreen: false,
 		// videoStateChanged: 0,
 		videoSelectionOpen: false,
@@ -81,7 +80,6 @@ class VirtualStreaming extends Component {
   }
 
   componentDidMount() {
-    this.props.shidurJanus.onTalking((talking) => this.setState({talking}));
     this.setState({cssFixInterval: setInterval(() => this.cssFix(), 500)});
   };
 
@@ -180,7 +178,6 @@ class VirtualStreaming extends Component {
       audios,
       fullScreen,
       room,
-      talking,
       videos,
 			videoSelectionOpen,
 			audioSelectionOpen,
@@ -201,7 +198,6 @@ class VirtualStreaming extends Component {
             <div className="center-play">
 							{!shidurLoading && !shidur && <Icon name="play" className="center-play" onClick={() => this.localToggleShidur()} />}
 						</div>
-            {talking && <Label className='talk' size='massive' color='red'><Icon name='microphone' />On</Label>}
             <div className='mediaplayer'>
               <video ref={(ref) => this.videoRef(ref)}
                      id="remoteVideo"

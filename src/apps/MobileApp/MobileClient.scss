@@ -41,6 +41,13 @@
 					@include portrait {
 						padding-bottom: 1em;
 					}
+
+          .ui.menu a.item {
+            color: white;
+            &.disabled {
+              color: rgba(40, 40, 40, 0.3);
+            }
+          }
 				}
 
         & > .menu,
@@ -353,4 +360,10 @@
 .mediaplayer__volume i {
   color: white;
   font-size: 1.5em;
+}
+
+.talk {
+  @include portrait {
+    font-size: 3rem !important;
+  }
 }
