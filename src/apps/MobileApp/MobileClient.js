@@ -137,7 +137,7 @@ class MobileClient extends Component {
             window.location = '/user/';
             return;
         }
-        this.state.shidurJanus.onTalking((talking) => this.setState({talking}));
+        this.state.shidurJanus.onTalking((talking) => { console.log('onTalking', talking); this.setState({talking}); });
     };
 
     componentWillUnmount() {
@@ -509,6 +509,7 @@ class MobileClient extends Component {
     };
 
     onRoomData = (data) => {
+        console.log('ON_ROOM_DATA!!!', data);
         const {user} = this.state;
         const feeds = Object.assign([], this.state.feeds);
         const {camera,question,rcmd,type,id} = data;
@@ -1092,6 +1093,8 @@ class MobileClient extends Component {
                 this.micMute();
             } else if(type === "video-mute" && user.id === id) {
                 this.camMute();
+            } else if (type === 'audio-out') {
+                this.handleAudioOut(ondata);
             }
         });
     };
@@ -1429,7 +1432,7 @@ class MobileClient extends Component {
                 </div>
 
                 <div style={{height: '0px', zIndex: 1, position: 'sticky', top: 0}}>
-                  {talking && <Label className='talk' size='massive' color='red' style={{margin: '0.4rem'}}>
+                  {talking && <Label className='talk' size='massive' color='red' style={{margin: '1rem'}}>
                     <Icon name='microphone' />On</Label>}
                 </div>
 
@@ -1524,7 +1527,7 @@ class MobileClient extends Component {
                       <span>{t(cammuted ? 'oldClient.startVideo' : 'oldClient.stopVideo')}</span>
                   </Menu.Item>
                   <Menu.Item disabled={questionDisabled} onClick={this.handleQuestion}>
-                    <Icon name='question' style={{color: question ? 'green' : null}} />
+                    <Icon name='question' style={{color: question ? '#21ba45' : null}} />
                     <span>
                       {t('oldClient.askQuestion')}
                     </span>

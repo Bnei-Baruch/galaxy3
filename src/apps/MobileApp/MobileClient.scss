@@ -363,7 +363,10 @@
 }
 
 .talk {
+  @include landscape {
+    font-size: 3.5rem !important;
+  }
   @include portrait {
-    font-size: 3rem !important;
+    font-size: 5rem !important;
   }
 }

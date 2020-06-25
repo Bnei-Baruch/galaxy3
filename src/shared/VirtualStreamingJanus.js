@@ -322,6 +322,7 @@ export default class VirtualStreamingJanus {
   };
 
   streamGalaxy = (talk, col, name) => {
+    console.log('streamGalaxy', talk, col, name);
     if (!this.isInitialized_()) {
       return;
     }
