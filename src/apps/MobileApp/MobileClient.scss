@@ -36,7 +36,7 @@
 					background-color: rgb(125, 125, 125);
 					position: sticky;
 				  bottom: 0;
-					z-index: 8;
+					z-index: 11;
 
 					@include portrait {
 						padding-bottom: 1em;
@@ -47,6 +47,11 @@
             &.disabled {
               color: rgba(40, 40, 40, 0.3);
             }
+          }
+
+          .ui.labeled.icon.menu {
+            justify-content: center;
+            width: 100%;
           }
 				}
 

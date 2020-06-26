@@ -193,8 +193,7 @@ class VirtualStreaming extends Component {
     return (
       <Fragment>
         <div ref={(ref) => this.setVideoWrapperRef(ref)}>
-          <div className="video video--broadcast" key='v0' id='video0'
-               style={{border: 'none', height: '39.3em'}}>
+          <div className="video video--broadcast" key='v0' id='video0'>
             <div className="center-play">
 							{!shidurLoading && !shidur && <Icon name="play" className="center-play" onClick={() => this.localToggleShidur()} />}
 						</div>

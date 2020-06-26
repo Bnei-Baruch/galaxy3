@@ -358,3 +358,13 @@
 	height: 100%;
 	color: white;
 }
+
+.video.video--broadcast {
+  border: none;
+  @include landscape {
+    height: calc(100vh - 5em);
+  }
+  @include portrait {
+    height: 39.3em;
+  }
+}
