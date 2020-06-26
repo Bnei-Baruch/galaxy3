@@ -513,6 +513,7 @@ class MobileClient extends Component {
         const {user} = this.state;
         const feeds = Object.assign([], this.state.feeds);
         const {camera,question,rcmd,type,id} = data;
+        // CHECK: Looks like this code never run!
         if(rcmd) {
             if (type === 'client-reconnect' && user.id === id) {
                 this.exitRoom(true);
@@ -1061,7 +1062,7 @@ class MobileClient extends Component {
             this.setState({protocol});
         }, ondata => {
             Janus.log("-- :: It's protocol public message: ", ondata);
-            const {type,error_code,id} = ondata;
+            const {type, error_code, id, room} = ondata;
             if(ondata.type === "error" && error_code === 420) {
                 this.exitRoom(false, () => {
                     alert(ondata.error);
@@ -1093,7 +1094,7 @@ class MobileClient extends Component {
                 this.micMute();
             } else if(type === "video-mute" && user.id === id) {
                 this.camMute();
-            } else if (type === 'audio-out') {
+            } else if (type === 'audio-out' && room === selected_room) {
                 this.handleAudioOut(ondata);
             }
         });
