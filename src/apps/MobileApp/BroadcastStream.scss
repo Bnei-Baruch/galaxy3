@@ -329,6 +329,10 @@
     position: absolute;
     bottom: 0rem;
     z-index: 15;
+
+    @include portrait {
+      top: calc(50vh + (50vw / 1.75));
+    }
   }
 
   &.ui.labeled.icon.menu .item {
@@ -361,10 +365,13 @@
 
 .video.video--broadcast {
   border: none;
-  @include landscape {
-    height: calc(100vh - 5em);
-  }
-  @include portrait {
-    height: 39.3em;
+
+  &.no-full-screen {
+    @include landscape {
+      height: calc(100vh - 5em);
+    }
+    @include portrait {
+      height: 39.3em;
+    }
   }
 }

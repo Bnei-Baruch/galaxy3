@@ -193,7 +193,8 @@ class VirtualStreaming extends Component {
     return (
       <Fragment>
         <div ref={(ref) => this.setVideoWrapperRef(ref)}>
-          <div className="video video--broadcast" key='v0' id='video0'>
+          <div className={classNames('video', 'video--broadcast', {'no-full-screen': !fullScreen})}
+               key='v0' id='video0'>
             <div className="center-play">
 							{!shidurLoading && !shidur && <Icon name="play" className="center-play" onClick={() => this.localToggleShidur()} />}
 						</div>
@@ -208,7 +209,7 @@ class VirtualStreaming extends Component {
                      playsInline={true} />
             </div>
           </div>
-          <Menu icon='labeled' inverted className={classNames('toolbar', {'full-screen' : fullScreen})}>
+          <Menu icon='labeled' inverted className={classNames('toolbar', {'full-screen': fullScreen})}>
             <Menu.Item onClick={() => this.localToggleShidur()}
 											 disabled={shidurLoading || !shidur}>
               <Icon name="stop" />
