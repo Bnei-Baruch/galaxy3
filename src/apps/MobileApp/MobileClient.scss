@@ -221,6 +221,7 @@
     background:#000;
     padding: 1.6em;
     flex: 1 0 100%;
+    flex-direction: column;
     // transition: .2s all linear;
 
     .vclient--chat-open & {
@@ -308,8 +309,12 @@
     background-color: silver!important;
 }
 .dots {
-    position: absolute;
-    bottom: 0;
+  margin: auto;
+  padding-top: 1em;
+}
+.dot-holder {
+  margin-right: 0.5em !important;
+  margin-left: 0.5em !important;
 }
 .right-arrow {
     z-index: 1;

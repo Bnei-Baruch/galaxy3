@@ -1486,13 +1486,13 @@ class MobileClient extends Component {
                                         </div>
                                         {/* } */}
                                     {videos}
+                                </div>
+                            </div>
                                         {videos.length>0?
                                         <div className="dots">
                                         <Dots length={Math.floor(this.state.feeds.length/3)+1} active={(Math.ceil(this.state.index/3)-1)} />
                                         </div>
                                         :""}
-                                </div>
-                            </div>
                             {videos.length>0 ?
                             <div className="right-arrow" onClick={()=>this.switchFour(true)}>
                                         <Icon name='chevron right' color='blue' size='huge' />
