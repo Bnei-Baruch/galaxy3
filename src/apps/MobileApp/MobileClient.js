@@ -3,7 +3,7 @@ import {Janus} from "../../lib/janus";
 import classNames from 'classnames';
 
 import Dots from 'react-carousel-dots';
-import {Button, Icon, Image, Input, Label, Menu, Popup, Select} from "semantic-ui-react";
+import {Button, Icon, Image, Input, Label, Menu, Modal, Popup, Select} from "semantic-ui-react";
 import {checkNotification, geoInfo, getMedia, getMediaStream, initJanus, micLevel, wkliLeave} from "../../shared/tools";
 import './MobileClient.scss'
 import './MobileConteiner.scss'
@@ -899,7 +899,7 @@ class MobileClient extends Component {
                     {request: "subscribe", streams: subscription}
             });
             return;
-        }
+        } 
 
         // We don't have a handle yet, but we may be creating one already
         if (this.state.creatingFeed) {
@@ -943,10 +943,10 @@ class MobileClient extends Component {
                 setTimeout(() => {
                     //FIXME: Here we must be sure
                     // we get mids updated event after unsubscribing event
-                    this.fillQuad(id,feeds,index);
+                    this.fillQuad(id, feeds, index);
                 }, 500);
 
-                this.setState({feeds,feedStreams});
+                this.setState({feeds, feedStreams});
                 break
             }
         }
@@ -1023,7 +1023,7 @@ class MobileClient extends Component {
                 m = 0;
                 break;
             }
-            debugger;
+            // debugger;
             let sub_mid = showed_mids[m].mid;
             let feed = feeds[i].id;
             if(showed_mids[m].type === "video" )
@@ -1488,23 +1488,28 @@ class MobileClient extends Component {
                                     {videos}
                                 </div>
                             </div>
-                                        {videos.length>0?
-                                        <div className="dots">
-                                        <Dots length={Math.floor(this.state.feeds.length/3)+1} active={(Math.ceil(this.state.index/3)-1)} />
-                                        </div>
-                                        :""}
+                            {videos.length>0?
+                              <div className="dots">
+                                <Dots
+                                    length={Math.ceil(this.state.feeds.length/3)}
+                                    visible={Math.ceil(this.state.feeds.length/3)}
+                                    active={(Math.ceil(this.state.index/3)-1)}
+                                    margin={10}
+                                />
+                              </div>
+                            :""}
                             {videos.length>0 ?
-                            <div className="right-arrow" onClick={()=>this.switchFour(true)}>
+                              <div className="right-arrow" onClick={()=>this.switchFour(true)}>
                                         <Icon name='chevron right' color='blue' size='huge' />
 
-                            </div>
+                              </div>
                             :""}
-                             {videos.length>0?
-                            <div className="left-arrow" onClick={()=>this.switchFour(false)}>
-                            <Icon name='chevron left' color='blue' size='huge' />
+                            {videos.length>0?
+                              <div className="left-arrow" onClick={()=>this.switchFour(false)}>
+                                <Icon name='chevron left' color='blue' size='huge' />
 
-                            </div>
-                              :""  }
+                              </div>
+                            :""}
                         </div>
                         {audios}
                     </div>

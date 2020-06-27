@@ -308,6 +308,10 @@
 		@include portrait {
 			font-size: 2.18rem;
 		}
+
+    .item:before {
+      width: 0;
+    }
   }
 
 	&.full-screen {
@@ -348,6 +352,20 @@
 		&.disabled {
 			color: rgba(255,255,255,.3) !important;
 		}
+
+    >.icon {
+      &.expand,
+      &.compress,
+      &.stop {
+        font-size: 1.4em !important;
+        margin: 0 !important;
+      }
+    }
+
+    >.icon.stop {
+      font-size: 1.4em !important;
+      margin: 0 !important;
+    }
   }
 }
 
@@ -368,7 +386,7 @@
 
   &.no-full-screen {
     @include landscape {
-      height: calc(100vh - 5em);
+      height: calc(100vh - 4em);
     }
     @include portrait {
       height: 39.3em;

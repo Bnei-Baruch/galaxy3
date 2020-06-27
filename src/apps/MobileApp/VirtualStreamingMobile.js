@@ -119,6 +119,7 @@ class VirtualStreaming extends Component {
 			} else if (this.videoWrapper.ownerDocument.mozCancelFullScreen) {
 				this.videoWrapper.ownerDocument.mozCancelFullScreen();
 			}
+      this.setState({fullScreen: false});
     } else {
       if (this.videoWrapper.requestFullscreen) {
         this.videoWrapper.requestFullscreen();
@@ -129,6 +130,7 @@ class VirtualStreaming extends Component {
       } else if (this.video.webkitEnterFullscreen) {
 				this.video.webkitEnterFullscreen();
 			}
+      this.setState({fullScreen: true});
     }
   };
 
@@ -273,7 +275,7 @@ class VirtualStreaming extends Component {
 							</List>
 						</Modal>}
             {!isIOS && <Menu.Item>
-              <Icon name={fullScreen ? 'compress' : 'expand'} onClick={this.toggleFullScreen} style={{fontSize: '1.5em'}}/>
+              <Icon name={fullScreen ? 'compress' : 'expand'} onClick={this.toggleFullScreen} />
             </Menu.Item>}
           </Menu>
         </div>

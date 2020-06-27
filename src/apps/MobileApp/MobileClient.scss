@@ -312,9 +312,14 @@
   margin: auto;
   padding-top: 1em;
 }
-.dot-holder {
-  margin-right: 0.5em !important;
-  margin-left: 0.5em !important;
+.react-carousel-dots-dot {
+  background-color: gray !important;
+  &.active {
+    background-color: white !important;
+  }
+  &.small {
+    transform: none !important;
+  }
 }
 .right-arrow {
     z-index: 1;
