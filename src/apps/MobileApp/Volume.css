@@ -1,0 +1,13 @@
+.mediaplayer__volume {
+  position: relative;
+}
+
+.mediaplayer__volume button {
+    background: none;
+    border: 0;
+    border-radius: 4px;
+    min-width: 40px;
+    padding: 0 .5rem;
+    text-transform: lowercase;
+    cursor: pointer;
+}
