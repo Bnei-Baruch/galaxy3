@@ -340,6 +340,7 @@ export default class VirtualStreamingJanus {
       } else {
         this.trlAudioJanusStream.send({'message': { 'request': 'switch', 'id': id }});
         this.talking = setInterval(this.ducerMixaudio, 200);
+        this.audioElement.addEventListener('volumechange', this.volumeChangeWhileTalking);
         console.log(' :: Init TRL Stream: ', localStorage.getItem('vrt_langtext'), id);
       }
       Janus.log('You now talking');
@@ -347,6 +348,7 @@ export default class VirtualStreamingJanus {
       Janus.log('Stop talking');
       if (this.talking) {
         clearInterval(this.talking);
+        this.audioElement.removeEventListener('volumechange', this.volumeChangeWhileTalking);
       }
       this.audioElement.volume = this.mixvolume;
       const id = Number(localStorage.getItem('vrt_lang')) || 15;
@@ -362,15 +364,24 @@ export default class VirtualStreamingJanus {
     }
   };
 
+  volumeChangeWhileTalking = (e) => {
+    if(this.isInitialized_()) {
+      console.log('volumeChangeWhileTalking', e);
+      console.log('volumeChangeWhileTalking', 'this.mixvolume', this.mixvolume, 'this.audioElement.volume', this.audioElement.volume);
+      this.mixvolume = this.audioElement.volume;
+      this.trlAudioElement.volume = this.mixvolume;
+    }
+  };
+
   ducerMixaudio = () => {
     if(this.isInitialized_()) {
+      console.log('ducerMixaudio initialized');
       this.trlAudioJanusStream.getVolume(null, volume => {
-        let audio      = this.audioElement;
-        let trl_volume = this.mixvolume * 0.05;
+        console.log('ducerMixaudio', 'volume', volume, 'this.mixvolume', this.mixvolume, 'this.audioElement.volume', this.audioElement.volume);
         if (volume > 0.05) {
-          audio.volume = trl_volume;
-        } else if (audio.volume + 0.01 <= this.mixvolume) {
-          audio.volume = audio.volume + 0.01;
+          this.audioElement.volume = this.mixvolume * 0.05;
+        } else if (this.audioElement.volume + 0.01 <= this.mixvolume) {
+          this.audioElement.volume = this.audioElement.volume + 0.01;
         }
       });
     }

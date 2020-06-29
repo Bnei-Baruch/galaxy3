@@ -225,7 +225,6 @@ class VirtualStreaming extends Component {
                   })}
                 </Dropdown.Menu>
               </Dropdown>
-
               <Volume media={virtualStreamingJanus.audioElement} />
               <div className="controls__spacer"></div>
               <button onClick={this.toggleFullScreen}>
