@@ -433,7 +433,6 @@ class VirtualClient extends Component {
           console.error("ICE Disconnected");
           this.initClient(true);
         });
-        reportToSentry("ICE State disconnected",{source: "ice"}, this.state.user);
       }
     }, 3000);
   };
@@ -460,7 +459,6 @@ class VirtualClient extends Component {
         // Video still not back disconnecting
         if (count >= 10) {
           clearInterval(chk);
-          reportToSentry("Video stopped",{source: "media"}, this.state.user);
           alert(t('oldClient.serverStoppedReceiveOurMedia'));
         }
       }, 3000);
@@ -494,7 +492,6 @@ class VirtualClient extends Component {
           if (question) {
             this.handleQuestion();
           }
-          reportToSentry("Audio stopped",{source: "media"}, this.state.user);
           alert(t('oldClient.serverStoppedReceiveOurAudio'));
         }
       }, 3000);
