@@ -331,6 +331,10 @@ export default class VirtualStreamingJanus {
       this.talking = true;
       this.trlAudioElement.volume = this.mixvolume;
       this.trlAudioElement.muted = false;
+
+      this.prevAudioVolume = this.audioElement.volume;
+      this.prevMuted = this.audioElement.muted;
+
       console.log(' :: Switch STR Stream: ', gxycol[col]);
       this.audioJanusStream.send({'message': { 'request': 'switch', 'id': gxycol[col]}});
       const id = trllang[localStorage.getItem('vrt_langtext')];
@@ -364,14 +368,24 @@ export default class VirtualStreamingJanus {
 
   ducerMixaudio = () => {
     if(this.isInitialized_()) {
+      // Get remote volume of translator stream (FYI in case of Hebrew, this will be 0 - no translation).
       this.trlAudioJanusStream.getVolume(null, volume => {
-        let audio      = this.audioElement;
-        let trl_volume = this.mixvolume * 0.05;
-        if (volume > 0.05) {
-          audio.volume = trl_volume;
-        } else if (audio.volume + 0.01 <= this.mixvolume) {
-          audio.volume = audio.volume + 0.01;
+        if (this.prevAudioVolume !== this.audioElement.volume || this.prevMuted !== this.audioElement.muted) {
+          // This happens only when user changes audio, update mixvolume.
+          this.mixvolume = this.audioElement.muted ? 0 : this.audioElement.volume;
+          this.trlAudioElement.volume = this.mixvolume;
         }
+        if (volume > 0.05) {
+          // If translator is talking (remote volume > 0.05) we want to reduce Rav to 5%.
+          this.audioElement.volume = this.mixvolume * 0.05;
+        } else if (this.audioElement.volume + 0.01 <= this.mixvolume) {
+          // If translator is not talking or no translation (Hebrew) we want to slowly raise
+          // sound levels of original source up to original this.mixvolume.
+          this.audioElement.volume = this.audioElement.volume + 0.01;
+        }
+        // Store volume and mute values to be able to detect user volume change.
+        this.prevAudioVolume = this.audioElement.volume;
+        this.prevMuted = this.audioElement.muted;
       });
     }
   };
