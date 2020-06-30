@@ -331,6 +331,10 @@ export default class VirtualStreamingJanus {
       this.talking = true;
       this.trlAudioElement.volume = this.mixvolume;
       this.trlAudioElement.muted = false;
+
+      this.prevAudioVolume = this.audioElement.volume;
+      this.prevMuted = this.audioElement.muted;
+
       console.log(' :: Switch STR Stream: ', gxycol[col]);
       this.audioJanusStream.send({'message': { 'request': 'switch', 'id': gxycol[col]}});
       const id = trllang[localStorage.getItem('vrt_langtext')];
@@ -340,7 +344,6 @@ export default class VirtualStreamingJanus {
       } else {
         this.trlAudioJanusStream.send({'message': { 'request': 'switch', 'id': id }});
         this.talking = setInterval(this.ducerMixaudio, 200);
-        this.audioElement.addEventListener('volumechange', this.volumeChangeWhileTalking);
         console.log(' :: Init TRL Stream: ', localStorage.getItem('vrt_langtext'), id);
       }
       Janus.log('You now talking');
@@ -348,7 +351,6 @@ export default class VirtualStreamingJanus {
       Janus.log('Stop talking');
       if (this.talking) {
         clearInterval(this.talking);
-        this.audioElement.removeEventListener('volumechange', this.volumeChangeWhileTalking);
       }
       this.audioElement.volume = this.mixvolume;
       const id = Number(localStorage.getItem('vrt_lang')) || 15;
@@ -364,25 +366,26 @@ export default class VirtualStreamingJanus {
     }
   };
 
-  volumeChangeWhileTalking = (e) => {
-    if(this.isInitialized_()) {
-      console.log('volumeChangeWhileTalking', e);
-      console.log('volumeChangeWhileTalking', 'this.mixvolume', this.mixvolume, 'this.audioElement.volume', this.audioElement.volume);
-      this.mixvolume = this.audioElement.volume;
-      this.trlAudioElement.volume = this.mixvolume;
-    }
-  };
-
   ducerMixaudio = () => {
     if(this.isInitialized_()) {
-      console.log('ducerMixaudio initialized');
+      // Get remote volume of translator stream (FYI in case of Hebrew, this will be 0 - no translation).
       this.trlAudioJanusStream.getVolume(null, volume => {
-        console.log('ducerMixaudio', 'volume', volume, 'this.mixvolume', this.mixvolume, 'this.audioElement.volume', this.audioElement.volume);
+        if (this.prevAudioVolume !== this.audioElement.volume || this.prevMuted !== this.audioElement.muted) {
+          // This happens only when user changes audio, update mixvolume.
+          this.mixvolume = this.audioElement.muted ? 0 : this.audioElement.volume;
+          this.trlAudioElement.volume = this.mixvolume;
+        }
         if (volume > 0.05) {
+          // If translator is talking (remote volume > 0.05) we want to reduce Rav to 5%.
           this.audioElement.volume = this.mixvolume * 0.05;
         } else if (this.audioElement.volume + 0.01 <= this.mixvolume) {
+          // If translator is not talking or no translation (Hebrew) we want to slowly raise
+          // sound levels of original source up to original this.mixvolume.
           this.audioElement.volume = this.audioElement.volume + 0.01;
         }
+        // Store volume and mute values to be able to detect user volume change.
+        this.prevAudioVolume = this.audioElement.volume;
+        this.prevMuted = this.audioElement.muted;
       });
     }
   };
