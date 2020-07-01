@@ -407,6 +407,10 @@
 
     .messages_list {
       height: 60vh;
+
+      .messages-wrapper {
+        width: 100%;
+      }
     }
   }
 }

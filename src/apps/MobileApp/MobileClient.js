@@ -141,7 +141,7 @@ class MobileClient extends Component {
             window.location = '/user/';
             return;
         }
-        this.state.shidurJanus.onTalking((talking) => { console.log('onTalking', talking); this.setState({talking}); });
+        this.state.shidurJanus.onTalking((talking) => this.setState({talking}));
     };
 
     componentWillUnmount() {
@@ -284,7 +284,7 @@ class MobileClient extends Component {
         let {media} = this.state;
         if(JSON.stringify(video_setting) === JSON.stringify(media.video.setting))
             return
-        getMediaStream(false,true, video_setting,null, media.video.video_device)
+        getMediaStream(false, true, video_setting,null, media.video.video_device)
             .then(data => {
                 console.log(data)
                 const [stream, error] = data;
@@ -305,7 +305,7 @@ class MobileClient extends Component {
         let {media} = this.state;
         if(video_device === media.video.video_device)
             return
-        getMediaStream(false,true, media.video.setting,null,video_device)
+        getMediaStream(false, true, media.video.setting,null,video_device)
             .then(data => {
                 console.log(data)
                 const [stream, error] = data;
@@ -326,7 +326,7 @@ class MobileClient extends Component {
         let {media} = this.state;
         if(audio_device === media.audio.audio_device)
             return
-        getMediaStream(true,false, media.video.setting, audio_device,null)
+        getMediaStream(true, false, media.video.setting, audio_device,null)
             .then(data => {
                 console.log(data)
                 const [stream, error] = data;
@@ -514,7 +514,6 @@ class MobileClient extends Component {
     };
 
     onRoomData = (data) => {
-        console.log('ON_ROOM_DATA!!!', data);
         const {user} = this.state;
         const feeds = Object.assign([], this.state.feeds);
         const {camera,question,rcmd,type,id} = data;
@@ -1246,19 +1245,18 @@ class MobileClient extends Component {
     };
 
     onChatMessage = () => {
-      console.log('onChatMessage!');
       this.setState({chatMessagesCount: this.state.chatMessagesCount + 1});
     };
 
     chatMount = () => {
-      console.log('Mount', 'Modal', this.chatModal, 'Wrapper', this.chatWrapper);
-      this.chatModal.appendChild(this.chatWrapper.firstChild);
-      this.setState({chatVisible: true});
+      if (this.chatModal && this.chatWrapper && this.chatWrapper.firstChild) {
+        this.chatModal.appendChild(this.chatWrapper.firstChild);
+        this.setState({chatVisible: true});
+      }
     }
 
     chatUnmount = () => {
-      console.log('Unmount', 'Modal', this.chatModal, 'Wrapper', this.chatWrapper);
-      if (this.chatModal.firstChild) {
+      if (this.chatWrapper && this.chatModal && this.chatModal.firstChild) {
         this.chatWrapper.appendChild(this.chatModal.firstChild);
         this.setState({chatVisible: false});
       }
@@ -1405,7 +1403,7 @@ class MobileClient extends Component {
       const login = (<LoginPage user={user} checkPermission={this.checkPermission} />);
       const openVideoDisabled = video_device === null || !localAudioTrack || delay;
       const chatCountLabel = (<Label key='Carbon' floating size='mini' color='red'
-                                     style={{top: '.3em', fontSize: '.8rem', left: 'unset', right: '1em'}}>
+                                     style={{top: '.3em', fontSize: '1.3rem', left: 'unset', right: '1em'}}>
                               {chatMessagesCount}</Label>);
       const content = (
         <div>

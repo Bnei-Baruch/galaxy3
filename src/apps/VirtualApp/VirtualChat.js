@@ -248,7 +248,7 @@ class VirtualChat extends Component {
       let { user, time, text } = msg;
       console.log('messages.map', 'user', user, 'time', time, 'text!!!!!', text, 'msg', msg);
       return (
-        <p key={i} style={{direction: isRTLString(text) ? 'rtl' : 'ltr'}}><span style={{display: 'block'}}>
+        <p key={i} style={{direction: isRTLString(text) ? 'rtl' : 'ltr', textAlign: isRTLString(text) ? 'right' : 'left'}}><span style={{display: 'block'}}>
           <i style={{ color: 'grey' }}>{time}</i> -
           <b style={{ color: user.role === 'admin' ? 'red' : 'blue' }}>{user.display}</b>:
         </span>{textWithLinks(text)}</p>
@@ -258,7 +258,7 @@ class VirtualChat extends Component {
     let admin_msgs = support_msgs.map((msg, i) => {
       let { user, time, text } = msg;
       return (
-        <p key={i} style={{direction: isRTLString(text) ? 'rtl' : 'ltr'}}><span style={{display: 'block'}}>
+        <p key={i} style={{direction: isRTLString(text) ? 'rtl' : 'ltr', textAlign: isRTLString(text) ? 'right' : 'left'}}><span style={{display: 'block'}}>
           <i style={{ color: 'grey' }}>{time}</i> -
           <b style={{ color: user.role === 'admin' ? 'red' : 'blue' }}>{user.role === 'admin' ? user.username : user.display}</b>:
         </span>{textWithLinks(text)}</p>

@@ -168,6 +168,11 @@ export const getDateString = (jsonDate) => {
     var when = new Date();
     if(jsonDate) {
         when = new Date(Date.parse(jsonDate));
+        if (isNaN(when.getTime()) && jsonDate.length > 2) {
+          // Fix some edge cases where : missing to be valid ISO 8601 format.
+          const len = jsonDate.length;
+          when = new Date(Date.parse(`${jsonDate.slice(0, len-2)}:${jsonDate.slice(len-2)}`));
+        }
     }
     var dateString =
         ("0" + when.getHours()).slice(-2) + ":" +
