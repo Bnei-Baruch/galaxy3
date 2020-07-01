@@ -109,8 +109,9 @@ class VirtualChat extends Component {
         let { messages } = this.state;
         let message      = JSON.parse(msg);
         message.time     = dateString;
-        Janus.log('-:: It\'s public message: ' + message);
+        Janus.log('-:: It\'s public message: ' + JSON.stringify(message));
         messages.push(message);
+        console.log('Messages: ', messages);
         this.setState({ messages });
         if (this.props.visible) {
           this.scrollToBottom();
@@ -203,7 +204,14 @@ class VirtualChat extends Component {
     const textWithLinks = (text) => {
 			const parts = [];
 			let start = 0;
-			for (const match of text.matchAll(urlRegex)) {
+      // Polyfil for Safari <13
+      let matchAll = null;
+      if (text.matchAll) {
+        matchAll = (re) => text.matchAll(re);
+      } else {
+        matchAll = (re) => text.match(re);
+      }
+			for (const match of matchAll(urlRegex)) {
 				const url = match[0];
 				const index = match.index;
 				if (index > start) {
@@ -238,6 +246,7 @@ class VirtualChat extends Component {
 
     let room_msgs = messages.map((msg, i) => {
       let { user, time, text } = msg;
+      console.log('messages.map', 'user', user, 'time', time, 'text!!!!!', text, 'msg', msg);
       return (
         <p key={i} style={{direction: isRTLString(text) ? 'rtl' : 'ltr'}}><span style={{display: 'block'}}>
           <i style={{ color: 'grey' }}>{time}</i> -

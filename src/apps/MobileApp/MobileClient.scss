@@ -32,6 +32,13 @@
 						padding: .8rem .5rem;
         }
 
+
+        .ui.action.input>.button, .ui.action.input>.buttons>.button {
+            @include portrait {
+                width: 8rem;
+            }
+        }
+
 				&.bottom {
 					background-color: rgb(125, 125, 125);
 					position: sticky;
@@ -52,6 +59,10 @@
           .ui.labeled.icon.menu {
             justify-content: center;
             width: 100%;
+
+            .item {
+              min-width: 5em;
+            }
           }
 				}
 
@@ -86,7 +97,7 @@
         display: flex;
         // border: 2px solid red;
         @include landscape {
-            height: 36em;
+          height: calc(100vh - 5em);
         }
         @include portrait {
             flex-direction: column;
@@ -208,12 +219,6 @@
     width: 360px;
 }
 
-.ui.action.input>.button, .ui.action.input>.buttons>.button {
-    @include portrait {
-        width: 100px;
-    }
-}
-
 /* TESTING */
 
 .videos-panel {
@@ -222,25 +227,15 @@
     padding: 1.6em;
     flex: 1 0 100%;
     flex-direction: column;
-    // transition: .2s all linear;
-
-    .vclient--chat-open & {
-        flex: 1 0 calc(100% - 400px);
-    }
 }
 
-.chat-panel {
-    flex: 0 0 400px;
-    overflow: hidden;
-    padding: 0 10px 10px 10px;
-    display: flex;
-    flex-direction: column;
-    @include portrait {
-        padding: 10px;
-    }
-
+.chat-wrapper {
+    display: none;
 }
 
+.chat-modal {
+    font-size: 2rem;
+}
 
 .messages_list {
     overflow-y:scroll;
@@ -383,5 +378,56 @@
   }
   @include portrait {
     font-size: 5rem !important;
+  }
+}
+
+.chat {
+  &.ui.active.modal {
+    @include landscape {
+      width: 75vw;
+      font-size: 2rem;
+    }
+
+    @include portrait {
+      width: 90vw;
+      font-size: 3rem;
+    }
+
+    .close {
+      top: 0.2em;
+      right: 0.3em;
+      color: rgba(0,0,0,.87);
+      z-index: 10;
+      font-size: 2.7rem;
+    }
+
+    .chat-panel button {
+      font-size: 2rem;
+    }
+
+    .messages_list {
+      height: 60vh;
+    }
+  }
+}
+
+.vote {
+  &.ui.active.modal {
+    font-size: 2rem;
+    padding: .7em;
+
+    .close {
+      top: 0.2em;
+      right: 0.3em;
+      color: rgba(0,0,0,.87);
+    }
+
+    .buttons {
+      width: calc(100% - 3rem);
+
+      iframe {
+        width: 100%;
+      }
+    }
   }
 }

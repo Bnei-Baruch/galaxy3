@@ -30,6 +30,8 @@ import connectionGray from '../VirtualApp/connection-gray.png';
 import VirtualStreamingMobile from './VirtualStreamingMobile';
 import VirtualStreamingJanus from '../../shared/VirtualStreamingJanus';
 
+import VirtualChat from '../VirtualApp/VirtualChat';
+
 class MobileClient extends Component {
 
     state = {
@@ -87,6 +89,8 @@ class MobileClient extends Component {
         shidurLoading: true,
         shidurJanus: new VirtualStreamingJanus(() => this.shidurInitialized()),
         talking: false,
+        chatMessagesCount: 0,
+        chatVisible: false,
     };
 
     shidurInitialized() {
@@ -210,6 +214,7 @@ class MobileClient extends Component {
           if (Janus.unifiedPlan) {
             user.session = janus.getSessionId();
             this.setState({janus});
+            this.chat.initChat(janus);
             this.initVideoRoom(reconnect, user);
           } else {
             alert(t('oldClient.unifiedPlanNotSupported'));
@@ -1073,13 +1078,15 @@ class MobileClient extends Component {
                 let register = {"request": "join", "room": selected_room, "ptype": "publisher", "display": JSON.stringify(d)};
                 videoroom.send({"message": register,
                     success: () => {
-                        // this.chat.initChatRoom(user, selected_room);
+                        this.chat.initChatRoom(user, selected_room);
                     },
                     error: (error) => {
                         console.error(error);
                         this.exitRoom(false);
                     }
                 });
+            } else if (type === 'chat-broadcast' && room === selected_room) {
+              this.chat.showSupportMessage(ondata);
             } else if(type === "client-reconnect" && user.id === id) {
                 this.exitRoom(true);
             } else if(type === "client-reload" && user.id === id) {
@@ -1120,6 +1127,8 @@ class MobileClient extends Component {
                 this.setState({rooms});
             });
 
+        this.chat.exitChatRoom(room);
+
         setTimeout(() => {
             if(videoroom) videoroom.detach();
             if(protocol) protocol.detach();
@@ -1132,6 +1141,7 @@ class MobileClient extends Component {
                 remoteFeed: null, videoroom: null, protocol: null, janus: null,
                 delay: reconnect,
                 room: reconnect ? room : '',
+                chatMessagesCount: 0,
             });
             if(typeof callback === "function") callback();
         }, 2000);
@@ -1235,13 +1245,35 @@ class MobileClient extends Component {
       this.setState(stateUpdate);
     };
 
+    onChatMessage = () => {
+      console.log('onChatMessage!');
+      this.setState({chatMessagesCount: this.state.chatMessagesCount + 1});
+    };
+
+    chatMount = () => {
+      console.log('Mount', 'Modal', this.chatModal, 'Wrapper', this.chatWrapper);
+      this.chatModal.appendChild(this.chatWrapper.firstChild);
+      this.setState({chatVisible: true});
+    }
+
+    chatUnmount = () => {
+      console.log('Unmount', 'Modal', this.chatModal, 'Wrapper', this.chatWrapper);
+      if (this.chatModal.firstChild) {
+        this.chatWrapper.appendChild(this.chatModal.firstChild);
+        this.setState({chatVisible: false});
+      }
+    }
+
     render() {
       const {t, i18n} = this.props;
       const {
         appInitError,
         audio,
         cammuted,
+        chatMessagesCount,
+        chatVisible,
         delay,
+        janus,
         localAudioTrack,
         media,
         monitoringData,
@@ -1254,10 +1286,10 @@ class MobileClient extends Component {
         rooms,
         selected_room,
         shidur,
+        shidurJanus,
         shidurLoading,
         talking,
         user,
-        shidurJanus,
       } = this.state;
     
       const {video_device} = media.video;
@@ -1372,9 +1404,11 @@ class MobileClient extends Component {
       const questionDisabled = !audio_device || !localAudioTrack || delay || otherFeedHasQuestion;
       const login = (<LoginPage user={user} checkPermission={this.checkPermission} />);
       const openVideoDisabled = video_device === null || !localAudioTrack || delay;
+      const chatCountLabel = (<Label key='Carbon' floating size='mini' color='red'
+                                     style={{top: '.3em', fontSize: '.8rem', left: 'unset', right: '1em'}}>
+                              {chatMessagesCount}</Label>);
       const content = (
         <div>
-          <div>
             <div className='vclient'>
                 <div className="vclient__toolbar">
                   <Input iconPosition='left' action>
@@ -1517,7 +1551,6 @@ class MobileClient extends Component {
             </div>
             { !(new URL(window.location.href).searchParams.has('lost')) ? null :
                 (<Label color={net_status === 2 ? 'yellow' : net_status === 3 ? 'red' : 'green'} icon='wifi' corner='right' />)}
-          </div>
           <div className={classNames('vclient__toolbar', 'bottom')}>
               <Menu icon='labeled' size='massive' secondary>
                   <Menu.Item disabled={!localAudioTrack} onClick={this.micMute} className="mute-button">
@@ -1538,8 +1571,49 @@ class MobileClient extends Component {
                       {t('oldClient.askQuestion')}
                     </span>
                   </Menu.Item>
+                  <Modal
+                    trigger={
+                      <Menu.Item disabled={!localAudioTrack}>
+                        <Icon name="comments" />
+                        {t('oldClient.openChat')}
+                        {chatMessagesCount > 0 ? chatCountLabel : ''}
+                      </Menu.Item>
+                    }
+                    disabled={!localAudioTrack}
+                    on='click'
+                    position='bottom center'
+                    closeIcon
+                    className='chat'
+                    onMount={() => this.chatMount()}
+                    onUnmount={() => this.chatUnmount()}
+                  >
+                    <div ref={chatModal => {this.chatModal = chatModal;}}></div>
+                  </Modal>
+                  <Modal
+                    trigger={<Menu.Item disabled={!user || !user.id || room === ''} icon='hand paper outline' name={t('oldClient.vote')} />}
+                    disabled={!user || !user.id || room === ''}
+                    on='click'
+                    position='bottom center'
+                    closeIcon
+                    className='vote'
+                  >
+                    <Button.Group>
+                      <iframe src={`https://vote.kli.one/button.html?answerId=1&userId=${user && user.id}`} frameBorder="0"></iframe>
+                      <iframe src={`https://vote.kli.one/button.html?answerId=2&userId=${user && user.id}`} frameBorder="0"></iframe>
+                    </Button.Group>
+                  </Modal>
                   <Monitoring monitoringData={monitoringData} />
               </Menu>
+          </div>
+          <div className='chat-wrapper' ref={chatWrapper => {this.chatWrapper = chatWrapper;}}>
+            <VirtualChat
+              t={t}
+              ref={chat => {this.chat = chat;}}
+              visible={chatVisible}
+              janus={janus}
+              room={room}
+              user={user}
+              onNewMsg={this.onChatMessage} />
           </div>
         </div>
       );
