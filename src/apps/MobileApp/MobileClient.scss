@@ -69,6 +69,19 @@
               min-width: 5em;
             }
           }
+
+          .ui.menu .item>.floating.label {
+            top: .3em;
+            left: unset;
+            right: 1em;
+
+            @include landscape {
+              font-size: .9rem;
+            }
+            @include portrait {
+              font-size: 1.7rem;
+            }
+          }
 				}
 
         & > .menu,

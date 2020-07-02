@@ -1402,9 +1402,7 @@ class MobileClient extends Component {
       const questionDisabled = !audio_device || !localAudioTrack || delay || otherFeedHasQuestion;
       const login = (<LoginPage user={user} checkPermission={this.checkPermission} />);
       const openVideoDisabled = video_device === null || !localAudioTrack || delay;
-      const chatCountLabel = (<Label key='Carbon' floating size='mini' color='red'
-                                     style={{top: '.3em', fontSize: '1.3rem', left: 'unset', right: '1em'}}>
-                              {chatMessagesCount}</Label>);
+      const chatCountLabel = (<Label key='Carbon' floating size='mini' color='red'>{chatMessagesCount}</Label>);
       const content = (
         <div>
             <div className='vclient'>
