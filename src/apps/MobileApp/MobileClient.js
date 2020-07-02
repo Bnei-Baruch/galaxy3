@@ -1126,7 +1126,9 @@ class MobileClient extends Component {
                 this.setState({rooms});
             });
 
-        this.chat.exitChatRoom(room);
+        if (this.chat) {
+          this.chat.exitChatRoom(room);
+        }
 
         setTimeout(() => {
             if(videoroom) videoroom.detach();
@@ -1259,6 +1261,21 @@ class MobileClient extends Component {
       if (this.chatWrapper && this.chatModal && this.chatModal.firstChild) {
         this.chatWrapper.appendChild(this.chatModal.firstChild);
         this.setState({chatVisible: false});
+      }
+    }
+
+    homerLimudCss = (ref) => {
+      console.log(ref);
+      return;
+
+      if (ref) {
+        ref.onload = () => {
+          var body = ref.contentWindow.document.querySelector('body');
+          body.style.color = 'red';
+          console.log('loaded')
+          body.style.fontSize = '3rem';
+          body.style.lineHeight = '3rem';
+        }
       }
     }
 
@@ -1585,6 +1602,23 @@ class MobileClient extends Component {
                     <div ref={chatModal => {this.chatModal = chatModal;}}></div>
                   </Modal>
                   <Modal
+                    trigger={<Menu.Item icon='book' name={t('oldClient.homerLimud')} />}
+                    on='click'
+                    closeIcon
+                    className='homer-limud'
+                  >
+
+        <iframe id="forum_embed"
+          src={https://groups.google.com/forum/m/#!forum/bb-study-materials}
+          scrolling="no"
+          frameborder="0"
+          width="900"
+          height="700">
+        </iframe>
+
+
+                  </Modal>
+                  <Modal
                     trigger={<Menu.Item disabled={!user || !user.id || room === ''} icon='hand paper outline' name={t('oldClient.vote')} />}
                     disabled={!user || !user.id || room === ''}
                     on='click'
@@ -1595,15 +1629,6 @@ class MobileClient extends Component {
                       <iframe src={`https://vote.kli.one/button.html?answerId=1&userId=${user && user.id}`} frameBorder="0"></iframe>
                       <iframe src={`https://vote.kli.one/button.html?answerId=2&userId=${user && user.id}`} frameBorder="0"></iframe>
                     </Button.Group>
-                  </Modal>
-                  <Modal
-                    trigger={<Menu.Item icon='book' name={t('oldClient.homerLimud')} />}
-                    on='click'
-                    closeIcon
-                    className='homer-limud'
-                  >
-                    <iframe src={`https://groups.google.com/forum/embed/?place=forum/bb-study-materials&showpopout=true&showtabs=false&parenturl=${encodeURIComponent(window.location.href)}`}
-                      frameBorder="0"></iframe>
                   </Modal>
                   <Monitoring monitoringData={monitoringData} />
               </Menu>

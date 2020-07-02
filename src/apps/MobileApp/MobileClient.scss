@@ -468,6 +468,10 @@
     iframe {
       width: 100%;
       height: 70vh;
+
+      body {
+        font-size: 3rem !important;
+      }
     }
   }
 }
