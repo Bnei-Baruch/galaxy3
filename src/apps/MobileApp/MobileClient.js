@@ -983,7 +983,7 @@ class MobileClient extends Component {
         } else if(feeds.length < 3) {
             Janus.log(" :: Clean up Quad");
             for (let i=0; i<video_mids.length; i++) {
-                if(!video_mids[i].active) {
+                if(video_mids[i] && !video_mids[i].active) {
                     video_mids[i] = null;
                     this.setState({video_mids});
                 }
