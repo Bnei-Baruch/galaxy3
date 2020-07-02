@@ -41,6 +41,11 @@
 
 				&.bottom {
           overflow-x: scroll;
+          scrollbar-width: none;  /* Firefox */
+          &::-webkit-scrollbar { 
+            display: none;  /* Safari and Chrome */
+          }
+
 					background-color: rgb(125, 125, 125);
 					position: sticky;
 				  bottom: 0;
