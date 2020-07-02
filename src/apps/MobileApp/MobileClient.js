@@ -1251,7 +1251,7 @@ class MobileClient extends Component {
     chatMount = () => {
       if (this.chatModal && this.chatWrapper && this.chatWrapper.firstChild) {
         this.chatModal.appendChild(this.chatWrapper.firstChild);
-        this.setState({chatVisible: true});
+        this.setState({chatVisible: true, chatMessagesCount: 0});
       }
     }
 
