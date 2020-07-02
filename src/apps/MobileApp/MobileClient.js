@@ -1577,7 +1577,6 @@ class MobileClient extends Component {
                     }
                     disabled={!localAudioTrack}
                     on='click'
-                    position='bottom center'
                     closeIcon
                     className='chat'
                     onMount={() => this.chatMount()}
@@ -1589,7 +1588,6 @@ class MobileClient extends Component {
                     trigger={<Menu.Item disabled={!user || !user.id || room === ''} icon='hand paper outline' name={t('oldClient.vote')} />}
                     disabled={!user || !user.id || room === ''}
                     on='click'
-                    position='bottom center'
                     closeIcon
                     className='vote'
                   >
@@ -1597,6 +1595,15 @@ class MobileClient extends Component {
                       <iframe src={`https://vote.kli.one/button.html?answerId=1&userId=${user && user.id}`} frameBorder="0"></iframe>
                       <iframe src={`https://vote.kli.one/button.html?answerId=2&userId=${user && user.id}`} frameBorder="0"></iframe>
                     </Button.Group>
+                  </Modal>
+                  <Modal
+                    trigger={<Menu.Item icon='book' name={t('oldClient.homerLimud')} />}
+                    on='click'
+                    closeIcon
+                    className='homer-limud'
+                  >
+                    <iframe src={`https://groups.google.com/forum/embed/?place=forum/bb-study-materials&showpopout=true&showtabs=false&parenturl=${encodeURIComponent(window.location.href)}`}
+                      frameBorder="0"></iframe>
                   </Modal>
                   <Monitoring monitoringData={monitoringData} />
               </Menu>

@@ -453,3 +453,21 @@
     }
   }
 }
+
+.homer-limud {
+  &.ui.active.modal {
+    font-size: 2rem;
+    padding: .7em;
+
+    .close {
+      top: 0.2em;
+      right: 0.3em;
+      color: rgba(0,0,0,.87);
+    }
+
+    iframe {
+      width: 100%;
+      height: 70vh;
+    }
+  }
+}
