@@ -1609,7 +1609,7 @@ class MobileClient extends Component {
                   >
 
         <iframe id="forum_embed"
-          src={https://groups.google.com/forum/m/#!forum/bb-study-materials}
+          src='https://groups.google.com/forum/m/#!forum/bb-study-materials'
           scrolling="no"
           frameborder="0"
           width="900"
