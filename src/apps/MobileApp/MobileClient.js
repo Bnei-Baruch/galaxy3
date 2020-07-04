@@ -1601,23 +1601,9 @@ class MobileClient extends Component {
                   >
                     <div ref={chatModal => {this.chatModal = chatModal;}}></div>
                   </Modal>
-                  <Modal
-                    trigger={<Menu.Item icon='book' name={t('oldClient.homerLimud')} />}
-                    on='click'
-                    closeIcon
-                    className='homer-limud'
-                  >
-
-        <iframe id="forum_embed"
-          src='https://groups.google.com/forum/m/#!forum/bb-study-materials'
-          scrolling="no"
-          frameborder="0"
-          width="900"
-          height="700">
-        </iframe>
-
-
-                  </Modal>
+                  <Menu.Item icon='book'
+                             name={t('oldClient.homerLimud')}
+                             onClick={() => window.open('https://groups.google.com/forum/m/#!forum/bb-study-materials')}/>
                   <Modal
                     trigger={<Menu.Item disabled={!user || !user.id || room === ''} icon='hand paper outline' name={t('oldClient.vote')} />}
                     disabled={!user || !user.id || room === ''}
