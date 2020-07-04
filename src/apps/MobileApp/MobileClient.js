@@ -3,7 +3,7 @@ import {Janus} from "../../lib/janus";
 import classNames from 'classnames';
 
 import Dots from 'react-carousel-dots';
-import {Button, Icon, Image, Input, Label, Menu, Modal, Popup, Select} from "semantic-ui-react";
+import {Accordion, Button, Icon, Image, Input, Label, Menu, Modal, Select} from "semantic-ui-react";
 import {checkNotification, geoInfo, getMedia, getMediaStream, initJanus, micLevel, wkliLeave} from "../../shared/tools";
 import './MobileClient.scss'
 import './MobileConteiner.scss'
@@ -20,7 +20,6 @@ import {MonitoringData, LINK_STATE_INIT, LINK_STATE_GOOD, LINK_STATE_MEDIUM, LIN
 import api from '../../shared/Api';
 import {kc} from "../../components/UserManager";
 import LoginPage from "../../components/LoginPage";
-import {Profile} from "../../components/Profile";
 import GxyJanus from "../../shared/janus-utils";
 import connectionOrange from '../VirtualApp/connection-orange.png';
 import connectionWhite from '../VirtualApp/connection-white.png';
@@ -91,6 +90,7 @@ class MobileClient extends Component {
         talking: false,
         chatMessagesCount: 0,
         chatVisible: false,
+        settingsActiveIndex: -1,
     };
 
     shidurInitialized() {
@@ -1279,6 +1279,14 @@ class MobileClient extends Component {
       }
     }
 
+    handleClick = (e, titleProps) => {
+      const { index } = titleProps;
+      const { settingsActiveIndex } = this.state;
+      const newIndex = settingsActiveIndex === index ? -1 : index;
+
+      this.setState({ settingsActiveIndex: newIndex })
+    }
+
     render() {
       const {t, i18n} = this.props;
       const {
@@ -1300,6 +1308,7 @@ class MobileClient extends Component {
         room,
         rooms,
         selected_room,
+        settingsActiveIndex,
         shidur,
         shidurJanus,
         shidurLoading,
@@ -1330,16 +1339,6 @@ class MobileClient extends Component {
       let rooms_list = rooms.map((data,i) => {
           const { room, description, num_users } = data;
           return ({ key: i, text: description, description: num_users, value: room });
-      });
-
-      let adevices_list = media.audio.devices.map((device,i) => {
-          const {label, deviceId} = device;
-          return ({ key: i, text: label, value: deviceId})
-      });
-
-      let vdevices_list = media.video.devices.map((device,i) => {
-          const {label, deviceId} = device;
-          return ({ key: i, text: label, value: deviceId})
       });
 
       let connectionIcon = () => {
@@ -1438,44 +1437,87 @@ class MobileClient extends Component {
                       {!room ? <Button size='massive' className="login-icon" primary icon='sign-in' loading={delay} disabled={delay || !selected_room} onClick={() => this.initClient(false)} />:""}
                   </Input>
                   <Menu icon="labeled" size="massive" secondary>
-                    <Popup trigger={<Menu.Item icon="setting" name={t('oldClient.settings')} position="right" />}
+                    <Modal trigger={<Menu.Item icon="setting" name={t('oldClient.settings')} position="right" />}
                            on='click'
-                           position='bottom right'>
-                        <Popup.Content>
-                            <Button className="select_device" size="massive">
-                                <Icon name="user circle"/>
-                                <Profile title={user ? user.display : ''} kc={kc} />
-                            </Button>
-                            <Select className='select_device'
-                                    disabled={!!room}
-                                    error={!audio_device}
-                                    placeholder={t('oldClient.selectDevice')}
-                                    value={audio_device}
-                                    options={adevices_list}
-                                    onChange={(e, { value }) => this.setAudioDevice(value)} />
-                            <Select className='select_device'
-                                    disabled={!!room}
-                                    error={!media.video.video_device}
-                                    placeholder={t('oldClient.selectDevice')}
-                                    value={media.video.video_device}
-                                    options={vdevices_list}
-                                    onChange={(e, { value }) => this.setVideoDevice(value)} />
-                            <Select className='select_device'
-                                    disabled={!!room}
-                                    error={!media.video.video_device}
-                                    placeholder={t('oldClient.videoSettings')}
-                                    value={media.video.setting}
-                                    options={vsettings_list}
-                                    onChange={(e, { value }) => this.setVideoSize(value)} />
-                            <Select className='select_device'
-                                    value={i18n.language}
-                                    options={languagesOptions}
-                                    onChange={(e, { value }) => {
-                                      setLanguage(value);
-                                      this.setState({ selftest: t('oldClient.selfAudioTest') });
-                                    }} />
-                        </Popup.Content>
-                    </Popup>
+                           closeIcon
+                           className='settings'>
+                      <Accordion as={Menu} vertical>
+                        <Menu.Item className='settings-title'>
+                          <Accordion.Title
+                            active={settingsActiveIndex === 0}
+                            content={t('oldClient.video')}
+                            index={0}
+                            onClick={this.handleClick}
+                          />
+                        </Menu.Item>
+                        {settingsActiveIndex === 0 && media.video.devices.map((device, i) => (
+                          <Menu.Item key={`video-${i}`}
+                                     name={device.label}
+                                     className={video_device === device.deviceId ? 'selected' : null}
+                                     onClick={() => this.setVideoDevice(device.deviceId)} />
+                        ))}
+                        <Menu.Item className='settings-title'>
+                          <Accordion.Title
+                            active={settingsActiveIndex === 1}
+                            content={t('oldClient.audio')}
+                            index={1}
+                            onClick={this.handleClick}
+                          />
+                        </Menu.Item>
+                        {settingsActiveIndex === 1 && media.audio.devices.map((device, i) => (
+                          <Menu.Item key={`audio-${i}`}
+                                     name={device.label}
+                                     className={audio_device === device.deviceId ? 'selected' : null}
+                                     onClick={() => this.setAudioDevice(device.deviceId)} />
+                        ))}
+                        <Menu.Item className='settings-title'>
+                          <Accordion.Title
+                            active={settingsActiveIndex === 2}
+                            content={t('oldClient.cameraQuality')}
+                            index={2}
+                            onClick={this.handleClick}
+                          />
+                        </Menu.Item>
+                        {settingsActiveIndex === 2 && vsettings_list.filter((quality) => quality.mobileText).map((quality, i) => (
+                          <Menu.Item key={`quality-${i}`}
+                                     name={t(`oldClient.${quality.mobileText}`)}
+                                     className={JSON.stringify(media.video.setting) ===
+                                                JSON.stringify(quality.value) ? 'selected' : null}
+                                     onClick={() => this.setVideoSize(quality.value)} />
+                        ))}
+                        <Menu.Item className='settings-title'>
+                          <Accordion.Title
+                            active={settingsActiveIndex === 3}
+                            content={t('oldClient.language')}
+                            index={3}
+                            onClick={this.handleClick}
+                          />
+                        </Menu.Item>
+                        {settingsActiveIndex === 3 && languagesOptions.map((language) => (
+                          <Menu.Item key={`lang-${language.key}`}
+                                     name={language.text}
+                                     className={i18n.language === language.value ? 'selected' : null}
+                                     onClick={() => setLanguage(language.value)} />
+                        ))}
+                        <Menu.Item className='settings-title'>
+                          <Accordion.Title
+                            active={settingsActiveIndex === 4}
+                            index={4}
+                            onClick={this.handleClick}>
+                            <Icon name="user circle" />
+                            <span className='name'>{user ? user.display : ''}</span>
+                            <Icon name={settingsActiveIndex === 4 ? 'caret down' : 'caret left'}
+                                  style={{float: 'right'}} />
+                          </Accordion.Title>
+                        </Menu.Item>
+                        {settingsActiveIndex === 4 && <Menu.Item
+                            name={t('oldClient.myAccount')}
+                            onClick={() => window.open('https://accounts.kbb1.com/auth/realms/main/account')} />}
+                        {settingsActiveIndex === 4 && <Menu.Item
+                            name={t('oldClient.signOut')}
+                            onClick={() => kc.logout()} />}
+                      </Accordion>
+                    </Modal>
                   </Menu>
                 </div>
 

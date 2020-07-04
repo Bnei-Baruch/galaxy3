@@ -12,10 +12,10 @@ export const JANUS_GATEWAYS = ["gxy1", "gxy2", "gxy3"];
 // TODO (edo): put all janus instance configs in a single object
 
 export const vsettings_list = [
-    { key: 0, text: '320 x 180, 15 fps', value: {width: 320, height: 180, ideal: 15}},
-    { key: 1, text: '320 x 180, 30 fps', value: {width: 320, height: 180, ideal: 30} },
+    { key: 0, text: '320 x 180, 15 fps', value: {width: 320, height: 180, ideal: 15}, mobileText: 'low'},
+    { key: 1, text: '320 x 180, 30 fps', value: {width: 320, height: 180, ideal: 30}, mobileText: 'medium'},
     { key: 2, text: '640 x 360, 15 fps', value: {width: 640, height: 360, ideal: 15} },
-    { key: 3, text: '640 x 360, 30 fps', value: {width: 640, height: 360, ideal: 30} },
+    { key: 3, text: '640 x 360, 30 fps', value: {width: 640, height: 360, ideal: 30}, mobileText: 'high'},
 ];
 
 export const NO_VIDEO_OPTION_VALUE = -1;

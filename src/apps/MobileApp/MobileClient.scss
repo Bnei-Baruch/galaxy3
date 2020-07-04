@@ -475,3 +475,40 @@
     }
   }
 }
+
+.settings {
+  &.ui.active.modal {
+    background-color: #f2f2f2;
+    font-size: 3rem;
+
+    .close {
+      top: 0.2em;
+      right: 0.3em;
+      color: rgba(0,0,0,.87);
+    }
+  }
+
+  .ui.accordion {
+    font-size: 4rem;
+    width: 100%;
+
+    &.vertical.menu .item {
+      &.settings-title {
+        background-color: #f2f2f2;
+        .name {
+          width: calc(100% - 10rem);
+          display: inline-block;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          vertical-align: bottom;
+        }
+      }
+      &.selected {
+        background-color: #2185d0;
+        color: white;
+      }
+    }
+  }
+
+}
