@@ -1445,13 +1445,15 @@ class MobileClient extends Component {
                         <Menu.Item className='settings-title'>
                           <Accordion.Title
                             active={settingsActiveIndex === 0}
+                            className={classNames({'disabled': !!room})}
                             content={t('oldClient.video')}
                             index={0}
                             onClick={this.handleClick}
                           />
                         </Menu.Item>
-                        {settingsActiveIndex === 0 && media.video.devices.map((device, i) => (
+                        {!room && settingsActiveIndex === 0 && media.video.devices.map((device, i) => (
                           <Menu.Item key={`video-${i}`}
+                                     disabled={!!room}
                                      name={device.label}
                                      className={video_device === device.deviceId ? 'selected' : null}
                                      onClick={() => this.setVideoDevice(device.deviceId)} />
@@ -1459,13 +1461,15 @@ class MobileClient extends Component {
                         <Menu.Item className='settings-title'>
                           <Accordion.Title
                             active={settingsActiveIndex === 1}
+                            className={classNames({'disabled': !!room})}
                             content={t('oldClient.audio')}
                             index={1}
                             onClick={this.handleClick}
                           />
                         </Menu.Item>
-                        {settingsActiveIndex === 1 && media.audio.devices.map((device, i) => (
+                        {!room && settingsActiveIndex === 1 && media.audio.devices.map((device, i) => (
                           <Menu.Item key={`audio-${i}`}
+                                     disabled={!!room}
                                      name={device.label}
                                      className={audio_device === device.deviceId ? 'selected' : null}
                                      onClick={() => this.setAudioDevice(device.deviceId)} />
@@ -1473,13 +1477,15 @@ class MobileClient extends Component {
                         <Menu.Item className='settings-title'>
                           <Accordion.Title
                             active={settingsActiveIndex === 2}
+                            className={classNames({'disabled': !!room})}
                             content={t('oldClient.cameraQuality')}
                             index={2}
                             onClick={this.handleClick}
                           />
                         </Menu.Item>
-                        {settingsActiveIndex === 2 && vsettings_list.filter((quality) => quality.mobileText).map((quality, i) => (
+                        {!room && settingsActiveIndex === 2 && vsettings_list.filter((quality) => quality.mobileText).map((quality, i) => (
                           <Menu.Item key={`quality-${i}`}
+                                     disabled={!!room}
                                      name={t(`oldClient.${quality.mobileText}`)}
                                      className={JSON.stringify(media.video.setting) ===
                                                 JSON.stringify(quality.value) ? 'selected' : null}

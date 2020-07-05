@@ -479,18 +479,34 @@
 .settings {
   &.ui.active.modal {
     background-color: #f2f2f2;
-    font-size: 3rem;
+    @include landscape {
+      font-size: 1.7rem;
+      width: 50vw;
+    }
+    @include portrait {
+      font-size: 3rem;
+    }
 
     .close {
       top: 0.2em;
-      right: 0.3em;
+      @include landscape {
+        right: 0.4em;
+      }
+      @include portrait {
+        right: 0.3em;
+      }
       color: rgba(0,0,0,.87);
     }
   }
 
   .ui.accordion {
-    font-size: 4rem;
     width: 100%;
+    @include landscape {
+      font-size: 2rem;
+    }
+    @include portrait {
+      font-size: 4rem;
+    }
 
     &.vertical.menu .item {
       &.settings-title {
@@ -502,6 +518,12 @@
           text-overflow: ellipsis;
           white-space: nowrap;
           vertical-align: bottom;
+        }
+
+        .disabled {
+          cursor: default !important;
+          background-color: transparent !important;
+          color: rgba(40,40,40,.3) !important;
         }
       }
       &.selected {
