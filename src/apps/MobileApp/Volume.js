@@ -27,7 +27,7 @@ const Volume = ({ media, muted, setMuted }) => {
     <div className="mediaplayer__volume">
       <button type="button" onClick={handleMuteUnmute}>
         {(muted || volumeState === 0) && (
-            <Icon key="mute" name="volume off" color="white" />
+            <Icon key="mute" name="volume off" color="red" />
         )}
         {!muted && volumeState > 0 && volumeState < 0.5 && (
             <Icon key="volume-down" name="volume down" color="white" />

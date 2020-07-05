@@ -1131,11 +1131,14 @@ class MobileClient extends Component {
           this.chat.exitChatRoom(room);
         }
 
+        if (this.state.shidur) {
+          this.toggleShidur();
+        }
+
         setTimeout(() => {
             if(videoroom) videoroom.detach();
             if(protocol) protocol.detach();
             if(janus) janus.destroy();
-            this.setShidurMuted(!reconnect);
             this.setState({
                 cammuted: false, muted: false, question: false,
                 feeds: [], mids: [], showed_mids:[],
