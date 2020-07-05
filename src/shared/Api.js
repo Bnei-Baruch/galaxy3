@@ -108,7 +108,7 @@ class Api {
           return response.json();
         })
         .then(data => {
-          console.debug(`[API] ${action} success`, data);
+          //console.debug(`[API] ${action} success`, data);
           return data;
         })
         .catch(err => {

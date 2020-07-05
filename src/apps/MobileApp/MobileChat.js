@@ -47,12 +47,14 @@ class MobileChat extends Component {
     exitChatRoom = (room) => {
         let {chatroom} = this.state;
         let chatreq = {textroom : "leave", transaction: Janus.randomString(12),"room": room};
-        chatroom.data({text: JSON.stringify(chatreq),
-            success: () => {
-                Janus.log(":: Text room leave callback: ");
-                this.setState({messages:[]});
-            }
-        });
+        if(chatroom) {
+            chatroom.data({text: JSON.stringify(chatreq),
+                success: () => {
+                    Janus.log(":: Text room leave callback: ");
+                    this.setState({messages:[], chatroom: null});
+                }
+            });
+        }
     };
 
     onData = (data) => {

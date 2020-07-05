@@ -154,7 +154,7 @@ class GxyJanus extends EventTarget {
     }
 
     debug = (...args) => {
-        console.debug(`[${this.name}]`, ...args)
+        //console.debug(`[${this.name}]`, ...args)
     };
     log = (...args) => {
         console.log(`[${this.name}]`, ...args)
