@@ -1466,7 +1466,7 @@ class VirtualClient extends Component {
 						closeIcon
 						className='homet-limud'>
               <iframe src={`https://groups.google.com/forum/embed/?place=forum/bb-study-materials&showpopout=true&showtabs=false&parenturl=${encodeURIComponent(window.location.href)}`}
-                style={{height: '60vh', margin: '1rem'}} frameBorder="0"></iframe>
+                style={{width: '100%', height: '60vh', padding: '1rem'}} frameBorder="0"></iframe>
 					</Modal>   
         </Menu>
         <Menu icon='labeled' secondary size="mini">
