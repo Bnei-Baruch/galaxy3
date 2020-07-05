@@ -2,7 +2,7 @@ import React, {Component, Fragment} from 'react';
 import {Janus} from '../../lib/janus';
 import classNames from 'classnames';
 import {isMobile} from 'react-device-detect';
-import {Button, Icon, Input, Label, Menu, Popup, Select,Image} from 'semantic-ui-react';
+import {Button, Icon, Input, Label, Menu, Modal, Popup, Select,Image} from 'semantic-ui-react';
 import {checkNotification, geoInfo, getMedia, getMediaStream, initJanus, micLevel, reportToSentry, takeImage, testMic, wkliLeave} from '../../shared/tools';
 import './VirtualClient.scss';
 import './VideoConteiner.scss';
@@ -1459,16 +1459,15 @@ class VirtualClient extends Component {
               </Button.Group>
             </Popup.Content>
           </Popup>
-          <Popup
-            trigger={<Menu.Item icon='book' name={t('oldClient.homerLimud')} />}
-            on='click'
-            position='bottom center'
-          >
-            <Popup.Content>
+					<Modal
+						trigger={<Menu.Item icon='book' name={t('oldClient.homerLimud')} />}
+						disabled={!localAudioTrack}
+						on='click'
+						closeIcon
+						className='homet-limud'>
               <iframe src={`https://groups.google.com/forum/embed/?place=forum/bb-study-materials&showpopout=true&showtabs=false&parenturl=${encodeURIComponent(window.location.href)}`}
-                style={{width: '50em', height: '50em'}} frameBorder="0"></iframe>
-            </Popup.Content>
-          </Popup>
+                style={{height: '60vh', margin: '1rem'}} frameBorder="0"></iframe>
+					</Modal>   
         </Menu>
         <Menu icon='labeled' secondary size="mini">
           {!room ?
