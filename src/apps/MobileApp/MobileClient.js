@@ -30,6 +30,8 @@ import connectionGray from '../VirtualApp/connection-gray.png';
 import VirtualStreamingMobile from './VirtualStreamingMobile';
 import VirtualStreamingJanus from '../../shared/VirtualStreamingJanus';
 
+import VirtualChat from '../VirtualApp/VirtualChat';
+
 class MobileClient extends Component {
 
     state = {
@@ -87,6 +89,8 @@ class MobileClient extends Component {
         shidurLoading: true,
         shidurJanus: new VirtualStreamingJanus(() => this.shidurInitialized()),
         talking: false,
+        chatMessagesCount: 0,
+        chatVisible: false,
     };
 
     shidurInitialized() {
@@ -137,7 +141,7 @@ class MobileClient extends Component {
             window.location = '/user/';
             return;
         }
-        this.state.shidurJanus.onTalking((talking) => { console.log('onTalking', talking); this.setState({talking}); });
+        this.state.shidurJanus.onTalking((talking) => this.setState({talking}));
     };
 
     componentWillUnmount() {
@@ -210,6 +214,7 @@ class MobileClient extends Component {
           if (Janus.unifiedPlan) {
             user.session = janus.getSessionId();
             this.setState({janus});
+            this.chat.initChat(janus);
             this.initVideoRoom(reconnect, user);
           } else {
             alert(t('oldClient.unifiedPlanNotSupported'));
@@ -279,7 +284,7 @@ class MobileClient extends Component {
         let {media} = this.state;
         if(JSON.stringify(video_setting) === JSON.stringify(media.video.setting))
             return
-        getMediaStream(false,true, video_setting,null, media.video.video_device)
+        getMediaStream(false, true, video_setting,null, media.video.video_device)
             .then(data => {
                 console.log(data)
                 const [stream, error] = data;
@@ -300,7 +305,7 @@ class MobileClient extends Component {
         let {media} = this.state;
         if(video_device === media.video.video_device)
             return
-        getMediaStream(false,true, media.video.setting,null,video_device)
+        getMediaStream(false, true, media.video.setting,null,video_device)
             .then(data => {
                 console.log(data)
                 const [stream, error] = data;
@@ -321,7 +326,7 @@ class MobileClient extends Component {
         let {media} = this.state;
         if(audio_device === media.audio.audio_device)
             return
-        getMediaStream(true,false, media.video.setting, audio_device,null)
+        getMediaStream(true, false, media.video.setting, audio_device,null)
             .then(data => {
                 console.log(data)
                 const [stream, error] = data;
@@ -509,7 +514,6 @@ class MobileClient extends Component {
     };
 
     onRoomData = (data) => {
-        console.log('ON_ROOM_DATA!!!', data);
         const {user} = this.state;
         const feeds = Object.assign([], this.state.feeds);
         const {camera,question,rcmd,type,id} = data;
@@ -979,7 +983,7 @@ class MobileClient extends Component {
         } else if(feeds.length < 3) {
             Janus.log(" :: Clean up Quad");
             for (let i=0; i<video_mids.length; i++) {
-                if(!video_mids[i].active) {
+                if(video_mids[i] && !video_mids[i].active) {
                     video_mids[i] = null;
                     this.setState({video_mids});
                 }
@@ -1073,13 +1077,15 @@ class MobileClient extends Component {
                 let register = {"request": "join", "room": selected_room, "ptype": "publisher", "display": JSON.stringify(d)};
                 videoroom.send({"message": register,
                     success: () => {
-                        // this.chat.initChatRoom(user, selected_room);
+                        this.chat.initChatRoom(user, selected_room);
                     },
                     error: (error) => {
                         console.error(error);
                         this.exitRoom(false);
                     }
                 });
+            } else if (type === 'chat-broadcast' && room === selected_room) {
+              this.chat.showSupportMessage(ondata);
             } else if(type === "client-reconnect" && user.id === id) {
                 this.exitRoom(true);
             } else if(type === "client-reload" && user.id === id) {
@@ -1120,6 +1126,10 @@ class MobileClient extends Component {
                 this.setState({rooms});
             });
 
+        if (this.chat) {
+          this.chat.exitChatRoom(room);
+        }
+
         setTimeout(() => {
             if(videoroom) videoroom.detach();
             if(protocol) protocol.detach();
@@ -1132,6 +1142,7 @@ class MobileClient extends Component {
                 remoteFeed: null, videoroom: null, protocol: null, janus: null,
                 delay: reconnect,
                 room: reconnect ? room : '',
+                chatMessagesCount: 0,
             });
             if(typeof callback === "function") callback();
         }, 2000);
@@ -1235,13 +1246,49 @@ class MobileClient extends Component {
       this.setState(stateUpdate);
     };
 
+    onChatMessage = () => {
+      this.setState({chatMessagesCount: this.state.chatMessagesCount + 1});
+    };
+
+    chatMount = () => {
+      if (this.chatModal && this.chatWrapper && this.chatWrapper.firstChild) {
+        this.chatModal.appendChild(this.chatWrapper.firstChild);
+        this.setState({chatVisible: true, chatMessagesCount: 0});
+      }
+    }
+
+    chatUnmount = () => {
+      if (this.chatWrapper && this.chatModal && this.chatModal.firstChild) {
+        this.chatWrapper.appendChild(this.chatModal.firstChild);
+        this.setState({chatVisible: false});
+      }
+    }
+
+    homerLimudCss = (ref) => {
+      console.log(ref);
+      return;
+
+      if (ref) {
+        ref.onload = () => {
+          var body = ref.contentWindow.document.querySelector('body');
+          body.style.color = 'red';
+          console.log('loaded')
+          body.style.fontSize = '3rem';
+          body.style.lineHeight = '3rem';
+        }
+      }
+    }
+
     render() {
       const {t, i18n} = this.props;
       const {
         appInitError,
         audio,
         cammuted,
+        chatMessagesCount,
+        chatVisible,
         delay,
+        janus,
         localAudioTrack,
         media,
         monitoringData,
@@ -1254,10 +1301,10 @@ class MobileClient extends Component {
         rooms,
         selected_room,
         shidur,
+        shidurJanus,
         shidurLoading,
         talking,
         user,
-        shidurJanus,
       } = this.state;
     
       const {video_device} = media.video;
@@ -1372,9 +1419,9 @@ class MobileClient extends Component {
       const questionDisabled = !audio_device || !localAudioTrack || delay || otherFeedHasQuestion;
       const login = (<LoginPage user={user} checkPermission={this.checkPermission} />);
       const openVideoDisabled = video_device === null || !localAudioTrack || delay;
+      const chatCountLabel = (<Label key='Carbon' floating size='mini' color='red'>{chatMessagesCount}</Label>);
       const content = (
         <div>
-          <div>
             <div className='vclient'>
                 <div className="vclient__toolbar">
                   <Input iconPosition='left' action>
@@ -1517,7 +1564,6 @@ class MobileClient extends Component {
             </div>
             { !(new URL(window.location.href).searchParams.has('lost')) ? null :
                 (<Label color={net_status === 2 ? 'yellow' : net_status === 3 ? 'red' : 'green'} icon='wifi' corner='right' />)}
-          </div>
           <div className={classNames('vclient__toolbar', 'bottom')}>
               <Menu icon='labeled' size='massive' secondary>
                   <Menu.Item disabled={!localAudioTrack} onClick={this.micMute} className="mute-button">
@@ -1538,8 +1584,50 @@ class MobileClient extends Component {
                       {t('oldClient.askQuestion')}
                     </span>
                   </Menu.Item>
+                  <Modal
+                    trigger={
+                      <Menu.Item disabled={!localAudioTrack}>
+                        <Icon name="comments" />
+                        {t('oldClient.openChat')}
+                        {chatMessagesCount > 0 ? chatCountLabel : ''}
+                      </Menu.Item>
+                    }
+                    disabled={!localAudioTrack}
+                    on='click'
+                    closeIcon
+                    className='chat'
+                    onMount={() => this.chatMount()}
+                    onUnmount={() => this.chatUnmount()}
+                  >
+                    <div ref={chatModal => {this.chatModal = chatModal;}}></div>
+                  </Modal>
+                  <Menu.Item icon='book'
+                             name={t('oldClient.homerLimud')}
+                             onClick={() => window.open('https://groups.google.com/forum/m/#!forum/bb-study-materials')}/>
+                  <Modal
+                    trigger={<Menu.Item disabled={!user || !user.id || room === ''} icon='hand paper outline' name={t('oldClient.vote')} />}
+                    disabled={!user || !user.id || room === ''}
+                    on='click'
+                    closeIcon
+                    className='vote'
+                  >
+                    <Button.Group>
+                      <iframe src={`https://vote.kli.one/button.html?answerId=1&userId=${user && user.id}`} frameBorder="0"></iframe>
+                      <iframe src={`https://vote.kli.one/button.html?answerId=2&userId=${user && user.id}`} frameBorder="0"></iframe>
+                    </Button.Group>
+                  </Modal>
                   <Monitoring monitoringData={monitoringData} />
               </Menu>
+          </div>
+          <div className='chat-wrapper' ref={chatWrapper => {this.chatWrapper = chatWrapper;}}>
+            <VirtualChat
+              t={t}
+              ref={chat => {this.chat = chat;}}
+              visible={chatVisible}
+              janus={janus}
+              room={room}
+              user={user}
+              onNewMsg={this.onChatMessage} />
           </div>
         </div>
       );
