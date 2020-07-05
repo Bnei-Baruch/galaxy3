@@ -3,19 +3,17 @@ import { Icon } from 'semantic-ui-react';
 
 import './Volume.css';
 
-const Volume = ({ media }) => {
+const Volume = ({ media, muted, setMuted }) => {
   const [volumeState, setVolumeState] = useState(0);
-  const [mutedState, setMutedState] = useState(0);
 
 	useEffect(() => {
-		setVolumeState((media && media.volume) || 0);
-		setMutedState(!media || media.muted);
-	}, [media]);
+		setVolumeState((media && media.volume) || 0.6 /* default */);
+	}, [media, muted]);
 
   const handleMuteUnmute = () => {
-    media.muted = !media.muted;
-		setMutedState(media.muted);
-		if (media.muted) {
+    media.muted = !muted;
+    setMuted(media.muted);
+		if (muted) {
 			setVolumeState(0);
 		} else {
 			if (media.volume === 0) {
@@ -28,31 +26,18 @@ const Volume = ({ media }) => {
   return (
     <div className="mediaplayer__volume">
       <button type="button" onClick={handleMuteUnmute}>
-        {
-          (mutedState || volumeState === 0) && (
-            <Icon key="mute" name="volume off" color="white" />
-          )
-        }
-        {
-          !mutedState && volumeState > 0 && volumeState < 0.5 && (
+        {(muted || volumeState === 0) && (
+            <Icon key="mute" name="volume off" color="red" />
+        )}
+        {!muted && volumeState > 0 && volumeState < 0.5 && (
             <Icon key="volume-down" name="volume down" color="white" />
-          )
-        }
-        {
-          !mutedState && volumeState >= 0.5 && (
+        )}
+        {!muted && volumeState >= 0.5 && (
             <Icon key="volume-up" name="volume up" color="white" />
-          )
-        }
+        )}
       </button>
     </div>
   );
 };
 
-const arePropsEqual = (props, nextProps) => {
-  const { media } = props;
-
-	const ret = media === nextProps.media;
-	return ret;
-};
-
-export default React.memo(Volume, arePropsEqual);
+export default Volume

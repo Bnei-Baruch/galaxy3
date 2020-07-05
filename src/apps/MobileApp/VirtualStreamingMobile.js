@@ -217,7 +217,9 @@ class VirtualStreaming extends Component {
               <Icon name="stop" />
             </Menu.Item>
             <Menu.Item>
-              <Volume media={shidurJanus.audioElement} />
+              <Volume media={shidurJanus.audioElement}
+                      muted={this.props.muted}
+                      setMuted={this.props.setMuted} />
             </Menu.Item>
 						{!fullScreen && <Modal className="video-selection"
 									 open={videoSelectionOpen}

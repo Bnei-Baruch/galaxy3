@@ -84,9 +84,10 @@ class MobileClient extends Component {
         appInitError: null,
         net_status: 1,
         keepalive: null,
-        shidur: true,
-        shidurLoading: true,
+        shidur: false,
+        shidurLoading: false,
         shidurJanus: new VirtualStreamingJanus(() => this.shidurInitialized()),
+        shidurMuted: false,
         talking: false,
         chatMessagesCount: 0,
         chatVisible: false,
@@ -97,15 +98,20 @@ class MobileClient extends Component {
       this.setState({shidurLoading: false});
     }
 
+    setShidurMuted(muted) {
+      this.state.shidurJanus.audioElement.muted = muted;
+      this.setState({shidurMuted: muted});
+    }
+
     componentDidUpdate(prevProps, prevState) {
-      if (this.state.shidur && !prevState.shidur && !this.state.shidurLoading && this.room) {
-        this.state.shidurJanus.audioElement.muted = false;
+      const {room, shidur, shidurLoading, shidurMuted} = this.state;
+      // We are in the room and shidur now enabled (not loading).
+      if (!shidurMuted && shidur && !prevState.shidur && !shidurLoading && room) {
+        this.setShidurMuted(false);
       }
-      if (!this.state.shidurLoading && prevState.shidurLoading && this.state.shidur && this.room) {
-        this.state.shidurJanus.audioElement.muted = false;
-      }
-      if (this.state.room && !prevState.room && this.state.shidur && !this.shidurLoading) {
-        this.state.shidurJanus.audioElement.muted = false;
+      // We are in the room shidur is on and shidur finished loading.
+      if (!shidurMuted && !shidurLoading && prevState.shidurLoading && shidur && room) {
+        this.setShidurMuted(false);
       }
       if (this.state.videoroom !== prevState.videoroom ||
           this.state.localVideoTrack !== prevState.localVideoTrack ||
@@ -225,11 +231,6 @@ class MobileClient extends Component {
               this.reinitClient(retry);
           });
       }, config.url, config.token, config.iceServers);
-
-      if(!reconnect) {
-        const {ip, country} = user;
-        this.state.shidurJanus.init(ip, country);
-      }
     };
 
     reinitClient = (retry) => {
@@ -1130,11 +1131,14 @@ class MobileClient extends Component {
           this.chat.exitChatRoom(room);
         }
 
+        if (this.state.shidur) {
+          this.toggleShidur();
+        }
+
         setTimeout(() => {
             if(videoroom) videoroom.detach();
             if(protocol) protocol.detach();
             if(janus) janus.destroy();
-            this.state.shidurJanus.audioElement.muted = !reconnect;
             this.setState({
                 cammuted: false, muted: false, question: false,
                 feeds: [], mids: [], showed_mids:[],
@@ -1540,6 +1544,8 @@ class MobileClient extends Component {
 										shidurJanus={shidurJanus}
 										toggleShidur={this.toggleShidur}
 										audio={this.state.shidurJanus && this.state.shidurJanus.audioElement}
+                    muted={this.state.shidurMuted}
+                    setMuted={(muted) => this.setShidurMuted(muted)}
 									/> : null}
 								</div>
 
