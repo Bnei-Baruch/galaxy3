@@ -903,12 +903,10 @@ class VirtualClient extends Component {
     const subscription = [];
     newFeeds.forEach(feed => {
       const {id, streams} = feed;
-      console.log(JSON.stringify(feed));
       feed.video = !!streams.find(v => v.type === 'video' && v.codec === "h264");
       feed.audio = !!streams.find(a => a.type === 'audio' && a.codec === "opus");
       feed.data = !!streams.find(d => d.type === 'data');
       feed.cammute = !feed.video;
-      console.log(JSON.stringify(feed));
 
       streams.forEach(stream => {
         if ((subscribeToVideo && stream.type === "video" && stream.codec === "h264") ||
