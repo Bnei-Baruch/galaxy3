@@ -31,8 +31,6 @@ export const resources = {
         stopVideo: 'Stop Video',
         audioMode: 'Audio Mode',
         fullMode: 'Full Mode',
-        hideOtherVideos: 'Hide Other Videos',
-        showOtherVideos: 'Show Other Videos',
         selectDevice: 'Select device:',
         videoSettings: 'Video Settings:',
         noResultsFound: 'No results found.',
