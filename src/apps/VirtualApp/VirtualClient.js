@@ -31,6 +31,8 @@ import connectionOrange from './connection-orange.png';
 import connectionWhite from './connection-white.png';
 import connectionRed from './connection-red.png';
 import connectionGray from './connection-gray.png';
+import audioModeSvg from '../../shared/audio-mode.svg';
+import fullModeSvg from '../../shared/full-mode.svg';
 
 class VirtualClient extends Component {
 
@@ -90,6 +92,7 @@ class VirtualClient extends Component {
     upval: null,
     net_status: 1,
     keepalive: null,
+    muteOtherCams: false,
   };
 
   virtualStreamingInitialized() {
@@ -679,7 +682,9 @@ class VirtualClient extends Component {
 
           Janus.debug('Got a list of available publishers/feeds:');
           Janus.log(list);
-          this.makeSubscription(feeds, false);
+          this.makeSubscription(feeds, /* feedsJustJoined= */ false,
+                                /* subscribeToVideo= */ !this.state.muteOtherCams,
+                                /* subscribeToAudio= */ true, /* subscribeToData= */ true);
         }
       } else if (event === 'talking') {
         const feeds = Object.assign([], this.state.feeds);
@@ -721,14 +726,15 @@ class VirtualClient extends Component {
 
           Janus.debug('New list of available publishers/feeds:');
           Janus.debug(feeds);
-
-          this.makeSubscription(feeds, true);
+          this.makeSubscription(feeds, /* feedsJustJoined= */ true,
+                                /* subscribeToVideo= */ !this.state.muteOtherCams,
+                                /* subscribeToAudio= */ true, /* subscribeToData= */ true);
 
         } else if (msg['leaving'] !== undefined && msg['leaving'] !== null) {
           // One of the publishers has gone away?
           const leaving = msg['leaving'];
           Janus.log('Publisher left: ' + leaving);
-          this.unsubscribeFrom(leaving);
+          this.unsubscribeFrom([leaving], /* onlyVideo= */ false);
         } else if (msg['unpublished'] !== undefined && msg['unpublished'] !== null) {
           const unpublished = msg['unpublished'];
           Janus.log('Publisher left: ' + unpublished);
@@ -737,7 +743,7 @@ class VirtualClient extends Component {
             videoroom.hangup();
             return;
           }
-          this.unsubscribeFrom(unpublished);
+          this.unsubscribeFrom([unpublished], /* onlyVideo= */ false);
         } else if (msg['error'] !== undefined && msg['error'] !== null) {
           if (msg['error_code'] === 426) {
             Janus.log('This is a no such room');
@@ -886,36 +892,41 @@ class VirtualClient extends Component {
       });
   };
 
-  makeSubscription = (feeds, new_feed) => {
-    let subscription = [];
-    for (let f in feeds) {
-      let feed = feeds[f];
-      let {id,streams} = feed;
+  // Subscribe to feeds, whether already existing in the room, when I joined
+  // or new feeds that join the room when I'm already in. In both cases I
+  // should add those feeds to my feeds list.
+  // In case of feeds just joined and |question| is set, we should notify the
+  // new entering user by notifying everyone.
+  // Subscribes selectively to different stream types |subscribeToVideo|, |subscribeToAudio|, |subscribeToData|.
+  // This is required to stop and then start only the videos to save bandwidth.
+  makeSubscription = (newFeeds, feedsJustJoined, subscribeToVideo, subscribeToAudio, subscribeToData) => {
+    const subscription = [];
+    newFeeds.forEach(feed => {
+      const {id, streams} = feed;
       feed.video = !!streams.find(v => v.type === 'video' && v.codec === "h264");
       feed.audio = !!streams.find(a => a.type === 'audio' && a.codec === "opus");
       feed.data = !!streams.find(d => d.type === 'data');
       feed.cammute = !feed.video;
-      for (let i in streams) {
-        let stream = streams[i];
-        const video = stream.type === "video" && stream.codec === "h264";
-        const audio = stream.type === "audio" && stream.codec === "opus";
-        const data = stream.type === "data";
-        if (video) {
+
+      streams.forEach(stream => {
+        if ((subscribeToVideo && stream.type === "video" && stream.codec === "h264") ||
+            (subscribeToAudio && stream.type === "audio" && stream.codec === "opus") ||
+            (subscribeToData && stream.type === "data")) {
           subscription.push({feed: id, mid: stream.mid});
         }
-        if (audio) {
-          subscription.push({feed: id, mid: stream.mid});
-        }
-        if (data) {
-          subscription.push({feed: id, mid: stream.mid});
-        }
-      }
-    }
-    this.setState({feeds:[...this.state.feeds,...feeds]});
+      });
+    });
+    // Merge |newFeeds| with existing feeds.
+    const {feeds} = this.state;
+    const feedsIds = new Set(feeds.map(feed => feed.id));
+    // Add only non yet existing feeds.
+    this.setState({feeds: [...feeds, ...newFeeds.filter(feed => !feedsIds.has(feed.id))]});
+
     if (subscription.length > 0) {
       this.subscribeTo(subscription);
-      if(new_feed) {
-        // Send question event for new feed
+      if(feedsJustJoined) {
+        // Send question event for new feed, by notifying all room.
+        // FIXME: Can this be done by notifying only the joined feed?
         setTimeout(() => {
           if (this.state.question) {
             this.sendDataMessage('question', true);
@@ -948,22 +959,32 @@ class VirtualClient extends Component {
     this.newRemoteFeed(subscription);
   };
 
-  unsubscribeFrom = (id) => {
-    // Unsubscribe from this publisher
-    const {remoteFeed} = this.state;
-    const feeds = Object.assign([], this.state.feeds);
-    for (let i = 0; i<feeds.length; i++) {
-      if (feeds[i].id === id) {
-        Janus.log('Feed ' + feeds[i] + ' (' + id + ') has left the room, detaching');
-        feeds.splice(i, 1);
-        // Send an unsubscribe request
-        let unsubscribe = {request: 'unsubscribe', streams: [{ feed: id }]};
-        if (remoteFeed !== null) {
-          remoteFeed.send({ message: unsubscribe });
-        }
-        this.setState({feeds});
-        break;
+  // Unsubscribe from feeds defined by |ids| (with all streams) and remove it when |onlyVideo| is false.
+  // If |onlyVideo| is true, will unsubscribe only from video stream of those specific feeds, keeping those feeds.
+  unsubscribeFrom = (ids, onlyVideo) => {
+    const {feeds} = this.state;
+    const idsSet = new Set(ids);
+    const unsubscribe = {request: 'unsubscribe', streams: []};
+    feeds.filter(feed => idsSet.has(feed.id)).forEach(feed => {
+      if (onlyVideo) {
+        // Unsubscribe only from one video stream (not all publisher feed).
+        // Acutally expecting only one video stream, but writing more generic code.
+        feed.streams.filter(stream => stream.type === 'video')
+          .map(stream => ({feed: feed.id, mid: stream.mid}))
+          .forEach(stream => unsubscribe.streams.push(stream));
+      } else {
+        // Unsubscribe the whole feed (all it's streams).
+        unsubscribe.streams.push({ feed: feed.id });
+        Janus.log('Feed ' + JSON.stringify(feed) + ' (' + feed.id + ') has left the room, detaching');
       }
+    });
+    // Send an unsubscribe request.
+    const {remoteFeed} = this.state;
+    if (remoteFeed !== null && unsubscribe.streams.length > 0) {
+      remoteFeed.send({ message: unsubscribe });
+    }
+    if (!onlyVideo) {
+      this.setState({feeds: feeds.filter(feed => !idsSet.has(feed.id))});
     }
   };
 
@@ -1131,6 +1152,19 @@ class VirtualClient extends Component {
     muted ? videoroom.unmuteAudio() : videoroom.muteAudio();
     this.setState({muted: !muted});
   };
+  
+  otherCamsMuteToggle = () => {
+    const {feeds, muteOtherCams} = this.state;
+    if (!muteOtherCams) {
+      // Should hide/mute now all videos.
+      this.unsubscribeFrom(feeds.map(feed => feed.id), /* onlyVideo= */ true);
+    } else {
+      // Should unmute/show now all videos.
+      this.makeSubscription(feeds, /* feedsJustJoined= */ false, /* subscribeToVideo= */ true,
+                            /* subscribeToAudio= */ false, /* subscribeToData= */ false);
+    }
+    this.setState({muteOtherCams: !muteOtherCams});
+  }
 
   toggleShidur = () => {
     const {virtualStreamingJanus, shidur, user} = this.state;
@@ -1218,6 +1252,8 @@ class VirtualClient extends Component {
 
   renderMedia = (feed, width, height) => {
     const {id, talking, question, cammute, display: { display }} = feed;
+    const {muteOtherCams} = this.state;
+    const mute = cammute || muteOtherCams;
 
     return (<div className="video" key={'v' + id} ref={'video' + id} id={'video' + id}>
       <div className={classNames('video__overlay', { 'talk-frame': talking })}>
@@ -1228,7 +1264,7 @@ class VirtualClient extends Component {
         </div> : ''}
         <div className="video__title">{!talking ? <Icon name="microphone slash" size="small" color="red" /> : ''}{display}</div>
       </div>
-      <svg className={classNames('nowebcam', {'hidden': !cammute})} viewBox="0 0 32 18" preserveAspectRatio="xMidYMid meet">
+      <svg className={classNames('nowebcam', {'hidden': !mute})} viewBox="0 0 32 18" preserveAspectRatio="xMidYMid meet">
         <text x="16" y="9" textAnchor="middle" alignmentBaseline="central" dominantBaseline="central">&#xf2bd;</text>
       </svg>
       <video
@@ -1253,6 +1289,7 @@ class VirtualClient extends Component {
 
   render() {
     const {
+      appInitError,
       attachedSource,
       cammuted,
       chatMessagesCount,
@@ -1261,11 +1298,14 @@ class VirtualClient extends Component {
       delay,
       feeds,
       janus,
-      localVideoTrack,
       localAudioTrack,
+      localVideoTrack,
+      media,
       monitoringData,
+      muteOtherCams,
       muted,
       myid,
+      net_status,
       numberOfVirtualUsers,
       question,
       room,
@@ -1277,9 +1317,6 @@ class VirtualClient extends Component {
       tested,
       user,
       virtualStreamingJanus,
-      appInitError,
-      net_status,
-      media,
     } = this.state;
     const {video_device} = media.video;
     const {audio_device} = media.audio;
@@ -1484,6 +1521,10 @@ class VirtualClient extends Component {
           <Menu.Item disabled={video_device === null || !localVideoTrack || delay} onClick={this.camMute}>
             <Icon color={cammuted ? 'red' : ''} name={!cammuted ? 'eye' : 'eye slash'} />
             {t(cammuted ? 'oldClient.startVideo' : 'oldClient.stopVideo')}
+          </Menu.Item>
+          <Menu.Item onClick={this.otherCamsMuteToggle}>
+            <Image src={muteOtherCams ? audioModeSvg : fullModeSvg} style={{marginBottom: '0.5rem'}} />
+            {t(muteOtherCams ? 'oldClient.fullMode' : 'oldClient.audioMode')}
           </Menu.Item>
           {/*<Menu.Item>*/}
           {/*  <Select*/}
