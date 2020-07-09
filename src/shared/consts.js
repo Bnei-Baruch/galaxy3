@@ -62,7 +62,7 @@ export const audiog_options2 = [
     { key: 'sv', value: 47, flag: 'se', icon:'crosshairs', eng_text: 'Swedish', text:'Svenska' },
     { key: 'lt', value: 48, flag: 'lt', icon:'crosshairs', eng_text: 'Lithuanian', text:'Lietuvių' },
     { key: 'hr', value: 49, flag: 'hr', icon:'crosshairs', eng_text: 'Croatian', text:'Hrvatski' },
-    { key: 'ja', value: 50, flag: 'jp', icon:'crosshairs', eng_text: 'Japanese', text:'語本日  ラバカ' },
+    { key: 'ja', value: 50, flag: 'jp', icon:'crosshairs', eng_text: 'Japanese', text:'日本語' },
     { key: 'sl', value: 51, flag: 'si', icon:'crosshairs', eng_text: 'Slovenian', text:'Slovenščina' },
     { key: 'pl', value: 52, flag: 'pl', icon:'crosshairs', eng_text: 'Polish', text:'Polski' },
     { key: 'no', value: 53, flag: 'no', icon:'crosshairs', eng_text: 'Norwegian', text:'Norsk' },
