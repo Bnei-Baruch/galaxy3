@@ -857,12 +857,6 @@ class AdminRoot extends Component {
                                   <List.Item>GXY4: {gxy4_count}</List.Item>
                               </List>
                           </Label>
-                          {
-                              this.isAllowed("root") && chatRoomsInitialized ?
-                                  <RoomManager gateways={gateways}/>
-                                  : null
-                          }
-
                       </Segment>
                       : null
               }
@@ -950,6 +944,7 @@ class AdminRoot extends Component {
         { menuItem: 'Admin', render: () => <Tab.Pane>{adminContent}</Tab.Pane> },
       ];
       if (this.isAllowed('root')) {
+        panes.push({ menuItem: 'Rooms', render: () => <Tab.Pane><RoomManager /></Tab.Pane> });
         panes.push({ menuItem: 'Monitor', render: () => <Tab.Pane><MonitoringAdmin addUserTab={(user, stats) => this.addUserTab(user, stats)}/></Tab.Pane> });
         usersTabs.forEach(({user, stats}, index) => panes.push({
           menuItem: (
@@ -960,7 +955,6 @@ class AdminRoot extends Component {
           ),
           render: () => <Tab.Pane><MonitoringUser user={user} stats={stats} /></Tab.Pane>,
         }));
-        panes.push({ menuItem: 'Rooms', render: () => <Tab.Pane><RoomManager /></Tab.Pane> });
       }
 
       const content = (
