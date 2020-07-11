@@ -16,7 +16,7 @@ import {
 import {debounce} from 'debounce';
 import api from "../../../shared/Api";
 
-const pageSize = 20;
+const pageSize = 10;
 
 class RoomManager extends Component {
 

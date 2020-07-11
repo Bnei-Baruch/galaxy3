@@ -857,12 +857,6 @@ class AdminRoot extends Component {
                                   <List.Item>GXY4: {gxy4_count}</List.Item>
                               </List>
                           </Label>
-                          {
-                              this.isAllowed("root") && chatRoomsInitialized ?
-                                  <RoomManager gateways={gateways}/>
-                                  : null
-                          }
-
                       </Segment>
                       : null
               }
