@@ -1,253 +1,414 @@
-import React, {Component} from 'react';
-import {Button, Input, Menu, Message, Select} from "semantic-ui-react";
-import {Janus} from "../../../lib/janus";
-import {JANUS_GATEWAYS} from "../../../shared/consts";
-import {SECRET} from "../../../shared/env";
+import React, {Component, Fragment} from 'react';
+import {
+    Button,
+    Confirm,
+    Dropdown,
+    Form,
+    Header,
+    Icon,
+    Input,
+    Menu,
+    Message,
+    Modal,
+    Pagination,
+    Table
+} from 'semantic-ui-react'
+import {debounce} from 'debounce';
+import api from "../../../shared/Api";
 
-const bitrate_options = [
-    {key: 0, text: '64Kb/s', value: 64000},
-    {key: 1, text: '128Kb/s', value: 128000},
-    {key: 2, text: '300Kb/s', value: 300000},
-    {key: 3, text: '600Kb/s', value: 600000},
-];
+const pageSize = 20;
 
 class RoomManager extends Component {
 
-    /*
-        props:
-            gateways: {},
-    */
-
     state = {
-        bitrate: 128000,
-        current_gateway: "",
-        rooms_list: {},
-        current_room: "",
-        room_id: "",
-        description: "",
+        data: [],
+        total: 0,
+        wip: false,
+        err: null,
+        pageNo: 1,
+        currentRoom: null,
+        gateways: [],
+        filters: {},
+        modals: {
+            confirmRemoveRoom: false,
+            createEditRoom: false,
+        }
     };
 
     componentDidMount() {
-        this.initGateways();
+        this.fetchGateways();
+        this.fetchData();
     };
 
-    componentDidUpdate(prevProps) {
-        if (prevProps.gateways !== this.props.gateways) {
-            this.initGateways();
-        }
+    fetchGateways = () => {
+        api.adminFetchGateways({order_by: 'name'})
+            .then(data => {
+                const gateways = data.data.filter(x => x.type === 'rooms');
+                this.setState({gateways});
+            })
+            .catch(err => {
+                console.error("[Admin-Rooms] fetch gateways", err);
+                this.setState({err});
+            })
     }
 
-    initGateways = () => {
-        const {gateways} = this.props;
-        console.log("[Admin] [RoomManager] initGateways", gateways);
+    fetchData = () => {
+        const {pageNo, filters} = this.state;
+        console.debug("[Admin-Rooms] fetch rooms", pageNo, filters);
+        const params = {
+            page_no: pageNo,
+            page_size: pageSize,
+            order_by: 'name',
+            ...filters,
+        };
 
-        Object.values(gateways).forEach(gateway => {
-            if (!gateway.videoroom) {
-                gateway.initVideoRoom()
-                    .catch(err => {
-                        console.error("[Admin] [RoomManager] gateway.initVideoRoom error", gateway.name, err);
-                    });
-            }
-        });
+        this.setState({wip: true, err: null});
+        api.adminFetchRooms(params)
+            .then(data => this.setState(data))
+            .catch(err => {
+                console.error("[Admin-Rooms] fetch rooms", err);
+                this.setState({err});
+            }).finally(() => this.setState({wip: false}));
     };
 
-    getRoomList = (gateway) => {
-        console.log("[Admin] [RoomManager] getRoomList", gateway.name);
+    onPageChange = (e, data) => {
+        this.setState({pageNo: data.activePage}, this.fetchData);
+    }
 
-        if (!gateway.videoroom) {
-            console.error("[Admin] [RoomManager] getRoomList gateway videoroom not initialized", gateway);
-            return;
+    onFilterChangeGateway = (e, data) => {
+        this.setState({pageNo: 1, filters: {...this.state.filters, gateway_id: data.value}}, this.fetchData);
+    }
+
+    onFilterChangeDisabled = (e, data) => {
+        this.setState({pageNo: 1, filters: {...this.state.filters, disabled: data.value}}, this.fetchData);
+    }
+
+    onFilterChangeRemoved = (e, data) => {
+        this.setState({pageNo: 1, filters: {...this.state.filters, removed: data.value}}, this.fetchData);
+    }
+
+    debouncedFetchData = () => {
+        if (!this.debouncedFetchDataFn) {
+            this.debouncedFetchDataFn = debounce(this.fetchData, 200);
         }
+        this.debouncedFetchDataFn();
+    }
 
-        gateway.send("videoroom", "list", gateway.videoroom, {request: "list"})
-            .then(data => {
-                let rooms_list = data.list;
-                rooms_list.sort((a, b) => {
-                    if (a.description > b.description) return 1;
-                    if (a.description < b.description) return -1;
-                    return 0;
-                });
+    onFilterChangeSearch = (e, data) => {
+        this.setState({pageNo: 1, filters: {...this.state.filters, term: data.value}}, this.debouncedFetchData);
+    }
 
-                this.setState({
-                        rooms_list: {
-                            ...this.state.rooms_list,
-                            [gateway.name]: rooms_list,
-                        }
-                    }
-                );
+    onCreateRoom = (e, data) => {
+        this.setState({currentRoom: {}, modals: {createEditRoom: true}, wip: false, err: null});
+    }
+
+    onEnableRoom = (e, data, room) => {
+        this.doUpdateRoom({...room, disabled: false});
+    }
+
+    onDisableRoom = (e, data, room) => {
+        this.doUpdateRoom({...room, disabled: true});
+    }
+
+    doUpdateRoom = (room) => {
+        api.adminUpdateRoom(room.id, room)
+            .then(this.fetchData)
+            .catch(err => {
+                console.error("[Admin-Rooms] update room", err);
+                this.setState({err});
             });
     };
 
-    selectRoom = (e, data) => {
-        const {rooms_list, current_gateway} = this.state;
-        this.setState({room_id: rooms_list[current_gateway][data.value].room});
-    };
+    onRemoveRoom = (e, data, room) => {
+        this.setState({currentRoom: room, modals: {confirmRemoveRoom: true}});
+    }
 
-    selectJanusInstance = (e, data) => {
-        this.setState({current_gateway: data.value});
-        this.getRoomList(this.props.gateways[data.value]);
-    };
-
-    handleBitrateChange = (e, data) => {
-        this.setState({bitrate: data.value});
-    };
-
-    handleDescriptionChange = (e, data) => {
-        this.setState({description: data.value});
-    };
-
-    getRoomID = () => {
-        const {rooms_list, current_gateway} = this.state;
-        const roomIDs = new Set((rooms_list[current_gateway] || []).map(x => x.room));
-        let id = 2100;
-        for (let i = id; i < 9999; i++) {
-            if (!roomIDs.has(i)) {
-                return i;
-            }
-        }
-    };
-
-    createChatRoom = (gateway, room, description) => {
-        return gateway.data("chatroom", gateway.chatroom, {
-            textroom: "create",
-            room,
-            transaction: Janus.randomString(12),
-            secret: `${SECRET}`,
-            description,
-            is_private: false,
-            permanent: true
-        });
-    };
-
-    removeChatRoom = (gateway, room) => {
-        return gateway.data("chatroom", gateway.chatroom, {
-            textroom: "destroy",
-            room,
-            transaction: Janus.randomString(12),
-            secret: `${SECRET}`,
-            permanent: true,
-        });
-    };
-
-    createRoom = () => {
-        const {gateways} = this.props;
-        const {current_gateway, bitrate, description} = this.state;
-        const gateway = gateways[current_gateway];
-
-        const room = this.getRoomID();
-        console.log("[Admin] [RoomManager] createRoom", current_gateway, room, bitrate, description);
-
-        gateway.send("videoroom", "create", gateway.videoroom, {
-            request: "create",
-            room,
-            description,
-            secret: `${SECRET}`,
-            publishers: 20,
-            bitrate,
-            fir_freq: 10,
-            audiocodec: "opus",
-            videocodec: "h264",
-            audiolevel_event: true,
-            audio_level_average: 100,
-            audio_active_packets: 25,
-            record: false,
-            is_private: false,
-            permanent: true,
-        })
+    doRemoveRoom = () => {
+        const {currentRoom} = this.state;
+        api.adminDeleteRoom(currentRoom.id)
             .then(() => {
-                this.getRoomList(gateway);
-                return this.createChatRoom(gateway, room, description);
-            })
-            .then(() => {
-                this.setState({description: ""});
-                console.log("[Admin] [RoomManager] createRoom success");
-                alert(`Room ${room} created on ${gateway.name}`);
+                this.closeModal('confirmRemoveRoom');
+                this.fetchData();
             })
             .catch(err => {
-                console.error("[Admin] [RoomManager] createRoom error", err);
-                alert(`Error creating room ${room} on ${gateway.name}: ${err}`);
+                console.error("[Admin-Rooms] delete room", err);
+                this.setState({err});
             });
-    };
+    }
 
-    removeRoom = () => {
-        const {gateways} = this.props;
-        const {room_id, current_gateway} = this.state;
-        const gateway = gateways[current_gateway];
+    onEditRoom = (e, data, room) => {
+        this.setState({
+            currentRoom: room,
+            modals: {
+                createEditRoom: true,
+            },
+            wip: false,
+            err: null,
+        });
+    }
 
-        console.log("[Admin] [RoomManager] removeRoom", current_gateway, room_id);
+    onCurrentRoomNameChange = (e, data) => {
+        this.setState({
+            currentRoom: {
+                ...this.state.currentRoom,
+                name: data.value,
+            }
+        });
+    }
 
-        gateway.send("videoroom", "destory", gateway.videoroom, {
-            request: "destroy",
-            room: room_id,
-            secret: `${SECRET}`,
-            permanent: true,
+    onCurrentRoomGatewayChange = (e, data) => {
+        this.setState({
+            currentRoom: {
+                ...this.state.currentRoom,
+                default_gateway_id: data.value,
+            }
+        });
+    }
+
+    doSaveRoom = () => {
+        const {currentRoom} = this.state;
+        console.info("[Admin-Rooms] save room", currentRoom);
+
+        let p;
+        if (!!currentRoom.id) {
+            p = api.adminUpdateRoom(currentRoom.id, currentRoom);
+        } else {
+            p = api.adminCreateRoom(currentRoom);
+        }
+
+        p.then(() => {
+            this.closeModal('createEditRoom');
+            this.fetchData();
         })
-            .then(() => {
-                this.getRoomList(gateway);
-                return this.removeChatRoom(gateway, room_id);
-            })
-            .then(() => {
-                console.log("[Admin] [RoomManager] removeRoom success");
-                alert(`Room ${room_id} removed from ${gateway.name}`);
-            })
             .catch(err => {
-                console.error("[Admin] [RoomManager] removeRoom error", err);
-                alert(`Error removing room ${room_id} from ${gateway.name}: ${err}`);
+                console.error(`[Admin-Rooms] save room [${!!currentRoom.id ? 'edit' : 'create'}]`, err);
+                this.setState({err});
             });
-    };
+    }
+
+    closeModal = (modal) => {
+        this.setState({
+            modals: {
+                ...this.state.modals,
+                [modal]: false,
+            }
+        });
+    }
 
     render() {
-        const {bitrate, rooms_list, current_gateway, i, description, room_id} = this.state;
+        const {pageNo, data, total, err, wip, currentRoom, modals, gateways} = this.state;
 
-        const videorooms = (rooms_list[current_gateway] || []).map((data, i) => {
-            const {room, num_participants, description} = data;
-            return ({key: room, text: description, value: i, description: num_participants.toString()});
-        });
+        const gatewayOptions = gateways.map(x => ({key: x.id, text: x.name, value: x.id}));
+        const gatewaysByID = gateways.reduce((acc, x) => {
+            acc[x.id] = x;
+            return acc;
+        }, {});
 
         return (
-            <Menu secondary>
-                <Menu.Item>
-                    <Message info content="Room management is pending new implementation"/>
-                </Menu.Item>
+            <Fragment>
+                <Menu>
+                    <Menu.Item icon='filter'/>
 
-                {/*<Menu.Item>*/}
-                {/*    <Select placeholder="Janus instance"*/}
-                {/*            value={current_gateway}*/}
-                {/*            onChange={this.selectJanusInstance}*/}
-                {/*            options={*/}
-                {/*                JANUS_GATEWAYS.map((gateway) => ({*/}
-                {/*                    key: gateway,*/}
-                {/*                    text: gateway,*/}
-                {/*                    value: gateway,*/}
-                {/*                }))*/}
-                {/*            }/>*/}
-                {/*</Menu.Item>*/}
-                {/*<Menu.Item>*/}
-                {/*    <Button negative onClick={this.removeRoom}>Remove</Button>*/}
-                {/*    :::*/}
-                {/*    <Select*/}
-                {/*        error={!!room_id}*/}
-                {/*        scrolling*/}
-                {/*        placeholder="Select Room:"*/}
-                {/*        value={i}*/}
-                {/*        options={videorooms}*/}
-                {/*        onChange={this.selectRoom}/>*/}
-                {/*</Menu.Item>*/}
-                {/*<Menu.Item>*/}
-                {/*    <Input type='text' placeholder='Room description...' action value={description}*/}
-                {/*           onChange={this.handleDescriptionChange}>*/}
-                {/*        <input/>*/}
-                {/*        <Select*/}
-                {/*            compact={true}*/}
-                {/*            scrolling={false}*/}
-                {/*            placeholder="Room Bitrate:"*/}
-                {/*            value={bitrate}*/}
-                {/*            options={bitrate_options}*/}
-                {/*            onChange={this.handleBitrateChange}/>*/}
-                {/*        <Button positive onClick={this.createRoom}>Create</Button>*/}
-                {/*    </Input>*/}
-                {/*</Menu.Item>*/}
-            </Menu>
+                    <Dropdown
+                        item
+                        multiple
+                        selection
+                        text='Gateway'
+                        options={gatewayOptions}
+                        onChange={this.onFilterChangeGateway}
+                    />
+
+                    <Dropdown
+                        item
+                        selection
+                        placeholder='Disabled'
+                        options={[
+                            {key: 1, text: 'All', value: null},
+                            {key: 2, text: 'Disabled', value: 'true'},
+                            {key: 3, text: 'Enabled Only', value: 'false'},
+                        ]}
+                        onChange={this.onFilterChangeDisabled}
+                    />
+
+                    <Dropdown
+                        item
+                        selection
+                        placeholder='Removed'
+                        options={[
+                            {key: 1, text: 'All', value: null},
+                            {key: 2, text: 'Removed', value: 'true'},
+                            {key: 3, text: 'Active Only', value: 'false'},
+                        ]}
+                        onChange={this.onFilterChangeRemoved}
+                    />
+
+                    <Menu.Item style={{flexGrow: 1}}>
+                        <Input className='icon' icon='search' placeholder='Search...'
+                               onChange={this.onFilterChangeSearch}/>
+                    </Menu.Item>
+
+                    <Menu.Menu position='right'>
+                        <Menu.Item>
+                            <Button
+                                primary
+                                content='Create New'
+                                icon='add'
+                                labelPosition='left'
+                                onClick={this.onCreateRoom}
+                            />
+                        </Menu.Item>
+                    </Menu.Menu>
+                </Menu>
+
+                {err ?
+                    <Message negative>
+                        <Message.Header>Unexpected error fetching data from server</Message.Header>
+                        <p>{JSON.stringify(err)}</p>
+                    </Message> :
+                    null}
+
+                <div style={{float: 'right', paddingRight: '1em'}}>
+                    {wip ? <Icon loading name='spinner'/> : null}
+                    <strong>{(pageNo - 1) * pageSize + 1}-{Math.min(total, pageNo * pageSize)}</strong>&nbsp;
+                    of &nbsp;
+                    <strong>{total}</strong>
+                </div>
+                <br/>
+
+                <Table celled padded compact>
+                    <Table.Header>
+                        <Table.Row>
+                            <Table.HeaderCell>ID</Table.HeaderCell>
+                            <Table.HeaderCell singleLine>Gateway</Table.HeaderCell>
+                            <Table.HeaderCell singleLine>Gateway UID</Table.HeaderCell>
+                            <Table.HeaderCell>Name</Table.HeaderCell>
+                            <Table.HeaderCell>Actions</Table.HeaderCell>
+                        </Table.Row>
+                    </Table.Header>
+
+                    <Table.Body>
+                        {
+                            data.map(x => {
+                                const error = !!x.removed_at;
+                                const warning = !error && !!x.disabled;
+                                return (
+                                    <Table.Row key={x.id} error={error} warning={warning}>
+                                        <Table.Cell collapsing textAlign='center'>{x.id}</Table.Cell>
+                                        <Table.Cell collapsing
+                                                    textAlign='center'>{gatewaysByID[x.default_gateway_id]?.name}</Table.Cell>
+                                        <Table.Cell collapsing textAlign='center'>{x.gateway_uid}</Table.Cell>
+                                        <Table.Cell>
+                                            {x.name}
+                                            {!!x.removed_at ?
+                                                <Header sub
+                                                        size='tiny'
+                                                        color='grey'
+                                                        floated='right'>Removed At: {x.removed_at}</Header> :
+                                                x.disabled ?
+                                                    <Header sub
+                                                            size='tiny'
+                                                            color='grey'
+                                                            floated='right'>Updated At: {x.updated_at}</Header> :
+                                                    null
+                                            }
+                                        </Table.Cell>
+                                        <Table.Cell collapsing textAlign='center'>
+                                            <Button.Group basic>
+                                                <Button
+                                                    icon='edit'
+                                                    title='edit'
+                                                    onClick={(e, data) => this.onEditRoom(e, data, x)}
+                                                />
+                                                {x.disabled ?
+                                                    <Button disabled={!!x.removed_at}
+                                                            icon='play'
+                                                            title='enable'
+                                                            onClick={(e, data) => this.onEnableRoom(e, data, x)}/> :
+                                                    <Button disabled={!!x.removed_at}
+                                                            icon='pause'
+                                                            title='disable'
+                                                            onClick={(e, data) => this.onDisableRoom(e, data, x)}/>
+                                                }
+                                                <Button disabled={!!x.removed_at}
+                                                        icon='trash alternate'
+                                                        title='remove'
+                                                        onClick={(e, data) => this.onRemoveRoom(e, data, x)}
+                                                />
+                                            </Button.Group>
+                                        </Table.Cell>
+                                    </Table.Row>
+                                );
+                            })
+                        }
+                    </Table.Body>
+
+                    <Table.Footer>
+                        <Table.Row>
+                            <Table.HeaderCell colSpan='5'>
+                                <Menu floated='right'>
+                                    <Pagination
+                                        activePage={pageNo}
+                                        siblingRange={2}
+                                        totalPages={Math.ceil(total / pageSize)}
+                                        onPageChange={this.onPageChange}/>
+                                </Menu>
+                            </Table.HeaderCell>
+                        </Table.Row>
+                    </Table.Footer>
+                </Table>
+
+                <Confirm
+                    open={modals.confirmRemoveRoom}
+                    onCancel={() => this.closeModal('confirmRemoveRoom')}
+                    onConfirm={this.doRemoveRoom}
+                />
+
+                {currentRoom ?
+                    <Modal
+                        open={modals.createEditRoom}
+                        onClose={() => this.closeModal('createEditRoom')}
+                        size='small'
+                        closeIcon
+                    >
+                        <Header content='Room Details'/>
+                        <Modal.Content>
+                            <Form>
+                                <Form.Field required>
+                                    <label>Name</label>
+                                    <Input
+                                        value={currentRoom.name}
+                                        onChange={this.onCurrentRoomNameChange}
+                                        placeholder='Room name goes here'
+                                    />
+                                    <small> Up to 64 characters. </small>
+                                </Form.Field>
+                                <Form.Select
+                                    label='Gateway'
+                                    options={gatewayOptions}
+                                    value={currentRoom.default_gateway_id || gateways[0].id}
+                                    onChange={this.onCurrentRoomGatewayChange}
+                                    required
+                                />
+                            </Form>
+                            {err ?
+                                <Message negative>
+                                    <Message.Header>Unexpected error saving data to the server</Message.Header>
+                                    <p>{JSON.stringify(err)}</p>
+                                </Message> :
+                                null}
+                        </Modal.Content>
+                        <Modal.Actions>
+                            <Button onClick={() => this.closeModal('createEditRoom')}>
+                                <Icon name='cancel'/> Cancel
+                            </Button>
+                            <Button primary onClick={this.doSaveRoom}>
+                                <Icon name='save outline'/> Save
+                            </Button>
+                        </Modal.Actions>
+                    </Modal>
+                    : null}
+
+            </Fragment>
         );
     }
 }

@@ -9,9 +9,9 @@ import {kc} from "../../components/UserManager";
 import LoginPage from "../../components/LoginPage";
 import GxyJanus from "../../shared/janus-utils";
 import ChatBox from "./components/ChatBox";
-import RoomManager from "./components/RoomManager";
 import MonitoringAdmin from "./components/MonitoringAdmin";
 import MonitoringUser from "./components/MonitoringUser";
+import RoomManager from "./components/RoomManager";
 import api from "../../shared/Api";
 
 class AdminRoot extends Component {
@@ -960,10 +960,12 @@ class AdminRoot extends Component {
           ),
           render: () => <Tab.Pane><MonitoringUser user={user} stats={stats} /></Tab.Pane>,
         }));
+        panes.push({ menuItem: 'Rooms', render: () => <Tab.Pane><RoomManager /></Tab.Pane> });
       }
 
       const content = (
-        <Tab menu={{ secondary: true, pointing: true, color: "blue" }} panes={panes}
+        <Tab menu={{ secondary: true, pointing: true, color: "blue" }}
+             panes={panes}
              activeIndex={activeTab || 0}
              onTabChange={(e, {activeIndex}) => this.setState({activeTab: activeIndex})}
              renderActiveOnly={true} />
