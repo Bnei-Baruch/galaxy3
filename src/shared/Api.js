@@ -1,7 +1,4 @@
-import {
-  API_BACKEND,
-  AUTH_API_BACKEND,
-} from "./env";
+import {API_BACKEND, AUTH_API_BACKEND,} from "./env";
 
 class Api {
 
@@ -15,7 +12,7 @@ class Api {
         `${Object.entries(params)
             .filter(([_, v]) => v !== undefined && v !== null)
             .map((pair) => {
-                const key   = pair[0];
+                const key = pair[0];
                 const value = pair[1];
                 if (Array.isArray(value)) {
                     return value.map(val => `${key}=${Api.encode(val)}`).join('&');
@@ -28,6 +25,8 @@ class Api {
     );
 
     static encode = encodeURIComponent;
+
+    // Galaxy API
 
     fetchConfig = () =>
         this.logAndParse('fetch config', fetch(this.urlFor('/v2/config'), this.defaultOptions()));
@@ -52,24 +51,45 @@ class Api {
         this.logAndParse('fetch program', fetch(this.urlFor('/qids'), this.defaultOptions()));
 
     updateQuad = (col, data) => {
-        const options = {
-            ...this.defaultOptions(),
-            method: 'PUT',
-            body: JSON.stringify(data),
-        };
-        options.headers['Content-Type'] = 'application/json';
+        const options = this.makeOptions('PUT', data);
         return this.logAndParse(`update quad ${col}`, fetch(this.urlFor(`/qids/q${col}`), options));
     }
 
     updateUser = (id, data) => {
-        const options = {
-            ...this.defaultOptions(),
-            method: 'PUT',
-            body: JSON.stringify(data),
-        };
-        options.headers['Content-Type'] = 'application/json';
+        const options = this.makeOptions('PUT', data);
         return this.logAndParse(`update user ${id}`, fetch(this.urlFor(`/users/${id}`), options));
     }
+
+    // Admin API
+
+    adminFetchGateways = (params = {}) =>
+        this.logAndParse('admin fetch gateways',
+            fetch(`${this.urlFor('/admin/gateways')}?${Api.makeParams(params)}`, this.defaultOptions()));
+
+    fetchHandleInfo = (gateway, session_id, handle_id) =>
+        this.logAndParse('fetch handle_info',
+            fetch(this.urlFor(`/admin/gateways/${gateway}/sessions/${session_id}/handles/${handle_id}/info`), this.defaultOptions()));
+
+    adminFetchRooms = (params = {}) =>
+        this.logAndParse('admin fetch rooms',
+            fetch(`${this.urlFor('/admin/rooms')}?${Api.makeParams(params)}`, this.defaultOptions()));
+
+    adminCreateRoom = (data) => {
+        const options = this.makeOptions('POST', data);
+        return this.logAndParse(`admin create room`, fetch(this.urlFor("/admin/rooms"), options));
+    }
+
+    adminUpdateRoom = (id, data) => {
+        const options = this.makeOptions('PUT', data);
+        return this.logAndParse(`admin update room`, fetch(this.urlFor(`/admin/rooms/${id}`), options));
+    }
+
+    adminDeleteRoom = (id) => {
+        const options = this.makeOptions('DELETE');
+        return this.logAndParse(`admin delete room`, fetch(this.urlFor(`/admin/rooms/${id}`), options));
+    }
+
+    // Auth Helper API
 
     verifyUser = (pendingEmail, action) =>
         this.logAndParse(`verify user ${pendingEmail}, ${action}`, fetch(this.authUrlFor(`/verify?email=${pendingEmail}&action=${action}`), this.defaultOptions()));
@@ -95,22 +115,34 @@ class Api {
         };
     };
 
+    makeOptions = (method, payload) => {
+        const options = {
+            ...this.defaultOptions(),
+            method,
+        };
+        if (payload) {
+            options.body = JSON.stringify(payload);
+            options.headers['Content-Type'] = 'application/json';
+        }
+        return options;
+    };
+
     logAndParse = (action, fetchPromise) => {
-      return fetchPromise
-        .then(response => {
-          if (!response.ok) {
-            throw Error(response.statusText);
-          }
-          return response.json();
-        })
-        .then(data => {
-          //console.debug(`[API] ${action} success`, data);
-          return data;
-        })
-        .catch(err => {
-          console.error(`[API] ${action} error`, err);
-          return Promise.reject(err);
-        });
+        return fetchPromise
+            .then(response => {
+                if (!response.ok) {
+                    throw Error(response.statusText);
+                }
+                return response.json();
+            })
+            .then(data => {
+                //console.debug(`[API] ${action} success`, data);
+                return data;
+            })
+            .catch(err => {
+                console.error(`[API] ${action} error`, err);
+                return Promise.reject(err);
+            });
     }
 
     setAccessToken = (token) => {

@@ -1,6 +1,6 @@
 import React, {Component, Fragment} from 'react';
 import {Janus} from "../../lib/janus";
-import {Button, Grid, Icon, List, Menu, Popup, Segment, Tab, Table, Label} from "semantic-ui-react";
+import {Button, Grid, Icon, Label, List, Menu, Popup, Segment, Tab, Table} from "semantic-ui-react";
 import './AdminRoot.css';
 import './AdminRootVideo.scss'
 import classNames from "classnames";
@@ -9,11 +9,10 @@ import {kc} from "../../components/UserManager";
 import LoginPage from "../../components/LoginPage";
 import GxyJanus from "../../shared/janus-utils";
 import ChatBox from "./components/ChatBox";
-import RoomManager from "./components/RoomManager";
 import MonitoringAdmin from "./components/MonitoringAdmin";
 import MonitoringUser from "./components/MonitoringUser";
+import RoomManager from "./components/RoomManager";
 import api from "../../shared/Api";
-import {reportToSentry} from "../../shared/tools";
 
 class AdminRoot extends Component {
 
@@ -654,12 +653,11 @@ class AdminRoot extends Component {
     };
 
     getFeedInfo = () => {
-        const {gateways, feed_user} = this.state;
+        const {feed_user} = this.state;
         if (feed_user) {
-            const {session, handle} = this.state.feed_user;
-            if (session && handle) {
-                const gateway = gateways[feed_user.janus];
-                gateway.getPublisherInfo(session, handle)
+            const {janus, session, handle} = this.state.feed_user;
+            if (janus && session && handle) {
+                api.fetchHandleInfo(janus, session, handle)
                     .then(data => {
                             console.debug("[Admin] Publisher info", data);
                             const video = data.info.webrtc.media[1].rtcp.main;
@@ -667,6 +665,7 @@ class AdminRoot extends Component {
                             this.setState({feed_rtcp: {video, audio}});
                         }
                     )
+                    .catch(err => alert("Error fetching handle_info: " + err))
             }
         }
     };
@@ -858,12 +857,6 @@ class AdminRoot extends Component {
                                   <List.Item>GXY4: {gxy4_count}</List.Item>
                               </List>
                           </Label>
-                          {
-                              this.isAllowed("root") && chatRoomsInitialized ?
-                                  <RoomManager gateways={gateways}/>
-                                  : null
-                          }
-
                       </Segment>
                       : null
               }
@@ -951,6 +944,7 @@ class AdminRoot extends Component {
         { menuItem: 'Admin', render: () => <Tab.Pane>{adminContent}</Tab.Pane> },
       ];
       if (this.isAllowed('root')) {
+        panes.push({ menuItem: 'Rooms', render: () => <Tab.Pane><RoomManager /></Tab.Pane> });
         panes.push({ menuItem: 'Monitor', render: () => <Tab.Pane><MonitoringAdmin addUserTab={(user, stats) => this.addUserTab(user, stats)}/></Tab.Pane> });
         usersTabs.forEach(({user, stats}, index) => panes.push({
           menuItem: (
@@ -964,7 +958,8 @@ class AdminRoot extends Component {
       }
 
       const content = (
-        <Tab menu={{ secondary: true, pointing: true, color: "blue" }} panes={panes}
+        <Tab menu={{ secondary: true, pointing: true, color: "blue" }}
+             panes={panes}
              activeIndex={activeTab || 0}
              onTabChange={(e, {activeIndex}) => this.setState({activeTab: activeIndex})}
              renderActiveOnly={true} />
