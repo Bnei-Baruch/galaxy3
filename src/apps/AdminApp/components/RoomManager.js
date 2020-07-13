@@ -99,7 +99,13 @@ class RoomManager extends Component {
     }
 
     onCreateRoom = (e, data) => {
-        this.setState({currentRoom: {}, modals: {createEditRoom: true}, wip: false, err: null});
+        const {gateways} = this.state;
+        this.setState({
+            currentRoom: {default_gateway_id: gateways[0].id},
+            modals: {createEditRoom: true},
+            wip: false,
+            err: null
+        });
     }
 
     onEnableRoom = (e, data, room) => {
@@ -385,7 +391,7 @@ class RoomManager extends Component {
                                 <Form.Select
                                     label='Gateway'
                                     options={gatewayOptions}
-                                    value={currentRoom.default_gateway_id || gateways[0].id}
+                                    value={currentRoom.default_gateway_id}
                                     onChange={this.onCurrentRoomGatewayChange}
                                     required
                                 />
