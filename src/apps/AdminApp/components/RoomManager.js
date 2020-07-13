@@ -212,7 +212,7 @@ class RoomManager extends Component {
 
         return (
             <Fragment>
-                <Menu>
+                <Menu secondary>
                     <Menu.Item icon='filter'/>
 
                     <Dropdown
