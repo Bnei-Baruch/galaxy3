@@ -82,6 +82,17 @@
               font-size: 1.7rem;
             }
           }
+
+          .audio-mode {
+           margin-bottom: 0.5rem;
+           @include landscape {
+             height: 2rem;
+           }
+           @include portrait {
+             height: 3.5rem;
+           }
+          }
+
 				}
 
         & > .menu,
@@ -532,5 +543,4 @@
       }
     }
   }
-
 }

@@ -25,17 +25,23 @@ import connectionOrange from '../VirtualApp/connection-orange.png';
 import connectionWhite from '../VirtualApp/connection-white.png';
 import connectionRed from '../VirtualApp/connection-red.png';
 import connectionGray from '../VirtualApp/connection-gray.png';
+import audioModeSvg from '../../shared/audio-mode.svg';
+import fullModeSvg from '../../shared/full-mode-white.svg';
 
 import VirtualStreamingMobile from './VirtualStreamingMobile';
 import VirtualStreamingJanus from '../../shared/VirtualStreamingJanus';
 
 import VirtualChat from '../VirtualApp/VirtualChat';
 
+const sortAndFilterFeeds = (feeds) => feeds
+  .filter(feed => !feed.display.role.match(/^(ghost|guest)$/))
+  .sort((a, b) => a.display.timestamp - b.display.timestamp);
+
+const PAGE_SIZE = 3;
+
 class MobileClient extends Component {
 
     state = {
-        index: 3,
-        creatingFeed: false,
         delay: true,
         media: {
             audio:{
@@ -56,8 +62,15 @@ class MobileClient extends Component {
         audio: null,
         video: null,
         janus: null,
+
+
         feeds: [],
-        feedStreams: {},
+        streamsMids: new Map(),
+        switchingVideos: false,
+        creatingFeed: false,  
+        switchToPage: -1,
+        page: 0,
+
         rooms: [],
         room: '',
         selected_room: parseInt(localStorage.getItem("room"), 10) || "",
@@ -67,9 +80,6 @@ class MobileClient extends Component {
         mypvtid: null,
         localVideoTrack: null,
         localAudioTrack: null,
-        mids: [],
-        video_mids: [],
-        showed_mids:[],
         muted: false,
         cammuted: false,
         protocol: null,
@@ -92,6 +102,7 @@ class MobileClient extends Component {
         chatMessagesCount: 0,
         chatVisible: false,
         settingsActiveIndex: -1,
+        muteOtherCams: false,
     };
 
     shidurInitialized() {
@@ -378,7 +389,7 @@ class MobileClient extends Component {
                     this.initClient(true);
                 });
             }
-        },3000);
+        }, 3000);
     };
 
     mediaState = (media) => {
@@ -404,7 +415,7 @@ class MobileClient extends Component {
                     clearInterval(chk);
                     alert("Server stopped receiving our media! Check your video device.");
                 }
-            },3000);
+            }, 3000);
         }
 
         //Handle audio
@@ -436,7 +447,7 @@ class MobileClient extends Component {
                         this.handleQuestion();
                     alert("Server stopped receiving our Audio! Check your Mic");
                 }
-            },3000);
+            }, 3000);
         }
     };
 
@@ -516,7 +527,6 @@ class MobileClient extends Component {
 
     onRoomData = (data) => {
         const {user} = this.state;
-        const feeds = Object.assign([], this.state.feeds);
         const {camera,question,rcmd,type,id} = data;
         // CHECK: Looks like this code never run!
         if(rcmd) {
@@ -542,14 +552,13 @@ class MobileClient extends Component {
                 this.handleAudioOut(data);
             }
         } else {
-            for (let i = 0; i < feeds.length; i++) {
-                if (feeds[i] && feeds[i].id === data.rfid) {
-                    feeds[i].cammute = !camera;
-                    feeds[i].question = question;
-                    this.setState({feeds});
-                    break;
-                }
-            }
+          const feeds = Object.assign([], this.state.feeds);
+          const feed = feeds.find(feed => feed && feed.id === data.rfid);
+          if (feed) {
+            feed.cammute = !camera;
+            feed.question = question;
+            this.setState({feeds});
+          }
         }
     };
 
@@ -586,6 +595,8 @@ class MobileClient extends Component {
         });
     };
 
+    
+
     onMessage = (videoroom, msg, jsep) => {
         Janus.log(" ::: Got a message (publisher) :::");
         Janus.log(msg);
@@ -609,74 +620,95 @@ class MobileClient extends Component {
 
                 // Any new feed to attach to?
                 if(msg["publishers"] !== undefined && msg["publishers"] !== null) {
-                    //FIXME: display property is JSON write now, let parse it in one place
-                    let list = msg['publishers'].filter(l => l.display = (JSON.parse(l.display)));
-                    let feeds = list.sort((a, b) => a.display.timestamp - b.display.timestamp).filter(f => !f.display.role.match(/^(ghost|guest)$/));
-                    Janus.log(':: Got Pulbishers list: ', feeds);
+                  //FIXME: display property is JSON write now, let parse it in one place
+                  const feeds = sortAndFilterFeeds(
+                    msg['publishers'].filter(l => l.display = (JSON.parse(l.display))));
+                  Janus.log(':: Got Pulbishers list: ', msg['publishers'], feeds);
 
-                    // Feeds count with user role
-                    let feeds_count = feeds.filter(f => f.display.role === "user").length;
-                    if (feeds_count > 25) {
-                        alert("Max users in this room is reached");
-                        this.exitRoom(false);
-                    }
+                  // Feeds count with user role
+                  const feedsCount = feeds.filter(feed => feed.display.role === 'user').length;
+                  if (feedsCount > 25) {
+                    alert(`Max users in this room is reached (${feedsCount}).`);
+                    this.exitRoom(false);
+                    return;
+                  }
 
-                    this.makeSubscription(feeds, false);
+                  this.makeSubscription(feeds, /* feedsJustJoined= */ false,
+                                        /* subscribeToVideo= */ false,
+                                        /* subscribeToAudio= */ true, /* subscribeToData= */ true);
+                  console.log('switchVideos', this.state.page, [], feeds);
+                  this.switchVideos(/* page= */ this.state.page, [], feeds, /* isWaiting= */ false);
+                  this.setState({feeds});
                 }
-            } else if(event === "talking") {
-                let {feeds} = this.state;
-                let id = msg["id"];
-                Janus.log("User: "+id+" - start talking");
-                for(let i=0; i<feeds.length; i++) {
-                    if(feeds[i] && feeds[i].id === id) {
-                        feeds[i].taking = true;
-                    }
-                }
-                this.setState({feeds});
-            } else if(event === "stopped-talking") {
-                let {feeds} = this.state;
-                let id = msg["id"];
-                Janus.log("User: "+id+" - stop talking");
-                for(let i=0; i<feeds.length; i++) {
-                    if(feeds[i] && feeds[i].id === id) {
-                        feeds[i].taking = false;
-                    }
-                }
-                this.setState({feeds});
+            } else if(event === 'talking') {
+              const feeds = Object.assign([], this.state.feeds);
+              const id = msg['id'];
+              Janus.log(`User: ${id} - start talking`);
+              const feed = feeds.find(feed => feed.id === id);
+              if (!feed) {
+                Janus.error(`Did not find user ${id}.`);
+                return;
+              }
+              feed.talking = true;
+              this.setState({feeds});
+            } else if(event === 'stopped-talking') {
+              const feeds = Object.assign([], this.state.feeds);
+              const id = msg['id'];
+              Janus.log(`User: ${id} - stop talking`);
+              const feed = feeds.find(feed => feed.id === id);
+              if (!feed) {
+                Janus.error(`Did not find user ${id}.`);
+                return;
+              }
+              feed.taking = false;
+              this.setState({feeds});
             } else if(event === "destroyed") {
                 // The room has been destroyed
                 Janus.warn("The room has been destroyed!");
             } else if(event === "event") {
                 // Any info on our streams or a new feed to attach to?
-                let {feedStreams,user,myid} = this.state;
+                console.log('(IGNORING) Any info on our streams or a new feed to attach to', msg);
+                //let {feedStreams,user,myid} = this.state;
                 if(msg["streams"] !== undefined && msg["streams"] !== null) {
-                    let streams = msg["streams"];
-                    for (let i in streams) {
-                        let stream = streams[i];
-                        stream["id"] = myid;
-                        stream["display"] = user;
-                    }
-                    feedStreams[myid] = {id: myid, display: user, streams: streams};
-                    this.setState({feedStreams})
+                    console.log('IGNORING update my streams?!', msg, msg['streams']);
                 } else if(msg["publishers"] !== undefined && msg["publishers"] !== null) {
-                    let feeds = msg['publishers'].filter(l => l.display = (JSON.parse(l.display)));
-                    Janus.debug('New list of available publishers/feeds:', feeds);
-                    this.makeSubscription(feeds, true);
-                } else if(msg["leaving"] !== undefined && msg["leaving"] !== null) {
-                    // One of the publishers has gone away?
-                    var leaving = msg["leaving"];
-                    Janus.log("Publisher left: " + leaving);
-                    this.unsubscribeFrom(leaving);
+                  // User just joined the room.
+                  const newFeeds = sortAndFilterFeeds(msg['publishers'].filter(l => l.display = (JSON.parse(l.display))));
+                  Janus.debug('New list of available publishers/feeds:', newFeeds);
+                  const newFeedsIds = new Set(newFeeds.map(feed => feed.id));
+                  const {feeds} = this.state;
+                  if (feeds.some(feed => newFeedsIds.has(feed.id))) {
+                    Janus.error(`New feed joining but one of the feeds already exist`, newFeeds, feeds);
+                    return;
+                  }
+                  // Merge new feed with existing feeds and sort.
+                  const feedsNewState = sortAndFilterFeeds([...newFeeds, ...feeds]);
+                  this.makeSubscription(newFeeds, /* feedsJustJoined= */ true,
+                                        /* subscribeToVideo= */ false,
+                                        /* subscribeToAudio= */ true, /* subscribeToData= */ true);
+                  console.log('switchVideos', this.state.page, feeds, feedsNewState);
+                  this.switchVideos(/* page= */ this.state.page, feeds, feedsNewState, /* isWaiting= */ false);
+                  this.setState({feeds: feedsNewState});
 
-                } else if(msg["unpublished"] !== undefined && msg["unpublished"] !== null) {
-                    let unpublished = msg["unpublished"];
-                    Janus.log("Publisher left: " + unpublished);
+                } else if(msg["leaving"] !== undefined && msg["leaving"] !== null) {
+                  // User leaving the room which is same as publishers gone.
+                  const leaving = msg['leaving'];
+                  Janus.log('Publisher leaving: ', leaving);
+                  const {feeds} = this.state;
+                  this.unsubscribeFrom([leaving], /* onlyVideo= */ false);
+                  const feedsNewState = feeds.filter(feed => feed.id !== leaving);
+                  console.log('switchVideos', this.state.page, feeds, feedsNewState);
+                  this.switchVideos(/* page= */ this.state.page, feeds, feedsNewState, /* isWaiting= */ false);
+                  this.setState({feeds: feedsNewState});
+
+                } else if(msg['unpublished'] !== undefined && msg['unpublished'] !== null) {
+                    const unpublished = msg['unpublished'];
+                    Janus.log('Publisher unpublished: ', unpublished);
                     if(unpublished === 'ok') {
                         // That's us
                         videoroom.hangup();
                         return;
                     }
-                    this.unsubscribeFrom(unpublished);
 
                 } else if(msg["error"] !== undefined && msg["error"] !== null) {
                     if(msg["error_code"] === 426) {
@@ -726,49 +758,34 @@ class MobileClient extends Component {
                     Janus.log(msg);
                     let event = msg["videoroom"];
                     Janus.log("Event: " + event);
-                    let {remoteFeed} = this.state;
                     if(msg["error"] !== undefined && msg["error"] !== null) {
-                        Janus.debug("-- ERROR: " + msg["error"]);
+                      Janus.debug("-- ERROR: " + msg["error"]);
                     } else if(event !== undefined && event !== null) {
-                        if(event === "attached") {
-                            this.setState({creatingFeed: false});
-                            Janus.log("Successfully attached to feed in room " + msg["room"]);
-                        } else if(event === "event") {
-                            // Check if we got an event on a simulcast-related event from this publisher
-                        } else {
-                            // What has just happened?
+                      if(event === "attached") {
+                          this.setState({creatingFeed: false});
+                          Janus.log("Successfully attached to feed in room " + msg["room"]);
+                      } else if(event === "event") {
+                          // Check if we got an event on a simulcast-related event from this publisher
+                      } else {
+                          // What has just happened?
+                      }
+
+                      if (event === 'attached' || (event === 'event' && msg['switched'] === 'ok') ||
+                          event === 'updated') {
+                        if (msg['streams']) {
+                          // Update map of subscriptions by mid
+                          console.log('STREAMS UPDATE', msg['streams']);
+                          const {streamsMids} = this.state;
+                          const old = Array.from(streamsMids.entries());
+                          const newStreamsMids = new Map(msg['streams'].map(stream => [stream.mid, stream.feed_id]));
+                          console.log('Updating streams mids old', old, ' updated: ', newStreamsMids)
+                          this.setState({streamsMids: newStreamsMids});
                         }
+                      }
                     }
-                    if(msg["streams"]) {
-                        // Update map of subscriptions by mid
-                        let {mids,video_mids,feedStreams,showed_mids,feeds} = this.state;
-                        let m = 0;
-                        for(let i in msg["streams"]) {
-                            let sub_mid = msg["streams"][i];
-                            let mindex = msg["streams"][i]["mid"];
-                            //let feed_id = msg["streams"][i]["feed_id"];
-                            mids[mindex] = msg["streams"][i];
-                            if(sub_mid.type === "video") {
-                                video_mids[m] = sub_mid;
-                                if(feedStreams[sub_mid.feed_id])
-                                    feedStreams[sub_mid.feed_id].slot = m;
-                                m++
-                            }
-                        }
-
-
-                    //go over all feeds and find if it has only audio
-
-                    showed_mids= (msg["streams"].filter(e => e.type === "audio" && feeds.some(item => item.id === e.feed_id && item.streams.length ===2)));
-
-                    showed_mids = video_mids.concat(showed_mids);
-
-                    Janus.log("switch got streams subscribed ",showed_mids,"and feedstream: ",feedStreams);
-
-                    this.setState({mids,video_mids,feedStreams,showed_mids});
-                }
 
                     if(jsep !== undefined && jsep !== null) {
+                        const {remoteFeed} = this.state;
                         Janus.debug("Handling SDP as well...");
                         Janus.debug(jsep);
                         // Answer and attach
@@ -795,41 +812,46 @@ class MobileClient extends Component {
                     // The subscriber stream is recvonly, we don't expect anything here
                 },
                 onremotetrack: (track, mid, on) => {
-                    Janus.log(" ::: Got a remote track event ::: (remote feed)");
-                    if(!mid) {
-                        mid = track.id.split("janus")[1];
-                    }
-                    Janus.log("Remote track (mid=" + mid + ") " + (on ? "added" : "removed") + ":", track);
-                    // Which publisher are we getting on this mid?
-                    let {mids,feedStreams} = this.state;
-                    let feed = mids[mid].feed_id;
-                    Janus.log(" >> This track is coming from feed " + feed + ":", mid);
-                    // If we're here, a new track was added
-                    if(track.kind === "audio" && on) {
-                        // New audio track: create a stream out of it, and use a hidden <audio> element
-                        let stream = new MediaStream();
-                        stream.addTrack(track.clone());
-                        Janus.log("Created remote audio stream:", stream);
-                        feedStreams[feed].audio_stream = stream;
-                        this.setState({feedStreams});
-                        let remoteaudio = this.refs["remoteAudio" + feed];
-                        Janus.attachMediaStream(remoteaudio, stream);
-                    } else if(track.kind === "video" && on) {
-                        // New video track: create a stream out of it
-                        let stream = new MediaStream();
-                        stream.addTrack(track.clone());
-                        Janus.log("Created remote video stream:", stream);
-                        feedStreams[feed].video_stream = stream;
-                        this.setState({feedStreams});
-                        //FIXME: this must be based on video mids
-                        let remotevideo = this.refs["remoteVideo" + feedStreams[feed].slot];
-                        Janus.log("Attach to slot: ", feedStreams[feed].slot);
-                        Janus.attachMediaStream(remotevideo, stream);
-                    } else if(track.kind === "data") {
-                        Janus.log("Created remote data channel");
-                    } else {
-                        Janus.log("-- Already active stream --");
-                    }
+                  Janus.log(" ::: Got a remote track event ::: (remote feed)");
+                  if(!mid) {
+                    mid = track.id.split("janus")[1];
+                  }
+                  Janus.log("Remote track (mid=" + mid + ") " + (on ? "added" : "removed") + ":", track);
+                  // Which publisher are we getting on this mid?
+                  // let {mids,feedStreams} = this.state;
+                  const {streamsMids, feeds} = this.state
+                  if (!streamsMids.has(mid)) {
+                    Janus.error('Got remote track, but it is not in mids', mid, Array.from(streamsMids.entries()));
+                    return;
+                  }
+                  const feedId = streamsMids.get(mid);
+                  const feed = feeds.find(feed => feed.id === feedId);
+                  console.log('On Remote track', feedId, feed);
+                  // Janus.log(" >> This track is coming from feed " + feed + ":", mid);
+                  // If we're here, a new track was added
+                  if(track.kind === "audio" && on) {
+                      // New audio track: create a stream out of it, and use a hidden <audio> element
+                      const stream = new MediaStream();
+                      stream.addTrack(track.clone());
+                      Janus.log("Created remote audio stream:", stream);
+                      // feedStreams[feed].audio_stream = stream;
+                      // this.setState({feedStreams});
+                      const remoteAudio = this.refs["remoteAudio" + feedId];
+                      Janus.attachMediaStream(remoteAudio, stream);
+                  } else if(track.kind === "video" && on) {
+                      // New video track: create a stream out of it
+                      let stream = new MediaStream();
+                      stream.addTrack(track.clone());
+                      Janus.log("Created remote video stream:", stream);
+                      console.log('BIND FEED/STREAM VIDEO TO SLOT.');
+                      const remotevideo = this.refs["remoteVideo" + feed.videoSlot];
+                      Janus.log("Attach to slot: ", feed.videoSlot);
+                      Janus.attachMediaStream(remotevideo, stream);
+                  } else if(track.kind === "data") {
+                      Janus.log("Created remote data channel");
+                  } else {
+                      Janus.log("-- Already active stream --");
+                  }
                 },
                 ondataopen: (label) => {
                     Janus.log("Feed - DataChannel is available! ("+label+")");
@@ -846,59 +868,50 @@ class MobileClient extends Component {
             });
     };
 
-    makeSubscription = (feeds, new_feed) => {
-        let {feedStreams} = this.state;
-        let subscription = [];
-        for (let f=0; f<feeds.length; f++) {
-            let feed = feeds[f];
-            let {id,streams} = feed;
-            feed.video = !!streams.find(v => v.type === 'video' && v.codec === "h264");
-            feed.audio = !!streams.find(a => a.type === 'audio' && a.codec === "opus");
-            feed.data = !!streams.find(d => d.type === 'data');
-            feed.cammute = !feed.video;
-            for (let i in streams) {
-                let stream = streams[i];
-                const video = stream.type === "video" && stream.codec === "h264";
-                const audio = stream.type === "audio" && stream.codec === "opus";
-                const data = stream.type === "data";
-                if(new_feed) {
-                    // We subscribe for video to fill 3 slots
-                    if (video && this.state.feeds.length < 4) {
-                        subscription.push({feed: id, mid: stream.mid});
-                    }
-                } else {
-                    // We subscribe for video to fill 3 slots
-                    if (video && f < 4) {
-                        subscription.push({feed: id, mid: stream.mid});
-                    }
-                }
-                if (audio) {
-                    subscription.push({feed: id, mid: stream.mid});
-                }
-                if (data) {
-                    subscription.push({feed: id, mid: stream.mid});
-                }
+
+    // Subscribe to feeds, whether already existing in the room, when I joined
+    // or new feeds that join the room when I'm already in. In both cases I
+    // should add those feeds to my feeds list.
+    // In case of feeds just joined and |question| is set, we should notify the
+    // new entering user by notifying everyone.
+    // Subscribes selectively to different stream types |subscribeToVideo|, |subscribeToAudio|, |subscribeToData|.
+    // This is required to stop and then start only the videos to save bandwidth.
+    makeSubscription = (newFeeds, feedsJustJoined, subscribeToVideo, subscribeToAudio, subscribeToData) => {
+      const subscription = [];
+      newFeeds.forEach((feed, feedIndex) => {
+        const {id, streams} = feed;
+        feed.video = !!streams.find(v => v.type === 'video' && v.codec === "h264");
+        feed.audio = !!streams.find(a => a.type === 'audio' && a.codec === "opus");
+        feed.data = !!streams.find(d => d.type === 'data');
+        feed.cammute = !feed.video;
+
+        streams.forEach(stream => {
+          if ((subscribeToVideo && stream.type === "video" && stream.codec === "h264") ||
+              (subscribeToAudio && stream.type === "audio" && stream.codec === "opus") ||
+              (subscribeToData && stream.type === "data")) {
+            subscription.push({feed: id, mid: stream.mid});
+            console.log('SUBSCRIBING TO', stream, feedIndex);
+          }
+        });
+      });
+
+      if (subscription.length > 0) {
+        this.subscribeTo(subscription);
+        if(feedsJustJoined) {
+          // Send question event for new feed, by notifying the whole room.
+          // FIXME: Can this be done by notifying only the joined feed?
+          setTimeout(() => {
+            if (this.state.question) {
+              this.sendDataMessage('question', true);
             }
-            feedStreams[id] = {id, display: feed.display, streams};
+          }, 3000);
         }
-        this.setState({feeds:[...this.state.feeds,...feeds], feedStreams});
-        if (subscription.length > 0) {
-            this.subscribeTo(subscription);
-            //FIXME: Write now questions is disabled
-            // if(new_feed) {
-            //     // Send question event for new feed
-            //     setTimeout(() => {
-            //         if (this.state.question) {
-            //             this.sendDataMessage('question', true);
-            //         }
-            //     }, 3000);
-            // }
-        }
+      }
     }
 
     subscribeTo = (subscription) => {
         // New feeds are available, do we need create a new plugin handle first?
-        Janus.log(" :: Got subscribtion: ", subscription);
+        Janus.log(" :: Got subscribtion: ", subscription, !!this.state.remoteFeed, this.state.creatingFeed);
         if (this.state.remoteFeed) {
             this.state.remoteFeed.send({message:
                     {request: "subscribe", streams: subscription}
@@ -915,139 +928,132 @@ class MobileClient extends Component {
             return;
         }
 
-        // We don't creating, so let's do it
+        // We are not creating the feed, so let's do it.
         this.setState({creatingFeed: true});
         this.newRemoteFeed(subscription);
     };
 
-    unsubscribeFrom = (id) => {
-        // Unsubscribe from this publisher
-        let {feeds,remoteFeed,feedStreams,index} = this.state;
-        for (let i=0; i<feeds.length; i++) {
-            if (feeds[i].id === id) {
-                Janus.log("Feed " + feeds[i] + " (" + id + ") has left the room, detaching");
-                //TODO: remove mids
-                //delete feedStreams[id];
-                feeds.splice(i, 1);
-
-                // Fix index if equal to last index
-                if(index >= feeds.length - 1) {
-                    index = feeds.length - 1;
-                    this.setState({index});
-                }
-
-                // Send an unsubscribe request
-                let unsubscribe = {
-                    request: "unsubscribe",
-                    streams: [{ feed: id }],
-                };
-                if(remoteFeed !== null)
-                    remoteFeed.send({ message: unsubscribe });
-
-                // Check if we need atoswitch feeds in program
-                setTimeout(() => {
-                    //FIXME: Here we must be sure
-                    // we get mids updated event after unsubscribing event
-                    this.fillQuad(id, feeds, index);
-                }, 500);
-
-                this.setState({feeds, feedStreams});
-                break
-            }
+    // Unsubscribe from feeds defined by |ids| (with all streams) and remove it when |onlyVideo| is false.
+    // If |onlyVideo| is true, will unsubscribe only from video stream of those specific feeds, keeping those feeds.
+    unsubscribeFrom = (ids, onlyVideo) => {
+      const {feeds/*, feedStreams, index*/} = this.state;
+      const idsSet = new Set(ids);
+      const unsubscribe = {request: 'unsubscribe', streams: []};
+      feeds.filter(feed => idsSet.has(feed.id)).forEach(feed => {
+        if (onlyVideo) {
+          // Unsubscribe only from one video stream (not all publisher feed).
+          // Acutally expecting only one video stream, but writing more generic code.
+          feed.streams.filter(stream => stream.type === 'video')
+            .map(stream => ({feed: feed.id, mid: stream.mid}))
+            .forEach(stream => unsubscribe.streams.push(stream));
+        } else {
+          // Unsubscribe the whole feed (all it's streams).
+          unsubscribe.streams.push({ feed: feed.id });
+          Janus.log('Unsubscribe from Feed ' + JSON.stringify(feed) + ' (' + feed.id + ').');
         }
+      });
+      // Send an unsubscribe request.
+      const {remoteFeed} = this.state;
+      if (remoteFeed !== null && unsubscribe.streams.length > 0) {
+        remoteFeed.send({ message: unsubscribe });
+      }
     };
 
-    fillQuad = (id,feeds,index) => {
-        let {round,video_mids} = this.state;
+    switchVideoSlots = (from, to) => {
+      console.log(this.refs);
+      const fromRemoteVideo = this.refs["remoteVideo" + from];
+      const toRemoteVideo = this.refs["remoteVideo" + to];
+      const stream = fromRemoteVideo.srcObject;
+      Janus.log(`Switching stream from ${from} to ${to}`, stream, fromRemoteVideo, toRemoteVideo);
+      Janus.attachMediaStream(toRemoteVideo, stream);
+      Janus.attachMediaStream(fromRemoteVideo, null);
+    }
 
-        // Switch to next feed if Quad full
-        if(feeds.length >= 3) {
-            Janus.log(" :: Let's check mids - ", video_mids);
-            video_mids.forEach((mid,i) => {
-                Janus.debug(" :: mids iteration - ", i, mid);
-                if (mid && !mid.active) {
-                    Janus.log(" :: Found empty slot in Quad! - ", video_mids[i]);
-                    let feed = feeds[index];
-                    index++;
-                    if(index >= feeds.length) {
-                        // End round here!
-                        index = 0;
-                        round++;
-                        Janus.log(" -- ROUND END --");
-                    }
-                    this.setState({index,round});
-                    Janus.log(":: Auto switch program to: ", feed);
-                    let streams = [{feed: feed.id, mid: "1"}];
-                    this.subscribeTo(streams);
-                }
-            })
-        } else if(feeds.length < 3) {
-            Janus.log(" :: Clean up Quad");
-            for (let i=0; i<video_mids.length; i++) {
-                if(video_mids[i] && !video_mids[i].active) {
-                    video_mids[i] = null;
-                    this.setState({video_mids});
-                }
-            }
+    switchVideos = (page, oldFeeds, newFeeds, isWaiting) => {
+      const {muteOtherCams, switchingVideos} = this.state;
+      
+      // Switch later (only one time with latest page and feeds from state).
+      if (switchingVideos) {
+        const {switchToPage} = this.state;
+        if (switchToPage === -1 || isWaiting) {
+          setTimeout(() => {
+            this.switchVideos(this.state.switchToPage, this.state.feeds, /* isWaiting= */ true);
+          }, 500);
         }
-    };
+        this.setState({switchToPage: page});
+        return;
+      }
 
-    switchFour = (isForward) => {
-        Janus.log(" :: Switch");
-        let {feeds,index,video_mids,showed_mids} = this.state;
-        Janus.log("Index start: "+index);
+      // Not switching now, lets switch.
+      const oldVideoSlots = [
+        oldFeeds.findIndex(feed => feed.videoSlot === 0),
+        oldFeeds.findIndex(feed => feed.videoSlot === 1),
+        oldFeeds.findIndex(feed => feed.videoSlot === 2),
+      ];
+      const oldVideoFeeds = oldVideoSlots.map(index => index !== -1 ? oldFeeds[index] : null);
 
+      const newVideoSlots = [
+        (page * PAGE_SIZE) + 0 >= newFeeds.length ? -1 : (page * PAGE_SIZE) + 0,
+        (page * PAGE_SIZE) + 1 >= newFeeds.length ? -1 : (page * PAGE_SIZE) + 1,
+        (page * PAGE_SIZE) + 2 >= newFeeds.length ? -1 : (page * PAGE_SIZE) + 2,
+      ];
+      const newVideoFeeds = newVideoSlots.map(index => index !== -1 ? newFeeds[index] : null);
 
-        if(feeds.length < 3)
-            return;
-
-        if(!isForward && index>=3)
-         index = index-3;
-        else if(!isForward)
-          return;
-
-        if(index === feeds.length) {
-            // End round here!
-            Janus.log(" -- ROUND END --");
-            this.setState({index: 0});
-            index = 0;
+      // Update video slots.
+      oldVideoFeeds.forEach((feed) => {
+        if (feed !== null) {
+          delete feed.videoSlot;
         }
-
-        let streams = [];
-        let m = 0;
-
-        for(let i=index; i<feeds.length && m<3; i++) {
-
-            Janus.log(" :: ITer: ", i ,feeds[i]);
-
-            if(i > feeds.length) {
-                // End round here!
-                Janus.log(" -- ROUND END --");
-                this.setState({index: 0});
-                index = 0;
-                m = 0;
-                break;
-            }
-            // debugger;
-            let sub_mid = showed_mids[m].mid;
-            let feed = feeds[i].id;
-            if(showed_mids[m].type === "video" )
-                streams.push({feed, mid: "1", sub_mid});
-
-            index++;
-            m++;
+      });
+      newVideoFeeds.forEach((feed, newIndex) => {
+        if (feed !== null) {
+          feed.videoSlot = newIndex;
         }
+      });
 
-        this.setState({index});
-        Janus.log("Index end: "+index);
-        Janus.log(" :: Going to switch four: ", streams);
-        let switch_four = {request: "switch", streams};
-        this.state.remoteFeed.send ({"message": switch_four,
-            success: () => {
-                Janus.debug(" -- Switch success: ");
-            }
-        })
-    };
+      // Cases:
+      // old: [0, 1, 2] [f0, f1, f2], new: [3, 4, 5] [f3, f4, f5]                  Simple next page switch.
+      // old: [3, 4, 5] [f3, f4, f5], new: [0, 1, 2] [f0, f1, f2]                  Simple prev page switch.
+      // old: [-1, -1, -1] [null, null, null], new: [0, -1, -1] [f0, null, null]   First user joins.
+      // old: [0, -1, -1] [f0, null, null], new: [0, 1, -1] [f0, f1, null]         Second user joins.
+      // old: [3, 4, 5] [f3, f4, f5], new: [3, 4, 5] [f3, f5, f6]                  User f4 left.
+      // old: [3, 4, 5] [f3, f4, f5], new: [3, 4, 5] [f3, fX, f4]                  User fX joins.
+
+      const subscribeFeeds = [];
+      const unsubscribeFeeds = [];
+      const switchFeeds = [];
+      newVideoFeeds.forEach(newFeed => {
+        if (newFeed !== null && !oldVideoFeeds.find(oldFeed => oldFeed !== null && oldFeed.id === newFeed.id)) {
+          subscribeFeeds.push(newFeed);
+        }
+      });
+      oldVideoFeeds.forEach(oldFeed => {
+        if (oldFeed !== null && !newVideoFeeds.find(newFeed => newFeed !== null && newFeed.id === oldFeed.id)) {
+          unsubscribeFeeds.push(oldFeed);
+        }
+      });
+      oldVideoFeeds.forEach((oldFeed, oldIndex) => {
+        if (oldFeed !== null) {
+          const newIndex = newVideoFeeds.findIndex(newFeed => newFeed !== null && newFeed.id === oldFeed.id);
+          if (newIndex !== -1 && oldIndex !== newIndex) {
+            switchFeeds.push({from: oldVideoSlots[oldIndex], to: newVideoSlots[newIndex]});
+          }
+        }
+      })
+
+      console.log('SWITCH');
+      console.log(oldVideoSlots, oldVideoFeeds, newVideoSlots, newVideoFeeds);
+      console.log(subscribeFeeds, unsubscribeFeeds, switchFeeds);
+
+      if (!muteOtherCams) {
+        this.makeSubscription(subscribeFeeds, /* feedsJustJoined= */ false, /* subscribeToVideo= */ true,
+                              /* subscribeToAudio= */ false, /* subscribeToData= */ false);
+        this.unsubscribeFrom(unsubscribeFeeds.map(feed => feed.id), /* onlyVideo= */ true);
+        switchFeeds.forEach(({from, to}) => this.switchVideoSlots(from, to));
+      } else {
+        console.log('Ignoring subscribe/unsubscribe/switch, we are at mute other cams mode.');
+      }
+    }
 
     sendDataMessage = (user) => {
         const {videoroom} = this.state;
@@ -1141,7 +1147,7 @@ class MobileClient extends Component {
             if(janus) janus.destroy();
             this.setState({
                 cammuted: false, muted: false, question: false,
-                feeds: [], mids: [], showed_mids:[],
+                feeds: [], /*mids: [], showed_mids:[],*/
                 localAudioTrack: null, localVideoTrack: null, upval: null,
                 remoteFeed: null, videoroom: null, protocol: null, janus: null,
                 delay: reconnect,
@@ -1213,6 +1219,20 @@ class MobileClient extends Component {
         }
       }
     };
+
+    otherCamsMuteToggle = () => {
+      const {feeds, muteOtherCams} = this.state;
+      const activeFeeds = feeds.filter((feed) => feed.videoSlot !== undefined);
+      if (!muteOtherCams) {
+        // Should hide/mute now all videos.
+        this.unsubscribeFrom(activeFeeds.map(feed => feed.id), /* onlyVideo= */ true);
+      } else {
+        // Should unmute/show now all videos.false,
+        this.makeSubscription(activeFeeds, /* feedsJustJoined= */ false, /* subscribeToVideo= */ true,
+                              /* subscribeToAudio= */ false, /* subscribeToData= */ false);
+      }
+      this.setState({muteOtherCams: !muteOtherCams});
+    }
 
     camMute = () => {
         let {videoroom, cammuted} = this.state;
@@ -1291,6 +1311,14 @@ class MobileClient extends Component {
       this.setState({ settingsActiveIndex: newIndex })
     }
 
+    switchPage = (page, feeds) => {
+      // Normalize page, e.g., if it is -1 or too large...
+      const numPages = Math.ceil(feeds.length / PAGE_SIZE);
+      page = numPages === 0 ? 0 : (numPages + page) % numPages;
+      this.switchVideos(page, feeds, feeds, /* isWaiting= */ false);
+      this.setState({page});
+    }
+
     render() {
       const {t, i18n} = this.props;
       const {
@@ -1304,6 +1332,7 @@ class MobileClient extends Component {
         localAudioTrack,
         media,
         monitoringData,
+        muteOtherCams,
         muted,
         myid,
         name,
@@ -1318,8 +1347,9 @@ class MobileClient extends Component {
         shidurLoading,
         talking,
         user,
+        feeds,
+        page,
       } = this.state;
-    
       const {video_device} = media.video;
       const {audio_device} = media.audio;
 
@@ -1360,62 +1390,50 @@ class MobileClient extends Component {
         }
       }
 
-      let videos = this.state.showed_mids.map((mid,i) => {
-          if(mid && i <3) {
-              if(mid.active) {
-                  let feed = this.state.feeds.find(f => f.id === mid.feed_id);
-                  //let id = feed.id;
-                  let taking = feed ? feed.taking : false;
-                  let question = feed ? feed.question : false;
-                  let cammute = feed ? feed.cammute : false;
-                  let display_name = feed ? feed.display.display : "";
-                  return (<div className="video"
-                               key={"vk" + i}
-                               ref={"video" + i}
-                               id={"video" + i}>
-                      <div className={classNames('video__overlay', {'talk': taking})}>
-                          {question ? <div className="question">
-                              <svg viewBox="0 0 50 50">
-                                  <text x="25" y="25" textAnchor="middle" alignmentBaseline="central"
-                                        dominantBaseline="central">&#xF128;</text>
-                              </svg>
-                          </div> : ''}
-                          <div className="video__title">{!taking ?
-                              <Icon name="microphone slash" color="red"/> : ''}{display_name}</div>
-                      </div>
-                      <svg className={classNames('nowebcam', {'hidden': !cammute})} viewBox="0 0 32 18"
-                           preserveAspectRatio="xMidYMid meet">
-                          <text x="16" y="9" textAnchor="middle" alignmentBaseline="central"
-                                dominantBaseline="central">&#xf2bd;</text>
-                      </svg>
-                      <video
-                          key={"v" + i}
-                          ref={"remoteVideo" + i}
-                          id={"remoteVideo" + i}
-                          width={width}
-                          height={height}
-                          autoPlay={autoPlay}
-                          controls={controls}
-                          muted={true}
-                          playsInline={true}/>
-                  </div>);
-              }
-          }
-          return true;
+      console.log('render FEEDS', feeds, muteOtherCams);
+      // TODO: Instead of 0, 3 should actuaaly map things...
+      const remoteVideos = feeds.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE).map((feed, i) => {
+        return (<div className="video"
+                     key={"vk" + i}
+                     ref={"video" + i}
+                     id={"video" + i}>
+            <div className={classNames('video__overlay', {'talk': feed.taking})}>
+                {feed.question ? <div className="question">
+                    <svg viewBox="0 0 50 50">
+                        <text x="25" y="25" textAnchor="middle" alignmentBaseline="central"
+                              dominantBaseline="central">&#xF128;</text>
+                    </svg>
+                </div> : ''}
+                <div className="video__title">{!feed.taking ?
+                    <Icon name="microphone slash" color="red"/> : ''}{feed.display.display}</div>
+            </div>
+            <svg className={classNames('nowebcam', {'hidden': !feed.cammute && !muteOtherCams})} viewBox="0 0 32 18"
+                 preserveAspectRatio="xMidYMid meet">
+                <text x="16" y="9" textAnchor="middle" alignmentBaseline="central"
+                      dominantBaseline="central">&#xf2bd;</text>
+            </svg>
+            <video
+                key={"v" + i}
+                ref={"remoteVideo" + i}
+                id={"remoteVideo" + i}
+                width={width}
+                height={height}
+                autoPlay={autoPlay}
+                controls={controls}
+                muted={true}
+                playsInline={true} />
+        </div>);
       });
 
-      let audios = this.state.feeds.map((feed) => {
-          if(feed) {
-              let id = feed.id;
-              return (<audio
-                      key={"a"+id}
-                      ref={"remoteAudio" + id}
-                      id={"remoteAudio" + id}
-                      autoPlay={autoPlay}
-                      controls={controls}
-                      playsInline={true}/>);
-          }
-          return true;
+      const remoteAudios = this.state.feeds.map((feed) => {
+        const id = feed.id;
+        return (<audio
+                  key={'a'+id}
+                  ref={'remoteAudio' + id}
+                  id={'remoteAudio' + id}
+                  autoPlay={autoPlay}
+                  controls={controls}
+                  playsInline={true} />);
       });
 
       const otherFeedHasQuestion = this.state.feeds.some(({question, id}) => question && id !== myid);
@@ -1554,65 +1572,60 @@ class MobileClient extends Component {
                         <div className="videos-panel">
                             <div className="videos" >
                                 <div className="videos__wrapper">
-                                    {/* {!!localAudioTrack ? "" : */}
-                                        <div className="video">
-                                            <div className={classNames('video__overlay')}>
-                                                {question ?
-                                                    <div className="question">
-                                                        <svg viewBox="0 0 50 50"><text x="25" y="25" textAnchor="middle" alignmentBaseline="central" dominantBaseline="central">&#xF128;</text></svg>
-                                                    </div>
-                                                    :
-                                                    ''
-                                                }
-                                                <div className="video__title">
-                                                    {muted ? <Icon name="microphone slash" color="red"/> : ''}
-                                                    <div style={{display: 'inline-block', verticalAlign: 'middle'}}>{user ? user.display : ""}</div>
-                                                    <Image src={connectionIcon()} style={{height: '1em', objectFit: 'contain', display: 'inline-block', verticalAlign: 'middle', marginLeft: '0.4em'}} />
+                                    {/* My own feed/video */}
+                                    <div className="video">
+                                        <div className={classNames('video__overlay')}>
+                                            {question ?
+                                                <div className="question">
+                                                    <svg viewBox="0 0 50 50"><text x="25" y="25" textAnchor="middle" alignmentBaseline="central" dominantBaseline="central">&#xF128;</text></svg>
                                                 </div>
+                                                :
+                                                ''
+                                            }
+                                            <div className="video__title">
+                                                {muted ? <Icon name="microphone slash" color="red"/> : ''}
+                                                <div style={{display: 'inline-block', verticalAlign: 'middle'}}>{user ? user.display : ""}</div>
+                                                <Image src={connectionIcon()} style={{height: '1em', objectFit: 'contain', display: 'inline-block', verticalAlign: 'middle', marginLeft: '0.4em'}} />
                                             </div>
-                                            <svg className={classNames('nowebcam',{'hidden':!cammuted})} viewBox="0 0 32 18" preserveAspectRatio="xMidYMid meet" >
-                                                <text x="16" y="9" textAnchor="middle" alignmentBaseline="central" dominantBaseline="central">&#xf2bd;</text>
-                                            </svg>
-                                            <video
-                                                className={classNames('mirror',{'hidden':cammuted})}
-                                                ref="localVideo"
-                                                id="localVideo"
-                                                width={width}
-                                                height={height}
-                                                autoPlay={autoPlay}
-                                                controls={controls}
-                                                muted={true}
-                                                playsInline={true}/>
-
                                         </div>
-                                        {/* } */}
-                                    {videos}
+                                        <svg className={classNames('nowebcam',{'hidden':!cammuted})} viewBox="0 0 32 18" preserveAspectRatio="xMidYMid meet" >
+                                            <text x="16" y="9" textAnchor="middle" alignmentBaseline="central" dominantBaseline="central">&#xf2bd;</text>
+                                        </svg>
+                                        <video
+                                            className={classNames('mirror',{'hidden':cammuted})}
+                                            ref="localVideo"
+                                            id="localVideo"
+                                            width={width}
+                                            height={height}
+                                            autoPlay={autoPlay}
+                                            controls={controls}
+                                            muted={true}
+                                            playsInline={true}/>
+
+                                    </div>
+                                    {remoteVideos}
                                 </div>
                             </div>
-                            {videos.length>0?
+                            {remoteVideos.length > 0 ?
                               <div className="dots">
-                                <Dots
-                                    length={Math.ceil(this.state.feeds.length/3)}
-                                    visible={Math.ceil(this.state.feeds.length/3)}
-                                    active={(Math.ceil(this.state.index/3)-1)}
-                                    margin={10}
-                                />
+                                <Dots length={Math.ceil(feeds.length/PAGE_SIZE)}
+                                      visible={Math.ceil(feeds.length/PAGE_SIZE)}
+                                      active={page}
+                                      margin={10} />
                               </div>
                             :""}
-                            {videos.length>0 ?
-                              <div className="right-arrow" onClick={()=>this.switchFour(true)}>
+                            {remoteVideos.length > 0 ?
+                              <div className="right-arrow" onClick={() => this.switchPage(page + 1, feeds)}>
                                         <Icon name='chevron right' color='blue' size='huge' />
-
                               </div>
                             :""}
-                            {videos.length>0?
-                              <div className="left-arrow" onClick={()=>this.switchFour(false)}>
+                            {remoteVideos.length > 0 ?
+                              <div className="left-arrow" onClick={()=> this.switchPage(page - 1, feeds)}>
                                 <Icon name='chevron left' color='blue' size='huge' />
-
                               </div>
                             :""}
                         </div>
-                        {audios}
+                        {remoteAudios}
                     </div>
                 </div>
             </div>
@@ -1631,6 +1644,10 @@ class MobileClient extends Component {
                       <Icon name={!cammuted ? "eye" : "eye slash"}
                             style={{color: openVideoDisabled ? null : (cammuted ? 'red' : 'white')}} />
                       <span>{t(cammuted ? 'oldClient.startVideo' : 'oldClient.stopVideo')}</span>
+                  </Menu.Item>
+                  <Menu.Item onClick={this.otherCamsMuteToggle}>
+                    <Image className='audio-mode' src={muteOtherCams ? audioModeSvg : fullModeSvg} />
+                    <span>{t(muteOtherCams ? 'oldClient.fullMode' : 'oldClient.audioMode')}</span>
                   </Menu.Item>
                   <Menu.Item disabled={questionDisabled} onClick={this.handleQuestion}>
                     <Icon name='question' style={{color: question ? '#21ba45' : null}} />
