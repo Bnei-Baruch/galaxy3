@@ -157,13 +157,13 @@
 		background: rgba(34, 34, 34, .9);
 		font-size: 1rem;
 		color: white;
-		// border-radius: 4px;
 		line-height: 1;
 		text-shadow: 0 2px 1px rgba(0, 0, 0, .7);
-
 		.icon, span {
-			margin-right: .7rem;
-
+			&+.icon,
+			&+span{
+				margin:  0 0 0 .7rem;
+			}
 		}
 		.icon {
 			position: relative;
