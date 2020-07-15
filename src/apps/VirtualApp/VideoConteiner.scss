@@ -89,7 +89,9 @@
 	// height: percentage(1/1);
 	position: relative;
 	// margin: 1px;
-	background: rgba(34, 34, 34, 1);
+	&:not(.icon){
+		background: rgba(34, 34, 34, 1);
+	}
 	// border: 2px solid #000;
 	// overflow: hidden;
 
@@ -159,13 +161,14 @@
 		line-height: 1;
 		text-shadow: 0 2px 1px rgba(0, 0, 0, .7);
 
-		.icon {
+		.icon, span {
 			margin-right: .7rem;
+
+		}
+		.icon {
 			position: relative;
 			top: -.09rem;
 		}
-
-		// color:yellow;
 	}
 
 	video {

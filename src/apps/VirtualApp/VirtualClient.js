@@ -27,10 +27,6 @@ import {Profile} from "../../components/Profile";
 import * as Sentry from "@sentry/browser";
 import VerifyAccount from './components/VerifyAccount';
 import GxyJanus from "../../shared/janus-utils";
-import connectionOrange from './connection-orange.png';
-import connectionWhite from './connection-white.png';
-import connectionRed from './connection-red.png';
-import connectionGray from './connection-gray.png';
 import audioModeSvg from '../../shared/audio-mode.svg';
 import fullModeSvg from '../../shared/full-mode.svg';
 
@@ -1198,15 +1194,15 @@ class VirtualClient extends Component {
   connectionIcon = () => {
     switch (this.state.connectionStatus) {
       case LINK_STATE_INIT:
-        return connectionGray;
+        return "grey";
       case LINK_STATE_GOOD:
-        return connectionWhite;
+        return "white";
       case LINK_STATE_MEDIUM:
-        return connectionOrange;
+        return "orange";
       case LINK_STATE_WEAK:
-        return connectionRed;
+        return "red";
       default:
-        return connectionGray;
+        return "grey";
     }
   }
 
@@ -1227,9 +1223,9 @@ class VirtualClient extends Component {
           ''
         }
         <div className="video__title">
-          {muted ? <Icon name="microphone slash" size="small" color="red" style={{verticalAlign: 'middle'}} /> : ''}
-          <div style={{display: 'inline-block', verticalAlign: 'middle'}}>{user ? user.display : ''}</div>
-          <Image src={this.connectionIcon()} style={{height: '1em', objectFit: 'contain', display: 'inline-block', verticalAlign: 'middle', marginLeft: '0.4em'}} />
+          {muted ? <Icon name="microphone slash" size="small" color="red"  /> : ''}
+          <span>{user ? user.display : ''}</span>
+          <Icon name="signal" size="small" color={this.connectionIcon()}/>
         </div>
       </div>
       <svg className={classNames('nowebcam', {'hidden': !cammuted})} viewBox="0 0 32 18"
@@ -1262,7 +1258,7 @@ class VirtualClient extends Component {
             <text x="25" y="25" textAnchor="middle" alignmentBaseline="central" dominantBaseline="central">&#xF128;</text>
           </svg>
         </div> : ''}
-        <div className="video__title">{!talking ? <Icon name="microphone slash" size="small" color="red" /> : ''}{display}</div>
+        <div className="video__title">{!talking ? <Icon name="microphone slash" size="small" color="red" /> : ''}<span>{display}</span></div>
       </div>
       <svg className={classNames('nowebcam', {'hidden': !mute})} viewBox="0 0 32 18" preserveAspectRatio="xMidYMid meet">
         <text x="16" y="9" textAnchor="middle" alignmentBaseline="central" dominantBaseline="central">&#xf2bd;</text>
