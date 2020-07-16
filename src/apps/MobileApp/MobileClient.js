@@ -644,7 +644,7 @@ class MobileClient extends Component {
                     console.log('MUTING CAMERA!');
                     this.camMute(/* cammuted= */ false);
                     this.setState({prevVideoSetting: this.state.shidurJanus.videos, videos: NO_VIDEO_OPTION_VALUE});
-                    this.state.shidurJanus.setVideo(videos);
+                    this.state.shidurJanus.setVideo(NO_VIDEO_OPTION_VALUE);
                   }
                 }
             } else if(event === 'talking') {
