@@ -9,7 +9,7 @@ import './MobileClient.scss'
 import './MobileConteiner.scss'
 import 'eqcss'
 import {initGxyProtocol} from "../../shared/protocol";
-import {PROTOCOL_ROOM, vsettings_list} from "../../shared/consts";
+import {PROTOCOL_ROOM, NO_VIDEO_OPTION_VALUE, vsettings_list} from "../../shared/consts";
 import {GEO_IP_INFO} from "../../shared/env";
 import platform from "platform";
 import { isMobile } from 'react-device-detect';
@@ -66,10 +66,12 @@ class MobileClient extends Component {
 
         feeds: [],
         streamsMids: new Map(),
-        switchingVideos: false,
         creatingFeed: false,  
         switchToPage: -1,
         page: 0,
+        muteOtherCams: false,
+        prevVideoSetting: null,
+        videos: Number(localStorage.getItem('vrt_video')) || 1,
 
         rooms: [],
         room: '',
@@ -102,7 +104,6 @@ class MobileClient extends Component {
         chatMessagesCount: 0,
         chatVisible: false,
         settingsActiveIndex: -1,
-        muteOtherCams: false,
     };
 
     shidurInitialized() {
@@ -526,7 +527,7 @@ class MobileClient extends Component {
     };
 
     onRoomData = (data) => {
-        const {user} = this.state;
+        const {user, cammuted} = this.state;
         const {camera,question,rcmd,type,id} = data;
         // CHECK: Looks like this code never run!
         if(rcmd) {
@@ -543,7 +544,7 @@ class MobileClient extends Component {
             } else if (type === 'client-mute' && user.id === id) {
                 this.micMute();
             } else if (type === 'video-mute' && user.id === id) {
-                this.camMute();
+                this.camMute(cammuted);
             } else if (type === 'sound_test' && user.id === id) {
                 user.sound_test = true;
                 localStorage.setItem('sound_test', true);
@@ -639,6 +640,12 @@ class MobileClient extends Component {
                   console.log('switchVideos', this.state.page, [], feeds);
                   this.switchVideos(/* page= */ this.state.page, [], feeds, /* isWaiting= */ false);
                   this.setState({feeds});
+                  if (this.state.muteOtherCams) {
+                    console.log('MUTING CAMERA!');
+                    this.camMute(/* cammuted= */ false);
+                    this.setState({prevVideoSetting: this.state.shidurJanus.videos, videos: NO_VIDEO_OPTION_VALUE});
+                    this.state.shidurJanus.setVideo(videos);
+                  }
                 }
             } else if(event === 'talking') {
               const feeds = Object.assign([], this.state.feeds);
@@ -960,7 +967,6 @@ class MobileClient extends Component {
     };
 
     switchVideoSlots = (from, to) => {
-      console.log(this.refs);
       const fromRemoteVideo = this.refs["remoteVideo" + from];
       const toRemoteVideo = this.refs["remoteVideo" + to];
       const stream = fromRemoteVideo.srcObject;
@@ -970,21 +976,8 @@ class MobileClient extends Component {
     }
 
     switchVideos = (page, oldFeeds, newFeeds, isWaiting) => {
-      const {muteOtherCams, switchingVideos} = this.state;
+      const {muteOtherCams} = this.state;
       
-      // Switch later (only one time with latest page and feeds from state).
-      if (switchingVideos) {
-        const {switchToPage} = this.state;
-        if (switchToPage === -1 || isWaiting) {
-          setTimeout(() => {
-            this.switchVideos(this.state.switchToPage, this.state.feeds, /* isWaiting= */ true);
-          }, 500);
-        }
-        this.setState({switchToPage: page});
-        return;
-      }
-
-      // Not switching now, lets switch.
       const oldVideoSlots = [
         oldFeeds.findIndex(feed => feed.videoSlot === 0),
         oldFeeds.findIndex(feed => feed.videoSlot === 1),
@@ -1106,7 +1099,7 @@ class MobileClient extends Component {
             } else if(type === "client-mute" && user.id === id) {
                 this.micMute();
             } else if(type === "video-mute" && user.id === id) {
-                this.camMute();
+                this.camMute(this.state.cammuted);
             } else if (type === 'audio-out' && room === selected_room) {
                 this.handleAudioOut(ondata);
             }
@@ -1221,21 +1214,29 @@ class MobileClient extends Component {
     };
 
     otherCamsMuteToggle = () => {
-      const {feeds, muteOtherCams} = this.state;
+      const {feeds, muteOtherCams, prevVideoSetting} = this.state;
       const activeFeeds = feeds.filter((feed) => feed.videoSlot !== undefined);
       if (!muteOtherCams) {
         // Should hide/mute now all videos.
         this.unsubscribeFrom(activeFeeds.map(feed => feed.id), /* onlyVideo= */ true);
+        this.camMute(/* cammuted= */ false);
+        this.setState({prevVideoSetting: this.state.shidurJanus.videos, videos: NO_VIDEO_OPTION_VALUE});
+        this.state.shidurJanus.setVideo(NO_VIDEO_OPTION_VALUE);
       } else {
         // Should unmute/show now all videos.false,
         this.makeSubscription(activeFeeds, /* feedsJustJoined= */ false, /* subscribeToVideo= */ true,
                               /* subscribeToAudio= */ false, /* subscribeToData= */ false);
+        this.camMute(/* cammuted= */ true);
+        if (prevVideoSetting !== null) {
+          this.setState({prevVideoSetting: null, videos: prevVideoSetting});
+          this.state.shidurJanus.setVideo(prevVideoSetting);
+        }
       }
       this.setState({muteOtherCams: !muteOtherCams});
     }
 
-    camMute = () => {
-        let {videoroom, cammuted} = this.state;
+    camMute = (cammuted) => {
+        let {videoroom} = this.state;
         const user = Object.assign({}, this.state.user);
         if(user.role === "ghost") return;
         this.makeDelay();
@@ -1289,7 +1290,6 @@ class MobileClient extends Component {
     }
 
     homerLimudCss = (ref) => {
-      console.log(ref);
       return;
 
       if (ref) {
@@ -1349,6 +1349,7 @@ class MobileClient extends Component {
         user,
         feeds,
         page,
+        videos,
       } = this.state;
       const {video_device} = media.video;
       const {audio_device} = media.audio;
@@ -1563,6 +1564,8 @@ class MobileClient extends Component {
 										toggleShidur={this.toggleShidur}
 										audio={this.state.shidurJanus && this.state.shidurJanus.audioElement}
                     muted={this.state.shidurMuted}
+                    videos={videos}
+                    setVideo={(v) => this.setState({videos: v})}
                     setMuted={(muted) => this.setShidurMuted(muted)}
 									/> : null}
 								</div>
@@ -1640,7 +1643,7 @@ class MobileClient extends Component {
                         {t(muted ? 'oldClient.unMute' : 'oldClient.mute')}
                       </span>
                   </Menu.Item>
-                  <Menu.Item disabled={openVideoDisabled} onClick={this.camMute}>
+                  <Menu.Item disabled={openVideoDisabled} onClick={() => this.camMute(cammuted)}>
                       <Icon name={!cammuted ? "eye" : "eye slash"}
                             style={{color: openVideoDisabled ? null : (cammuted ? 'red' : 'white')}} />
                       <span>{t(cammuted ? 'oldClient.startVideo' : 'oldClient.stopVideo')}</span>

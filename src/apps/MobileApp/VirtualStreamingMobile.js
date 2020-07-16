@@ -31,39 +31,19 @@ class VirtualStreaming extends Component {
   }
 
   state = {
-    videos: Number(localStorage.getItem('vrt_video')) || 1,
     audios: Number(localStorage.getItem('vrt_lang')) || 2,
     room: Number(localStorage.getItem('room')) || null,
     user: {},
     cssFixInterval: null,
     fullScreen: false,
-		// videoStateChanged: 0,
 		videoSelectionOpen: false,
 		audioSelectionOpen: false,
   };
 
-	/*videoStateChanged(e) {
-		console.log('videoStateChanged', e);
-		if (e && e.type === 'pause' && this.props.audio) {
-			this.props.audio.pause();
-		}
-		if (e && e.type === 'play' && this.props.audio) {
-			this.props.audio.play();
-		}
-		this.setState({videoStateChanged: this.state.videoStateChanged + 1});
-	}*/
-
   videoRef(ref) {
 		if (ref && ref !== this.video) {
-			/*if (this.video) {
-				this.video.removeEventListener('pause', this.videoStateChanged);
-				this.video.removeEventListener('play', this.videoStateChanged);
-			}*/
 			this.video = ref;
-			/*this.video.addEventListener('pause', this.videoStateChanged);
-			this.video.addEventListener('play', this.videoStateChanged);*/
 			this.props.shidurJanus.attachVideoStream(ref);
-			// this.setState({videoStateChanged: this.state.videoStateChanged + 1});
 		}
   }
 
@@ -135,8 +115,9 @@ class VirtualStreaming extends Component {
   };
 
   setVideo(videos) {
-    this.setState({videos, videoSelectionOpen: false});
+    this.setState({videoSelectionOpen: false});
     this.props.shidurJanus.setVideo(videos);
+    this.props.setVideo(videos);
   }
 
   setAudio(audios, text) {
@@ -175,12 +156,12 @@ class VirtualStreaming extends Component {
 			shidurLoading,
       shidurJanus,
       t,
+      videos,
     } = this.props;
     const {
       audios,
       fullScreen,
       room,
-      videos,
 			videoSelectionOpen,
 			audioSelectionOpen,
     } = this.state;

@@ -392,14 +392,16 @@ export default class VirtualStreamingJanus {
 
   setVideo = (videos) => {
     this.videos = videos;
-    if (videos === NO_VIDEO_OPTION_VALUE) {
-      this.videoJanusStream.detach();
-      this.detachVideo_();
-    } else {
-      if (this.videoJanusStream) {
-        this.videoJanusStream.send({ message: { request: 'switch', id: videos } });
+    if (this.janus) {
+      if (videos === NO_VIDEO_OPTION_VALUE) {
+        this.videoJanusStream.detach();
+        this.detachVideo_();
       } else {
-        this.initVideoStream(this.janus);
+        if (this.videoJanusStream) {
+          this.videoJanusStream.send({ message: { request: 'switch', id: videos } });
+        } else {
+          this.initVideoStream(this.janus);
+        }
       }
     }
     localStorage.setItem('vrt_video', videos);
