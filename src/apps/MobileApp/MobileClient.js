@@ -1067,8 +1067,8 @@ class MobileClient extends Component {
                     alert(ondata.error);
                 });
             } else if(ondata.type === "joined") {
-                const {id,timestamp,role,display} = user;
-                const d = {id,timestamp,role,display};
+                const {id,timestamp,role,username} = user;
+                const d = {id,timestamp,role,display: username};
                 let register = {"request": "join", "room": selected_room, "ptype": "publisher", "display": JSON.stringify(d)};
                 videoroom.send({"message": register,
                     success: () => {
