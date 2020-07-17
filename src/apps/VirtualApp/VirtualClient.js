@@ -10,7 +10,7 @@ import './CustomIcons.scss';
 import 'eqcss';
 import VirtualChat from './VirtualChat';
 import {initGxyProtocol} from '../../shared/protocol';
-import {PROTOCOL_ROOM, vsettings_list} from '../../shared/consts';
+import {PROTOCOL_ROOM, NO_VIDEO_OPTION_VALUE, vsettings_list} from '../../shared/consts';
 import {GEO_IP_INFO, SENTRY_KEY} from '../../shared/env';
 import platform from 'platform';
 import {Help} from './components/Help';
@@ -93,6 +93,8 @@ class VirtualClient extends Component {
     net_status: 1,
     keepalive: null,
     muteOtherCams: false,
+    videos: Number(localStorage.getItem('vrt_video')) || 1,
+    prevVideoSetting: null,
   };
 
   virtualStreamingInitialized() {
@@ -577,7 +579,7 @@ class VirtualClient extends Component {
   };
 
   onRoomData = (data) => {
-    const {user} = this.state;
+    const {user, cammuted} = this.state;
     const feeds = Object.assign([], this.state.feeds);
     const {camera,question,rcmd,type,id} = data;
     if(rcmd) {
@@ -594,7 +596,7 @@ class VirtualClient extends Component {
       } else if (type === 'client-mute' && user.id === id) {
         this.micMute();
       } else if (type === 'video-mute' && user.id === id) {
-        this.camMute();
+        this.camMute(cammuted);
       } else if (type === 'sound_test' && user.id === id) {
         user.sound_test = true;
         localStorage.setItem('sound_test', true);
@@ -685,6 +687,11 @@ class VirtualClient extends Component {
           this.makeSubscription(feeds, /* feedsJustJoined= */ false,
                                 /* subscribeToVideo= */ !this.state.muteOtherCams,
                                 /* subscribeToAudio= */ true, /* subscribeToData= */ true);
+          if (this.state.muteOtherCams) {
+            this.setState({prevVideoSetting: this.state.videos, videos: NO_VIDEO_OPTION_VALUE});
+            this.state.virtualStreamingJanus.setVideo(NO_VIDEO_OPTION_VALUE);
+            this.camMute(/* cammuted= */ false);
+          }
         }
       } else if (event === 'talking') {
         const feeds = Object.assign([], this.state.feeds);
@@ -1057,7 +1064,7 @@ class VirtualClient extends Component {
       } else if (type === 'client-mute' && user.id === id) {
         this.micMute();
       } else if (type === 'video-mute' && user.id === id) {
-        this.camMute();
+        this.camMute(this.state.cammuted);
       } else if (type === 'sound_test' && user.id === id) {
         user.sound_test = true;
         localStorage.setItem('sound_test', true);
@@ -1130,21 +1137,23 @@ class VirtualClient extends Component {
     }
   };
 
-  camMute = () => {
-    let {videoroom, cammuted} = this.state;
-    const user = Object.assign({}, this.state.user);
-    if(user.role === "ghost") return;
-    this.makeDelay();
-    user.camera = cammuted;
-    api.updateUser(user.id, user)
-        .then(data => {
-          if(data.result === "success") {
-            cammuted ? videoroom.unmuteVideo() : videoroom.muteVideo();
-            this.setState({user, cammuted: !cammuted});
-            this.sendDataMessage(user);
-          }
-        })
-        .catch(err => console.error("[User] error updating user state", user.id, err))
+  camMute = (cammuted) => {
+    let {videoroom} = this.state;
+    if (videoroom) {
+      const user = Object.assign({}, this.state.user);
+      if(user.role === "ghost") return;
+      this.makeDelay();
+      user.camera = cammuted;
+      api.updateUser(user.id, user)
+          .then(data => {
+              if(data.result === "success") {
+                  cammuted ? videoroom.unmuteVideo() : videoroom.muteVideo();
+                  this.setState({user, cammuted: !cammuted});
+                  this.sendDataMessage(user);
+              }
+          })
+          .catch(err => console.error("[User] error updating user state", user.id, err))
+    }
   };
 
   micMute = () => {
@@ -1154,14 +1163,22 @@ class VirtualClient extends Component {
   };
   
   otherCamsMuteToggle = () => {
-    const {feeds, muteOtherCams} = this.state;
+    const {feeds, muteOtherCams, prevVideoSetting} = this.state;
     if (!muteOtherCams) {
       // Should hide/mute now all videos.
       this.unsubscribeFrom(feeds.map(feed => feed.id), /* onlyVideo= */ true);
+      this.camMute(/* cammuted= */ false);
+      this.setState({prevVideoSetting: this.state.virtualStreamingJanus.videos, videos: NO_VIDEO_OPTION_VALUE});
+      this.state.virtualStreamingJanus.setVideo(NO_VIDEO_OPTION_VALUE);
     } else {
       // Should unmute/show now all videos.
       this.makeSubscription(feeds, /* feedsJustJoined= */ false, /* subscribeToVideo= */ true,
                             /* subscribeToAudio= */ false, /* subscribeToData= */ false);
+      this.camMute(/* cammuted= */ true);
+      if (prevVideoSetting !== null) {
+        this.setState({prevVideoSetting: null, videos: prevVideoSetting});
+        this.state.virtualStreamingJanus.setVideo(prevVideoSetting);
+      }
     }
     this.setState({muteOtherCams: !muteOtherCams});
   }
@@ -1317,6 +1334,7 @@ class VirtualClient extends Component {
       tested,
       user,
       virtualStreamingJanus,
+      videos,
     } = this.state;
     const {video_device} = media.video;
     const {audio_device} = media.audio;
@@ -1353,6 +1371,8 @@ class VirtualClient extends Component {
         virtualStreamingJanus={virtualStreamingJanus}
         attached={attachedSource}
         closeShidur={this.toggleShidur}
+        videos={videos}
+        setVideo={(v) => this.setState({videos: v})}
         setDetached={() => {
           this.setState({ attachedSource: false });
         }}
@@ -1371,7 +1391,7 @@ class VirtualClient extends Component {
 
     let otherFeedHasQuestion = false;
     let localPushed          = false;
-    let videos = feeds.filter(feed => feed.display.role === "user").reduce((result, feed) => {
+    let remoteVideos = feeds.filter(feed => feed.display.role === "user").reduce((result, feed) => {
       const { question, id } = feed;
       otherFeedHasQuestion   = otherFeedHasQuestion || (question && id !== myid);
       if (!localPushed && feed.display.timestamp >= user.timestamp) {
@@ -1385,11 +1405,11 @@ class VirtualClient extends Component {
     }, []);
     if (!localPushed) {
       for (let i = 0; i < parseInt(numberOfVirtualUsers, 10); i++) {
-        videos.push(this.renderLocalMedia(width, height, i));
+        remoteVideos.push(this.renderLocalMedia(width, height, i));
       }
     }
 
-    let noOfVideos = videos.length;
+    let noOfVideos = remoteVideos.length;
     if (room !== '') {
       if (shidur && attachedSource && ['double', 'equal'].includes(layout)) {
         noOfVideos += 1; // + Source
@@ -1518,7 +1538,7 @@ class VirtualClient extends Component {
             <Icon color={muted ? 'red' : ''} name={!muted ? 'microphone' : 'microphone slash'} />
             {t(muted ? 'oldClient.unMute' : 'oldClient.mute')}
           </Menu.Item>
-          <Menu.Item disabled={video_device === null || !localVideoTrack || delay} onClick={this.camMute}>
+          <Menu.Item disabled={video_device === null || !localVideoTrack || delay} onClick={() => this.camMute(cammuted)}>
             <Icon color={cammuted ? 'red' : ''} name={!cammuted ? 'eye' : 'eye slash'} />
             {t(cammuted ? 'oldClient.startVideo' : 'oldClient.stopVideo')}
           </Menu.Item>
@@ -1610,7 +1630,7 @@ class VirtualClient extends Component {
             {/* <div className="videos"> */}
               <div className="videos__wrapper">
                 {(layout === 'equal' || layout === 'double') && source}
-                {videos}
+                {remoteVideos}
               </div>
             {/* </div> */}
           </div>

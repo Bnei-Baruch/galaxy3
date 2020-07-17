@@ -641,9 +641,8 @@ class MobileClient extends Component {
                   this.switchVideos(/* page= */ this.state.page, [], feeds, /* isWaiting= */ false);
                   this.setState({feeds});
                   if (this.state.muteOtherCams) {
-                    console.log('MUTING CAMERA!');
                     this.camMute(/* cammuted= */ false);
-                    this.setState({prevVideoSetting: this.state.shidurJanus.videos, videos: NO_VIDEO_OPTION_VALUE});
+                    this.setState({prevVideoSetting: this.state.videos, videos: NO_VIDEO_OPTION_VALUE});
                     this.state.shidurJanus.setVideo(NO_VIDEO_OPTION_VALUE);
                   }
                 }
@@ -1034,10 +1033,6 @@ class MobileClient extends Component {
         }
       })
 
-      console.log('SWITCH');
-      console.log(oldVideoSlots, oldVideoFeeds, newVideoSlots, newVideoFeeds);
-      console.log(subscribeFeeds, unsubscribeFeeds, switchFeeds);
-
       if (!muteOtherCams) {
         this.makeSubscription(subscribeFeeds, /* feedsJustJoined= */ false, /* subscribeToVideo= */ true,
                               /* subscribeToAudio= */ false, /* subscribeToData= */ false);
@@ -1236,7 +1231,8 @@ class MobileClient extends Component {
     }
 
     camMute = (cammuted) => {
-        let {videoroom} = this.state;
+      let {videoroom} = this.state;
+      if (videoroom) {
         const user = Object.assign({}, this.state.user);
         if(user.role === "ghost") return;
         this.makeDelay();
@@ -1250,6 +1246,7 @@ class MobileClient extends Component {
                 }
             })
             .catch(err => console.error("[User] error updating user state", user.id, err))
+      }
     };
 
     micMute = () => {
