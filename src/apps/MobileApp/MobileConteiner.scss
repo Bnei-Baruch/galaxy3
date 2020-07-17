@@ -165,6 +165,15 @@
             top: -.09rem;
         }
         // color:yellow;
+
+        .title-name {
+          display: inline-block;
+          vertical-align: middle;
+          text-overflow: ellipsis;
+          overflow: hidden;
+          max-width: 5rem;
+          white-space: nowrap;
+        }
     }
     video {
         object-fit: contain;

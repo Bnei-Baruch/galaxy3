@@ -1402,8 +1402,10 @@ class MobileClient extends Component {
                               dominantBaseline="central">&#xF128;</text>
                     </svg>
                 </div> : ''}
-                <div className="video__title">{!feed.taking ?
-                    <Icon name="microphone slash" color="red"/> : ''}{feed.display.display}</div>
+                <div className="video__title">
+                  {!feed.taking ?  <Icon name="microphone slash" color="red"/> : ''}
+                  <div className='title-name'>{feed.display.display}</div>
+                </div>
             </div>
             <svg className={classNames('nowebcam', {'hidden': !feed.cammute && !muteOtherCams})} viewBox="0 0 32 18"
                  preserveAspectRatio="xMidYMid meet">
@@ -1584,7 +1586,7 @@ class MobileClient extends Component {
                                             }
                                             <div className="video__title">
                                                 {muted ? <Icon name="microphone slash" color="red"/> : ''}
-                                                <div style={{display: 'inline-block', verticalAlign: 'middle'}}>{user ? user.display : ""}</div>
+                                                <div className='title-name'>{user ? user.username : ""}</div>
                                                 <Image src={connectionIcon()} style={{height: '1em', objectFit: 'contain', display: 'inline-block', verticalAlign: 'middle', marginLeft: '0.4em'}} />
                                             </div>
                                         </div>
