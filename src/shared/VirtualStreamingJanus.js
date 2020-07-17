@@ -394,7 +394,9 @@ export default class VirtualStreamingJanus {
     this.videos = videos;
     if (this.janus) {
       if (videos === NO_VIDEO_OPTION_VALUE) {
-        this.videoJanusStream.detach();
+        if (this.videoJanusStream !== null) {
+          this.videoJanusStream.detach();
+        }
         this.detachVideo_();
       } else {
         if (this.videoJanusStream) {
