@@ -1036,8 +1036,8 @@ class VirtualClient extends Component {
           alert(this.props.t('oldClient.error') + ondata.error);
         });
       } else if (type === 'joined') {
-        const {id,timestamp,role,display} = user;
-        const d = {id,timestamp,role,display};
+        const {id,timestamp,role,username} = user;
+        const d = {id,timestamp,role,display: username};
         let register = {'request': 'join', 'room': selected_room, 'ptype': 'publisher', 'display': JSON.stringify(d)};
         videoroom.send({"message": register,
           success: () => {
@@ -1245,7 +1245,13 @@ class VirtualClient extends Component {
         }
         <div className="video__title">
           {muted ? <Icon name="microphone slash" size="small" color="red" style={{verticalAlign: 'middle'}} /> : ''}
-          <div style={{display: 'inline-block', verticalAlign: 'middle'}}>{user ? user.display : ''}</div>
+          <Popup
+            content={user ? user.username : ''}
+            mouseEnterDelay={200}
+            mouseLeaveDelay={500}
+            on='hover'
+            trigger={<div className='title-name'>{user ? user.username : ''}</div>}
+          />
           <Image src={this.connectionIcon()} style={{height: '1em', objectFit: 'contain', display: 'inline-block', verticalAlign: 'middle', marginLeft: '0.4em'}} />
         </div>
       </div>
@@ -1279,7 +1285,16 @@ class VirtualClient extends Component {
             <text x="25" y="25" textAnchor="middle" alignmentBaseline="central" dominantBaseline="central">&#xF128;</text>
           </svg>
         </div> : ''}
-        <div className="video__title">{!talking ? <Icon name="microphone slash" size="small" color="red" /> : ''}{display}</div>
+        <div className="video__title">
+          {!talking ? <Icon name="microphone slash" size="small" color="red" /> : ''}
+          <Popup
+            content={display}
+            mouseEnterDelay={200}
+            mouseLeaveDelay={500}
+            on='hover'
+            trigger={<div className='title-name'>{display}</div>}
+          />
+        </div>
       </div>
       <svg className={classNames('nowebcam', {'hidden': !mute})} viewBox="0 0 32 18" preserveAspectRatio="xMidYMid meet">
         <text x="16" y="9" textAnchor="middle" alignmentBaseline="central" dominantBaseline="central">&#xf2bd;</text>
