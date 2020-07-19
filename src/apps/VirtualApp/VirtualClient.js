@@ -379,8 +379,10 @@ class VirtualClient extends Component {
   };
 
   exitRoom = (reconnect, callback) => {
-    this.setState({delay: true})
-    wkliLeave(this.state.user);
+    this.setState({delay: true});
+    if(this.state.user.role === "user") {
+      wkliLeave(this.state.user);
+    }
     clearInterval(this.state.upval);
     this.clearKeepAlive();
 
@@ -1002,7 +1004,7 @@ class VirtualClient extends Component {
     user.timestamp = Date.now();
     this.setState({user, muted: true});
 
-    if(video_device) {
+    if(video_device && user.role === "user") {
       if(this.state.upval) {
         clearInterval(this.state.upval);
       }
