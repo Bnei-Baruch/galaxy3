@@ -262,7 +262,6 @@ class MobileClient extends Component {
     initDevices = () => {
         getMedia(this.state.media)
             .then(media => {
-                console.log("Got media: ", media);
                 const {audio,video} = media;
 
                 if(audio.error && video.error) {
@@ -298,7 +297,6 @@ class MobileClient extends Component {
             return
         getMediaStream(false, true, video_setting,null, media.video.video_device)
             .then(data => {
-                console.log(data)
                 const [stream, error] = data;
                 if(error) {
                     console.error(error)
@@ -319,7 +317,6 @@ class MobileClient extends Component {
             return
         getMediaStream(false, true, media.video.setting,null,video_device)
             .then(data => {
-                console.log(data)
                 const [stream, error] = data;
                 if(error) {
                     console.error(error)
@@ -340,7 +337,6 @@ class MobileClient extends Component {
             return
         getMediaStream(true, false, media.video.setting, audio_device,null)
             .then(data => {
-                console.log(data)
                 const [stream, error] = data;
                 if(error) {
                     console.error(error)
@@ -563,39 +559,40 @@ class MobileClient extends Component {
     };
 
     publishOwnFeed = (useVideo, useAudio) => {
-        const {videoroom, media} = this.state;
-        const {audio: {audio_device}, video: {setting,video_device}} = media;
-        let offer = {audioRecv: false, videoRecv: false, audioSend: useAudio, videoSend: useVideo, data: true};
+      console.log('publishOwnFeed');
+      const {videoroom, media} = this.state;
+      const {audio: {audio_device}, video: {setting,video_device}} = media;
+      const offer = {audioRecv: false, videoRecv: false, audioSend: useAudio, videoSend: useVideo, data: true};
 
-        if(useVideo) {
-            const {width,height,ideal} = setting;
-            offer.video = {width, height, frameRate: {ideal, min: 1}, deviceId: {exact: video_device}};
-        }
+      if(useVideo) {
+          const {width,height,ideal} = setting;
+          offer.video = {width, height, frameRate: {ideal, min: 1}, deviceId: {exact: video_device}};
+      }
 
-        if(useAudio) {
-            offer.audio = {deviceId: {exact: audio_device}};
-        }
-        videoroom.createOffer({
-            media: offer,
-            simulcast: false,
-            success: (jsep) => {
-                Janus.debug("Got publisher SDP!");
-                Janus.debug(jsep);
-                let publish = { request: "configure", audio: useAudio, video: useVideo, data: true };
-                videoroom.send({"message": publish, "jsep": jsep});
-            },
-            error: (error) => {
-                Janus.error("WebRTC error:", error);
-                if (useVideo) {
-                    this.publishOwnFeed(false);
-                } else {
-                    Janus.error("WebRTC error... " + JSON.stringify(error));
-                }
+      if(useAudio) {
+          offer.audio = {deviceId: {exact: audio_device}};
+      }
+
+      videoroom.createOffer({
+          media: offer,
+          simulcast: false,
+          success: (jsep) => {
+            console.log('publishOwnFeed createOffer success!');
+            Janus.debug("Got publisher SDP!");
+            Janus.debug(jsep);
+            const publish = { request: "configure", audio: useAudio, video: useVideo, data: true };
+            videoroom.send({"message": publish, "jsep": jsep});
+          },
+          error: (error) => {
+            Janus.error("WebRTC error:", error);
+            if (useVideo) {
+                this.publishOwnFeed(false);
+            } else {
+                Janus.error("WebRTC error... " + JSON.stringify(error));
             }
-        });
+          }
+      });
     };
-
-    
 
     onMessage = (videoroom, msg, jsep) => {
         Janus.log(" ::: Got a message (publisher) :::");
@@ -623,7 +620,7 @@ class MobileClient extends Component {
                   //FIXME: display property is JSON write now, let parse it in one place
                   const feeds = sortAndFilterFeeds(
                     msg['publishers'].filter(l => l.display = (JSON.parse(l.display))));
-                  Janus.log(':: Got Pulbishers list: ', msg['publishers'], feeds);
+                  Janus.log(':: Got Publishers list: ', msg['publishers'], feeds);
 
                   // Feeds count with user role
                   const feedsCount = feeds.filter(feed => feed.display.role === 'user').length;
@@ -636,14 +633,8 @@ class MobileClient extends Component {
                   this.makeSubscription(feeds, /* feedsJustJoined= */ false,
                                         /* subscribeToVideo= */ false,
                                         /* subscribeToAudio= */ true, /* subscribeToData= */ true);
-                  console.log('switchVideos', this.state.page, [], feeds);
                   this.switchVideos(/* page= */ this.state.page, [], feeds, /* isWaiting= */ false);
                   this.setState({feeds});
-                  if (this.state.muteOtherCams) {
-                    this.camMute(/* cammuted= */ false);
-                    this.setState({videos: NO_VIDEO_OPTION_VALUE});
-                    this.state.shidurJanus.setVideo(NO_VIDEO_OPTION_VALUE);
-                  }
                 }
             } else if(event === 'talking') {
               const feeds = Object.assign([], this.state.feeds);
@@ -671,11 +662,13 @@ class MobileClient extends Component {
                 // The room has been destroyed
                 Janus.warn("The room has been destroyed!");
             } else if(event === "event") {
-                // Any info on our streams or a new feed to attach to?
-                console.log('(IGNORING) Any info on our streams or a new feed to attach to', msg);
-                //let {feedStreams,user,myid} = this.state;
-                if(msg["streams"] !== undefined && msg["streams"] !== null) {
-                    console.log('IGNORING update my streams?!', msg, msg['streams']);
+                if (msg['configured'] === 'ok') {
+                  // User published own feed successfully.
+                  if (this.state.muteOtherCams) {
+                    this.camMute(/* cammuted= */ false);
+                    this.setState({videos: NO_VIDEO_OPTION_VALUE});
+                    this.state.shidurJanus.setVideo(NO_VIDEO_OPTION_VALUE);
+                  }
                 } else if(msg["publishers"] !== undefined && msg["publishers"] !== null) {
                   // User just joined the room.
                   const newFeeds = sortAndFilterFeeds(msg['publishers'].filter(l => l.display = (JSON.parse(l.display))));
@@ -691,7 +684,6 @@ class MobileClient extends Component {
                   this.makeSubscription(newFeeds, /* feedsJustJoined= */ true,
                                         /* subscribeToVideo= */ false,
                                         /* subscribeToAudio= */ true, /* subscribeToData= */ true);
-                  console.log('switchVideos', this.state.page, feeds, feedsNewState);
                   this.switchVideos(/* page= */ this.state.page, feeds, feedsNewState, /* isWaiting= */ false);
                   this.setState({feeds: feedsNewState});
 
@@ -702,7 +694,6 @@ class MobileClient extends Component {
                   const {feeds} = this.state;
                   this.unsubscribeFrom([leaving], /* onlyVideo= */ false);
                   const feedsNewState = feeds.filter(feed => feed.id !== leaving);
-                  console.log('switchVideos', this.state.page, feeds, feedsNewState);
                   this.switchVideos(/* page= */ this.state.page, feeds, feedsNewState, /* isWaiting= */ false);
                   this.setState({feeds: feedsNewState});
 
@@ -779,11 +770,9 @@ class MobileClient extends Component {
                           event === 'updated') {
                         if (msg['streams']) {
                           // Update map of subscriptions by mid
-                          console.log('STREAMS UPDATE', msg['streams']);
                           const {streamsMids} = this.state;
                           const old = Array.from(streamsMids.entries());
                           const newStreamsMids = new Map(msg['streams'].map(stream => [stream.mid, stream.feed_id]));
-                          console.log('Updating streams mids old', old, ' updated: ', newStreamsMids)
                           this.setState({streamsMids: newStreamsMids});
                         }
                       }
@@ -831,7 +820,6 @@ class MobileClient extends Component {
                   }
                   const feedId = streamsMids.get(mid);
                   const feed = feeds.find(feed => feed.id === feedId);
-                  console.log('On Remote track', feedId, feed);
                   // Janus.log(" >> This track is coming from feed " + feed + ":", mid);
                   // If we're here, a new track was added
                   if(track.kind === "audio" && on) {
@@ -848,7 +836,6 @@ class MobileClient extends Component {
                       let stream = new MediaStream();
                       stream.addTrack(track.clone());
                       Janus.log("Created remote video stream:", stream);
-                      console.log('BIND FEED/STREAM VIDEO TO SLOT.');
                       const remotevideo = this.refs["remoteVideo" + feed.videoSlot];
                       Janus.log("Attach to slot: ", feed.videoSlot);
                       Janus.attachMediaStream(remotevideo, stream);
@@ -895,7 +882,6 @@ class MobileClient extends Component {
               (subscribeToAudio && stream.type === "audio" && stream.codec === "opus") ||
               (subscribeToData && stream.type === "data")) {
             subscription.push({feed: id, mid: stream.mid});
-            console.log('SUBSCRIBING TO', stream, feedIndex);
           }
         });
       });
@@ -1290,7 +1276,6 @@ class MobileClient extends Component {
         ref.onload = () => {
           var body = ref.contentWindow.document.querySelector('body');
           body.style.color = 'red';
-          console.log('loaded')
           body.style.fontSize = '3rem';
           body.style.lineHeight = '3rem';
         }
@@ -1385,7 +1370,6 @@ class MobileClient extends Component {
         }
       }
 
-      console.log('render FEEDS', feeds, muteOtherCams);
       // TODO: Instead of 0, 3 should actuaaly map things...
       const remoteVideos = feeds.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE).map((feed, i) => {
         return (<div className="video"

@@ -171,8 +171,15 @@
           vertical-align: middle;
           text-overflow: ellipsis;
           overflow: hidden;
-          max-width: 5rem;
           white-space: nowrap;
+
+          @include landscape {
+            max-width: 6rem;
+          }
+
+          @include portrait {
+            max-width: 10rem;
+          }
         }
     }
     video {

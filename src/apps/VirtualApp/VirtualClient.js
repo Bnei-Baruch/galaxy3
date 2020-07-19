@@ -690,11 +690,6 @@ class VirtualClient extends Component {
           this.makeSubscription(feeds, /* feedsJustJoined= */ false,
                                 /* subscribeToVideo= */ !this.state.muteOtherCams,
                                 /* subscribeToAudio= */ true, /* subscribeToData= */ true);
-          if (this.state.muteOtherCams) {
-            this.setState({videos: NO_VIDEO_OPTION_VALUE});
-            this.state.virtualStreamingJanus.setVideo(NO_VIDEO_OPTION_VALUE);
-            this.camMute(/* cammuted= */ false);
-          }
         }
       } else if (event === 'talking') {
         const feeds = Object.assign([], this.state.feeds);
@@ -720,17 +715,13 @@ class VirtualClient extends Component {
         // The room has been destroyed
         Janus.warn('The room has been destroyed!');
       } else if (event === 'event') {
-
-        // Any info on our streams or a new feed to attach to?
-        let { user, myid } = this.state;
-        if (msg['streams'] !== undefined && msg['streams'] !== null) {
-          let streams = msg['streams'];
-          for (let i in streams) {
-            let stream = streams[i];
-            stream['id'] = myid;
-            stream['display'] = user;
+        if (msg['configured'] === 'ok') {
+          // User published own feed successfully.
+          if (this.state.muteOtherCams) {
+            this.setState({videos: NO_VIDEO_OPTION_VALUE});
+            this.state.virtualStreamingJanus.setVideo(NO_VIDEO_OPTION_VALUE);
+            this.camMute(/* cammuted= */ false);
           }
-          //console.log("MY STREAM: ",streams)
         } else if (msg['publishers'] !== undefined && msg['publishers'] !== null) {
           // User just joined the room.
           const feeds = sortAndFilterFeeds(msg['publishers'].filter(l => l.display = (JSON.parse(l.display))));
