@@ -9,7 +9,7 @@ import './MobileClient.scss'
 import './MobileConteiner.scss'
 import 'eqcss'
 import {initGxyProtocol} from "../../shared/protocol";
-import {PROTOCOL_ROOM, NO_VIDEO_OPTION_VALUE, vsettings_list} from "../../shared/consts";
+import {PROTOCOL_ROOM, VIDEO_240P_OPTION_VALUE, NO_VIDEO_OPTION_VALUE, vsettings_list} from "../../shared/consts";
 import {GEO_IP_INFO} from "../../shared/env";
 import platform from "platform";
 import { isMobile } from 'react-device-detect';
@@ -70,7 +70,6 @@ class MobileClient extends Component {
         switchToPage: -1,
         page: 0,
         muteOtherCams: false,
-        prevVideoSetting: null,
         videos: Number(localStorage.getItem('vrt_video')) || 1,
 
         rooms: [],
@@ -642,7 +641,7 @@ class MobileClient extends Component {
                   this.setState({feeds});
                   if (this.state.muteOtherCams) {
                     this.camMute(/* cammuted= */ false);
-                    this.setState({prevVideoSetting: this.state.videos, videos: NO_VIDEO_OPTION_VALUE});
+                    this.setState({videos: NO_VIDEO_OPTION_VALUE});
                     this.state.shidurJanus.setVideo(NO_VIDEO_OPTION_VALUE);
                   }
                 }
@@ -1209,23 +1208,21 @@ class MobileClient extends Component {
     };
 
     otherCamsMuteToggle = () => {
-      const {feeds, muteOtherCams, prevVideoSetting} = this.state;
+      const {feeds, muteOtherCams} = this.state;
       const activeFeeds = feeds.filter((feed) => feed.videoSlot !== undefined);
       if (!muteOtherCams) {
         // Should hide/mute now all videos.
         this.unsubscribeFrom(activeFeeds.map(feed => feed.id), /* onlyVideo= */ true);
         this.camMute(/* cammuted= */ false);
-        this.setState({prevVideoSetting: this.state.shidurJanus.videos, videos: NO_VIDEO_OPTION_VALUE});
+        this.setState({videos: NO_VIDEO_OPTION_VALUE});
         this.state.shidurJanus.setVideo(NO_VIDEO_OPTION_VALUE);
       } else {
         // Should unmute/show now all videos.false,
         this.makeSubscription(activeFeeds, /* feedsJustJoined= */ false, /* subscribeToVideo= */ true,
                               /* subscribeToAudio= */ false, /* subscribeToData= */ false);
         this.camMute(/* cammuted= */ true);
-        if (prevVideoSetting !== null) {
-          this.setState({prevVideoSetting: null, videos: prevVideoSetting});
-          this.state.shidurJanus.setVideo(prevVideoSetting);
-        }
+        this.setState({videos: VIDEO_240P_OPTION_VALUE});
+        this.state.shidurJanus.setVideo(VIDEO_240P_OPTION_VALUE);
       }
       this.setState({muteOtherCams: !muteOtherCams});
     }

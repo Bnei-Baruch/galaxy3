@@ -19,11 +19,14 @@ export const vsettings_list = [
 ];
 
 export const NO_VIDEO_OPTION_VALUE = -1;
+export const VIDEO_240P_OPTION_VALUE = 11;
+export const VIDEO_360P_OPTION_VALUE = 1;
+export const VIDEO_720P_OPTION_VALUE = 16;
 
 export const videos_options = [
-    { key: 1, text: '240p', value: 11 },
-    { key: 2, text: '360p', value: 1 },
-    { key: 3, text: '720p', value: 16 },
+    { key: 1, text: '240p', value: VIDEO_240P_OPTION_VALUE },
+    { key: 2, text: '360p', value: VIDEO_360P_OPTION_VALUE },
+    { key: 3, text: '720p', value: VIDEO_720P_OPTION_VALUE },
     { key: 4, text: 'NoVideo', value: NO_VIDEO_OPTION_VALUE },
 ];
 

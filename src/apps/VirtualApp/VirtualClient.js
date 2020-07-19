@@ -10,7 +10,7 @@ import './CustomIcons.scss';
 import 'eqcss';
 import VirtualChat from './VirtualChat';
 import {initGxyProtocol} from '../../shared/protocol';
-import {PROTOCOL_ROOM, NO_VIDEO_OPTION_VALUE, vsettings_list} from '../../shared/consts';
+import {PROTOCOL_ROOM, VIDEO_360P_OPTION_VALUE, NO_VIDEO_OPTION_VALUE, vsettings_list} from '../../shared/consts';
 import {GEO_IP_INFO, SENTRY_KEY} from '../../shared/env';
 import platform from 'platform';
 import {Help} from './components/Help';
@@ -33,6 +33,10 @@ import connectionRed from './connection-red.png';
 import connectionGray from './connection-gray.png';
 import audioModeSvg from '../../shared/audio-mode.svg';
 import fullModeSvg from '../../shared/full-mode.svg';
+
+const sortAndFilterFeeds = (feeds) => feeds
+  .filter(feed => !feed.display.role.match(/^(ghost|guest)$/))
+  .sort((a, b) => a.display.timestamp - b.display.timestamp);
 
 class VirtualClient extends Component {
 
@@ -94,7 +98,6 @@ class VirtualClient extends Component {
     keepalive: null,
     muteOtherCams: false,
     videos: Number(localStorage.getItem('vrt_video')) || 1,
-    prevVideoSetting: null,
   };
 
   virtualStreamingInitialized() {
@@ -671,8 +674,8 @@ class VirtualClient extends Component {
         // Any new feed to attach to?
         if (msg['publishers'] !== undefined && msg['publishers'] !== null) {
           //FIXME: display property is JSON write now, let parse it in one place
-          let list = msg['publishers'].filter(l => l.display = (JSON.parse(l.display)));
-          let feeds = list.sort((a, b) => a.display.timestamp - b.display.timestamp).filter(f => !f.display.role.match(/^(ghost|guest)$/));
+          const feeds = sortAndFilterFeeds(
+            msg['publishers'].filter(l => l.display = (JSON.parse(l.display))));
           Janus.log(':: Got Pulbishers list: ', feeds);
 
           // Feeds count with user role
@@ -683,12 +686,12 @@ class VirtualClient extends Component {
           }
 
           Janus.debug('Got a list of available publishers/feeds:');
-          Janus.log(list);
+          Janus.log(feeds);
           this.makeSubscription(feeds, /* feedsJustJoined= */ false,
                                 /* subscribeToVideo= */ !this.state.muteOtherCams,
                                 /* subscribeToAudio= */ true, /* subscribeToData= */ true);
           if (this.state.muteOtherCams) {
-            this.setState({prevVideoSetting: this.state.videos, videos: NO_VIDEO_OPTION_VALUE});
+            this.setState({videos: NO_VIDEO_OPTION_VALUE});
             this.state.virtualStreamingJanus.setVideo(NO_VIDEO_OPTION_VALUE);
             this.camMute(/* cammuted= */ false);
           }
@@ -729,14 +732,13 @@ class VirtualClient extends Component {
           }
           //console.log("MY STREAM: ",streams)
         } else if (msg['publishers'] !== undefined && msg['publishers'] !== null) {
-          let feeds = msg['publishers'].filter(l => l.display = (JSON.parse(l.display)));
-
+          // User just joined the room.
+          const feeds = sortAndFilterFeeds(msg['publishers'].filter(l => l.display = (JSON.parse(l.display))));
           Janus.debug('New list of available publishers/feeds:');
           Janus.debug(feeds);
           this.makeSubscription(feeds, /* feedsJustJoined= */ true,
                                 /* subscribeToVideo= */ !this.state.muteOtherCams,
                                 /* subscribeToAudio= */ true, /* subscribeToData= */ true);
-
         } else if (msg['leaving'] !== undefined && msg['leaving'] !== null) {
           // One of the publishers has gone away?
           const leaving = msg['leaving'];
@@ -927,7 +929,7 @@ class VirtualClient extends Component {
     const {feeds} = this.state;
     const feedsIds = new Set(feeds.map(feed => feed.id));
     // Add only non yet existing feeds.
-    this.setState({feeds: [...feeds, ...newFeeds.filter(feed => !feedsIds.has(feed.id))]});
+    this.setState({feeds: sortAndFilterFeeds([...feeds, ...newFeeds.filter(feed => !feedsIds.has(feed.id))])});
 
     if (subscription.length > 0) {
       this.subscribeTo(subscription);
@@ -1163,22 +1165,20 @@ class VirtualClient extends Component {
   };
   
   otherCamsMuteToggle = () => {
-    const {feeds, muteOtherCams, prevVideoSetting} = this.state;
+    const {feeds, muteOtherCams} = this.state;
     if (!muteOtherCams) {
       // Should hide/mute now all videos.
       this.unsubscribeFrom(feeds.map(feed => feed.id), /* onlyVideo= */ true);
       this.camMute(/* cammuted= */ false);
-      this.setState({prevVideoSetting: this.state.virtualStreamingJanus.videos, videos: NO_VIDEO_OPTION_VALUE});
+      this.setState({videos: NO_VIDEO_OPTION_VALUE});
       this.state.virtualStreamingJanus.setVideo(NO_VIDEO_OPTION_VALUE);
     } else {
       // Should unmute/show now all videos.
       this.makeSubscription(feeds, /* feedsJustJoined= */ false, /* subscribeToVideo= */ true,
                             /* subscribeToAudio= */ false, /* subscribeToData= */ false);
       this.camMute(/* cammuted= */ true);
-      if (prevVideoSetting !== null) {
-        this.setState({prevVideoSetting: null, videos: prevVideoSetting});
-        this.state.virtualStreamingJanus.setVideo(prevVideoSetting);
-      }
+      this.setState({videos: VIDEO_360P_OPTION_VALUE});
+      this.state.virtualStreamingJanus.setVideo(VIDEO_360P_OPTION_VALUE);
     }
     this.setState({muteOtherCams: !muteOtherCams});
   }
