@@ -23,7 +23,6 @@ class VirtualStreaming extends Component {
   }
 
   state = {
-    videos: Number(localStorage.getItem('vrt_video')) || 1,
     audios: Number(localStorage.getItem('vrt_lang')) || 2,
     room: Number(localStorage.getItem('room')) || null,
     user: {},
@@ -113,8 +112,8 @@ class VirtualStreaming extends Component {
   };
 
   setVideo(videos) {
-    this.setState({videos});
     this.props.virtualStreamingJanus.setVideo(videos);
+    this.props.setVideo(videos);
   }
 
   setAudio(audios, text) {
@@ -128,13 +127,13 @@ class VirtualStreaming extends Component {
       closeShidur,
       virtualStreamingJanus,
       t,
+      videos,
     } = this.props;
     const {
       audios,
       fullScreen,
       room,
       talking,
-      videos,
     } = this.state;
 
     if (!room) {

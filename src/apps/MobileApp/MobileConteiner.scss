@@ -109,7 +109,8 @@
         }
     }
     .nowebcam {
-        top:0;
+        background-color: rgb(34, 34, 34);
+        top: 0;
         position: absolute;
         fill: #fff;
         font-family: Icons;
@@ -164,6 +165,22 @@
             top: -.09rem;
         }
         // color:yellow;
+
+        .title-name {
+          display: inline-block;
+          vertical-align: middle;
+          text-overflow: ellipsis;
+          overflow: hidden;
+          white-space: nowrap;
+
+          @include landscape {
+            max-width: 6rem;
+          }
+
+          @include portrait {
+            max-width: 10rem;
+          }
+        }
     }
     video {
         object-fit: contain;

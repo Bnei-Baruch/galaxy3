@@ -169,6 +169,16 @@
 			position: relative;
 			top: -.09rem;
 		}
+
+    .title-name {
+      display: inline-block;
+      vertical-align: middle;
+      text-overflow: ellipsis;
+      overflow: hidden;
+      max-width: 5rem;
+      white-space: nowrap;
+    }
+		// color:yellow;
 	}
 
 	video {
