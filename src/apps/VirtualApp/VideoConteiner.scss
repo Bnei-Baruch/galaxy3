@@ -274,7 +274,7 @@ body:before {
 
           &.layout--double,
           &.layout--equal {
-            .workshop-question-overlay .workshop-question-outer-container {
+            .workshop-question-overlay {
               height: 100%;
             }
           }

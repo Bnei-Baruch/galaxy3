@@ -5,6 +5,7 @@
   "homepage": ".",
   "dependencies": {
     "@sentry/browser": "^5.15.5",
+    "animate.css": "^4.1.0",
     "classnames": "^2.2.6",
     "debounce": "^1.2.0",
     "eqcss": "^1.9.1",

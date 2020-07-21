@@ -58,8 +58,8 @@ export const resources = {
         audio: 'Audio',
         cameraQuality: 'Quality',
         language: 'Language',
-        slideOut: 'Slide out',
-        slideIn: 'Slide in',
+        hideQuestion: 'Hide question',
+        showQuestion: 'Show question',
         increaseFontSize: 'Increase font size',
         decreaseFontSize: 'Decrease font size'
       },
@@ -180,8 +180,8 @@ export const resources = {
         audio: 'Audio',
         cameraQuality: 'Calidad de la cámara',
         language: 'Idioma',
-        slideOut: '',
-        slideIn: '',
+        hideQuestion: '',
+        showQuestion: '',
         increaseFontSize: '',
         decreaseFontSize: ''
       },
@@ -302,8 +302,8 @@ export const resources = {
         audio: 'אודיו',
         cameraQuality: 'איכות מצלמה',
         language: 'שפה',
-        slideOut: '',
-        slideIn: '',
+        hideQuestion: '',
+        showQuestion: '',
         increaseFontSize: '',
         decreaseFontSize: ''
       },
@@ -424,8 +424,8 @@ export const resources = {
         audio: 'Аудио',
         cameraQuality: 'Качество камеры',
         language: 'Язык',
-        slideOut: '',
-        slideIn: '',
+        hideQuestion: '',
+        showQuestion: '',
         increaseFontSize: '',
         decreaseFontSize: ''
       },
