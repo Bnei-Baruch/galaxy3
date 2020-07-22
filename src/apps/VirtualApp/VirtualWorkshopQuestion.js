@@ -11,8 +11,10 @@ const WS_FONT_SIZE = 'ws-font-size';
 const WS_LANG = 'ws-lang';
 
 const languageOptions = [
-  {key: 'il', value: 'il', flag: 'il', text: 'עברית', content: 'עברית'},
-  {key: 'ru', value: 'ru', flag: 'ru', text: 'Русский', content: 'Русский'}
+  {key: 'il', value: 'il', flag: 'il', text: 'עברית'},
+  {key: 'ru', value: 'ru', flag: 'ru', text: 'Русский'},
+  {key: 'us', value: 'us', flag: 'us', text: 'English'},
+  {key: 'es', value: 'es', flag: 'es', text: 'Español'}
 ];
 
 class VirtualWorkshopQuestion extends Component {
@@ -26,13 +28,13 @@ class VirtualWorkshopQuestion extends Component {
     }
 
     this.state = {
-      showQuestion: true,
+      showWsOverlay: true,
       disableIncreaseFontSize: false,
       disableDecreaseFontSize: false,
       selectedLanguage: questionLang,
       fontSize: +localStorage.getItem(WS_FONT_SIZE) || 18,
       innerOverlayAnimation: null,
-      showInnerOverlayAnimation: null,
+      showInnerOverlayBtnAnimation: null,
       question: `Lorem ipsum dolor sit amet, consectetur adipisicing elit. Ab accusantium adipisci aliquam dolorem eligendi
             libero quam quas quis recusandae, repellat reprehenderit tempore ullam, vel! Deleniti dicta est excepturi
             magnam molestiae nihil odio praesentium sequi ut vitae. Ducimus et illum inventore nemo obcaecati quam
@@ -59,14 +61,14 @@ class VirtualWorkshopQuestion extends Component {
     const showAnimationClass = ' animate__animated slide-in-left';
     const hideAnimationClass = ' animate__animated animate__slideOutLeft';
     let innerOverlay = hideAnimationClass;
-    let showInnerOverlay = showAnimationClass;
+    let showInnerOverlayBtn = showAnimationClass;
 
     if (show) {
       innerOverlay = showAnimationClass;
-      showInnerOverlay = hideAnimationClass;
+      showInnerOverlayBtn = hideAnimationClass;
     }
 
-    this.setState({innerOverlayAnimation: innerOverlay, showInnerOverlayAnimation: showInnerOverlay});
+    this.setState({innerOverlayAnimation: innerOverlay, showInnerOverlayBtnAnimation: showInnerOverlayBtn});
   }
 
   increaseFontSize() {
@@ -117,24 +119,24 @@ class VirtualWorkshopQuestion extends Component {
   render() {
     const {t} = this.props;
     const {
-      showQuestion,
+      showWsOverlay,
       disableIncreaseFontSize,
       disableDecreaseFontSize,
       selectedLanguage,
       fontSize,
       innerOverlayAnimation,
-      showInnerOverlayAnimation,
+      showInnerOverlayBtnAnimation,
       question
     } = this.state;
 
-    let questionOverlay = 'workshop-question-overlay animate__animated fade-in';
-    if (!showQuestion) questionOverlay = 'workshop-question-overlay animate__animated animate__fadeOut';
+    let wsOverlay = 'workshop-question-overlay animate__animated ';
+    wsOverlay += showWsOverlay ? 'animate__fadeIn' : 'animate__fadeOut';
 
-    let questionContainerClass = 'workshop-question-inner-overlay';
-    let showQuestionContainerClass = 'workshop-question-show-inner-overlay';
-    if (innerOverlayAnimation && showInnerOverlayAnimation) {
-      questionContainerClass += innerOverlayAnimation;
-      showQuestionContainerClass += showInnerOverlayAnimation;
+    let innerOverlayClass = 'workshop-question-inner-overlay';
+    let showInnerOverlayBtnClass = 'workshop-question-show-inner-overlay';
+    if (innerOverlayAnimation && showInnerOverlayBtnAnimation) {
+      innerOverlayClass += innerOverlayAnimation;
+      showInnerOverlayBtnClass += showInnerOverlayBtnAnimation;
     }
 
     let questionClass = 'workshop__question';
@@ -149,8 +151,8 @@ class VirtualWorkshopQuestion extends Component {
     );
 
     return (
-      <div className={questionOverlay}>
-        <div className={questionContainerClass}>
+      <div className={wsOverlay}>
+        <div className={innerOverlayClass}>
           <div className="workshop__toolbar">
             <div className="workshop__toolbar__left">
               <Button compact title={t('oldClient.hideQuestion')} onClick={() => this.displayQuestion(false)}>
@@ -184,7 +186,7 @@ class VirtualWorkshopQuestion extends Component {
             {question}
           </div>
         </div>
-        <div className={showQuestionContainerClass}>
+        <div className={showInnerOverlayBtnClass}>
           <Button compact title={t('oldClient.showQuestion')} onClick={() => this.displayQuestion(true)}>
             <Icon name='file alternate outline'/>
           </Button>

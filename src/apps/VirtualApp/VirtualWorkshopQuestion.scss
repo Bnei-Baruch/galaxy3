@@ -1,48 +1,7 @@
 @import "~animate.css/animate.min.css";
 
-@mixin fadeIn {
-  from {
-    display: block;
-    opacity: 0;
-  }
-
-  to {
-    opacity: 1;
-  }
-}
-
-@mixin fadeOut {
-  from {
-    opacity: 1;
-  }
-
-  50% {
-    opacity: 0;
-  }
-
-  to {
-    display: none;
-  }
-}
-
 .workshop-question-overlay {
   position: relative;
-
-  @-webkit-keyframes fadeInCustom {
-    @include fadeIn;
-  }
-
-  @keyframes fadeInCustom {
-    @include fadeIn;
-  }
-
-  @-webkit-keyframes fadeOutCustom {
-    @include fadeOut;
-  }
-
-  @keyframes fadeOutCustom {
-    @include fadeOut;
-  }
 
   @mixin slideInLeft {
     from {
@@ -66,8 +25,7 @@
   .fullscreen & {
     height: 100%;
 
-    .workshop-question-inner-overlay .workshop-question {
-      font-size: 30px;
+    .workshop-question-inner-overlay .workshop__question {
       min-height: 200px;
       max-height: 350px;
     }
@@ -86,6 +44,7 @@
   .workshop-question-inner-overlay {
     position: absolute;
     bottom: 0;
+    width: 100%;
 
     .workshop {
       &__toolbar {
