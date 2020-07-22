@@ -8,6 +8,7 @@ import {getStore, setStore} from "../../shared/store";
 class UsersQuad extends Component {
 
     state = {
+        delay: false,
         question: false,
         col: null,
         vquad: [null,null,null,null],
@@ -172,9 +173,11 @@ class UsersQuad extends Component {
 
     switchFullScreen = (i,g,q) => {
         if(!g) return;
-        let {fullscr,full_feed,question} = this.state;
+        let {fullscr,full_feed,question,delay} = this.state;
 
-        if(question) return;
+        if(delay || question) return;
+
+        this.setDelay();
 
         if(fullscr && full_feed === i) {
             this.toFourGroup(i,g,() => {},q);
@@ -223,6 +226,13 @@ class UsersQuad extends Component {
         this.setState({fullscr: false, full_feed: null, question: false}, () => {
             cb();
         });
+    };
+
+    setDelay = () => {
+        this.setState({delay: true});
+        setTimeout(() => {
+            this.setState({delay: false});
+        }, 1000);
     };
 
   render() {

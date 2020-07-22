@@ -105,12 +105,8 @@ class AudioOutApp extends Component {
 
         if (data.type === "sdi-fullscr_group" && status && qst) {
             this.setState({group, room});
-            this.users.initVideoRoom(group.room, group.janus);
         } else if (data.type === "sdi-fullscr_group" && !status && qst) {
-            if (this.state.group && this.state.group.room) {
-                this.users.exitVideoRoom(this.state.group.room, () => {
-                });
-            }
+            this.setState({group: null, room: null});
         } else if (data.type === "sdi-restart_sdiout") {
             window.location.reload();
         } else if (data.type === "audio-out") {
@@ -126,7 +122,7 @@ class AudioOutApp extends Component {
     };
 
     render() {
-        const {group, appInitError, gatewaysInitialized} = this.state;
+        const {gateways, group, appInitError, gatewaysInitialized, audio} = this.state;
 
         if (appInitError) {
             return (
@@ -148,9 +144,7 @@ class AudioOutApp extends Component {
                 <div className="usersvideo_grid">
                     <div className="video_full">
                         <div className="title">{name}</div>
-                        <UsersHandleAudioOut ref={users => {
-                            this.users = users;
-                        }} {...this.state} setProps={this.setProps}/>
+                        <UsersHandleAudioOut g={group} gateways={gateways} audio={audio} setProps={this.setProps}/>
                     </div>
                 </div>
             </Segment>
