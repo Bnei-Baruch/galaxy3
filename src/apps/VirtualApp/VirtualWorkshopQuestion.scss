@@ -1,7 +1,48 @@
 @import "~animate.css/animate.min.css";
 
+@mixin fadeIn {
+  from {
+    display: block;
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@mixin fadeOut {
+  from {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0;
+  }
+
+  to {
+    display: none;
+  }
+}
+
 .workshop-question-overlay {
   position: relative;
+
+  @-webkit-keyframes fadeInCustom {
+    @include fadeIn;
+  }
+
+  @keyframes fadeInCustom {
+    @include fadeIn;
+  }
+
+  @-webkit-keyframes fadeOutCustom {
+    @include fadeOut;
+  }
+
+  @keyframes fadeOutCustom {
+    @include fadeOut;
+  }
 
   @mixin slideInLeft {
     from {
@@ -30,6 +71,16 @@
       min-height: 200px;
       max-height: 350px;
     }
+  }
+
+  &.fade-in {
+    -webkit-animation-name: fadeInCustom;
+    animation-name: fadeInCustom;
+  }
+
+  &.fade-out {
+    -webkit-animation-name: fadeOutCustom;
+    animation-name: fadeOutCustom;
   }
 
   .workshop-question-inner-overlay {
@@ -72,15 +123,11 @@
             }
           }
 
-          .ui.selection.dropdown {
+          .ui.dropdown {
             padding: 8px;
-            min-height: auto;
-            min-width: 132px;
-            margin: 0 4px;
-
-            .dropdown.icon {
-              padding: 8px;
-            }
+            margin-left: 4px;
+            border: 1px solid #dbdbdb;
+            border-radius: 4px;
           }
         }
       }

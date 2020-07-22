@@ -5,7 +5,10 @@ import Dropdown from 'semantic-ui-react/dist/commonjs/modules/Dropdown';
 import Flag from 'semantic-ui-react/dist/commonjs/elements/Flag';
 import Button from 'semantic-ui-react/dist/commonjs/elements/Button';
 import Icon from 'semantic-ui-react/dist/commonjs/elements/Icon';
+import ReconnectingWebSocket from 'reconnectingwebsocket';
 
+const WS_FONT_SIZE = 'ws-font-size';
+const WS_LANG = 'ws-lang';
 
 const languageOptions = [
   {key: 'il', value: 'il', flag: 'il', text: 'עברית', content: 'עברית'},
@@ -17,7 +20,7 @@ class VirtualWorkshopQuestion extends Component {
     super(props);
 
     let questionLang = languageOptions[0];
-    const storageLang = localStorage.getItem('ws-lang');
+    const storageLang = localStorage.getItem(WS_LANG);
     if (storageLang) {
       questionLang = languageOptions.find((lang) => lang.value === storageLang);
     }
@@ -27,7 +30,7 @@ class VirtualWorkshopQuestion extends Component {
       disableIncreaseFontSize: false,
       disableDecreaseFontSize: false,
       selectedLanguage: questionLang,
-      fontSize: +localStorage.getItem('ws-font-size') || 18,
+      fontSize: +localStorage.getItem(WS_FONT_SIZE) || 18,
       innerOverlayAnimation: null,
       showInnerOverlayAnimation: null,
       question: `Lorem ipsum dolor sit amet, consectetur adipisicing elit. Ab accusantium adipisci aliquam dolorem eligendi
@@ -36,17 +39,19 @@ class VirtualWorkshopQuestion extends Component {
             quidem recusandae! Eos esse facere maxime nulla.`
     };
 
-    this.wsOverlayRef = React.createRef();
-
     this.displayQuestion = this.displayQuestion.bind(this);
     this.decreaseFontSize = this.decreaseFontSize.bind(this);
     this.increaseFontSize = this.increaseFontSize.bind(this);
     this.changeLanguage = this.changeLanguage.bind(this);
     this.copyQuestion = this.copyQuestion.bind(this);
 
-    // const ws = new WebSocket('wss://ktuviot.kbb1.com:4000/congress');
-    // ws.onerror = function(event) {
-    //   console.error("WebSocket error observed:", event);
+    // const ws = new ReconnectingWebSocket('ws://ktuviot.kbb1.com:4000/ws');
+    // ws.onopen = function(event) {
+    //   console.info("WebSocket open", event);
+    // };
+    //
+    // ws.onmessage = function(message) {
+    //   console.info("WebSocket msg", message);
     // };
   }
 
@@ -70,7 +75,7 @@ class VirtualWorkshopQuestion extends Component {
     const {fontSize} = this.state;
     const nextFonSize = fontSize + 2;
     this.setState({fontSize: nextFonSize});
-    localStorage.setItem('ws-font-size', fontSize);
+    localStorage.setItem(WS_FONT_SIZE, fontSize);
 
     if (nextFonSize > 48) {
       this.setState({disableIncreaseFontSize: true});
@@ -83,7 +88,7 @@ class VirtualWorkshopQuestion extends Component {
     const {fontSize} = this.state;
     const nextFonSize = fontSize - 2;
     this.setState({fontSize: nextFonSize});
-    localStorage.setItem('ws-font-size', fontSize);
+    localStorage.setItem(WS_FONT_SIZE, fontSize);
 
     if (nextFonSize < 18) {
       this.setState({disableDecreaseFontSize: true});
@@ -93,7 +98,7 @@ class VirtualWorkshopQuestion extends Component {
   changeLanguage({value}) {
     const language = languageOptions.find((lang) => lang.value === value);
     this.setState({selectedLanguage: language});
-    localStorage.setItem('ws-lang', value);
+    localStorage.setItem(WS_LANG, value);
   }
 
   copyQuestion() {
@@ -122,12 +127,8 @@ class VirtualWorkshopQuestion extends Component {
       question
     } = this.state;
 
-    let questionOverlay = 'workshop-question-overlay';
-    if (showQuestion && this.wsOverlayRef.current.display === 'none') {
-      questionOverlay += ' animate__animated';
-    } else if (!showQuestion) {
-      questionOverlay += ' animate__animated';
-    }
+    let questionOverlay = 'workshop-question-overlay animate__animated fade-in';
+    if (!showQuestion) questionOverlay = 'workshop-question-overlay animate__animated animate__fadeOut';
 
     let questionContainerClass = 'workshop-question-inner-overlay';
     let showQuestionContainerClass = 'workshop-question-show-inner-overlay';
@@ -140,8 +141,7 @@ class VirtualWorkshopQuestion extends Component {
     if (selectedLanguage.value === 'il') questionClass += ' rtl';
 
     const languages = (
-      <Dropdown selection
-                selectOnBlur={false}
+      <Dropdown selectOnBlur={false}
                 options={languageOptions}
                 onChange={(event, data) => this.changeLanguage(data)}
                 trigger={<span><Flag name={selectedLanguage.flag}/> {selectedLanguage.text}</span>}
@@ -149,7 +149,7 @@ class VirtualWorkshopQuestion extends Component {
     );
 
     return (
-      <div className={questionOverlay} ref={this.wsOverlayRef}>
+      <div className={questionOverlay}>
         <div className={questionContainerClass}>
           <div className="workshop__toolbar">
             <div className="workshop__toolbar__left">
@@ -180,7 +180,7 @@ class VirtualWorkshopQuestion extends Component {
               {languages}
             </div>
           </div>
-          <div className={questionClass} style={{'font-size': `${fontSize}px`}}>
+          <div className={questionClass} style={{fontSize: `${fontSize}px`}}>
             {question}
           </div>
         </div>
@@ -195,6 +195,3 @@ class VirtualWorkshopQuestion extends Component {
 }
 
 export default withTranslation()(VirtualWorkshopQuestion);
-
-
-
