@@ -3,6 +3,18 @@
 .workshop-question-overlay {
   position: relative;
 
+  @mixin slideInLeft {
+    from {
+      -webkit-transform: translate3d(-110%, 0, 0);
+      transform: translate3d(-110%, 0, 0);
+    }
+
+    to {
+      -webkit-transform: translate3d(0, 0, 0);
+      transform: translate3d(0, 0, 0);
+    }
+  }
+
   .layout--double &,
   .layout--equal &,
   .layout--split & {
@@ -80,6 +92,10 @@
         overflow: auto;
         padding: 8px 12px 12px;
         z-index: 1;
+
+        &.rtl {
+          direction: rtl;
+        }
       }
 
       &__toolbar,
@@ -108,7 +124,7 @@
     }
   }
 
-  .slideInLeftCustom {
+  .slide-in-left {
     -webkit-animation-name: slideInLeftCustom;
     animation-name: slideInLeftCustom;
     -webkit-animation-delay: 1s;
@@ -116,27 +132,11 @@
   }
 
   @-webkit-keyframes slideInLeftCustom {
-    from {
-      -webkit-transform: translate3d(-110%, 0, 0);
-      transform: translate3d(-110%, 0, 0);
-    }
-
-    to {
-      -webkit-transform: translate3d(0, 0, 0);
-      transform: translate3d(0, 0, 0);
-    }
+    @include slideInLeft;
   }
 
   @keyframes slideInLeftCustom {
-    from {
-      -webkit-transform: translate3d(-110%, 0, 0);
-      transform: translate3d(-110%, 0, 0);
-    }
-
-    to {
-      -webkit-transform: translate3d(0, 0, 0);
-      transform: translate3d(0, 0, 0);
-    }
+    @include slideInLeft;
   }
 
   // Check VideoContainer.scss for .layout--double & .layout--equal

@@ -16,19 +16,33 @@ class VirtualWorkshopQuestion extends Component {
   constructor(props) {
     super(props);
 
+    let questionLang = languageOptions[0];
+    const storageLang = localStorage.getItem('ws-lang');
+    if (storageLang) {
+      questionLang = languageOptions.find((lang) => lang.value === storageLang);
+    }
+
     this.state = {
+      showQuestion: true,
       disableIncreaseFontSize: false,
       disableDecreaseFontSize: false,
-      selectedLanguage: languageOptions[0],
-      fontSize: 18,
+      selectedLanguage: questionLang,
+      fontSize: +localStorage.getItem('ws-font-size') || 18,
       innerOverlayAnimation: null,
-      showInnerOverlayAnimation: null
+      showInnerOverlayAnimation: null,
+      question: `Lorem ipsum dolor sit amet, consectetur adipisicing elit. Ab accusantium adipisci aliquam dolorem eligendi
+            libero quam quas quis recusandae, repellat reprehenderit tempore ullam, vel! Deleniti dicta est excepturi
+            magnam molestiae nihil odio praesentium sequi ut vitae. Ducimus et illum inventore nemo obcaecati quam
+            quidem recusandae! Eos esse facere maxime nulla.`
     };
+
+    this.wsOverlayRef = React.createRef();
 
     this.displayQuestion = this.displayQuestion.bind(this);
     this.decreaseFontSize = this.decreaseFontSize.bind(this);
     this.increaseFontSize = this.increaseFontSize.bind(this);
     this.changeLanguage = this.changeLanguage.bind(this);
+    this.copyQuestion = this.copyQuestion.bind(this);
 
     // const ws = new WebSocket('wss://ktuviot.kbb1.com:4000/congress');
     // ws.onerror = function(event) {
@@ -37,7 +51,7 @@ class VirtualWorkshopQuestion extends Component {
   }
 
   displayQuestion(show) {
-    const showAnimationClass = ' animate__animated slideInLeftCustom';
+    const showAnimationClass = ' animate__animated slide-in-left';
     const hideAnimationClass = ' animate__animated animate__slideOutLeft';
     let innerOverlay = hideAnimationClass;
     let showInnerOverlay = showAnimationClass;
@@ -56,6 +70,7 @@ class VirtualWorkshopQuestion extends Component {
     const {fontSize} = this.state;
     const nextFonSize = fontSize + 2;
     this.setState({fontSize: nextFonSize});
+    localStorage.setItem('ws-font-size', fontSize);
 
     if (nextFonSize > 48) {
       this.setState({disableIncreaseFontSize: true});
@@ -68,6 +83,7 @@ class VirtualWorkshopQuestion extends Component {
     const {fontSize} = this.state;
     const nextFonSize = fontSize - 2;
     this.setState({fontSize: nextFonSize});
+    localStorage.setItem('ws-font-size', fontSize);
 
     if (nextFonSize < 18) {
       this.setState({disableDecreaseFontSize: true});
@@ -77,19 +93,51 @@ class VirtualWorkshopQuestion extends Component {
   changeLanguage({value}) {
     const language = languageOptions.find((lang) => lang.value === value);
     this.setState({selectedLanguage: language});
+    localStorage.setItem('ws-lang', value);
+  }
+
+  copyQuestion() {
+    try {
+      const el = document.createElement('input');
+      el.setAttribute('value', this.state.question);
+      document.body.appendChild(el);
+      el.select();
+      document.execCommand('copy');
+      document.body.removeChild(el)
+    } catch (e) {
+      alert('Could not copy the question');
+    }
   }
 
   render() {
     const {t} = this.props;
-    const {disableIncreaseFontSize, disableDecreaseFontSize, selectedLanguage, fontSize, innerOverlayAnimation, showInnerOverlayAnimation} = this.state;
+    const {
+      showQuestion,
+      disableIncreaseFontSize,
+      disableDecreaseFontSize,
+      selectedLanguage,
+      fontSize,
+      innerOverlayAnimation,
+      showInnerOverlayAnimation,
+      question
+    } = this.state;
+
+    let questionOverlay = 'workshop-question-overlay';
+    if (showQuestion && this.wsOverlayRef.current.display === 'none') {
+      questionOverlay += ' animate__animated';
+    } else if (!showQuestion) {
+      questionOverlay += ' animate__animated';
+    }
 
     let questionContainerClass = 'workshop-question-inner-overlay';
     let showQuestionContainerClass = 'workshop-question-show-inner-overlay';
-
     if (innerOverlayAnimation && showInnerOverlayAnimation) {
       questionContainerClass += innerOverlayAnimation;
       showQuestionContainerClass += showInnerOverlayAnimation;
     }
+
+    let questionClass = 'workshop__question';
+    if (selectedLanguage.value === 'il') questionClass += ' rtl';
 
     const languages = (
       <Dropdown selection
@@ -101,7 +149,7 @@ class VirtualWorkshopQuestion extends Component {
     );
 
     return (
-      <div className="workshop-question-overlay">
+      <div className={questionOverlay} ref={this.wsOverlayRef}>
         <div className={questionContainerClass}>
           <div className="workshop__toolbar">
             <div className="workshop__toolbar__left">
@@ -110,6 +158,11 @@ class VirtualWorkshopQuestion extends Component {
               </Button>
             </div>
             <div className="workshop__toolbar__right">
+              <Button compact
+                      title={t('oldClient.copyQuestion')}
+                      onClick={this.copyQuestion}>
+                <Icon name="copy outline"/>
+              </Button>
               <Button compact
                       className="font-size-increase"
                       title={t('oldClient.increaseFontSize')}
@@ -127,11 +180,8 @@ class VirtualWorkshopQuestion extends Component {
               {languages}
             </div>
           </div>
-          <div className="workshop__question" style={{'font-size': `${fontSize}px`}}>
-            Lorem ipsum dolor sit amet, consectetur adipisicing elit. Ab accusantium adipisci aliquam dolorem eligendi
-            libero quam quas quis recusandae, repellat reprehenderit tempore ullam, vel! Deleniti dicta est excepturi
-            magnam molestiae nihil odio praesentium sequi ut vitae. Ducimus et illum inventore nemo obcaecati quam
-            quidem recusandae! Eos esse facere maxime nulla.
+          <div className={questionClass} style={{'font-size': `${fontSize}px`}}>
+            {question}
           </div>
         </div>
         <div className={showQuestionContainerClass}>

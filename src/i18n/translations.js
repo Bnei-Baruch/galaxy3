@@ -61,7 +61,8 @@ export const resources = {
         hideQuestion: 'Hide question',
         showQuestion: 'Show question',
         increaseFontSize: 'Increase font size',
-        decreaseFontSize: 'Decrease font size'
+        decreaseFontSize: 'Decrease font size',
+        copyQuestion: 'Copy question'
       },
       feedback: {
         feedbackHelp: 'Feedback/Help',
@@ -183,7 +184,8 @@ export const resources = {
         hideQuestion: '',
         showQuestion: '',
         increaseFontSize: '',
-        decreaseFontSize: ''
+        decreaseFontSize: '',
+        copyQuestion: ''
       },
       feedback: {
         feedbackHelp: 'Comentarios/Ayuda',
@@ -305,7 +307,8 @@ export const resources = {
         hideQuestion: '',
         showQuestion: '',
         increaseFontSize: '',
-        decreaseFontSize: ''
+        decreaseFontSize: '',
+        copyQuestion: ''
       },
       feedback: {
         feedbackHelp: 'משוב/עזרה',
@@ -427,7 +430,8 @@ export const resources = {
         hideQuestion: '',
         showQuestion: '',
         increaseFontSize: '',
-        decreaseFontSize: ''
+        decreaseFontSize: '',
+        copyQuestion: ''
       },
       feedback: {
         feedbackHelp: 'Фидбек/Помощь',
