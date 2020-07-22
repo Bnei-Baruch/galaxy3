@@ -1243,8 +1243,7 @@ class VirtualClient extends Component {
               on='hover'
               trigger={<div className='title-name'>{user ? user.username : ''}</div>}
           />
-          <span>{user ? user.display : ''}</span>
-          <Icon name="signal" size="small" color={this.connectionIcon()}/>
+          <Icon style={{marginLeft: '0.3rem'}} name="signal" size="small" color={this.connectionIcon()} />
         </div>
       </div>
       <svg className={classNames('nowebcam', {'hidden': !cammuted})} viewBox="0 0 32 18"
