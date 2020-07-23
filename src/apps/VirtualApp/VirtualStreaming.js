@@ -16,6 +16,7 @@ import './BroadcastStream.scss';
 import Volume from './components/Volume'
 import {withTranslation} from 'react-i18next';
 import VirtualWorkshopQuestion from './VirtualWorkshopQuestion';
+import classNames from 'classnames';
 
 class VirtualStreaming extends Component {
   constructor(props) {
@@ -144,13 +145,11 @@ class VirtualStreaming extends Component {
     const video_option = videos_options2.find((option) => option.value === videos);
     const audio_option = audiog_options2.find((option) => option.value === audios);
 
-    let videoClass = 'video video--broadcast';
-    if (fullScreen) {
-      videoClass += ' fullscreen';
-    }
-
     const inLine = (
-      <div className={videoClass} key='v0' ref={(ref) => this.setVideoWrapperRef(ref)} id='video0'
+      <div className={classNames('video video--broadcast', {'fullscreen': fullScreen})}
+           key='v0'
+           ref={(ref) => this.setVideoWrapperRef(ref)}
+           id='video0'
            style={{height: !attached ? '100%' : null, width: !attached ? '100%' : null}}>
         <div className="video__overlay">
           <div className="video-overlay-container">

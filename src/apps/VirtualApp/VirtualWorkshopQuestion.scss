@@ -1,19 +1,6 @@
-@import "~animate.css/animate.min.css";
-
 .workshop-question-overlay {
   position: relative;
-
-  @mixin slideInLeft {
-    from {
-      -webkit-transform: translate3d(-110%, 0, 0);
-      transform: translate3d(-110%, 0, 0);
-    }
-
-    to {
-      -webkit-transform: translate3d(0, 0, 0);
-      transform: translate3d(0, 0, 0);
-    }
-  }
+  visibility: visible;
 
   .layout--double &,
   .layout--equal &,
@@ -31,20 +18,17 @@
     }
   }
 
-  &.fade-in {
-    -webkit-animation-name: fadeInCustom;
-    animation-name: fadeInCustom;
-  }
-
-  &.fade-out {
-    -webkit-animation-name: fadeOutCustom;
-    animation-name: fadeOutCustom;
+  &.ws-hidden {
+    visibility: hidden;
+    transition: visibility 0s 1s;
   }
 
   .workshop-question-inner-overlay {
     position: absolute;
     bottom: 0;
     width: 100%;
+    background-color: #fffdff;
+    opacity: 1;
 
     .workshop {
       &__toolbar {
@@ -84,9 +68,11 @@
 
           .ui.dropdown {
             padding: 8px;
-            margin-left: 4px;
-            border: 1px solid #dbdbdb;
-            border-radius: 4px;
+            background-color: #fffdff;
+
+            &:hover {
+              background-color: #f2f2f2;
+            }
           }
         }
       }
@@ -103,17 +89,10 @@
           direction: rtl;
         }
       }
-
-      &__toolbar,
-      &__question {
-        background-color: #fffdff;
-      }
     }
   }
 
-  .workshop-question-show-inner-overlay {
-    -webkit-transform: translate3d(-110%, 0, 0);
-    transform: translate3d(-110%, 0, 0);
+  .workshop-question-show-inner-overlay-btn {
     position: absolute;
     bottom: 14vh;
     background-color: #fffdff;
@@ -130,19 +109,26 @@
     }
   }
 
-  .slide-in-left {
-    -webkit-animation-name: slideInLeftCustom;
-    animation-name: slideInLeftCustom;
-    -webkit-animation-delay: 1s;
-    animation-delay: 1s;
-  }
+  .workshop-question-inner-overlay,
+  .workshop-question-show-inner-overlay-btn {
+    opacity: 0;
+    visibility: hidden;
 
-  @-webkit-keyframes slideInLeftCustom {
-    @include slideInLeft;
-  }
+    &.overlay {
+      &__visible {
+        display: block;
+        visibility: visible;
+        opacity: 1;
+        transition: opacity 1s linear .8s;
+      }
 
-  @keyframes slideInLeftCustom {
-    @include slideInLeft;
+      &__hidden {
+        display: block;
+        visibility: hidden;
+        opacity: 0;
+        transition: visibility 0s 1s, opacity .8s linear;
+      }
+    }
   }
 
   // Check VideoContainer.scss for .layout--double & .layout--equal

@@ -3,6 +3,7 @@ import { Janus } from '../../lib/janus';
 import { Button, Input, Message } from 'semantic-ui-react';
 import { getDateString, initChatRoom, joinChatRoom, notifyMe } from '../../shared/tools';
 import { SHIDUR_ID } from '../../shared/consts';
+import classNames from 'classnames';
 
 class VirtualChat extends Component {
 
@@ -197,7 +198,7 @@ class VirtualChat extends Component {
   };
 
   render() {
-    const { t }                                 = this.props;
+    const { t, visible } = this.props;
     const { messages, support_msgs, room_chat } = this.state;
 
 		const urlRegex =/(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#/%?=~_|!:,.;()]*[-A-Z0-9+&@#/%=~_|()])/ig;
@@ -266,7 +267,7 @@ class VirtualChat extends Component {
     });
 
     return (
-      <div className="chat-panel">
+      <div className={classNames('chat-panel', {hidden: !visible})}>
         {/* <div className="chat" > */}
         <Button.Group attached='top'>
           <Button disabled={room_chat} color='blue' onClick={() => this.tooggleChat(true)}>{t('virtualChat.roomChat')}</Button>

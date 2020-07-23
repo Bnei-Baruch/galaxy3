@@ -1608,9 +1608,7 @@ class VirtualClient extends Component {
         { !(new URL(window.location.href).searchParams.has('lost')) ? null :
             (<Label color={net_status === 2 ? 'yellow' : net_status === 3 ? 'red' : 'green'} icon='wifi' corner='right' />)}
       </div>
-      <div className="vclient__main" onDoubleClick={() => this.setState({
-        chatVisible: !chatVisible
-      })}>
+      <div className="vclient__main">
         <div className={`
           vclient__main-wrapper
           no-of-videos-${noOfVideos}
