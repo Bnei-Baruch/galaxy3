@@ -57,12 +57,7 @@ export const resources = {
         video: 'Video',
         audio: 'Audio',
         cameraQuality: 'Quality',
-        language: 'Language',
-        hideQuestion: 'Hide question',
-        showQuestion: 'Show question',
-        increaseFontSize: 'Increase font size',
-        decreaseFontSize: 'Decrease font size',
-        copyQuestion: 'Copy question'
+        language: 'Language'
       },
       feedback: {
         feedbackHelp: 'Feedback/Help',
@@ -120,6 +115,15 @@ export const resources = {
         cancel: 'Cancel',
         continueAsGuest: 'Continue as a Guest',
       },
+      workshop: {
+        hideQuestion: 'Hide question',
+        showQuestion: 'Show question',
+        copyQuestion: 'Copy question',
+        increaseFontSize: 'Increase font size',
+        decreaseFontSize: 'Decrease font size',
+        inProgress: 'In progress',
+        questionInOtherLanguages: 'Question is available in other languages'
+      }
     },
   },
   es: {
@@ -180,12 +184,7 @@ export const resources = {
         video: 'Vídeo',
         audio: 'Audio',
         cameraQuality: 'Calidad de la cámara',
-        language: 'Idioma',
-        hideQuestion: '',
-        showQuestion: '',
-        increaseFontSize: '',
-        decreaseFontSize: '',
-        copyQuestion: ''
+        language: 'Idioma'
       },
       feedback: {
         feedbackHelp: 'Comentarios/Ayuda',
@@ -243,6 +242,14 @@ export const resources = {
         cancel: 'Cancel',
         continueAsGuest: 'Continuar como invitado',
       },
+      workshop: {
+        hideQuestion: '',
+        showQuestion: '',
+        copyQuestion: '',
+        increaseFontSize: '',
+        decreaseFontSize: '',
+        questionInOtherLanguages: ''
+      }
     },
   },
   he: {
@@ -303,12 +310,7 @@ export const resources = {
         video: 'וידאו',
         audio: 'אודיו',
         cameraQuality: 'איכות מצלמה',
-        language: 'שפה',
-        hideQuestion: '',
-        showQuestion: '',
-        increaseFontSize: '',
-        decreaseFontSize: '',
-        copyQuestion: ''
+        language: 'שפה'
       },
       feedback: {
         feedbackHelp: 'משוב/עזרה',
@@ -366,6 +368,14 @@ export const resources = {
         cancel: 'בטל',
         continueAsGuest: 'המשך כאורח',
       },
+      workshop: {
+        hideQuestion: '',
+        showQuestion: '',
+        copyQuestion: '',
+        increaseFontSize: '',
+        decreaseFontSize: '',
+        questionInOtherLanguages: ''
+      }
     },
   },
   ru: {
@@ -426,12 +436,7 @@ export const resources = {
         video: 'Видео',
         audio: 'Аудио',
         cameraQuality: 'Качество камеры',
-        language: 'Язык',
-        hideQuestion: '',
-        showQuestion: '',
-        increaseFontSize: '',
-        decreaseFontSize: '',
-        copyQuestion: ''
+        language: 'Язык'
       },
       feedback: {
         feedbackHelp: 'Фидбек/Помощь',
@@ -489,6 +494,14 @@ export const resources = {
         terms: 'Условия использования системы Галакси',
         close: 'Закрыть',
       },
+      workshop: {
+        hideQuestion: '',
+        showQuestion: '',
+        copyQuestion: '',
+        increaseFontSize: '',
+        decreaseFontSize: '',
+        questionInOtherLanguages: ''
+      }
     },
   },
 };

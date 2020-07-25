@@ -152,7 +152,7 @@ class VirtualStreaming extends Component {
            id='video0'
            style={{height: !attached ? '100%' : null, width: !attached ? '100%' : null}}>
         <div className="video__overlay">
-          <div className="video-overlay-container">
+          <div className="activities">
             <div className="controls">
               <div className="controls__top">
                 <button>

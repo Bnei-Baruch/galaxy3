@@ -274,8 +274,23 @@ body:before {
 
           &.layout--double,
           &.layout--equal {
-            .workshop-question-overlay {
-              height: 100%;
+            .activities {
+              &:hover {
+                .workshop-question-overlay .workshop-question-inner-overlay {
+                  animation: up 0s;
+                }
+              }
+
+              .workshop-question-overlay {
+                height: 100%;
+
+                .workshop-question-inner-overlay {
+                  animation: down 300ms;
+                  animation-fill-mode: forwards;
+                  animation-delay: 1s;
+                  bottom: 52px;
+                }
+              }
             }
           }
         }
