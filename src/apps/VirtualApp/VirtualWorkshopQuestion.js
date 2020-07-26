@@ -34,7 +34,7 @@ const getLanguageValue = () => {
   }
 
   return langValue;
-}
+};
 
 class VirtualWorkshopQuestion extends Component {
   constructor(props) {
@@ -61,8 +61,15 @@ class VirtualWorkshopQuestion extends Component {
   componentDidMount() {
     fetch(GET_WORKSHOP_QUESTIONS)
       .then(response => response.json())
-      .then(data => console.log(data))
-      .catch(e => console.log('Could not get workshop questions', e));
+      .then(data => {
+        const approved = data.questions.filter(q => q.approved);
+        approved.length && languageOptions.forEach(l => {
+          const current = approved.find(a => a.language === l.key);
+          if (current) l.question = current.message;
+        });
+      })
+      .catch(e => console.error('Could not get workshop questions', e));
+
     this.websocket = new ReconnectingWebSocket(WEB_SOCKET_WORKSHOP_QUESTION);
 
     this.websocket.onopen = () => console.log('Workshop websocket open');
@@ -81,7 +88,7 @@ class VirtualWorkshopQuestion extends Component {
           lang.question = wsData.message;
           if (!wsData.approved) {
             lang.question = null;
-            hasQuestion = !!languageOptions.find(l => l.question !== null);
+            hasQuestion = !!languageOptions.find(l => l.question);
           }
 
           this.setState({hasQuestion});
@@ -329,7 +336,6 @@ class VirtualWorkshopQuestion extends Component {
                 </Button>
               </div>
               <div className="workshop__toolbar__right">
-                <input type="range" min="16" max="50" step="2"/>
                 <Button compact
                         title={t('workshop.copyQuestion')}
                         onClick={this.copyQuestion}>
@@ -360,9 +366,9 @@ class VirtualWorkshopQuestion extends Component {
             <div className={classNames('workshop__question', {rtl: key === 'he'})}
                  style={{fontSize: `${fontSize}px`}}>
               <div className={classNames('lang-question', {'show-question': question})}>{question}</div>
-              <div className={classNames('in-progress', {'show-question': !question})}>
-                <div>{t('workshop.inProgress')}. {t('workshop.questionInOtherLanguages')}:</div>
-                {languageOptions.filter(l => l.question !== null).map(l => (
+              <div className={classNames('in-process', {'show-question': !question})}>
+                <div>{t('workshop.inProcess')}...</div>
+                {languageOptions.filter(l => l.question).map(l => (
                   <div className={classNames('other-question', {rtl: l.key === 'he'})}>{l.question}</div>
                 ))}
               </div>

@@ -121,8 +121,7 @@ export const resources = {
         copyQuestion: 'Copy question',
         increaseFontSize: 'Increase font size',
         decreaseFontSize: 'Decrease font size',
-        inProgress: 'In progress',
-        questionInOtherLanguages: 'Question is available in other languages'
+        inProcess: 'In process'
       }
     },
   },
@@ -248,7 +247,7 @@ export const resources = {
         copyQuestion: '',
         increaseFontSize: '',
         decreaseFontSize: '',
-        questionInOtherLanguages: ''
+        inProcess: ''
       }
     },
   },
@@ -374,7 +373,7 @@ export const resources = {
         copyQuestion: '',
         increaseFontSize: '',
         decreaseFontSize: '',
-        questionInOtherLanguages: ''
+        inProcess: ''
       }
     },
   },
@@ -500,7 +499,7 @@ export const resources = {
         copyQuestion: '',
         increaseFontSize: '',
         decreaseFontSize: '',
-        questionInOtherLanguages: ''
+        inProcess: ''
       }
     },
   },

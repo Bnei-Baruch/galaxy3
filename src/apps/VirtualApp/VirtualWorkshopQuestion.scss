@@ -96,7 +96,7 @@
         direction: ltr;
 
         .lang-question,
-        .in-progress {
+        .in-process {
           display: none;
 
           &.show-question {
@@ -104,9 +104,9 @@
           }
         }
 
-        .in-progress {
+        .in-process {
           .other-question {
-            background-color: #f3f3f3;
+            background-color: #ebebeb;
             margin: 8px 0;
             padding: 8px;
 
