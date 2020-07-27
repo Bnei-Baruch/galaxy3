@@ -119,8 +119,7 @@ export const resources = {
         hideQuestion: 'Hide question',
         showQuestion: 'Show question',
         copyQuestion: 'Copy question',
-        increaseFontSize: 'Increase font size',
-        decreaseFontSize: 'Decrease font size',
+        manageFontSize: 'Manage font size',
         inProcess: 'In process'
       }
     },
@@ -245,8 +244,7 @@ export const resources = {
         hideQuestion: '',
         showQuestion: '',
         copyQuestion: '',
-        increaseFontSize: '',
-        decreaseFontSize: '',
+        manageFontSize: '',
         inProcess: ''
       }
     },
@@ -371,8 +369,7 @@ export const resources = {
         hideQuestion: '',
         showQuestion: '',
         copyQuestion: '',
-        increaseFontSize: '',
-        decreaseFontSize: '',
+        manageFontSize: '',
         inProcess: ''
       }
     },
@@ -497,8 +494,7 @@ export const resources = {
         hideQuestion: '',
         showQuestion: '',
         copyQuestion: '',
-        increaseFontSize: '',
-        decreaseFontSize: '',
+        manageFontSize: '',
         inProcess: ''
       }
     },

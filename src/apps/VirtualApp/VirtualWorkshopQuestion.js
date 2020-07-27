@@ -8,8 +8,7 @@ import Icon from 'semantic-ui-react/dist/commonjs/elements/Icon';
 import classNames from 'classnames';
 import ReconnectingWebSocket from 'reconnectingwebsocket';
 import {GET_WORKSHOP_QUESTIONS, WEB_SOCKET_WORKSHOP_QUESTION} from '../../shared/env';
-import Transition from "semantic-ui-react/dist/commonjs/modules/Transition";
-import Popup from "semantic-ui-react/dist/commonjs/modules/Popup";
+import {Slider} from 'react-semantic-ui-range';
 
 const WS_FONT_SIZE = 'ws-font-size';
 const WS_LANG = 'ws-lang';
@@ -42,8 +41,6 @@ class VirtualWorkshopQuestion extends Component {
 
     this.state = {
       fontSize: +localStorage.getItem(WS_FONT_SIZE) || 18,
-      disableIncreaseFontSize: false,
-      disableDecreaseFontSize: false,
       selectedLanguageValue: getLanguageValue(),
       hasQuestion: false,
       showQuestion: true
@@ -52,9 +49,8 @@ class VirtualWorkshopQuestion extends Component {
     this.websocket = null;
 
     this.displayQuestion = this.displayQuestion.bind(this);
-    this.increaseFontSize = this.increaseFontSize.bind(this);
-    this.decreaseFontSize = this.decreaseFontSize.bind(this);
     this.changeLanguage = this.changeLanguage.bind(this);
+    this.manageFontSize = this.manageFontSize.bind(this);
     this.copyQuestion = this.copyQuestion.bind(this);
   }
 
@@ -260,35 +256,14 @@ class VirtualWorkshopQuestion extends Component {
     this.setState({showQuestion: show});
   }
 
-  increaseFontSize() {
-    this.state.disableDecreaseFontSize && this.setState({disableDecreaseFontSize: false});
-
-    const {fontSize} = this.state;
-    const nextFonSize = fontSize + 2;
-    this.setState({fontSize: nextFonSize});
-    localStorage.setItem(WS_FONT_SIZE, fontSize);
-
-    if (nextFonSize > 48) {
-      this.setState({disableIncreaseFontSize: true});
-    }
-  }
-
-  decreaseFontSize() {
-    this.state.disableIncreaseFontSize && this.setState({disableIncreaseFontSize: false});
-
-    const {fontSize} = this.state;
-    const nextFonSize = fontSize - 2;
-    this.setState({fontSize: nextFonSize});
-    localStorage.setItem(WS_FONT_SIZE, fontSize);
-
-    if (nextFonSize < 18) {
-      this.setState({disableDecreaseFontSize: true});
-    }
-  }
-
   changeLanguage({value}) {
     this.setState({selectedLanguageValue: value});
     localStorage.setItem(WS_LANG, value);
+  }
+
+  manageFontSize(value) {
+    this.setState({fontSize: value});
+    localStorage.setItem(WS_FONT_SIZE, value);
   }
 
   copyQuestion() {
@@ -306,75 +281,84 @@ class VirtualWorkshopQuestion extends Component {
 
   render() {
     const {t} = this.props;
-    const {
-      fontSize,
-      disableIncreaseFontSize,
-      disableDecreaseFontSize,
-      selectedLanguageValue,
-      hasQuestion,
-      showQuestion
-    } = this.state;
+    const {fontSize, selectedLanguageValue, hasQuestion, showQuestion} = this.state;
     const {key, flag, text, question} = languageOptions[selectedLanguageValue];
-
+    const settings = {
+      start: fontSize,
+      min: 16,
+      max: 50,
+      step: 1,
+      onChange: value => this.manageFontSize(value)
+    };
 
     return (
       <div className="workshop-question-overlay">
-        <Transition visible={hasQuestion && !showQuestion}>
-          <div className="workshop-question-show-inner-overlay-btn">
-            <Button size="large" title={t('workshop.showQuestion')} onClick={() => this.displayQuestion(true)}>
-              <Icon name="file alternate outline"/>
-            </Button>
+        <div className={classNames('workshop-question-show-inner-overlay-btn', {
+          'overlay__visible': hasQuestion && !showQuestion,
+          'overlay__hidden': !hasQuestion || showQuestion
+        })}>
+          <Button size="large"
+                  icon="file alternate outline"
+                  title={t('workshop.showQuestion')}
+                  onClick={() => this.displayQuestion(true)}
+          />
+        </div>
+        <div className={classNames('workshop-question-inner-overlay', {
+          'overlay__visible': hasQuestion && showQuestion,
+          'overlay__hidden': !hasQuestion || !showQuestion
+        })}>
+          <div className="workshop__toolbar">
+            <div className="workshop__toolbar__left">
+              <Button icon="eye slash"
+                      title={t('workshop.hideQuestion')}
+                      onClick={() => this.displayQuestion(false)}
+              />
+            </div>
+            <div className="workshop__toolbar__right">
+              <Button compact
+                      icon="copy outline"
+                      title={t('workshop.copyQuestion')}
+                      onClick={this.copyQuestion}
+              />
+              <div className="manage-font-size">
+                <div className="manage-font-size-pop__container">
+                  <div className="manage-font-size-pop__context">
+                    <Icon name="font" className="decrease-font" aria-hidden="true"/>
+                    <Slider color="blue"
+                            style={{width: '140px', thumb: {width: '16px', height: '16px', top: '3px'}}}
+                            settings={{
+                              min: 16,
+                              max: 50,
+                              start: fontSize,
+                              step: 1,
+                              onChange: value => this.manageFontSize(value)
+                            }}
+                    />
+                    <Icon name="font" className="increase-font" aria-hidden="true"/>
+                  </div>
+                </div>
+                <Button icon='font' title={t('workshop.manageFontSize')}/>
+              </div>
+              <Dropdown defaultValue={selectedLanguageValue}
+                        selectOnBlur={false}
+                        options={languageOptions}
+                        onChange={(event, data) => this.changeLanguage(data)}
+                        trigger={<span><Flag name={flag}/> {text}</span>}
+              />
+            </div>
           </div>
-        </Transition>
+          <div className={classNames('workshop__question', {rtl: key === 'he'})}
+               style={{fontSize: `${fontSize}px`}}>
+            <div className={classNames('lang-question', {'show-question': question})}>{question}</div>
+            <div className={classNames('in-process', {'show-question': !question})}>
+              <div>{t('workshop.inProcess')}...</div>
+              {languageOptions.filter(l => l.question).map(l => (
+                <div key={l.key} className={classNames('other-question', {rtl: l.key === 'he'})}>{l.question}</div>
+              ))}
+            </div>
+          </div>
+        </div>
 
-        <Transition visible={hasQuestion && showQuestion}>
-          <div className="workshop-question-inner-overlay">
-            <div className="workshop__toolbar">
-              <div className="workshop__toolbar__left">
-                <Button compact title={t('workshop.hideQuestion')} onClick={() => this.displayQuestion(false)}>
-                  <Icon name="eye slash"/>
-                </Button>
-              </div>
-              <div className="workshop__toolbar__right">
-                <Button compact
-                        title={t('workshop.copyQuestion')}
-                        onClick={this.copyQuestion}>
-                  <Icon name="copy outline"/>
-                </Button>
-                <Button compact
-                        className="font-size-increase"
-                        title={t('workshop.increaseFontSize')}
-                        onClick={this.increaseFontSize}
-                        disabled={disableIncreaseFontSize}>
-                  <Icon name="font"/>
-                </Button>
-                <Button compact
-                        className="font-size-decrease"
-                        title={t('workshop.decreaseFontSize')}
-                        onClick={this.decreaseFontSize}
-                        disabled={disableDecreaseFontSize}>
-                  <Icon name="font"/>
-                </Button>
-                <Dropdown defaultValue={selectedLanguageValue}
-                          selectOnBlur={false}
-                          options={languageOptions}
-                          onChange={(event, data) => this.changeLanguage(data)}
-                          trigger={<span><Flag name={flag}/> {text}</span>}
-                />
-              </div>
-            </div>
-            <div className={classNames('workshop__question', {rtl: key === 'he'})}
-                 style={{fontSize: `${fontSize}px`}}>
-              <div className={classNames('lang-question', {'show-question': question})}>{question}</div>
-              <div className={classNames('in-process', {'show-question': !question})}>
-                <div>{t('workshop.inProcess')}...</div>
-                {languageOptions.filter(l => l.question).map(l => (
-                  <div className={classNames('other-question', {rtl: l.key === 'he'})}>{l.question}</div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </Transition>
       </div>
     );
   }
