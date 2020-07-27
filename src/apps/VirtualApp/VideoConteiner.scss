@@ -1,3 +1,5 @@
+@import "VirtualWorkshopQuestionHelpers";
+
 @function list-remove($list, $index) {
   $newList: ();
   @for $i from 1 through length($list) {
@@ -274,24 +276,8 @@ body:before {
 
           &.layout--double,
           &.layout--equal {
-            .activities {
-              &:hover {
-                .workshop-question-overlay .workshop-question-inner-overlay {
-                  animation: up 0s;
-                }
-              }
-
-              .workshop-question-overlay {
-                height: 100%;
-
-                .workshop-question-inner-overlay {
-                  animation: down 300ms;
-                  animation-fill-mode: forwards;
-                  animation-delay: 1s;
-                  bottom: 52px;
-                }
-              }
-            }
+            @include workshop-question-hover-transition;
+            @include activities-workshop-question-hover(12vw, 20vw);
           }
         }
       }

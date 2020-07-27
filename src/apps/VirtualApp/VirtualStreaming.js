@@ -146,7 +146,7 @@ class VirtualStreaming extends Component {
     const audio_option = audiog_options2.find((option) => option.value === audios);
 
     const inLine = (
-      <div className={classNames('video video--broadcast', {'fullscreen': fullScreen})}
+      <div className={classNames('video video--broadcast', {fullscreen: fullScreen})}
            key='v0'
            ref={(ref) => this.setVideoWrapperRef(ref)}
            id='video0'

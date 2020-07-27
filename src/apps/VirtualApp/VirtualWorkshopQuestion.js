@@ -328,7 +328,7 @@ class VirtualWorkshopQuestion extends Component {
                             style={{width: '140px', thumb: {width: '16px', height: '16px', top: '3px'}}}
                             settings={{
                               min: 16,
-                              max: 50,
+                              max: 60,
                               start: fontSize,
                               step: 1,
                               onChange: value => this.manageFontSize(value)

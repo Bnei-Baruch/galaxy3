@@ -1,0 +1,41 @@
+@mixin workshop-question-hover-transition {
+  .activities .workshop-question-overlay {
+    @keyframes up {
+      to {
+        bottom: 52px;
+      }
+    }
+
+    @keyframes down {
+      to {
+        bottom: 0;
+      }
+    }
+  }
+}
+
+@mixin activities-workshop-question-hover($min-height, $max-height) {
+  .activities {
+    &:hover {
+      .workshop-question-overlay .workshop-question-inner-overlay {
+        animation: up 0s;
+      }
+    }
+
+    .workshop-question-overlay {
+      height: 100%;
+
+      .workshop-question-inner-overlay {
+        animation: down 300ms;
+        animation-fill-mode: forwards;
+        animation-delay: 1s;
+        bottom: 52px;
+
+        .workshop__question {
+          min-height: $min-height;
+          max-height: $max-height;
+        }
+      }
+    }
+  }
+}
