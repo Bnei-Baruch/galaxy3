@@ -1,9 +1,10 @@
 @import "VirtualWorkshopQuestionHelpers";
 
 .workshop-question-overlay {
-  position: relative;
   width: 100%;
-  height: 56vw;
+  display: flex;
+  align-items: flex-end;
+  @include workshop-visibility;
 
   .layout--double &,
   .layout--equal &,
@@ -11,25 +12,33 @@
     height: 28vw;
   }
 
-  .workshop-question-inner-overlay {
-    position: absolute;
-    bottom: 0;
+  .workshop-container {
     width: 100%;
-    background-color: #fffdff;
-    opacity: 1;
+    position: relative;
+    flex: 1;
 
-    .workshop {
-      &__toolbar {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        border-bottom: 1px solid #e3e3e3;
-        padding: 12px 12px 8px;
+    .manage-question-visibility {
+      position: absolute;
+      top: 12px;
+      left: 0;
+      z-index: 1;
+      background-color:  #fffdff;
+      border-top-right-radius: 4px;
+      border-bottom-right-radius: 4px;
+      padding-left: 4px;
+    }
 
-        &__right {
+    .question-container {
+      background-color: #fffdff;
+      @include workshop-visibility;
+
+      .workshop {
+        &__toolbar {
           display: flex;
           justify-content: flex-end;
           align-items: center;
+          border-bottom: 1px solid #e3e3e3;
+          padding: 12px 12px 8px;
 
           .manage-font-size {
             position: relative;
@@ -112,85 +121,46 @@
             }
           }
         }
-      }
 
-      .layout--double &,
-      .layout--equal &,
-      .layout--split & {
         &__question {
           min-height: 6vw;
           max-height: 12vw;
-        }
-      }
+          line-height: 1.3;
+          overflow: auto;
+          padding: 8px 12px 12px;
+          z-index: 1;
 
-      &__question {
-        min-height: 10vw;
-        max-height: 20vw;
-        line-height: 1.3;
-        overflow: auto;
-        padding: 8px 12px 12px;
-        z-index: 1;
-        direction: ltr;
+          .lang-question,
+          .in-process {
+            display: none;
 
-        &.rtl {
-          direction: rtl;
-        }
+            &.show-question {
+              display: block;
+            }
+          }
 
-        .lang-question,
-        .in-process {
-          display: none;
+          .lang-question,
+          .in-process .in-process-text,
+          .in-process .other-question {
+            direction: ltr;
 
-          &.show-question {
-            display: block;
+            &.rtl {
+              direction: rtl;
+            }
+          }
+
+          .in-process .other-question {
+            background-color: #ebebeb;
+            margin: 8px 0;
+            padding: 8px;
           }
         }
-
-        .in-process .other-question {
-          background-color: #ebebeb;
-          margin: 8px 0;
-          padding: 8px;
-          direction: ltr;
-
-          &.rtl {
-            direction: rtl;
-          }
-        }
-      }
-    }
-  }
-
-  .workshop-question-show-inner-overlay-btn {
-    position: absolute;
-    bottom: 14vh;
-    background-color: #fffdff;
-    border-top-right-radius: 4px;
-    border-bottom-right-radius: 4px;
-  }
-
-  .workshop-question-inner-overlay,
-  .workshop-question-show-inner-overlay-btn {
-    opacity: 0;
-    visibility: hidden;
-
-    &.overlay {
-      &__visible {
-        display: block;
-        visibility: visible;
-        opacity: 1;
-        transition: opacity .5s linear .2s;
-      }
-
-      &__hidden {
-        display: block;
-        visibility: hidden;
-        opacity: 0;
-        transition: visibility 0s .5s, opacity .5s linear;
       }
     }
   }
 
   .ui.button {
-    background-color: inherit;
+    background-color: #fffdff;
     padding: 8px;
 
     &:hover {
@@ -202,8 +172,6 @@
     }
   }
 }
-
-
 
 .fullscreen {
   @include workshop-question-hover-transition;

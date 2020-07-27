@@ -70,29 +70,29 @@ class VirtualWorkshopQuestion extends Component {
 
     this.websocket.onopen = () => console.log('Workshop websocket open');
 
-    this.websocket.onmessage = event => {
-      try {
-        const wsData = JSON.parse(event.data);
-        if (wsData.questions) {
-          this.setState({hasQuestion: false});
-          languageOptions.forEach(l => l.question = null);
-        } else if (wsData.type === 'question') {
-          const lang = languageOptions.find(l => l.key === wsData.language);
-          if (!lang) return;
-
-          let hasQuestion = true;
-          lang.question = wsData.message;
-          if (!wsData.approved) {
-            lang.question = null;
-            hasQuestion = !!languageOptions.find(l => l.question);
-          }
-
-          this.setState({hasQuestion});
-        }
-      } catch (e) {
-        console.error('Workshop onmessage parse error', e);
-      }
-    };
+    // this.websocket.onmessage = event => {
+    //   try {
+    //     const wsData = JSON.parse(event.data);
+    //     if (wsData.questions) {
+    //       this.setState({hasQuestion: false});
+    //       languageOptions.forEach(l => l.question = null);
+    //     } else if (wsData.type === 'question') {
+    //       const lang = languageOptions.find(l => l.key === wsData.language);
+    //       if (!lang) return;
+    //
+    //       let hasQuestion = true;
+    //       lang.question = wsData.message;
+    //       if (!wsData.approved) {
+    //         lang.question = null;
+    //         hasQuestion = !!languageOptions.find(l => l.question);
+    //       }
+    //
+    //       this.setState({hasQuestion});
+    //     }
+    //   } catch (e) {
+    //     console.error('Workshop onmessage parse error', e);
+    //   }
+    // };
 
     const heOk = {
       "id": 90667,
@@ -240,20 +240,20 @@ class VirtualWorkshopQuestion extends Component {
         "approved": false
       }, {"id": 0, "message": "", "user_name": "", "type": "", "language": "am", "approved": false}]
     };
-    setTimeout(() => this.websocket.send(JSON.stringify(heOk)), 2000);
-    setTimeout(() => this.websocket.send(JSON.stringify(enOk)), 3500);
-    setTimeout(() => this.websocket.send(JSON.stringify(esOk)), 3000);
+    // setTimeout(() => this.websocket.send(JSON.stringify(heOk)), 2000);
+    // setTimeout(() => this.websocket.send(JSON.stringify(enOk)), 3500);
+    // setTimeout(() => this.websocket.send(JSON.stringify(esOk)), 3000);
     // setTimeout(() => this.websocket.send(JSON.stringify(heNotOk)), 5000);
     // setTimeout(() => this.websocket.send(JSON.stringify(clearQ)), 5000);
-    // setTimeout(() =>  this.setState({hasQuestion: true}), 2000);
+    setTimeout(() =>  this.setState({hasQuestion: true}), 1000);
   }
 
   componentWillUnmount() {
     this.websocket && this.websocket.close();
   }
 
-  displayQuestion(show) {
-    this.setState({showQuestion: show});
+  displayQuestion() {
+    this.setState(prevState => ({showQuestion: !prevState.showQuestion}));
   }
 
   changeLanguage({value}) {
@@ -283,38 +283,18 @@ class VirtualWorkshopQuestion extends Component {
     const {t} = this.props;
     const {fontSize, selectedLanguageValue, hasQuestion, showQuestion} = this.state;
     const {key, flag, text, question} = languageOptions[selectedLanguageValue];
-    const settings = {
-      start: fontSize,
-      min: 16,
-      max: 50,
-      step: 1,
-      onChange: value => this.manageFontSize(value)
-    };
 
     return (
-      <div className="workshop-question-overlay">
-        <div className={classNames('workshop-question-show-inner-overlay-btn', {
-          'overlay__visible': hasQuestion && !showQuestion,
-          'overlay__hidden': !hasQuestion || showQuestion
-        })}>
-          <Button size="large"
-                  icon="file alternate outline"
-                  title={t('workshop.showQuestion')}
-                  onClick={() => this.displayQuestion(true)}
-          />
-        </div>
-        <div className={classNames('workshop-question-inner-overlay', {
-          'overlay__visible': hasQuestion && showQuestion,
-          'overlay__hidden': !hasQuestion || !showQuestion
-        })}>
-          <div className="workshop__toolbar">
-            <div className="workshop__toolbar__left">
-              <Button icon="eye slash"
-                      title={t('workshop.hideQuestion')}
-                      onClick={() => this.displayQuestion(false)}
-              />
-            </div>
-            <div className="workshop__toolbar__right">
+      <div className={classNames('workshop-question-overlay', {'overlay-visible': hasQuestion})}>
+        <div className="workshop-container">
+          <div className="manage-question-visibility">
+            <Button icon={classNames('eye',{'slash': showQuestion})}
+                    title={t(showQuestion ? 'workshop.hideQuestion' : 'workshop.showQuestion')}
+                    onClick={() => this.displayQuestion()}
+            />
+          </div>
+          <div className={classNames('question-container', {'overlay-visible': showQuestion})}>
+            <div className="workshop__toolbar">
               <Button compact
                       icon="copy outline"
                       title={t('workshop.copyQuestion')}
@@ -346,19 +326,17 @@ class VirtualWorkshopQuestion extends Component {
                         trigger={<span><Flag name={flag}/> {text}</span>}
               />
             </div>
-          </div>
-          <div className={classNames('workshop__question', {rtl: key === 'he'})}
-               style={{fontSize: `${fontSize}px`}}>
-            <div className={classNames('lang-question', {'show-question': question})}>{question}</div>
-            <div className={classNames('in-process', {'show-question': !question})}>
-              <div>{t('workshop.inProcess')}...</div>
-              {languageOptions.filter(l => l.question).map(l => (
-                <div key={l.key} className={classNames('other-question', {rtl: l.key === 'he'})}>{l.question}</div>
-              ))}
+            <div className="workshop__question" style={{fontSize: `${fontSize}px`}}>
+              <div className={classNames('lang-question', {'show-question': question, rtl: key === 'he'})}>{question}</div>
+              <div className={classNames('in-process', {'show-question': !question})}>
+                <div className={classNames('in-process-text', {rtl: key === 'he'})}>{t('workshop.inProcess')}...</div>
+                {languageOptions.filter(l => l.question).map(l => (
+                  <div key={l.key} className={classNames('other-question', {rtl: l.key === 'he'})}>{l.question}</div>
+                ))}
+              </div>
             </div>
           </div>
         </div>
-
       </div>
     );
   }

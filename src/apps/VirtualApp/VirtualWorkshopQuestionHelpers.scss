@@ -17,7 +17,7 @@
 @mixin activities-workshop-question-hover($min-height, $max-height) {
   .activities {
     &:hover {
-      .workshop-question-overlay .workshop-question-inner-overlay {
+      .workshop-question-overlay .outer-container {
         animation: up 0s;
       }
     }
@@ -25,7 +25,7 @@
     .workshop-question-overlay {
       height: 100%;
 
-      .workshop-question-inner-overlay {
+      .outer-container {
         animation: down 300ms;
         animation-fill-mode: forwards;
         animation-delay: 1s;
@@ -37,5 +37,17 @@
         }
       }
     }
+  }
+}
+
+@mixin workshop-visibility {
+  visibility: hidden;
+  opacity: 0;
+  transition: visibility 0s .5s, opacity .5s linear;
+
+  &.overlay-visible {
+    visibility: visible;
+    opacity: 1;
+    transition: opacity .5s linear .2s;
   }
 }
