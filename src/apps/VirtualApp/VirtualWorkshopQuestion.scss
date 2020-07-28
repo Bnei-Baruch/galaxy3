@@ -28,13 +28,19 @@
       padding-left: 4px;
 
       &:hover {
-        background-color:  #fffdff;
+        background-color: #fffdff;
+      }
+
+      .ui.button.question-hidden:hover {
+        background-color: transparent;
       }
     }
 
     .question-container {
       background-color: #fffdff;
       @include workshop-visibility;
+      -webkit-box-shadow: 0px -2px 4px 0px rgba(0, 0, 0, 0.1);
+      box-shadow: 0px -2px 4px 0px rgba(0, 0, 0, 0.1);
 
       .workshop {
         &__toolbar {
@@ -111,6 +117,10 @@
             }
           }
 
+          .ui.button {
+
+          }
+
           .ui.dropdown {
             padding: 8px;
             border-radius: 4px;
@@ -177,17 +187,18 @@
   }
 }
 
-.fullscreen {
+.video--pop,
+.video--fullscreen {
   @include workshop-question-hover-transition;
-  @include activities-workshop-question-hover(200px, 350px);
+  @include activities-workshop-question-hover(150px, 350px);
 }
 
+// Also check VideoConteiner.scss for layout--double & --equal
 @media screen and (orientation: portrait) {
-  .video__overlay {
+  .layout--split,
+  .layout--double,
+  .layout--equal {
     @include workshop-question-hover-transition;
-  }
-
-  .layout--split {
-    @include activities-workshop-question-hover(12vw, 20vw);
+    @include activities-workshop-question-hover(10vw, 20vw);
   }
 }

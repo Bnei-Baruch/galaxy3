@@ -276,8 +276,7 @@ body:before {
 
           &.layout--double,
           &.layout--equal {
-            @include workshop-question-hover-transition;
-            @include activities-workshop-question-hover(12vw, 20vw);
+            @include activities-workshop-question-hover(10vw, 20vw);
           }
         }
       }

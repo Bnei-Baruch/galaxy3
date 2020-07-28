@@ -15,9 +15,9 @@ const WS_LANG = 'ws-lang';
 const GALAXY_LANG = 'lng';
 
 const languageOptions = [
-  {key: 'he', value: 0, flag: 'il', question: null, text: 'עברית'},
-  {key: 'ru', value: 1, flag: 'ru', question: null, text: 'Русский'},
-  {key: 'en', value: 2, flag: 'us', question: null, text: 'English'},
+  {key: 'he', value: 0, flag: 'il', question: 'כיצד נשתמש בצורה נכונה ברצון לקבל המתעורר בנו, כדי לקדם אותנו לחיבור בעשירייה ודביקות עם הבורא?', text: 'עברית'},
+  {key: 'ru', value: 1, flag: 'ru', question: 'Какую пользу мы получаем, занимаясь "любовью к товарищам"?', text: 'Русский'},
+  {key: 'en', value: 2, flag: 'us', question: 'Let\'s discuss how we can see each other as greater at times, lower, and equal to everyone?', text: 'English'},
   {key: 'es', value: 3, flag: 'es', question: null, text: 'Español'}
 ];
 
@@ -28,7 +28,7 @@ const getLanguageValue = () => {
   if (!isNaN(storageLang)) {
     langValue = storageLang;
   } else if (galaxyLang) {
-    const lang = languageOptions.find((lang) => lang.value === galaxyLang);
+    const lang = languageOptions.find((lang) => lang.key === galaxyLang);
     if (lang) langValue = lang.value;
   }
 
@@ -42,13 +42,12 @@ class VirtualWorkshopQuestion extends Component {
     this.state = {
       fontSize: +localStorage.getItem(WS_FONT_SIZE) || 18,
       selectedLanguageValue: getLanguageValue(),
-      hasQuestion: false,
+      hasQuestion: true,
       showQuestion: true
     };
 
     this.websocket = null;
 
-    this.displayQuestion = this.displayQuestion.bind(this);
     this.changeLanguage = this.changeLanguage.bind(this);
     this.manageFontSize = this.manageFontSize.bind(this);
     this.copyQuestion = this.copyQuestion.bind(this);
@@ -70,190 +69,34 @@ class VirtualWorkshopQuestion extends Component {
 
     this.websocket.onopen = () => console.log('Workshop websocket open');
 
-    // this.websocket.onmessage = event => {
-    //   try {
-    //     const wsData = JSON.parse(event.data);
-    //     if (wsData.questions) {
-    //       this.setState({hasQuestion: false});
-    //       languageOptions.forEach(l => l.question = null);
-    //     } else if (wsData.type === 'question') {
-    //       const lang = languageOptions.find(l => l.key === wsData.language);
-    //       if (!lang) return;
-    //
-    //       let hasQuestion = true;
-    //       lang.question = wsData.message;
-    //       if (!wsData.approved) {
-    //         lang.question = null;
-    //         hasQuestion = !!languageOptions.find(l => l.question);
-    //       }
-    //
-    //       this.setState({hasQuestion});
-    //     }
-    //   } catch (e) {
-    //     console.error('Workshop onmessage parse error', e);
-    //   }
-    // };
+    this.websocket.onmessage = event => {
+      try {
+        const wsData = JSON.parse(event.data);
+        if (wsData.questions) {
+          this.setState({hasQuestion: false});
+          languageOptions.forEach(l => l.question = null);
+          return;
+        }
 
-    const heOk = {
-      "id": 90667,
-      "message": "מהו הרווח שאנחנו מקבלים מהעסק ב\"אהבת חברים\"?",
-      "user_name": "עורך",
-      "type": "question",
-      "language": "he",
-      "approved": true
+        const lang = languageOptions.find(l => l.key === wsData.language);
+        if (!lang) return;
+
+        let hasQuestion = true;
+        lang.question = wsData.message;
+        if (!wsData.approved) {
+          lang.question = null;
+          hasQuestion = !!languageOptions.find(l => l.question);
+        }
+
+        this.setState({hasQuestion});
+      } catch (e) {
+        console.error('Workshop onmessage parse error', e);
+      }
     };
-    const enOk = {
-      "id": 90667,
-      "message": "Let's discuss how we can see each other as greater at times, lower, and equal to everyone?",
-      "user_name": "עורך",
-      "type": "question",
-      "language": "en",
-      "approved": true
-    };
-    const esOk = {
-      "id": 90667,
-      "message": "¿Cómo usamos adecuadamente el deseo de recibir que despierta en nosotros para hacernos avanzar en la conexión con la decena y adhesión al Creador?",
-      "user_name": "עורך",
-      "type": "question",
-      "language": "es",
-      "approved": true
-    };
-    const heNotOk = {
-      "message": "מהו הרווח שאנחנו מקבלים מהעסק ב\"אהבת חברים\"?",
-      "user_name": "עורך",
-      "type": "question",
-      "language": "he",
-      "approved": false
-    };
-    const clearQ = {
-      "questions": [{
-        "id": 0,
-        "message": "",
-        "user_name": "",
-        "type": "",
-        "language": "en",
-        "approved": false
-      }, {"id": 0, "message": "", "user_name": "", "type": "", "language": "he", "approved": false}, {
-        "id": 0,
-        "message": "",
-        "user_name": "",
-        "type": "",
-        "language": "ru",
-        "approved": false
-      }, {"id": 0, "message": "", "user_name": "", "type": "", "language": "es", "approved": false}, {
-        "id": 0,
-        "message": "",
-        "user_name": "",
-        "type": "",
-        "language": "it",
-        "approved": false
-      }, {"id": 0, "message": "", "user_name": "", "type": "", "language": "de", "approved": false}, {
-        "id": 0,
-        "message": "",
-        "user_name": "",
-        "type": "",
-        "language": "nl",
-        "approved": false
-      }, {"id": 0, "message": "", "user_name": "", "type": "", "language": "fr", "approved": false}, {
-        "id": 0,
-        "message": "",
-        "user_name": "",
-        "type": "",
-        "language": "pt",
-        "approved": false
-      }, {"id": 0, "message": "", "user_name": "", "type": "", "language": "tr", "approved": false}, {
-        "id": 0,
-        "message": "",
-        "user_name": "",
-        "type": "",
-        "language": "pl",
-        "approved": false
-      }, {"id": 0, "message": "", "user_name": "", "type": "", "language": "ar", "approved": false}, {
-        "id": 0,
-        "message": "",
-        "user_name": "",
-        "type": "",
-        "language": "hu",
-        "approved": false
-      }, {"id": 0, "message": "", "user_name": "", "type": "", "language": "fi", "approved": false}, {
-        "id": 0,
-        "message": "",
-        "user_name": "",
-        "type": "",
-        "language": "lt",
-        "approved": false
-      }, {"id": 0, "message": "", "user_name": "", "type": "", "language": "ja", "approved": false}, {
-        "id": 0,
-        "message": "",
-        "user_name": "",
-        "type": "",
-        "language": "bg",
-        "approved": false
-      }, {"id": 0, "message": "", "user_name": "", "type": "", "language": "ka", "approved": false}, {
-        "id": 0,
-        "message": "",
-        "user_name": "",
-        "type": "",
-        "language": "no",
-        "approved": false
-      }, {"id": 0, "message": "", "user_name": "", "type": "", "language": "sv", "approved": false}, {
-        "id": 0,
-        "message": "",
-        "user_name": "",
-        "type": "",
-        "language": "hr",
-        "approved": false
-      }, {"id": 0, "message": "", "user_name": "", "type": "", "language": "zh", "approved": false}, {
-        "id": 0,
-        "message": "",
-        "user_name": "",
-        "type": "",
-        "language": "fa",
-        "approved": false
-      }, {"id": 0, "message": "", "user_name": "", "type": "", "language": "ro", "approved": false}, {
-        "id": 0,
-        "message": "",
-        "user_name": "",
-        "type": "",
-        "language": "hi",
-        "approved": false
-      }, {"id": 0, "message": "", "user_name": "", "type": "", "language": "ua", "approved": false}, {
-        "id": 0,
-        "message": "",
-        "user_name": "",
-        "type": "",
-        "language": "mk",
-        "approved": false
-      }, {"id": 0, "message": "", "user_name": "", "type": "", "language": "sl", "approved": false}, {
-        "id": 0,
-        "message": "",
-        "user_name": "",
-        "type": "",
-        "language": "lv",
-        "approved": false
-      }, {"id": 0, "message": "", "user_name": "", "type": "", "language": "sk", "approved": false}, {
-        "id": 0,
-        "message": "",
-        "user_name": "",
-        "type": "",
-        "language": "cs",
-        "approved": false
-      }, {"id": 0, "message": "", "user_name": "", "type": "", "language": "am", "approved": false}]
-    };
-    // setTimeout(() => this.websocket.send(JSON.stringify(heOk)), 2000);
-    // setTimeout(() => this.websocket.send(JSON.stringify(enOk)), 3500);
-    // setTimeout(() => this.websocket.send(JSON.stringify(esOk)), 3000);
-    // setTimeout(() => this.websocket.send(JSON.stringify(heNotOk)), 5000);
-    // setTimeout(() => this.websocket.send(JSON.stringify(clearQ)), 5000);
-    setTimeout(() =>  this.setState({hasQuestion: true}), 1000);
   }
 
   componentWillUnmount() {
     this.websocket && this.websocket.close();
-  }
-
-  displayQuestion() {
-    this.setState(prevState => ({showQuestion: !prevState.showQuestion}));
   }
 
   changeLanguage({value}) {
@@ -266,10 +109,10 @@ class VirtualWorkshopQuestion extends Component {
     localStorage.setItem(WS_FONT_SIZE, value);
   }
 
-  copyQuestion() {
+  copyQuestion(question) {
     try {
       const el = document.createElement('input');
-      el.setAttribute('value', this.state.question);
+      el.setAttribute('value', question);
       document.body.appendChild(el);
       el.select();
       document.execCommand('copy');
@@ -289,21 +132,23 @@ class VirtualWorkshopQuestion extends Component {
         <div className="workshop-container">
           <div className="manage-question-visibility">
             <Button icon={classNames('eye',{'slash': showQuestion})}
+                    className={{'question-hidden': !showQuestion}}
                     title={t(showQuestion ? 'workshop.hideQuestion' : 'workshop.showQuestion')}
-                    onClick={() => this.displayQuestion()}
+                    onClick={() => this.setState({showQuestion: !showQuestion})}
             />
           </div>
           <div className={classNames('question-container', {'overlay-visible': showQuestion})}>
             <div className="workshop__toolbar">
               <Button compact
+                      disabled={!question}
                       icon="copy outline"
                       title={t('workshop.copyQuestion')}
-                      onClick={this.copyQuestion}
+                      onClick={() => this.copyQuestion(question)}
               />
               <div className="manage-font-size">
                 <div className="manage-font-size-pop__container">
                   <div className="manage-font-size-pop__context">
-                    <Icon name="font" className="decrease-font" aria-hidden="true"/>
+                    <Icon name="font" className="decrease-font" aria-hidden="true" />
                     <Slider color="blue"
                             style={{width: '140px', thumb: {width: '16px', height: '16px', top: '3px'}}}
                             settings={{
@@ -314,10 +159,10 @@ class VirtualWorkshopQuestion extends Component {
                               onChange: value => this.manageFontSize(value)
                             }}
                     />
-                    <Icon name="font" className="increase-font" aria-hidden="true"/>
+                    <Icon name="font" className="increase-font" aria-hidden="true" />
                   </div>
                 </div>
-                <Button icon='font' title={t('workshop.manageFontSize')}/>
+                <Button icon='font' title={t('workshop.manageFontSize')} />
               </div>
               <Dropdown defaultValue={selectedLanguageValue}
                         selectOnBlur={false}
