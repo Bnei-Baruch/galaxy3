@@ -51,3 +51,8 @@
     transition: opacity .5s linear .2s;
   }
 }
+
+@mixin workshop-box-shadow($shadow...) {
+  -webkit-box-shadow: $shadow;
+  box-shadow: $shadow;
+}
