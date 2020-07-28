@@ -37,6 +37,8 @@ const sortAndFilterFeeds = (feeds) => feeds
   .filter(feed => !feed.display.role.match(/^(ghost|guest)$/))
   .sort((a, b) => a.display.timestamp - b.display.timestamp);
 
+const userFeeds = (feeds) => feeds.filter(feed => feed.display.role === 'user');
+
 const PAGE_SIZE = 3;
 
 class MobileClient extends Component {
@@ -623,7 +625,7 @@ class MobileClient extends Component {
                   Janus.log(':: Got Publishers list: ', msg['publishers'], feeds);
 
                   // Feeds count with user role
-                  const feedsCount = feeds.filter(feed => feed.display.role === 'user').length;
+                  const feedsCount = userFeeds(feeds).length;
                   if (feedsCount > 25) {
                     alert(`Max users in this room is reached (${feedsCount}).`);
                     this.exitRoom(false);
@@ -633,7 +635,7 @@ class MobileClient extends Component {
                   this.makeSubscription(feeds, /* feedsJustJoined= */ false,
                                         /* subscribeToVideo= */ false,
                                         /* subscribeToAudio= */ true, /* subscribeToData= */ true);
-                  this.switchVideos(/* page= */ this.state.page, [], feeds, /* isWaiting= */ false);
+                  this.switchVideos(/* page= */ this.state.page, [], userFeeds(feeds));
                   this.setState({feeds});
                 }
             } else if(event === 'talking') {
@@ -684,7 +686,7 @@ class MobileClient extends Component {
                   this.makeSubscription(newFeeds, /* feedsJustJoined= */ true,
                                         /* subscribeToVideo= */ false,
                                         /* subscribeToAudio= */ true, /* subscribeToData= */ true);
-                  this.switchVideos(/* page= */ this.state.page, feeds, feedsNewState, /* isWaiting= */ false);
+                  this.switchVideos(/* page= */ this.state.page, userFeeds(feeds), userFeeds(feedsNewState));
                   this.setState({feeds: feedsNewState});
 
                 } else if(msg["leaving"] !== undefined && msg["leaving"] !== null) {
@@ -694,7 +696,7 @@ class MobileClient extends Component {
                   const {feeds} = this.state;
                   this.unsubscribeFrom([leaving], /* onlyVideo= */ false);
                   const feedsNewState = feeds.filter(feed => feed.id !== leaving);
-                  this.switchVideos(/* page= */ this.state.page, feeds, feedsNewState, /* isWaiting= */ false);
+                  this.switchVideos(/* page= */ this.state.page, userFeeds(feeds), userFeeds(feedsNewState));
                   this.setState({feeds: feedsNewState});
 
                 } else if(msg['unpublished'] !== undefined && msg['unpublished'] !== null) {
@@ -959,7 +961,7 @@ class MobileClient extends Component {
       Janus.attachMediaStream(fromRemoteVideo, null);
     }
 
-    switchVideos = (page, oldFeeds, newFeeds, isWaiting) => {
+    switchVideos = (page, oldFeeds, newFeeds) => {
       const {muteOtherCams} = this.state;
       
       const oldVideoSlots = [
@@ -1217,7 +1219,7 @@ class MobileClient extends Component {
       let {videoroom} = this.state;
       if (videoroom) {
         const user = Object.assign({}, this.state.user);
-        if(user.role === "ghost") return;
+        if (user.role === "ghost") return;
         this.makeDelay();
         user.camera = cammuted;
         api.updateUser(user.id, user)
@@ -1292,9 +1294,10 @@ class MobileClient extends Component {
 
     switchPage = (page, feeds) => {
       // Normalize page, e.g., if it is -1 or too large...
-      const numPages = Math.ceil(feeds.length / PAGE_SIZE);
+      const onlyUserFeeds = userFeeds(feeds);
+      const numPages = Math.ceil(onlyUserFeeds.length / PAGE_SIZE);
       page = numPages === 0 ? 0 : (numPages + page) % numPages;
-      this.switchVideos(page, feeds, feeds, /* isWaiting= */ false);
+      this.switchVideos(page, onlyUserFeeds, onlyUserFeeds);
       this.setState({page});
     }
 
@@ -1371,7 +1374,7 @@ class MobileClient extends Component {
       }
 
       // TODO: Instead of 0, 3 should actuaaly map things...
-      const remoteVideos = feeds.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE).map((feed, i) => {
+      const remoteVideos = userFeeds(feeds).slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE).map((feed, i) => {
         return (<div className="video"
                      key={"vk" + i}
                      ref={"video" + i}
@@ -1591,8 +1594,8 @@ class MobileClient extends Component {
                             </div>
                             {remoteVideos.length > 0 ?
                               <div className="dots">
-                                <Dots length={Math.ceil(feeds.length/PAGE_SIZE)}
-                                      visible={Math.ceil(feeds.length/PAGE_SIZE)}
+                                <Dots length={Math.ceil(userFeeds(feeds).length/PAGE_SIZE)}
+                                      visible={Math.ceil(userFeeds(feeds).length/PAGE_SIZE)}
                                       active={page}
                                       margin={10} />
                               </div>

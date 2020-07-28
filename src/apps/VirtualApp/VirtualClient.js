@@ -34,6 +34,8 @@ const sortAndFilterFeeds = (feeds) => feeds
   .filter(feed => !feed.display.role.match(/^(ghost|guest)$/))
   .sort((a, b) => a.display.timestamp - b.display.timestamp);
 
+const userFeeds = (feeds) => feeds.filter(feed => feed.display.role === 'user');
+
 class VirtualClient extends Component {
 
   state = {
@@ -677,7 +679,7 @@ class VirtualClient extends Component {
           Janus.log(':: Got Pulbishers list: ', feeds);
 
           // Feeds count with user role
-          let feeds_count = feeds.filter(f => f.display.role === "user").length;
+          let feeds_count = userFeeds(feeds).length;
           if (feeds_count > 25) {
             alert(t('oldClient.maxUsersInRoom'));
             this.exitRoom(false);
@@ -1104,7 +1106,7 @@ class VirtualClient extends Component {
   handleQuestion = () => {
     const {question} = this.state;
     const user = Object.assign({}, this.state.user);
-    if(user.role === "ghost") return;
+    if (user.role === "ghost") return;
     this.makeDelay();
     user.question = !question;
     api.updateUser(user.id, user)
@@ -1132,7 +1134,7 @@ class VirtualClient extends Component {
     let {videoroom} = this.state;
     if (videoroom) {
       const user = Object.assign({}, this.state.user);
-      if(user.role === "ghost") return;
+      if (user.role === "ghost") return;
       this.makeDelay();
       user.camera = cammuted;
       api.updateUser(user.id, user)
@@ -1241,8 +1243,7 @@ class VirtualClient extends Component {
               on='hover'
               trigger={<div className='title-name'>{user ? user.username : ''}</div>}
           />
-          <span>{user ? user.display : ''}</span>
-          <Icon name="signal" size="small" color={this.connectionIcon()}/>
+          <Icon style={{marginLeft: '0.3rem'}} name="signal" size="small" color={this.connectionIcon()} />
         </div>
       </div>
       <svg className={classNames('nowebcam', {'hidden': !cammuted})} viewBox="0 0 32 18"
@@ -1396,7 +1397,7 @@ class VirtualClient extends Component {
 
     let otherFeedHasQuestion = false;
     let localPushed          = false;
-    let remoteVideos = feeds.filter(feed => feed.display.role === "user").reduce((result, feed) => {
+    let remoteVideos = userFeeds(feeds).reduce((result, feed) => {
       const { question, id } = feed;
       otherFeedHasQuestion   = otherFeedHasQuestion || (question && id !== myid);
       if (!localPushed && feed.display.timestamp >= user.timestamp) {
