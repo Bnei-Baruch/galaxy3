@@ -15,9 +15,9 @@ const WS_LANG = 'ws-lang';
 const GALAXY_LANG = 'lng';
 
 const languageOptions = [
-  {key: 'he', value: 0, flag: 'il', question: 'כיצד נשתמש בצורה נכונה ברצון לקבל המתעורר בנו, כדי לקדם אותנו לחיבור בעשירייה ודביקות עם הבורא?', text: 'עברית'},
-  {key: 'ru', value: 1, flag: 'ru', question: 'Какую пользу мы получаем, занимаясь "любовью к товарищам"?', text: 'Русский'},
-  {key: 'en', value: 2, flag: 'us', question: 'Let\'s discuss how we can see each other as greater at times, lower, and equal to everyone?', text: 'English'},
+  {key: 'he', value: 0, flag: 'il', question: null, text: 'עברית'},
+  {key: 'ru', value: 1, flag: 'ru', question: null, text: 'Русский'},
+  {key: 'en', value: 2, flag: 'us', question: null, text: 'English'},
   {key: 'es', value: 3, flag: 'es', question: null, text: 'Español'}
 ];
 
@@ -42,7 +42,7 @@ class VirtualWorkshopQuestion extends Component {
     this.state = {
       fontSize: +localStorage.getItem(WS_FONT_SIZE) || 18,
       selectedLanguageValue: getLanguageValue(),
-      hasQuestion: true,
+      hasQuestion: false,
       showQuestion: true
     };
 
@@ -51,6 +51,7 @@ class VirtualWorkshopQuestion extends Component {
     this.changeLanguage = this.changeLanguage.bind(this);
     this.manageFontSize = this.manageFontSize.bind(this);
     this.copyQuestion = this.copyQuestion.bind(this);
+    this.closeWebsocket = this.closeWebsocket.bind(this);
   }
 
   componentDidMount() {
@@ -93,9 +94,16 @@ class VirtualWorkshopQuestion extends Component {
         console.error('Workshop onmessage parse error', e);
       }
     };
+
+    window.addEventListener('beforeunload', this.closeWebsocket);
   }
 
   componentWillUnmount() {
+    this.closeWebsocket();
+    window.removeEventListener('beforeunload', this.closeWebsocket);
+  }
+
+  closeWebsocket() {
     this.websocket && this.websocket.close();
   }
 
@@ -131,8 +139,8 @@ class VirtualWorkshopQuestion extends Component {
       <div className={classNames('workshop-question-overlay', {'overlay-visible': hasQuestion})}>
         <div className="workshop-container">
           <div className="manage-question-visibility">
-            <Button icon={classNames('eye',{'slash': showQuestion})}
-                    className={{'question-hidden': !showQuestion}}
+            <Button icon={classNames('eye', {'slash': showQuestion})}
+                    className={classNames({'question-hidden': !showQuestion})}
                     title={t(showQuestion ? 'workshop.hideQuestion' : 'workshop.showQuestion')}
                     onClick={() => this.setState({showQuestion: !showQuestion})}
             />
@@ -148,7 +156,7 @@ class VirtualWorkshopQuestion extends Component {
               <div className="manage-font-size">
                 <div className="manage-font-size-pop__container">
                   <div className="manage-font-size-pop__context">
-                    <Icon name="font" className="decrease-font" aria-hidden="true" />
+                    <Icon name="font" className="decrease-font" aria-hidden="true"/>
                     <Slider color="blue"
                             style={{width: '140px', thumb: {width: '16px', height: '16px', top: '3px'}}}
                             settings={{
@@ -159,10 +167,10 @@ class VirtualWorkshopQuestion extends Component {
                               onChange: value => this.manageFontSize(value)
                             }}
                     />
-                    <Icon name="font" className="increase-font" aria-hidden="true" />
+                    <Icon name="font" className="increase-font" aria-hidden="true"/>
                   </div>
                 </div>
-                <Button icon='font' title={t('workshop.manageFontSize')} />
+                <Button icon='font' title={t('workshop.manageFontSize')}/>
               </div>
               <Dropdown defaultValue={selectedLanguageValue}
                         selectOnBlur={false}
@@ -172,7 +180,8 @@ class VirtualWorkshopQuestion extends Component {
               />
             </div>
             <div className="workshop__question" style={{fontSize: `${fontSize}px`}}>
-              <div className={classNames('lang-question', {'show-question': question, rtl: key === 'he'})}>{question}</div>
+              <div
+                className={classNames('lang-question', {'show-question': question, rtl: key === 'he'})}>{question}</div>
               <div className={classNames('in-process', {'show-question': !question})}>
                 <div className={classNames('in-process-text', {rtl: key === 'he'})}>{t('workshop.inProcess')}...</div>
                 {languageOptions.filter(l => l.question).map(l => (
