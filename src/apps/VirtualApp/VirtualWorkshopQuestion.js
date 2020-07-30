@@ -28,7 +28,7 @@ const getLanguageValue = () => {
   if (!isNaN(storageLang)) {
     langValue = storageLang;
   } else if (galaxyLang) {
-    const lang = languageOptions.find(lang => lang.key === galaxyLang);
+    const lang = languageOptions.find(l => l.key === galaxyLang);
     if (lang) langValue = lang.value;
   }
 
