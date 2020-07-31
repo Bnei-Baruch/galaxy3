@@ -59,10 +59,18 @@ class VirtualWorkshopQuestion extends Component {
       .then(response => response.json())
       .then(data => {
         const approved = data.questions.filter(q => q.approved);
-        approved.length && languageOptions.forEach(l => {
+        if (!approved.length) return;
+
+        let hasQuestion = false;
+        languageOptions.forEach(l => {
           const current = approved.find(a => a.language === l.key);
-          if (current) l.question = current.message;
+          if (current) {
+            l.question = current.message;
+            hasQuestion = true;
+          }
         });
+
+        this.setState({hasQuestion});
       })
       .catch(e => console.error('Could not get workshop questions', e));
 
