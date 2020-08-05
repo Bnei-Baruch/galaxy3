@@ -1090,7 +1090,7 @@ class MobileClient extends Component {
 
     exitRoom = (reconnect, callback) => {
         this.setState({delay: true})
-        let {videoroom, remoteFeed, protocol, janus, room} = this.state;
+        let {videoroom, remoteFeed, protocol, janus, room,cammuted,muted} = this.state;
         wkliLeave(this.state.user);
         clearInterval(this.state.upval);
         this.clearKeepAlive();
@@ -1121,7 +1121,9 @@ class MobileClient extends Component {
             if(protocol) protocol.detach();
             if(janus) janus.destroy();
             this.setState({
-                cammuted: false, muted: false, question: false,
+                cammuted: reconnect ? cammuted : false, 
+                muted: reconnect? muted : false,
+                question: false,
                 feeds: [], /*mids: [], showed_mids:[],*/
                 localAudioTrack: null, localVideoTrack: null, upval: null,
                 remoteFeed: null, videoroom: null, protocol: null, janus: null,
