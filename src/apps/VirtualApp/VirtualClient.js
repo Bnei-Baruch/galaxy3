@@ -1065,6 +1065,13 @@ class VirtualClient extends Component {
         this.setState({user});
       } else if (type === 'audio-out' && room === selected_room) {
         this.handleAudioOut(ondata);
+      } else if (type === 'premoder-mode') {
+        const {premod, question} = this.state;
+        this.setState({premod: !premod});
+        if(question) {
+          this.handleQuestion();
+        }
+        //TODO: DB request
       }
     });
   };

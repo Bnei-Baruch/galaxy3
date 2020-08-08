@@ -849,6 +849,7 @@ class AdminRoot extends Component {
                               on='click'
                               hideOnScroll
                           />
+                          <Popup trigger={<Button color="yellow" icon='question' onClick={() => this.sendRemoteCommand("client-question")} />} content='Set/Unset question' inverted />
                           <Label attached='top right'>
                               <List>
                                   <List.Item>GXY1: {gxy1_count}</List.Item>
@@ -875,7 +876,8 @@ class AdminRoot extends Component {
                                           <Popup trigger={<Button color="pink" icon='eye' onClick={() => this.sendRemoteCommand("video-mute")} />} content='Cam Mute/Unmute' inverted />
                                           <Popup trigger={<Button color="orange" icon={command_status ? 'volume off' : 'volume up'} onClick={() => this.sendRemoteCommand("audio-out")} />} content='Talk event' inverted />
                                           {/*<Popup trigger={<Button color="pink" icon='eye' onClick={() => this.sendDataMessage("video-mute")} />} content='Cam Mute/Unmute' inverted />*/}
-                                          <Popup trigger={<Button color="blue" icon='power off' onClick={() => this.sendRemoteCommand("client-disconnect")} />} content='Disconnect(LOST FEED HERE!)' inverted />
+                                          {/*<Popup trigger={<Button color="blue" icon='power off' onClick={() => this.sendRemoteCommand("client-disconnect")} />} content='Disconnect(LOST FEED HERE!)' inverted />*/}
+                                          <Popup trigger={<Button color="blue" icon='copyright' onClick={() => this.sendRemoteCommand("premoder-mode")} />} content='Pre Moderation Mode' inverted />
                                           <Popup trigger={<Button color="yellow" icon='question' onClick={() => this.sendRemoteCommand("client-question")} />} content='Set/Unset question' inverted />
                                       </Segment>
                                       : null
