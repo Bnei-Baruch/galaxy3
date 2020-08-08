@@ -96,6 +96,7 @@ class VirtualClient extends Component {
     keepalive: null,
     muteOtherCams: false,
     videos: Number(localStorage.getItem('vrt_video')) || 1,
+    premod: true,
   };
 
   virtualStreamingInitialized() {
@@ -1341,6 +1342,7 @@ class VirtualClient extends Component {
       user,
       virtualStreamingJanus,
       videos,
+      premod,
     } = this.state;
     const {video_device} = media.video;
     const {audio_device} = media.audio;
@@ -1486,7 +1488,7 @@ class VirtualClient extends Component {
             {chatMessagesCount > 0 ? chatCountLabel : ''}
           </Menu.Item>
           <Menu.Item
-            disabled={!audio_device || !localAudioTrack || delay || otherFeedHasQuestion}
+            disabled={premod || !audio_device || !localAudioTrack || delay || otherFeedHasQuestion}
             onClick={this.handleQuestion}>
             <Icon {...(question ? {color: 'green'} : {})} name='question' />
             {t('oldClient.askQuestion')}
