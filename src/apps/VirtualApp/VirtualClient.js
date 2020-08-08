@@ -96,7 +96,7 @@ class VirtualClient extends Component {
     keepalive: null,
     muteOtherCams: false,
     videos: Number(localStorage.getItem('vrt_video')) || 1,
-    premod: true,
+    premod: false,
   };
 
   virtualStreamingInitialized() {
@@ -1071,7 +1071,6 @@ class VirtualClient extends Component {
         if(question) {
           this.handleQuestion();
         }
-        //TODO: DB request
       }
     });
   };

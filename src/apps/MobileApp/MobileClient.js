@@ -1091,7 +1091,6 @@ class MobileClient extends Component {
                 if(question) {
                     this.handleQuestion();
                 }
-                //TODO: DB request
             }
         });
     };

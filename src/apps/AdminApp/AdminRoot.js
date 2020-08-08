@@ -536,6 +536,17 @@ class AdminRoot extends Component {
 
     sendRemoteCommand = (command_type) => {
         const {gateways, feed_user, current_janus, current_room, command_status} = this.state;
+
+        if(command_type === "premoder-mode") {
+            for(let i=1; i<5; i++) {
+                const gateway = gateways["gxy"+i];
+                gateway.sendProtocolMessage({type: command_type, room: null, status: command_status, id: null, user: null})
+                    .catch(alert);
+            }
+            //TODO: DB request
+            return ;
+        }
+
         if (!feed_user) {
             alert("Choose user");
             return;
