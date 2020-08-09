@@ -21,7 +21,6 @@
     "react-new-window": "Hinaser/react-new-window#npm-fix-external-font-not-loaded",
     "react-rangeslider": "^2.2.0",
     "react-scripts": "3.4.0",
-    "react-semantic-ui-range": "^0.7.0",
     "reconnectingwebsocket": "^1.0.0",
     "semantic-ui-css": "^2.4.0",
     "semantic-ui-react": "^0.88.2",

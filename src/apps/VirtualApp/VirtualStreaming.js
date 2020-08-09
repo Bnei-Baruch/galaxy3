@@ -269,7 +269,7 @@ class VirtualStreaming extends Component {
         {!attached &&
         <NewWindow
           features={{width: '725', height: '635', left: '200', top: '200', location: 'no'}}
-          title='V4G' onUnload={this.onUnload} onBlock={this.onBlock}>
+          title='Broadcast' onUnload={this.onUnload} onBlock={this.onBlock}>
           {inLine}
         </NewWindow>
         }

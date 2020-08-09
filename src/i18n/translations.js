@@ -120,7 +120,7 @@ export const resources = {
         showQuestion: 'Show question',
         copyQuestion: 'Copy question',
         manageFontSize: 'Manage font size',
-        inProcess: 'In process'
+        inProcess: 'In process... Available in'
       }
     },
   },
