@@ -215,18 +215,18 @@ class UsersQuad extends Component {
     };
 
     toFullGroup = (i,g,q) => {
-        let {room,janus} = i;
+        let {room,janus} = g;
         console.log("[Shidur]:: Make Full Screen Group: ",g);
         this.setState({fullscr: true, full_feed: i, question: q});
         this.sdiAction("fullscr_group" , true, i, g, q);
-        this.micMute(false, room, janus);
+        this.micMute(true, room, janus);
     };
 
     toFourGroup = (i,g,cb,q) => {
-        let {room,janus} = i;
+        let {room,janus} = g;
         console.log("[Shidur]:: Back to four: ");
         this.sdiAction("fullscr_group" , false, i, g, q);
-        this.micMute(true, room, janus);
+        this.micMute(false, room, janus);
         this.setState({fullscr: false, full_feed: null, question: false}, () => {
             cb();
         });
