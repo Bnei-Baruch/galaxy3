@@ -215,17 +215,39 @@ class UsersQuad extends Component {
     };
 
     toFullGroup = (i,g,q) => {
+        let {room,janus} = i;
         console.log("[Shidur]:: Make Full Screen Group: ",g);
         this.setState({fullscr: true, full_feed: i, question: q});
         this.sdiAction("fullscr_group" , true, i, g, q);
+        this.micMute(false, room, janus);
     };
 
     toFourGroup = (i,g,cb,q) => {
+        let {room,janus} = i;
         console.log("[Shidur]:: Back to four: ");
         this.sdiAction("fullscr_group" , false, i, g, q);
+        this.micMute(true, room, janus);
         this.setState({fullscr: false, full_feed: null, question: false}, () => {
             cb();
         });
+    };
+
+    sendDataMessage = (status) => {
+        const {col,full_feed} = this.state;
+        const cmd = {type: "audio-out", rcmd: true, status}
+        const message = JSON.stringify(cmd);
+        console.log(':: Sending message: ', message);
+        this["cmd"+col+full_feed].state.videoroom.data({ text: message });
+    };
+
+    micMute = (status, room, inst) => {
+        const msg = {type: "audio-out", status, room, col: null, i: null, feed: null};
+
+        const {gateways} = this.props;
+        //TODO: Send data in room channel
+        //this.sendDataMessage(status);
+        gateways[inst].sendProtocolMessage(msg);
+        gateways["gxy3"].sendServiceMessage(msg);
     };
 
     setDelay = () => {

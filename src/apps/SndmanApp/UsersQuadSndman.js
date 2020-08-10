@@ -129,7 +129,8 @@ class UsersQuadSndman extends Component {
               </div>
           </Segment>
               <Button className='fours_button'
-                      disabled={!fullscr || forward_request}
+                      disabled
+                      // disabled={!fullscr || forward_request}
                       attached='bottom'
                       positive={!forward}
                       negative={forward}
