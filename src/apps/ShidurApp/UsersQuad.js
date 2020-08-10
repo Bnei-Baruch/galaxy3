@@ -260,11 +260,6 @@ class UsersQuad extends Component {
   render() {
       const {full_feed,fullscr,col,vquad,question} = this.state;
       const {groups,group,rooms,next_button,presets} = this.props;
-      const q = (<div className="question">
-          <svg viewBox="0 0 50 50">
-              <text x="25" y="25" textAnchor="middle" alignmentBaseline="central" dominantBaseline="central">&#xF128;</text>
-          </svg>
-      </div>);
 
       let program = vquad.map((g,i) => {
           if (groups.length === 0) return false;
@@ -276,7 +271,7 @@ class UsersQuad extends Component {
               <div key={"pr" + i} className={qf ? "video_full" : ff ? "video_qst" : "video_box"} >
                   <div className='click-panel' onClick={() => this.switchQuestion(i,g,true)} >
                   <div className='video_title' >{name}</div>
-                  {qst ? q : ""}
+                  {qst ? <div className="qst_title">?</div> : ""}
                   <UsersHandle key={"q"+i} g={g} index={i} {...this.props} />
                   </div>
                   {!question ?

@@ -170,18 +170,19 @@
 }
 
 .qst_title {
-    font-family: "Liberation Serif";
-    font-weight: bolder;
-    line-height: 1.1285em;
+    font-family: Arial, sans-serif;
     position: absolute;
     color: black;
     text-align: center;
+    line-height: 30px;
+    font-weight: bold;
     font-size: 30px;
     background-color: white;
-    width: auto;
-    padding: 0px 10px;
-    float: left !important;
-    bottom: 0px;
+    width: 30px;
+    height: 30px;
+    /* right: 2px; */
+    /* top: 2px; */
+    z-index: 2;
 }
 
 .qst_fullscreentitle {
