@@ -18,20 +18,15 @@ const GALAXY_LANG = 'lng';
 const languageOptions = [
   {key: 'he', value: 0, flag: 'il', question: null, selected: false},
   {key: 'ru', value: 1, flag: 'ru', question: null, selected: false},
-  {
-    key: 'en',
-    value: 2,
-    flag: 'us',
-    question: 'What is unity? What is unity? What is unity? What is unity?',
-    selected: false
-  },
-  {key: 'es', value: 3, flag: 'es', question: 'Es', selected: false}
+  {key: 'en', value: 2, flag: 'us', question: null, selected: false},
+  {key: 'es', value: 3, flag: 'es', question: null, selected: false}
 ];
 
 const getLanguageValue = () => {
   const storageLang = parseInt(localStorage.getItem(WQ_LANG));
   const galaxyLang = localStorage.getItem(GALAXY_LANG);
   let langValue = 2;
+
   if (!isNaN(storageLang)) {
     langValue = storageLang;
   } else if (galaxyLang) {
@@ -52,20 +47,20 @@ class VirtualWorkshopQuestion extends Component {
     this.websocket = null;
 
     const inProcessStored = JSON.parse(localStorage.getItem(WQ_IN_PROCESS_SELECTED));
-    let inProcessSelected = [];
+    let inProcessSelectedLanguages = [];
     if (inProcessStored) {
       languageOptions.forEach(l => l.selected = inProcessStored.indexOf(l.value) !== -1);
-      inProcessSelected = languageOptions.filter(l => l.selected);
+      inProcessSelectedLanguages = languageOptions.filter(l => l.selected);
     }
 
     this.state = {
       fontSize: +localStorage.getItem(WQ_FONT_SIZE) || 18,
       selectedLanguageValue: getLanguageValue(),
-      hasQuestion: true,
+      hasQuestion: false,
       showQuestion: true,
       openSettings: false,
       fontPopVisible: false,
-      inProcessSelected
+      inProcessSelectedLanguages
     };
 
     this.changeLanguage = this.changeLanguage.bind(this);
@@ -143,7 +138,7 @@ class VirtualWorkshopQuestion extends Component {
   }
 
   manageFontSize(value) {
-    this.setState({fontSize: value, openSettings: true});
+    this.setState({fontSize: value});
     localStorage.setItem(WQ_FONT_SIZE, value);
   }
 
@@ -163,25 +158,32 @@ class VirtualWorkshopQuestion extends Component {
   selectAvailableLanguage(lang) {
     lang.selected = !lang.selected;
 
-    const inProcessSelected = languageOptions.filter(l => l.selected);
+    const inProcessSelectedLanguages = languageOptions.filter(l => l.selected);
 
-    if (inProcessSelected.length) {
-      localStorage.setItem(WQ_IN_PROCESS_SELECTED, JSON.stringify(inProcessSelected.map(l => l.value)));
+    if (inProcessSelectedLanguages.length) {
+      localStorage.setItem(WQ_IN_PROCESS_SELECTED, JSON.stringify(inProcessSelectedLanguages.map(l => l.value)));
     } else {
       localStorage.removeItem(WQ_IN_PROCESS_SELECTED);
     }
 
-    this.setState({inProcessSelected});
+    this.setState({inProcessSelectedLanguages});
   }
 
-  onSettingsBlur(event) {
-    if ((event.relatedTarget && event.relatedTarget.className === 'rangeslider__handle') || event.target.className === 'rangeslider__handle') return;
-    this.setState({openSettings: false});
+  onSettingsBlur({relatedTarget}) {
+    !relatedTarget && this.setState({openSettings: false});
   }
 
   render() {
     const {t} = this.props;
-    const {fontSize, selectedLanguageValue, hasQuestion, showQuestion, inProcessSelected, openSettings, fontPopVisible} = this.state;
+    const {
+      fontSize,
+      selectedLanguageValue,
+      hasQuestion,
+      showQuestion,
+      inProcessSelectedLanguages,
+      openSettings,
+      fontPopVisible
+    } = this.state;
     const {key, flag, question} = languageOptions[selectedLanguageValue];
 
     return (
@@ -204,8 +206,8 @@ class VirtualWorkshopQuestion extends Component {
                     />
                   )}
                 </div>
-                {inProcessSelected.map(l =>
-                  <div key={l.value} className={classNames('other-question', {rtl: l.key === 'he'})}>{l.question}</div>
+                {inProcessSelectedLanguages.map(l =>
+                  <div key={l.key} className={classNames('other-question', {rtl: l.key === 'he'})}>{l.question}</div>
                 )}
               </div>
             </div>
@@ -228,9 +230,10 @@ class VirtualWorkshopQuestion extends Component {
                         trigger={
                           <Icon name="cog"
                                 onClick={() => this.setState(prevState => ({
-                                  openSettings: !prevState.openSettings,
-                                  fontPopVisible: false
-                                }))}
+                                    openSettings: !prevState.openSettings,
+                                    fontPopVisible: false
+                                  })
+                                )}
                           />
                         }
                         onBlur={event => this.onSettingsBlur(event)}

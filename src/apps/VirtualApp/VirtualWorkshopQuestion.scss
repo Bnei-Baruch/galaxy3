@@ -56,7 +56,7 @@
               .ui.compact.button {
                 padding: 0;
                 margin: 0 4px;
-                opacity: .35;
+                opacity: .3;
 
                 &:hover,
                 &.selected {
@@ -87,7 +87,7 @@
           .ui.dropdown {
             border-radius: 4px;
 
-            >i {
+            > i {
               padding: 8px;
               width: auto;
               height: auto;
@@ -189,6 +189,7 @@
       background-color: white;
       border-top-left-radius: 4px;
       border-bottom-left-radius: 4px;
+      @include wq-box-shadow(0 2px 4px 0 rgba(34, 36, 38, .12), 0 2px 10px 0 rgba(34, 36, 38, .15));
 
       @include wq-visibility;
     }
@@ -216,7 +217,7 @@
 }
 
 .video--pop {
-  @include activities-wq-dimensions(auto, 14vw);
+  @include activities-wq-dimensions(12vw, 14vw);
 }
 
 .video--fullscreen {
@@ -228,6 +229,6 @@
   .layout--split,
   .layout--double,
   .layout--equal {
-    @include activities-wq-dimensions(14vw, 20vw);
+    @include activities-wq-dimensions(auto, 14vw);
   }
 }

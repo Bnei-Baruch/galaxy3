@@ -233,15 +233,15 @@
     justify-content: space-between;
     //   max-height: 10vh;
   }
+}
 
-  // Set flag url for detached video
-  & .video--pop {
-    i.flag:not(.icon)::before {
-      $flag-url: "/static/media/flags.9c74e172.png";
-      background-image: url("https://galaxy.kli.one" + $flag-url),
-      url("https://dev-galaxy.kli.one" + $flag-url),
-      url("http://localhost:3000" + $flag-url),
-    }
+// Set flag url for detached video
+.video--pop .activities {
+  i.flag:not(.icon)::before {
+    $flag-url: "/static/media/flags.9c74e172.png";
+    background-image: url("https://galaxy.kli.one" + $flag-url),
+    url("https://dev-galaxy.kli.one" + $flag-url),
+    url("http://localhost:3000" + $flag-url),
   }
 }
 
