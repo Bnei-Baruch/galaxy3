@@ -41,28 +41,18 @@
   transition: .2s all linear;
 }
 
-//.video_full {
-//    background-color: #444;
-//    color: #fff;
-//    font-size: 150%;
-//    position:relative;
-//    height: 233px;
-//    width: 402px;
-//}
-
 .hidden {
     display: none;
 }
 
 .video_title {
-    font-family: "Liberation Serif";
     line-height: 1.1285em;
     position: absolute;
-    right: 40px;
+    right: 33px;
     color: #FFF;
     text-align: center;
-    font-size: 15px;
-    background-color: blue;
+    font-size: 25px;
+    background-color: #2185d0;
     width: auto;
     padding: 0px 10px;
     float: right !important;
@@ -177,11 +167,11 @@
     line-height: 30px;
     font-weight: bold;
     font-size: 30px;
-    background-color: white;
+    background-color: yellow;
     width: 30px;
-    height: 30px;
-    /* right: 2px; */
-    /* top: 2px; */
+    height: 28px;
+    right: 2px;
+    //top: 2px;
     z-index: 2;
 }
 

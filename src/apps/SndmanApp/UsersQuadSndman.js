@@ -18,7 +18,7 @@ class UsersQuadSndman extends Component {
         let { index } = this.props;
         let col = index === 0 ? 1 : index === 4 ? 2 : index === 8 ? 3 : index === 12 ? 4 : null;
         this.setState({col});
-        document.addEventListener("keydown", this.onKeyPressed);
+        //document.addEventListener("keydown", this.onKeyPressed);
         setInterval(() => {
             api.fetchQuad(col)
                 .then(data => this.setState({vquad: data.vquad}))
@@ -29,7 +29,7 @@ class UsersQuadSndman extends Component {
     };
 
     componentWillUnmount() {
-        document.removeEventListener("keydown", this.onKeyPressed);
+        //document.removeEventListener("keydown", this.onKeyPressed);
     };
 
     onKeyPressed = (e) => {
@@ -134,7 +134,7 @@ class UsersQuadSndman extends Component {
                       attached='bottom'
                       positive={!forward}
                       negative={forward}
-                      onKeyDown={(e) => this.onKeyPressed(e)}
+                      //onKeyDown={(e) => this.onKeyPressed(e)}
                       onClick={() => this.forwardStream(full_group)}>
                   <Icon size='large' name={forward ? 'microphone' : 'microphone slash' } />
                   <Label attached='top left' color='grey'>{this.state.col}</Label>
