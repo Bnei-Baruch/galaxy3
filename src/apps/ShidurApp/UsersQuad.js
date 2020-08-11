@@ -277,14 +277,12 @@ class UsersQuad extends Component {
                   {!question ?
                   <Button className='fullscr_button'
                           size='mini'
-                          color='grey'
                           icon='expand arrows alternate'
                           onClick={() => this.switchFullScreen(i,g,false)} /> : ""}
                   {fullscr && full_feed === i ? "" :
                       <Button className='next_button'
                               disabled={groups.length < 5 || next_button}
                               size='mini'
-                              color='grey'
                               icon={group ? 'arrow up' : 'share'}
                               onClick={() => this.switchProgram(i, false)} />}
               </div>

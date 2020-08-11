@@ -75,21 +75,23 @@
 }
 
 .next_button {
-    color: #ffffff;
+    color: #ffffff !important;
     bottom: 0;
     position: absolute;
     right: 0px;
     float: right !important;
     z-index: 3;
+    background-color: #545151 !important;
 }
 
 .fullscr_button {
-    color: #ffffff;
+    color: #ffffff !important;
     bottom: 0;
     position: absolute;
     left: 3px;
     float: right !important;
     z-index: 3;
+    background-color: #545151 !important;
 }
 
 .sound_test {
