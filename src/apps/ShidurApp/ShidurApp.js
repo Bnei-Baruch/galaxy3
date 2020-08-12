@@ -170,6 +170,12 @@ class ShidurApp extends Component {
     };
 
     onProtocolData = (gateway, data) => {
+        const { gdm } = this.state;
+        if (gdm.checkAck(data)) {
+            // Ack received, do nothing.
+            return;
+        }
+
         if (data.type === "error" && data.error_code === 420) {
             console.error("[Shidur] protocol error message (reloading in 10 seconds)", data.error);
             setTimeout(() => {

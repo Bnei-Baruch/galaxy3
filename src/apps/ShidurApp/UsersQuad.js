@@ -232,18 +232,18 @@ class UsersQuad extends Component {
     };
 
     toFullGroup = (i,g,q) => {
-        let {room,janus} = g;
+        let {room,janus,id} = g;
         console.log("[Shidur]:: Make Full Screen Group: ",g);
         this.setState({fullscr: true, full_feed: i, question: q});
         this.sdiGuaranteeAction("fullscr_group" , true, i, g, q, [AUDIOOUT_ID, SDIOUT_ID, SNDMAN_ID]);
-        this.micMute(true, room, janus);
+        this.micMute(true, room, janus, [id]);
     };
 
     toFourGroup = (i,g,cb,q) => {
-        let {room,janus} = g;
+        let {room,janus,id} = g;
         console.log("[Shidur]:: Back to four: ");
         this.sdiGuaranteeAction("fullscr_group" , false, i, g, q, [AUDIOOUT_ID, SDIOUT_ID, SNDMAN_ID]);
-        this.micMute(false, room, janus);
+        this.micMute(false, room, janus, [id]);
         this.setState({fullscr: false, full_feed: null, question: false}, () => {
             cb();
         });
@@ -257,14 +257,20 @@ class UsersQuad extends Component {
         this["cmd"+col+full_feed].state.videoroom.data({ text: message });
     };
 
-    micMute = (status, room, inst) => {
+    micMute = (status, room, inst, toAck) => {
         const msg = {type: "audio-out", status, room, col: null, i: null, feed: null};
 
-        const {gateways} = this.props;
+        const {gateways, gdm} = this.props;
         //TODO: Send data in room channel
         //this.sendDataMessage(status);
-        gateways[inst].sendProtocolMessage(msg);
+        //gateways[inst].sendProtocolMessage(msg);
         gateways["gxy3"].sendServiceMessage(msg);
+        gdm.send(msg, toAck, (msg) => gateways[inst].sendProtocolMessage(msg)).
+        then(() => {
+            console.log(`MIC delivered to ${toAck}.`);
+        }).catch((error) => {
+            console.error(`MIC not delivered to ${toAck} due to ` , error);
+        });
     };
 
     setDelay = () => {
