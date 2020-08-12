@@ -9,6 +9,7 @@ import NewWindow from 'react-new-window';
 import {
   videos_options2,
   audiog_options2,
+  NO_VIDEO_OPTION_VALUE,
 } from '../../shared/consts';
 // import '../StreamApp/GalaxyStream.css';
 import './BroadcastStream.scss';
@@ -22,7 +23,6 @@ class VirtualStreaming extends Component {
   }
 
   state = {
-    videos: Number(localStorage.getItem('vrt_video')) || 1,
     audios: Number(localStorage.getItem('vrt_lang')) || 2,
     room: Number(localStorage.getItem('room')) || null,
     user: {},
@@ -112,8 +112,8 @@ class VirtualStreaming extends Component {
   };
 
   setVideo(videos) {
-    this.setState({videos});
     this.props.virtualStreamingJanus.setVideo(videos);
+    this.props.setVideo(videos);
   }
 
   setAudio(audios, text) {
@@ -127,13 +127,13 @@ class VirtualStreaming extends Component {
       closeShidur,
       virtualStreamingJanus,
       t,
+      videos,
     } = this.props;
     const {
       audios,
       fullScreen,
       room,
       talking,
-      videos,
     } = this.state;
 
     if (!room) {
@@ -160,7 +160,7 @@ class VirtualStreaming extends Component {
                 scrolling
                 icon={null}
                 selectOnBlur={false}
-                trigger={<button>{video_option ? `${video_option.description}` : ''}</button>}
+                trigger={<button>{video_option ? (video_option.value === NO_VIDEO_OPTION_VALUE ? t(video_option.description) : video_option.description) : ''}</button>}
                 className="video-selection"
                 >
                 <Dropdown.Menu className='controls__dropdown'>
@@ -224,7 +224,6 @@ class VirtualStreaming extends Component {
                   })}
                 </Dropdown.Menu>
               </Dropdown>
-
               <Volume media={virtualStreamingJanus.audioElement} />
               <div className="controls__spacer"></div>
               <button onClick={this.toggleFullScreen}>

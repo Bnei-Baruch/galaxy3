@@ -1,6 +1,6 @@
 import React, {Component, Fragment} from 'react';
 import {Janus} from "../../lib/janus";
-import {Button, Grid, Icon, List, Menu, Popup, Segment, Tab, Table, Label} from "semantic-ui-react";
+import {Button, Grid, Icon, Label, List, Menu, Popup, Segment, Tab, Table} from "semantic-ui-react";
 import './AdminRoot.css';
 import './AdminRootVideo.scss'
 import classNames from "classnames";
@@ -9,11 +9,10 @@ import {kc} from "../../components/UserManager";
 import LoginPage from "../../components/LoginPage";
 import GxyJanus from "../../shared/janus-utils";
 import ChatBox from "./components/ChatBox";
-import RoomManager from "./components/RoomManager";
 import MonitoringAdmin from "./components/MonitoringAdmin";
 import MonitoringUser from "./components/MonitoringUser";
+import RoomManager from "./components/RoomManager";
 import api from "../../shared/Api";
-import {reportToSentry} from "../../shared/tools";
 
 class AdminRoot extends Component {
 
@@ -47,6 +46,7 @@ class AdminRoot extends Component {
         gxy2_count: 0,
         gxy3_count: 0,
         gxy4_count: 0,
+        gxy5_count: 0,
         command_status: true,
     };
 
@@ -183,6 +183,7 @@ class AdminRoot extends Component {
                 const gxy2_count = data.filter(r => r.janus === "gxy2").map(r => r.num_users).reduce((su, cur) => su + cur, 0);
                 const gxy3_count = data.filter(r => r.janus === "gxy3").map(r => r.num_users).reduce((su, cur) => su + cur, 0);
                 const gxy4_count = data.filter(r => r.janus === "gxy4").map(r => r.num_users).reduce((su, cur) => su + cur, 0);
+                const gxy5_count = data.filter(r => r.janus === "gxy5").map(r => r.num_users).reduce((su, cur) => su + cur, 0);
                 const room = data.find(r => r.room === current_room);
                 let users = current_room && room ? room.users : [];
                 data.sort((a, b) => {
@@ -190,7 +191,7 @@ class AdminRoot extends Component {
                     if (a.description < b.description) return -1;
                     return 0;
                 });
-                this.setState({rooms: data, users, users_count, gxy1_count, gxy2_count, gxy3_count, gxy4_count});
+                this.setState({rooms: data, users, users_count, gxy1_count, gxy2_count, gxy3_count, gxy4_count, gxy5_count});
             })
             .catch(err => {
                 console.error("[Admin] error fetching active rooms", err);
@@ -654,12 +655,11 @@ class AdminRoot extends Component {
     };
 
     getFeedInfo = () => {
-        const {gateways, feed_user} = this.state;
+        const {feed_user} = this.state;
         if (feed_user) {
-            const {session, handle} = this.state.feed_user;
-            if (session && handle) {
-                const gateway = gateways[feed_user.janus];
-                gateway.getPublisherInfo(session, handle)
+            const {janus, session, handle} = this.state.feed_user;
+            if (janus && session && handle) {
+                api.fetchHandleInfo(janus, session, handle)
                     .then(data => {
                             console.debug("[Admin] Publisher info", data);
                             const video = data.info.webrtc.media[1].rtcp.main;
@@ -667,6 +667,7 @@ class AdminRoot extends Component {
                             this.setState({feed_rtcp: {video, audio}});
                         }
                     )
+                    .catch(err => alert("Error fetching handle_info: " + err))
             }
         }
     };
@@ -713,6 +714,7 @@ class AdminRoot extends Component {
           gxy2_count,
           gxy3_count,
           gxy4_count,
+          gxy5_count,
         chatRoomsInitialized,
           appInitError,
           command_status,
@@ -852,18 +854,13 @@ class AdminRoot extends Component {
                           />
                           <Label attached='top right'>
                               <List>
-                                  <List.Item>GXY1: {gxy1_count}</List.Item>
-                                  <List.Item>GXY2: {gxy2_count}</List.Item>
-                                  <List.Item>GXY3: {gxy3_count}</List.Item>
-                                  <List.Item>GXY4: {gxy4_count}</List.Item>
+                                  <List.Item className="gxy_count">GXY1: <b>{gxy1_count}</b></List.Item>
+                                  <List.Item className="gxy_count">GXY2: <b>{gxy2_count}</b></List.Item>
+                                  <List.Item className="gxy_count">GXY3: <b>{gxy3_count}</b></List.Item>
+                                  <List.Item className="gxy_count">GXY4: <b>{gxy4_count}</b></List.Item>
+                                  <List.Item className="gxy_count">GXY5: <b>{gxy5_count}</b></List.Item>
                               </List>
                           </Label>
-                          {
-                              this.isAllowed("root") && chatRoomsInitialized ?
-                                  <RoomManager gateways={gateways}/>
-                                  : null
-                          }
-
                       </Segment>
                       : null
               }
@@ -951,6 +948,7 @@ class AdminRoot extends Component {
         { menuItem: 'Admin', render: () => <Tab.Pane>{adminContent}</Tab.Pane> },
       ];
       if (this.isAllowed('root')) {
+        panes.push({ menuItem: 'Rooms', render: () => <Tab.Pane><RoomManager /></Tab.Pane> });
         panes.push({ menuItem: 'Monitor', render: () => <Tab.Pane><MonitoringAdmin addUserTab={(user, stats) => this.addUserTab(user, stats)}/></Tab.Pane> });
         usersTabs.forEach(({user, stats}, index) => panes.push({
           menuItem: (
@@ -964,7 +962,8 @@ class AdminRoot extends Component {
       }
 
       const content = (
-        <Tab menu={{ secondary: true, pointing: true, color: "blue" }} panes={panes}
+        <Tab menu={{ secondary: true, pointing: true, color: "blue" }}
+             panes={panes}
              activeIndex={activeTab || 0}
              onTabChange={(e, {activeIndex}) => this.setState({activeTab: activeIndex})}
              renderActiveOnly={true} />

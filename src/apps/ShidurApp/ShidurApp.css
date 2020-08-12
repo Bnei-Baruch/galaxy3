@@ -139,14 +139,13 @@
 }
 
 .shidur_overlay {
-    font-family: "Liberation Serif";
     line-height: 1.1285em;
     position: absolute;
     right: 50px;
     color: #FFF;
     text-align: center;
-    font-size: 20px;
-    background-color: blue;
+    font-size: 30px;
+    background-color: #2185d0;
     width: auto;
     padding: 0px 10px;
     z-index: 1;

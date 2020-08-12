@@ -1,6 +1,6 @@
 import {Janus} from "../lib/janus";
 import {DATA_PORT, PROTOCOL_ROOM, SDIOUT_ID, SERVICE_ROOM, SHIDUR_ID, SNDMAN_ID, STORAN_ID,} from "./consts";
-import {ADMIN_SECRET, JANUS_ADMIN_GXY1, JANUS_ADMIN_GXY2, JANUS_ADMIN_GXY3, JANUS_ADMIN_GXY4, SECRET} from "./env";
+import {SECRET} from "./env";
 import {getDateString} from "./tools";
 
 class GxyJanus extends EventTarget {
@@ -41,31 +41,10 @@ class GxyJanus extends EventTarget {
             throw new Error(`unknown gateway ${name}`);
         }
 
-        // TODO: remove this ugly hack once api is fully authed
-        let admin;
-        switch (name) {
-            case "gxy1":
-                admin = JANUS_ADMIN_GXY1;
-                break;
-            case "gxy2":
-                admin = JANUS_ADMIN_GXY2;
-                break;
-            case "gxy3":
-                admin = JANUS_ADMIN_GXY3;
-                break;
-            case "gxy4":
-                admin= JANUS_ADMIN_GXY4;
-                break;
-            default:
-                break;
-        }
-
         return {
             ...gateway,
             iceServers: GxyJanus.globalConfig.ice_servers[gateway.type].map(url => ({urls: url})),
-            admin,
         }
-
     };
 
     static gatewayNames = (type = "rooms") => (
@@ -175,7 +154,7 @@ class GxyJanus extends EventTarget {
     }
 
     debug = (...args) => {
-        console.debug(`[${this.name}]`, ...args)
+        //console.debug(`[${this.name}]`, ...args)
     };
     log = (...args) => {
         console.log(`[${this.name}]`, ...args)
@@ -822,43 +801,6 @@ class GxyJanus extends EventTarget {
             }
         });
     };
-
-    getPublisherInfo = (session, handle) => {
-        if (handle === null || handle === undefined)
-            return;
-
-        return this.getData(`/${session}/${handle}`, {janus: "handle_info"});
-    };
-
-    sendPluginMessage = (request) => {
-        let message = {janus: "message_plugin", plugin: "janus.plugin.videoroom", request};
-        return this.getData(`/`, message);
-    };
-
-    getData = (path, params = {}) => {
-        const config = this.getConfig();
-        const url = `${config.admin}${path}`;
-        const payload = {
-            ...{transaction: Janus.randomString(12)},
-            ...params,
-            ...{admin_secret: ADMIN_SECRET}
-        };
-
-        return new Promise((resolve, reject) => {
-            fetch(url, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify(payload)
-            })
-                .then((response) => {
-                    response.json().then(data => resolve(data));
-                })
-                .catch(err => {
-                    this.error("fetch error", url, payload, err);
-                    reject(err);
-                });
-        });
-    }
 }
 
 export default GxyJanus;

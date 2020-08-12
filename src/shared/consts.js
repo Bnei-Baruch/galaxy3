@@ -13,18 +13,21 @@ export const JANUS_GATEWAYS = ["gxy1", "gxy2", "gxy3"];
 // TODO (edo): put all janus instance configs in a single object
 
 export const vsettings_list = [
-    { key: 0, text: '320 x 180, 15 fps', value: {width: 320, height: 180, fps: 15}},
-    { key: 1, text: '320 x 180, 30 fps', value: {width: 320, height: 180, fps: 30} },
-    { key: 2, text: '640 x 360, 15 fps', value: {width: 640, height: 360, fps: 15} },
-    { key: 3, text: '640 x 360, 30 fps', value: {width: 640, height: 360, fps: 30} },
+    { key: 0, text: '320 x 180, 15 fps', value: {width: 320, height: 180, ideal: 15}, mobileText: 'low'},
+    { key: 1, text: '320 x 180, 30 fps', value: {width: 320, height: 180, ideal: 30}, mobileText: 'medium'},
+    { key: 2, text: '640 x 360, 15 fps', value: {width: 640, height: 360, ideal: 15} },
+    { key: 3, text: '640 x 360, 30 fps', value: {width: 640, height: 360, ideal: 30}, mobileText: 'high'},
 ];
 
 export const NO_VIDEO_OPTION_VALUE = -1;
+export const VIDEO_240P_OPTION_VALUE = 11;
+export const VIDEO_360P_OPTION_VALUE = 1;
+export const VIDEO_720P_OPTION_VALUE = 16;
 
 export const videos_options = [
-    { key: 1, text: '240p', value: 11 },
-    { key: 2, text: '360p', value: 1 },
-    { key: 3, text: '720p', value: 16 },
+    { key: 1, text: '240p', value: VIDEO_240P_OPTION_VALUE },
+    { key: 2, text: '360p', value: VIDEO_360P_OPTION_VALUE },
+    { key: 3, text: '720p', value: VIDEO_720P_OPTION_VALUE },
     { key: 4, text: 'NoVideo', value: NO_VIDEO_OPTION_VALUE },
 ];
 
@@ -63,7 +66,7 @@ export const audiog_options2 = [
     { key: 'sv', value: 47, flag: 'se', icon:'crosshairs', eng_text: 'Swedish', text:'Svenska' },
     { key: 'lt', value: 48, flag: 'lt', icon:'crosshairs', eng_text: 'Lithuanian', text:'Lietuvių' },
     { key: 'hr', value: 49, flag: 'hr', icon:'crosshairs', eng_text: 'Croatian', text:'Hrvatski' },
-    { key: 'ja', value: 50, flag: 'jp', icon:'crosshairs', eng_text: 'Japanese', text:'語本日  ラバカ' },
+    { key: 'ja', value: 50, flag: 'jp', icon:'crosshairs', eng_text: 'Japanese', text:'日本語' },
     { key: 'sl', value: 51, flag: 'si', icon:'crosshairs', eng_text: 'Slovenian', text:'Slovenščina' },
     { key: 'pl', value: 52, flag: 'pl', icon:'crosshairs', eng_text: 'Polish', text:'Polski' },
     { key: 'no', value: 53, flag: 'no', icon:'crosshairs', eng_text: 'Norwegian', text:'Norsk' },
@@ -135,5 +138,7 @@ export const trllang = {
         "Bulgarian": 310,
         "Romanian": 312,
         "Lithuanian": 315,
-        "Ukrainian": 322
+        "Ukrainian": 322,
+        "Heb-Eng": 303,
+        "Heb-Rus": 302,
 };

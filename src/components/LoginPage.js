@@ -2,11 +2,11 @@ import React, { Component,Fragment } from 'react';
 import {kc, getUser} from './UserManager';
 import {Button, Container, Divider, Grid, Header, Image, Menu, Message, Segment, Select,} from 'semantic-ui-react';
 import bblogo from './logo.png';
-import {languagesOptions, setLanguage} from "../i18n/i18n";
+import {languagesOptions, setLanguage, kcLocale} from "../i18n/i18n";
 import {withTranslation} from "react-i18next";
 import {Terms} from "./Terms";
 import {Profile} from "./Profile";
-
+import internet from './internet.png';
 import './LoginPage.css';
 
 class LoginPage extends Component {
@@ -33,7 +33,7 @@ class LoginPage extends Component {
 
     userLogin = () => {
         this.setState({disabled: true, loading: true});
-        kc.login({redirectUri: window.location.href});
+        kc.login({redirectUri: window.location.href, locale: kcLocale(this.props.i18n.language)});
     };
 
     render() {
@@ -80,7 +80,6 @@ class LoginPage extends Component {
                     </Menu.Menu>
                 </Menu>
                 <Container textAlign='center' style={{direction}} >
-                    <br />
                     <Message size='massive'>
                         <Message.Header>
                             {this.props.user === null ? t('loginPage.galaxy') : "Welcome, " + this.props.user.username}
@@ -112,8 +111,8 @@ class LoginPage extends Component {
                             </Segment>
                             :
                             <Segment basic>
-                                <Button primary onClick={() => window.open("http://ktuviot.kbb1.com/three_languages","_blank")} >Workshop Questions</Button>
-                                <Button primary onClick={() => window.open("https://bb.kli.one/","_blank")} >BB KLI</Button>
+                                <Button primary onClick={() => window.open('http://ktuviot.kbb1.com/three_languages', '_blank')}>Workshop Questions</Button>
+                                <Button primary onClick={() => window.open('https://bb.kli.one/', '_blank')}>BB KLI</Button>
                             </Segment>
                         }
                     </Message>
@@ -124,6 +123,11 @@ class LoginPage extends Component {
         return (
             <Fragment>
                 {loading ? login : main}
+                <Container text textAlign='center' style={{direction, marginTop: '20px', fontSize: '1.5em'}}>
+                  <Image src={internet} style={{margin: 'auto', width: '60px'}}></Image>
+                  <p style={{marginTop: '15px'}}>{t('loginPage.intro')}</p>
+                  <Button basic color='red' size='large' onClick={() => window.open('https://virtualhome.kli.one', '_blank')}>{t('loginPage.userFee')}</Button>
+                </Container>
                 <Terms />
             </Fragment>
         );

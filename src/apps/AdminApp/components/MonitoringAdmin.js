@@ -14,6 +14,8 @@ import {
 
 import './MonitoringAdmin.css';
 import {
+  audioVideoScore,
+  dataValues,
   fetchData,
   popup,
   shortNumber,
@@ -109,59 +111,15 @@ const MonitoringAdmin = (props) => {
     };
   }, []);
 
-  const statsNames = ['oneMin', 'threeMin', 'tenMin'];
-  const audioVideoScore = (audioVideo) => {
-    if (!audioVideo) {
-      return 0;
-    }
-    let ret = 0;
-    if (audioVideo.jitter && audioVideo.jitter.score.value > 0) {
-      ret += 1000*(audioVideo.jitter.score.value);
-    }
-    if (audioVideo.packetsLost && audioVideo.packetsLost.score.value > 0) {
-      ret += audioVideo.packetsLost.score.value;
-    }
-    if (audioVideo.roundTripTime && audioVideo.roundTripTime.score.value > 0) {
-      ret += 100*(audioVideo.roundTripTime.score.value);
-    }
-    return ret;
-  };
   const usersDataValues = (userId) => {
-    const values = {};
+    let ud = {};
     if (userId in usersData) {
-      const ud = usersData[userId];
-      if (ud.timestamps && ud.timestamps.length) {
-        values.update = {value: ud.timestamps[0], view: sinceTimestamp(ud.timestamps[0], now)};
-      }
-      for (let [metric, index] of Object.entries(ud.index)) {
-        const metricField = metric.includes('video') ? 'video' : 'audio';
-        if (!(metricField in values)) {
-          values[metricField] = {};
-        }
-        const metricName = metric.split('.').slice(-1)[0];
-        values[metricField][metricName] = {};
-
-        const value = ud.data[index][0];
-        values[metricField][metricName].last = {value, view: shortNumber(value) || ''};
-        if (!isNaN(value)) {
-          ud.stats[index].forEach((stats, statsIndex) => {
-            const stdev = Math.sqrt(stats.dsquared);
-            values[metricField][metricName][statsNames[statsIndex]] = {
-              mean: {value: stats.mean, view: shortNumber(stats.mean)},
-              stdev: {value: stdev, view: shortNumber(stdev)},
-              length: {value: stats.length, view: shortNumber(stats.length)},
-            };
-          });
-          let metricScore = 0;
-          if (values[metricField][metricName].oneMin && values[metricField][metricName].threeMin) {
-            metricScore = values[metricField][metricName].oneMin.mean.value - values[metricField][metricName].threeMin.mean.value;
-          } 
-          values[metricField][metricName].score = {value: metricScore, view: shortNumber(metricScore)};
-        }
-      }
+      ud = usersData[userId];
     }
-    const score = audioVideoScore(values.audio) + audioVideoScore(values.video);
-    values.score = {value: score, view: shortNumber(score)};
+    const values = dataValues(ud, now);
+    if (userId === 'c69d7189-4bda-4472-8fdf-812abe3f6bfc') {
+      console.log(ud, values);
+    }
     return values;
   }
 
@@ -190,7 +148,7 @@ const MonitoringAdmin = (props) => {
         groupSet.add(user.group);
         filterOptions.group.push({title: user.group});
       }
-      const s = system(user.system);
+      const s = system(user);
       if (!systemSet.has(s)) {
         systemSet.add(s);
         filterOptions.system.push({title: s});
@@ -208,17 +166,15 @@ const MonitoringAdmin = (props) => {
       } else if (name === 'group') {
         return re.test(user.group);
       } else if (name === 'system') {
-        return re.test(system(user.system));
+        return re.test(system(user));
       }
 
     }
-    //console.log(user, stats);
     return true;
   }
 
   const updateFilter = (name, value) => {
     const valueRe = new RegExp(value, 'i');
-    console.log(name, value, filters);
     if (!(name in filters) || filters[name].source !== value) {
       const newFilters = Object.assign({}, filters);
       if (!(name in filters)) {
@@ -243,6 +199,14 @@ const MonitoringAdmin = (props) => {
     }
   }, [filters]);
 
+  const compareArr = (aValues, bValues) => {
+    const index = aValues.findIndex((value, index) => value !== bValues[index]);
+    if (index === -1) {
+      return 0;
+    }
+    return aValues[index] - bValues[index];
+  }
+
   const sortView = columnToSort => (a, b) => {
     if (['group', 'janus'].includes(columnToSort)) {
       return a.user[columnToSort].localeCompare(b.user[columnToSort]);
@@ -251,7 +215,7 @@ const MonitoringAdmin = (props) => {
     } else if (columnToSort === 'login') {
       return a.user.timestamp - b.user.timestamp;
     } else if (columnToSort === 'system') {
-      return system(a.user.system).localeCompare(system(b.user.system));
+      return system(a.user).localeCompare(system(b.user));
     } else if (columnToSort === 'update') {
       return ((a.stats.update && a.stats.update.value) || 0) - ((b.stats.update && b.stats.update.value) || 0);
     } else if (columnToSort.startsWith('audio')) {
@@ -272,6 +236,16 @@ const MonitoringAdmin = (props) => {
       }
     } else if (columnToSort === 'score') {
       return b.stats.score.value - a.stats.score.value;
+    } else if (columnToSort.startsWith('misc')) {
+      if (columnToSort.endsWith('iceState')) {
+        return ((a.stats.misc && a.stats.misc.iceState.last.value) || '').localeCompare((b.stats.misc && b.stats.misc.iceState.last.value) || '');
+      } else if (columnToSort.endsWith('slowLink')) {
+        return compareArr([(b.stats.misc && b.stats.misc.slowLink.score.value) || 0, (b.stats.misc && b.stats.misc.slowLink.last.value) || 0],
+                          [(a.stats.misc && a.stats.misc.slowLink.score.value) || 0, (a.stats.misc && a.stats.misc.slowLink.last.value) || 0]);
+      } else if (columnToSort.endsWith('slowLinkLost')) {
+        return compareArr([(b.stats.misc && b.stats.misc.slowLinkLost.score.value) || 0, (b.stats.misc && b.stats.misc.slowLinkLost.last.value) || 0],
+                          [(a.stats.misc && a.stats.misc.slowLinkLost.score.value) || 0, (a.stats.misc && a.stats.misc.slowLinkLost.last.value) || 0]);
+      }
     }
     console.error('Should not get here!');
     return 0;
@@ -284,6 +258,7 @@ const MonitoringAdmin = (props) => {
           column: sortingColumn,
           direction: sortingColumn.startsWith('audio') ||
             sortingColumn.startsWith('video') ||
+            (sortingColumn.startsWith('misc') && !sortingColumn.endsWith('iceState')) ||
             ['login', 'update', 'score'].includes(sortingColumn) ? 'descending' : 'ascending',
           view: view.sort(sortView(sortingColumn)),
         });
@@ -338,6 +313,7 @@ const MonitoringAdmin = (props) => {
                               onClick={handleSort('score')}>{popup('Score')}</Table.HeaderCell>
             <Table.HeaderCell colSpan="3">{popup('Audio')}</Table.HeaderCell>
             <Table.HeaderCell colSpan="3">{popup('Video')}</Table.HeaderCell>
+            <Table.HeaderCell colSpan="3">{popup('Misc')}</Table.HeaderCell>
           </Table.Row>
           <Table.Row textAlign='center'>
             <Table.HeaderCell sorted={column === 'audio.jitter' ? direction : null}
@@ -352,6 +328,12 @@ const MonitoringAdmin = (props) => {
                               onClick={handleSort('video.packetsLost')}>{popup('Packets Lost')}</Table.HeaderCell>
             <Table.HeaderCell sorted={column === 'video.roundTripTime' ? direction : null}
                               onClick={handleSort('video.roundTripTime')}>{popup('Round trip time')}</Table.HeaderCell>
+            <Table.HeaderCell sorted={column === 'misc.iceState' ? direction : null}
+                              onClick={handleSort('misc.iceState')}>{popup('iceState')}</Table.HeaderCell>
+            <Table.HeaderCell sorted={column === 'misc.slowLink' ? direction : null}
+                              onClick={handleSort('misc.slowLink')}>{popup('slowLink')}</Table.HeaderCell>
+            <Table.HeaderCell sorted={column === 'misc.slowLinkLost' ? direction : null}
+                              onClick={handleSort('misc.slowLinkLost')}>{popup('slowLink Lost')}</Table.HeaderCell>
           </Table.Row>
           <Table.Row>
             <Table.HeaderCell>
@@ -390,7 +372,7 @@ const MonitoringAdmin = (props) => {
         { usersToShow >= view.length ? null : (
           <Table.Footer>
             <Table.Row textAlign='center'>
-              <Table.HeaderCell colSpan="12"><Button icon onClick={() => setUsersToShow(usersToShow + usersToShow)}><Icon name='angle double down' /></Button></Table.HeaderCell>
+              <Table.HeaderCell colSpan="15"><Button icon onClick={() => setUsersToShow(usersToShow + usersToShow)}><Icon name='angle double down' /></Button></Table.HeaderCell>
             </Table.Row>
           </Table.Footer>)
         }

@@ -60,8 +60,10 @@ export const getUser = (callback) => {
                     const {realm_access: {roles},sub,given_name,name,email} = kc.tokenParsed;
                     const {pending, request, timestamp: request_timestamp,group,title} = profile.attributes;
                     const user = {
-                        id: sub, title: title ? title[0] : given_name, username: given_name,
-                        email, group: group ? group[0] : undefined, name, pending, request, request_timestamp, roles,
+                        name, email, pending, request, request_timestamp, roles,
+                        id: sub, username: given_name,
+                        display: title && !!title[0] ? title[0] : name,
+                        group: group && !!group[0] ? group[0] : "",
                     };
                     api.setAccessToken(kc.token);
                     callback(user)

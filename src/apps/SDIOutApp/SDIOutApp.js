@@ -23,7 +23,7 @@ class SDIOutApp extends Component {
             role: "sdiout",
             display: "sdiout",
             id: SDIOUT_ID,
-            // id: "SDIOUT_ID",
+            //id: "SDIOUT_ID",
             name: "sdiout"
         },
         qids: [],

@@ -1,6 +1,6 @@
-import { Janus } from '../../lib/janus';
-import {gxycol, trllang, NO_VIDEO_OPTION_VALUE,} from '../../shared/consts';
-import GxyJanus from "../../shared/janus-utils";
+import { Janus } from '../lib/janus';
+import {gxycol, trllang, NO_VIDEO_OPTION_VALUE,} from './consts';
+import GxyJanus from "./janus-utils";
 
 export default class VirtualStreamingJanus {
 
@@ -9,7 +9,6 @@ export default class VirtualStreamingJanus {
     this.videoJanusStream = null;
     this.audioJanusStream = null;
     this.trlAudioJanusStream = null;
-    //this.dataJanusStream = null;
     this.videoMediaStream = null;
     this.audioMediaStream = null;
     this.trlAudioMediaStream = null;
@@ -35,15 +34,17 @@ export default class VirtualStreamingJanus {
     this.onTalkingCallback = null;
   }
 
+  isInitialized_() {
+    return (this.videos === NO_VIDEO_OPTION_VALUE || this.videoJanusStream) &&
+      this.trlAudioJanusStream &&
+      this.audioJanusStream &&
+      (this.videos === NO_VIDEO_OPTION_VALUE || this.videoMediaStream) &&
+      this.trlAudioMediaStream &&
+      this.audioMediaStream;
+  }
+
   onInitialized_() {
-    if (this.onInitialized &&
-        (this.videos === NO_VIDEO_OPTION_VALUE || this.videoJanusStream) &&
-        this.trlAudioJanusStream &&
-        this.audioJanusStream &&
-        //this.dataJanusStream &&
-        (this.videos === NO_VIDEO_OPTION_VALUE || this.videoMediaStream) &&
-        this.trlAudioMediaStream &&
-        this.audioMediaStream) {
+    if (this.onInitialized && this.isInitialized_()) {
       this.onInitialized();
     }
   }
@@ -57,7 +58,6 @@ export default class VirtualStreamingJanus {
     this.detachVideo_();
     this.audioJanusStream = null;
     this.trlAudioJanusStream = null;
-    //this.dataJanusStream = null;
     this.audioMediaStream = null;
     this.trlAudioMediaStream = null;
   }
@@ -109,6 +109,10 @@ export default class VirtualStreamingJanus {
   }
 
   destroy() {
+    if (this.talking) {
+      clearInterval(this.talking);
+      this.talking = null;
+    }
     if (this.janus) {
       if (this.videoElement) {
         this.videoElement.srcObject = null;
@@ -144,7 +148,6 @@ export default class VirtualStreamingJanus {
             if (this.videos !== NO_VIDEO_OPTION_VALUE) {
               this.initVideoStream(this.janus);
             }
-            //this.initDataStream(this.janus);
             this.initAudioStream(this.janus);
             let id = trllang[localStorage.getItem('vrt_langtext')] || 301;
             this.initTranslationStream(id);
@@ -250,48 +253,6 @@ export default class VirtualStreamingJanus {
     });
   };
 
-  initDataStream(janus) {
-    janus.attach({
-      plugin: 'janus.plugin.streaming',
-      opaqueId: 'datastream-' + Janus.randomString(12),
-      success: (dataJanusStream) => {
-        this.dataJanusStream = dataJanusStream;
-        dataJanusStream.send({ 'message': { request: 'watch', id: 101 } });
-        this.onInitialized_();
-      },
-      error: (error) => {
-        Janus.log('Error attaching plugin: ' + error);
-      },
-      iceState: (state) => {
-        Janus.log('ICE state changed to ' + state);
-      },
-      webrtcState: (on) => {
-        Janus.log('Janus says our WebRTC PeerConnection is ' + (on ? 'up' : 'down') + ' now');
-      },
-      slowLink: (uplink, lost, mid) => {
-        Janus.log('Janus reports problems ' + (uplink ? 'sending' : 'receiving') +
-          ' packets on mid ' + mid + ' (' + lost + ' lost packets)');
-      },
-      onmessage: (msg, jsep) => {
-        this.onStreamingMessage(this.dataJanusStream, msg, jsep, true);
-      },
-      ondataopen: () => {
-        Janus.log('The DataStreamChannel is available!');
-      },
-      ondata: (data) => {
-        let json = JSON.parse(data);
-        Janus.log('We got data from the DataStreamChannel! ', json);
-        this.checkData(json);
-      },
-      onremotestream: (stream) => {
-        Janus.log('Got a remote stream!', stream);
-      },
-      oncleanup: () => {
-        Janus.log('Got a cleanup notification');
-      }
-    });
-  };
-
   initTranslationStream = (streamId) => {
     this.janus.attach({
       plugin: 'janus.plugin.streaming',
@@ -338,7 +299,7 @@ export default class VirtualStreamingJanus {
   onStreamingMessage = (handle, msg, jsep, initdata) => {
     Janus.log('Got a message', msg);
 
-    if (jsep !== undefined && jsep !== null) {
+    if (handle !== null && jsep !== undefined && jsep !== null) {
       Janus.log('Handling SDP as well...', jsep);
 
       // Answer
@@ -360,19 +321,20 @@ export default class VirtualStreamingJanus {
     }
   };
 
-  checkData = (json) => {
-    let { talk, col, name, ip } = json;
-    if (localStorage.getItem('vrt_extip') === ip) {
-      this.streamGalaxy(talk, col, name);
-    }
-  };
-
   streamGalaxy = (talk, col, name) => {
+    console.log('streamGalaxy', talk, col, name);
+    if (!this.isInitialized_()) {
+      return;
+    }
     if (talk) {
       this.mixvolume = this.audioElement.volume;
       this.talking = true;
       this.trlAudioElement.volume = this.mixvolume;
       this.trlAudioElement.muted = false;
+
+      this.prevAudioVolume = this.audioElement.volume;
+      this.prevMuted = this.audioElement.muted;
+
       console.log(' :: Switch STR Stream: ', gxycol[col]);
       this.audioJanusStream.send({'message': { 'request': 'switch', 'id': gxycol[col]}});
       const id = trllang[localStorage.getItem('vrt_langtext')];
@@ -387,7 +349,9 @@ export default class VirtualStreamingJanus {
       Janus.log('You now talking');
     } else if (this.talking) {
       Janus.log('Stop talking');
-      clearInterval(this.talking);
+      if (this.talking) {
+        clearInterval(this.talking);
+      }
       this.audioElement.volume = this.mixvolume;
       const id = Number(localStorage.getItem('vrt_lang')) || 15;
       console.log(' :: Switch STR Stream: ', localStorage.getItem('vrt_lang'), id);
@@ -403,29 +367,43 @@ export default class VirtualStreamingJanus {
   };
 
   ducerMixaudio = () => {
-    if(this.trlAudioJanusStream) {
+    if(this.isInitialized_()) {
+      // Get remote volume of translator stream (FYI in case of Hebrew, this will be 0 - no translation).
       this.trlAudioJanusStream.getVolume(null, volume => {
-        let audio      = this.audioElement;
-        let trl_volume = this.mixvolume * 0.05;
-        if (volume > 0.05) {
-          audio.volume = trl_volume;
-        } else if (audio.volume + 0.01 <= this.mixvolume) {
-          audio.volume = audio.volume + 0.01;
+        if (this.prevAudioVolume !== this.audioElement.volume || this.prevMuted !== this.audioElement.muted) {
+          // This happens only when user changes audio, update mixvolume.
+          this.mixvolume = this.audioElement.muted ? 0 : this.audioElement.volume;
+          this.trlAudioElement.volume = this.mixvolume;
         }
+        if (volume > 0.05) {
+          // If translator is talking (remote volume > 0.05) we want to reduce Rav to 5%.
+          this.audioElement.volume = this.mixvolume * 0.05;
+        } else if (this.audioElement.volume + 0.01 <= this.mixvolume) {
+          // If translator is not talking or no translation (Hebrew) we want to slowly raise
+          // sound levels of original source up to original this.mixvolume.
+          this.audioElement.volume = this.audioElement.volume + 0.01;
+        }
+        // Store volume and mute values to be able to detect user volume change.
+        this.prevAudioVolume = this.audioElement.volume;
+        this.prevMuted = this.audioElement.muted;
       });
     }
   };
 
   setVideo = (videos) => {
     this.videos = videos;
-    if (videos === NO_VIDEO_OPTION_VALUE) {
-      this.videoJanusStream.detach();
-      this.detachVideo_();
-    } else {
-      if (this.videoJanusStream) {
-        this.videoJanusStream.send({ message: { request: 'switch', id: videos } });
+    if (this.janus) {
+      if (videos === NO_VIDEO_OPTION_VALUE) {
+        if (this.videoJanusStream !== null) {
+          this.videoJanusStream.detach();
+        }
+        this.detachVideo_();
       } else {
-        this.initVideoStream(this.janus);
+        if (this.videoJanusStream) {
+          this.videoJanusStream.send({ message: { request: 'switch', id: videos } });
+        } else {
+          this.initVideoStream(this.janus);
+        }
       }
     }
     localStorage.setItem('vrt_video', videos);

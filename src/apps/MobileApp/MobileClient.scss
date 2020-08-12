@@ -12,21 +12,88 @@
 
 .vclient {
     width: 100vw;
-    height: 100vh;
     display: flex;
     flex-direction: column;
+
+		@include portrait {
+			height: calc(100vh - 13.2em);
+		}
 
     &__toolbar {
         display: flex;
         align-items: center;
-        padding: .8rem .5rem;
         flex-wrap:wrap;
         @include landscape {
-            font-size: 21px;
+            font-size: 1.6rem;
+						padding: 0;
         }
         @include portrait {
-            font-size: 31px;
+            font-size: 3rem;
+						padding: .8rem .5rem;
         }
+
+
+        .ui.action.input>.button, .ui.action.input>.buttons>.button {
+            @include portrait {
+                width: 8rem;
+            }
+        }
+
+				&.bottom {
+          overflow-x: scroll;
+          scrollbar-width: none;  /* Firefox */
+          &::-webkit-scrollbar { 
+            display: none;  /* Safari and Chrome */
+          }
+
+					background-color: rgb(125, 125, 125);
+					position: sticky;
+				  bottom: 0;
+					z-index: 11;
+
+					@include portrait {
+						padding-bottom: 1em;
+					}
+
+          .ui.menu a.item {
+            color: white;
+            &.disabled {
+              color: rgba(40, 40, 40, 0.3);
+            }
+          }
+
+          .ui.labeled.icon.menu {
+            width: 100%;
+
+            .item {
+              min-width: 5em;
+            }
+          }
+
+          .ui.menu .item>.floating.label {
+            top: .3em;
+            left: unset;
+            right: 1em;
+
+            @include landscape {
+              font-size: .9rem;
+            }
+            @include portrait {
+              font-size: 1.7rem;
+            }
+          }
+
+          .audio-mode {
+           margin-bottom: 0.5rem;
+           @include landscape {
+             height: 2rem;
+           }
+           @include portrait {
+             height: 3.5rem;
+           }
+          }
+
+				}
 
         & > .menu,
         & > .input {
@@ -35,6 +102,15 @@
 
         .menu:nth-child(2) {
             flex: 1 0 auto;
+        }
+
+        .ui.selection.dropdown {
+					@include landscape {
+            min-width: 15em;
+					}
+					@include portrait {
+            min-width: 10em;
+					}
         }
     }
 
@@ -46,43 +122,39 @@
     }
 
     &__main-wrapper {
-        position: absolute;
-        height: 100%;
         width: 100%;
         display: flex;
         // border: 2px solid red;
+        @include landscape {
+          height: calc(100vh - 5em);
+        }
         @include portrait {
             flex-direction: column;
         }
-
     }
 }
 
 /* TESTING */
 
-.select_room.ui.selection.dropdown .menu {
-    min-width: calc(208% + 3px);
-}
-
 .select_room.ui.selection.dropdown .menu>.item {
     @include landscape {
-        font-size: 40px;
-        height: 100px;
+        font-size: 2rem;
+        height: 4.5rem;
     }
     @include portrait {
-        font-size: 70px;
-        height: 150px;
+        font-size: 4rem;
+        height: 6.5rem;
     }
 }
 
 .select_room.ui.selection.dropdown .menu {
-    max-height: 80rem;
-}
-
-.select_device.ui.selection.dropdown .menu>.item {
-    @include portrait {
-        font-size: 50px;
-    }
+		@include landscape {
+			max-height: 31rem;
+		}
+		@include portrait {
+			max-height: 80rem;
+		}
+		min-width: 18em;
 }
 
 .ui.mini.menu {
@@ -95,20 +167,58 @@
 }
 
 .select_device {
+	&.ui.button {
     @include landscape {
-        font-size: 25px;
+        font-size: 2rem;
+				min-width: 28rem;
     }
     @include portrait {
-        font-size: 50px;
+        font-size: 4rem;
+				width: 55rem;
     }
+
+		.dropdown .menu>.item {
+			@include landscape {
+					font-size: 2rem;
+					padding: 0.75rem !important;
+			}
+			@include portrait {
+					font-size: 4rem;
+					padding: 1.5rem !important;
+			}
+		}
+	}
+
+	&.selection.dropdown {
+		@include landscape {
+			font-size: 2rem;
+		}
+		@include portrait {
+			font-size: 4rem;
+		}
+
+		.menu .item {
+			@include landscape {
+				font-size: 2rem;
+			}
+			@include portrait {
+				font-size: 4rem;
+			}
+		}
+	}
 }
 
-.ui.bottom.right.popup {
+.ui.bottom.right.popup,
+.ui.bottom.left.popup,
+.ui.top.right.popup,
+.ui.top.left.popup,
+{
     @include landscape {
-        font-size: 40px;
+        font-size: 1rem;
     }
     @include portrait {
-        font-size: 60px;
+        font-size: 2rem;
+        padding: 1rem;
     }
 }
 
@@ -138,12 +248,6 @@
     width: 360px;
 }
 
-.ui.action.input>.button, .ui.action.input>.buttons>.button {
-    @include portrait {
-        width: 100px;
-    }
-}
-
 /* TESTING */
 
 .videos-panel {
@@ -151,25 +255,16 @@
     background:#000;
     padding: 1.6em;
     flex: 1 0 100%;
-    // transition: .2s all linear;
-
-    .vclient--chat-open & {
-        flex: 1 0 calc(100% - 400px);
-    }
-}
-
-.chat-panel {
-    flex: 0 0 400px;
-    overflow: hidden;
-    padding: 0 10px 10px 10px;
-    display: flex;
     flex-direction: column;
-    @include portrait {
-        padding: 10px;
-    }
-
 }
 
+.chat-wrapper {
+    display: none;
+}
+
+.chat-modal {
+    font-size: 2rem;
+}
 
 .messages_list {
     overflow-y:scroll;
@@ -210,7 +305,12 @@
 }
 
 .ui.massive.menu {
-    font-size: 1.28571429rem;
+	@include landscape {
+			font-size: 1rem;
+	}
+	@include portrait {
+			font-size: 2rem;
+	}
 }
 
 
@@ -232,7 +332,37 @@
     height: 250px;
     background-color: silver!important;
 }
+.dots {
+  margin: auto;
+  padding-top: 1em;
+}
+.react-carousel-dots-dot {
+  background-color: gray !important;
+  &.active {
+    background-color: white !important;
+  }
+  &.small {
+    transform: none !important;
+  }
+}
+.right-arrow {
+    z-index: 1;
+    position: absolute;
+    right: 0;
+    top: 50%;
+}
 
+.left-arrow {
+    z-index: 1;
+    position: absolute;
+    left: 0;
+    top:50%;
+}
+
+
+.react-carousel-dots-dot.active{
+    background-color:lightblue;
+}
 .segment_conteiner {
     width: 460px;
     height: 920px;
@@ -251,4 +381,166 @@
     padding: 0px 10px;
     z-index: 2147483647;
     float: right !important;
+}
+
+
+/* Dirty fixes */
+.login-icon i {
+    width: 100%;
+		@include landscape {
+			font-size: 1em;
+		}
+		@include portrait {
+			font-size: 1.5em;
+			padding-top: 0.16em;
+		}
+}
+
+.mediaplayer__volume i {
+  color: white;
+  font-size: 1.5em;
+}
+
+.talk {
+  @include landscape {
+    font-size: 3.5rem !important;
+  }
+  @include portrait {
+    font-size: 5rem !important;
+  }
+}
+
+.chat {
+  &.ui.active.modal {
+    @include landscape {
+      width: 75vw;
+      font-size: 2rem;
+    }
+
+    @include portrait {
+      width: 90vw;
+      font-size: 3rem;
+    }
+
+    .close {
+      top: 0.2em;
+      right: 0.3em;
+      color: rgba(0,0,0,.87);
+      z-index: 10;
+      font-size: 2.7rem;
+    }
+
+    .chat-panel button {
+      font-size: 2rem;
+    }
+
+    .messages_list {
+      height: 60vh;
+
+      .messages-wrapper {
+        width: 100%;
+      }
+    }
+  }
+}
+
+.vote {
+  &.ui.active.modal {
+    font-size: 2rem;
+    padding: .7em;
+
+    .close {
+      top: 0.2em;
+      right: 0.3em;
+      color: rgba(0,0,0,.87);
+    }
+
+    .buttons {
+      width: calc(100% - 3rem);
+
+      iframe {
+        width: 100%;
+      }
+    }
+  }
+}
+
+.homer-limud {
+  &.ui.active.modal {
+    font-size: 2rem;
+    padding: .7em;
+
+    .close {
+      top: 0.2em;
+      right: 0.3em;
+      color: rgba(0,0,0,.87);
+    }
+
+    iframe {
+      width: 100%;
+      height: 70vh;
+
+      body {
+        font-size: 3rem !important;
+      }
+    }
+  }
+}
+
+.settings {
+  &.ui.active.modal {
+    background-color: #f2f2f2;
+    @include landscape {
+      font-size: 1.7rem;
+      width: 50vw;
+    }
+    @include portrait {
+      font-size: 3rem;
+    }
+
+    .close {
+      top: 0.2em;
+      @include landscape {
+        right: 0.4em;
+      }
+      @include portrait {
+        right: 0.3em;
+      }
+      color: rgba(0,0,0,.87);
+    }
+  }
+
+  .ui.accordion {
+    width: 100%;
+    @include landscape {
+      font-size: 2rem;
+    }
+    @include portrait {
+      font-size: 4rem;
+    }
+
+    &.vertical.menu .item {
+      &.settings-title {
+        background-color: #f2f2f2;
+        .name {
+          width: calc(100% - 10rem);
+          display: inline-block;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          vertical-align: bottom;
+        }
+
+        .disabled {
+          cursor: default !important;
+          background-color: transparent !important;
+          color: rgba(40,40,40,.3) !important;
+        }
+      }
+      &.selected {
+        background-color: #2185d0;
+        color: white;
+      }
+    }
+  }
 }

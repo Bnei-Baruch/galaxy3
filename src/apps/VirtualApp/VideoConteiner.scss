@@ -89,7 +89,9 @@
 	// height: percentage(1/1);
 	position: relative;
 	// margin: 1px;
-	background: rgba(34, 34, 34, 1);
+	&:not(.icon){
+		background: rgba(34, 34, 34, 1);
+	}
 	// border: 2px solid #000;
 	// overflow: hidden;
 
@@ -106,6 +108,7 @@
 	}
 
 	.nowebcam {
+    background-color: rgb(34, 34, 34);
 		top: 0;
 		position: absolute;
 		fill: #fff;
@@ -154,16 +157,27 @@
 		background: rgba(34, 34, 34, .9);
 		font-size: 1rem;
 		color: white;
-		// border-radius: 4px;
 		line-height: 1;
 		text-shadow: 0 2px 1px rgba(0, 0, 0, .7);
-
+		.icon, span {
+			&+.icon,
+			&+span{
+				margin:  0 0 0 .7rem;
+			}
+		}
 		.icon {
-			margin-right: .7rem;
 			position: relative;
 			top: -.09rem;
 		}
 
+    .title-name {
+      display: inline-block;
+      vertical-align: middle;
+      text-overflow: ellipsis;
+      overflow: hidden;
+      max-width: 5rem;
+      white-space: nowrap;
+    }
 		// color:yellow;
 	}
 

@@ -17,8 +17,8 @@ class UsersHandleSDIOut extends Component {
 
     componentDidMount() {
         let {g} = this.props;
-        let num_videos = g && g.users.filter(u =>  u.camera).length;
-        if(num_videos > 16) num_videos = 16;
+        let num_videos = g && g.users && g.users.filter(u =>  u.camera).length;
+        if(num_videos > 25) num_videos = 25;
         this.setState({num_videos});
     }
 
@@ -41,9 +41,9 @@ class UsersHandleSDIOut extends Component {
                 }
             })
         }
-        if(g && JSON.stringify(g) !== JSON.stringify(prevProps.g)) {
-            let num_videos = g && g.users.filter(u =>  u.camera).length
-            if(num_videos > 16) num_videos = 16;
+        if(g && g.users && JSON.stringify(g) !== JSON.stringify(prevProps.g)) {
+            let num_videos = g.users.filter(u => u.camera && u.role === "user").length
+            if(num_videos > 25) num_videos = 25;
             this.setState({num_videos})
         }
     }
@@ -147,7 +147,7 @@ class UsersHandleSDIOut extends Component {
             } else if(event === "talking") {
                 let {feeds} = this.state;
                 let id = msg["id"];
-                console.debug(`[SDIOut] [room ${roomid}] started talking`, id);
+                //console.debug(`[SDIOut] [room ${roomid}] started talking`, id);
                 for(let i=0; i<feeds.length; i++) {
                     if(feeds[i] && feeds[i].id === id) {
                         feeds[i].talk = true;
@@ -157,7 +157,7 @@ class UsersHandleSDIOut extends Component {
             } else if(event === "stopped-talking") {
                 let {feeds} = this.state;
                 let id = msg["id"];
-                console.debug(`[SDIOut] [room ${roomid}] stopped talking`, id);
+                //console.debug(`[SDIOut] [room ${roomid}] stopped talking`, id);
                 for(let i=0; i<feeds.length; i++) {
                     if(feeds[i] && feeds[i].id === id) {
                         feeds[i].talk = false;
@@ -210,7 +210,6 @@ class UsersHandleSDIOut extends Component {
 
                 } else if(msg["unpublished"] !== undefined && msg["unpublished"] !== null) {
                     let unpublished = msg["unpublished"];
-                    console.log(`[SDIOut] [room ${roomid}] Publisher left`, unpublished);
                     if(unpublished === 'ok') {
                         this.state.videoroom.hangup();
                         return;
@@ -363,7 +362,7 @@ class UsersHandleSDIOut extends Component {
       //const q = (<b style={{color: 'red', fontSize: '20px', fontFamily: 'Verdana', fontWeight: 'bold'}}>?</b>);
 
       let program_feeds = feeds.map((feed) => {
-          let camera = !!g.users.find(u => feed.id === u.rfid && u.camera);
+          let camera = g && g.users && !!g.users.find(u => feed.id === u.rfid && u.camera);
           if(feed) {
               let id = feed.id;
               let talk = feed.talk;

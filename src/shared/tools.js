@@ -5,7 +5,7 @@ import {STUN_SRV_GXY, WKLI_ENTER, WKLI_LEAVE
 
 export const initJanus = (cb,er,server,token="",iceServers=[{urls: STUN_SRV_GXY}]) => {
     Janus.init({
-        debug: process.env.NODE_ENV !== 'production' ? ["log","error"] : ["log", "error"],
+        debug: process.env.NODE_ENV !== 'production' ? ["log","error"] : ["error"],
         callback: () => {
             let janus = new Janus({
                 server,
@@ -124,25 +124,23 @@ export const initChatRoom = (janus,roomid,handle,cb) => {
 };
 
 export const notifyMe = (title, message, tout) => {
-    if (!Notification) {
-        alert('Desktop notifications not available in your browser. Try Chromium.');
-        return;
-    }
-    if (Notification.permission !== "granted")
-        Notification.requestPermission();
-    else {
-        var notification = new Notification(title+":", {
-            icon: './nlogo.png',
-            body: message,
-            requireInteraction: tout
-        });
-        notification.onclick = function () {
-            window.focus();
-        };
-        notification.onshow = function () {
-            var audio = new Audio('./plucky.mp3');
-            audio.play();
-        };
+    if (!!window.Notification) {
+        if (Notification.permission !== "granted")
+            Notification.requestPermission();
+        else {
+            let notification = new Notification(title + ":", {
+                icon: './nlogo.png',
+                body: message,
+                requireInteraction: tout
+            });
+            notification.onclick = function () {
+                window.focus();
+            };
+            notification.onshow = function () {
+                var audio = new Audio('./plucky.mp3');
+                audio.play();
+            };
+        }
     }
 };
 
@@ -170,6 +168,11 @@ export const getDateString = (jsonDate) => {
     var when = new Date();
     if(jsonDate) {
         when = new Date(Date.parse(jsonDate));
+        if (isNaN(when.getTime()) && jsonDate.length > 2) {
+          // Fix some edge cases where : missing to be valid ISO 8601 format.
+          const len = jsonDate.length;
+          when = new Date(Date.parse(`${jsonDate.slice(0, len-2)}:${jsonDate.slice(len-2)}`));
+        }
     }
     var dateString =
         ("0" + when.getHours()).slice(-2) + ":" +
@@ -225,46 +228,79 @@ export const micLevel = (stream, canvas, cb) => {
 };
 
 export const checkNotification = () => {
-    var iOS = !!navigator.platform && /iPad|iPhone|iPod/.test(navigator.platform);
-    if ( !iOS && Notification.permission !== "granted") {
+    if ( !!window.Notification && Notification.permission !== "granted") {
         Notification.requestPermission();
     }
 };
 
-export const getDevicesStream = (audioid,videoid,video_setting,cb) => {
-    const width = video_setting.width;
-    const height = video_setting.height;
-    const ideal = video_setting.fps;
-    let video = videoid ? {width, height, frameRate: {ideal, min: 1}, deviceId: {exact: videoid}} : "";
-    let audio = audioid ? {deviceId: {exact: audioid}} : "";
-    navigator.mediaDevices.getUserMedia({ audio: audio, video: video }).then(stream => {
-        cb(stream);
-    });
+export const getMediaStream = (audio, video, setting={width: 320, height: 180, ideal: 15}, audioid, videoid) => {
+    const {width,height,ideal} = setting;
+    if(video && videoid) {
+        video = {width, height, frameRate: {ideal, min: 1}, deviceId: {exact: videoid}};
+    } else if(video && !videoid) {
+        video = {width, height, frameRate: {ideal, min: 1}};
+    }
+    audio = audioid ? {deviceId: {exact: audioid}} : audio;
+    return navigator.mediaDevices.getUserMedia({audio, video})
+        .then(data => ([data, null]))
+        .catch(error => Promise.resolve([null, error.name]));
 };
 
-export const testDevices = (video,audio,user,cb) => {
-    navigator.mediaDevices.getUserMedia({ audio: audio, video: video }).then(stream => {
-        cb(stream);
-    }, function (e) {
-        reportToSentry((video ? "Video" : "Audio") + " Device Failed: " + e.name, {source: "device",audio,video}, user)
-        var message;
-        switch (e.name) {
-            case 'NotFoundError':
-            case 'DevicesNotFoundError':
-                message = 'No input devices found.';
-                break;
-            case 'SourceUnavailableError':
-                message = 'Your input device is busy';
-                break;
-            case 'PermissionDeniedError':
-            case 'SecurityError':
-                message = 'Permission denied!';
-                break;
-            default: Janus.log('Permission devices usage is Rejected! You must grant it.', e);
-                return;
-        }
-        Janus.log(message);
-    });
+export const getMedia = async (media) => {
+    const {audio, video} = media;
+    let error = null;
+    let devices = [];
+
+    //TODO: Translate exceptions - https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getUserMedia#Exceptions
+
+    // Check saved devices in local storage
+    let storage_video = localStorage.getItem("video_device");
+    let storage_audio = localStorage.getItem("audio_device");
+    let storage_setting = JSON.parse(localStorage.getItem("video_setting"));
+    video.video_device = !!storage_video ? storage_video : null;
+    audio.audio_device = !!storage_audio ? storage_audio : null;
+    video.setting = !!storage_setting ? storage_setting : video.setting;
+    [video.stream, error] = await getMediaStream(true, true,
+        video.setting, audio.audio_device, video.video_device);
+
+    // Saved devices failed try with default
+    if(error === "OverconstrainedError") {
+        [video.stream, error] = await getMediaStream(true, true);
+    }
+
+    if(error) {
+        // Get only audio
+        [audio.stream, audio.error] = await getMediaStream(true, false,
+            video.setting, audio.audio_device, null);
+        devices = await navigator.mediaDevices.enumerateDevices()
+        audio.devices = devices.filter(a => !!a.deviceId && a.kind === 'audioinput');
+
+        // Get only video
+        [video.stream, video.error] = await getMediaStream(false, true,
+            video.setting, null, video.video_device);
+        devices = await navigator.mediaDevices.enumerateDevices()
+        video.devices = devices.filter(v => !!v.deviceId && v.kind === 'videoinput');
+    } else {
+        devices = await navigator.mediaDevices.enumerateDevices()
+        audio.devices = devices.filter(a => !!a.deviceId && a.kind === 'audioinput');
+        video.devices = devices.filter(v => !!v.deviceId && v.kind === 'videoinput');
+        audio.stream = video.stream;
+    }
+
+    if(audio.stream) {
+        console.log(audio.stream)
+        audio.audio_device = audio.stream.getAudioTracks()[0].getSettings().deviceId
+    } else {
+        audio.audio_device = "";
+    }
+
+    if(video.stream) {
+        video.video_device = video.stream.getVideoTracks()[0].getSettings().deviceId
+    } else {
+        video.video_device =  "";
+    }
+
+    return media
 };
 
 export const geoInfo = (url,cb) => fetch(`${url}`)
@@ -330,8 +366,8 @@ export const takeImage = (user) => {
 };
 
 const wkliEnter = (base64, user) => {
-    const {title,id,group,room} = user;
-    let request = {userName: title, userId: id, roomName: group, roomId: room, image: base64};
+    const {display,id,group,room} = user;
+    let request = {userName: display, userId: id, roomName: group, roomId: room, image: base64};
     fetch(`${WKLI_ENTER}`,{
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
