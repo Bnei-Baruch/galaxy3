@@ -41,28 +41,18 @@
   transition: .2s all linear;
 }
 
-//.video_full {
-//    background-color: #444;
-//    color: #fff;
-//    font-size: 150%;
-//    position:relative;
-//    height: 233px;
-//    width: 402px;
-//}
-
 .hidden {
     display: none;
 }
 
 .video_title {
-    font-family: "Liberation Serif";
     line-height: 1.1285em;
     position: absolute;
-    right: 40px;
+    right: 33px;
     color: #FFF;
     text-align: center;
-    font-size: 15px;
-    background-color: blue;
+    font-size: 20px;
+    background-color: #2185d0;
     width: auto;
     padding: 0px 10px;
     float: right !important;
@@ -85,19 +75,23 @@
 }
 
 .next_button {
+    color: #ffffff !important;
     bottom: 0;
     position: absolute;
     right: 0px;
     float: right !important;
     z-index: 3;
+    background-color: #545151 !important;
 }
 
 .fullscr_button {
+    color: #ffffff !important;
     bottom: 0;
     position: absolute;
     left: 3px;
     float: right !important;
     z-index: 3;
+    background-color: #545151 !important;
 }
 
 .sound_test {
@@ -170,18 +164,19 @@
 }
 
 .qst_title {
-    font-family: "Liberation Serif";
-    font-weight: bolder;
-    line-height: 1.1285em;
+    font-family: Arial, sans-serif;
     position: absolute;
     color: black;
     text-align: center;
+    line-height: 30px;
+    font-weight: bold;
     font-size: 30px;
-    background-color: white;
-    width: auto;
-    padding: 0px 10px;
-    float: left !important;
-    bottom: 0px;
+    background-color: yellow;
+    width: 30px;
+    height: 28px;
+    right: 2px;
+    //top: 2px;
+    z-index: 2;
 }
 
 .qst_fullscreentitle {
