@@ -13,6 +13,7 @@ class UsersQuad extends Component {
         question: false,
         col: null,
         vquad: [null,null,null,null],
+        ask_feed: null,
     };
 
     componentDidMount() {
@@ -232,18 +233,18 @@ class UsersQuad extends Component {
     };
 
     toFullGroup = (i,g,q) => {
-        let {room,janus,id} = g;
+        let {room,janus} = g;
         console.log("[Shidur]:: Make Full Screen Group: ",g);
         this.setState({fullscr: true, full_feed: i, question: q});
         this.sdiGuaranteeAction("fullscr_group" , true, i, g, q, [AUDIOOUT_ID, SDIOUT_ID, SNDMAN_ID]);
-        this.micMute(true, room, janus, [id]);
+        this.micMute(true, room, janus);
     };
 
     toFourGroup = (i,g,cb,q) => {
-        let {room,janus,id} = g;
+        let {room,janus} = g;
         console.log("[Shidur]:: Back to four: ");
         this.sdiGuaranteeAction("fullscr_group" , false, i, g, q, [AUDIOOUT_ID, SDIOUT_ID, SNDMAN_ID]);
-        this.micMute(false, room, janus, [id]);
+        this.micMute(false, room, janus);
         this.setState({fullscr: false, full_feed: null, question: false}, () => {
             cb();
         });
@@ -257,8 +258,20 @@ class UsersQuad extends Component {
         this["cmd"+col+full_feed].state.videoroom.data({ text: message });
     };
 
-    micMute = (status, room, inst, toAck) => {
+    micMute = (status, room, inst) => {
         const msg = {type: "audio-out", status, room, col: null, i: null, feed: null};
+        let toAck = [];
+        if(status) {
+            const group = this.props.rooms.filter(g => g.room === room)[0]
+            const ask_feed = group.users.filter(u => u.question)[0];
+            if(!ask_feed) return
+            this.setState({ask_feed});
+            toAck.push(ask_feed.id);
+        } else {
+            const {ask_feed} =  this.state;
+            if(!ask_feed) return
+            toAck.push(ask_feed.id);
+        }
 
         const {gateways, gdm} = this.props;
         //TODO: Send data in room channel
