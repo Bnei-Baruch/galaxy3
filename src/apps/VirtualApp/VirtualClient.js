@@ -9,7 +9,7 @@ import './VideoConteiner.scss';
 import './CustomIcons.scss';
 import 'eqcss';
 import VirtualChat from './VirtualChat';
-import {initGxyProtocol} from '../../shared/protocol';
+import {initGxyProtocol, sendProtocolMessage} from '../../shared/protocol';
 import {
   PROTOCOL_ROOM,
   VIDEO_360P_OPTION_VALUE,
@@ -135,7 +135,7 @@ class VirtualClient extends Component {
   }
 
   componentDidMount() {
-    Sentry.init({dsn: `https://${SENTRY_KEY}@sentry.kli.one/2`});
+    //Sentry.init({dsn: `https://${SENTRY_KEY}@sentry.kli.one/2`});
     if (isMobile) {
       window.location = '/userm';
     }
@@ -1130,15 +1130,13 @@ class VirtualClient extends Component {
   };
 
   handleAudioOut = (data) => {
-    const { gdm, user } = this.state;
+    const { gdm, user, protocol } = this.state;
     if (gdm.checkAck(data)) {
       // Ack received, do nothing.
       return;
     }
 
-    const gateways = GxyJanus.makeGateways("rooms");
-
-    gdm.accept(data, (msg) => gateways[user.janus].sendProtocolMessage(msg)).then((data) => {
+    gdm.accept(data, (msg) => sendProtocolMessage(protocol, user, msg, false)).then((data) => {
       if (data === null) {
         console.log('Message received more then once.');
         return;
