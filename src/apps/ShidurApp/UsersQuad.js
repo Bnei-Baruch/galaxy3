@@ -275,9 +275,9 @@ class UsersQuad extends Component {
         gateways["gxy3"].sendServiceMessage(msg);
         gdm.send(msg, toAck, (msg) => gateways[inst].sendProtocolMessage(msg)).
         then(() => {
-            console.log(`MIC delivered to ${toAck}.`);
+            console.log(`MIC delivered.`);
         }).catch((error) => {
-            console.error(`MIC not delivered to ${toAck} due to ` , error);
+            console.error(`MIC not delivered due to: ` , error);
         });
     };
 
