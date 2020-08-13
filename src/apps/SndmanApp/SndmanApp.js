@@ -7,6 +7,8 @@ import LoginPage from "../../components/LoginPage";
 import {Grid} from "semantic-ui-react";
 import UsersQuadSndman from "./UsersQuadSndman";
 import GxyJanus from "../../shared/janus-utils";
+import {SNDMAN_ID} from "../../shared/consts"
+import {GuaranteeDeliveryManager} from '../../shared/GuaranteeDelivery';
 
 
 class SndmanApp extends Component {
@@ -16,6 +18,7 @@ class SndmanApp extends Component {
         gateways: {},
         gatewaysInitialized: false,
         appInitError: null,
+        gdm: new GuaranteeDeliveryManager(SNDMAN_ID),
     };
 
     componentWillUnmount() {
@@ -82,30 +85,44 @@ class SndmanApp extends Component {
     }
 
     onServiceData = (gateway, data) => {
-        if (data.type === "error" && data.error_code === 420) {
-            console.error("[Sndman] service error message (reloading in 10 seconds)", data.error);
-            setTimeout(() => {
-                this.initGateway(this.state.user, gateway);
-            }, 10000);
+        const { gdm } = this.state;
+        if (gdm.checkAck(data)) {
+          // Ack received, do nothing.
+          return;
         }
+        gdm.accept(data, (msg) => gateway.sendServiceMessage(msg)).then((data) => {
+          if (data === null) {
+            console.log('Message received more then once.');
+            return;
+          }
 
-        let {col, group, i, status} = data;
+          if (data.type === "error" && data.error_code === 420) {
+              console.error("[Sndman] service error message (reloading in 10 seconds)", data.error);
+              setTimeout(() => {
+                  this.initGateway(this.state.user, gateway);
+              }, 10000);
+          }
 
-        // Shidur action
-        if(data.type === "sdi-fullscr_group" && status) {
-            this["col"+col].fullScreenGroup(i,group);
-        } else if(data.type === "sdi-fullscr_group" && !status) {
-            this["col"+col].toFourGroup(i,group);
-        }
+          let {col, group, i, status} = data;
 
-        if(data.type === "event") {
-            delete data.type;
-            this.setState({...data});
-        }
+          // Shidur action
+          if(data.type === "sdi-fullscr_group" && status) {
+              this["col"+col].fullScreenGroup(i,group);
+          } else if(data.type === "sdi-fullscr_group" && !status) {
+              this["col"+col].toFourGroup(i,group);
+          }
 
-        if(data.type === "sdi-restart_sndman") {
-            window.location.reload();
-        }
+          if(data.type === "event") {
+              delete data.type;
+              this.setState({...data});
+          }
+
+          if(data.type === "sdi-restart_sndman") {
+              window.location.reload();
+          }
+        }).catch((error) => {
+          console.error(`Failed receiving ${data}: ${error}`);
+        });
     };
 
     onProtocolData = (gateway, data) => {

@@ -9,8 +9,13 @@ import './VideoConteiner.scss';
 import './CustomIcons.scss';
 import 'eqcss';
 import VirtualChat from './VirtualChat';
-import {initGxyProtocol} from '../../shared/protocol';
-import {PROTOCOL_ROOM, VIDEO_360P_OPTION_VALUE, NO_VIDEO_OPTION_VALUE, vsettings_list} from '../../shared/consts';
+import {initGxyProtocol, sendProtocolMessage} from '../../shared/protocol';
+import {
+  PROTOCOL_ROOM,
+  VIDEO_360P_OPTION_VALUE,
+  NO_VIDEO_OPTION_VALUE,
+  vsettings_list,
+} from '../../shared/consts';
 import {GEO_IP_INFO, SENTRY_KEY} from '../../shared/env';
 import platform from 'platform';
 import {Help} from './components/Help';
@@ -29,6 +34,7 @@ import VerifyAccount from './components/VerifyAccount';
 import GxyJanus from "../../shared/janus-utils";
 import audioModeSvg from '../../shared/audio-mode.svg';
 import fullModeSvg from '../../shared/full-mode.svg';
+import {GuaranteeDeliveryManager} from '../../shared/GuaranteeDelivery';
 
 const sortAndFilterFeeds = (feeds) => feeds
   .filter(feed => !feed.display.role.match(/^(ghost|guest)$/))
@@ -96,6 +102,7 @@ class VirtualClient extends Component {
     keepalive: null,
     muteOtherCams: false,
     videos: Number(localStorage.getItem('vrt_video')) || 1,
+    gdm: null,
   };
 
   virtualStreamingInitialized() {
@@ -151,6 +158,8 @@ class VirtualClient extends Component {
   }
 
   initApp = (user) => {
+    let gdm = new GuaranteeDeliveryManager(user.id);
+    this.setState({gdm});
     const {t} = this.props;
     localStorage.setItem('question', false);
     localStorage.setItem('sound_test', false);
@@ -1121,13 +1130,29 @@ class VirtualClient extends Component {
   };
 
   handleAudioOut = (data) => {
-    this.state.virtualStreamingJanus.streamGalaxy(data.status, 4, "");
-    if (data.status) {
-      // remove question mark when sndman unmute our room
-      if (this.state.question) {
-        this.handleQuestion();
-      }
+    const { gdm, user, protocol } = this.state;
+    if (gdm.checkAck(data)) {
+      // Ack received, do nothing.
+      return;
     }
+
+    gdm.accept(data, (msg) => sendProtocolMessage(protocol, user, msg, false)).then((data) => {
+      if (data === null) {
+        console.log('Message received more then once.');
+        return;
+      }
+
+      this.state.virtualStreamingJanus.streamGalaxy(data.status, 4, "");
+      if (data.status) {
+        // remove question mark when sndman unmute our room
+        if (this.state.question) {
+          this.handleQuestion();
+        }
+      }
+
+    }).catch((error) => {
+      console.error(`Failed receiving ${data}: ${error}`);
+    });
   };
 
   camMute = (cammuted) => {

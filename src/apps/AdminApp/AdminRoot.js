@@ -13,6 +13,7 @@ import MonitoringAdmin from "./components/MonitoringAdmin";
 import MonitoringUser from "./components/MonitoringUser";
 import RoomManager from "./components/RoomManager";
 import api from "../../shared/Api";
+import {GuaranteeDeliveryManager} from "../../shared/GuaranteeDelivery";
 
 class AdminRoot extends Component {
 
@@ -48,6 +49,7 @@ class AdminRoot extends Component {
         gxy4_count: 0,
         gxy5_count: 0,
         command_status: true,
+        gdm: null,
     };
 
     componentWillUnmount() {
@@ -114,7 +116,8 @@ class AdminRoot extends Component {
     withAudio = () => (this.isAllowed("admin"));
 
     initApp = (user) => {
-        this.setState({user});
+        let gdm = new GuaranteeDeliveryManager(user.id);
+        this.setState({user,gdm});
 
         api.fetchConfig()
             .then(data => GxyJanus.setGlobalConfig(data))
@@ -514,6 +517,12 @@ class AdminRoot extends Component {
     };
 
     onProtocolData = (gateway, data) => {
+        const { gdm } = this.state;
+        if (gdm.checkAck(data)) {
+            // Ack received, do nothing.
+            return;
+        }
+
         // let {users} = this.state;
         //
         // // Set status in users list
@@ -537,7 +546,7 @@ class AdminRoot extends Component {
     };
 
     sendRemoteCommand = (command_type) => {
-        const {gateways, feed_user, current_janus, current_room, command_status} = this.state;
+        const {gateways, feed_user, current_janus, current_room, command_status, gdm} = this.state;
         if (!feed_user) {
             alert("Choose user");
             return;
@@ -548,8 +557,21 @@ class AdminRoot extends Component {
         }
 
         const gateway = gateways[current_janus];
-        gateway.sendProtocolMessage({type: command_type, room: current_room, status: command_status, id: feed_user.id, user: feed_user})
-            .catch(alert);
+        const msg = {type: command_type, room: current_room, status: command_status, id: feed_user.id, user: feed_user};
+        const toAck = [feed_user.id];
+
+        if(command_type === "audio-out") {
+            gdm.send(msg, toAck, (msg) => gateway.sendProtocolMessage(msg).catch(alert)).
+            then(() => {
+                console.log(`MIC delivered to ${toAck}.`);
+            }).catch((error) => {
+                console.error(`MIC not delivered to ${toAck} due to ` , error);
+            });
+        } else {
+            const gateway = gateways[current_janus];
+            gateway.sendProtocolMessage({type: command_type, room: current_room, status: command_status, id: feed_user.id, user: feed_user})
+                .catch(alert);
+        }
 
         if (command_type === "audio-out") {
             this.setState({command_status: !command_status})
