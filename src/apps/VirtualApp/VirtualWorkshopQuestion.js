@@ -17,8 +17,8 @@ const GALAXY_LANG = 'lng';
 
 const languageOptions = [
   {key: 'he', value: 0, flag: 'il', question: null, selected: false},
-  {key: 'ru', value: 1, flag: 'ru', question: null, selected: false},
-  {key: 'en', value: 2, flag: 'us', question: null, selected: false},
+  {key: 'ru', value: 1, flag: 'ru', question: 'rus', selected: false},
+  {key: 'en', value: 2, flag: 'us', question: 'eng', selected: false},
   {key: 'es', value: 3, flag: 'es', question: null, selected: false}
 ];
 
@@ -56,7 +56,7 @@ class VirtualWorkshopQuestion extends Component {
     this.state = {
       fontSize: +localStorage.getItem(WQ_FONT_SIZE) || 18,
       selectedLanguageValue: getLanguageValue(),
-      hasQuestion: false,
+      hasQuestion: true,
       showQuestion: true,
       openSettings: false,
       fontPopVisible: false,
@@ -229,8 +229,8 @@ class VirtualWorkshopQuestion extends Component {
                         selectOnBlur={false}
                         trigger={
                           <Icon name="cog"
-                                onClick={() => this.setState(prevState => ({
-                                    openSettings: !prevState.openSettings,
+                                onClick={() => this.setState(({openSettings}) => ({
+                                    openSettings: !openSettings,
                                     fontPopVisible: false
                                   })
                                 )}

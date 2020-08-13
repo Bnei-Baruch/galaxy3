@@ -1415,6 +1415,10 @@ class VirtualClient extends Component {
       }
     }
 
+    for (let i = 0; i < 20; i++) {
+      remoteVideos.push(this.renderLocalMedia(width, height, i));
+    }
+
     let noOfVideos = remoteVideos.length;
     if (room !== '') {
       if (shidur && attachedSource && ['double', 'equal'].includes(layout)) {
