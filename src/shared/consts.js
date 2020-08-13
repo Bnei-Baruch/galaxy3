@@ -7,6 +7,7 @@ export const SHIDUR_ID = "4ab867e5-46f9-47b9-bd6d-47a6df784d92";
 export const SNDMAN_ID = "720f133f-b8e2-49a8-a148-7bd80763ae55";
 export const SDIOUT_ID = "91966d26-0777-4179-9773-d7cd5456a5ed";
 export const STORAN_ID = "28c8d37e-d86f-4c8c-9f89-f3b92e81f13e";
+export const AUDIOOUT_ID = 'something-constant....';
 
 export const vsettings_list = [
     { key: 0, text: '320 x 180, 15 fps', value: {width: 320, height: 180, ideal: 15}, mobileText: 'low'},

@@ -106,7 +106,7 @@ class ChatBox extends Component {
     };
 
     sendPrivateMessage = () => {
-        const {user, selected_room, selected_user, gateways} = this.props;
+        const {user: {role, display, username}, selected_room, selected_user, gateways} = this.props;
         const {input_value} = this.state;
         if (!selected_user) {
             alert("Choose user");
@@ -114,7 +114,7 @@ class ChatBox extends Component {
         }
 
         const gateway = gateways[selected_user.janus];
-        const msg = {user, text: input_value};
+        const msg = {user: {role, display, username}, text: input_value};
         gateway.data("chatroom", gateway.chatroom, {
             ack: false,
             textroom: "message",
@@ -134,7 +134,7 @@ class ChatBox extends Component {
     };
 
     sendBroadcastMessage = () => {
-        const {user, selected_room, rooms, gateways} = this.props;
+        const {user: {role, display, username}, selected_room, rooms, gateways} = this.props;
         const {input_value, messages} = this.state;
 
         const room_data = rooms.find(x => x.room === selected_room);
@@ -145,7 +145,7 @@ class ChatBox extends Component {
         }
 
         const gateway = gateways[room_data.janus];
-        const msg = {type: "chat-broadcast", room: selected_room, user, text: input_value};
+        const msg = {type: "chat-broadcast", room: selected_room, user: {role, display, username}, text: input_value};
         gateway.sendProtocolMessage(msg)
             .then(() => {
                 msg.time = getDateString();
