@@ -560,12 +560,18 @@ class AdminRoot extends Component {
         const msg = {type: command_type, room: current_room, status: command_status, id: feed_user.id, user: feed_user};
         const toAck = [feed_user.id];
 
-        gdm.send(msg, toAck, (msg) => gateway.sendProtocolMessage(msg).catch(alert)).
-        then(() => {
-            console.log(`MIC delivered to ${toAck}.`);
-        }).catch((error) => {
-            console.error(`MIC not delivered to ${toAck} due to ` , error);
-        });
+        if(command_type === "audio-out") {
+            gdm.send(msg, toAck, (msg) => gateway.sendProtocolMessage(msg).catch(alert)).
+            then(() => {
+                console.log(`MIC delivered to ${toAck}.`);
+            }).catch((error) => {
+                console.error(`MIC not delivered to ${toAck} due to ` , error);
+            });
+        } else {
+            const gateway = gateways[current_janus];
+            gateway.sendProtocolMessage({type: command_type, room: current_room, status: command_status, id: feed_user.id, user: feed_user})
+                .catch(alert);
+        }
 
         if (command_type === "audio-out") {
             this.setState({command_status: !command_status})
