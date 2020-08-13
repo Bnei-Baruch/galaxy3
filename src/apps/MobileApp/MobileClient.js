@@ -1202,7 +1202,7 @@ class MobileClient extends Component {
                 return;
             }
 
-            this.state.virtualStreamingJanus.streamGalaxy(data.status, 4, "");
+            this.state.shidurJanus.streamGalaxy(data.status, 4, '');
             if (data.status) {
                 // remove question mark when sndman unmute our room
                 if (this.state.question) {
