@@ -215,17 +215,39 @@ class UsersQuad extends Component {
     };
 
     toFullGroup = (i,g,q) => {
+        let {room,janus} = g;
         console.log("[Shidur]:: Make Full Screen Group: ",g);
         this.setState({fullscr: true, full_feed: i, question: q});
         this.sdiAction("fullscr_group" , true, i, g, q);
+        this.micMute(true, room, janus);
     };
 
     toFourGroup = (i,g,cb,q) => {
+        let {room,janus} = g;
         console.log("[Shidur]:: Back to four: ");
         this.sdiAction("fullscr_group" , false, i, g, q);
+        this.micMute(false, room, janus);
         this.setState({fullscr: false, full_feed: null, question: false}, () => {
             cb();
         });
+    };
+
+    sendDataMessage = (status) => {
+        const {col,full_feed} = this.state;
+        const cmd = {type: "audio-out", rcmd: true, status}
+        const message = JSON.stringify(cmd);
+        console.log(':: Sending message: ', message);
+        this["cmd"+col+full_feed].state.videoroom.data({ text: message });
+    };
+
+    micMute = (status, room, inst) => {
+        const msg = {type: "audio-out", status, room, col: null, i: null, feed: null};
+
+        const {gateways} = this.props;
+        //TODO: Send data in room channel
+        //this.sendDataMessage(status);
+        gateways[inst].sendProtocolMessage(msg);
+        gateways["gxy3"].sendServiceMessage(msg);
     };
 
     setDelay = () => {
@@ -238,11 +260,6 @@ class UsersQuad extends Component {
   render() {
       const {full_feed,fullscr,col,vquad,question} = this.state;
       const {groups,group,rooms,next_button,presets} = this.props;
-      const q = (<div className="question">
-          <svg viewBox="0 0 50 50">
-              <text x="25" y="25" textAnchor="middle" alignmentBaseline="central" dominantBaseline="central">&#xF128;</text>
-          </svg>
-      </div>);
 
       let program = vquad.map((g,i) => {
           if (groups.length === 0) return false;
@@ -254,20 +271,18 @@ class UsersQuad extends Component {
               <div key={"pr" + i} className={qf ? "video_full" : ff ? "video_qst" : "video_box"} >
                   <div className='click-panel' onClick={() => this.switchQuestion(i,g,true)} >
                   <div className='video_title' >{name}</div>
-                  {qst ? q : ""}
+                  {qst ? <div className="qst_title">?</div> : ""}
                   <UsersHandle key={"q"+i} g={g} index={i} {...this.props} />
                   </div>
                   {!question ?
                   <Button className='fullscr_button'
                           size='mini'
-                          color='blue'
                           icon='expand arrows alternate'
                           onClick={() => this.switchFullScreen(i,g,false)} /> : ""}
                   {fullscr && full_feed === i ? "" :
                       <Button className='next_button'
                               disabled={groups.length < 5 || next_button}
                               size='mini'
-                              color='green'
                               icon={group ? 'arrow up' : 'share'}
                               onClick={() => this.switchProgram(i, false)} />}
               </div>

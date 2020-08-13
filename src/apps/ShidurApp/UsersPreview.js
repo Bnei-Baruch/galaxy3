@@ -203,7 +203,7 @@ class UsersPreview extends Component {
                                       onClick={() => this.props.closePopup({disable: true}, this.props.pg)} />
                               <Button className='hide_button'
                                       size='mini'
-                                      color='green'
+                                      color='grey'
                                       icon='share'
                                       onClick={this.props.nextInQueue} />
                           </div>
