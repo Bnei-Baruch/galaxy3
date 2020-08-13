@@ -243,10 +243,14 @@ class MobileClient extends Component {
             alert(t('oldClient.unifiedPlanNotSupported'));
           }
       }, err => {
-          this.exitRoom(true, () => {
-              console.error("[VirtualClient] error initializing janus", err);
-              this.reinitClient(retry);
+          this.exitRoom(false, () => {
+              console.error("[VirtualClient] reinitializing failed after: " + retry + " retries");
+              alert("Lost connection to the server!");
           });
+          // this.exitRoom(true, () => {
+          //     console.error("[VirtualClient] error initializing janus", err);
+          //     this.reinitClient(retry);
+          // });
       }, config.url, config.token, config.iceServers);
     };
 
@@ -386,10 +390,10 @@ class MobileClient extends Component {
             }
             if(count >= 10) {
                 clearInterval(chk);
-                this.exitRoom(true, () => {
-                    console.error("ICE Disconnected");
-                    this.initClient(true);
-                });
+                // this.exitRoom(true, () => {
+                //     console.error("ICE Disconnected");
+                //     this.initClient(true);
+                // });
             }
         }, 3000);
     };
