@@ -89,6 +89,11 @@ class Api {
         return this.logAndParse(`admin delete room`, fetch(this.urlFor(`/admin/rooms/${id}`), options));
     }
 
+    adminSetConfig = (key, value) => {
+        const options = this.makeOptions('POST', {value});
+        return this.logAndParse(`admin set config`, fetch(this.urlFor(`/admin/dynamic_config/${key}`), options));
+    }
+
     // Auth Helper API
 
     verifyUser = (pendingEmail, action) =>
