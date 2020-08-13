@@ -42,7 +42,7 @@ export class GuaranteeDeliveryManager {
     for (let [transaction, state] of this.pending) {
       const interval = now - state.sent;
       if (interval > this.maxDelay) {
-        console.log('Did not get all ack as required', state.ack);
+        console.error('[GDM] Did not get all ack as required', state.ack);
         // Failed sending message on timeout. Delete and reject.
         this.pending.delete(transaction);
         state.delivery.reject({reason: DEADLINE_EXCEEDED, message: state.message});  // Note that if reject is computation heavy action, our timings might be not accurate.

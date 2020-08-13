@@ -8,7 +8,7 @@ import {checkNotification, geoInfo, getMedia, getMediaStream, initJanus, micLeve
 import './MobileClient.scss'
 import './MobileConteiner.scss'
 import 'eqcss'
-import {initGxyProtocol} from "../../shared/protocol";
+import {initGxyProtocol, sendProtocolMessage} from "../../shared/protocol";
 import {PROTOCOL_ROOM, VIDEO_240P_OPTION_VALUE, NO_VIDEO_OPTION_VALUE, vsettings_list} from "../../shared/consts";
 import {GEO_IP_INFO} from "../../shared/env";
 import platform from "platform";
@@ -32,6 +32,7 @@ import VirtualStreamingMobile from './VirtualStreamingMobile';
 import VirtualStreamingJanus from '../../shared/VirtualStreamingJanus';
 
 import VirtualChat from '../VirtualApp/VirtualChat';
+import {GuaranteeDeliveryManager} from "../../shared/GuaranteeDelivery";
 
 const sortAndFilterFeeds = (feeds) => feeds
   .filter(feed => !feed.display.role.match(/^(ghost|guest)$/))
@@ -105,6 +106,7 @@ class MobileClient extends Component {
         chatMessagesCount: 0,
         chatVisible: false,
         settingsActiveIndex: -1,
+        gdm: null,
     };
 
     shidurInitialized() {
@@ -168,6 +170,8 @@ class MobileClient extends Component {
     }
 
     initApp = (user) => {
+        let gdm = new GuaranteeDeliveryManager(user.id);
+        this.setState({gdm});
         localStorage.setItem('question', false);
         localStorage.setItem('sound_test', false);
         localStorage.setItem('uuid', user.id);
@@ -1186,13 +1190,29 @@ class MobileClient extends Component {
     };
 
     handleAudioOut = (data) => {
-      this.state.shidurJanus.streamGalaxy(data.status, 4, '');
-      if (data.status) {
-        // remove question mark when sndman unmute our room
-        if (this.state.question) {
-          this.handleQuestion();
+        const { gdm, user, protocol } = this.state;
+        if (gdm.checkAck(data)) {
+            // Ack received, do nothing.
+            return;
         }
-      }
+
+        gdm.accept(data, (msg) => sendProtocolMessage(protocol, user, msg, false)).then((data) => {
+            if (data === null) {
+                console.log('Message received more then once.');
+                return;
+            }
+
+            this.state.virtualStreamingJanus.streamGalaxy(data.status, 4, "");
+            if (data.status) {
+                // remove question mark when sndman unmute our room
+                if (this.state.question) {
+                    this.handleQuestion();
+                }
+            }
+
+        }).catch((error) => {
+            console.error(`Failed receiving ${data}: ${error}`);
+        });
     };
 
     otherCamsMuteToggle = () => {
