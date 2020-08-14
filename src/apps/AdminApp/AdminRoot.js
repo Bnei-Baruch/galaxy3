@@ -13,6 +13,7 @@ import MonitoringAdmin from "./components/MonitoringAdmin";
 import MonitoringUser from "./components/MonitoringUser";
 import RoomManager from "./components/RoomManager";
 import api from "../../shared/Api";
+import ConfigStore from "../../shared/ConfigStore";
 import {GuaranteeDeliveryManager} from "../../shared/GuaranteeDelivery";
 
 class AdminRoot extends Component {
@@ -50,6 +51,7 @@ class AdminRoot extends Component {
         gxy5_count: 0,
         command_status: true,
         gdm: null,
+        premodStatus: false,
     };
 
     componentWillUnmount() {
@@ -120,7 +122,11 @@ class AdminRoot extends Component {
         this.setState({user,gdm});
 
         api.fetchConfig()
-            .then(data => GxyJanus.setGlobalConfig(data))
+            .then(data => {
+                ConfigStore.setGlobalConfig(data);
+                this.setState({premodStatus: ConfigStore.dynamicConfig(ConfigStore.PRE_MODERATION_KEY) === 'true'});
+                GxyJanus.setGlobalConfig(data);
+            })
             .then(() => this.initGateways(user))
             .then(this.pollRooms)
             .catch(err => {
@@ -547,6 +553,29 @@ class AdminRoot extends Component {
 
     sendRemoteCommand = (command_type) => {
         const {gateways, feed_user, current_janus, current_room, command_status, gdm} = this.state;
+
+        if (command_type === "premoder-mode") {
+            const value = !this.state.premodStatus;
+            api.adminSetConfig(ConfigStore.PRE_MODERATION_KEY, value.toString())
+                .then(() => {
+                    ConfigStore.setDynamicConfig(ConfigStore.PRE_MODERATION_KEY, value.toString());
+                    this.setState({premodStatus: value});
+
+                    const msg = {
+                        type: "reload-config",
+                        status: value,
+                        id: null,
+                        user: null,
+                        room: null,
+                    };
+                    Object.values(gateways).forEach(gateway =>
+                        gateway.sendProtocolMessage(msg)
+                            .catch(alert))
+                })
+                .catch(alert)
+            return;
+        }
+
         if (!feed_user) {
             alert("Choose user");
             return;
@@ -718,28 +747,29 @@ class AdminRoot extends Component {
 
   render() {
       const {
-        activeTab,
-        current_room,
-        feed_id,
-        feed_info,
-        feed_rtcp,
-        feed_user,
-        feeds,
-        users,
-        gateways,
-        gatewaysInitialized,
-        rooms,
-        user,
-        usersTabs,
+          activeTab,
+          current_room,
+          feed_id,
+          feed_info,
+          feed_rtcp,
+          feed_user,
+          feeds,
+          users,
+          gateways,
+          gatewaysInitialized,
+          rooms,
+          user,
+          usersTabs,
           users_count,
           gxy1_count,
           gxy2_count,
           gxy3_count,
           gxy4_count,
           gxy5_count,
-        chatRoomsInitialized,
+          chatRoomsInitialized,
           appInitError,
           command_status,
+          premodStatus,
       } = this.state;
 
       if (appInitError) {
@@ -874,6 +904,7 @@ class AdminRoot extends Component {
                               on='click'
                               hideOnScroll
                           />
+                          <Popup trigger={<Button color="yellow" icon='question' onClick={() => this.sendRemoteCommand("client-question")} />} content='Set/Unset question' inverted />
                           <Label attached='top right'>
                               <List>
                                   <List.Item className="gxy_count">GXY1: <b>{gxy1_count}</b></List.Item>
@@ -901,7 +932,15 @@ class AdminRoot extends Component {
                                           <Popup trigger={<Button color="pink" icon='eye' onClick={() => this.sendRemoteCommand("video-mute")} />} content='Cam Mute/Unmute' inverted />
                                           <Popup trigger={<Button color="orange" icon={command_status ? 'volume off' : 'volume up'} onClick={() => this.sendRemoteCommand("audio-out")} />} content='Talk event' inverted />
                                           {/*<Popup trigger={<Button color="pink" icon='eye' onClick={() => this.sendDataMessage("video-mute")} />} content='Cam Mute/Unmute' inverted />*/}
-                                          <Popup trigger={<Button color="blue" icon='power off' onClick={() => this.sendRemoteCommand("client-disconnect")} />} content='Disconnect(LOST FEED HERE!)' inverted />
+                                          {/*<Popup trigger={<Button color="blue" icon='power off' onClick={() => this.sendRemoteCommand("client-disconnect")} />} content='Disconnect(LOST FEED HERE!)' inverted />*/}
+                                          <Popup inverted
+                                                 content={`${premodStatus ? 'Disable' : 'Enable'} Pre Moderation Mode`}
+                                                 trigger={
+                                                     <Button color="blue"
+                                                             icon='copyright'
+                                                             inverted={premodStatus}
+                                                             onClick={() => this.sendRemoteCommand("premoder-mode")}/>
+                                                 }/>
                                           <Popup trigger={<Button color="yellow" icon='question' onClick={() => this.sendRemoteCommand("client-question")} />} content='Set/Unset question' inverted />
                                       </Segment>
                                       : null

@@ -32,6 +32,7 @@ import VirtualStreamingMobile from './VirtualStreamingMobile';
 import VirtualStreamingJanus from '../../shared/VirtualStreamingJanus';
 
 import VirtualChat from '../VirtualApp/VirtualChat';
+import ConfigStore from "../../shared/ConfigStore";
 import {GuaranteeDeliveryManager} from "../../shared/GuaranteeDelivery";
 
 const sortAndFilterFeeds = (feeds) => feeds
@@ -69,7 +70,7 @@ class MobileClient extends Component {
 
         feeds: [],
         streamsMids: new Map(),
-        creatingFeed: false,  
+        creatingFeed: false,
         switchToPage: -1,
         page: 0,
         muteOtherCams: false,
@@ -107,6 +108,7 @@ class MobileClient extends Component {
         chatVisible: false,
         settingsActiveIndex: -1,
         gdm: null,
+        premodStatus: false,
     };
 
     shidurInitialized() {
@@ -195,7 +197,11 @@ class MobileClient extends Component {
             this.setState({user});
 
             api.fetchConfig()
-                .then(data => GxyJanus.setGlobalConfig(data))
+                .then(data => {
+                    ConfigStore.setGlobalConfig(data);
+                    this.setState({premodStatus: ConfigStore.dynamicConfig(ConfigStore.PRE_MODERATION_KEY) === 'true'});
+                    GxyJanus.setGlobalConfig(data);
+                })
                 .then(() => (api.fetchAvailableRooms({with_num_users: true})))
                 .then(data => {
                     const {rooms} = data;
@@ -918,7 +924,7 @@ class MobileClient extends Component {
                     {request: "subscribe", streams: subscription}
             });
             return;
-        } 
+        }
 
         // We don't have a handle yet, but we may be creating one already
         if (this.state.creatingFeed) {
@@ -971,7 +977,7 @@ class MobileClient extends Component {
 
     switchVideos = (page, oldFeeds, newFeeds) => {
       const {muteOtherCams} = this.state;
-      
+
       const oldVideoSlots = [
         oldFeeds.findIndex(feed => feed.videoSlot === 0),
         oldFeeds.findIndex(feed => feed.videoSlot === 1),
@@ -1092,6 +1098,8 @@ class MobileClient extends Component {
                 this.camMute(this.state.cammuted);
             } else if (type === 'audio-out' && room === selected_room) {
                 this.handleAudioOut(ondata);
+            } else if (type === 'reload-config') {
+                this.reloadConfig();
             }
         });
     };
@@ -1155,8 +1163,13 @@ class MobileClient extends Component {
     sendKeepAlive = () => {
         const {user, janus} = this.state;
         if (user && janus && janus.isConnected() && user.session && user.handle) {
-            console.debug("[User] sendKeepAlive", new Date());
             api.updateUser(user.id, user)
+                .then(data => {
+                    if (ConfigStore.isNewer(data.config_last_modified)) {
+                        console.info("[User] there is a newer config. Reloading ", data.config_last_modified);
+                        this.reloadConfig();
+                    }
+                })
                 .catch(err => console.error("[User] error sending keepalive", user.id, err));
         }
     };
@@ -1167,6 +1180,24 @@ class MobileClient extends Component {
             clearInterval(keepalive);
         }
         this.setState({keepalive: null});
+    }
+
+    reloadConfig = () => {
+        api.fetchConfig()
+            .then((data) => {
+                ConfigStore.setGlobalConfig(data);
+                const {premodStatus, question} = this.state;
+                const newPremodStatus = ConfigStore.dynamicConfig(ConfigStore.PRE_MODERATION_KEY) === 'true';
+                if (newPremodStatus !== premodStatus) {
+                    this.setState({premodStatus: newPremodStatus});
+                    if(question) {
+                        this.handleQuestion();
+                    }
+                }
+            })
+            .catch(err => {
+                console.error("[User] error reloading config", err);
+            });
     }
 
     makeDelay = () => {
@@ -1356,6 +1387,7 @@ class MobileClient extends Component {
         feeds,
         page,
         videos,
+        premodStatus,
       } = this.state;
       const {video_device} = media.video;
       const {audio_device} = media.audio;
@@ -1659,7 +1691,7 @@ class MobileClient extends Component {
                     <Image className='audio-mode' src={muteOtherCams ? audioModeSvg : fullModeSvg} />
                     <span>{t(muteOtherCams ? 'oldClient.fullMode' : 'oldClient.audioMode')}</span>
                   </Menu.Item>
-                  <Menu.Item disabled={questionDisabled} onClick={this.handleQuestion}>
+                  <Menu.Item disabled={premodStatus || questionDisabled} onClick={this.handleQuestion}>
                     <Icon name='question' style={{color: question ? '#21ba45' : null}} />
                     <span>
                       {t('oldClient.askQuestion')}
