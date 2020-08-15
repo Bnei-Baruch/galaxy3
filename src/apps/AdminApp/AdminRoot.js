@@ -1,6 +1,6 @@
 import React, {Component, Fragment} from 'react';
 import {Janus} from "../../lib/janus";
-import {Button, Grid, Icon, Label, List, Menu, Popup, Segment, Tab, Table} from "semantic-ui-react";
+import {Button, Confirm, Grid, Header, Icon, Label, List, Menu, Popup, Segment, Tab, Table} from "semantic-ui-react";
 import './AdminRoot.css';
 import './AdminRootVideo.scss'
 import classNames from "classnames";
@@ -54,6 +54,7 @@ class AdminRoot extends Component {
         command_status: true,
         gdm: null,
         premodStatus: false,
+        showConfirmReloadAll: false,
     };
 
     componentWillUnmount() {
@@ -762,6 +763,15 @@ class AdminRoot extends Component {
     }
   }
 
+    onConfirmReloadAllCancel = (e, data) => {
+        this.setState({showConfirmReloadAll: false});
+    }
+
+    onConfirmReloadAllConfirm = (e, data) => {
+        this.setState({showConfirmReloadAll: false});
+        this.sendRemoteCommand("client-reload-all");
+    }
+
   render() {
       const {
           activeTab,
@@ -789,6 +799,7 @@ class AdminRoot extends Component {
           appInitError,
           command_status,
           premodStatus,
+          showConfirmReloadAll,
       } = this.state;
 
       if (appInitError) {
@@ -963,7 +974,7 @@ class AdminRoot extends Component {
                                                              onClick={() => this.sendRemoteCommand("premoder-mode")}/>
                                                  }/>
                                           <Popup trigger={<Button color="yellow" icon='question' onClick={() => this.sendRemoteCommand("client-question")} />} content='Set/Unset question' inverted />
-                                          <Popup trigger={<Button color="red" icon='redo' onClick={() => this.sendRemoteCommand("client-reload-all")} />} content='RELOAD ALL' inverted />
+                                          <Popup trigger={<Button color="red" icon='redo' onClick={() => this.setState({showConfirmReloadAll: !showConfirmReloadAll})} />} content='RELOAD ALL' inverted />
                                       </Segment>
                                       : null
                               }
@@ -1021,6 +1032,20 @@ class AdminRoot extends Component {
                                selected_user={feed_user}
                                gateways={gateways}
                                onChatRoomsInitialized={this.onChatRoomsInitialized}/>
+                      : null
+              }
+
+              {
+                  this.isAllowed("root") ?
+                      <Confirm
+                          open={showConfirmReloadAll}
+                          header={
+                              <Header><Icon name="warning circle" color="red"/>Caution</Header>
+                          }
+                          content="Are you sure you want to force ALL USERS to reload their page ?!"
+                          onCancel={this.onConfirmReloadAllCancel}
+                          onConfirm={this.onConfirmReloadAllConfirm}
+                      />
                       : null
               }
 
