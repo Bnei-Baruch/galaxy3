@@ -8,6 +8,7 @@ import {API_BACKEND_PASSWORD, API_BACKEND_USERNAME} from "../../shared/env";
 import GxyJanus from "../../shared/janus-utils";
 import UsersHandleSDIOut from "./UsersHandleSDIOut";
 import UsersQuadSDIOut from "./UsersQuadSDIOut";
+import {GuaranteeDeliveryManager} from '../../shared/GuaranteeDelivery';
 
 
 class SDIOutApp extends Component {
@@ -31,6 +32,7 @@ class SDIOutApp extends Component {
         gatewaysInitialized: false,
         appInitError: null,
         vote: false,
+        gdm: new GuaranteeDeliveryManager(SDIOUT_ID),
     };
 
     componentDidMount() {
@@ -112,38 +114,52 @@ class SDIOutApp extends Component {
     };
 
     onServiceData = (gateway, data, user) => {
-        if (data.type === "error" && data.error_code === 420) {
-            console.error("[SDIOut] service error message (reloading in 10 seconds)", data.error);
-                setTimeout(() => {
-                this.initGateway(user, gateway);
-                }, 10000);
-            }
-
-        const {room, col, feed, group, i, status, qst} = data;
-
-        if(data.type === "sdi-fullscr_group" && status) {
-            if(qst) {
-                this.setState({col, i, group, room, qg: this.state.qids["q"+col].vquad[i]})
-            } else {
-                this["col"+col].toFullGroup(i,feed);
-            }
-        } else if(data.type === "sdi-fullscr_group" && !status) {
-            let {col, feed, i} = data;
-            if(qst) {
-                this.setState({group: null, room: null, qg: null});
-            } else {
-                this["col"+col].toFourGroup(i,feed);
-            }
-        } else if(data.type === "sdi-vote") {
-            if(this.state.group)
-                return
-            this.setState({vote: status, qg: null});
-        } else if(data.type === "sdi-restart_sdiout") {
-            window.location.reload();
-        } else if(data.type === "event") {
-            delete data.type;
-            this.setState({...data});
+        const { gdm } = this.state;
+        if (gdm.checkAck(data)) {
+          // Ack received, do nothing.
+          return;
         }
+        gdm.accept(data, (msg) => gateway.sendServiceMessage(msg)).then((data) => {
+          if (data === null) {
+            console.log('Message received more then once.');
+            return;
+          }
+
+          if (data.type === "error" && data.error_code === 420) {
+              console.error("[SDIOut] service error message (reloading in 10 seconds)", data.error);
+                  setTimeout(() => {
+                  this.initGateway(user, gateway);
+                  }, 10000);
+              }
+
+          const {room, col, feed, group, i, status, qst} = data;
+
+          if(data.type === "sdi-fullscr_group" && status) {
+              if(qst) {
+                  this.setState({col, i, group, room, qg: this.state.qids["q"+col].vquad[i]})
+              } else {
+                  this["col"+col].toFullGroup(i,feed);
+              }
+          } else if(data.type === "sdi-fullscr_group" && !status) {
+              let {col, feed, i} = data;
+              if(qst) {
+                  this.setState({group: null, room: null, qg: null});
+              } else {
+                  this["col"+col].toFourGroup(i,feed);
+              }
+          } else if(data.type === "sdi-vote") {
+              if(this.state.group)
+                  return
+              this.setState({vote: status, qg: null});
+          } else if(data.type === "sdi-restart_sdiout") {
+              window.location.reload();
+          } else if(data.type === "event") {
+              delete data.type;
+              this.setState({...data});
+          }
+        }).catch((error) => {
+          console.error(`Failed receiving ${data}: ${error}`);
+        });
     };
 
     render() {

@@ -8,7 +8,7 @@ import {checkNotification, geoInfo, getMedia, getMediaStream, initJanus, micLeve
 import './MobileClient.scss'
 import './MobileConteiner.scss'
 import 'eqcss'
-import {initGxyProtocol} from "../../shared/protocol";
+import {initGxyProtocol, sendProtocolMessage} from "../../shared/protocol";
 import {PROTOCOL_ROOM, VIDEO_240P_OPTION_VALUE, NO_VIDEO_OPTION_VALUE, vsettings_list} from "../../shared/consts";
 import {GEO_IP_INFO} from "../../shared/env";
 import platform from "platform";
@@ -32,6 +32,8 @@ import VirtualStreamingMobile from './VirtualStreamingMobile';
 import VirtualStreamingJanus from '../../shared/VirtualStreamingJanus';
 
 import VirtualChat from '../VirtualApp/VirtualChat';
+import ConfigStore from "../../shared/ConfigStore";
+import {GuaranteeDeliveryManager} from "../../shared/GuaranteeDelivery";
 
 const sortAndFilterFeeds = (feeds) => feeds
   .filter(feed => !feed.display.role.match(/^(ghost|guest)$/))
@@ -68,7 +70,7 @@ class MobileClient extends Component {
 
         feeds: [],
         streamsMids: new Map(),
-        creatingFeed: false,  
+        creatingFeed: false,
         switchToPage: -1,
         page: 0,
         muteOtherCams: false,
@@ -105,6 +107,8 @@ class MobileClient extends Component {
         chatMessagesCount: 0,
         chatVisible: false,
         settingsActiveIndex: -1,
+        gdm: null,
+        premodStatus: false,
     };
 
     shidurInitialized() {
@@ -168,6 +172,8 @@ class MobileClient extends Component {
     }
 
     initApp = (user) => {
+        let gdm = new GuaranteeDeliveryManager(user.id);
+        this.setState({gdm});
         localStorage.setItem('question', false);
         localStorage.setItem('sound_test', false);
         localStorage.setItem('uuid', user.id);
@@ -191,7 +197,11 @@ class MobileClient extends Component {
             this.setState({user});
 
             api.fetchConfig()
-                .then(data => GxyJanus.setGlobalConfig(data))
+                .then(data => {
+                    ConfigStore.setGlobalConfig(data);
+                    this.setState({premodStatus: ConfigStore.dynamicConfig(ConfigStore.PRE_MODERATION_KEY) === 'true'});
+                    GxyJanus.setGlobalConfig(data);
+                })
                 .then(() => (api.fetchAvailableRooms({with_num_users: true})))
                 .then(data => {
                     const {rooms} = data;
@@ -239,10 +249,14 @@ class MobileClient extends Component {
             alert(t('oldClient.unifiedPlanNotSupported'));
           }
       }, err => {
-          this.exitRoom(true, () => {
-              console.error("[VirtualClient] error initializing janus", err);
-              this.reinitClient(retry);
+          this.exitRoom(false, () => {
+              console.error("[VirtualClient] reinitializing failed after: " + retry + " retries");
+              alert("Lost connection to the server!");
           });
+          // this.exitRoom(true, () => {
+          //     console.error("[VirtualClient] error initializing janus", err);
+          //     this.reinitClient(retry);
+          // });
       }, config.url, config.token, config.iceServers);
     };
 
@@ -382,10 +396,10 @@ class MobileClient extends Component {
             }
             if(count >= 10) {
                 clearInterval(chk);
-                this.exitRoom(true, () => {
-                    console.error("ICE Disconnected");
-                    this.initClient(true);
-                });
+                // this.exitRoom(true, () => {
+                //     console.error("ICE Disconnected");
+                //     this.initClient(true);
+                // });
             }
         }, 3000);
     };
@@ -910,7 +924,7 @@ class MobileClient extends Component {
                     {request: "subscribe", streams: subscription}
             });
             return;
-        } 
+        }
 
         // We don't have a handle yet, but we may be creating one already
         if (this.state.creatingFeed) {
@@ -963,7 +977,7 @@ class MobileClient extends Component {
 
     switchVideos = (page, oldFeeds, newFeeds) => {
       const {muteOtherCams} = this.state;
-      
+
       const oldVideoSlots = [
         oldFeeds.findIndex(feed => feed.videoSlot === 0),
         oldFeeds.findIndex(feed => feed.videoSlot === 1),
@@ -1084,6 +1098,8 @@ class MobileClient extends Component {
                 this.camMute(this.state.cammuted);
             } else if (type === 'audio-out' && room === selected_room) {
                 this.handleAudioOut(ondata);
+            } else if (type === 'reload-config') {
+                this.reloadConfig();
             }
         });
     };
@@ -1147,8 +1163,13 @@ class MobileClient extends Component {
     sendKeepAlive = () => {
         const {user, janus} = this.state;
         if (user && janus && janus.isConnected() && user.session && user.handle) {
-            console.debug("[User] sendKeepAlive", new Date());
             api.updateUser(user.id, user)
+                .then(data => {
+                    if (ConfigStore.isNewer(data.config_last_modified)) {
+                        console.info("[User] there is a newer config. Reloading ", data.config_last_modified);
+                        this.reloadConfig();
+                    }
+                })
                 .catch(err => console.error("[User] error sending keepalive", user.id, err));
         }
     };
@@ -1159,6 +1180,24 @@ class MobileClient extends Component {
             clearInterval(keepalive);
         }
         this.setState({keepalive: null});
+    }
+
+    reloadConfig = () => {
+        api.fetchConfig()
+            .then((data) => {
+                ConfigStore.setGlobalConfig(data);
+                const {premodStatus, question} = this.state;
+                const newPremodStatus = ConfigStore.dynamicConfig(ConfigStore.PRE_MODERATION_KEY) === 'true';
+                if (newPremodStatus !== premodStatus) {
+                    this.setState({premodStatus: newPremodStatus});
+                    if(question) {
+                        this.handleQuestion();
+                    }
+                }
+            })
+            .catch(err => {
+                console.error("[User] error reloading config", err);
+            });
     }
 
     makeDelay = () => {
@@ -1186,13 +1225,29 @@ class MobileClient extends Component {
     };
 
     handleAudioOut = (data) => {
-      this.state.shidurJanus.streamGalaxy(data.status, 4, '');
-      if (data.status) {
-        // remove question mark when sndman unmute our room
-        if (this.state.question) {
-          this.handleQuestion();
+        const { gdm, user, protocol } = this.state;
+        if (gdm.checkAck(data)) {
+            // Ack received, do nothing.
+            return;
         }
-      }
+
+        gdm.accept(data, (msg) => sendProtocolMessage(protocol, user, msg, false)).then((data) => {
+            if (data === null) {
+                console.log('Message received more then once.');
+                return;
+            }
+
+            this.state.shidurJanus.streamGalaxy(data.status, 4, '');
+            if (data.status) {
+                // remove question mark when sndman unmute our room
+                if (this.state.question) {
+                    this.handleQuestion();
+                }
+            }
+
+        }).catch((error) => {
+            console.error(`Failed receiving ${data}: ${error}`);
+        });
     };
 
     otherCamsMuteToggle = () => {
@@ -1332,6 +1387,7 @@ class MobileClient extends Component {
         feeds,
         page,
         videos,
+        premodStatus,
       } = this.state;
       const {video_device} = media.video;
       const {audio_device} = media.audio;
@@ -1635,7 +1691,7 @@ class MobileClient extends Component {
                     <Image className='audio-mode' src={muteOtherCams ? audioModeSvg : fullModeSvg} />
                     <span>{t(muteOtherCams ? 'oldClient.fullMode' : 'oldClient.audioMode')}</span>
                   </Menu.Item>
-                  <Menu.Item disabled={questionDisabled} onClick={this.handleQuestion}>
+                  <Menu.Item disabled={premodStatus || questionDisabled} onClick={this.handleQuestion}>
                     <Icon name='question' style={{color: question ? '#21ba45' : null}} />
                     <span>
                       {t('oldClient.askQuestion')}

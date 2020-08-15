@@ -24,6 +24,11 @@
     height: 86px;
 }
 
+.gxy_count {
+    padding: 0.52em !important;
+    line-height: 0.14285714em !important;
+}
+
 .ingest_segment > .menu,
 .ingest_segment >.input {
     margin: .2rem .5rem !important;
