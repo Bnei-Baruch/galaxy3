@@ -638,6 +638,10 @@ class VirtualClient extends Component {
         this.setState({user});
       } else if (type === 'audio-out') {
         this.handleAudioOut(data);
+      }  else if (type === 'reload-config') {
+        this.reloadConfig();
+      } else if (type === 'client-reload-all') {
+        window.location.reload();
       }
     } else {
       for (let i = 0; i < feeds.length; i++) {
@@ -1098,6 +1102,8 @@ class VirtualClient extends Component {
         this.handleAudioOut(ondata);
       } else if (type === 'reload-config') {
         this.reloadConfig();
+      } else if (type === 'client-reload-all') {
+        window.location.reload();
       }
     });
   };
