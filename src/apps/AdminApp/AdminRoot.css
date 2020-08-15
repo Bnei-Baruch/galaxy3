@@ -27,6 +27,8 @@
 .gxy_count {
     padding: 0.52em !important;
     line-height: 0.14285714em !important;
+    transform: scale(1.3, 1);
+    font-weight: bolder;
 }
 
 .ingest_segment > .menu,

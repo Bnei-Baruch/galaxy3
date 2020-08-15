@@ -49,6 +49,8 @@ class AdminRoot extends Component {
         gxy3_count: 0,
         gxy4_count: 0,
         gxy5_count: 0,
+        gxy6_count: 0,
+        gxy7_count: 0,
         command_status: true,
         gdm: null,
         premodStatus: false,
@@ -193,6 +195,8 @@ class AdminRoot extends Component {
                 const gxy3_count = data.filter(r => r.janus === "gxy3").map(r => r.num_users).reduce((su, cur) => su + cur, 0);
                 const gxy4_count = data.filter(r => r.janus === "gxy4").map(r => r.num_users).reduce((su, cur) => su + cur, 0);
                 const gxy5_count = data.filter(r => r.janus === "gxy5").map(r => r.num_users).reduce((su, cur) => su + cur, 0);
+                const gxy6_count = data.filter(r => r.janus === "gxy6").map(r => r.num_users).reduce((su, cur) => su + cur, 0);
+                const gxy7_count = data.filter(r => r.janus === "gxy7").map(r => r.num_users).reduce((su, cur) => su + cur, 0);
                 const room = data.find(r => r.room === current_room);
                 let users = current_room && room ? room.users : [];
                 data.sort((a, b) => {
@@ -200,7 +204,7 @@ class AdminRoot extends Component {
                     if (a.description < b.description) return -1;
                     return 0;
                 });
-                this.setState({rooms: data, users, users_count, gxy1_count, gxy2_count, gxy3_count, gxy4_count, gxy5_count});
+                this.setState({rooms: data, users, users_count, gxy1_count, gxy2_count, gxy3_count, gxy4_count, gxy5_count, gxy6_count, gxy7_count});
             })
             .catch(err => {
                 console.error("[Admin] error fetching active rooms", err);
@@ -779,6 +783,8 @@ class AdminRoot extends Component {
           gxy3_count,
           gxy4_count,
           gxy5_count,
+          gxy6_count,
+          gxy7_count,
           chatRoomsInitialized,
           appInitError,
           command_status,
@@ -918,13 +924,15 @@ class AdminRoot extends Component {
                               hideOnScroll
                           />
                           <Popup trigger={<Button color="yellow" icon='question' onClick={() => this.sendRemoteCommand("client-question")} />} content='Set/Unset question' inverted />
-                          <Label attached='top right'>
+                          <Label attached='top right' size='mini'>
                               <List>
-                                  <List.Item className="gxy_count">GXY1: <b>{gxy1_count}</b></List.Item>
-                                  <List.Item className="gxy_count">GXY2: <b>{gxy2_count}</b></List.Item>
-                                  <List.Item className="gxy_count">GXY3: <b>{gxy3_count}</b></List.Item>
-                                  <List.Item className="gxy_count">GXY4: <b>{gxy4_count}</b></List.Item>
-                                  <List.Item className="gxy_count">GXY5: <b>{gxy5_count}</b></List.Item>
+                                  <List.Item className="gxy_count">gxy1: <b>{gxy1_count}</b></List.Item>
+                                  <List.Item className="gxy_count">gxy2: <b>{gxy2_count}</b></List.Item>
+                                  <List.Item className="gxy_count">gxy3: <b>{gxy3_count}</b></List.Item>
+                                  <List.Item className="gxy_count">gxy4: <b>{gxy4_count}</b></List.Item>
+                                  <List.Item className="gxy_count">gxy5: <b>{gxy5_count}</b></List.Item>
+                                  <List.Item className="gxy_count">gxy6: <b>{gxy6_count}</b></List.Item>
+                                  <List.Item className="gxy_count">gxy7: <b>{gxy7_count}</b></List.Item>
                               </List>
                           </Label>
                       </Segment>
