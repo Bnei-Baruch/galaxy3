@@ -562,6 +562,10 @@ class MobileClient extends Component {
                 this.setState({user});
             } else if (type === 'audio-out') {
                 this.handleAudioOut(data);
+            } else if (type === 'reload-config') {
+                this.reloadConfig();
+            } else if (type === 'client-reload-all') {
+                window.location.reload();
             }
         } else {
           const feeds = Object.assign([], this.state.feeds);
@@ -1100,6 +1104,8 @@ class MobileClient extends Component {
                 this.handleAudioOut(ondata);
             } else if (type === 'reload-config') {
                 this.reloadConfig();
+            } else if (type === 'client-reload-all') {
+                window.location.reload();
             }
         });
     };

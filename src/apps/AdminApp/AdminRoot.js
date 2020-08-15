@@ -570,9 +570,22 @@ class AdminRoot extends Component {
                     };
                     Object.values(gateways).forEach(gateway =>
                         gateway.sendProtocolMessage(msg)
-                            .catch(alert))
+                            .catch(alert));
                 })
                 .catch(alert)
+            return;
+        }
+        if (command_type === "client-reload-all") {
+            const msg = {
+                type: "client-reload-all",
+                status: true,
+                id: null,
+                user: null,
+                room: null,
+            };
+            Object.values(gateways).forEach(gateway =>
+                gateway.sendProtocolMessage(msg)
+                    .catch(alert));
             return;
         }
 
@@ -942,6 +955,7 @@ class AdminRoot extends Component {
                                                              onClick={() => this.sendRemoteCommand("premoder-mode")}/>
                                                  }/>
                                           <Popup trigger={<Button color="yellow" icon='question' onClick={() => this.sendRemoteCommand("client-question")} />} content='Set/Unset question' inverted />
+                                          <Popup trigger={<Button color="red" icon='redo' onClick={() => this.sendRemoteCommand("client-reload-all")} />} content='RELOAD ALL' inverted />
                                       </Segment>
                                       : null
                               }
