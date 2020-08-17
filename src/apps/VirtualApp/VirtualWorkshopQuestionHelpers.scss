@@ -1,15 +1,6 @@
-@mixin activities-wq-dimensions($min-height, $max-height) {
-  .activities {
-    .wq-overlay {
-      height: 100%;
-
-      .wq-container {
-        .wq__question {
-          min-height: $min-height;
-          max-height: $max-height;
-        }
-      }
-    }
+@mixin wq-overlay-full-height() {
+  .activities .wq-overlay {
+    height: 100%;
   }
 }
 

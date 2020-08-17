@@ -1385,6 +1385,7 @@ class VirtualClient extends Component {
         setAttached={() => {
           this.setState({ attachedSource: true });
         }}
+        layout={currentLayout}
       />;
 
     let rooms_list = rooms.map((data, i) => {
@@ -1415,7 +1416,7 @@ class VirtualClient extends Component {
       }
     }
 
-    for (let i = 0; i < 20; i++) {
+    for (let i = 0; i < 10; i++) {
       remoteVideos.push(this.renderLocalMedia(width, height, i));
     }
 

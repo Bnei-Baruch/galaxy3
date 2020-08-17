@@ -130,6 +130,7 @@ class VirtualStreaming extends Component {
       virtualStreamingJanus,
       t,
       videos,
+      layout
     } = this.props;
     const {
       audios,
@@ -235,7 +236,7 @@ class VirtualStreaming extends Component {
                   </Dropdown.Menu>
                 </Dropdown>
                 <Volume media={virtualStreamingJanus.audioElement}/>
-                <div className="controls__spacer"></div>
+                <div className="controls__spacer"/>
                 <button onClick={this.toggleFullScreen}>
                   <Icon name={fullScreen ? 'compress' : 'expand'}/>
                 </button>
@@ -246,7 +247,7 @@ class VirtualStreaming extends Component {
                 }
               </div>
             </div>
-            <VirtualWorkshopQuestion />
+            <VirtualWorkshopQuestion layout={fullScreen || !attached ? 'full' : layout} />
           </div>
           {talking && <Label className='talk' size='massive' color='red'><Icon name='microphone'/>On</Label>}
         </div>

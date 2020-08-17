@@ -15,14 +15,44 @@ const WQ_LANG = 'wq-lang';
 const WQ_IN_PROCESS_SELECTED = 'wq-in-process-selected';
 const GALAXY_LANG = 'lng';
 
-const languageOptions = [
-  {key: 'he', value: 0, flag: 'il', question: null, selected: false},
-  {key: 'ru', value: 1, flag: 'ru', question: 'rus', selected: false},
-  {key: 'en', value: 2, flag: 'us', question: 'eng', selected: false},
-  {key: 'es', value: 3, flag: 'es', question: null, selected: false}
-];
+// 'Let\'s discuss how we can see each other as greater at times, lower, and equal to everyone?'
+// '¿Cómo usamos adecuadamente el deseo de recibir que despierta en nosotros para hacernos avanzar en la conexión con la decena y adhesión al Creador? '
 
-const getLanguageValue = () => {
+class Language {
+  constructor(key, value, flag) {
+    this.key = key;
+    this.value = value;
+    this.flag = flag;
+    this.question = null;
+    this.selected = false;
+  }
+}
+
+class FontSize {
+  constructor(min, max, current) {
+    this.min = min;
+    this.max = max;
+    this.current = current > max ? max : current;
+  }
+}
+
+const setLanguageOptions = () => {
+  const languageOptions = [
+    new Language('he', 0, 'il'),
+    new Language('ru', 1, 'ru'),
+    new Language('en', 2, 'us'),
+    new Language('es', 3, 'es')
+  ];
+
+  const selected = JSON.parse(localStorage.getItem(WQ_IN_PROCESS_SELECTED));
+  if (selected) {
+    languageOptions.forEach(l => l.selected = selected.indexOf(l.value) !== -1);
+  }
+
+  return languageOptions;
+}
+
+const getSelectedLanguageValue = (languageOptions) => {
   const storageLang = parseInt(localStorage.getItem(WQ_LANG));
   const galaxyLang = localStorage.getItem(GALAXY_LANG);
   let langValue = 2;
@@ -40,92 +70,143 @@ const getLanguageValue = () => {
   return langValue;
 };
 
+const setFontSize = (layout, current) => {
+  switch (layout) {
+    case 'equal':
+      return new FontSize(16, 20, current || 18);
+    case 'full':
+      return new FontSize(30, 40, current || 34);
+    default:
+      return new FontSize(20, 28, current || 24);
+  }
+};
+
 class VirtualWorkshopQuestion extends Component {
   constructor(props) {
     super(props);
 
-    this.websocket = null;
-
-    const inProcessStored = JSON.parse(localStorage.getItem(WQ_IN_PROCESS_SELECTED));
-    let inProcessSelectedLanguages = [];
-    if (inProcessStored) {
-      languageOptions.forEach(l => l.selected = inProcessStored.indexOf(l.value) !== -1);
-      inProcessSelectedLanguages = languageOptions.filter(l => l.selected);
-    }
-
+    const languageOptions = setLanguageOptions();
+    const {layout} = props;
     this.state = {
-      fontSize: +localStorage.getItem(WQ_FONT_SIZE) || 18,
-      selectedLanguageValue: getLanguageValue(),
-      hasQuestion: true,
+      languageOptions,
+      selectedLanguageValue: getSelectedLanguageValue(languageOptions),
+      fontSize: setFontSize(layout, +localStorage.getItem(WQ_FONT_SIZE)),
+      mountView: true,
       showQuestion: true,
       openSettings: false,
       fontPopVisible: false,
-      inProcessSelectedLanguages
+      currentLayout: null
     };
+    this.websocket = null;
+    this.websocketAttempts = 0;
 
     this.changeLanguage = this.changeLanguage.bind(this);
     this.manageFontSize = this.manageFontSize.bind(this);
     this.copyQuestion = this.copyQuestion.bind(this);
-    this.closeWebsocket = this.closeWebsocket.bind(this);
     this.selectAvailableLanguage = this.selectAvailableLanguage.bind(this);
     this.onSettingsBlur = this.onSettingsBlur.bind(this);
+    this.setFontSize = this.setFontSize.bind(this);
+    this.resetWebsocketAttempts = this.resetWebsocketAttempts.bind(this);
+    this.incrementWebsocketAttempts = this.incrementWebsocketAttempts.bind(this);
+    this.onWebsocketOpen = this.onWebsocketOpen.bind(this);
+    this.onWebsocketMessage = this.onWebsocketMessage.bind(this);
+    this.closeWebsocket = this.closeWebsocket.bind(this);
+    this.clearQuestions = this.clearQuestions.bind(this);
   }
 
   componentDidMount() {
-    fetch(GET_WORKSHOP_QUESTIONS)
-      .then(response => response.json())
-      .then(data => {
-        const approved = data.questions.filter(q => q.approved);
-        if (!approved.length) return;
-
-        let hasQuestion = false;
-        languageOptions.forEach(l => {
-          const current = approved.find(a => a.language === l.key);
-          if (current) {
-            l.question = current.message;
-            hasQuestion = true;
-          }
-        });
-
-        this.setState({hasQuestion});
-      })
-      .catch(e => console.error('Could not get workshop questions', e));
-
     this.websocket = new ReconnectingWebSocket(WEB_SOCKET_WORKSHOP_QUESTION);
-
-    this.websocket.onopen = () => console.log('Workshop websocket open');
-
-    this.websocket.onmessage = event => {
-      try {
-        const wsData = JSON.parse(event.data);
-        if (wsData.questions) {
-          this.setState({hasQuestion: false});
-          languageOptions.forEach(l => l.question = null);
-          return;
-        }
-
-        const lang = languageOptions.find(l => l.key === wsData.language);
-        if (!lang) return;
-
-        let hasQuestion = true;
-        lang.question = wsData.message;
-        if (!wsData.approved) {
-          lang.question = null;
-          hasQuestion = !!languageOptions.find(l => l.question);
-        }
-
-        this.setState({hasQuestion});
-      } catch (e) {
-        console.error('Workshop onmessage parse error', e);
-      }
-    };
-
+    this.websocket.onopen = this.onWebsocketOpen;
+    this.websocket.onmessage = this.onWebsocketMessage;
     window.addEventListener('beforeunload', this.closeWebsocket);
+
+    setTimeout(() => {
+      this.setState(({languageOptions}) => ({
+        languageOptions: languageOptions.map(l => ({...l, question: 'Test q'}))
+      }));
+    }, 10000);
+
+    setTimeout(() => {
+      this.setState(({languageOptions}) => ({
+        languageOptions: languageOptions.map(l => ({...l, question: null}))
+      }));
+    }, 20000);
   }
 
   componentWillUnmount() {
     this.closeWebsocket();
     window.removeEventListener('beforeunload', this.closeWebsocket);
+  }
+
+  clearQuestions() {
+    this.setState(({languageOptions}) => ({
+      languageOptions: languageOptions.map(l => ({...l, question: null}))
+    }));
+  }
+
+  setWsAttempts(value) {
+    this.wsAttempts = value;
+  }
+
+  resetWebsocketAttempts() {
+    this.websocketAttempts = 0;
+  }
+
+  incrementWebsocketAttempts() {
+    this.websocketAttempts++;
+  }
+
+  onWebsocketOpen() {
+    if (this.websocketAttempts > 2) return;
+    this.incrementWebsocketAttempts();
+
+    fetch(GET_WORKSHOP_QUESTIONS)
+      .then(response => response.json())
+      .then(data => {
+        const approved = data.questions.filter(q => q.approved);
+        if (!approved.length) {
+          this.clearQuestions();
+          return;
+        }
+
+        this.resetWebsocketAttempts();
+        this.setState(({languageOptions}) => ({
+          languageOptions: languageOptions.map(l => {
+            const current = approved.find(a => a.language === l.key);
+            if (current) {
+              l.question = current.message;
+            }
+
+            return l;
+          })
+        }));
+      })
+      .catch(e => console.error('Could not get workshop questions', e));
+  }
+
+  onWebsocketMessage(event) {
+    this.resetWebsocketAttempts();
+
+    try {
+      const wsData = JSON.parse(event.data);
+      if (wsData.questions) {
+        this.clearQuestions();
+        return;
+      }
+
+      const {languageOptions} = this.state;
+      const lang = languageOptions.find(l => l.key === wsData.language);
+      if (!lang) return;
+
+      lang.question = wsData.message;
+      if (!wsData.approved) {
+        lang.question = null;
+      }
+
+      this.setState({languageOptions});
+    } catch (e) {
+      console.error('Workshop onmessage parse error', e);
+    }
   }
 
   closeWebsocket() {
@@ -137,9 +218,9 @@ class VirtualWorkshopQuestion extends Component {
     localStorage.setItem(WQ_LANG, value);
   }
 
-  manageFontSize(value) {
-    this.setState({fontSize: value});
-    localStorage.setItem(WQ_FONT_SIZE, value);
+  manageFontSize(current) {
+    this.setState(({fontSize}) => ({fontSize: {...fontSize, current}}));
+    localStorage.setItem(WQ_FONT_SIZE, current);
   }
 
   copyQuestion(question) {
@@ -158,39 +239,61 @@ class VirtualWorkshopQuestion extends Component {
   selectAvailableLanguage(lang) {
     lang.selected = !lang.selected;
 
-    const inProcessSelectedLanguages = languageOptions.filter(l => l.selected);
+    const {languageOptions} = this.state;
+    const selected = languageOptions.filter(l => l.selected);
 
-    if (inProcessSelectedLanguages.length) {
-      localStorage.setItem(WQ_IN_PROCESS_SELECTED, JSON.stringify(inProcessSelectedLanguages.map(l => l.value)));
+    if (selected.length) {
+      localStorage.setItem(WQ_IN_PROCESS_SELECTED, JSON.stringify(selected.map(l => l.value)));
     } else {
       localStorage.removeItem(WQ_IN_PROCESS_SELECTED);
     }
 
-    this.setState({inProcessSelectedLanguages});
+    this.setState({});
   }
 
   onSettingsBlur({relatedTarget}) {
     !relatedTarget && this.setState({openSettings: false});
   }
 
+  setFontSize() {
+    const {layout} = this.props;
+    const {currentLayout} = this.state;
+
+    if (currentLayout === layout) return;
+
+    this.setState({fontSize: setFontSize(layout), currentLayout: layout});
+  }
+
   render() {
     const {t} = this.props;
     const {
+      mountView,
       fontSize,
       selectedLanguageValue,
-      hasQuestion,
       showQuestion,
-      inProcessSelectedLanguages,
       openSettings,
-      fontPopVisible
+      fontPopVisible,
+      languageOptions
     } = this.state;
+    const hasQuestion = !!languageOptions.find(l => l.question);
+
+    if (hasQuestion && !mountView) {
+      this.setState({mountView: true});
+    } else if (!hasQuestion) {
+      setTimeout(() => this.setState({mountView: false}), 1000);
+    }
+
+    if (!mountView) return null;
+
     const {key, flag, question} = languageOptions[selectedLanguageValue];
+
+    this.setFontSize();
 
     return (
       <div className={classNames('wq-overlay', {'overlay-visible': hasQuestion})}>
         <div className="wq-container">
           <div className={classNames('question-container', {'overlay-visible': showQuestion})}>
-            <div className="wq__question" style={{fontSize: `${fontSize}px`}}>
+            <div className="wq__question" style={{fontSize: `${fontSize.current}px`}}>
               <div className={classNames('lang-question', {'show-question': question, rtl: key === 'he'})}>
                 {question}
               </div>
@@ -206,8 +309,10 @@ class VirtualWorkshopQuestion extends Component {
                     />
                   )}
                 </div>
-                {inProcessSelectedLanguages.map(l =>
-                  <div key={l.key} className={classNames('other-question', {rtl: l.key === 'he'})}>{l.question}</div>
+                {languageOptions.filter(l => l.question && l.selected).map(l =>
+                  <div key={l.key} className={classNames('other-question', {rtl: l.key === 'he'})}>
+                    {l.question}
+                  </div>
                 )}
               </div>
             </div>
@@ -245,9 +350,9 @@ class VirtualWorkshopQuestion extends Component {
                       <div className="manage-font-size-pop__context">
                         <Icon name="font" className="decrease-font" aria-hidden="true"/>
                         <Slider
-                          min={16}
-                          max={50}
-                          value={fontSize}
+                          min={fontSize.min}
+                          max={fontSize.max}
+                          value={fontSize.current}
                           tooltip={false}
                           onChange={value => this.manageFontSize(value)}
                         />

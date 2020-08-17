@@ -276,7 +276,7 @@ body:before {
 
           &.layout--double,
           &.layout--equal {
-            @include activities-wq-dimensions(auto, 6vw);
+            @include wq-overlay-full-height();
           }
         }
       }
