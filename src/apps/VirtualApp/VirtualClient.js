@@ -1188,9 +1188,8 @@ class VirtualClient extends Component {
   };
 
   updateLayout = (currentLayout) => {
-    this.setState({ currentLayout }, () => {
-      localStorage.setItem('currentLayout', currentLayout);
-    });
+    this.setState({currentLayout});
+    localStorage.setItem('currentLayout', currentLayout);
   }
 
   onChatMessage = () => {
@@ -1414,10 +1413,6 @@ class VirtualClient extends Component {
       for (let i = 0; i < parseInt(numberOfVirtualUsers, 10); i++) {
         remoteVideos.push(this.renderLocalMedia(width, height, i));
       }
-    }
-
-    for (let i = 0; i < 10; i++) {
-      remoteVideos.push(this.renderLocalMedia(width, height, i));
     }
 
     let noOfVideos = remoteVideos.length;

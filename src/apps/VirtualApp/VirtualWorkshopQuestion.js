@@ -14,6 +14,9 @@ const WQ_FONT_SIZE = 'wq-font-size';
 const WQ_LANG = 'wq-lang';
 const WQ_IN_PROCESS_SELECTED = 'wq-in-process-selected';
 const GALAXY_LANG = 'lng';
+const EQUAL = 'equal';
+const FULLSCREEN = 'fullscreen';
+const DETACHED = 'detached';
 
 // 'Let\'s discuss how we can see each other as greater at times, lower, and equal to everyone?'
 // '¿Cómo usamos adecuadamente el deseo de recibir que despierta en nosotros para hacernos avanzar en la conexión con la decena y adhesión al Creador? '
@@ -72,10 +75,12 @@ const getSelectedLanguageValue = (languageOptions) => {
 
 const setFontSize = (layout, current) => {
   switch (layout) {
-    case 'equal':
-      return new FontSize(16, 20, current || 18);
-    case 'full':
+    case EQUAL:
+      return new FontSize(16, 20, current || 16);
+    case FULLSCREEN:
       return new FontSize(30, 40, current || 34);
+    case DETACHED:
+      return new FontSize(20, 40, current || 24);
     default:
       return new FontSize(20, 28, current || 24);
   }
@@ -86,17 +91,17 @@ class VirtualWorkshopQuestion extends Component {
     super(props);
 
     const languageOptions = setLanguageOptions();
-    const {layout} = props;
+
     this.state = {
       languageOptions,
       selectedLanguageValue: getSelectedLanguageValue(languageOptions),
-      fontSize: setFontSize(layout, +localStorage.getItem(WQ_FONT_SIZE)),
-      mountView: true,
+      fontSize: setFontSize(props.layout, +localStorage.getItem(WQ_FONT_SIZE)),
+      mountView: false,
       showQuestion: true,
       openSettings: false,
-      fontPopVisible: false,
-      currentLayout: null
+      fontPopVisible: false
     };
+
     this.websocket = null;
     this.websocketAttempts = 0;
 
@@ -105,13 +110,13 @@ class VirtualWorkshopQuestion extends Component {
     this.copyQuestion = this.copyQuestion.bind(this);
     this.selectAvailableLanguage = this.selectAvailableLanguage.bind(this);
     this.onSettingsBlur = this.onSettingsBlur.bind(this);
-    this.setFontSize = this.setFontSize.bind(this);
     this.resetWebsocketAttempts = this.resetWebsocketAttempts.bind(this);
     this.incrementWebsocketAttempts = this.incrementWebsocketAttempts.bind(this);
     this.onWebsocketOpen = this.onWebsocketOpen.bind(this);
     this.onWebsocketMessage = this.onWebsocketMessage.bind(this);
     this.closeWebsocket = this.closeWebsocket.bind(this);
     this.clearQuestions = this.clearQuestions.bind(this);
+    this.unmountView = this.unmountView.bind(this);
   }
 
   componentDidMount() {
@@ -119,18 +124,6 @@ class VirtualWorkshopQuestion extends Component {
     this.websocket.onopen = this.onWebsocketOpen;
     this.websocket.onmessage = this.onWebsocketMessage;
     window.addEventListener('beforeunload', this.closeWebsocket);
-
-    setTimeout(() => {
-      this.setState(({languageOptions}) => ({
-        languageOptions: languageOptions.map(l => ({...l, question: 'Test q'}))
-      }));
-    }, 10000);
-
-    setTimeout(() => {
-      this.setState(({languageOptions}) => ({
-        languageOptions: languageOptions.map(l => ({...l, question: null}))
-      }));
-    }, 20000);
   }
 
   componentWillUnmount() {
@@ -138,10 +131,20 @@ class VirtualWorkshopQuestion extends Component {
     window.removeEventListener('beforeunload', this.closeWebsocket);
   }
 
+  componentDidUpdate(prevProps) {
+    if (this.props.layout !== prevProps.layout) {
+      this.setState({fontSize: setFontSize(this.props.layout)});
+    }
+  }
+
   clearQuestions() {
     this.setState(({languageOptions}) => ({
       languageOptions: languageOptions.map(l => ({...l, question: null}))
     }));
+  }
+
+  unmountView() {
+    setTimeout(() => this.setState({mountView: false}), 1000);
   }
 
   setWsAttempts(value) {
@@ -171,6 +174,7 @@ class VirtualWorkshopQuestion extends Component {
 
         this.resetWebsocketAttempts();
         this.setState(({languageOptions}) => ({
+          mountView: true,
           languageOptions: languageOptions.map(l => {
             const current = approved.find(a => a.language === l.key);
             if (current) {
@@ -198,12 +202,8 @@ class VirtualWorkshopQuestion extends Component {
       const lang = languageOptions.find(l => l.key === wsData.language);
       if (!lang) return;
 
-      lang.question = wsData.message;
-      if (!wsData.approved) {
-        lang.question = null;
-      }
-
-      this.setState({languageOptions});
+      lang.question = wsData.approved ? wsData.message : null;
+      this.setState({languageOptions, mountView: true});
     } catch (e) {
       console.error('Workshop onmessage parse error', e);
     }
@@ -220,7 +220,10 @@ class VirtualWorkshopQuestion extends Component {
 
   manageFontSize(current) {
     this.setState(({fontSize}) => ({fontSize: {...fontSize, current}}));
-    localStorage.setItem(WQ_FONT_SIZE, current);
+
+    if (this.currentLayout !== FULLSCREEN && this.currentLayout !== DETACHED) {
+      localStorage.setItem(WQ_FONT_SIZE, current);
+    }
   }
 
   copyQuestion(question) {
@@ -252,16 +255,9 @@ class VirtualWorkshopQuestion extends Component {
   }
 
   onSettingsBlur({relatedTarget}) {
-    !relatedTarget && this.setState({openSettings: false});
-  }
-
-  setFontSize() {
-    const {layout} = this.props;
-    const {currentLayout} = this.state;
-
-    if (currentLayout === layout) return;
-
-    this.setState({fontSize: setFontSize(layout), currentLayout: layout});
+    if (!relatedTarget) {
+      this.setState({openSettings: false});
+    }
   }
 
   render() {
@@ -276,18 +272,13 @@ class VirtualWorkshopQuestion extends Component {
       languageOptions
     } = this.state;
     const hasQuestion = !!languageOptions.find(l => l.question);
+    const {key, flag, question} = languageOptions[selectedLanguageValue];
 
-    if (hasQuestion && !mountView) {
-      this.setState({mountView: true});
-    } else if (!hasQuestion) {
-      setTimeout(() => this.setState({mountView: false}), 1000);
+    if (!hasQuestion) {
+      this.unmountView();
     }
 
     if (!mountView) return null;
-
-    const {key, flag, question} = languageOptions[selectedLanguageValue];
-
-    this.setFontSize();
 
     return (
       <div className={classNames('wq-overlay', {'overlay-visible': hasQuestion})}>
@@ -362,7 +353,7 @@ class VirtualWorkshopQuestion extends Component {
                     <Icon id="manage-font-size"
                           name="font"
                           title={t('workshop.manageFontSize')}
-                          onClick={() => this.setState(prevState => ({fontPopVisible: !prevState.fontPopVisible}))}
+                          onClick={() => this.setState(({fontPopVisible}) => ({fontPopVisible: !fontPopVisible}))}
                     />
                   </Dropdown.Item>
                   <Dropdown.Item disabled={!question}>

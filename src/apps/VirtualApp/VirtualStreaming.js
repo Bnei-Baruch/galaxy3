@@ -247,7 +247,7 @@ class VirtualStreaming extends Component {
                 }
               </div>
             </div>
-            <VirtualWorkshopQuestion layout={fullScreen || !attached ? 'full' : layout} />
+            <VirtualWorkshopQuestion layout={fullScreen ? 'fullscreen' : !attached ? 'detached' : layout} />
           </div>
           {talking && <Label className='talk' size='massive' color='red'><Icon name='microphone'/>On</Label>}
         </div>
