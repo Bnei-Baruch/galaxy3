@@ -217,23 +217,15 @@ class VirtualWorkshopQuestion extends Component {
 
   manageFontSize(current) {
     this.setState(({fontSize}) => ({fontSize: {...fontSize, current}}));
-
-    if (this.currentLayout !== FULLSCREEN && this.currentLayout !== DETACHED) {
-      localStorage.setItem(WQ_FONT_SIZE, current);
-    }
+    localStorage.setItem(WQ_FONT_SIZE, current);
   }
 
   copyQuestion(question) {
-    try {
-      const el = document.createElement('input');
-      el.setAttribute('value', question);
-      document.body.appendChild(el);
-      el.select();
-      document.execCommand('copy');
-      document.body.removeChild(el)
-    } catch (e) {
-      alert('Could not copy the question');
-    }
+    navigator.clipboard.writeText(question)
+      .then(function () {
+      }, function () {
+        alert('Could not copy the question');
+      });
   }
 
   selectAvailableLanguage(lang) {
@@ -272,10 +264,9 @@ class VirtualWorkshopQuestion extends Component {
     const {key, flag, question} = languageOptions[selectedLanguageValue];
 
     if (!hasQuestion) {
+      if (!mountView) return null;
       this.unmountView();
     }
-
-    if (!mountView) return null;
 
     return (
       <div className={classNames('wq-overlay', {'overlay-visible': hasQuestion})}>
@@ -285,7 +276,7 @@ class VirtualWorkshopQuestion extends Component {
               <div className={classNames('lang-question', {'show-question': question, rtl: key === 'he'})}>
                 {question}
               </div>
-              <div className={classNames('in-process', {'show-question': !question})}>
+              <div className={classNames('in-process', {'show-question': !question && hasQuestion})}>
                 <div className={classNames('in-process-text', {rtl: key === 'he'})}>
                   <span>{t('workshop.inProcess')} </span>
                   {languageOptions.filter(l => l.question).map(l =>
