@@ -18,9 +18,6 @@ const EQUAL = 'equal';
 const FULLSCREEN = 'fullscreen';
 const DETACHED = 'detached';
 
-// 'Let\'s discuss how we can see each other as greater at times, lower, and equal to everyone?'
-// '¿Cómo usamos adecuadamente el deseo de recibir que despierta en nosotros para hacernos avanzar en la conexión con la decena y adhesión al Creador? '
-
 class Language {
   constructor(key, value, flag) {
     this.key = key;
