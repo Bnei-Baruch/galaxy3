@@ -4,6 +4,7 @@ import './UsersQuad.scss'
 import UsersHandle from "./UsersHandle";
 import api from '../../shared/Api';
 import {getStore, setStore} from "../../shared/store";
+import {AUDIOOUT_ID, SDIOUT_ID, SNDMAN_ID} from "../../shared/consts"
 
 class UsersQuad extends Component {
 
@@ -12,6 +13,7 @@ class UsersQuad extends Component {
         question: false,
         col: null,
         vquad: [null,null,null,null],
+        ask_feed: null,
     };
 
     componentDidMount() {
@@ -156,17 +158,34 @@ class UsersQuad extends Component {
             .catch(err => console.error("[Shidur] error updating quad state", col, err))
     };
 
+    sdiActionMessage_ = (action, status, i, group, qst) => {
+      const {col} = this.state;
+      return {type: "sdi-"+action, status, room: null, col, i, group, qst};
+    }
+
     sdiAction = (action, status, i, group, qst) => {
         const {gateways} = this.props;
-        const {col} = this.state;
-        let msg = {type: "sdi-"+action, status, room: null, col, i, group, qst};
-        gateways["gxy3"].sendServiceMessage(msg);
+        gateways["gxy3"].sendServiceMessage(this.sdiActionMessage_(action, status, i, group, qst));
     };
+
+    sdiGuaranteeAction = (action, status, i, group, qst, toAck) => {
+      const { gateways, gdm } = this.props;
+      gdm.send(
+        this.sdiActionMessage_(action, status, i, group, qst),
+        toAck,
+        (msg) => gateways["gxy3"].sendServiceMessage(msg)).
+      then(() => {
+        console.log(`${action} delivered to ${toAck}.`);
+      }).catch((error) => {
+        console.error(`${action} not delivered to ${toAck} due to ${error}`);
+      });
+    }
 
     checkFullScreen = () => {
         let {fullscr,full_feed,vquad,question} = this.state;
         if(fullscr) {
             console.log("[Shidur] :: Group: " + full_feed + " , sending sdi-action...");
+            //this.sdiGuaranteeAction("fullscr_group" , true, full_feed, vquad[full_feed], question, [AUDIOOUT_ID, SDIOUT_ID, SNDMAN_ID]);
             this.sdiAction("fullscr_group" , true, full_feed, vquad[full_feed], question);
         }
     };
@@ -218,6 +237,7 @@ class UsersQuad extends Component {
         let {room,janus} = g;
         console.log("[Shidur]:: Make Full Screen Group: ",g);
         this.setState({fullscr: true, full_feed: i, question: q});
+        //this.sdiGuaranteeAction("fullscr_group" , true, i, g, q, [AUDIOOUT_ID, SDIOUT_ID, SNDMAN_ID]);
         this.sdiAction("fullscr_group" , true, i, g, q);
         this.micMute(true, room, janus);
     };
@@ -225,6 +245,7 @@ class UsersQuad extends Component {
     toFourGroup = (i,g,cb,q) => {
         let {room,janus} = g;
         console.log("[Shidur]:: Back to four: ");
+        //this.sdiGuaranteeAction("fullscr_group" , false, i, g, q, [AUDIOOUT_ID, SDIOUT_ID, SNDMAN_ID]);
         this.sdiAction("fullscr_group" , false, i, g, q);
         this.micMute(false, room, janus);
         this.setState({fullscr: false, full_feed: null, question: false}, () => {
@@ -242,12 +263,22 @@ class UsersQuad extends Component {
 
     micMute = (status, room, inst) => {
         const msg = {type: "audio-out", status, room, col: null, i: null, feed: null};
+        const group = this.props.rooms.filter(g => g.room === room)[0];
+        //const ask_feed = group.users.filter(u => u.question)[0];
+        let toAck = group.users.map(u => {return u.id});
+        if(toAck.length === 0) return;
 
-        const {gateways} = this.props;
+        const {gateways, gdm} = this.props;
         //TODO: Send data in room channel
         //this.sendDataMessage(status);
-        gateways[inst].sendProtocolMessage(msg);
+        //gateways[inst].sendProtocolMessage(msg);
         gateways["gxy3"].sendServiceMessage(msg);
+        gdm.send(msg, toAck, (msg) => gateways[inst].sendProtocolMessage(msg)).
+        then(() => {
+            console.log(`MIC delivered.`);
+        }).catch((error) => {
+            console.error(`MIC not delivered due to: ` , error);
+        });
     };
 
     setDelay = () => {

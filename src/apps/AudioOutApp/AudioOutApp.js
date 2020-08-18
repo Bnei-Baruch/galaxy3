@@ -7,6 +7,8 @@ import UsersHandleAudioOut from "./UsersHandleAudioOut";
 import api from "../../shared/Api";
 import {API_BACKEND_PASSWORD, API_BACKEND_USERNAME} from "../../shared/env";
 import GxyJanus from "../../shared/janus-utils";
+import {AUDIOOUT_ID} from "../../shared/consts"
+import {GuaranteeDeliveryManager} from '../../shared/GuaranteeDelivery';
 
 
 class AudioOutApp extends Component {
@@ -20,12 +22,13 @@ class AudioOutApp extends Component {
             handle: 0,
             role: "audioout",
             display: "audioout",
-            id: Janus.randomString(10),
+            id: AUDIOOUT_ID,
             name: "audioout"
         },
         gateways: {},
         gatewaysInitialized: false,
         appInitError: null,
+        gdm: new GuaranteeDeliveryManager(AUDIOOUT_ID),
     };
 
     componentDidMount() {
@@ -94,14 +97,20 @@ class AudioOutApp extends Component {
     };
 
     onServiceData = (gateway, data, user) => {
-        if (data.type === "error" && data.error_code === 420) {
-            console.error("[AudioOut] service error message (reloading in 10 seconds)", data.error);
-            setTimeout(() => {
-                this.initGateway(user, gateway);
-            }, 10000);
+        const { gdm } = this.state;
+        if (gdm.checkAck(data)) {
+          // Ack received, do nothing.
+          return;
         }
+        gdm.accept(data, (msg) => gateway.sendServiceMessage(msg)).then((data) => {
+          if (data.type === "error" && data.error_code === 420) {
+              console.error("[AudioOut] service error message (reloading in 10 seconds)", data.error);
+              setTimeout(() => {
+                  this.initGateway(user, gateway);
+              }, 10000);
+          }
 
-        const {room, group, status, qst} = data;
+          const {room, group, status, qst} = data;
 
         if (data.type === "sdi-fullscr_group" && status && qst) {
             this.setState({group, room});
@@ -115,6 +124,9 @@ class AudioOutApp extends Component {
             delete data.type;
             this.setState({...data});
         }
+        }).catch((error) => {
+            console.error(`Failed receiving ${data}: ${error}`);
+        });
     };
 
     setProps = (props) => {

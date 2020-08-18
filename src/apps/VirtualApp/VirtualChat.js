@@ -112,7 +112,7 @@ class VirtualChat extends Component {
         message.time     = dateString;
         Janus.log('-:: It\'s public message: ' + JSON.stringify(message));
         messages.push(message);
-        console.log('Messages: ', messages);
+        // console.log('Messages: ', messages);
         this.setState({ messages });
         if (this.props.visible) {
           this.scrollToBottom();
@@ -247,7 +247,7 @@ class VirtualChat extends Component {
 
     let room_msgs = messages.map((msg, i) => {
       let { user, time, text } = msg;
-      console.log('messages.map', 'user', user, 'time', time, 'text!!!!!', text, 'msg', msg);
+      // console.log('messages.map', 'user', user, 'time', time, 'text!!!!!', text, 'msg', msg);
       return (
         <p key={i} style={{direction: isRTLString(text) ? 'rtl' : 'ltr', textAlign: isRTLString(text) ? 'right' : 'left'}}><span style={{display: 'block'}}>
           <i style={{ color: 'grey' }}>{time}</i> -
