@@ -110,9 +110,10 @@ export const userRow = (user, stats, now, onUser) => {
     <Table.Row key={user.id} style={{backgroundColor: color}}>
       <Table.Cell><a style={{cursor: 'pointer'}} onClick={onUser ? () => onUser() : null}>{popup(user.display)}</a></Table.Cell>
       <Table.Cell>{popup(user.group)}</Table.Cell>
+      <Table.Cell>{popup(user.role)}</Table.Cell>
       <Table.Cell>{popup(user.janus)}</Table.Cell>
       <Table.Cell>{popup(sinceTimestamp(user.timestamp, now))}</Table.Cell>
-      <Table.Cell>{popup(system(user))}</Table.Cell>
+      <Table.Cell style={{whiteSpace: 'nowrap'}}>{popup(system(user))}</Table.Cell>
       <Table.Cell key={'update'}>
         {stats.update && stats.update.value !== undefined && stats.update.value !== null ? popup(stats.update.view) : null}
       </Table.Cell>

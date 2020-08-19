@@ -759,7 +759,7 @@ class AdminRoot extends Component {
     if (index < usersTabs.length) {
       const newUsersTabs = usersTabs.slice();
       newUsersTabs.splice(index, 1);
-      this.setState({usersTabs: newUsersTabs, activeTab: 1});
+      this.setState({usersTabs: newUsersTabs, activeTab: 2});
     }
   }
 
