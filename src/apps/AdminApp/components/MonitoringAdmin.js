@@ -37,6 +37,8 @@ const MonitoringAdmin = (props) => {
       name: [],
       group: [],
       system: [],
+      janus: [],
+      role: [],
     },
   });
   const [filters, setFilters] = useState({});
@@ -128,11 +130,15 @@ const MonitoringAdmin = (props) => {
       name: [],
       group: [],
       system: [],
+      role: [],
+      janus: [],
     };
 
     const nameSet = new Set();
     const groupSet = new Set();
     const systemSet = new Set();
+    const roleSet = new Set();
+    const janusSet = new Set();
 
     const newFullView = Object.values(users).map(user => ({
       user,
@@ -153,6 +159,14 @@ const MonitoringAdmin = (props) => {
         systemSet.add(s);
         filterOptions.system.push({title: s});
       }
+      if (!roleSet.has(user.role)) {
+        roleSet.add(user.role);
+        filterOptions.role.push({title: user.role});
+      }
+      if (!janusSet.has(user.janus)) {
+        janusSet.add(user.janus);
+        filterOptions.janus.push({title: user.janus});
+      }
     });
 
     setFullView({fullView: newFullView, filterOptions});
@@ -160,17 +174,18 @@ const MonitoringAdmin = (props) => {
   }, [users, usersData]);
 
   const filterView = ({user, stats}) => {
+    let keep = true;
+    const filterChecks = new Map([
+      ['name', (re) => re.test(user.display)],
+      ['group', (re) => re.test(user.group)],
+      ['system', (re) => re.test(system(user))],
+      ['role', (re) => re.test(user.role)],
+      ['janus', (re) => re.test(user.janus)],
+    ]);
     for (const [name, re] of Object.entries(filters)) {
-      if (name === 'name') {
-        return re.test(user.display);
-      } else if (name === 'group') {
-        return re.test(user.group);
-      } else if (name === 'system') {
-        return re.test(system(user));
-      }
-
+      keep = keep && filterChecks.get(name)(re);
     }
-    return true;
+    return keep;
   }
 
   const updateFilter = (name, value) => {
@@ -208,7 +223,7 @@ const MonitoringAdmin = (props) => {
   }
 
   const sortView = columnToSort => (a, b) => {
-    if (['group', 'janus'].includes(columnToSort)) {
+    if (['group', 'janus', 'role'].includes(columnToSort)) {
       return a.user[columnToSort].localeCompare(b.user[columnToSort]);
     } else if (columnToSort === 'name') {
       return a.user.display.localeCompare(b.user.display);
@@ -297,6 +312,9 @@ const MonitoringAdmin = (props) => {
                               sorted={column === 'group' ? direction : null}
                               onClick={handleSort('group')}>{popup('Group')}</Table.HeaderCell>
             <Table.HeaderCell rowSpan="2"
+                              sorted={column === 'role' ? direction : null}
+                              onClick={handleSort('role')}>{popup('Role')}</Table.HeaderCell>
+            <Table.HeaderCell rowSpan="2"
                               sorted={column === 'janus' ? direction : null}
                               onClick={handleSort('janus')}>{popup('Janus')}</Table.HeaderCell>
             <Table.HeaderCell rowSpan="2"
@@ -353,6 +371,20 @@ const MonitoringAdmin = (props) => {
               />
             </Table.HeaderCell>
             <Table.HeaderCell>
+              <Search className='monitoring-search'
+                minCharacters={0}
+                onResultSelect={(e, search) => updateFilter('role', `^${search.result.title}$`)}
+                onSearchChange={(e, search) => updateFilter('role', search.value)}
+                results={filterOptions.role.filter(role => !filters.role || filters.role.test(role.title))}
+              />
+            </Table.HeaderCell>
+            <Table.HeaderCell>
+              <Search className='monitoring-search'
+                minCharacters={0}
+                onResultSelect={(e, search) => updateFilter('janus', `^${search.result.title}$`)}
+                onSearchChange={(e, search) => updateFilter('janus', search.value)}
+                results={filterOptions.janus.filter(janus => !filters.janus || filters.janus.test(janus.title))}
+              />
             </Table.HeaderCell>
             <Table.HeaderCell>
             </Table.HeaderCell>
