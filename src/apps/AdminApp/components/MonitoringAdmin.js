@@ -39,6 +39,7 @@ const MonitoringAdmin = (props) => {
       system: [],
       janus: [],
       role: [],
+      version: [],
     },
   });
   const [filters, setFilters] = useState({});
@@ -132,6 +133,7 @@ const MonitoringAdmin = (props) => {
       system: [],
       role: [],
       janus: [],
+      version: [],
     };
 
     const nameSet = new Set();
@@ -139,6 +141,7 @@ const MonitoringAdmin = (props) => {
     const systemSet = new Set();
     const roleSet = new Set();
     const janusSet = new Set();
+    const versionSet = new Set();
 
     const newFullView = Object.values(users).map(user => ({
       user,
@@ -167,6 +170,10 @@ const MonitoringAdmin = (props) => {
         janusSet.add(user.janus);
         filterOptions.janus.push({title: user.janus});
       }
+      if (!versionSet.has(user.galaxyVersion)) {
+        versionSet.add(user.galaxyVersion);
+        filterOptions.version.push({title: user.galaxyVersion});
+      }
     });
 
     setFullView({fullView: newFullView, filterOptions});
@@ -181,6 +188,7 @@ const MonitoringAdmin = (props) => {
       ['system', (re) => re.test(system(user))],
       ['role', (re) => re.test(user.role)],
       ['janus', (re) => re.test(user.janus)],
+      ['version', (re) => re.test(user.galaxyVersion)],
     ]);
     for (const [name, re] of Object.entries(filters)) {
       keep = keep && filterChecks.get(name)(re);
@@ -225,6 +233,8 @@ const MonitoringAdmin = (props) => {
   const sortView = columnToSort => (a, b) => {
     if (['group', 'janus', 'role'].includes(columnToSort)) {
       return a.user[columnToSort].localeCompare(b.user[columnToSort]);
+    } else if (columnToSort === 'version') {
+      return a.user.galaxyVersion.localeCompare(b.user.galaxyVersion);
     } else if (columnToSort === 'name') {
       return a.user.display.localeCompare(b.user.display);
     } else if (columnToSort === 'login') {
@@ -318,6 +328,9 @@ const MonitoringAdmin = (props) => {
                               sorted={column === 'janus' ? direction : null}
                               onClick={handleSort('janus')}>{popup('Janus')}</Table.HeaderCell>
             <Table.HeaderCell rowSpan="2"
+                              sorted={column === 'version' ? direction : null}
+                              onClick={handleSort('version')}>{popup('version')}</Table.HeaderCell>
+            <Table.HeaderCell rowSpan="2"
                               sorted={column === 'login' ? direction : null}
                               onClick={handleSort('login')}>{popup('Login')}</Table.HeaderCell>
             <Table.HeaderCell rowSpan="2"
@@ -385,6 +398,14 @@ const MonitoringAdmin = (props) => {
                 onSearchChange={(e, search) => updateFilter('janus', search.value)}
                 results={filterOptions.janus.filter(janus => !filters.janus || filters.janus.test(janus.title))}
               />
+            </Table.HeaderCell>
+              <Search className='monitoring-search'
+                minCharacters={0}
+                onResultSelect={(e, search) => updateFilter('version', `^${search.result.title}$`)}
+                onSearchChange={(e, search) => updateFilter('version', search.value)}
+                results={filterOptions.version.filter(version => !filters.version || filters.version.test(version.title))}
+              />
+            <Table.HeaderCell>
             </Table.HeaderCell>
             <Table.HeaderCell>
             </Table.HeaderCell>
