@@ -5,6 +5,7 @@ import {
 } from "./env";
 
 import { dataValues } from './MonitoringUtils';
+import Version from '../Version';
 
 const ONE_SECOND_IN_MS = 1000;
 const ONE_MINUTE_IN_MS = 60 * 1000;
@@ -180,6 +181,7 @@ export const MonitoringData = class {
       cpu: (navigator && navigator.hardwareConcurrency) || 0,
       ram: (navigator && navigator.deviceMemory) || 0,
       network: (navigator && navigator.connection && navigator.connection.type) || '',
+      galaxyVersion: Version,
     }, user);
   }
 
