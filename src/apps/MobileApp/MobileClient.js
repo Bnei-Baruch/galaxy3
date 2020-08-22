@@ -9,7 +9,13 @@ import './MobileClient.scss'
 import './MobileConteiner.scss'
 import 'eqcss'
 import {initGxyProtocol, sendProtocolMessage} from "../../shared/protocol";
-import {PROTOCOL_ROOM, VIDEO_240P_OPTION_VALUE, NO_VIDEO_OPTION_VALUE, vsettings_list} from "../../shared/consts";
+import {
+    PROTOCOL_ROOM,
+    VIDEO_240P_OPTION_VALUE,
+    NO_VIDEO_OPTION_VALUE,
+    vsettings_list,
+    STORAN_ID
+} from "../../shared/consts";
 import {GEO_IP_INFO} from "../../shared/env";
 import platform from "platform";
 import { isMobile } from 'react-device-detect';
@@ -1056,7 +1062,7 @@ class MobileClient extends Component {
     };
 
     joinRoom = (reconnect, videoroom, user) => {
-        let {janus, selected_room, media} = this.state;
+        let {janus, selected_room, media, gdm} = this.state;
         const {video: {video_device}} = media;
         user.question = false;
         user.camera = !!video_device;
@@ -1066,6 +1072,11 @@ class MobileClient extends Component {
             this.setState({protocol});
         }, ondata => {
             Janus.log("-- :: It's protocol public message: ", ondata);
+            if (gdm.checkAck(ondata)) {
+                // Ack received, do nothing.
+                return;
+            }
+
             const {type, error_code, id, room} = ondata;
             if(ondata.type === "error" && error_code === 420) {
                 this.exitRoom(false, () => {
@@ -1214,28 +1225,41 @@ class MobileClient extends Component {
     };
 
     handleQuestion = () => {
-        const {question} = this.state;
+        const {question, gdm, room, protocol} = this.state;
         const user = Object.assign({}, this.state.user);
         if(user.role === 'ghost') return;
         this.makeDelay();
+
+        if(!question) {
+            const msg = {type: "shidur-ping", status: true, room, col: null, i: null, gxy: user.janus, feed: null};
+            gdm.send(msg, [STORAN_ID], (msg) => sendProtocolMessage(protocol, user, msg, false)).
+            then(() => {
+                console.log(`PING delivered.`);
+                this.questionState(user, question);
+            }).catch((error) => {
+                console.error(`PING not delivered due to: ` , error);
+                alert("Connection to shidur is failed, try reconnect Galaxy")
+            });
+        } else {
+            this.questionState(user, question);
+        }
+    };
+
+    questionState = (user, question) => {
         user.question = !question;
         api.updateUser(user.id, user)
             .then(data => {
-                if(data.result === 'success') {
+                if(data.result === "success") {
                     localStorage.setItem('question', !question);
                     this.setState({user, question: !question});
                     this.sendDataMessage(user);
                 }
             })
-            .catch(err => console.error('[User] error updating user state', user.id, err))
+            .catch(err => console.error("[User] error updating user state", user.id, err))
     };
 
     handleAudioOut = (data) => {
         const { gdm, user, protocol } = this.state;
-        if (gdm.checkAck(data)) {
-            // Ack received, do nothing.
-            return;
-        }
 
         gdm.accept(data, (msg) => sendProtocolMessage(protocol, user, msg, false)).then((data) => {
             if (data === null) {

@@ -25,7 +25,7 @@ import {
   PROTOCOL_ROOM,
   VIDEO_360P_OPTION_VALUE,
   NO_VIDEO_OPTION_VALUE,
-  vsettings_list,
+  vsettings_list, STORAN_ID,
 } from '../../shared/consts';
 import {GEO_IP_INFO, SENTRY_KEY} from '../../shared/env';
 import platform from 'platform';
@@ -1032,7 +1032,7 @@ class VirtualClient extends Component {
   };
 
   joinRoom = (reconnect, videoroom, user) => {
-    let {janus, selected_room, tested, media} = this.state;
+    let {janus, selected_room, tested, media, gdm} = this.state;
     const {video: {video_device}} = media;
     user.self_test = tested;
     user.camera = !!video_device;
@@ -1059,6 +1059,11 @@ class VirtualClient extends Component {
       this.setState({protocol});
     }, ondata => {
       Janus.log('-- :: It\'s protocol public message: ', ondata);
+      if (gdm.checkAck(ondata)) {
+        // Ack received, do nothing.
+        return;
+      }
+
       const { type, error_code, id, room } = ondata;
       if (type === 'error' && error_code === 420) {
         this.exitRoom(false, () => {
@@ -1167,10 +1172,27 @@ class VirtualClient extends Component {
   };
 
   handleQuestion = () => {
-    const {question} = this.state;
+    const {question,room,gdm,protocol} = this.state;
     const user = Object.assign({}, this.state.user);
     if (user.role === "ghost") return;
     this.makeDelay();
+
+    if(!question) {
+      const msg = {type: "shidur-ping", status: true, room, col: null, i: null, gxy: user.janus, feed: null};
+      gdm.send(msg, [STORAN_ID], (msg) => sendProtocolMessage(protocol, user, msg, false)).
+      then(() => {
+        console.log(`PING delivered.`);
+        this.questionState(user, question);
+      }).catch((error) => {
+        console.error(`PING not delivered due to: ` , error);
+        alert("Connection to shidur is failed, try reconnect Galaxy")
+      });
+    } else {
+      this.questionState(user, question);
+    }
+  };
+
+  questionState = (user, question) => {
     user.question = !question;
     api.updateUser(user.id, user)
         .then(data => {
@@ -1185,10 +1207,6 @@ class VirtualClient extends Component {
 
   handleAudioOut = (data) => {
     const { gdm, user, protocol } = this.state;
-    if (gdm.checkAck(data)) {
-      // Ack received, do nothing.
-      return;
-    }
 
     gdm.accept(data, (msg) => sendProtocolMessage(protocol, user, msg, false)).then((data) => {
       if (data === null) {

@@ -170,17 +170,28 @@ class ShidurApp extends Component {
     };
 
     onProtocolData = (gateway, data) => {
-        const { gdm } = this.state;
+        const { gdm, gateways } = this.state;
         if (gdm.checkAck(data)) {
             // Ack received, do nothing.
             return;
         }
 
-        if (data.type === "error" && data.error_code === 420) {
+        const {type, error_code, gxy} = data;
+
+        if (type === "error" && error_code === 420) {
             console.error("[Shidur] protocol error message (reloading in 10 seconds)", data.error);
             setTimeout(() => {
                 this.initGateway(this.state.user, gateway);
             }, 10000);
+        } else if (type === 'shidur-ping') {
+            gdm.accept(data, (msg) => gateways[gxy].sendProtocolMessage(msg)).then((data) => {
+                if (data === null) {
+                    console.log('Message received more then once.');
+                    return;
+                }
+            }).catch((error) => {
+                console.error(`Failed receiving ${data}: ${error}`);
+            });
         }
     };
 
