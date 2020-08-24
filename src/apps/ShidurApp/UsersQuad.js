@@ -253,9 +253,9 @@ class UsersQuad extends Component {
         });
     };
 
-    sendDataMessage = (status, i) => {
+    sendDataMessage = (cmd) => {
         const {col} = this.state;
-        const cmd = {type: "audio-out", rcmd: true, status}
+        const {i} = cmd;
         const message = JSON.stringify(cmd);
         console.log(':: Sending message: ', message);
         this["cmd"+col+i].state.videoroom.data({ text: message });
@@ -263,16 +263,21 @@ class UsersQuad extends Component {
 
     micMute = (status, room, inst, i) => {
         const msg = {type: "audio-out", status, room, col: null, i, feed: null};
+        const cmd = {type: "audio-out", rcmd: true, status, i}
         const group = this.props.rooms.filter(g => g.room === room)[0];
         //const ask_feed = group.users.filter(u => u.question)[0];
         let toAck = group.users.map(u => {return u.id});
         if(toAck.length === 0) return;
 
         const {gateways, gdm} = this.props;
-        //TODO: Send data in room channel
-        this.sendDataMessage(status, i);
-        //gateways[inst].sendProtocolMessage(msg);
+        gdm.send(cmd, toAck, (cmd) => this.sendDataMessage(cmd)).
+        then(() => {
+            console.log(`MIC delivered.`);
+        }).catch((error) => {
+            console.error(`MIC not delivered due to: ` , error);
+        });
         gateways["gxy3"].sendServiceMessage(msg);
+        //gateways[inst].sendProtocolMessage(msg);
         // gdm.send(msg, toAck, (msg) => gateways[inst].sendProtocolMessage(msg)).
         // then(() => {
         //     console.log(`MIC delivered.`);

@@ -614,10 +614,15 @@ class VirtualClient extends Component {
   };
 
   onRoomData = (data) => {
-    const {user, cammuted} = this.state;
+    const {user, cammuted, gdm} = this.state;
     const feeds = Object.assign([], this.state.feeds);
     const {camera,question,rcmd,type,id} = data;
     if(rcmd) {
+      if (gdm.checkAck(data)) {
+        // Ack received, do nothing.
+        return;
+      }
+
       if (type === 'client-reconnect' && user.id === id) {
         this.exitRoom(true);
       } else if (type === 'client-reload' && user.id === id) {
@@ -642,6 +647,14 @@ class VirtualClient extends Component {
         this.reloadConfig();
       } else if (type === 'client-reload-all') {
         window.location.reload();
+      } else if (type === 'shidur-ping') {
+        gdm.accept(data, (msg) => this.sendDataMessage(msg)).then((data) => {
+          if (data === null) {
+            console.log('Message received more then once.');
+          }
+        }).catch((error) => {
+          console.error(`Failed receiving ${data}: ${error}`);
+        });
       }
     } else {
       for (let i = 0; i < feeds.length; i++) {

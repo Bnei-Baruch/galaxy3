@@ -300,13 +300,38 @@ class UsersHandle extends Component {
                 ondata: (data, label) => {
                     gateway.log('Feed - Got data from the DataChannel! (' + label + ')' + data);
                     let msg = JSON.parse(data);
-                    //this.onRoomData(msg);
+                    this.onRoomData(gateway, msg);
                     gateway.log(' :: We got msg via DataChannel: ', msg);
                 },
                 oncleanup: () => {
                     gateway.debug(`[room ${roomid}] [remoteFeed] ::: Got a cleanup notification :::`);
                 }
             });
+    };
+
+    sendDataMessage = (cmd) => {
+        const message = JSON.stringify(cmd);
+        console.log(':: Sending message: ', message);
+        this.state.videoroom.data({ text: message });
+    };
+
+    onRoomData = (gateway, data) => {
+        const { gdm } = this.props;
+        if (gdm.checkAck(data)) {
+            // Ack received, do nothing.
+            return;
+        }
+
+        const {type} = data;
+        if (type === 'shidur-ping') {
+            gdm.accept(data, (msg) => this.sendDataMessage(msg)).then((data) => {
+                if (data === null) {
+                    console.log('Message received more then once.');
+                }
+            }).catch((error) => {
+                console.error(`Failed receiving ${data}: ${error}`);
+            });
+        }
     };
 
     subscribeTo = (gateway, roomid, subscription) => {
