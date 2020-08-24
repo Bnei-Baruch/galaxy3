@@ -658,7 +658,7 @@ class MobileClient extends Component {
                 Janus.error(`Did not find user ${id}.`);
                 return;
               }
-              feed.taking = false;
+              feed.talking = false;
               this.setState({feeds});
             } else if(event === "destroyed") {
                 // The room has been destroyed
@@ -1520,7 +1520,7 @@ class MobileClient extends Component {
                      key={"vk" + i}
                      ref={"video" + i}
                      id={"video" + i}>
-            <div className={classNames('video__overlay', {'talk': feed.taking})}>
+            <div className={classNames('video__overlay', {'talk': feed.talking})}>
                 {feed.question ? <div className="question">
                     <svg viewBox="0 0 50 50">
                         <text x="25" y="25" textAnchor="middle" alignmentBaseline="central"
@@ -1528,7 +1528,7 @@ class MobileClient extends Component {
                     </svg>
                 </div> : ''}
                 <div className="video__title">
-                  {!feed.taking ?  <Icon name="microphone slash" color="red"/> : ''}
+                  {!feed.talking ?  <Icon name="microphone slash" color="red"/> : ''}
                   <div className='title-name'>{feed.display.display}</div>
                 </div>
             </div>
