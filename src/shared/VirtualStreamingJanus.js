@@ -134,7 +134,9 @@ export default class VirtualStreamingJanus {
   initJanus_(country) {
     this.destroy();
 
-    const gateway = country === "IL" ? 'str4' : 'str3';
+    // const gateway = country === "IL" ? 'str4' : 'str3';
+    const streamingGateways = GxyJanus.gatewayNames("streaming");
+    const gateway = streamingGateways[Math.floor(Math.random() * streamingGateways.length)];
     const config = GxyJanus.instanceConfig(gateway);
 
     Janus.init({

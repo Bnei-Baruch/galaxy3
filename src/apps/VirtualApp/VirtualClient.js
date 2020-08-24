@@ -2,22 +2,44 @@ import React, {Component, Fragment} from 'react';
 import {Janus} from '../../lib/janus';
 import classNames from 'classnames';
 import {isMobile} from 'react-device-detect';
-import {Button, Icon, Input, Label, Menu, Modal, Popup, Select,Image} from 'semantic-ui-react';
-import {checkNotification, geoInfo, getMedia, getMediaStream, initJanus, micLevel, reportToSentry, takeImage, testMic, wkliLeave} from '../../shared/tools';
+import {Button, Icon, Image, Input, Label, Menu, Modal, Popup, Select} from 'semantic-ui-react';
+import {
+  checkNotification,
+  geoInfo,
+  getMedia,
+  getMediaStream,
+  initJanus,
+  micLevel,
+  reportToSentry,
+  takeImage,
+  testMic,
+  wkliLeave
+} from '../../shared/tools';
 import './VirtualClient.scss';
 import './VideoConteiner.scss';
 import './CustomIcons.scss';
 import 'eqcss';
 import VirtualChat from './VirtualChat';
-import {initGxyProtocol} from '../../shared/protocol';
-import {PROTOCOL_ROOM, VIDEO_360P_OPTION_VALUE, NO_VIDEO_OPTION_VALUE, vsettings_list} from '../../shared/consts';
+import {initGxyProtocol, sendProtocolMessage} from '../../shared/protocol';
+import {
+  PROTOCOL_ROOM,
+  VIDEO_360P_OPTION_VALUE,
+  NO_VIDEO_OPTION_VALUE,
+  vsettings_list,
+} from '../../shared/consts';
 import {GEO_IP_INFO, SENTRY_KEY} from '../../shared/env';
 import platform from 'platform';
 import {Help} from './components/Help';
 import {withTranslation} from 'react-i18next';
 import {languagesOptions, setLanguage} from '../../i18n/i18n';
 import {Monitoring} from '../../components/Monitoring';
-import {MonitoringData, LINK_STATE_INIT, LINK_STATE_GOOD, LINK_STATE_MEDIUM, LINK_STATE_WEAK} from '../../shared/MonitoringData';
+import {
+  LINK_STATE_GOOD,
+  LINK_STATE_INIT,
+  LINK_STATE_MEDIUM,
+  LINK_STATE_WEAK,
+  MonitoringData
+} from '../../shared/MonitoringData';
 import api from '../../shared/Api';
 import VirtualStreaming from './VirtualStreaming';
 import VirtualStreamingJanus from '../../shared/VirtualStreamingJanus';
@@ -29,6 +51,8 @@ import VerifyAccount from './components/VerifyAccount';
 import GxyJanus from "../../shared/janus-utils";
 import audioModeSvg from '../../shared/audio-mode.svg';
 import fullModeSvg from '../../shared/full-mode.svg';
+import ConfigStore from "../../shared/ConfigStore";
+import {GuaranteeDeliveryManager} from '../../shared/GuaranteeDelivery';
 
 const sortAndFilterFeeds = (feeds) => feeds
   .filter(feed => !feed.display.role.match(/^(ghost|guest)$/))
@@ -96,6 +120,8 @@ class VirtualClient extends Component {
     keepalive: null,
     muteOtherCams: false,
     videos: Number(localStorage.getItem('vrt_video')) || 1,
+    premodStatus: false,
+    gdm: null,
   };
 
   virtualStreamingInitialized() {
@@ -151,6 +177,8 @@ class VirtualClient extends Component {
   }
 
   initApp = (user) => {
+    let gdm = new GuaranteeDeliveryManager(user.id);
+    this.setState({gdm});
     const {t} = this.props;
     localStorage.setItem('question', false);
     localStorage.setItem('sound_test', false);
@@ -170,7 +198,11 @@ class VirtualClient extends Component {
       this.setState({user});
 
       api.fetchConfig()
-          .then(data => GxyJanus.setGlobalConfig(data))
+          .then(data => {
+            ConfigStore.setGlobalConfig(data);
+            this.setState({premodStatus: ConfigStore.dynamicConfig(ConfigStore.PRE_MODERATION_KEY) === 'true'});
+            GxyJanus.setGlobalConfig(data);
+          })
           .then(() => (api.fetchAvailableRooms({with_num_users: true})))
           .then(data => {
             const {rooms} = data;
@@ -192,7 +224,7 @@ class VirtualClient extends Component {
             }
           })
           .catch(err => {
-            console.error("[VirtualClient] error initializing app", err);
+            console.error("[User] error initializing app", err);
             this.setState({appInitError: err});
           });
     });
@@ -220,7 +252,7 @@ class VirtualClient extends Component {
       }
     }, err => {
       this.exitRoom(true, () => {
-        console.error("[VirtualClient] error initializing janus", err);
+        console.error("[User] error initializing janus", err);
         this.reinitClient(retry);
       });
     }, config.url, config.token, config.iceServers);
@@ -233,14 +265,14 @@ class VirtualClient extends Component {
 
   reinitClient = (retry) => {
     retry++;
-    console.error("[VirtualClient] reinitializing try: ", retry);
+    console.error("[User] reinitializing try: ", retry);
     if(retry < 10) {
       setTimeout(() => {
         this.initClient(true, retry);
       }, 5000)
     } else {
       this.exitRoom(false, () => {
-        console.error("[VirtualClient] reinitializing failed after: " + retry + " retries");
+        console.error("[User] reinitializing failed after: " + retry + " retries");
         alert(this.props.t('oldClient.networkSettingsChanged'));
       });
     }
@@ -606,6 +638,10 @@ class VirtualClient extends Component {
         this.setState({user});
       } else if (type === 'audio-out') {
         this.handleAudioOut(data);
+      }  else if (type === 'reload-config') {
+        this.reloadConfig();
+      } else if (type === 'client-reload-all') {
+        window.location.reload();
       }
     } else {
       for (let i = 0; i < feeds.length; i++) {
@@ -1064,6 +1100,10 @@ class VirtualClient extends Component {
         this.setState({user});
       } else if (type === 'audio-out' && room === selected_room) {
         this.handleAudioOut(ondata);
+      } else if (type === 'reload-config') {
+        this.reloadConfig();
+      } else if (type === 'client-reload-all') {
+        window.location.reload();
       }
     });
   };
@@ -1082,9 +1122,14 @@ class VirtualClient extends Component {
   sendKeepAlive = () => {
     const {user, janus} = this.state;
     if (user && janus && janus.isConnected() && user.session && user.handle) {
-      console.debug("[User] sendKeepAlive", new Date());
       api.updateUser(user.id, user)
-          .catch(err => console.error("[User] error sending keepalive", user.id, err));
+        .then(data => {
+          if (ConfigStore.isNewer(data.config_last_modified)) {
+            console.info("[User] there is a newer config. Reloading ", data.config_last_modified);
+            this.reloadConfig();
+          }
+        })
+        .catch(err => console.error("[User] error sending keepalive", user.id, err));
     }
   };
 
@@ -1094,6 +1139,24 @@ class VirtualClient extends Component {
       clearInterval(keepalive);
     }
     this.setState({keepalive: null});
+  }
+
+  reloadConfig = () => {
+    api.fetchConfig()
+      .then((data) => {
+        ConfigStore.setGlobalConfig(data);
+        const {premodStatus, question} = this.state;
+        const newPremodStatus = ConfigStore.dynamicConfig(ConfigStore.PRE_MODERATION_KEY) === 'true';
+        if (newPremodStatus !== premodStatus) {
+          this.setState({premodStatus: newPremodStatus});
+          if (question) {
+            this.handleQuestion();
+          }
+        }
+      })
+      .catch(err => {
+        console.error("[User] error reloading config", err);
+      });
   }
 
   makeDelay = () => {
@@ -1121,13 +1184,29 @@ class VirtualClient extends Component {
   };
 
   handleAudioOut = (data) => {
-    this.state.virtualStreamingJanus.streamGalaxy(data.status, 4, "");
-    if (data.status) {
-      // remove question mark when sndman unmute our room
-      if (this.state.question) {
-        this.handleQuestion();
-      }
+    const { gdm, user, protocol } = this.state;
+    if (gdm.checkAck(data)) {
+      // Ack received, do nothing.
+      return;
     }
+
+    gdm.accept(data, (msg) => sendProtocolMessage(protocol, user, msg, false)).then((data) => {
+      if (data === null) {
+        console.log('Message received more then once.');
+        return;
+      }
+
+      this.state.virtualStreamingJanus.streamGalaxy(data.status, 4, "");
+      if (data.status) {
+        // remove question mark when sndman unmute our room
+        if (this.state.question) {
+          this.handleQuestion();
+        }
+      }
+
+    }).catch((error) => {
+      console.error(`Failed receiving ${data}: ${error}`);
+    });
   };
 
   camMute = (cammuted) => {
@@ -1154,7 +1233,7 @@ class VirtualClient extends Component {
     muted ? videoroom.unmuteAudio() : videoroom.muteAudio();
     this.setState({muted: !muted});
   };
-  
+
   otherCamsMuteToggle = () => {
     const {feeds, muteOtherCams} = this.state;
     if (!muteOtherCams) {
@@ -1341,6 +1420,7 @@ class VirtualClient extends Component {
       user,
       virtualStreamingJanus,
       videos,
+      premodStatus,
     } = this.state;
     const {video_device} = media.video;
     const {audio_device} = media.audio;
@@ -1486,7 +1566,7 @@ class VirtualClient extends Component {
             {chatMessagesCount > 0 ? chatCountLabel : ''}
           </Menu.Item>
           <Menu.Item
-            disabled={!audio_device || !localAudioTrack || delay || otherFeedHasQuestion}
+            disabled={premodStatus || !audio_device || !localAudioTrack || delay || otherFeedHasQuestion}
             onClick={this.handleQuestion}>
             <Icon {...(question ? {color: 'green'} : {})} name='question' />
             {t('oldClient.askQuestion')}
@@ -1530,7 +1610,7 @@ class VirtualClient extends Component {
 						className='homet-limud'>
               <iframe src={`https://groups.google.com/forum/embed/?place=forum/bb-study-materials&showpopout=true&showtabs=false&parenturl=${encodeURIComponent(window.location.href)}`}
                 style={{width: '100%', height: '60vh', padding: '1rem'}} frameBorder="0"></iframe>
-					</Modal>   
+					</Modal>
         </Menu>
         <Menu icon='labeled' secondary size="mini">
           {!room ?

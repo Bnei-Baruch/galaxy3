@@ -1,6 +1,6 @@
 import React, {Component, Fragment} from 'react';
 import {Janus} from "../../lib/janus";
-import {Button, Grid, Icon, Label, List, Menu, Popup, Segment, Tab, Table} from "semantic-ui-react";
+import {Button, Confirm, Grid, Header, Icon, Label, List, Menu, Popup, Segment, Tab, Table} from "semantic-ui-react";
 import './AdminRoot.css';
 import './AdminRootVideo.scss'
 import classNames from "classnames";
@@ -13,6 +13,8 @@ import MonitoringAdmin from "./components/MonitoringAdmin";
 import MonitoringUser from "./components/MonitoringUser";
 import RoomManager from "./components/RoomManager";
 import api from "../../shared/Api";
+import ConfigStore from "../../shared/ConfigStore";
+import {GuaranteeDeliveryManager} from "../../shared/GuaranteeDelivery";
 
 class AdminRoot extends Component {
 
@@ -46,7 +48,13 @@ class AdminRoot extends Component {
         gxy2_count: 0,
         gxy3_count: 0,
         gxy4_count: 0,
+        gxy5_count: 0,
+        gxy6_count: 0,
+        gxy7_count: 0,
         command_status: true,
+        gdm: null,
+        premodStatus: false,
+        showConfirmReloadAll: false,
     };
 
     componentWillUnmount() {
@@ -113,10 +121,15 @@ class AdminRoot extends Component {
     withAudio = () => (this.isAllowed("admin"));
 
     initApp = (user) => {
-        this.setState({user});
+        let gdm = new GuaranteeDeliveryManager(user.id);
+        this.setState({user,gdm});
 
         api.fetchConfig()
-            .then(data => GxyJanus.setGlobalConfig(data))
+            .then(data => {
+                ConfigStore.setGlobalConfig(data);
+                this.setState({premodStatus: ConfigStore.dynamicConfig(ConfigStore.PRE_MODERATION_KEY) === 'true'});
+                GxyJanus.setGlobalConfig(data);
+            })
             .then(() => this.initGateways(user))
             .then(this.pollRooms)
             .catch(err => {
@@ -182,6 +195,9 @@ class AdminRoot extends Component {
                 const gxy2_count = data.filter(r => r.janus === "gxy2").map(r => r.num_users).reduce((su, cur) => su + cur, 0);
                 const gxy3_count = data.filter(r => r.janus === "gxy3").map(r => r.num_users).reduce((su, cur) => su + cur, 0);
                 const gxy4_count = data.filter(r => r.janus === "gxy4").map(r => r.num_users).reduce((su, cur) => su + cur, 0);
+                const gxy5_count = data.filter(r => r.janus === "gxy5").map(r => r.num_users).reduce((su, cur) => su + cur, 0);
+                const gxy6_count = data.filter(r => r.janus === "gxy6").map(r => r.num_users).reduce((su, cur) => su + cur, 0);
+                const gxy7_count = data.filter(r => r.janus === "gxy7").map(r => r.num_users).reduce((su, cur) => su + cur, 0);
                 const room = data.find(r => r.room === current_room);
                 let users = current_room && room ? room.users : [];
                 data.sort((a, b) => {
@@ -189,7 +205,7 @@ class AdminRoot extends Component {
                     if (a.description < b.description) return -1;
                     return 0;
                 });
-                this.setState({rooms: data, users, users_count, gxy1_count, gxy2_count, gxy3_count, gxy4_count});
+                this.setState({rooms: data, users, users_count, gxy1_count, gxy2_count, gxy3_count, gxy4_count, gxy5_count, gxy6_count, gxy7_count});
             })
             .catch(err => {
                 console.error("[Admin] error fetching active rooms", err);
@@ -512,6 +528,12 @@ class AdminRoot extends Component {
     };
 
     onProtocolData = (gateway, data) => {
+        const { gdm } = this.state;
+        if (gdm.checkAck(data)) {
+            // Ack received, do nothing.
+            return;
+        }
+
         // let {users} = this.state;
         //
         // // Set status in users list
@@ -535,7 +557,43 @@ class AdminRoot extends Component {
     };
 
     sendRemoteCommand = (command_type) => {
-        const {gateways, feed_user, current_janus, current_room, command_status} = this.state;
+        const {gateways, feed_user, current_janus, current_room, command_status, gdm} = this.state;
+
+        if (command_type === "premoder-mode") {
+            const value = !this.state.premodStatus;
+            api.adminSetConfig(ConfigStore.PRE_MODERATION_KEY, value.toString())
+                .then(() => {
+                    ConfigStore.setDynamicConfig(ConfigStore.PRE_MODERATION_KEY, value.toString());
+                    this.setState({premodStatus: value});
+
+                    const msg = {
+                        type: "reload-config",
+                        status: value,
+                        id: null,
+                        user: null,
+                        room: null,
+                    };
+                    Object.values(gateways).forEach(gateway =>
+                        gateway.sendProtocolMessage(msg)
+                            .catch(alert));
+                })
+                .catch(alert)
+            return;
+        }
+        if (command_type === "client-reload-all") {
+            const msg = {
+                type: "client-reload-all",
+                status: true,
+                id: null,
+                user: null,
+                room: null,
+            };
+            Object.values(gateways).forEach(gateway =>
+                gateway.sendProtocolMessage(msg)
+                    .catch(alert));
+            return;
+        }
+
         if (!feed_user) {
             alert("Choose user");
             return;
@@ -546,8 +604,21 @@ class AdminRoot extends Component {
         }
 
         const gateway = gateways[current_janus];
-        gateway.sendProtocolMessage({type: command_type, room: current_room, status: command_status, id: feed_user.id, user: feed_user})
-            .catch(alert);
+        const msg = {type: command_type, room: current_room, status: command_status, id: feed_user.id, user: feed_user};
+        const toAck = [feed_user.id];
+
+        if(command_type === "audio-out") {
+            gdm.send(msg, toAck, (msg) => gateway.sendProtocolMessage(msg).catch(alert)).
+            then(() => {
+                console.log(`MIC delivered to ${toAck}.`);
+            }).catch((error) => {
+                console.error(`MIC not delivered to ${toAck} due to ` , error);
+            });
+        } else {
+            const gateway = gateways[current_janus];
+            gateway.sendProtocolMessage({type: command_type, room: current_room, status: command_status, id: feed_user.id, user: feed_user})
+                .catch(alert);
+        }
 
         if (command_type === "audio-out") {
             this.setState({command_status: !command_status})
@@ -688,33 +759,47 @@ class AdminRoot extends Component {
     if (index < usersTabs.length) {
       const newUsersTabs = usersTabs.slice();
       newUsersTabs.splice(index, 1);
-      this.setState({usersTabs: newUsersTabs, activeTab: 1});
+      this.setState({usersTabs: newUsersTabs, activeTab: 2});
     }
   }
 
+    onConfirmReloadAllCancel = (e, data) => {
+        this.setState({showConfirmReloadAll: false});
+    }
+
+    onConfirmReloadAllConfirm = (e, data) => {
+        this.setState({showConfirmReloadAll: false});
+        this.sendRemoteCommand("client-reload-all");
+    }
+
   render() {
       const {
-        activeTab,
-        current_room,
-        feed_id,
-        feed_info,
-        feed_rtcp,
-        feed_user,
-        feeds,
-        users,
-        gateways,
-        gatewaysInitialized,
-        rooms,
-        user,
-        usersTabs,
+          activeTab,
+          current_room,
+          feed_id,
+          feed_info,
+          feed_rtcp,
+          feed_user,
+          feeds,
+          users,
+          gateways,
+          gatewaysInitialized,
+          rooms,
+          user,
+          usersTabs,
           users_count,
           gxy1_count,
           gxy2_count,
           gxy3_count,
           gxy4_count,
-        chatRoomsInitialized,
+          gxy5_count,
+          gxy6_count,
+          gxy7_count,
+          chatRoomsInitialized,
           appInitError,
           command_status,
+          premodStatus,
+          showConfirmReloadAll,
       } = this.state;
 
       if (appInitError) {
@@ -849,12 +934,16 @@ class AdminRoot extends Component {
                               on='click'
                               hideOnScroll
                           />
-                          <Label attached='top right'>
+                          <Popup trigger={<Button color="yellow" icon='question' onClick={() => this.sendRemoteCommand("client-question")} />} content='Set/Unset question' inverted />
+                          <Label attached='top right' size='mini'>
                               <List>
-                                  <List.Item>GXY1: {gxy1_count}</List.Item>
-                                  <List.Item>GXY2: {gxy2_count}</List.Item>
-                                  <List.Item>GXY3: {gxy3_count}</List.Item>
-                                  <List.Item>GXY4: {gxy4_count}</List.Item>
+                                  <List.Item className="gxy_count">gxy1: <b>{gxy1_count}</b></List.Item>
+                                  <List.Item className="gxy_count">gxy2: <b>{gxy2_count}</b></List.Item>
+                                  <List.Item className="gxy_count">gxy3: <b>{gxy3_count}</b></List.Item>
+                                  <List.Item className="gxy_count">gxy4: <b>{gxy4_count}</b></List.Item>
+                                  <List.Item className="gxy_count">gxy5: <b>{gxy5_count}</b></List.Item>
+                                  <List.Item className="gxy_count">gxy6: <b>{gxy6_count}</b></List.Item>
+                                  <List.Item className="gxy_count">gxy7: <b>{gxy7_count}</b></List.Item>
                               </List>
                           </Label>
                       </Segment>
@@ -875,8 +964,17 @@ class AdminRoot extends Component {
                                           <Popup trigger={<Button color="pink" icon='eye' onClick={() => this.sendRemoteCommand("video-mute")} />} content='Cam Mute/Unmute' inverted />
                                           <Popup trigger={<Button color="orange" icon={command_status ? 'volume off' : 'volume up'} onClick={() => this.sendRemoteCommand("audio-out")} />} content='Talk event' inverted />
                                           {/*<Popup trigger={<Button color="pink" icon='eye' onClick={() => this.sendDataMessage("video-mute")} />} content='Cam Mute/Unmute' inverted />*/}
-                                          <Popup trigger={<Button color="blue" icon='power off' onClick={() => this.sendRemoteCommand("client-disconnect")} />} content='Disconnect(LOST FEED HERE!)' inverted />
+                                          {/*<Popup trigger={<Button color="blue" icon='power off' onClick={() => this.sendRemoteCommand("client-disconnect")} />} content='Disconnect(LOST FEED HERE!)' inverted />*/}
+                                          <Popup inverted
+                                                 content={`${premodStatus ? 'Disable' : 'Enable'} Pre Moderation Mode`}
+                                                 trigger={
+                                                     <Button color="blue"
+                                                             icon='copyright'
+                                                             inverted={premodStatus}
+                                                             onClick={() => this.sendRemoteCommand("premoder-mode")}/>
+                                                 }/>
                                           <Popup trigger={<Button color="yellow" icon='question' onClick={() => this.sendRemoteCommand("client-question")} />} content='Set/Unset question' inverted />
+                                          <Popup trigger={<Button color="red" icon='redo' onClick={() => this.setState({showConfirmReloadAll: !showConfirmReloadAll})} />} content='RELOAD ALL' inverted />
                                       </Segment>
                                       : null
                               }
@@ -934,6 +1032,20 @@ class AdminRoot extends Component {
                                selected_user={feed_user}
                                gateways={gateways}
                                onChatRoomsInitialized={this.onChatRoomsInitialized}/>
+                      : null
+              }
+
+              {
+                  this.isAllowed("root") ?
+                      <Confirm
+                          open={showConfirmReloadAll}
+                          header={
+                              <Header><Icon name="warning circle" color="red"/>Caution</Header>
+                          }
+                          content="Are you sure you want to force ALL USERS to reload their page ?!"
+                          onCancel={this.onConfirmReloadAllCancel}
+                          onConfirm={this.onConfirmReloadAllConfirm}
+                      />
                       : null
               }
 

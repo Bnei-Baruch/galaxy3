@@ -7,6 +7,8 @@ import LoginPage from "../../components/LoginPage";
 import ShidurToran from "./ShidurToran";
 import UsersQuad from "./UsersQuad";
 import './ShidurApp.css'
+import {STORAN_ID} from "../../shared/consts"
+import {GuaranteeDeliveryManager} from '../../shared/GuaranteeDelivery';
 
 
 class ShidurApp extends Component {
@@ -31,6 +33,7 @@ class ShidurApp extends Component {
         sdiout: false,
         sndman: false,
         users_count: 0,
+        gdm: new GuaranteeDeliveryManager(STORAN_ID),
     };
 
     componentWillUnmount() {
@@ -81,9 +84,12 @@ class ShidurApp extends Component {
 
         return gateway.init()
             .then(() => {
-                if (gateway.name === "gxy3") {
-                    return gateway.initServiceProtocol(user, data => this.onServiceData(gateway, data))
-                }
+                return gateway.initGxyProtocol(user, data => this.onProtocolData(gateway, data))
+                    .then(() => {
+                        if (gateway.name === "gxy3") {
+                            return gateway.initServiceProtocol(user, data => this.onServiceData(gateway, data))
+                        }
+                    });
             })
             .catch(err => {
                 console.error("[Shidur] error initializing gateway", gateway.name, err);
@@ -136,22 +142,45 @@ class ShidurApp extends Component {
     }
 
     onServiceData = (gateway, data) => {
+      const { gdm } = this.state;
+      if (gdm.checkAck(data)) {
+        // Ack received, do nothing.
+        return;
+      }
+
+      if (data.type === "error" && data.error_code === 420) {
+          console.error("[Shidur] service error message (reloading in 10 seconds)", data.error);
+          setTimeout(() => {
+              this.initGateway(this.state.user, gateway);
+          }, 10000);
+          return;
+      }
+
+      if(data.type === "event") {
+          delete data.type;
+          this.setState({...data});
+          if(data.sdiout || data.sndman) {
+              setTimeout(() => {
+                  console.log("[Shidur] :: Check Full Screen state :: ");
+                  this.checkFullScreen();
+              }, 3000);
+          }
+          return;
+      }
+    };
+
+    onProtocolData = (gateway, data) => {
+        const { gdm } = this.state;
+        if (gdm.checkAck(data)) {
+            // Ack received, do nothing.
+            return;
+        }
+
         if (data.type === "error" && data.error_code === 420) {
-            console.error("[Shidur] service error message (reloading in 10 seconds)", data.error);
+            console.error("[Shidur] protocol error message (reloading in 10 seconds)", data.error);
             setTimeout(() => {
                 this.initGateway(this.state.user, gateway);
             }, 10000);
-        }
-
-        if(data.type === "event") {
-            delete data.type;
-            this.setState({...data});
-            if(data.sdiout || data.sndman) {
-                setTimeout(() => {
-                    console.log("[Shidur] :: Check Full Screen state :: ");
-                    this.checkFullScreen();
-                }, 3000);
-            }
         }
     };
 
