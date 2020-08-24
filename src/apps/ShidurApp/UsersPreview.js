@@ -131,8 +131,11 @@ class UsersPreview extends Component {
                 ondataopen: (data) => {
                     gateway.debug("[Preview] [remoteFeed] The DataChannel is available!");
                 },
-                ondata: (data) => {
-                    gateway.debug("[Preview] [remoteFeed] We got data from the DataChannel!", data);
+                ondata: (data, label) => {
+                    console.log('Got Room data from the DataChannel! (' + label + ')' + data);
+                    let msg = JSON.parse(data);
+                    //this.onRoomData(msg);
+                    console.log(' :: We got msg via Room DataChannel: ', msg);
                 },
                 oncleanup: () => {
                     gateway.debug("[Preview] [remoteFeed] ::: Got a cleanup notification :::");

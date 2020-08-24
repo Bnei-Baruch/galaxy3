@@ -239,7 +239,7 @@ class UsersQuad extends Component {
         this.setState({fullscr: true, full_feed: i, question: q});
         //this.sdiGuaranteeAction("fullscr_group" , true, i, g, q, [AUDIOOUT_ID, SDIOUT_ID, SNDMAN_ID]);
         this.sdiAction("fullscr_group" , true, i, g, q);
-        this.micMute(true, room, janus);
+        this.micMute(true, room, janus, i);
     };
 
     toFourGroup = (i,g,cb,q) => {
@@ -247,22 +247,22 @@ class UsersQuad extends Component {
         console.log("[Shidur]:: Back to four: ");
         //this.sdiGuaranteeAction("fullscr_group" , false, i, g, q, [AUDIOOUT_ID, SDIOUT_ID, SNDMAN_ID]);
         this.sdiAction("fullscr_group" , false, i, g, q);
-        this.micMute(false, room, janus);
+        this.micMute(false, room, janus, i);
         this.setState({fullscr: false, full_feed: null, question: false}, () => {
             cb();
         });
     };
 
-    sendDataMessage = (status) => {
-        const {col,full_feed} = this.state;
+    sendDataMessage = (status, i) => {
+        const {col} = this.state;
         const cmd = {type: "audio-out", rcmd: true, status}
         const message = JSON.stringify(cmd);
         console.log(':: Sending message: ', message);
-        this["cmd"+col+full_feed].state.videoroom.data({ text: message });
+        this["cmd"+col+i].state.videoroom.data({ text: message });
     };
 
-    micMute = (status, room, inst) => {
-        const msg = {type: "audio-out", status, room, col: null, i: null, feed: null};
+    micMute = (status, room, inst, i) => {
+        const msg = {type: "audio-out", status, room, col: null, i, feed: null};
         const group = this.props.rooms.filter(g => g.room === room)[0];
         //const ask_feed = group.users.filter(u => u.question)[0];
         let toAck = group.users.map(u => {return u.id});
@@ -270,15 +270,15 @@ class UsersQuad extends Component {
 
         const {gateways, gdm} = this.props;
         //TODO: Send data in room channel
-        //this.sendDataMessage(status);
+        this.sendDataMessage(status, i);
         //gateways[inst].sendProtocolMessage(msg);
         gateways["gxy3"].sendServiceMessage(msg);
-        gdm.send(msg, toAck, (msg) => gateways[inst].sendProtocolMessage(msg)).
-        then(() => {
-            console.log(`MIC delivered.`);
-        }).catch((error) => {
-            console.error(`MIC not delivered due to: ` , error);
-        });
+        // gdm.send(msg, toAck, (msg) => gateways[inst].sendProtocolMessage(msg)).
+        // then(() => {
+        //     console.log(`MIC delivered.`);
+        // }).catch((error) => {
+        //     console.error(`MIC not delivered due to: ` , error);
+        // });
     };
 
     setDelay = () => {
@@ -303,7 +303,7 @@ class UsersQuad extends Component {
                   <div className='click-panel' onClick={() => this.switchQuestion(i,g,true)} >
                   <div className='video_title' >{name}</div>
                   {qst ? <div className="qst_title">?</div> : ""}
-                  <UsersHandle key={"q"+i} g={g} index={i} {...this.props} />
+                  <UsersHandle key={"q"+i} g={g} index={i} ref={cmd => {this["cmd"+col+i] = cmd;}} {...this.props} />
                   </div>
                   {!question ?
                   <Button className='fullscr_button'

@@ -267,16 +267,16 @@ class AdminRoot extends Component {
                         feeds[f].display = display;
                         feeds[f].talk = talk;
                         feeds[f].janus = gateway.name;
-                        let subst = {feed: id};
                         for (let i in streams) {
                             let stream = streams[i];
                             stream["id"] = id;
                             stream["display"] = display;
                             if (!this.withAudio() && stream.type === "video") {
-                                subst.mid = stream.mid;
+                                subscription.push({feed: id, mid: stream.mid});
+                            } else {
+                                subscription.push({feed: id, mid: stream.mid});
                             }
                         }
-                        subscription.push(subst);
                     }
                     this.setState({feeds});
                     if (subscription.length > 0)
@@ -328,16 +328,16 @@ class AdminRoot extends Component {
                         let streams = feed[f]["streams"];
                         feed[f].display = display;
                         feed[f].janus = gateway.name;
-                        let subst = {feed: id};
                         for (let i in streams) {
                             let stream = streams[i];
                             stream["id"] = id;
                             stream["display"] = display;
                             if (!this.withAudio() && stream.type === "video") {
-                                subst.mid = stream.mid;
+                                subscription.push({feed: id, mid: stream.mid});
+                            } else {
+                                subscription.push({feed: id, mid: stream.mid});
                             }
                         }
-                        subscription.push(subst);
                     }
                     feeds.push(feed[0]);
                     feeds.sort((a, b) => {
@@ -410,10 +410,10 @@ class AdminRoot extends Component {
                     gateway.remoteFeed.createAnswer(
                         {
                             jsep: jsep,
-                            media: {audioSend: false, videoSend: false, data: false},	// We want recvonly audio/video
+                            media: {audioSend: false, videoSend: false, data: true},	// We want recvonly audio/video
                             success: (jsep) => {
                                 gateway.debug("[remoteFeed] Got SDP", jsep);
-                                let body = {request: "start", room: this.state.current_room, data: false};
+                                let body = {request: "start", room: this.state.current_room, data: true};
                                 gateway.remoteFeed.send({message: body, jsep: jsep});
                             },
                             error: (error) => {
