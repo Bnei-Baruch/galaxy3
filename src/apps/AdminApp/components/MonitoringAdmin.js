@@ -38,6 +38,7 @@ const MonitoringAdmin = (props) => {
       group: [],
       system: [],
       janus: [],
+      streaming: [],
       role: [],
       version: [],
     },
@@ -133,6 +134,7 @@ const MonitoringAdmin = (props) => {
       system: [],
       role: [],
       janus: [],
+      streaming: [],
       version: [],
     };
 
@@ -141,6 +143,7 @@ const MonitoringAdmin = (props) => {
     const systemSet = new Set();
     const roleSet = new Set();
     const janusSet = new Set();
+    const streamingSet = new Set();
     const versionSet = new Set();
 
     const newFullView = Object.values(users).map(user => ({
@@ -170,6 +173,10 @@ const MonitoringAdmin = (props) => {
         janusSet.add(user.janus);
         filterOptions.janus.push({title: user.janus});
       }
+      if (!streamingSet.has(user.streamingGateway)) {
+        streamingSet.add(user.streamingGateway);
+        filterOptions.streaming.push({title: user.streamingGateway});
+      }
       if (!versionSet.has(user.galaxyVersion)) {
         versionSet.add(user.galaxyVersion);
         filterOptions.version.push({title: user.galaxyVersion});
@@ -188,6 +195,7 @@ const MonitoringAdmin = (props) => {
       ['system', (re) => re.test(system(user))],
       ['role', (re) => re.test(user.role)],
       ['janus', (re) => re.test(user.janus)],
+      ['streaming', (re) => re.test(user.streamingGateway)],
       ['version', (re) => re.test(user.galaxyVersion)],
     ]);
     for (const [name, re] of Object.entries(filters)) {
@@ -235,6 +243,8 @@ const MonitoringAdmin = (props) => {
       return a.user[columnToSort].localeCompare(b.user[columnToSort]);
     } else if (columnToSort === 'version') {
       return a.user.galaxyVersion.localeCompare(b.user.galaxyVersion);
+    } else if (columnToSort === 'streaming') {
+      return a.user.streamingGateway.localeCompare(b.user.streamingGateway);
     } else if (columnToSort === 'name') {
       return a.user.display.localeCompare(b.user.display);
     } else if (columnToSort === 'login') {
@@ -315,9 +325,7 @@ const MonitoringAdmin = (props) => {
           <Table.Row textAlign='center'>
             <Table.HeaderCell rowSpan="2"
                               sorted={column === 'name' ? direction : null}
-                              onClick={handleSort('name')}>
-              {popup('Name')}
-            </Table.HeaderCell>
+                              onClick={handleSort('name')}>{popup('Name')}</Table.HeaderCell>
             <Table.HeaderCell rowSpan="2"
                               sorted={column === 'group' ? direction : null}
                               onClick={handleSort('group')}>{popup('Group')}</Table.HeaderCell>
@@ -327,6 +335,9 @@ const MonitoringAdmin = (props) => {
             <Table.HeaderCell rowSpan="2"
                               sorted={column === 'janus' ? direction : null}
                               onClick={handleSort('janus')}>{popup('Janus')}</Table.HeaderCell>
+            <Table.HeaderCell rowSpan="2"
+                              sorted={column === 'streaming' ? direction : null}
+                              onClick={handleSort('streaming')}>{popup('Streaming')}</Table.HeaderCell>
             <Table.HeaderCell rowSpan="2"
                               sorted={column === 'version' ? direction : null}
                               onClick={handleSort('version')}>{popup('version')}</Table.HeaderCell>
@@ -399,12 +410,22 @@ const MonitoringAdmin = (props) => {
                 results={filterOptions.janus.filter(janus => !filters.janus || filters.janus.test(janus.title))}
               />
             </Table.HeaderCell>
+            <Table.HeaderCell>
+              <Search className='monitoring-search'
+                minCharacters={0}
+                onResultSelect={(e, search) => updateFilter('streaming', `^${search.result.title}$`)}
+                onSearchChange={(e, search) => updateFilter('streaming', search.value)}
+                results={filterOptions.streaming.filter(streaming => !filters.streaming || filters.streaming.test(streaming.title))}
+              />
+            </Table.HeaderCell>
+            <Table.HeaderCell>
               <Search className='monitoring-search'
                 minCharacters={0}
                 onResultSelect={(e, search) => updateFilter('version', `^${search.result.title}$`)}
                 onSearchChange={(e, search) => updateFilter('version', search.value)}
                 results={filterOptions.version.filter(version => !filters.version || filters.version.test(version.title))}
               />
+            </Table.HeaderCell>
             <Table.HeaderCell>
             </Table.HeaderCell>
             <Table.HeaderCell>

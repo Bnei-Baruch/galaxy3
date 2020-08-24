@@ -138,7 +138,8 @@ class MobileClient extends Component {
           this.state.videoroom,
           this.state.localAudioTrack,
           this.state.localVideoTrack,
-          this.state.user);
+          this.state.user,
+          this.state.shidurJanus);
         this.state.monitoringData.setOnStatus((connectionStatus, connectionStatusMessage) => {
           if (this.state.connectionStatus !== connectionStatus) {
             this.setState({connectionStatus});

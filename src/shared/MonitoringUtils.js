@@ -112,6 +112,7 @@ export const userRow = (user, stats, now, onUser) => {
       <Table.Cell>{popup(user.group)}</Table.Cell>
       <Table.Cell>{popup(user.role)}</Table.Cell>
       <Table.Cell>{popup(user.janus)}</Table.Cell>
+      <Table.Cell>{popup(user.streamingGateway)}</Table.Cell>
       <Table.Cell>{popup(user.galaxyVersion || '')}</Table.Cell>
       <Table.Cell>{popup(sinceTimestamp(user.timestamp, now))}</Table.Cell>
       <Table.Cell style={{whiteSpace: 'nowrap'}}>{popup(system(user))}</Table.Cell>
