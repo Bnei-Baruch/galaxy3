@@ -44,7 +44,9 @@ class UsersPreview extends Component {
             for (let i in g.users) {
                 let id = g.users[i].rfid;
                 let subst = {feed: id, mid: "1"};
-                subscription.push(subst);
+                if(g.users[i].camera) {
+                    subscription.push(subst);
+                }
             }
             this.subscribeTo(subscription, g.janus);
         });
