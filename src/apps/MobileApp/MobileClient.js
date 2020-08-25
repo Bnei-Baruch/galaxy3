@@ -1,4 +1,6 @@
 import React, {Component, Fragment} from 'react';
+import MetaTags from 'react-meta-tags';
+
 import {Janus} from "../../lib/janus";
 import classNames from 'classnames';
 
@@ -1832,6 +1834,9 @@ class MobileClient extends Component {
 
       return (
           <Fragment>
+             <MetaTags>
+                <meta name="viewport" content=" user-scalable=no" />
+             </MetaTags>
               {user ? content : login}
           </Fragment>
       );
