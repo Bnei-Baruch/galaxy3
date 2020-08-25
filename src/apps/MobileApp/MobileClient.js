@@ -543,47 +543,6 @@ class MobileClient extends Component {
         });
     };
 
-    onRoomData = (data) => {
-        const {user, cammuted} = this.state;
-        const {camera,question,rcmd,type,id} = data;
-        // CHECK: Looks like this code never run!
-        if(rcmd) {
-            if (type === 'client-reconnect' && user.id === id) {
-                this.exitRoom(true);
-            } else if (type === 'client-reload' && user.id === id) {
-                window.location.reload();
-            } else if (type === 'client-disconnect' && user.id === id) {
-                this.exitRoom(false);
-            } else if(type === "client-kicked" && user.id === id) {
-                kc.logout();
-            } else if (type === 'client-question' && user.id === id) {
-                this.handleQuestion();
-            } else if (type === 'client-mute' && user.id === id) {
-                this.micMute();
-            } else if (type === 'video-mute' && user.id === id) {
-                this.camMute(cammuted);
-            } else if (type === 'sound_test' && user.id === id) {
-                user.sound_test = true;
-                localStorage.setItem('sound_test', true);
-                this.setState({user});
-            } else if (type === 'audio-out') {
-                this.handleAudioOut(data);
-            } else if (type === 'reload-config') {
-                this.reloadConfig();
-            } else if (type === 'client-reload-all') {
-                window.location.reload();
-            }
-        } else {
-          const feeds = Object.assign([], this.state.feeds);
-          const feed = feeds.find(feed => feed && feed.id === data.rfid);
-          if (feed) {
-            feed.cammute = !camera;
-            feed.question = question;
-            this.setState({feeds});
-          }
-        }
-    };
-
     publishOwnFeed = (useVideo, useAudio) => {
       console.log('publishOwnFeed');
       const {videoroom, media} = this.state;
@@ -919,7 +878,8 @@ class MobileClient extends Component {
           // FIXME: Can this be done by notifying only the joined feed?
           setTimeout(() => {
             if (this.state.question) {
-              this.sendDataMessage('question', true);
+                this.sendDataMessage(this.state.user);
+              //this.sendDataMessage('question', true);
             }
           }, 3000);
         }
@@ -1059,6 +1019,60 @@ class MobileClient extends Component {
         const message = JSON.stringify(user);
         Janus.log(':: Sending message: ', message);
         videoroom.data({ text: message });
+    };
+
+    onRoomData = (data) => {
+        const {user, cammuted, gdm} = this.state;
+        const {camera,question,rcmd,type,id} = data;
+        // CHECK: Looks like this code never run!
+        if(rcmd) {
+            if (gdm.checkAck(data)) {
+                // Ack received, do nothing.
+                return;
+            }
+
+            if (type === 'client-reconnect' && user.id === id) {
+                this.exitRoom(true);
+            } else if (type === 'client-reload' && user.id === id) {
+                window.location.reload();
+            } else if (type === 'client-disconnect' && user.id === id) {
+                this.exitRoom(false);
+            } else if(type === "client-kicked" && user.id === id) {
+                kc.logout();
+            } else if (type === 'client-question' && user.id === id) {
+                this.handleQuestion();
+            } else if (type === 'client-mute' && user.id === id) {
+                this.micMute();
+            } else if (type === 'video-mute' && user.id === id) {
+                this.camMute(cammuted);
+            } else if (type === 'sound_test' && user.id === id) {
+                user.sound_test = true;
+                localStorage.setItem('sound_test', true);
+                this.setState({user});
+            } else if (type === 'audio-out') {
+                this.handleAudioOut(data);
+            } else if (type === 'reload-config') {
+                this.reloadConfig();
+            } else if (type === 'client-reload-all') {
+                window.location.reload();
+            } else if (type === 'shidur-ping') {
+                gdm.accept(data, (msg) => this.sendDataMessage(msg)).then((data) => {
+                    if (data === null) {
+                        console.log('Message received more then once.');
+                    }
+                }).catch((error) => {
+                    console.error(`Failed receiving ${data}: ${error}`);
+                });
+            }
+        } else {
+            const feeds = Object.assign([], this.state.feeds);
+            const feed = feeds.find(feed => feed && feed.id === data.rfid);
+            if (feed) {
+                feed.cammute = !camera;
+                feed.question = question;
+                this.setState({feeds});
+            }
+        }
     };
 
     joinRoom = (reconnect, videoroom, user) => {
@@ -1261,13 +1275,13 @@ class MobileClient extends Component {
     handleAudioOut = (data) => {
         const { gdm, user, protocol } = this.state;
 
-        gdm.accept(data, (msg) => sendProtocolMessage(protocol, user, msg, false)).then((data) => {
+        gdm.accept(data, (msg) => this.sendDataMessage(msg)).then((data) => {
             if (data === null) {
                 console.log('Message received more then once.');
                 return;
             }
 
-            this.state.shidurJanus.streamGalaxy(data.status, 4, '');
+            this.state.virtualStreamingJanus.streamGalaxy(data.status, 4, "");
             if (data.status) {
                 // remove question mark when sndman unmute our room
                 if (this.state.question) {
@@ -1278,6 +1292,24 @@ class MobileClient extends Component {
         }).catch((error) => {
             console.error(`Failed receiving ${data}: ${error}`);
         });
+
+        // gdm.accept(data, (msg) => sendProtocolMessage(protocol, user, msg, false)).then((data) => {
+        //     if (data === null) {
+        //         console.log('Message received more then once.');
+        //         return;
+        //     }
+        //
+        //     this.state.shidurJanus.streamGalaxy(data.status, 4, '');
+        //     if (data.status) {
+        //         // remove question mark when sndman unmute our room
+        //         if (this.state.question) {
+        //             this.handleQuestion();
+        //         }
+        //     }
+        //
+        // }).catch((error) => {
+        //     console.error(`Failed receiving ${data}: ${error}`);
+        // });
     };
 
     otherCamsMuteToggle = () => {
