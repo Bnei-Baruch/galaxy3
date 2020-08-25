@@ -613,61 +613,6 @@ class VirtualClient extends Component {
     });
   };
 
-  onRoomData = (data) => {
-    const {user, cammuted, gdm} = this.state;
-    const feeds = Object.assign([], this.state.feeds);
-    const {camera,question,rcmd,type,id} = data;
-    if(rcmd) {
-      if (gdm.checkAck(data)) {
-        // Ack received, do nothing.
-        return;
-      }
-
-      if (type === 'client-reconnect' && user.id === id) {
-        this.exitRoom(true);
-      } else if (type === 'client-reload' && user.id === id) {
-        window.location.reload();
-      } else if (type === 'client-disconnect' && user.id === id) {
-        this.exitRoom(false);
-      } else if(type === "client-kicked" && user.id === id) {
-        kc.logout();
-      } else if (type === 'client-question' && user.id === id) {
-        this.handleQuestion();
-      } else if (type === 'client-mute' && user.id === id) {
-        this.micMute();
-      } else if (type === 'video-mute' && user.id === id) {
-        this.camMute(cammuted);
-      } else if (type === 'sound_test' && user.id === id) {
-        user.sound_test = true;
-        localStorage.setItem('sound_test', true);
-        this.setState({user});
-      } else if (type === 'audio-out') {
-        this.handleAudioOut(data);
-      }  else if (type === 'reload-config') {
-        this.reloadConfig();
-      } else if (type === 'client-reload-all') {
-        window.location.reload();
-      } else if (type === 'shidur-ping') {
-        gdm.accept(data, (msg) => this.sendDataMessage(msg)).then((data) => {
-          if (data === null) {
-            console.log('Message received more then once.');
-          }
-        }).catch((error) => {
-          console.error(`Failed receiving ${data}: ${error}`);
-        });
-      }
-    } else {
-      for (let i = 0; i < feeds.length; i++) {
-        if (feeds[i] && feeds[i].id === data.rfid) {
-          feeds[i].cammute = !camera;
-          feeds[i].question = question;
-          this.setState({feeds});
-          break;
-        }
-      }
-    }
-  };
-
   publishOwnFeed = (useVideo, useAudio) => {
     const {videoroom, media} = this.state;
     const {audio: {audio_device}, video: {setting,video_device}} = media;
@@ -978,7 +923,8 @@ class VirtualClient extends Component {
         // FIXME: Can this be done by notifying only the joined feed?
         setTimeout(() => {
           if (this.state.question) {
-            this.sendDataMessage('question', true);
+            this.sendDataMessage(this.state.user);
+            //this.sendDataMessage('question', true);
           }
         }, 3000);
       }
@@ -1042,6 +988,61 @@ class VirtualClient extends Component {
     const message = JSON.stringify(user);
     Janus.log(':: Sending message: ', message);
     videoroom.data({ text: message });
+  };
+
+  onRoomData = (data) => {
+    const {user, cammuted, gdm} = this.state;
+    const feeds = Object.assign([], this.state.feeds);
+    const {camera,question,rcmd,type,id} = data;
+    if(rcmd) {
+      if (gdm.checkAck(data)) {
+        // Ack received, do nothing.
+        return;
+      }
+
+      if (type === 'client-reconnect' && user.id === id) {
+        this.exitRoom(true);
+      } else if (type === 'client-reload' && user.id === id) {
+        window.location.reload();
+      } else if (type === 'client-disconnect' && user.id === id) {
+        this.exitRoom(false);
+      } else if(type === "client-kicked" && user.id === id) {
+        kc.logout();
+      } else if (type === 'client-question' && user.id === id) {
+        this.handleQuestion();
+      } else if (type === 'client-mute' && user.id === id) {
+        this.micMute();
+      } else if (type === 'video-mute' && user.id === id) {
+        this.camMute(cammuted);
+      } else if (type === 'sound_test' && user.id === id) {
+        user.sound_test = true;
+        localStorage.setItem('sound_test', true);
+        this.setState({user});
+      } else if (type === 'audio-out') {
+        this.handleAudioOut(data);
+      }  else if (type === 'reload-config') {
+        this.reloadConfig();
+      } else if (type === 'client-reload-all') {
+        window.location.reload();
+      } else if (type === 'shidur-ping') {
+        gdm.accept(data, (msg) => this.sendDataMessage(msg)).then((data) => {
+          if (data === null) {
+            console.log('Message received more then once.');
+          }
+        }).catch((error) => {
+          console.error(`Failed receiving ${data}: ${error}`);
+        });
+      }
+    } else {
+      for (let i = 0; i < feeds.length; i++) {
+        if (feeds[i] && feeds[i].id === data.rfid) {
+          feeds[i].cammute = !camera;
+          feeds[i].question = question;
+          this.setState({feeds});
+          break;
+        }
+      }
+    }
   };
 
   joinRoom = (reconnect, videoroom, user) => {
@@ -1189,20 +1190,21 @@ class VirtualClient extends Component {
     const user = Object.assign({}, this.state.user);
     if (user.role === "ghost") return;
     this.makeDelay();
+    this.questionState(user, question);
 
-    if(!question) {
-      const msg = {type: "shidur-ping", status: true, room, col: null, i: null, gxy: user.janus, feed: null};
-      gdm.send(msg, [STORAN_ID], (msg) => sendProtocolMessage(protocol, user, msg, false)).
-      then(() => {
-        console.log(`PING delivered.`);
-        this.questionState(user, question);
-      }).catch((error) => {
-        console.error(`PING not delivered due to: ` , error);
-        alert("Connection to shidur is failed, try reconnect Galaxy")
-      });
-    } else {
-      this.questionState(user, question);
-    }
+    // if(!question) {
+    //   const msg = {type: "shidur-ping", status: true, room, col: null, i: null, gxy: user.janus, feed: null};
+    //   gdm.send(msg, [STORAN_ID], (msg) => sendProtocolMessage(protocol, user, msg, false)).
+    //   then(() => {
+    //     console.log(`PING delivered.`);
+    //     this.questionState(user, question);
+    //   }).catch((error) => {
+    //     console.error(`PING not delivered due to: ` , error);
+    //     alert("Connection to shidur is failed, try reconnect Galaxy")
+    //   });
+    // } else {
+    //   this.questionState(user, question);
+    // }
   };
 
   questionState = (user, question) => {
@@ -1221,7 +1223,7 @@ class VirtualClient extends Component {
   handleAudioOut = (data) => {
     const { gdm, user, protocol } = this.state;
 
-    gdm.accept(data, (msg) => sendProtocolMessage(protocol, user, msg, false)).then((data) => {
+    gdm.accept(data, (msg) => this.sendDataMessage(msg)).then((data) => {
       if (data === null) {
         console.log('Message received more then once.');
         return;
@@ -1238,6 +1240,24 @@ class VirtualClient extends Component {
     }).catch((error) => {
       console.error(`Failed receiving ${data}: ${error}`);
     });
+
+    // gdm.accept(data, (msg) => sendProtocolMessage(protocol, user, msg, false)).then((data) => {
+    //   if (data === null) {
+    //     console.log('Message received more then once.');
+    //     return;
+    //   }
+    //
+    //   this.state.virtualStreamingJanus.streamGalaxy(data.status, 4, "");
+    //   if (data.status) {
+    //     // remove question mark when sndman unmute our room
+    //     if (this.state.question) {
+    //       this.handleQuestion();
+    //     }
+    //   }
+    //
+    // }).catch((error) => {
+    //   console.error(`Failed receiving ${data}: ${error}`);
+    // });
   };
 
   camMute = (cammuted) => {
