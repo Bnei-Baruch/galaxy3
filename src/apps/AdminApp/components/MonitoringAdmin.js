@@ -35,6 +35,7 @@ const MonitoringAdmin = (props) => {
     filterView:[],
     filterOptions: {
       name: [],
+      email: [],
       group: [],
       system: [],
       janus: [],
@@ -130,6 +131,7 @@ const MonitoringAdmin = (props) => {
   useEffect(() => {
     const filterOptions = {
       name: [],
+      email: [],
       group: [],
       system: [],
       role: [],
@@ -139,6 +141,7 @@ const MonitoringAdmin = (props) => {
     };
 
     const nameSet = new Set();
+    const emailSet = new Set();
     const groupSet = new Set();
     const systemSet = new Set();
     const roleSet = new Set();
@@ -155,6 +158,10 @@ const MonitoringAdmin = (props) => {
       if (!nameSet.has(user.display)) {
         nameSet.add(user.display);
         filterOptions.name.push({title: user.display});
+      }
+      if (!emailSet.has(user.email)) {
+        emailSet.add(user.email);
+        filterOptions.email.push({title: user.email});
       }
       if (!groupSet.has(user.group)) {
         groupSet.add(user.group);
@@ -191,6 +198,7 @@ const MonitoringAdmin = (props) => {
     let keep = true;
     const filterChecks = new Map([
       ['name', (re) => re.test(user.display)],
+      ['email', (re) => re.test(user.email)],
       ['group', (re) => re.test(user.group)],
       ['system', (re) => re.test(system(user))],
       ['role', (re) => re.test(user.role)],
@@ -239,7 +247,7 @@ const MonitoringAdmin = (props) => {
   }
 
   const sortView = columnToSort => (a, b) => {
-    if (['group', 'janus', 'role'].includes(columnToSort)) {
+    if (['email', 'group', 'janus', 'role'].includes(columnToSort)) {
       return a.user[columnToSort].localeCompare(b.user[columnToSort]);
     } else if (columnToSort === 'version') {
       return a.user.galaxyVersion.localeCompare(b.user.galaxyVersion);
@@ -326,6 +334,9 @@ const MonitoringAdmin = (props) => {
             <Table.HeaderCell rowSpan="2"
                               sorted={column === 'name' ? direction : null}
                               onClick={handleSort('name')}>{popup('Name')}</Table.HeaderCell>
+            <Table.HeaderCell rowSpan="2"
+                              sorted={column === 'email' ? direction : null}
+                              onClick={handleSort('email')}>{popup('Email')}</Table.HeaderCell>
             <Table.HeaderCell rowSpan="2"
                               sorted={column === 'group' ? direction : null}
                               onClick={handleSort('group')}>{popup('Group')}</Table.HeaderCell>
@@ -429,14 +440,14 @@ const MonitoringAdmin = (props) => {
             <Table.HeaderCell>
             </Table.HeaderCell>
             <Table.HeaderCell>
-            </Table.HeaderCell>
-            <Table.HeaderCell>
               <Search className='monitoring-search'
                 minCharacters={0}
                 onResultSelect={(e, search) => updateFilter('system', `^${search.result.title}$`)}
                 onSearchChange={(e, search) => updateFilter('system', search.value)}
                 results={filterOptions.system.filter(system => !filters.system || filters.system.test(system.title))}
               />
+            </Table.HeaderCell>
+            <Table.HeaderCell>
             </Table.HeaderCell>
           </Table.Row>
         </Table.Header>
