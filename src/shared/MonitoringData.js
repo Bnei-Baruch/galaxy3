@@ -134,6 +134,7 @@ export const MonitoringData = class {
     this.sentDataCount = 0;
     this.miscData = {};
     this.scoreFormula = '';
+    this.virtualStreamingJanus = null;
 
     this.spec = {
       sample_interval: INITIAL_SAMPLE_INTERVAL,
@@ -173,10 +174,11 @@ export const MonitoringData = class {
     this.onDataCallback = null;
   }
 
-  setConnection(pluginHandle, localAudioTrack, localVideoTrack, user) {
+  setConnection(pluginHandle, localAudioTrack, localVideoTrack, user, virtualStreamingJanus) {
     this.pluginHandle = pluginHandle;
     this.localAudioTrack = localAudioTrack;
     this.localVideoTrack = localVideoTrack;
+    this.virtualStreamingJanus = virtualStreamingJanus;
     this.user = Object.assign({
       cpu: (navigator && navigator.hardwareConcurrency) || 0,
       ram: (navigator && navigator.deviceMemory) || 0,
@@ -506,6 +508,8 @@ export const MonitoringData = class {
     this.sentDataCount = this.sentDataCount % 100;  // Keep count small.
     // Update user network. We just need the latest and don't want to monitor this.
     this.user.network = (navigator && navigator.connection && navigator.connection.type) || '';
+    // Update last streaming server from virtualStreamingJanus.
+    this.user.streamingGateway = this.virtualStreamingJanus.streamingGateway;
     const data = {
       user: this.user,
       data: sentData,

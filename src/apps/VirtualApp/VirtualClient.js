@@ -146,7 +146,8 @@ class VirtualClient extends Component {
         this.state.videoroom,
         this.state.localAudioTrack,
         this.state.localVideoTrack,
-        this.state.user);
+        this.state.user,
+        this.state.virtualStreamingJanus);
       this.state.monitoringData.setOnStatus((connectionStatus, connectionStatusMessage) => {
         this.setState({connectionStatus});
       });

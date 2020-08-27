@@ -1,5 +1,15 @@
+.monitoring-search div {
+  width: 100%;
+}
+
 .monitoring-search input {
   width: 100%;
+}
+
+.monitoring-cell {
+  white-space: nowrap;
+  overflow: hidden;
+  max-width: 200px;
 }
 
 .ui.table thead th {
