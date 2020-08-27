@@ -154,7 +154,7 @@ class VirtualClient extends Component {
   }
 
   componentDidMount() {
-    //Sentry.init({dsn: `https://${SENTRY_KEY}@sentry.kli.one/2`});
+    Sentry.init({dsn: `https://${SENTRY_KEY}@sentry.kli.one/2`});
     if (isMobile) {
       window.location = '/userm';
     }
@@ -552,7 +552,6 @@ class VirtualClient extends Component {
       },
       error: (error) => {
         Janus.log('Error attaching plugin: ' + error);
-        reportToSentry(error,{source: "videoroom"}, this.state.user);
       },
       consentDialog: (on) => {
         Janus.debug('Consent dialog should be ' + (on ? 'on' : 'off') + ' now');
@@ -638,7 +637,6 @@ class VirtualClient extends Component {
       },
       error: (error) => {
         Janus.error('WebRTC error:', error);
-        reportToSentry(JSON.stringify(error),{source: "webrtc"}, this.state.user);
       }
     });
   };
@@ -743,7 +741,6 @@ class VirtualClient extends Component {
             Janus.log('This is a no such room');
           } else {
             Janus.log(msg['error']);
-            reportToSentry(msg['error'],{source: "videoroom"}, this.state.user);
           }
         }
       }
@@ -776,7 +773,6 @@ class VirtualClient extends Component {
         },
         error: (error) => {
           Janus.error('  -- Error attaching plugin...', error);
-          reportToSentry(error,{source: "remotefeed"}, this.state.user);
         },
         iceState: (state) => {
           Janus.log('ICE state (remote feed) changed to ' + state);
@@ -795,7 +791,6 @@ class VirtualClient extends Component {
           Janus.log('Event: ' + event);
           if (msg['error'] !== undefined && msg['error'] !== null) {
             Janus.debug('-- ERROR: ' + msg['error']);
-            reportToSentry(msg['error'],{source: "remotefeed"}, this.state.user);
           } else if (event !== undefined && event !== null) {
             if (event === 'attached') {
               this.setState({ creatingFeed: false });
@@ -836,7 +831,6 @@ class VirtualClient extends Component {
                 error: (error) => {
                   Janus.error('WebRTC error:', error);
                   Janus.debug('WebRTC error... ' + JSON.stringify(error));
-                  reportToSentry(JSON.stringify(error),{source: "remotefeed"}, this.state.user);
                 }
               });
           }
@@ -1019,6 +1013,7 @@ class VirtualClient extends Component {
         localStorage.setItem('sound_test', true);
         this.setState({user});
       } else if (type === 'audio-out') {
+        reportToSentry("event",{source: "switch"}, this.state.user);
         this.handleAudioOut(data);
       }  else if (type === 'reload-config') {
         this.reloadConfig();
@@ -1093,7 +1088,6 @@ class VirtualClient extends Component {
           },
           error: (error) => {
             console.error(error);
-            reportToSentry(error,{source: "register"}, this.state.user);
             this.exitRoom(false);
           }
         });
@@ -1229,6 +1223,7 @@ class VirtualClient extends Component {
         return;
       }
 
+      reportToSentry("action",{source: "switch"}, this.state.user);
       this.state.virtualStreamingJanus.streamGalaxy(data.status, 4, "");
       if (data.status) {
         // remove question mark when sndman unmute our room

@@ -16,7 +16,7 @@ import {
     vsettings_list,
     STORAN_ID
 } from "../../shared/consts";
-import {GEO_IP_INFO} from "../../shared/env";
+import {GEO_IP_INFO, SENTRY_KEY} from "../../shared/env";
 import platform from "platform";
 import { isMobile } from 'react-device-detect';
 import {withTranslation} from 'react-i18next';
@@ -40,6 +40,7 @@ import VirtualStreamingJanus from '../../shared/VirtualStreamingJanus';
 import VirtualChat from '../VirtualApp/VirtualChat';
 import ConfigStore from "../../shared/ConfigStore";
 import {GuaranteeDeliveryManager} from "../../shared/GuaranteeDelivery";
+import * as Sentry from "@sentry/browser";
 
 const sortAndFilterFeeds = (feeds) => feeds
   .filter(feed => !feed.display.role.match(/^(ghost|guest)$/))
@@ -166,6 +167,7 @@ class MobileClient extends Component {
     }
 
     componentDidMount() {
+        Sentry.init({dsn: `https://${SENTRY_KEY}@sentry.kli.one/2`});
         if(!isMobile && window.location.href.indexOf("userm") > -1) {
             window.location = '/user/';
             return;
