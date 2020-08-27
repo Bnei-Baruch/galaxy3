@@ -290,11 +290,11 @@ class UsersQuad extends Component {
         this.setState({delay: true});
         setTimeout(() => {
             this.setState({delay: false});
-        }, 1000);
+        }, 3000);
     };
 
   render() {
-      const {full_feed,fullscr,col,vquad,question} = this.state;
+      const {full_feed,fullscr,col,vquad,question,delay} = this.state;
       const {groups,group,rooms,next_button,presets} = this.props;
 
       let program = vquad.map((g,i) => {
@@ -340,7 +340,7 @@ class UsersQuad extends Component {
                       {col}
                   </Button>
                   <Button className='fours_button'
-                          disabled={groups.length < 10 || fullscr}
+                          disabled={delay || groups.length < 10 || fullscr}
                           color='brown'
                           onClick={this.switchFour}>
                       <Icon name='share' />
