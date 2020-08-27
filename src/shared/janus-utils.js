@@ -600,6 +600,10 @@ class GxyJanus extends EventTarget {
                         " packets on mid " + mid + " (" + lost + " lost packets)");
                     if (callbacks.slowLink) callbacks.slowLink(uplink, lost, mid);
                 },
+                onmessage: (msg, jsep) => {
+                    this.log("[remoteFeed] message", msg);
+                    if (callbacks.onmessage) callbacks.onmessage(msg, jsep);
+                },
                 onlocaltrack: (track, on) => {
                     // The subscriber stream is recvonly, we don't expect anything here
                     this.warn("[remoteFeed] ::: unexpected local track ::: ")
@@ -611,17 +615,13 @@ class GxyJanus extends EventTarget {
                     this.log("[remoteFeed] Remote track (mid=" + mid + ") " + (on ? "added" : "removed") + ":", track);
                     if (callbacks.onremotetrack) callbacks.onremotetrack(track, mid, on);
                 },
-                ondataopen: () => {
+                ondataopen: (label) => {
                     this.log("[remoteFeed] The DataChannel is available!");
-                    if (callbacks.ondataopen) callbacks.ondataopen();
+                    if (callbacks.ondataopen) callbacks.ondataopen(label);
                 },
-                ondata: (data) => {
+                ondata: (data, label) => {
                     this.log("[remoteFeed] data", data);
-                    if (callbacks.ondata) callbacks.ondata(data);
-                },
-                onmessage: (msg, jsep) => {
-                    this.log("[remoteFeed] message", msg);
-                    if (callbacks.onmessage) callbacks.onmessage(msg, jsep);
+                    if (callbacks.ondata) callbacks.ondata(data, label);
                 },
                 oncleanup: () => {
                     this.log("[remoteFeed] cleanup");

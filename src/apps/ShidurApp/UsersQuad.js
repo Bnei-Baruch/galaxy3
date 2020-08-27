@@ -5,11 +5,11 @@ import UsersHandle from "./UsersHandle";
 import api from '../../shared/Api';
 import {getStore, setStore} from "../../shared/store";
 import {AUDIOOUT_ID, SDIOUT_ID, SNDMAN_ID} from "../../shared/consts"
+import {reportToSentry} from "../../shared/tools";
 
 class UsersQuad extends Component {
 
     state = {
-        delay: false,
         question: false,
         col: null,
         vquad: [null,null,null,null],
@@ -112,6 +112,8 @@ class UsersQuad extends Component {
         let {groups_queue,groups,round} = this.props;
         let {vquad,col} = this.state;
 
+        this.setDelay();
+
         for(let i=0; i<4; i++) {
 
             // Don't switch if nobody in queue
@@ -192,11 +194,9 @@ class UsersQuad extends Component {
 
     switchFullScreen = (i,g,q) => {
         if(!g) return;
-        let {fullscr,full_feed,question,delay} = this.state;
+        let {fullscr,full_feed,question} = this.state;
 
-        if(delay || question) return;
-
-        this.setDelay();
+        if(question) return;
 
         if(fullscr && full_feed === i) {
             this.toFourGroup(i,g,() => {},q);
@@ -239,7 +239,7 @@ class UsersQuad extends Component {
         this.setState({fullscr: true, full_feed: i, question: q});
         //this.sdiGuaranteeAction("fullscr_group" , true, i, g, q, [AUDIOOUT_ID, SDIOUT_ID, SNDMAN_ID]);
         this.sdiAction("fullscr_group" , true, i, g, q);
-        this.micMute(true, room, janus);
+        this.micMute(true, room, janus, i);
     };
 
     toFourGroup = (i,g,cb,q) => {
@@ -247,50 +247,56 @@ class UsersQuad extends Component {
         console.log("[Shidur]:: Back to four: ");
         //this.sdiGuaranteeAction("fullscr_group" , false, i, g, q, [AUDIOOUT_ID, SDIOUT_ID, SNDMAN_ID]);
         this.sdiAction("fullscr_group" , false, i, g, q);
-        this.micMute(false, room, janus);
+        this.micMute(false, room, janus, i);
         this.setState({fullscr: false, full_feed: null, question: false}, () => {
             cb();
         });
     };
 
-    sendDataMessage = (status) => {
-        const {col,full_feed} = this.state;
-        const cmd = {type: "audio-out", rcmd: true, status}
+    sendDataMessage = (cmd) => {
+        const {col} = this.state;
+        const {i} = cmd;
         const message = JSON.stringify(cmd);
         console.log(':: Sending message: ', message);
-        this["cmd"+col+full_feed].state.videoroom.data({ text: message });
+        this["cmd"+col+i].state.videoroom.data({ text: message });
     };
 
-    micMute = (status, room, inst) => {
-        const msg = {type: "audio-out", status, room, col: null, i: null, feed: null};
+    micMute = (status, room, inst, i) => {
+        const msg = {type: "audio-out", status, room, col: null, i, feed: null};
+        const cmd = {type: "audio-out", rcmd: true, status, i}
         const group = this.props.rooms.filter(g => g.room === room)[0];
         //const ask_feed = group.users.filter(u => u.question)[0];
         let toAck = group.users.map(u => {return u.id});
         if(toAck.length === 0) return;
 
         const {gateways, gdm} = this.props;
-        //TODO: Send data in room channel
-        //this.sendDataMessage(status);
-        //gateways[inst].sendProtocolMessage(msg);
-        gateways["gxy3"].sendServiceMessage(msg);
-        gdm.send(msg, toAck, (msg) => gateways[inst].sendProtocolMessage(msg)).
+        gdm.send(cmd, toAck, (cmd) => this.sendDataMessage(cmd)).
         then(() => {
             console.log(`MIC delivered.`);
         }).catch((error) => {
-            console.error(`MIC not delivered due to: ` , error);
+            console.error(`MIC not delivered due to: ` , JSON.stringify(error));
+            reportToSentry("Delivery",{source: "shidur"}, this.props.user);
         });
+        gateways["gxy3"].sendServiceMessage(msg);
+        //gateways[inst].sendProtocolMessage(msg);
+        // gdm.send(msg, toAck, (msg) => gateways[inst].sendProtocolMessage(msg)).
+        // then(() => {
+        //     console.log(`MIC delivered.`);
+        // }).catch((error) => {
+        //     console.error(`MIC not delivered due to: ` , error);
+        // });
     };
 
     setDelay = () => {
-        this.setState({delay: true});
+        this.props.setProps({delay: true});
         setTimeout(() => {
-            this.setState({delay: false});
-        }, 1000);
+            this.props.setProps({delay: false});
+        }, 3000);
     };
 
   render() {
       const {full_feed,fullscr,col,vquad,question} = this.state;
-      const {groups,group,rooms,next_button,presets} = this.props;
+      const {groups,group,rooms,next_button,presets,delay} = this.props;
 
       let program = vquad.map((g,i) => {
           if (groups.length === 0) return false;
@@ -303,7 +309,7 @@ class UsersQuad extends Component {
                   <div className='click-panel' onClick={() => this.switchQuestion(i,g,true)} >
                   <div className='video_title' >{name}</div>
                   {qst ? <div className="qst_title">?</div> : ""}
-                  <UsersHandle key={"q"+i} g={g} index={i} {...this.props} />
+                  <UsersHandle key={"q"+i} g={g} index={i} ref={cmd => {this["cmd"+col+i] = cmd;}} {...this.props} />
                   </div>
                   {!question ?
                   <Button className='fullscr_button'
@@ -335,7 +341,7 @@ class UsersQuad extends Component {
                       {col}
                   </Button>
                   <Button className='fours_button'
-                          disabled={groups.length < 10 || fullscr}
+                          disabled={delay || groups.length < 10 || fullscr}
                           color='brown'
                           onClick={this.switchFour}>
                       <Icon name='share' />
