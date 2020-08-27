@@ -9,6 +9,9 @@ import UsersQuad from "./UsersQuad";
 import './ShidurApp.css'
 import {STORAN_ID} from "../../shared/consts"
 import {GuaranteeDeliveryManager} from '../../shared/GuaranteeDelivery';
+import * as Sentry from "@sentry/browser";
+import {SENTRY_KEY} from "../../shared/env";
+import {isMobile} from "react-device-detect";
 
 
 class ShidurApp extends Component {
@@ -36,6 +39,10 @@ class ShidurApp extends Component {
         users_count: 0,
         gdm: new GuaranteeDeliveryManager(STORAN_ID),
     };
+
+    componentDidMount() {
+        Sentry.init({dsn: `https://${SENTRY_KEY}@sentry.kli.one/2`});
+    }
 
     componentWillUnmount() {
         Object.values(this.state.gateways).forEach(x => x.destroy());

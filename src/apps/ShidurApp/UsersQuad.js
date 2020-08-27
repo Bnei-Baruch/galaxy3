@@ -5,6 +5,7 @@ import UsersHandle from "./UsersHandle";
 import api from '../../shared/Api';
 import {getStore, setStore} from "../../shared/store";
 import {AUDIOOUT_ID, SDIOUT_ID, SNDMAN_ID} from "../../shared/consts"
+import {reportToSentry} from "../../shared/tools";
 
 class UsersQuad extends Component {
 
@@ -273,7 +274,8 @@ class UsersQuad extends Component {
         then(() => {
             console.log(`MIC delivered.`);
         }).catch((error) => {
-            console.error(`MIC not delivered due to: ` , error);
+            console.error(`MIC not delivered due to: ` , JSON.stringify(error));
+            reportToSentry("Delivery",{source: "shidur"}, this.props.user);
         });
         gateways["gxy3"].sendServiceMessage(msg);
         //gateways[inst].sendProtocolMessage(msg);
