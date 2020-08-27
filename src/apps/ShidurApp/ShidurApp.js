@@ -15,6 +15,7 @@ class ShidurApp extends Component {
 
     state = {
         ce: null,
+        delay: false,
         group: "",
         groups: [],
         groups_queue: 0,

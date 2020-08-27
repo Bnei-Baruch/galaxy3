@@ -9,7 +9,6 @@ import {AUDIOOUT_ID, SDIOUT_ID, SNDMAN_ID} from "../../shared/consts"
 class UsersQuad extends Component {
 
     state = {
-        delay: false,
         question: false,
         col: null,
         vquad: [null,null,null,null],
@@ -112,6 +111,8 @@ class UsersQuad extends Component {
         let {groups_queue,groups,round} = this.props;
         let {vquad,col} = this.state;
 
+        this.setDelay();
+
         for(let i=0; i<4; i++) {
 
             // Don't switch if nobody in queue
@@ -192,11 +193,9 @@ class UsersQuad extends Component {
 
     switchFullScreen = (i,g,q) => {
         if(!g) return;
-        let {fullscr,full_feed,question,delay} = this.state;
+        let {fullscr,full_feed,question} = this.state;
 
-        if(delay || question) return;
-
-        this.setDelay();
+        if(question) return;
 
         if(fullscr && full_feed === i) {
             this.toFourGroup(i,g,() => {},q);
@@ -287,15 +286,15 @@ class UsersQuad extends Component {
     };
 
     setDelay = () => {
-        this.setState({delay: true});
+        this.props.setProps({delay: true});
         setTimeout(() => {
-            this.setState({delay: false});
+            this.props.setProps({delay: false});
         }, 3000);
     };
 
   render() {
-      const {full_feed,fullscr,col,vquad,question,delay} = this.state;
-      const {groups,group,rooms,next_button,presets} = this.props;
+      const {full_feed,fullscr,col,vquad,question} = this.state;
+      const {groups,group,rooms,next_button,presets,delay} = this.props;
 
       let program = vquad.map((g,i) => {
           if (groups.length === 0) return false;
