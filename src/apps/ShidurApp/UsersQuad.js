@@ -218,6 +218,8 @@ class UsersQuad extends Component {
         let store = getStore();
         if(store.qst && store.col !== col) return;
 
+        if(!this["cmd"+col+i].state.videoroom) return;
+
         if(fullscr && full_feed === i) {
             this.toFourGroup(i,g,() => {},q);
             setStore({qst: false,col,group: g});
@@ -258,7 +260,8 @@ class UsersQuad extends Component {
         const {i} = cmd;
         const message = JSON.stringify(cmd);
         console.log(':: Sending message: ', message);
-        this["cmd"+col+i].state.videoroom.data({ text: message });
+        if(this["cmd"+col+i].state.videoroom)
+            this["cmd"+col+i].state.videoroom.data({ text: message });
     };
 
     micMute = (status, room, inst, i) => {
