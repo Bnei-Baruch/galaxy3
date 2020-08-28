@@ -1079,6 +1079,7 @@ export function Janus(gatewayCallbacks) {
 		callbacks.onremotetrack = (typeof callbacks.onremotetrack == "function") ? callbacks.onremotetrack : Janus.noop;
 		callbacks.ondata = (typeof callbacks.ondata == "function") ? callbacks.ondata : Janus.noop;
 		callbacks.ondataopen = (typeof callbacks.ondataopen == "function") ? callbacks.ondataopen : Janus.noop;
+		callbacks.ondataerror = (typeof callbacks.ondataerror == "function") ? callbacks.ondataerror : Janus.noop;
 		callbacks.oncleanup = (typeof callbacks.oncleanup == "function") ? callbacks.oncleanup : Janus.noop;
 		callbacks.ondetached = (typeof callbacks.ondetached == "function") ? callbacks.ondetached : Janus.noop;
 		if(!connected) {
@@ -1159,6 +1160,7 @@ export function Janus(gatewayCallbacks) {
 						onremotetrack : callbacks.onremotetrack,
 						ondata : callbacks.ondata,
 						ondataopen : callbacks.ondataopen,
+						ondataerror : callbacks.ondataerror,
 						oncleanup : callbacks.oncleanup,
 						ondetached : callbacks.ondetached,
 						hangup : function(sendRequest) { cleanupWebrtc(handleId, sendRequest === true); },
@@ -1233,6 +1235,7 @@ export function Janus(gatewayCallbacks) {
 						onremotetrack : callbacks.onremotetrack,
 						ondata : callbacks.ondata,
 						ondataopen : callbacks.ondataopen,
+						ondataerror : callbacks.ondataerror,
 						oncleanup : callbacks.oncleanup,
 						ondetached : callbacks.ondetached,
 						hangup : function(sendRequest) { cleanupWebrtc(handleId, sendRequest === true); },
@@ -1439,8 +1442,8 @@ export function Janus(gatewayCallbacks) {
 			}
 		};
 		var onDataChannelError = function(error) {
-			Janus.error('Got error on data channel:', error);
-			// TODO
+			//Janus.error('Got error on data channel:', error);
+			pluginHandle.ondataerror(error);
 		};
 		if(!incoming) {
 			// FIXME Add options (ordered, maxRetransmits, etc.)

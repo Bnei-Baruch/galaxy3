@@ -524,6 +524,10 @@ class GxyJanus extends EventTarget {
                     this.log("[videoroom] data (publisher) ", data);
                     if (callbacks.ondata) callbacks.ondata(data);
                 },
+                ondataerror: (error) => {
+                    this.warn("[videoroom] data (publisher) ", error);
+                    if (callbacks.ondataerror) callbacks.ondataerror(error);
+                },
                 onmessage: (msg, jsep) => {
                     this.log("[videoroom] message", msg);
                     if (callbacks.onmessage) callbacks.onmessage(msg, jsep);
@@ -622,6 +626,10 @@ class GxyJanus extends EventTarget {
                 ondata: (data, label) => {
                     this.log("[remoteFeed] data", data);
                     if (callbacks.ondata) callbacks.ondata(data, label);
+                },
+                ondataerror: (error) => {
+                    this.warn("[remoteFeed] data (subscriber) ", error);
+                    if (callbacks.ondataerror) callbacks.ondataerror(error);
                 },
                 oncleanup: () => {
                     this.log("[remoteFeed] cleanup");
