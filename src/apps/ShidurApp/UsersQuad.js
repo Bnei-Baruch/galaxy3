@@ -218,6 +218,8 @@ class UsersQuad extends Component {
         let store = getStore();
         if(store.qst && store.col !== col) return;
 
+        if(!this["cmd"+col+i].state.videoroom) return;
+
         if(fullscr && full_feed === i) {
             this.toFourGroup(i,g,() => {},q);
             setStore({qst: false,col,group: g});
