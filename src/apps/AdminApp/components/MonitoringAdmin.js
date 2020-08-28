@@ -400,6 +400,14 @@ const MonitoringAdmin = (props) => {
             <Table.HeaderCell>
               <Search className='monitoring-search'
                 minCharacters={0}
+                onResultSelect={(e, search) => updateFilter('email', `^${search.result.title}$`)}
+                onSearchChange={(e, search) => updateFilter('email', search.value)}
+                results={filterOptions.email.filter(email => !filters.email || filters.email.test(email.title))}
+              />
+            </Table.HeaderCell>
+            <Table.HeaderCell>
+              <Search className='monitoring-search'
+                minCharacters={0}
                 onResultSelect={(e, search) => updateFilter('group', `^${search.result.title}$`)}
                 onSearchChange={(e, search) => updateFilter('group', search.value)}
                 results={filterOptions.group.filter(group => !filters.group || filters.group.test(group.title))}
