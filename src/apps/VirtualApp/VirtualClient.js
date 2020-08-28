@@ -607,6 +607,9 @@ class VirtualClient extends Component {
       ondata: (data, label) => {
         Janus.log('Publisher - Got data from the DataChannel! (' + label + ')' + data);
       },
+      ondataerror: (error) => {
+        Janus.warn('Publisher - DataChannel error: ' + error);
+      },
       oncleanup: () => {
         Janus.log(' ::: Got a cleanup notification: we are unpublished now :::');
       }
@@ -874,6 +877,9 @@ class VirtualClient extends Component {
           let msg = JSON.parse(data);
           this.onRoomData(msg);
           Janus.log(' :: We got msg via DataChannel: ', msg);
+        },
+        ondataerror: (error) => {
+          Janus.warn('Feed - DataChannel error: ' + error);
         },
         oncleanup: () => {
           Janus.log(' ::: Got a cleanup notification (remote feed) :::');
