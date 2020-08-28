@@ -258,7 +258,8 @@ class UsersQuad extends Component {
         const {i} = cmd;
         const message = JSON.stringify(cmd);
         console.log(':: Sending message: ', message);
-        this["cmd"+col+i].state.videoroom.data({ text: message });
+        if(this["cmd"+col+i].state.videoroom)
+            this["cmd"+col+i].state.videoroom.data({ text: message });
     };
 
     micMute = (status, room, inst, i) => {
