@@ -22,7 +22,7 @@ class User {
   }
 }
 
-xit('messaged delivery guaranteed', (done) => {
+it('messaged delivery guaranteed', (done) => {
   const gdmA = new GuaranteeDeliveryManager('userA',
     /* maxDelay= */ 2000, /* retryDelay= */ 500, /* intervalsDelay =*/ 100);
   const userA = new User(/* messageSendDelay= */ 10);
@@ -64,7 +64,7 @@ xit('messaged delivery guaranteed', (done) => {
   });
 });
 
-xit('slow user, retry few times', (done) => {
+it('slow user, retry few times', (done) => {
   const gdmA = new GuaranteeDeliveryManager('userA',
     /* maxDelay= */ 200, /* retryDelay= */ 50, /* intervalsDelay =*/ 10);
   const userA = new User(/* messageSendDelay= */ 70);
@@ -119,7 +119,7 @@ xit('slow user, retry few times', (done) => {
   });
 });
 
-xit('very slow user, fail eventually', (done) => {
+it('very slow user, fail eventually', (done) => {
   const gdmA = new GuaranteeDeliveryManager('userA',
     /* maxDelay= */ 200, /* retryDelay= */ 50, /* intervalsDelay =*/ 10);
   const userA = new User(/* messageSendDelay= */ 120);
@@ -175,7 +175,7 @@ xit('very slow user, fail eventually', (done) => {
   });
 });
 
-xit('cannot implicitly ack myself', (done) => {
+it('cannot implicitly ack myself', (done) => {
   const gdm = new GuaranteeDeliveryManager('userA',
     /* maxDelay= */ 2000, /* retryDelay= */ 500, /* intervalsDelay =*/ 100);
   const userA = new User(/* messageSendDelay= */ 10);
@@ -215,7 +215,7 @@ xit('cannot implicitly ack myself', (done) => {
   });
 });
 
-xit('can explicitl ack myself', (done) => {
+it('can explicitl ack myself', (done) => {
   const gdm = new GuaranteeDeliveryManager('userA',
     /* maxDelay= */ 2000, /* retryDelay= */ 500, /* intervalsDelay =*/ 100);
   const userA = new User(/* messageSendDelay= */ 10);
@@ -292,7 +292,7 @@ const createRoom = (numUsers) => {
   return room;
 }
 
-xit('messaged delivery guaranteed to many users any', (done) => {
+it('messaged delivery guaranteed to many users any', (done) => {
   const room = createRoom(10);
   const theMessage = {test: 'test'};
   room['user_0'].gdm.send(Object.assign({}, theMessage), /* toAck= */ [], sendToAll(room)).then(() => {
@@ -306,7 +306,7 @@ xit('messaged delivery guaranteed to many users any', (done) => {
   });
 });
 
-xit('messaged delivery guaranteed to many users - specific user ack', (done) => {
+it('messaged delivery guaranteed to many users - specific user ack', (done) => {
   const room = createRoom(10);
   const theMessage = {test: 'test'};
   room['user_0'].gdm.send(Object.assign({}, theMessage), /* toAck= */ ['user_5'], sendToAll(room)).then(() => {
@@ -320,7 +320,7 @@ xit('messaged delivery guaranteed to many users - specific user ack', (done) => 
   });
 });
 
-xit('messaged delivery guaranteed to many users - some users ack', (done) => {
+it('messaged delivery guaranteed to many users - some users ack', (done) => {
   const room = createRoom(10);
   const theMessage = {test: 'test'};
   room['user_0'].gdm.send(Object.assign({}, theMessage), /* toAck= */ ['user_5', 'user_2', 'user_9'], sendToAll(room)).then(() => {
@@ -343,7 +343,7 @@ it('messaged delivery guaranteed to many users - some users ack - one of them un
     done();
   }).catch((error) => {
     console.log('messaged delivery guaranteed to many users - some users ack - one of them unreachable - failed', error);
-    expect(error.reason).toBe(' ' + DEADLINE_EXCEEDED);
+    expect(error.reason).toBe(DEADLINE_EXCEEDED);
     done();
   });
 });
