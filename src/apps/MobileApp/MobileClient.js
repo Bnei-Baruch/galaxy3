@@ -4,7 +4,16 @@ import classNames from 'classnames';
 
 import Dots from 'react-carousel-dots';
 import {Accordion, Button, Icon, Image, Input, Label, Menu, Modal, Select} from "semantic-ui-react";
-import {checkNotification, geoInfo, getMedia, getMediaStream, initJanus, micLevel, wkliLeave} from "../../shared/tools";
+import {
+    checkNotification,
+    geoInfo,
+    getMedia,
+    getMediaStream,
+    initJanus,
+    micLevel,
+    reportToSentry,
+    wkliLeave
+} from "../../shared/tools";
 import './MobileClient.scss'
 import './MobileConteiner.scss'
 import 'eqcss'
@@ -542,6 +551,7 @@ class MobileClient extends Component {
             },
             ondataerror: (error) => {
                 Janus.warn('Publisher - DataChannel error: ' + error);
+                reportToSentry(error,{source: "Publisher"}, this.state.user);
             },
             oncleanup: () => {
                 Janus.log(" ::: Got a cleanup notification: we are unpublished now :::");
@@ -847,6 +857,7 @@ class MobileClient extends Component {
                 },
                 ondataerror: (error) => {
                     Janus.warn('Feed - DataChannel error: ' + error);
+                    reportToSentry(error,{source: "Feed"}, this.state.user);
                 },
                 oncleanup: () => {
                     Janus.log(" ::: Got a cleanup notification (remote feed) :::");
