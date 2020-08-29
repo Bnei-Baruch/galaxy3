@@ -600,6 +600,7 @@ class VirtualClient extends Component {
       },
       onremotestream: (stream) => {
         // The publisher stream is sendonly, we don't expect anything here
+        Janus.log('Send only publisher stream, if this happends, it is not expected, stream:', stream);
       },
       ondataopen: (label) => {
         Janus.log('Publisher - DataChannel is available! (' + label + ')');
@@ -621,7 +622,7 @@ class VirtualClient extends Component {
   publishOwnFeed = (useVideo, useAudio) => {
     const {videoroom, media} = this.state;
     const {audio: {audio_device}, video: {setting,video_device}} = media;
-    let offer = {audioRecv: false, videoRecv: false, audioSend: useAudio, videoSend: useVideo, data: true};
+    const offer = {audioRecv: false, videoRecv: false, audioSend: useAudio, videoSend: useVideo, data: true};
 
     if(useVideo) {
       const {width,height,ideal} = setting;
@@ -638,7 +639,7 @@ class VirtualClient extends Component {
       success: (jsep) => {
         Janus.debug('Got publisher SDP!');
         Janus.debug(jsep);
-        let publish = { request: 'configure', audio: useAudio, video: useVideo, data: true };
+        const publish = { request: 'configure', audio: useAudio, video: useVideo, data: true };
         videoroom.send({ 'message': publish, 'jsep': jsep });
       },
       error: (error) => {
@@ -1092,7 +1093,7 @@ class VirtualClient extends Component {
       } else if (type === 'joined') {
         const {id,timestamp,role,username} = user;
         const d = {id,timestamp,role,display: username};
-        let register = {'request': 'join', 'room': selected_room, 'ptype': 'publisher', 'display': JSON.stringify(d)};
+        const register = {'request': 'join', 'room': selected_room, 'ptype': 'publisher', 'display': JSON.stringify(d)};
         videoroom.send({"message": register,
           success: () => {
             this.chat.initChatRoom(user, selected_room);
@@ -1267,7 +1268,7 @@ class VirtualClient extends Component {
   };
 
   camMute = (cammuted) => {
-    let {videoroom} = this.state;
+    const {videoroom} = this.state;
     if (videoroom) {
       const user = Object.assign({}, this.state.user);
       if (user.role === "ghost") return;
@@ -1286,7 +1287,7 @@ class VirtualClient extends Component {
   };
 
   micMute = () => {
-    let {videoroom, muted} = this.state;
+    const {videoroom, muted} = this.state;
     muted ? videoroom.unmuteAudio() : videoroom.muteAudio();
     this.setState({muted: !muted});
   };
@@ -1338,6 +1339,10 @@ class VirtualClient extends Component {
       return ({key: i, text: label, value: deviceId});
     });
   };
+
+  pingDataChannel = () => {
+    this.sendDataMessage({user: this.state.user});
+  }
 
   connectionIcon = () => {
     switch (this.state.connectionStatus) {
@@ -1561,6 +1566,9 @@ class VirtualClient extends Component {
 
     const chatCountLabel = (<Label key='Carbon' floating size='mini' color='red'>{chatMessagesCount}</Label>);
 
+    // Show ping button if in deb mode.
+    const isDeb = (new URL(window.location.href)).searchParams.has('deb');
+
     let login = (<LoginPage user={user} checkPermission={this.checkPermission} />);
 
     let content = (<div className={classNames('vclient', { 'vclient--chat-open': chatVisible })}>
@@ -1668,6 +1676,10 @@ class VirtualClient extends Component {
               <iframe src={`https://groups.google.com/forum/embed/?place=forum/bb-study-materials&showpopout=true&showtabs=false&parenturl=${encodeURIComponent(window.location.href)}`}
                 style={{width: '100%', height: '60vh', padding: '1rem'}} frameBorder="0"></iframe>
 					</Modal>
+          {isDeb && <Menu.Item onClick={this.pingDataChannel}>
+            <Icon name="telegram plane" />
+            Ping Data Channel
+          </Menu.Item>}
         </Menu>
         <Menu icon='labeled' secondary size="mini">
           {!room ?
