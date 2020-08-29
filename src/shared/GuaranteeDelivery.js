@@ -137,7 +137,7 @@ export class GuaranteeDeliveryManager {
         return true; // Don't ack yourself.
       }
       if (Object.entries(ack).every(([ackUserId, acked]) => acked)) {
-        console.log('Message acked, resolving.', ack);
+        // console.log('Message acked, resolving.', ack);
         this.pending.delete(transaction);
         delivery.resolve();
       }
@@ -154,7 +154,7 @@ export class GuaranteeDeliveryManager {
   accept(message, sendAckBack) {
     if (!(RETRY_FIELD in message)) {
       // This is a regular non-guarantee message, resolve right away.
-      console.log(`${RETRY_FIELD} not found in `, message);
+      // console.log(`${RETRY_FIELD} not found in `, message);
       return Promise.resolve(message);
     }
     [TRANSACTION_FIELD, FROM_FIELD].forEach((field) => {
