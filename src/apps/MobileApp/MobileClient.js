@@ -1263,20 +1263,21 @@ class MobileClient extends Component {
         const user = Object.assign({}, this.state.user);
         if(user.role === 'ghost') return;
         this.makeDelay();
+        this.questionState(user, question);
 
-        if(!question) {
-            const msg = {type: "shidur-ping", status: true, room, col: null, i: null, gxy: user.janus, feed: null};
-            gdm.send(msg, [STORAN_ID], (msg) => sendProtocolMessage(protocol, user, msg, false)).
-            then(() => {
-                console.log(`PING delivered.`);
-                this.questionState(user, question);
-            }).catch((error) => {
-                console.error(`PING not delivered due to: ` , error);
-                alert("Connection to shidur is failed, try reconnect Galaxy")
-            });
-        } else {
-            this.questionState(user, question);
-        }
+        // if(!question) {
+        //     const msg = {type: "shidur-ping", status: true, room, col: null, i: null, gxy: user.janus, feed: null};
+        //     gdm.send(msg, [STORAN_ID], (msg) => sendProtocolMessage(protocol, user, msg, false)).
+        //     then(() => {
+        //         console.log(`PING delivered.`);
+        //         this.questionState(user, question);
+        //     }).catch((error) => {
+        //         console.error(`PING not delivered due to: ` , error);
+        //         alert("Connection to shidur is failed, try reconnect Galaxy")
+        //     });
+        // } else {
+        //     this.questionState(user, question);
+        // }
     };
 
     questionState = (user, question) => {
