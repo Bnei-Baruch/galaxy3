@@ -118,6 +118,7 @@ class VirtualClient extends Component {
     upval: null,
     net_status: 1,
     keepalive: null,
+    dataChannelKeepAlive: null,
     muteOtherCams: false,
     videos: Number(localStorage.getItem('vrt_video')) || 1,
     premodStatus: false,
@@ -178,7 +179,7 @@ class VirtualClient extends Component {
   }
 
   initApp = (user) => {
-    let gdm = new GuaranteeDeliveryManager(user.id);
+    const gdm = new GuaranteeDeliveryManager(user.id);
     this.setState({gdm});
     const {t} = this.props;
     localStorage.setItem('question', false);
@@ -611,7 +612,7 @@ class VirtualClient extends Component {
       ondataerror: (error) => {
         Janus.warn('Publisher - DataChannel error: ' + error);
         if(this.state.videoroom && error.error)
-          reportToSentry(error.error,{source: "Publisher"}, this.state.user);
+          reportToSentry(error.error, {source: "Publisher"}, this.state.user);
       },
       oncleanup: () => {
         Janus.log(' ::: Got a cleanup notification: we are unpublished now :::');
@@ -721,6 +722,14 @@ class VirtualClient extends Component {
             this.state.virtualStreamingJanus.setVideo(NO_VIDEO_OPTION_VALUE);
             this.camMute(/* cammuted= */ false);
           }
+          // Subscribe to self DataChannel to allow pings to self.
+          const dataStream = (msg?.streams || []).filter(stream => stream.type === 'data');
+          const myid = this.state.myid;
+          if (!myid) {
+            Janus.error(`After publish own feed, myid (${myid}) should exist.`);
+          } else if (dataStream) {
+            this.subscribeTo([{feed: myid, mid: dataStream.mid}]);
+          }
         } else if (msg['publishers'] !== undefined && msg['publishers'] !== null) {
           // User just joined the room.
           const feeds = sortAndFilterFeeds(msg['publishers'].filter(l => l.display = (JSON.parse(l.display))));
@@ -760,6 +769,7 @@ class VirtualClient extends Component {
   };
 
   newRemoteFeed = (subscription) => {
+    console.log('newRemoteFeed');
     this.state.janus.attach(
       {
         plugin: 'janus.plugin.videoroom',
@@ -770,7 +780,7 @@ class VirtualClient extends Component {
           Janus.log('  -- This is a multistream subscriber', remoteFeed);
           this.setState({remoteFeed, creatingFeed: false});
           // We wait for the plugin to send us an offer
-          let subscribe = {
+          const subscribe = {
             request: 'join',
             room: this.state.room,
             ptype: 'subscriber',
@@ -938,6 +948,7 @@ class VirtualClient extends Component {
   }
 
   subscribeTo = (subscription) => {
+    console.log('subscribeTo', subscription);
     // New feeds are available, do we need create a new plugin handle first?
     if (this.state.remoteFeed) {
       this.state.remoteFeed.send({
@@ -999,8 +1010,8 @@ class VirtualClient extends Component {
   onRoomData = (data) => {
     const {user, cammuted, gdm} = this.state;
     const feeds = Object.assign([], this.state.feeds);
-    const {camera,question,rcmd,type,id} = data;
-    if(rcmd) {
+    const {camera, question, rcmd, type, id} = data;
+    if (rcmd) {
       if (gdm.checkAck(data)) {
         // Ack received, do nothing.
         return;
@@ -1025,7 +1036,7 @@ class VirtualClient extends Component {
         localStorage.setItem('sound_test', true);
         this.setState({user});
       } else if (type === 'audio-out') {
-        reportToSentry("event",{source: "switch"}, this.state.user);
+        reportToSentry('event',{source: 'switch'}, this.state.user);
         this.handleAudioOut(data);
       }  else if (type === 'reload-config') {
         this.reloadConfig();
@@ -1039,6 +1050,8 @@ class VirtualClient extends Component {
         }).catch((error) => {
           console.error(`Failed receiving ${data}: ${error}`);
         });
+      } else if (type === 'self-ping' && data.id === user.id) {
+        this.receiveSelfPingDataChannel();
       }
     } else {
       for (let i = 0; i < feeds.length; i++) {
@@ -1340,16 +1353,33 @@ class VirtualClient extends Component {
     });
   };
 
-  pingDataChannel = () => {
-    this.sendDataMessage({user: this.state.user});
+  selfPingDataChannel = () => {
+    const PING_INTERVAL = 30 * 1000;  // 30 seconds;
+    const PING_CHECK_INTERVAL = 45 * 1000;  // 45 seconds;
+
+    const {user, dataChannelKeepAlive, videoroom} = this.state;
+    if (dataChannelKeepAlive !== null) {
+      const now = Date.now();
+      if (now - dataChannelKeepAlive > PING_CHECK_INTERVAL) {
+        reportToSentry('DataChannelNotAvailble', {latency: now - dataChannelKeepAlive}, user);
+      }
+    }
+    if (videoroom) {
+      this.sendDataMessage({type: 'self-ping', rcmd: true, id: user.id});
+    }
+    setTimeout(() => this.selfPingDataChannel(), PING_INTERVAL);
   }
 
-  connectionIcon = () => {
+  receiveSelfPingDataChannel = () => {
+    this.setState({dataChannelKeepAlive: Date.now()});
+  }
+
+  connectionColor = () => {
     switch (this.state.connectionStatus) {
       case LINK_STATE_INIT:
         return "grey";
       case LINK_STATE_GOOD:
-        return "white";
+        return "";  // white.
       case LINK_STATE_MEDIUM:
         return "orange";
       case LINK_STATE_WEAK:
@@ -1384,7 +1414,7 @@ class VirtualClient extends Component {
               on='hover'
               trigger={<div className='title-name'>{user ? user.username : ''}</div>}
           />
-          <Icon style={{marginLeft: '0.3rem'}} name="signal" size="small" color={this.connectionIcon()} />
+          <Icon style={{marginLeft: '0.3rem'}} name="signal" size="small" color={this.connectionColor()} />
         </div>
       </div>
       <svg className={classNames('nowebcam', {'hidden': !cammuted})} viewBox="0 0 32 18"
@@ -1484,6 +1514,7 @@ class VirtualClient extends Component {
       videos,
       premodStatus,
     } = this.state;
+
     const {video_device} = media.video;
     const {audio_device} = media.audio;
 
@@ -1676,7 +1707,7 @@ class VirtualClient extends Component {
               <iframe src={`https://groups.google.com/forum/embed/?place=forum/bb-study-materials&showpopout=true&showtabs=false&parenturl=${encodeURIComponent(window.location.href)}`}
                 style={{width: '100%', height: '60vh', padding: '1rem'}} frameBorder="0"></iframe>
 					</Modal>
-          {isDeb && <Menu.Item onClick={this.pingDataChannel}>
+          {isDeb && <Menu.Item onClick={this.selfPingDataChannel}>
             <Icon name="telegram plane" />
             Ping Data Channel
           </Menu.Item>}
