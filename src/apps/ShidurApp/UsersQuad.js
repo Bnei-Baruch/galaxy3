@@ -3,8 +3,7 @@ import {Segment, Icon, Button} from "semantic-ui-react";
 import './UsersQuad.scss'
 import UsersHandle from "./UsersHandle";
 import api from '../../shared/Api';
-import {getStore, setStore} from "../../shared/store";
-import {AUDIOOUT_ID, SDIOUT_ID, SNDMAN_ID} from "../../shared/consts"
+//import {AUDIOOUT_ID, SDIOUT_ID, SNDMAN_ID} from "../../shared/consts"
 import {reportToSentry} from "../../shared/tools";
 
 class UsersQuad extends Component {
@@ -39,11 +38,10 @@ class UsersQuad extends Component {
             for(let i=0; i<4; i++) {
                 if(vquad[i] && vquad[i].room === res.room) {
                     // Check question state
-                    let store = getStore();
-                    let {qst,col,group} = store;
-                    if(qst && group.room === res.room) {
-                        this.toFourGroup(i,group,() => {},true);
-                        setStore({qst: false,col,group});
+                    const {full_qst, full_col, full_group} = this.props;
+                    if(full_qst && full_group.room === res.room) {
+                        this.toFourGroup(i,full_group,() => {},true);
+                        this.props.setProps({full_qst: false, full_col, full_group});
                     }
                     // FIXME: Does we need send leave room request?
                     this.switchProgram(i, true);
@@ -184,21 +182,21 @@ class UsersQuad extends Component {
     }
 
     checkFullScreen = () => {
-        let {fullscr,full_feed,vquad,question} = this.state;
+        let {fullscr,index,vquad,question} = this.state;
         if(fullscr) {
-            console.log("[Shidur] :: Group: " + full_feed + " , sending sdi-action...");
-            //this.sdiGuaranteeAction("fullscr_group" , true, full_feed, vquad[full_feed], question, [AUDIOOUT_ID, SDIOUT_ID, SNDMAN_ID]);
-            this.sdiAction("fullscr_group" , true, full_feed, vquad[full_feed], question);
+            console.log("[Shidur] :: Group: " + index + " , sending sdi-action...");
+            //this.sdiGuaranteeAction("fullscr_group" , true, index, vquad[index], question, [AUDIOOUT_ID, SDIOUT_ID, SNDMAN_ID]);
+            this.sdiAction("fullscr_group" , true, index, vquad[index], question);
         }
     };
 
     switchFullScreen = (i,g,q) => {
         if(!g) return;
-        let {fullscr,full_feed,question} = this.state;
+        let {fullscr,index,question} = this.state;
 
         if(question) return;
 
-        if(fullscr && full_feed === i) {
+        if(fullscr && index === i) {
             this.toFourGroup(i,g,() => {},q);
         } else if(fullscr) {
             this.toFourGroup(i,g, () => {
@@ -211,18 +209,18 @@ class UsersQuad extends Component {
 
     switchQuestion = (i,g,q) => {
         if(!g) return;
-        let {fullscr,full_feed,question,col} = this.state;
+        let {fullscr,index,question,col} = this.state;
 
         if(fullscr && !question) return;
 
-        let store = getStore();
-        if(store.qst && store.col !== col) return;
+        const {full_qst, full_col} = this.props;
+        if(full_qst && full_col !== col) return;
 
         if(!this["cmd"+col+i].state.videoroom) return;
 
-        if(fullscr && full_feed === i) {
+        if(fullscr && index === i) {
             this.toFourGroup(i,g,() => {},q);
-            setStore({qst: false,col,group: g});
+            this.props.setProps({full_qst: false, full_col: col, full_group: g});
         } else if(fullscr) {
             return
             // this.toFourGroup(i,g, () => {
@@ -231,14 +229,14 @@ class UsersQuad extends Component {
             // });
         } else {
             this.toFullGroup(i,g,q);
-            setStore({qst: true,col,group: g});
+            this.props.setProps({full_qst: true, full_col: col, full_group: g});
         }
     };
 
     toFullGroup = (i,g,q) => {
         let {room,janus} = g;
         console.log("[Shidur]:: Make Full Screen Group: ",g);
-        this.setState({fullscr: true, full_feed: i, question: q});
+        this.setState({fullscr: true, index: i, question: q});
         //this.sdiGuaranteeAction("fullscr_group" , true, i, g, q, [AUDIOOUT_ID, SDIOUT_ID, SNDMAN_ID]);
         this.sdiAction("fullscr_group" , true, i, g, q);
         this.micMute(true, room, janus, i);
@@ -250,7 +248,7 @@ class UsersQuad extends Component {
         //this.sdiGuaranteeAction("fullscr_group" , false, i, g, q, [AUDIOOUT_ID, SDIOUT_ID, SNDMAN_ID]);
         this.sdiAction("fullscr_group" , false, i, g, q);
         this.micMute(false, room, janus, i);
-        this.setState({fullscr: false, full_feed: null, question: false}, () => {
+        this.setState({fullscr: false, index: null, question: false}, () => {
             cb();
         });
     };
@@ -298,14 +296,14 @@ class UsersQuad extends Component {
     };
 
   render() {
-      const {full_feed,fullscr,col,vquad,question} = this.state;
+      const {index,fullscr,col,vquad,question} = this.state;
       const {groups,group,rooms,next_button,presets,delay} = this.props;
 
       let program = vquad.map((g,i) => {
           if (groups.length === 0) return false;
           let qst = rooms ? rooms.filter(q => q && g && q.room === g.room && q.questions).length > 0 : false;
-          let qf = fullscr && full_feed === i && question;
-          let ff = fullscr && full_feed === i && !question;
+          let qf = fullscr && index === i && question;
+          let ff = fullscr && index === i && !question;
           let name = g ? g.description : "";
           return (
               <div key={"pr" + i} className={qf ? "video_full" : ff ? "video_qst" : "video_box"} >
@@ -319,7 +317,7 @@ class UsersQuad extends Component {
                           size='mini'
                           icon='expand arrows alternate'
                           onClick={() => this.switchFullScreen(i,g,false)} /> : ""}
-                  {fullscr && full_feed === i ? "" :
+                  {fullscr && index === i ? "" :
                       <Button className='next_button'
                               disabled={groups.length < 5 || next_button}
                               size='mini'

@@ -11,7 +11,6 @@ import {STORAN_ID} from "../../shared/consts"
 import {GuaranteeDeliveryManager} from '../../shared/GuaranteeDelivery';
 import * as Sentry from "@sentry/browser";
 import {SENTRY_KEY} from "../../shared/env";
-import {isMobile} from "react-device-detect";
 
 
 class ShidurApp extends Component {
@@ -19,6 +18,10 @@ class ShidurApp extends Component {
     state = {
         ce: null,
         delay: false,
+        full_qst: false,
+        full_feed: {},
+        full_group: {},
+        full_col: null,
         group: "",
         groups: [],
         groups_queue: 0,
