@@ -651,9 +651,8 @@ class VirtualClient extends Component {
 
   onMessage = (videoroom, msg, jsep) => {
     const {t} = this.props;
-    Janus.log(' ::: Got a message (publisher) :::');
-    Janus.log(msg);
-    let event = msg['videoroom'];
+    Janus.log(`::: Got a message (publisher) ::: ${JSON.stringify(msg)}`);
+    const event = msg['videoroom'];
     if (event !== undefined && event !== null) {
       if (event === 'joined') {
         const user = Object.assign({}, this.state.user);
@@ -769,15 +768,13 @@ class VirtualClient extends Component {
   };
 
   newRemoteFeed = (subscription) => {
-    console.log('newRemoteFeed');
     this.state.janus.attach(
       {
         plugin: 'janus.plugin.videoroom',
         opaqueId: 'remotefeed_user',
         success: (pluginHandle) => {
           const remoteFeed = pluginHandle;
-          Janus.log('2 Plugin attached! (' + remoteFeed.getPlugin() + ', id=' + remoteFeed.getId() + ')');
-          Janus.log('  -- This is a multistream subscriber', remoteFeed);
+          Janus.log(`2 Plugin attached! (${remoteFeed.getPlugin()}, id=${remoteFeed.getId()}). -- This is a multistream subscriber ${remoteFeed}`);
           this.setState({remoteFeed, creatingFeed: false});
           // We wait for the plugin to send us an offer
           const subscribe = {
@@ -802,10 +799,8 @@ class VirtualClient extends Component {
             ' packets on this PeerConnection (remote feed, ' + nacks + ' NACKs/s ' + (uplink ? 'received' : 'sent') + ')');
         },
         onmessage: (msg, jsep) => {
-          Janus.log(' ::: Got a message (subscriber) :::');
-          Janus.log(msg);
           const event = msg['videoroom'];
-          Janus.log('Event: ' + event);
+          Janus.log(`::: Got a message (subscriber) ::: Event: ${event} Msg: ${JSON.stringify(msg)}`);
           if (msg['error'] !== undefined && msg['error'] !== null) {
             Janus.debug('-- ERROR: ' + msg['error']);
           } else if (event !== undefined && event !== null) {
