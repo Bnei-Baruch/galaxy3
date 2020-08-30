@@ -1367,7 +1367,11 @@ class VirtualClient extends Component {
       }
     }
     if (videoroom) {
-      this.sendDataMessage({type: 'self-ping', rcmd: true, id: user.id});
+      try {
+        this.sendDataMessage({type: 'self-ping', rcmd: true, id: user.id});
+      } catch (error) {
+        Janus.log(`Failed sending self-ping due to ${JSON.stringify(error)}`);
+      }
     }
     this.setState({dataChannelKeepAliveTimeoutId: setTimeout(() => this.selfPingDataChannel(), PING_INTERVAL)});
   }
