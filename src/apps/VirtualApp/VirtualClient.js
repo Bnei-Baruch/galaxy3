@@ -944,7 +944,6 @@ class VirtualClient extends Component {
   }
 
   subscribeTo = (subscription) => {
-    console.log('subscribeTo', subscription);
     // New feeds are available, do we need create a new plugin handle first?
     if (this.state.remoteFeed) {
       this.state.remoteFeed.send({
