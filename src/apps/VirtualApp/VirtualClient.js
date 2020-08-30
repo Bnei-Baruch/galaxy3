@@ -119,6 +119,7 @@ class VirtualClient extends Component {
     net_status: 1,
     keepalive: null,
     dataChannelKeepAlive: null,
+    dataChannelKeepAliveTimeoutId: null,
     muteOtherCams: false,
     videos: Number(localStorage.getItem('vrt_video')) || 1,
     premodStatus: false,
@@ -442,6 +443,9 @@ class VirtualClient extends Component {
     let pl = {textroom: 'leave', transaction: Janus.randomString(12), 'room': PROTOCOL_ROOM};
     if(protocol) protocol.data({text: JSON.stringify(pl)});
     this.chat.exitChatRoom(room);
+    if (this.state.dataChannelKeepAliveTimeoutId !== null) {
+      clearTimeout(this.state.dataChannelKeepAliveTimeoutId);
+    }
 
     setTimeout(() => {
       if(videoroom) videoroom.detach();
@@ -453,6 +457,8 @@ class VirtualClient extends Component {
         feeds: [], mids: [],
         localAudioTrack: null, localVideoTrack: null, upval: null,
         remoteFeed: null, videoroom: null, protocol: null, janus: null,
+        dataChannelKeepAlive: null,
+        dataChannelKeepAliveTimeoutId: null,
         delay: reconnect,
         room: reconnect ? room : '',
         chatMessagesCount: 0,
@@ -656,7 +662,7 @@ class VirtualClient extends Component {
     if (event !== undefined && event !== null) {
       if (event === 'joined') {
         const user = Object.assign({}, this.state.user);
-        let myid = msg['id'];
+        const myid = msg['id'];
         let mypvtid = msg['private_id'];
         Janus.log('Successfully joined room ' + msg['room'] + ' with ID ' + myid);
 
@@ -723,12 +729,13 @@ class VirtualClient extends Component {
           }
           // Subscribe to self DataChannel to allow pings to self.
           const dataStream = (msg?.streams || []).filter(stream => stream.type === 'data');
-          const myid = this.state.myid;
-          if (!myid) {
-            Janus.error(`After publish own feed, myid (${myid}) should exist.`);
+          if (!this.state.myid) {
+            Janus.error(`After publish own feed, myid (${this.state.myid}) should exist.`);
           } else if (dataStream) {
-            this.subscribeTo([{feed: myid, mid: dataStream.mid}]);
-            this.selfPingDataChannel();
+            this.subscribeTo([{feed: this.state.myid, mid: dataStream.mid}]);
+            if (this.state.dataChannelKeepAliveTimeoutId === null) {
+              this.selfPingDataChannel();
+            }
           }
         } else if (msg['publishers'] !== undefined && msg['publishers'] !== null) {
           // User just joined the room.
@@ -1349,8 +1356,8 @@ class VirtualClient extends Component {
   };
 
   selfPingDataChannel = () => {
-    const PING_INTERVAL = 30 * 1000;  // 30 seconds;
-    const PING_CHECK_INTERVAL = 45 * 1000;  // 45 seconds;
+    const PING_INTERVAL = 60 * 1000;  // 60 seconds;
+    const PING_CHECK_INTERVAL = 90 * 1000;  // 90 seconds;
 
     const {user, dataChannelKeepAlive, videoroom} = this.state;
     if (dataChannelKeepAlive !== null) {
@@ -1362,7 +1369,7 @@ class VirtualClient extends Component {
     if (videoroom) {
       this.sendDataMessage({type: 'self-ping', rcmd: true, id: user.id});
     }
-    setTimeout(() => this.selfPingDataChannel(), PING_INTERVAL);
+    this.setState({dataChannelKeepAliveTimeoutId: setTimeout(() => this.selfPingDataChannel(), PING_INTERVAL)});
   }
 
   receiveSelfPingDataChannel = () => {
