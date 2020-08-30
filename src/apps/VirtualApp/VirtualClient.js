@@ -728,6 +728,7 @@ class VirtualClient extends Component {
             Janus.error(`After publish own feed, myid (${myid}) should exist.`);
           } else if (dataStream) {
             this.subscribeTo([{feed: myid, mid: dataStream.mid}]);
+            this.selfPingDataChannel();
           }
         } else if (msg['publishers'] !== undefined && msg['publishers'] !== null) {
           // User just joined the room.
