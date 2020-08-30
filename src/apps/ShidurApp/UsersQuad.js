@@ -51,18 +51,26 @@ class UsersQuad extends Component {
         }
     };
 
-    quadCheckDup = () => {
-        let {group,groups,groups_queue} = this.props;
-        let {vquad} = this.state;
-        let dup = false;
-        let g = group || groups[groups_queue];
-        for (let i=0; i<4; i++) {
-            if(vquad[i] && g && vquad[i].room === g.room) {
-                dup = true;
-                break;
-            }
-        }
-        return dup;
+    // quadCheckDup = () => {
+    //     let {group,groups,groups_queue,quads} = this.props;
+    //     let {vquad} = this.state;
+    //     let dup = false;
+    //     let g = group || groups[groups_queue];
+    //     for (let i=0; i<4; i++) {
+    //         if(vquad[i] && g && vquad[i].room === g.room) {
+    //             dup = true;
+    //             break;
+    //         }
+    //     }
+    //     return dup;
+    // };
+
+    checkDup = () => {
+        let {group,groups,groups_queue,quads} = this.props;
+        let i = groups_queue >= groups.length ? 0 : groups_queue;
+        let g = group || groups[i];
+        let r = quads.filter(q => q && g && q.room === g.room);
+        return r.length > 0;
     };
 
     quadGroup = (queue) => {
@@ -80,7 +88,7 @@ class UsersQuad extends Component {
         if(leave)
             groups_queue--;
 
-        if(this.quadCheckDup())
+        if(this.checkDup())
             return;
 
         if(group) {
@@ -113,6 +121,10 @@ class UsersQuad extends Component {
         this.setDelay();
 
         for(let i=0; i<4; i++) {
+
+            // Don't allow dup group in program
+            if(this.checkDup())
+                return;
 
             // Don't switch if nobody in queue
             if(i === groups.length) {

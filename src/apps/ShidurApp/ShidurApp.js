@@ -29,6 +29,7 @@ class ShidurApp extends Component {
         preview_mode: true,
         round: 0,
         questions: [],
+        quads: [],
         rooms: [],
         disabled_rooms: [],
         pre_groups: [],
@@ -145,7 +146,7 @@ class ShidurApp extends Component {
                 let quads = [...this.col1.state.vquad,...this.col2.state.vquad,...this.col3.state.vquad,...this.col4.state.vquad];
                 let list = groups.filter(r => !quads.find(q => q && r.room === q.room));
                 let questions = list.filter(room => room.questions);
-                this.setState({questions,users_count});
+                this.setState({quads, questions, users_count});
             })
             .catch(err => {
                 console.error("[Shidur] error fetching active rooms", err);
