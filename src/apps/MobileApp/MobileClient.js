@@ -1298,7 +1298,7 @@ class MobileClient extends Component {
     handleAudioOut = (data) => {
         const { gdm, user, protocol } = this.state;
 
-        gdm.accept(data, (msg) => this.sendDataMessage(msg)).then((data) => {
+        gdm.accept(data, (msg) => this.chat.sendCmdMessage(msg)).then((data) => {
             if (data === null) {
                 console.log('Message received more then once.');
                 return;

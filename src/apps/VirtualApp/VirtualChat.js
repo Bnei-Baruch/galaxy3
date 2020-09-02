@@ -161,6 +161,25 @@ class VirtualChat extends Component {
     }
   };
 
+  sendCmdMessage = (msg) => {
+    let message = {
+      ack: false,
+      textroom: 'message',
+      transaction: Janus.randomString(12),
+      room: this.state.room,
+      text: JSON.stringify(msg),
+    };
+    this.state.chatroom.data({
+      text: JSON.stringify(message),
+      error: (reason) => {
+        console.error(reason);
+      },
+      success: () => {
+        Janus.log(':: Cmd Message sent ::');
+      }
+    });
+  };
+
   sendChatMessage = () => {
     let { input_value, user:{id, role, display}, from, room_chat, support_msgs } = this.state;
     if (!role.match(/^(user|guest)$/) || input_value === '') {
@@ -184,7 +203,7 @@ class VirtualChat extends Component {
     this.state.chatroom.data({
       text: JSON.stringify(message),
       error: (reason) => {
-        alert(reason);
+        console.error(reason);
       },
       success: () => {
         Janus.log(':: Message sent ::');
