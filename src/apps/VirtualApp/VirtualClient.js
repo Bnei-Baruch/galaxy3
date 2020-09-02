@@ -731,8 +731,8 @@ class VirtualClient extends Component {
           const dataStream = (msg?.streams || []).filter(stream => stream.type === 'data');
           if (!this.state.myid) {
             Janus.error(`After publish own feed, myid (${this.state.myid}) should exist.`);
-          } else if (dataStream) {
-            this.subscribeTo([{feed: this.state.myid, mid: dataStream.mid}]);
+          } else if (dataStream.length) {
+            this.subscribeTo([{feed: this.state.myid, mid: dataStream[0].mid}]);
             if (this.state.dataChannelKeepAliveTimeoutId === null) {
               this.selfPingDataChannel();
             }
