@@ -1784,6 +1784,7 @@ class VirtualClient extends Component {
             janus={janus}
             room={room}
             user={user}
+            onCmdMsg={this.onRoomData}
             onNewMsg={this.onChatMessage} />
         </div>
       </div>
