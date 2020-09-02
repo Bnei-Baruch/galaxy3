@@ -273,21 +273,21 @@ class UsersQuad extends Component {
         if(toAck.length === 0) return;
 
         const {gateways, gdm} = this.props;
-        gdm.send(cmd, toAck, (cmd) => this.sendDataMessage(cmd)).
-        then(() => {
-            console.log(`MIC delivered.`);
-        }).catch((error) => {
-            console.error(`MIC not delivered due to: ` , JSON.stringify(error));
-            reportToSentry("Delivery",{source: "shidur"}, this.props.user);
-        });
-        gateways["gxy3"].sendServiceMessage(msg);
-        //gateways[inst].sendProtocolMessage(msg);
-        // gdm.send(msg, toAck, (msg) => gateways[inst].sendProtocolMessage(msg)).
+        // gdm.send(cmd, toAck, (cmd) => this.sendDataMessage(cmd)).
         // then(() => {
         //     console.log(`MIC delivered.`);
         // }).catch((error) => {
-        //     console.error(`MIC not delivered due to: ` , error);
+        //     console.error(`MIC not delivered due to: ` , JSON.stringify(error));
+        //     reportToSentry("Delivery",{source: "shidur"}, this.props.user);
         // });
+        gateways["gxy3"].sendServiceMessage(msg);
+        //gateways[inst].sendProtocolMessage(msg);
+        gdm.send(cmd, toAck, (cmd) => gateways[inst].sendCmdMessage(cmd)).
+        then(() => {
+            console.log(`MIC delivered.`);
+        }).catch((error) => {
+            console.error(`MIC not delivered due to: ` , error);
+        });
     };
 
     setDelay = () => {

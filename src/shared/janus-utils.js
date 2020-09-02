@@ -477,6 +477,16 @@ class GxyJanus extends EventTarget {
         });
     };
 
+    sendCmdMessage = (msg, room) => {
+        return this.data("command", this.chatroom, {
+            ack: false,
+            textroom: "message",
+            transaction: Janus.randomString(12),
+            room,
+            text: JSON.stringify(msg),
+        });
+    };
+
     initVideoRoom = (callbacks) => {
         return new Promise((resolve, reject) => {
             this.gateway.attach({
