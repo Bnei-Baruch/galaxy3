@@ -477,12 +477,12 @@ class GxyJanus extends EventTarget {
         });
     };
 
-    sendCmdMessage = (msg, room) => {
+    sendCmdMessage = (msg) => {
         return this.data("command", this.chatroom, {
             ack: false,
             textroom: "message",
             transaction: Janus.randomString(12),
-            room,
+            room: msg.room,
             text: JSON.stringify(msg),
         });
     };

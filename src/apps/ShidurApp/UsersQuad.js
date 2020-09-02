@@ -266,7 +266,7 @@ class UsersQuad extends Component {
 
     micMute = (status, room, inst, i) => {
         const msg = {type: "audio-out", status, room, col: null, i, feed: null};
-        const cmd = {type: "audio-out", rcmd: true, status, i}
+        const cmd = {type: "audio-out", rcmd: true, status, room, i}
         const group = this.props.rooms.filter(g => g.room === room)[0];
         //const ask_feed = group.users.filter(u => u.question)[0];
         let toAck = group.users.map(u => {return u.id});
