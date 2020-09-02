@@ -7,6 +7,7 @@ export const INTERVALS_DELAY = 100; // 100ms.
 const ACK_FIELD = '__gack__';
 const FROM_FIELD = '__from__';
 const TO_ACK_FIELD = '__to_ack__';
+const ACKED_FIELD = '__acked__';
 const RETRY_FIELD = '__gretry__';
 const TRANSACTION_FIELD = 'transaction';
 export const DEADLINE_EXCEEDED = 'DEADLINE_EXCEEDED';
@@ -39,7 +40,7 @@ export class GuaranteeDeliveryManager {
   // passes, delete them and reject.
   iterate_() {
     const now = Number(new Date());
-    for (let [transaction, state] of this.pending) {
+    for (const [transaction, state] of this.pending) {
       const interval = now - state.sent;
       if (interval > this.maxDelay) {
         console.error('[GDM] Did not get all ack as required', state.ack);
@@ -49,12 +50,22 @@ export class GuaranteeDeliveryManager {
       } else if (now - state.sent >= (state.message[RETRY_FIELD] + 1) * this.retryDelay) {
         // We should retry.
         state.message[RETRY_FIELD]++;
+        // Update the toAck and acked fields.
+        state.message[TO_ACK_FIELD].length = 0;
+        state.message[ACKED_FIELD].length = 0;
+        for (const [ackUserId, acked] of Object.entries(state.ack)) {
+          if (acked) {
+            state.message[ACKED_FIELD].push(ackUserId);
+          } else {
+            state.message[TO_ACK_FIELD].push(ackUserId);
+          }
+        }
         state.sendMessage(state.message);
       }
     }
 
     // Garbage collect accepted messages.
-    for (let [transaction, accepted] of this.accepted) {
+    for (const [transaction, accepted] of this.accepted) {
       const interval = now - accepted;
       if (interval > 10 * this.maxDelay) {
         // We don't expect messages to arrive after 10 * MAX_DELAY time, it is safe to delete
@@ -80,6 +91,7 @@ export class GuaranteeDeliveryManager {
     }
     message[RETRY_FIELD] = 0;
     message[TO_ACK_FIELD] = toAck;
+    message[ACKED_FIELD] = [];
     message[FROM_FIELD] = this.userId;
     const delivery = {};
     const ret = new Promise((resolve, reject) => {
@@ -125,7 +137,7 @@ export class GuaranteeDeliveryManager {
         return true; // Don't ack yourself.
       }
       if (Object.entries(ack).every(([ackUserId, acked]) => acked)) {
-        console.log('Message acked, resolving.', ack);
+        // console.log('Message acked, resolving.', ack);
         this.pending.delete(transaction);
         delivery.resolve();
       }
@@ -142,7 +154,7 @@ export class GuaranteeDeliveryManager {
   accept(message, sendAckBack) {
     if (!(RETRY_FIELD in message)) {
       // This is a regular non-guarantee message, resolve right away.
-      console.log(`${RETRY_FIELD} not found in `, message);
+      // console.log(`${RETRY_FIELD} not found in `, message);
       return Promise.resolve(message);
     }
     [TRANSACTION_FIELD, FROM_FIELD].forEach((field) => {

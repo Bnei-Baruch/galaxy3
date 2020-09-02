@@ -255,7 +255,9 @@ it('can explicitl ack myself', (done) => {
   });
 });
 
-const sendToAll = (room, unreachableUsers = []) => (message) => {
+// After moving to room data channel, messages don't come back to self, so
+// adding selfId to not send the message to myself.
+const sendToAll = (room, selfId, unreachableUsers = []) => (message) => {
   console.log('Sending', message, 'to room. Unreachable: ', unreachableUsers);
   for (const [userId, {gdm, user}] of Object.entries(room)) {
     if (!(unreachableUsers.includes(userId))) {
@@ -273,13 +275,14 @@ const createRoom = (numUsers) => {
       user: new User(/* messageSendDelay= */ 10),
     };
     room[userId].user.setOnMessageCallback((message) => {
+      console.log('Message received on channel', userId, message);
       if (room[userId].gdm.checkAck(message)) {
-        console.log('checkAck, ack accepted', userId);
+        console.log('checkAck, ack accepted', userId, message);
         return;  // ack message accepted don’t handle.
       }
-      room[userId].gdm.accept(message, sendToAll(room)).then((message) => {
+      room[userId].gdm.accept(message, sendToAll(room, userId)).then((message) => {
         if (message === null) {
-          console.log('accept received more then once', userId);
+          console.log('accept received more then once', userId, message);
         } else {
           console.log('accept received', userId, message);
         }
@@ -294,7 +297,7 @@ const createRoom = (numUsers) => {
 it('messaged delivery guaranteed to many users any', (done) => {
   const room = createRoom(10);
   const theMessage = {test: 'test'};
-  room['user_0'].gdm.send(Object.assign({}, theMessage), /* toAck= */ [], sendToAll(room)).then(() => {
+  room['user_0'].gdm.send(Object.assign({}, theMessage), /* toAck= */ [], sendToAll(room, 'user_0')).then(() => {
     console.log('messaged delivery guaranteed to many users any', theMessage);
     expect(true).toBe(true);
     done();
@@ -308,7 +311,7 @@ it('messaged delivery guaranteed to many users any', (done) => {
 it('messaged delivery guaranteed to many users - specific user ack', (done) => {
   const room = createRoom(10);
   const theMessage = {test: 'test'};
-  room['user_0'].gdm.send(Object.assign({}, theMessage), /* toAck= */ ['user_5'], sendToAll(room)).then(() => {
+  room['user_0'].gdm.send(Object.assign({}, theMessage), /* toAck= */ ['user_5'], sendToAll(room, 'user_0')).then(() => {
     console.log('messaged delivery guaranteed to many users - specific user ack', theMessage);
     expect(true).toBe(true);
     done();
@@ -322,7 +325,7 @@ it('messaged delivery guaranteed to many users - specific user ack', (done) => {
 it('messaged delivery guaranteed to many users - some users ack', (done) => {
   const room = createRoom(10);
   const theMessage = {test: 'test'};
-  room['user_0'].gdm.send(Object.assign({}, theMessage), /* toAck= */ ['user_5', 'user_2', 'user_9'], sendToAll(room)).then(() => {
+  room['user_0'].gdm.send(Object.assign({}, theMessage), /* toAck= */ ['user_5', 'user_2', 'user_9'], sendToAll(room, 'user_0')).then(() => {
     console.log('messaged delivery guaranteed to many users - some users ack', theMessage);
     expect(true).toBe(true);
     done();
@@ -336,7 +339,7 @@ it('messaged delivery guaranteed to many users - some users ack', (done) => {
 it('messaged delivery guaranteed to many users - some users ack - one of them unreachable', (done) => {
   const room = createRoom(10);
   const theMessage = {test: 'test'};
-  room['user_0'].gdm.send(Object.assign({}, theMessage), /* toAck= */ ['user_5', 'user_2', 'user_9'], sendToAll(room, /* unreachableUsers= */ ['user_2'])).then(() => {
+  room['user_0'].gdm.send(Object.assign({}, theMessage), /* toAck= */ ['user_5', 'user_2', 'user_9'], sendToAll(room, 'user_0', /* unreachableUsers= */ ['user_2'])).then(() => {
     console.log('messaged delivery guaranteed to many users - some users ack - one of them unreachable', theMessage);
     expect(true).toBe(false);  // Should not happen.
     done();
