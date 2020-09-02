@@ -9,11 +9,11 @@ import Icon from 'semantic-ui-react/dist/commonjs/elements/Icon';
 import Slider from 'react-rangeslider'
 import ReconnectingWebSocket from 'reconnectingwebsocket';
 import {GET_WORKSHOP_QUESTIONS, WEB_SOCKET_WORKSHOP_QUESTION} from '../../shared/env';
+import {getLanguage} from '../../i18n/i18n';
 
 const WQ_FONT_SIZE = 'wq-font-size';
 const WQ_LANG = 'wq-lang';
 const WQ_IN_PROCESS_SELECTED = 'wq-in-process-selected';
-const GALAXY_LANG = 'lng';
 const EQUAL = 'equal';
 const FULLSCREEN = 'fullscreen';
 const DETACHED = 'detached';
@@ -54,7 +54,7 @@ const setLanguageOptions = () => {
 
 const getSelectedLanguageValue = (languageOptions) => {
   const storageLang = parseInt(localStorage.getItem(WQ_LANG));
-  const galaxyLang = localStorage.getItem(GALAXY_LANG);
+  const galaxyLang = getLanguage();
   let langValue = 2;
 
   if (!isNaN(storageLang)) {
@@ -83,6 +83,8 @@ const setFontSize = (layout, current) => {
   }
 };
 
+let currentLayout = localStorage.getItem('currentLayout') || EQUAL;
+
 class VirtualWorkshopQuestion extends Component {
   constructor(props) {
     super(props);
@@ -92,7 +94,7 @@ class VirtualWorkshopQuestion extends Component {
     this.state = {
       languageOptions,
       selectedLanguageValue: getSelectedLanguageValue(languageOptions),
-      fontSize: setFontSize(props.layout, +localStorage.getItem(WQ_FONT_SIZE)),
+      fontSize: setFontSize(currentLayout, +localStorage.getItem(WQ_FONT_SIZE)),
       mountView: false,
       showQuestion: true,
       openSettings: false,
@@ -129,8 +131,11 @@ class VirtualWorkshopQuestion extends Component {
   }
 
   componentDidUpdate(prevProps) {
-    if (this.props.layout !== prevProps.layout) {
-      this.setState({fontSize: setFontSize(this.props.layout)});
+    if (this.props.layout !== currentLayout) {
+      currentLayout = this.props.layout;
+      const fontSize = setFontSize(this.props.layout);
+      this.setState({fontSize});
+      localStorage.setItem(WQ_FONT_SIZE, fontSize.current);
     }
   }
 
@@ -163,8 +168,8 @@ class VirtualWorkshopQuestion extends Component {
     fetch(GET_WORKSHOP_QUESTIONS)
       .then(response => response.json())
       .then(data => {
-        const approved = data.questions.filter(q => q.approved);
-        if (!approved.length) {
+        const questions = data.questions.filter(q => q.message);
+        if (!questions.length) {
           this.clearQuestions();
           return;
         }
@@ -173,7 +178,7 @@ class VirtualWorkshopQuestion extends Component {
         this.setState(({languageOptions}) => ({
           mountView: true,
           languageOptions: languageOptions.map(l => {
-            const current = approved.find(a => a.language === l.key);
+            const current = questions.find(a => a.language === l.key);
             if (current) {
               l.question = current.message;
             }
@@ -199,7 +204,7 @@ class VirtualWorkshopQuestion extends Component {
       const lang = languageOptions.find(l => l.key === wsData.language);
       if (!lang) return;
 
-      lang.question = wsData.approved ? wsData.message : null;
+      lang.question = wsData.message;
       this.setState({languageOptions, mountView: true});
     } catch (e) {
       console.error('Workshop onmessage parse error', e);
@@ -262,6 +267,7 @@ class VirtualWorkshopQuestion extends Component {
     } = this.state;
     const hasQuestion = !!languageOptions.find(l => l.question);
     const {key, flag, question} = languageOptions[selectedLanguageValue];
+    const galaxyLang = getLanguage();
 
     if (!hasQuestion) {
       if (!mountView) return null;
@@ -277,7 +283,7 @@ class VirtualWorkshopQuestion extends Component {
                 {question}
               </div>
               <div className={classNames('in-process', {'show-question': !question && hasQuestion})}>
-                <div className={classNames('in-process-text', {rtl: key === 'he'})}>
+                <div className={classNames('in-process-text', {rtl: galaxyLang === 'he'})}>
                   <span>{t('workshop.inProcess')} </span>
                   {languageOptions.filter(l => l.question).map(l =>
                     <Button className={l.selected ? 'selected' : ''}

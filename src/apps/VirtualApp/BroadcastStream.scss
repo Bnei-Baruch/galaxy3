@@ -63,22 +63,22 @@
   overflow: hidden;
 
   &:hover {
-   .controls {
-     // opacity: 1!important;
-     animation: out 0s;
+    .controls {
+      // opacity: 1!important;
+      animation: out 0s;
 
-     .controls__bottom {
-       animation: bottomout 0s;
-     }
+      .controls__bottom {
+        animation: bottomout 0s;
+      }
 
-     .controls__top {
-       animation: topout 0s;
-     }
+      .controls__top {
+        animation: topout 0s;
+      }
 
-     // animation: in 500ms;
-     // animation-direction: reverse;
-     // animation-fill-mode: forwards;
-   }
+      // animation: in 500ms;
+      // animation-direction: reverse;
+      // animation-fill-mode: forwards;
+    }
   }
 
   // controls animation
@@ -116,8 +116,8 @@
       display: flex;
       padding: 4px;
       direction: ltr;
-      flex-wrap: wrap;
       position: absolute;
+      justify-content: space-between;
     }
 
     &__top {
@@ -136,6 +136,12 @@
 
       button {
         background: none;
+      }
+
+      .audio-selection {
+        .audio-small-screen {
+          display: none;
+        }
       }
     }
 
@@ -241,6 +247,80 @@
       background-image: url("https://galaxy.kli.one" + $flag-url),
       url("https://dev-galaxy.kli.one" + $flag-url),
       url("http://localhost:3000" + $flag-url),
+    }
+  }
+
+  .layout--equal & {
+    .wq-overlay + .controls {
+      .controls {
+        &__top {
+          background: rgba(34, 34, 34, .85);
+
+          button {
+            background: none;
+
+            &:hover {
+              background: rgba(255, 255, 255, 0.2)
+            }
+          }
+        }
+
+        &__bottom {
+          top: 0;
+          bottom: initial;
+          width: calc(100% - 48px);
+          animation: topin 300ms;
+          animation-delay: 1s;
+
+          .controls__spacer {
+            display: none;
+          }
+
+          .menu {
+            top: 80%;
+            bottom: auto;
+          }
+
+          .volume-popover {
+            top: 100%;
+            bottom: auto;
+          }
+        }
+      }
+    }
+
+    &:hover .wq-overlay + .controls {
+      animation: out 0s;
+
+      .controls__bottom {
+        animation: topout 0s;
+      }
+    }
+  }
+}
+
+@media screen and (max-width: 648px) {
+  .layout--equal .activities .wq-overlay + .controls .controls__bottom .audio-selection {
+    .audio-big-screen {
+      display: none;
+    }
+
+    .audio-small-screen {
+      display: inline-block;
+    }
+  }
+}
+
+@media screen and (max-width: 548px) {
+  .layout--equal .activities .wq-overlay + .controls {
+
+    button {
+      min-width: auto;
+      padding: 0 4px;
+    }
+
+    .controls__bottom {
+      width: calc(100% - 32px);
     }
   }
 }

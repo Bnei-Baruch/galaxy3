@@ -241,11 +241,11 @@ export const resources = {
         continueAsGuest: 'Continuar como invitado',
       },
       workshop: {
-        hideQuestion: '',
-        showQuestion: '',
-        copyQuestion: '',
-        manageFontSize: '',
-        inProcess: ''
+        hideQuestion: 'Ocultar pregunta',
+        showQuestion: 'Mostrar pregunta',
+        copyQuestion: 'Copiar pregunta',
+        manageFontSize: 'Cambiar el tamaño de la fuente',
+        inProcess: 'En proceso… Disponible en'
       }
     },
   },
@@ -366,11 +366,11 @@ export const resources = {
         continueAsGuest: 'המשך כאורח',
       },
       workshop: {
-        hideQuestion: '',
-        showQuestion: '',
-        copyQuestion: '',
-        manageFontSize: '',
-        inProcess: ''
+        hideQuestion: 'להחביא את השאלה',
+        showQuestion: 'להראות את השאלה',
+        copyQuestion: 'להעתיק את השאלה',
+        manageFontSize: 'להגדיר את גודל האותיות',
+        inProcess: 'בתהליך... זמין בשפות'
       }
     },
   },
@@ -491,11 +491,11 @@ export const resources = {
         close: 'Закрыть',
       },
       workshop: {
-        hideQuestion: '',
-        showQuestion: '',
-        copyQuestion: '',
-        manageFontSize: '',
-        inProcess: ''
+        hideQuestion: 'Скрыть вопрос',
+        showQuestion: 'Показать вопрос',
+        copyQuestion: 'Копировать вопрос',
+        manageFontSize: 'Изменить размер шрифта',
+        inProcess: 'В процессе... Доступно на'
       }
     },
   },
