@@ -41,7 +41,7 @@ class ShidurApp extends Component {
     };
 
     componentDidMount() {
-        Sentry.init({dsn: `https://${SENTRY_KEY}@sentry.kli.one/2`});
+        //Sentry.init({dsn: `https://${SENTRY_KEY}@sentry.kli.one/2`});
     }
 
     componentWillUnmount() {
@@ -82,7 +82,12 @@ class ShidurApp extends Component {
                 console.log("[Shidur] gateways initialization complete");
                 this.setState({gatewaysInitialized: true});
             });
+
     };
+
+    onChatData = (gateway, data) => {
+        console.log(gateway, data)
+    }
 
     initGateway = (user, gateway) => {
         console.log("[Shidur] initializing gateway", gateway.name);
@@ -94,9 +99,12 @@ class ShidurApp extends Component {
             .then(() => {
                 return gateway.initGxyProtocol(user, data => this.onProtocolData(gateway, data))
                     .then(() => {
-                        if (gateway.name === "gxy3") {
-                            return gateway.initServiceProtocol(user, data => this.onServiceData(gateway, data))
-                        }
+                        return gateway.initChatRoom(data => this.onChatData(gateway, data))
+                            .then(() => {
+                                if (gateway.name === "gxy3") {
+                                    return gateway.initServiceProtocol(user, data => this.onServiceData(gateway, data))
+                                }
+                            })
                     });
             })
             .catch(err => {
