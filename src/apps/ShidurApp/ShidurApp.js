@@ -86,7 +86,18 @@ class ShidurApp extends Component {
     };
 
     onChatData = (gateway, data) => {
-        console.log(gateway, data)
+        const json = JSON.parse(data);
+        const what = json["textroom"];
+        if (what === "message") {
+            let msg = json['text'];
+            let message = JSON.parse(msg);
+            console.log(" : Got Chat Message: ", message)
+            const { gdm } = this.state;
+            if (gdm.checkAck(message)) {
+                // Ack received, do nothing.
+                return;
+            }
+        }
     }
 
     initGateway = (user, gateway) => {

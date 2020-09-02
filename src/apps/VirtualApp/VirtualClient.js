@@ -155,7 +155,7 @@ class VirtualClient extends Component {
   }
 
   componentDidMount() {
-    Sentry.init({dsn: `https://${SENTRY_KEY}@sentry.kli.one/2`});
+    //Sentry.init({dsn: `https://${SENTRY_KEY}@sentry.kli.one/2`});
     if (isMobile) {
       window.location = '/userm';
     }
@@ -999,12 +999,13 @@ class VirtualClient extends Component {
     const {user, cammuted, gdm} = this.state;
     const feeds = Object.assign([], this.state.feeds);
     const {camera,question,rcmd,type,id} = data;
-    if(rcmd) {
-      if (gdm.checkAck(data)) {
-        // Ack received, do nothing.
-        return;
-      }
 
+    if (gdm.checkAck(data)) {
+      // Ack received, do nothing.
+      return;
+    }
+
+    if(rcmd) {
       if (type === 'client-reconnect' && user.id === id) {
         this.exitRoom(true);
       } else if (type === 'client-reload' && user.id === id) {
