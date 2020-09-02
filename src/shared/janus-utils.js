@@ -252,12 +252,12 @@ class GxyJanus extends EventTarget {
         });
     };
 
-    chatRoomJoin = (room, user) => {
+    chatRoomJoin = (room, user, mlt_user) => {
         return this.data("chatroom", this.chatroom, {
             textroom: "join",
             transaction: Janus.randomString(12),
             room,
-            username: user.id,
+            username: mlt_user ? Janus.randomString(10) : user.id,
             display: user.display
         });
     };

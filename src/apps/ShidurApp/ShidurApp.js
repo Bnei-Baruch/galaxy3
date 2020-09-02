@@ -91,7 +91,6 @@ class ShidurApp extends Component {
         if (what === "message") {
             let msg = json['text'];
             let message = JSON.parse(msg);
-            console.log(" : Got Chat Message: ", message)
             const { gdm } = this.state;
             if (gdm.checkAck(message)) {
                 // Ack received, do nothing.

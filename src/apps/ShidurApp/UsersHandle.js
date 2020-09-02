@@ -46,7 +46,7 @@ class UsersHandle extends Component {
                 gateway.log(`[room ${roomid}] attach success`, videoroom.getId());
                 this.setState({room: roomid, videoroom, remoteFeed: null});
                 let {user} = this.props;
-                gateway.chatRoomJoin(roomid, user);
+                gateway.chatRoomJoin(roomid, user, true);
                 let register = { "request": "join", "room": roomid, "ptype": "publisher", "display": JSON.stringify(user) };
                 videoroom.send({"message": register});
             },
