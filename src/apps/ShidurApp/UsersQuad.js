@@ -122,10 +122,6 @@ class UsersQuad extends Component {
 
         for(let i=0; i<4; i++) {
 
-            // Don't allow dup group in program
-            if(this.checkDup())
-                return;
-
             // Don't switch if nobody in queue
             if(i === groups.length) {
                 console.log("[Shidur] Queue is END");

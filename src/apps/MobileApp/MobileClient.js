@@ -551,7 +551,7 @@ class MobileClient extends Component {
             },
             ondataerror: (error) => {
                 Janus.warn('Publisher - DataChannel error: ' + error);
-                if(this.state.videoroom && error.error)
+                if(!this.state.delay && error.error)
                     reportToSentry(error.error,{source: "Publisher"}, this.state.user);
             },
             oncleanup: () => {
@@ -858,7 +858,7 @@ class MobileClient extends Component {
                 },
                 ondataerror: (error) => {
                     Janus.warn('Feed - DataChannel error: ' + error);
-                    if(this.state.remoteFeed && error.error)
+                    if(!this.state.delay && error.error)
                         reportToSentry(error.error,{source: "Feed"}, this.state.user);
                 },
                 oncleanup: () => {

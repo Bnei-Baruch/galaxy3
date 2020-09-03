@@ -609,7 +609,7 @@ class VirtualClient extends Component {
       },
       ondataerror: (error) => {
         Janus.warn('Publisher - DataChannel error: ' + error);
-        if(this.state.videoroom && error.error)
+        if(!this.state.delay && error.error)
           reportToSentry(error.error,{source: "Publisher"}, this.state.user);
       },
       oncleanup: () => {
@@ -882,7 +882,7 @@ class VirtualClient extends Component {
         },
         ondataerror: (error) => {
           Janus.warn('Feed - DataChannel error: ' + error);
-          if(this.state.remoteFeed && error.error)
+          if(!this.state.delay && error.error)
             reportToSentry(error.error,{source: "Feed"}, this.state.user);
         },
         oncleanup: () => {
@@ -1025,7 +1025,6 @@ class VirtualClient extends Component {
         localStorage.setItem('sound_test', true);
         this.setState({user});
       } else if (type === 'audio-out') {
-        reportToSentry("event",{source: "switch"}, this.state.user);
         this.handleAudioOut(data);
       }  else if (type === 'reload-config') {
         this.reloadConfig();
@@ -1235,7 +1234,6 @@ class VirtualClient extends Component {
         return;
       }
 
-      reportToSentry("action",{source: "switch"}, this.state.user);
       this.state.virtualStreamingJanus.streamGalaxy(data.status, 4, "");
       if (data.status) {
         // remove question mark when sndman unmute our room
