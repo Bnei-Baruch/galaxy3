@@ -44,7 +44,8 @@ class UsersPreview extends Component {
             for (let i in g.users) {
                 let id = g.users[i].rfid;
                 let subst = {feed: id, mid: "1"};
-                if(g.users[i].camera) {
+                //TODO: Edo don't save ghost role in DB so it's will not work
+                if(g.users[i].camera && g.users[i].role === "user") {
                     subscription.push(subst);
                 }
             }
