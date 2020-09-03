@@ -45,7 +45,7 @@ class ShidurApp extends Component {
     };
 
     componentDidMount() {
-        //Sentry.init({dsn: `https://${SENTRY_KEY}@sentry.kli.one/2`});
+        Sentry.init({dsn: `https://${SENTRY_KEY}@sentry.kli.one/2`});
     }
 
     componentWillUnmount() {
