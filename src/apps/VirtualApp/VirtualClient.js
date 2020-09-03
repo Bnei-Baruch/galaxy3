@@ -600,7 +600,7 @@ class VirtualClient extends Component {
       },
       onremotestream: (stream) => {
         // The publisher stream is sendonly, we don't expect anything here
-        Janus.log('Send only publisher stream, if this happends, it is not expected, stream:', stream);
+        Janus.warn('Send only publisher stream, if this happends, it is not expected, stream:', stream);
       },
       ondataopen: (label) => {
         Janus.log('Publisher - DataChannel is available! (' + label + ')');
