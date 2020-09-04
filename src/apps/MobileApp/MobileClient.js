@@ -1821,6 +1821,7 @@ class MobileClient extends Component {
               janus={janus}
               room={room}
               user={user}
+              gdm={this.state.gdm}
               onCmdMsg={this.onRoomData}
               onNewMsg={this.onChatMessage} />
           </div>
