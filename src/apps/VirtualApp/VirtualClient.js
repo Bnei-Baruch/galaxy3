@@ -999,12 +999,6 @@ class VirtualClient extends Component {
     const {user, cammuted, gdm} = this.state;
     const feeds = Object.assign([], this.state.feeds);
     const {camera,question,rcmd,type,id} = data;
-
-    if (gdm.checkAck(data)) {
-      // Ack received, do nothing.
-      return;
-    }
-
     if(rcmd) {
       if (type === 'client-reconnect' && user.id === id) {
         this.exitRoom(true);
@@ -1783,6 +1777,7 @@ class VirtualClient extends Component {
             janus={janus}
             room={room}
             user={user}
+            gdm={this.state.gdm}
             onCmdMsg={this.onRoomData}
             onNewMsg={this.onChatMessage} />
         </div>

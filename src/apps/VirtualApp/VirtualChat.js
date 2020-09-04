@@ -89,11 +89,18 @@ class VirtualChat extends Component {
       let from = json['from'];
       let dateString = getDateString(json['date']);
       let whisper = json['whisper'];
+
+      let message = JSON.parse(msg);
+      const { gdm } = this.props;
+      if (gdm.checkAck(message)) {
+        // Ack received, do nothing.
+        return;
+      }
+
       if (whisper === true) {
         // Private message
         Janus.log(':: It\'s private message: ' + dateString + ' : ' + from + ' : ' + msg);
         let { support_msgs } = this.state;
-        let message = JSON.parse(msg);
         if(message.type && message.type !== "chat") {
           Janus.log(':: It\'s remote command :: ', message);
           this.props.onCmdMsg(message);
@@ -113,7 +120,6 @@ class VirtualChat extends Component {
         // Public message
         let { messages } = this.state;
         Janus.log('-:: It\'s public message: ' + msg);
-        let message = JSON.parse(msg);
         if(message.type && message.type !== "chat") {
           Janus.log(':: It\'s remote command :: ', message);
           this.props.onCmdMsg(message);

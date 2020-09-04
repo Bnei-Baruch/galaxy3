@@ -1046,12 +1046,6 @@ class MobileClient extends Component {
     onRoomData = (data) => {
         const {user, cammuted, gdm} = this.state;
         const {camera,question,rcmd,type,id} = data;
-        // CHECK: Looks like this code never run!
-        if (gdm.checkAck(data)) {
-            // Ack received, do nothing.
-            return;
-        }
-
         if(rcmd) {
             if (type === 'client-reconnect' && user.id === id) {
                 this.exitRoom(true);
