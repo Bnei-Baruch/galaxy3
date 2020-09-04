@@ -275,10 +275,16 @@ class UsersQuad extends Component {
         const cmd = {type: "audio-out", rcmd: true, status, room, i}
         const group = this.props.rooms.filter(g => g.room === room)[0];
         //const ask_feed = group.users.filter(u => u.question)[0];
-        let toAck = group.users.map(u => {
-            if(u.role.match(/^(user|ghost|guest)$/)) return u.id
-        });
-        if(toAck.length === 0) return;
+        let toAck = [];
+
+        if(group && group.users) {
+            toAck = group.users.map(u => {
+                if(u.role.match(/^(user|ghost|guest)$/)) return u.id
+            });
+            if(toAck.length === 0) return;
+        } else {
+            return;
+        }
 
         const {gateways, gdm} = this.props;
         // gdm.send(cmd, toAck, (cmd) => this.sendDataMessage(cmd)).
