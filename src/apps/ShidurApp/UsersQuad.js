@@ -275,8 +275,9 @@ class UsersQuad extends Component {
         const cmd = {type: "audio-out", rcmd: true, status, room, i}
         const group = this.props.rooms.filter(g => g.room === room)[0];
         //const ask_feed = group.users.filter(u => u.question)[0];
-        //TODO: We don't expect here feedback from admin and shidur
-        let toAck = group.users.map(u => {return u.id});
+        let toAck = group.users.map(u => {
+            if(u.role.match(/^(user|ghost|guest)$/)) return u.id
+        });
         if(toAck.length === 0) return;
 
         const {gateways, gdm} = this.props;
