@@ -178,7 +178,7 @@ class VirtualClient extends Component {
   }
 
   initApp = (user) => {
-    let gdm = new GuaranteeDeliveryManager(user.id);
+    const gdm = new GuaranteeDeliveryManager(user.id);
     this.setState({gdm});
     const {t} = this.props;
     localStorage.setItem('question', false);
@@ -600,6 +600,7 @@ class VirtualClient extends Component {
       },
       onremotestream: (stream) => {
         // The publisher stream is sendonly, we don't expect anything here
+        Janus.warn('Send only publisher stream, if this happends, it is not expected, stream:', stream);
       },
       ondataopen: (label) => {
         Janus.log('Publisher - DataChannel is available! (' + label + ')');
@@ -621,7 +622,7 @@ class VirtualClient extends Component {
   publishOwnFeed = (useVideo, useAudio) => {
     const {videoroom, media} = this.state;
     const {audio: {audio_device}, video: {setting,video_device}} = media;
-    let offer = {audioRecv: false, videoRecv: false, audioSend: useAudio, videoSend: useVideo, data: true};
+    const offer = {audioRecv: false, videoRecv: false, audioSend: useAudio, videoSend: useVideo, data: true};
 
     if(useVideo) {
       const {width,height,ideal} = setting;
@@ -638,7 +639,7 @@ class VirtualClient extends Component {
       success: (jsep) => {
         Janus.debug('Got publisher SDP!');
         Janus.debug(jsep);
-        let publish = { request: 'configure', audio: useAudio, video: useVideo, data: true };
+        const publish = { request: 'configure', audio: useAudio, video: useVideo, data: true };
         videoroom.send({ 'message': publish, 'jsep': jsep });
       },
       error: (error) => {
@@ -649,13 +650,12 @@ class VirtualClient extends Component {
 
   onMessage = (videoroom, msg, jsep) => {
     const {t} = this.props;
-    Janus.log(' ::: Got a message (publisher) :::');
-    Janus.log(msg);
-    let event = msg['videoroom'];
+    Janus.log(`::: Got a message (publisher) ::: ${JSON.stringify(msg)}`);
+    const event = msg['videoroom'];
     if (event !== undefined && event !== null) {
       if (event === 'joined') {
         const user = Object.assign({}, this.state.user);
-        let myid = msg['id'];
+        const myid = msg['id'];
         let mypvtid = msg['private_id'];
         Janus.log('Successfully joined room ' + msg['room'] + ' with ID ' + myid);
 
@@ -765,11 +765,10 @@ class VirtualClient extends Component {
         opaqueId: 'remotefeed_user',
         success: (pluginHandle) => {
           const remoteFeed = pluginHandle;
-          Janus.log('2 Plugin attached! (' + remoteFeed.getPlugin() + ', id=' + remoteFeed.getId() + ')');
-          Janus.log('  -- This is a multistream subscriber', remoteFeed);
+          Janus.log(`2 Plugin attached! (${remoteFeed.getPlugin()}, id=${remoteFeed.getId()}). -- This is a multistream subscriber ${remoteFeed}`);
           this.setState({remoteFeed, creatingFeed: false});
           // We wait for the plugin to send us an offer
-          let subscribe = {
+          const subscribe = {
             request: 'join',
             room: this.state.room,
             ptype: 'subscriber',
@@ -791,10 +790,8 @@ class VirtualClient extends Component {
             ' packets on this PeerConnection (remote feed, ' + nacks + ' NACKs/s ' + (uplink ? 'received' : 'sent') + ')');
         },
         onmessage: (msg, jsep) => {
-          Janus.log(' ::: Got a message (subscriber) :::');
-          Janus.log(msg);
           const event = msg['videoroom'];
-          Janus.log('Event: ' + event);
+          Janus.log(`::: Got a message (subscriber) ::: Event: ${event} Msg: ${JSON.stringify(msg)}`);
           if (msg['error'] !== undefined && msg['error'] !== null) {
             Janus.debug('-- ERROR: ' + msg['error']);
           } else if (event !== undefined && event !== null) {
@@ -1086,7 +1083,7 @@ class VirtualClient extends Component {
       } else if (type === 'joined') {
         const {id,timestamp,role,username} = user;
         const d = {id,timestamp,role,display: username};
-        let register = {'request': 'join', 'room': selected_room, 'ptype': 'publisher', 'display': JSON.stringify(d)};
+        const register = {'request': 'join', 'room': selected_room, 'ptype': 'publisher', 'display': JSON.stringify(d)};
         videoroom.send({"message": register,
           success: () => {
             this.chat.initChatRoom(user, selected_room);
@@ -1260,7 +1257,7 @@ class VirtualClient extends Component {
   };
 
   camMute = (cammuted) => {
-    let {videoroom} = this.state;
+    const {videoroom} = this.state;
     if (videoroom) {
       const user = Object.assign({}, this.state.user);
       if (user.role === "ghost") return;
@@ -1279,7 +1276,7 @@ class VirtualClient extends Component {
   };
 
   micMute = () => {
-    let {videoroom, muted} = this.state;
+    const {videoroom, muted} = this.state;
     muted ? videoroom.unmuteAudio() : videoroom.muteAudio();
     this.setState({muted: !muted});
   };
@@ -1332,12 +1329,12 @@ class VirtualClient extends Component {
     });
   };
 
-  connectionIcon = () => {
+  connectionColor = () => {
     switch (this.state.connectionStatus) {
       case LINK_STATE_INIT:
         return "grey";
       case LINK_STATE_GOOD:
-        return "white";
+        return "";  // white.
       case LINK_STATE_MEDIUM:
         return "orange";
       case LINK_STATE_WEAK:
@@ -1372,7 +1369,7 @@ class VirtualClient extends Component {
               on='hover'
               trigger={<div className='title-name'>{user ? user.username : ''}</div>}
           />
-          <Icon style={{marginLeft: '0.3rem'}} name="signal" size="small" color={this.connectionIcon()} />
+          <Icon style={{marginLeft: '0.3rem'}} name="signal" size="small" color={this.connectionColor()} />
         </div>
       </div>
       <svg className={classNames('nowebcam', {'hidden': !cammuted})} viewBox="0 0 32 18"
@@ -1472,6 +1469,7 @@ class VirtualClient extends Component {
       videos,
       premodStatus,
     } = this.state;
+
     const {video_device} = media.video;
     const {audio_device} = media.audio;
 

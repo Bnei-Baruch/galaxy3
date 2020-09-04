@@ -300,7 +300,7 @@ export default class VirtualStreamingJanus {
   };
 
   onStreamingMessage = (handle, msg, jsep, initdata) => {
-    Janus.log('Got a message', msg);
+    Janus.log(`Got a message ${JSON.stringify(msg)}`);
 
     if (handle !== null && jsep !== undefined && jsep !== null) {
       Janus.log('Handling SDP as well...', jsep);
