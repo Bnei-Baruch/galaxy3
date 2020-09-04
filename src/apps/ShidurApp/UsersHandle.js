@@ -124,7 +124,7 @@ class UsersHandle extends Component {
                 let mypvtid = msg["private_id"];
                 this.setState({myid ,mypvtid});
                 console.debug(`[Shidur] [room ${roomid}] Successfully joined room`, myid);
-                this.publishOwnFeed();
+                //this.publishOwnFeed();
                 if(msg["publishers"] !== undefined && msg["publishers"] !== null) {
                     let list = msg["publishers"];
                     //FIXME: Tmp fix for black screen in room caoused by feed with video_codec = none
@@ -145,7 +145,7 @@ class UsersHandle extends Component {
                             // Janus bug: if try subscribe to only video and data
                             // the data pass only one way so we subscribe here to all
                             // streams in feed
-                            if(stream.type) {
+                            if(stream.type === "video") {
                                 subscription.push({feed: id, mid: stream.mid});
                             }
                         }
@@ -186,7 +186,7 @@ class UsersHandle extends Component {
                             // Janus bug: if try subscribe to only video and data
                             // the data pass only one way so we subscribe here to all
                             // streams in feed
-                            if(stream.type) {
+                            if(stream.type === "video") {
                                 subscription.push({feed: id, mid: stream.mid});
                             }
                         }
@@ -279,10 +279,10 @@ class UsersHandle extends Component {
                         this.state.remoteFeed.createAnswer(
                             {
                                 jsep: jsep,
-                                media: { audioSend: false, videoSend: false, data: true },
+                                media: { audioSend: false, videoSend: false, data: false },
                                 success: (jsep) => {
                                     gateway.debug(`[room ${roomid}] [remoteFeed] Got SDP!`, jsep);
-                                    let body = { request: "start", room: this.state.room, data: true };
+                                    let body = { request: "start", room: this.state.room, data: false };
                                     this.state.remoteFeed.send({ message: body, jsep: jsep });
                                 },
                                 error: (err) => {
