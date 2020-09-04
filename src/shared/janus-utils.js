@@ -154,7 +154,7 @@ class GxyJanus extends EventTarget {
     }
 
     debug = (...args) => {
-        //console.debug(`[${this.name}]`, ...args)
+        console.debug(`[${this.name}]`, ...args)
     };
     log = (...args) => {
         console.log(`[${this.name}]`, ...args)
@@ -252,12 +252,12 @@ class GxyJanus extends EventTarget {
         });
     };
 
-    chatRoomJoin = (room, user, mlt_user) => {
+    chatRoomJoin = (room, user) => {
         return this.data("chatroom", this.chatroom, {
             textroom: "join",
             transaction: Janus.randomString(12),
             room,
-            username: mlt_user ? Janus.randomString(10) : user.id,
+            username: user.id,
             display: user.display
         });
     };

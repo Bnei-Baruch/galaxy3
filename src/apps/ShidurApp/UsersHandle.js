@@ -46,7 +46,7 @@ class UsersHandle extends Component {
                 gateway.log(`[room ${roomid}] attach success`, videoroom.getId());
                 this.setState({room: roomid, videoroom, remoteFeed: null});
                 let {user} = this.props;
-                gateway.chatRoomJoin(roomid, user, true);
+                gateway.chatRoomJoin(roomid, user);
                 let register = { "request": "join", "room": roomid, "ptype": "publisher", "display": JSON.stringify(user) };
                 videoroom.send({"message": register});
             },
@@ -85,18 +85,19 @@ class UsersHandle extends Component {
 
     exitVideoRoom = (roomid, inst, callback) => {
         const gateway = this.props.gateways[inst];
-        gateway.chatRoomLeave(roomid)
-        if(this.state.videoroom) {
-            let leave_room = {request : "leave", "room": roomid};
-            this.state.videoroom.send({"message": leave_room,
-                success: () => {
-                    this.state.videoroom.detach();
-                    if(this.state.remoteFeed)
-                        this.state.remoteFeed.detach();
-                    callback();
-                }
-            });
-        }
+        gateway.chatRoomLeave(roomid).then(() => {
+            if(this.state.videoroom) {
+                let leave_room = {request : "leave", "room": roomid};
+                this.state.videoroom.send({"message": leave_room,
+                    success: () => {
+                        this.state.videoroom.detach();
+                        if(this.state.remoteFeed)
+                            this.state.remoteFeed.detach();
+                        callback();
+                    }
+                });
+            }
+        })
     };
 
     publishOwnFeed = () => {
