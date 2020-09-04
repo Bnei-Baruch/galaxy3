@@ -551,7 +551,7 @@ class MobileClient extends Component {
             },
             ondataerror: (error) => {
                 Janus.warn('Publisher - DataChannel error: ' + error);
-                if(this.state.videoroom && error.error)
+                if(!this.state.delay && error.error)
                     reportToSentry(error.error,{source: "Publisher"}, this.state.user);
             },
             oncleanup: () => {
@@ -858,7 +858,7 @@ class MobileClient extends Component {
                 },
                 ondataerror: (error) => {
                     Janus.warn('Feed - DataChannel error: ' + error);
-                    if(this.state.remoteFeed && error.error)
+                    if(!this.state.delay && error.error)
                         reportToSentry(error.error,{source: "Feed"}, this.state.user);
                 },
                 oncleanup: () => {
@@ -1046,13 +1046,7 @@ class MobileClient extends Component {
     onRoomData = (data) => {
         const {user, cammuted, gdm} = this.state;
         const {camera,question,rcmd,type,id} = data;
-        // CHECK: Looks like this code never run!
         if(rcmd) {
-            if (gdm.checkAck(data)) {
-                // Ack received, do nothing.
-                return;
-            }
-
             if (type === 'client-reconnect' && user.id === id) {
                 this.exitRoom(true);
             } else if (type === 'client-reload' && user.id === id) {
@@ -1298,7 +1292,7 @@ class MobileClient extends Component {
     handleAudioOut = (data) => {
         const { gdm, user, protocol } = this.state;
 
-        gdm.accept(data, (msg) => this.sendDataMessage(msg)).then((data) => {
+        gdm.accept(data, (msg) => this.chat.sendCmdMessage(msg)).then((data) => {
             if (data === null) {
                 console.log('Message received more then once.');
                 return;
@@ -1825,6 +1819,7 @@ class MobileClient extends Component {
               janus={janus}
               room={room}
               user={user}
+              onCmdMsg={this.onRoomData}
               onNewMsg={this.onChatMessage} />
           </div>
         </div>

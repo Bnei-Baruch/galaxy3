@@ -20,18 +20,22 @@ class UsersHandle extends Component {
         let {room} = this.state;
         if(g && JSON.stringify(g) !== JSON.stringify(prevProps.g) && g.room !== room) {
             if(room) {
-                this.exitVideoRoom(room, () =>{
+                this.exitVideoRoom(room, prevProps.g.janus, () =>{
                     this.initVideoRoom(g.room, g.janus);
                 });
             } else {
                 this.initVideoRoom(g.room, g.janus);
             }
         }
-    }
+    };
 
     componentWillUnmount() {
         this.exitVideoRoom(this.state.room, () =>{})
     };
+
+    onChatData = (gateway, data) => {
+        console.log(gateway, data)
+    }
 
     initVideoRoom = (roomid, inst) => {
         const gateway = this.props.gateways[inst];
@@ -42,6 +46,7 @@ class UsersHandle extends Component {
                 gateway.log(`[room ${roomid}] attach success`, videoroom.getId());
                 this.setState({room: roomid, videoroom, remoteFeed: null});
                 let {user} = this.props;
+                gateway.chatRoomJoin(roomid, user, true);
                 let register = { "request": "join", "room": roomid, "ptype": "publisher", "display": JSON.stringify(user) };
                 videoroom.send({"message": register});
             },
@@ -78,7 +83,9 @@ class UsersHandle extends Component {
         });
     };
 
-    exitVideoRoom = (roomid, callback) => {
+    exitVideoRoom = (roomid, inst, callback) => {
+        const gateway = this.props.gateways[inst];
+        gateway.chatRoomLeave(roomid)
         if(this.state.videoroom) {
             let leave_room = {request : "leave", "room": roomid};
             this.state.videoroom.send({"message": leave_room,
@@ -117,7 +124,7 @@ class UsersHandle extends Component {
                 let mypvtid = msg["private_id"];
                 this.setState({myid ,mypvtid});
                 console.debug(`[Shidur] [room ${roomid}] Successfully joined room`, myid);
-                this.publishOwnFeed();
+                //this.publishOwnFeed();
                 if(msg["publishers"] !== undefined && msg["publishers"] !== null) {
                     let list = msg["publishers"];
                     //FIXME: Tmp fix for black screen in room caoused by feed with video_codec = none
@@ -138,7 +145,7 @@ class UsersHandle extends Component {
                             // Janus bug: if try subscribe to only video and data
                             // the data pass only one way so we subscribe here to all
                             // streams in feed
-                            if(stream.type) {
+                            if(stream.type === "video") {
                                 subscription.push({feed: id, mid: stream.mid});
                             }
                         }
@@ -179,7 +186,7 @@ class UsersHandle extends Component {
                             // Janus bug: if try subscribe to only video and data
                             // the data pass only one way so we subscribe here to all
                             // streams in feed
-                            if(stream.type) {
+                            if(stream.type === "video") {
                                 subscription.push({feed: id, mid: stream.mid});
                             }
                         }
@@ -272,10 +279,10 @@ class UsersHandle extends Component {
                         this.state.remoteFeed.createAnswer(
                             {
                                 jsep: jsep,
-                                media: { audioSend: false, videoSend: false, data: true },
+                                media: { audioSend: false, videoSend: false, data: false },
                                 success: (jsep) => {
                                     gateway.debug(`[room ${roomid}] [remoteFeed] Got SDP!`, jsep);
-                                    let body = { request: "start", room: this.state.room, data: true };
+                                    let body = { request: "start", room: this.state.room, data: false };
                                     this.state.remoteFeed.send({ message: body, jsep: jsep });
                                 },
                                 error: (err) => {

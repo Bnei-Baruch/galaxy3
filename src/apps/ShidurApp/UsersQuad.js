@@ -122,10 +122,6 @@ class UsersQuad extends Component {
 
         for(let i=0; i<4; i++) {
 
-            // Don't allow dup group in program
-            if(this.checkDup())
-                return;
-
             // Don't switch if nobody in queue
             if(i === groups.length) {
                 console.log("[Shidur] Queue is END");
@@ -276,28 +272,36 @@ class UsersQuad extends Component {
 
     micMute = (status, room, inst, i) => {
         const msg = {type: "audio-out", status, room, col: null, i, feed: null};
-        const cmd = {type: "audio-out", rcmd: true, status, i}
+        const cmd = {type: "audio-out", rcmd: true, status, room, i}
         const group = this.props.rooms.filter(g => g.room === room)[0];
         //const ask_feed = group.users.filter(u => u.question)[0];
-        let toAck = group.users.map(u => {return u.id});
-        if(toAck.length === 0) return;
+        let toAck = [];
+
+        if(group && group.users) {
+            toAck = group.users.map(u => {
+                if(u.role.match(/^(user|ghost|guest)$/)) return u.id
+            });
+            if(toAck.length === 0) return;
+        } else {
+            return;
+        }
 
         const {gateways, gdm} = this.props;
-        gdm.send(cmd, toAck, (cmd) => this.sendDataMessage(cmd)).
-        then(() => {
-            console.log(`MIC delivered.`);
-        }).catch((error) => {
-            console.error(`MIC not delivered due to: ` , JSON.stringify(error));
-            reportToSentry("Delivery",{source: "shidur"}, this.props.user);
-        });
-        gateways["gxy3"].sendServiceMessage(msg);
-        //gateways[inst].sendProtocolMessage(msg);
-        // gdm.send(msg, toAck, (msg) => gateways[inst].sendProtocolMessage(msg)).
+        // gdm.send(cmd, toAck, (cmd) => this.sendDataMessage(cmd)).
         // then(() => {
         //     console.log(`MIC delivered.`);
         // }).catch((error) => {
-        //     console.error(`MIC not delivered due to: ` , error);
+        //     console.error(`MIC not delivered due to: ` , JSON.stringify(error));
+        //     reportToSentry("Delivery",{source: "shidur"}, this.props.user);
         // });
+        gateways["gxy3"].sendServiceMessage(msg);
+        //gateways[inst].sendProtocolMessage(msg);
+        gdm.send(cmd, toAck, (cmd) => gateways[inst].sendCmdMessage(cmd)).
+        then(() => {
+            console.log(`MIC delivered.`);
+        }).catch((error) => {
+            console.error(`MIC not delivered due to: ` , error);
+        });
     };
 
     setDelay = () => {

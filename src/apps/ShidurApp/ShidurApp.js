@@ -86,7 +86,22 @@ class ShidurApp extends Component {
                 console.log("[Shidur] gateways initialization complete");
                 this.setState({gatewaysInitialized: true});
             });
+
     };
+
+    onChatData = (gateway, data) => {
+        const json = JSON.parse(data);
+        const what = json["textroom"];
+        if (what === "message") {
+            let msg = json['text'];
+            let message = JSON.parse(msg);
+            const { gdm } = this.state;
+            if (gdm.checkAck(message)) {
+                // Ack received, do nothing.
+                return;
+            }
+        }
+    }
 
     initGateway = (user, gateway) => {
         console.log("[Shidur] initializing gateway", gateway.name);
@@ -98,9 +113,12 @@ class ShidurApp extends Component {
             .then(() => {
                 return gateway.initGxyProtocol(user, data => this.onProtocolData(gateway, data))
                     .then(() => {
-                        if (gateway.name === "gxy3") {
-                            return gateway.initServiceProtocol(user, data => this.onServiceData(gateway, data))
-                        }
+                        return gateway.initChatRoom(data => this.onChatData(gateway, data))
+                            .then(() => {
+                                if (gateway.name === "gxy3") {
+                                    return gateway.initServiceProtocol(user, data => this.onServiceData(gateway, data))
+                                }
+                            })
                     });
             })
             .catch(err => {
