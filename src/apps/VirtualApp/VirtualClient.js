@@ -1003,7 +1003,7 @@ class VirtualClient extends Component {
     }
 
     if(rcmd) {
-      this.handleCmdData(data);
+      this.handleCmdData(data, false);
     } else {
       for (let i = 0; i < feeds.length; i++) {
         if (feeds[i] && feeds[i].id === data.rfid) {
@@ -1017,10 +1017,10 @@ class VirtualClient extends Component {
   };
 
   onChatData = (data) => {
-    this.handleCmdData(data);
+    this.handleCmdData(data, true);
   };
 
-  handleCmdData = (data) => {
+  handleCmdData = (data, chatroom) => {
     const {user, cammuted, gdm} = this.state;
     const {type,id} = data;
     if (type === 'client-reconnect' && user.id === id) {
@@ -1042,7 +1042,7 @@ class VirtualClient extends Component {
       localStorage.setItem('sound_test', true);
       this.setState({user});
     } else if (type === 'audio-out') {
-      this.handleAudioOut(data);
+      this.handleAudioOut(data, chatroom);
     }  else if (type === 'reload-config') {
       this.reloadConfig();
     } else if (type === 'client-reload-all') {
@@ -1232,26 +1232,48 @@ class VirtualClient extends Component {
         .catch(err => console.error("[User] error updating user state", user.id, err))
   };
 
-  handleAudioOut = (data) => {
+  handleAudioOut = (data, chatroom) => {
     const { gdm, user, protocol } = this.state;
 
-    gdm.accept(data, (msg) => this.chat.sendCmdMessage(msg)).then((data) => {
-      if (data === null) {
-        console.log('Message received more then once.');
-        return;
-      }
-
-      this.state.virtualStreamingJanus.streamGalaxy(data.status, 4, "");
-      if (data.status) {
-        // remove question mark when sndman unmute our room
-        if (this.state.question) {
-          this.handleQuestion();
+    if(chatroom) {
+      gdm.accept(data, (msg) => this.chat.sendCmdMessage(msg)).then((data) => {
+        if (data === null) {
+          console.log('Message received more then once.');
+          return;
         }
-      }
 
-    }).catch((error) => {
-      console.error(`Failed receiving ${data}: ${error}`);
-    });
+        this.state.virtualStreamingJanus.streamGalaxy(data.status, 4, "");
+        if (data.status) {
+          // remove question mark when sndman unmute our room
+          if (this.state.question) {
+            this.handleQuestion();
+          }
+        }
+
+      }).catch((error) => {
+        console.error(`Failed receiving ${data}: ${error}`);
+      });
+    } else {
+      gdm.accept(data, (msg) => this.sendDataMessage(msg)).then((data) => {
+        if (data === null) {
+          console.log('Message received more then once.');
+          return;
+        }
+
+        this.state.virtualStreamingJanus.streamGalaxy(data.status, 4, "");
+        if (data.status) {
+          // remove question mark when sndman unmute our room
+          if (this.state.question) {
+            this.handleQuestion();
+          }
+        }
+
+      }).catch((error) => {
+        console.error(`Failed receiving ${data}: ${error}`);
+      });
+    }
+
+
 
     // gdm.accept(data, (msg) => sendProtocolMessage(protocol, user, msg, false)).then((data) => {
     //   if (data === null) {
