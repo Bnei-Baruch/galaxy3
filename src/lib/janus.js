@@ -1857,7 +1857,8 @@ export function Janus(gatewayCallbacks) {
 									t => t.receiver.track === ev.target);
 								mid = transceiver.mid;
 							}
-							pluginHandle.onremotetrack(ev.target, mid, true);
+							//FIXME: don't trigger attach stream hack
+							pluginHandle.onremotetrack(ev.target, mid, false);
 						} catch(e) {
 							Janus.error(e);
 						};
