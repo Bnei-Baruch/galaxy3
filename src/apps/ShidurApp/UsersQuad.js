@@ -296,12 +296,26 @@ class UsersQuad extends Component {
         // });
         gateways["gxy3"].sendServiceMessage(msg);
         //gateways[inst].sendProtocolMessage(msg);
-        gdm.send(cmd, toAck, (cmd) => gateways[inst].sendCmdMessage(cmd)).
-        then(() => {
-            console.log(`MIC delivered.`);
-        }).catch((error) => {
-            console.error(`MIC not delivered due to: ` , error);
-        });
+
+        if(status) {
+            gateways[inst].chatRoomJoin(room, this.props.user).then(() => {
+                gdm.send(cmd, toAck, (cmd) => gateways[inst].sendCmdMessage(cmd)).
+                then(() => {
+                    console.log(`MIC delivered.`);
+                }).catch((error) => {
+                    console.error(`MIC not delivered due to: ` , error);
+                });
+            })
+        } else {
+            gdm.send(cmd, toAck, (cmd) => gateways[inst].sendCmdMessage(cmd)).
+            then(() => {
+                console.log(`MIC delivered.`);
+                gateways[inst].chatRoomLeave(room)
+            }).catch((error) => {
+                console.error(`MIC not delivered due to: ` , error);
+                gateways[inst].chatRoomLeave(room)
+            });
+        }
     };
 
     setDelay = () => {
