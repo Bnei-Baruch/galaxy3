@@ -10,7 +10,6 @@ import {
   getMediaStream,
   initJanus,
   micLevel,
-  reportToSentry,
   takeImage,
   testMic,
   wkliLeave
@@ -610,8 +609,6 @@ class VirtualClient extends Component {
       },
       ondataerror: (error) => {
         Janus.warn('Publisher - DataChannel error: ' + error);
-        if(!this.state.delay && error.error)
-          reportToSentry(error.error,{source: "Publisher"}, this.state.user);
       },
       oncleanup: () => {
         Janus.log(' ::: Got a cleanup notification: we are unpublished now :::');
@@ -879,8 +876,6 @@ class VirtualClient extends Component {
         },
         ondataerror: (error) => {
           Janus.warn('Feed - DataChannel error: ' + error);
-          if(!this.state.delay && error.error)
-            reportToSentry(error.error,{source: "Feed"}, this.state.user);
         },
         oncleanup: () => {
           Janus.log(' ::: Got a cleanup notification (remote feed) :::');

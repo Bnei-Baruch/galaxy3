@@ -60,8 +60,8 @@ export const joinChatRoom = (textroom, roomid, user) => {
     });
 };
 
-export const initChatRoom = (janus,roomid,handle,cb) => {
-    var textroom = null;
+export const initChatRoom = (janus, user, handle, cb) => {
+    let textroom = null;
     janus.attach(
         {
             plugin: "janus.plugin.textroom",
@@ -77,6 +77,7 @@ export const initChatRoom = (janus,roomid,handle,cb) => {
             },
             error: (error) => {
                 console.error("  -- Error attaching plugin...", error);
+                reportToSentry(error, {source: "Textroom"}, user);
             },
             webrtcState: (on) => {
                 Janus.log("Janus says our WebRTC PeerConnection is " + (on ? "up" : "down") + " now");
@@ -85,7 +86,8 @@ export const initChatRoom = (janus,roomid,handle,cb) => {
                 Janus.debug(" ::: Got a message :::");
                 Janus.debug(msg);
                 if (msg["error"] !== undefined && msg["error"] !== null) {
-                    alert(msg["error"]);
+                    console.error(msg["error"]);
+                    reportToSentry(msg["error"], {source: "Onmessage"}, user);
                 }
                 if (jsep !== undefined && jsep !== null) {
                     // Answer
@@ -101,17 +103,14 @@ export const initChatRoom = (janus,roomid,handle,cb) => {
                             },
                             error: (error) => {
                                 Janus.error("WebRTC error:", error);
-                                alert("WebRTC error... " + JSON.stringify(error));
+                                console.error("WebRTC error... " + JSON.stringify(error));
+                                reportToSentry(msg["error"], {source: "Offer"}, user);
                             }
                         });
                 }
             },
             ondataopen: () => {
                 Janus.log("The DataChannel is available!");
-                // Prompt for a display name to join the default room
-                // if(roomid) {
-                //     joinChatRoom(textroom,roomid,null)
-                // }
             },
             ondata: (data) => {
                 Janus.debug("We got data from the DataChannel! " + data);
