@@ -38,7 +38,7 @@ class VirtualChat extends Component {
   }
 
   initChat = (janus) => {
-    initChatRoom(janus, null, chatroom => {
+    initChatRoom(janus, this.props.user, chatroom => {
       Janus.log(':: Got Chat Handle: ', chatroom);
       this.setState({ chatroom });
     }, data => {
@@ -73,7 +73,7 @@ class VirtualChat extends Component {
 
   onData = (data) => {
     Janus.log(':: We got message from Data Channel: ', data);
-    var json = JSON.parse(data);
+    let json = JSON.parse(data);
     // var transaction = json["transaction"];
     // if (transactions[transaction]) {
     //     // Someone was waiting for this
@@ -81,49 +81,64 @@ class VirtualChat extends Component {
     //     delete transactions[transaction];
     //     return;
     // }
-    var what = json['textroom'];
+    let what = json['textroom'];
     if (what === 'message') {
       // Incoming message: public or private?
-      var msg        = json['text'];
-      msg            = msg.replace(new RegExp('<', 'g'), '&lt');
-      msg            = msg.replace(new RegExp('>', 'g'), '&gt');
-      var from       = json['from'];
-      var dateString = getDateString(json['date']);
-      var whisper    = json['whisper'];
+      let msg = json['text'];
+      msg = msg.replace(new RegExp('<', 'g'), '&lt');
+      msg = msg.replace(new RegExp('>', 'g'), '&gt');
+      let from = json['from'];
+      let dateString = getDateString(json['date']);
+      let whisper = json['whisper'];
+
+      let message = JSON.parse(msg);
+      const { gdm } = this.props;
+      if (gdm.checkAck(message)) {
+        // Ack received, do nothing.
+        return;
+      }
+
       if (whisper === true) {
         // Private message
-        Janus.log('-:: It\'s private message: ' + dateString + ' : ' + from + ' : ' + msg);
+        Janus.log(':: It\'s private message: ' + dateString + ' : ' + from + ' : ' + msg);
         let { support_msgs } = this.state;
-        let message          = JSON.parse(msg);
-        message.time         = dateString;
-        support_msgs.push(message);
-        this.setState({ support_msgs, from });
-        if (this.props.visible) {
-          this.scrollToBottom();
+        if(message.type && message.type !== "chat") {
+          Janus.log(':: It\'s remote command :: ', message);
+          this.props.onCmdMsg(message);
         } else {
-          notifyMe('Shidur', message.text, true);
-          this.setState({ room_chat: false });
-          this.props.onNewMsg(true);
+          message.time = dateString;
+          support_msgs.push(message);
+          this.setState({ support_msgs, from });
+          if (this.props.visible) {
+            this.scrollToBottom();
+          } else {
+            notifyMe('Shidur', message.text, true);
+            this.setState({ room_chat: false });
+            this.props.onNewMsg(true);
+          }
         }
       } else {
         // Public message
         let { messages } = this.state;
-        let message      = JSON.parse(msg);
-        message.time     = dateString;
-        Janus.log('-:: It\'s public message: ' + JSON.stringify(message));
-        messages.push(message);
-        // console.log('Messages: ', messages);
-        this.setState({ messages });
-        if (this.props.visible) {
-          this.scrollToBottom();
+        Janus.log('-:: It\'s public message: ' + msg);
+        if(message.type && message.type !== "chat") {
+          Janus.log(':: It\'s remote command :: ', message);
+          this.props.onCmdMsg(message);
         } else {
-          this.props.onNewMsg();
+          message.time = dateString;
+          messages.push(message);
+          this.setState({ messages });
+          if (this.props.visible) {
+            this.scrollToBottom();
+          } else {
+            this.props.onNewMsg();
+          }
         }
       }
     } else if (what === 'join') {
       // Somebody joined
       let username = json['username'];
-      let display  = json['display'];
+      let display = json['display'];
       Janus.log('-:: Somebody joined - username: ' + username + ' : display: ' + display);
     } else if (what === 'leave') {
       // Somebody left
@@ -141,7 +156,7 @@ class VirtualChat extends Component {
 
   showSupportMessage = (message) => {
     let { support_msgs } = this.state;
-    message.time         = getDateString();
+    message.time = getDateString();
     support_msgs.push(message);
     this.setState({ support_msgs, from: 'Admin' });
     if (this.props.visible) {
@@ -153,13 +168,32 @@ class VirtualChat extends Component {
     }
   };
 
+  sendCmdMessage = (msg) => {
+    let message = {
+      ack: false,
+      textroom: 'message',
+      transaction: Janus.randomString(12),
+      room: this.state.room,
+      text: JSON.stringify(msg),
+    };
+    this.state.chatroom.data({
+      text: JSON.stringify(message),
+      error: (reason) => {
+        console.error(reason);
+      },
+      success: () => {
+        Janus.log(':: Cmd Message sent ::');
+      }
+    });
+  };
+
   sendChatMessage = () => {
-    let { input_value, user, from, room_chat, support_msgs } = this.state;
-    if (!user.role.match(/^(user|guest)$/) || input_value === '') {
+    let { input_value, user:{id, role, display}, from, room_chat, support_msgs } = this.state;
+    if (!role.match(/^(user|guest)$/) || input_value === '') {
       return;
     }
-    let msg     = { user, text: input_value };
-    let pvt     = room_chat ? '' : from ? { 'to': from } : { 'to': `${SHIDUR_ID}` };
+    let msg = { user: {id, role, display}, type: "chat", text: input_value };
+    let pvt = room_chat ? '' : from ? { 'to': from } : { 'to': `${SHIDUR_ID}` };
     let message = {
       ack: false,
       textroom: 'message',
@@ -176,7 +210,7 @@ class VirtualChat extends Component {
     this.state.chatroom.data({
       text: JSON.stringify(message),
       error: (reason) => {
-        alert(reason);
+        console.error(reason);
       },
       success: () => {
         Janus.log(':: Message sent ::');
@@ -201,10 +235,10 @@ class VirtualChat extends Component {
     const { t, visible } = this.props;
     const { messages, support_msgs, room_chat } = this.state;
 
-		const urlRegex =/(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#/%?=~_|!:,.;()]*[-A-Z0-9+&@#/%=~_|()])/ig;
+    const urlRegex =/(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#/%?=~_|!:,.;()]*[-A-Z0-9+&@#/%=~_|()])/ig;
     const textWithLinks = (text) => {
-			const parts = [];
-			let start = 0;
+      const parts = [];
+      let start = 0;
       // Polyfil for Safari <13
       let matchAll = null;
       if (text.matchAll) {
@@ -212,58 +246,61 @@ class VirtualChat extends Component {
       } else {
         matchAll = (re) => text.match(re);
       }
-			for (const match of matchAll(urlRegex)) {
-				const url = match[0];
-				const index = match.index;
-				if (index > start) {
-					parts.push(<span key={start}>{text.slice(start, index)}</span>);
-				}
-				parts.push(<a key={index} target='blank_' href={url}>{url}</a>);
-				start = index + url.length;
-			}
-			if (start < text.length) {
-				parts.push(<span key={start}>{text.slice(start, text.length)}</span>);
-			}
-			return parts;
+      for (const match of matchAll(urlRegex)) {
+        const url = match[0];
+        const index = match.index;
+        if (index > start) {
+          parts.push(<span key={start}>{text.slice(start, index)}</span>);
+        }
+        parts.push(<a key={index} target='blank_' href={url}>{url}</a>);
+        start = index + url.length;
+      }
+      if (start < text.length) {
+        parts.push(<span key={start}>{text.slice(start, text.length)}</span>);
+      }
+      return parts;
     };
 
-		const isRTLChar = /[\u0590-\u07FF\u200F\u202B\u202E\uFB1D-\uFDFD\uFE70-\uFEFC]/;
-		const isAscii = /[\x00-\x7F]/;
-		const isAsciiChar = /[a-zA-Z]/;
-		const isRTLString = (text) => {
-			let rtl = 0;
-			let ltr = 0;
-			for (let i = 0; i < text.length; i++){
-				if (!isAscii.test(text[i]) || isAsciiChar.test(text[i])) {
-					if (isRTLChar.test(text[i])) {
-						rtl++;
-					} else {
-						ltr++;
-					}
-				}
-			}
-			return rtl > ltr;
-		};
+    const isRTLChar = /[\u0590-\u07FF\u200F\u202B\u202E\uFB1D-\uFDFD\uFE70-\uFEFC]/;
+    const isAscii = /[\x00-\x7F]/;
+    const isAsciiChar = /[a-zA-Z]/;
+    const isRTLString = (text) => {
+      let rtl = 0;
+      let ltr = 0;
+      for (let i = 0; i < text.length; i++){
+        if (!isAscii.test(text[i]) || isAsciiChar.test(text[i])) {
+          if (isRTLChar.test(text[i])) {
+            rtl++;
+          } else {
+            ltr++;
+          }
+        }
+      }
+      return rtl > ltr;
+    };
 
     let room_msgs = messages.map((msg, i) => {
       let { user, time, text } = msg;
-      // console.log('messages.map', 'user', user, 'time', time, 'text!!!!!', text, 'msg', msg);
-      return (
-        <p key={i} style={{direction: isRTLString(text) ? 'rtl' : 'ltr', textAlign: isRTLString(text) ? 'right' : 'left'}}><span style={{display: 'block'}}>
+      if(text) {
+        return (
+            <p key={i} style={{direction: isRTLString(text) ? 'rtl' : 'ltr', textAlign: isRTLString(text) ? 'right' : 'left'}}><span style={{display: 'block'}}>
           <i style={{ color: 'grey' }}>{time}</i> -
           <b style={{ color: user.role === 'admin' ? 'red' : 'blue' }}>{user.display}</b>:
         </span>{textWithLinks(text)}</p>
-      );
+        );
+      }
     });
 
     let admin_msgs = support_msgs.map((msg, i) => {
       let { user, time, text } = msg;
-      return (
-        <p key={i} style={{direction: isRTLString(text) ? 'rtl' : 'ltr', textAlign: isRTLString(text) ? 'right' : 'left'}}><span style={{display: 'block'}}>
+      if(text) {
+        return (
+            <p key={i} style={{direction: isRTLString(text) ? 'rtl' : 'ltr', textAlign: isRTLString(text) ? 'right' : 'left'}}><span style={{display: 'block'}}>
           <i style={{ color: 'grey' }}>{time}</i> -
           <b style={{ color: user.role === 'admin' ? 'red' : 'blue' }}>{user.role === 'admin' ? user.username : user.display}</b>:
         </span>{textWithLinks(text)}</p>
-      );
+        );
+      }
     });
 
     return (
@@ -280,18 +317,17 @@ class VirtualChat extends Component {
           </div>
         </Message>
 
-        <Input ref='input'
-							 fluid type='text'
-							 placeholder={t('virtualChat.enterMessage')}
-							 action
-							 value={this.state.input_value}
-               onChange={(v, { value }) => this.setState({ input_value: value })}>
-          <input dir={isRTLString(this.state.input_value) ? 'rtl' : 'ltr'}
-								 style={{textAlign: isRTLString(this.state.input_value) ? 'right' : 'left'}}/>
-          <Button size='mini' positive onClick={this.sendChatMessage}>{t('virtualChat.send')}</Button>
-        </Input>
-        {/* </div> */}
-      </div>
+          <Input ref='input'
+                 fluid type='text'
+                 placeholder={t('virtualChat.enterMessage')}
+                 action
+                 value={this.state.input_value}
+                 onChange={(v, { value }) => this.setState({ input_value: value })}>
+            <input dir={isRTLString(this.state.input_value) ? 'rtl' : 'ltr'}
+                   style={{textAlign: isRTLString(this.state.input_value) ? 'right' : 'left'}}/>
+            <Button size='mini' positive onClick={this.sendChatMessage}>{t('virtualChat.send')}</Button>
+          </Input>
+        </div>
     );
 
   }

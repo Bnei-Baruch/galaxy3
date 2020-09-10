@@ -16,6 +16,7 @@ export default class VirtualStreamingJanus {
     this.audios = Number(localStorage.getItem('vrt_lang')) || 2;
     this.mixvolume = null;
     this.talking = null;
+    this.streamingGateway = '';
 
     this.videoElement = null;
     this.audioElement = new Audio();
@@ -136,8 +137,8 @@ export default class VirtualStreamingJanus {
 
     // const gateway = country === "IL" ? 'str4' : 'str3';
     const streamingGateways = GxyJanus.gatewayNames("streaming");
-    const gateway = streamingGateways[Math.floor(Math.random() * streamingGateways.length)];
-    const config = GxyJanus.instanceConfig(gateway);
+    this.streamingGateway = streamingGateways[Math.floor(Math.random() * streamingGateways.length)];
+    const config = GxyJanus.instanceConfig(this.streamingGateway);
 
     Janus.init({
       debug: process.env.NODE_ENV !== 'production' ? [/*'log', 'warn',*/ 'error'] : ['error'],
@@ -299,7 +300,7 @@ export default class VirtualStreamingJanus {
   };
 
   onStreamingMessage = (handle, msg, jsep, initdata) => {
-    Janus.log('Got a message', msg);
+    Janus.log(`Got a message ${JSON.stringify(msg)}`);
 
     if (handle !== null && jsep !== undefined && jsep !== null) {
       Janus.log('Handling SDP as well...', jsep);

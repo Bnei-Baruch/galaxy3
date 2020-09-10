@@ -1,16 +1,32 @@
 import React, {Component, Fragment} from 'react';
+import MetaTags from 'react-meta-tags';
+
 import {Janus} from "../../lib/janus";
 import classNames from 'classnames';
 
 import Dots from 'react-carousel-dots';
 import {Accordion, Button, Icon, Image, Input, Label, Menu, Modal, Select} from "semantic-ui-react";
-import {checkNotification, geoInfo, getMedia, getMediaStream, initJanus, micLevel, wkliLeave} from "../../shared/tools";
+import {
+    checkNotification,
+    geoInfo,
+    getMedia,
+    getMediaStream,
+    initJanus,
+    micLevel,
+    wkliLeave
+} from "../../shared/tools";
 import './MobileClient.scss'
 import './MobileConteiner.scss'
 import 'eqcss'
 import {initGxyProtocol, sendProtocolMessage} from "../../shared/protocol";
-import {PROTOCOL_ROOM, VIDEO_240P_OPTION_VALUE, NO_VIDEO_OPTION_VALUE, vsettings_list} from "../../shared/consts";
-import {GEO_IP_INFO} from "../../shared/env";
+import {
+    PROTOCOL_ROOM,
+    VIDEO_240P_OPTION_VALUE,
+    NO_VIDEO_OPTION_VALUE,
+    vsettings_list,
+    STORAN_ID
+} from "../../shared/consts";
+import {GEO_IP_INFO, SENTRY_KEY} from "../../shared/env";
 import platform from "platform";
 import { isMobile } from 'react-device-detect';
 import {withTranslation} from 'react-i18next';
@@ -34,6 +50,7 @@ import VirtualStreamingJanus from '../../shared/VirtualStreamingJanus';
 import VirtualChat from '../VirtualApp/VirtualChat';
 import ConfigStore from "../../shared/ConfigStore";
 import {GuaranteeDeliveryManager} from "../../shared/GuaranteeDelivery";
+import * as Sentry from "@sentry/browser";
 
 const sortAndFilterFeeds = (feeds) => feeds
   .filter(feed => !feed.display.role.match(/^(ghost|guest)$/))
@@ -138,7 +155,8 @@ class MobileClient extends Component {
           this.state.videoroom,
           this.state.localAudioTrack,
           this.state.localVideoTrack,
-          this.state.user);
+          this.state.user,
+          this.state.shidurJanus);
         this.state.monitoringData.setOnStatus((connectionStatus, connectionStatusMessage) => {
           if (this.state.connectionStatus !== connectionStatus) {
             this.setState({connectionStatus});
@@ -160,6 +178,7 @@ class MobileClient extends Component {
     }
 
     componentDidMount() {
+        Sentry.init({dsn: `https://${SENTRY_KEY}@sentry.kli.one/2`});
         if(!isMobile && window.location.href.indexOf("userm") > -1) {
             window.location = '/user/';
             return;
@@ -531,51 +550,13 @@ class MobileClient extends Component {
             ondata: (data, label) => {
                 Janus.log("Publisher - Got data from the DataChannel! ("+label+")" + data);
             },
+            ondataerror: (error) => {
+                Janus.warn('Publisher - DataChannel error: ' + error);
+            },
             oncleanup: () => {
                 Janus.log(" ::: Got a cleanup notification: we are unpublished now :::");
             }
         });
-    };
-
-    onRoomData = (data) => {
-        const {user, cammuted} = this.state;
-        const {camera,question,rcmd,type,id} = data;
-        // CHECK: Looks like this code never run!
-        if(rcmd) {
-            if (type === 'client-reconnect' && user.id === id) {
-                this.exitRoom(true);
-            } else if (type === 'client-reload' && user.id === id) {
-                window.location.reload();
-            } else if (type === 'client-disconnect' && user.id === id) {
-                this.exitRoom(false);
-            } else if(type === "client-kicked" && user.id === id) {
-                kc.logout();
-            } else if (type === 'client-question' && user.id === id) {
-                this.handleQuestion();
-            } else if (type === 'client-mute' && user.id === id) {
-                this.micMute();
-            } else if (type === 'video-mute' && user.id === id) {
-                this.camMute(cammuted);
-            } else if (type === 'sound_test' && user.id === id) {
-                user.sound_test = true;
-                localStorage.setItem('sound_test', true);
-                this.setState({user});
-            } else if (type === 'audio-out') {
-                this.handleAudioOut(data);
-            } else if (type === 'reload-config') {
-                this.reloadConfig();
-            } else if (type === 'client-reload-all') {
-                window.location.reload();
-            }
-        } else {
-          const feeds = Object.assign([], this.state.feeds);
-          const feed = feeds.find(feed => feed && feed.id === data.rfid);
-          if (feed) {
-            feed.cammute = !camera;
-            feed.question = question;
-            this.setState({feeds});
-          }
-        }
     };
 
     publishOwnFeed = (useVideo, useAudio) => {
@@ -676,7 +657,7 @@ class MobileClient extends Component {
                 Janus.error(`Did not find user ${id}.`);
                 return;
               }
-              feed.taking = false;
+              feed.talking = false;
               this.setState({feeds});
             } else if(event === "destroyed") {
                 // The room has been destroyed
@@ -874,6 +855,9 @@ class MobileClient extends Component {
                     this.onRoomData(msg);
                     Janus.log(" :: We got msg via DataChannel: ",msg)
                 },
+                ondataerror: (error) => {
+                    Janus.warn('Feed - DataChannel error: ' + error);
+                },
                 oncleanup: () => {
                     Janus.log(" ::: Got a cleanup notification (remote feed) :::");
                 }
@@ -913,7 +897,8 @@ class MobileClient extends Component {
           // FIXME: Can this be done by notifying only the joined feed?
           setTimeout(() => {
             if (this.state.question) {
-              this.sendDataMessage('question', true);
+                this.sendDataMessage(this.state.user);
+              //this.sendDataMessage('question', true);
             }
           }, 3000);
         }
@@ -1055,8 +1040,74 @@ class MobileClient extends Component {
         videoroom.data({ text: message });
     };
 
+    onRoomData = (data) => {
+        const {gdm} = this.state;
+        const feeds = Object.assign([], this.state.feeds);
+        const {camera,question,rcmd} = data;
+
+        if (gdm.checkAck(data)) {
+            // Ack received, do nothing.
+            return;
+        }
+
+        if(rcmd) {
+            this.handleCmdData(data, false);
+        } else {
+            for (let i = 0; i < feeds.length; i++) {
+                if (feeds[i] && feeds[i].id === data.rfid) {
+                    feeds[i].cammute = !camera;
+                    feeds[i].question = question;
+                    this.setState({feeds});
+                    break;
+                }
+            }
+        }
+    };
+
+    onChatData = (data) => {
+        this.handleCmdData(data, true);
+    };
+
+    handleCmdData = (data, chatroom) => {
+        const {user, cammuted, gdm} = this.state;
+        const {type,id} = data;
+        if (type === 'client-reconnect' && user.id === id) {
+            this.exitRoom(true);
+        } else if (type === 'client-reload' && user.id === id) {
+            window.location.reload();
+        } else if (type === 'client-disconnect' && user.id === id) {
+            this.exitRoom(false);
+        } else if(type === "client-kicked" && user.id === id) {
+            kc.logout();
+        } else if (type === 'client-question' && user.id === id) {
+            this.handleQuestion();
+        } else if (type === 'client-mute' && user.id === id) {
+            this.micMute();
+        } else if (type === 'video-mute' && user.id === id) {
+            this.camMute(cammuted);
+        } else if (type === 'sound_test' && user.id === id) {
+            user.sound_test = true;
+            localStorage.setItem('sound_test', true);
+            this.setState({user});
+        } else if (type === 'audio-out') {
+            this.handleAudioOut(data, chatroom);
+        }  else if (type === 'reload-config') {
+            this.reloadConfig();
+        } else if (type === 'client-reload-all') {
+            window.location.reload();
+        } else if (type === 'shidur-ping') {
+            gdm.accept(data, (msg) => this.sendDataMessage(msg)).then((data) => {
+                if (data === null) {
+                    console.log('Message received more then once.');
+                }
+            }).catch((error) => {
+                console.error(`Failed receiving ${data}: ${error}`);
+            });
+        }
+    };
+
     joinRoom = (reconnect, videoroom, user) => {
-        let {janus, selected_room, media} = this.state;
+        let {janus, selected_room, media, gdm} = this.state;
         const {video: {video_device}} = media;
         user.question = false;
         user.camera = !!video_device;
@@ -1066,6 +1117,11 @@ class MobileClient extends Component {
             this.setState({protocol});
         }, ondata => {
             Janus.log("-- :: It's protocol public message: ", ondata);
+            if (gdm.checkAck(ondata)) {
+                // Ack received, do nothing.
+                return;
+            }
+
             const {type, error_code, id, room} = ondata;
             if(ondata.type === "error" && error_code === 420) {
                 this.exitRoom(false, () => {
@@ -1214,46 +1270,98 @@ class MobileClient extends Component {
     };
 
     handleQuestion = () => {
-        const {question} = this.state;
+        const {question, gdm, room, protocol} = this.state;
         const user = Object.assign({}, this.state.user);
         if(user.role === 'ghost') return;
         this.makeDelay();
+        this.questionState(user, question);
+
+        // if(!question) {
+        //     const msg = {type: "shidur-ping", status: true, room, col: null, i: null, gxy: user.janus, feed: null};
+        //     gdm.send(msg, [STORAN_ID], (msg) => sendProtocolMessage(protocol, user, msg, false)).
+        //     then(() => {
+        //         console.log(`PING delivered.`);
+        //         this.questionState(user, question);
+        //     }).catch((error) => {
+        //         console.error(`PING not delivered due to: ` , error);
+        //         alert("Connection to shidur is failed, try reconnect Galaxy")
+        //     });
+        // } else {
+        //     this.questionState(user, question);
+        // }
+    };
+
+    questionState = (user, question) => {
         user.question = !question;
         api.updateUser(user.id, user)
             .then(data => {
-                if(data.result === 'success') {
+                if(data.result === "success") {
                     localStorage.setItem('question', !question);
                     this.setState({user, question: !question});
                     this.sendDataMessage(user);
                 }
             })
-            .catch(err => console.error('[User] error updating user state', user.id, err))
+            .catch(err => console.error("[User] error updating user state", user.id, err))
     };
 
-    handleAudioOut = (data) => {
+    handleAudioOut = (data, chatroom) => {
         const { gdm, user, protocol } = this.state;
-        if (gdm.checkAck(data)) {
-            // Ack received, do nothing.
-            return;
+
+        if(chatroom) {
+            gdm.accept(data, (msg) => this.chat.sendCmdMessage(msg)).then((data) => {
+                if (data === null) {
+                    console.log('Message received more then once.');
+                    return;
+                }
+
+                this.state.virtualStreamingJanus.streamGalaxy(data.status, 4, "");
+                if (data.status) {
+                    // remove question mark when sndman unmute our room
+                    if (this.state.question) {
+                        this.handleQuestion();
+                    }
+                }
+
+            }).catch((error) => {
+                console.error(`Failed receiving ${data}: ${error}`);
+            });
+        } else {
+            gdm.accept(data, (msg) => this.sendDataMessage(msg)).then((data) => {
+                if (data === null) {
+                    console.log('Message received more then once.');
+                    return;
+                }
+
+                this.state.virtualStreamingJanus.streamGalaxy(data.status, 4, "");
+                if (data.status) {
+                    // remove question mark when sndman unmute our room
+                    if (this.state.question) {
+                        this.handleQuestion();
+                    }
+                }
+
+            }).catch((error) => {
+                console.error(`Failed receiving ${data}: ${error}`);
+            });
         }
 
-        gdm.accept(data, (msg) => sendProtocolMessage(protocol, user, msg, false)).then((data) => {
-            if (data === null) {
-                console.log('Message received more then once.');
-                return;
-            }
-
-            this.state.shidurJanus.streamGalaxy(data.status, 4, '');
-            if (data.status) {
-                // remove question mark when sndman unmute our room
-                if (this.state.question) {
-                    this.handleQuestion();
-                }
-            }
-
-        }).catch((error) => {
-            console.error(`Failed receiving ${data}: ${error}`);
-        });
+        // gdm.accept(data, (msg) => sendProtocolMessage(protocol, user, msg, false)).then((data) => {
+        //     if (data === null) {
+        //         console.log('Message received more then once.');
+        //         return;
+        //     }
+        //
+        //     this.state.shidurJanus.streamGalaxy(data.status, 4, '');
+        //     if (data.status) {
+        //         // remove question mark when sndman unmute our room
+        //         if (this.state.question) {
+        //             this.handleQuestion();
+        //         }
+        //     }
+        //
+        // }).catch((error) => {
+        //     console.error(`Failed receiving ${data}: ${error}`);
+        // });
     };
 
     otherCamsMuteToggle = () => {
@@ -1441,7 +1549,7 @@ class MobileClient extends Component {
                      key={"vk" + i}
                      ref={"video" + i}
                      id={"video" + i}>
-            <div className={classNames('video__overlay', {'talk': feed.taking})}>
+            <div className={classNames('video__overlay', {'talk': feed.talking})}>
                 {feed.question ? <div className="question">
                     <svg viewBox="0 0 50 50">
                         <text x="25" y="25" textAnchor="middle" alignmentBaseline="central"
@@ -1449,7 +1557,7 @@ class MobileClient extends Component {
                     </svg>
                 </div> : ''}
                 <div className="video__title">
-                  {!feed.taking ?  <Icon name="microphone slash" color="red"/> : ''}
+                  {!feed.talking ?  <Icon name="microphone slash" color="red"/> : ''}
                   <div className='title-name'>{feed.display.display}</div>
                 </div>
             </div>
@@ -1746,6 +1854,8 @@ class MobileClient extends Component {
               janus={janus}
               room={room}
               user={user}
+              gdm={this.state.gdm}
+              onCmdMsg={this.onChatData}
               onNewMsg={this.onChatMessage} />
           </div>
         </div>
@@ -1753,6 +1863,9 @@ class MobileClient extends Component {
 
       return (
           <Fragment>
+             <MetaTags>
+                <meta name="viewport" content=" user-scalable=no" />
+             </MetaTags>
               {user ? content : login}
           </Fragment>
       );

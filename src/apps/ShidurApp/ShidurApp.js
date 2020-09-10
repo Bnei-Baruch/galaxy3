@@ -9,12 +9,19 @@ import UsersQuad from "./UsersQuad";
 import './ShidurApp.css'
 import {STORAN_ID} from "../../shared/consts"
 import {GuaranteeDeliveryManager} from '../../shared/GuaranteeDelivery';
+import * as Sentry from "@sentry/browser";
+import {SENTRY_KEY} from "../../shared/env";
 
 
 class ShidurApp extends Component {
 
     state = {
         ce: null,
+        delay: false,
+        full_qst: false,
+        full_feed: {},
+        full_group: {},
+        full_col: null,
         group: "",
         groups: [],
         groups_queue: 0,
@@ -22,6 +29,7 @@ class ShidurApp extends Component {
         preview_mode: true,
         round: 0,
         questions: [],
+        quads: [],
         rooms: [],
         disabled_rooms: [],
         pre_groups: [],
@@ -35,6 +43,10 @@ class ShidurApp extends Component {
         users_count: 0,
         gdm: new GuaranteeDeliveryManager(STORAN_ID),
     };
+
+    componentDidMount() {
+        Sentry.init({dsn: `https://${SENTRY_KEY}@sentry.kli.one/2`});
+    }
 
     componentWillUnmount() {
         Object.values(this.state.gateways).forEach(x => x.destroy());
@@ -74,7 +86,22 @@ class ShidurApp extends Component {
                 console.log("[Shidur] gateways initialization complete");
                 this.setState({gatewaysInitialized: true});
             });
+
     };
+
+    onChatData = (gateway, data) => {
+        const json = JSON.parse(data);
+        const what = json["textroom"];
+        if (what === "message") {
+            let msg = json['text'];
+            let message = JSON.parse(msg);
+            const { gdm } = this.state;
+            if (gdm.checkAck(message)) {
+                // Ack received, do nothing.
+                return;
+            }
+        }
+    }
 
     initGateway = (user, gateway) => {
         console.log("[Shidur] initializing gateway", gateway.name);
@@ -86,9 +113,12 @@ class ShidurApp extends Component {
             .then(() => {
                 return gateway.initGxyProtocol(user, data => this.onProtocolData(gateway, data))
                     .then(() => {
-                        if (gateway.name === "gxy3") {
-                            return gateway.initServiceProtocol(user, data => this.onServiceData(gateway, data))
-                        }
+                        return gateway.initChatRoom(data => this.onChatData(gateway, data))
+                            .then(() => {
+                                if (gateway.name === "gxy3") {
+                                    return gateway.initServiceProtocol(user, data => this.onServiceData(gateway, data))
+                                }
+                            })
                     });
             })
             .catch(err => {
@@ -134,7 +164,7 @@ class ShidurApp extends Component {
                 let quads = [...this.col1.state.vquad,...this.col2.state.vquad,...this.col3.state.vquad,...this.col4.state.vquad];
                 let list = groups.filter(r => !quads.find(q => q && r.room === q.room));
                 let questions = list.filter(room => room.questions);
-                this.setState({questions,users_count});
+                this.setState({quads, questions, users_count});
             })
             .catch(err => {
                 console.error("[Shidur] error fetching active rooms", err);
@@ -170,17 +200,28 @@ class ShidurApp extends Component {
     };
 
     onProtocolData = (gateway, data) => {
-        const { gdm } = this.state;
+        const { gdm, gateways } = this.state;
         if (gdm.checkAck(data)) {
             // Ack received, do nothing.
             return;
         }
 
-        if (data.type === "error" && data.error_code === 420) {
+        const {type, error_code, gxy} = data;
+
+        if (type === "error" && error_code === 420) {
             console.error("[Shidur] protocol error message (reloading in 10 seconds)", data.error);
             setTimeout(() => {
                 this.initGateway(this.state.user, gateway);
             }, 10000);
+        } else if (type === 'shidur-ping') {
+            gdm.accept(data, (msg) => gateways[gxy].sendProtocolMessage(msg)).then((data) => {
+                if (data === null) {
+                    console.log('Message received more then once.');
+                    return;
+                }
+            }).catch((error) => {
+                console.error(`Failed receiving ${data}: ${error}`);
+            });
         }
     };
 

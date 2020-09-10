@@ -27,7 +27,7 @@ class UsersHandle extends Component {
                 this.initVideoRoom(g.room, g.janus);
             }
         }
-    }
+    };
 
     componentWillUnmount() {
         this.exitVideoRoom(this.state.room, () =>{})
@@ -66,6 +66,12 @@ class UsersHandle extends Component {
             onlocalstream: (mystream) => {
                 gateway.log(`[room ${roomid}] ::: Got a local stream :::`, mystream);
             },
+            ondataopen: (label) => {
+                gateway.log('Publisher - DataChannel is available! (' + label + ')');
+            },
+            ondata: (data, label) => {
+                gateway.log('Publisher - Got data from the DataChannel! (' + label + ')' + data);
+            },
             oncleanup: () => {
                 gateway.log(`[room ${roomid}] ::: Got a cleanup notification: we are unpublished now :::`);
             }
@@ -86,6 +92,22 @@ class UsersHandle extends Component {
         }
     };
 
+    publishOwnFeed = () => {
+        this.state.videoroom.createOffer({
+            media: {audio: false, video: false, data: true},
+            simulcast: false,
+            success: (jsep) => {
+                console.debug('Got publisher SDP!');
+                console.debug(jsep);
+                let publish = { request: 'configure', audio: false, video: false, data: true };
+                this.state.videoroom.send({ 'message': publish, 'jsep': jsep });
+            },
+            error: (error) => {
+                console.error('WebRTC error:', error);
+            }
+        });
+    };
+
     onMessage = (gateway, roomid, msg, jsep) => {
         gateway.debug(`[room ${roomid}] ::: Got a message (publisher) :::`, msg);
         let event = msg["videoroom"];
@@ -95,6 +117,7 @@ class UsersHandle extends Component {
                 let mypvtid = msg["private_id"];
                 this.setState({myid ,mypvtid});
                 console.debug(`[Shidur] [room ${roomid}] Successfully joined room`, myid);
+                //this.publishOwnFeed();
                 if(msg["publishers"] !== undefined && msg["publishers"] !== null) {
                     let list = msg["publishers"];
                     //FIXME: Tmp fix for black screen in room caoused by feed with video_codec = none
@@ -108,19 +131,21 @@ class UsersHandle extends Component {
                         //let talk = feeds[f]["talking"];
                         let streams = feeds[f]["streams"];
                         feeds[f].display = display;
-                        let subst = {feed: id};
                         for (let i in streams) {
                             let stream = streams[i];
                             stream["id"] = id;
                             stream["display"] = display;
+                            // Janus bug: if try subscribe to only video and data
+                            // the data pass only one way so we subscribe here to all
+                            // streams in feed
                             if(stream.type === "video") {
-                                subst.mid = stream.mid;
+                                subscription.push({feed: id, mid: stream.mid});
                             }
                         }
-                        subscription.push(subst);
                     }
                     this.setState({feeds});
                     if(subscription.length > 0) {
+                        console.log(subscription)
                         this.subscribeTo(gateway, roomid, subscription);
                     }
                 }
@@ -147,16 +172,17 @@ class UsersHandle extends Component {
                             return;
                         let streams = feed[f]["streams"];
                         feed[f].display = display;
-                        let subst = {feed: id};
                         for (let i in streams) {
                             let stream = streams[i];
                             stream["id"] = id;
                             stream["display"] = display;
+                            // Janus bug: if try subscribe to only video and data
+                            // the data pass only one way so we subscribe here to all
+                            // streams in feed
                             if(stream.type === "video") {
-                                subst.mid = stream.mid;
+                                subscription.push({feed: id, mid: stream.mid});
                             }
                         }
-                        subscription.push(subst);
                     }
                     feeds.push(feed[0]);
                     this.setState({feeds});
@@ -230,6 +256,7 @@ class UsersHandle extends Component {
                             // What has just happened?
                         }
                     }
+
                     if(msg["streams"]) {
                         let {mids} = this.state;
                         for(let i in msg["streams"]) {
@@ -238,16 +265,17 @@ class UsersHandle extends Component {
                         }
                         this.setState({mids});
                     }
-                    if(jsep !== undefined && jsep !== null) {
-                        gateway.debug(`[room ${roomid}] [remoteFeed] Handling SDP as well...`, jsep);
+
+                    if(jsep) {
+                        gateway.log(`[room ${roomid}] [remoteFeed] Handling SDP as well...`, jsep);
                         // Answer and attach
                         this.state.remoteFeed.createAnswer(
                             {
                                 jsep: jsep,
-                                media: { audioSend: false, videoSend: false },
+                                media: { audioSend: false, videoSend: false, data: false },
                                 success: (jsep) => {
                                     gateway.debug(`[room ${roomid}] [remoteFeed] Got SDP!`, jsep);
-                                    let body = { request: "start", room: this.state.room };
+                                    let body = { request: "start", room: this.state.room, data: false };
                                     this.state.remoteFeed.send({ message: body, jsep: jsep });
                                 },
                                 error: (err) => {
@@ -266,16 +294,44 @@ class UsersHandle extends Component {
                         Janus.attachMediaStream(remotevideo, stream);
                     }
                 },
-                ondataopen: (data) => {
-                    gateway.debug(`[room ${roomid}] [remoteFeed] The DataChannel is available!`);
+                ondataopen: (label) => {
+                    gateway.log('Feed - DataChannel is available! (' + label + ')');
                 },
-                ondata: (data) => {
-                    gateway.debug(`[room ${roomid}] [remoteFeed] We got data from the DataChannel!`, data);
+                ondata: (data, label) => {
+                    gateway.log('Feed - Got data from the DataChannel! (' + label + ')' + data);
+                    let msg = JSON.parse(data);
+                    this.onRoomData(gateway, msg);
+                    gateway.log(' :: We got msg via DataChannel: ', msg);
                 },
                 oncleanup: () => {
                     gateway.debug(`[room ${roomid}] [remoteFeed] ::: Got a cleanup notification :::`);
                 }
             });
+    };
+
+    sendDataMessage = (cmd) => {
+        const message = JSON.stringify(cmd);
+        console.log(':: Sending message: ', message);
+        this.state.videoroom.data({ text: message });
+    };
+
+    onRoomData = (gateway, data) => {
+        const { gdm } = this.props;
+        if (gdm.checkAck(data)) {
+            // Ack received, do nothing.
+            return;
+        }
+
+        const {type} = data;
+        if (type === 'shidur-ping') {
+            gdm.accept(data, (msg) => this.sendDataMessage(msg)).then((data) => {
+                if (data === null) {
+                    console.log('Message received more then once.');
+                }
+            }).catch((error) => {
+                console.error(`Failed receiving ${data}: ${error}`);
+            });
+        }
     };
 
     subscribeTo = (gateway, roomid, subscription) => {

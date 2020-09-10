@@ -22,7 +22,7 @@ class App extends Component {
         {/*<MobileClient />*/}
         <VirtualClient />
         {/*<GalaxyStream/>*/}
-        {/*<AdminRoot />*/}
+        {/*{<AdminRoot />}*/}
         {/*<ShidurApp />*/}
         {/*<SndmanApp />*/}
         {/*<AudioOutApp />*/}
