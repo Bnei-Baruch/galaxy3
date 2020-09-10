@@ -118,7 +118,7 @@ class MobileClient extends Component {
         keepalive: null,
         shidur: false,
         shidurLoading: false,
-        shidurJanus: new VirtualStreamingJanus(() => this.shidurInitialized()),
+        virtualStreamingJanus: new VirtualStreamingJanus(() => this.shidurInitialized()),
         shidurMuted: false,
         talking: false,
         chatMessagesCount: 0,
@@ -133,7 +133,7 @@ class MobileClient extends Component {
     }
 
     setShidurMuted(muted) {
-      this.state.shidurJanus.audioElement.muted = muted;
+      this.state.virtualStreamingJanus.audioElement.muted = muted;
       this.setState({shidurMuted: muted});
     }
 
@@ -156,7 +156,7 @@ class MobileClient extends Component {
           this.state.localAudioTrack,
           this.state.localVideoTrack,
           this.state.user,
-          this.state.shidurJanus);
+          this.state.virtualStreamingJanus);
         this.state.monitoringData.setOnStatus((connectionStatus, connectionStatusMessage) => {
           if (this.state.connectionStatus !== connectionStatus) {
             this.setState({connectionStatus});
@@ -183,11 +183,11 @@ class MobileClient extends Component {
             window.location = '/user/';
             return;
         }
-        this.state.shidurJanus.onTalking((talking) => this.setState({talking}));
+        this.state.virtualStreamingJanus.onTalking((talking) => this.setState({talking}));
     };
 
     componentWillUnmount() {
-      this.state.shidurJanus.destroy();
+      this.state.virtualStreamingJanus.destroy();
     }
 
     initApp = (user) => {
@@ -668,7 +668,7 @@ class MobileClient extends Component {
                   if (this.state.muteOtherCams) {
                     this.camMute(/* cammuted= */ false);
                     this.setState({videos: NO_VIDEO_OPTION_VALUE});
-                    this.state.shidurJanus.setVideo(NO_VIDEO_OPTION_VALUE);
+                    this.state.virtualStreamingJanus.setVideo(NO_VIDEO_OPTION_VALUE);
                   }
                 } else if(msg["publishers"] !== undefined && msg["publishers"] !== null) {
                   // User just joined the room.
@@ -1351,7 +1351,7 @@ class MobileClient extends Component {
         //         return;
         //     }
         //
-        //     this.state.shidurJanus.streamGalaxy(data.status, 4, '');
+        //     this.state.virtualStreamingJanus.streamGalaxy(data.status, 4, '');
         //     if (data.status) {
         //         // remove question mark when sndman unmute our room
         //         if (this.state.question) {
@@ -1372,14 +1372,14 @@ class MobileClient extends Component {
         this.unsubscribeFrom(activeFeeds.map(feed => feed.id), /* onlyVideo= */ true);
         this.camMute(/* cammuted= */ false);
         this.setState({videos: NO_VIDEO_OPTION_VALUE});
-        this.state.shidurJanus.setVideo(NO_VIDEO_OPTION_VALUE);
+        this.state.virtualStreamingJanus.setVideo(NO_VIDEO_OPTION_VALUE);
       } else {
         // Should unmute/show now all videos.false,
         this.makeSubscription(activeFeeds, /* feedsJustJoined= */ false, /* subscribeToVideo= */ true,
                               /* subscribeToAudio= */ false, /* subscribeToData= */ false);
         this.camMute(/* cammuted= */ true);
         this.setState({videos: VIDEO_240P_OPTION_VALUE});
-        this.state.shidurJanus.setVideo(VIDEO_240P_OPTION_VALUE);
+        this.state.virtualStreamingJanus.setVideo(VIDEO_240P_OPTION_VALUE);
       }
       this.setState({muteOtherCams: !muteOtherCams});
     }
@@ -1410,13 +1410,13 @@ class MobileClient extends Component {
     };
 
     toggleShidur = () => {
-      const {shidurJanus, shidur, user} = this.state;
+      const {virtualStreamingJanus, shidur, user} = this.state;
       const stateUpdate = {shidur: !shidur};
       if (shidur) {
-        shidurJanus.destroy();
+        virtualStreamingJanus.destroy();
       } else {
         const {ip, country} = user;
-        shidurJanus.init(ip, country);
+        virtualStreamingJanus.init(ip, country);
         stateUpdate.shidurLoading = true;
       }
       this.setState(stateUpdate);
@@ -1494,7 +1494,7 @@ class MobileClient extends Component {
         selected_room,
         settingsActiveIndex,
         shidur,
-        shidurJanus,
+        virtualStreamingJanus,
         shidurLoading,
         talking,
         user,
@@ -1713,9 +1713,9 @@ class MobileClient extends Component {
 									<VirtualStreamingMobile
 										shidur={shidur}
 										shidurLoading={shidurLoading}
-										shidurJanus={shidurJanus}
+										shidurJanus={virtualStreamingJanus}
 										toggleShidur={this.toggleShidur}
-										audio={this.state.shidurJanus && this.state.shidurJanus.audioElement}
+										audio={this.state.virtualStreamingJanus && this.state.virtualStreamingJanus.audioElement}
                     muted={this.state.shidurMuted}
                     videos={videos}
                     setVideo={(v) => this.setState({videos: v})}
