@@ -76,9 +76,13 @@ class UsersQuad extends Component {
     quadGroup = (queue) => {
         let {groups} = this.props;
         let group = groups[queue];
-        delete group.users;
-        group.queue = queue;
-        return group;
+        if(group && group.users) {
+            delete group.users;
+            group.queue = queue;
+            return group;
+        } else {
+            return null;
+        }
     };
 
     switchProgram = (i, leave) => {
