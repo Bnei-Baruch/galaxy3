@@ -316,7 +316,8 @@ class UsersQuad extends Component {
                 console.log(`MIC delivered.`);
                 gateways[inst].chatRoomLeave(room)
             }).catch((error) => {
-                console.error(`MIC not delivered due to: ` , error);
+                console.error(`MIC not delivered due to: ` , JSON.stringify(error));
+                reportToSentry("Delivery",{source: "shidur"}, this.props.user);
                 gateways[inst].chatRoomLeave(room)
             });
         }
