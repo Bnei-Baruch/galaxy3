@@ -54,8 +54,12 @@ export const joinChatRoom = (textroom, roomid, user) => {
     };
     textroom.data({
         text: JSON.stringify(register),
+        success: (data) => {
+            Janus.log("Join chat room " + roomid + ", is: " + data);
+        },
         error: (reason) => {
-            alert(reason);
+            console.error("  -- Error join room", reason);
+            reportToSentry(reason, {source: "Textroom"}, user);
         }
     });
 };
