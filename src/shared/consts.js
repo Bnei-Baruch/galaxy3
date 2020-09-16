@@ -132,6 +132,7 @@ export const trllang = {
         "German": 307,
         "Italian": 306,
         "Turkish": 308,
+        "Portuguese": 309,
         "Bulgarian": 310,
         "Romanian": 312,
         "Lithuanian": 315,
