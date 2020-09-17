@@ -4,8 +4,8 @@ import { Button } from '@material-ui/core';
 import LoginPage from '../../../components/LoginPage';
 import { kc } from '../../../components/UserManager';
 import SettingsContainer from './settings/SettingsContainer';
-import VideoRoomContainer from './app/VideoRoomContainer';
 import { AudioModeContext } from './AudioModeContext';
+import RoomContainer from './app/RoomContainer';
 
 const adaptUser = (data) => {
   const { display, email, id, role } = data;
@@ -14,7 +14,7 @@ const adaptUser = (data) => {
 
 const VirtualClient = (props) => {
   const { t }                         = useTranslation();
-  const [user, setUser]               = useState({});
+  const [user, setUser]               = useState(null);
   const [isAudioMode, setIsAudioMode] = useState(localStorage.getItem('audio_mode'));
   const [room, setRoom]               = useState(localStorage.getItem('room'));
 
@@ -33,17 +33,17 @@ const VirtualClient = (props) => {
     } else {
       alert('Access denied!');
       kc.logout();
-      setUser({});
+      setUser(null);
     }
   };
-
+  console.log('index page user', user);
   return (
     <AudioModeContext.Provider value={{ isAudioMode, updateAudioMode }}>
       {
         !user?.id
           ? <LoginPage user={user} checkPermission={checkPermission} />
-          /*: room
-          ? <VideoRoomContainer />*/
+          : room
+          ? <RoomContainer user={user} room={Number.parseInt(room)} />
           : <SettingsContainer user={user} handleJoinRoom={setRoom} />
       }
     </AudioModeContext.Provider>

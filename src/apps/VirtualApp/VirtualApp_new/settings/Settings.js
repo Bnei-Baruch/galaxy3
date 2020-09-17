@@ -1,11 +1,11 @@
 import React, { useContext, useEffect, useState } from 'react';
 import Grid from '@material-ui/core/Grid';
 
-import MyMedia from './MyMedia';
+import MyMedia from '../components/MyMedia';
 import { Select, Paper, FormControl, InputLabel, Checkbox, Button } from '@material-ui/core';
 import { useTranslation } from 'react-i18next';
 import { vsettings_list } from '../../../../shared/consts';
-import SelfTest from './SelfTest';
+import SelfTest from '../components/SelfTest';
 
 import '../../VirtualClient.scss';
 import '../../VideoConteiner.scss';
