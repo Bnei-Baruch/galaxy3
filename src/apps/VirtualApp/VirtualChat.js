@@ -36,10 +36,11 @@ class VirtualChat extends Component {
     }
   }
 
-  initChat = (janus) => {
-    initChatRoom(janus, this.props.user, chatroom => {
+  initChat = (janus, room, user) => {
+    initChatRoom(janus, user, chatroom => {
       Janus.log(':: Got Chat Handle: ', chatroom);
       this.setState({ chatroom });
+      joinChatRoom(chatroom, room, user);
     }, data => {
       this.onData(data);
     });

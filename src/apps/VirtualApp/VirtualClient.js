@@ -245,7 +245,6 @@ class VirtualClient extends Component {
       if (Janus.unifiedPlan) {
         user.session = janus.getSessionId();
         this.setState({janus});
-        this.chat.initChat(janus);
         this.initVideoRoom(reconnect, user);
       } else {
         alert(t('oldClient.unifiedPlanNotSupported'));
@@ -614,6 +613,101 @@ class VirtualClient extends Component {
         Janus.log(' ::: Got a cleanup notification: we are unpublished now :::');
       }
     });
+  };
+
+  joinRoom = (reconnect, videoroom, user) => {
+    let {janus, selected_room, tested, media, gdm} = this.state;
+    const {video: {video_device}} = media;
+    user.self_test = tested;
+    user.camera = !!video_device;
+    user.sound_test = reconnect ? JSON.parse(localStorage.getItem('sound_test')) : false;
+    //user.question = reconnect ? JSON.parse(localStorage.getItem('question')) : false;
+    user.question = false;
+    user.timestamp = Date.now();
+    this.setState({user, muted: true});
+
+    if(video_device && user.role === "user") {
+      if(this.state.upval) {
+        clearInterval(this.state.upval);
+      }
+      takeImage(user);
+      let upval = setInterval(() => {
+        takeImage(user);
+      }, 10*60000);
+      this.setState({upval});
+    }
+
+    this.setState({user});
+
+    const {id,timestamp,role,username} = user;
+    const d = {id,timestamp,role,display: username};
+    const register = {'request': 'join', 'room': selected_room, 'ptype': 'publisher', 'display': JSON.stringify(d)};
+    videoroom.send({"message": register,
+      success: () => {
+        this.chat.initChat(janus, selected_room, user);
+        //this.chat.initChatRoom(user, selected_room);
+      },
+      error: (error) => {
+        console.error(error);
+        this.exitRoom(false);
+      }
+    });
+
+    // initGxyProtocol(janus, user, protocol => {
+    //   this.setState({protocol});
+    // }, ondata => {
+    //   Janus.log('-- :: It\'s protocol public message: ', ondata);
+    //   if (gdm.checkAck(ondata)) {
+    //     // Ack received, do nothing.
+    //     return;
+    //   }
+    //
+    //   const { type, error_code, id, room } = ondata;
+    //   if (type === 'error' && error_code === 420) {
+    //     this.exitRoom(false, () => {
+    //       alert(this.props.t('oldClient.error') + ondata.error);
+    //     });
+    //   } else if (type === 'joined') {
+    //     const {id,timestamp,role,username} = user;
+    //     const d = {id,timestamp,role,display: username};
+    //     const register = {'request': 'join', 'room': selected_room, 'ptype': 'publisher', 'display': JSON.stringify(d)};
+    //     videoroom.send({"message": register,
+    //       success: () => {
+    //         this.chat.initChatRoom(user, selected_room);
+    //       },
+    //       error: (error) => {
+    //         console.error(error);
+    //         this.exitRoom(false);
+    //       }
+    //     });
+    //   } else if (type === 'chat-broadcast' && room === selected_room) {
+    //     this.chat.showSupportMessage(ondata);
+    //   } else if (type === 'client-reconnect' && user.id === id) {
+    //     this.exitRoom(true);
+    //   } else if (type === 'client-reload' && user.id === id) {
+    //     window.location.reload();
+    //   } else if (type === 'client-disconnect' && user.id === id) {
+    //     this.exitRoom(false);
+    //   } else if(type === "client-kicked" && user.id === id) {
+    //     kc.logout();
+    //   } else if (type === 'client-question' && user.id === id) {
+    //     this.handleQuestion();
+    //   } else if (type === 'client-mute' && user.id === id) {
+    //     this.micMute();
+    //   } else if (type === 'video-mute' && user.id === id) {
+    //     this.camMute(this.state.cammuted);
+    //   } else if (type === 'sound_test' && user.id === id) {
+    //     user.sound_test = true;
+    //     localStorage.setItem('sound_test', true);
+    //     this.setState({user});
+    //   } else if (type === 'audio-out' && room === selected_room) {
+    //     this.handleAudioOut(ondata);
+    //   } else if (type === 'reload-config') {
+    //     this.reloadConfig();
+    //   } else if (type === 'client-reload-all') {
+    //     window.location.reload();
+    //   }
+    // });
   };
 
   publishOwnFeed = (useVideo, useAudio) => {
@@ -1051,100 +1145,6 @@ class VirtualClient extends Component {
         console.error(`Failed receiving ${data}: ${error}`);
       });
     }
-  };
-
-  joinRoom = (reconnect, videoroom, user) => {
-    let {janus, selected_room, tested, media, gdm} = this.state;
-    const {video: {video_device}} = media;
-    user.self_test = tested;
-    user.camera = !!video_device;
-    user.sound_test = reconnect ? JSON.parse(localStorage.getItem('sound_test')) : false;
-    //user.question = reconnect ? JSON.parse(localStorage.getItem('question')) : false;
-    user.question = false;
-    user.timestamp = Date.now();
-    this.setState({user, muted: true});
-
-    if(video_device && user.role === "user") {
-      if(this.state.upval) {
-        clearInterval(this.state.upval);
-      }
-      takeImage(user);
-      let upval = setInterval(() => {
-        takeImage(user);
-      }, 10*60000);
-      this.setState({upval});
-    }
-
-    this.setState({user});
-
-    const {id,timestamp,role,username} = user;
-    const d = {id,timestamp,role,display: username};
-    const register = {'request': 'join', 'room': selected_room, 'ptype': 'publisher', 'display': JSON.stringify(d)};
-    videoroom.send({"message": register,
-      success: () => {
-        this.chat.initChatRoom(user, selected_room);
-      },
-      error: (error) => {
-        console.error(error);
-        this.exitRoom(false);
-      }
-    });
-
-    // initGxyProtocol(janus, user, protocol => {
-    //   this.setState({protocol});
-    // }, ondata => {
-    //   Janus.log('-- :: It\'s protocol public message: ', ondata);
-    //   if (gdm.checkAck(ondata)) {
-    //     // Ack received, do nothing.
-    //     return;
-    //   }
-    //
-    //   const { type, error_code, id, room } = ondata;
-    //   if (type === 'error' && error_code === 420) {
-    //     this.exitRoom(false, () => {
-    //       alert(this.props.t('oldClient.error') + ondata.error);
-    //     });
-    //   } else if (type === 'joined') {
-    //     const {id,timestamp,role,username} = user;
-    //     const d = {id,timestamp,role,display: username};
-    //     const register = {'request': 'join', 'room': selected_room, 'ptype': 'publisher', 'display': JSON.stringify(d)};
-    //     videoroom.send({"message": register,
-    //       success: () => {
-    //         this.chat.initChatRoom(user, selected_room);
-    //       },
-    //       error: (error) => {
-    //         console.error(error);
-    //         this.exitRoom(false);
-    //       }
-    //     });
-    //   } else if (type === 'chat-broadcast' && room === selected_room) {
-    //     this.chat.showSupportMessage(ondata);
-    //   } else if (type === 'client-reconnect' && user.id === id) {
-    //     this.exitRoom(true);
-    //   } else if (type === 'client-reload' && user.id === id) {
-    //     window.location.reload();
-    //   } else if (type === 'client-disconnect' && user.id === id) {
-    //     this.exitRoom(false);
-    //   } else if(type === "client-kicked" && user.id === id) {
-    //     kc.logout();
-    //   } else if (type === 'client-question' && user.id === id) {
-    //     this.handleQuestion();
-    //   } else if (type === 'client-mute' && user.id === id) {
-    //     this.micMute();
-    //   } else if (type === 'video-mute' && user.id === id) {
-    //     this.camMute(this.state.cammuted);
-    //   } else if (type === 'sound_test' && user.id === id) {
-    //     user.sound_test = true;
-    //     localStorage.setItem('sound_test', true);
-    //     this.setState({user});
-    //   } else if (type === 'audio-out' && room === selected_room) {
-    //     this.handleAudioOut(ondata);
-    //   } else if (type === 'reload-config') {
-    //     this.reloadConfig();
-    //   } else if (type === 'client-reload-all') {
-    //     window.location.reload();
-    //   }
-    // });
   };
 
   keepAlive = () => {

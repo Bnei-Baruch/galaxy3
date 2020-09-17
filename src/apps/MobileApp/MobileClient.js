@@ -262,7 +262,6 @@ class MobileClient extends Component {
           if (Janus.unifiedPlan) {
             user.session = janus.getSessionId();
             this.setState({janus});
-            this.chat.initChat(janus);
             this.initVideoRoom(reconnect, user);
           } else {
             alert(t('oldClient.unifiedPlanNotSupported'));
@@ -1119,7 +1118,8 @@ class MobileClient extends Component {
         let register = {"request": "join", "room": selected_room, "ptype": "publisher", "display": JSON.stringify(d)};
         videoroom.send({"message": register,
             success: () => {
-                this.chat.initChatRoom(user, selected_room);
+                this.chat.initChat(janus, selected_room, user);
+                ///this.chat.initChatRoom(user, selected_room);
             },
             error: (error) => {
                 console.error(error);
