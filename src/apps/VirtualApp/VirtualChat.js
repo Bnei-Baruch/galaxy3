@@ -36,10 +36,11 @@ class VirtualChat extends Component {
     }
   }
 
-  initChat = (janus) => {
-    initChatRoom(janus, this.props.user, chatroom => {
+  initChat = (janus, room, user) => {
+    initChatRoom(janus, user, chatroom => {
       Janus.log(':: Got Chat Handle: ', chatroom);
       this.setState({ chatroom });
+      joinChatRoom(chatroom, room, user);
     }, data => {
       this.onData(data);
     });
@@ -284,7 +285,7 @@ class VirtualChat extends Component {
         return (
             <p key={i} style={{direction: isRTLString(text) ? 'rtl' : 'ltr', textAlign: isRTLString(text) ? 'right' : 'left'}}><span style={{display: 'block'}}>
           <i style={{ color: 'grey' }}>{time}</i> -
-          <b style={{ color: user.role === 'admin' ? 'red' : 'blue' }}>{user.display}</b>:
+          <b style={{ color: user.role.match(/^(admin|root)$/) ? 'red' : 'blue' }}>{user.display}</b>:
         </span>{textWithLinks(text)}</p>
         );
       }
@@ -296,7 +297,7 @@ class VirtualChat extends Component {
         return (
             <p key={i} style={{direction: isRTLString(text) ? 'rtl' : 'ltr', textAlign: isRTLString(text) ? 'right' : 'left'}}><span style={{display: 'block'}}>
           <i style={{ color: 'grey' }}>{time}</i> -
-          <b style={{ color: user.role === 'admin' ? 'red' : 'blue' }}>{user.role === 'admin' ? user.username : user.display}</b>:
+          <b style={{ color: user.role.match(/^(admin|root)$/) ? 'red' : 'blue' }}>{user.role === 'admin' ? user.username : user.display}</b>:
         </span>{textWithLinks(text)}</p>
         );
       }

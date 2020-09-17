@@ -72,7 +72,6 @@ export const initChatRoom = (janus, user, handle, cb) => {
             opaqueId: "chatroom_user",
             success: (pluginHandle) => {
                 textroom = pluginHandle;
-                handle(textroom);
                 Janus.log("Plugin attached! (" + textroom.getPlugin() + ", id=" + textroom.getId() + ")");
                 // Setup the DataChannel
                 let body = {"request": "setup"};
@@ -115,6 +114,7 @@ export const initChatRoom = (janus, user, handle, cb) => {
             },
             ondataopen: () => {
                 Janus.log("The DataChannel is available!");
+                handle(textroom);
             },
             ondata: (data) => {
                 Janus.debug("We got data from the DataChannel! " + data);
