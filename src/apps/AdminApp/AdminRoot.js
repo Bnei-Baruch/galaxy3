@@ -558,6 +558,10 @@ class AdminRoot extends Component {
         // }
     };
 
+    sendCommandMessage = () => {
+        //gateways[inst].sendCmdMessage(cmd)
+    };
+
     sendRemoteCommand = (command_type) => {
         const {gateways, feed_user, current_janus, current_room, command_status, gdm} = this.state;
 
@@ -661,6 +665,7 @@ class AdminRoot extends Component {
             .then(() => {
                 this.setState({
                     current_room: room,
+                    current_group: rooms[i].description,
                     current_janus: inst,
                     feeds: [],
                     feed_user: null,
@@ -779,6 +784,7 @@ class AdminRoot extends Component {
           activeTab,
           current_janus,
           current_room,
+          current_group,
           feed_id,
           feed_info,
           feed_rtcp,
@@ -1061,6 +1067,7 @@ class AdminRoot extends Component {
                                rooms={rooms}
                                selected_janus={current_janus}
                                selected_room={current_room}
+                               selected_group={current_group}
                                selected_user={feed_user}
                                gateways={gateways}
                                onChatRoomsInitialized={this.onChatRoomsInitialized}/>

@@ -203,12 +203,13 @@ class ChatBox extends Component {
     };
 
     render() {
-        const {selected_user} = this.props;
+        const {selected_user, selected_group} = this.props;
         const {messages, msg_type, input_value} = this.state;
         const to = selected_user && selected_user.display ? selected_user.display : 'Select User:';
+        const group = selected_group ? selected_group : 'All:';
 
         const send_options = [
-            {key: 'all', text: 'All', value: 'all'},
+            {key: 'all', text: group, value: 'all'},
             {key: 'private', text: to, value: 'private'},
         ];
 
@@ -218,7 +219,7 @@ class ChatBox extends Component {
                 <div key={i}><p>
                     <i style={{color: 'grey'}}>{time}</i> -
                     <b style={{color: user.role === "admin" ? 'red' : 'blue'}}>{user.username}</b>
-                    {to ? <b style={{color: 'blue'}}>-> {to} :</b> : ""}
+                    {to ? <b style={{color: 'blue'}}>-> {to} :</b> : <b style={{color: 'red'}}>-> {selected_group} :</b>}
                 </p>{text}</div>
             );
         });
