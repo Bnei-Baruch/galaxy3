@@ -777,6 +777,7 @@ class AdminRoot extends Component {
   render() {
       const {
           activeTab,
+          current_janus,
           current_room,
           feed_id,
           feed_info,
@@ -1058,6 +1059,7 @@ class AdminRoot extends Component {
                   this.isAllowed("admin") ?
                       <ChatBox user={user}
                                rooms={rooms}
+                               selected_janus={current_janus}
                                selected_room={current_room}
                                selected_user={feed_user}
                                gateways={gateways}

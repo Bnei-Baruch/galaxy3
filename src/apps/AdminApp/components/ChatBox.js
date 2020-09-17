@@ -3,11 +3,6 @@ import {Button, Input, Message, Segment, Select} from "semantic-ui-react";
 import {Janus} from "../../../lib/janus";
 import {getDateString} from "../../../shared/tools";
 
-const send_options = [
-    {key: 'all', text: 'All', value: 'all'},
-    {key: 'private', text: 'Private', value: 'private'},
-];
-
 class ChatBox extends Component {
 
     /*
@@ -67,7 +62,7 @@ class ChatBox extends Component {
 
     onKeyPressed = (e) => {
         if (e.code === "Enter")
-            this.sendPrivateMessage();
+            this.sendMessage();
     };
 
     onChatData = (gateway, data) => {
@@ -81,18 +76,29 @@ class ChatBox extends Component {
             let from = json["from"];
             let dateString = getDateString(json["date"]);
             let whisper = json["whisper"];
+            let message = JSON.parse(msg);
+
+            if(message.type && message.type !== "chat") {
+                console.log(':: It\'s remote command :: ');
+                return;
+            }
+
+            message.user.username = message.user.display;
+            message.time = dateString;
             if (whisper === true) {
                 // Private message
-                let message = JSON.parse(msg);
-                message.user.username = message.user.display;
-                message.time = dateString;
                 console.log("[Admin] [ChatBox] private message", gateway.name, from, message);
                 let {messages} = this.state;
                 messages.push(message);
                 this.setState({messages});
                 this.scrollToBottom();
             } else {
-                console.warn("[Admin] [ChatBox] unexpected public chat message", json);
+                // Public message
+                console.log("[Admin] [ChatBox] public message", gateway.name, from, message);
+                let {messages} = this.state;
+                messages.push(message);
+                this.setState({messages});
+                this.scrollToBottom();
             }
         } else if (what === "join") {
             gateway.log("[chatroom] Somebody joined", json["username"], json["display"]);
@@ -128,7 +134,33 @@ class ChatBox extends Component {
                 msg.time = getDateString();
                 msg.to = selected_user.display;
                 messages.push(msg);
-                this.setState({messages, input_value: ""}, this.scrollToBottom);
+                this.setState({ input_value: ""}, this.scrollToBottom);
+            })
+            .catch(alert);
+    };
+
+    sendPublicMessage = () => {
+        const {user: {role, display, username}, selected_janus, selected_room, gateways} = this.props;
+        const {input_value} = this.state;
+        if (!selected_room) {
+            alert("Enter room");
+            return;
+        }
+
+        const gateway = gateways[selected_janus];
+        const msg = {user: {role, display, username}, text: input_value};
+        gateway.data("chatroom", gateway.chatroom, {
+            ack: false,
+            textroom: "message",
+            transaction: Janus.randomString(12),
+            room: selected_room,
+            text: JSON.stringify(msg),
+        })
+            .then(() => {
+                // const {messages} = this.state;
+                // msg.time = getDateString();
+                // messages.push(msg);
+                this.setState({input_value: ""}, this.scrollToBottom);
             })
             .catch(alert);
     };
@@ -158,7 +190,8 @@ class ChatBox extends Component {
 
     sendMessage = () => {
         const {msg_type} = this.state;
-        msg_type === "private" ? this.sendPrivateMessage() : this.sendBroadcastMessage();
+        const {selected_user} = this.props;
+        msg_type === "private" ? this.sendPrivateMessage() : this.sendPublicMessage();
     };
 
     scrollToBottom = () => {
@@ -170,7 +203,14 @@ class ChatBox extends Component {
     };
 
     render() {
+        const {selected_user} = this.props;
         const {messages, msg_type, input_value} = this.state;
+        const to = selected_user && selected_user.display ? selected_user.display : 'Select User:';
+
+        const send_options = [
+            {key: 'all', text: 'All', value: 'all'},
+            {key: 'private', text: to, value: 'private'},
+        ];
 
         const list_msgs = messages.map((msg, i) => {
             const {user, time, text, to} = msg;
