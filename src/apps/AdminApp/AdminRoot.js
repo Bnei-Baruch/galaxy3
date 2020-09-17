@@ -561,9 +561,25 @@ class AdminRoot extends Component {
     sendCommandMessage = (command_type) => {
         const {gateways, feed_user, current_janus, current_room, command_status, gdm} = this.state;
         const gateway = gateways[current_janus];
-        const cmd = {type: command_type, rcmd: true, room: current_room, status: command_status, id: feed_user.id, user: feed_user}
-        gateway.sendCmdMessage(cmd)
-            .catch(alert);
+        const cmd = {type: command_type, rcmd: true, room: current_room, status: command_status, id: feed_user.id, user: feed_user};
+        const toAck = [feed_user.id];
+
+        if(command_type === "audio-out") {
+            gdm.send(cmd, toAck, (cmd) => gateway.sendCmdMessage(cmd)).
+            then(() => {
+                console.log(`MIC delivered.`);
+            }).catch((error) => {
+                console.error(`MIC not delivered due to: ` , JSON.stringify(error));
+            });
+        } else {
+            gateway.sendCmdMessage(cmd)
+                .catch(alert);
+        }
+
+        if (command_type === "audio-out") {
+            this.setState({command_status: !command_status})
+        }
+
     };
 
     sendRemoteCommand = (command_type) => {
@@ -1077,6 +1093,7 @@ class AdminRoot extends Component {
                                selected_group={current_group}
                                selected_user={feed_user}
                                gateways={gateways}
+                               gdm={this.state.gdm}
                                onChatRoomsInitialized={this.onChatRoomsInitialized}/>
                       : null
               }

@@ -78,6 +78,12 @@ class ChatBox extends Component {
             let whisper = json["whisper"];
             let message = JSON.parse(msg);
 
+            const { gdm } = this.props;
+            if (gdm.checkAck(message)) {
+                // Ack received, do nothing.
+                return;
+            }
+
             if(message.type && message.type !== "chat") {
                 console.log(':: It\'s remote command :: ');
                 return;
