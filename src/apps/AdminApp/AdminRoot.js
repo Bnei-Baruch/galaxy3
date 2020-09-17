@@ -558,11 +558,18 @@ class AdminRoot extends Component {
         // }
     };
 
-    sendCommandMessage = () => {
-        //gateways[inst].sendCmdMessage(cmd)
+    sendCommandMessage = (command_type) => {
+        const {gateways, feed_user, current_janus, current_room, command_status, gdm} = this.state;
+        const gateway = gateways[current_janus];
+        const cmd = {type: command_type, rcmd: true, room: current_room, status: command_status, id: feed_user.id, user: feed_user}
+        gateway.sendCmdMessage(cmd)
+            .catch(alert);
     };
 
     sendRemoteCommand = (command_type) => {
+        this.sendCommandMessage(command_type);
+        return;
+
         const {gateways, feed_user, current_janus, current_room, command_status, gdm} = this.state;
 
         if (command_type === "premoder-mode") {
