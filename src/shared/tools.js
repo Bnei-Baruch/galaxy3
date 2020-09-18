@@ -1,7 +1,8 @@
 import {Janus} from "../lib/janus";
-import * as Sentry from '@sentry/browser';
+import * as Sentry from '@sentry/react';
 import {STUN_SRV_GXY, WKLI_ENTER, WKLI_LEAVE
 } from "./env";
+import {reportToSentry} from './sentry'
 
 export const initJanus = (cb,er,server,token="",iceServers=[{urls: STUN_SRV_GXY}]) => {
     Janus.init({
@@ -27,22 +28,6 @@ export const initJanus = (cb,er,server,token="",iceServers=[{urls: STUN_SRV_GXY}
     })
 };
 
-export const reportToSentry = (title, data, user, level) => {
-    level = level || 'info';
-    data  = data  || {};
-    Sentry.withScope(scope => {
-        Object.keys(data).forEach((key) => {
-            scope.setExtra(key, data[key]);
-        });
-        scope.setLevel(level);
-        if(user) {
-            const {id,username,email} = user;
-            Sentry.setUser({id,username,email});
-        }
-        Sentry.captureMessage(title);
-    });
-}
-
 export const joinChatRoom = (textroom, roomid, user) => {
     let transaction = Janus.randomString(12);
     let register = {
@@ -50,7 +35,7 @@ export const joinChatRoom = (textroom, roomid, user) => {
         transaction: transaction,
         room: roomid,
         username: user.id,
-        display: user.display
+        display: user.display,
     };
     textroom.data({
         text: JSON.stringify(register),
@@ -59,12 +44,12 @@ export const joinChatRoom = (textroom, roomid, user) => {
         },
         error: (reason) => {
             console.error("  -- Error join room", reason);
-            reportToSentry(reason, {source: "Textroom"}, user);
+            reportToSentry(reason, {source: "Textroom"});
         }
     });
 };
 
-export const initChatRoom = (janus, user, handle, cb) => {
+export const initChatRoomSharedTools = (janus, handle, cb) => {
     let textroom = null;
     janus.attach(
         {
@@ -80,7 +65,7 @@ export const initChatRoom = (janus, user, handle, cb) => {
             },
             error: (error) => {
                 console.error("  -- Error attaching plugin...", error);
-                reportToSentry(error, {source: "Textroom"}, user);
+                reportToSentry(error, {source: "Textroom"});
             },
             webrtcState: (on) => {
                 Janus.log("Janus says our WebRTC PeerConnection is " + (on ? "up" : "down") + " now");
@@ -90,7 +75,7 @@ export const initChatRoom = (janus, user, handle, cb) => {
                 Janus.debug(msg);
                 if (msg["error"] !== undefined && msg["error"] !== null) {
                     console.error(msg["error"]);
-                    reportToSentry(msg["error"], {source: "Onmessage"}, user);
+                    reportToSentry(msg["error"], {source: "Onmessage"});
                 }
                 if (jsep !== undefined && jsep !== null) {
                     // Answer
@@ -107,7 +92,7 @@ export const initChatRoom = (janus, user, handle, cb) => {
                             error: (error) => {
                                 Janus.error("WebRTC error:", error);
                                 console.error("WebRTC error... " + JSON.stringify(error));
-                                reportToSentry(msg["error"], {source: "Offer"}, user);
+                                reportToSentry(msg["error"], {source: "Offer"});
                             }
                         });
                 }
@@ -118,7 +103,9 @@ export const initChatRoom = (janus, user, handle, cb) => {
             },
             ondata: (data) => {
                 Janus.debug("We got data from the DataChannel! " + data);
-                cb(data);
+                if (cb) {
+                  cb(data);
+                }
             },
             oncleanup: () => {
                 Janus.log(" ::: Got a cleanup notification :::");

@@ -1,8 +1,7 @@
 import React, { Component } from 'react';
 import { Janus } from "../lib/janus";
 import {Segment, Message, Button, Input} from "semantic-ui-react";
-import {initChatRoom,getDateString,joinChatRoom} from "../shared/tools";
-
+import {initChatRoomSharedTools ,getDateString, joinChatRoom} from "../shared/tools";
 
 class ChatClient extends Component {
 
@@ -26,7 +25,7 @@ class ChatClient extends Component {
         if (prevProps.janus !== this.state.janus) {
             this.setState({janus: prevProps.janus})
             Janus.log(" -- Janus was updated");
-            initChatRoom(prevProps.janus, null, chatroom => {
+            initChatRoomSharedTools(prevProps.janus, chatroom => {
                 Janus.log(":: Got Chat Handle: ", chatroom);
                 this.setState({chatroom});
             }, data => {

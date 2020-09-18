@@ -17,6 +17,7 @@ import {
 import './VirtualClient.scss';
 import './VideoConteiner.scss';
 import './CustomIcons.scss';
+import {reportToSentry} from '../../shared/sentry';
 import 'eqcss';
 import VirtualChat from './VirtualChat';
 import {initGxyProtocol, sendProtocolMessage} from '../../shared/protocol';
@@ -45,7 +46,6 @@ import VirtualStreamingJanus from '../../shared/VirtualStreamingJanus';
 import {kc} from "../../components/UserManager";
 import LoginPage from "../../components/LoginPage";
 import {Profile} from "../../components/Profile";
-import * as Sentry from "@sentry/browser";
 import VerifyAccount from './components/VerifyAccount';
 import GxyJanus from "../../shared/janus-utils";
 import audioModeSvg from '../../shared/audio-mode.svg';
@@ -154,7 +154,6 @@ class VirtualClient extends Component {
   }
 
   componentDidMount() {
-    Sentry.init({dsn: `https://${SENTRY_KEY}@sentry.kli.one/2`});
     if (isMobile) {
       window.location = '/userm';
     }
@@ -399,6 +398,28 @@ class VirtualClient extends Component {
         }, 1000);
       }
     }, 1000);
+  };
+
+  myFunction = () => {
+    console.log('stack: ' + (new Error()).stack);
+    this.tryThisOut();
+    //reportToSentry('Testing Sentry', {data: "some-data"}, this.state.user);
+  };
+  
+  outerFunction = () => {
+    this.myFunction();
+  };
+
+  sentryDeb = () => {
+    this.state.user.test = 'test';
+    console.log('sentryDeb');
+    // try {
+      // reportToSentry('Testing Sentry', {data: "some-data"}, this.state.user);
+      //throw "Testing Exception";
+    // } catch (e) {
+      // console.log('catched', e);
+    // }
+    this.outerFunction();
   };
 
   selectRoom = (selected_room) => {
@@ -1380,7 +1401,7 @@ class VirtualClient extends Component {
       case LINK_STATE_INIT:
         return "grey";
       case LINK_STATE_GOOD:
-        return "";  // white.
+        return null;  // white.
       case LINK_STATE_MEDIUM:
         return "orange";
       case LINK_STATE_WEAK:
@@ -1600,6 +1621,8 @@ class VirtualClient extends Component {
 
     let login = (<LoginPage user={user} checkPermission={this.checkPermission} />);
 
+    const isDeb = new URL(window.location.href).searchParams.has('deb');
+
     let content = (<div className={classNames('vclient', { 'vclient--chat-open': chatVisible })}>
 			<VerifyAccount user={user} loginPage={false} i18n={i18n} />
       <div className="vclient__toolbar">
@@ -1618,7 +1641,7 @@ class VirtualClient extends Component {
           {room ? <Button attached='right' negative icon='sign-out' disabled={delay} onClick={() => this.exitRoom(false)} /> : ''}
           {!room ? <Button attached='right' primary icon='sign-in' loading={delay} disabled={delay || !selected_room} onClick={() => this.initClient(false)} /> : ''}
         </Input>
-        { !(new URL(window.location.href).searchParams.has('deb')) ? null : (
+        { !isDeb ? null : (
         <Input>
           <Select placeholder='number of virtual users' options={[
             { value: '1', text: '1' },
@@ -1715,11 +1738,11 @@ class VirtualClient extends Component {
             : ''}
           <Menu.Item disabled={!localAudioTrack} onClick={this.micMute} className="mute-button">
             <canvas className={muted ? 'hidden' : 'vumeter'} ref="canvas1" id="canvas1" width="15" height="35" />
-            <Icon color={muted ? 'red' : ''} name={!muted ? 'microphone' : 'microphone slash'} />
+            <Icon color={muted ? 'red' : null} name={!muted ? 'microphone' : 'microphone slash'} />
             {t(muted ? 'oldClient.unMute' : 'oldClient.mute')}
           </Menu.Item>
           <Menu.Item disabled={video_device === null || !localVideoTrack || delay} onClick={() => this.camMute(cammuted)}>
-            <Icon color={cammuted ? 'red' : ''} name={!cammuted ? 'eye' : 'eye slash'} />
+            <Icon color={cammuted ? 'red' : null} name={!cammuted ? 'eye' : 'eye slash'} />
             {t(cammuted ? 'oldClient.startVideo' : 'oldClient.stopVideo')}
           </Menu.Item>
           <Menu.Item onClick={this.otherCamsMuteToggle}>
@@ -1779,6 +1802,11 @@ class VirtualClient extends Component {
           <Help t={t} />
           <Button primary style={{margin: 'auto'}} onClick={() => window.open('https://virtualhome.kli.one', '_blank')}>{t('loginPage.userFee')}</Button>
           <Monitoring monitoringData={monitoringData} />
+          {!isDeb ? null :
+           <Menu.Item onClick={this.sentryDeb}>
+             Sentry
+           </Menu.Item>
+          }
         </Menu>
         { !(new URL(window.location.href).searchParams.has('lost')) ? null :
             (<Label color={net_status === 2 ? 'yellow' : net_status === 3 ? 'red' : 'green'} icon='wifi' corner='right' />)}

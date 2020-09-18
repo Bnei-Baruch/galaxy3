@@ -9,8 +9,6 @@ import UsersQuad from "./UsersQuad";
 import './ShidurApp.css'
 import {STORAN_ID} from "../../shared/consts"
 import {GuaranteeDeliveryManager} from '../../shared/GuaranteeDelivery';
-import * as Sentry from "@sentry/browser";
-import {SENTRY_KEY} from "../../shared/env";
 
 
 class ShidurApp extends Component {
@@ -43,10 +41,6 @@ class ShidurApp extends Component {
         users_count: 0,
         gdm: new GuaranteeDeliveryManager(STORAN_ID),
     };
-
-    componentDidMount() {
-        Sentry.init({dsn: `https://${SENTRY_KEY}@sentry.kli.one/2`});
-    }
 
     componentWillUnmount() {
         Object.values(this.state.gateways).forEach(x => x.destroy());
@@ -113,7 +107,7 @@ class ShidurApp extends Component {
             .then(() => {
                 return gateway.initGxyProtocol(user, data => this.onProtocolData(gateway, data))
                     .then(() => {
-                        return gateway.initChatRoom(data => this.onChatData(gateway, data))
+                        return gateway.initChatRoomGateway(data => this.onChatData(gateway, data))
                             .then(() => {
                                 if (gateway.name === "gxy3") {
                                     return gateway.initServiceProtocol(user, data => this.onServiceData(gateway, data))

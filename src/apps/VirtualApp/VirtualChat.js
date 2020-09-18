@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import { Janus } from '../../lib/janus';
 import { Button, Input, Message } from 'semantic-ui-react';
-import { getDateString, initChatRoom, joinChatRoom, notifyMe } from '../../shared/tools';
+import { getDateString, initChatRoomSharedTools, joinChatRoom, notifyMe } from '../../shared/tools';
 import { SHIDUR_ID } from '../../shared/consts';
 
 class VirtualChat extends Component {
@@ -37,7 +37,7 @@ class VirtualChat extends Component {
   }
 
   initChat = (janus, room, user) => {
-    initChatRoom(janus, user, chatroom => {
+    initChatRoomSharedTools(janus, chatroom => {
       Janus.log(':: Got Chat Handle: ', chatroom);
       this.setState({ chatroom });
       joinChatRoom(chatroom, room, user);
@@ -46,7 +46,7 @@ class VirtualChat extends Component {
     });
   };
 
-  initChatRoom = (user, room) => {
+  init = (user, room) => {
     joinChatRoom(this.state.chatroom, room, user);
     this.setState({ room });
   };

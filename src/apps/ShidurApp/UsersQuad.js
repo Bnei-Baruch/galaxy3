@@ -4,7 +4,7 @@ import './UsersQuad.scss'
 import UsersHandle from "./UsersHandle";
 import api from '../../shared/Api';
 //import {AUDIOOUT_ID, SDIOUT_ID, SNDMAN_ID} from "../../shared/consts"
-import {reportToSentry} from "../../shared/tools";
+import {reportToSentry} from "../../shared/sentry";
 
 class UsersQuad extends Component {
 

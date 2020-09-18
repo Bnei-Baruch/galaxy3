@@ -171,7 +171,7 @@ class GxyJanus extends EventTarget {
 
     getConfig = () => (GxyJanus.instanceConfig(this.name));
 
-    initChatRoom = (ondata) => {
+    initChatRoomGateway = (ondata) => {
         return new Promise((resolve, reject) => {
             this.gateway.attach(
                 {

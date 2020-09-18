@@ -47,9 +47,9 @@ class ChatBox extends Component {
 
         Promise.all(Object.values(gateways).map(gateway => {
             if (!gateway.chatroom) {
-                gateway.initChatRoom(data => this.onChatData(gateway, data))
+                gateway.initChatRoomGateway(data => this.onChatData(gateway, data))
                     .catch(err => {
-                        console.error("[Admin] [ChatBox] gateway.initChatRoom error", gateway.name, err);
+                        console.error("[Admin] [ChatBox] gateway.initChatRoomGateway error", gateway.name, err);
                     });
             }
         }))
