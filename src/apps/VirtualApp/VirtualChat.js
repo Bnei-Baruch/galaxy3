@@ -117,7 +117,7 @@ class VirtualChat extends Component {
             if (what.match(/^(success|error)$/)) {
               cb(json)
             } else {
-              this.onData(data);
+              this.onData(json);
             }
           },
           oncleanup: () => {
