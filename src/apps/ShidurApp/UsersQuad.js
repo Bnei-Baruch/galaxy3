@@ -202,25 +202,25 @@ class UsersQuad extends Component {
         }
     };
 
-    switchFullScreen = (i,g,q) => {
-        if(!g) return;
+    switchFullScreen = (i, group, is_qst) => {
+        if(!group) return;
         let {fullscr,index,question} = this.state;
 
         if(question) return;
 
         if(fullscr && index === i) {
-            this.toFourGroup(i,g,() => {},q);
+            this.toFourGroup(i, group,() => {}, is_qst);
         } else if(fullscr) {
-            this.toFourGroup(i,g, () => {
-                this.toFullGroup(i,g,q);
+            this.toFourGroup(i, group, () => {
+                this.toFullGroup(i, group, is_qst);
             });
         } else {
-            this.toFullGroup(i,g,q);
+            this.toFullGroup(i, group, is_qst);
         }
     };
 
-    switchQuestion = (i,g,q) => {
-        if(!g) return;
+    switchQuestion = (i, group, is_qst) => {
+        if(!group) return;
         let {fullscr,index,question,col} = this.state;
 
         if(fullscr && !question) return;
@@ -231,8 +231,8 @@ class UsersQuad extends Component {
         if(!this["cmd"+col+i].state.videoroom) return;
 
         if(fullscr && index === i) {
-            this.toFourGroup(i,g,() => {},q);
-            this.props.setProps({full_qst: false, full_col: col, full_group: g});
+            this.toFourGroup(i, group,() => {}, is_qst);
+            this.props.setProps({full_qst: false, full_col: col, full_group: group});
         } else if(fullscr) {
             return
             // this.toFourGroup(i,g, () => {
@@ -240,26 +240,26 @@ class UsersQuad extends Component {
             //     setStore({qst: true,col,group: g});
             // });
         } else {
-            this.toFullGroup(i,g,q);
-            this.props.setProps({full_qst: true, full_col: col, full_group: g});
+            this.toFullGroup(i, group, is_qst);
+            this.props.setProps({full_qst: true, full_col: col, full_group: group});
         }
     };
 
-    toFullGroup = (i,g,q) => {
-        let {room,janus} = g;
-        console.log("[Shidur]:: Make Full Screen Group: ",g);
-        this.setState({fullscr: true, index: i, question: q});
-        //this.sdiGuaranteeAction("fullscr_group" , true, i, g, q, [AUDIOOUT_ID, SDIOUT_ID, SNDMAN_ID]);
-        this.sdiAction("fullscr_group" , true, i, g, q);
-        if(q) this.micMute(true, room, janus, i);
+    toFullGroup = (i, group, is_qst) => {
+        let {room,janus} = group;
+        console.log("[Shidur]:: Make Full Screen Group: ", group);
+        this.setState({fullscr: true, index: i, question: is_qst});
+        //this.sdiGuaranteeAction("fullscr_group" , true, i, group, is_qst, [AUDIOOUT_ID, SDIOUT_ID, SNDMAN_ID]);
+        this.sdiAction("fullscr_group" , true, i, group, is_qst);
+        if(is_qst) this.micMute(true, room, janus, i);
     };
 
-    toFourGroup = (i,g,cb,q) => {
-        let {room,janus} = g;
+    toFourGroup = (i, group, cb , is_qst) => {
+        let {room,janus} = group;
         console.log("[Shidur]:: Back to four: ");
-        //this.sdiGuaranteeAction("fullscr_group" , false, i, g, q, [AUDIOOUT_ID, SDIOUT_ID, SNDMAN_ID]);
-        this.sdiAction("fullscr_group" , false, i, g, q);
-        if(q) this.micMute(false, room, janus, i);
+        //this.sdiGuaranteeAction("fullscr_group" , false, i, group, is_qst, [AUDIOOUT_ID, SDIOUT_ID, SNDMAN_ID]);
+        this.sdiAction("fullscr_group" , false, i, group, is_qst);
+        if(is_qst) this.micMute(false, room, janus, i);
         this.setState({fullscr: false, index: null, question: false}, () => {
             cb();
         });
@@ -345,7 +345,7 @@ class UsersQuad extends Component {
           let name = g ? g.description : "";
           return (
               <div key={"pr" + i} className={qf ? "video_full" : ff ? "video_qst" : "video_box"} >
-                  <div className='click-panel' onClick={() => this.switchQuestion(i,g,true)} >
+                  <div className='click-panel' onClick={() => this.switchQuestion(i, g, true)} >
                   <div className='video_title' >{name}</div>
                   {qst ? <div className="qst_title">?</div> : ""}
                   <UsersHandle key={"q"+i} g={g} index={i} ref={cmd => {this["cmd"+col+i] = cmd;}} {...this.props} />
@@ -354,7 +354,7 @@ class UsersQuad extends Component {
                   <Button className='fullscr_button'
                           size='mini'
                           icon='expand arrows alternate'
-                          onClick={() => this.switchFullScreen(i,g,false)} /> : ""}
+                          onClick={() => this.switchFullScreen(i, g, false)} /> : ""}
                   {fullscr && index === i ? "" :
                       <Button className='next_button'
                               disabled={groups.length < 5 || next_button}
