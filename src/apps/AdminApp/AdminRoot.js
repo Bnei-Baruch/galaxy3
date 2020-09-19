@@ -15,6 +15,7 @@ import RoomManager from "./components/RoomManager";
 import api from "../../shared/Api";
 import ConfigStore from "../../shared/ConfigStore";
 import {GuaranteeDeliveryManager} from "../../shared/GuaranteeDelivery";
+import StatNotes from "./components/StatNotes";
 
 class AdminRoot extends Component {
 
@@ -44,14 +45,6 @@ class AdminRoot extends Component {
         usersTabs: [],
         appInitError: null,
         users_count: 0,
-        gxy1_count: 0,
-        gxy2_count: 0,
-        gxy3_count: 0,
-        gxy4_count: 0,
-        gxy5_count: 0,
-        gxy6_count: 0,
-        gxy7_count: 0,
-        gxy8_count: 0,
         command_status: true,
         gdm: null,
         premodStatus: false,
@@ -192,14 +185,6 @@ class AdminRoot extends Component {
             .then((data) => {
                 const {current_room} = this.state;
                 const users_count = data.map(r => r.num_users).reduce((su, cur) => su + cur, 0);
-                const gxy1_count = data.filter(r => r.janus === "gxy1").map(r => r.num_users).reduce((su, cur) => su + cur, 0);
-                const gxy2_count = data.filter(r => r.janus === "gxy2").map(r => r.num_users).reduce((su, cur) => su + cur, 0);
-                const gxy3_count = data.filter(r => r.janus === "gxy3").map(r => r.num_users).reduce((su, cur) => su + cur, 0);
-                const gxy4_count = data.filter(r => r.janus === "gxy4").map(r => r.num_users).reduce((su, cur) => su + cur, 0);
-                const gxy5_count = data.filter(r => r.janus === "gxy5").map(r => r.num_users).reduce((su, cur) => su + cur, 0);
-                const gxy6_count = data.filter(r => r.janus === "gxy6").map(r => r.num_users).reduce((su, cur) => su + cur, 0);
-                const gxy7_count = data.filter(r => r.janus === "gxy7").map(r => r.num_users).reduce((su, cur) => su + cur, 0);
-                const gxy8_count = data.filter(r => r.janus === "gxy8").map(r => r.num_users).reduce((su, cur) => su + cur, 0);
                 const room = data.find(r => r.room === current_room);
                 let users = current_room && room ? room.users : [];
                 data.sort((a, b) => {
@@ -207,7 +192,7 @@ class AdminRoot extends Component {
                     if (a.description < b.description) return -1;
                     return 0;
                 });
-                this.setState({rooms: data, users, users_count, gxy1_count, gxy2_count, gxy3_count, gxy4_count, gxy5_count, gxy6_count, gxy7_count, gxy8_count});
+                this.setState({rooms: data, users, users_count});
             })
             .catch(err => {
                 console.error("[Admin] error fetching active rooms", err);
@@ -820,14 +805,6 @@ class AdminRoot extends Component {
           user,
           usersTabs,
           users_count,
-          gxy1_count,
-          gxy2_count,
-          gxy3_count,
-          gxy4_count,
-          gxy5_count,
-          gxy6_count,
-          gxy7_count,
-          gxy8_count,
           chatRoomsInitialized,
           appInitError,
           command_status,
@@ -968,44 +945,7 @@ class AdminRoot extends Component {
                               hideOnScroll
                           />
                           <Popup trigger={<Button color="yellow" icon='question' onClick={() => this.sendRemoteCommand("client-question")} />} content='Set/Unset question' inverted />
-                          <Label attached='top right' size='mini' className='gxy_count' >
-                              <Table compact='very'>
-                                  <Table.Header>
-                                      <Table.Row>
-                                          <Table.HeaderCell />
-                                          <Table.HeaderCell />
-                                          <Table.HeaderCell />
-                                          <Table.HeaderCell />
-                                      </Table.Row>
-                                  </Table.Header>
-                                  <Table.Body>
-                                      <Table.Row>
-                                          <Table.Cell>gxy1 :</Table.Cell>
-                                          <Table.Cell>{gxy1_count}</Table.Cell>
-                                          <Table.Cell>gxy5 :</Table.Cell>
-                                          <Table.Cell>{gxy5_count}</Table.Cell>
-                                      </Table.Row>
-                                      <Table.Row>
-                                          <Table.Cell>gxy2 :</Table.Cell>
-                                          <Table.Cell>{gxy2_count}</Table.Cell>
-                                          <Table.Cell>gxy6 :</Table.Cell>
-                                          <Table.Cell>{gxy6_count}</Table.Cell>
-                                      </Table.Row>
-                                      <Table.Row>
-                                          <Table.Cell>gxy3 :</Table.Cell>
-                                          <Table.Cell>{gxy3_count}</Table.Cell>
-                                          <Table.Cell>gxy7 :</Table.Cell>
-                                          <Table.Cell>{gxy7_count}</Table.Cell>
-                                      </Table.Row>
-                                      <Table.Row>
-                                          <Table.Cell>gxy4 :</Table.Cell>
-                                          <Table.Cell>{gxy4_count}</Table.Cell>
-                                          <Table.Cell>gxy8 :</Table.Cell>
-                                          <Table.Cell>{gxy8_count}</Table.Cell>
-                                      </Table.Row>
-                                  </Table.Body>
-                              </Table>
-                          </Label>
+                          <StatNotes data={rooms} />
                       </Segment>
                       : null
               }
@@ -1072,7 +1012,7 @@ class AdminRoot extends Component {
                               <Table selectable compact='very' basic structured className="admin_table" unstackable>
                                   <Table.Body>
                                       <Table.Row disabled positive>
-                                          <Table.Cell width={5} >Rooms</Table.Cell>
+                                          <Table.Cell width={5} >Rooms: {rooms.length}</Table.Cell>
                                           <Table.Cell width={1} >{users_count}</Table.Cell>
                                       </Table.Row>
                                       {rooms_grid}
