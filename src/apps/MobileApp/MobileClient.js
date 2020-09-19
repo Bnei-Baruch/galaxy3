@@ -1122,7 +1122,7 @@ class MobileClient extends Component {
                 this.exitRoom(false, () => {
                     alert(this.props.t('oldClient.error') + data.error);
                 });
-            } else {
+            } else if(textroom === "success" && data.participants) {
                 Janus.log(":: Successfully joined to chat room: " + selected_room );
                 const {id, timestamp, role, username} = user;
                 const d = {id, timestamp, role, display: username};
