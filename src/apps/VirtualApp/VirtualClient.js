@@ -10,6 +10,7 @@ import {
   getMediaStream,
   initJanus,
   micLevel,
+  reportToSentry,
   takeImage,
   testMic,
   wkliLeave
@@ -19,7 +20,7 @@ import './VideoConteiner.scss';
 import './CustomIcons.scss';
 import 'eqcss';
 import VirtualChat from './VirtualChat';
-import {initGxyProtocol, sendProtocolMessage} from '../../shared/protocol';
+//import {initGxyProtocol, sendProtocolMessage} from '../../shared/protocol';
 import {
   PROTOCOL_ROOM,
   VIDEO_360P_OPTION_VALUE,
@@ -639,17 +640,29 @@ class VirtualClient extends Component {
 
     this.setState({user});
 
-    const {id,timestamp,role,username} = user;
-    const d = {id,timestamp,role,display: username};
-    const register = {'request': 'join', 'room': selected_room, 'ptype': 'publisher', 'display': JSON.stringify(d)};
-    videoroom.send({"message": register,
-      success: () => {
-        this.chat.initChat(janus, selected_room, user);
-        //this.chat.initChatRoom(user, selected_room);
-      },
-      error: (error) => {
-        console.error(error);
-        this.exitRoom(false);
+    this.chat.initChatRoom(janus, selected_room, user, data => {
+      const { textroom, error_code } = data;
+      if (textroom === 'error') {
+        //error_code === 420
+        console.error("Chatroom error: ", data, error_code)
+        reportToSentry(data, {source: "Chatroom"}, this.state.user);
+        this.exitRoom(false, () => {
+          alert(this.props.t('oldClient.error') + data.error);
+        });
+      } else {
+        const {id, timestamp, role, username} = user;
+        const d = {id, timestamp, role, display: username};
+        const register = {'request': 'join', 'room': selected_room, 'ptype': 'publisher', 'display': JSON.stringify(d)};
+        videoroom.send({
+          "message": register,
+          success: () => {
+            console.log(" Request join success");
+          },
+          error: (error) => {
+            console.error(error);
+            this.exitRoom(false);
+          }
+        })
       }
     });
 
