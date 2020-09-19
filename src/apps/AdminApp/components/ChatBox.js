@@ -102,6 +102,7 @@ class ChatBox extends Component {
                 // Public message
                 console.log("[Admin] [ChatBox] public message", gateway.name, from, message);
                 let {messages} = this.state;
+                message.to = this.props.selected_group;
                 messages.push(message);
                 this.setState({messages});
                 this.scrollToBottom();
@@ -225,7 +226,7 @@ class ChatBox extends Component {
                 <div key={i}><p>
                     <i style={{color: 'grey'}}>{time}</i> -
                     <b style={{color: user.role === "admin" ? 'red' : 'blue'}}>{user.username}</b>
-                    {to ? <b style={{color: 'blue'}}>-> {to} :</b> : <b style={{color: 'red'}}>-> {selected_group} :</b>}
+                    {to ? <b style={{color: 'blue'}}>-> {to} :</b> : ""}
                 </p>{text}</div>
             );
         });
