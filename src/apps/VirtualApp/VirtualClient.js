@@ -1130,7 +1130,9 @@ class VirtualClient extends Component {
     const {user, cammuted, gdm} = this.state;
     const {type,id} = data;
     if (type === 'client-reconnect' && user.id === id) {
-      this.exitRoom(true);
+      this.exitRoom(true, () => {
+        this.initClient(true);
+      });
     } else if (type === 'client-reload' && user.id === id) {
       window.location.reload();
     } else if (type === 'client-disconnect' && user.id === id) {
