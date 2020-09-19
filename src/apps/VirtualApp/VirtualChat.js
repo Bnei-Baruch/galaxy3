@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import { Janus } from '../../lib/janus';
 import { Button, Input, Message } from 'semantic-ui-react';
-import { getDateString, initChatRoom, joinChatRoom, notifyMe } from '../../shared/tools';
+import {getDateString, notifyMe, reportToSentry} from '../../shared/tools';
 import { SHIDUR_ID } from '../../shared/consts';
 
 class VirtualChat extends Component {
@@ -36,19 +36,94 @@ class VirtualChat extends Component {
     }
   }
 
-  initChat = (janus, room, user) => {
-    initChatRoom(janus, user, chatroom => {
-      Janus.log(':: Got Chat Handle: ', chatroom);
-      this.setState({ chatroom });
-      joinChatRoom(chatroom, room, user);
-    }, data => {
-      this.onData(data);
+  joinChatRoom = (textroom, roomid, user) => {
+    let transaction = Janus.randomString(12);
+    let register = {
+      textroom: "join",
+      transaction: transaction,
+      room: roomid,
+      username: user.id,
+      display: user.display
+    };
+    textroom.data({
+      text: JSON.stringify(register),
+      success: () => {
+        Janus.log("Join chat room request successfully sent " + roomid );
+      },
+      error: (reason) => {
+        console.error("  -- Error join room", reason);
+        reportToSentry(reason, {source: "Textroom"}, user);
+      }
     });
   };
 
-  initChatRoom = (user, room) => {
-    joinChatRoom(this.state.chatroom, room, user);
-    this.setState({ room });
+  initChatRoom = (janus, room, user, cb) => {
+    let chatroom = null;
+    janus.attach(
+        {
+          plugin: "janus.plugin.textroom",
+          opaqueId: "chatroom_user",
+          success: (pluginHandle) => {
+            chatroom = pluginHandle;
+            Janus.log("Plugin attached! (" + chatroom.getPlugin() + ", id=" + chatroom.getId() + ")");
+            this.setState({ chatroom, room });
+            // Setup the DataChannel
+            let body = {"request": "setup"};
+            Janus.debug("Sending message (" + JSON.stringify(body) + ")");
+            chatroom.send({"message": body});
+          },
+          error: (error) => {
+            console.error("  -- Error attaching plugin...", error);
+            reportToSentry(error, {source: "Textroom"}, user);
+          },
+          webrtcState: (on) => {
+            Janus.log("Janus says our WebRTC PeerConnection is " + (on ? "up" : "down") + " now");
+          },
+          onmessage: (msg, jsep) => {
+            Janus.debug(" ::: Got a message :::");
+            Janus.debug(msg);
+            if (msg["error"] !== undefined && msg["error"] !== null) {
+              console.error(msg["error"]);
+              reportToSentry(msg["error"], {source: "Onmessage"}, user);
+            }
+            if (jsep !== undefined && jsep !== null) {
+              // Answer
+              chatroom.createAnswer(
+                  {
+                    jsep: jsep,
+                    media: {audio: false, video: false, data: true},	// We only use datachannels
+                    success: (jsep) => {
+                      Janus.debug("Got SDP!");
+                      Janus.debug(jsep);
+                      let body = {"request": "ack"};
+                      chatroom.send({"message": body, "jsep": jsep});
+                    },
+                    error: (error) => {
+                      Janus.error("WebRTC error:", error);
+                      console.error("WebRTC error... " + JSON.stringify(error));
+                      reportToSentry(msg["error"], {source: "Offer"}, user);
+                    }
+                  });
+            }
+          },
+          ondataopen: () => {
+            Janus.log("The DataChannel is available!");
+            this.joinChatRoom(chatroom, room, user);
+          },
+          ondata: (data) => {
+            Janus.log(':: We got message from Data Channel: ', data);
+            let json = JSON.parse(data);
+            let what = json['textroom'];
+            if (what.match(/^(success|error)$/)) {
+              cb(json)
+            } else {
+              this.onData(json);
+            }
+          },
+          oncleanup: () => {
+            Janus.log(" ::: Got a cleanup notification :::");
+          }
+        });
   };
 
   onKeyPressed = (e) => {
@@ -71,9 +146,7 @@ class VirtualChat extends Component {
     }
   };
 
-  onData = (data) => {
-    Janus.log(':: We got message from Data Channel: ', data);
-    let json = JSON.parse(data);
+  onData = (json) => {
     // var transaction = json["transaction"];
     // if (transactions[transaction]) {
     //     // Someone was waiting for this
