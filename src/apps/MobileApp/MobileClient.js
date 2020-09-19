@@ -1123,6 +1123,7 @@ class MobileClient extends Component {
                     alert(this.props.t('oldClient.error') + data.error);
                 });
             } else {
+                Janus.log(":: Successfully joined to chat room: " + selected_room );
                 const {id, timestamp, role, username} = user;
                 const d = {id, timestamp, role, display: username};
                 const register = {'request': 'join', 'room': selected_room, 'ptype': 'publisher', 'display': JSON.stringify(d)};

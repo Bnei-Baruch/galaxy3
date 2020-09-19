@@ -47,8 +47,8 @@ class VirtualChat extends Component {
     };
     textroom.data({
       text: JSON.stringify(register),
-      success: (data) => {
-        Janus.log("Join chat room " + roomid + ", is: " + data);
+      success: () => {
+        Janus.log("Join chat room request successfully sent " + roomid );
       },
       error: (reason) => {
         console.error("  -- Error join room", reason);
