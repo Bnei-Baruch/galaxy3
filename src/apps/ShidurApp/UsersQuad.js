@@ -251,7 +251,7 @@ class UsersQuad extends Component {
         this.setState({fullscr: true, index: i, question: q});
         //this.sdiGuaranteeAction("fullscr_group" , true, i, g, q, [AUDIOOUT_ID, SDIOUT_ID, SNDMAN_ID]);
         this.sdiAction("fullscr_group" , true, i, g, q);
-        this.micMute(true, room, janus, i);
+        if(q) this.micMute(true, room, janus, i);
     };
 
     toFourGroup = (i,g,cb,q) => {
@@ -259,7 +259,7 @@ class UsersQuad extends Component {
         console.log("[Shidur]:: Back to four: ");
         //this.sdiGuaranteeAction("fullscr_group" , false, i, g, q, [AUDIOOUT_ID, SDIOUT_ID, SNDMAN_ID]);
         this.sdiAction("fullscr_group" , false, i, g, q);
-        this.micMute(false, room, janus, i);
+        if(q) this.micMute(false, room, janus, i);
         this.setState({fullscr: false, index: null, question: false}, () => {
             cb();
         });
