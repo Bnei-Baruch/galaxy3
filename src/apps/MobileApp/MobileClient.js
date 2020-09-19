@@ -1114,14 +1114,14 @@ class MobileClient extends Component {
         this.setState({user, muted: true});
 
         this.chat.initChatRoom(janus, selected_room, user, data => {
-            const { textroom, error_code } = data;
+            const { textroom, error_code, error } = data;
             if (textroom === 'error') {
-                //error_code === 420
                 console.error("Chatroom error: ", data, error_code)
-                reportToSentry(data, {source: "Chatroom"}, this.state.user);
+                reportToSentry(error, {source: "Chatroom"}, this.state.user);
                 this.exitRoom(false, () => {
-                    alert(this.props.t('oldClient.error') + data.error);
-                });
+                    if(error_code === 420)
+                        alert(this.props.t('oldClient.error') + data.error);
+                }, true);
             } else if(textroom === "success" && data.participants) {
                 Janus.log(":: Successfully joined to chat room: " + selected_room );
                 const {id, timestamp, role, username} = user;
@@ -1193,7 +1193,7 @@ class MobileClient extends Component {
         // });
     };
 
-    exitRoom = (reconnect, callback) => {
+    exitRoom = (reconnect, callback, error) => {
         this.setState({delay: true})
         let {videoroom, remoteFeed, protocol, janus, room} = this.state;
         wkliLeave(this.state.user);
@@ -1213,7 +1213,7 @@ class MobileClient extends Component {
                 this.setState({rooms});
             });
 
-        if (this.chat) {
+        if (this.chat && !error) {
           this.chat.exitChatRoom(room);
         }
 

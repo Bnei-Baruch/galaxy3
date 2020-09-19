@@ -417,7 +417,7 @@ class VirtualClient extends Component {
     this.setState({selected_room, user});
   };
 
-  exitRoom = (reconnect, callback) => {
+  exitRoom = (reconnect, callback, error) => {
     this.setState({delay: true});
     if(this.state.user.role === "user") {
       wkliLeave(this.state.user);
@@ -439,7 +439,10 @@ class VirtualClient extends Component {
     if(videoroom) videoroom.send({"message": {request: 'leave', room}});
     let pl = {textroom: 'leave', transaction: Janus.randomString(12), 'room': PROTOCOL_ROOM};
     if(protocol) protocol.data({text: JSON.stringify(pl)});
-    this.chat.exitChatRoom(room);
+
+    if (this.chat && !error) {
+      this.chat.exitChatRoom(room);
+    }
 
     setTimeout(() => {
       if(videoroom) videoroom.detach();
@@ -641,14 +644,14 @@ class VirtualClient extends Component {
     this.setState({user});
 
     this.chat.initChatRoom(janus, selected_room, user, data => {
-      const { textroom, error_code } = data;
+      const { textroom, error_code, error } = data;
       if (textroom === 'error') {
-        //error_code === 420
         console.error("Chatroom error: ", data, error_code)
-        reportToSentry(data, {source: "Chatroom"}, this.state.user);
+        reportToSentry(error, {source: "Chatroom"}, this.state.user);
         this.exitRoom(false, () => {
-          alert(this.props.t('oldClient.error') + data.error);
-        });
+          if(error_code === 420)
+            alert(this.props.t('oldClient.error') + data.error);
+        }, true);
       } else if(textroom === "success" && data.participants) {
         Janus.log(":: Successfully joined to chat room: " + selected_room );
         const {id, timestamp, role, username} = user;
