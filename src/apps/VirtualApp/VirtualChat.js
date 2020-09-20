@@ -317,7 +317,7 @@ class VirtualChat extends Component {
       if (text.matchAll) {
         matchAll = (re) => text.matchAll(re);
       } else {
-        matchAll = (re) => text.match(re);
+        matchAll = (re) => ([text.match(re)]);
       }
       for (const match of matchAll(urlRegex)) {
         const url = match[0];
