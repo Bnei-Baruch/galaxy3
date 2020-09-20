@@ -1,0 +1,8 @@
+[defaults]
+project=galaxy
+org=sentry
+url=https://sentry.kli.one/
+sentry_api_key=<PUT SENTRY API KEY HERE>
+
+[auth]
+token=<PUT SENTRY AUTH TOKEN HERE>

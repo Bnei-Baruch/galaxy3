@@ -9,6 +9,7 @@ import UsersQuadSndman from "./UsersQuadSndman";
 import GxyJanus from "../../shared/janus-utils";
 import {SNDMAN_ID} from "../../shared/consts"
 import {GuaranteeDeliveryManager} from '../../shared/GuaranteeDelivery';
+import {updateSentryUser} from "../../shared/sentry";
 
 
 class SndmanApp extends Component {
@@ -35,11 +36,13 @@ class SndmanApp extends Component {
         } else {
             alert("Access denied!");
             kc.logout();
+            updateSentryUser(null);
         }
     };
 
     initApp = (user) => {
         this.setState({user});
+        updateSentryUser(user);
 
         api.fetchConfig()
             .then(data => GxyJanus.setGlobalConfig(data))

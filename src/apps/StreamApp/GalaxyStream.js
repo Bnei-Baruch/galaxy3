@@ -9,7 +9,7 @@ import LoginPage from "../../components/LoginPage";
 import './GalaxyStream.css'
 import api from "../../shared/Api";
 import GxyJanus from "../../shared/janus-utils";
-
+import {updateSentryUser} from "../../shared/sentry";
 
 class GalaxyStream extends Component {
 
@@ -36,9 +36,11 @@ class GalaxyStream extends Component {
             delete user.roles;
             user.role = gxy_group ? "group" : gxy_user ? "user" : "public";
             this.initApp(user);
+            updateSentryUser(user);
         } else {
             alert("Access denied!");
             kc.logout();
+            updateSentryUser(null);
         }
     };
 

@@ -16,6 +16,7 @@ import api from "../../shared/Api";
 import ConfigStore from "../../shared/ConfigStore";
 import {GuaranteeDeliveryManager} from "../../shared/GuaranteeDelivery";
 import StatNotes from "./components/StatNotes";
+import {updateSentryUser} from "../../shared/sentry";
 
 class AdminRoot extends Component {
 
@@ -90,6 +91,7 @@ class AdminRoot extends Component {
         } else {
             alert("Access denied!");
             kc.logout();
+            updateSentryUser(null);
         }
     };
 
@@ -116,7 +118,8 @@ class AdminRoot extends Component {
 
     initApp = (user) => {
         let gdm = new GuaranteeDeliveryManager(user.id);
-        this.setState({user,gdm});
+        this.setState({user, gdm});
+        updateSentryUser(user);
 
         api.fetchConfig()
             .then(data => {
