@@ -944,7 +944,6 @@ class AdminRoot extends Component {
                               on='click'
                               hideOnScroll
                           />
-                          <Popup trigger={<Button color="yellow" icon='question' onClick={() => this.sendRemoteCommand("client-question")} />} content='Set/Unset question' inverted />
                           <StatNotes data={rooms} />
                       </Segment>
                       : null
@@ -963,18 +962,18 @@ class AdminRoot extends Component {
                                           <Popup trigger={<Button color="teal" icon='microphone' onClick={() => this.sendRemoteCommand("client-mute")} />} content='Mic Mute/Unmute' inverted />
                                           <Popup trigger={<Button color="pink" icon='eye' onClick={() => this.sendRemoteCommand("video-mute")} />} content='Cam Mute/Unmute' inverted />
                                           <Popup trigger={<Button color="orange" icon={command_status ? 'volume off' : 'volume up'} onClick={() => this.sendRemoteCommand("audio-out")} />} content='Talk event' inverted />
+                                          <Popup trigger={<Button color="yellow" icon='question' onClick={() => this.sendRemoteCommand("client-question")} />} content='Set/Unset question' inverted />
                                           {/*<Popup trigger={<Button color="pink" icon='eye' onClick={() => this.sendDataMessage("video-mute")} />} content='Cam Mute/Unmute' inverted />*/}
                                           {/*<Popup trigger={<Button color="blue" icon='power off' onClick={() => this.sendRemoteCommand("client-disconnect")} />} content='Disconnect(LOST FEED HERE!)' inverted />*/}
-                                          <Popup inverted
-                                                 content={`${premodStatus ? 'Disable' : 'Enable'} Pre Moderation Mode`}
-                                                 trigger={
-                                                     <Button color="blue"
-                                                             icon='copyright'
-                                                             inverted={premodStatus}
-                                                             onClick={() => this.sendRemoteCommand("premoder-mode")}/>
-                                                 }/>
-                                          <Popup trigger={<Button color="yellow" icon='question' onClick={() => this.sendRemoteCommand("client-question")} />} content='Set/Unset question' inverted />
-                                          <Popup trigger={<Button color="red" icon='redo' onClick={() => this.setState({showConfirmReloadAll: !showConfirmReloadAll})} />} content='RELOAD ALL' inverted />
+                                          {/*<Popup inverted*/}
+                                          {/*       content={`${premodStatus ? 'Disable' : 'Enable'} Pre Moderation Mode`}*/}
+                                          {/*       trigger={*/}
+                                          {/*           <Button color="blue"*/}
+                                          {/*                   icon='copyright'*/}
+                                          {/*                   inverted={premodStatus}*/}
+                                          {/*                   onClick={() => this.sendRemoteCommand("premoder-mode")}/>*/}
+                                          {/*       }/>*/}
+                                          {/*<Popup trigger={<Button color="red" icon='redo' onClick={() => this.setState({showConfirmReloadAll: !showConfirmReloadAll})} />} content='RELOAD ALL' inverted />*/}
                                       </Segment>
                                       : null
                               }
