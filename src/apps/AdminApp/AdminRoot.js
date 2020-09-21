@@ -211,12 +211,12 @@ class AdminRoot extends Component {
 
     publishOwnFeed = (gateway) => {
         gateway.videoroom.createOffer({
-            media: {audio: false, video: false, data: true},
+            media: {audio: false, video: false, data: false},
             simulcast: false,
             success: (jsep) => {
                 Janus.debug('Got publisher SDP!');
                 Janus.debug(jsep);
-                let publish = { request: 'configure', audio: false, video: false, data: true };
+                let publish = { request: 'configure', audio: false, video: false, data: false };
                 gateway.videoroom.send({ 'message': publish, 'jsep': jsep });
             },
             error: (error) => {
@@ -397,10 +397,10 @@ class AdminRoot extends Component {
                     gateway.remoteFeed.createAnswer(
                         {
                             jsep: jsep,
-                            media: {audioSend: false, videoSend: false, data: true},	// We want recvonly audio/video
+                            media: {audioSend: false, videoSend: false, data: false},	// We want recvonly audio/video
                             success: (jsep) => {
                                 gateway.debug("[remoteFeed] Got SDP", jsep);
-                                let body = {request: "start", room: this.state.current_room, data: true};
+                                let body = {request: "start", room: this.state.current_room, data: false};
                                 gateway.remoteFeed.send({message: body, jsep: jsep});
                             },
                             error: (error) => {
