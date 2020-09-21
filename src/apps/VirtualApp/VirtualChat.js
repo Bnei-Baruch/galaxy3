@@ -204,6 +204,9 @@ class VirtualChat extends Component {
           if (this.props.visible) {
             this.scrollToBottom();
           } else {
+            if(message.user.role.match(/^(admin|root)$/)) {
+              notifyMe('Shidur', message.text, true);
+            }
             this.props.onNewMsg();
           }
         }
