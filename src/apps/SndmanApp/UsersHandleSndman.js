@@ -116,7 +116,7 @@ class UsersHandleSndman extends Component {
                 let mypvtid = msg["private_id"];
                 this.setState({myid, mypvtid});
                 console.debug(`[Sndman] [room ${roomid}] Successfully joined room`, myid);
-                this.publishOwnFeed();
+                //this.publishOwnFeed();
                 if (msg["publishers"] !== undefined && msg["publishers"] !== null) {
                     let list = msg["publishers"];
                     //FIXME: Tmp fix for black screen in room caoused by feed with video_codec = none
