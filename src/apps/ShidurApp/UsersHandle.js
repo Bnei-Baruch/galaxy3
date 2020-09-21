@@ -94,12 +94,12 @@ class UsersHandle extends Component {
 
     publishOwnFeed = () => {
         this.state.videoroom.createOffer({
-            media: {audio: false, video: false, data: true},
+            media: {audio: false, video: false, data: false},
             simulcast: false,
             success: (jsep) => {
                 console.debug('Got publisher SDP!');
                 console.debug(jsep);
-                let publish = { request: 'configure', audio: false, video: false, data: true };
+                let publish = { request: 'configure', audio: false, video: false, data: false };
                 this.state.videoroom.send({ 'message': publish, 'jsep': jsep });
             },
             error: (error) => {

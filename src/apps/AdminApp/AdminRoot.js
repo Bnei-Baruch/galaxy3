@@ -211,12 +211,12 @@ class AdminRoot extends Component {
 
     publishOwnFeed = (gateway) => {
         gateway.videoroom.createOffer({
-            media: {audio: false, video: false, data: true},
+            media: {audio: false, video: false, data: false},
             simulcast: false,
             success: (jsep) => {
                 Janus.debug('Got publisher SDP!');
                 Janus.debug(jsep);
-                let publish = { request: 'configure', audio: false, video: false, data: true };
+                let publish = { request: 'configure', audio: false, video: false, data: false };
                 gateway.videoroom.send({ 'message': publish, 'jsep': jsep });
             },
             error: (error) => {
@@ -234,7 +234,7 @@ class AdminRoot extends Component {
                 let mypvtid = msg["private_id"];
                 this.setState({myid, mypvtid});
                 console.log("[Admin] Successfully joined room " + msg["room"] + " with ID " + myid + " on " + gateway.name);
-                this.publishOwnFeed(gateway);
+                //this.publishOwnFeed(gateway);
                 // Any new feed to attach to?
                 if (msg["publishers"] !== undefined && msg["publishers"] !== null) {
                     let list = msg["publishers"];
@@ -397,10 +397,10 @@ class AdminRoot extends Component {
                     gateway.remoteFeed.createAnswer(
                         {
                             jsep: jsep,
-                            media: {audioSend: false, videoSend: false, data: true},	// We want recvonly audio/video
+                            media: {audioSend: false, videoSend: false, data: false},	// We want recvonly audio/video
                             success: (jsep) => {
                                 gateway.debug("[remoteFeed] Got SDP", jsep);
-                                let body = {request: "start", room: this.state.current_room, data: true};
+                                let body = {request: "start", room: this.state.current_room, data: false};
                                 gateway.remoteFeed.send({message: body, jsep: jsep});
                             },
                             error: (error) => {
@@ -944,7 +944,6 @@ class AdminRoot extends Component {
                               on='click'
                               hideOnScroll
                           />
-                          <Popup trigger={<Button color="yellow" icon='question' onClick={() => this.sendRemoteCommand("client-question")} />} content='Set/Unset question' inverted />
                           <StatNotes data={rooms} />
                       </Segment>
                       : null
@@ -963,18 +962,18 @@ class AdminRoot extends Component {
                                           <Popup trigger={<Button color="teal" icon='microphone' onClick={() => this.sendRemoteCommand("client-mute")} />} content='Mic Mute/Unmute' inverted />
                                           <Popup trigger={<Button color="pink" icon='eye' onClick={() => this.sendRemoteCommand("video-mute")} />} content='Cam Mute/Unmute' inverted />
                                           <Popup trigger={<Button color="orange" icon={command_status ? 'volume off' : 'volume up'} onClick={() => this.sendRemoteCommand("audio-out")} />} content='Talk event' inverted />
+                                          <Popup trigger={<Button color="yellow" icon='question' onClick={() => this.sendRemoteCommand("client-question")} />} content='Set/Unset question' inverted />
                                           {/*<Popup trigger={<Button color="pink" icon='eye' onClick={() => this.sendDataMessage("video-mute")} />} content='Cam Mute/Unmute' inverted />*/}
                                           {/*<Popup trigger={<Button color="blue" icon='power off' onClick={() => this.sendRemoteCommand("client-disconnect")} />} content='Disconnect(LOST FEED HERE!)' inverted />*/}
-                                          <Popup inverted
-                                                 content={`${premodStatus ? 'Disable' : 'Enable'} Pre Moderation Mode`}
-                                                 trigger={
-                                                     <Button color="blue"
-                                                             icon='copyright'
-                                                             inverted={premodStatus}
-                                                             onClick={() => this.sendRemoteCommand("premoder-mode")}/>
-                                                 }/>
-                                          <Popup trigger={<Button color="yellow" icon='question' onClick={() => this.sendRemoteCommand("client-question")} />} content='Set/Unset question' inverted />
-                                          <Popup trigger={<Button color="red" icon='redo' onClick={() => this.setState({showConfirmReloadAll: !showConfirmReloadAll})} />} content='RELOAD ALL' inverted />
+                                          {/*<Popup inverted*/}
+                                          {/*       content={`${premodStatus ? 'Disable' : 'Enable'} Pre Moderation Mode`}*/}
+                                          {/*       trigger={*/}
+                                          {/*           <Button color="blue"*/}
+                                          {/*                   icon='copyright'*/}
+                                          {/*                   inverted={premodStatus}*/}
+                                          {/*                   onClick={() => this.sendRemoteCommand("premoder-mode")}/>*/}
+                                          {/*       }/>*/}
+                                          {/*<Popup trigger={<Button color="red" icon='redo' onClick={() => this.setState({showConfirmReloadAll: !showConfirmReloadAll})} />} content='RELOAD ALL' inverted />*/}
                                       </Segment>
                                       : null
                               }

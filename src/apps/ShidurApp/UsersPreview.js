@@ -136,9 +136,6 @@ class UsersPreview extends Component {
                 },
                 ondata: (data, label) => {
                     console.log('Got Room data from the DataChannel! (' + label + ')' + data);
-                    let msg = JSON.parse(data);
-                    //this.onRoomData(msg);
-                    console.log(' :: We got msg via Room DataChannel: ', msg);
                 },
                 oncleanup: () => {
                     gateway.debug("[Preview] [remoteFeed] ::: Got a cleanup notification :::");
