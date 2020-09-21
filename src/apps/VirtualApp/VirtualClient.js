@@ -641,8 +641,6 @@ class VirtualClient extends Component {
       this.setState({upval});
     }
 
-    this.setState({user});
-
     this.chat.initChatRoom(janus, selected_room, user, data => {
       const { textroom, error_code, error } = data;
       if (textroom === 'error') {

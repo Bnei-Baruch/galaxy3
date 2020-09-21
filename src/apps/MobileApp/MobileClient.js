@@ -558,6 +558,94 @@ class MobileClient extends Component {
         });
     };
 
+    joinRoom = (reconnect, videoroom, user) => {
+        let {janus, selected_room, media, gdm} = this.state;
+        const {video: {video_device}} = media;
+        user.question = false;
+        user.camera = !!video_device;
+        user.timestamp = Date.now();
+        this.setState({user, muted: true});
+
+        this.chat.initChatRoom(janus, selected_room, user, data => {
+            const { textroom, error_code, error } = data;
+            if (textroom === 'error') {
+                console.error("Chatroom error: ", data, error_code)
+                reportToSentry(error, {source: "Chatroom"}, this.state.user);
+                this.exitRoom(false, () => {
+                    if(error_code === 420)
+                        alert(this.props.t('oldClient.error') + data.error);
+                }, true);
+            } else if(textroom === "success" && data.participants) {
+                Janus.log(":: Successfully joined to chat room: " + selected_room );
+                const {id, timestamp, role, username} = user;
+                const d = {id, timestamp, role, display: username};
+                const register = {'request': 'join', 'room': selected_room, 'ptype': 'publisher', 'display': JSON.stringify(d)};
+                videoroom.send({
+                    "message": register,
+                    success: () => {
+                        console.log(" Request join success");
+                    },
+                    error: (error) => {
+                        console.error(error);
+                        this.exitRoom(false);
+                    }
+                })
+            }
+        });
+
+        // initGxyProtocol(janus, user, protocol => {
+        //     this.setState({protocol});
+        // }, ondata => {
+        //     Janus.log("-- :: It's protocol public message: ", ondata);
+        //     if (gdm.checkAck(ondata)) {
+        //         // Ack received, do nothing.
+        //         return;
+        //     }
+        //
+        //     const {type, error_code, id, room} = ondata;
+        //     if(ondata.type === "error" && error_code === 420) {
+        //         this.exitRoom(false, () => {
+        //             alert(ondata.error);
+        //         });
+        //     } else if(ondata.type === "joined") {
+        //         const {id,timestamp,role,username} = user;
+        //         const d = {id,timestamp,role,display: username};
+        //         let register = {"request": "join", "room": selected_room, "ptype": "publisher", "display": JSON.stringify(d)};
+        //         videoroom.send({"message": register,
+        //             success: () => {
+        //                 this.chat.initChatRoom(user, selected_room);
+        //             },
+        //             error: (error) => {
+        //                 console.error(error);
+        //                 this.exitRoom(false);
+        //             }
+        //         });
+        //     } else if (type === 'chat-broadcast' && room === selected_room) {
+        //       this.chat.showSupportMessage(ondata);
+        //     } else if(type === "client-reconnect" && user.id === id) {
+        //         this.exitRoom(true);
+        //     } else if(type === "client-reload" && user.id === id) {
+        //         window.location.reload();
+        //     } else if(type === "client-disconnect" && user.id === id) {
+        //         this.exitRoom();
+        //     } else if(type === "client-kicked" && user.id === id) {
+        //         kc.logout();
+        //     } else if(type === "client-question" && user.id === id) {
+        //         this.handleQuestion();
+        //     } else if(type === "client-mute" && user.id === id) {
+        //         this.micMute();
+        //     } else if(type === "video-mute" && user.id === id) {
+        //         this.camMute(this.state.cammuted);
+        //     } else if (type === 'audio-out' && room === selected_room) {
+        //         this.handleAudioOut(ondata);
+        //     } else if (type === 'reload-config') {
+        //         this.reloadConfig();
+        //     } else if (type === 'client-reload-all') {
+        //         window.location.reload();
+        //     }
+        // });
+    };
+
     publishOwnFeed = (useVideo, useAudio) => {
       console.log('publishOwnFeed');
       const {videoroom, media} = this.state;
@@ -1105,94 +1193,6 @@ class MobileClient extends Component {
                 console.error(`Failed receiving ${data}: ${error}`);
             });
         }
-    };
-
-    joinRoom = (reconnect, videoroom, user) => {
-        let {janus, selected_room, media, gdm} = this.state;
-        const {video: {video_device}} = media;
-        user.question = false;
-        user.camera = !!video_device;
-        user.timestamp = Date.now();
-        this.setState({user, muted: true});
-
-        this.chat.initChatRoom(janus, selected_room, user, data => {
-            const { textroom, error_code, error } = data;
-            if (textroom === 'error') {
-                console.error("Chatroom error: ", data, error_code)
-                reportToSentry(error, {source: "Chatroom"}, this.state.user);
-                this.exitRoom(false, () => {
-                    if(error_code === 420)
-                        alert(this.props.t('oldClient.error') + data.error);
-                }, true);
-            } else if(textroom === "success" && data.participants) {
-                Janus.log(":: Successfully joined to chat room: " + selected_room );
-                const {id, timestamp, role, username} = user;
-                const d = {id, timestamp, role, display: username};
-                const register = {'request': 'join', 'room': selected_room, 'ptype': 'publisher', 'display': JSON.stringify(d)};
-                videoroom.send({
-                    "message": register,
-                    success: () => {
-                        console.log(" Request join success");
-                    },
-                    error: (error) => {
-                        console.error(error);
-                        this.exitRoom(false);
-                    }
-                })
-            }
-        });
-
-        // initGxyProtocol(janus, user, protocol => {
-        //     this.setState({protocol});
-        // }, ondata => {
-        //     Janus.log("-- :: It's protocol public message: ", ondata);
-        //     if (gdm.checkAck(ondata)) {
-        //         // Ack received, do nothing.
-        //         return;
-        //     }
-        //
-        //     const {type, error_code, id, room} = ondata;
-        //     if(ondata.type === "error" && error_code === 420) {
-        //         this.exitRoom(false, () => {
-        //             alert(ondata.error);
-        //         });
-        //     } else if(ondata.type === "joined") {
-        //         const {id,timestamp,role,username} = user;
-        //         const d = {id,timestamp,role,display: username};
-        //         let register = {"request": "join", "room": selected_room, "ptype": "publisher", "display": JSON.stringify(d)};
-        //         videoroom.send({"message": register,
-        //             success: () => {
-        //                 this.chat.initChatRoom(user, selected_room);
-        //             },
-        //             error: (error) => {
-        //                 console.error(error);
-        //                 this.exitRoom(false);
-        //             }
-        //         });
-        //     } else if (type === 'chat-broadcast' && room === selected_room) {
-        //       this.chat.showSupportMessage(ondata);
-        //     } else if(type === "client-reconnect" && user.id === id) {
-        //         this.exitRoom(true);
-        //     } else if(type === "client-reload" && user.id === id) {
-        //         window.location.reload();
-        //     } else if(type === "client-disconnect" && user.id === id) {
-        //         this.exitRoom();
-        //     } else if(type === "client-kicked" && user.id === id) {
-        //         kc.logout();
-        //     } else if(type === "client-question" && user.id === id) {
-        //         this.handleQuestion();
-        //     } else if(type === "client-mute" && user.id === id) {
-        //         this.micMute();
-        //     } else if(type === "video-mute" && user.id === id) {
-        //         this.camMute(this.state.cammuted);
-        //     } else if (type === 'audio-out' && room === selected_room) {
-        //         this.handleAudioOut(ondata);
-        //     } else if (type === 'reload-config') {
-        //         this.reloadConfig();
-        //     } else if (type === 'client-reload-all') {
-        //         window.location.reload();
-        //     }
-        // });
     };
 
     exitRoom = (reconnect, callback, error) => {
