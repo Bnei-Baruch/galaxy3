@@ -650,7 +650,7 @@ class MobileClient extends Component {
       console.log('publishOwnFeed');
       const {videoroom, media} = this.state;
       const {audio: {audio_device}, video: {setting,video_device}} = media;
-      const offer = {audioRecv: false, videoRecv: false, audioSend: useAudio, videoSend: useVideo, data: true};
+      const offer = {audioRecv: false, videoRecv: false, audioSend: useAudio, videoSend: useVideo, data: false};
 
       if(useVideo) {
           const {width,height,ideal} = setting;
@@ -668,7 +668,7 @@ class MobileClient extends Component {
             console.log('publishOwnFeed createOffer success!');
             Janus.debug("Got publisher SDP!");
             Janus.debug(jsep);
-            const publish = { request: "configure", audio: useAudio, video: useVideo, data: true };
+            const publish = { request: "configure", audio: useAudio, video: useVideo, data: false };
             videoroom.send({"message": publish, "jsep": jsep});
           },
           error: (error) => {
@@ -876,7 +876,7 @@ class MobileClient extends Component {
                                 jsep: jsep,
                                 // Add data:true here if you want to subscribe to datachannels as well
                                 // (obviously only works if the publisher offered them in the first place)
-                                media: { audioSend: false, videoSend: false, data:true },	// We want recvonly audio/video
+                                media: { audioSend: false, videoSend: false, data: false },	// We want recvonly audio/video
                                 success: (jsep) => {
                                     Janus.debug("Got SDP!");
                                     Janus.debug(jsep);
@@ -1121,10 +1121,13 @@ class MobileClient extends Component {
     }
 
     sendDataMessage = (user) => {
-        const {videoroom} = this.state;
-        const message = JSON.stringify(user);
-        Janus.log(':: Sending message: ', message);
-        videoroom.data({ text: message });
+        const msg = {type: "client-state", user};
+        this.chat.sendCmdMessage(msg);
+
+        // const {videoroom} = this.state;
+        // const message = JSON.stringify(user);
+        // Janus.log(':: Sending message: ', message);
+        // videoroom.data({ text: message });
     };
 
     onRoomData = (data) => {
@@ -1192,6 +1195,8 @@ class MobileClient extends Component {
             }).catch((error) => {
                 console.error(`Failed receiving ${data}: ${error}`);
             });
+        } else if (type === 'client-state') {
+            this.onRoomData(data.user);
         }
     };
 
