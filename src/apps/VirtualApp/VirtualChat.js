@@ -8,19 +8,13 @@ class VirtualChat extends Component {
 
   state = {
     chatroom: null,
+    room: null,
     input_value: '',
     messages: [],
     support_msgs: [],
     room_chat: true,
     from: null,
   };
-
-  static getDerivedStateFromProps(props, state) {
-    return {
-      ...state,
-      ...props
-    }
-  }
 
   componentDidMount() {
     document.addEventListener('keydown', this.onKeyPressed);
@@ -49,6 +43,7 @@ class VirtualChat extends Component {
       text: JSON.stringify(register),
       success: () => {
         Janus.log("Join chat room request successfully sent " + roomid );
+        this.setState({room: roomid})
       },
       error: (reason) => {
         console.error("  -- Error join room", reason);
@@ -66,7 +61,7 @@ class VirtualChat extends Component {
           success: (pluginHandle) => {
             chatroom = pluginHandle;
             Janus.log("Plugin attached! (" + chatroom.getPlugin() + ", id=" + chatroom.getId() + ")");
-            this.setState({ chatroom, room });
+            this.setState({ chatroom });
             // Setup the DataChannel
             let body = {"request": "setup"};
             Janus.debug("Sending message (" + JSON.stringify(body) + ")");
@@ -75,6 +70,12 @@ class VirtualChat extends Component {
           error: (error) => {
             console.error("  -- Error attaching plugin...", error);
             reportToSentry(error, {source: "Textroom"}, user);
+          },
+          iceState: (state) => {
+            Janus.log("ICE state changed to " + state);
+          },
+          mediaState: (medium, on) => {
+            Janus.log("Janus " + (on ? "started" : "stopped") + " receiving our " + medium);
           },
           webrtcState: (on) => {
             Janus.log("Janus says our WebRTC PeerConnection is " + (on ? "up" : "down") + " now");
@@ -107,8 +108,9 @@ class VirtualChat extends Component {
             }
           },
           ondataopen: () => {
-            Janus.log("The DataChannel is available!");
-            this.joinChatRoom(chatroom, room, user);
+            Janus.log("The DataChannel is available! ");
+            if(!this.state.room)
+              this.joinChatRoom(chatroom, room, user);
           },
           ondata: (data) => {
             Janus.log(':: We got message from Data Channel: ', data);
@@ -122,6 +124,8 @@ class VirtualChat extends Component {
           },
           oncleanup: () => {
             Janus.log(" ::: Got a cleanup notification :::");
+            if(this.state.room)
+              this.setState({ messages: [], chatroom: null, room: null });
           }
         });
   };
@@ -140,7 +144,7 @@ class VirtualChat extends Component {
         text: JSON.stringify(chatreq),
         success: () => {
           Janus.log(':: Text room leave callback: ');
-          this.setState({ messages: [], chatroom: null });
+          this.setState({ messages: [], chatroom: null, room: null });
         }
       });
     }
@@ -264,7 +268,8 @@ class VirtualChat extends Component {
   };
 
   sendChatMessage = () => {
-    let { input_value, user:{id, role, display}, from, room_chat, support_msgs } = this.state;
+    let { id, role, display } = this.props.user;
+    let { input_value, from, room_chat, support_msgs } = this.state;
     if (!role.match(/^(user|guest)$/) || input_value === '') {
       return;
     }
