@@ -36,14 +36,14 @@ const VirtualClient = (props) => {
       setUser(null);
     }
   };
-  console.log('index page user', user);
+
   return (
     <AudioModeContext.Provider value={{ isAudioMode, updateAudioMode }}>
       {
         !user?.id
           ? <LoginPage user={user} checkPermission={checkPermission} />
           : room
-          ? <RoomContainer user={user} room={Number.parseInt(room)} />
+          ? <RoomContainer user={user} room={Number.parseInt(room)} setRoom={setRoom} />
           : <SettingsContainer user={user} handleJoinRoom={setRoom} />
       }
     </AudioModeContext.Provider>

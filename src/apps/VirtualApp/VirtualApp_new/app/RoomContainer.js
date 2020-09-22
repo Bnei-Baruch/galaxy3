@@ -8,7 +8,7 @@ import 'eqcss';
 import VideoRoom from './VideoRoom';
 import GxyJanus from '../../../../shared/janus-utils';
 import {
-  checkNotification,
+  checkNotification, geoInfo,
   getMedia,
   micLevel,
   reportToSentry,
@@ -27,6 +27,9 @@ import { NO_VIDEO_OPTION_VALUE, PROTOCOL_ROOM, VIDEO_360P_OPTION_VALUE } from '.
 import RoomLayout from './RoomLayout';
 import { MonitoringData } from '../../../../shared/MonitoringData';
 import FeedsSubscriber from '../FeedsSubscriber';
+import { ButtonActionsContext } from '../ButtonActionsContext';
+import { AudioModeContext } from '../AudioModeContext';
+import { GEO_IP_INFO } from '../../../../shared/env';
 
 let gdm       = null;
 let chat      = null;
@@ -40,19 +43,20 @@ const sortAndFilterFeeds = (feeds) => feeds
   //.filter(feed => !feed.display.role.match(/^(ghost|guest)$/))
   .sort((a, b) => a.display.timestamp - b.display.timestamp);
 
-const userFeeds = (feeds) => feeds.filter(feed => feed.display.role === 'user');
+const userFeeds = (feeds) => feeds.filter(feed => feed.display.role === 'userProps');
 
 let media;
 let keepalive;
 let creatingFeed;
 let remoteFeed;
+let virtualStreamingJanus;
+let userInfo = {};
 
 const RoomContainer = (props) => {
-  const { room, user } = props;
+  const { room, user: userProps, setRoom } = props;
 
   const { t }                                   = useTranslation();
   const [delay, setDelay]                       = useState();
-  const [userInfo, setUserInfo]                 = useState();
   const [ice, setIce]                           = useState();
   const [tState, setTState]                     = useState({ feeds: [], mids: [] });
   const [tested, setTested]                     = useState();
@@ -61,29 +65,29 @@ const RoomContainer = (props) => {
   const [localAudioTrack, setLocalAudioTrack]   = useState();
   const [connectionStatus, setConnectionStatus] = useState();
   const [shidur, setShidur]                     = useState();
-  const [question, setQuestion]                 = useState();
+  const [question, setQuestion]                 = useState(false);
   const [audio, setAudio]                       = useState();
   const [video, setVideo]                       = useState();
   const [muted, setMuted]                       = useState(false);
-  const [cammuted, setCammuted]                 = useState();
+  const [cammuted, setCammuted]                 = useState(false);
   const [premodStatus, setPremodStatus]         = useState();
   const [myId, setMyId]                         = useState();
   const [myPvtId, setMyPvtId]                   = useState();
   const [muteOtherCams, setMuteOtherCams]       = useState();
   const [upval, setUpval]                       = useState();
 
-  const virtualStreamingJanus       = new VirtualStreamingJanus(() => virtualStreamingInitialized());
   const virtualStreamingInitialized = () => setSourceLoading(false);
 
   useEffect(() => {
+    virtualStreamingJanus = new VirtualStreamingJanus(() => virtualStreamingInitialized());
     return virtualStreamingJanus.destroy();
   }, []);
 
   useEffect(() => {
-    if (user && room) {
+    if (userProps && room) {
       initClient();
     }
-  }, [room, user]);
+  }, [room, userProps]);
 
   useEffect(() => {
     if (!sourceLoading && room)
@@ -101,9 +105,9 @@ const RoomContainer = (props) => {
   }, [room]);
 
   useEffect(() => {
-    monitoringData.setConnection(gxyJanus.videoroom, localAudioTrack, localVideoTrack, user, virtualStreamingJanus);
+    monitoringData.setConnection(gxyJanus.videoroom, localAudioTrack, localVideoTrack, userProps, virtualStreamingJanus);
     monitoringData.setOnStatus((connectionStatus, msg) => setConnectionStatus(connectionStatus));
-  }, [gxyJanus?.videoroom, localVideoTrack, localAudioTrack, user]);
+  }, [gxyJanus?.videoroom, localVideoTrack, localAudioTrack, userProps]);
 
   const initChat = (j) => {
   };
@@ -116,7 +120,10 @@ const RoomContainer = (props) => {
   ///////////////
 
   const initClient = async () => {
-    gdm = await initConfig();
+    gdm                                        = await initConfig();
+    const { ip = '127.0.0.1', country = 'XX' } = await geoInfo(`${GEO_IP_INFO}`)
+      .then(d => ({ ip: d && d.ip ? d.ip : '127.0.0.1', country: d && d.country ? d.country : 'XX' }));
+    userInfo                                   = { ...userInfo, ip, country };
     await initDevices();
 
     const _room = await findRoom();
@@ -125,12 +132,14 @@ const RoomContainer = (props) => {
     resetLocalstorage();
 
     await initJanus(_room.janus);
+    virtualStreamingJanus.init(ip, country);
+
     await gxyJanus.initVideoRoom(roomCallbacks);
+    initUserInfo(_room);
     takeMyScreen();
-    await gxyJanus.initGxyProtocol(user, onDataProtocol);
+    await gxyJanus.initGxyProtocol(userProps, onDataProtocol);
     await gxyJanus.newRemoteFeed(remoteFeedCallbacks);
 
-    initUserInfo(_room);
   };
 
   const initDevices = async () => {
@@ -149,7 +158,7 @@ const RoomContainer = (props) => {
   };
 
   const initConfig = async () => {
-    const _gdm = new GuaranteeDeliveryManager(user.id);
+    const _gdm = new GuaranteeDeliveryManager(userProps.id);
 
     const config = await api.fetchConfig();
 
@@ -161,15 +170,15 @@ const RoomContainer = (props) => {
   const resetLocalstorage = () => {
     localStorage.setItem('question', false);
     localStorage.setItem('sound_test', false);
-    localStorage.setItem('uuid', user.id);
+    localStorage.setItem('uuid', userProps.id);
   };
 
   const initUserInfo = (_room) => {
     const { janus, description: group } = _room;
     const { video: { video_device } }   = media;
 
-    const _info = {
-      ...user,
+    const _userInfo = {
+      ...userInfo,
       system: navigator.userAgent,
       room,
       janus,
@@ -181,8 +190,7 @@ const RoomContainer = (props) => {
       question: false,
       timestamp: Date.now()
     };
-
-    setUserInfo(_info);
+    userInfo        = { ..._userInfo };
   };
 
   const initJanus = async (_janus) => {
@@ -204,9 +212,10 @@ const RoomContainer = (props) => {
     setMyId(myid);
     setMyPvtId(mypvtid);
     setDelay(false);
+    userInfo.rfid = myid;
 
-    api.updateUser(user.id, { ...user, rfid: myid })
-      .catch(err => console.error('[User] error updating user state', user.id, err));
+    api.updateUser(userProps.id, { ...userProps, ...userInfo })
+      .catch(err => console.error('[User] error updating userProps state', userProps.id, err));
     keepAlive();
 
     const { audio: { audio_device }, video: { video_device } } = media;
@@ -219,7 +228,7 @@ const RoomContainer = (props) => {
 
       Janus.log(':: Got Pulbishers list: ', feeds);
 
-      // Feeds count with user role
+      // Feeds count with userProps role
       let feeds_count = userFeeds(feeds).length;
       if (feeds_count > 25) {
         alert(t('oldClient.maxUsersInRoom'));
@@ -345,13 +354,16 @@ const RoomContainer = (props) => {
         }
       }
     },
+    ondata: (data, label) => {
+      Janus.log('Publisher - Got data from the DataChannel! (' + label + ')' + data);
+    },
     ondataerror: (error) => {
       if (gxyJanus.videoroom && error.error)
-        reportToSentry(error.error, { source: 'Publisher' }, user);
+        reportToSentry(error.error, { source: 'Publisher' }, userProps);
     }
   };
 
-  const onRoomData = (data) => {
+  const onRemoteFeedData = (data) => {
     const { camera, question, rcmd, type, id } = data;
     if (rcmd) {
       if (gdm.checkAck(data)) {
@@ -359,26 +371,26 @@ const RoomContainer = (props) => {
         return;
       }
 
-      if (type === 'client-reconnect' && user.id === id) {
+      if (type === 'client-reconnect' && userProps.id === id) {
         exitRoom(true);
-      } else if (type === 'client-reload' && user.id === id) {
+      } else if (type === 'client-reload' && userProps.id === id) {
         window.location.reload();
-      } else if (type === 'client-disconnect' && user.id === id) {
+      } else if (type === 'client-disconnect' && userProps.id === id) {
         exitRoom(false);
-      } else if (type === 'client-kicked' && user.id === id) {
+      } else if (type === 'client-kicked' && userProps.id === id) {
         kc.logout();
-      } else if (type === 'client-question' && user.id === id) {
+      } else if (type === 'client-question' && userProps.id === id) {
         handleQuestion();
-      } else if (type === 'client-mute' && user.id === id) {
+      } else if (type === 'client-mute' && userProps.id === id) {
         micMute();
-      } else if (type === 'video-mute' && user.id === id) {
+      } else if (type === 'video-mute' && userProps.id === id) {
         camMute(cammuted);
-      } else if (type === 'sound_test' && user.id === id) {
-        user.sound_test = true;
+      } else if (type === 'sound_test' && userProps.id === id) {
+        userProps.sound_test = true;
         localStorage.setItem('sound_test', true);
-        setUserInfo({ ...userInfo, sound_test: true });
+        userInfo.sound_test = true;
       } else if (type === 'audio-out') {
-        reportToSentry('event', { source: 'switch' }, user);
+        reportToSentry('event', { source: 'switch' }, userProps);
         handleAudioOut(data);
       } else if (type === 'reload-config') {
         reloadConfig();
@@ -414,7 +426,7 @@ const RoomContainer = (props) => {
         return;
       }
 
-      reportToSentry('action', { source: 'switch' }, user);
+      reportToSentry('action', { source: 'switch' }, userProps);
       virtualStreamingJanus.streamGalaxy(data.status, 4, '');
       if (data.status) {
         // remove question mark when sndman unmute our room
@@ -452,17 +464,17 @@ const RoomContainer = (props) => {
 
   const camMute = (_cammuted) => {
     if (gxyJanus.videoroom) {
-      if (user.role === 'ghost') return;
+      if (userProps.role === 'ghost') return;
       makeDelay();
-      api.updateUser(user.id, { ...user, camera: _cammuted })
+      api.updateUser(userProps.id, { ...userProps, ...userInfo, camera: _cammuted })
         .then(data => {
           if (data.result === 'success') {
             _cammuted ? gxyJanus.videoroom.unmuteVideo() : gxyJanus.videoroom.muteVideo();
             setCammuted(!_cammuted);
-            sendDataMessage({ ...user, camera: _cammuted });
+            sendDataMessage({ ...userProps, camera: _cammuted });
           }
         })
-        .catch(err => console.error('[User] error updating user state', user.id, err));
+        .catch(err => console.error('[User] error updating userProps state', userProps.id, err));
     }
   };
 
@@ -508,7 +520,6 @@ const RoomContainer = (props) => {
       });
     });
   };
-
 
   const remoteFeedCallbacks = {
     onmessage: (msg, jsep) => {
@@ -591,13 +602,13 @@ const RoomContainer = (props) => {
     ondata: (data, label) => {
       Janus.debug('Feed - Got data from the DataChannel! (' + label + ')' + data);
       let msg = JSON.parse(data);
-      onRoomData(msg);
+      onRemoteFeedData(msg);
       Janus.log(' :: We got msg via DataChannel: ', msg);
     },
     ondataerror: (error) => {
       Janus.warn('Feed - DataChannel error: ' + error);
       if (remoteFeed && error.error)
-        reportToSentry(error.error, { source: 'Feed' }, user);
+        reportToSentry(error.error, { source: 'Feed' }, userProps);
     }
   };
 
@@ -605,7 +616,7 @@ const RoomContainer = (props) => {
   // or new feeds that join the room when I'm already in. In both cases I
   // should add those feeds to my feeds list.
   // In case of feeds just joined and |question| is set, we should notify the
-  // new entering user by notifying everyone.
+  // new entering userProps by notifying everyone.
   // Subscribes selectively to different stream types |subscribeToVideo|, |subscribeToAudio|, |subscribeToData|.
   // This is required to stop and then start only the videos to save bandwidth.
   const makeSubscription = async (newFeeds, feedsJustJoined, subscribeToVideo, subscribeToAudio, subscribeToData) => {
@@ -641,7 +652,7 @@ const RoomContainer = (props) => {
         // FIXME: Can this be done by notifying only the joined feed?
         setTimeout(() => {
           if (question) {
-            sendDataMessage(user);
+            sendDataMessage(userProps);
           }
         }, 3000);
       }
@@ -723,15 +734,15 @@ const RoomContainer = (props) => {
   const clearKeepAlive = () => keepalive && clearInterval(keepalive);
 
   const sendKeepAlive = () => {
-    if (user && gxyJanus.gateway?.isConnected() && user.session && user.handle) {
-      api.updateUser(user.id, user)
+    if (userProps && gxyJanus.gateway?.isConnected() && userProps.session && userProps.handle) {
+      api.updateUser(userProps.id, userProps)
         .then(data => {
           if (ConfigStore.isNewer(data.config_last_modified)) {
             console.info('[User] there is a newer config. Reloading ', data.config_last_modified);
             reloadConfig();
           }
         })
-        .catch(err => console.error('[User] error sending keepalive', user.id, err));
+        .catch(err => console.error('[User] error sending keepalive', userProps.id, err));
     }
   };
 
@@ -741,22 +752,18 @@ const RoomContainer = (props) => {
   };
 
   const handleQuestion = () => {
-    if (user.role === 'ghost') return;
+    if (userProps.role === 'ghost') return;
     makeDelay();
-    questionState(question);
-  };
-
-  const questionState = (question) => {
-    user.question = !question;
-    api.updateUser(user.id, user)
+    userInfo.question = !question;
+    api.updateUser(userProps.id, { ...userProps, ...userInfo })
       .then(data => {
         if (data.result === 'success') {
           localStorage.setItem('question', !question);
           setQuestion(!question);
-          sendDataMessage({ ...user, question: !question });
+          sendDataMessage({ ...userProps, ...userInfo });
         }
       })
-      .catch(err => console.error('[User] error updating user state', user.id, err));
+      .catch(err => console.error('[User] error updating userProps state', userProps.id, err));
   };
 
   const sendDataMessage = (data) => {
@@ -765,23 +772,22 @@ const RoomContainer = (props) => {
     gxyJanus.videoroom.data({ text: message });
   };
 
-  /*  const otherCamsMuteToggle = () => {
-      if (!muteOtherCams) {
-        // Should hide/mute now all videos.
-        unsubscribeFrom(feedsOnState.map(feed => feed.id), /!* onlyVideo= *!/ true);
-        camMute(/!* cammuted= *!/ false);
-        this.setState({ videos: NO_VIDEO_OPTION_VALUE });
-        virtualStreamingJanus.setVideo(NO_VIDEO_OPTION_VALUE);
-      } else {
-        // Should unmute/show now all videos.
-        makeSubscription(feedsOnState, /!* feedsJustJoined= *!/ false, /!* subscribeToVideo= *!/ true,
-          /!* subscribeToAudio= *!/ false, /!* subscribeToData= *!/ false);
-        camMute(/!* cammuted= *!/ true);
-        this.setState({ videos: VIDEO_360P_OPTION_VALUE });
-        virtualStreamingJanus.setVideo(VIDEO_360P_OPTION_VALUE);
-      }
-      setMuteOtherCams(!muteOtherCams);
-    };*/
+  const otherCamsMuteToggle = () => {
+    if (!muteOtherCams) {
+      // Should hide/mute now all videos.
+      unsubscribeFrom(tState.feeds.map(feed => feed.id), true);
+      camMute(false);
+      setVideo(NO_VIDEO_OPTION_VALUE);
+      virtualStreamingJanus.setVideo(NO_VIDEO_OPTION_VALUE);
+    } else {
+      // Should unmute/show now all videos.
+      makeSubscription(tState.feeds, false, true, false, false);
+      camMute(true);
+      setVideo(VIDEO_360P_OPTION_VALUE);
+      virtualStreamingJanus.setVideo(VIDEO_360P_OPTION_VALUE);
+    }
+    setMuteOtherCams(!muteOtherCams);
+  };
 
   const mediaState = (media) => {
     // Handle video
@@ -859,8 +865,8 @@ const RoomContainer = (props) => {
 
   const exitRoom = (reconnect, callback) => {
     setDelay(true);
-    if (user.role === 'user') {
-      wkliLeave(user);
+    if (userProps.role === 'userProps') {
+      wkliLeave(userProps);
     }
     clearInterval(upval);
     clearKeepAlive();
@@ -908,28 +914,28 @@ const RoomContainer = (props) => {
         alert(t('oldClient.error') + ondata.error);
       });
     } else if (type === 'joined') {
-      gxyJanus.videoRoomJoin(room, user)
+      gxyJanus.videoRoomJoin(room, userProps)
         .then(() => gxyJanus.initChatRoom())
         .catch(e => exitRoom(false));
     } else if (type === 'chat-broadcast' && room === _room) {
       //    chat.showSupportMessage(ondata);
-    } else if (type === 'client-reconnect' && user.id === id) {
+    } else if (type === 'client-reconnect' && userProps.id === id) {
       exitRoom(true);
-    } else if (type === 'client-reload' && user.id === id) {
+    } else if (type === 'client-reload' && userProps.id === id) {
       window.location.reload();
-    } else if (type === 'client-disconnect' && user.id === id) {
+    } else if (type === 'client-disconnect' && userProps.id === id) {
       exitRoom(false);
-    } else if (type === 'client-kicked' && user.id === id) {
+    } else if (type === 'client-kicked' && userProps.id === id) {
       kc.logout();
-    } else if (type === 'client-question' && user.id === id) {
+    } else if (type === 'client-question' && userProps.id === id) {
       handleQuestion();
-    } else if (type === 'client-mute' && user.id === id) {
+    } else if (type === 'client-mute' && userProps.id === id) {
       micMute();
-    } else if (type === 'video-mute' && user.id === id) {
+    } else if (type === 'video-mute' && userProps.id === id) {
       camMute(cammuted);
-    } else if (type === 'sound_test' && user.id === id) {
+    } else if (type === 'sound_test' && userProps.id === id) {
       localStorage.setItem('sound_test', true);
-      setUserInfo({ ...userInfo, sound_test: true });
+      userInfo.sound_test = true;
     } else if (type === 'audio-out' && room === _room) {
       handleAudioOut(ondata);
     } else if (type === 'reload-config') {
@@ -942,28 +948,58 @@ const RoomContainer = (props) => {
   const takeMyScreen = () => {
     const { video: { video_device } } = media;
 
-    if (video_device && user.role === 'user') {
+    if (video_device && userProps.role === 'userProps') {
       if (upval) {
         clearInterval(upval);
       }
-      takeImage(user);
+      takeImage(userProps);
       const _upval = setInterval(() => {
-        takeImage(user);
+        takeImage(userProps);
       }, 10 * 60000);
       setUpval(_upval);
     }
   };
 
+  const handleMic = () => {
+    micMute();
+  };
+
+  const handleCamera = () => {
+    camMute(cammuted);
+  };
+
+  const handleLayout = () => {
+    alert('layout');
+  };
+
+  const handleAudioMode = () => {
+    otherCamsMuteToggle();
+  };
+
+  const handleExitRoom = () => {
+    exitRoom(false, () => setRoom(null));
+  };
   return (
-    <>
+    <ButtonActionsContext.Provider value={{
+      handleCamera,
+      handleExitRoom,
+      handleMic,
+      handleLayout,
+      handleAudioMode,
+      handleQuestion,
+      micOn: !muted,
+      cameraOn: !cammuted,
+      audioModeOn: muteOtherCams,
+      questionOn: question
+    }}>
       <RoomLayout
-        user={user}
+        user={{ ...userProps, ...userInfo }}
         janus={gxyJanus.gateway}
         virtualStreamingJanus={virtualStreamingJanus}
         room={room}
         feeds={tState.feeds}
         mids={tState.mids} />
-    </>
+    </ButtonActionsContext.Provider>
   );
 };
 

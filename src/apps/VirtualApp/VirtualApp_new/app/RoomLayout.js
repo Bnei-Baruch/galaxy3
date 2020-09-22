@@ -11,12 +11,22 @@ import 'eqcss';
 import Badge from '@material-ui/core/Badge';
 import VirtualChat from '../../VirtualChat';
 import VideoRoom from './VideoRoom';
+import { makeStyles } from '@material-ui/core/styles';
+import { positions, lef } from '@material-ui/system';
+import Box from '@material-ui/core/Box';
+
+const useStyles = makeStyles({
+  middle: {
+    height: '100%'
+  }
+});
 
 let chat = null;
 
 const RoomLayout = (props) => {
-  const { janus, room, user, virtualStreamingJanus, feeds, mids } = props;
-  console.log('RoomLayout call component', feeds, mids);
+  const { janus, room, user, virtualStreamingJanus, feeds, mids, isHeb = false } = props;
+
+  const classes = useStyles(isHeb);
 
   const { t }                   = useTranslation();
   const [lSideBar, setLSideBar] = useState('');
@@ -69,21 +79,23 @@ const RoomLayout = (props) => {
   };
 
   const renderTopBar = () => (
-    <AppBar position="static">
+    <AppBar position="static" color="inherit">
       <Toolbar>
-        <ButtonGroup
-          variant="contained"
-          color="primary"
-        >
-          <Badge color="secondary" badgeContent={0} showZero>
-            <Button onClick={() => handleLeftBar('drawing')}>{t('button.drawing')}</Button>
-          </Badge>
-          <Button onClick={() => handleLeftBar('material')}>{t('button.material')}</Button>
-        </ButtonGroup>
+        <Box display='flex' flexGrow={1}>
+
+          <ButtonGroup
+            variant="outlined"
+            className={classes.toL}
+          >
+            <Badge color="secondary" badgeContent={0} showZero>
+              <Button onClick={() => handleLeftBar('drawing')}>{t('button.drawing')}</Button>
+            </Badge>
+            <Button onClick={() => handleLeftBar('material')}>{t('button.material')}</Button>
+          </ButtonGroup>
+        </Box>
 
         <ButtonGroup
-          variant="contained"
-          color="primary"
+          variant="outlined"
         >
           <Badge color="secondary" badgeContent={0} showZero>
             <Button onClick={() => handleRightBar('chat')}>{t('button.chat')}</Button>
@@ -109,7 +121,7 @@ const RoomLayout = (props) => {
     <>
       {renderTopBar()}
 
-      <Grid container spacing={1}>
+      <Grid container spacing={1} className={classes.middle}>
         {renderLeftAside()}
         <Grid item xs={6 + (!lSideBar && 3) + (!rSideBar && 3)}>
           <VideoRoom user={user} virtualStreamingJanus={virtualStreamingJanus} feeds={feeds} mids={mids} />

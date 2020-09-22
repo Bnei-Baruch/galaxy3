@@ -7,6 +7,14 @@ import { Icon, Popup } from 'semantic-ui-react';
 import { getMedia } from '../../../../shared/tools';
 import { renderUserName, renderNoCam, renderQuestion } from '../helper';
 
+const PROPORTIONAL_COEFFICIENT = 9 / 14;
+
+const useStyles = makeStyles({
+  media: {
+    height: (w) => w * PROPORTIONAL_COEFFICIENT
+  }
+});
+
 const renderVideo = (video) => (
   <video
     src={URL.createObjectURL(video)}
@@ -25,9 +33,11 @@ const renderAudio = (audio) => (
 );
 
 const Media = (props) => {
-  const { cammute, user, question, muted, connectionIcon, feed, talking, muteOtherCams, mid } = props;
+  const ref     = useRef(null);
+  const classes = useStyles(ref.current?.offsetWidth);
 
-  const { audio, video, audio_stream, video_stream, display: { display } } = feed;
+  const { cammute, user, question, muted, connectionIcon, feed, talking, muteOtherCams, mid } = props;
+  const { audio, video, audio_stream, video_stream, display: { display } }                    = feed;
 
   const mute = cammute || muteOtherCams;
 
@@ -44,7 +54,7 @@ const Media = (props) => {
     <Card>
       <CardActionArea>
         <CardContent>
-          <div className={'video'}>
+          <div className={'video ' + classes.media} ref={ref}>
             <div className={classNames('video__overlay', { 'talk-frame': talking })}>
               {question ? renderQuestion() : null}
               <div className="video__title">

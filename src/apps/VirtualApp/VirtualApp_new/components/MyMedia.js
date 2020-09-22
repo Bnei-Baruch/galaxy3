@@ -1,8 +1,7 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React from 'react';
 import { makeStyles } from '@material-ui/core/styles';
 import classNames from 'classnames';
-import { Icon, Popup } from 'semantic-ui-react';
-import { getMedia } from '../../../../shared/tools';
+import { Icon } from 'semantic-ui-react';
 import CardActionArea from '@material-ui/core/CardActionArea';
 import Card from '@material-ui/core/Card';
 import CardContent from '@material-ui/core/CardContent';

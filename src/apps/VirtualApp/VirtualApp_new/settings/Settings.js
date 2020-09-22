@@ -94,7 +94,7 @@ const Settings = (props) => {
 
   const connectToRoom = () => {
     localStorage.setItem('room', room);
-    handleJoinRoom();
+    handleJoinRoom(room);
   }
 
   return (
