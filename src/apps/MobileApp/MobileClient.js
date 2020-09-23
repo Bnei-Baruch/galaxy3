@@ -408,18 +408,24 @@ class MobileClient extends Component {
         let count = 0;
         let chk = setInterval(() => {
             count++;
+            console.debug("ICE counter: ", count)
             let {ice} = this.state;
-            if(count < 11 && ice === "connected") {
+            if (count < 60 && ice === 'connected') {
                 clearInterval(chk);
             }
-            if(count >= 10) {
-                clearInterval(chk);
-                // this.exitRoom(true, () => {
-                //     console.error("ICE Disconnected");
-                //     this.initClient(true);
-                // });
+            if (count === 30 && ice !== 'connected') {
+                console.log(" :: ICE Restart :: ")
+                this.iceRestart();
             }
-        }, 3000);
+            if (count >= 60) {
+                clearInterval(chk);
+                console.debug(" :: ICE Filed: Reconnecting... ")
+                this.exitRoom(true, () => {
+                    console.error("ICE Disconnected");
+                    this.initClient(true);
+                });
+            }
+        }, 1000);
     };
 
     mediaState = (media) => {
@@ -680,6 +686,29 @@ class MobileClient extends Component {
             }
           }
       });
+    };
+
+    iceRestart = () => {
+        const {videoroom, remoteFeed} = this.state;
+
+        videoroom.createOffer({
+            media: { audioRecv: false, videoRecv: false, audioSend: true, videoSend: true },
+            iceRestart: true,
+            simulcast: false,
+            success: (jsep) => {
+                Janus.debug('Got publisher SDP!');
+                Janus.debug(jsep);
+                const publish = { request: 'configure', restart: true };
+                videoroom.send({ 'message': publish, 'jsep': jsep });
+            },
+            error: (error) => {
+                Janus.error('WebRTC error:', error);
+            }
+        });
+
+        remoteFeed.send({message: {request: "configure", restart: true}});
+        this.chat.iceRestart();
+        this.state.virtualStreamingJanus.iceRestart();
     };
 
     onMessage = (videoroom, msg, jsep) => {

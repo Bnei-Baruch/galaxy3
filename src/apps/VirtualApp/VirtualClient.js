@@ -466,21 +466,24 @@ class VirtualClient extends Component {
     let count = 0;
     let chk = setInterval(() => {
       count++;
-      console.warn("ICE counter: ", count)
+      console.debug("ICE counter: ", count)
       let {ice} = this.state;
-      if (count < 11 && ice === 'connected') {
+      if (count < 60 && ice === 'connected') {
         clearInterval(chk);
       }
-      if (count >= 10) {
-        clearInterval(chk);
-        console.warn(" :: ICE Restart :: ")
+      if (count === 30 && ice !== 'connected') {
+        console.log(" :: ICE Restart :: ")
         this.iceRestart();
-        // this.exitRoom(true, () => {
-        //   console.error("ICE Disconnected");
-        //   this.initClient(true);
-        // });
       }
-    }, 3000);
+      if (count >= 60) {
+        clearInterval(chk);
+        console.debug(" :: ICE Filed: Reconnecting... ")
+        this.exitRoom(true, () => {
+          console.error("ICE Disconnected");
+          this.initClient(true);
+        });
+      }
+    }, 1000);
   };
 
   mediaState = (media) => {
@@ -728,7 +731,7 @@ class VirtualClient extends Component {
     // });
   };
 
-  publishOwnFeed = (useVideo, useAudio, icerestart = false) => {
+  publishOwnFeed = (useVideo, useAudio) => {
     const {videoroom, media} = this.state;
     const {audio: {audio_device}, video: {setting,video_device}} = media;
     const offer = {audioRecv: false, videoRecv: false, audioSend: useAudio, videoSend: useVideo, data: false};
@@ -758,18 +761,7 @@ class VirtualClient extends Component {
   };
 
   iceRestart = () => {
-    const {videoroom, remoteFeed, media} = this.state;
-    const {audio: {audio_device}, video: {setting,video_device}} = media;
-    //const offer = {audioRecv: false, videoRecv: false, audioSend: useAudio, videoSend: useVideo, data: false};
-
-    // if(useVideo) {
-    //   const {width,height,ideal} = setting;
-    //   offer.video = {width, height, frameRate: {ideal, min: 1}, deviceId: {exact: video_device}};
-    // }
-    //
-    // if(useAudio) {
-    //   offer.audio = {deviceId: {exact: audio_device}};
-    // }
+    const {videoroom, remoteFeed} = this.state;
 
     videoroom.createOffer({
       media: { audioRecv: false, videoRecv: false, audioSend: true, videoSend: true },
