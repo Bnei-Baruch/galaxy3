@@ -1,8 +1,9 @@
 import React, { Component } from 'react';
 import { Janus } from '../../lib/janus';
 import { Button, Input, Message } from 'semantic-ui-react';
-import {getDateString, notifyMe, reportToSentry} from '../../shared/tools';
+import {getDateString, notifyMe, } from '../../shared/tools';
 import { SHIDUR_ID } from '../../shared/consts';
+import {reportToSentry} from '../../shared/sentry';
 
 class VirtualChat extends Component {
 
@@ -47,7 +48,7 @@ class VirtualChat extends Component {
       },
       error: (reason) => {
         console.error("  -- Error join room", reason);
-        reportToSentry(reason, {source: "Textroom"}, user);
+        reportToSentry(reason, {source: "Textroom"});
       }
     });
   };
@@ -69,7 +70,7 @@ class VirtualChat extends Component {
           },
           error: (error) => {
             console.error("  -- Error attaching plugin...", error);
-            reportToSentry(error, {source: "Textroom"}, user);
+            reportToSentry(error, {source: "Textroom"});
           },
           iceState: (state) => {
             Janus.log("ICE state changed to " + state);
@@ -85,7 +86,7 @@ class VirtualChat extends Component {
             Janus.debug(msg);
             if (msg["error"] !== undefined && msg["error"] !== null) {
               console.error(msg["error"]);
-              reportToSentry(msg["error"], {source: "Onmessage"}, user);
+              reportToSentry(msg["error"], {source: "Onmessage"});
             }
             if (jsep !== undefined && jsep !== null) {
               // Answer
@@ -102,7 +103,7 @@ class VirtualChat extends Component {
                     error: (error) => {
                       Janus.error("WebRTC error:", error);
                       console.error("WebRTC error... " + JSON.stringify(error));
-                      reportToSentry(msg["error"], {source: "Offer"}, user);
+                      reportToSentry(msg["error"], {source: "Offer"});
                     }
                   });
             }

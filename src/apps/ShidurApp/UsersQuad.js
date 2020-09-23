@@ -4,7 +4,7 @@ import './UsersQuad.scss'
 import UsersHandle from "./UsersHandle";
 import api from '../../shared/Api';
 //import {AUDIOOUT_ID, SDIOUT_ID, SNDMAN_ID} from "../../shared/consts"
-import {reportToSentry} from "../../shared/tools";
+import {reportToSentry} from "../../shared/sentry";
 
 class UsersQuad extends Component {
 
@@ -296,7 +296,7 @@ class UsersQuad extends Component {
         //     console.log(`MIC delivered.`);
         // }).catch((error) => {
         //     console.error(`MIC not delivered due to: ` , JSON.stringify(error));
-        //     reportToSentry("Delivery",{source: "shidur"}, this.props.user);
+        //     reportToSentry("Delivery",{source: "shidur"});
         // });
         gateways["gxy3"].sendServiceMessage(msg);
         //gateways[inst].sendProtocolMessage(msg);
@@ -306,10 +306,10 @@ class UsersQuad extends Component {
                 gdm.send(cmd, toAck, (cmd) => gateways[inst].sendCmdMessage(cmd)).
                 then(() => {
                     console.log(`MIC delivered.`);
-                    reportToSentry("Delivery ON success",{source: "shidur"}, this.props.user);
+                    reportToSentry("Delivery ON success", {source: "shidur"}, 'info');
                 }).catch((error) => {
                     console.error(`MIC not delivered due to: ` , error);
-                    reportToSentry("Delivery ON failed",{source: "shidur"}, this.props.user, 'error');
+                    reportToSentry("Delivery ON failed",{source: "shidur"});
                 });
             })
         } else {
@@ -317,10 +317,10 @@ class UsersQuad extends Component {
             then(() => {
                 console.log(`MIC delivered.`);
                 gateways[inst].chatRoomLeave(room)
-                reportToSentry("Delivery OFF success",{source: "shidur"}, this.props.user);
+                reportToSentry("Delivery OFF success",{source: "shidur"}, 'info');
             }).catch((error) => {
                 console.error(`MIC not delivered due to: ` , JSON.stringify(error));
-                reportToSentry("Delivery OFF failed",{source: "shidur"}, this.props.user, 'error');
+                reportToSentry("Delivery OFF failed",{source: "shidur"});
                 gateways[inst].chatRoomLeave(room)
             });
         }
