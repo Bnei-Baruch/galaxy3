@@ -719,6 +719,8 @@ class MobileClient extends Component {
         remoteFeed.send({message: {request: "configure", restart: true}});
         this.chat.iceRestart();
         this.state.virtualStreamingJanus.iceRestart();
+
+        reportToSentry("ICE Restart", {source: "icestate"}, 'info');
     };
 
     onMessage = (videoroom, msg, jsep) => {
