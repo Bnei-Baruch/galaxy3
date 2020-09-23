@@ -405,16 +405,22 @@ class MobileClient extends Component {
     };
 
     iceState = () => {
+        let {user: {system}} = this.state;
+        let browser = platform.parse(system);
         let count = 0;
         let chk = setInterval(() => {
             count++;
-            console.debug("ICE counter: ", count)
+            console.debug("ICE counter: ", count);
             let {ice} = this.state;
             if (count < 60 && ice === 'connected') {
                 clearInterval(chk);
             }
-            if (count === 30 && ice !== 'connected') {
-                console.log(" :: ICE Restart :: ")
+            if (browser.name.match(/^(Safari|Firefox)$/) && count === 10) {
+                console.log(" :: ICE Restart :: ");
+                this.iceRestart();
+            }
+            if (browser.name === "Chrome" && count === 30) {
+                console.log(" :: ICE Restart :: ");
                 this.iceRestart();
             }
             if (count >= 60) {
