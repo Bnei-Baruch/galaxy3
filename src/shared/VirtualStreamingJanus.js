@@ -141,7 +141,7 @@ export default class VirtualStreamingJanus {
     const config = GxyJanus.instanceConfig(this.streamingGateway);
 
     Janus.init({
-      debug: process.env.NODE_ENV !== 'production' ? [/*'log', 'warn',*/ 'error'] : ['error'],
+      debug: process.env.NODE_ENV !== 'production' ? ['log', 'debug', 'error'] : ['log', 'debug', 'error'],
       callback: () => {
         this.janus = new Janus({
           server: config.url,
@@ -169,6 +169,13 @@ export default class VirtualStreamingJanus {
       }
     });
   };
+
+  iceRestart = () => {
+    let id = trllang[localStorage.getItem('vrt_langtext')] || 301;
+    this.videoJanusStream.send({ message: { request: 'watch', id: this.videos, restart: true } });
+    this.audioJanusStream.send({ message: { request: 'watch', id: this.audios, restart: true } });
+    this.trlAudioJanusStream.send({ message: { request: 'watch', id, restart: true } });
+  }
 
   initVideoStream = (janus) => {
     janus.attach({

@@ -155,7 +155,7 @@ class VirtualClient extends Component {
   }
 
   componentDidMount() {
-    Sentry.init({dsn: `https://${SENTRY_KEY}@sentry.kli.one/2`});
+    //Sentry.init({dsn: `https://${SENTRY_KEY}@sentry.kli.one/2`});
     if (isMobile) {
       window.location = '/userm';
     }
@@ -466,16 +466,19 @@ class VirtualClient extends Component {
     let count = 0;
     let chk = setInterval(() => {
       count++;
+      console.warn("ICE counter: ", count)
       let {ice} = this.state;
       if (count < 11 && ice === 'connected') {
         clearInterval(chk);
       }
       if (count >= 10) {
         clearInterval(chk);
-        this.exitRoom(true, () => {
-          console.error("ICE Disconnected");
-          this.initClient(true);
-        });
+        console.warn(" :: ICE Restart :: ")
+        this.iceRestart();
+        // this.exitRoom(true, () => {
+        //   console.error("ICE Disconnected");
+        //   this.initClient(true);
+        // });
       }
     }, 3000);
   };
@@ -725,7 +728,7 @@ class VirtualClient extends Component {
     // });
   };
 
-  publishOwnFeed = (useVideo, useAudio) => {
+  publishOwnFeed = (useVideo, useAudio, icerestart = false) => {
     const {videoroom, media} = this.state;
     const {audio: {audio_device}, video: {setting,video_device}} = media;
     const offer = {audioRecv: false, videoRecv: false, audioSend: useAudio, videoSend: useVideo, data: false};
@@ -752,6 +755,40 @@ class VirtualClient extends Component {
         Janus.error('WebRTC error:', error);
       }
     });
+  };
+
+  iceRestart = () => {
+    const {videoroom, remoteFeed, media} = this.state;
+    const {audio: {audio_device}, video: {setting,video_device}} = media;
+    //const offer = {audioRecv: false, videoRecv: false, audioSend: useAudio, videoSend: useVideo, data: false};
+
+    // if(useVideo) {
+    //   const {width,height,ideal} = setting;
+    //   offer.video = {width, height, frameRate: {ideal, min: 1}, deviceId: {exact: video_device}};
+    // }
+    //
+    // if(useAudio) {
+    //   offer.audio = {deviceId: {exact: audio_device}};
+    // }
+
+    videoroom.createOffer({
+      media: { audioRecv: false, videoRecv: false, audioSend: true, videoSend: true },
+      iceRestart: true,
+      simulcast: false,
+      success: (jsep) => {
+        Janus.debug('Got publisher SDP!');
+        Janus.debug(jsep);
+        const publish = { request: 'configure', restart: true };
+        videoroom.send({ 'message': publish, 'jsep': jsep });
+      },
+      error: (error) => {
+        Janus.error('WebRTC error:', error);
+      }
+    });
+
+    remoteFeed.send({message: {request: "configure", restart: true}});
+    this.chat.iceRestart();
+    this.state.virtualStreamingJanus.iceRestart();
   };
 
   onMessage = (videoroom, msg, jsep) => {

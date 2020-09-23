@@ -52,6 +52,10 @@ class VirtualChat extends Component {
     });
   };
 
+  iceRestart = () => {
+    this.state.chatroom.send({message: {request: "restart"}});
+  }
+
   initChatRoom = (janus, room, user, cb) => {
     let chatroom = null;
     janus.attach(
