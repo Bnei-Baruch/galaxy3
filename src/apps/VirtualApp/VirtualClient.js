@@ -10,7 +10,6 @@ import {
   getMediaStream,
   initJanus,
   micLevel,
-  reportToSentry,
   takeImage,
   testMic,
   wkliLeave
@@ -46,7 +45,7 @@ import VirtualStreamingJanus from '../../shared/VirtualStreamingJanus';
 import {kc} from "../../components/UserManager";
 import LoginPage from "../../components/LoginPage";
 import {Profile} from "../../components/Profile";
-import * as Sentry from "@sentry/browser";
+import {reportToSentry, updateSentryUser, sentryDebugAction} from '../../shared/sentry';
 import VerifyAccount from './components/VerifyAccount';
 import GxyJanus from "../../shared/janus-utils";
 import audioModeSvg from '../../shared/audio-mode.svg';
@@ -155,7 +154,6 @@ class VirtualClient extends Component {
   }
 
   componentDidMount() {
-    //Sentry.init({dsn: `https://${SENTRY_KEY}@sentry.kli.one/2`});
     if (isMobile) {
       window.location = '/userm';
     }
@@ -174,6 +172,7 @@ class VirtualClient extends Component {
     } else {
       alert("Access denied!");
       kc.logout();
+      updateSentryUser(null);
     }
   }
 
@@ -197,6 +196,7 @@ class VirtualClient extends Component {
       user.ip = data && data.ip ? data.ip : '127.0.0.1';
       user.country = data && data.country ? data.country : 'XX';
       this.setState({user});
+      updateSentryUser(user);
 
       api.fetchConfig()
           .then(data => {
@@ -217,6 +217,7 @@ class VirtualClient extends Component {
                 user.janus = room.janus;
                 user.group = room.description;
                 this.setState({delay: false, user});
+                updateSentryUser(user);
               } else {
                 this.setState({selected_room: '', delay: false});
               }
@@ -415,6 +416,7 @@ class VirtualClient extends Component {
     user.group = name;
     user.janus = room.janus;
     this.setState({selected_room, user});
+    updateSentryUser(user);
   };
 
   exitRoom = (reconnect, callback, error) => {
@@ -561,7 +563,7 @@ class VirtualClient extends Component {
         Janus.log(' :: My handle: ', videoroom);
         Janus.log('Plugin attached! (' + videoroom.getPlugin() + ', id=' + videoroom.getId() + ')');
         Janus.log('  -- This is a publisher/manager');
-        user.handle = videoroom.getId();
+        user.handle = videoroom.getId();  // User state updated in this.joinRoom.
         this.setState({videoroom});
         this.joinRoom(reconnect, videoroom, user);
       },
@@ -642,6 +644,7 @@ class VirtualClient extends Component {
     user.question = false;
     user.timestamp = Date.now();
     this.setState({user, muted: true});
+    updateSentryUser(user);
 
     if(video_device && user.role === "user") {
       if(this.state.upval) {
@@ -658,7 +661,7 @@ class VirtualClient extends Component {
       const { textroom, error_code, error } = data;
       if (textroom === 'error') {
         console.error("Chatroom error: ", data, error_code)
-        reportToSentry(error, {source: "Chatroom"}, this.state.user);
+        reportToSentry(error, {source: "Chatroom"});
         this.exitRoom(false, () => {
           if(error_code === 420)
             alert(this.props.t('oldClient.error') + data.error);
@@ -803,6 +806,7 @@ class VirtualClient extends Component {
 
         user.rfid = myid;
         this.setState({user, myid, mypvtid, room: msg['room'], delay: false});
+        updateSentryUser(user);
 
         api.updateUser(user.id, user)
             .catch(err => console.error("[User] error updating user state", user.id, err));
@@ -1175,6 +1179,7 @@ class VirtualClient extends Component {
       this.exitRoom(false);
     } else if(type === "client-kicked" && user.id === id) {
       kc.logout();
+      updateSentryUser(null);
     } else if (type === 'client-question' && user.id === id) {
       this.handleQuestion();
     } else if (type === 'client-mute' && user.id === id) {
@@ -1185,6 +1190,7 @@ class VirtualClient extends Component {
       user.sound_test = true;
       localStorage.setItem('sound_test', true);
       this.setState({user});
+      updateSentryUser(user);
     } else if (type === 'audio-out') {
       this.handleAudioOut(data, chatroom);
     }  else if (type === 'reload-config') {
@@ -1291,6 +1297,7 @@ class VirtualClient extends Component {
           if(data.result === "success") {
             localStorage.setItem('question', !question);
             this.setState({user, question: !question});
+            updateSentryUser(user);
             this.sendDataMessage(user);
           }
         })
@@ -1371,6 +1378,7 @@ class VirtualClient extends Component {
               if(data.result === "success") {
                   cammuted ? videoroom.unmuteVideo() : videoroom.muteVideo();
                   this.setState({user, cammuted: !cammuted});
+                  updateSentryUser(user);
                   this.sendDataMessage(user);
               }
           })
@@ -1437,7 +1445,7 @@ class VirtualClient extends Component {
       case LINK_STATE_INIT:
         return "grey";
       case LINK_STATE_GOOD:
-        return "";  // white.
+        return null;  // white.
       case LINK_STATE_MEDIUM:
         return "orange";
       case LINK_STATE_WEAK:
@@ -1657,6 +1665,8 @@ class VirtualClient extends Component {
 
     let login = (<LoginPage user={user} checkPermission={this.checkPermission} />);
 
+    const isDeb = new URL(window.location.href).searchParams.has('deb');
+
     let content = (<div className={classNames('vclient', { 'vclient--chat-open': chatVisible })}>
 			<VerifyAccount user={user} loginPage={false} i18n={i18n} />
       <div className="vclient__toolbar">
@@ -1675,7 +1685,7 @@ class VirtualClient extends Component {
           {room ? <Button attached='right' negative icon='sign-out' disabled={delay} onClick={() => this.exitRoom(false)} /> : ''}
           {!room ? <Button attached='right' primary icon='sign-in' loading={delay} disabled={delay || !selected_room} onClick={() => this.initClient(false)} /> : ''}
         </Input>
-        { !(new URL(window.location.href).searchParams.has('deb')) ? null : (
+        { !isDeb ? null : (
         <Input>
           <Select placeholder='number of virtual users' options={[
             { value: '1', text: '1' },
@@ -1772,11 +1782,11 @@ class VirtualClient extends Component {
             : ''}
           <Menu.Item disabled={!localAudioTrack} onClick={this.micMute} className="mute-button">
             <canvas className={muted ? 'hidden' : 'vumeter'} ref="canvas1" id="canvas1" width="15" height="35" />
-            <Icon color={muted ? 'red' : ''} name={!muted ? 'microphone' : 'microphone slash'} />
+            <Icon color={muted ? 'red' : null} name={!muted ? 'microphone' : 'microphone slash'} />
             {t(muted ? 'oldClient.unMute' : 'oldClient.mute')}
           </Menu.Item>
           <Menu.Item disabled={video_device === null || !localVideoTrack || delay} onClick={() => this.camMute(cammuted)}>
-            <Icon color={cammuted ? 'red' : ''} name={!cammuted ? 'eye' : 'eye slash'} />
+            <Icon color={cammuted ? 'red' : null} name={!cammuted ? 'eye' : 'eye slash'} />
             {t(cammuted ? 'oldClient.startVideo' : 'oldClient.stopVideo')}
           </Menu.Item>
           <Menu.Item onClick={this.otherCamsMuteToggle}>
@@ -1836,6 +1846,11 @@ class VirtualClient extends Component {
           <Help t={t} />
           <Button primary style={{margin: 'auto'}} onClick={() => window.open('https://virtualhome.kli.one', '_blank')}>{t('loginPage.userFee')}</Button>
           <Monitoring monitoringData={monitoringData} />
+					{!isDeb ? null :
+           <Menu.Item onClick={sentryDebugAction}>
+             Sentry
+           </Menu.Item>
+          }
         </Menu>
         { !(new URL(window.location.href).searchParams.has('lost')) ? null :
             (<Label color={net_status === 2 ? 'yellow' : net_status === 3 ? 'red' : 'green'} icon='wifi' corner='right' />)}

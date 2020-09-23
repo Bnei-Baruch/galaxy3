@@ -10,7 +10,7 @@ import './ShidurApp.css'
 import {STORAN_ID} from "../../shared/consts"
 import {GuaranteeDeliveryManager} from '../../shared/GuaranteeDelivery';
 import * as Sentry from "@sentry/browser";
-import {SENTRY_KEY} from "../../shared/env";
+import {updateSentryUser} from "../../shared/sentry";
 
 
 class ShidurApp extends Component {
@@ -44,10 +44,6 @@ class ShidurApp extends Component {
         gdm: new GuaranteeDeliveryManager(STORAN_ID),
     };
 
-    componentDidMount() {
-        Sentry.init({dsn: `https://${SENTRY_KEY}@sentry.kli.one/2`});
-    }
-
     componentWillUnmount() {
         Object.values(this.state.gateways).forEach(x => x.destroy());
     };
@@ -62,11 +58,13 @@ class ShidurApp extends Component {
         } else {
             alert("Access denied!");
             kc.logout();
+            updateSentryUser(null);
         }
     };
 
     initApp = (user) => {
         this.setState({user});
+        updateSentryUser(user);
         api.fetchConfig()
             .then(data => GxyJanus.setGlobalConfig(data))
             .then(() => this.initGateways(user))

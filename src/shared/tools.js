@@ -1,7 +1,5 @@
 import {Janus} from "../lib/janus";
-import * as Sentry from '@sentry/browser';
-import {STUN_SRV_GXY, WKLI_ENTER, WKLI_LEAVE
-} from "./env";
+import {STUN_SRV_GXY, WKLI_ENTER, WKLI_LEAVE} from "./env";
 
 export const initJanus = (cb,er,server,token="",iceServers=[{urls: STUN_SRV_GXY}]) => {
     Janus.init({
@@ -25,22 +23,6 @@ export const initJanus = (cb,er,server,token="",iceServers=[{urls: STUN_SRV_GXY}
             });
         }
     })
-};
-
-export const reportToSentry = (title, data, user, level) => {
-    level = level || 'info';
-    data  = data  || {};
-    Sentry.withScope(scope => {
-        Object.keys(data).forEach((key) => {
-            scope.setExtra(key, data[key]);
-        });
-        scope.setLevel(level);
-        if(user) {
-            const {id,username,email} = user;
-            Sentry.setUser({id,username,email});
-        }
-        Sentry.captureMessage(title);
-    });
 };
 
 export const notifyMe = (title, message, tout) => {

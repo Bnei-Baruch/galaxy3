@@ -12,7 +12,7 @@ import {
     getMedia,
     getMediaStream,
     initJanus,
-    micLevel, reportToSentry,
+    micLevel,
     wkliLeave
 } from "../../shared/tools";
 import './MobileClient.scss'
@@ -26,7 +26,7 @@ import {
     vsettings_list,
     STORAN_ID
 } from "../../shared/consts";
-import {GEO_IP_INFO, SENTRY_KEY} from "../../shared/env";
+import {GEO_IP_INFO} from "../../shared/env";
 import platform from "platform";
 import { isMobile } from 'react-device-detect';
 import {withTranslation} from 'react-i18next';
@@ -50,7 +50,7 @@ import VirtualStreamingJanus from '../../shared/VirtualStreamingJanus';
 import VirtualChat from '../VirtualApp/VirtualChat';
 import ConfigStore from "../../shared/ConfigStore";
 import {GuaranteeDeliveryManager} from "../../shared/GuaranteeDelivery";
-import * as Sentry from "@sentry/browser";
+import {updateSentryUser, reportToSentry} from "../../shared/sentry";
 
 const sortAndFilterFeeds = (feeds) => feeds
   .filter(feed => !feed.display.role.match(/^(ghost|guest)$/))
@@ -174,11 +174,11 @@ class MobileClient extends Component {
         } else {
             alert("Access denied!");
             kc.logout();
+            updateSentryUser(null);
         }
     }
 
     componentDidMount() {
-        Sentry.init({dsn: `https://${SENTRY_KEY}@sentry.kli.one/2`});
         if(!isMobile && window.location.href.indexOf("userm") > -1) {
             window.location = '/user/';
             return;
@@ -214,6 +214,7 @@ class MobileClient extends Component {
             user.ip = data && data.ip ? data.ip : '127.0.0.1';
             user.country = data && data.country ? data.country : 'XX';
             this.setState({user});
+            updateSentryUser(user);
 
             api.fetchConfig()
                 .then(data => {
@@ -234,6 +235,7 @@ class MobileClient extends Component {
                             user.janus = room.janus;
                             user.group = room.description;
                             this.setState({delay: false, user});
+                            updateSentryUser(user);
                         } else {
                             this.setState({selected_room: "", delay: false});
                         }
@@ -402,6 +404,7 @@ class MobileClient extends Component {
         user.group = name;
         user.janus = room.janus;
         this.setState({selected_room, user});
+        updateSentryUser(user);
     };
 
     iceState = () => {
@@ -501,7 +504,7 @@ class MobileClient extends Component {
                 Janus.log(' :: My handle: ', videoroom);
                 Janus.log('Plugin attached! (' + videoroom.getPlugin() + ', id=' + videoroom.getId() + ')');
                 Janus.log('  -- This is a publisher/manager');
-                user.handle = videoroom.getId();
+                user.handle = videoroom.getId();  // User state updated in this.joinRoom.
                 this.setState({videoroom});
                 this.joinRoom(reconnect, videoroom, user);
             },
@@ -577,6 +580,7 @@ class MobileClient extends Component {
         user.camera = !!video_device;
         user.timestamp = Date.now();
         this.setState({user, muted: true});
+        updateSentryUser(user);
 
         this.chat.initChatRoom(janus, selected_room, user, data => {
             const { textroom, error_code, error } = data;
@@ -730,6 +734,7 @@ class MobileClient extends Component {
 
                 user.rfid = myid;
                 this.setState({user, myid, mypvtid, room: msg['room'], delay: false});
+                updateSentryUser(user);
 
                 api.updateUser(user.id, user)
                     .catch(err => console.error("[User] error updating user state", user.id, err));
@@ -1206,6 +1211,7 @@ class MobileClient extends Component {
             this.exitRoom(false);
         } else if(type === "client-kicked" && user.id === id) {
             kc.logout();
+            updateSentryUser(null);
         } else if (type === 'client-question' && user.id === id) {
             this.handleQuestion();
         } else if (type === 'client-mute' && user.id === id) {
@@ -1216,6 +1222,7 @@ class MobileClient extends Component {
             user.sound_test = true;
             localStorage.setItem('sound_test', true);
             this.setState({user});
+            updateSentryUser(user);
         } else if (type === 'audio-out') {
             this.handleAudioOut(data, chatroom);
         }  else if (type === 'reload-config') {
@@ -1367,6 +1374,7 @@ class MobileClient extends Component {
                 if(data.result === "success") {
                     localStorage.setItem('question', !question);
                     this.setState({user, question: !question});
+                    updateSentryUser(user);
                     this.sendDataMessage(user);
                 }
             })
@@ -1465,6 +1473,7 @@ class MobileClient extends Component {
                 if(data.result === "success") {
                     cammuted ? videoroom.unmuteVideo() : videoroom.muteVideo();
                     this.setState({user, cammuted: !cammuted});
+                    updateSentryUser(user);
                     this.sendDataMessage(user);
                 }
             })
@@ -1766,7 +1775,7 @@ class MobileClient extends Component {
                             onClick={() => window.open('https://accounts.kbb1.com/auth/realms/main/account')} />}
                         {settingsActiveIndex === 4 && <Menu.Item
                             name={t('oldClient.signOut')}
-                            onClick={() => kc.logout()} />}
+                            onClick={() => { kc.logout(); updateSentryUser(null); }} />}
                       </Accordion>
                     </Modal>
                   </Menu>

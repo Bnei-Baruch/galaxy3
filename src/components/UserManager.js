@@ -1,5 +1,6 @@
 import Keycloak from 'keycloak-js';
 import api from '../shared/Api';
+import {updateSentryUser} from '../shared/sentry'
 
 const userManagerConfig = {
     url: 'https://accounts.kbb1.com/auth',
@@ -66,6 +67,7 @@ export const getUser = (callback) => {
                         group: group && !!group[0] ? group[0] : "",
                     };
                     api.setAccessToken(kc.token);
+                    updateSentryUser(user);
                     callback(user)
                 })
         } else {

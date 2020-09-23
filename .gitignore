@@ -10,7 +10,7 @@
 
 # production
 /build
-/scripts
+scripts/deploy.sh
 
 # misc
 .DS_Store
@@ -24,3 +24,4 @@ yarn-debug.log*
 yarn-error.log*
 .env
 .idea
+.sentryclirc
