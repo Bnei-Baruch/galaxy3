@@ -1,6 +1,6 @@
 import React, {Component, Fragment} from 'react';
 import {Janus} from "../../lib/janus";
-import {Button, Confirm, Grid, Header, Icon, Label, List, Menu, Popup, Segment, Tab, Table} from "semantic-ui-react";
+import {Button, Confirm, Dropdown, Grid, Header, Icon, List, Menu, Popup, Segment, Tab, Table} from "semantic-ui-react";
 import './AdminRoot.css';
 import './AdminRootVideo.scss'
 import classNames from "classnames";
@@ -42,6 +42,7 @@ class AdminRoot extends Component {
         mystream: null,
         rooms: [],
         users: [],
+        rooms_question: [],
         user: null,
         usersTabs: [],
         appInitError: null,
@@ -189,13 +190,14 @@ class AdminRoot extends Component {
                 const {current_room} = this.state;
                 const users_count = data.map(r => r.num_users).reduce((su, cur) => su + cur, 0);
                 const room = data.find(r => r.room === current_room);
+                const rooms_question = data.filter(r => r.questions);
                 let users = current_room && room ? room.users : [];
                 data.sort((a, b) => {
                     if (a.description > b.description) return 1;
                     if (a.description < b.description) return -1;
                     return 0;
                 });
-                this.setState({rooms: data, users, users_count});
+                this.setState({rooms: data, users, users_count, rooms_question});
             })
             .catch(err => {
                 console.error("[Admin] error fetching active rooms", err);
@@ -651,16 +653,16 @@ class AdminRoot extends Component {
         gateway.videoroom.data({ text: message });
     };
 
-    joinRoom = (data, i) => {
-        console.log("[Admin] joinRoom", data, i);
-        const {rooms, user, current_room} = this.state;
-        const {room, janus: inst} = rooms[i];
+    joinRoom = (data) => {
+        console.log("[Admin] joinRoom", data);
+        const {user, current_room} = this.state;
+        const {room, janus: inst} = data;
 
         if (current_room === room)
             return;
 
         console.log("[Admin] joinRoom", room, inst);
-        this.setState({users: rooms[i].users})
+        this.setState({users: data.users})
 
         let promise;
 
@@ -676,7 +678,7 @@ class AdminRoot extends Component {
             .then(() => {
                 this.setState({
                     current_room: room,
-                    current_group: rooms[i].description,
+                    current_group: data.description,
                     current_janus: inst,
                     feeds: [],
                     feed_user: null,
@@ -802,6 +804,7 @@ class AdminRoot extends Component {
           feed_user,
           feeds,
           users,
+          rooms_question,
           gateways,
           gatewaysInitialized,
           rooms,
@@ -839,11 +842,27 @@ class AdminRoot extends Component {
       //const v = (<Icon name='checkmark' />);
       //const x = (<Icon name='close' />);
 
+      let group_options = rooms.map((feed,i) => {
+          const display = feed.description;
+          return ({ key: i, value: feed, text: display })
+      });
+
+      let rooms_question_grid = rooms_question.map((data,i) => {
+          const {room, num_users, description, questions} = data;
+          return (
+              <Table.Row active={current_room === room}
+                         key={i+"q"} onClick={() => this.joinRoom(data)} >
+                  <Table.Cell width={5}>{questions ? q : ""}{description}</Table.Cell>
+                  <Table.Cell width={1}>{num_users}</Table.Cell>
+              </Table.Row>
+          )
+      });
+
       let rooms_grid = rooms.map((data,i) => {
           const {room, num_users, description, questions} = data;
           return (
               <Table.Row active={current_room === room}
-                         key={i} onClick={() => this.joinRoom(data, i)} >
+                         key={i} onClick={() => this.joinRoom(data)} >
                   <Table.Cell width={5}>{questions ? q : ""}{description}</Table.Cell>
                   <Table.Cell width={1}>{num_users}</Table.Cell>
               </Table.Row>
@@ -906,8 +925,9 @@ class AdminRoot extends Component {
       let login = (<LoginPage user={user} checkPermission={this.checkPermission} />);
 
       let adminContent = (
-          <Fragment>
-
+          <Grid>
+              <Grid.Row>
+                  <Grid.Column>
               {
                   this.isAllowed("admin") ?
                       <Segment textAlign='center' className="ingest_segment">
@@ -951,8 +971,8 @@ class AdminRoot extends Component {
                       </Segment>
                       : null
               }
-
-              <Grid>
+                  </Grid.Column>
+              </Grid.Row>
                   <Grid.Row columns='equal'>
                       <Grid.Column width={4}>
                           <Segment.Group className="group_list">
@@ -980,7 +1000,6 @@ class AdminRoot extends Component {
                                       </Segment>
                                       : null
                               }
-
                               <Segment textAlign='center' raised>
                                   <Table selectable compact='very' basic structured className="admin_table" unstackable>
                                       <Table.Body>
@@ -1009,8 +1028,14 @@ class AdminRoot extends Component {
                           </div>
                       </Grid.Column>
                       <Grid.Column width={3}>
-
                           <Segment textAlign='center' className="group_list" raised>
+                              <Dropdown placeholder='Search..'
+                                        fluid
+                                        search
+                                        selection
+                                        options={group_options}
+                                        onClick={this.sortGroups}
+                                        onChange={(e,{value}) => this.joinRoom(value)} />
                               <Table selectable compact='very' basic structured className="admin_table" unstackable>
                                   <Table.Body>
                                       <Table.Row disabled positive>
@@ -1021,13 +1046,13 @@ class AdminRoot extends Component {
                                   </Table.Body>
                               </Table>
                           </Segment>
-
                       </Grid.Column>
                   </Grid.Row>
-              </Grid>
 
               {
                   this.isAllowed("admin") ?
+                      <Grid.Row>
+                          <Grid.Column width={13}>
                       <ChatBox user={user}
                                rooms={rooms}
                                selected_janus={current_janus}
@@ -1037,6 +1062,22 @@ class AdminRoot extends Component {
                                gateways={gateways}
                                gdm={this.state.gdm}
                                onChatRoomsInitialized={this.onChatRoomsInitialized}/>
+
+                          </Grid.Column>
+                          <Grid.Column width={3}>
+                              <Segment textAlign='center' className="vip_list" raised>
+                                  <Table selectable compact='very' basic structured className="admin_table" unstackable>
+                                      <Table.Body>
+                                          <Table.Row disabled positive>
+                                              <Table.Cell width={5} >Question Rooms: {rooms_question.length}</Table.Cell>
+                                              <Table.Cell width={1} >{}</Table.Cell>
+                                          </Table.Row>
+                                          {rooms_question_grid}
+                                      </Table.Body>
+                                  </Table>
+                              </Segment>
+                          </Grid.Column>
+                      </Grid.Row>
                       : null
               }
 
@@ -1054,32 +1095,32 @@ class AdminRoot extends Component {
                       : null
               }
 
-          </Fragment>
+          </Grid>
       );
 
       const panes = [
-        { menuItem: 'Admin', render: () => <Tab.Pane>{adminContent}</Tab.Pane> },
+          { menuItem: 'Admin', render: () => <Tab.Pane>{adminContent}</Tab.Pane> },
       ];
       if (this.isAllowed('root')) {
-        panes.push({ menuItem: 'Rooms', render: () => <Tab.Pane><RoomManager /></Tab.Pane> });
-        panes.push({ menuItem: 'Monitor', render: () => <Tab.Pane><MonitoringAdmin addUserTab={(user, stats) => this.addUserTab(user, stats)}/></Tab.Pane> });
-        usersTabs.forEach(({user, stats}, index) => panes.push({
-          menuItem: (
-            <Menu.Item key={user.id}>
-              {user.display || user.name}&nbsp;
-              <Icon name='window close' style={{cursor: 'pointer'}} onClick={(e) => { e.stopPropagation(); this.removeUserTab(index); }} />
-            </Menu.Item>
-          ),
-          render: () => <Tab.Pane><MonitoringUser user={user} stats={stats} /></Tab.Pane>,
-        }));
+          panes.push({ menuItem: 'Rooms', render: () => <Tab.Pane><RoomManager /></Tab.Pane> });
+          panes.push({ menuItem: 'Monitor', render: () => <Tab.Pane><MonitoringAdmin addUserTab={(user, stats) => this.addUserTab(user, stats)}/></Tab.Pane> });
+          usersTabs.forEach(({user, stats}, index) => panes.push({
+              menuItem: (
+                  <Menu.Item key={user.id}>
+                      {user.display || user.name}&nbsp;
+                      <Icon name='window close' style={{cursor: 'pointer'}} onClick={(e) => { e.stopPropagation(); this.removeUserTab(index); }} />
+                  </Menu.Item>
+              ),
+              render: () => <Tab.Pane><MonitoringUser user={user} stats={stats} /></Tab.Pane>,
+          }));
       }
 
       const content = (
-        <Tab menu={{ secondary: true, pointing: true, color: "blue" }}
-             panes={panes}
-             activeIndex={activeTab || 0}
-             onTabChange={(e, {activeIndex}) => this.setState({activeTab: activeIndex})}
-             renderActiveOnly={true} />
+          <Tab menu={{ secondary: true, pointing: true, color: "blue" }}
+               panes={panes}
+               activeIndex={activeTab || 0}
+               onTabChange={(e, {activeIndex}) => this.setState({activeTab: activeIndex})}
+               renderActiveOnly={true} />
       );
 
       return (
