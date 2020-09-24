@@ -42,5 +42,6 @@
   "browserslist": {
     "production": [],
     "development": []
-  }
+  },
+  "type": "module"
 }
