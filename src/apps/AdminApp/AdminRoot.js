@@ -1028,14 +1028,14 @@ class AdminRoot extends Component {
                           </div>
                       </Grid.Column>
                       <Grid.Column width={3}>
-                          <Segment textAlign='center' className="group_list" raised>
-                              <Dropdown placeholder='Search..'
-                                        fluid
-                                        search
-                                        selection
-                                        options={group_options}
-                                        onClick={this.sortGroups}
-                                        onChange={(e,{value}) => this.joinRoom(value)} />
+                          <Dropdown placeholder='Search..'
+                                    fluid
+                                    search
+                                    selection
+                                    options={group_options}
+                                    onClick={this.sortGroups}
+                                    onChange={(e,{value}) => this.joinRoom(value)} />
+                          <Segment textAlign='center' className="group_list">
                               <Table selectable compact='very' basic structured className="admin_table" unstackable>
                                   <Table.Body>
                                       <Table.Row disabled positive>
@@ -1065,7 +1065,7 @@ class AdminRoot extends Component {
 
                           </Grid.Column>
                           <Grid.Column width={3}>
-                              <Segment textAlign='center' className="vip_list" raised>
+                              <Segment textAlign='center' className="vip_list">
                                   <Table selectable compact='very' basic structured className="admin_table" unstackable>
                                       <Table.Body>
                                           <Table.Row disabled positive>
