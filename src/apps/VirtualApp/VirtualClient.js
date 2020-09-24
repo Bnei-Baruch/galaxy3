@@ -419,51 +419,6 @@ class VirtualClient extends Component {
     updateSentryUser(user);
   };
 
-  exitRoom = (reconnect, callback, error) => {
-    this.setState({delay: true});
-    if(this.state.user.role === "user") {
-      wkliLeave(this.state.user);
-    }
-    clearInterval(this.state.upval);
-    this.clearKeepAlive();
-
-    localStorage.setItem('question', false);
-
-    api.fetchAvailableRooms({with_num_users: true})
-        .then(data => {
-          const {rooms} = data;
-          this.setState({rooms});
-        });
-
-
-    let {videoroom, remoteFeed, protocol, janus, room} = this.state;
-    if(remoteFeed) remoteFeed.detach();
-    if(videoroom) videoroom.send({"message": {request: 'leave', room}});
-    let pl = {textroom: 'leave', transaction: Janus.randomString(12), 'room': PROTOCOL_ROOM};
-    if(protocol) protocol.data({text: JSON.stringify(pl)});
-
-    if (this.chat && !error) {
-      this.chat.exitChatRoom(room);
-    }
-
-    setTimeout(() => {
-      if(videoroom) videoroom.detach();
-      if(protocol) protocol.detach();
-      if(janus) janus.destroy();
-      this.state.virtualStreamingJanus.audioElement.muted = !reconnect;
-      this.setState({
-        cammuted: false, muted: false, question: false,
-        feeds: [], mids: [],
-        localAudioTrack: null, localVideoTrack: null, upval: null,
-        remoteFeed: null, videoroom: null, protocol: null, janus: null,
-        delay: reconnect,
-        room: reconnect ? room : '',
-        chatMessagesCount: 0,
-      });
-      if(typeof callback === "function") callback();
-    }, 2000);
-  }
-
   iceState = () => {
     let {user: {system}} = this.state;
     let browser = platform.parse(system);
@@ -739,6 +694,51 @@ class VirtualClient extends Component {
     //     window.location.reload();
     //   }
     // });
+  };
+
+  exitRoom = (reconnect, callback, error) => {
+    this.setState({delay: true});
+    if(this.state.user.role === "user") {
+      wkliLeave(this.state.user);
+    }
+    clearInterval(this.state.upval);
+    this.clearKeepAlive();
+
+    localStorage.setItem('question', false);
+
+    api.fetchAvailableRooms({with_num_users: true})
+        .then(data => {
+          const {rooms} = data;
+          this.setState({rooms});
+        });
+
+
+    let {videoroom, remoteFeed, protocol, janus, room} = this.state;
+    if(remoteFeed) remoteFeed.detach();
+    if(videoroom) videoroom.send({"message": {request: 'leave', room}});
+    let pl = {textroom: 'leave', transaction: Janus.randomString(12), 'room': PROTOCOL_ROOM};
+    if(protocol) protocol.data({text: JSON.stringify(pl)});
+
+    if (this.chat && !error) {
+      this.chat.exitChatRoom(room);
+    }
+
+    setTimeout(() => {
+      if(videoroom) videoroom.detach();
+      if(protocol) protocol.detach();
+      if(janus) janus.destroy();
+      this.state.virtualStreamingJanus.audioElement.muted = !reconnect;
+      this.setState({
+        cammuted: false, muted: false, question: false,
+        feeds: [], mids: [],
+        localAudioTrack: null, localVideoTrack: null, upval: null,
+        remoteFeed: null, videoroom: null, protocol: null, janus: null,
+        delay: reconnect,
+        room: reconnect ? room : '',
+        chatMessagesCount: 0,
+      });
+      if(typeof callback === "function") callback();
+    }, 2000);
   };
 
   publishOwnFeed = (useVideo, useAudio) => {
