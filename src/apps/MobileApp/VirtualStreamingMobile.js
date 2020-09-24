@@ -1,16 +1,5 @@
 import React, { Component, Fragment } from 'react';
-import {
-  Button,
-  Divider,
-  Dropdown,
-  Header,
-  Icon,
-  Label,
-  Modal,
-  List,
-  Menu,
-  Popup,
-} from 'semantic-ui-react';
+import {Divider, Header, Icon, Modal, List, Menu,} from 'semantic-ui-react';
 import {
   videos_options2,
   audiog_options2,

@@ -24,9 +24,9 @@ import {
   PROTOCOL_ROOM,
   VIDEO_360P_OPTION_VALUE,
   NO_VIDEO_OPTION_VALUE,
-  vsettings_list, STORAN_ID,
+  vsettings_list,
 } from '../../shared/consts';
-import {GEO_IP_INFO, SENTRY_KEY} from '../../shared/env';
+import {GEO_IP_INFO} from '../../shared/env';
 import platform from 'platform';
 import {Help} from './components/Help';
 import {withTranslation} from 'react-i18next';
