@@ -172,9 +172,12 @@ export default class VirtualStreamingJanus {
 
   iceRestart = () => {
     let id = trllang[localStorage.getItem('vrt_langtext')] || 301;
-    this.videoJanusStream.send({ message: { request: 'watch', id: this.videos, restart: true } });
-    this.audioJanusStream.send({ message: { request: 'watch', id: this.audios, restart: true } });
-    this.trlAudioJanusStream.send({ message: { request: 'watch', id, restart: true } });
+    if(this.videoJanusStream)
+      this.videoJanusStream.send({ message: { request: 'watch', id: this.videos, restart: true } });
+    if(this.audioJanusStream)
+      this.audioJanusStream.send({ message: { request: 'watch', id: this.audios, restart: true } });
+    if(this.trlAudioJanusStream)
+      this.trlAudioJanusStream.send({ message: { request: 'watch', id, restart: true } });
   }
 
   initVideoStream = (janus) => {
