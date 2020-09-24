@@ -419,12 +419,12 @@ class MobileClient extends Component {
                 clearInterval(chk);
             }
             if (browser.name.match(/^(Safari|Firefox)$/) && count === 10) {
-                console.log(" :: ICE Restart :: ");
-                this.iceRestart();
+                // console.log(" :: ICE Restart :: ");
+                // this.iceRestart();
             }
             if (browser.name === "Chrome" && count === 30) {
-                console.log(" :: ICE Restart :: ");
-                this.iceRestart();
+                // console.log(" :: ICE Restart :: ");
+                // this.iceRestart();
             }
             if (count >= 60) {
                 clearInterval(chk);
