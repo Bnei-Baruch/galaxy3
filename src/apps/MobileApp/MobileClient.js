@@ -18,13 +18,12 @@ import {
 import './MobileClient.scss'
 import './MobileConteiner.scss'
 import 'eqcss'
-import {initGxyProtocol, sendProtocolMessage} from "../../shared/protocol";
+//import {initGxyProtocol, sendProtocolMessage} from "../../shared/protocol";
 import {
     PROTOCOL_ROOM,
     VIDEO_240P_OPTION_VALUE,
     NO_VIDEO_OPTION_VALUE,
     vsettings_list,
-    STORAN_ID
 } from "../../shared/consts";
 import {GEO_IP_INFO} from "../../shared/env";
 import platform from "platform";
@@ -270,9 +269,10 @@ class MobileClient extends Component {
           }
       }, err => {
           this.exitRoom(false, () => {
-              console.error("[VirtualClient] reinitializing failed after: " + retry + " retries");
+              console.error("Disconnected duo: ", err);
               alert("Lost connection to the server!");
           });
+          // FIXME: reconnect does not work as expected
           // this.exitRoom(true, () => {
           //     console.error("[VirtualClient] error initializing janus", err);
           //     this.reinitClient(retry);
@@ -408,21 +408,35 @@ class MobileClient extends Component {
     };
 
     iceState = () => {
+        let {user: {system}} = this.state;
+        let browser = platform.parse(system);
         let count = 0;
         let chk = setInterval(() => {
             count++;
+            console.debug("ICE counter: ", count);
             let {ice} = this.state;
-            if(count < 11 && ice === "connected") {
+            if (count < 60 && ice === 'connected') {
                 clearInterval(chk);
             }
-            if(count >= 10) {
+            if (browser.name.match(/^(Safari|Firefox)$/) && count === 10) {
+                console.log(" :: ICE Restart :: ");
+                this.iceRestart();
+            }
+            if (browser.name === "Chrome" && count === 30) {
+                console.log(" :: ICE Restart :: ");
+                this.iceRestart();
+            }
+            if (count >= 60) {
                 clearInterval(chk);
+                console.debug(" :: ICE Filed: Reconnecting... ");
+                this.exitRoom(false);
+                // FIXME: reconnect does not work as expected
                 // this.exitRoom(true, () => {
                 //     console.error("ICE Disconnected");
                 //     this.initClient(true);
                 // });
             }
-        }, 3000);
+        }, 1000);
     };
 
     mediaState = (media) => {
@@ -650,6 +664,51 @@ class MobileClient extends Component {
         // });
     };
 
+    exitRoom = (reconnect, callback, error) => {
+        this.setState({delay: true})
+        let {videoroom, remoteFeed, protocol, janus, room} = this.state;
+        wkliLeave(this.state.user);
+        clearInterval(this.state.upval);
+        this.clearKeepAlive();
+
+        if(remoteFeed) remoteFeed.detach();
+        if(videoroom) videoroom.send({"message": {request: 'leave', room}});
+        let pl = {textroom: 'leave', transaction: Janus.randomString(12), 'room': PROTOCOL_ROOM};
+        if(protocol) protocol.data({text: JSON.stringify(pl)});
+
+        localStorage.setItem('question', false);
+
+        api.fetchAvailableRooms({with_num_users: true})
+            .then(data => {
+                const {rooms} = data;
+                this.setState({rooms});
+            });
+
+        if (this.chat && !error) {
+            this.chat.exitChatRoom(room);
+        }
+
+        if (this.state.shidur) {
+            this.toggleShidur();
+        }
+
+        setTimeout(() => {
+            if(videoroom) videoroom.detach();
+            if(protocol) protocol.detach();
+            if(janus) janus.destroy();
+            this.setState({
+                cammuted: false, muted: false, question: false,
+                feeds: [], /*mids: [], showed_mids:[],*/
+                localAudioTrack: null, localVideoTrack: null, upval: null,
+                remoteFeed: null, videoroom: null, protocol: null, janus: null,
+                delay: reconnect,
+                room: reconnect ? room : '',
+                chatMessagesCount: 0,
+            });
+            if(typeof callback === "function") callback();
+        }, 2000);
+    };
+
     publishOwnFeed = (useVideo, useAudio) => {
       console.log('publishOwnFeed');
       const {videoroom, media} = this.state;
@@ -684,6 +743,31 @@ class MobileClient extends Component {
             }
           }
       });
+    };
+
+    iceRestart = () => {
+        const {videoroom, remoteFeed} = this.state;
+
+        videoroom.createOffer({
+            media: { audioRecv: false, videoRecv: false, audioSend: true, videoSend: true },
+            iceRestart: true,
+            simulcast: false,
+            success: (jsep) => {
+                Janus.debug('Got publisher SDP!');
+                Janus.debug(jsep);
+                const publish = { request: 'configure', restart: true };
+                videoroom.send({ 'message': publish, 'jsep': jsep });
+            },
+            error: (error) => {
+                Janus.error('WebRTC error:', error);
+            }
+        });
+
+        remoteFeed.send({message: {request: "configure", restart: true}});
+        this.chat.iceRestart();
+        this.state.virtualStreamingJanus.iceRestart();
+
+        reportToSentry("ICE Restart", {source: "icestate"}, 'info');
     };
 
     onMessage = (videoroom, msg, jsep) => {
@@ -1205,51 +1289,6 @@ class MobileClient extends Component {
         } else if (type === 'client-state') {
             this.onRoomData(data.user);
         }
-    };
-
-    exitRoom = (reconnect, callback, error) => {
-        this.setState({delay: true})
-        let {videoroom, remoteFeed, protocol, janus, room} = this.state;
-        wkliLeave(this.state.user);
-        clearInterval(this.state.upval);
-        this.clearKeepAlive();
-
-        if(remoteFeed) remoteFeed.detach();
-        if(videoroom) videoroom.send({"message": {request: 'leave', room}});
-        let pl = {textroom: 'leave', transaction: Janus.randomString(12), 'room': PROTOCOL_ROOM};
-        if(protocol) protocol.data({text: JSON.stringify(pl)});
-
-        localStorage.setItem('question', false);
-
-        api.fetchAvailableRooms({with_num_users: true})
-            .then(data => {
-                const {rooms} = data;
-                this.setState({rooms});
-            });
-
-        if (this.chat && !error) {
-          this.chat.exitChatRoom(room);
-        }
-
-        if (this.state.shidur) {
-          this.toggleShidur();
-        }
-
-        setTimeout(() => {
-            if(videoroom) videoroom.detach();
-            if(protocol) protocol.detach();
-            if(janus) janus.destroy();
-            this.setState({
-                cammuted: false, muted: false, question: false,
-                feeds: [], /*mids: [], showed_mids:[],*/
-                localAudioTrack: null, localVideoTrack: null, upval: null,
-                remoteFeed: null, videoroom: null, protocol: null, janus: null,
-                delay: reconnect,
-                room: reconnect ? room : '',
-                chatMessagesCount: 0,
-            });
-            if(typeof callback === "function") callback();
-        }, 2000);
     };
 
     keepAlive = () => {

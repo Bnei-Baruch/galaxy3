@@ -24,9 +24,9 @@ import {
   PROTOCOL_ROOM,
   VIDEO_360P_OPTION_VALUE,
   NO_VIDEO_OPTION_VALUE,
-  vsettings_list, STORAN_ID,
+  vsettings_list,
 } from '../../shared/consts';
-import {GEO_IP_INFO, SENTRY_KEY} from '../../shared/env';
+import {GEO_IP_INFO} from '../../shared/env';
 import platform from 'platform';
 import {Help} from './components/Help';
 import {withTranslation} from 'react-i18next';
@@ -419,67 +419,34 @@ class VirtualClient extends Component {
     updateSentryUser(user);
   };
 
-  exitRoom = (reconnect, callback, error) => {
-    this.setState({delay: true});
-    if(this.state.user.role === "user") {
-      wkliLeave(this.state.user);
-    }
-    clearInterval(this.state.upval);
-    this.clearKeepAlive();
-
-    localStorage.setItem('question', false);
-
-    api.fetchAvailableRooms({with_num_users: true})
-        .then(data => {
-          const {rooms} = data;
-          this.setState({rooms});
-        });
-
-
-    let {videoroom, remoteFeed, protocol, janus, room} = this.state;
-    if(remoteFeed) remoteFeed.detach();
-    if(videoroom) videoroom.send({"message": {request: 'leave', room}});
-    let pl = {textroom: 'leave', transaction: Janus.randomString(12), 'room': PROTOCOL_ROOM};
-    if(protocol) protocol.data({text: JSON.stringify(pl)});
-
-    if (this.chat && !error) {
-      this.chat.exitChatRoom(room);
-    }
-
-    setTimeout(() => {
-      if(videoroom) videoroom.detach();
-      if(protocol) protocol.detach();
-      if(janus) janus.destroy();
-      this.state.virtualStreamingJanus.audioElement.muted = !reconnect;
-      this.setState({
-        cammuted: false, muted: false, question: false,
-        feeds: [], mids: [],
-        localAudioTrack: null, localVideoTrack: null, upval: null,
-        remoteFeed: null, videoroom: null, protocol: null, janus: null,
-        delay: reconnect,
-        room: reconnect ? room : '',
-        chatMessagesCount: 0,
-      });
-      if(typeof callback === "function") callback();
-    }, 2000);
-  }
-
   iceState = () => {
+    let {user: {system}} = this.state;
+    let browser = platform.parse(system);
     let count = 0;
     let chk = setInterval(() => {
       count++;
+      console.debug("ICE counter: ", count);
       let {ice} = this.state;
-      if (count < 11 && ice === 'connected') {
+      if (count < 60 && ice === 'connected') {
         clearInterval(chk);
       }
-      if (count >= 10) {
+      if (browser.name.match(/^(Safari|Firefox)$/) && count === 10) {
+        console.log(" :: ICE Restart :: ");
+        this.iceRestart();
+      }
+      if (browser.name === "Chrome" && count === 30) {
+        console.log(" :: ICE Restart :: ");
+        this.iceRestart();
+      }
+      if (count >= 60) {
         clearInterval(chk);
+        console.debug(" :: ICE Filed: Reconnecting... ")
         this.exitRoom(true, () => {
           console.error("ICE Disconnected");
           this.initClient(true);
         });
       }
-    }, 3000);
+    }, 1000);
   };
 
   mediaState = (media) => {
@@ -566,7 +533,8 @@ class VirtualClient extends Component {
         this.setState({ ice: state });
         this.state.monitoringData.onIceState(state);
         if (state === 'disconnected') {
-          // FIXME: ICE restart does not work properly, so we will do silent reconnect
+          // Chrome: iceconnectionstate does not go to failed if connection drops - https://bugs.chromium.org/p/chromium/issues/detail?id=982793
+          // Safari/Firefox ice restart may be triggered on state: failed as in example - https://developer.mozilla.org/en-US/docs/Web/API/RTCPeerConnection/restartIce
           this.iceState();
         }
       },
@@ -728,6 +696,51 @@ class VirtualClient extends Component {
     // });
   };
 
+  exitRoom = (reconnect, callback, error) => {
+    this.setState({delay: true});
+    if(this.state.user.role === "user") {
+      wkliLeave(this.state.user);
+    }
+    clearInterval(this.state.upval);
+    this.clearKeepAlive();
+
+    localStorage.setItem('question', false);
+
+    api.fetchAvailableRooms({with_num_users: true})
+        .then(data => {
+          const {rooms} = data;
+          this.setState({rooms});
+        });
+
+
+    let {videoroom, remoteFeed, protocol, janus, room} = this.state;
+    if(remoteFeed) remoteFeed.detach();
+    if(videoroom) videoroom.send({"message": {request: 'leave', room}});
+    let pl = {textroom: 'leave', transaction: Janus.randomString(12), 'room': PROTOCOL_ROOM};
+    if(protocol) protocol.data({text: JSON.stringify(pl)});
+
+    if (this.chat && !error) {
+      this.chat.exitChatRoom(room);
+    }
+
+    setTimeout(() => {
+      if(videoroom) videoroom.detach();
+      if(protocol) protocol.detach();
+      if(janus) janus.destroy();
+      this.state.virtualStreamingJanus.audioElement.muted = !reconnect;
+      this.setState({
+        cammuted: false, muted: false, question: false,
+        feeds: [], mids: [],
+        localAudioTrack: null, localVideoTrack: null, upval: null,
+        remoteFeed: null, videoroom: null, protocol: null, janus: null,
+        delay: reconnect,
+        room: reconnect ? room : '',
+        chatMessagesCount: 0,
+      });
+      if(typeof callback === "function") callback();
+    }, 2000);
+  };
+
   publishOwnFeed = (useVideo, useAudio) => {
     const {videoroom, media} = this.state;
     const {audio: {audio_device}, video: {setting,video_device}} = media;
@@ -755,6 +768,31 @@ class VirtualClient extends Component {
         Janus.error('WebRTC error:', error);
       }
     });
+  };
+
+  iceRestart = () => {
+    const {videoroom, remoteFeed} = this.state;
+
+    videoroom.createOffer({
+      media: { audioRecv: false, videoRecv: false, audioSend: true, videoSend: true },
+      iceRestart: true,
+      simulcast: false,
+      success: (jsep) => {
+        Janus.debug('Got publisher SDP!');
+        Janus.debug(jsep);
+        const publish = { request: 'configure', restart: true };
+        videoroom.send({ 'message': publish, 'jsep': jsep });
+      },
+      error: (error) => {
+        Janus.error('WebRTC error:', error);
+      }
+    });
+
+    remoteFeed.send({message: {request: "configure", restart: true}});
+    this.chat.iceRestart();
+    this.state.virtualStreamingJanus.iceRestart();
+
+    reportToSentry("ICE Restart", {source: "icestate"}, 'info');
   };
 
   onMessage = (videoroom, msg, jsep) => {
@@ -1814,7 +1852,7 @@ class VirtualClient extends Component {
            <Menu.Item onClick={sentryDebugAction}>
              Sentry
            </Menu.Item>
-          } 
+          }
         </Menu>
         { !(new URL(window.location.href).searchParams.has('lost')) ? null :
             (<Label color={net_status === 2 ? 'yellow' : net_status === 3 ? 'red' : 'green'} icon='wifi' corner='right' />)}
