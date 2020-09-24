@@ -748,24 +748,26 @@ class MobileClient extends Component {
     iceRestart = () => {
         const {videoroom, remoteFeed} = this.state;
 
-        videoroom.createOffer({
-            media: { audioRecv: false, videoRecv: false, audioSend: true, videoSend: true },
-            iceRestart: true,
-            simulcast: false,
-            success: (jsep) => {
-                Janus.debug('Got publisher SDP!');
-                Janus.debug(jsep);
-                const publish = { request: 'configure', restart: true };
-                videoroom.send({ 'message': publish, 'jsep': jsep });
-            },
-            error: (error) => {
-                Janus.error('WebRTC error:', error);
-            }
-        });
+        if(videoroom) {
+            videoroom.createOffer({
+                media: { audioRecv: false, videoRecv: false, audioSend: true, videoSend: true },
+                iceRestart: true,
+                simulcast: false,
+                success: (jsep) => {
+                    Janus.debug('Got publisher SDP!');
+                    Janus.debug(jsep);
+                    const publish = { request: 'configure', restart: true };
+                    videoroom.send({ 'message': publish, 'jsep': jsep });
+                },
+                error: (error) => {
+                    Janus.error('WebRTC error:', error);
+                }
+            });
+        }
 
-        remoteFeed.send({message: {request: "configure", restart: true}});
-        this.chat.iceRestart();
-        this.state.virtualStreamingJanus.iceRestart();
+        if(remoteFeed) remoteFeed.send({message: {request: "configure", restart: true}});
+        if(this.chat) this.chat.iceRestart();
+        if(this.state.virtualStreamingJanus) this.state.virtualStreamingJanus.iceRestart();
 
         reportToSentry("ICE Restart", {source: "icestate"}, 'info');
     };
