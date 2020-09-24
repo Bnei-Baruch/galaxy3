@@ -415,7 +415,7 @@ class MobileClient extends Component {
             count++;
             console.debug("ICE counter: ", count);
             let {ice} = this.state;
-            if (count < 60 && ice === 'connected') {
+            if (count < 60 && ice.match(/^(connected|completed)$/)) {
                 clearInterval(chk);
             }
             if (browser.name.match(/^(Safari|Firefox)$/) && count === 10) {
