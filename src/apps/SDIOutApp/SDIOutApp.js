@@ -66,7 +66,7 @@ class SDIOutApp extends Component {
                 console.error("[SDIOut] error initializing app", err);
                 this.setState({appInitError: err});
             });
-    }
+    };
 
     initGateways = (user) => {
         const gateways = GxyJanus.makeGateways("rooms");
@@ -77,13 +77,13 @@ class SDIOutApp extends Component {
                 console.log("[SDIOut] gateways initialization complete");
                 this.setState({gatewaysInitialized: true});
             });
-    }
+    };
 
     initGateway = (user, gateway) => {
         console.log("[SDIOut] initializing gateway", gateway.name);
 
         gateway.addEventListener("reinit", () => {
-                this.postInitGateway(user, gateway)
+                this.initGateway(user, gateway)
                     .catch(err => {
                         console.error("[SDIOut] postInitGateway error after reinit. Reloading", gateway.name, err);
                         window.location.reload();
@@ -98,17 +98,22 @@ class SDIOutApp extends Component {
             }
         });
 
+
         return gateway.init()
-            .then(() => this.postInitGateway(user, gateway));
-    }
+            .then(() => {
+                this.postInitGateway(user, gateway);
+            })
+            .catch(err => {
+                console.error("[Shidur] error initializing gateway", gateway.name, err);
+                setTimeout(() => {
+                    this.initGateway(user, gateway);
+                }, 5000);
+            });
+    };
 
     postInitGateway = (user, gateway) => {
-        console.log("[SDIOut] initializing gateway", gateway.name);
-
         if (gateway.name === "gxy3") {
-            return gateway.initServiceProtocol(user, data => this.onServiceData(gateway, data, user))
-        } else {
-            return Promise.resolve();
+            return gateway.initServiceProtocol(user, data => this.onServiceData(gateway, data))
         }
     };
 
