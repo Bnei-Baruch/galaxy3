@@ -70,7 +70,7 @@ class AdminRoot extends Component {
              nextState.activeTab === 0 ||
              activeTab !== nextState.activeTab ||
              nextState.usersTabs.length !== usersTabs.length;
-    }
+    };
 
     checkPermission = (user) => {
         const roles = new Set(user.roles || []);
@@ -134,7 +134,7 @@ class AdminRoot extends Component {
                 console.error("[Admin] error initializing app", err);
                 this.setState({appInitError: err});
             });
-    }
+    };
 
     initGateways = (user) => {
         const gateways = GxyJanus.makeGateways("rooms");
@@ -150,15 +150,6 @@ class AdminRoot extends Component {
     initGateway = (user, gateway) => {
         console.info("[Admin] initializing gateway", gateway.name);
 
-        gateway.addEventListener("reinit", () => {
-                this.postInitGateway(user, gateway)
-                    .catch(err => {
-                        console.error("[Admin] postInitGateway error after reinit. Reloading", gateway.name, err);
-                        window.location.reload();
-                    });
-            }
-        );
-
         gateway.addEventListener("reinit_failure", (e) => {
             if (e.detail > 10) {
                 console.error("[Admin] too many reinit_failure. Reloading", gateway.name, e);
@@ -166,23 +157,13 @@ class AdminRoot extends Component {
             }
         });
 
-        return gateway.init()
-            .then(() => this.postInitGateway(user, gateway));
-    }
-
-    postInitGateway = (user, gateway) => {
-        console.info("[Admin] gateway post initialization", gateway.name);
-        if (this.isAllowed("admin")) {
-            return gateway.initGxyProtocol(user, data => this.onProtocolData(gateway, data))
-        } else {
-            return Promise.resolve();
-        }
-    }
+        return gateway.init();
+    };
 
     pollRooms = () => {
         this.fetchRooms();
         setInterval(this.fetchRooms, 10 * 1000)
-    }
+    };
 
     fetchRooms = () => {
         api.fetchActiveRooms()
@@ -519,35 +500,6 @@ class AdminRoot extends Component {
         }
     };
 
-    onProtocolData = (gateway, data) => {
-        const { gdm } = this.state;
-        if (gdm.checkAck(data)) {
-            // Ack received, do nothing.
-            return;
-        }
-
-        // let {users} = this.state;
-        //
-        // // Set status in users list
-        // if (data.type.match(/^(camera|question|sound_test)$/)) {
-        //     gateway.log("[protocol] user", data.type, data.status, data.user.id);
-        //     if (users[data.user.id]) {
-        //         users[data.user.id][data.type] = data.status;
-        //         this.setState({users});
-        //     } else {
-        //         users[data.user.id] = {[data.type]: data.status};
-        //         this.setState({users});
-        //     }
-        // }
-        //
-        // // Save user on enter
-        // if (data.type.match(/^(enter)$/)) {
-        //     gateway.log("[protocol] user entered", data.user);
-        //     users[data.user.id] = data.user;
-        //     this.setState({users});
-        // }
-    };
-
     sendCommandMessage = (command_type) => {
         const {gateways, feed_user, current_janus, current_room, command_status, gdm} = this.state;
         const gateway = gateways[current_janus];
@@ -642,15 +594,6 @@ class AdminRoot extends Component {
         if (command_type === "audio-out") {
             this.setState({command_status: !command_status})
         }
-    };
-
-    sendDataMessage = (msg) => {
-        const {gateways, feed_user, current_janus} = this.state;
-        const gateway = gateways[current_janus];
-        const cmd = {type: msg, rcmd: true, id: feed_user.id}
-        const message = JSON.stringify(cmd);
-        console.log(':: Sending message: ', message);
-        gateway.videoroom.data({ text: message });
     };
 
     joinRoom = (data) => {
