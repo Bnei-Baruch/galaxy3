@@ -910,6 +910,30 @@ class AdminRoot extends Component {
                               on='click'
                               hideOnScroll
                           />
+                          {
+                              this.isAllowed("root") ?
+                                  <div>
+                                      <Popup trigger={<Button color="yellow" icon='question' onClick={() => this.sendRemoteCommand("client-question")} />} content='Set/Unset question' inverted />
+                                      <Popup trigger={<Button color="brown" icon='sync alternate' alt="test" onClick={() => this.sendRemoteCommand("client-reconnect")} />} content='Reconnect' inverted />
+                                      <Popup trigger={<Button color="olive" icon='redo alternate' onClick={() => this.sendRemoteCommand("client-reload")} />} content='Reload page(LOST FEED HERE!)' inverted />
+                                      <Popup trigger={<Button color="teal" icon='microphone' onClick={() => this.sendRemoteCommand("client-mute")} />} content='Mic Mute/Unmute' inverted />
+                                      <Popup trigger={<Button color="pink" icon='eye' onClick={() => this.sendRemoteCommand("video-mute")} />} content='Cam Mute/Unmute' inverted />
+                                      <Popup trigger={<Button color="orange" icon={command_status ? 'volume off' : 'volume up'} onClick={() => this.sendRemoteCommand("audio-out")} />} content='Talk event' inverted />
+                                      <Popup trigger={<Button negative icon='user x' onClick={() => this.sendRemoteCommand("client-kicked")} />} content='Kick' inverted />
+                                      {/*<Popup trigger={<Button color="pink" icon='eye' onClick={() => this.sendDataMessage("video-mute")} />} content='Cam Mute/Unmute' inverted />*/}
+                                      {/*<Popup trigger={<Button color="blue" icon='power off' onClick={() => this.sendRemoteCommand("client-disconnect")} />} content='Disconnect(LOST FEED HERE!)' inverted />*/}
+                                      {/*<Popup inverted*/}
+                                      {/*       content={`${premodStatus ? 'Disable' : 'Enable'} Pre Moderation Mode`}*/}
+                                      {/*       trigger={*/}
+                                      {/*           <Button color="blue"*/}
+                                      {/*                   icon='copyright'*/}
+                                      {/*                   inverted={premodStatus}*/}
+                                      {/*                   onClick={() => this.sendRemoteCommand("premoder-mode")}/>*/}
+                                      {/*       }/>*/}
+                                      {/*<Popup trigger={<Button color="red" icon='redo' onClick={() => this.setState({showConfirmReloadAll: !showConfirmReloadAll})} />} content='RELOAD ALL' inverted />*/}
+                                  </div>
+                                  : null
+                          }
                           <StatNotes data={rooms} />
                       </Segment>
                       : null
@@ -918,31 +942,7 @@ class AdminRoot extends Component {
               </Grid.Row>
                   <Grid.Row columns='equal'>
                       <Grid.Column width={4}>
-                          <Segment.Group className="group_list">
-                              {
-                                  this.isAllowed("root") ?
-                                      <Segment textAlign='center'>
-                                          <Popup trigger={<Button negative icon='user x' onClick={() => this.sendRemoteCommand("client-kicked")} />} content='Kick' inverted />
-                                          <Popup trigger={<Button color="brown" icon='sync alternate' alt="test" onClick={() => this.sendRemoteCommand("client-reconnect")} />} content='Reconnect' inverted />
-                                          <Popup trigger={<Button color="olive" icon='redo alternate' onClick={() => this.sendRemoteCommand("client-reload")} />} content='Reload page(LOST FEED HERE!)' inverted />
-                                          <Popup trigger={<Button color="teal" icon='microphone' onClick={() => this.sendRemoteCommand("client-mute")} />} content='Mic Mute/Unmute' inverted />
-                                          <Popup trigger={<Button color="pink" icon='eye' onClick={() => this.sendRemoteCommand("video-mute")} />} content='Cam Mute/Unmute' inverted />
-                                          <Popup trigger={<Button color="orange" icon={command_status ? 'volume off' : 'volume up'} onClick={() => this.sendRemoteCommand("audio-out")} />} content='Talk event' inverted />
-                                          <Popup trigger={<Button color="yellow" icon='question' onClick={() => this.sendRemoteCommand("client-question")} />} content='Set/Unset question' inverted />
-                                          {/*<Popup trigger={<Button color="pink" icon='eye' onClick={() => this.sendDataMessage("video-mute")} />} content='Cam Mute/Unmute' inverted />*/}
-                                          {/*<Popup trigger={<Button color="blue" icon='power off' onClick={() => this.sendRemoteCommand("client-disconnect")} />} content='Disconnect(LOST FEED HERE!)' inverted />*/}
-                                          {/*<Popup inverted*/}
-                                          {/*       content={`${premodStatus ? 'Disable' : 'Enable'} Pre Moderation Mode`}*/}
-                                          {/*       trigger={*/}
-                                          {/*           <Button color="blue"*/}
-                                          {/*                   icon='copyright'*/}
-                                          {/*                   inverted={premodStatus}*/}
-                                          {/*                   onClick={() => this.sendRemoteCommand("premoder-mode")}/>*/}
-                                          {/*       }/>*/}
-                                          {/*<Popup trigger={<Button color="red" icon='redo' onClick={() => this.setState({showConfirmReloadAll: !showConfirmReloadAll})} />} content='RELOAD ALL' inverted />*/}
-                                      </Segment>
-                                      : null
-                              }
+                          <Segment.Group className="user_list">
                               <Segment textAlign='center' raised>
                                   <Table selectable compact='very' basic structured className="admin_table" unstackable>
                                       <Table.Body>
@@ -1042,7 +1042,7 @@ class AdminRoot extends Component {
       );
 
       const panes = [
-          { menuItem: 'Admin', render: () => <Tab.Pane>{adminContent}</Tab.Pane> },
+          { menuItem: 'Admin', render: () => <Tab.Pane className="grid_tab">{adminContent}</Tab.Pane> },
       ];
       if (this.isAllowed('root')) {
           panes.push({ menuItem: 'Rooms', render: () => <Tab.Pane><RoomManager /></Tab.Pane> });
