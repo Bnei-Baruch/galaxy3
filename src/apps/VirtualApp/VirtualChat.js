@@ -3,7 +3,7 @@ import { Janus } from '../../lib/janus';
 import { Button, Input, Message } from 'semantic-ui-react';
 import {getDateString, notifyMe, } from '../../shared/tools';
 import { SHIDUR_ID } from '../../shared/consts';
-import {reportToSentry} from '../../shared/sentry';
+import {captureException} from '../../shared/sentry';
 
 class VirtualChat extends Component {
 
@@ -46,9 +46,9 @@ class VirtualChat extends Component {
         Janus.log("Join chat room request successfully sent " + roomid );
         this.setState({room: roomid})
       },
-      error: (reason) => {
-        console.error("  -- Error join room", reason);
-        reportToSentry(reason, {source: "Textroom"});
+      error: (err) => {
+        console.error("  -- Error join room", err);
+        captureException(err, {source: "Textroom", err});
       }
     });
   };
@@ -72,9 +72,9 @@ class VirtualChat extends Component {
             Janus.debug("Sending message (" + JSON.stringify(body) + ")");
             chatroom.send({"message": body});
           },
-          error: (error) => {
-            console.error("  -- Error attaching plugin...", error);
-            reportToSentry(error, {source: "Textroom"});
+          err: (err) => {
+            console.err("  -- Error attaching plugin...", err);
+            captureException(err, {source: "Textroom", err});
           },
           iceState: (state) => {
             Janus.log("ICE state changed to " + state);
@@ -90,7 +90,7 @@ class VirtualChat extends Component {
             Janus.debug(msg);
             if (msg["error"] !== undefined && msg["error"] !== null) {
               console.error(msg["error"]);
-              reportToSentry(msg["error"], {source: "Onmessage"});
+              captureException(msg["error"], {source: "Onmessage", err: msg["error"], msg});
             }
             if (jsep !== undefined && jsep !== null) {
               // Answer
@@ -107,7 +107,7 @@ class VirtualChat extends Component {
                     error: (error) => {
                       Janus.error("WebRTC error:", error);
                       console.error("WebRTC error... " + JSON.stringify(error));
-                      reportToSentry(msg["error"], {source: "Offer"});
+                      captureException(msg["error"], {source: "Offer", msg});
                     }
                   });
             }

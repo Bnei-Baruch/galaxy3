@@ -49,7 +49,7 @@ import VirtualStreamingJanus from '../../shared/VirtualStreamingJanus';
 import VirtualChat from '../VirtualApp/VirtualChat';
 import ConfigStore from "../../shared/ConfigStore";
 import {GuaranteeDeliveryManager} from "../../shared/GuaranteeDelivery";
-import {updateSentryUser, reportToSentry} from "../../shared/sentry";
+import {updateSentryUser, captureException, captureMessage} from "../../shared/sentry";
 
 const sortAndFilterFeeds = (feeds) => feeds
   .filter(feed => !feed.display.role.match(/^(ghost|guest)$/))
@@ -588,7 +588,7 @@ class MobileClient extends Component {
             const { textroom, error_code, error } = data;
             if (textroom === 'error') {
                 console.error("Chatroom error: ", data, error_code)
-                reportToSentry(error, {source: "Chatroom"}, this.state.user);
+                captureException(error, {source: "Chatroom", msg: data, err: error});
                 this.exitRoom(false, () => {
                     if(error_code === 420)
                         alert(this.props.t('oldClient.error') + data.error);
@@ -769,7 +769,7 @@ class MobileClient extends Component {
         if(this.chat) this.chat.iceRestart();
         if(this.state.virtualStreamingJanus) this.state.virtualStreamingJanus.iceRestart();
 
-        reportToSentry("ICE Restart", {source: "icestate"}, 'info');
+        captureMessage("ICE Restart", {source: "icestate"});
     };
 
     onMessage = (videoroom, msg, jsep) => {

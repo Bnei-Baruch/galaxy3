@@ -9,6 +9,7 @@ import GxyJanus from "../../shared/janus-utils";
 import UsersHandleSDIOut from "./UsersHandleSDIOut";
 import UsersQuadSDIOut from "./UsersQuadSDIOut";
 import {GuaranteeDeliveryManager} from '../../shared/GuaranteeDelivery';
+import {captureException} from "../../shared/sentry";
 
 
 class SDIOutApp extends Component {
@@ -46,6 +47,7 @@ class SDIOutApp extends Component {
                 })
                 .catch(err => {
                     console.error("[SDIOut] error fetching quad state", err);
+                    captureException(`[SDIOut] error fetching quad state: ${err}`, {err});
                 });
         }, 1000);
         this.initApp();
