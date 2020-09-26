@@ -1415,6 +1415,10 @@ export function Janus(gatewayCallbacks) {
 			return;
 		}
 		var config = pluginHandle.webrtcStuff;
+		if(!config.pc) {
+			Janus.warn("Invalid PeerConnection");
+			return;
+		}
 		var onDataChannelMessage = function(event) {
 			Janus.log('Received message on data channel:', event);
 			var label = event.target.label;
