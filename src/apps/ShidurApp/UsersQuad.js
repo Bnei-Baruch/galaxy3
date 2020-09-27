@@ -92,8 +92,8 @@ class UsersQuad extends Component {
         if(leave)
             groups_queue--;
 
-        // if(this.checkDup())
-        //     return;
+        if(this.checkDup())
+            return;
 
         if(group) {
             // From preview
