@@ -265,15 +265,6 @@ class UsersQuad extends Component {
         });
     };
 
-    sendDataMessage = (cmd) => {
-        const {col} = this.state;
-        const {i} = cmd;
-        const message = JSON.stringify(cmd);
-        console.log(':: Sending message: ', message);
-        if(this["cmd"+col+i].state.videoroom)
-            this["cmd"+col+i].state.videoroom.data({ text: message });
-    };
-
     micMute = (status, room, inst, i) => {
         const msg = {type: "audio-out", status, room, col: null, i, feed: null};
         const cmd = {type: "audio-out", rcmd: true, status, room, i}
@@ -291,15 +282,7 @@ class UsersQuad extends Component {
         }
 
         const {gateways, gdm} = this.props;
-        // gdm.send(cmd, toAck, (cmd) => this.sendDataMessage(cmd)).
-        // then(() => {
-        //     console.log(`MIC delivered.`);
-        // }).catch((error) => {
-        //     console.error(`MIC not delivered due to: ` , JSON.stringify(error));
-        //     captureMessage("Delivery",{source: "shidur", error});
-        // });
         gateways["gxy3"].sendServiceMessage(msg);
-        //gateways[inst].sendProtocolMessage(msg);
 
         if(status) {
             gateways[inst].chatRoomJoin(room, this.props.user).then(() => {

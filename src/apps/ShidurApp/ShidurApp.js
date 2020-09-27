@@ -9,7 +9,6 @@ import UsersQuad from "./UsersQuad";
 import './ShidurApp.css'
 import {STORAN_ID} from "../../shared/consts"
 import {GuaranteeDeliveryManager} from '../../shared/GuaranteeDelivery';
-import * as Sentry from "@sentry/browser";
 import {updateSentryUser} from "../../shared/sentry";
 
 
@@ -73,7 +72,7 @@ class ShidurApp extends Component {
                 console.error("[Shidur] error initializing app", err);
                 this.setState({appInitError: err});
             });
-    }
+    };
 
     initGateways = (user) => {
         const gateways = GxyJanus.makeGateways("rooms");
@@ -87,50 +86,48 @@ class ShidurApp extends Component {
 
     };
 
-    onChatData = (gateway, data) => {
-        const json = JSON.parse(data);
-        const what = json["textroom"];
-        if (what === "message") {
-            let msg = json['text'];
-            let message = JSON.parse(msg);
-            const { gdm } = this.state;
-            if (gdm.checkAck(message)) {
-                // Ack received, do nothing.
-                return;
-            }
-        }
-    }
-
     initGateway = (user, gateway) => {
         console.log("[Shidur] initializing gateway", gateway.name);
 
-        // we re-initialize the whole gateway on protocols error
-        gateway.destroy();
+        gateway.addEventListener("reinit", () => {
+                this.postInitGateway(user, gateway)
+                    .catch(err => {
+                        console.error("[Shidur] postInitGateway error after reinit. Reloading", gateway.name, err);
+                        this.initGateway(user, gateway);
+                    });
+            }
+        );
+
+        gateway.addEventListener("reinit_failure", (e) => {
+            if (e.detail > 10) {
+                console.error("[Shidur] too many reinit_failure. Reloading", gateway.name, e);
+                this.initGateway(user, gateway);
+            }
+        });
 
         return gateway.init()
-            .then(() => {
-                return gateway.initGxyProtocol(user, data => this.onProtocolData(gateway, data))
-                    .then(() => {
-                        return gateway.initChatRoom(data => this.onChatData(gateway, data))
-                            .then(() => {
-                                if (gateway.name === "gxy3") {
-                                    return gateway.initServiceProtocol(user, data => this.onServiceData(gateway, data))
-                                }
-                            })
-                    });
-            })
+            .then(() => this.postInitGateway(user, gateway))
             .catch(err => {
                 console.error("[Shidur] error initializing gateway", gateway.name, err);
                 setTimeout(() => {
-                    this.initGateway(user, gateway);
+                    this.postInitGateway(user, gateway);
                 }, 10000);
             });
-    }
+    };
+
+    postInitGateway = (user, gateway) => {
+        return gateway.initChatRoom(data => this.onChatData(gateway, data))
+            .then(() => {
+                if (gateway.name === "gxy3") {
+                    return gateway.initServiceProtocol(user, data => this.onServiceData(gateway, data))
+                }
+            })
+    };
 
     pollRooms = () => {
         this.fetchRooms();
         setInterval(this.fetchRooms, 2 * 1000)
-    }
+    };
 
     fetchRooms = () => {
         let {disabled_rooms,groups,shidur_mode,preview_mode} = this.state;
@@ -167,7 +164,21 @@ class ShidurApp extends Component {
             .catch(err => {
                 console.error("[Shidur] error fetching active rooms", err);
             })
-    }
+    };
+
+    onChatData = (gateway, data) => {
+        const json = JSON.parse(data);
+        const what = json["textroom"];
+        if (what === "message") {
+            let msg = json['text'];
+            let message = JSON.parse(msg);
+            const { gdm } = this.state;
+            if (gdm.checkAck(message)) {
+                // Ack received, do nothing.
+                return;
+            }
+        }
+    };
 
     onServiceData = (gateway, data) => {
       const { gdm } = this.state;
@@ -195,32 +206,6 @@ class ShidurApp extends Component {
           }
           return;
       }
-    };
-
-    onProtocolData = (gateway, data) => {
-        const { gdm, gateways } = this.state;
-        if (gdm.checkAck(data)) {
-            // Ack received, do nothing.
-            return;
-        }
-
-        const {type, error_code, gxy} = data;
-
-        if (type === "error" && error_code === 420) {
-            console.error("[Shidur] protocol error message (reloading in 10 seconds)", data.error);
-            setTimeout(() => {
-                this.initGateway(this.state.user, gateway);
-            }, 10000);
-        } else if (type === 'shidur-ping') {
-            gdm.accept(data, (msg) => gateways[gxy].sendProtocolMessage(msg)).then((data) => {
-                if (data === null) {
-                    console.log('Message received more then once.');
-                    return;
-                }
-            }).catch((error) => {
-                console.error(`Failed receiving ${data}: ${error}`);
-            });
-        }
     };
 
     nextInQueue = () => {

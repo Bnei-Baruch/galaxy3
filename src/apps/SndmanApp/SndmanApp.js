@@ -67,17 +67,13 @@ class SndmanApp extends Component {
     initGateway = (user, gateway) => {
         console.log("[Sndman] initializing gateway", gateway.name);
 
-        // we re-initialize the whole gateway on protocols error
         gateway.destroy();
 
         return gateway.init()
             .then(() => {
-                return gateway.initGxyProtocol(user, data => this.onProtocolData(gateway, data))
-                    .then(() => {
-                        if (gateway.name === "gxy3") {
-                            return gateway.initServiceProtocol(user, data => this.onServiceData(gateway, data))
-                        }
-                    });
+                if (gateway.name === "gxy3") {
+                    return gateway.initServiceProtocol(user, data => this.onServiceData(gateway, data))
+                }
             })
             .catch(err => {
                 console.error("[Sndman] error initializing gateway", gateway.name, err);
@@ -126,15 +122,6 @@ class SndmanApp extends Component {
         }).catch((error) => {
           console.error(`Failed receiving ${data}: ${error}`);
         });
-    };
-
-    onProtocolData = (gateway, data) => {
-        if (data.type === "error" && data.error_code === 420) {
-            console.error("[Sndman] protocol error message (reloading in 10 seconds)", data.error);
-            setTimeout(() => {
-                this.initGateway(this.state.user, gateway);
-            }, 10000);
-        }
     };
 
     setProps = (props) => {
