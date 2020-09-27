@@ -2,7 +2,7 @@ import React, { Component, Fragment } from 'react';
 import { Janus } from '../../lib/janus';
 import classNames from 'classnames';
 import { isMobile } from 'react-device-detect';
-import { Button, Icon, Image, Input, Label, Menu, Modal, Popup, Select } from 'semantic-ui-react';
+import { Button, Icon, Input, Label, Menu, Modal, Popup, Select } from 'semantic-ui-react';
 import {
   checkNotification,
   geoInfo,
@@ -48,11 +48,9 @@ import { Profile } from '../../components/Profile';
 import { reportToSentry, updateSentryUser, sentryDebugAction } from '../../shared/sentry';
 import VerifyAccount from './components/VerifyAccount';
 import GxyJanus from '../../shared/janus-utils';
-import audioModeSvg from '../../shared/audio-mode.svg';
-import fullModeSvg from '../../shared/full-mode.svg';
 import ConfigStore from '../../shared/ConfigStore';
 import { GuaranteeDeliveryManager } from '../../shared/GuaranteeDelivery';
-import MuteVideo from './buttoms/MuteVideo';
+import { AskQuestion, AudioMode, CloseBroadcast, Layout, Mute, MuteVideo, OpenChat, Vote } from './buttons';
 
 const sortAndFilterFeeds = (feeds) => feeds
   .filter(feed => !feed.display.role.match(/^(ghost|guest)$/))
@@ -1615,19 +1613,6 @@ class VirtualClient extends Component {
     const height      = '100';
     const layout      = (room === '' || !shidur || !attachedSource) ? 'equal' : currentLayout;
 
-    let layoutIcon;
-    switch (layout) {
-    case 'double':
-      layoutIcon = 'layout-double';
-      break;
-    case 'split':
-      layoutIcon = 'layout-split';
-      break;
-    default:
-      layoutIcon = 'layout-equal';
-      break;
-    }
-
     let source = room !== '' && shidur &&
       <VirtualStreaming
         virtualStreamingJanus={virtualStreamingJanus}
@@ -1740,53 +1725,48 @@ class VirtualClient extends Component {
             </Select>
           </Input>)}
         <Menu icon='labeled' secondary size="mini">
-          <Menu.Item disabled={!localAudioTrack} onClick={() => this.setState({
-            chatVisible: !chatVisible,
-            chatMessagesCount: 0
-          })}>
-            <Icon name="comments" />
-            {t(chatVisible ? 'oldClient.closeChat' : 'oldClient.openChat')}
-            {chatMessagesCount > 0 ? chatCountLabel : ''}
+          <Menu.Item>
+            <OpenChat
+              isOn={chatVisible}
+              disabled={!localAudioTrack}
+              t={t}
+              counter={chatMessagesCount}
+              action={(() => this.setState({ chatVisible: !chatVisible, chatMessagesCount: 0 })).bind(this)
+              } />
           </Menu.Item>
-          <Menu.Item
-            disabled={premodStatus || !audio_device || !localAudioTrack || delay || otherFeedHasQuestion}
-            onClick={this.handleQuestion}>
-            <Icon {...(question ? { color: 'green' } : {})} name='question' />
-            {t('oldClient.askQuestion')}
+          <Menu.Item>
+            <AskQuestion
+              t={t}
+              isOn={question}
+              disabled={premodStatus || !audio_device || !localAudioTrack || delay || otherFeedHasQuestion}
+              action={this.handleQuestion.bind(this)}
+            />
           </Menu.Item>
-          <Menu.Item onClick={this.toggleShidur} disabled={room === '' || sourceLoading}>
-            <Icon name="tv" />
-            {shidur ? t('oldClient.closeBroadcast') : t('oldClient.openBroadcast')}
+          <Menu.Item>
+            <CloseBroadcast
+              t={t}
+              isOn={shidur}
+              action={this.toggleShidur.bind(this)}
+              disabled={room === '' || sourceLoading}
+            />
           </Menu.Item>
-          <Popup
-            trigger={
-              <Menu.Item disabled={room === '' || !shidur || sourceLoading || !attachedSource} icon={{ className: `icon--custom ${layoutIcon}` }} name={t('oldClient.layout')} />}
-            disabled={room === '' || !shidur || !attachedSource}
-            on='click'
-            position='bottom center'
-          >
-            <Popup.Content>
-              <Button.Group>
-                <Button onClick={() => this.updateLayout('double')} active={layout === 'double'} disabled={sourceLoading} icon={{ className: 'icon--custom layout-double' }} /> {/* Double first */}
-                <Button onClick={() => this.updateLayout('split')} active={layout === 'split'} disabled={sourceLoading} icon={{ className: 'icon--custom layout-split' }} /> {/* Split */}
-                <Button onClick={() => this.updateLayout('equal')} active={layout === 'equal'} disabled={sourceLoading} icon={{ className: 'icon--custom layout-equal' }} /> {/* Equal */}
-              </Button.Group>
-            </Popup.Content>
-          </Popup>
-          <Popup
-            trigger={
-              <Menu.Item disabled={!user || !user.id || room === ''} icon='hand paper outline' name={t('oldClient.vote')} />}
-            disabled={!user || !user.id || room === ''}
-            on='click'
-            position='bottom center'
-          >
-            <Popup.Content>
-              <Button.Group>
-                <iframe src={`https://vote.kli.one/button.html?answerId=1&userId=${user && user.id}`} width="40px" height="36px" frameBorder="0"></iframe>
-                <iframe src={`https://vote.kli.one/button.html?answerId=2&userId=${user && user.id}`} width="40px" height="36px" frameBorder="0"></iframe>
-              </Button.Group>
-            </Popup.Content>
-          </Popup>
+          <Menu.Item>
+            <Layout
+              t={t}
+              active={layout}
+              action={this.updateLayout.bind(this)}
+              disabled={room === '' || !shidur || sourceLoading || !attachedSource}
+              iconDisabled={sourceLoading}
+            />
+          </Menu.Item>
+          <Menu.Item>
+            <Vote
+              t={t}
+              id={user?.id}
+              disabled={!user || !user.id || room === ''}
+            />
+          </Menu.Item>
+
           <Modal
             trigger={<Menu.Item icon='book' name={t('oldClient.homerLimud')} />}
             disabled={!localAudioTrack}
@@ -1804,22 +1784,25 @@ class VirtualClient extends Component {
               {selftest}
             </Menu.Item>
             : ''}
-          <Menu.Item disabled={!localAudioTrack} onClick={this.micMute} className="mute-button">
+          <Menu.Item className="mute-button">
             <canvas className={muted ? 'hidden' : 'vumeter'} ref="canvas1" id="canvas1" width="15" height="35" />
-            <Icon color={muted ? 'red' : null} name={!muted ? 'microphone' : 'microphone slash'} />
-            {t(muted ? 'oldClient.unMute' : 'oldClient.mute')}
+            <Mute
+              t={t}
+              action={this.micMute.bind(this)}
+              disabled={!localAudioTrack}
+              isOn={muted}
+            />
           </Menu.Item>
           <Menu.Item>
             <MuteVideo
-              text={t(cammuted ? 'oldClient.startVideo' : 'oldClient.stopVideo')}
+              t={t}
               action={this.camMute.bind(this)}
               disabled={video_device === null || !localVideoTrack || delay}
               isOn={cammuted}
             />
           </Menu.Item>
-          <Menu.Item onClick={this.otherCamsMuteToggle}>
-            <Image src={muteOtherCams ? audioModeSvg : fullModeSvg} style={{ marginBottom: '0.5rem' }} />
-            {t(muteOtherCams ? 'oldClient.fullMode' : 'oldClient.audioMode')}
+          <Menu.Item>
+            <AudioMode t={t} action={this.otherCamsMuteToggle.bind(this)} isOn={muteOtherCams} />
           </Menu.Item>
           {/*<Menu.Item>*/}
           {/*  <Select*/}

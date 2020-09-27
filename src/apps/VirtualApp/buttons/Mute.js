@@ -1,15 +1,14 @@
 import React from 'react';
 import { makeStyles } from '@material-ui/core/styles';
-import { Videocam, VideocamOff } from '@material-ui/icons';
-import Button from '@material-ui/core/Button';
-import IconButton from '@material-ui/core/IconButton';
+import { Mic, MicOff } from '@material-ui/icons';
 import ButtonBase from '@material-ui/core/ButtonBase';
+import red from '@material-ui/core/colors/red';
 
 const useStyles = makeStyles({
   label: {
     width: '100%',
     display: 'block',
-    marginTop: '5px'
+    marginTop: '7px'
   },
   disabled: {
     opacity: 0.5
@@ -20,13 +19,12 @@ const useStyles = makeStyles({
   }
 });
 
-const MuteVideo = (props) => {
-  const { action, isOn, disabled, text } = props;
+const Mute = (props) => {
+  const { action, isOn, disabled, t } = props;
 
   const classes = useStyles();
 
   const handleAction = () => action(isOn);
-
   return (
     <ButtonBase
       variant="contained"
@@ -38,11 +36,15 @@ const MuteVideo = (props) => {
         disabled: classes.disabled
       }}
     >
-      {isOn ? <Videocam /> : <VideocamOff />}
-      <span className={classes.label}>{text}</span>
+
+      {isOn ? <MicOff style={{ color: red[500] }} /> : <Mic />}
+      <span className={classes.label}>
+        {t(isOn ? 'oldClient.unMute' : 'oldClient.mute')}
+      </span>
     </ButtonBase>
   );
 
 };
 
-export default MuteVideo;
+export { Mute };
+export default Mute;
