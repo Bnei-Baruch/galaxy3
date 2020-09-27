@@ -1,9 +1,14 @@
 import React from 'react';
 import { makeStyles } from '@material-ui/core/styles';
-import { Videocam, VideocamOff } from '@material-ui/icons';
+import { ForumRounded, Videocam, VideocamOff } from '@material-ui/icons';
 import Button from '@material-ui/core/Button';
 import IconButton from '@material-ui/core/IconButton';
 import ButtonBase from '@material-ui/core/ButtonBase';
+import audioModeSvg from '../../../shared/audio-mode.svg';
+import fullModeSvg from '../../../shared/full-mode.svg';
+import SvgIcon from '@material-ui/core/SvgIcon';
+import Icon from '@material-ui/core/Icon';
+import Badge from '@material-ui/core/Badge';
 
 const useStyles = makeStyles({
   label: {
@@ -17,17 +22,21 @@ const useStyles = makeStyles({
   button: {
     display: 'flex',
     flexDirection: 'column'
+  },
+  badge: {
+    top: '1px',
+    right: '5px'
+
   }
 });
 
-const MuteVideo = (props) => {
-  const { action, isOn, disabled, t } = props;
+const OpenChat = (props) => {
+  const { action, isOn, disabled, t, counter } = props;
 
   const classes = useStyles();
 
   const handleAction = () => action(isOn);
-
-  return (
+  const renderButton = () => (
     <ButtonBase
       variant="contained"
       color="secondary"
@@ -38,13 +47,19 @@ const MuteVideo = (props) => {
         disabled: classes.disabled
       }}
     >
-      {isOn ? <Videocam /> : <VideocamOff />}
+      <ForumRounded />
       <span className={classes.label}>
-        {t(isOn ? 'oldClient.startVideo' : 'oldClient.stopVideo')}
+        {t(isOn ? 'oldClient.closeChat' : 'oldClient.openChat')}
       </span>
     </ButtonBase>
   );
 
+  return (
+    counter > 0
+      ? <Badge badgeContent={counter} color="secondary" className={classes.badge}>{renderButton()}</Badge>
+      : renderButton()
+  );
+
 };
 
-export default MuteVideo;
+export default OpenChat;

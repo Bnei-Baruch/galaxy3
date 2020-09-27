@@ -4,6 +4,10 @@ import { Videocam, VideocamOff } from '@material-ui/icons';
 import Button from '@material-ui/core/Button';
 import IconButton from '@material-ui/core/IconButton';
 import ButtonBase from '@material-ui/core/ButtonBase';
+import audioModeSvg from '../../../shared/audio-mode.svg';
+import fullModeSvg from '../../../shared/full-mode.svg';
+import SvgIcon from '@material-ui/core/SvgIcon';
+import Icon from '@material-ui/core/Icon';
 
 const useStyles = makeStyles({
   label: {
@@ -20,7 +24,7 @@ const useStyles = makeStyles({
   }
 });
 
-const MuteVideo = (props) => {
+const AudioMode = (props) => {
   const { action, isOn, disabled, t } = props;
 
   const classes = useStyles();
@@ -38,13 +42,15 @@ const MuteVideo = (props) => {
         disabled: classes.disabled
       }}
     >
-      {isOn ? <Videocam /> : <VideocamOff />}
+      <Icon classes={{root: classes.iconRoot}}>
+        <img src={isOn ? audioModeSvg : fullModeSvg}/>
+      </Icon>
       <span className={classes.label}>
-        {t(isOn ? 'oldClient.startVideo' : 'oldClient.stopVideo')}
+        {t(isOn ? 'oldClient.fullMode' : 'oldClient.audioMode')}
       </span>
     </ButtonBase>
   );
 
 };
 
-export default MuteVideo;
+export default AudioMode;

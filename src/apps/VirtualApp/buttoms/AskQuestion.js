@@ -1,9 +1,15 @@
 import React from 'react';
 import { makeStyles } from '@material-ui/core/styles';
-import { Videocam, VideocamOff } from '@material-ui/icons';
+import { ForumRounded, HelpOutline, Videocam, VideocamOff } from '@material-ui/icons';
 import Button from '@material-ui/core/Button';
 import IconButton from '@material-ui/core/IconButton';
 import ButtonBase from '@material-ui/core/ButtonBase';
+import audioModeSvg from '../../../shared/audio-mode.svg';
+import fullModeSvg from '../../../shared/full-mode.svg';
+import SvgIcon from '@material-ui/core/SvgIcon';
+import Icon from '@material-ui/core/Icon';
+import Badge from '@material-ui/core/Badge';
+import green from '@material-ui/core/colors/green';
 
 const useStyles = makeStyles({
   label: {
@@ -17,15 +23,20 @@ const useStyles = makeStyles({
   button: {
     display: 'flex',
     flexDirection: 'column'
+  },
+  badge: {
+    top: '1px',
+    right: '5px'
+
   }
 });
 
-const MuteVideo = (props) => {
-  const { action, isOn, disabled, t } = props;
+const AskQuestion = (props) => {
+  const { action, isOn, disabled, t, question } = props;
 
   const classes = useStyles();
 
-  const handleAction = () => action(isOn);
+  const handleAction = () => action();
 
   return (
     <ButtonBase
@@ -38,13 +49,13 @@ const MuteVideo = (props) => {
         disabled: classes.disabled
       }}
     >
-      {isOn ? <Videocam /> : <VideocamOff />}
+      <HelpOutline style={{ color: isOn ? green[500] : 'primary' }} />
       <span className={classes.label}>
-        {t(isOn ? 'oldClient.startVideo' : 'oldClient.stopVideo')}
+        {t('oldClient.askQuestion')}
       </span>
     </ButtonBase>
   );
 
 };
 
-export default MuteVideo;
+export default AskQuestion;

@@ -1,8 +1,6 @@
 import React from 'react';
 import { makeStyles } from '@material-ui/core/styles';
-import { Videocam, VideocamOff } from '@material-ui/icons';
-import Button from '@material-ui/core/Button';
-import IconButton from '@material-ui/core/IconButton';
+import { ForumRounded, HelpOutline, Tv, TvOff } from '@material-ui/icons';
 import ButtonBase from '@material-ui/core/ButtonBase';
 
 const useStyles = makeStyles({
@@ -17,15 +15,20 @@ const useStyles = makeStyles({
   button: {
     display: 'flex',
     flexDirection: 'column'
+  },
+  badge: {
+    top: '1px',
+    right: '5px'
+
   }
 });
 
-const MuteVideo = (props) => {
-  const { action, isOn, disabled, t } = props;
+const CloseBroadcast = (props) => {
+  const { action, isOn, disabled, t, question } = props;
 
   const classes = useStyles();
 
-  const handleAction = () => action(isOn);
+  const handleAction = () => action();
 
   return (
     <ButtonBase
@@ -38,13 +41,13 @@ const MuteVideo = (props) => {
         disabled: classes.disabled
       }}
     >
-      {isOn ? <Videocam /> : <VideocamOff />}
+      {isOn ? <Tv /> : <TvOff />}
       <span className={classes.label}>
-        {t(isOn ? 'oldClient.startVideo' : 'oldClient.stopVideo')}
+        {isOn ? t('oldClient.closeBroadcast') : t('oldClient.openBroadcast')}
       </span>
     </ButtonBase>
   );
 
 };
 
-export default MuteVideo;
+export default CloseBroadcast;

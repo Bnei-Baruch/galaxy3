@@ -2,7 +2,7 @@ import React, { Component, Fragment } from 'react';
 import { Janus } from '../../lib/janus';
 import classNames from 'classnames';
 import { isMobile } from 'react-device-detect';
-import { Button, Icon, Image, Input, Label, Menu, Modal, Popup, Select } from 'semantic-ui-react';
+import { Button, Icon, Input, Label, Menu, Modal, Popup, Select } from 'semantic-ui-react';
 import {
   checkNotification,
   geoInfo,
@@ -48,11 +48,13 @@ import { Profile } from '../../components/Profile';
 import { reportToSentry, updateSentryUser, sentryDebugAction } from '../../shared/sentry';
 import VerifyAccount from './components/VerifyAccount';
 import GxyJanus from '../../shared/janus-utils';
-import audioModeSvg from '../../shared/audio-mode.svg';
-import fullModeSvg from '../../shared/full-mode.svg';
 import ConfigStore from '../../shared/ConfigStore';
 import { GuaranteeDeliveryManager } from '../../shared/GuaranteeDelivery';
 import MuteVideo from './buttoms/MuteVideo';
+import AudioMode from './buttoms/AudioMode';
+import OpenChat from './buttoms/OpenChat';
+import AskQuestion from './buttoms/AskQuestion';
+import CloseBroadcast from './buttoms/CloseBroadcast';
 
 const sortAndFilterFeeds = (feeds) => feeds
   .filter(feed => !feed.display.role.match(/^(ghost|guest)$/))
@@ -1740,23 +1742,30 @@ class VirtualClient extends Component {
             </Select>
           </Input>)}
         <Menu icon='labeled' secondary size="mini">
-          <Menu.Item disabled={!localAudioTrack} onClick={() => this.setState({
-            chatVisible: !chatVisible,
-            chatMessagesCount: 0
-          })}>
-            <Icon name="comments" />
-            {t(chatVisible ? 'oldClient.closeChat' : 'oldClient.openChat')}
-            {chatMessagesCount > 0 ? chatCountLabel : ''}
+          <Menu.Item>
+            <OpenChat
+              isOn={chatVisible}
+              disabled={!localAudioTrack}
+              t={t}
+              counter={chatMessagesCount}
+              action={(() => this.setState({ chatVisible: !chatVisible, chatMessagesCount: 0 })).bind(this)
+              } />
           </Menu.Item>
-          <Menu.Item
-            disabled={premodStatus || !audio_device || !localAudioTrack || delay || otherFeedHasQuestion}
-            onClick={this.handleQuestion}>
-            <Icon {...(question ? { color: 'green' } : {})} name='question' />
-            {t('oldClient.askQuestion')}
+          <Menu.Item>
+            <AskQuestion
+              t={t}
+              question={question}
+              disabled={premodStatus || !audio_device || !localAudioTrack || delay || otherFeedHasQuestion}
+              action={this.handleQuestion.bind(this)}
+            />
           </Menu.Item>
-          <Menu.Item onClick={this.toggleShidur} disabled={room === '' || sourceLoading}>
-            <Icon name="tv" />
-            {shidur ? t('oldClient.closeBroadcast') : t('oldClient.openBroadcast')}
+          <Menu.Item>
+            <CloseBroadcast
+              t={t}
+              isOn={shidur}
+              action={this.toggleShidur.bind(this)}
+              disabled={room === '' || sourceLoading}
+            />
           </Menu.Item>
           <Popup
             trigger={
@@ -1811,15 +1820,14 @@ class VirtualClient extends Component {
           </Menu.Item>
           <Menu.Item>
             <MuteVideo
-              text={t(cammuted ? 'oldClient.startVideo' : 'oldClient.stopVideo')}
+              t={t}
               action={this.camMute.bind(this)}
               disabled={video_device === null || !localVideoTrack || delay}
               isOn={cammuted}
             />
           </Menu.Item>
-          <Menu.Item onClick={this.otherCamsMuteToggle}>
-            <Image src={muteOtherCams ? audioModeSvg : fullModeSvg} style={{ marginBottom: '0.5rem' }} />
-            {t(muteOtherCams ? 'oldClient.fullMode' : 'oldClient.audioMode')}
+          <Menu.Item>
+            <AudioMode t={t} action={this.otherCamsMuteToggle.bind(this)} isOn={muteOtherCams} />
           </Menu.Item>
           {/*<Menu.Item>*/}
           {/*  <Select*/}
