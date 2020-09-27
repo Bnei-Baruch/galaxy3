@@ -45,7 +45,7 @@ import VirtualStreamingJanus from '../../shared/VirtualStreamingJanus';
 import {kc} from "../../components/UserManager";
 import LoginPage from "../../components/LoginPage";
 import {Profile} from "../../components/Profile";
-import {reportToSentry, updateSentryUser, sentryDebugAction} from '../../shared/sentry';
+import {captureMessage, captureException, reportToSentry, updateSentryUser, sentryDebugAction} from '../../shared/sentry';
 import VerifyAccount from './components/VerifyAccount';
 import GxyJanus from "../../shared/janus-utils";
 import audioModeSvg from '../../shared/audio-mode.svg';
@@ -616,7 +616,7 @@ class VirtualClient extends Component {
       const { textroom, error_code, error } = data;
       if (textroom === 'error') {
         console.error("Chatroom error: ", data, error_code)
-        reportToSentry(error, {source: "Chatroom"});
+        captureException(error, {source: "Chatroom", err: error, msg: data});
         this.exitRoom(false, () => {
           if(error_code === 420)
             alert(this.props.t('oldClient.error') + data.error);
@@ -784,17 +784,18 @@ class VirtualClient extends Component {
           const publish = { request: 'configure', restart: true };
           videoroom.send({ 'message': publish, 'jsep': jsep });
         },
-        error: (error) => {
-          Janus.error('WebRTC error:', error);
+        error: (err) => {
+          Janus.error('WebRTC error:', err);
+          captureException(`WebRTC error: ${err}`, {source: 'createoffer', err: err});
         }
       });
     }
 
-    if(remoteFeed) remoteFeed.send({message: {request: "configure", restart: true}});
+    if(remoteFeed) remoteFeed.send({message: {request: 'configure', restart: true}});
     if(this.chat) this.chat.iceRestart();
     if(this.state.virtualStreamingJanus) this.state.virtualStreamingJanus.iceRestart();
 
-    reportToSentry("ICE Restart", {source: "icestate"}, 'info');
+    captureMessage('ICE Restart', {source: 'icestate'});
   };
 
   onMessage = (videoroom, msg, jsep) => {
