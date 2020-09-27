@@ -76,4 +76,8 @@ export const getUser = (callback) => {
     }).catch((err) => console.log(err));
 };
 
+export const isGhostOrGuest = (role) => {
+  return ['ghost', 'guest'].includes(role);
+}
+
 export default kc;
