@@ -33,7 +33,7 @@ import {languagesOptions, setLanguage} from '../../i18n/i18n';
 import {Monitoring} from '../../components/Monitoring';
 import {MonitoringData, LINK_STATE_INIT, LINK_STATE_GOOD, LINK_STATE_MEDIUM, LINK_STATE_WEAK} from '../../shared/MonitoringData';
 import api from '../../shared/Api';
-import {kc} from "../../components/UserManager";
+import {kc, isGhostOrGuest} from "../../components/UserManager";
 import LoginPage from "../../components/LoginPage";
 import GxyJanus from "../../shared/janus-utils";
 import connectionOrange from '../VirtualApp/connection-orange.png';
@@ -811,7 +811,7 @@ class MobileClient extends Component {
 
                   this.makeSubscription(feeds, /* feedsJustJoined= */ false,
                                         /* subscribeToVideo= */ false,
-                                        /* subscribeToAudio= */ true, /* subscribeToData= */ true);
+                                        /* subscribeToAudio= */ !isGhostOrGuest(user.role), /* subscribeToData= */ true);
                   this.switchVideos(/* page= */ this.state.page, [], userFeeds(feeds));
                   this.setState({feeds});
                 }
@@ -853,7 +853,7 @@ class MobileClient extends Component {
                   const newFeeds = sortAndFilterFeeds(msg['publishers'].filter(l => l.display = (JSON.parse(l.display))));
                   Janus.debug('New list of available publishers/feeds:', newFeeds);
                   const newFeedsIds = new Set(newFeeds.map(feed => feed.id));
-                  const {feeds} = this.state;
+                  const {feeds, user: {role}} = this.state;
                   if (feeds.some(feed => newFeedsIds.has(feed.id))) {
                     Janus.error(`New feed joining but one of the feeds already exist`, newFeeds, feeds);
                     return;
@@ -862,7 +862,7 @@ class MobileClient extends Component {
                   const feedsNewState = sortAndFilterFeeds([...newFeeds, ...feeds]);
                   this.makeSubscription(newFeeds, /* feedsJustJoined= */ true,
                                         /* subscribeToVideo= */ false,
-                                        /* subscribeToAudio= */ true, /* subscribeToData= */ true);
+                                        /* subscribeToAudio= */ isGhostOrGuest(role), /* subscribeToData= */ true);
                   this.switchVideos(/* page= */ this.state.page, userFeeds(feeds), userFeeds(feedsNewState));
                   this.setState({feeds: feedsNewState});
 

@@ -42,7 +42,7 @@ import {
 import api from '../../shared/Api';
 import VirtualStreaming from './VirtualStreaming';
 import VirtualStreamingJanus from '../../shared/VirtualStreamingJanus';
-import {kc} from "../../components/UserManager";
+import {kc, isGhostOrGuest} from "../../components/UserManager";
 import LoginPage from "../../components/LoginPage";
 import {Profile} from "../../components/Profile";
 import {reportToSentry, updateSentryUser, sentryDebugAction} from '../../shared/sentry';
@@ -837,7 +837,7 @@ class VirtualClient extends Component {
           Janus.log(feeds);
           this.makeSubscription(feeds, /* feedsJustJoined= */ false,
                                 /* subscribeToVideo= */ !this.state.muteOtherCams,
-                                /* subscribeToAudio= */ true, /* subscribeToData= */ true);
+                                /* subscribeToAudio= */ !isGhostOrGuest(user.role), /* subscribeToData= */ true);
         }
       } else if (event === 'talking') {
         const feeds = Object.assign([], this.state.feeds);
@@ -872,12 +872,13 @@ class VirtualClient extends Component {
           }
         } else if (msg['publishers'] !== undefined && msg['publishers'] !== null) {
           // User just joined the room.
+          const {user: {role}} = this.state;
           const feeds = sortAndFilterFeeds(msg['publishers'].filter(l => l.display = (JSON.parse(l.display))));
           Janus.debug('New list of available publishers/feeds:');
           Janus.debug(feeds);
           this.makeSubscription(feeds, /* feedsJustJoined= */ true,
                                 /* subscribeToVideo= */ !this.state.muteOtherCams,
-                                /* subscribeToAudio= */ true, /* subscribeToData= */ true);
+                                /* subscribeToAudio= */ !isGhostOrGuest(role), /* subscribeToData= */ true);
         } else if (msg['leaving'] !== undefined && msg['leaving'] !== null) {
           // One of the publishers has gone away?
           const leaving = msg['leaving'];
@@ -1044,6 +1045,7 @@ class VirtualClient extends Component {
   // Subscribes selectively to different stream types |subscribeToVideo|, |subscribeToAudio|, |subscribeToData|.
   // This is required to stop and then start only the videos to save bandwidth.
   makeSubscription = (newFeeds, feedsJustJoined, subscribeToVideo, subscribeToAudio, subscribeToData) => {
+    console.log('makeSubscription', newFeeds, feedsJustJoined, subscribeToVideo, subscribeToAudio, subscribeToData);
     const subscription = [];
     newFeeds.forEach(feed => {
       const {id, streams} = feed;
