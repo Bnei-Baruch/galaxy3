@@ -1806,7 +1806,7 @@ class VirtualClient extends Component {
         <div className="vclient__toolbar">
           <Input>
             <Select
-              className="room-selection"
+              className = "room-selection"
               search
               disabled={!!room}
               error={!selected_room}
@@ -1816,12 +1816,10 @@ class VirtualClient extends Component {
               noResultsMessage={t('oldClient.noResultsFound')}
               //onClick={this.getRoomList}
               onChange={(e, { value }) => this.selectRoom(value)} />
-            {room ?
-              <Button attached='right' negative icon='sign-out' disabled={delay} onClick={() => this.exitRoom(false)} /> : ''}
-            {!room ?
-              <Button attached='right' primary icon='sign-in' loading={delay} disabled={delay || !selected_room} onClick={() => this.initClient(false)} /> : ''}
+            {room ? <Button attached='right' negative icon='sign-out' disabled={delay} onClick={() => this.exitRoom(false)} /> : ''}
+            {!room ? <Button attached='right' primary icon='sign-in' loading={delay} disabled={delay || !selected_room} onClick={() => this.initClient(false)} /> : ''}
           </Input>
-          {!isDeb ? null : (
+          { !isDeb ? null : (
             <Input>
               <Select placeholder='number of virtual users' options={[
                 { value: '1', text: '1' },
@@ -1857,10 +1855,7 @@ class VirtualClient extends Component {
               </Select>
             </Input>)}
           <Menu icon='labeled' secondary size="mini">
-            <Menu.Item disabled={!localAudioTrack} onClick={() => this.setState({
-              chatVisible: !chatVisible,
-              chatMessagesCount: 0
-            })}>
+            <Menu.Item disabled={!localAudioTrack} onClick={() => this.setState({chatVisible: !chatVisible, chatMessagesCount: 0})}>
               <Icon name="comments" />
               {t(chatVisible ? 'oldClient.closeChat' : 'oldClient.openChat')}
               {chatMessagesCount > 0 ? chatCountLabel : ''}
@@ -1868,7 +1863,7 @@ class VirtualClient extends Component {
             <Menu.Item
               disabled={premodStatus || !audio_device || !localAudioTrack || delay || otherFeedHasQuestion}
               onClick={this.handleQuestion}>
-              <Icon {...(question ? { color: 'green' } : {})} name='question' />
+              <Icon {...(question ? {color: 'green'} : {})} name='question' />
               {t('oldClient.askQuestion')}
             </Menu.Item>
             <Menu.Item onClick={this.toggleShidur} disabled={room === '' || sourceLoading}>
@@ -1876,23 +1871,21 @@ class VirtualClient extends Component {
               {shidur ? t('oldClient.closeBroadcast') : t('oldClient.openBroadcast')}
             </Menu.Item>
             <Popup
-              trigger={
-                <Menu.Item disabled={room === '' || !shidur || sourceLoading || !attachedSource} icon={{ className: `icon--custom ${layoutIcon}` }} name={t('oldClient.layout')} />}
+              trigger={<Menu.Item disabled={room === '' || !shidur || sourceLoading || !attachedSource} icon={{className:`icon--custom ${layoutIcon}`}} name={t('oldClient.layout')} />}
               disabled={room === '' || !shidur || !attachedSource}
               on='click'
               position='bottom center'
             >
               <Popup.Content>
                 <Button.Group>
-                  <Button onClick={() => this.updateLayout('double')} active={layout === 'double'} disabled={sourceLoading} icon={{ className: 'icon--custom layout-double' }} /> {/* Double first */}
-                  <Button onClick={() => this.updateLayout('split')} active={layout === 'split'} disabled={sourceLoading} icon={{ className: 'icon--custom layout-split' }} /> {/* Split */}
-                  <Button onClick={() => this.updateLayout('equal')} active={layout === 'equal'} disabled={sourceLoading} icon={{ className: 'icon--custom layout-equal' }} /> {/* Equal */}
+                  <Button onClick={() => this.updateLayout('double')} active={layout === 'double'} disabled={sourceLoading} icon={{className:'icon--custom layout-double'}} /> {/* Double first */}
+                  <Button onClick={() => this.updateLayout('split')} active={layout === 'split'} disabled={sourceLoading} icon={{className:'icon--custom layout-split'}} /> {/* Split */}
+                  <Button onClick={() => this.updateLayout('equal')} active={layout === 'equal'} disabled={sourceLoading} icon={{className:'icon--custom layout-equal'}} /> {/* Equal */}
                 </Button.Group>
               </Popup.Content>
             </Popup>
             <Popup
-              trigger={
-                <Menu.Item disabled={!user || !user.id || room === ''} icon='hand paper outline' name={t('oldClient.vote')} />}
+              trigger={<Menu.Item disabled={!user || !user.id || room === ''} icon='hand paper outline' name={t('oldClient.vote')} />}
               disabled={!user || !user.id || room === ''}
               on='click'
               position='bottom center'
@@ -1911,7 +1904,7 @@ class VirtualClient extends Component {
               closeIcon
               className='homet-limud'>
               <iframe src={`https://groups.google.com/forum/embed/?place=forum/bb-study-materials&showpopout=true&showtabs=false&parenturl=${encodeURIComponent(window.location.href)}`}
-                      style={{ width: '100%', height: '60vh', padding: '1rem' }} frameBorder="0"></iframe>
+                      style={{width: '100%', height: '60vh', padding: '1rem'}} frameBorder="0"></iframe>
             </Modal>
           </Menu>
           <Menu icon='labeled' secondary size="mini">
@@ -1931,7 +1924,7 @@ class VirtualClient extends Component {
               {t(cammuted ? 'oldClient.startVideo' : 'oldClient.stopVideo')}
             </Menu.Item>
             <Menu.Item onClick={this.otherCamsMuteToggle}>
-              <Image src={muteOtherCams ? audioModeSvg : fullModeSvg} style={{ marginBottom: '0.5rem' }} />
+              <Image src={muteOtherCams ? audioModeSvg : fullModeSvg} style={{marginBottom: '0.5rem'}} />
               {t(muteOtherCams ? 'oldClient.fullMode' : 'oldClient.audioMode')}
             </Menu.Item>
             {/*<Menu.Item>*/}
@@ -1951,7 +1944,7 @@ class VirtualClient extends Component {
             >
               <Popup.Content>
                 <Button size='huge' fluid>
-                  <Icon name='user circle' />
+                  <Icon name='user circle'/>
                   <Profile title={user && user.display} kc={kc} />
                 </Button>
                 <Select className='select_device'
@@ -1985,7 +1978,7 @@ class VirtualClient extends Component {
               </Popup.Content>
             </Popup>
             <Help t={t} />
-            <Button primary style={{ margin: 'auto' }} onClick={() => window.open('https://virtualhome.kli.one', '_blank')}>{t('loginPage.userFee')}</Button>
+            <Button primary style={{margin: 'auto'}} onClick={() => window.open('https://virtualhome.kli.one', '_blank')}>{t('loginPage.userFee')}</Button>
             <Monitoring monitoringData={monitoringData} />
             {!isDeb ? null :
               <Menu.Item onClick={sentryDebugAction}>
@@ -1993,9 +1986,8 @@ class VirtualClient extends Component {
               </Menu.Item>
             }
           </Menu>
-          {!(new URL(window.location.href).searchParams.has('lost')) ? null :
-            (
-              <Label color={net_status === 2 ? 'yellow' : net_status === 3 ? 'red' : 'green'} icon='wifi' corner='right' />)}
+          { !(new URL(window.location.href).searchParams.has('lost')) ? null :
+            (<Label color={net_status === 2 ? 'yellow' : net_status === 3 ? 'red' : 'green'} icon='wifi' corner='right' />)}
         </div>
         <div className="vclient__main" onDoubleClick={() => this.setState({
           chatVisible: !chatVisible
@@ -2008,39 +2000,39 @@ class VirtualClient extends Component {
           ${!attachedSource ? ' broadcast--popup' : 'broadcast--inline'}
          `}>
 
-          {/* ${layout === 'equal' ? ' broadcast--equal' : ''} */}
-          {/* ${layout === 'double' ? ' broadcast--double' : ''} */}
-          {/* ${layout === 'split' ? ' broadcast--split' : ''} */}
+            {/* ${layout === 'equal' ? ' broadcast--equal' : ''} */}
+            {/* ${layout === 'double' ? ' broadcast--double' : ''} */}
+            {/* ${layout === 'split' ? ' broadcast--split' : ''} */}
 
-          <div className="broadcast-panel">
-            {/* <div className="videos"> */}
+            <div className="broadcast-panel">
+              {/* <div className="videos"> */}
               <div className="broadcast__wrapper">
                 {layout === 'split' && source}
               </div>
-            {/* </div> */}
-          </div>
+              {/* </div> */}
+            </div>
 
-          <div className="videos-panel">
-            {/* <div className="videos"> */}
+            <div className="videos-panel">
+              {/* <div className="videos"> */}
               <div className="videos__wrapper">
                 {(layout === 'equal' || layout === 'double') && source}
                 {remoteVideos}
               </div>
-            {/* </div> */}
+              {/* </div> */}
+            </div>
+            <VirtualChat
+              t={t}
+              ref={chat => {this.chat = chat;}}
+              visible={chatVisible}
+              janus={janus}
+              room={room}
+              user={user}
+              gdm={this.state.gdm}
+              onCmdMsg={this.handleCmdData}
+              onNewMsg={this.onChatMessage} />
           </div>
-          <VirtualChat
-            t={t}
-            ref={chat => {this.chat = chat;}}
-            visible={chatVisible}
-            janus={janus}
-            room={room}
-            user={user}
-            gdm={this.state.gdm}
-            onCmdMsg={this.handleCmdData}
-            onNewMsg={this.onChatMessage} />
         </div>
-      </div>
-    </div>);
+      </div>);
     } else
       content = this.renderNewVersionContent(layout, isDeb, source, rooms_list, otherFeedHasQuestion, adevices_list, vdevices_list, noOfVideos, remoteVideos);
 
