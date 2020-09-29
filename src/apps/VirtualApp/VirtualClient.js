@@ -1732,16 +1732,6 @@ class VirtualClient extends Component {
             <Menu.Item>
               <AudioMode t={t} action={this.otherCamsMuteToggle.bind(this)} isOn={muteOtherCams} />
             </Menu.Item>
-            {/*<Menu.Item>*/}
-            {/*  <Select*/}
-            {/*    compact*/}
-            {/*    value={i18n.language}*/}
-            {/*    options={languagesOptions}*/}
-            {/*    onChange={(e, { value }) => {*/}
-            {/*      setLanguage(value);*/}
-            {/*      this.setState({ selftest: t('oldClient.selfAudioTest') });*/}
-            {/*    }} />*/}
-            {/*</Menu.Item>*/}
             <Popup
               trigger={<Menu.Item icon="setting" name={t('oldClient.settings')} />}
               on='click'

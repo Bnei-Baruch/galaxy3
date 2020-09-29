@@ -1,6 +1,6 @@
 import React from 'react';
 import { makeStyles } from '@material-ui/core/styles';
-import { Videocam, VideocamOff } from '@material-ui/icons';
+import { Mic, Videocam, VideocamOff } from '@material-ui/icons';
 import ButtonBase from '@material-ui/core/ButtonBase';
 import red from '@material-ui/core/colors/red';
 
@@ -8,7 +8,7 @@ const useStyles = makeStyles({
   label: {
     width: '100%',
     display: 'block',
-    marginTop: '7px'
+    marginTop: '4px'
   },
   disabled: {
     opacity: 0.5
@@ -37,7 +37,11 @@ const MuteVideo = (props) => {
         disabled: classes.disabled
       }}
     >
-      {isOn ? <VideocamOff style={{ color: red[500] }} /> : <Videocam />}
+      {
+        isOn
+          ? <VideocamOff style={{ color: red[500], fontSize: '1.8rem' }} />
+          : <Videocam style={{ fontSize: '1.8rem' }} />
+      }
       <span className={classes.label}>
         {t(isOn ? 'oldClient.startVideo' : 'oldClient.stopVideo')}
       </span>

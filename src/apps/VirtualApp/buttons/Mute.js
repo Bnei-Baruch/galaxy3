@@ -8,7 +8,7 @@ const useStyles = makeStyles({
   label: {
     width: '100%',
     display: 'block',
-    marginTop: '7px'
+    marginTop: '4px'
   },
   disabled: {
     opacity: 0.5
@@ -37,7 +37,11 @@ const Mute = (props) => {
       }}
     >
 
-      {isOn ? <MicOff style={{ color: red[500] }} /> : <Mic />}
+      {
+        isOn
+          ? <MicOff style={{ color: red[500], fontSize: '1.8rem' }} />
+          : <Mic style={{ fontSize: '1.8rem' }} />
+      }
       <span className={classes.label}>
         {t(isOn ? 'oldClient.unMute' : 'oldClient.mute')}
       </span>
