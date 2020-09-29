@@ -19,15 +19,17 @@ const useStyles = makeStyles({
   },
   button: {
     display: 'flex',
-    flexDirection: 'column',
-    zIndex: 100
+    flexDirection: 'column'
   },
   icon: {
     fontSize: '1.5em !important',
   },
   popupIcon: {
     lineHeight: '1em'
-  }
+  },
+  popup: {
+    zIndex: 100
+  },
 });
 
 const getLayoutIcon = (layout) => {
@@ -83,6 +85,7 @@ const Layout = (props) => {
       open={open}
       anchorEl={anchorRef.current}
       onClose={handleClose}
+      className={classes.popup}
     >
       <Paper>
         <ClickAwayListener onClickAway={handleClose}>
