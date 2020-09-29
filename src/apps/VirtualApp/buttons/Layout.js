@@ -20,8 +20,6 @@ const useStyles = makeStyles({
   button: {
     display: 'flex',
     flexDirection: 'column',
-  },
-  tooltip: {
     zIndex: 100
   },
   icon: {
@@ -85,7 +83,6 @@ const Layout = (props) => {
       open={open}
       anchorEl={anchorRef.current}
       onClose={handleClose}
-      className={classes.tooltip}
     >
       <Paper>
         <ClickAwayListener onClickAway={handleClose}>
