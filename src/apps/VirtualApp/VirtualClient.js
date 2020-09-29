@@ -1662,15 +1662,13 @@ class VirtualClient extends Component {
             </div>
             <VirtualChat
               t={t}
-              ref={chat => {
-                this.chat = chat;
-              }}
+              ref={chat => {this.chat = chat;}}
               visible={chatVisible}
               janus={janus}
               room={room}
               user={user}
               gdm={this.state.gdm}
-              onCmdMsg={this.onChatData}
+              onCmdMsg={this.handleCmdData}
               onNewMsg={this.onChatMessage} />
           </div>
         </div>
