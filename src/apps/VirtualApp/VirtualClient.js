@@ -1714,6 +1714,8 @@ class VirtualClient extends Component {
       premodStatus,
     } = this.state;
 
+    const isUseNewDesign = new URL(window.location.href).searchParams.has('new_design');
+
     const {video_device} = media.video;
     const {audio_device} = media.audio;
 
