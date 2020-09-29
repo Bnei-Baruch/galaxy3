@@ -23,32 +23,30 @@ export const initSentry = () => {
   });
 };
 
-const reportToSentry = (title, data, level, exception) => {
-	 Sentry.withScope(scope => {
-    // Always group by title when reporting manually to Sentry.
-    scope.setFingerprint([title]);  
-    Object.keys(data).forEach((key) => {
-        scope.setExtra(key, data[key]);
-    });
-    scope.setLevel(level);
-    if (exception) {
-      Sentry.captureException(title);
-    } else {
-      Sentry.captureMessage(title);
-    }
+export const captureException = (exception, data = {}) => {
+  Sentry.withScope(scope => {
+    scope.setExtras(data);
+    Sentry.captureException(exception);
   });
-};
-
-export const captureException = (title, data = {}, level = 'error') => {
-  reportToSentry(title, data, level, /* exception= */ true);
 }
 
 export const captureMessage = (title, data = {}, level = 'info') => {
-  reportToSentry(title, data, level, /* exception= */ false);
+	 Sentry.withScope(scope => {
+    // Always group by title when reporting manually to Sentry.
+    scope.setFingerprint([title]);  
+    scope.setExtras(data);
+    scope.setLevel(level);
+    Sentry.captureMessage(title);
+  });
 }
 
 export const sentryDebugAction = () => {
 	console.log('stack: ' + (new Error()).stack);
-	this.tryThisOut();  // Should generate runtime exception and send to Sentry.
-	//captureException('Testing Sentry', {data: "some-data"});
+	//this.tryThisOut();  // Should generate runtime exception and send to Sentry.
+  //try {
+  //  throw new Error('This is an error');
+  //} catch (e) {
+  //  captureException(e, {source: 'some-src'});
+  //}
+  captureMessage('Try capture message', {source: 'sentry-test'}, 'error');
 }
