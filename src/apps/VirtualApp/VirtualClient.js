@@ -614,7 +614,7 @@ class VirtualClient extends Component {
       const { textroom, error_code, error } = data;
       if (textroom === 'error') {
         console.error("Chatroom error: ", data, error_code)
-        captureException(error, {source: "Chatroom", err: error, msg: data});
+        captureMessage(error, {source: "Chatroom", err: error, msg: data}, 'error');
         this.exitRoom(false, () => {
           if(error_code === 420)
             alert(this.props.t('oldClient.error') + data.error);
@@ -728,7 +728,7 @@ class VirtualClient extends Component {
         },
         error: (err) => {
           Janus.error('WebRTC error:', err);
-          captureException(`WebRTC error: ${err}`, {source: 'createoffer', err: err});
+          captureException(err, {source: 'createoffer', err: `WebRTC error: ${err}`});
         }
       });
     }

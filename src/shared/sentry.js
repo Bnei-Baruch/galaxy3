@@ -23,7 +23,16 @@ export const initSentry = () => {
   });
 };
 
-const reportToSentry = (title, data, level, exception) => {
+export const captureException = (exception, data = {}) => {
+	 Sentry.withScope(scope => {
+    Object.keys(data).forEach((key) => {
+        scope.setExtra(key, data[key]);
+    });
+    Sentry.captureException(exception);
+  });
+}
+
+export const captureMessage = (title, data = {}, level = 'info') => {
 	 Sentry.withScope(scope => {
     // Always group by title when reporting manually to Sentry.
     scope.setFingerprint([title]);  
@@ -31,20 +40,8 @@ const reportToSentry = (title, data, level, exception) => {
         scope.setExtra(key, data[key]);
     });
     scope.setLevel(level);
-    if (exception) {
-      Sentry.captureException(title);
-    } else {
-      Sentry.captureMessage(title);
-    }
+    Sentry.captureMessage(title);
   });
-};
-
-export const captureException = (title, data = {}, level = 'error') => {
-  reportToSentry(title, data, level, /* exception= */ true);
-}
-
-export const captureMessage = (title, data = {}, level = 'info') => {
-  reportToSentry(title, data, level, /* exception= */ false);
 }
 
 export const sentryDebugAction = () => {

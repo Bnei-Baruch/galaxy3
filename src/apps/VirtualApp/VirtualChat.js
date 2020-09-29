@@ -3,7 +3,7 @@ import { Janus } from '../../lib/janus';
 import { Button, Input, Message } from 'semantic-ui-react';
 import {getDateString, notifyMe, } from '../../shared/tools';
 import { SHIDUR_ID } from '../../shared/consts';
-import {captureException} from '../../shared/sentry';
+import {captureMessage, captureException} from '../../shared/sentry';
 
 class VirtualChat extends Component {
 
@@ -48,7 +48,7 @@ class VirtualChat extends Component {
       },
       error: (err) => {
         console.error("  -- Error join room", err);
-        captureException(err, {source: "Textroom", err});
+        captureException(err, {source: "Textroom", err: `Error joining room (${roomid}): ${err}`});
       }
     });
   };
@@ -74,7 +74,7 @@ class VirtualChat extends Component {
           },
           err: (err) => {
             console.err("  -- Error attaching plugin...", err);
-            captureException(err, {source: "Textroom", err});
+            captureException(err, {source: "Textroom", err: `Error attaching textroom plugin: ${err}`});
           },
           iceState: (state) => {
             Janus.log("ICE state changed to " + state);
@@ -90,7 +90,7 @@ class VirtualChat extends Component {
             Janus.debug(msg);
             if (msg["error"] !== undefined && msg["error"] !== null) {
               console.error(msg["error"]);
-              captureException(msg["error"], {source: "Onmessage", err: msg["error"], msg});
+              captureMessage(msg["error"], {source: "Onmessage", err: msg["error"], msg}, 'error');
             }
             if (jsep !== undefined && jsep !== null) {
               // Answer
@@ -107,7 +107,7 @@ class VirtualChat extends Component {
                     error: (error) => {
                       Janus.error("WebRTC error:", error);
                       console.error("WebRTC error... " + JSON.stringify(error));
-                      captureException(msg["error"], {source: "Offer", msg});
+                      captureMessage(msg["error"], {source: "Offer", msg}, 'error');
                     }
                   });
             }

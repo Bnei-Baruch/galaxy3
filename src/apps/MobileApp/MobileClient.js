@@ -580,7 +580,7 @@ class MobileClient extends Component {
             const { textroom, error_code, error } = data;
             if (textroom === 'error') {
                 console.error("Chatroom error: ", data, error_code)
-                captureException(error, {source: "Chatroom", msg: data, err: error});
+                captureMessage(error, {source: "Chatroom", msg: data, err: `Chatroom error: ${error}`}, 'error');
                 this.exitRoom(false, () => {
                     if(error_code === 420)
                         alert(this.props.t('oldClient.error') + data.error);
