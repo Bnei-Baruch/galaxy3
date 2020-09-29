@@ -24,24 +24,20 @@ export const initSentry = () => {
 };
 
 export const captureException = (exception, data = {}) => {
-	 Sentry.withScope(scope => {
-    Object.keys(data).forEach((key) => {
-        scope.setExtra(key, data[key]);
+    Sentry.withScope(scope => {
+        scope.setExtras(data);
+        Sentry.captureException(exception);
     });
-    Sentry.captureException(exception);
-  });
 }
 
 export const captureMessage = (title, data = {}, level = 'info') => {
-	 Sentry.withScope(scope => {
-    // Always group by title when reporting manually to Sentry.
-    scope.setFingerprint([title]);  
-    Object.keys(data).forEach((key) => {
-        scope.setExtra(key, data[key]);
+    Sentry.withScope(scope => {
+        // Always group by title when reporting manually to Sentry.
+        scope.setFingerprint([title]);
+        scope.setExtras(data);
+        scope.setLevel(level);
+        Sentry.captureMessage(title);
     });
-    scope.setLevel(level);
-    Sentry.captureMessage(title);
-  });
 }
 
 export const sentryDebugAction = () => {

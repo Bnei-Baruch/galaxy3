@@ -87,7 +87,7 @@ export class GuaranteeDeliveryManager {
     }
     if (this.pending.has(message[TRANSACTION_FIELD])) {
       // Should not happen, sending new message with existing transaction.
-      return Promise.reject(new Error('Error, not expected new message with same transaction.', message));
+      return Promise.reject(new Error(`Duplicate transaction ${message[TRANSACTION_FIELD]}`));
     }
     message[RETRY_FIELD] = 0;
     message[TO_ACK_FIELD] = toAck;
@@ -159,7 +159,7 @@ export class GuaranteeDeliveryManager {
     }
     [TRANSACTION_FIELD, FROM_FIELD].forEach((field) => {
       if (!(field in message)) {
-        return Promise.reject(`All guarantee messages expect to have ${field} field.`);
+        return Promise.reject(new Error(`Message missing field: ${field}`));
       }
     });
     const ack = {
