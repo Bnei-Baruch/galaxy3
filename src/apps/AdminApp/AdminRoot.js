@@ -70,7 +70,7 @@ class AdminRoot extends Component {
              nextState.activeTab === 0 ||
              activeTab !== nextState.activeTab ||
              nextState.usersTabs.length !== usersTabs.length;
-    }
+    };
 
     checkPermission = (user) => {
         const roles = new Set(user.roles || []);
@@ -134,7 +134,7 @@ class AdminRoot extends Component {
                 console.error("[Admin] error initializing app", err);
                 this.setState({appInitError: err});
             });
-    }
+    };
 
     initGateways = (user) => {
         const gateways = GxyJanus.makeGateways("rooms");
@@ -150,15 +150,6 @@ class AdminRoot extends Component {
     initGateway = (user, gateway) => {
         console.info("[Admin] initializing gateway", gateway.name);
 
-        gateway.addEventListener("reinit", () => {
-                this.postInitGateway(user, gateway)
-                    .catch(err => {
-                        console.error("[Admin] postInitGateway error after reinit. Reloading", gateway.name, err);
-                        window.location.reload();
-                    });
-            }
-        );
-
         gateway.addEventListener("reinit_failure", (e) => {
             if (e.detail > 10) {
                 console.error("[Admin] too many reinit_failure. Reloading", gateway.name, e);
@@ -166,23 +157,13 @@ class AdminRoot extends Component {
             }
         });
 
-        return gateway.init()
-            .then(() => this.postInitGateway(user, gateway));
-    }
-
-    postInitGateway = (user, gateway) => {
-        console.info("[Admin] gateway post initialization", gateway.name);
-        if (this.isAllowed("admin")) {
-            return gateway.initGxyProtocol(user, data => this.onProtocolData(gateway, data))
-        } else {
-            return Promise.resolve();
-        }
-    }
+        return gateway.init();
+    };
 
     pollRooms = () => {
         this.fetchRooms();
         setInterval(this.fetchRooms, 10 * 1000)
-    }
+    };
 
     fetchRooms = () => {
         api.fetchActiveRooms()
@@ -519,35 +500,6 @@ class AdminRoot extends Component {
         }
     };
 
-    onProtocolData = (gateway, data) => {
-        const { gdm } = this.state;
-        if (gdm.checkAck(data)) {
-            // Ack received, do nothing.
-            return;
-        }
-
-        // let {users} = this.state;
-        //
-        // // Set status in users list
-        // if (data.type.match(/^(camera|question|sound_test)$/)) {
-        //     gateway.log("[protocol] user", data.type, data.status, data.user.id);
-        //     if (users[data.user.id]) {
-        //         users[data.user.id][data.type] = data.status;
-        //         this.setState({users});
-        //     } else {
-        //         users[data.user.id] = {[data.type]: data.status};
-        //         this.setState({users});
-        //     }
-        // }
-        //
-        // // Save user on enter
-        // if (data.type.match(/^(enter)$/)) {
-        //     gateway.log("[protocol] user entered", data.user);
-        //     users[data.user.id] = data.user;
-        //     this.setState({users});
-        // }
-    };
-
     sendCommandMessage = (command_type) => {
         const {gateways, feed_user, current_janus, current_room, command_status, gdm} = this.state;
         const gateway = gateways[current_janus];
@@ -642,15 +594,6 @@ class AdminRoot extends Component {
         if (command_type === "audio-out") {
             this.setState({command_status: !command_status})
         }
-    };
-
-    sendDataMessage = (msg) => {
-        const {gateways, feed_user, current_janus} = this.state;
-        const gateway = gateways[current_janus];
-        const cmd = {type: msg, rcmd: true, id: feed_user.id}
-        const message = JSON.stringify(cmd);
-        console.log(':: Sending message: ', message);
-        gateway.videoroom.data({ text: message });
     };
 
     joinRoom = (data) => {
@@ -967,6 +910,30 @@ class AdminRoot extends Component {
                               on='click'
                               hideOnScroll
                           />
+                          {
+                              this.isAllowed("root") ?
+                                  <div>
+                                      <Popup trigger={<Button color="yellow" icon='question' onClick={() => this.sendRemoteCommand("client-question")} />} content='Set/Unset question' inverted />
+                                      <Popup trigger={<Button color="brown" icon='sync alternate' alt="test" onClick={() => this.sendRemoteCommand("client-reconnect")} />} content='Reconnect' inverted />
+                                      <Popup trigger={<Button color="olive" icon='redo alternate' onClick={() => this.sendRemoteCommand("client-reload")} />} content='Reload page(LOST FEED HERE!)' inverted />
+                                      <Popup trigger={<Button color="teal" icon='microphone' onClick={() => this.sendRemoteCommand("client-mute")} />} content='Mic Mute/Unmute' inverted />
+                                      <Popup trigger={<Button color="pink" icon='eye' onClick={() => this.sendRemoteCommand("video-mute")} />} content='Cam Mute/Unmute' inverted />
+                                      <Popup trigger={<Button color="orange" icon={command_status ? 'volume off' : 'volume up'} onClick={() => this.sendRemoteCommand("audio-out")} />} content='Talk event' inverted />
+                                      <Popup trigger={<Button negative icon='user x' onClick={() => this.sendRemoteCommand("client-kicked")} />} content='Kick' inverted />
+                                      {/*<Popup trigger={<Button color="pink" icon='eye' onClick={() => this.sendDataMessage("video-mute")} />} content='Cam Mute/Unmute' inverted />*/}
+                                      {/*<Popup trigger={<Button color="blue" icon='power off' onClick={() => this.sendRemoteCommand("client-disconnect")} />} content='Disconnect(LOST FEED HERE!)' inverted />*/}
+                                      {/*<Popup inverted*/}
+                                      {/*       content={`${premodStatus ? 'Disable' : 'Enable'} Pre Moderation Mode`}*/}
+                                      {/*       trigger={*/}
+                                      {/*           <Button color="blue"*/}
+                                      {/*                   icon='copyright'*/}
+                                      {/*                   inverted={premodStatus}*/}
+                                      {/*                   onClick={() => this.sendRemoteCommand("premoder-mode")}/>*/}
+                                      {/*       }/>*/}
+                                      {/*<Popup trigger={<Button color="red" icon='redo' onClick={() => this.setState({showConfirmReloadAll: !showConfirmReloadAll})} />} content='RELOAD ALL' inverted />*/}
+                                  </div>
+                                  : null
+                          }
                           <StatNotes data={rooms} />
                       </Segment>
                       : null
@@ -975,31 +942,7 @@ class AdminRoot extends Component {
               </Grid.Row>
                   <Grid.Row columns='equal'>
                       <Grid.Column width={4}>
-                          <Segment.Group className="group_list">
-                              {
-                                  this.isAllowed("root") ?
-                                      <Segment textAlign='center'>
-                                          <Popup trigger={<Button negative icon='user x' onClick={() => this.sendRemoteCommand("client-kicked")} />} content='Kick' inverted />
-                                          <Popup trigger={<Button color="brown" icon='sync alternate' alt="test" onClick={() => this.sendRemoteCommand("client-reconnect")} />} content='Reconnect' inverted />
-                                          <Popup trigger={<Button color="olive" icon='redo alternate' onClick={() => this.sendRemoteCommand("client-reload")} />} content='Reload page(LOST FEED HERE!)' inverted />
-                                          <Popup trigger={<Button color="teal" icon='microphone' onClick={() => this.sendRemoteCommand("client-mute")} />} content='Mic Mute/Unmute' inverted />
-                                          <Popup trigger={<Button color="pink" icon='eye' onClick={() => this.sendRemoteCommand("video-mute")} />} content='Cam Mute/Unmute' inverted />
-                                          <Popup trigger={<Button color="orange" icon={command_status ? 'volume off' : 'volume up'} onClick={() => this.sendRemoteCommand("audio-out")} />} content='Talk event' inverted />
-                                          <Popup trigger={<Button color="yellow" icon='question' onClick={() => this.sendRemoteCommand("client-question")} />} content='Set/Unset question' inverted />
-                                          {/*<Popup trigger={<Button color="pink" icon='eye' onClick={() => this.sendDataMessage("video-mute")} />} content='Cam Mute/Unmute' inverted />*/}
-                                          {/*<Popup trigger={<Button color="blue" icon='power off' onClick={() => this.sendRemoteCommand("client-disconnect")} />} content='Disconnect(LOST FEED HERE!)' inverted />*/}
-                                          {/*<Popup inverted*/}
-                                          {/*       content={`${premodStatus ? 'Disable' : 'Enable'} Pre Moderation Mode`}*/}
-                                          {/*       trigger={*/}
-                                          {/*           <Button color="blue"*/}
-                                          {/*                   icon='copyright'*/}
-                                          {/*                   inverted={premodStatus}*/}
-                                          {/*                   onClick={() => this.sendRemoteCommand("premoder-mode")}/>*/}
-                                          {/*       }/>*/}
-                                          {/*<Popup trigger={<Button color="red" icon='redo' onClick={() => this.setState({showConfirmReloadAll: !showConfirmReloadAll})} />} content='RELOAD ALL' inverted />*/}
-                                      </Segment>
-                                      : null
-                              }
+                          <Segment.Group className="user_list">
                               <Segment textAlign='center' raised>
                                   <Table selectable compact='very' basic structured className="admin_table" unstackable>
                                       <Table.Body>
@@ -1099,7 +1042,7 @@ class AdminRoot extends Component {
       );
 
       const panes = [
-          { menuItem: 'Admin', render: () => <Tab.Pane>{adminContent}</Tab.Pane> },
+          { menuItem: 'Admin', render: () => <Tab.Pane className="grid_tab">{adminContent}</Tab.Pane> },
       ];
       if (this.isAllowed('root')) {
           panes.push({ menuItem: 'Rooms', render: () => <Tab.Pane><RoomManager /></Tab.Pane> });
