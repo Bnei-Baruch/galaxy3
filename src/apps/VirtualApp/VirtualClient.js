@@ -51,6 +51,7 @@ import audioModeSvg from '../../shared/audio-mode.svg';
 import fullModeSvg from '../../shared/full-mode.svg';
 import ConfigStore from "../../shared/ConfigStore";
 import {GuaranteeDeliveryManager} from '../../shared/GuaranteeDelivery';
+import { AskQuestion, AudioMode, CloseBroadcast, Layout, Mute, MuteVideo, OpenChat, Vote } from './buttons';
 
 const sortAndFilterFeeds = (feeds) => feeds
   .filter(feed => !feed.display.role.match(/^(ghost|guest)$/))
@@ -2007,9 +2008,9 @@ class VirtualClient extends Component {
           ${!attachedSource ? ' broadcast--popup' : 'broadcast--inline'}
          `}>
 
-            {/* ${layout === 'equal' ? ' broadcast--equal' : ''} */}
-            {/* ${layout === 'double' ? ' broadcast--double' : ''} */}
-            {/* ${layout === 'split' ? ' broadcast--split' : ''} */}
+          {/* ${layout === 'equal' ? ' broadcast--equal' : ''} */}
+          {/* ${layout === 'double' ? ' broadcast--double' : ''} */}
+          {/* ${layout === 'split' ? ' broadcast--split' : ''} */}
 
           <div className="broadcast-panel">
             {/* <div className="videos"> */}
@@ -2019,8 +2020,8 @@ class VirtualClient extends Component {
             {/* </div> */}
           </div>
 
-            <div className="videos-panel">
-              {/* <div className="videos"> */}
+          <div className="videos-panel">
+            {/* <div className="videos"> */}
               <div className="videos__wrapper">
                 {(layout === 'equal' || layout === 'double') && source}
                 {remoteVideos}
