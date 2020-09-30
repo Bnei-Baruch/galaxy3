@@ -44,7 +44,7 @@ import VirtualStreamingJanus from '../../shared/VirtualStreamingJanus';
 import {kc, isGhostOrGuest} from "../../components/UserManager";
 import LoginPage from "../../components/LoginPage";
 import {Profile} from "../../components/Profile";
-import {captureMessage, captureException, reportToSentry, updateSentryUser, sentryDebugAction} from '../../shared/sentry';
+import {captureMessage, reportToSentry, updateSentryUser, sentryDebugAction} from '../../shared/sentry';
 import VerifyAccount from './components/VerifyAccount';
 import GxyJanus from "../../shared/janus-utils";
 import audioModeSvg from '../../shared/audio-mode.svg';
@@ -614,7 +614,7 @@ class VirtualClient extends Component {
       const { textroom, error_code, error } = data;
       if (textroom === 'error') {
         console.error("Chatroom error: ", data, error_code)
-        captureException(error, {source: "Chatroom", err: error, msg: data});
+        captureMessage(`Chatroom error: init - ${error}`, {source: "Textroom", err: data}, 'error');
         this.exitRoom(false, () => {
           if(error_code === 420)
             alert(this.props.t('oldClient.error') + data.error);
@@ -708,6 +708,7 @@ class VirtualClient extends Component {
       },
       error: (error) => {
         Janus.error('WebRTC error:', error);
+        captureMessage(`Videoroom error: create offer [publishOwnFeed] - ${error}`, {source: "Videoroom", error}, 'error');
       }
     });
   };
@@ -728,7 +729,7 @@ class VirtualClient extends Component {
         },
         error: (err) => {
           Janus.error('WebRTC error:', err);
-          captureException(`WebRTC error: ${err}`, {source: 'createoffer', err: err});
+          captureMessage(`Videoroom error: create offer [ice restart] - ${err}`, {source: "Videoroom", err}, 'error');
         }
       });
     }

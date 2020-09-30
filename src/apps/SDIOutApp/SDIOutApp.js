@@ -47,7 +47,7 @@ class SDIOutApp extends Component {
                 })
                 .catch(err => {
                     console.error("[SDIOut] error fetching quad state", err);
-                    captureException(`[SDIOut] error fetching quad state: ${err}`, {err});
+                    captureException(err, {source: "SDIOut"});
                 });
         }, 1000);
         this.initApp();

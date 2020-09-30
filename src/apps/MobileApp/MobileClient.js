@@ -44,7 +44,7 @@ import VirtualStreamingJanus from '../../shared/VirtualStreamingJanus';
 import VirtualChat from '../VirtualApp/VirtualChat';
 import ConfigStore from "../../shared/ConfigStore";
 import {GuaranteeDeliveryManager} from "../../shared/GuaranteeDelivery";
-import {updateSentryUser, captureException, captureMessage} from "../../shared/sentry";
+import {updateSentryUser, captureMessage} from "../../shared/sentry";
 
 const sortAndFilterFeeds = (feeds) => feeds
   .filter(feed => !feed.display.role.match(/^(ghost|guest)$/))
@@ -580,7 +580,7 @@ class MobileClient extends Component {
             const { textroom, error_code, error } = data;
             if (textroom === 'error') {
                 console.error("Chatroom error: ", data, error_code)
-                captureException(error, {source: "Chatroom", msg: data, err: error});
+                captureMessage(`Chatroom error: init - ${error}`, {source: "Textroom", err: data}, 'error');
                 this.exitRoom(false, () => {
                     if(error_code === 420)
                         alert(this.props.t('oldClient.error') + data.error);

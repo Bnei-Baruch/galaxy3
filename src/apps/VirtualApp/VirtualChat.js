@@ -3,7 +3,7 @@ import { Janus } from '../../lib/janus';
 import { Button, Input, Message } from 'semantic-ui-react';
 import {getDateString, notifyMe, } from '../../shared/tools';
 import { SHIDUR_ID } from '../../shared/consts';
-import {captureException} from '../../shared/sentry';
+import {captureMessage} from '../../shared/sentry';
 
 class VirtualChat extends Component {
 
@@ -48,7 +48,7 @@ class VirtualChat extends Component {
       },
       error: (err) => {
         console.error("  -- Error join room", err);
-        captureException(err, {source: "Textroom", err});
+        captureMessage(`Chatroom error: join room (${roomid}) - ${err}`, {source: "Textroom", err}, 'error');
       }
     });
   };
@@ -72,11 +72,11 @@ class VirtualChat extends Component {
             Janus.debug("Sending message (" + JSON.stringify(body) + ")");
             chatroom.send({"message": body});
           },
-          err: (err) => {
-            console.err("  -- Error attaching plugin...", err);
-            captureException(err, {source: "Textroom", err});
+          error: (err) => {
+            console.error("  -- Error attaching plugin...", err);
+						captureMessage(`Chatroom error: attach - ${err}`, {source: "Textroom", err}, 'error');
           },
-          iceState: (state) => {
+          iceStatr: (state) => {
             Janus.log("ICE state changed to " + state);
           },
           mediaState: (medium, on) => {
@@ -90,7 +90,7 @@ class VirtualChat extends Component {
             Janus.debug(msg);
             if (msg["error"] !== undefined && msg["error"] !== null) {
               console.error(msg["error"]);
-              captureException(msg["error"], {source: "Onmessage", err: msg["error"], msg});
+							captureMessage(`Chatroom error: message - ${msg["error"]}`, {source: "Textroom", err: msg}, 'error');
             }
             if (jsep !== undefined && jsep !== null) {
               // Answer
@@ -107,7 +107,7 @@ class VirtualChat extends Component {
                     error: (error) => {
                       Janus.error("WebRTC error:", error);
                       console.error("WebRTC error... " + JSON.stringify(error));
-                      captureException(msg["error"], {source: "Offer", msg});
+											captureMessage(`Chatroom error: jsep answer - ${msg["error"]}`, {source: "Textroom", err: msg}, 'error');
                     }
                   });
             }
