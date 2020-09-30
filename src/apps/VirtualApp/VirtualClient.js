@@ -1788,7 +1788,7 @@ class VirtualClient extends Component {
     const isDeb = new URL(window.location.href).searchParams.has('deb');
 
     let content;
-    if (isUseNewDesign) {
+    if (!isUseNewDesign) {
       let layoutIcon;
       switch (layout) {
       case 'double':
