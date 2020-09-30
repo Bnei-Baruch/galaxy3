@@ -1,6 +1,6 @@
 import React from 'react';
 import { makeStyles } from '@material-ui/core/styles';
-import { Tv, TvOff } from '@material-ui/icons';
+import { DesktopAccessDisabled, DesktopWindows } from '@material-ui/icons';
 import ButtonBase from '@material-ui/core/ButtonBase';
 
 const useStyles = makeStyles({
@@ -41,7 +41,7 @@ const CloseBroadcast = (props) => {
         disabled: classes.disabled
       }}
     >
-      {isOn ? <Tv /> : <TvOff />}
+      {isOn ? <DesktopWindows /> : <DesktopAccessDisabled />}
       <span className={classes.label}>
         {isOn ? t('oldClient.closeBroadcast') : t('oldClient.openBroadcast')}
       </span>

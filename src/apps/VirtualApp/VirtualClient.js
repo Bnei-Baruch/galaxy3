@@ -52,6 +52,11 @@ import fullModeSvg from '../../shared/full-mode.svg';
 import ConfigStore from "../../shared/ConfigStore";
 import {GuaranteeDeliveryManager} from '../../shared/GuaranteeDelivery';
 import { AskQuestion, AudioMode, CloseBroadcast, Layout, Mute, MuteVideo, OpenChat, Vote } from './buttons';
+import AppBar from '@material-ui/core/AppBar';
+import Grid from '@material-ui/core/Grid';
+import ButtonGroup from '@material-ui/core/ButtonGroup';
+import { grey, red } from '@material-ui/core/colors';
+
 
 const sortAndFilterFeeds = (feeds) => feeds
   .filter(feed => !feed.display.role.match(/^(ghost|guest)$/))
@@ -1408,6 +1413,110 @@ class VirtualClient extends Component {
     </div>);
   }
 
+  renderBottomBar = (layout,otherFeedHasQuestion) => {
+    const { t } = this.props;
+    const {
+            attachedSource,
+            cammuted,
+            delay,
+            localAudioTrack,
+            localVideoTrack,
+            muteOtherCams,
+            muted,
+            question,
+            room,
+            shidur,
+            sourceLoading,
+            user,
+            premodStatus,
+            media
+          }           = this.state;
+
+    const { video_device } = media.video;
+    const { audio_device } = media.audio;
+
+    return (
+      <AppBar position="sticky" color="transparent" style={{ top: 'auto', bottom: 0, fontSize: '0.7rem', backgroundColor: 'black' }}>
+        <Grid container spacing={0}>
+          <Grid item xs={2}>
+            <ButtonGroup
+              variant="contained"
+              style={{ color: grey[50] }}
+            >
+              <Mute
+                t={t}
+                action={this.micMute.bind(this)}
+                disabled={!localAudioTrack}
+                isOn={muted}
+              />
+              <MuteVideo
+                t={t}
+                action={this.camMute.bind(this)}
+                disabled={video_device === null || !localVideoTrack || delay}
+                isOn={cammuted}
+              />
+            </ButtonGroup>
+          </Grid>
+          <Grid item xs={1}></Grid>
+          <Grid item xs={3}>
+            <ButtonGroup
+              variant="contained"
+              style={{ color: grey[50] }}
+            >
+              <CloseBroadcast
+                t={t}
+                isOn={shidur}
+                action={this.toggleShidur.bind(this)}
+                disabled={room === '' || sourceLoading}
+              />
+              <Layout
+                t={t}
+                active={layout}
+                action={this.updateLayout.bind(this)}
+                disabled={room === '' || !shidur || sourceLoading || !attachedSource}
+                iconDisabled={sourceLoading}
+              />
+              <AudioMode
+                t={t}
+                action={this.otherCamsMuteToggle.bind(this)}
+                isOn={muteOtherCams} />
+            </ButtonGroup>
+          </Grid>
+          <Grid item xs={1}></Grid>
+          <Grid item xs={3}>
+            <ButtonGroup
+              variant="contained"
+              style={{ color: grey[50] }}
+            >
+              <AskQuestion
+                t={t}
+                isOn={question}
+                disabled={premodStatus || !audio_device || !localAudioTrack || delay || otherFeedHasQuestion}
+                action={this.handleQuestion.bind(this)}
+              />
+              <Vote
+                t={t}
+                id={user?.id}
+                disabled={!user || !user.id || room === ''}
+              />
+            </ButtonGroup>
+          </Grid>
+          <Grid item xs={1}></Grid>
+          <Grid item xs={1}>
+            <Button
+              onClick={() => this.exitRoom(false)}
+              variant="contained"
+              color="secondary"
+            >
+              Exi
+            </Button>
+          </Grid>
+        </Grid>
+      </AppBar>
+    );
+  };
+
+
   renderNewVersionContent = (layout, isDeb, source, rooms_list, otherFeedHasQuestion, adevices_list, vdevices_list, noOfVideos, remoteVideos) => {
     const { t, i18n } = this.props;
     const {
@@ -1629,6 +1738,8 @@ class VirtualClient extends Component {
             (
               <Label color={net_status === 2 ? 'yellow' : net_status === 3 ? 'red' : 'green'} icon='wifi' corner='right' />)}
         </div>
+
+
         <div className="vclient__main" onDoubleClick={() => this.setState({
           chatVisible: !chatVisible
         })}>
@@ -1671,7 +1782,11 @@ class VirtualClient extends Component {
               onCmdMsg={this.handleCmdData}
               onNewMsg={this.onChatMessage} />
           </div>
+
         </div>
+        {
+          this.renderBottomBar(layout,otherFeedHasQuestion)
+        }
       </div>
     );
 
