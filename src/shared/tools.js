@@ -101,6 +101,8 @@ export const micLevel = (stream, canvas, cb) => {
 
     javascriptNode.connect(audioContext.destination);
 
+    if (!canvas)
+        return;
     let canvasContext = canvas.getContext("2d");
     let gradient = canvasContext.createLinearGradient(0,0,0,55);
     gradient.addColorStop(1,'green');

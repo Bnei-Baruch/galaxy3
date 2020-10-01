@@ -22,7 +22,7 @@ const useStyles = makeStyles({
 const Vote = (props) => {
   const { disabled, t, id } = props;
   const classes             = useStyles();
-  const [open, setOpen]     = React.useState(null);
+  const [open, setOpen]     = React.useState(false);
   const ref                 = useRef();
 
   const handleClick = (event) => {

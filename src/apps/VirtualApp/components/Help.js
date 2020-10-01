@@ -1,28 +1,56 @@
-import React from 'react';
-import { Button, Icon, Menu, Popup } from 'semantic-ui-react';
+import React, { useRef, useState } from 'react';
+import { ListItemIcon, List, ListItemText, ListItem } from '@material-ui/core';
+import { Help as HelpIcon } from '@material-ui/icons';
+import Menu from '@material-ui/core/Menu';
 
-export const Help = ({ t }) => (
-  <Popup
-    trigger={<Menu.Item><Icon name="address card" />{t('feedback.feedbackHelp')}</Menu.Item>}
-    on="click"
-    position="bottom right"
-  >
-    <Popup.Content>
-      <Menu vertical>
-        <Menu.Item>
-          <Button attached="top">{t('feedback.feedback')}</Button>
-          <Button basic fluid as="a" href='https://forms.gle/F6Lm2KMLUkU4hrmK8' target="_blank" rel="noopener noreferrer">{t('feedback.feedback')}</Button>
-        </Menu.Item>
+export const Help = ({ t }) => {
+  const [open, setOpen] = React.useState(false);
+  const anchorRef       = useRef();
+
+  const handleClick = (event) => {
+    setOpen(!open);
+  };
+
+  const handleClose = () => {
+    setOpen(false);
+  };
+
+  const renderList = () => {
+    return (
+      <List>
+        <ListItem button onClick={() => window.open('https://bit.ly/2JkBU08', '_blank')}>
+          <ListItemText>English</ListItemText>
+        </ListItem>
+        <ListItem button onClick={() => window.open('https://bit.ly/39miYbJ', '_blank')}>
+          <ListItemText>Spanish</ListItemText>
+        </ListItem>
+        <ListItem button onClick={() => window.open('https://bit.ly/3amR5BV', '_blank')}>
+          <ListItemText>Hebrew</ListItemText>
+        </ListItem>
+        <ListItem button onClick={() => window.open('https://bit.ly/2UE1l1Y', '_blank')}>
+          <ListItemText>Russian</ListItemText>
+        </ListItem>
+      </List>
+    );
+  };
+
+  return (
+    <ListItem ref={anchorRef} button key={'help'} onClick={handleClick}>
+      <ListItemText primary={t('feedback.help')} />
+      <ListItemIcon><HelpIcon /></ListItemIcon>
+      <Menu
+        id="help-menu"
+        anchorEl={anchorRef.current}
+        open={open}
+        onClose={handleClose}
+        getContentAnchorEl={null}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        {
+          renderList()
+        }
       </Menu>
-      <Menu vertical>
-        <Menu.Item>
-          <Button attached='top'>{t('feedback.help')}</Button>
-          <Button basic fluid as="a" href='https://bit.ly/2JkBU08' target="_blank" rel="noopener noreferrer">English</Button>
-          <Button basic fluid as="a" href='https://bit.ly/39miYbJ' target="_blank" rel="noopener noreferrer">Spanish</Button>
-          <Button basic fluid as="a" href='https://bit.ly/3amR5BV' target="_blank" rel="noopener noreferrer">Hebrew</Button>
-          <Button basic fluid as="a" href='https://bit.ly/2UE1l1Y' target="_blank" rel="noopener noreferrer">Russian</Button>
-        </Menu.Item>
-      </Menu>
-    </Popup.Content>
-  </Popup>
-);
+    </ListItem>
+  );
+};
