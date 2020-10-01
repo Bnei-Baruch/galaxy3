@@ -124,7 +124,11 @@ class MobileClient extends Component {
     }
 
     setShidurMuted(muted) {
-      this.state.virtualStreamingJanus.audioElement.muted = muted;
+      if (muted) {
+        this.state.virtualStreamingJanus.muteAudioElement();
+      } else {
+        this.state.virtualStreamingJanus.unmuteAudioElement();
+      }
       this.setState({shidurMuted: muted});
     }
 

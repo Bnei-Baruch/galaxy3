@@ -128,13 +128,13 @@ class VirtualClient extends Component {
 
   componentDidUpdate(prevProps, prevState) {
     if (this.state.shidur && !prevState.shidur && !this.state.sourceLoading && this.room) {
-      this.state.virtualStreamingJanus.audioElement.muted = false;
+      this.state.virtualStreamingJanus.unmuteAudioElement();
     }
     if (!this.state.sourceLoading && prevState.sourceLoading && this.state.shidur && this.room) {
-      this.state.virtualStreamingJanus.audioElement.muted = false;
+      this.state.virtualStreamingJanus.unmuteAudioElement();
     }
     if (this.state.room && !prevState.room && this.state.shidur && !this.sourceLoading) {
-      this.state.virtualStreamingJanus.audioElement.muted = false;
+      this.state.virtualStreamingJanus.unmuteAudioElement();
     }
     if (this.state.videoroom !== prevState.videoroom ||
       this.state.localVideoTrack !== prevState.localVideoTrack ||
@@ -669,7 +669,11 @@ class VirtualClient extends Component {
       if(videoroom) videoroom.detach();
       if(protocol) protocol.detach();
       if(janus) janus.destroy();
-      this.state.virtualStreamingJanus.audioElement.muted = !reconnect;
+      if (reconnect) {
+        this.state.virtualStreamingJanus.muteAudioElement();
+      } else {
+        this.state.virtualStreamingJanus.unmuteAudioElement();
+      }
       this.setState({
         cammuted: false, muted: false, question: false,
         feeds: [], mids: [],
