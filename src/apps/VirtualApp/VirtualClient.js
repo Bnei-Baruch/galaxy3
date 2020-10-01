@@ -56,7 +56,13 @@ import AppBar from '@material-ui/core/AppBar';
 import Grid from '@material-ui/core/Grid';
 import ButtonGroup from '@material-ui/core/ButtonGroup';
 import { grey, red } from '@material-ui/core/colors';
-
+import { AskQuestion, AudioMode, CloseBroadcast, Layout, Mute, MuteVideo, Vote } from './buttons';
+import List from '@material-ui/core/List';
+import Divider from '@material-ui/core/Divider';
+import ListItemIcon from '@material-ui/core/ListItemIcon';
+import ListItemText from '@material-ui/core/ListItemText';
+import SwipeableDrawer from '@material-ui/core/SwipeableDrawer';
+import ListItem from '@material-ui/core/ListItem';
 
 const sortAndFilterFeeds = (feeds) => feeds
   .filter(feed => !feed.display.role.match(/^(ghost|guest)$/))
@@ -126,6 +132,7 @@ class VirtualClient extends Component {
     videos: Number(localStorage.getItem('vrt_video')) || 1,
     premodStatus: false,
     gdm: null,
+    asideMsgCounter: { drawing: 0, chat: 0 }
   };
 
   virtualStreamingInitialized() {
@@ -1436,7 +1443,12 @@ class VirtualClient extends Component {
     const { audio_device } = media.audio;
 
     return (
-      <AppBar position="sticky" color="transparent" style={{ top: 'auto', bottom: 0, fontSize: '0.7rem', backgroundColor: 'black' }}>
+      <AppBar position="sticky" color="transparent" style={{
+        top: 'auto',
+        bottom: 0,
+        fontSize: '0.7rem',
+        backgroundColor: 'black'
+      }}>
         <Grid container spacing={0}>
           <Grid item xs={2}>
             <ButtonGroup
@@ -1508,7 +1520,7 @@ class VirtualClient extends Component {
               variant="contained"
               color="secondary"
             >
-              Exi
+              Exit
             </Button>
           </Grid>
         </Grid>
@@ -1516,6 +1528,183 @@ class VirtualClient extends Component {
     );
   };
 
+  toggleRightAside = (name) => {
+    const { rightAsideName: oldName, asideMsgCounter } = this.state;
+    const rightAsideName                               = name === oldName ? null : name;
+
+    if (asideMsgCounter[name])
+      asideMsgCounter[name] = 0;
+
+    this.setState({ rightAsideName, asideMsgCounter });
+  };
+
+  toggleLeftAside = (name) => {
+    const { leftAsideName: oldName, asideMsgCounter } = this.state;
+    const leftAsideName                               = name === oldName ? null : name;
+
+    if (asideMsgCounter[name])
+      asideMsgCounter[name] = 0;
+
+    this.setState({ leftAsideName, asideMsgCounter });
+  };
+
+  renderRightAside = () => {
+    const { t }                                              = this.props;
+    const { chatVisible, janus, user, room, rightAsideName } = this.state;
+
+    let content;
+    if (rightAsideName === 'chat') {
+      content = (
+        <VirtualChat
+          t={t}
+          ref={chat => {
+            this.chat = chat;
+          }}
+          visible={chatVisible}
+          janus={janus}
+          room={room}
+          user={user}
+          gdm={this.state.gdm}
+          onCmdMsg={this.handleCmdData}
+          onNewMsg={this.onChatMessage} />
+      );
+    }
+
+    return (
+      <Grid item xs={rightAsideName ? 3 : 0}>
+        {content}
+      </Grid>
+    );
+  };
+
+  renderLeftAside = () => {
+    const { leftAsideName } = this.state;
+
+    let content;
+    if (leftAsideName === 'material') {
+      content = (
+        <iframe
+          src={`https://groups.google.com/forum/embed/?place=forum/bb-study-materials&showpopout=true&showtabs=false&parenturl=${encodeURIComponent(window.location.href)}`}
+          style={{ width: '100%', height: '60vh', padding: '1rem' }}
+          frameBorder="0"></iframe>
+      );
+    }
+
+    return (
+      <Grid item xs={leftAsideName ? 3 : 0}>
+        {content}
+      </Grid>
+    );
+  };
+
+  renderMenu = () => {
+    const { t } = this.props;
+    return (
+      <>
+        <IconButton
+          edge="start"
+          color="inherit"
+          onClick={() => this.setState({ menuOpened: true })}
+          style={{ margin: '0 1em' }}
+        >
+          <MenuIcon />
+        </IconButton>
+        <SwipeableDrawer
+          anchor={'left'}
+          open={this.state.menuOpened}
+          onClose={() => this.setState({ menuOpened: false })}
+        >
+          <Typography display="block">
+            User
+          </Typography>
+          <List>
+            <ListItem button key={'account'} onClick={() => window.open('https://accounts.kbb1.com/auth/realms/main/account', '_blank')}>
+              <ListItemText primary={t('oldClient.myAccount')} />
+              <ListItemIcon><AccountBox /></ListItemIcon>
+            </ListItem>
+            <ListItem button key={'signOut'} onClick={() => {
+              kc.logout();
+              updateSentryUser(null);
+            }}>
+              <ListItemText primary={t('oldClient.signOut')} />
+              <ListItemIcon><ExitToApp /></ListItemIcon>
+            </ListItem>
+          </List>
+          <Divider />
+          <Typography display="block">
+            Support
+          </Typography>
+          <List>
+            <ListItem button onClick={() => window.open('https://forms.gle/F6Lm2KMLUkU4hrmK8', '_blank')}>
+              <ListItemText>
+                {t('feedback.feedback')}
+              </ListItemText>
+              <ListItemIcon><Feedback /></ListItemIcon>
+            </ListItem>
+            <Help t={t} />
+          </List>
+          <Divider />
+          <Typography display="block">
+            Useful links
+          </Typography>
+          <List>
+            <ListItem button onClick={() => window.open('https://kabbalahgroup.info/internet/', '_blank')}>
+              <ListItemText>{t('Sviva Tova')}</ListItemText>
+            </ListItem>
+          </List>
+        </SwipeableDrawer>
+      </>
+    )
+      ;
+  };
+
+  renderTopBar = () => {
+    const { t } = this.props;
+
+    const { user, asideMsgCounter: counter } = this.state;
+
+    return (
+      <Box display="flex" style={{ justifyContent: 'space-between' }} className="vclient__toolbar">
+        <Box>
+          {this.renderMenu()}
+          <Button
+            primary
+            style={{ margin: 'auto' }}
+            onClick={() => window.open('https://virtualhome.kli.one', '_blank')}>
+            {t('loginPage.userFee')}
+          </Button>
+          <ButtonGroup variant="outlined">
+            <Badge color="secondary" badgeContent={counter.drawing} showZero>
+              <Button onClick={() => this.toggleLeftAside('drawing')}>
+                {t('button.drawing')}
+              </Button>
+            </Badge>
+            <Button onClick={() => this.toggleLeftAside('material')}>
+              {t('button.material')}
+            </Button>
+          </ButtonGroup>
+        </Box>
+        <Box>
+          {user?.group}
+        </Box>
+        <Box>
+          <ButtonGroup variant="outlined">
+            <Badge color="secondary" badgeContent={counter.chat} showZero>
+              <Button onClick={() => this.toggleRightAside('chat')}>
+                {t('button.chat')}
+              </Button>
+            </Badge>
+            <Button onClick={() => this.toggleRightAside('support')}>
+              {t('button.support')}
+            </Button>
+            <Button onClick={() => this.toggleRightAside('question')}>
+              {t('button.question')}
+            </Button>
+          </ButtonGroup>
+        </Box>
+      </Box>
+    );
+  };
 
   renderNewVersionContent = (layout, isDeb, source, rooms_list, otherFeedHasQuestion, adevices_list, vdevices_list, noOfVideos, remoteVideos) => {
     const { t, i18n } = this.props;
@@ -1543,7 +1732,8 @@ class VirtualClient extends Component {
             sourceLoading,
             tested,
             user,
-            premodStatus,
+            rightAsideName,
+            leftAsideName,
           }           = this.state;
 
     const { video_device } = media.video;
@@ -1552,6 +1742,9 @@ class VirtualClient extends Component {
     return (
       <div className={classNames('vclient', { 'vclient--chat-open': chatVisible })}>
         <VerifyAccount user={user} loginPage={false} i18n={i18n} />
+        {this.renderTopBar(adevices_list, vdevices_list)}
+
+        {/*
         <div className="vclient__toolbar">
           <Input>
             <Select
@@ -1739,59 +1932,53 @@ class VirtualClient extends Component {
               <Label color={net_status === 2 ? 'yellow' : net_status === 3 ? 'red' : 'green'} icon='wifi' corner='right' />)}
         </div>
 
+*/}
 
-        <div className="vclient__main" onDoubleClick={() => this.setState({
-          chatVisible: !chatVisible
-        })}>
-          <div className={`
-          vclient__main-wrapper
-          no-of-videos-${noOfVideos}
-          layout--${layout}
-          broadcast--${room !== '' && shidur ? 'on' : 'off'}
-          ${!attachedSource ? ' broadcast--popup' : 'broadcast--inline'}
-         `}>
+        <Grid container className="vclient__main">
+          {this.renderLeftAside()}
+          <Grid item xs={6 + (!leftAsideName && 3) + (!rightAsideName && 3)}>
+            <div className={`
+            vclient__main-wrapper
+            no-of-videos-${noOfVideos}
+            layout--${layout}
+            broadcast--${room !== '' && shidur ? 'on' : 'off'}
+            ${!attachedSource ? ' broadcast--popup' : 'broadcast--inline'}
+           `}>
 
-            {/* ${layout === 'equal' ? ' broadcast--equal' : ''} */}
-            {/* ${layout === 'double' ? ' broadcast--double' : ''} */}
-            {/* ${layout === 'split' ? ' broadcast--split' : ''} */}
+              {/* ${layout === 'equal' ? ' broadcast--equal' : ''} */}
+              {/* ${layout === 'double' ? ' broadcast--double' : ''} */}
+              {/* ${layout === 'split' ? ' broadcast--split' : ''} */}
 
-            <div className="broadcast-panel">
-              {/* <div className="videos"> */}
-              <div className="broadcast__wrapper">
-                {layout === 'split' && source}
+              <div className="broadcast-panel">
+                {/* <div className="videos"> */}
+                <div className="broadcast__wrapper">
+                  {layout === 'split' && source}
+                </div>
+                {/* </div> */}
               </div>
-              {/* </div> */}
-            </div>
 
-            <div className="videos-panel">
-              {/* <div className="videos"> */}
-              <div className="videos__wrapper">
-                {(layout === 'equal' || layout === 'double') && source}
-                {remoteVideos}
+              <div className="videos-panel">
+                {/* <div className="videos"> */}
+                <div className="videos__wrapper">
+                  {(layout === 'equal' || layout === 'double') && source}
+                  {remoteVideos}
+                </div>
+                {/* </div> */}
               </div>
-              {/* </div> */}
-            </div>
-            <VirtualChat
-              t={t}
-              ref={chat => {this.chat = chat;}}
-              visible={chatVisible}
-              janus={janus}
-              room={room}
-              user={user}
-              gdm={this.state.gdm}
-              onCmdMsg={this.handleCmdData}
-              onNewMsg={this.onChatMessage} />
-          </div>
 
-        </div>
+            </div>
+          </Grid>
+
+          {this.renderRightAside()}
+
+        </Grid>
         {
-          this.renderBottomBar(layout,otherFeedHasQuestion)
+          this.renderBottomBar(layout, otherFeedHasQuestion)
         }
       </div>
     );
 
   };
-
 
   render() {
     const {
