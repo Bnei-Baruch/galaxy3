@@ -291,7 +291,7 @@ class UsersQuad extends Component {
                     console.log(`MIC delivered.`);
                     captureMessage("Delivery ON success", {source: "shidur"});
                 }).catch((err) => {
-                    console.err(`MIC not delivered due to: ` , err);
+                    console.error('MIC not delivered due to: ' , err);
                     captureMessage("Delivery ON failed", {source: "shidur", err}, 'error');
                 });
             })
@@ -302,7 +302,7 @@ class UsersQuad extends Component {
                 gateways[inst].chatRoomLeave(room)
                 captureMessage("Delivery OFF success",{source: "shidur"});
             }).catch((err) => {
-                console.err(`MIC not delivered due to: ` , JSON.stringify(err));
+                console.error('MIC not delivered due to: ' , JSON.stringify(err));
                 captureMessage("Delivery OFF failed", {source: "shidur", err}, 'error');
                 gateways[inst].chatRoomLeave(room)
             });
