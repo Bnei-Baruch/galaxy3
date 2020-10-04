@@ -28,7 +28,6 @@ class UsersPreview extends Component {
                 this.state.remoteFeed.detach();
             this.setState({remoteFeed: null, mids: [], feeds: [], feedStreams: {}}, () => {
                 this.attachPreview(this.props.pg);
-                console.log("ATTACHING PREVIEW:", this.props.pg)
             });
         }
     }
@@ -43,13 +42,13 @@ class UsersPreview extends Component {
             let subscription = [];
             for (let i in g.users) {
                 let id = g.users[i].rfid;
-                let subst = {feed: id, mid: "1"};
-                //TODO: Edo don't save ghost role in DB so it's will not work
-                if(g.users[i].camera && g.users[i].role === "user") {
+                let subst = {feed: id, mid: "1"}; //FIXME: mid 1 will be write only for feeds with audio
+                if(g.users[i].camera) {
                     subscription.push(subst);
                 }
             }
-            this.subscribeTo(subscription, g.janus);
+            if(subscription.length > 0)
+                this.subscribeTo(subscription, g.janus);
         });
     };
 
@@ -123,8 +122,8 @@ class UsersPreview extends Component {
                         mid = track.id.split("janus")[1];
                     }
                     let {mids} = this.state;
-                    let feed = mids[mid].feed_id;
                     if(track.kind === "video" && on) {
+                        let feed = mids[mid].feed_id;
                         let stream = new MediaStream();
                         stream.addTrack(track.clone());
                         let remotevideo = this.refs["pv" + feed];
