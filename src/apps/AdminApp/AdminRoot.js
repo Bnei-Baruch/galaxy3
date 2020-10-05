@@ -693,10 +693,19 @@ class AdminRoot extends Component {
             if (janus && session && handle) {
                 api.fetchHandleInfo(janus, session, handle)
                     .then(data => {
-                            console.debug("[Admin] Publisher info", data);
-                            const video = data.info.webrtc.media[1].rtcp.main;
-                            const audio = data.info.webrtc.media[0].rtcp.main;
-                            this.setState({feed_rtcp: {video, audio}});
+                        console.debug("[Admin] Publisher info", data);
+                        const m0 = data.info.webrtc.media[0];
+                        const m1 = data.info.webrtc.media[1];
+                        let video = null; let audio = null;
+                        if(m0 && m1) {
+                            audio = data.info.webrtc.media[0].rtcp.main;
+                            video = data.info.webrtc.media[1].rtcp.main;
+                        } else if(m0.type === "audio") {
+                            audio = data.info.webrtc.media[0].rtcp.main;
+                        } else if(m0.type === "video") {
+                            video = data.info.webrtc.media[0].rtcp.main;
+                        }
+                        this.setState({feed_rtcp: {video, audio}});
                         }
                     )
                     .catch(err => alert("Error fetching handle_info: " + err))
@@ -887,24 +896,26 @@ class AdminRoot extends Component {
                                               <List.Item as='li'>Version: {feed_info ? feed_info.version : ""}</List.Item>
                                           </List.List>
                                       </List.Item>
-                                      <List.Item as='li'>Video
+
+                                      {feed_rtcp.video ? <List.Item as='li'>Video
                                           <List.List as='ul'>
-                                              <List.Item as='li'>in-link-quality: {feed_rtcp.video ? feed_rtcp.video["in-link-quality"] : ""}</List.Item>
-                                              <List.Item as='li'>in-media-link-quality: {feed_rtcp.video ? feed_rtcp.video["in-media-link-quality"] : ""}</List.Item>
-                                              <List.Item as='li'>jitter-local: {feed_rtcp.video ? feed_rtcp.video["jitter-local"] : ""}</List.Item>
-                                              <List.Item as='li'>jitter-remote: {feed_rtcp.video ? feed_rtcp.video["jitter-remote"] : ""}</List.Item>
-                                              <List.Item as='li'>lost: {feed_rtcp.video ? feed_rtcp.video["lost"] : ""}</List.Item>
+                                              <List.Item as='li'>in-link-quality: {feed_rtcp.video["in-link-quality"]}</List.Item>
+                                              <List.Item as='li'>in-media-link-quality: {feed_rtcp.video["in-media-link-quality"]}</List.Item>
+                                              <List.Item as='li'>jitter-local: {feed_rtcp.video["jitter-local"]}</List.Item>
+                                              <List.Item as='li'>jitter-remote: {feed_rtcp.video["jitter-remote"]}</List.Item>
+                                              <List.Item as='li'>lost: {feed_rtcp.video["lost"]}</List.Item>
                                           </List.List>
-                                      </List.Item>
-                                      <List.Item as='li'>Audio
+                                      </List.Item> : null}
+
+                                      {feed_rtcp.audio ? <List.Item as='li'>Audio
                                           <List.List as='ul'>
-                                              <List.Item as='li'>in-link-quality: {feed_rtcp.audio ? feed_rtcp.audio["in-link-quality"] : ""}</List.Item>
-                                              <List.Item as='li'>in-media-link-quality: {feed_rtcp.audio ? feed_rtcp.audio["in-media-link-quality"] : ""}</List.Item>
-                                              <List.Item as='li'>jitter-local: {feed_rtcp.audio ? feed_rtcp.audio["jitter-local"] : ""}</List.Item>
-                                              <List.Item as='li'>jitter-remote: {feed_rtcp.audio ? feed_rtcp.audio["jitter-remote"] : ""}</List.Item>
-                                              <List.Item as='li'>lost: {feed_rtcp.audio ? feed_rtcp.audio["lost"] : ""}</List.Item>
+                                              <List.Item as='li'>in-link-quality: {feed_rtcp.audio["in-link-quality"]}</List.Item>
+                                              <List.Item as='li'>in-media-link-quality: {feed_rtcp.audio["in-media-link-quality"]}</List.Item>
+                                              <List.Item as='li'>jitter-local: {feed_rtcp.audio["jitter-local"]}</List.Item>
+                                              <List.Item as='li'>jitter-remote: {feed_rtcp.audio["jitter-remote"]}</List.Item>
+                                              <List.Item as='li'>lost: {feed_rtcp.audio["lost"]}</List.Item>
                                           </List.List>
-                                      </List.Item>
+                                      </List.Item> : null}
                                   </List>
                               }
                               on='click'
