@@ -142,6 +142,7 @@ class VirtualClient extends Component {
     videos: Number(localStorage.getItem('vrt_video')) || 1,
     premodStatus: false,
     gdm: null,
+    asideMsgCounter: { drawing: 0, chat: 0 }
   };
 
   virtualStreamingInitialized() {
@@ -2040,8 +2041,7 @@ class VirtualClient extends Component {
             virtualStreamingJanus,
             videos,
             premodStatus,
-            isSettings,
-            isRoomChat
+            isSettings
           } = this.state;
 
     const isUseNewDesign = new URL(window.location.href).searchParams.has('new_design');
