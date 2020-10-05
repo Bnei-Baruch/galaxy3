@@ -4,7 +4,7 @@ import './UsersQuad.scss'
 import UsersHandle from "./UsersHandle";
 import api from '../../shared/Api';
 //import {AUDIOOUT_ID, SDIOUT_ID, SNDMAN_ID} from "../../shared/consts"
-import {captureMessage, captureException} from "../../shared/sentry";
+import {captureMessage} from "../../shared/sentry";
 
 class UsersQuad extends Component {
 
@@ -291,8 +291,8 @@ class UsersQuad extends Component {
                     console.log(`MIC delivered.`);
                     captureMessage("Delivery ON success", {source: "shidur"});
                 }).catch((err) => {
-                    console.err(`MIC not delivered due to: ` , err);
-                    captureException("Delivery ON failed", {source: "shidur", err});
+                    console.error('MIC not delivered due to: ' , err);
+                    captureMessage("Delivery ON failed", {source: "shidur", err}, 'error');
                 });
             })
         } else {
@@ -302,8 +302,8 @@ class UsersQuad extends Component {
                 gateways[inst].chatRoomLeave(room)
                 captureMessage("Delivery OFF success",{source: "shidur"});
             }).catch((err) => {
-                console.err(`MIC not delivered due to: ` , JSON.stringify(err));
-                captureException("Delivery OFF failed",{source: "shidur", err});
+                console.error('MIC not delivered due to: ' , JSON.stringify(err));
+                captureMessage("Delivery OFF failed", {source: "shidur", err}, 'error');
                 gateways[inst].chatRoomLeave(room)
             });
         }
