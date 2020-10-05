@@ -7,14 +7,16 @@ const useStyles = makeStyles({
   label: {
     width: '100%',
     display: 'block',
-    marginTop: '7px'
+    marginTop: '5px',
+    whiteSpace: 'nowrap'
   },
   disabled: {
     opacity: 0.5
   },
   button: {
     display: 'flex',
-    flexDirection: 'column'
+    flexDirection: 'column',
+    margin: '0.5em 1em'
   },
   badge: {
     top: '1px',

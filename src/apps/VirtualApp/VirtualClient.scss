@@ -120,6 +120,7 @@
     padding: 0 10px 10px 10px;
     display: flex;
     flex-direction: column;
+    height: 100%;
     @include portrait {
         padding: 10px;
     }
