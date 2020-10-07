@@ -1,12 +1,13 @@
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import CircularProgress from '@material-ui/core/CircularProgress';
 import makeStyles from '@material-ui/core/styles/makeStyles';
 import { Button, Modal, Typography } from '@material-ui/core';
 
 import { getMediaStream, recordAudio, sleep } from '../../../shared/tools';
+import Box from '@material-ui/core/Box';
 
-const INTERVAL_STEP_MLS = 500;
+const INTERVAL_STEP_MLS = 250;
 
 const useStyles = makeStyles((theme) => ({
         modal: {
@@ -19,15 +20,12 @@ const useStyles = makeStyles((theme) => ({
           border: '2px solid #000',
           height: 200,
           width: 300,
-        },
-        btnOpen: {
-          backgroundColor: 'green',
         }
       }))
 ;
 let recorder;
 
-const SelfTest = ({ device }) => {
+const CheckMySelf = ({ device }) => {
   const classes = useStyles();
 
   const { t }                 = useTranslation();
@@ -78,7 +76,12 @@ const SelfTest = ({ device }) => {
 
   return (
     <>
-      <Button onClick={handleOpen} className={classes.btnOpen}>
+      <Button
+        onClick={handleOpen}
+        variant={'contained'}
+        color="primary"
+        fullWidth
+      >
         {t('oldClient.selfAudioTest')}
       </Button>
       <Modal
@@ -87,16 +90,25 @@ const SelfTest = ({ device }) => {
         onClose={handleClose}
         disableBackdropClick={true}
       >
-        <div className={classes.content}>
-          <Typography variant="subtitle1" id="simple-modal-description">
-            {t('oldClient.recording') + ' ' + process}
-          </Typography>
-          <CircularProgress variant="static" value={process} />
-        </div>
+        <Box position="relative" display="inline-flex" style={{ backgroundColor: 'white' }}>
+          <CircularProgress variant="static" value={process} style={{ height: '100px', width: '100px' }} />
+          <Box
+            top={0}
+            left={0}
+            bottom={0}
+            right={0}
+            position="absolute"
+            display="flex"
+            alignItems="center"
+            justifyContent="center"
+          >
+            <Typography variant="caption" component="div" color="textSecondary">{`${Math.round(process)}%`}</Typography>
+          </Box>
+        </Box>
       </Modal>
     </>
   );
 
 };
 
-export default SelfTest;
+export default CheckMySelf;
