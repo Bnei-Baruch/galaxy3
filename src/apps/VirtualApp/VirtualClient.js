@@ -2190,7 +2190,10 @@ class VirtualClient extends Component {
               video={media.video}
               closeModal={() => this.setState({ isSettings: false, isOpenTopMenu: false })}
               setAudio={((a, t) => this.setState({ audios: { audios: a, text: t } }))}
-              setVideo={((v) => this.setState({ videos: v }))}
+              setVideo={((v) => {
+                virtualStreamingJanus.setVideo(v);
+                this.setState({ videos: v });
+              })}
               videos={videos}
               videoLength={media.video?.devices.length}
               audioModeChange={this.otherCamsMuteToggle}
