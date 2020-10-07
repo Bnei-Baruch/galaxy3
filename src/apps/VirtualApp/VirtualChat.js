@@ -348,7 +348,7 @@ class VirtualChat extends Component {
     };
 
     const isRTLChar = /[\u0590-\u07FF\u200F\u202B\u202E\uFB1D-\uFDFD\uFE70-\uFEFC]/;
-    const isAscii = /[\x00-\x7F]/;
+    const isAscii = /[\x20-\x7F]/;
     const isAsciiChar = /[a-zA-Z]/;
     const isRTLString = (text) => {
       let rtl = 0;
@@ -375,6 +375,7 @@ class VirtualChat extends Component {
         </span>{textWithLinks(text)}</p>
         );
       }
+			return null;
     });
 
     let admin_msgs = support_msgs.map((msg, i) => {
@@ -387,6 +388,7 @@ class VirtualChat extends Component {
         </span>{textWithLinks(text)}</p>
         );
       }
+			return null;
     });
 
     return (

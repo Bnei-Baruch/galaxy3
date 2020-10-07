@@ -169,15 +169,13 @@ class ShidurToran extends Component {
 
     sdiGuaranteeAction = (action, status, i, feed, toAck) => {
       const { gateways, gdm } = this.props;
-      gdm.send(
-        this.sdiActionMessage_(action, status, i, feed),
-        toAck,
-        (msg) => gateways["gxy3"].sendServiceMessage(msg)).
-      then(() => {
-        console.log(`${action} delivered to ${toAck}.`);
-      }).catch((error) => {
-        console.error(`${action} not delivered to ${toAck} due to ${error}`);
-      });
+      gdm.send(this.sdiActionMessage_(action, status, i, feed), toAck, (msg) => gateways["gxy3"].sendServiceMessage(msg))
+				.then(() => {
+					console.log(`${action} delivered to ${toAck}.`);
+				})
+				.catch((error) => {
+					console.error(`${action} not delivered to ${toAck} due to ${error}`);
+				});
     }
 
     setDelay = () => {

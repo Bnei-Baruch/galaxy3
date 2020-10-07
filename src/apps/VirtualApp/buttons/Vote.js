@@ -61,8 +61,8 @@ const Vote = (props) => {
           horizontal: 'center',
         }}
       >
-        <iframe src={`https://vote.kli.one/button.html?answerId=1&userId=${id}`} width="40px" height="36px" frameBorder="0"></iframe>
-        <iframe src={`https://vote.kli.one/button.html?answerId=2&userId=${id}`} width="40px" height="36px" frameBorder="0"></iframe>
+        <iframe title={`${t('oldClient.vote')} 1`} src={`https://vote.kli.one/button.html?answerId=1&userId=${id}`} width="40px" height="36px" frameBorder="0"></iframe>
+        <iframe title={`${t('oldClient.vote')} 2`} src={`https://vote.kli.one/button.html?answerId=2&userId=${id}`} width="40px" height="36px" frameBorder="0"></iframe>
       </Popover>
     </ButtonBase>
   );

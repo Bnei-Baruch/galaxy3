@@ -50,7 +50,7 @@ class AdminRoot extends Component {
         users_count: 0,
         command_status: true,
         gdm: null,
-        premodStatus: false,
+        // premodStatus: false, Temporary not used.
         showConfirmReloadAll: false,
     };
 
@@ -126,14 +126,15 @@ class AdminRoot extends Component {
         api.fetchConfig()
             .then(data => {
                 ConfigStore.setGlobalConfig(data);
-                this.setState({premodStatus: ConfigStore.dynamicConfig(ConfigStore.PRE_MODERATION_KEY) === 'true'});
+                // this.setState({premodStatus: ConfigStore.dynamicConfig(ConfigStore.PRE_MODERATION_KEY) === 'true'});  Temporary not used.
                 GxyJanus.setGlobalConfig(data);
             })
             .then(() => this.initGateways(user))
             .then(this.pollRooms)
-            .catch(err => {
-                console.error("[Admin] error initializing app", err);
-                this.setState({appInitError: err});
+            .catch(error => {
+                console.error("[Admin] error initializing app", error);
+                captureException(error, {source: 'AdminRoot'});
+                this.setState({appInitError: error});
             });
     };
 
@@ -141,7 +142,13 @@ class AdminRoot extends Component {
         const gateways = GxyJanus.makeGateways("rooms");
         this.setState({gateways});
 
-        return Promise.all(Object.values(gateways).map(gateway => (this.initGateway(user, gateway))))
+        const gatewayToInitPromise = (gateway) => this.initGateway(user, gateway)
+					.catch(error => {
+						captureException(error, {source: 'AdminRoot', gateway: gateway.name});
+						throw error;
+					});
+
+        return Promise.all(Object.values(gateways).map(gatewayToInitPromise))
             .then(() => {
                 console.info("[Admin] gateways initialization complete");
                 this.setState({gatewaysInitialized: true});
@@ -154,6 +161,7 @@ class AdminRoot extends Component {
         gateway.addEventListener("reinit_failure", (e) => {
             if (e.detail > 10) {
                 console.error("[Admin] too many reinit_failure. Reloading", gateway.name, e);
+                captureException(e, {source: 'AdminRoot', gateway: gateway.name});
                 window.location.reload();
             }
         });
@@ -508,8 +516,7 @@ class AdminRoot extends Component {
         const toAck = [feed_user.id];
 
         if(command_type === "audio-out") {
-            gdm.send(cmd, toAck, (cmd) => gateway.sendCmdMessage(cmd)).
-            then(() => {
+            gdm.send(cmd, toAck, (cmd) => gateway.sendCmdMessage(cmd)).then(() => {
                 console.log(`MIC delivered.`);
             }).catch((error) => {
                 console.error(`MIC not delivered due to: ` , JSON.stringify(error));
@@ -529,7 +536,8 @@ class AdminRoot extends Component {
         this.sendCommandMessage(command_type);
         return;
 
-        const {gateways, feed_user, current_janus, current_room, command_status, gdm} = this.state;
+        /* TEMPORARY NOT USED */
+        /* const {gateways, feed_user, current_janus, current_room, command_status, gdm} = this.state;
 
         if (command_type === "premoder-mode") {
             const value = !this.state.premodStatus;
@@ -594,7 +602,7 @@ class AdminRoot extends Component {
 
         if (command_type === "audio-out") {
             this.setState({command_status: !command_status})
-        }
+        }*/
     };
 
     joinRoom = (data) => {
@@ -772,7 +780,7 @@ class AdminRoot extends Component {
           users_count,
           appInitError,
           command_status,
-          premodStatus,
+          // premodStatus, Temporary not used.
           showConfirmReloadAll,
       } = this.state;
 
@@ -827,23 +835,24 @@ class AdminRoot extends Component {
           )
       });
 
-      let users_grid = feeds.map((feed,i) => {
-          if(feed) {
-              //let qt = users[feed.display.id].question;
-              //let st = users[feed.display.id].sound_test;
-              let feed_user = users.find(u => feed.id === u.rfid);
-              let qt = feed_user && !!feed_user.question;
-              return (
-                  <Table.Row active={feed.id === this.state.feed_id} key={i} onClick={() => this.getUserInfo(feed_user)} >
-                      <Table.Cell width={10}>{qt ? q : ""}{feed.display.display}</Table.Cell>
-                      {/*<Table.Cell positive={st} width={1}>{st ? v : ""}</Table.Cell>*/}
-                      <Table.Cell width={1}></Table.Cell>
-                  </Table.Row>
-              )
+      const users_grid = feeds.map((feed,i) => {
+          if (!feed) {
+            return null;
           }
+          //let qt = users[feed.display.id].question;
+          //let st = users[feed.display.id].sound_test;
+          let feed_user = users.find(u => feed.id === u.rfid);
+          let qt = feed_user && !!feed_user.question;
+          return (
+              <Table.Row active={feed.id === this.state.feed_id} key={i} onClick={() => this.getUserInfo(feed_user)} >
+                  <Table.Cell width={10}>{qt ? q : ""}{feed.display.display}</Table.Cell>
+                  {/*<Table.Cell positive={st} width={1}>{st ? v : ""}</Table.Cell>*/}
+                  <Table.Cell width={1}></Table.Cell>
+              </Table.Row>
+          )
       });
 
-      let videos = this.state.feeds.map((feed) => {
+      let videos = feeds.map((feed) => {
           if(feed) {
               let id = feed.id;
               let talk = feed.talk;
@@ -920,8 +929,6 @@ class AdminRoot extends Component {
 				trigger={<Icon color={chatRoomsInitialized ? (chatRoomsInitializedError ? 'red' : 'green') : 'grey'} circular="true" icon="circle" inverted />}
 				content={`Chat status: ${chatRoomsInitializedError || 'OK'}`} />;
 
-			console.log('chatRoomsInitialized', chatRoomsInitialized);
-
 			const rootControlPanel = [];
 			if (this.isAllowed('root')) {
 				rootControlPanel.push(...[
@@ -954,10 +961,10 @@ class AdminRoot extends Component {
               {
                   this.isAllowed("admin") ?
                       <Segment textAlign='center' className="ingest_segment">
-                          {/*<Button color='blue' icon='sound' onClick={() => this.sendRemoteCommand("sound_test")} />*/}
-													{infoPopup}
-                          {rootControlPanel}
-                          <StatNotes data={rooms} />
+												{/*<Button color='blue' icon='sound' onClick={() => this.sendRemoteCommand("sound_test")} />*/}
+												{infoPopup}
+												{rootControlPanel}
+												<StatNotes data={rooms} />
                       </Segment>
                       : null
               }
@@ -1019,15 +1026,15 @@ class AdminRoot extends Component {
                   this.isAllowed("admin") ?
                       <Grid.Row>
                           <Grid.Column width={13}>
-                      <ChatBox user={user}
-                               rooms={rooms}
-                               selected_janus={current_janus}
-                               selected_room={current_room}
-                               selected_group={current_group}
-                               selected_user={feed_user}
-                               gateways={gateways}
-                               gdm={this.state.gdm}
-                               onChatRoomsInitialized={this.onChatRoomsInitialized}/>
+                          <ChatBox user={user}
+                                   rooms={rooms}
+                                   selected_janus={current_janus}
+                                   selected_room={current_room}
+                                   selected_group={current_group}
+                                   selected_user={feed_user}
+                                   gateways={gateways}
+                                   gdm={this.state.gdm} 
+																	 onChatRoomsInitialized={this.onChatRoomsInitialized}/>
 
                           </Grid.Column>
                           <Grid.Column width={3}>

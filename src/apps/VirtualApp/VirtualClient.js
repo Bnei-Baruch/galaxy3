@@ -20,9 +20,10 @@ import './CustomIcons.scss';
 import 'eqcss';
 import VirtualChat from './VirtualChat';
 import {
-  PROTOCOL_ROOM,
-  VIDEO_360P_OPTION_VALUE,
   NO_VIDEO_OPTION_VALUE,
+  PROTOCOL_ROOM,
+  USERNAME_ALREADY_EXIST_ERROR_CODE,
+  VIDEO_360P_OPTION_VALUE,
   vsettings_list,
 } from '../../shared/consts';
 import {GEO_IP_INFO} from '../../shared/env';
@@ -44,7 +45,7 @@ import VirtualStreamingJanus from '../../shared/VirtualStreamingJanus';
 import {kc, isGhostOrGuest} from "../../components/UserManager";
 import LoginPage from "../../components/LoginPage";
 import {Profile} from "../../components/Profile";
-import {captureException, captureMessage, reportToSentry, updateSentryUser, sentryDebugAction} from '../../shared/sentry';
+import {captureException, captureMessage, updateSentryUser, sentryDebugAction} from '../../shared/sentry';
 import VerifyAccount from './components/VerifyAccount';
 import GxyJanus from "../../shared/janus-utils";
 import audioModeSvg from '../../shared/audio-mode.svg';
@@ -129,13 +130,13 @@ class VirtualClient extends Component {
 
   componentDidUpdate(prevProps, prevState) {
     if (this.state.shidur && !prevState.shidur && !this.state.sourceLoading && this.room) {
-      this.state.virtualStreamingJanus.audioElement.muted = false;
+      this.state.virtualStreamingJanus.unmuteAudioElement();
     }
     if (!this.state.sourceLoading && prevState.sourceLoading && this.state.shidur && this.room) {
-      this.state.virtualStreamingJanus.audioElement.muted = false;
+      this.state.virtualStreamingJanus.unmuteAudioElement();
     }
     if (this.state.room && !prevState.room && this.state.shidur && !this.sourceLoading) {
-      this.state.virtualStreamingJanus.audioElement.muted = false;
+      this.state.virtualStreamingJanus.unmuteAudioElement();
     }
     if (this.state.videoroom !== prevState.videoroom ||
       this.state.localVideoTrack !== prevState.localVideoTrack ||
@@ -614,10 +615,15 @@ class VirtualClient extends Component {
     this.chat.initChatRoom(janus, selected_room, user, data => {
       const { textroom, error_code, error } = data;
       if (textroom === 'error') {
-        console.error("Chatroom error: ", data, error_code)
-        captureMessage(`Chatroom error: init - ${error}`, {source: "Textroom", err: data}, 'error');
+        if (error_code !== USERNAME_ALREADY_EXIST_ERROR_CODE) {
+          console.error("Chatroom error: ", data, error_code)
+          captureMessage(`Chatroom error: init - ${error}`, {source: "Textroom", err: data}, 'error');
+        } else {
+          console.log("Chatroom error: ", data, error_code);
+          captureMessage(`Chatroom error: init - ${error}`, {source: "Textroom", err: data});
+        }
         this.exitRoom(false, () => {
-          if(error_code === 420)
+          if(error_code === USERNAME_ALREADY_EXIST_ERROR_CODE)
             alert(this.props.t('oldClient.error') + data.error);
         }, true);
       } else if(textroom === "success" && data.participants) {
@@ -670,7 +676,11 @@ class VirtualClient extends Component {
       if(videoroom) videoroom.detach();
       if(protocol) protocol.detach();
       if(janus) janus.destroy();
-      this.state.virtualStreamingJanus.audioElement.muted = !reconnect;
+      if (reconnect) {
+        this.state.virtualStreamingJanus.muteAudioElement();
+      } else {
+        this.state.virtualStreamingJanus.unmuteAudioElement();
+      }
       this.setState({
         cammuted: false, muted: false, question: false,
         feeds: [], mids: [],
@@ -1431,7 +1441,6 @@ class VirtualClient extends Component {
             numberOfVirtualUsers,
             question,
             room,
-            rooms,
             selected_room,
             selftest,
             shidur,
@@ -1507,8 +1516,8 @@ class VirtualClient extends Component {
                 disabled={!localAudioTrack}
                 t={t}
                 counter={chatMessagesCount}
-                action={(() => this.setState({ chatVisible: !chatVisible, chatMessagesCount: 0 })).bind(this)
-                } />
+                action={(() => this.setState({ chatVisible: !chatVisible, chatMessagesCount: 0 }))}
+              />
             </Menu.Item>
             <Menu.Item>
               <AskQuestion
@@ -1549,8 +1558,10 @@ class VirtualClient extends Component {
               on='click'
               closeIcon
               className='homet-limud'>
-              <iframe src={`https://groups.google.com/forum/embed/?place=forum/bb-study-materials&showpopout=true&showtabs=false&parenturl=${encodeURIComponent(window.location.href)}`}
-                      style={{ width: '100%', height: '60vh', padding: '1rem' }} frameBorder="0"></iframe>
+              <iframe title={t('oldClient.homerLimud')}
+                      src={`https://groups.google.com/forum/embed/?place=forum/bb-study-materials&showpopout=true&showtabs=false&parenturl=${encodeURIComponent(window.location.href)}`}
+                      style={{ width: '100%', height: '60vh', padding: '1rem' }}
+                      frameBorder="0"></iframe>
             </Modal>
           </Menu>
           <Menu icon='labeled' secondary size="mini">
@@ -1896,8 +1907,8 @@ class VirtualClient extends Component {
           >
             <Popup.Content>
               <Button.Group>
-                <iframe src={`https://vote.kli.one/button.html?answerId=1&userId=${user && user.id}`} width="40px" height="36px" frameBorder="0"></iframe>
-                <iframe src={`https://vote.kli.one/button.html?answerId=2&userId=${user && user.id}`} width="40px" height="36px" frameBorder="0"></iframe>
+                <iframe title={`${t('oldClient.vote')} 1`} src={`https://vote.kli.one/button.html?answerId=1&userId=${user && user.id}`} width="40px" height="36px" frameBorder="0"></iframe>
+                <iframe title={`${t('oldClient.vote')} 2`} src={`https://vote.kli.one/button.html?answerId=2&userId=${user && user.id}`} width="40px" height="36px" frameBorder="0"></iframe>
               </Button.Group>
             </Popup.Content>
           </Popup>
@@ -1907,7 +1918,8 @@ class VirtualClient extends Component {
 						on='click'
 						closeIcon
 						className='homet-limud'>
-              <iframe src={`https://groups.google.com/forum/embed/?place=forum/bb-study-materials&showpopout=true&showtabs=false&parenturl=${encodeURIComponent(window.location.href)}`}
+              <iframe title={t('oldClient.homerLimud')}
+                src={`https://groups.google.com/forum/embed/?place=forum/bb-study-materials&showpopout=true&showtabs=false&parenturl=${encodeURIComponent(window.location.href)}`}
                 style={{width: '100%', height: '60vh', padding: '1rem'}} frameBorder="0"></iframe>
 					</Modal>
         </Menu>

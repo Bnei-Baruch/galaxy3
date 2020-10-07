@@ -1,6 +1,6 @@
 import React from 'react';
 import { makeStyles } from '@material-ui/core/styles';
-import { Mic, Videocam, VideocamOff } from '@material-ui/icons';
+import { Videocam, VideocamOff } from '@material-ui/icons';
 import ButtonBase from '@material-ui/core/ButtonBase';
 import red from '@material-ui/core/colors/red';
 
