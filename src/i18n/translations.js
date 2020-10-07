@@ -72,6 +72,18 @@ export const resources = {
         selectCamera: 'Select camera',
         selectMic: 'Select microphone',
         selectSize: 'Select video size',
+        userSettings: 'User settings',
+        screenName: 'Screen name',
+        interfaceLanguage: 'Interface language',
+        broadcastSettings: 'Broadcast settings',
+        broadcastQuality: 'Broadcast quality',
+        broadcastLanguage: 'Broadcast language',
+        cameraSettings: 'Camera settings',
+        microphoneSettings: 'Microphone settings',
+        micSource: 'Microphone source',
+        cameraSource: 'Camera source',
+        cameraQuality: 'Camera quality',
+
       },
       feedback: {
         feedbackHelp: 'Feedback/Help',
