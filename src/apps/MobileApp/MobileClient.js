@@ -44,7 +44,7 @@ import VirtualStreamingJanus from '../../shared/VirtualStreamingJanus';
 import VirtualChat from '../VirtualApp/VirtualChat';
 import ConfigStore from "../../shared/ConfigStore";
 import {GuaranteeDeliveryManager} from "../../shared/GuaranteeDelivery";
-import {updateSentryUser, captureMessage} from "../../shared/sentry";
+import {updateSentryUser, captureException, captureMessage} from "../../shared/sentry";
 
 const sortAndFilterFeeds = (feeds) => feeds
   .filter(feed => !feed.display.role.match(/^(ghost|guest)$/))
@@ -1285,9 +1285,10 @@ class MobileClient extends Component {
         gdm.accept(data, (msg) => this.chat.sendCmdMessage(msg)).then((data) => {
             if (data === null) {
                 console.log('Message received more then once.');
+								captureMessage('Message received more then once.', {source: 'MobileClient DELIVERY', msg: data});
                 return;
             }
-
+						captureMessage(`MobileClient DELIVERY ${data.status ? 'ON' : 'OFF'}`, {source: 'MobileClient DELIVERY', msg: data});
             this.state.virtualStreamingJanus.streamGalaxy(data.status, 4, "");
             if (data.status) {
                 // remove question mark when sndman unmute our room
@@ -1295,9 +1296,9 @@ class MobileClient extends Component {
                     this.handleQuestion();
                 }
             }
-
         }).catch((error) => {
             console.error(`Failed receiving ${data}: ${error}`);
+						captureException(error, {source: 'MobileClient DELIVERY', msg: data});
         });
     };
 

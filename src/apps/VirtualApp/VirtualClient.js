@@ -44,7 +44,7 @@ import VirtualStreamingJanus from '../../shared/VirtualStreamingJanus';
 import {kc, isGhostOrGuest} from "../../components/UserManager";
 import LoginPage from "../../components/LoginPage";
 import {Profile} from "../../components/Profile";
-import {captureMessage, reportToSentry, updateSentryUser, sentryDebugAction} from '../../shared/sentry';
+import {captureException, captureMessage, reportToSentry, updateSentryUser, sentryDebugAction} from '../../shared/sentry';
 import VerifyAccount from './components/VerifyAccount';
 import GxyJanus from "../../shared/janus-utils";
 import audioModeSvg from '../../shared/audio-mode.svg';
@@ -1213,8 +1213,10 @@ class VirtualClient extends Component {
     gdm.accept(data, (msg) => this.chat.sendCmdMessage(msg)).then((data) => {
       if (data === null) {
         console.log('Message received more then once.');
+				captureMessage('Message received more then once.', {source: 'VirtualClient DELIVERY', msg: data});
         return;
       }
+			captureMessage(`VirtualClient DELIVERY ${data.status ? 'ON' : 'OFF'}`, {source: 'VirtualClient DELIVERY', msg: data});
       this.state.virtualStreamingJanus.streamGalaxy(data.status, 4, "");
       if (data.status) {
         // remove question mark when sndman unmute our room
@@ -1224,6 +1226,7 @@ class VirtualClient extends Component {
       }
     }).catch((error) => {
       console.error(`Failed receiving ${data}: ${error}`);
+			captureException(error, {source: 'VirtualClient DELIVERY', msg: data});
     });
   };
 
