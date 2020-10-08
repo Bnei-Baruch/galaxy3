@@ -33,6 +33,7 @@ class SDIOutApp extends Component {
         appInitError: null,
         vote: false,
         gdm: new GuaranteeDeliveryManager(SDIOUT_ID),
+        roomsStatistics: {},
     };
 
     componentDidMount() {
@@ -47,6 +48,15 @@ class SDIOutApp extends Component {
                 })
                 .catch(err => {
                     console.error("[SDIOut] error fetching quad state", err);
+                    captureException(err, {source: "SDIOut"});
+                });
+
+            api.fetchRoomsStatistics()
+                .then((roomsStatistics) => {
+                    this.setState({roomsStatistics});
+                })
+                .catch(err => {
+                    console.error("[SDIOut] error fetching rooms statistics", err);
                     captureException(err, {source: "SDIOut"});
                 });
         }, 1000);
@@ -169,7 +179,7 @@ class SDIOutApp extends Component {
     };
 
     render() {
-        let {vote,appInitError, gatewaysInitialized,group,qids,qg,gateways} = this.state;
+        let {vote,appInitError, gatewaysInitialized,group,qids,qg,gateways, roomsStatistics} = this.state;
         // let qst = g && g.questions;
         let name = group && group.description;
 
@@ -190,18 +200,18 @@ class SDIOutApp extends Component {
             <Grid columns={2} className="sdi_container">
                 <Grid.Row>
                     <Grid.Column>
-                        <UsersQuadSDIOut index={0} {...qids.q1} gateways={gateways} ref={col => {this.col1 = col;}} />
+                        <UsersQuadSDIOut index={0} {...qids.q1} gateways={gateways} roomsStatistics={roomsStatistics} ref={col => {this.col1 = col;}} />
                     </Grid.Column>
                     <Grid.Column>
-                        <UsersQuadSDIOut index={4} {...qids.q2} gateways={gateways} ref={col => {this.col2 = col;}} />
+                        <UsersQuadSDIOut index={4} {...qids.q2} gateways={gateways} roomsStatistics={roomsStatistics} ref={col => {this.col2 = col;}} />
                     </Grid.Column>
                 </Grid.Row>
                 <Grid.Row>
                     <Grid.Column>
-                        <UsersQuadSDIOut index={8} {...qids.q3} gateways={gateways} ref={col => {this.col3 = col;}} />
+                        <UsersQuadSDIOut index={8} {...qids.q3} gateways={gateways} roomsStatistics={roomsStatistics} ref={col => {this.col3 = col;}} />
                     </Grid.Column>
                     <Grid.Column>
-                        <UsersQuadSDIOut index={12} {...qids.q4} gateways={gateways} ref={col => {this.col4 = col;}} />
+                        <UsersQuadSDIOut index={12} {...qids.q4} gateways={gateways} roomsStatistics={roomsStatistics} ref={col => {this.col4 = col;}} />
                     </Grid.Column>
                 </Grid.Row>
                 <Grid.Row>

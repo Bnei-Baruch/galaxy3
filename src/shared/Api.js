@@ -50,6 +50,9 @@ class Api {
     fetchProgram = () =>
         this.logAndParse('fetch program', fetch(this.urlFor('/qids'), this.defaultOptions()));
 
+    fetchRoomsStatistics = () =>
+        this.logAndParse('fetch rooms statistics', fetch(this.urlFor('/v2/rooms_statistics'), this.defaultOptions()));
+
     updateQuad = (col, data) => {
         const options = this.makeOptions('PUT', data);
         return this.logAndParse(`update quad ${col}`, fetch(this.urlFor(`/qids/q${col}`), options));

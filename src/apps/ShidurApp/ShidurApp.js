@@ -9,7 +9,7 @@ import UsersQuad from "./UsersQuad";
 import './ShidurApp.css'
 import {STORAN_ID} from "../../shared/consts"
 import {GuaranteeDeliveryManager} from '../../shared/GuaranteeDelivery';
-import {updateSentryUser} from "../../shared/sentry";
+import {captureException, updateSentryUser} from "../../shared/sentry";
 
 
 class ShidurApp extends Component {
@@ -41,6 +41,7 @@ class ShidurApp extends Component {
         sndman: false,
         users_count: 0,
         gdm: new GuaranteeDeliveryManager(STORAN_ID),
+        roomsStatistics: {},
     };
 
     componentWillUnmount() {
@@ -163,7 +164,17 @@ class ShidurApp extends Component {
             })
             .catch(err => {
                 console.error("[Shidur] error fetching active rooms", err);
+                captureException(err, {source: "Shidur"});
             })
+
+        api.fetchRoomsStatistics()
+            .then((roomsStatistics) => {
+                this.setState({roomsStatistics});
+            })
+            .catch(err => {
+                console.error("[Shidur] error fetching rooms statistics", err);
+                captureException(err, {source: "Shidur"});
+            });
     };
 
     onChatData = (gateway, data) => {

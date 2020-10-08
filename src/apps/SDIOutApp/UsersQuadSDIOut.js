@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React, {Component} from 'react';
 import {Segment} from "semantic-ui-react";
 import UsersHandleSDIOut from "./UsersHandleSDIOut";
 
@@ -9,43 +9,55 @@ class UsersQuadSDIOut extends Component {
     };
 
     componentDidMount() {
-        let { index } = this.props;
+        let {index} = this.props;
         let col = index === 0 ? 1 : index === 4 ? 2 : index === 8 ? 3 : index === 12 ? 4 : null;
         this.setState({col});
     };
 
-    toFullGroup = (i,g) => {
+    toFullGroup = (i, g) => {
         this.setState({fullscr: true, full_feed: i});
     };
 
-    toFourGroup = (i,g) => {
+    toFourGroup = (i, g) => {
         this.setState({fullscr: false, full_feed: null});
     };
 
-  render() {
-      const {full_feed,fullscr} = this.state;
-      const {vquad = [null,null,null,null]} = this.props;
+    render() {
+        const {full_feed, fullscr} = this.state;
+        const {vquad = [null, null, null, null], roomsStatistics = {}} = this.props;
 
-      let program = vquad.map((g,i) => {
-          let qst = g && g.questions;
-          let name = g ? g.description : "";
-          return (
-              <div className={fullscr && full_feed === i ? "video_full" : fullscr && full_feed !== i ? "hidden" : "usersvideo_box"}
-                   key={"pr" + i} >
-                  {qst ? <div className={fullscr ? "qst_fullscreentitle" : "qst_title"}>?</div> : ""}
-                  <div className={fullscr ? "fullscrvideo_title" : "video_title"} >{name}</div>
-                  <UsersHandleSDIOut key={"q"+i} g={g} index={i} {...this.props} />
-              </div>);
-      });
+        let program = vquad.map((g, i) => {
+            let qst = "";
+            let name = "";
+            if (g) {
+                name = g.description;
+                if (g.questions) {
+                    let className = fullscr ? "qst_fullscreentitle" : "qst_title";
+                    if (!roomsStatistics[g.room] || roomsStatistics[g.room]["on_air"] < 2) {
+                        className += ` ${className}__first_time`;
+                    }
+                    qst = <div className={className}>?</div>;
+                }
+            }
 
-      return (
-          <Segment className="preview_sdi">
-              <div className="usersvideo_grid">
-                  {program}
-              </div>
-          </Segment>
-    );
-  }
+            return (
+                <div
+                    className={fullscr && full_feed === i ? "video_full" : fullscr && full_feed !== i ? "hidden" : "usersvideo_box"}
+                    key={"pr" + i}>
+                    {qst}
+                    <div className={fullscr ? "fullscrvideo_title" : "video_title"}>{name}</div>
+                    <UsersHandleSDIOut key={"q" + i} g={g} index={i} {...this.props} />
+                </div>);
+        });
+
+        return (
+            <Segment className="preview_sdi">
+                <div className="usersvideo_grid">
+                    {program}
+                </div>
+            </Segment>
+        );
+    }
 }
 
 export default UsersQuadSDIOut;
