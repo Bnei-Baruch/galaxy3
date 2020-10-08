@@ -68,10 +68,10 @@ export const resources = {
         usefulLinks: 'Useful Links',
         leave: 'Leave',
       },
-      settings:{
+      settings: {
         selectCamera: 'Select camera',
         selectMic: 'Select microphone',
-        selectSize: 'Select video size',
+        selectSize: 'Select camera quality',
         userSettings: 'User settings',
         screenName: 'Screen name',
         interfaceLanguage: 'Interface language',
@@ -83,6 +83,8 @@ export const resources = {
         micSource: 'Microphone source',
         cameraSource: 'Camera source',
         cameraQuality: 'Camera quality',
+        helloUser: 'Hello {{name}}',
+        beforeConnecting: 'before connecting with the TEN, please check your settings and device setup:'
 
       },
       feedback: {
@@ -95,6 +97,8 @@ export const resources = {
         supportChat: 'Support chat',
         send: 'Send',
         enterMessage: 'Type your message',
+        msgRoomInfo: 'Messages here will be seen by all the members of the ten connected now.',
+        msgAdminInfo: 'Our support team will contact you here.'
       },
       loginPage: {
         support: 'Help',

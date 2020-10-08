@@ -1,10 +1,6 @@
 import React, { useCallback } from 'react';
-import { makeStyles } from '@material-ui/core/styles';
 import classNames from 'classnames';
 import { Icon } from 'semantic-ui-react';
-import CardActionArea from '@material-ui/core/CardActionArea';
-import Card from '@material-ui/core/Card';
-import CardContent from '@material-ui/core/CardContent';
 import { renderUserName, renderNoCam, renderQuestion } from './helper';
 import Box from '@material-ui/core/Box';
 

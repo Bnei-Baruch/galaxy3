@@ -1,35 +1,44 @@
 import React from 'react';
 import { makeStyles } from '@material-ui/core/styles';
-import { HelpOutline } from '@material-ui/icons';
-import ButtonBase from '@material-ui/core/ButtonBase';
-import green from '@material-ui/core/colors/green';
+import { green, grey } from '@material-ui/core/colors';
+import { Typography, ButtonBase } from '@material-ui/core';
 
-const useStyles = makeStyles({
-  label: {
-    width: '100%',
-    display: 'block',
-    marginTop: '5px',
-    whiteSpace: 'nowrap'
-  },
-  disabled: {
-    opacity: 0.5
-  },
-  button: {
-    display: 'flex',
-    flexDirection: 'column',
-    margin: '0.5em 1em'
-  },
-  badge: {
-    top: '1px',
-    right: '5px'
+const useStyles = makeStyles(isOn => (
+    {
+      label: {
+        width: '100%',
+        display: 'block',
+        whiteSpace: 'nowrap'
+      },
+      disabled: {
+        opacity: 0.5
+      },
+      button: {
+        display: 'flex',
+        flexDirection: 'column',
+        margin: '0.5em 1em'
+      },
+      badge: {
+        top: '1px',
+        right: '5px'
+      },
+      textColor: {
+        color: !isOn ? green[500] : grey[0]
+      },
+      sign: {
+        fontSize: '2.5em',
+        fontWeight: 'bold',
+        lineHeight: '1.06em'
+      }
 
-  }
-});
+    }
+  )
+);
 
 const AskQuestion = (props) => {
   const { action, isOn, disabled, t } = props;
 
-  const classes = useStyles();
+  const classes = useStyles(isOn);
 
   const handleAction = () => action();
 
@@ -44,8 +53,8 @@ const AskQuestion = (props) => {
         disabled: classes.disabled
       }}
     >
-      <HelpOutline style={{ color: isOn ? green[500] : '' }} />
-      <span className={classes.label} style={{ color: isOn ? green[500] : '' }}>
+      <Typography className={`${classes.textColor} ${classes.sign}`}>?</Typography>
+      <span className={`${classes.textColor} ${classes.label}`}>
         {t('oldClient.askQuestion')}
       </span>
     </ButtonBase>

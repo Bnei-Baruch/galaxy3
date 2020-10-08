@@ -1,7 +1,8 @@
-import React, { useRef, useState } from 'react';
-import { ListItemIcon, List, ListItemText, ListItem, IconButton, SwipeableDrawer, Divider } from '@material-ui/core';
+import React, { useRef } from 'react';
+
+import { List, ListItemText, ListItem, IconButton, Menu, Divider } from '@material-ui/core';
 import { AccountBox, Close, ExitToApp, Feedback, Help, Menu as MenuIcon, Settings } from '@material-ui/icons';
-import Menu from '@material-ui/core/Menu';
+
 import { kc } from '../../../components/UserManager';
 import { updateSentryUser } from '../../../shared/sentry';
 import { getLanguage } from '../../../i18n/i18n';

@@ -1547,12 +1547,11 @@ class VirtualClient extends Component {
             </ButtonGroup>
           </Grid>
           <Grid item xs={1}></Grid>
-          <Grid item xs={1}>
+          <Grid item xs={1} alignItems="center" style={{ display: 'flex' }}>
             <ButtonMD
               onClick={() => this.exitRoom(false)}
               variant="contained"
-              color="secondary"
-              style={{ marginRight: '1em', float: 'right' }}
+              style={{ marginRight: '1em', backgroundColor: red[500], fontWeight: 'bold', color: 'white', textTransform: 'none' }}
             >
               {t('oldClient.leave')}
             </ButtonMD>
@@ -2208,7 +2207,7 @@ class VirtualClient extends Component {
           && (isUseNewDesign && !Boolean(room))
           && (
             <Settings
-              user={user}
+              userDisplay={user.display}
               rooms={rooms}
               selectRoom={this.selectRoom.bind(this)}
               selectedRoom={selected_room}

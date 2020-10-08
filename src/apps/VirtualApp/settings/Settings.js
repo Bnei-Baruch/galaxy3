@@ -1,16 +1,15 @@
 import React, { memo } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { Button, Checkbox, FormControl, InputLabel, Select, FormControlLabel, Modal, Grid } from '@material-ui/core';
+import { Button, Checkbox, FormControlLabel, Modal, Grid, Typography, TextField } from '@material-ui/core';
 import Autocomplete from '@material-ui/lab/Autocomplete';
 import makeStyles from '@material-ui/core/styles/makeStyles';
+import green from '@material-ui/core/colors/green';
 
 import MyMedia from './MyMedia';
 import CheckMySelf from './CheckMySelf';
 import { vsettings_list } from '../../../shared/consts';
-import TextField from '@material-ui/core/TextField';
-import green from '@material-ui/core/colors/green';
-import { white } from 'color-name';
+import LogoutDropdown from './LogoutDropdown';
 
 const settingsList = vsettings_list.map(({ key, text, value }) => ({ key, text, value: JSON.stringify(value) }));
 const mapDevice    = ({ label, deviceId }) => ({ text: label, value: deviceId });
@@ -49,7 +48,8 @@ const Settings = memo((props) => {
             videoLength,
             videoSettings,
             audioDevice = audio.devices[0]?.deviceId,
-            videoDevice = video?.devices[0]?.deviceId
+            videoDevice = video?.devices[0]?.deviceId,
+            userDisplay
           }     = props;
 
     const renderCameras = () => {
@@ -143,14 +143,22 @@ const Settings = memo((props) => {
     const renderContent = () => {
       return (
         <Grid container spacing={4} className={classes.content}>
+          <Grid item xs={10}>
+            <Typography variant="h3" display={'block'}>
+              {t('settings.helloUser', { name: userDisplay })}
+            </Typography>
+          </Grid>
+          <Grid item xs={2}>
+            <LogoutDropdown display={userDisplay} />
+          </Grid>
           <Grid item xs={4}>
             {renderCameras()}
           </Grid>
           <Grid item xs={4}>
-            {renderSounds()}
+            {renderVideoSize()}
           </Grid>
           <Grid item xs={4}>
-            {renderVideoSize()}
+            {renderSounds()}
           </Grid>
           <Grid item xs={8}>
             {<MyMedia cammuted={false} video={video} />}
