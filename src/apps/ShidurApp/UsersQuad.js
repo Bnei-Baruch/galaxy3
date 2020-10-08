@@ -22,7 +22,7 @@ class UsersQuad extends Component {
     };
 
     componentDidUpdate(prevProps) {
-        let {groups,index,reinit} = this.props;
+        let {groups,index} = this.props;
         let {vquad,col} = this.state;
         if(groups.length > prevProps.groups.length) {
             let res = groups.filter(o => !prevProps.groups.some(v => v.room === o.room))[0];
@@ -46,15 +46,6 @@ class UsersQuad extends Component {
                     // FIXME: Does we need send leave room request?
                     this.switchProgram(i, true);
                     break;
-                }
-            }
-        }
-        if(reinit) {
-            this.props.setProps({reinit: null});
-            for(let i=0; i<4; i++) {
-                if(vquad[i] && vquad[i].janus === reinit) {
-                    console.log(":: ReInit :: ", vquad[i])
-                    this["cmd"+col+i].reinitVideoRoom();
                 }
             }
         }

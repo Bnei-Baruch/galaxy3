@@ -41,7 +41,6 @@ class ShidurApp extends Component {
         sndman: false,
         users_count: 0,
         gdm: new GuaranteeDeliveryManager(STORAN_ID),
-        reinit: null,
     };
 
     componentWillUnmount() {
@@ -91,7 +90,7 @@ class ShidurApp extends Component {
         console.log("[Shidur] initializing gateway", gateway.name);
 
         gateway.addEventListener("reinit", () => {
-                this.postInitGateway(user, gateway, true)
+                this.postInitGateway(user, gateway)
                     .catch(err => {
                         console.error("[Shidur] postInitGateway error after reinit. Reloading", gateway.name, err);
                         this.initGateway(user, gateway);
@@ -116,12 +115,9 @@ class ShidurApp extends Component {
             });
     };
 
-    postInitGateway = (user, gateway, reinit = false) => {
+    postInitGateway = (user, gateway) => {
         return gateway.initChatRoom(data => this.onChatData(gateway, data))
             .then(() => {
-                if(reinit) {
-                    this.setState({reinit: gateway.name});
-                }
                 if (gateway.name === "gxy3") {
                     return gateway.initServiceProtocol(user, data => this.onServiceData(gateway, data))
                 }
