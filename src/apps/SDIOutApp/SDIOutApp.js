@@ -114,6 +114,7 @@ class SDIOutApp extends Component {
         if (gateway.name === "gxy3") {
             return gateway.initServiceProtocol(user, data => this.onServiceData(gateway, data))
         }
+        return Promise.resolve();
     };
 
     onServiceData = (gateway, data, user) => {
