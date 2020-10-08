@@ -335,7 +335,7 @@ class GxyJanus extends EventTarget {
                             textroom: "join",
                             transaction: Janus.randomString(12),
                             room: GxyJanus.protocolRoom(name),
-                            username: user.id || user.sub,
+                            username: user && user.id ? user.id : user.sub,
                             display: user.display
                         });
                     },

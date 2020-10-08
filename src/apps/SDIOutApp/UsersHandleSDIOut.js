@@ -62,7 +62,7 @@ class UsersHandleSDIOut extends Component {
             opaqueId: "preview_shidur",
             success: (videoroom) => {
                 gateway.log(`[room ${roomid}] attach success`, videoroom.getId());
-                this.setState({videoroom, remoteFeed: null});
+                this.setState({inst, videoroom, remoteFeed: null});
                 let {user} = this.props;
                 let register = { "request": "join", "room": roomid, "ptype": "publisher", "display": JSON.stringify(user) };
                 videoroom.send({"message": register});
