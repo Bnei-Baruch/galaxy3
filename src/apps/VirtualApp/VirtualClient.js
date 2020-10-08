@@ -80,7 +80,7 @@ const sortAndFilterFeeds = (feeds) => feeds
 
 const userFeeds = (feeds) => feeds.filter(feed => feed.display.role === 'user');
 
-const isUseNewDesign = !new URL(window.location.href).searchParams.has('new_design');
+const isUseNewDesign = new URL(window.location.href).searchParams.has('new_design');
 
 class VirtualClient extends Component {
 
