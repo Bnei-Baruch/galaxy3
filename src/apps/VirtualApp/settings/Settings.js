@@ -178,7 +178,7 @@ const Settings = memo((props) => {
             <Button
               variant="contained"
               color="primary"
-              style={{ background: green[500] }}
+              style={{ background: green[500], height: '100%' }}
               size="large"
               onClick={handleInitClient}>
               {t('oldClient.joinRoom')}

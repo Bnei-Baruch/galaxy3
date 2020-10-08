@@ -55,7 +55,7 @@ const SettingsJoined = (props) => {
   const renderHeader = () => (
     <>
       <Grid item xs={11}>
-        <Typography variant="h6" display="block">
+        <Typography variant="h5" display="block">
           {t('oldClient.settings')}
         </Typography>
       </Grid>
@@ -196,11 +196,11 @@ const SettingsJoined = (props) => {
     return (
       <Grid container spacing={4} className={classes.content}>
         {renderHeader()}
-        <Divider variant="fullWidth" />
+        <Divider variant="fullWidth" style={{ width: '100%' }} />
         {renderUserSettings()}
-        <Divider />
+        <Divider variant="fullWidth" style={{ width: '100%' }} />
         {renderBroadcastSettings()}
-        <Divider />
+        <Divider variant="fullWidth" style={{ width: '100%' }} />
         {renderMediaSettings()}
 
         <Grid item xs={12}>

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ListItemIcon, Divider, MenuItem, Typography, TextField } from '@material-ui/core';
+import { ListItemIcon, ListItemText, Divider, Typography, TextField, ListItem } from '@material-ui/core';
 import { CenterFocusWeak, Group } from '@material-ui/icons';
 import { blue } from '@material-ui/core/colors';
 
@@ -22,19 +22,21 @@ export const SelectLanguage = ({ setAudio }) => {
     }
   };
   const renderHeader     = (op) => (
-    <MenuItem key={op.text} inputMode="text" style={{ whiteSpace: 'normal' }} disabled={true}>
+    <ListItem key={op.text}>
       <ListItemIcon>{headerIconByName(op.icon)}</ListItemIcon>
-      <Typography style={{ color: blue[500] }}>{t(op.text)}</Typography>
-      <Typography display="block">{t(op.description)}</Typography>
-    </MenuItem>
+      <ListItemText
+        primary={t(op.text)}
+        secondary={t(op.description)}
+      />
+    </ListItem>
   );
 
   const renderDivider = key => <Divider key={`divider_${key}`} />;
 
   const renderOption = (op) => (
-    <MenuItem key={op.key} inputMode="text" value={op}>
+    <ListItem key={op.key} value={op} button>
       <Typography>{t(op.text)}</Typography>
-    </MenuItem>
+    </ListItem>
   );
 
   const handleSelectLang = (value, eng_text) => {

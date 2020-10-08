@@ -5,6 +5,7 @@ import Menu from '@material-ui/core/Menu';
 import { kc } from '../../../components/UserManager';
 import { updateSentryUser } from '../../../shared/sentry';
 import { getLanguage } from '../../../i18n/i18n';
+import ListItemSecondaryAction from '@material-ui/core/ListItemSecondaryAction';
 
 const helpUrlsByLang = {
   'en': 'https://bit.ly/2JkBU08',
@@ -32,7 +33,7 @@ export const TopMenu = ({ t, openSettings, open = false, setOpen }) => {
     return (
       <ListItem button key={'help'} onClick={() => window.open(url, '_blank')}>
         <ListItemText primary={t('feedback.help')} />
-        <ListItemIcon><Help /></ListItemIcon>
+        <ListItemSecondaryAction><Help /></ListItemSecondaryAction>
       </ListItem>
     );
   };
@@ -43,18 +44,18 @@ export const TopMenu = ({ t, openSettings, open = false, setOpen }) => {
         <ListItem style={{ fontWeight: 'bold' }}>{t('oldClient.user')}</ListItem>
         <ListItem button key={'account'} onClick={() => window.open('https://accounts.kbb1.com/auth/realms/main/account', '_blank')}>
           <ListItemText primary={t('oldClient.myAccount')} />
-          <ListItemIcon><AccountBox /></ListItemIcon>
+          <ListItemSecondaryAction><AccountBox /></ListItemSecondaryAction>
         </ListItem>
         <ListItem button key={'settings'} onClick={openSettings}>
           <ListItemText primary={t('oldClient.settings')} />
-          <ListItemIcon><Settings /></ListItemIcon>
+          <ListItemSecondaryAction><Settings /></ListItemSecondaryAction>
         </ListItem>
         <ListItem button key={'signOut'} onClick={() => {
           kc.logout();
           updateSentryUser(null);
         }}>
           <ListItemText primary={t('oldClient.signOut')} />
-          <ListItemIcon><ExitToApp /></ListItemIcon>
+          <ListItemSecondaryAction><ExitToApp /></ListItemSecondaryAction>
         </ListItem>
         <Divider />
         <ListItem style={{ fontWeight: 'bold' }}>{t('oldClient.support')}</ListItem>
@@ -62,7 +63,7 @@ export const TopMenu = ({ t, openSettings, open = false, setOpen }) => {
           <ListItemText>
             {t('feedback.feedback')}
           </ListItemText>
-          <ListItemIcon><Feedback /></ListItemIcon>
+          <ListItemSecondaryAction><Feedback /></ListItemSecondaryAction>
         </ListItem>
         {helpByLang()}
         <Divider />

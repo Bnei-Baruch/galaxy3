@@ -11,7 +11,7 @@ export const SelectBroadcastVideo = ({ setVideo, videos }) => {
 
   const renderOption = (op) => (
     <MenuItem key={op.key} inputMode="text" value={op.value}>
-      <Typography>{`${t(op.text)} ${op.description}`}</Typography>
+      <Typography>{`${t(op.text)} - ${t(op.description)}`}</Typography>
     </MenuItem>
   );
 
