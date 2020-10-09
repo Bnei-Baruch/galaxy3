@@ -1,5 +1,5 @@
 import React, {Component, Fragment} from 'react';
-import {Grid} from "semantic-ui-react";
+import {Grid, Confirm} from "semantic-ui-react";
 import api from '../../shared/Api';
 import {kc} from "../../components/UserManager";
 import GxyJanus from "../../shared/janus-utils";
@@ -7,7 +7,7 @@ import LoginPage from "../../components/LoginPage";
 import ShidurToran from "./ShidurToran";
 import UsersQuad from "./UsersQuad";
 import './ShidurApp.css'
-import {STORAN_ID} from "../../shared/consts"
+import {LOST_CONNECTION, STORAN_ID} from "../../shared/consts"
 import {GuaranteeDeliveryManager} from '../../shared/GuaranteeDelivery';
 import {updateSentryUser} from "../../shared/sentry";
 
@@ -41,6 +41,9 @@ class ShidurApp extends Component {
         sndman: false,
         users_count: 0,
         gdm: new GuaranteeDeliveryManager(STORAN_ID),
+        alert: false,
+        timer: 10,
+        lost_servers: [],
     };
 
     componentWillUnmount() {
@@ -98,7 +101,11 @@ class ShidurApp extends Component {
             }
         );
 
-        return gateway.init()
+        return gateway.init(err => {
+                if(err === LOST_CONNECTION) {
+                    this.reinitTimer(gateway);
+                }
+            })
             .then(() => this.postInitGateway(user, gateway))
             .catch(err => {
                 console.error("[Shidur] error initializing gateway", gateway.name, err);
@@ -106,6 +113,29 @@ class ShidurApp extends Component {
                     this.initGateway(user, gateway);
                 }, 10000);
             });
+    };
+
+    reinitTimer = (gateway) => {
+        const {lost_servers} =  this.state;
+        lost_servers.push(gateway.name);
+        this.setState({lost_servers, alert: true});
+        let count = 11;
+        let timer = setInterval(() => {
+            count--;
+            this.setState({timer: count});
+            if (count === 0) {
+                clearInterval(timer);
+                //TODO: don't remove alert if lost_servers.length > 1
+                this.setState({alert: false});
+                for (let i=0; i<lost_servers.length; i++) {
+                    if (lost_servers[i] === gateway.name) {
+                        lost_servers.splice(i, 1);
+                        this.setState({lost_servers});
+                        break
+                    }
+                }
+            }
+        }, 1000);
     };
 
     postInitGateway = (user, gateway) => {
@@ -227,7 +257,7 @@ class ShidurApp extends Component {
     };
 
     render() {
-        const {user, gatewaysInitialized, appInitError} = this.state;
+        const {user, gatewaysInitialized, appInitError, alert, timer, lost_servers} = this.state;
 
         if (appInitError) {
             return (
@@ -271,6 +301,11 @@ class ShidurApp extends Component {
         return (
             <div>
                 {user ? content : login}
+                <Confirm cancelButton={null} confirmButton={timer}
+                    header='Error'
+                    content={'Lost connection to servers: ' + lost_servers.toString()}
+                    open={alert}
+                    size='mini' />
             </div>
         );
     }

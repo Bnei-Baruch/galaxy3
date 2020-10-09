@@ -62,7 +62,7 @@ class GxyJanus extends EventTarget {
         return name === "protocol" ? PROTOCOL_ROOM : SERVICE_ROOM;
     };
 
-    init = () => {
+    init = (callback) => {
         return new Promise((resolve, reject) => {
             Janus.init({
                 debug: process.env.NODE_ENV !== 'production' ? ["log", "warn", "error"] : ["warn", "error"],
@@ -81,6 +81,9 @@ class GxyJanus extends EventTarget {
                             reject(err);
                             if (this.gateway.getSessionId()) {
                                 this.reconnect();
+                            }
+                            if(typeof callback === "function") {
+                                callback(err);
                             }
                         },
                         destroyed: () => {
