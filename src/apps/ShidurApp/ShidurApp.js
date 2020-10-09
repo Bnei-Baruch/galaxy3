@@ -98,19 +98,12 @@ class ShidurApp extends Component {
             }
         );
 
-        gateway.addEventListener("reinit_failure", (e) => {
-            if (e.detail > 10) {
-                console.error("[Shidur] too many reinit_failure. Reloading", gateway.name, e);
-                this.initGateway(user, gateway);
-            }
-        });
-
         return gateway.init()
             .then(() => this.postInitGateway(user, gateway))
             .catch(err => {
                 console.error("[Shidur] error initializing gateway", gateway.name, err);
                 setTimeout(() => {
-                    this.postInitGateway(user, gateway);
+                    this.initGateway(user, gateway);
                 }, 10000);
             });
     };
