@@ -125,8 +125,9 @@ class ShidurApp extends Component {
             this.setState({timer: count});
             if (count === 0) {
                 clearInterval(timer);
-                //TODO: don't remove alert if lost_servers.length > 1
-                this.setState({alert: false});
+                if(lost_servers.length <= 1) {
+                    this.setState({alert: false});
+                }
                 for (let i=0; i<lost_servers.length; i++) {
                     if (lost_servers[i] === gateway.name) {
                         lost_servers.splice(i, 1);
