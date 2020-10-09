@@ -2,6 +2,7 @@ import React, {Component} from 'react';
 import {Button, Input, Message, Segment, Select} from "semantic-ui-react";
 import {Janus} from "../../../lib/janus";
 import {getDateString} from "../../../shared/tools";
+import {captureException} from "../../../shared/sentry";
 
 class ChatBox extends Component {
 
@@ -47,17 +48,26 @@ class ChatBox extends Component {
 
         Promise.all(Object.values(gateways).map(gateway => {
             if (!gateway.chatroom) {
-                gateway.initChatRoom(data => this.onChatData(gateway, data))
-                    .catch(err => {
-                        console.error("[Admin] [ChatBox] gateway.initChatRoom error", gateway.name, err);
-                    });
+							gateway.initChatRoom(data => this.onChatData(gateway, data))
+								.catch(err => {
+									console.error("[Admin] [ChatBox] gateway.initChatRoom error", gateway.name, err);
+									captureException(err, {source: 'AdminRoot ChatBox', gateway: gateway.name});
+									throw err;
+								});
             }
         }))
-            .then(() => {
-                if (!!this.props.onChatRoomsInitialized) {
-                    this.props.onChatRoomsInitialized();
-                }
-            });
+					.then(() => {
+						if (!!this.props.onChatRoomsInitialized) {
+							this.props.onChatRoomsInitialized();
+						}
+					})
+					.catch((error) => {
+						console.error("[Admin] [ChatBox] error initializing gateways", error);
+						captureException(error, {source: 'AdminRoot ChatBox'});
+						if (!!this.props.onChatRoomsInitialized) {
+								this.props.onChatRoomsInitialized(error);
+						}
+					});
     };
 
     onKeyPressed = (e) => {
