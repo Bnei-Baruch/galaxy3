@@ -101,11 +101,12 @@ class ShidurApp extends Component {
             }
         );
 
-        return gateway.init(err => {
-                if(err === LOST_CONNECTION) {
-                    this.reinitTimer(gateway);
-                }
-            })
+        gateway.addEventListener("net-lost", () => {
+                this.reinitTimer(gateway);
+            }
+        );
+
+        return gateway.init()
             .then(() => this.postInitGateway(user, gateway))
             .catch(err => {
                 console.error("[Shidur] error initializing gateway", gateway.name, err);
