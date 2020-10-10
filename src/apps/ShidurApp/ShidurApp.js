@@ -101,8 +101,9 @@ class ShidurApp extends Component {
             }
         );
 
-        gateway.addEventListener("net-lost", () => {
-                this.reinitTimer(gateway);
+        gateway.addEventListener("net-lost", (err) => {
+                if(err.detail === LOST_CONNECTION)
+                    this.reinitTimer(gateway);
             }
         );
 
