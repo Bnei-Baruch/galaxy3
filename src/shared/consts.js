@@ -3,6 +3,8 @@ export const DATA_PORT = 5102;
 export const PROTOCOL_ROOM = 1000;
 export const SERVICE_ROOM = 1001;
 export const GROUPS_ROOM = 1234;
+export const LOST_CONNECTION = 'Lost connection to the server (is it down?)';
+
 export const SHIDUR_ID = "4ab867e5-46f9-47b9-bd6d-47a6df784d92";
 export const SNDMAN_ID = "720f133f-b8e2-49a8-a148-7bd80763ae55";
 export const SDIOUT_ID = "91966d26-0777-4179-9773-d7cd5456a5ed";

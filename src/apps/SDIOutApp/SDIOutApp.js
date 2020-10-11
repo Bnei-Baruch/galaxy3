@@ -85,31 +85,21 @@ class SDIOutApp extends Component {
         console.log("[SDIOut] initializing gateway", gateway.name);
 
         gateway.addEventListener("reinit", () => {
-                this.initGateway(user, gateway)
+                this.postInitGateway(user, gateway)
                     .catch(err => {
                         console.error("[SDIOut] postInitGateway error after reinit. Reloading", gateway.name, err);
-                        window.location.reload();
+                        this.initGateway(user, gateway);
                     });
             }
         );
 
-        gateway.addEventListener("reinit_failure", (e) => {
-            if (e.detail > 10) {
-                console.error("[SDIOut] too many reinit_failure. Reloading", gateway.name, e);
-                window.location.reload();
-            }
-        });
-
-
         return gateway.init()
-            .then(() => {
-                this.postInitGateway(user, gateway);
-            })
+            .then(() => this.postInitGateway(user, gateway))
             .catch(err => {
-                console.error("[Shidur] error initializing gateway", gateway.name, err);
+                console.error("[SDIOut] error initializing gateway", gateway.name, err);
                 setTimeout(() => {
                     this.initGateway(user, gateway);
-                }, 5000);
+                }, 10000);
             });
     };
 
@@ -117,6 +107,7 @@ class SDIOutApp extends Component {
         if (gateway.name === "gxy3") {
             return gateway.initServiceProtocol(user, data => this.onServiceData(gateway, data))
         }
+        return Promise.resolve();
     };
 
     onServiceData = (gateway, data, user) => {

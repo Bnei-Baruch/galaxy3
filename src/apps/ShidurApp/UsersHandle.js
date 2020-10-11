@@ -35,12 +35,15 @@ class UsersHandle extends Component {
 
     initVideoRoom = (roomid, inst) => {
         const gateway = this.props.gateways[inst];
+        gateway.addEventListener("reinit", () => {
+            this.reinitVideoRoom();
+        });
         gateway.gateway.attach({
             plugin: "janus.plugin.videoroom",
             opaqueId: "preview_shidur",
             success: (videoroom) => {
                 gateway.log(`[room ${roomid}] attach success`, videoroom.getId());
-                this.setState({room: roomid, videoroom, remoteFeed: null});
+                this.setState({inst, room: roomid, videoroom, remoteFeed: null});
                 let {user} = this.props;
                 let register = { "request": "join", "room": roomid, "ptype": "publisher", "display": JSON.stringify(user) };
                 videoroom.send({"message": register});
@@ -87,10 +90,25 @@ class UsersHandle extends Component {
                     if(this.state.remoteFeed)
                         this.state.remoteFeed.detach();
                     callback();
+                },
+                error: () => {
+                    this.setState({mids: [], feeds: [], videoroom: null, remoteFeed: null});
+                    callback();
                 }
             });
         }
     };
+
+    reinitVideoRoom = () => {
+        const {g} = this.props;
+        const {inst, room} = this.state;
+        if(g.janus === inst) {
+            this.setState({mids: [], feeds: [], videoroom: null, remoteFeed: null});
+            setTimeout(() => {
+                this.initVideoRoom(room, inst);
+            }, 5000)
+        }
+    }
 
     publishOwnFeed = () => {
         this.state.videoroom.createOffer({
