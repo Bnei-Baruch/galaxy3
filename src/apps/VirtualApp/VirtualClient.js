@@ -67,7 +67,7 @@ import { grey, red } from '@material-ui/core/colors';
 import { AskQuestion, AudioMode, CloseBroadcast, Layout, Mute, MuteVideo, Vote } from './buttons';
 import Settings from './settings/Settings';
 import SettingsJoined from './settings/SettingsJoined';
-import LoadSourceContainer from './components/LoadSourceContainer';
+import HomerLimud from './components/HomerLimud';
 
 const sortAndFilterFeeds = (feeds) => feeds
   .filter(feed => !feed.display.role.match(/^(ghost|guest)$/))
@@ -1744,7 +1744,7 @@ class VirtualClient extends Component {
 
     let content;
     if (leftAsideName === 'material') {
-      content = <LoadSourceContainer />;
+      content = <HomerLimud />;
       /*content = (
         <iframe
           src={`https://groups.google.com/forum/embed/?place=forum/bb-study-materials&showpopout=true&showtabs=false&parenturl=${encodeURIComponent(window.location.href)}`}
@@ -1754,7 +1754,7 @@ class VirtualClient extends Component {
     } else if (leftAsideName === 'drawing') {
       content = (
         <iframe
-          src={`http://www.kab.tv/classboard/classboard.php`}
+          src={`https://www.kab.tv/classboard/classboard.php`}
           style={{ width: '100%', height: '100%', padding: '1rem' }}
           frameBorder="0"></iframe>
       );
