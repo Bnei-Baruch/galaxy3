@@ -1751,6 +1751,13 @@ class VirtualClient extends Component {
           style={{ width: '100%', height: '100%', padding: '1rem' }}
           frameBorder="0"></iframe>
       );*/
+    } else if (leftAsideName === 'drawing') {
+      content = (
+        <iframe
+          src={`http://www.kab.tv/classboard/classboard.php`}
+          style={{ width: '100%', height: '100%', padding: '1rem' }}
+          frameBorder="0"></iframe>
+      );
     }
 
     return (
