@@ -110,7 +110,7 @@ const Settings = (props) => {
   };
 
   const renderRooms = () => {
-    if (!rooms || rooms.length === 0 || !selectedRoom)
+    if (!rooms || rooms.length === 0)
       return null;
 
     return (
