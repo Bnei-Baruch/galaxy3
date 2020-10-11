@@ -100,7 +100,7 @@ class UsersQuadSndman extends Component {
     };
 
   render() {
-      const {full_group,full_feed,fullscr,vquad,forward,forward_request,col} = this.state;
+      const {full_group,full_feed,fullscr,vquad,forward, /*forward_request,*/ col} = this.state;
       const q = (<div className="question">
           <svg viewBox="0 0 50 50">
               <text x="25" y="25" textAnchor="middle" alignmentBaseline="central" dominantBaseline="central">&#xF128;</text>

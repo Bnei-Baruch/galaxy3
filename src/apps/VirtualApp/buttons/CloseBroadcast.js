@@ -24,7 +24,7 @@ const useStyles = makeStyles({
 });
 
 const CloseBroadcast = (props) => {
-  const { action, isOn, disabled, t, question } = props;
+  const { action, isOn, disabled, t } = props;
 
   const classes = useStyles();
 
