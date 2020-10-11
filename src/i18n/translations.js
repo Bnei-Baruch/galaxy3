@@ -1,3 +1,6 @@
+import { List, ListItem, ListItemText } from '@material-ui/core';
+import React from 'react';
+
 export const resources = {
   en: {
     common: {
@@ -67,6 +70,10 @@ export const resources = {
         user: 'User',
         usefulLinks: 'Useful Links',
         leave: 'Leave',
+        SvivaTova: 'Sviva Tova',
+        LiveGroups: 'Live Groups',
+        WorkshopQuestions: 'Workshop Questions',
+        KabbalahMedia: 'Kabbalah Media'
       },
       settings: {
         selectCamera: 'Select camera',
