@@ -191,6 +191,7 @@ class AdminRoot extends Component {
             })
             .catch(err => {
                 console.error("[Admin] error fetching active rooms", err);
+                captureException(err, {source: 'AdminRoot'});
             })
     }
 
@@ -557,7 +558,10 @@ class AdminRoot extends Component {
                         gateway.sendProtocolMessage(msg)
                             .catch(alert));
                 })
-                .catch(alert)
+                .catch(err => {
+									alert(err);
+									captureException(err, {source: 'AdminRoot'});
+								});
             return;
         }
         if (command_type === "client-reload-all") {
@@ -721,7 +725,10 @@ class AdminRoot extends Component {
                         this.setState({feed_rtcp: {video, audio}});
                         }
                     )
-                    .catch(err => alert("Error fetching handle_info: " + err))
+                    .catch(err => {
+											captureException(err, {source: 'AdminRoot'});
+											alert("Error fetching handle_info: " + err);
+										});
             }
         }
     };

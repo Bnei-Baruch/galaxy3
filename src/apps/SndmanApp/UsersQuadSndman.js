@@ -3,6 +3,7 @@ import {Button, Icon, Label, Segment} from "semantic-ui-react";
 import './UsersQuadSndman.scss'
 import UsersHandleSndman from "./UsersHandleSndman";
 import api from '../../shared/Api';
+import {captureException} from "../../shared/sentry";
 
 class UsersQuadSndman extends Component {
 
@@ -23,7 +24,8 @@ class UsersQuadSndman extends Component {
             api.fetchQuad(col)
                 .then(data => this.setState({vquad: data.vquad}))
                 .catch(err => {
-                    console.error("[Sndman] error fetching quad state", col, err);
+									console.error("[Sndman] error fetching quad state", col, err);
+									captureException(err, {source: "Sndman", col});
                 });
         }, 1000);
     };

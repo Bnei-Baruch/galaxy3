@@ -218,7 +218,7 @@ class MobileClient extends Component {
                     this.setState({premodStatus: ConfigStore.dynamicConfig(ConfigStore.PRE_MODERATION_KEY) === 'true'});
                     GxyJanus.setGlobalConfig(data);
                 })
-                .then(() => (api.fetchAvailableRooms({with_num_users: true})))
+                .then(() => api.fetchAvailableRooms({with_num_users: true}))
                 .then(data => {
                     const {rooms} = data;
                     this.setState({rooms});
@@ -241,6 +241,7 @@ class MobileClient extends Component {
                 })
                 .catch(err => {
                     console.error("[MobileClient] error initializing app", err);
+										captureException(err, {source: 'MobileClient'});
                     this.setState({appInitError: err});
                 });
         });
@@ -629,10 +630,14 @@ class MobileClient extends Component {
         localStorage.setItem('question', false);
 
         api.fetchAvailableRooms({with_num_users: true})
-            .then(data => {
-                const {rooms} = data;
-                this.setState({rooms});
-            });
+					.then(data => {
+							const {rooms} = data;
+							this.setState({rooms});
+					})
+					.catch(err => {
+						console.error("[MobileClient] error exiting room", err);
+						captureException(err, {source: 'MobileClient'});
+					});
 
         if (this.chat && !error) {
             this.chat.exitChatRoom(room);
@@ -738,7 +743,10 @@ class MobileClient extends Component {
                 updateSentryUser(user);
 
                 api.updateUser(user.id, user)
-                    .catch(err => console.error("[User] error updating user state", user.id, err));
+                    .catch(err => {
+											console.error("[User] error updating user state", user.id, err);
+											captureException(err, {source: 'MobileClient'});
+										});
                 this.keepAlive();
 
                 const {media: {audio: {audio_device}, video: {video_device}}} = this.state;
@@ -1227,7 +1235,10 @@ class MobileClient extends Component {
                         this.reloadConfig();
                     }
                 })
-                .catch(err => console.error("[User] error sending keepalive", user.id, err));
+                .catch(err => {
+									console.error("[User] error sending keepalive", user.id, err);
+									captureException(err, {source: 'MobileClient'});
+								});
         }
     };
 
@@ -1254,6 +1265,7 @@ class MobileClient extends Component {
             })
             .catch(err => {
                 console.error("[User] error reloading config", err);
+								captureException(err, {source: 'MobileClient'});
             });
     }
 
@@ -1284,7 +1296,10 @@ class MobileClient extends Component {
                     this.chat.sendCmdMessage(msg);
                 }
             })
-            .catch(err => console.error("[User] error updating user state", user.id, err))
+            .catch(err => {
+							console.error("[User] error updating user state", user.id, err);
+							captureException(err, {source: 'MobileClient'});
+						});
     };
 
     handleAudioOut = (data) => {
@@ -1347,7 +1362,10 @@ class MobileClient extends Component {
                     this.chat.sendCmdMessage(msg);
                 }
             })
-            .catch(err => console.error("[User] error updating user state", user.id, err))
+            .catch(err => {
+							console.error("[User] error updating user state", user.id, err);
+							captureException(err, {source: 'MobileClient'});
+						});
       }
     };
 
