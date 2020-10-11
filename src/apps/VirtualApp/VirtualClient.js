@@ -59,20 +59,15 @@ import {
   ButtonGroup,
   Button as ButtonMD,
   Grid,
-  AppBar,
-  Typography,
-  List,
-  Divider,
-  ListItemIcon,
-  ListItemText,
-  SwipeableDrawer,
-  ListItem
+  AppBar
 } from '@material-ui/core';
-import { AccountBox, ExitToApp, Feedback, Menu as MenuIcon, Settings as SettingsIcon } from '@material-ui/icons';
+import { ChevronLeft, ChevronRight } from '@material-ui/icons';
 import { grey, red } from '@material-ui/core/colors';
+
 import { AskQuestion, AudioMode, CloseBroadcast, Layout, Mute, MuteVideo, Vote } from './buttons';
 import Settings from './settings/Settings';
 import SettingsJoined from './settings/SettingsJoined';
+import LoadSourceContainer from './components/LoadSourceContainer';
 
 const sortAndFilterFeeds = (feeds) => feeds
   .filter(feed => !feed.display.role.match(/^(ghost|guest)$/))
@@ -144,7 +139,8 @@ class VirtualClient extends Component {
     videos: Number(localStorage.getItem('vrt_video')) || 1,
     premodStatus: false,
     gdm: null,
-    asideMsgCounter: { drawing: 0, chat: 0 }
+    asideMsgCounter: { drawing: 0, chat: 0 },
+    leftAsideSize: 3
   };
 
   virtualStreamingInitialized() {
@@ -1535,7 +1531,7 @@ class VirtualClient extends Component {
             >
               <AskQuestion
                 t={t}
-                isOn={question}
+                isOn={!!question}
                 disabled={premodStatus || !audio_device || !localAudioTrack || delay || otherFeedHasQuestion}
                 action={this.handleQuestion.bind(this)}
               />
@@ -1547,11 +1543,17 @@ class VirtualClient extends Component {
             </ButtonGroup>
           </Grid>
           <Grid item xs={1}></Grid>
-          <Grid item xs={1} alignItems="center" style={{ display: 'flex' }}>
+          <Grid item xs={1} style={{ display: 'flex', alignItems: 'center' }}>
             <ButtonMD
               onClick={() => this.exitRoom(false)}
               variant="contained"
-              style={{ marginRight: '1em', backgroundColor: red[500], fontWeight: 'bold', color: 'white', textTransform: 'none' }}
+              style={{
+                marginRight: '1em',
+                backgroundColor: red[500],
+                fontWeight: 'bold',
+                color: 'white',
+                textTransform: 'none'
+              }}
             >
               {t('oldClient.leave')}
             </ButtonMD>
@@ -1619,24 +1621,17 @@ class VirtualClient extends Component {
     );
   };
 
-  renderLeftAside = () => {
-    const { leftAsideName } = this.state;
+  handleAsideResize = (incr) => {
+    const { leftAsideSize, rightAsideName, leftAsideName } = this.state;
+    const _state                                           = {};
 
-    let content;
-    if (leftAsideName === 'material') {
-      content = (
-        <iframe
-          src={`https://groups.google.com/forum/embed/?place=forum/bb-study-materials&showpopout=true&showtabs=false&parenturl=${encodeURIComponent(window.location.href)}`}
-          style={{ width: '100%', height: '100%', padding: '1rem' }}
-          frameBorder="0"></iframe>
-      );
-    }
+    const size = incr ? leftAsideSize + 1 : leftAsideSize - 1;
 
-    return (
-      <Grid item xs={leftAsideName ? 3 : false}>
-        {content}
-      </Grid>
-    );
+    const rightName = (size > 3) ? null : rightAsideName;
+
+    const leftName = (size > 3) ? leftAsideName : null;
+
+    this.setState({ leftAsideSize: size, rightAsideName: rightName, leftAsideName: leftName });
   };
 
   renderTopBar = (isDeb) => {
@@ -1744,6 +1739,41 @@ class VirtualClient extends Component {
     );
   };
 
+  renderLeftAside = () => {
+    const { leftAsideName, leftAsideSize } = this.state;
+
+    let content;
+    if (leftAsideName === 'material') {
+      content = <LoadSourceContainer />;
+      /*content = (
+        <iframe
+          src={`https://groups.google.com/forum/embed/?place=forum/bb-study-materials&showpopout=true&showtabs=false&parenturl=${encodeURIComponent(window.location.href)}`}
+          style={{ width: '100%', height: '100%', padding: '1rem' }}
+          frameBorder="0"></iframe>
+      );*/
+    }
+
+    return (
+      <Grid item xs={(leftAsideSize >= 3 && leftAsideName) ? leftAsideSize : false}>
+        {
+          leftAsideName ?
+            (
+              <ButtonGroup>
+                <IconButton onClick={() => this.handleAsideResize(false)}>
+                  <ChevronLeft />
+                </IconButton>
+                <IconButton onClick={() => this.handleAsideResize(true)} disabled={leftAsideSize > 7}>
+                  <ChevronRight />
+                </IconButton>
+              </ButtonGroup>
+            )
+            : null
+        }
+        {content}
+      </Grid>
+    );
+  };
+
   renderNewVersionContent = (layout, isDeb, source, rooms_list, otherFeedHasQuestion, adevices_list, vdevices_list, noOfVideos, remoteVideos) => {
     const { t, i18n } = this.props;
     const {
@@ -1753,7 +1783,8 @@ class VirtualClient extends Component {
             shidur,
             user,
             rightAsideName,
-            leftAsideName,
+            leftAsideSize,
+            leftAsideName
           }           = this.state;
 
     return (
@@ -1763,7 +1794,7 @@ class VirtualClient extends Component {
 
         <Grid container className="vclient__main">
           {this.renderLeftAside()}
-          <Grid item xs={6 + (!leftAsideName && 3) + (!rightAsideName && 3)}>
+          <Grid item xs={12 - (!leftAsideName ? 0 : leftAsideSize) - (!rightAsideName ? 0 : 3)}>
             <div className={`
             vclient__main-wrapper
             no-of-videos-${noOfVideos}
