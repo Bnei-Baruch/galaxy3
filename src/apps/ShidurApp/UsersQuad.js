@@ -4,7 +4,7 @@ import './UsersQuad.scss'
 import UsersHandle from "./UsersHandle";
 import api from '../../shared/Api';
 //import {AUDIOOUT_ID, SDIOUT_ID, SNDMAN_ID} from "../../shared/consts"
-import {captureMessage} from "../../shared/sentry";
+import {captureException, captureMessage} from "../../shared/sentry";
 
 class UsersQuad extends Component {
 
@@ -115,7 +115,10 @@ class UsersQuad extends Component {
 
         this.setState({vquad});
         api.updateQuad(col, {vquad})
-            .catch(err => console.error("[Shidur] error updating quad state", col, err))
+            .catch(err => {
+							console.error("[Shidur] error updating quad state", col, err);
+							captureException(err, {source: "Shidur"});
+						});
     };
 
     switchFour = () => {
@@ -152,7 +155,10 @@ class UsersQuad extends Component {
         }
 
         api.updateQuad(col, {vquad})
-            .catch(err => console.error("[Shidur] error updating quad state", col, err))
+            .catch(err => {
+							console.error("[Shidur] error updating quad state", col, err);
+							captureException(err, {source: "Shidur"});
+						});
     };
 
     setPreset = () => {
@@ -167,7 +173,10 @@ class UsersQuad extends Component {
         this.setState({vquad});
 
         api.updateQuad(col, {vquad})
-            .catch(err => console.error("[Shidur] error updating quad state", col, err))
+            .catch(err => {
+							console.error("[Shidur] error updating quad state", col, err);
+							captureException(err, {source: "Shidur"});
+						});
     };
 
     sdiActionMessage_ = (action, status, i, group, qst) => {

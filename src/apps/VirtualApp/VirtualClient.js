@@ -228,6 +228,7 @@ class VirtualClient extends Component {
           })
           .catch(err => {
             console.error("[User] error initializing app", err);
+						captureException(err, {source: 'VirtualClient'});
             this.setState({appInitError: err});
           });
     });
@@ -659,7 +660,11 @@ class VirtualClient extends Component {
         .then(data => {
           const {rooms} = data;
           this.setState({rooms});
-        });
+        })
+			.catch(err => {
+				console.error('Error exiting room', err);
+				captureException(err, {source: 'VirtualClient'});
+			});
 
 
     let {videoroom, remoteFeed, protocol, janus, room} = this.state;
@@ -768,7 +773,10 @@ class VirtualClient extends Component {
         updateSentryUser(user);
 
         api.updateUser(user.id, user)
-            .catch(err => console.error("[User] error updating user state", user.id, err));
+            .catch(err => {
+							console.error("[User] error updating user state", user.id, err);
+							captureException(err, {source: 'VirtualClient'});
+						});
         this.keepAlive();
 
         const {media: {audio: {audio_device}, video: {video_device}}} = this.state;
@@ -1158,7 +1166,10 @@ class VirtualClient extends Component {
             this.reloadConfig();
           }
         })
-        .catch(err => console.error("[User] error sending keepalive", user.id, err));
+        .catch(err => {
+					console.error("[User] error sending keepalive", user.id, err);
+					captureException(err, {source: 'VirtualClient'});
+				});
     }
   };
 
@@ -1185,6 +1196,7 @@ class VirtualClient extends Component {
       })
       .catch(err => {
         console.error("[User] error reloading config", err);
+				captureException(err, {source: 'VirtualClient'});
       });
   }
 
@@ -1215,7 +1227,10 @@ class VirtualClient extends Component {
             this.chat.sendCmdMessage(msg);
           }
         })
-        .catch(err => console.error("[User] error updating user state", user.id, err))
+        .catch(err => {
+					console.error("[User] error updating user state", user.id, err);
+					captureException(err, {source: 'VirtualClient'});
+				});
   };
 
   handleAudioOut = (data) => {
@@ -1257,7 +1272,10 @@ class VirtualClient extends Component {
               this.chat.sendCmdMessage(msg);
             }
           })
-          .catch(err => console.error("[User] error updating user state", user.id, err))
+          .catch(err => {
+						console.error("[User] error updating user state", user.id, err);
+						captureException(err, {source: 'VirtualClient'});
+					});
     }
   };
 
