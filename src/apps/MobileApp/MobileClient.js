@@ -598,16 +598,19 @@ class MobileClient extends Component {
                 }, true);
             } else if(textroom === "success" && data.participants) {
                 Janus.log(":: Successfully joined to chat room: " + selected_room );
+								captureMessage('Successfully joined to chat room', {source: "Textroom", selected_room});
                 const {id, timestamp, role, username} = user;
                 const d = {id, timestamp, role, display: username};
                 const register = {'request': 'join', 'room': selected_room, 'ptype': 'publisher', 'display': JSON.stringify(d)};
                 videoroom.send({
                     "message": register,
                     success: () => {
-                        console.log(" Request join success");
+                        console.log("Request join success");
+												captureMessage('Request join success', {source: "Videoroom", selected_room});
                     },
                     error: (error) => {
                         console.error(error);
+												captureException(error, {source: 'Videoroom'});
                         this.exitRoom(false);
                     }
                 })
