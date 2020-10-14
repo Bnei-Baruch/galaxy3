@@ -76,7 +76,7 @@ class VirtualChat extends Component {
             console.error("  -- Error attaching plugin...", err);
 						captureMessage(`Chatroom error: attach - ${err}`, {source: "Textroom", err}, 'error');
           },
-          iceStatr: (state) => {
+          iceState: (state) => {
             Janus.log("Textroom ICE state changed to " + state);
 						captureMessage(`ICE state changed to ${state}`, {source: "Textroom"});
           },
