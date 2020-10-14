@@ -77,13 +77,18 @@ class VirtualChat extends Component {
 						captureMessage(`Chatroom error: attach - ${err}`, {source: "Textroom", err}, 'error');
           },
           iceStatr: (state) => {
-            Janus.log("ICE state changed to " + state);
+            Janus.log("Textroom ICE state changed to " + state);
+						captureMessage(`ICE state changed to ${state}`, {source: "Textroom"});
           },
           mediaState: (medium, on) => {
-            Janus.log("Janus " + (on ? "started" : "stopped") + " receiving our " + medium);
+						const message = `Janus ${on ? "started" : "stopped"} receiving our ${medium}`;
+            Janus.log(`Textroom ${message}`);
+						captureMessage(message, {source: "Textroom"});
           },
           webrtcState: (on) => {
-            Janus.log("Janus says our WebRTC PeerConnection is " + (on ? "up" : "down") + " now");
+						const message = `Janus says our WebRTC PeerConnection is ${on ? "up" : "down"} now`;
+            Janus.log(`Textroom ${message}`);
+						captureMessage(message, {source: "Textroom"});
           },
           onmessage: (msg, jsep) => {
             Janus.debug(" ::: Got a message :::");
