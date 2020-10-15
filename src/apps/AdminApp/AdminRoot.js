@@ -16,14 +16,15 @@ import api from "../../shared/Api";
 import ConfigStore from "../../shared/ConfigStore";
 import {GuaranteeDeliveryManager} from "../../shared/GuaranteeDelivery";
 import StatNotes from "./components/StatNotes";
-import {updateSentryUser} from "../../shared/sentry";
+import {captureException, updateSentryUser} from "../../shared/sentry";
 
 class AdminRoot extends Component {
 
     state = {
         activeTab: 0,
         audio: null,
-        chatRoomsInitialized: false,
+				chatRoomsInitialized: false,
+				chatRoomsInitializedError: null,
         current_room: "",
         current_janus: "",
         feedStreams: {},
@@ -49,7 +50,7 @@ class AdminRoot extends Component {
         users_count: 0,
         command_status: true,
         gdm: null,
-        premodStatus: false,
+        // premodStatus: false, Temporary not used.
         showConfirmReloadAll: false,
     };
 
@@ -125,14 +126,15 @@ class AdminRoot extends Component {
         api.fetchConfig()
             .then(data => {
                 ConfigStore.setGlobalConfig(data);
-                this.setState({premodStatus: ConfigStore.dynamicConfig(ConfigStore.PRE_MODERATION_KEY) === 'true'});
+                // this.setState({premodStatus: ConfigStore.dynamicConfig(ConfigStore.PRE_MODERATION_KEY) === 'true'});  Temporary not used.
                 GxyJanus.setGlobalConfig(data);
             })
             .then(() => this.initGateways(user))
             .then(this.pollRooms)
-            .catch(err => {
-                console.error("[Admin] error initializing app", err);
-                this.setState({appInitError: err});
+            .catch(error => {
+                console.error("[Admin] error initializing app", error);
+                captureException(error, {source: 'AdminRoot'});
+                this.setState({appInitError: error});
             });
     };
 
@@ -140,7 +142,13 @@ class AdminRoot extends Component {
         const gateways = GxyJanus.makeGateways("rooms");
         this.setState({gateways});
 
-        return Promise.all(Object.values(gateways).map(gateway => (this.initGateway(user, gateway))))
+        const gatewayToInitPromise = (gateway) => this.initGateway(user, gateway)
+					.catch(error => {
+						captureException(error, {source: 'AdminRoot', gateway: gateway.name});
+						throw error;
+					});
+
+        return Promise.all(Object.values(gateways).map(gatewayToInitPromise))
             .then(() => {
                 console.info("[Admin] gateways initialization complete");
                 this.setState({gatewaysInitialized: true});
@@ -153,6 +161,7 @@ class AdminRoot extends Component {
         gateway.addEventListener("reinit_failure", (e) => {
             if (e.detail > 10) {
                 console.error("[Admin] too many reinit_failure. Reloading", gateway.name, e);
+                captureException(e, {source: 'AdminRoot', gateway: gateway.name});
                 window.location.reload();
             }
         });
@@ -182,6 +191,7 @@ class AdminRoot extends Component {
             })
             .catch(err => {
                 console.error("[Admin] error fetching active rooms", err);
+                captureException(err, {source: 'AdminRoot'});
             })
     }
 
@@ -507,8 +517,7 @@ class AdminRoot extends Component {
         const toAck = [feed_user.id];
 
         if(command_type === "audio-out") {
-            gdm.send(cmd, toAck, (cmd) => gateway.sendCmdMessage(cmd)).
-            then(() => {
+            gdm.send(cmd, toAck, (cmd) => gateway.sendCmdMessage(cmd)).then(() => {
                 console.log(`MIC delivered.`);
             }).catch((error) => {
                 console.error(`MIC not delivered due to: ` , JSON.stringify(error));
@@ -528,7 +537,8 @@ class AdminRoot extends Component {
         this.sendCommandMessage(command_type);
         return;
 
-        const {gateways, feed_user, current_janus, current_room, command_status, gdm} = this.state;
+        /* TEMPORARY NOT USED */
+        /* const {gateways, feed_user, current_janus, current_room, command_status, gdm} = this.state;
 
         if (command_type === "premoder-mode") {
             const value = !this.state.premodStatus;
@@ -548,7 +558,10 @@ class AdminRoot extends Component {
                         gateway.sendProtocolMessage(msg)
                             .catch(alert));
                 })
-                .catch(alert)
+                .catch(err => {
+									alert(err);
+									captureException(err, {source: 'AdminRoot'});
+								});
             return;
         }
         if (command_type === "client-reload-all") {
@@ -593,7 +606,7 @@ class AdminRoot extends Component {
 
         if (command_type === "audio-out") {
             this.setState({command_status: !command_status})
-        }
+        }*/
     };
 
     joinRoom = (data) => {
@@ -627,18 +640,22 @@ class AdminRoot extends Component {
                     feed_user: null,
                     feed_id: null,
                     command_status: true,
-                });
+										chatRoomsInitialized: false,
+										chatRoomsInitializedError: null,
+                }, () => {
+									const gateway = this.state.gateways[inst];
 
-                const gateway = this.state.gateways[inst];
+									this.newVideoRoom(gateway, room)
+											.then(() => {
+													gateway.videoRoomJoin(room, user);
+											});
 
-                this.newVideoRoom(gateway, room)
-                    .then(() => {
-                        gateway.videoRoomJoin(room, user);
-                    });
-
-                if (this.isAllowed("admin")) {
-                    gateway.chatRoomJoin(room, user);
-                }
+									if (this.isAllowed("admin")) {
+											gateway.chatRoomJoin(room, user)
+												.catch((error) => this.setState({chatRoomsInitializedError: error}))
+												.finally(() => this.setState({chatRoomsInitialized: true}));
+									}
+								});
             })
     };
 
@@ -649,7 +666,7 @@ class AdminRoot extends Component {
         const room_data = rooms.find(x => x.room === room);
         if (!room_data) {
             console.warn("[Admin] exitRoom. no room data in state");
-            return;
+            return Promise.resolve();
         }
 
         const gateway = gateways[room_data.janus];
@@ -708,14 +725,17 @@ class AdminRoot extends Component {
                         this.setState({feed_rtcp: {video, audio}});
                         }
                     )
-                    .catch(err => alert("Error fetching handle_info: " + err))
+                    .catch(err => {
+											captureException(err, {source: 'AdminRoot'});
+											alert("Error fetching handle_info: " + err);
+										});
             }
         }
     };
-
-    onChatRoomsInitialized = () => {
-        this.setState({chatRoomsInitialized: true});
-    };
+ 
+	onChatRoomsInitialized = (error) => {	
+		this.setState({chatRoomsInitialized: true, chatRoomsInitializedError: error});	
+	};
 
   addUserTab(user, stats) {
     const { usersTabs } = this.state;
@@ -747,6 +767,8 @@ class AdminRoot extends Component {
   render() {
       const {
           activeTab,
+					chatRoomsInitialized,
+					chatRoomsInitializedError,
           current_janus,
           current_room,
           current_group,
@@ -763,10 +785,9 @@ class AdminRoot extends Component {
           user,
           usersTabs,
           users_count,
-          chatRoomsInitialized,
           appInitError,
           command_status,
-          premodStatus,
+          // premodStatus, Temporary not used.
           showConfirmReloadAll,
       } = this.state;
 
@@ -821,23 +842,24 @@ class AdminRoot extends Component {
           )
       });
 
-      let users_grid = feeds.map((feed,i) => {
-          if(feed) {
-              //let qt = users[feed.display.id].question;
-              //let st = users[feed.display.id].sound_test;
-              let feed_user = users.find(u => feed.id === u.rfid);
-              let qt = feed_user && !!feed_user.question;
-              return (
-                  <Table.Row active={feed.id === this.state.feed_id} key={i} onClick={() => this.getUserInfo(feed_user)} >
-                      <Table.Cell width={10}>{qt ? q : ""}{feed.display.display}</Table.Cell>
-                      {/*<Table.Cell positive={st} width={1}>{st ? v : ""}</Table.Cell>*/}
-                      <Table.Cell width={1}></Table.Cell>
-                  </Table.Row>
-              )
+      const users_grid = feeds.map((feed,i) => {
+          if (!feed) {
+            return null;
           }
+          //let qt = users[feed.display.id].question;
+          //let st = users[feed.display.id].sound_test;
+          let feed_user = users.find(u => feed.id === u.rfid);
+          let qt = feed_user && !!feed_user.question;
+          return (
+              <Table.Row active={feed.id === this.state.feed_id} key={i} onClick={() => this.getUserInfo(feed_user)} >
+                  <Table.Cell width={10}>{qt ? q : ""}{feed.display.display}</Table.Cell>
+                  {/*<Table.Cell positive={st} width={1}>{st ? v : ""}</Table.Cell>*/}
+                  <Table.Cell width={1}></Table.Cell>
+              </Table.Row>
+          )
       });
 
-      let videos = this.state.feeds.map((feed) => {
+      let videos = feeds.map((feed) => {
           if(feed) {
               let id = feed.id;
               let talk = feed.talk;
@@ -875,6 +897,69 @@ class AdminRoot extends Component {
       });
 
       let login = (<LoginPage user={user} checkPermission={this.checkPermission} />);
+		
+			const infoPopup =
+				<Popup trigger={<Button positive icon='info' onClick={this.getFeedInfo} />}
+					position='bottom left'
+					content={
+						<List as='ul'>
+							<List.Item as='li'>System
+								<List.List as='ul'>
+									<List.Item as='li'>OS: {feed_info ? feed_info.os.toString() : ""}</List.Item>
+									<List.Item as='li'>Browser: {feed_info ? feed_info.name : ""}</List.Item>
+									<List.Item as='li'>Version: {feed_info ? feed_info.version : ""}</List.Item>
+								</List.List>
+							</List.Item>
+							{feed_rtcp.video ? <List.Item as='li'>Video
+								<List.List as='ul'>
+									<List.Item as='li'>in-link-quality: {feed_rtcp.video["in-link-quality"]}</List.Item>
+									<List.Item as='li'>in-media-link-quality: {feed_rtcp.video["in-media-link-quality"]}</List.Item>
+									<List.Item as='li'>jitter-local: {feed_rtcp.video["jitter-local"]}</List.Item>
+									<List.Item as='li'>jitter-remote: {feed_rtcp.video["jitter-remote"]}</List.Item>
+									<List.Item as='li'>lost: {feed_rtcp.video["lost"]}</List.Item>
+								</List.List>
+							</List.Item> : null}
+							{feed_rtcp.audio ? <List.Item as='li'>Audio
+								<List.List as='ul'>
+									<List.Item as='li'>in-link-quality: {feed_rtcp.audio["in-link-quality"]}</List.Item>
+									<List.Item as='li'>in-media-link-quality: {feed_rtcp.audio["in-media-link-quality"]}</List.Item>
+									<List.Item as='li'>jitter-local: {feed_rtcp.audio["jitter-local"]}</List.Item>
+									<List.Item as='li'>jitter-remote: {feed_rtcp.audio["jitter-remote"]}</List.Item>
+									<List.Item as='li'>lost: {feed_rtcp.audio["lost"]}</List.Item>
+								</List.List>
+							</List.Item> : null}
+						</List>
+					}
+					on='click'
+					hideOnScroll />;
+		  const chatRoomStatus = <Popup
+				trigger={<Icon color={chatRoomsInitialized ? (chatRoomsInitializedError ? 'red' : 'green') : 'grey'} circular="true" icon="circle" inverted />}
+				content={`Chat status: ${chatRoomsInitializedError || 'OK'}`} />;
+
+			const rootControlPanel = [];
+			if (this.isAllowed('root')) {
+				rootControlPanel.push(...[
+					<Popup trigger={<Button color="yellow" icon='question' onClick={() => this.sendRemoteCommand("client-question")} />} content='Set/Unset question' inverted />,
+					<Popup trigger={<Button color="brown" icon='sync alternate' alt="test" onClick={() => this.sendRemoteCommand("client-reconnect")} />} content='Reconnect' inverted />,
+					<Popup trigger={<Button color="olive" icon='redo alternate' onClick={() => this.sendRemoteCommand("client-reload")} />} content='Reload page(LOST FEED HERE!)' inverted />,
+					<Popup trigger={<Button color="teal" icon='microphone' onClick={() => this.sendRemoteCommand("client-mute")} />} content='Mic Mute/Unmute' inverted />,
+					<Popup trigger={<Button color="pink" icon='eye' onClick={() => this.sendRemoteCommand("video-mute")} />} content='Cam Mute/Unmute' inverted />,
+					<Popup trigger={<Button color="orange" icon={command_status ? 'volume off' : 'volume up'} onClick={() => this.sendRemoteCommand("audio-out")} />} content='Talk event' inverted />,
+					<Popup trigger={<Button negative icon='user x' onClick={() => this.sendRemoteCommand("client-kicked")} />} content='Kick' inverted />,
+					/*<Popup trigger={<Button color="pink" icon='eye' onClick={() => this.sendDataMessage("video-mute")} />} content='Cam Mute/Unmute' inverted />,*/
+					/*<Popup trigger={<Button color="blue" icon='power off' onClick={() => this.sendRemoteCommand("client-disconnect")} />} content='Disconnect(LOST FEED HERE!)' inverted />,*/
+					/*<Popup inverted
+					       content={`${premodStatus ? 'Disable' : 'Enable'} Pre Moderation Mode`}
+					       trigger={
+					           <Button color="blue"
+					                   icon='copyright'
+					                   inverted={premodStatus}
+					                   onClick={() => this.sendRemoteCommand("premoder-mode")}/>
+					       }/>,*/
+					/*<Popup trigger={<Button color="red" icon='redo' onClick={() => this.setState({showConfirmReloadAll: !showConfirmReloadAll})} />} content='RELOAD ALL' inverted />,*/
+					chatRoomStatus,
+				]);
+			}
 
       let adminContent = (
           <Grid>
@@ -883,69 +968,10 @@ class AdminRoot extends Component {
               {
                   this.isAllowed("admin") ?
                       <Segment textAlign='center' className="ingest_segment">
-                          {/*<Button color='blue' icon='sound' onClick={() => this.sendRemoteCommand("sound_test")} />*/}
-                          <Popup
-                              trigger={<Button positive icon='info' onClick={this.getFeedInfo} />}
-                              position='bottom left'
-                              content={
-                                  <List as='ul'>
-                                      <List.Item as='li'>System
-                                          <List.List as='ul'>
-                                              <List.Item as='li'>OS: {feed_info ? feed_info.os.toString() : ""}</List.Item>
-                                              <List.Item as='li'>Browser: {feed_info ? feed_info.name : ""}</List.Item>
-                                              <List.Item as='li'>Version: {feed_info ? feed_info.version : ""}</List.Item>
-                                          </List.List>
-                                      </List.Item>
-
-                                      {feed_rtcp.video ? <List.Item as='li'>Video
-                                          <List.List as='ul'>
-                                              <List.Item as='li'>in-link-quality: {feed_rtcp.video["in-link-quality"]}</List.Item>
-                                              <List.Item as='li'>in-media-link-quality: {feed_rtcp.video["in-media-link-quality"]}</List.Item>
-                                              <List.Item as='li'>jitter-local: {feed_rtcp.video["jitter-local"]}</List.Item>
-                                              <List.Item as='li'>jitter-remote: {feed_rtcp.video["jitter-remote"]}</List.Item>
-                                              <List.Item as='li'>lost: {feed_rtcp.video["lost"]}</List.Item>
-                                          </List.List>
-                                      </List.Item> : null}
-
-                                      {feed_rtcp.audio ? <List.Item as='li'>Audio
-                                          <List.List as='ul'>
-                                              <List.Item as='li'>in-link-quality: {feed_rtcp.audio["in-link-quality"]}</List.Item>
-                                              <List.Item as='li'>in-media-link-quality: {feed_rtcp.audio["in-media-link-quality"]}</List.Item>
-                                              <List.Item as='li'>jitter-local: {feed_rtcp.audio["jitter-local"]}</List.Item>
-                                              <List.Item as='li'>jitter-remote: {feed_rtcp.audio["jitter-remote"]}</List.Item>
-                                              <List.Item as='li'>lost: {feed_rtcp.audio["lost"]}</List.Item>
-                                          </List.List>
-                                      </List.Item> : null}
-                                  </List>
-                              }
-                              on='click'
-                              hideOnScroll
-                          />
-                          {
-                              this.isAllowed("root") ?
-                                  <div>
-                                      <Popup trigger={<Button color="yellow" icon='question' onClick={() => this.sendRemoteCommand("client-question")} />} content='Set/Unset question' inverted />
-                                      <Popup trigger={<Button color="brown" icon='sync alternate' alt="test" onClick={() => this.sendRemoteCommand("client-reconnect")} />} content='Reconnect' inverted />
-                                      <Popup trigger={<Button color="olive" icon='redo alternate' onClick={() => this.sendRemoteCommand("client-reload")} />} content='Reload page(LOST FEED HERE!)' inverted />
-                                      <Popup trigger={<Button color="teal" icon='microphone' onClick={() => this.sendRemoteCommand("client-mute")} />} content='Mic Mute/Unmute' inverted />
-                                      <Popup trigger={<Button color="pink" icon='eye' onClick={() => this.sendRemoteCommand("video-mute")} />} content='Cam Mute/Unmute' inverted />
-                                      <Popup trigger={<Button color="orange" icon={command_status ? 'volume off' : 'volume up'} onClick={() => this.sendRemoteCommand("audio-out")} />} content='Talk event' inverted />
-                                      <Popup trigger={<Button negative icon='user x' onClick={() => this.sendRemoteCommand("client-kicked")} />} content='Kick' inverted />
-                                      {/*<Popup trigger={<Button color="pink" icon='eye' onClick={() => this.sendDataMessage("video-mute")} />} content='Cam Mute/Unmute' inverted />*/}
-                                      {/*<Popup trigger={<Button color="blue" icon='power off' onClick={() => this.sendRemoteCommand("client-disconnect")} />} content='Disconnect(LOST FEED HERE!)' inverted />*/}
-                                      {/*<Popup inverted*/}
-                                      {/*       content={`${premodStatus ? 'Disable' : 'Enable'} Pre Moderation Mode`}*/}
-                                      {/*       trigger={*/}
-                                      {/*           <Button color="blue"*/}
-                                      {/*                   icon='copyright'*/}
-                                      {/*                   inverted={premodStatus}*/}
-                                      {/*                   onClick={() => this.sendRemoteCommand("premoder-mode")}/>*/}
-                                      {/*       }/>*/}
-                                      {/*<Popup trigger={<Button color="red" icon='redo' onClick={() => this.setState({showConfirmReloadAll: !showConfirmReloadAll})} />} content='RELOAD ALL' inverted />*/}
-                                  </div>
-                                  : null
-                          }
-                          <StatNotes data={rooms} />
+												{/*<Button color='blue' icon='sound' onClick={() => this.sendRemoteCommand("sound_test")} />*/}
+												{infoPopup}
+												{rootControlPanel}
+												<StatNotes data={rooms} />
                       </Segment>
                       : null
               }
@@ -1007,15 +1033,15 @@ class AdminRoot extends Component {
                   this.isAllowed("admin") ?
                       <Grid.Row>
                           <Grid.Column width={13}>
-                      <ChatBox user={user}
-                               rooms={rooms}
-                               selected_janus={current_janus}
-                               selected_room={current_room}
-                               selected_group={current_group}
-                               selected_user={feed_user}
-                               gateways={gateways}
-                               gdm={this.state.gdm}
-                               onChatRoomsInitialized={this.onChatRoomsInitialized}/>
+                          <ChatBox user={user}
+                                   rooms={rooms}
+                                   selected_janus={current_janus}
+                                   selected_room={current_room}
+                                   selected_group={current_group}
+                                   selected_user={feed_user}
+                                   gateways={gateways}
+                                   gdm={this.state.gdm} 
+																	 onChatRoomsInitialized={this.onChatRoomsInitialized}/>
 
                           </Grid.Column>
                           <Grid.Column width={3}>

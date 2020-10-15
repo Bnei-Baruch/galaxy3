@@ -22,3 +22,6 @@ export const MONITORING_BACKEND = process.env.REACT_APP_MONITORING_BACKEND;
 export const AUTH_API_BACKEND = process.env.REACT_APP_AUTH_API_BACKEND;
 
 export const MONITOR_SRV = process.env.REACT_APP_MONITOR_SRV;
+
+export const ADMIN_SECRET = process.env.REACT_APP_ADMIN_SECRET;
+export const ADMIN_SRV_STR1 = process.env.REACT_APP_ADMIN_SRV_STR1;

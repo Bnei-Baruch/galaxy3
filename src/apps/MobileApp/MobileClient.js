@@ -17,9 +17,10 @@ import './MobileClient.scss'
 import './MobileConteiner.scss'
 import 'eqcss'
 import {
-    PROTOCOL_ROOM,
-    VIDEO_240P_OPTION_VALUE,
     NO_VIDEO_OPTION_VALUE,
+    PROTOCOL_ROOM,
+    USERNAME_ALREADY_EXIST_ERROR_CODE,
+    VIDEO_240P_OPTION_VALUE,
     vsettings_list,
 } from "../../shared/consts";
 import {GEO_IP_INFO} from "../../shared/env";
@@ -44,7 +45,7 @@ import VirtualStreamingJanus from '../../shared/VirtualStreamingJanus';
 import VirtualChat from '../VirtualApp/VirtualChat';
 import ConfigStore from "../../shared/ConfigStore";
 import {GuaranteeDeliveryManager} from "../../shared/GuaranteeDelivery";
-import {updateSentryUser, captureMessage} from "../../shared/sentry";
+import {updateSentryUser, captureException, captureMessage} from "../../shared/sentry";
 
 const sortAndFilterFeeds = (feeds) => feeds
   .filter(feed => !feed.display.role.match(/^(ghost|guest)$/))
@@ -124,7 +125,11 @@ class MobileClient extends Component {
     }
 
     setShidurMuted(muted) {
-      this.state.virtualStreamingJanus.audioElement.muted = muted;
+      if (muted) {
+        this.state.virtualStreamingJanus.muteAudioElement();
+      } else {
+        this.state.virtualStreamingJanus.unmuteAudioElement();
+      }
       this.setState({shidurMuted: muted});
     }
 
@@ -213,7 +218,7 @@ class MobileClient extends Component {
                     this.setState({premodStatus: ConfigStore.dynamicConfig(ConfigStore.PRE_MODERATION_KEY) === 'true'});
                     GxyJanus.setGlobalConfig(data);
                 })
-                .then(() => (api.fetchAvailableRooms({with_num_users: true})))
+                .then(() => api.fetchAvailableRooms({with_num_users: true}))
                 .then(data => {
                     const {rooms} = data;
                     this.setState({rooms});
@@ -236,6 +241,7 @@ class MobileClient extends Component {
                 })
                 .catch(err => {
                     console.error("[MobileClient] error initializing app", err);
+										captureException(err, {source: 'MobileClient'});
                     this.setState({appInitError: err});
                 });
         });
@@ -579,24 +585,32 @@ class MobileClient extends Component {
         this.chat.initChatRoom(janus, selected_room, user, data => {
             const { textroom, error_code, error } = data;
             if (textroom === 'error') {
-                console.error("Chatroom error: ", data, error_code)
-                captureMessage(`Chatroom error: init - ${error}`, {source: "Textroom", err: data}, 'error');
+                if(error_code !== USERNAME_ALREADY_EXIST_ERROR_CODE) {
+                  console.error("Chatroom error: ", data, error_code)
+                  captureMessage(`Chatroom error: init - ${error}`, {source: "Textroom", err: data}, 'error');
+                } else {
+                  console.log("Chatroom error: ", data, error_code);
+                  captureMessage(`Chatroom error: init - ${error}`, {source: "Textroom", err: data});
+                }
                 this.exitRoom(false, () => {
-                    if(error_code === 420)
+                    if(error_code === USERNAME_ALREADY_EXIST_ERROR_CODE)
                         alert(this.props.t('oldClient.error') + data.error);
                 }, true);
             } else if(textroom === "success" && data.participants) {
                 Janus.log(":: Successfully joined to chat room: " + selected_room );
+								captureMessage('Successfully joined to chat room', {source: "Textroom", selected_room});
                 const {id, timestamp, role, username} = user;
                 const d = {id, timestamp, role, display: username};
                 const register = {'request': 'join', 'room': selected_room, 'ptype': 'publisher', 'display': JSON.stringify(d)};
                 videoroom.send({
                     "message": register,
                     success: () => {
-                        console.log(" Request join success");
+                        console.log("Request join success");
+												captureMessage('Request join success', {source: "Videoroom", selected_room});
                     },
                     error: (error) => {
                         console.error(error);
+												captureException(error, {source: 'Videoroom'});
                         this.exitRoom(false);
                     }
                 })
@@ -619,10 +633,14 @@ class MobileClient extends Component {
         localStorage.setItem('question', false);
 
         api.fetchAvailableRooms({with_num_users: true})
-            .then(data => {
-                const {rooms} = data;
-                this.setState({rooms});
-            });
+					.then(data => {
+							const {rooms} = data;
+							this.setState({rooms});
+					})
+					.catch(err => {
+						console.error("[MobileClient] error exiting room", err);
+						captureException(err, {source: 'MobileClient'});
+					});
 
         if (this.chat && !error) {
             this.chat.exitChatRoom(room);
@@ -728,7 +746,10 @@ class MobileClient extends Component {
                 updateSentryUser(user);
 
                 api.updateUser(user.id, user)
-                    .catch(err => console.error("[User] error updating user state", user.id, err));
+                    .catch(err => {
+											console.error("[User] error updating user state", user.id, err);
+											captureException(err, {source: 'MobileClient'});
+										});
                 this.keepAlive();
 
                 const {media: {audio: {audio_device}, video: {video_device}}} = this.state;
@@ -889,8 +910,6 @@ class MobileClient extends Component {
                           event === 'updated') {
                         if (msg['streams']) {
                           // Update map of subscriptions by mid
-                          const {streamsMids} = this.state;
-                          const old = Array.from(streamsMids.entries());
                           const newStreamsMids = new Map(msg['streams'].map(stream => [stream.mid, stream.feed_id]));
                           this.setState({streamsMids: newStreamsMids});
                         }
@@ -1219,7 +1238,10 @@ class MobileClient extends Component {
                         this.reloadConfig();
                     }
                 })
-                .catch(err => console.error("[User] error sending keepalive", user.id, err));
+                .catch(err => {
+									console.error("[User] error sending keepalive", user.id, err);
+									captureException(err, {source: 'MobileClient'});
+								});
         }
     };
 
@@ -1246,6 +1268,7 @@ class MobileClient extends Component {
             })
             .catch(err => {
                 console.error("[User] error reloading config", err);
+								captureException(err, {source: 'MobileClient'});
             });
     }
 
@@ -1276,7 +1299,10 @@ class MobileClient extends Component {
                     this.chat.sendCmdMessage(msg);
                 }
             })
-            .catch(err => console.error("[User] error updating user state", user.id, err))
+            .catch(err => {
+							console.error("[User] error updating user state", user.id, err);
+							captureException(err, {source: 'MobileClient'});
+						});
     };
 
     handleAudioOut = (data) => {
@@ -1285,9 +1311,10 @@ class MobileClient extends Component {
         gdm.accept(data, (msg) => this.chat.sendCmdMessage(msg)).then((data) => {
             if (data === null) {
                 console.log('Message received more then once.');
+								captureMessage('Message received more then once.', {source: 'MobileClient DELIVERY', msg: data});
                 return;
             }
-
+						captureMessage(`MobileClient DELIVERY ${data.status ? 'ON' : 'OFF'}`, {source: 'MobileClient DELIVERY', msg: data});
             this.state.virtualStreamingJanus.streamGalaxy(data.status, 4, "");
             if (data.status) {
                 // remove question mark when sndman unmute our room
@@ -1295,9 +1322,9 @@ class MobileClient extends Component {
                     this.handleQuestion();
                 }
             }
-
         }).catch((error) => {
             console.error(`Failed receiving ${data}: ${error}`);
+						captureException(error, {source: 'MobileClient DELIVERY', msg: data});
         });
     };
 
@@ -1338,7 +1365,10 @@ class MobileClient extends Component {
                     this.chat.sendCmdMessage(msg);
                 }
             })
-            .catch(err => console.error("[User] error updating user state", user.id, err))
+            .catch(err => {
+							console.error("[User] error updating user state", user.id, err);
+							captureException(err, {source: 'MobileClient'});
+						});
       }
     };
 
@@ -1376,19 +1406,6 @@ class MobileClient extends Component {
       if (this.chatWrapper && this.chatModal && this.chatModal.firstChild) {
         this.chatWrapper.appendChild(this.chatModal.firstChild);
         this.setState({chatVisible: false});
-      }
-    }
-
-    homerLimudCss = (ref) => {
-      return;
-
-      if (ref) {
-        ref.onload = () => {
-          var body = ref.contentWindow.document.querySelector('body');
-          body.style.color = 'red';
-          body.style.fontSize = '3rem';
-          body.style.lineHeight = '3rem';
-        }
       }
     }
 
@@ -1778,8 +1795,8 @@ class MobileClient extends Component {
                     className='vote'
                   >
                     <Button.Group>
-                      <iframe src={`https://vote.kli.one/button.html?answerId=1&userId=${user && user.id}`} frameBorder="0"></iframe>
-                      <iframe src={`https://vote.kli.one/button.html?answerId=2&userId=${user && user.id}`} frameBorder="0"></iframe>
+                      <iframe title={`${t('oldClient.vote')} 1`} src={`https://vote.kli.one/button.html?answerId=1&userId=${user && user.id}`} frameBorder="0"></iframe>
+                      <iframe title={`${t('oldClient.vote')} 2`} src={`https://vote.kli.one/button.html?answerId=2&userId=${user && user.id}`} frameBorder="0"></iframe>
                     </Button.Group>
                   </Modal>
                   <Monitoring monitoringData={monitoringData} />

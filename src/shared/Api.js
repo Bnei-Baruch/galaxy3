@@ -169,13 +169,13 @@ class Api {
 }
 
 // Helpers for tests / local dev
-class MockApi {
+/* class MockApi {
     fetchConfig = () =>
         new Promise((resolve, reject) => resolve({
             gateways: [{name: "gxytest", url: "http://localhost:8088/janus", type: "rooms", token: "secret"}],
             ice_servers: [],
         }))
-}
+} */
 
 // const defaultApi = new MockApi();
 

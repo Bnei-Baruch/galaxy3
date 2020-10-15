@@ -1,5 +1,5 @@
 import React, {Component, Fragment} from 'react';
-import {Grid} from "semantic-ui-react";
+import {Grid, Confirm} from "semantic-ui-react";
 import api from '../../shared/Api';
 import {kc} from "../../components/UserManager";
 import GxyJanus from "../../shared/janus-utils";
@@ -7,9 +7,9 @@ import LoginPage from "../../components/LoginPage";
 import ShidurToran from "./ShidurToran";
 import UsersQuad from "./UsersQuad";
 import './ShidurApp.css'
-import {STORAN_ID} from "../../shared/consts"
+import {USERNAME_ALREADY_EXIST_ERROR_CODE, LOST_CONNECTION, STORAN_ID} from "../../shared/consts"
 import {GuaranteeDeliveryManager} from '../../shared/GuaranteeDelivery';
-import {captureException, updateSentryUser} from "../../shared/sentry";
+import {captureException, captureMessage, updateSentryUser} from "../../shared/sentry";
 
 
 class ShidurApp extends Component {
@@ -41,6 +41,9 @@ class ShidurApp extends Component {
         sndman: false,
         users_count: 0,
         gdm: new GuaranteeDeliveryManager(STORAN_ID),
+        alert: false,
+        timer: 10,
+        lost_servers: [],
         roomsStatistics: {},
     };
 
@@ -72,6 +75,7 @@ class ShidurApp extends Component {
             .catch(err => {
                 console.error("[Shidur] error initializing app", err);
                 this.setState({appInitError: err});
+                captureException(err, {source: 'ShidurApp'});
             });
     };
 
@@ -79,12 +83,17 @@ class ShidurApp extends Component {
         const gateways = GxyJanus.makeGateways("rooms");
         this.setState({gateways});
 
-        return Promise.all(Object.values(gateways).map(gateway => (this.initGateway(user, gateway))))
-            .then(() => {
-                console.log("[Shidur] gateways initialization complete");
-                this.setState({gatewaysInitialized: true});
-            });
+        const gatewayToInitPromise = (gateway) => this.initGateway(user, gateway)
+					.catch(error => {
+						captureException(error, {source: 'ShidurApp', gateway: gateway.name});
+						throw error;
+					});
 
+        return Promise.all(Object.values(gateways).map(gatewayToInitPromise))
+					.then(() => {
+							console.log("[Shidur] gateways initialization complete");
+							this.setState({gatewaysInitialized: true});
+					});
     };
 
     initGateway = (user, gateway) => {
@@ -99,21 +108,49 @@ class ShidurApp extends Component {
             }
         );
 
-        gateway.addEventListener("reinit_failure", (e) => {
-            if (e.detail > 10) {
-                console.error("[Shidur] too many reinit_failure. Reloading", gateway.name, e);
-                this.initGateway(user, gateway);
+        gateway.addEventListener("net-lost", (err) => {
+                if(err.detail === LOST_CONNECTION)
+                    this.reinitTimer(gateway);
             }
-        });
+        );
 
         return gateway.init()
             .then(() => this.postInitGateway(user, gateway))
             .catch(err => {
-                console.error("[Shidur] error initializing gateway", gateway.name, err);
+                console.error("[Shidur] error initializing gateway. Will retry postInitGateway in 10 seconds.", gateway.name, err);
+                captureException(err, {source: 'ShidurApp', gateway: gateway.name});
                 setTimeout(() => {
-                    this.postInitGateway(user, gateway);
+                    this.initGateway(user, gateway)
+                        .catch(err => {
+                            console.error("[Shidur] error initializing gateway.", gateway.name, err);
+                            captureException(err, {source: 'ShidurApp', gateway: gateway.name});
+                        });
                 }, 10000);
             });
+    };
+
+    reinitTimer = (gateway) => {
+        const {lost_servers} =  this.state;
+        lost_servers.push(gateway.name);
+        this.setState({lost_servers, alert: true});
+        let count = 11;
+        let timer = setInterval(() => {
+            count--;
+            this.setState({timer: count});
+            if (count === 0) {
+                clearInterval(timer);
+                if(lost_servers.length <= 1) {
+                    this.setState({alert: false});
+                }
+                for (let i=0; i<lost_servers.length; i++) {
+                    if (lost_servers[i] === gateway.name) {
+                        lost_servers.splice(i, 1);
+                        this.setState({lost_servers});
+                        break
+                    }
+                }
+            }
+        }, 1000);
     };
 
     postInitGateway = (user, gateway) => {
@@ -122,6 +159,7 @@ class ShidurApp extends Component {
                 if (gateway.name === "gxy3") {
                     return gateway.initServiceProtocol(user, data => this.onServiceData(gateway, data))
                 }
+                return Promise.resolve();
             })
     };
 
@@ -131,8 +169,8 @@ class ShidurApp extends Component {
     };
 
     fetchRooms = () => {
-        let {disabled_rooms,groups,shidur_mode,preview_mode} = this.state;
-        api.fetchActiveRooms()
+        let {disabled_rooms, groups, shidur_mode, preview_mode} = this.state;
+        return api.fetchActiveRooms()
             .then((data) => {
                 const users_count = data.map(r => r.num_users).reduce((su, cur) => su + cur, 0);
 
@@ -156,7 +194,7 @@ class ShidurApp extends Component {
 
                 groups = rooms.filter(r => !disabled_rooms.find(d => r.room === d.room) && !pre_groups.find(d => r.room === d.room));
                 disabled_rooms = rooms.filter(r => !groups.find(g => r.room === g.room) && !pre_groups.find(d => r.room === d.room));
-                this.setState({rooms,groups,disabled_rooms});
+                this.setState({rooms, groups, disabled_rooms});
                 let quads = [...this.col1.state.vquad,...this.col2.state.vquad,...this.col3.state.vquad,...this.col4.state.vquad];
                 let list = groups.filter(r => !quads.find(q => q && r.room === q.room));
                 let questions = list.filter(room => room.questions);
@@ -198,12 +236,17 @@ class ShidurApp extends Component {
         return;
       }
 
-      if (data.type === "error" && data.error_code === 420) {
+      if (data.type === "error") {
+        if (data.error_code === USERNAME_ALREADY_EXIST_ERROR_CODE) {
           console.error("[Shidur] service error message (reloading in 10 seconds)", data.error);
+          captureMessage(data.error, {source: "Shidur", msg: data});
           setTimeout(() => {
               this.initGateway(this.state.user, gateway);
           }, 10000);
           return;
+        } else {
+          captureException(data.error, {source: "Shidur", msg: data});
+        }
       }
 
       if(data.type === "event") {
@@ -245,7 +288,7 @@ class ShidurApp extends Component {
     };
 
     render() {
-        const {user, gatewaysInitialized, appInitError} = this.state;
+        const {user, gatewaysInitialized, appInitError, alert, timer, lost_servers} = this.state;
 
         if (appInitError) {
             return (
@@ -289,6 +332,11 @@ class ShidurApp extends Component {
         return (
             <div>
                 {user ? content : login}
+                <Confirm cancelButton={null} confirmButton={timer}
+                    header='Error'
+                    content={'Lost connection to servers: ' + lost_servers.toString()}
+                    open={alert}
+                    size='mini' />
             </div>
         );
     }

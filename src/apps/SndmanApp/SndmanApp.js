@@ -7,9 +7,9 @@ import LoginPage from "../../components/LoginPage";
 import {Grid} from "semantic-ui-react";
 import UsersQuadSndman from "./UsersQuadSndman";
 import GxyJanus from "../../shared/janus-utils";
-import {SNDMAN_ID} from "../../shared/consts"
+import {USERNAME_ALREADY_EXIST_ERROR_CODE, SNDMAN_ID} from "../../shared/consts"
 import {GuaranteeDeliveryManager} from '../../shared/GuaranteeDelivery';
-import {updateSentryUser} from "../../shared/sentry";
+import {captureException, captureMessage, updateSentryUser} from "../../shared/sentry";
 
 
 class SndmanApp extends Component {
@@ -50,6 +50,7 @@ class SndmanApp extends Component {
             .catch(err => {
                 console.error("[Sndman] error initializing app", err);
                 this.setState({appInitError: err});
+                captureException(err, {source: 'Sndman'});
             });
     }
 
@@ -57,11 +58,17 @@ class SndmanApp extends Component {
         const gateways = GxyJanus.makeGateways("rooms");
         this.setState({gateways});
 
-        return Promise.all(Object.values(gateways).map(gateway => (this.initGateway(user, gateway))))
-            .then(() => {
-                console.log("[Sndman] gateways initialization complete");
-                this.setState({gatewaysInitialized: true});
-            });
+        const gatewayToInitPromise = (gateway) => this.initGateway(user, gateway)
+					.catch(error => {
+						captureException(error, {source: 'Sndman', gateway: gateway.name});
+						throw error;
+					});
+
+        return Promise.all(Object.values(gateways).map(gatewayToInitPromise))
+					.then(() => {
+							console.log("[Sndman] gateways initialization complete");
+							this.setState({gatewaysInitialized: true});
+					});
     }
 
     initGateway = (user, gateway) => {
@@ -72,13 +79,19 @@ class SndmanApp extends Component {
         return gateway.init()
             .then(() => {
                 if (gateway.name === "gxy3") {
-                    return gateway.initServiceProtocol(user, data => this.onServiceData(gateway, data))
+                    return gateway.initServiceProtocol(user, data => this.onServiceData(gateway, data));
                 }
+                return Promise.resolve();
             })
             .catch(err => {
-                console.error("[Sndman] error initializing gateway", gateway.name, err);
+                console.error("[Sndman] error initializing gateway. Will retry in 10 sec.", gateway.name, err);
+                captureException(err, {source: 'Sndman', gateway: gateway.name});
                 setTimeout(() => {
-                    this.initGateway(user, gateway);
+                    this.initGateway(user, gateway)
+											.catch(err => {
+												console.error("[Sndman] error initializing gateway.", gateway.name, err);
+												captureException(err, {source: 'Sndman', gateway: gateway.name});
+											});
                 }, 10000);
             });
     }
@@ -95,11 +108,16 @@ class SndmanApp extends Component {
             return;
           }
 
-          if (data.type === "error" && data.error_code === 420) {
+          if (data.type === "error") {
+            if (data.error_code === USERNAME_ALREADY_EXIST_ERROR_CODE) {
               console.error("[Sndman] service error message (reloading in 10 seconds)", data.error);
+              captureMessage(data.error, {source: "Sndman", msg: data});
               setTimeout(() => {
                   this.initGateway(this.state.user, gateway);
               }, 10000);
+            } else {
+              captureException(data.error, {source: "Sndman", msg: data});
+            }
           }
 
           let {col, group, i, status} = data;

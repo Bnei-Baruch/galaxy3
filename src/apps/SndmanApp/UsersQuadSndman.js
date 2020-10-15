@@ -3,6 +3,7 @@ import {Button, Icon, Label, Segment} from "semantic-ui-react";
 import './UsersQuadSndman.scss'
 import UsersHandleSndman from "./UsersHandleSndman";
 import api from '../../shared/Api';
+import {captureException} from "../../shared/sentry";
 
 class UsersQuadSndman extends Component {
 
@@ -23,7 +24,8 @@ class UsersQuadSndman extends Component {
             api.fetchQuad(col)
                 .then(data => this.setState({vquad: data.vquad}))
                 .catch(err => {
-                    console.error("[Sndman] error fetching quad state", col, err);
+									console.error("[Sndman] error fetching quad state", col, err);
+									captureException(err, {source: "Sndman", col});
                 });
         }, 1000);
     };
@@ -100,7 +102,7 @@ class UsersQuadSndman extends Component {
     };
 
   render() {
-      const {full_group,full_feed,fullscr,vquad,forward,forward_request,col} = this.state;
+      const {full_group,full_feed,fullscr,vquad,forward, /*forward_request,*/ col} = this.state;
       const q = (<div className="question">
           <svg viewBox="0 0 50 50">
               <text x="25" y="25" textAnchor="middle" alignmentBaseline="central" dominantBaseline="central">&#xF128;</text>

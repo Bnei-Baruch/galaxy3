@@ -1,6 +1,7 @@
 import React, {Component} from "react";
 import {Label, Table} from "semantic-ui-react";
-import {MONITOR_SRV} from "../../../shared/env";
+import {ADMIN_SECRET, ADMIN_SRV_STR1, MONITOR_SRV} from "../../../shared/env";
+import {genUUID} from "../../../shared/tools";
 
 
 class StatNotes extends Component {
@@ -28,6 +29,7 @@ class StatNotes extends Component {
     };
 
     getCounts = () => {
+        this.getStr1Count();
         fetch(`${MONITOR_SRV}`)
             .then((response) => {
             if (response.ok) {
@@ -43,6 +45,21 @@ class StatNotes extends Component {
                 });
             }
         })
+    };
+
+    getStr1Count = () => {
+        let request = {"janus":"list_sessions","transaction": genUUID(),"admin_secret": ADMIN_SECRET};
+        fetch(`${ADMIN_SRV_STR1}`,{
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body:  JSON.stringify(request)
+        }).then((response) => {
+            if (response.ok) {
+                return response.json().then(data => {
+                    this.setState({str1_count: data.sessions.length});
+                });
+            }
+        });
     };
 
     render() {

@@ -23,7 +23,7 @@ export const Terms = (props) => {
       url.searchParams.delete('terms');
       window.history.pushState({}, document.title, url.href);
     }
-  });
+  }, []);
 
   const terms = {
     'en': '2PACX-1vRGxXGLrshOu57ifcb2bgCOnIhsgZAAnb_zXjiweD6XEre_s-hK7fa0Flx_FxUBsFK7unny6-1LNtH6',
@@ -36,7 +36,7 @@ export const Terms = (props) => {
   return (
     <div style={{width: '100%', flex: '1 1 auto', justifyContent: 'center', marginTop: '20px', marginBottom: '10px', display: 'flex'}}>
       <div style={{width: '100%', marginTop: 'auto', display: 'flex', justifyContent: 'center'}}>
-        <a href="javascript:void(0)" onClick={() => setOpen(true)}>{t('galaxyApp.terms')}</a>
+        <button className="link-button" onClick={() => setOpen(true)}>{t('galaxyApp.terms')}</button>
         {!open ? null :
           <Modal open={true} style={{direction, textAlign}}>
             <Modal.Content style={{height: '500px'}}>

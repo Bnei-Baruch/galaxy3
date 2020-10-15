@@ -4,7 +4,7 @@ import './UsersQuad.scss'
 import UsersHandle from "./UsersHandle";
 import api from '../../shared/Api';
 //import {AUDIOOUT_ID, SDIOUT_ID, SNDMAN_ID} from "../../shared/consts"
-import {captureMessage} from "../../shared/sentry";
+import {captureException, captureMessage} from "../../shared/sentry";
 
 class UsersQuad extends Component {
 
@@ -115,7 +115,10 @@ class UsersQuad extends Component {
 
         this.setState({vquad});
         api.updateQuad(col, {vquad})
-            .catch(err => console.error("[Shidur] error updating quad state", col, err))
+            .catch(err => {
+							console.error("[Shidur] error updating quad state", col, err);
+							captureException(err, {source: "Shidur"});
+						});
     };
 
     switchFour = () => {
@@ -152,7 +155,10 @@ class UsersQuad extends Component {
         }
 
         api.updateQuad(col, {vquad})
-            .catch(err => console.error("[Shidur] error updating quad state", col, err))
+            .catch(err => {
+							console.error("[Shidur] error updating quad state", col, err);
+							captureException(err, {source: "Shidur"});
+						});
     };
 
     setPreset = () => {
@@ -167,7 +173,10 @@ class UsersQuad extends Component {
         this.setState({vquad});
 
         api.updateQuad(col, {vquad})
-            .catch(err => console.error("[Shidur] error updating quad state", col, err))
+            .catch(err => {
+							console.error("[Shidur] error updating quad state", col, err);
+							captureException(err, {source: "Shidur"});
+						});
     };
 
     sdiActionMessage_ = (action, status, i, group, qst) => {
@@ -182,15 +191,13 @@ class UsersQuad extends Component {
 
     sdiGuaranteeAction = (action, status, i, group, qst, toAck) => {
       const { gateways, gdm } = this.props;
-      gdm.send(
-        this.sdiActionMessage_(action, status, i, group, qst),
-        toAck,
-        (msg) => gateways["gxy3"].sendServiceMessage(msg)).
-      then(() => {
-        console.log(`${action} delivered to ${toAck}.`);
-      }).catch((error) => {
-        console.error(`${action} not delivered to ${toAck} due to ${error}`);
-      });
+      gdm.send(this.sdiActionMessage_(action, status, i, group, qst), toAck, (msg) => gateways["gxy3"].sendServiceMessage(msg))
+				.then(() => {
+					console.log(`${action} delivered to ${toAck}.`);
+				})
+				.catch((error) => {
+					console.error(`${action} not delivered to ${toAck} due to ${error}`);
+				});
     }
 
     checkFullScreen = () => {
@@ -273,9 +280,7 @@ class UsersQuad extends Component {
         let toAck = [];
 
         if(group && group.users) {
-            toAck = group.users.map(u => {
-                if(u.role.match(/^(user|ghost|guest)$/)) return u.id
-            });
+            toAck = group.users.map(u => u.role.match(/^(user|ghost|guest)$/) ? u.id : null).filter(id => !!id);
             if(toAck.length === 0) return;
         } else {
             return;
@@ -286,26 +291,28 @@ class UsersQuad extends Component {
 
         if(status) {
             gateways[inst].chatRoomJoin(room, this.props.user).then(() => {
-                gdm.send(cmd, toAck, (cmd) => gateways[inst].sendCmdMessage(cmd)).
-                then(() => {
-                    console.log(`MIC delivered.`);
-                    captureMessage("Delivery ON success", {source: "shidur"});
-                }).catch((err) => {
-                    console.error('MIC not delivered due to: ' , err);
-                    captureMessage("Delivery ON failed", {source: "shidur", err}, 'error');
-                });
+                gdm.send(cmd, toAck, (cmd) => gateways[inst].sendCmdMessage(cmd))
+									.then(() => {
+											console.log(`MIC delivered.`);
+											captureMessage("Delivery ON success", {source: "shidur"});
+									})
+									.catch((err) => {
+											console.error('MIC not delivered due to: ' , err);
+											captureMessage("Delivery ON failed", {source: "shidur", err}, 'error');
+									});
             })
         } else {
-            gdm.send(cmd, toAck, (cmd) => gateways[inst].sendCmdMessage(cmd)).
-            then(() => {
-                console.log(`MIC delivered.`);
-                gateways[inst].chatRoomLeave(room)
-                captureMessage("Delivery OFF success",{source: "shidur"});
-            }).catch((err) => {
-                console.error('MIC not delivered due to: ' , JSON.stringify(err));
-                captureMessage("Delivery OFF failed", {source: "shidur", err}, 'error');
-                gateways[inst].chatRoomLeave(room)
-            });
+            gdm.send(cmd, toAck, (cmd) => gateways[inst].sendCmdMessage(cmd))
+							.then(() => {
+									console.log(`MIC delivered.`);
+									gateways[inst].chatRoomLeave(room)
+									captureMessage("Delivery OFF success",{source: "shidur"});
+							})
+							.catch((err) => {
+									console.error('MIC not delivered due to: ' , JSON.stringify(err));
+									captureMessage("Delivery OFF failed", {source: "shidur", err}, 'error');
+									gateways[inst].chatRoomLeave(room)
+							});
         }
     };
 

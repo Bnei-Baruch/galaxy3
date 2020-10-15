@@ -15,7 +15,7 @@ export const setLanguage = value => {
 };
 
 export const kcLocale = lang => {
-  if (lang == 'he') {
+  if (lang === 'he') {
     return 'il';
   }
   return lang;

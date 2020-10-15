@@ -430,4 +430,12 @@ export default class VirtualStreamingJanus {
     localStorage.setItem('vrt_lang', audios);
     localStorage.setItem('vrt_langtext', text);
   };
+
+  unmuteAudioElement = () => {
+    this.audioElement.muted = false;
+  }
+
+  muteAudioElement = () => {
+    this.audioElement.muted = true;
+  }
 };

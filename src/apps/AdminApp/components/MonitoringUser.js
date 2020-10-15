@@ -3,39 +3,42 @@ import {Dimmer, Header, Loader, Table} from 'semantic-ui-react';
 import {MONITORING_BACKEND} from '../../../shared/env';
 import {userRow} from '../../../shared/MonitoringUtils';
 
+const fetchUser = (onUserData, id, setLoadingCount, setFetchingError) => {
+  setLoadingCount(prev => prev + 1);
+  fetch(`${MONITORING_BACKEND}/user_metrics`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({user_id: id}),
+  })
+		.then((response) => {
+			if (response.ok) {
+				return response.json();
+			} else {
+				throw new Error(`Fetch error: ${response.url} ${response.status} ${response.statusText}`);
+			}
+		})
+		.then((data) => {
+			onUserData(data);
+		})
+		.catch((error) => {
+			console.error('Fetching monitoring users data error:', error);
+			setFetchingError(error.toString());
+		})
+		.finally(() => {
+			setLoadingCount(prev => prev - 1);
+		});
+}
+
 const MonitoringUser = (props) => {
   const [loadingCount, setLoadingCount] = useState(0);
   const [userData, setUserData] = useState({});
   const [fetchingError, setFetchingError] = useState('');
   const [, forceUpdate] = useState(true);  // Rerender to show progress in time since.
 
-  const fetchUser = (onUserData) => {
-    setLoadingCount(prev => prev + 1);
-    fetch(`${MONITORING_BACKEND}/user_metrics`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({user_id: props.user.id}),
-    }).then((response) => {
-      if (response.ok) {
-        return response.json();
-      } else {
-        throw new Error(`Fetch error: ${response.url} ${response.status} ${response.statusText}`);
-      }
-    }).then((data) => {
-      onUserData(data);
-    })
-    .catch((error) => {
-      console.error('Fetching monitoring users data error:', error);
-      setFetchingError(error.toString());
-    }).finally(() => {
-      setLoadingCount(prev => prev - 1);
-    });
-  }
-
   useEffect(() => {
     fetchUser((data) => {
       setUserData(data);
-    });
+    }, props.user.id, setLoadingCount, setFetchingError);
   }, [props.user]);
 
   useEffect(() => {

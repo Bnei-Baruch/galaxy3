@@ -42,7 +42,7 @@ const AudioMode = (props) => {
       }}
     >
       <Icon className={classes.icon}>
-        <img src={isOn ? audioModeSvg : fullModeSvg} />
+        <img src={isOn ? audioModeSvg : fullModeSvg} alt={t(isOn ? 'oldClient.fullMode' : 'oldClient.audioMode')} />
       </Icon>
       <span className={classes.label}>
         {t(isOn ? 'oldClient.fullMode' : 'oldClient.audioMode')}

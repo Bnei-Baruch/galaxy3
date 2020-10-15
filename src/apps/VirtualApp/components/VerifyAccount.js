@@ -12,9 +12,10 @@ import {
 import { useTranslation } from 'react-i18next';
 import api from '../../../shared/Api';
 import {getUser} from "../../../components/UserManager";
+import {captureException} from "../../../shared/sentry";
 
 
-const EMAIL_RE = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+const EMAIL_RE = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
 const emailValid = (email) => !!EMAIL_RE.test(String(email).toLowerCase());
 
 const VerifyAccount = (props) => {
@@ -48,11 +49,16 @@ const VerifyAccount = (props) => {
     for (let [pendingEmail, state] of Object.entries(pendingState)) {
 
       if (['ignore', 'approve'].includes(state)) {
-        api.verifyUser(pendingEmail, state).then((data) => {
-          if (data && data.result === 'success') {
-            getUser((user) => onUserUpdate(user));
-          }
-        });
+        api.verifyUser(pendingEmail, state)
+					.then((data) => {
+						if (data && data.result === 'success') {
+							getUser((user) => onUserUpdate(user));
+						}
+					})
+					.catch(err => {
+						console.error('Error applying pending states', err);
+						captureException(err, {source: 'VerifyAccount'});
+					});
       }
     }
   }
@@ -68,7 +74,10 @@ const VerifyAccount = (props) => {
       }).catch((error) => {
         if (error.message === 'Not Found') {
           setError(t('galaxyApp.requestedVerificationBadEmailPopup'));
-        }
+        } else {
+					console.error('Error asking friend to verify', error);
+					captureException(error, {source: 'VerifyAccount'});
+				}
       });
     }
   };

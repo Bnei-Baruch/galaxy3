@@ -82,6 +82,10 @@ class UsersHandleAudioOut extends Component {
                     if(this.state.remoteFeed)
                         this.state.remoteFeed.detach();
                     callback();
+                },
+                error: () => {
+                    this.setState({feeds: [], mids: [], room: null});
+                    callback();
                 }
             });
         }
