@@ -666,7 +666,7 @@ class AdminRoot extends Component {
         const room_data = rooms.find(x => x.room === room);
         if (!room_data) {
             console.warn("[Admin] exitRoom. no room data in state");
-            return;
+            return Promise.resolve();
         }
 
         const gateway = gateways[room_data.janus];
