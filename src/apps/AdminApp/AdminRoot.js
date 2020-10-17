@@ -16,15 +16,15 @@ import api from "../../shared/Api";
 import ConfigStore from "../../shared/ConfigStore";
 import {GuaranteeDeliveryManager} from "../../shared/GuaranteeDelivery";
 import StatNotes from "./components/StatNotes";
-import {captureException, updateSentryUser} from "../../shared/sentry";
+import {captureException, captureMessage, updateSentryUser} from "../../shared/sentry";
 
 class AdminRoot extends Component {
 
     state = {
         activeTab: 0,
         audio: null,
-				chatRoomsInitialized: false,
-				chatRoomsInitializedError: null,
+        chatRoomsInitialized: false,
+        chatRoomsInitializedError: null,
         current_room: "",
         current_janus: "",
         feedStreams: {},
@@ -206,17 +206,24 @@ class AdminRoot extends Component {
     };
 
     publishOwnFeed = (gateway) => {
+        console.log("[Admin] publishOwnFeed", gateway.name);
         gateway.videoroom.createOffer({
             media: {audio: false, video: false, data: false},
             simulcast: false,
             success: (jsep) => {
-                Janus.debug('Got publisher SDP!');
-                Janus.debug(jsep);
-                let publish = { request: 'configure', audio: false, video: false, data: false };
-                gateway.videoroom.send({ 'message': publish, 'jsep': jsep });
+                gateway.debug('Got publisher SDP!', jsep);
+                gateway.videoroom.send({
+                    jsep,
+                    message: {request: 'configure', audio: false, video: false, data: false},
+                    error: (err) => {
+                        gateway.error('videoroom configure error:', err);
+                        captureMessage(`Videoroom error: configure [publishOwnFeed] - ${err}`, {source: 'AdminRoot', err}, 'error');
+                    },
+                });
             },
-            error: (error) => {
-                Janus.error('WebRTC error:', error);
+            error: (err) => {
+                gateway.error('videoroom createOffer error:', err);
+                captureMessage(`Videoroom error: create offer [publishOwnFeed] - ${err}`, {source: 'AdminRoot', err}, 'error');
             }
         });
     };
@@ -351,22 +358,31 @@ class AdminRoot extends Component {
                     } else {
                         console.error("[Admin] videoroom error message", msg);
                     }
+                    captureMessage(`Videoroom error: message - ${msg["error"]}`, {source: "AdminRoot", err: msg, gateway: gateway.name}, 'error');
                 }
             }
         }
 
         if (jsep !== undefined && jsep !== null) {
             gateway.debug("[videoroom] Handling SDP as well...", jsep);
-            gateway.videoroom.handleRemoteJsep({jsep});
+            gateway.videoroom.handleRemoteJsep({
+                jsep,
+                error: (err) => {
+                    gateway.error('videoroom handleRemoteJsep error:', err);
+                    captureMessage(`Videoroom error: handleRemoteJsep - ${err}`, {source: 'AdminRoot', err, gateway: gateway.name}, 'error');
+                },
+            });
         }
     };
 
     newRemoteFeed = (gateway, subscription) => {
+        console.log("[Admin] newRemoteFeed", gateway.name);
         gateway.newRemoteFeed({
             onmessage: (msg, jsep) => {
                 let event = msg["videoroom"];
                 if (msg["error"] !== undefined && msg["error"] !== null) {
                     gateway.error("[remoteFeed] error message:", msg["error"]);
+                    captureMessage(`remoteFeed error: message - ${msg["error"]}`, {source: "AdminRoot", err: msg, gateway: gateway.name}, 'error');
                 } else if (event !== undefined && event !== null) {
                     if (event === "attached") {
                         gateway.log("[remoteFeed] Successfully attached to feed in room " + msg["room"]);
@@ -396,11 +412,18 @@ class AdminRoot extends Component {
                             media: {audioSend: false, videoSend: false, data: false},	// We want recvonly audio/video
                             success: (jsep) => {
                                 gateway.debug("[remoteFeed] Got SDP", jsep);
-                                let body = {request: "start", room: this.state.current_room, data: false};
-                                gateway.remoteFeed.send({message: body, jsep: jsep});
+                                gateway.remoteFeed.send({
+                                    jsep,
+                                    message: {request: "start", room: this.state.current_room, data: false},
+                                    error: (err) => {
+                                        gateway.error('[remoteFeed] start error', err);
+                                        captureMessage(`remoteFeed error: start - ${err}`, {source: 'AdminRoot', err, gateway: gateway.name}, 'error');
+                                    }
+                                });
                             },
-                            error: (error) => {
-                                gateway.error("[remoteFeed] createAnswer error", error);
+                            error: (err) => {
+                                gateway.error("[remoteFeed] createAnswer error", err);
+                                captureMessage(`remoteFeed error: createAnswer - ${err}`, {source: 'AdminRoot', err, gateway: gateway.name}, 'error');
                             }
                         });
                 }
@@ -443,15 +466,17 @@ class AdminRoot extends Component {
                 gateway.remoteFeed.send({
                     message: subscribe,
                     success: () => {
-                        gateway.log('[remoteFeed] join as subscriber success', subscribe)
+                        gateway.log('[remoteFeed] join as subscriber success', subscribe);
                     },
                     error: (err) => {
-                        gateway.error('[remoteFeed] error join as subscriber', subscribe, err)
+                        gateway.error('[remoteFeed] error join as subscriber', subscribe, err);
+                        captureMessage(`remoteFeed error: join - ${err}`, {source: 'AdminRoot', err, gateway: gateway.name}, 'error');
                     }
                 });
             })
             .catch(err => {
                 console.error("[Admin] gateway.newRemoteFeed error", err);
+                captureException(err, {source: 'AdminRoot', gateway: gateway.name});
             });
     };
 
@@ -465,10 +490,11 @@ class AdminRoot extends Component {
             gateway.remoteFeed.send({
                 message: subscribe,
                 success: () => {
-                    gateway.log('[remoteFeed] subscribe success', subscribe)
+                    gateway.log('[remoteFeed] subscribe success', subscribe);
                 },
                 error: (err) => {
-                    gateway.error('[remoteFeed] error subscribe', subscribe, err)
+                    gateway.error('[remoteFeed] error subscribe', subscribe, err);
+                    captureMessage(`remoteFeed error: subscribe - ${err}`, {source: "AdminRoot", err, gateway: gateway.name}, 'error');
                 }
             });
         } else {
@@ -493,10 +519,11 @@ class AdminRoot extends Component {
                 gateway.remoteFeed.send({
                     message: unsubscribe,
                     success: () => {
-                        gateway.log('[remoteFeed] unsubscribe success', unsubscribe)
+                        gateway.log('[remoteFeed] unsubscribe success', unsubscribe);
                     },
                     error: (err) => {
-                        gateway.error('[remoteFeed] error unsubscribe', unsubscribe, err)
+                        gateway.error('[remoteFeed] error unsubscribe', unsubscribe, err);
+                        captureMessage(`remoteFeed error: unsubscribe - ${err}`, {source: "AdminRoot", err}, 'error');
                     }
                 });
 
@@ -517,14 +544,20 @@ class AdminRoot extends Component {
         const toAck = [feed_user.id];
 
         if(command_type === "audio-out") {
-            gdm.send(cmd, toAck, (cmd) => gateway.sendCmdMessage(cmd)).then(() => {
-                console.log(`MIC delivered.`);
-            }).catch((error) => {
-                console.error(`MIC not delivered due to: ` , JSON.stringify(error));
-            });
+            gdm.send(cmd, toAck, (cmd) => gateway.sendCmdMessage(cmd))
+                .then(() => {
+                    console.log(`[Admin] MIC delivered.`);
+                }).catch((err) => {
+                    console.error('[Admin] not delivered', err);
+                    captureException(err, {source: 'AdminRoot', gateway: gateway.name});
+                });
         } else {
             gateway.sendCmdMessage(cmd)
-                .catch(alert);
+                .catch((err) => {
+                    console.error('[Admin] sendCmdMessage error', err);
+                    captureException(err, {source: 'AdminRoot', gateway: gateway.name});
+                    alert(err);
+                });
         }
 
         if (command_type === "audio-out") {
@@ -621,13 +654,12 @@ class AdminRoot extends Component {
         this.setState({users: data.users})
 
         let promise;
-
         if (current_room) {
             promise = this.exitRoom(current_room);
         } else {
             promise = new Promise((resolve, _) => {
                 resolve()
-            })
+            });
         }
 
         promise
@@ -640,23 +672,26 @@ class AdminRoot extends Component {
                     feed_user: null,
                     feed_id: null,
                     command_status: true,
-										chatRoomsInitialized: false,
-										chatRoomsInitializedError: null,
+                    chatRoomsInitialized: false,
+                    chatRoomsInitializedError: null,
                 }, () => {
-									const gateway = this.state.gateways[inst];
+                    const gateway = this.state.gateways[inst];
 
-									this.newVideoRoom(gateway, room)
-											.then(() => {
-													gateway.videoRoomJoin(room, user);
-											});
+                    this.newVideoRoom(gateway, room)
+                        .then(() => (gateway.videoRoomJoin(room, user)))
+                        .catch(err => captureException(err, {source: 'AdminRoot', gateway: gateway.name}));
 
-									if (this.isAllowed("admin")) {
-											gateway.chatRoomJoin(room, user)
-												.catch((error) => this.setState({chatRoomsInitializedError: error}))
-												.finally(() => this.setState({chatRoomsInitialized: true}));
-									}
-								});
+                    if (this.isAllowed("admin")) {
+                        gateway.chatRoomJoin(room, user)
+                            .catch((err) => {
+                                this.setState({chatRoomsInitializedError: err});
+                                captureException(err, {source: 'AdminRoot', gateway: gateway.name});
+                            })
+                            .finally(() => this.setState({chatRoomsInitialized: true}));
+                    }
+                });
             })
+            .catch(err => captureException(err, {source: 'AdminRoot'}));
     };
 
     exitRoom = (room) => {
@@ -726,15 +761,15 @@ class AdminRoot extends Component {
                         }
                     )
                     .catch(err => {
-											captureException(err, {source: 'AdminRoot'});
-											alert("Error fetching handle_info: " + err);
-										});
+                        captureException(err, {source: 'AdminRoot'});
+                        alert("Error fetching handle_info: " + err);
+                    });
             }
         }
     };
- 
-	onChatRoomsInitialized = (error) => {	
-		this.setState({chatRoomsInitialized: true, chatRoomsInitializedError: error});	
+
+	onChatRoomsInitialized = (error) => {
+		this.setState({chatRoomsInitialized: true, chatRoomsInitializedError: error});
 	};
 
   addUserTab(user, stats) {
@@ -767,8 +802,8 @@ class AdminRoot extends Component {
   render() {
       const {
           activeTab,
-					chatRoomsInitialized,
-					chatRoomsInitializedError,
+          chatRoomsInitialized,
+          chatRoomsInitializedError,
           current_janus,
           current_room,
           current_group,
@@ -897,7 +932,7 @@ class AdminRoot extends Component {
       });
 
       let login = (<LoginPage user={user} checkPermission={this.checkPermission} />);
-		
+
 			const infoPopup =
 				<Popup trigger={<Button positive icon='info' onClick={this.getFeedInfo} />}
 					position='bottom left'
@@ -1040,7 +1075,7 @@ class AdminRoot extends Component {
                                    selected_group={current_group}
                                    selected_user={feed_user}
                                    gateways={gateways}
-                                   gdm={this.state.gdm} 
+                                   gdm={this.state.gdm}
 																	 onChatRoomsInitialized={this.onChatRoomsInitialized}/>
 
                           </Grid.Column>
