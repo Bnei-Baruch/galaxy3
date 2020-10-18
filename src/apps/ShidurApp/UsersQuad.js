@@ -337,7 +337,6 @@ class UsersQuad extends Component {
               }
               qst = <div className={className}>?</div>;
           }
-
           let qf = fullscr && index === i && question;
           let ff = fullscr && index === i && !question;
           let name = g ? g.description : "";
