@@ -526,6 +526,7 @@ class VirtualClient extends Component {
       },
       error: (error) => {
         Janus.log('Error attaching plugin: ' + error);
+        captureMessage('Error attaching videoroom plugin', {source: 'Videoroom', err: error}, 'error');
       },
       consentDialog: (on) => {
         Janus.debug('Consent dialog should be ' + (on ? 'on' : 'off') + ' now');
@@ -584,6 +585,7 @@ class VirtualClient extends Component {
       },
       ondataerror: (error) => {
         Janus.warn('Publisher - DataChannel error: ' + error);
+        captureMessage('Publisher - DataChannel error', {source: 'Videoroom', err: error}, 'error');
       },
       oncleanup: () => {
         Janus.log(' ::: Got a cleanup notification: we are unpublished now :::');
@@ -895,6 +897,7 @@ class VirtualClient extends Component {
         },
         error: (error) => {
           Janus.error('  -- Error attaching plugin...', error);
+          captureMessage('Error attaching remotefeed plugin', {source: 'Remotefeed', err: error}, 'error');
         },
         iceState: (state) => {
           Janus.log('ICE state (remote feed) changed to ' + state);
@@ -993,6 +996,7 @@ class VirtualClient extends Component {
         },
         ondataerror: (error) => {
           Janus.warn('Feed - DataChannel error: ' + error);
+          captureMessage('Remotefeed - DataChannel error', {source: 'Remotefeed', err: error}, 'error');
         },
         oncleanup: () => {
           Janus.log(' ::: Got a cleanup notification (remote feed) :::');
