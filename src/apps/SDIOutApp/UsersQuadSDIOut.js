@@ -33,7 +33,7 @@ class UsersQuadSDIOut extends Component {
                 name = g.description;
                 if (g.questions) {
                     let className = fullscr ? "qst_fullscreentitle" : "qst_title";
-                    if (!roomsStatistics[g.room] || roomsStatistics[g.room]["on_air"] < 2) {
+                    if (!roomsStatistics[g.room] || roomsStatistics[g.room]["on_air"] === 0) {
                         className += ` ${className}__first_time`;
                     }
                     qst = <div className={className}>?</div>;

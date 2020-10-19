@@ -332,7 +332,7 @@ class UsersQuad extends Component {
           let qst = "";
           if (rooms && rooms.filter(q => q && g && q.room === g.room && q.questions).length > 0) {
               let className = "qst_title";
-              if (!roomsStatistics[g.room] || roomsStatistics[g.room]["on_air"] < 2) {
+              if (!roomsStatistics[g.room] || roomsStatistics[g.room]["on_air"] === 0) {
                   className += " qst_title__first_time";
               }
               qst = <div className={className}>?</div>;
