@@ -670,7 +670,7 @@ class GxyJanus extends EventTarget {
         });
     };
 
-    initForward = () => {
+    initForward = (onDataErrorCallback) => {
         return new Promise((resolve, reject) => {
             this.gateway.attach({
                 plugin: "janus.plugin.videoroom",
@@ -764,6 +764,12 @@ class GxyJanus extends EventTarget {
                 },
                 ondata: (data) => {
                     this.warn("[forward] ::: data from the DataChannel! :::", data);
+                },
+                ondataerror: (error) => {
+                  this.error("[forward] on data error", error);
+                  if (onDataErrorCallback) {
+                    onDataErrorCallback(error);
+                  }
                 },
                 oncleanup: () => {
                     this.log("[forward] cleanup");

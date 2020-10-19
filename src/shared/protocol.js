@@ -1,6 +1,7 @@
 import {Janus} from "../lib/janus";
 import {SERVICE_ROOM, PROTOCOL_ROOM, SDIOUT_ID, SHIDUR_ID, SNDMAN_ID, STORAN_ID} from "./consts";
 import {getDateString} from "./tools";
+import {captureException} from "./sentry";
 
 const attachGxyProtocol = (protocol, user, service) => {
     let transaction = Janus.randomString(12);
@@ -36,6 +37,7 @@ export const initGxyProtocol = (janus,user,callback,ondata,service) => {
             },
             error: (error) => {
                 console.error("  -- Error attaching plugin...", error);
+                captureException(error, {source: 'Protocol'});
             },
             webrtcState: (on) => {
                 Janus.log("Janus says our WebRTC PeerConnection is " + (on ? "up" : "down") + " now");
@@ -60,6 +62,7 @@ export const initGxyProtocol = (janus,user,callback,ondata,service) => {
                             },
                             error: (error) => {
                                 Janus.error("WebRTC error:", error);
+                                captureException(error, {source: 'Protocol'});
                                 alert("WebRTC error... " + JSON.stringify(error));
                             }
                         });
@@ -72,6 +75,10 @@ export const initGxyProtocol = (janus,user,callback,ondata,service) => {
             ondata: (data) => {
                 Janus.debug("We got data from the DataChannel! " + data);
                 onProtocolData(data,user,ondata);
+            },
+            ondataerror: (error) => {
+              Janus.error("Protocol data error: " + error);
+              captureException(error, {source: 'Protocol'});
             },
             oncleanup: () => {
                 Janus.log(" ::: Got a cleanup notification :::");
