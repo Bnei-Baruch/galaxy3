@@ -199,9 +199,13 @@ class AdminRoot extends Component {
         console.log("[Admin] newVideoRoom", room);
 
         return gateway.initVideoRoom({
-            onmessage: (msg, jsep) => {
-                this.onVideoroomMessage(gateway, msg, jsep);
-            }
+          onmessage: (msg, jsep) => {
+            this.onVideoroomMessage(gateway, msg, jsep);
+          },
+          ondataerror: (error) => {
+            console.error("[Admin] video room on data error", error);
+            captureMessage('[Admin] video room on data error', {source: 'AdminRoot', err: error, gateway: gateway.name}, 'error');
+          },
         });
     };
 
@@ -453,6 +457,9 @@ class AdminRoot extends Component {
                 } else {
                     console.debug("[Admin] Track already attached: ", track);
                 }
+            },
+            ondataerror: (error) => {
+              captureMessage('[Admin] remotefeed on data error', {source: 'AdminRoot', err: error, gateway: gateway.name}, 'error');
             },
         })
             .then(() => {
