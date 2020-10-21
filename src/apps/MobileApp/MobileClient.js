@@ -510,6 +510,7 @@ class MobileClient extends Component {
             },
             error: (error) => {
                 Janus.log("Error attaching plugin: " + error);
+                captureMessage('Error attaching videoroom plugin', {source: 'Videoroom', err: error});
             },
             consentDialog: (on) => {
                 Janus.debug("Consent dialog should be " + (on ? "on" : "off") + " now");
@@ -566,6 +567,8 @@ class MobileClient extends Component {
             },
             ondataerror: (error) => {
                 Janus.warn('Publisher - DataChannel error: ' + error);
+                captureException(error, {source: 'Videoroom'});
+                captureMessage('Publisher - DataChannel error', {source: 'Videoroom', err: error});
             },
             oncleanup: () => {
                 Janus.log(" ::: Got a cleanup notification: we are unpublished now :::");
@@ -878,6 +881,7 @@ class MobileClient extends Component {
                 },
                 error: (error) => {
                     Janus.error("  -- Error attaching plugin...", error);
+                    captureMessage('Error attaching videoroo plugin', {source: 'Videoroom', err: error});
                 },
                 iceState: (state) => {
                     Janus.log("ICE state (remote feed) changed to " + state);
@@ -991,6 +995,8 @@ class MobileClient extends Component {
                 },
                 ondataerror: (error) => {
                     Janus.warn('Feed - DataChannel error: ' + error);
+                    captureException(error, {source: 'RemoteFeed'});
+                    captureMessage('Remotefeed - DataChannel error', {source: 'Remotefeed', err: error});
                 },
                 oncleanup: () => {
                     Janus.log(" ::: Got a cleanup notification (remote feed) :::");
@@ -1106,6 +1112,11 @@ class MobileClient extends Component {
     switchVideoSlots = (from, to) => {
       const fromRemoteVideo = this.refs["remoteVideo" + from];
       const toRemoteVideo = this.refs["remoteVideo" + to];
+      if (!fromRemoteVideo || !toRemoteVideo) {
+        console.error(`Failed switching video slots ${from} to ${to}`, fromRemoteVideo, toRemoteVideo);
+        captureMessage('Mobile failed switching video slots', {source: 'MobileClient', from, to, fromRemoteVideo, toRemoteVideo}, 'error');
+        return;
+      }
       const stream = fromRemoteVideo.srcObject;
       Janus.log(`Switching stream from ${from} to ${to}`, stream, fromRemoteVideo, toRemoteVideo);
       Janus.attachMediaStream(toRemoteVideo, stream);
