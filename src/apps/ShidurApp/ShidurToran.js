@@ -1,9 +1,11 @@
 import React, {Component} from 'react';
-import {Grid, Label, Message, Segment, Table, Button, Dropdown, Popup} from "semantic-ui-react";
+import {Button, Dropdown, Grid, Label, Message, Popup, Segment, Table} from "semantic-ui-react";
 import './ShidurToran.scss';
 import UsersPreview from "./UsersPreview";
+import api from '../../shared/Api';
 import {RESET_VOTE} from "../../shared/env";
 import {SDIOUT_ID, SNDMAN_ID} from "../../shared/consts"
+import {captureException} from "../../shared/sentry";
 
 
 class ShidurToran extends Component {
@@ -199,6 +201,15 @@ class ShidurToran extends Component {
         }).then().catch(ex => console.log(`Reset Vote`, ex));
     }
 
+    resetRoomsStatistics = () => {
+        api.adminResetRoomsStatistics()
+            .catch(err => {
+                console.error('[Shidur] [Toran] error resetting rooms statistics', err);
+                captureException(err, {source: "Shidur"});
+                alert('Error resetting rooms statistics');
+            });
+    }
+
     render() {
 
         const {group,pre_groups,disabled_rooms,groups,groups_queue,questions,presets,sdiout,sndman,shidur_mode,users_count,preview_mode} = this.props;
@@ -300,6 +311,10 @@ class ShidurToran extends Component {
                             disabled={!sdiout}
                             onClick={() => this.sdiGuaranteeAction("restart_sdiout", false, 1, null, [SDIOUT_ID])}>
                             SdiOut</Button>
+                        <Button
+                            color="green"
+                            onClick={this.resetRoomsStatistics}>
+                            Reset Stats</Button>
                     </Button.Group>
                 </Grid.Column>
                 <Grid.Column>

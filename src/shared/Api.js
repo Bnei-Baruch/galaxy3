@@ -50,6 +50,9 @@ class Api {
     fetchProgram = () =>
         this.logAndParse('fetch program', fetch(this.urlFor('/qids'), this.defaultOptions()));
 
+    fetchRoomsStatistics = () =>
+        this.logAndParse('fetch rooms statistics', fetch(this.urlFor('/v2/rooms_statistics'), this.defaultOptions()));
+
     updateQuad = (col, data) => {
         const options = this.makeOptions('PUT', data);
         return this.logAndParse(`update quad ${col}`, fetch(this.urlFor(`/qids/q${col}`), options));
@@ -92,6 +95,11 @@ class Api {
     adminSetConfig = (key, value) => {
         const options = this.makeOptions('POST', {value});
         return this.logAndParse(`admin set config`, fetch(this.urlFor(`/admin/dynamic_config/${key}`), options));
+    }
+
+    adminResetRoomsStatistics = () => {
+        const options = this.makeOptions('DELETE');
+        return this.logAndParse(`admin reset rooms statistics`, fetch(this.urlFor('/admin/rooms_statistics'), options));
     }
 
     // Auth Helper API

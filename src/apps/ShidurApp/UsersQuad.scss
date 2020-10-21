@@ -166,17 +166,21 @@
 .qst_title {
     font-family: Arial, sans-serif;
     position: absolute;
-    color: red;
+    color: yellow;
     text-align: center;
     line-height: 30px;
     font-weight: bold;
     font-size: 30px;
-    background-color: yellow;
+    background-color: red;
     width: 30px;
     height: 28px;
     right: 2px;
     //top: 2px;
     z-index: 2;
+    &__first_time {
+        color: red;
+        background-color: yellow;
+    }
 }
 
 .qst_fullscreentitle {

@@ -325,11 +325,18 @@ class UsersQuad extends Component {
 
   render() {
       const {index,fullscr,col,vquad,question} = this.state;
-      const {groups,group,rooms,next_button,presets,delay} = this.props;
+      const {groups,group,rooms,next_button,presets,delay, roomsStatistics} = this.props;
 
       let program = vquad.map((g,i) => {
           if (groups.length === 0) return false;
-          let qst = rooms ? rooms.filter(q => q && g && q.room === g.room && q.questions).length > 0 : false;
+          let qst = "";
+          if (rooms && rooms.filter(q => q && g && q.room === g.room && q.questions).length > 0) {
+              let className = "qst_title";
+              if (!roomsStatistics[g.room] || roomsStatistics[g.room]["on_air"] === 0) {
+                  className += " qst_title__first_time";
+              }
+              qst = <div className={className}>?</div>;
+          }
           let qf = fullscr && index === i && question;
           let ff = fullscr && index === i && !question;
           let name = g ? g.description : "";
@@ -337,7 +344,7 @@ class UsersQuad extends Component {
               <div key={"pr" + i} className={qf ? "video_full" : ff ? "video_qst" : "video_box"} >
                   <div className='click-panel' onClick={() => this.switchQuestion(i, g, true)} >
                   <div className='video_title' >{name}</div>
-                  {qst ? <div className="qst_title">?</div> : ""}
+                  {qst}
                   <UsersHandle key={"q"+i} g={g} index={i} ref={cmd => {this["cmd"+col+i] = cmd;}} {...this.props} />
                   </div>
                   {!question ?
