@@ -12,17 +12,19 @@ const useStyles = makeStyles({
   label: {
     width: '100%',
     display: 'block',
-    marginTop: '11px'
+    marginTop: '9px',
+    whiteSpace: 'nowrap'
   },
   disabled: {
     opacity: 0.5
   },
   button: {
     display: 'flex',
-    flexDirection: 'column'
+    flexDirection: 'column',
+    margin: '0.5em 1em'
   },
   icon: {
-    fontSize: '1.5em !important',
+    fontSize: '1.8em !important',
   },
   popupIcon: {
     lineHeight: '1em'
@@ -47,7 +49,7 @@ const Layout = (props) => {
   const { disabled, t, iconDisabled, action, active } = props;
 
   const classes         = useStyles();
-  const [open, setOpen] = React.useState(null);
+  const [open, setOpen] = React.useState(false);
 
   const anchorRef = useRef();
 

@@ -8,14 +8,16 @@ const useStyles = makeStyles({
   label: {
     width: '100%',
     display: 'block',
-    marginTop: '4px'
+    marginTop: '2px',
+    whiteSpace: 'nowrap'
   },
   disabled: {
     opacity: 0.5
   },
   button: {
     display: 'flex',
-    flexDirection: 'column'
+    flexDirection: 'column',
+    margin: '0.5em 1em'
   }
 });
 

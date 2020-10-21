@@ -1,20 +1,22 @@
 import React from 'react';
 import { makeStyles } from '@material-ui/core/styles';
-import { Tv, TvOff } from '@material-ui/icons';
+import { DesktopAccessDisabled, DesktopWindows } from '@material-ui/icons';
 import ButtonBase from '@material-ui/core/ButtonBase';
 
 const useStyles = makeStyles({
   label: {
     width: '100%',
     display: 'block',
-    marginTop: '7px'
+    marginTop: '5px',
+    whiteSpace: 'nowrap'
   },
   disabled: {
     opacity: 0.5
   },
   button: {
     display: 'flex',
-    flexDirection: 'column'
+    flexDirection: 'column',
+    margin: '0.5em 1em'
   },
   badge: {
     top: '1px',
@@ -41,7 +43,7 @@ const CloseBroadcast = (props) => {
         disabled: classes.disabled
       }}
     >
-      {isOn ? <Tv /> : <TvOff />}
+      {isOn ? <DesktopWindows /> : <DesktopAccessDisabled />}
       <span className={classes.label}>
         {isOn ? t('oldClient.closeBroadcast') : t('oldClient.openBroadcast')}
       </span>

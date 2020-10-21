@@ -5,6 +5,7 @@ import {getDateString, notifyMe, } from '../../shared/tools';
 import { SHIDUR_ID } from '../../shared/consts';
 import {captureMessage} from '../../shared/sentry';
 
+const isUseNewDesign = new URL(window.location.href).searchParams.has('new_design');
 class VirtualChat extends Component {
 
   state = {
@@ -200,7 +201,7 @@ class VirtualChat extends Component {
             this.scrollToBottom();
           } else {
             notifyMe('Shidur', message.text, true);
-            this.setState({ room_chat: false });
+            isUseNewDesign ? this.props.setIsRoomChat(false) : this.setState({ room_chat: false });
             this.props.onNewMsg(true);
           }
         }
@@ -253,7 +254,7 @@ class VirtualChat extends Component {
       this.scrollToBottom();
     } else {
       notifyMe('Shidur', message.text, true);
-      this.setState({ room_chat: false });
+      isUseNewDesign ? this.props.setIsRoomChat(false) : this.setState({ room_chat: false });
       this.props.onNewMsg(true);
     }
   };
@@ -278,8 +279,9 @@ class VirtualChat extends Component {
   };
 
   sendChatMessage = () => {
+    const {  room_chat } = isUseNewDesign ? this.props : this.state;
     let { id, role, display } = this.props.user;
-    let { input_value, from, room_chat, support_msgs } = this.state;
+    let { input_value, from,  support_msgs } = this.state;
     if (!role.match(/^(user|guest)$/) || input_value === '') {
       return;
     }
@@ -319,12 +321,13 @@ class VirtualChat extends Component {
   };
 
   tooggleChat = (room_chat) => {
-    this.setState({ room_chat });
+    isUseNewDesign ? this.props.setIsRoomChat(room_chat) : this.setState({ room_chat });
   };
 
   render() {
     const { t } = this.props;
-    const { messages, support_msgs, room_chat } = this.state;
+    const { room_chat } = isUseNewDesign ? this.props : this.state;
+    const { messages, support_msgs } = this.state;
 
     const urlRegex =/(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#/%?=~_|!:,.;()]*[-A-Z0-9+&@#/%=~_|()])/ig;
     const textWithLinks = (text) => {
@@ -398,10 +401,16 @@ class VirtualChat extends Component {
 
     return (
         <div className="chat-panel">
-          <Button.Group attached='top'>
-            <Button disabled={room_chat} color='blue' onClick={() => this.tooggleChat(true)}>{t('virtualChat.roomChat')}</Button>
-            <Button disabled={!room_chat} color='blue' onClick={() => this.tooggleChat(false)}>{t('virtualChat.supportChat')}</Button>
-          </Button.Group>
+          {
+            isUseNewDesign
+              ? null
+              : (
+                <Button.Group attached='top'>
+                  <Button disabled={room_chat} color='blue' onClick={() => this.tooggleChat(true)}>{t('virtualChat.roomChat')}</Button>
+                  <Button disabled={!room_chat} color='blue' onClick={() => this.tooggleChat(false)}>{t('virtualChat.supportChat')}</Button>
+                </Button.Group>
+              )
+          }
           <Message attached className='messages_list'>
             <div className="messages-wrapper">
               {room_chat ? room_msgs : admin_msgs}
