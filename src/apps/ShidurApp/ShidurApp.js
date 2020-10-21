@@ -170,7 +170,7 @@ class ShidurApp extends Component {
 
     fetchRooms = () => {
         let {disabled_rooms, groups, shidur_mode, preview_mode} = this.state;
-        return api.fetchActiveRooms()
+        api.fetchActiveRooms()
             .then((data) => {
                 const users_count = data.map(r => r.num_users).reduce((su, cur) => su + cur, 0);
 
@@ -199,20 +199,20 @@ class ShidurApp extends Component {
                 let list = groups.filter(r => !quads.find(q => q && r.room === q.room));
                 let questions = list.filter(room => room.questions);
                 this.setState({quads, questions, users_count});
-
-                api.fetchRoomsStatistics()
-                    .then((roomsStatistics) => {
-                        this.setState({roomsStatistics});
-                    })
-                    .catch(err => {
-                        console.error("[Shidur] error fetching rooms statistics", err);
-                        captureException(err, {source: "Shidur"});
-                    });
             })
             .catch(err => {
                 console.error("[Shidur] error fetching active rooms", err);
                 captureException(err, {source: "Shidur"});
             })
+
+        api.fetchRoomsStatistics()
+            .then((roomsStatistics) => {
+                this.setState({roomsStatistics});
+            })
+            .catch(err => {
+                console.error("[Shidur] error fetching rooms statistics", err);
+                captureException(err, {source: "Shidur"});
+            });
     };
 
     onChatData = (gateway, data) => {
