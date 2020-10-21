@@ -52,6 +52,13 @@ class VirtualStreaming extends Component {
     this.setState({cssFixInterval: setInterval(() => this.cssFix(), 500)});
   };
 
+  componentDidUpdate(prevProps, prevState, snapshot) {
+    if (this.props.audios && this.props.audios.audios !== prevState.audios) {
+      const { audios, text } = this.props.audios;
+      this.setAudio(audios, text);
+    }
+  }
+
   cssFix() {
     const d = document.getElementsByClassName('controls__dropdown');
     if (d){
@@ -186,7 +193,7 @@ class VirtualStreaming extends Component {
                     })}
                 </Dropdown.Menu>
               </Dropdown>
-                
+
               <Dropdown
                 upward
                 floating
@@ -254,7 +261,7 @@ class VirtualStreaming extends Component {
     return (
       <Fragment>
         {attached && inLine}
-        {!attached && 
+        {!attached &&
           <NewWindow
             features={{ width: '725', height: '635', left: '200', top: '200', location: 'no' }}
             title='V4G' onUnload={this.onUnload} onBlock={this.onBlock}>

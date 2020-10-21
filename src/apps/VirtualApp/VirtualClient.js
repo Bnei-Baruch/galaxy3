@@ -28,7 +28,7 @@ import {
 } from '../../shared/consts';
 import { GEO_IP_INFO } from '../../shared/env';
 import platform from 'platform';
-import { Help } from './components/Help';
+import { TopMenu } from './components/TopMenu';
 import { withTranslation } from 'react-i18next';
 import { languagesOptions, setLanguage } from '../../i18n/i18n';
 import { Monitoring } from '../../components/Monitoring';
@@ -47,11 +47,11 @@ import LoginPage from "../../components/LoginPage";
 import {Profile} from "../../components/Profile";
 import {captureException, captureMessage, updateSentryUser, sentryDebugAction} from '../../shared/sentry';
 import VerifyAccount from './components/VerifyAccount';
-import GxyJanus from "../../shared/janus-utils";
+import GxyJanus from '../../shared/janus-utils';
 import audioModeSvg from '../../shared/audio-mode.svg';
 import fullModeSvg from '../../shared/full-mode.svg';
-import ConfigStore from "../../shared/ConfigStore";
-import {GuaranteeDeliveryManager} from '../../shared/GuaranteeDelivery';
+import ConfigStore from '../../shared/ConfigStore';
+import { GuaranteeDeliveryManager } from '../../shared/GuaranteeDelivery';
 
 import {
   IconButton,
@@ -60,26 +60,23 @@ import {
   ButtonGroup,
   Button as ButtonMD,
   Grid,
-  AppBar,
-  Typography,
-  List,
-  Divider,
-  ListItemIcon,
-  ListItemText,
-  SwipeableDrawer,
-  ListItem
+  AppBar
 } from '@material-ui/core';
-import { AccountBox, ExitToApp, Feedback, Menu as MenuIcon, Settings as SettingsIcon } from '@material-ui/icons';
+import { ChevronLeft, ChevronRight } from '@material-ui/icons';
 import { grey, red } from '@material-ui/core/colors';
+
 import { AskQuestion, AudioMode, CloseBroadcast, Layout, Mute, MuteVideo, Vote } from './buttons';
 import Settings from './settings/Settings';
 import SettingsJoined from './settings/SettingsJoined';
+import LoadSourceContainer from './components/LoadSourceContainer';
 
 const sortAndFilterFeeds = (feeds) => feeds
   .filter(feed => !feed.display.role.match(/^(ghost|guest)$/))
   .sort((a, b) => a.display.timestamp - b.display.timestamp);
 
 const userFeeds = (feeds) => feeds.filter(feed => feed.display.role === 'user');
+
+const isUseNewDesign = new URL(window.location.href).searchParams.has('new_design');
 
 class VirtualClient extends Component {
 
@@ -88,14 +85,14 @@ class VirtualClient extends Component {
     creatingFeed: false,
     delay: true,
     media: {
-      audio:{
+      audio: {
         context: null,
         audio_device: null,
         devices: [],
         error: null,
         stream: null,
       },
-      video:{
+      video: {
         setting: { width: 320, height: 180, ideal: 15 },
         video_device: null,
         devices: [],
@@ -143,7 +140,8 @@ class VirtualClient extends Component {
     videos: Number(localStorage.getItem('vrt_video')) || 1,
     premodStatus: false,
     gdm: null,
-    asideMsgCounter: { drawing: 0, chat: 0 }
+    asideMsgCounter: { drawing: 0, chat: 0 },
+    leftAsideSize: 3
   };
 
   virtualStreamingInitialized() {
@@ -187,17 +185,17 @@ class VirtualClient extends Component {
   }
 
   checkPermission = (user) => {
-    let pending_approval = kc.hasRealmRole("pending_approval");
-    let gxy_user = kc.hasRealmRole("gxy_user");
-    user.role = pending_approval ? 'ghost' : 'user';
+    let pending_approval = kc.hasRealmRole('pending_approval');
+    let gxy_user         = kc.hasRealmRole('gxy_user');
+    user.role            = pending_approval ? 'ghost' : 'user';
     if (gxy_user || pending_approval) {
       this.initApp(user);
     } else {
-      alert("Access denied!");
+      alert('Access denied!');
       kc.logout();
       updateSentryUser(null);
     }
-  }
+  };
 
   initApp = (user) => {
     const gdm = new GuaranteeDeliveryManager(user.id);
@@ -212,7 +210,7 @@ class VirtualClient extends Component {
     let browser = platform.parse(system);
     if (!(/Safari|Firefox|Chrome/.test(browser.name))) {
       alert(t('oldClient.browserNotSupported'));
-      return
+      return;
     }
 
     geoInfo(`${GEO_IP_INFO}`, data => {
@@ -254,7 +252,7 @@ class VirtualClient extends Component {
             this.setState({appInitError: err});
           });
     });
-  }
+  };
 
   initClient = (reconnect, retry = 0) => {
     this.setState({delay: true});
@@ -263,7 +261,6 @@ class VirtualClient extends Component {
     if (this.state.janus) {
       this.state.janus.destroy();
     }
-
 
     const config = GxyJanus.instanceConfig(user.janus);
     initJanus(janus => {
@@ -294,7 +291,7 @@ class VirtualClient extends Component {
     if(retry < 10) {
       setTimeout(() => {
         this.initClient(true, retry);
-      }, 5000)
+      }, 5000);
     } else {
       this.exitRoom(false, () => {
         console.error("[User] reinitializing failed after: " + retry + " retries");
@@ -719,7 +716,7 @@ class VirtualClient extends Component {
         delay: reconnect,
         room: reconnect ? room : '',
         chatMessagesCount: 0,
-        isSettings: reconnect ? false : true
+        isSettings: false
       });
       if(typeof callback === "function") callback();
     }, 2000);
@@ -1350,7 +1347,9 @@ class VirtualClient extends Component {
   }
 
   onChatMessage = () => {
-    this.setState({chatMessagesCount: this.state.chatMessagesCount + 1});
+    const { asideMsgCounter, chatMessagesCount } = this.state;
+    asideMsgCounter.chat++;
+    this.setState({ chatMessagesCount: chatMessagesCount + 1, asideMsgCounter });
   };
 
   mapDevices = (devices) => {
@@ -1372,7 +1371,7 @@ class VirtualClient extends Component {
       default:
         return "grey";
     }
-  }
+  };
 
   renderLocalMedia = (width, height, index) => {
     const {user, cammuted, question, muted} = this.state;
@@ -1464,7 +1463,7 @@ class VirtualClient extends Component {
         controls={false}
         playsInline={true} />
     </div>);
-  }
+  };
 
   renderBottomBar = (layout, otherFeedHasQuestion) => {
     const { t } = this.props;
@@ -1550,7 +1549,7 @@ class VirtualClient extends Component {
             >
               <AskQuestion
                 t={t}
-                isOn={question}
+                isOn={!!question}
                 disabled={premodStatus || !audio_device || !localAudioTrack || delay || otherFeedHasQuestion}
                 action={this.handleQuestion.bind(this)}
               />
@@ -1562,12 +1561,17 @@ class VirtualClient extends Component {
             </ButtonGroup>
           </Grid>
           <Grid item xs={1}></Grid>
-          <Grid item xs={1}>
+          <Grid item xs={1} style={{ display: 'flex', alignItems: 'center' }}>
             <ButtonMD
               onClick={() => this.exitRoom(false)}
               variant="contained"
-              color="secondary"
-              style={{ marginRight: '1em', float: 'right' }}
+              style={{
+                marginRight: '1em',
+                backgroundColor: red[500],
+                fontWeight: 'bold',
+                color: 'white',
+                textTransform: 'none'
+              }}
             >
               {t('oldClient.leave')}
             </ButtonMD>
@@ -1598,8 +1602,8 @@ class VirtualClient extends Component {
   };
 
   renderRightAside = () => {
-    const { t }                                                          = this.props;
-    const { chatVisible, janus, user, room, rightAsideName, isRoomChat } = this.state;
+    const { t }                                             = this.props;
+    const { janus, user, room, rightAsideName, isRoomChat } = this.state;
 
     let content;
     let displayChat = 'none';
@@ -1615,7 +1619,7 @@ class VirtualClient extends Component {
           ref={chat => {
             this.chat = chat;
           }}
-          visible={chatVisible}
+          visible={rightAsideName === 'chat'}
           janus={janus}
           room={room}
           user={user}
@@ -1628,161 +1632,170 @@ class VirtualClient extends Component {
       </Box>
     );
     return (
-      <Grid item xs={rightAsideName ? 3 : 0}>
+      <Grid item xs={rightAsideName ? 3 : false}>
         {content}
         {chat}
       </Grid>
     );
   };
 
+  handleAsideResize = (incr) => {
+    const { leftAsideSize, rightAsideName, leftAsideName } = this.state;
+    const _state                                           = {};
+
+    const size = incr ? leftAsideSize + 1 : leftAsideSize - 1;
+
+    const rightName = (size > 3) ? null : rightAsideName;
+
+    const leftName = (size > 3) ? leftAsideName : null;
+
+    this.setState({ leftAsideSize: size, rightAsideName: rightName, leftAsideName: leftName });
+  };
+
+  renderTopBar = (isDeb) => {
+    const { t } = this.props;
+
+    const { user, asideMsgCounter, leftAsideName, rightAsideName, monitoringData, net_status, isOpenTopMenu } = this.state;
+
+    return (
+      <Box display="flex" style={{ justifyContent: 'space-between', flexWrap: 'nowrap' }} className="vclient__toolbar">
+        <Box display="flex" style={{ flexWrap: 'nowrap', alignItems: 'center' }}>
+          <TopMenu
+            t={t}
+            openSettings={() => this.setState({ isSettings: true })}
+            open={isOpenTopMenu}
+            setOpen={(isOpen) => this.setState({ isOpenTopMenu: isOpen })}
+          />
+          <ButtonMD
+            color="primary"
+            variant="contained"
+            style={{ marginRight: '1em' }}
+            onClick={() => window.open('https://virtualhome.kli.one', '_blank')}
+          >
+            {t('loginPage.userFee')}
+          </ButtonMD>
+          <Box>
+            <Badge
+              color="secondary"
+              badgeContent={asideMsgCounter.drawing}
+              showZero={false}
+
+            >
+              <ButtonMD
+                variant={leftAsideName === 'drawing' ? 'outlined' : 'contained'}
+                size="small"
+                onClick={() => this.toggleLeftAside('drawing')}
+              >
+                {t('oldClient.drawing')}
+              </ButtonMD>
+            </Badge>
+            <ButtonMD
+              size="small"
+              onClick={() => this.toggleLeftAside('material')}
+              variant={leftAsideName === 'material' ? 'outlined' : 'contained'}
+            >
+              {t('oldClient.material')}
+            </ButtonMD>
+          </Box>
+        </Box>
+
+        <Box style={{ fontWeight: 'bold' }}>
+          {user?.group}
+        </Box>
+
+
+        <Box style={{ marginRight: '1em' }}>
+          <Badge
+            color="secondary"
+            badgeContent={asideMsgCounter.chat}
+            showZero={false}
+          >
+            <ButtonMD
+              variant={rightAsideName === 'chat' ? 'outlined' : 'contained'}
+              size="small"
+              onClick={() => {
+                this.toggleRightAside('chat');
+                this.setState({ isRoomChat: true });
+              }}
+            >
+              {t('oldClient.chat')}
+            </ButtonMD>
+          </Badge>
+          <ButtonMD
+            size="small"
+            onClick={() => {
+              this.toggleRightAside('support');
+              this.setState({ isRoomChat: false });
+            }}
+            variant={rightAsideName === 'support' ? 'outlined' : 'contained'}
+          >
+            {t('oldClient.support')}
+          </ButtonMD>
+          <ButtonMD
+            size="small"
+            onClick={() => this.toggleRightAside('question')}
+            variant={rightAsideName === 'question' ? 'outlined' : 'contained'}
+          >
+            {t('oldClient.sendQuestion')}
+          </ButtonMD>
+
+          {!isDeb ? null :
+            <ButtonMD onClick={sentryDebugAction}>
+              Sentry
+            </ButtonMD>
+          }
+
+        </Box>
+        <>
+          <Monitoring monitoringData={monitoringData} />
+
+          {!(new URL(window.location.href).searchParams.has('lost')) ? null :
+            (
+              <Label color={net_status === 2 ? 'yellow' : net_status === 3 ? 'red' : 'green'} icon='wifi' corner='right' />)}
+        </>
+      </Box>
+    );
+  };
+
   renderLeftAside = () => {
-    const { leftAsideName } = this.state;
+    const { leftAsideName, leftAsideSize } = this.state;
 
     let content;
     if (leftAsideName === 'material') {
-      content = (
+      content = <LoadSourceContainer />;
+      /*content = (
         <iframe
           src={`https://groups.google.com/forum/embed/?place=forum/bb-study-materials&showpopout=true&showtabs=false&parenturl=${encodeURIComponent(window.location.href)}`}
+          style={{ width: '100%', height: '100%', padding: '1rem' }}
+          frameBorder="0"></iframe>
+      );*/
+    } else if (leftAsideName === 'drawing') {
+      content = (
+        <iframe
+          src={`http://www.kab.tv/classboard/classboard.php`}
           style={{ width: '100%', height: '100%', padding: '1rem' }}
           frameBorder="0"></iframe>
       );
     }
 
     return (
-      <Grid item xs={leftAsideName ? 3 : 0}>
+      <Grid item xs={(leftAsideSize >= 3 && leftAsideName) ? leftAsideSize : false}>
+        {
+          leftAsideName ?
+            (
+              <ButtonGroup>
+                <IconButton onClick={() => this.handleAsideResize(false)}>
+                  <ChevronLeft />
+                </IconButton>
+                <IconButton onClick={() => this.handleAsideResize(true)} disabled={leftAsideSize > 7}>
+                  <ChevronRight />
+                </IconButton>
+              </ButtonGroup>
+            )
+            : null
+        }
         {content}
       </Grid>
-    );
-  };
-
-  renderMenu = () => {
-    const { t } = this.props;
-    return (
-      <>
-        <IconButton
-          edge="start"
-          color="inherit"
-          onClick={() => this.setState({ menuOpened: true })}
-          style={{ margin: '0 1em' }}
-        >
-          <MenuIcon />
-        </IconButton>
-        <SwipeableDrawer
-          anchor={'left'}
-          open={this.state.menuOpened}
-          onClose={() => this.setState({ menuOpened: false })}
-        >
-          <List>
-            <ListItem style={{ fontWeight: 'bold' }}>{t('oldClient.user')}</ListItem>
-            <ListItem button key={'account'} onClick={() => window.open('https://accounts.kbb1.com/auth/realms/main/account', '_blank')}>
-              <ListItemText primary={t('oldClient.myAccount')} />
-              <ListItemIcon><AccountBox /></ListItemIcon>
-            </ListItem>
-            <ListItem button key={'settings'} onClick={() => this.setState({ isSettings: true })}>
-              <ListItemText primary={t('oldClient.settings')} />
-              <ListItemIcon><SettingsIcon /></ListItemIcon>
-            </ListItem>
-            <ListItem button key={'signOut'} onClick={() => {
-              kc.logout();
-              updateSentryUser(null);
-            }}>
-              <ListItemText primary={t('oldClient.signOut')} />
-              <ListItemIcon><ExitToApp /></ListItemIcon>
-            </ListItem>
-          </List>
-          <Divider />
-          <ListItem style={{ fontWeight: 'bold' }}>{t('oldClient.support')}</ListItem>
-          <List>
-            <ListItem button onClick={() => window.open('https://forms.gle/F6Lm2KMLUkU4hrmK8', '_blank')}>
-              <ListItemText>
-                {t('feedback.feedback')}
-              </ListItemText>
-              <ListItemIcon><Feedback /></ListItemIcon>
-            </ListItem>
-            <Help t={t} />
-          </List>
-          <Divider />
-
-          <ListItem style={{ fontWeight: 'bold' }}>{t('oldClient.usefulLinks')}</ListItem>
-          <List>
-            <ListItem button onClick={() => window.open('https://kabbalahgroup.info/internet/', '_blank')}>
-              <ListItemText>{t('Sviva Tova')}</ListItemText>
-            </ListItem>
-          </List>
-        </SwipeableDrawer>
-      </>
-    );
-  };
-
-  renderTopBar = () => {
-    const { t } = this.props;
-
-    const { user, asideMsgCounter: counter, leftAsideName, rightAsideName } = this.state;
-
-    return (
-      <Box display="flex" style={{ justifyContent: 'space-between', flexWrap: 'nowrap' }} className="vclient__toolbar">
-        <Box>
-          {this.renderMenu()}
-          <ButtonMD color="primary"
-                    variant="contained"
-                    style={{ marginRight: '1em' }}
-                    onClick={() => window.open('https://virtualhome.kli.one', '_blank')}>
-            {t('loginPage.userFee')}
-          </ButtonMD>
-          <ButtonGroup size="small">
-            <Badge color="secondary" badgeContent={counter.drawing} showZero={false}>
-              <ButtonMD
-                variant={leftAsideName === 'drawing' ? 'outlined' : 'contained'}
-                size="small"
-                onClick={() => this.toggleLeftAside('drawing')}
-                active={leftAsideName === 'drawing'}
-              >
-                {t('oldClient.drawing')}
-              </ButtonMD>
-            </Badge>
-            <ButtonMD
-              onClick={() => this.toggleLeftAside('material')}
-              variant={leftAsideName === 'material' ? 'outlined' : 'contained'}
-            >
-              {t('oldClient.material')}
-            </ButtonMD>
-          </ButtonGroup>
-        </Box>
-        <Box style={{ fontWeight: 'bold' }}>
-          {user?.group}
-        </Box>
-        <Box>
-          <ButtonGroup style={{ marginRight: '1em' }} size="small">
-            <Badge color="secondary" badgeContent={counter.chat} showZero={false}>
-              <ButtonMD
-                variant={rightAsideName === 'chat' ? 'outlined' : 'contained'}
-                size="small"
-                onClick={() => {
-                  this.toggleRightAside('chat');
-                  this.setState({ isRoomChat: true });
-                }}
-              >
-                {t('oldClient.chat')}
-              </ButtonMD>
-            </Badge>
-            <ButtonMD
-              onClick={() => {
-                this.toggleRightAside('support');
-                this.setState({ isRoomChat: false });
-              }}
-              variant={rightAsideName === 'support' ? 'outlined' : 'contained'}
-            >
-              {t('oldClient.support')}
-            </ButtonMD>
-            <ButtonMD
-              onClick={() => this.toggleRightAside('question')}
-              variant={rightAsideName === 'question' ? 'outlined' : 'contained'}
-            >
-              {t('oldClient.sendQuestion')}
-            </ButtonMD>
-          </ButtonGroup>
-        </Box>
-      </Box>
     );
   };
 
@@ -1795,209 +1808,18 @@ class VirtualClient extends Component {
             shidur,
             user,
             rightAsideName,
-            leftAsideName,
+            leftAsideSize,
+            leftAsideName
           }           = this.state;
 
     return (
       <div className={classNames('vclient', { 'vclient--chat-open': chatVisible })}>
         <VerifyAccount user={user} loginPage={false} i18n={i18n} />
-        {this.renderTopBar(adevices_list, vdevices_list)}
-
-        {/*
-        <div className="vclient__toolbar">
-          <Input>
-            <Select
-              className="room-selection"
-              search
-              disabled={!!room}
-              error={!selected_room}
-              placeholder={t('oldClient.selectRoom')}
-              value={selected_room}
-              options={rooms_list}
-              noResultsMessage={t('oldClient.noResultsFound')}
-              //onClick={this.getRoomList}
-              onChange={(e, { value }) => this.selectRoom(value)} />
-            {room ?
-              <Button attached='right' negative icon='sign-out' disabled={delay} onClick={() => this.exitRoom(false)} /> : ''}
-            {!room ?
-              <Button attached='right' primary icon='sign-in' loading={delay} disabled={delay || !selected_room} onClick={() => this.initClient(false)} /> : ''}
-          </Input>
-          {!isDeb ? null : (
-            <Input>
-              <Select placeholder='number of virtual users' options={[
-                { value: '1', text: '1' },
-                { value: '2', text: '2' },
-                { value: '3', text: '3' },
-                { value: '4', text: '4' },
-                { value: '5', text: '5' },
-                { value: '6', text: '6' },
-                { value: '7', text: '7' },
-                { value: '8', text: '8' },
-                { value: '9', text: '9' },
-                { value: '10', text: '10' },
-                { value: '11', text: '11' },
-                { value: '12', text: '12' },
-                { value: '13', text: '13' },
-                { value: '14', text: '14' },
-                { value: '15', text: '15' },
-                { value: '16', text: '16' },
-                { value: '17', text: '17' },
-                { value: '18', text: '18' },
-                { value: '19', text: '19' },
-                { value: '20', text: '20' },
-                { value: '21', text: '21' },
-                { value: '22', text: '22' },
-                { value: '23', text: '23' },
-                { value: '24', text: '24' },
-                { value: '25', text: '25' },
-
-              ]} value={numberOfVirtualUsers} onChange={(e, { value }) => {
-                this.setState({ numberOfVirtualUsers: value });
-                localStorage.setItem('number_of_virtual_users', value);
-              }}>
-              </Select>
-            </Input>)}
-          <Menu icon='labeled' secondary size="mini">
-            <Menu.Item>
-              <OpenChat
-                isOn={chatVisible}
-                disabled={!localAudioTrack}
-                t={t}
-                counter={chatMessagesCount}
-                action={(() => this.setState({ chatVisible: !chatVisible, chatMessagesCount: 0 }))}
-              />
-            </Menu.Item>
-            <Menu.Item>
-              <AskQuestion
-                t={t}
-                isOn={question}
-                disabled={premodStatus || !audio_device || !localAudioTrack || delay || otherFeedHasQuestion}
-                action={this.handleQuestion.bind(this)}
-              />
-            </Menu.Item>
-            <Menu.Item>
-              <CloseBroadcast
-                t={t}
-                isOn={shidur}
-                action={this.toggleShidur.bind(this)}
-                disabled={room === '' || sourceLoading}
-              />
-            </Menu.Item>
-            <Menu.Item>
-              <Layout
-                t={t}
-                active={layout}
-                action={this.updateLayout.bind(this)}
-                disabled={room === '' || !shidur || sourceLoading || !attachedSource}
-                iconDisabled={sourceLoading}
-              />
-            </Menu.Item>
-            <Menu.Item>
-              <Vote
-                t={t}
-                id={user?.id}
-                disabled={!user || !user.id || room === ''}
-              />
-            </Menu.Item>
-
-            <Modal
-              trigger={<Menu.Item icon='book' name={t('oldClient.homerLimud')} />}
-              disabled={!localAudioTrack}
-              on='click'
-              closeIcon
-              className='homet-limud'>
-              <iframe title={t('oldClient.homerLimud')}
-                      src={`https://groups.google.com/forum/embed/?place=forum/bb-study-materials&showpopout=true&showtabs=false&parenturl=${encodeURIComponent(window.location.href)}`}
-                      style={{ width: '100%', height: '60vh', padding: '1rem' }}
-                      frameBorder="0"></iframe>
-            </Modal>
-          </Menu>
-          <Menu icon='labeled' secondary size="mini">
-            {!room ?
-              <Menu.Item position='right' disabled={!audio_device || selftest !== t('oldClient.selfAudioTest')} onClick={this.selfTest}>
-                <Icon color={tested ? 'green' : 'red'} name="sound" />
-                {selftest}
-              </Menu.Item>
-              : ''}
-            <Menu.Item className="mute-button">
-              <canvas className={muted ? 'hidden' : 'vumeter'} ref="canvas1" id="canvas1" width="15" height="35" />
-              <Mute
-                t={t}
-                action={this.micMute.bind(this)}
-                disabled={!localAudioTrack}
-                isOn={muted}
-              />
-            </Menu.Item>
-            <Menu.Item>
-              <MuteVideo
-                t={t}
-                action={this.camMute.bind(this)}
-                disabled={video_device === null || !localVideoTrack || delay}
-                isOn={cammuted}
-              />
-            </Menu.Item>
-            <Menu.Item>
-              <AudioMode t={t} action={this.otherCamsMuteToggle.bind(this)} isOn={muteOtherCams} />
-            </Menu.Item>
-            <Popup
-              trigger={<Menu.Item icon="setting" name={t('oldClient.settings')} />}
-              on='click'
-              position='bottom right'
-            >
-              <Popup.Content>
-                <Button size='huge' fluid>
-                  <Icon name='user circle' />
-                  <Profile title={user && user.display} kc={kc} />
-                </Button>
-                <Select className='select_device'
-                        disabled={!!room}
-                        error={!media.audio.audio_device}
-                        placeholder={t('oldClient.selectDevice')}
-                        value={media.audio.audio_device}
-                        options={adevices_list}
-                        onChange={(e, { value }) => this.setAudioDevice(value)} />
-                <Select className='select_device'
-                        disabled={!!room}
-                        error={!media.video.video_device}
-                        placeholder={t('oldClient.selectDevice')}
-                        value={media.video.video_device}
-                        options={vdevices_list}
-                        onChange={(e, { value }) => this.setVideoDevice(value)} />
-                <Select className='select_device'
-                        disabled={!!room}
-                        error={!media.video.video_device}
-                        placeholder={t('oldClient.videoSettings')}
-                        value={media.video.setting}
-                        options={vsettings_list}
-                        onChange={(e, { value }) => this.setVideoSize(value)} />
-                <Select className='select_device'
-                        value={i18n.language}
-                        options={languagesOptions}
-                        onChange={(e, { value }) => {
-                          setLanguage(value);
-                          this.setState({ selftest: t('oldClient.selfAudioTest') });
-                        }} />
-              </Popup.Content>
-            </Popup>
-            <Help t={t} />
-            <Button primary style={{ margin: 'auto' }} onClick={() => window.open('https://virtualhome.kli.one', '_blank')}>{t('loginPage.userFee')}</Button>
-            <Monitoring monitoringData={monitoringData} />
-            {!isDeb ? null :
-              <Menu.Item onClick={sentryDebugAction}>
-                Sentry
-              </Menu.Item>
-            }
-          </Menu>
-          {!(new URL(window.location.href).searchParams.has('lost')) ? null :
-            (
-              <Label color={net_status === 2 ? 'yellow' : net_status === 3 ? 'red' : 'green'} icon='wifi' corner='right' />)}
-        </div>
-
-*/}
+        {this.renderTopBar(isDeb)}
 
         <Grid container className="vclient__main">
           {this.renderLeftAside()}
-          <Grid item xs={6 + (!leftAsideName && 3) + (!rightAsideName && 3)}>
+          <Grid item xs={12 - (!leftAsideName ? 0 : leftAsideSize) - (!rightAsideName ? 0 : 3)}>
             <div className={`
             vclient__main-wrapper
             no-of-videos-${noOfVideos}
@@ -2006,25 +1828,17 @@ class VirtualClient extends Component {
             ${!attachedSource ? ' broadcast--popup' : 'broadcast--inline'}
            `}>
 
-              {/* ${layout === 'equal' ? ' broadcast--equal' : ''} */}
-              {/* ${layout === 'double' ? ' broadcast--double' : ''} */}
-              {/* ${layout === 'split' ? ' broadcast--split' : ''} */}
-
               <div className="broadcast-panel">
-                {/* <div className="videos"> */}
                 <div className="broadcast__wrapper">
                   {layout === 'split' && source}
                 </div>
-                {/* </div> */}
               </div>
 
               <div className="videos-panel">
-                {/* <div className="videos"> */}
                 <div className="videos__wrapper">
                   {(layout === 'equal' || layout === 'double') && source}
                   {remoteVideos}
                 </div>
-                {/* </div> */}
               </div>
 
             </div>
@@ -2079,41 +1893,41 @@ class VirtualClient extends Component {
             virtualStreamingJanus,
             videos,
             premodStatus,
-            isSettings
+            isSettings,
+            audios
           } = this.state;
 
-    const isUseNewDesign = new URL(window.location.href).searchParams.has('new_design');
-
-    const {video_device} = media.video;
-    const {audio_device} = media.audio;
+    const { video_device } = media.video;
+    const { audio_device } = media.audio;
 
     if (appInitError) {
       return (
-          <Fragment>
-            <h1>Error Initializing Application</h1>
-            {`${appInitError}`}
-          </Fragment>
+        <Fragment>
+          <h1>Error Initializing Application</h1>
+          {`${appInitError}`}
+        </Fragment>
       );
     }
 
-    const {t, i18n} = this.props;
-    const width = '134';
-    const height = '100';
-    const layout = (room === '' || !shidur || !attachedSource) ? 'equal' : currentLayout;
+    const { t, i18n } = this.props;
+    const width       = '134';
+    const height      = '100';
+    const layout      = (room === '' || !shidur || !attachedSource) ? 'equal' : currentLayout;
 
     let source = room !== '' && shidur &&
       <VirtualStreaming
         virtualStreamingJanus={virtualStreamingJanus}
         attached={attachedSource}
         closeShidur={this.toggleShidur}
-        videos={videos}
-        setVideo={(v) => this.setState({videos: v})}
+        setVideo={(v) => this.setState({ videos: v })}
         setDetached={() => {
           this.setState({ attachedSource: false });
         }}
         setAttached={() => {
           this.setState({ attachedSource: true });
         }}
+        videos={videos}
+        audios={audios}
       />;
 
     let rooms_list = rooms.map((data, i) => {
@@ -2126,7 +1940,7 @@ class VirtualClient extends Component {
 
     let otherFeedHasQuestion = false;
     let localPushed          = false;
-    let remoteVideos = userFeeds(feeds).reduce((result, feed) => {
+    let remoteVideos         = userFeeds(feeds).reduce((result, feed) => {
       const { question, id } = feed;
       otherFeedHasQuestion   = otherFeedHasQuestion || (question && id !== myid);
       if (!localPushed && feed.display.timestamp >= user.timestamp) {
@@ -2172,198 +1986,205 @@ class VirtualClient extends Component {
         break;
       }
       content = (<div className={classNames('vclient', { 'vclient--chat-open': chatVisible })}>
-			<VerifyAccount user={user} loginPage={false} i18n={i18n} />
-      <div className="vclient__toolbar">
-        <Input>
-          <Select
-            className = "room-selection"
-            search
-            disabled={!!room}
-            error={!selected_room}
-            placeholder={t('oldClient.selectRoom')}
-            value={selected_room}
-            options={rooms_list}
-            noResultsMessage={t('oldClient.noResultsFound')}
-            //onClick={this.getRoomList}
-            onChange={(e, { value }) => this.selectRoom(value)} />
-          {room ? <Button attached='right' negative icon='sign-out' disabled={delay} onClick={() => this.exitRoom(false)} /> : ''}
-          {!room ? <Button attached='right' primary icon='sign-in' loading={delay} disabled={delay || !selected_room} onClick={() => this.initClient(false)} /> : ''}
-        </Input>
-        { !isDeb ? null : (
-        <Input>
-          <Select placeholder='number of virtual users' options={[
-            { value: '1', text: '1' },
-            { value: '2', text: '2' },
-            { value: '3', text: '3' },
-            { value: '4', text: '4' },
-            { value: '5', text: '5' },
-            { value: '6', text: '6' },
-            { value: '7', text: '7' },
-            { value: '8', text: '8' },
-            { value: '9', text: '9' },
-            { value: '10', text: '10' },
-            { value: '11', text: '11' },
-            { value: '12', text: '12' },
-            { value: '13', text: '13' },
-            { value: '14', text: '14' },
-            { value: '15', text: '15' },
-            { value: '16', text: '16' },
-            { value: '17', text: '17' },
-            { value: '18', text: '18' },
-            { value: '19', text: '19' },
-            { value: '20', text: '20' },
-            { value: '21', text: '21' },
-            { value: '22', text: '22' },
-            { value: '23', text: '23' },
-            { value: '24', text: '24' },
-            { value: '25', text: '25' },
+        <VerifyAccount user={user} loginPage={false} i18n={i18n} />
+        <div className="vclient__toolbar">
+          <Input>
+            <Select
+              className="room-selection"
+              search
+              disabled={!!room}
+              error={!selected_room}
+              placeholder={t('oldClient.selectRoom')}
+              value={selected_room}
+              options={rooms_list}
+              noResultsMessage={t('oldClient.noResultsFound')}
+              //onClick={this.getRoomList}
+              onChange={(e, { value }) => this.selectRoom(value)} />
+            {room ?
+              <Button attached='right' negative icon='sign-out' disabled={delay} onClick={() => this.exitRoom(false)} /> : ''}
+            {!room ?
+              <Button attached='right' primary icon='sign-in' loading={delay} disabled={delay || !selected_room} onClick={() => this.initClient(false)} /> : ''}
+          </Input>
+          {!isDeb ? null : (
+            <Input>
+              <Select placeholder='number of virtual users' options={[
+                { value: '1', text: '1' },
+                { value: '2', text: '2' },
+                { value: '3', text: '3' },
+                { value: '4', text: '4' },
+                { value: '5', text: '5' },
+                { value: '6', text: '6' },
+                { value: '7', text: '7' },
+                { value: '8', text: '8' },
+                { value: '9', text: '9' },
+                { value: '10', text: '10' },
+                { value: '11', text: '11' },
+                { value: '12', text: '12' },
+                { value: '13', text: '13' },
+                { value: '14', text: '14' },
+                { value: '15', text: '15' },
+                { value: '16', text: '16' },
+                { value: '17', text: '17' },
+                { value: '18', text: '18' },
+                { value: '19', text: '19' },
+                { value: '20', text: '20' },
+                { value: '21', text: '21' },
+                { value: '22', text: '22' },
+                { value: '23', text: '23' },
+                { value: '24', text: '24' },
+                { value: '25', text: '25' },
 
-          ]} value={numberOfVirtualUsers} onChange={(e, { value }) => {
-            this.setState({ numberOfVirtualUsers: value });
-            localStorage.setItem('number_of_virtual_users', value);
-          }}>
-          </Select>
-        </Input>)}
-        <Menu icon='labeled' secondary size="mini">
-          <Menu.Item disabled={!localAudioTrack} onClick={() => this.setState({chatVisible: !chatVisible, chatMessagesCount: 0})}>
-            <Icon name="comments" />
-            {t(chatVisible ? 'oldClient.closeChat' : 'oldClient.openChat')}
-            {chatMessagesCount > 0 ? chatCountLabel : ''}
-          </Menu.Item>
-          <Menu.Item
-            disabled={premodStatus || !audio_device || !localAudioTrack || delay || otherFeedHasQuestion}
-            onClick={this.handleQuestion}>
-            <Icon {...(question ? {color: 'green'} : {})} name='question' />
-            {t('oldClient.askQuestion')}
-          </Menu.Item>
-          <Menu.Item onClick={this.toggleShidur} disabled={room === '' || sourceLoading}>
-            <Icon name="tv" />
-            {shidur ? t('oldClient.closeBroadcast') : t('oldClient.openBroadcast')}
-          </Menu.Item>
-          <Popup
-            trigger={<Menu.Item disabled={room === '' || !shidur || sourceLoading || !attachedSource} icon={{className:`icon--custom ${layoutIcon}`}} name={t('oldClient.layout')} />}
-            disabled={room === '' || !shidur || !attachedSource}
-            on='click'
-            position='bottom center'
-          >
-            <Popup.Content>
-              <Button.Group>
-                <Button onClick={() => this.updateLayout('double')} active={layout === 'double'} disabled={sourceLoading} icon={{className:'icon--custom layout-double'}} /> {/* Double first */}
-                <Button onClick={() => this.updateLayout('split')} active={layout === 'split'} disabled={sourceLoading} icon={{className:'icon--custom layout-split'}} /> {/* Split */}
-                <Button onClick={() => this.updateLayout('equal')} active={layout === 'equal'} disabled={sourceLoading} icon={{className:'icon--custom layout-equal'}} /> {/* Equal */}
-              </Button.Group>
-            </Popup.Content>
-          </Popup>
-          <Popup
-            trigger={<Menu.Item disabled={!user || !user.id || room === ''} icon='hand paper outline' name={t('oldClient.vote')} />}
-            disabled={!user || !user.id || room === ''}
-            on='click'
-            position='bottom center'
-          >
-            <Popup.Content>
-              <Button.Group>
-                <iframe title={`${t('oldClient.vote')} 1`} src={`https://vote.kli.one/button.html?answerId=1&userId=${user && user.id}`} width="40px" height="36px" frameBorder="0"></iframe>
-                <iframe title={`${t('oldClient.vote')} 2`} src={`https://vote.kli.one/button.html?answerId=2&userId=${user && user.id}`} width="40px" height="36px" frameBorder="0"></iframe>
-              </Button.Group>
-            </Popup.Content>
-          </Popup>
-					<Modal
-						trigger={<Menu.Item icon='book' name={t('oldClient.homerLimud')} />}
-						disabled={!localAudioTrack}
-						on='click'
-						closeIcon
-						className='homet-limud'>
-              <iframe title={t('oldClient.homerLimud')}
-                src={`https://groups.google.com/forum/embed/?place=forum/bb-study-materials&showpopout=true&showtabs=false&parenturl=${encodeURIComponent(window.location.href)}`}
-                style={{width: '100%', height: '60vh', padding: '1rem'}} frameBorder="0"></iframe>
-					</Modal>
-        </Menu>
-        <Menu icon='labeled' secondary size="mini">
-          {!room ?
-            <Menu.Item position='right' disabled={!audio_device || selftest !== t('oldClient.selfAudioTest')} onClick={this.selfTest}>
-              <Icon color={tested ? 'green' : 'red'} name="sound" />
-              {selftest}
+              ]} value={numberOfVirtualUsers} onChange={(e, { value }) => {
+                this.setState({ numberOfVirtualUsers: value });
+                localStorage.setItem('number_of_virtual_users', value);
+              }}>
+              </Select>
+            </Input>)}
+          <Menu icon='labeled' secondary size="mini">
+            <Menu.Item disabled={!localAudioTrack} onClick={() => this.setState({
+              chatVisible: !chatVisible,
+              chatMessagesCount: 0
+            })}>
+              <Icon name="comments" />
+              {t(chatVisible ? 'oldClient.closeChat' : 'oldClient.openChat')}
+              {chatMessagesCount > 0 ? chatCountLabel : ''}
             </Menu.Item>
-            : ''}
-          <Menu.Item disabled={!localAudioTrack} onClick={this.micMute} className="mute-button">
-            <canvas className={muted ? 'hidden' : 'vumeter'} ref="canvas1" id="canvas1" width="15" height="35" />
-            <Icon color={muted ? 'red' : null} name={!muted ? 'microphone' : 'microphone slash'} />
-            {t(muted ? 'oldClient.unMute' : 'oldClient.mute')}
-          </Menu.Item>
-          <Menu.Item disabled={video_device === null || !localVideoTrack || delay} onClick={() => this.camMute(cammuted)}>
-            <Icon color={cammuted ? 'red' : null} name={!cammuted ? 'eye' : 'eye slash'} />
-            {t(cammuted ? 'oldClient.startVideo' : 'oldClient.stopVideo')}
-          </Menu.Item>
-          <Menu.Item onClick={this.otherCamsMuteToggle}>
-            <Image src={muteOtherCams ? audioModeSvg : fullModeSvg} style={{marginBottom: '0.5rem'}} />
-            {t(muteOtherCams ? 'oldClient.fullMode' : 'oldClient.audioMode')}
-          </Menu.Item>
-          {/*<Menu.Item>*/}
-          {/*  <Select*/}
-          {/*    compact*/}
-          {/*    value={i18n.language}*/}
-          {/*    options={languagesOptions}*/}
-          {/*    onChange={(e, { value }) => {*/}
-          {/*      setLanguage(value);*/}
-          {/*      this.setState({ selftest: t('oldClient.selfAudioTest') });*/}
-          {/*    }} />*/}
-          {/*</Menu.Item>*/}
-          <Popup
-            trigger={<Menu.Item icon="setting" name={t('oldClient.settings')} />}
-            on='click'
-            position='bottom right'
-          >
-            <Popup.Content>
-              <Button size='huge' fluid>
-                <Icon name='user circle'/>
-                <Profile title={user && user.display} kc={kc} />
-              </Button>
-              <Select className='select_device'
-                      disabled={!!room}
-                      error={!media.audio.audio_device}
-                      placeholder={t('oldClient.selectDevice')}
-                      value={media.audio.audio_device}
-                      options={adevices_list}
-                      onChange={(e, { value }) => this.setAudioDevice(value)} />
-              <Select className='select_device'
-                      disabled={!!room}
-                      error={!media.video.video_device}
-                      placeholder={t('oldClient.selectDevice')}
-                      value={media.video.video_device}
-                      options={vdevices_list}
-                      onChange={(e, { value }) => this.setVideoDevice(value)} />
-              <Select className='select_device'
-                      disabled={!!room}
-                      error={!media.video.video_device}
-                      placeholder={t('oldClient.videoSettings')}
-                      value={media.video.setting}
-                      options={vsettings_list}
-                      onChange={(e, { value }) => this.setVideoSize(value)} />
-              <Select className='select_device'
-                      value={i18n.language}
-                      options={languagesOptions}
-                      onChange={(e, { value }) => {
-                        setLanguage(value);
-                        this.setState({ selftest: t('oldClient.selfAudioTest') });
-                      }} />
-            </Popup.Content>
-          </Popup>
-          <Help t={t} />
-          <Button primary style={{margin: 'auto'}} onClick={() => window.open('https://virtualhome.kli.one', '_blank')}>{t('loginPage.userFee')}</Button>
-          <Monitoring monitoringData={monitoringData} />
-					{!isDeb ? null :
-           <Menu.Item onClick={sentryDebugAction}>
-             Sentry
-           </Menu.Item>
-          }
-        </Menu>
-        { !(new URL(window.location.href).searchParams.has('lost')) ? null :
-            (<Label color={net_status === 2 ? 'yellow' : net_status === 3 ? 'red' : 'green'} icon='wifi' corner='right' />)}
-      </div>
-      <div className="vclient__main" onDoubleClick={() => this.setState({
-        chatVisible: !chatVisible
-      })}>
-        <div className={`
+            <Menu.Item
+              disabled={premodStatus || !audio_device || !localAudioTrack || delay || otherFeedHasQuestion}
+              onClick={this.handleQuestion}>
+              <Icon {...(question ? { color: 'green' } : {})} name='question' />
+              {t('oldClient.askQuestion')}
+            </Menu.Item>
+            <Menu.Item onClick={this.toggleShidur} disabled={room === '' || sourceLoading}>
+              <Icon name="tv" />
+              {shidur ? t('oldClient.closeBroadcast') : t('oldClient.openBroadcast')}
+            </Menu.Item>
+            <Popup
+              trigger={
+                <Menu.Item disabled={room === '' || !shidur || sourceLoading || !attachedSource} icon={{ className: `icon--custom ${layoutIcon}` }} name={t('oldClient.layout')} />}
+              disabled={room === '' || !shidur || !attachedSource}
+              on='click'
+              position='bottom center'
+            >
+              <Popup.Content>
+                <Button.Group>
+                  <Button onClick={() => this.updateLayout('double')} active={layout === 'double'} disabled={sourceLoading} icon={{ className: 'icon--custom layout-double' }} /> {/* Double first */}
+                  <Button onClick={() => this.updateLayout('split')} active={layout === 'split'} disabled={sourceLoading} icon={{ className: 'icon--custom layout-split' }} /> {/* Split */}
+                  <Button onClick={() => this.updateLayout('equal')} active={layout === 'equal'} disabled={sourceLoading} icon={{ className: 'icon--custom layout-equal' }} /> {/* Equal */}
+                </Button.Group>
+              </Popup.Content>
+            </Popup>
+            <Popup
+              trigger={
+                <Menu.Item disabled={!user || !user.id || room === ''} icon='hand paper outline' name={t('oldClient.vote')} />}
+              disabled={!user || !user.id || room === ''}
+              on='click'
+              position='bottom center'
+            >
+              <Popup.Content>
+                <Button.Group>
+                  <iframe src={`https://vote.kli.one/button.html?answerId=1&userId=${user && user.id}`} width="40px" height="36px" frameBorder="0"></iframe>
+                  <iframe src={`https://vote.kli.one/button.html?answerId=2&userId=${user && user.id}`} width="40px" height="36px" frameBorder="0"></iframe>
+                </Button.Group>
+              </Popup.Content>
+            </Popup>
+            <Modal
+              trigger={<Menu.Item icon='book' name={t('oldClient.homerLimud')} />}
+              disabled={!localAudioTrack}
+              on='click'
+              closeIcon
+              className='homet-limud'>
+              <iframe src={`https://groups.google.com/forum/embed/?place=forum/bb-study-materials&showpopout=true&showtabs=false&parenturl=${encodeURIComponent(window.location.href)}`}
+                      style={{ width: '100%', height: '60vh', padding: '1rem' }} frameBorder="0"></iframe>
+            </Modal>
+          </Menu>
+          <Menu icon='labeled' secondary size="mini">
+            {!room ?
+              <Menu.Item position='right' disabled={!audio_device || selftest !== t('oldClient.selfAudioTest')} onClick={this.selfTest}>
+                <Icon color={tested ? 'green' : 'red'} name="sound" />
+                {selftest}
+              </Menu.Item>
+              : ''}
+            <Menu.Item disabled={!localAudioTrack} onClick={this.micMute} className="mute-button">
+              <canvas className={muted ? 'hidden' : 'vumeter'} ref="canvas1" id="canvas1" width="15" height="35" />
+              <Icon color={muted ? 'red' : null} name={!muted ? 'microphone' : 'microphone slash'} />
+              {t(muted ? 'oldClient.unMute' : 'oldClient.mute')}
+            </Menu.Item>
+            <Menu.Item disabled={video_device === null || !localVideoTrack || delay} onClick={() => this.camMute(cammuted)}>
+              <Icon color={cammuted ? 'red' : null} name={!cammuted ? 'eye' : 'eye slash'} />
+              {t(cammuted ? 'oldClient.startVideo' : 'oldClient.stopVideo')}
+            </Menu.Item>
+            <Menu.Item onClick={this.otherCamsMuteToggle}>
+              <Image src={muteOtherCams ? audioModeSvg : fullModeSvg} style={{ marginBottom: '0.5rem' }} />
+              {t(muteOtherCams ? 'oldClient.fullMode' : 'oldClient.audioMode')}
+            </Menu.Item>
+            {/*<Menu.Item>*/}
+            {/*  <Select*/}
+            {/*    compact*/}
+            {/*    value={i18n.language}*/}
+            {/*    options={languagesOptions}*/}
+            {/*    onChange={(e, { value }) => {*/}
+            {/*      setLanguage(value);*/}
+            {/*      this.setState({ selftest: t('oldClient.selfAudioTest') });*/}
+            {/*    }} />*/}
+            {/*</Menu.Item>*/}
+            <Popup
+              trigger={<Menu.Item icon="setting" name={t('oldClient.settings')} />}
+              on='click'
+              position='bottom right'
+            >
+              <Popup.Content>
+                <Button size='huge' fluid>
+                  <Icon name='user circle' />
+                  <Profile title={user && user.display} kc={kc} />
+                </Button>
+                <Select className='select_device'
+                        disabled={!!room}
+                        error={!media.audio.audio_device}
+                        placeholder={t('oldClient.selectDevice')}
+                        value={media.audio.audio_device}
+                        options={adevices_list}
+                        onChange={(e, { value }) => this.setAudioDevice(value)} />
+                <Select className='select_device'
+                        disabled={!!room}
+                        error={!media.video.video_device}
+                        placeholder={t('oldClient.selectDevice')}
+                        value={media.video.video_device}
+                        options={vdevices_list}
+                        onChange={(e, { value }) => this.setVideoDevice(value)} />
+                <Select className='select_device'
+                        disabled={!!room}
+                        error={!media.video.video_device}
+                        placeholder={t('oldClient.videoSettings')}
+                        value={media.video.setting}
+                        options={vsettings_list}
+                        onChange={(e, { value }) => this.setVideoSize(value)} />
+                <Select className='select_device'
+                        value={i18n.language}
+                        options={languagesOptions}
+                        onChange={(e, { value }) => {
+                          setLanguage(value);
+                          this.setState({ selftest: t('oldClient.selfAudioTest') });
+                        }} />
+              </Popup.Content>
+            </Popup>
+            <TopMenu t={t} />
+            <Button primary style={{ margin: 'auto' }} onClick={() => window.open('https://virtualhome.kli.one', '_blank')}>{t('loginPage.userFee')}</Button>
+            <Monitoring monitoringData={monitoringData} />
+            {!isDeb ? null :
+              <Menu.Item onClick={sentryDebugAction}>
+                Sentry
+              </Menu.Item>
+            }
+          </Menu>
+          {!(new URL(window.location.href).searchParams.has('lost')) ? null :
+            (
+              <Label color={net_status === 2 ? 'yellow' : net_status === 3 ? 'red' : 'green'} icon='wifi' corner='right' />)}
+        </div>
+        <div className="vclient__main" onDoubleClick={() => this.setState({
+          chatVisible: !chatVisible
+        })}>
+          <div className={`
           vclient__main-wrapper
           no-of-videos-${noOfVideos}
           layout--${layout}
@@ -2371,39 +2192,41 @@ class VirtualClient extends Component {
           ${!attachedSource ? ' broadcast--popup' : 'broadcast--inline'}
          `}>
 
-          {/* ${layout === 'equal' ? ' broadcast--equal' : ''} */}
-          {/* ${layout === 'double' ? ' broadcast--double' : ''} */}
-          {/* ${layout === 'split' ? ' broadcast--split' : ''} */}
+            {/* ${layout === 'equal' ? ' broadcast--equal' : ''} */}
+            {/* ${layout === 'double' ? ' broadcast--double' : ''} */}
+            {/* ${layout === 'split' ? ' broadcast--split' : ''} */}
 
-          <div className="broadcast-panel">
-            {/* <div className="videos"> */}
+            <div className="broadcast-panel">
+              {/* <div className="videos"> */}
               <div className="broadcast__wrapper">
                 {layout === 'split' && source}
               </div>
-            {/* </div> */}
-          </div>
+              {/* </div> */}
+            </div>
 
-          <div className="videos-panel">
-            {/* <div className="videos"> */}
+            <div className="videos-panel">
+              {/* <div className="videos"> */}
               <div className="videos__wrapper">
                 {(layout === 'equal' || layout === 'double') && source}
                 {remoteVideos}
               </div>
-            {/* </div> */}
+              {/* </div> */}
+            </div>
+            <VirtualChat
+              t={t}
+              ref={chat => {
+                this.chat = chat;
+              }}
+              visible={chatVisible}
+              janus={janus}
+              room={room}
+              user={user}
+              gdm={this.state.gdm}
+              onCmdMsg={this.handleCmdData}
+              onNewMsg={this.onChatMessage} />
           </div>
-          <VirtualChat
-            t={t}
-            ref={chat => {this.chat = chat;}}
-            visible={chatVisible}
-            janus={janus}
-            room={room}
-            user={user}
-            gdm={this.state.gdm}
-            onCmdMsg={this.handleCmdData}
-            onNewMsg={this.onChatMessage} />
         </div>
-      </div>
-    </div>);
+      </div>);
     } else
       content = this.renderNewVersionContent(layout, isDeb, source, rooms_list, otherFeedHasQuestion, adevices_list, vdevices_list, noOfVideos, remoteVideos);
 
@@ -2412,36 +2235,50 @@ class VirtualClient extends Component {
         {
           user
           && !isMobile
-          && false
-          //&& (isUseNewDesign && Boolean(room))
+          //&& false
+          && (isUseNewDesign && Boolean(room))
           && (
             <SettingsJoined
-              user={user}
+              userDisplay={user.display}
               isOpen={isSettings}
-              selectedRoom={selected_room}
-              media={media}
-              closeModal={() => this.setState({ isSettings: false })}
+              audio={media.audio}
+              video={media.video}
+              closeModal={() => this.setState({ isSettings: false, isOpenTopMenu: false })}
+              setAudio={((a, t) => this.setState({ audios: { audios: a, text: t } }))}
+              setVideo={((v) => {
+                virtualStreamingJanus.setVideo(v);
+                this.setState({ videos: v });
+              })}
+              videos={videos}
+              videoLength={media.video?.devices.length}
+              audioModeChange={this.otherCamsMuteToggle}
+              isAudioMode={muteOtherCams}
             />
           )
         }
         {
           user
           && !isMobile
-          //&& !isMobile
+          //&& false
           && (isUseNewDesign && !Boolean(room))
           && (
             <Settings
-              user={user}
+              userDisplay={user.display}
               rooms={rooms}
               selectRoom={this.selectRoom.bind(this)}
               selectedRoom={selected_room}
               initClient={this.initClient.bind(this)}
-              media={media}
               isAudioMode={muteOtherCams}
               setAudioDevice={this.setAudioDevice.bind(this)}
               setVideoDevice={this.setVideoDevice.bind(this)}
               settingsChange={this.setVideoSize}
               audioModeChange={this.otherCamsMuteToggle}
+              audio={media.audio}
+              video={media.video}
+              videoDevice={media.video.video_device}
+              audioDevice={media.audio.audio_device}
+              videoLength={media.video?.devices.length}
+              videoSettings={JSON.stringify(media.video.setting)}
             />
           )
         }

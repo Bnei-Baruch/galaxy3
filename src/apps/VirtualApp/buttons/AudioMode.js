@@ -4,6 +4,8 @@ import ButtonBase from '@material-ui/core/ButtonBase';
 import audioModeSvg from '../../../shared/audio-mode.svg';
 import fullModeSvg from '../../../shared/full-mode.svg';
 import Icon from '@material-ui/core/Icon';
+import { RecordVoiceOver, RecordVoiceOverSharp } from '@material-ui/icons';
+import red from '@material-ui/core/colors/red';
 
 const useStyles = makeStyles({
   label: {
@@ -41,6 +43,7 @@ const AudioMode = (props) => {
         disabled: classes.disabled
       }}
     >
+      <RecordVoiceOver style={isOn ? { color: red[500] } : {}} />
       <Icon className={classes.icon}>
         <img src={isOn ? audioModeSvg : fullModeSvg} alt={t(isOn ? 'oldClient.fullMode' : 'oldClient.audioMode')} />
       </Icon>
@@ -49,7 +52,6 @@ const AudioMode = (props) => {
       </span>
     </ButtonBase>
   );
-
 };
 
 export { AudioMode };

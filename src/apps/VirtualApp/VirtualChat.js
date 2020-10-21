@@ -413,6 +413,7 @@ class VirtualChat extends Component {
           }
           <Message attached className='messages_list'>
             <div className="messages-wrapper">
+              <Message size='mini' color="grey">{t(room_chat ? 'virtualChat.msgRoomInfo' : 'virtualChat.msgAdminInfo')}</Message>
               {room_chat ? room_msgs : admin_msgs}
               <div ref='end' />
             </div>

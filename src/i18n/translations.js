@@ -1,3 +1,6 @@
+import { List, ListItem, ListItemText } from '@material-ui/core';
+import React from 'react';
+
 export const resources = {
   en: {
     common: {
@@ -67,11 +70,29 @@ export const resources = {
         user: 'User',
         usefulLinks: 'Useful Links',
         leave: 'Leave',
+        SvivaTova: 'Sviva Tova',
+        LiveGroups: 'Live Groups',
+        WorkshopQuestions: 'Workshop Questions',
+        KabbalahMedia: 'Kabbalah Media'
       },
-      settings:{
+      settings: {
         selectCamera: 'Select camera',
         selectMic: 'Select microphone',
-        selectSize: 'Select video size',
+        selectSize: 'Select camera quality',
+        userSettings: 'User settings',
+        screenName: 'Screen name',
+        interfaceLanguage: 'Interface language',
+        broadcastSettings: 'Broadcast settings',
+        broadcastQuality: 'Broadcast quality',
+        broadcastLanguage: 'Broadcast language',
+        cameraSettings: 'Camera settings',
+        microphoneSettings: 'Microphone settings',
+        micSource: 'Microphone source',
+        cameraSource: 'Camera source',
+        cameraQuality: 'Camera quality',
+        helloUser: 'Hello {{name}}',
+        beforeConnecting: 'before connecting with the TEN, please check your settings and device setup:'
+
       },
       feedback: {
         feedbackHelp: 'Feedback/Help',
@@ -83,6 +104,8 @@ export const resources = {
         supportChat: 'Support chat',
         send: 'Send',
         enterMessage: 'Type your message',
+        msgRoomInfo: 'Messages here will be seen by all the members of the ten connected now.',
+        msgAdminInfo: 'Our support team will contact you here.'
       },
       loginPage: {
         support: 'Help',

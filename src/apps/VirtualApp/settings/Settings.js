@@ -1,18 +1,26 @@
-import React, { useEffect, useState } from 'react';
+import React, { memo } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { Button, Checkbox, FormControl, InputLabel, Select, FormControlLabel, Modal, Grid } from '@material-ui/core';
+import { Button, Checkbox, FormControlLabel, Modal, Grid, Typography, TextField, ListItem } from '@material-ui/core';
 import Autocomplete from '@material-ui/lab/Autocomplete';
 import makeStyles from '@material-ui/core/styles/makeStyles';
+import green from '@material-ui/core/colors/green';
 
 import MyMedia from './MyMedia';
-import SelfTest from './SelfTest';
+import CheckMySelf from './CheckMySelf';
 import { vsettings_list } from '../../../shared/consts';
-import TextField from '@material-ui/core/TextField';
+import LogoutDropdown from './LogoutDropdown';
+import { MenuItem } from '@material-ui/core';
 
 const settingsList = vsettings_list.map(({ key, text, value }) => ({ key, text, value: JSON.stringify(value) }));
 const mapDevice    = ({ label, deviceId }) => ({ text: label, value: deviceId });
-const mapOption    = ({ text, value }) => (<option key={value} value={value}>{text}</option>);
+const mapOption    = ({ text, value }) => {
+  return (
+    <MenuItem key={value} value={value} button>
+      {text}
+    </MenuItem>
+  );
+};
 
 const useStyles = makeStyles(() => ({
   content: {
@@ -33,7 +41,8 @@ const Settings = (props) => {
 
   const { t } = useTranslation();
   const {
-          media,
+          audio,
+          video,
           rooms,
           isAudioMode,
           initClient,
@@ -42,45 +51,44 @@ const Settings = (props) => {
           setAudioDevice,
           setVideoDevice,
           settingsChange,
-          audioModeChange
+          audioModeChange,
+          videoLength,
+          videoSettings,
+          audioDevice = audio.devices[0]?.deviceId,
+          videoDevice = video?.devices[0]?.deviceId,
+          userDisplay
         }     = props;
 
-  const { audio, video } = media;
-  const audio_device     = audio?.audio_device || audio?.devices[0]?.deviceId;
-  const video_device     = video?.video_device || video?.devices[0]?.deviceId;
-
   const renderCameras = () => {
-    if (!video?.devices || video.devices.length === 0)
+    if (!videoLength)
       return null;
 
     return (
-      <FormControl>
-        <InputLabel>{t('settings.selectCamera')}</InputLabel>
-        <Select
-          native
-          variant="outlined"
-          onChange={handleVideoChange}
-          value={video_device}
-        >
-          {video.devices.map(mapDevice).map(mapOption)}
-        </Select>
-      </FormControl>
+      <TextField
+        select
+        fullWidth={true}
+        variant="outlined"
+        label={t('settings.selectCamera')}
+        onChange={handleVideoChange}
+        value={videoDevice}
+      >
+        {video.devices.map(mapDevice).map(mapOption)}
+      </TextField>
     );
   };
 
   const renderVideoSize = () => (
-    <FormControl>
-      <InputLabel>{t('settings.selectSize')}</InputLabel>
-      <Select
-        native
-        variant="outlined"
-        onChange={handleSettingsChange}
-        value={JSON.stringify(video.setting)}>
-        {
-          settingsList.map(mapOption)
-        }
-      </Select>
-    </FormControl>
+    <TextField
+      select
+      fullWidth={true}
+      variant="outlined"
+      label={t('settings.selectSize')}
+      onChange={handleSettingsChange}
+      value={videoSettings}>
+      {
+        settingsList.map(mapOption)
+      }
+    </TextField>
   );
 
   const renderSounds = () => {
@@ -88,17 +96,16 @@ const Settings = (props) => {
       return null;
 
     return (
-      <FormControl>
-        <InputLabel>{t('settings.selectMic')}</InputLabel>
-        <Select
-          native
-          variant="outlined"
-          onChange={handleAudioChange}
-          value={audio_device}
-        >
-          {audio.devices.map(mapDevice).map(mapOption)}
-        </Select>
-      </FormControl>
+      <TextField
+        variant="outlined"
+        fullWidth={true}
+        onChange={handleAudioChange}
+        value={audioDevice}
+        label={t('settings.selectMic')}
+        select
+      >
+        {audio.devices.map(mapDevice).map(mapOption)}
+      </TextField>
     );
   };
 
@@ -108,14 +115,14 @@ const Settings = (props) => {
 
     return (
       <Autocomplete
-        id="rooms_autocomplite"
         variant="outlined"
-        defaultValue={rooms.find(op => op.room === selectedRoom)}
+        value={rooms.find(op => op.room === selectedRoom)}
         options={rooms}
         getOptionLabel={(option) => option.description}
+        onChange={handleRoomChange}
         renderInput={
           (params) => (
-            <TextField {...params} label={t('settings.selectRoom')} variant="outlined" />
+            <TextField {...params} label={t('oldClient.selectRoom')} variant="outlined" />
           )
         }
       />
@@ -130,8 +137,11 @@ const Settings = (props) => {
 
   const handleAudioModeChange = () => audioModeChange();
 
-  const handleRoomChange = e => {
-    const num = Number.parseInt(e.target.value);
+  const handleRoomChange = (e, op) => {
+    if (!op?.room)
+      return;
+
+    const num = Number(op.room);
     !isNaN(num) && selectRoom(num);
   };
 
@@ -140,31 +150,52 @@ const Settings = (props) => {
   const renderContent = () => {
     return (
       <Grid container spacing={4} className={classes.content}>
+        <Grid item xs={9}>
+          <Typography variant="h3" display={'block'}>
+            {t('settings.helloUser', { name: userDisplay })}
+          </Typography>
+        </Grid>
+        <Grid item xs={3} style={{ justifyContent: 'flex-end', display: 'flex', alignItems: 'center' }}>
+          <LogoutDropdown display={userDisplay} />
+        </Grid>
         <Grid item xs={4}>
           {renderCameras()}
         </Grid>
         <Grid item xs={4}>
-          {renderSounds()}
+          {renderVideoSize()}
         </Grid>
         <Grid item xs={4}>
-          {renderVideoSize()}
+          {renderSounds()}
         </Grid>
         <Grid item xs={8}>
           {<MyMedia cammuted={false} video={video} />}
         </Grid>
         <Grid item xs={4}>
-          {<SelfTest device={audio?.audio_device} />}
+          {<CheckMySelf device={audioDevice} />}
         </Grid>
         <Grid item xs={12}>
-          <FormControlLabel control={
-            <Checkbox checked={!!isAudioMode} onChange={handleAudioModeChange} name="isAudioMode" />} label="Audio Mode" />
+          <FormControlLabel
+            label={t('oldClient.audioMode')}
+            control={
+              <Checkbox
+                checked={!!isAudioMode}
+                onChange={handleAudioModeChange}
+                name="isAudioMode"
+              />
+            }
+          />
         </Grid>
 
         <Grid item xs={8}>
           {renderRooms()}
         </Grid>
         <Grid item xs={4}>
-          <Button variant="contained" color="primary" onClick={handleInitClient}>
+          <Button
+            variant="contained"
+            color="primary"
+            style={{ background: green[500], height: '100%' }}
+            size="large"
+            onClick={handleInitClient}>
             {t('oldClient.joinRoom')}
           </Button>
         </Grid>
@@ -173,17 +204,28 @@ const Settings = (props) => {
   };
 
   return (
-    <Modal
-      open={true}
-      disableBackdropClick={true}
-      BackdropProps={{
-        style: { backgroundColor: 'white' }
-      }}
-      className={classes.modal}
-    >
-      {renderContent()}
-    </Modal>
+      <Modal
+        open={true}
+        disableBackdropClick={true}
+        BackdropProps={{
+          style: { backgroundColor: 'white' }
+        }}
+        className={classes.modal}
+      >
+        {renderContent()}
+      </Modal>
   );
 };
 
-export default Settings;
+export default memo(Settings, (props, next) => {
+    return (
+      props.videoLength === next.videoLength
+      && props.audioDevice === next.audioDevice
+      && props.videoDevice === next.videoDevice
+      && props.videoSettings === next.videoSettings
+      && props.isAudioMode === next.isAudioMode
+      && props.selectedRoom === next.selectedRoom
+      && props.rooms === next.rooms
+    );
+  }
+);

@@ -1,12 +1,7 @@
 import React, { useRef } from 'react';
+
+import { Box, Popper, Paper, ButtonGroup, ButtonBase, Button, ClickAwayListener } from '@material-ui/core';
 import { makeStyles } from '@material-ui/core/styles';
-import Button from '@material-ui/core/Button';
-import ButtonBase from '@material-ui/core/ButtonBase';
-import ButtonGroup from '@material-ui/core/ButtonGroup';
-import { Box } from '@material-ui/core';
-import Popper from '@material-ui/core/Popper';
-import Paper from '@material-ui/core/Paper';
-import ClickAwayListener from '@material-ui/core/ClickAwayListener';
 
 const useStyles = makeStyles({
   label: {
