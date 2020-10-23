@@ -1335,13 +1335,23 @@ class VirtualClient extends Component {
     const {virtualStreamingJanus, shidur, user} = this.state;
     const stateUpdate = {shidur: !shidur};
     if (shidur) {
-      virtualStreamingJanus.destroy();
+      virtualStreamingJanus.destroy({
+        success: () => {
+          console.log('Virtual streming destroyed.');
+          this.setState(stateUpdate);
+        },
+        error: (error) => {
+          console.log('Error destroying VirtualStreaming', error);
+          captureMessage('Error destroying VirtualStreaming', {source: 'VirtualClient', err: error}, 'error');
+          this.setState(stateUpdate);
+        },
+      });
     } else {
       const {ip, country} = user;
       virtualStreamingJanus.init(ip, country);
       stateUpdate.sourceLoading = true;
+      this.setState(stateUpdate);
     }
-    this.setState(stateUpdate);
   };
 
   updateLayout = (currentLayout) => {

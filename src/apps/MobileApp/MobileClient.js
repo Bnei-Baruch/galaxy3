@@ -183,7 +183,15 @@ class MobileClient extends Component {
     };
 
     componentWillUnmount() {
-      this.state.virtualStreamingJanus.destroy();
+      this.state.virtualStreamingJanus.destroy({
+        success: () => {
+          console.log('Mobile Virtual streming destroyed.');
+        },
+        error: (error) => {
+          console.log('Mobile Error destroying VirtualStreaming', error);
+          captureMessage('Mobile Error destroying VirtualStreaming', {source: 'MobileClient', err: error}, 'error');
+        },
+      });
     }
 
     initApp = (user) => {
@@ -1393,13 +1401,23 @@ class MobileClient extends Component {
       const {virtualStreamingJanus, shidur, user} = this.state;
       const stateUpdate = {shidur: !shidur};
       if (shidur) {
-        virtualStreamingJanus.destroy();
+        virtualStreamingJanus.destroy({
+        success: () => {
+          console.log('Mobile Virtual streming destroyed toggle.');
+          this.setState(stateUpdate);
+        },
+        error: (error) => {
+          console.log('Mobile Error destroying VirtualStreaming toggle', error);
+          captureMessage('Mobile Error destroying VirtualStreaming toggle', {source: 'MobileClient', err: error}, 'error');
+          this.setState(stateUpdate);
+        },
+      });
       } else {
         const {ip, country} = user;
         virtualStreamingJanus.init(ip, country);
         stateUpdate.shidurLoading = true;
+        this.setState(stateUpdate);
       }
-      this.setState(stateUpdate);
     };
 
     onChatMessage = () => {
