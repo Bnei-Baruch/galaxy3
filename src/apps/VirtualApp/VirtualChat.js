@@ -69,7 +69,7 @@ class VirtualChat extends Component {
     janus.attach(
         {
           plugin: "janus.plugin.textroom",
-          opaqueId: "chatroom_user",
+          opaqueId: user.id,
           success: (pluginHandle) => {
             chatroom = pluginHandle;
             console.log("[VirtualChat] Plugin attached! (" + chatroom.getPlugin() + ", id=" + chatroom.getId() + ")");

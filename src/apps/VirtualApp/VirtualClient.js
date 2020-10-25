@@ -534,7 +534,7 @@ class VirtualClient extends Component {
   initVideoRoom = (reconnect, user) => {
     this.state.janus.attach({
       plugin: 'janus.plugin.videoroom',
-      opaqueId: 'videoroom_user',
+      opaqueId: user.id,
       success: (videoroom) => {
         Janus.log(' :: My handle: ', videoroom);
         Janus.log('Plugin attached! (' + videoroom.getPlugin() + ', id=' + videoroom.getId() + ')');
