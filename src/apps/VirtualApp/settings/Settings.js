@@ -110,7 +110,7 @@ const Settings = (props) => {
   };
 
   const renderRooms = () => {
-    if (!rooms || rooms.length === 0 || !selectedRoom)
+    if (!rooms || rooms.length === 0)
       return null;
 
     return (
@@ -153,6 +153,9 @@ const Settings = (props) => {
         <Grid item xs={9}>
           <Typography variant="h3" display={'block'}>
             {t('settings.helloUser', { name: userDisplay })}
+          </Typography>
+          <Typography>
+            {t('settings.beforeConnecting')}
           </Typography>
         </Grid>
         <Grid item xs={3} style={{ justifyContent: 'flex-end', display: 'flex', alignItems: 'center' }}>
@@ -204,16 +207,16 @@ const Settings = (props) => {
   };
 
   return (
-      <Modal
-        open={true}
-        disableBackdropClick={true}
-        BackdropProps={{
-          style: { backgroundColor: 'white' }
-        }}
-        className={classes.modal}
-      >
-        {renderContent()}
-      </Modal>
+    <Modal
+      open={true}
+      disableBackdropClick={true}
+      BackdropProps={{
+        style: { backgroundColor: 'white' }
+      }}
+      className={classes.modal}
+    >
+      {renderContent()}
+    </Modal>
   );
 };
 

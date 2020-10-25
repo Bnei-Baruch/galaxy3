@@ -33,7 +33,7 @@ const fetchDoc = async (id, file) => {
 
 let linkByLand;
 
-const LoadSourceContainer = ({ id = 'hFeGidcS' }) => {
+const LoadMDBSource = ({ id = 'hFeGidcS' }) => {
   const [data, setData]         = useState([]);
   const [selected, setSelected] = useState(getLanguage());
   const [html, setHtml]         = useState();
@@ -93,4 +93,4 @@ const LoadSourceContainer = ({ id = 'hFeGidcS' }) => {
 
 };
 
-export default LoadSourceContainer;
+export default LoadMDBSource;

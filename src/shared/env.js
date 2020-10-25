@@ -25,3 +25,5 @@ export const MONITOR_SRV = process.env.REACT_APP_MONITOR_SRV;
 
 export const ADMIN_SECRET = process.env.REACT_APP_ADMIN_SECRET;
 export const ADMIN_SRV_STR1 = process.env.REACT_APP_ADMIN_SRV_STR1;
+
+export const STUDY_MATERIALS = process.env.REACT_APP_STUDY_MATERIALS;
