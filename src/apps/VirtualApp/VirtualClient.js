@@ -1745,12 +1745,6 @@ class VirtualClient extends Component {
     let content;
     if (leftAsideName === 'material') {
       content = <HomerLimud />;
-      /*content = (
-        <iframe
-          src={`https://groups.google.com/forum/embed/?place=forum/bb-study-materials&showpopout=true&showtabs=false&parenturl=${encodeURIComponent(window.location.href)}`}
-          style={{ width: '100%', height: '100%', padding: '1rem' }}
-          frameBorder="0"></iframe>
-      );*/
     } else if (leftAsideName === 'drawing') {
       content = (
         <iframe
@@ -1763,7 +1757,8 @@ class VirtualClient extends Component {
     return (
       <Grid item xs={(leftAsideSize >= 3 && leftAsideName) ? leftAsideSize : false}>
         {
-          leftAsideName ?
+          //buttons for resize tab (if want open study materials on browser tab)
+          leftAsideName && false ?
             (
               <ButtonGroup>
                 <IconButton onClick={() => this.handleAsideResize(false)}>
