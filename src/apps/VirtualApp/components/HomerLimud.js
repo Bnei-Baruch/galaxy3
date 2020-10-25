@@ -6,6 +6,9 @@ import Accordion from '@material-ui/core/Accordion';
 import AccordionSummary from '@material-ui/core/AccordionSummary';
 import AccordionDetails from '@material-ui/core/AccordionDetails';
 import Typography from '@material-ui/core/Typography';
+import {FETCH_STUDY_MATERIALS} from "../../../shared/env"
+
+
 
 const fetchMessages = async () => {
   try {
