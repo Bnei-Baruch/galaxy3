@@ -211,7 +211,7 @@ export const resources = {
         video: 'Vídeo',
         audio: 'Audio',
         cameraQuality: 'Calidad de la cámara',
-        language: 'Idioma'
+        language: 'Idioma',
         joinRoom: 'Unirse a la sala',
         drawing: 'Gráficos',
         material: 'Material de estudio',
@@ -363,7 +363,7 @@ export const resources = {
         video: 'וידאו',
         audio: 'אודיו',
         cameraQuality: 'איכות מצלמה',
-        language: 'שפה'
+        language: 'שפה',
         joinRoom: 'כנס לחדר',
         drawing: 'שרטוטים',
         material: 'חומר לימוד',
@@ -515,7 +515,7 @@ export const resources = {
         video: 'Видео',
         audio: 'Аудио',
         cameraQuality: 'Качество камеры',
-        language: 'Язык'
+        language: 'Язык',
         joinRoom: 'Join Room',
         drawing: 'Drawing',
         material: 'Study Materials',

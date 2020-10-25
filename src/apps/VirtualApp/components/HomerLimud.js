@@ -25,9 +25,8 @@ const mockData      = [
   },
 ];
 const fetchMessages = async () => {
-  return mockData;
   try {
-    const res = await fetch('url', { method: 'GET' });
+    const res = await fetch('https://stmat.kli.one/api/units', { method: 'GET' });
     return res.json();
   } catch (e) {
     return null;
@@ -49,11 +48,11 @@ const HomerLimud = () => {
 
   const handleAccordionChange = (name) => name !== expanded ? setExpanded(name) : setExpanded(null);
 
-  const renderMessage = ({ subject, body: __html }, i) => {
+  const renderMessage = ({ title, description: __html }, i) => {
     return (
       <Accordion key={i} expanded={expanded === `panel${i}`} onChange={() => handleAccordionChange(`panel${i}`)}>
         <AccordionSummary>
-          <Typography>{subject}</Typography>
+          <Typography>{title}</Typography>
         </AccordionSummary>
         <AccordionDetails>
           <Typography style={{ overflow: 'auto', fontSize: '0.8em', textOverflow: 'ellipsis' }}>
