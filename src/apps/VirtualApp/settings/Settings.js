@@ -154,6 +154,9 @@ const Settings = (props) => {
           <Typography variant="h3" display={'block'}>
             {t('settings.helloUser', { name: userDisplay })}
           </Typography>
+          <Typography>
+            {t('settings.beforeConnecting')}
+          </Typography>
         </Grid>
         <Grid item xs={3} style={{ justifyContent: 'flex-end', display: 'flex', alignItems: 'center' }}>
           <LogoutDropdown display={userDisplay} />
@@ -204,16 +207,16 @@ const Settings = (props) => {
   };
 
   return (
-      <Modal
-        open={true}
-        disableBackdropClick={true}
-        BackdropProps={{
-          style: { backgroundColor: 'white' }
-        }}
-        className={classes.modal}
-      >
-        {renderContent()}
-      </Modal>
+    <Modal
+      open={true}
+      disableBackdropClick={true}
+      BackdropProps={{
+        style: { backgroundColor: 'white' }
+      }}
+      className={classes.modal}
+    >
+      {renderContent()}
+    </Modal>
   );
 };
 
