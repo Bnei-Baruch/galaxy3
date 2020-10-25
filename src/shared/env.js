@@ -22,3 +22,5 @@ export const MONITORING_BACKEND = process.env.REACT_APP_MONITORING_BACKEND;
 export const AUTH_API_BACKEND = process.env.REACT_APP_AUTH_API_BACKEND;
 
 export const MONITOR_SRV = process.env.REACT_APP_MONITOR_SRV;
+
+export const FETCH_STUDY_MATERIALS = process.env.FETCH_STUDY_MATERIALS;

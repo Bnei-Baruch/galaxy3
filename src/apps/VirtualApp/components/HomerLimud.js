@@ -9,7 +9,7 @@ import Typography from '@material-ui/core/Typography';
 
 const fetchMessages = async () => {
   try {
-    const res = await fetch('https://stmat.kli.one/api/units', { method: 'GET' });
+    const res = await fetch(FETCH_STUDY_MATERIALS, { method: 'GET' });
     return res.json();
   } catch (e) {
     return null;
