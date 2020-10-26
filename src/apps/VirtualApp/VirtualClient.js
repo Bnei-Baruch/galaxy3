@@ -255,6 +255,7 @@ class VirtualClient extends Component {
   };
 
   initClient = (reconnect, retry = 0) => {
+    captureMessage('InitClient', {source: 'VirtualClient', reconnect, retry});
     this.setState({delay: true});
     const user = Object.assign({}, this.state.user);
     const {t} = this.props;
@@ -671,6 +672,7 @@ class VirtualClient extends Component {
   };
 
   exitRoom = (reconnect, callback, error) => {
+    captureMessage('Exit Room', {source: 'VirtualClient', reconnect, error});
     this.setState({delay: true});
     if(this.state.user.role === "user") {
       wkliLeave(this.state.user);

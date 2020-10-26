@@ -256,6 +256,7 @@ class MobileClient extends Component {
     };
 
     initClient = (reconnect, retry = 0) => {
+      captureMessage('InitClient', {source: 'MobileClient', reconnect, retry});
       this.setState({delay: true});
       const user = Object.assign({}, this.state.user);
       const {t} = this.props;
@@ -630,6 +631,7 @@ class MobileClient extends Component {
     };
 
     exitRoom = (reconnect, callback, error) => {
+        captureMessage('Exit Room', {source: 'MobileClient', reconnect, error});
         this.setState({delay: true})
         let {videoroom, remoteFeed, protocol, janus, room} = this.state;
         wkliLeave(this.state.user);
