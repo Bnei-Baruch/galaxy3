@@ -4,34 +4,32 @@ import {Janus} from "../../lib/janus";
 import classNames from 'classnames';
 import Dots from 'react-carousel-dots';
 import {Accordion, Button, Icon, Image, Input, Label, Menu, Modal, Select} from "semantic-ui-react";
-import {
-    checkNotification,
-    geoInfo,
-    getMedia,
-    getMediaStream,
-    initJanus,
-    micLevel,
-    wkliLeave
-} from "../../shared/tools";
+import {checkNotification, geoInfo, getMedia, getMediaStream, initJanus, micLevel, wkliLeave} from "../../shared/tools";
 import './MobileClient.scss'
 import './MobileConteiner.scss'
 import 'eqcss'
 import {
-    NO_VIDEO_OPTION_VALUE,
-    PROTOCOL_ROOM,
-    USERNAME_ALREADY_EXIST_ERROR_CODE,
-    VIDEO_240P_OPTION_VALUE,
-    vsettings_list,
+  NO_VIDEO_OPTION_VALUE,
+  PROTOCOL_ROOM,
+  USERNAME_ALREADY_EXIST_ERROR_CODE,
+  VIDEO_240P_OPTION_VALUE,
+  vsettings_list,
 } from "../../shared/consts";
 import {GEO_IP_INFO} from "../../shared/env";
 import platform from "platform";
-import { isMobile } from 'react-device-detect';
+import {isMobile} from 'react-device-detect';
 import {withTranslation} from 'react-i18next';
 import {languagesOptions, setLanguage} from '../../i18n/i18n';
 import {Monitoring} from '../../components/Monitoring';
-import {MonitoringData, LINK_STATE_INIT, LINK_STATE_GOOD, LINK_STATE_MEDIUM, LINK_STATE_WEAK} from '../../shared/MonitoringData';
+import {
+  LINK_STATE_GOOD,
+  LINK_STATE_INIT,
+  LINK_STATE_MEDIUM,
+  LINK_STATE_WEAK,
+  MonitoringData
+} from '../../shared/MonitoringData';
 import api from '../../shared/Api';
-import {kc, isGhostOrGuest} from "../../components/UserManager";
+import {isGhostOrGuest, kc} from "../../components/UserManager";
 import LoginPage from "../../components/LoginPage";
 import GxyJanus from "../../shared/janus-utils";
 import connectionOrange from '../VirtualApp/connection-orange.png';
@@ -45,7 +43,7 @@ import VirtualStreamingJanus from '../../shared/VirtualStreamingJanus';
 import VirtualChat from '../VirtualApp/VirtualChat';
 import ConfigStore from "../../shared/ConfigStore";
 import {GuaranteeDeliveryManager} from "../../shared/GuaranteeDelivery";
-import {updateSentryUser, captureException, captureMessage} from "../../shared/sentry";
+import {captureException, captureMessage, updateSentryUser} from "../../shared/sentry";
 
 const sortAndFilterFeeds = (feeds) => feeds
   .filter(feed => !feed.display.role.match(/^(ghost|guest)$/))
@@ -329,7 +327,25 @@ class MobileClient extends Component {
                     });
                 }
 
-                this.setState({media})
+              // we dup this info on user so it goes into the backend.
+              // from there it propagates into other components (e.g. shidur preview)
+              const user = {
+                ...this.state.user,
+                extra: {
+                  ...(this.state.user.extra || {}),
+                  media: {
+                    audio: {
+                      audio_device: audio.audio_device,
+                    },
+                    video: {
+                      setting: video.setting,
+                      video_device: video.video_device,
+                    },
+                  }
+                }
+              };
+
+                this.setState({media, user});
             });
     };
 
@@ -610,6 +626,8 @@ class MobileClient extends Component {
             } else if(textroom === "success" && data.participants) {
                 Janus.log(":: Successfully joined to chat room: " + selected_room );
 								captureMessage('Successfully joined to chat room', {source: "Textroom", selected_room});
+                user.textroom_handle = this.chat.getHandle(); // we want this in backend for debugging of textroom based signaling
+                this.setState({user});
                 const {id, timestamp, role, username} = user;
                 const d = {id, timestamp, role, display: username};
                 const register = {'request': 'join', 'room': selected_room, 'ptype': 'publisher', 'display': JSON.stringify(d)};

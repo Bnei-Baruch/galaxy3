@@ -26,12 +26,12 @@ import {
   VIDEO_360P_OPTION_VALUE,
   vsettings_list,
 } from '../../shared/consts';
-import { GEO_IP_INFO } from '../../shared/env';
+import {GEO_IP_INFO} from '../../shared/env';
 import platform from 'platform';
-import { TopMenu } from './components/TopMenu';
-import { withTranslation } from 'react-i18next';
-import { languagesOptions, setLanguage } from '../../i18n/i18n';
-import { Monitoring } from '../../components/Monitoring';
+import {TopMenu} from './components/TopMenu';
+import {withTranslation} from 'react-i18next';
+import {languagesOptions, setLanguage} from '../../i18n/i18n';
+import {Monitoring} from '../../components/Monitoring';
 import {
   LINK_STATE_GOOD,
   LINK_STATE_INIT,
@@ -42,30 +42,22 @@ import {
 import api from '../../shared/Api';
 import VirtualStreaming from './VirtualStreaming';
 import VirtualStreamingJanus from '../../shared/VirtualStreamingJanus';
-import {kc, isGhostOrGuest} from "../../components/UserManager";
+import {isGhostOrGuest, kc} from "../../components/UserManager";
 import LoginPage from "../../components/LoginPage";
 import {Profile} from "../../components/Profile";
-import {captureException, captureMessage, updateSentryUser, sentryDebugAction} from '../../shared/sentry';
+import {captureException, captureMessage, sentryDebugAction, updateSentryUser} from '../../shared/sentry';
 import VerifyAccount from './components/VerifyAccount';
 import GxyJanus from '../../shared/janus-utils';
 import audioModeSvg from '../../shared/audio-mode.svg';
 import fullModeSvg from '../../shared/full-mode.svg';
 import ConfigStore from '../../shared/ConfigStore';
-import { GuaranteeDeliveryManager } from '../../shared/GuaranteeDelivery';
+import {GuaranteeDeliveryManager} from '../../shared/GuaranteeDelivery';
 
-import {
-  IconButton,
-  Badge,
-  Box,
-  ButtonGroup,
-  Button as ButtonMD,
-  Grid,
-  AppBar
-} from '@material-ui/core';
-import { ChevronLeft, ChevronRight } from '@material-ui/icons';
-import { grey, red } from '@material-ui/core/colors';
+import {AppBar, Badge, Box, Button as ButtonMD, ButtonGroup, Grid, IconButton} from '@material-ui/core';
+import {ChevronLeft, ChevronRight} from '@material-ui/icons';
+import {grey, red} from '@material-ui/core/colors';
 
-import { AskQuestion, AudioMode, CloseBroadcast, Layout, Mute, MuteVideo, Vote } from './buttons';
+import {AskQuestion, AudioMode, CloseBroadcast, Layout, Mute, MuteVideo, Vote} from './buttons';
 import Settings from './settings/Settings';
 import SettingsJoined from './settings/SettingsJoined';
 import HomerLimud from './components/HomerLimud';
@@ -330,7 +322,25 @@ class VirtualClient extends Component {
             });
           }
 
-          this.setState({media})
+          // we dup this info on user so it goes into the backend.
+          // from there it propagates into other components (e.g. shidur preview)
+          const user = {
+            ...this.state.user,
+            extra: {
+              ...(this.state.user.extra || {}),
+              media: {
+                audio: {
+                  audio_device: audio.audio_device,
+                },
+                video: {
+                  setting: video.setting,
+                  video_device: video.video_device,
+                },
+              }
+            }
+          };
+
+          this.setState({media, user});
         });
   };
 
@@ -651,6 +661,8 @@ class VirtualClient extends Component {
       } else if(textroom === "success" && data.participants) {
         Janus.log(":: Successfully joined to chat room: " + selected_room );
 				captureMessage('Successfully joined to chat room', {source: "Textroom", selected_room});
+        user.textroom_handle = this.chat.getHandle(); // we want this in backend for debugging of textroom based signaling
+        this.setState({user});
         const {id, timestamp, role, username} = user;
         const d = {id, timestamp, role, display: username};
         const register = {'request': 'join', 'room': selected_room, 'ptype': 'publisher', 'display': JSON.stringify(d)};
