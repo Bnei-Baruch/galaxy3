@@ -23,7 +23,7 @@ const useStyles = makeStyles({
     margin: '0.5em 1em'
   },
   icon: {
-    width: '1.5em'
+    fontSize: '1.6rem'
   }
 });
 
@@ -44,9 +44,6 @@ const AudioMode = (props) => {
       }}
     >
       <RecordVoiceOver style={isOn ? { color: red[500] } : {}} />
-      <Icon className={classes.icon}>
-        <img src={isOn ? audioModeSvg : fullModeSvg} alt={t(isOn ? 'oldClient.fullMode' : 'oldClient.audioMode')} />
-      </Icon>
       <span className={classes.label}>
         {t(isOn ? 'oldClient.fullMode' : 'oldClient.audioMode')}
       </span>
