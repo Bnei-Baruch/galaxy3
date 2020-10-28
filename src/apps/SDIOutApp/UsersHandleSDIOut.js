@@ -55,9 +55,9 @@ class UsersHandleSDIOut extends Component {
 
     initVideoRoom = (roomid, inst) => {
         const gateway = this.props.gateways[inst];
-        gateway.addEventListener("reinit", () => {
-            this.reinitVideoRoom();
-        });
+        // gateway.addEventListener("reinit", () => {
+        //     this.reinitVideoRoom();
+        // });
         gateway.gateway.attach({
             plugin: "janus.plugin.videoroom",
             opaqueId: "preview_shidur",
@@ -116,9 +116,9 @@ class UsersHandleSDIOut extends Component {
     };
 
     reinitVideoRoom = () => {
-        const {g} = this.props;
+        const {g, reinit_inst} = this.props;
         const {inst, room} = this.state;
-        if(g.janus === inst) {
+        if(g.janus === reinit_inst) {
             this.setState({mids: [], feeds: [], videoroom: null, remoteFeed: null});
             setTimeout(() => {
                 this.initVideoRoom(room, inst);

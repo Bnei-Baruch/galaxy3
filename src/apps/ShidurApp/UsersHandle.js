@@ -36,9 +36,9 @@ class UsersHandle extends Component {
 
     initVideoRoom = (roomid, inst) => {
         const gateway = this.props.gateways[inst];
-        gateway.addEventListener("reinit", () => {
-            this.reinitVideoRoom();
-        });
+        // gateway.addEventListener("reinit", () => {
+        //     this.reinitVideoRoom();
+        // });
         gateway.gateway.attach({
             plugin: "janus.plugin.videoroom",
             opaqueId: "preview_shidur",
