@@ -7,6 +7,7 @@ class UsersHandleSDIOut extends Component {
 
     state = {
         feeds: [],
+        inst: null,
         mids: [],
         name: "",
         room: "",
@@ -20,7 +21,7 @@ class UsersHandleSDIOut extends Component {
         let num_videos = g && g.users && g.users.filter(u =>  u.camera).length;
         if(num_videos > 25) num_videos = 25;
         this.setState({num_videos});
-    }
+    };
 
     componentDidUpdate(prevProps) {
         let {g,index,group} = this.props;
@@ -46,7 +47,7 @@ class UsersHandleSDIOut extends Component {
             if(num_videos > 25) num_videos = 25;
             this.setState({num_videos})
         }
-    }
+    };
 
     componentWillUnmount() {
         this.exitVideoRoom(this.state.room, () =>{})
@@ -109,6 +110,8 @@ class UsersHandleSDIOut extends Component {
                     callback();
                 }
             });
+        } else {
+          this.setState({mids: [], feeds: [], videoroom: null, remoteFeed: null, room: ""});
         }
     };
 
