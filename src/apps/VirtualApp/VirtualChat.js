@@ -104,6 +104,12 @@ class VirtualChat extends Component {
             console.log(`[VirtualChat] ${message}`);
             captureMessage(`Chatroom: ${message}`, {source: "Textroom"});
           },
+          slowLink: (uplink, lost, mid) => {
+            const slowLinkType = uplink ? 'sending' : 'receiving';
+            const message = 'Janus reports slow link problems ' + slowLinkType + ' packets on mid ' + mid + ' (' + lost + ' lost packets)';
+            console.log(message);
+            captureMessage(`Chatroom: ${message}`, {source: "Textroom"});
+          },
           onmessage: (msg, jsep) => {
             console.debug("[VirtualChat] ::: Got a message :::", msg);
             if (msg["error"] !== undefined && msg["error"] !== null) {
