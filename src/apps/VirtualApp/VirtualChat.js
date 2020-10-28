@@ -341,6 +341,8 @@ class VirtualChat extends Component {
     });
   };
 
+  getHandle = () => (this.state.chatroom.getId());
+
   scrollToBottom = () => {
     this.refs.end.scrollIntoView({ behavior: 'smooth' });
   };
