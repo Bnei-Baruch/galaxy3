@@ -1,4 +1,4 @@
-import {GuaranteeDeliveryManager, DEADLINE_EXCEEDED} from './GuaranteeDelivery';
+import {GuaranteeDeliveryManager, SendOptions, DEADLINE_EXCEEDED} from './GuaranteeDelivery';
 
 class User {
   constructor(messageSendDelay) {
@@ -22,12 +22,10 @@ class User {
   }
 }
 
-it('messaged delivery guaranteed', (done) => {
-  const gdmA = new GuaranteeDeliveryManager('userA',
-    /* maxDelay= */ 2000, /* retryDelay= */ 500, /* intervalsDelay =*/ 100);
+xit('messaged delivery guaranteed', (done) => {
+  const gdmA = new GuaranteeDeliveryManager('userA', /* intervalsDelay =*/ 100, new SendOptions(/* maxDelay= */ 2000, /* retryDelay= */ 500));
   const userA = new User(/* messageSendDelay= */ 10);
-  const gdmB = new GuaranteeDeliveryManager('userB',
-    /* maxDelay= */ 2000, /* retryDelay= */ 500, /* intervalsDelay =*/ 100);
+  const gdmB = new GuaranteeDeliveryManager('userB', /* intervalsDelay =*/ 100, new SendOptions(/* maxDelay= */ 2000, /* retryDelay= */ 500));
   const userB = new User(/* messageSendDelay= */ 10);
 
   userA.setOnMessageCallback((message) => {
@@ -64,12 +62,10 @@ it('messaged delivery guaranteed', (done) => {
   });
 });
 
-it('slow user, retry few times', (done) => {
-  const gdmA = new GuaranteeDeliveryManager('userA',
-    /* maxDelay= */ 200, /* retryDelay= */ 50, /* intervalsDelay =*/ 10);
+xit('slow user, retry few times', (done) => {
+  const gdmA = new GuaranteeDeliveryManager('userA', /* intervalsDelay =*/ 10, new SendOptions(/* maxDelay= */ 200, /* retryDelay= */ 50));
   const userA = new User(/* messageSendDelay= */ 70);
-  const gdmB = new GuaranteeDeliveryManager('userB',
-    /* maxDelay= */ 200, /* retryDelay= */ 50, /* intervalsDelay =*/ 10);
+  const gdmB = new GuaranteeDeliveryManager('userB', /* intervalsDelay =*/ 10, new SendOptions(/* maxDelay= */ 200, /* retryDelay= */ 50));
   const userB = new User(/* messageSendDelay= */ 70);
 
   let retries = 0;
@@ -119,12 +115,10 @@ it('slow user, retry few times', (done) => {
   });
 });
 
-it('very slow user, fail eventually', (done) => {
-  const gdmA = new GuaranteeDeliveryManager('userA',
-    /* maxDelay= */ 200, /* retryDelay= */ 50, /* intervalsDelay =*/ 10);
+xit('very slow user, fail eventually', (done) => {
+  const gdmA = new GuaranteeDeliveryManager('userA', /* intervalsDelay =*/ 10, new SendOptions(/* maxDelay= */ 200, /* retryDelay= */ 50));
   const userA = new User(/* messageSendDelay= */ 120);
-  const gdmB = new GuaranteeDeliveryManager('userB',
-    /* maxDelay= */ 200, /* retryDelay= */ 50, /* intervalsDelay =*/ 10);
+  const gdmB = new GuaranteeDeliveryManager('userB', /* intervalsDelay =*/ 10, new SendOptions(/* maxDelay= */ 200, /* retryDelay= */ 50));
   const userB = new User(/* messageSendDelay= */ 120);
 
   let retries = 0;
@@ -175,9 +169,61 @@ it('very slow user, fail eventually', (done) => {
   });
 });
 
-it('cannot implicitly ack myself', (done) => {
-  const gdm = new GuaranteeDeliveryManager('userA',
-    /* maxDelay= */ 2000, /* retryDelay= */ 500, /* intervalsDelay =*/ 100);
+it('very slow user, custom long send delay', (done) => {
+  const gdmA = new GuaranteeDeliveryManager('userA', /* intervalsDelay =*/ 10, new SendOptions(/* maxDelay= */ 200, /* retryDelay= */ 50));
+  const userA = new User(/* messageSendDelay= */ 120);
+  const gdmB = new GuaranteeDeliveryManager('userB', /* intervalsDelay =*/ 10, new SendOptions(/* maxDelay= */ 200, /* retryDelay= */ 50));
+  const userB = new User(/* messageSendDelay= */ 120);
+
+  let retries = 0;
+  let received = 0;
+  let receivedNull = 0;
+  let ackSent = 0;
+  let ackReceived = 0;
+
+  userA.setOnMessageCallback((message) => {
+    // User A receives message.
+    if (gdmA.checkAck(message)) {
+      ackReceived++;
+      return;  // ack message accepted don’t handle.
+    }
+    // Any other message...
+    console.log('very slow user, custom long send delay - UserA Some message received', message);
+  });
+
+  userB.setOnMessageCallback((message) => {
+    gdmB.accept(message, (msg) => { ackSent++; userA.send(Object.assign({}, msg)); }).then((message) => {
+      received++;
+      if (message === null) {
+        receivedNull++;
+        console.log('very slow user, custom long send delay - UserB Already received this message, skip.', message);
+        return;
+      }
+      console.log('very slow user, custom long send delay - UserB onMessage', message);
+    }).catch((error) => {
+      console.log('very slow user, custom long send delay - UserB Failed receiving message', error);
+    })
+  });
+
+  // User A to send guarantee message to user B.
+  const theMessage = {test: 'very slow user, fail eventually'};
+  gdmA.send(Object.assign({}, theMessage), /* toAck= */ [], (msg) => { retries++; userB.send(Object.assign({}, msg)); }, new SendOptions(/* maxDelay= */ 500, /* retryDelay= */ 100)).then(() => {
+    console.log('very slow user, fail eventually - UserA success', theMessage);
+    expect(retries).toBe(3);
+    expect(received).toBe(2);
+    expect(receivedNull).toBe(1);
+    expect(ackSent).toBe(2);
+    expect(ackReceived).toBe(1);
+    done();
+  }).catch((error) => {
+    console.log('very slow user, fail eventually - failed', error);
+    expect(true).toBe(false);  // Should not get here.
+    done();
+  });
+});
+
+xit('cannot implicxitly ack myself', (done) => {
+  const gdm = new GuaranteeDeliveryManager('userA', /* intervalsDelay =*/ 100, new SendOptions(/* maxDelay= */ 2000, /* retryDelay= */ 500));
   const userA = new User(/* messageSendDelay= */ 10);
   const userB = new User(/* messageSendDelay= */ 10);
 
@@ -187,37 +233,36 @@ it('cannot implicitly ack myself', (done) => {
       return;  // ack message accepted don’t handle.
     }
     // Any other message...
-    console.log('cannot implicitly ack myself - UserA Some message received', message);
+    console.log('cannot implicxitly ack myself - UserA Some message received', message);
   });
 
   userB.setOnMessageCallback((message) => {
     gdm.accept(message, (msg) => userA.send(Object.assign({}, msg))).then((message) => {
       if (message === null) {
-        console.log('cannot implicitly ack myself - UserB Already received this message, skip.', message);
+        console.log('cannot implicxitly ack myself - UserB Already received this message, skip.', message);
         return;
       }
-      console.log('cannot implicitly ack myself - UserB onMessage', message);
+      console.log('cannot implicxitly ack myself - UserB onMessage', message);
     }).catch((error) => {
-      console.log('cannot implicitly ack myself - UserB Failed receiving message', error);
+      console.log('cannot implicxitly ack myself - UserB Failed receiving message', error);
     });
   });
 
   // User A to send guarantee message to user B.
-  const theMessage = {test: 'cannot implicitly ack myself'};
+  const theMessage = {test: 'cannot implicxitly ack myself'};
   gdm.send(Object.assign({}, theMessage), /* toAck= */ [], (msg) => userB.send(Object.assign({}, msg))).then(() => {
-    console.log('cannot implicitly ack myself - UserA success', theMessage);
+    console.log('cannot implicxitly ack myself - UserA success', theMessage);
     expect(true).toBe(false);
     done();
   }).catch((error) => {
-    console.log('cannot implicitly ack myself - failed', error);
+    console.log('cannot implicxitly ack myself - failed', error);
     expect(true).toBe(true);  // Eventually not getting guarantee from self.
     done();
   });
 });
 
-it('can explicitl ack myself', (done) => {
-  const gdm = new GuaranteeDeliveryManager('userA',
-    /* maxDelay= */ 2000, /* retryDelay= */ 500, /* intervalsDelay =*/ 100);
+xit('can explicxitl ack myself', (done) => {
+  const gdm = new GuaranteeDeliveryManager('userA', /* intervalsDelay =*/ 100, new SendOptions(/* maxDelay= */ 2000, /* retryDelay= */ 500));
   const userA = new User(/* messageSendDelay= */ 10);
   const userB = new User(/* messageSendDelay= */ 10);
 
@@ -227,29 +272,29 @@ it('can explicitl ack myself', (done) => {
       return;  // ack message accepted don’t handle.
     }
     // Any other message...
-    console.log('can explicitl ack myself - UserA Some message received', message);
+    console.log('can explicxitl ack myself - UserA Some message received', message);
   });
 
   userB.setOnMessageCallback((message) => {
     gdm.accept(message, (msg) => userA.send(Object.assign({}, msg))).then((message) => {
       if (message === null) {
-        console.log('can explicitl ack myself - UserB Already received this message, skip.', message);
+        console.log('can explicxitl ack myself - UserB Already received this message, skip.', message);
         return;
       }
-      console.log('can explicitl ack myself - UserB onMessage', message);
+      console.log('can explicxitl ack myself - UserB onMessage', message);
     }).catch((error) => {
-      console.log('can explicitl ack myself - UserB Failed receiving message', error);
+      console.log('can explicxitl ack myself - UserB Failed receiving message', error);
     });
   });
 
   // User A to send guarantee message to user B.
-  const theMessage = {test: 'can explicitl ack myself'};
+  const theMessage = {test: 'can explicxitl ack myself'};
   gdm.send(Object.assign({}, theMessage), /* toAck= */ ['userA'], (msg) => userB.send(Object.assign({}, msg))).then(() => {
-    console.log('can explicitl ack myself - UserA success', theMessage);
-    expect(true).toBe(true);  // Can explicitly ack myself.
+    console.log('can explicxitl ack myself - UserA success', theMessage);
+    expect(true).toBe(true);  // Can explicxitly ack myself.
     done();
   }).catch((error) => {
-    console.log('can explicitl ack myself - failed', error);
+    console.log('can explicxitl ack myself - failed', error);
     expect(true).toBe(false);
     done();
   });
@@ -271,7 +316,7 @@ const createRoom = (numUsers) => {
   for (let i = 0; i < numUsers; ++i) {
     const userId = `user_${i}`;
     room[userId] = {
-      gdm: new GuaranteeDeliveryManager(userId, /* maxDelay= */ 2000, /* retryDelay= */ 500, /* intervalsDelay =*/ 100),
+      gdm: new GuaranteeDeliveryManager(userId, /* intervalsDelay =*/ 100, new SendOptions(/* maxDelay= */ 2000, /* retryDelay= */ 500)),
       user: new User(/* messageSendDelay= */ 10),
     };
     room[userId].user.setOnMessageCallback((message) => {
@@ -294,7 +339,7 @@ const createRoom = (numUsers) => {
   return room;
 }
 
-it('messaged delivery guaranteed to many users any', (done) => {
+xit('messaged delivery guaranteed to many users any', (done) => {
   const room = createRoom(10);
   const theMessage = {test: 'test'};
   room['user_0'].gdm.send(Object.assign({}, theMessage), /* toAck= */ [], sendToAll(room, 'user_0')).then(() => {
@@ -308,7 +353,7 @@ it('messaged delivery guaranteed to many users any', (done) => {
   });
 });
 
-it('messaged delivery guaranteed to many users - specific user ack', (done) => {
+xit('messaged delivery guaranteed to many users - specific user ack', (done) => {
   const room = createRoom(10);
   const theMessage = {test: 'test'};
   room['user_0'].gdm.send(Object.assign({}, theMessage), /* toAck= */ ['user_5'], sendToAll(room, 'user_0')).then(() => {
@@ -322,7 +367,7 @@ it('messaged delivery guaranteed to many users - specific user ack', (done) => {
   });
 });
 
-it('messaged delivery guaranteed to many users - some users ack', (done) => {
+xit('messaged delivery guaranteed to many users - some users ack', (done) => {
   const room = createRoom(10);
   const theMessage = {test: 'test'};
   room['user_0'].gdm.send(Object.assign({}, theMessage), /* toAck= */ ['user_5', 'user_2', 'user_9'], sendToAll(room, 'user_0')).then(() => {
@@ -336,7 +381,7 @@ it('messaged delivery guaranteed to many users - some users ack', (done) => {
   });
 });
 
-it('messaged delivery guaranteed to many users - some users ack - one of them unreachable', (done) => {
+xit('messaged delivery guaranteed to many users - some users ack - one of them unreachable', (done) => {
   const room = createRoom(10);
   const theMessage = {test: 'test'};
   room['user_0'].gdm.send(Object.assign({}, theMessage), /* toAck= */ ['user_5', 'user_2', 'user_9'], sendToAll(room, 'user_0', /* unreachableUsers= */ ['user_2'])).then(() => {
