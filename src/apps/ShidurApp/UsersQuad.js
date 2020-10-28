@@ -5,6 +5,7 @@ import UsersHandle from "./UsersHandle";
 import api from '../../shared/Api';
 //import {AUDIOOUT_ID, SDIOUT_ID, SNDMAN_ID} from "../../shared/consts"
 import {captureException, captureMessage} from "../../shared/sentry";
+import {SendOptions} from '../../shared/GuaranteeDelivery';
 
 class UsersQuad extends Component {
 
@@ -304,7 +305,8 @@ class UsersQuad extends Component {
                             .catch(err => {
                                 captureException(err, {source: "Shidur"});
                             });
-                    })
+                    // Setting special send options, we want here GDM to wait for 10 seconds and retry every 1 second.
+                    }, new SendOptions(/* maxDelay= */ 10000, /* retryDelay= */ 1000))
                         .then(() => {
                             console.log('[Shidur] MIC ON delivered');
                             captureMessage("Delivery ON success", {source: "Shidur"});
