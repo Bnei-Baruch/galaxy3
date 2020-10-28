@@ -68,6 +68,7 @@ import { AskQuestion, AudioMode, CloseBroadcast, Layout, Mute, MuteVideo, Vote }
 import Settings from './settings/Settings';
 import SettingsJoined from './settings/SettingsJoined';
 import HomerLimud from './components/HomerLimud';
+import {Help} from './components/Help';
 
 const sortAndFilterFeeds = (feeds) => feeds
   .filter(feed => !feed.display.role.match(/^(ghost|guest)$/))
@@ -2145,7 +2146,7 @@ class VirtualClient extends Component {
                         }} />
               </Popup.Content>
             </Popup>
-            <TopMenu t={t} />
+            <Help t={t} />
             <Button primary style={{ margin: 'auto' }} onClick={() => window.open('https://virtualhome.kli.one', '_blank')}>{t('loginPage.userFee')}</Button>
             <Monitoring monitoringData={monitoringData} />
             {!isDeb ? null :
