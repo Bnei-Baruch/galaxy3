@@ -34,6 +34,7 @@ class SDIOutApp extends Component {
         vote: false,
         gdm: new GuaranteeDeliveryManager(SDIOUT_ID),
         roomsStatistics: {},
+        reinit_inst: null,
     };
 
     componentDidMount() {
@@ -102,6 +103,7 @@ class SDIOutApp extends Component {
         console.log("[SDIOut] initializing gateway", gateway.name);
 
         gateway.addEventListener("reinit", () => {
+                this.setState({reinit_inst: gateway.name});
                 this.postInitGateway(user, gateway)
                     .catch(err => {
                         console.error("[SDIOut] postInitGateway error after reinit. Reloading", gateway.name, err);

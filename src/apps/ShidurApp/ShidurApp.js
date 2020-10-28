@@ -45,6 +45,7 @@ class ShidurApp extends Component {
         timer: 10,
         lost_servers: [],
         roomsStatistics: {},
+        reinit_inst: null,
     };
 
     componentWillUnmount() {
@@ -100,6 +101,7 @@ class ShidurApp extends Component {
         console.log("[Shidur] initializing gateway", gateway.name);
 
         gateway.addEventListener("reinit", () => {
+                this.setState({reinit_inst: gateway.name});
                 this.postInitGateway(user, gateway)
                     .catch(err => {
                         console.error("[Shidur] postInitGateway error after reinit. Reloading", gateway.name, err);

@@ -8,6 +8,7 @@ class UsersHandle extends Component {
 
     state = {
         feeds: [],
+        inst: null,
         mids: [],
         name: "",
         room: "",
@@ -15,12 +16,12 @@ class UsersHandle extends Component {
         mystream: null,
     };
 
-    componentDidUpdate(prevProps) {
+  componentDidUpdate(prevProps) {
         let {g} = this.props;
         let {room} = this.state;
         if(g && JSON.stringify(g) !== JSON.stringify(prevProps.g) && g.room !== room) {
             if(room) {
-                this.exitVideoRoom(room, () =>{
+                this.exitVideoRoom(room, () => {
                     this.initVideoRoom(g.room, g.janus);
                 });
             } else {
@@ -30,14 +31,14 @@ class UsersHandle extends Component {
     };
 
     componentWillUnmount() {
-        this.exitVideoRoom(this.state.room, () =>{})
+        this.exitVideoRoom(this.state.room, () => {})
     };
 
     initVideoRoom = (roomid, inst) => {
         const gateway = this.props.gateways[inst];
-        gateway.addEventListener("reinit", () => {
-            this.reinitVideoRoom();
-        });
+        // gateway.addEventListener("reinit", () => {
+        //     this.reinitVideoRoom();
+        // });
         gateway.gateway.attach({
             plugin: "janus.plugin.videoroom",
             opaqueId: "preview_shidur",
@@ -96,13 +97,16 @@ class UsersHandle extends Component {
                     callback();
                 }
             });
+        } else {
+          this.setState({mids: [], feeds: [], videoroom: null, remoteFeed: null, room: ""});
         }
     };
 
     reinitVideoRoom = () => {
-        const {g} = this.props;
+        const {g, reinit_inst} = this.props;
         const {inst, room} = this.state;
-        if(g.janus === inst) {
+        if(g.janus === reinit_inst) {
+            console.log(" :: Got rinit trigger on: ", inst)
             this.setState({mids: [], feeds: [], videoroom: null, remoteFeed: null});
             setTimeout(() => {
                 this.initVideoRoom(room, inst);
@@ -139,7 +143,7 @@ class UsersHandle extends Component {
                 if(msg["publishers"] !== undefined && msg["publishers"] !== null) {
                     let list = msg["publishers"];
                     //FIXME: Tmp fix for black screen in room caoused by feed with video_codec = none
-                    let feeds         = list.sort((a, b) => JSON.parse(a.display).timestamp - JSON.parse(b.display).timestamp)
+                    let feeds = list.sort((a, b) => JSON.parse(a.display).timestamp - JSON.parse(b.display).timestamp)
                         .filter(feeder => JSON.parse(feeder.display).role === 'user' && feeder.video_codec !== 'none');
                     console.log(`[Shidur] [room ${roomid}] :: Got publishers list: `, feeds);
                     let subscription = [];

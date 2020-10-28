@@ -7,6 +7,7 @@ class UsersHandleSDIOut extends Component {
 
     state = {
         feeds: [],
+        inst: null,
         mids: [],
         name: "",
         room: "",
@@ -20,7 +21,7 @@ class UsersHandleSDIOut extends Component {
         let num_videos = g && g.users && g.users.filter(u =>  u.camera).length;
         if(num_videos > 25) num_videos = 25;
         this.setState({num_videos});
-    }
+    };
 
     componentDidUpdate(prevProps) {
         let {g,index,group} = this.props;
@@ -46,7 +47,7 @@ class UsersHandleSDIOut extends Component {
             if(num_videos > 25) num_videos = 25;
             this.setState({num_videos})
         }
-    }
+    };
 
     componentWillUnmount() {
         this.exitVideoRoom(this.state.room, () =>{})
@@ -54,9 +55,9 @@ class UsersHandleSDIOut extends Component {
 
     initVideoRoom = (roomid, inst) => {
         const gateway = this.props.gateways[inst];
-        gateway.addEventListener("reinit", () => {
-            this.reinitVideoRoom();
-        });
+        // gateway.addEventListener("reinit", () => {
+        //     this.reinitVideoRoom();
+        // });
         gateway.gateway.attach({
             plugin: "janus.plugin.videoroom",
             opaqueId: "preview_shidur",
@@ -109,13 +110,15 @@ class UsersHandleSDIOut extends Component {
                     callback();
                 }
             });
+        } else {
+          this.setState({mids: [], feeds: [], videoroom: null, remoteFeed: null, room: ""});
         }
     };
 
     reinitVideoRoom = () => {
-        const {g} = this.props;
+        const {g, reinit_inst} = this.props;
         const {inst, room} = this.state;
-        if(g.janus === inst) {
+        if(g.janus === reinit_inst) {
             this.setState({mids: [], feeds: [], videoroom: null, remoteFeed: null});
             setTimeout(() => {
                 this.initVideoRoom(room, inst);
