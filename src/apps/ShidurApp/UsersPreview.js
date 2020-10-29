@@ -41,9 +41,11 @@ class UsersPreview extends Component {
         this.setState({room: g.room}, () =>{
             let subscription = [];
             for (let i in g.users) {
-                let id = g.users[i].rfid;
-                let subst = {feed: id, mid: "1"}; //FIXME: mid 1 will be write only for feeds with audio
-                if(g.users[i].camera) {
+                let user = g.users[i];
+                let feed = user.rfid;
+                let mid = user?.extra?.media?.audio?.audio_device ? "1" : "0";
+                let subst = {feed, mid};
+                if(user.camera) {
                     subscription.push(subst);
                 }
             }
