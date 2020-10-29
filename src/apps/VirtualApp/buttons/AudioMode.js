@@ -1,10 +1,7 @@
 import React from 'react';
-import { makeStyles } from '@material-ui/core/styles';
 import ButtonBase from '@material-ui/core/ButtonBase';
-import audioModeSvg from '../../../shared/audio-mode.svg';
-import fullModeSvg from '../../../shared/full-mode.svg';
-import Icon from '@material-ui/core/Icon';
-import { RecordVoiceOver, RecordVoiceOverSharp } from '@material-ui/icons';
+import {makeStyles} from '@material-ui/core/styles';
+import {RecordVoiceOver} from '@material-ui/icons';
 import red from '@material-ui/core/colors/red';
 
 const useStyles = makeStyles({
@@ -28,8 +25,7 @@ const useStyles = makeStyles({
 });
 
 const AudioMode = (props) => {
-  const { action, isOn, disabled, t } = props;
-
+  const {action, isOn, disabled, t} = props;
   const classes = useStyles();
 
   const handleAction = () => action(isOn);
@@ -43,7 +39,7 @@ const AudioMode = (props) => {
         disabled: classes.disabled
       }}
     >
-      <RecordVoiceOver style={isOn ? { color: red[500] } : {}} />
+      <RecordVoiceOver style={isOn ? {color: red[500]} : {}}/>
       <span className={classes.label}>
         {t(isOn ? 'oldClient.fullMode' : 'oldClient.audioMode')}
       </span>
@@ -51,5 +47,5 @@ const AudioMode = (props) => {
   );
 };
 
-export { AudioMode };
+export {AudioMode};
 export default AudioMode;

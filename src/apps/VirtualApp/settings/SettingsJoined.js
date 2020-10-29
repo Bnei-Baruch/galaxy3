@@ -48,7 +48,7 @@ const SettingsJoined = (props) => {
   const video_device = video?.video_device || video?.devices[0]?.deviceId;
   const videoLabel   = video?.devices.find(d => d.deviceId === video_device)?.label;
 
-  const settingsLabel = vsettings_list.find(d => JSON.stringify(video?.setting) == JSON.stringify(d.value))?.text;
+  const settingsLabel = vsettings_list.find(d => JSON.stringify(video?.setting) === JSON.stringify(d.value))?.text;
 
   const handleAudioModeChange = () => audioModeChange();
 

@@ -1,6 +1,3 @@
-import { List, ListItem, ListItemText } from '@material-ui/core';
-import React from 'react';
-
 export const resources = {
   en: {
     common: {

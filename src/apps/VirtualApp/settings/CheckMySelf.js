@@ -1,44 +1,43 @@
-import React, { useEffect, useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import CircularProgress from '@material-ui/core/CircularProgress';
+import React, {useEffect, useState} from 'react';
+import {useTranslation} from 'react-i18next';
 import makeStyles from '@material-ui/core/styles/makeStyles';
-import { Button, Modal, Typography } from '@material-ui/core';
+import {Button, Modal, Typography, CircularProgress} from '@material-ui/core';
 
-import { getMediaStream, recordAudio, sleep } from '../../../shared/tools';
+import {getMediaStream, recordAudio, sleep} from '../../../shared/tools';
 import Box from '@material-ui/core/Box';
 
 const INTERVAL_STEP_MLS = 250;
 
 const useStyles = makeStyles((theme) => ({
-        modal: {
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        },
-        content: {
-          backgroundColor: 'white',
-          border: '2px solid #000',
-          height: 200,
-          width: 300,
-        }
-      }))
+    modal: {
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    content: {
+      backgroundColor: 'white',
+      border: '2px solid #000',
+      height: 200,
+      width: 300,
+    }
+  }))
 ;
 let recorder;
 
-const CheckMySelf = ({ device }) => {
+const CheckMySelf = ({device}) => {
   const classes = useStyles();
 
-  const { t }                 = useTranslation();
-  const [isOpen, setIsOpen]   = useState(false);
+  const {t} = useTranslation();
+  const [isOpen, setIsOpen] = useState(false);
   const [process, setProcess] = useState(0);
-  const [stream, setStream]   = useState(0);
+  const [stream, setStream] = useState(0);
 
   useEffect(() => {
     updateStream();
-  }, ['device']);
+  }, [device]);
 
   const updateStream = async () => {
-    const deviceId   = localStorage.getItem('audio_device') ?? null;
+    const deviceId = localStorage.getItem('audio_device') ?? null;
     const [s, error] = await getMediaStream(true, false, {}, deviceId, null);
     if (error)
       return console.log(error);
@@ -90,8 +89,8 @@ const CheckMySelf = ({ device }) => {
         onClose={handleClose}
         disableBackdropClick={true}
       >
-        <Box position="relative" display="inline-flex" style={{ backgroundColor: 'white' }}>
-          <CircularProgress variant="static" value={process} style={{ height: '100px', width: '100px' }} />
+        <Box position="relative" display="inline-flex" style={{backgroundColor: 'white'}}>
+          <CircularProgress variant="static" value={process} style={{height: '100px', width: '100px'}}/>
           <Box
             top={0}
             left={0}

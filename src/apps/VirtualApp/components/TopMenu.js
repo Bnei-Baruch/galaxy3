@@ -1,12 +1,11 @@
-import React, { useRef } from 'react';
+import React, {useRef} from 'react';
 
-import { List, ListItemText, ListItem, IconButton, Menu, Divider } from '@material-ui/core';
-import { AccountBox, Close, ExitToApp, Feedback, Help, Menu as MenuIcon, Settings } from '@material-ui/icons';
+import {List, ListItemText, ListItem, IconButton, Menu, Divider, ListItemSecondaryAction} from '@material-ui/core';
+import {AccountBox, Close, ExitToApp, Feedback, Help, Menu as MenuIcon, Settings} from '@material-ui/icons';
 
-import { kc } from '../../../components/UserManager';
-import { updateSentryUser } from '../../../shared/sentry';
-import { getLanguage } from '../../../i18n/i18n';
-import ListItemSecondaryAction from '@material-ui/core/ListItemSecondaryAction';
+import {kc} from '../../../components/UserManager';
+import {updateSentryUser} from '../../../shared/sentry';
+import {getLanguage} from '../../../i18n/i18n';
 
 const helpUrlsByLang = {
   'en': 'https://bit.ly/2JkBU08',
@@ -15,12 +14,8 @@ const helpUrlsByLang = {
   'ru': 'https://bit.ly/2UE1l1Y'
 };
 
-export const TopMenu = ({ t, openSettings, open = false, setOpen }) => {
+export const TopMenu = ({t, openSettings, open = false, setOpen}) => {
   const anchorRef = useRef();
-
-  const handleClick = (event) => {
-    setOpen(!open);
-  };
 
   const handleClose = () => {
     setOpen(false);
@@ -33,8 +28,8 @@ export const TopMenu = ({ t, openSettings, open = false, setOpen }) => {
 
     return (
       <ListItem button key={'help'} onClick={() => window.open(url, '_blank')}>
-        <ListItemText primary={t('feedback.help')} />
-        <ListItemSecondaryAction><Help /></ListItemSecondaryAction>
+        <ListItemText primary={t('feedback.help')}/>
+        <ListItemSecondaryAction><Help/></ListItemSecondaryAction>
       </ListItem>
     );
   };
@@ -42,34 +37,35 @@ export const TopMenu = ({ t, openSettings, open = false, setOpen }) => {
   const renderMenu = () => {
     return (
       <List>
-        <ListItem style={{ fontWeight: 'bold' }}>{t('oldClient.user')}</ListItem>
-        <ListItem button key={'account'} onClick={() => window.open('https://accounts.kbb1.com/auth/realms/main/account', '_blank')}>
-          <ListItemText primary={t('oldClient.myAccount')} />
-          <ListItemSecondaryAction><AccountBox /></ListItemSecondaryAction>
+        <ListItem style={{fontWeight: 'bold'}}>{t('oldClient.user')}</ListItem>
+        <ListItem button key={'account'}
+                  onClick={() => window.open('https://accounts.kbb1.com/auth/realms/main/account', '_blank')}>
+          <ListItemText primary={t('oldClient.myAccount')}/>
+          <ListItemSecondaryAction><AccountBox/></ListItemSecondaryAction>
         </ListItem>
         <ListItem button key={'settings'} onClick={openSettings}>
-          <ListItemText primary={t('oldClient.settings')} />
-          <ListItemSecondaryAction><Settings /></ListItemSecondaryAction>
+          <ListItemText primary={t('oldClient.settings')}/>
+          <ListItemSecondaryAction><Settings/></ListItemSecondaryAction>
         </ListItem>
         <ListItem button key={'signOut'} onClick={() => {
           kc.logout();
           updateSentryUser(null);
         }}>
-          <ListItemText primary={t('oldClient.signOut')} />
-          <ListItemSecondaryAction><ExitToApp /></ListItemSecondaryAction>
+          <ListItemText primary={t('oldClient.signOut')}/>
+          <ListItemSecondaryAction><ExitToApp/></ListItemSecondaryAction>
         </ListItem>
-        <Divider />
-        <ListItem style={{ fontWeight: 'bold' }}>{t('oldClient.support')}</ListItem>
+        <Divider/>
+        <ListItem style={{fontWeight: 'bold'}}>{t('oldClient.support')}</ListItem>
         <ListItem button onClick={() => window.open('https://forms.gle/F6Lm2KMLUkU4hrmK8', '_blank')}>
           <ListItemText>
             {t('feedback.feedback')}
           </ListItemText>
-          <ListItemSecondaryAction><Feedback /></ListItemSecondaryAction>
+          <ListItemSecondaryAction><Feedback/></ListItemSecondaryAction>
         </ListItem>
         {helpByLang()}
-        <Divider />
+        <Divider/>
 
-        <ListItem style={{ fontWeight: 'bold' }}>{t('oldClient.usefulLinks')}</ListItem>
+        <ListItem style={{fontWeight: 'bold'}}>{t('oldClient.usefulLinks')}</ListItem>
         <ListItem button onClick={() => window.open('https://kabbalahgroup.info/internet/', '_blank')}>
           <ListItemText>{t('oldClient.SvivaTova')}</ListItemText>
         </ListItem>
@@ -92,10 +88,10 @@ export const TopMenu = ({ t, openSettings, open = false, setOpen }) => {
         edge="start"
         color="inherit"
         onClick={() => toggleMenu(true)}
-        style={{ margin: '0 1em' }}
+        style={{margin: '0 1em'}}
         ref={anchorRef}
       >
-        {open ? <Close /> : <MenuIcon />}
+        {open ? <Close/> : <MenuIcon/>}
       </IconButton>
       <Menu
         id="help-menu"
@@ -103,8 +99,8 @@ export const TopMenu = ({ t, openSettings, open = false, setOpen }) => {
         open={open}
         onClose={handleClose}
         getContentAnchorEl={null}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-        transformOrigin={{ vertical: 'top', horizontal: 'center' }}
+        anchorOrigin={{vertical: 'bottom', horizontal: 'center'}}
+        transformOrigin={{vertical: 'top', horizontal: 'center'}}
       >
         {renderMenu()}
       </Menu>
