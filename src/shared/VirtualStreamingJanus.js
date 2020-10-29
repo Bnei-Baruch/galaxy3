@@ -84,6 +84,9 @@ export default class VirtualStreamingJanus {
         },
       });
     });
+    if (!this.videoJanusStream) {
+      callbacks.success();
+    }
     this.videoJanusStream.hangup();
   }
 
@@ -103,6 +106,10 @@ export default class VirtualStreamingJanus {
         },
       });
     });
+    if (!this.audioJanusStream) {
+      callbacks.success();
+      return;
+    }
     this.audioJanusStream.hangup();
   }
 
@@ -122,6 +129,10 @@ export default class VirtualStreamingJanus {
         },
       });
     });
+    if (!this.trlAudioJanusStream) {
+      callbacks.success();
+      return;
+    }
     this.trlAudioJanusStream.hangup();
   }
 
@@ -205,7 +216,7 @@ export default class VirtualStreamingJanus {
         this.trlAudioElement.srcObject = null;
       }
       const destroy = () => {
-        if (this.janus.destroy && typeof this.janus.destroy === 'function') {
+        if (this.janus && this.janus.destroy && typeof this.janus.destroy === 'function') {
           this.janus.destroy(callbacks);
         } else {
           callbacks.success();
