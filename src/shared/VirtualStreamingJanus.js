@@ -64,6 +64,10 @@ export default class VirtualStreamingJanus {
     }
   }
 
+  /**
+   * Detaches video. |callbacks| may be undefined.
+   * @param {{success: function, error: function}} callbacks
+   */
   detachVideo_(callbacks) {
     this.videoJanusStreamCleanup.push(() => {
       this.videoJanusStream.detach({
@@ -85,11 +89,18 @@ export default class VirtualStreamingJanus {
       });
     });
     if (!this.videoJanusStream) {
-      callbacks.success();
+      if (callbacks?.success) {
+        callbacks.success();
+      }
+      return;
     }
     this.videoJanusStream.hangup();
   }
 
+  /**
+   * Detaches audio.
+   * @param {{success: function, error: function}} callbacks
+   */
   detachAudio_(callbacks) {
     this.audioJanusStreamCleanup.push(() => {
       this.audioJanusStream.detach({
@@ -107,12 +118,18 @@ export default class VirtualStreamingJanus {
       });
     });
     if (!this.audioJanusStream) {
-      callbacks.success();
+      if (callbacks?.success) {
+        callbacks.success();
+      }
       return;
     }
     this.audioJanusStream.hangup();
   }
 
+  /**
+   * Detaches translation audio.
+   * @param {{success: function, error: function}} callbacks
+   */
   detachTrlAudio_(callbacks) {
     this.trlAudioJanusStreamCleanup.push(() => {
       this.trlAudioJanusStream.detach({

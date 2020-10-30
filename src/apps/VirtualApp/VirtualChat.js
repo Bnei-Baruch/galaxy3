@@ -157,6 +157,7 @@ class VirtualChat extends Component {
           },
           ondataerror: (error) => {
             Janus.warn('Textroom DataChannel error: ' + error);
+            console.error('Textroom DataChannel error: ', error);
             captureMessage('DataChannel error', {source: 'Textroom', err: error}, 'error');
           },
           oncleanup: () => {
