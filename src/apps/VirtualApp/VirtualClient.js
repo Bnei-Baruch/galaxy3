@@ -706,7 +706,7 @@ class VirtualClient extends Component {
 			});
 
 
-    let {videoroom, remoteFeed, protocol, janus, room} = this.state;
+    let {videoroom, remoteFeed, protocol, janus, room, shidur} = this.state;
     if(remoteFeed) remoteFeed.detach();
     if(videoroom) videoroom.send({"message": {request: 'leave', room}});
     let pl = {textroom: 'leave', transaction: Janus.randomString(12), 'room': PROTOCOL_ROOM};
@@ -716,15 +716,14 @@ class VirtualClient extends Component {
       this.chat.exitChatRoom(room);
     }
 
+    if (shidur) {
+      this.toggleShidur();
+    }
+
     setTimeout(() => {
       if(videoroom) videoroom.detach();
       if(protocol) protocol.detach();
       if(janus) janus.destroy();
-      if (reconnect) {
-        this.state.virtualStreamingJanus.muteAudioElement();
-      } else {
-        this.state.virtualStreamingJanus.unmuteAudioElement();
-      }
       this.setState({
         cammuted: false, muted: false, question: false,
         feeds: [], mids: [],
