@@ -156,9 +156,18 @@ class VirtualChat extends Component {
             }
           },
           ondataerror: (error) => {
-            Janus.warn('Textroom DataChannel error: ' + error);
-            console.error('Textroom DataChannel error: ', error);
-            captureMessage('DataChannel error', {source: 'Textroom', err: error}, 'error');
+            let details = '';
+            if (error.isTrusted) {
+              // {RTCError} Get error from RTCErrorEvent object.
+              const rtcError = error.isTrusted.error;
+              if (rtcError) {
+                details = `Message: ${rtcError.message}, Detail: ${rtcError.errorDetail}, Received Alert: ${rtcError.receivedAlert}, ` +
+                  `SCTP Cause Code: ${rtcError.sctpCauseCode}, SDP Line Number: ${rtcError.sdpLineNumber}, Sent Alert: ${rtcError.sentAlert}`;
+              }
+            }
+            Janus.warn(`Textroom DataChannel error: ${error} details: ${details}`);
+            console.error('Textroom DataChannel error: ', error, details);
+            captureMessage('DataChannel error', {source: 'Textroom', err: error, details}, 'error');
           },
           oncleanup: () => {
             console.log("[VirtualChat] ::: Got a cleanup notification :::");
