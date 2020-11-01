@@ -18,7 +18,8 @@ const useStyles = makeStyles(
     },
     content: {
       overflow: 'auto',
-      textOverflow: 'ellipsis'
+      textOverflow: 'ellipsis',
+      textAlign: 'initial'
     }
   }
 );
