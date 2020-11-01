@@ -706,7 +706,7 @@ class VirtualClient extends Component {
 			});
 
 
-    let {videoroom, remoteFeed, protocol, janus, room, shidur} = this.state;
+    let {videoroom, remoteFeed, protocol, janus, room, shidur, virtualStreamingJanus} = this.state;
     if(remoteFeed) remoteFeed.detach();
     if(videoroom) videoroom.send({"message": {request: 'leave', room}});
     let pl = {textroom: 'leave', transaction: Janus.randomString(12), 'room': PROTOCOL_ROOM};
@@ -717,7 +717,15 @@ class VirtualClient extends Component {
     }
 
     if (shidur) {
-      this.toggleShidur();
+      virtualStreamingJanus.destroy({
+        success: () => {
+          console.log('Virtual streaming destroyed on exit room.');
+        },
+        error: (error) => {
+          console.log('Error destroying VirtualStreaming on exit room', error);
+          captureMessage('Error destroying VirtualStreaming on exit room', {source: 'VirtualClient', err: error}, 'error');
+        },
+      });
     }
 
     setTimeout(() => {
