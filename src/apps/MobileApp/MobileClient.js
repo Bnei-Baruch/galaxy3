@@ -854,7 +854,7 @@ class MobileClient extends Component {
                   const feedsNewState = sortAndFilterFeeds([...newFeeds, ...feeds]);
                   this.makeSubscription(newFeeds, /* feedsJustJoined= */ true,
                                         /* subscribeToVideo= */ false,
-                                        /* subscribeToAudio= */ isGhostOrGuest(role), /* subscribeToData= */ true);
+                                        /* subscribeToAudio= */ !isGhostOrGuest(role), /* subscribeToData= */ true);
                   this.switchVideos(/* page= */ this.state.page, userFeeds(feeds), userFeeds(feedsNewState));
                   this.setState({feeds: feedsNewState});
 
