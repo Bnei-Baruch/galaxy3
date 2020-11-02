@@ -202,14 +202,12 @@ class ShidurApp extends Component {
 
         let pre_groups = [];
         if(preview_mode) {
-          pre_groups = rooms.filter(r => !disabled_rooms.find(d => r.room === d.room) && !groups.find(g => r.room === g.room));
+          pre_groups = rooms.filter(r => !disabled_rooms.find(d => r.room === d.room) && !groups.find(g => r.room === g.room) && r.num_users < 6);
           this.setState({pre_groups});
         } else {
           pre_groups = [];
           this.setState({pre_groups});
         }
-
-        console.log(pre_groups)
 
         groups = rooms.filter(r => !disabled_rooms.find(d => r.room === d.room) && !pre_groups.find(d => r.room === d.room));
         disabled_rooms = rooms.filter(r => !groups.find(g => r.room === g.room) && !pre_groups.find(d => r.room === d.room));
