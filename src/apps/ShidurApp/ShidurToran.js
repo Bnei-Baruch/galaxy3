@@ -1,5 +1,5 @@
 import React, {Component} from 'react';
-import {Button, Dropdown, Grid, Label, Message, Popup, Segment, Table} from "semantic-ui-react";
+import {Button, Dropdown, Grid, Label, Message, Popup, Segment, Table, Select} from "semantic-ui-react";
 import './ShidurToran.scss';
 import UsersPreview from "./UsersPreview";
 import api from '../../shared/Api';
@@ -221,7 +221,7 @@ class ShidurToran extends Component {
 
   render() {
 
-    const {group,pre_groups,disabled_rooms,groups,groups_queue,questions,presets,sdiout,sndman,shidur_mode,users_count,preview_mode,log_list} = this.props;
+    const {group,pre_groups,disabled_rooms,groups,groups_queue,questions,presets,sdiout,sndman,shidur_mode,users_count,preview_mode,log_list,preusers_count} = this.props;
     const {open,delay,vote,galaxy_mode} = this.state;
     const q = (<b style={{color: 'red', fontSize: '20px', fontFamily: 'Verdana', fontWeight: 'bold'}}>?</b>);
     const next_group = groups[groups_queue] ? groups[groups_queue].description : groups[0] ? groups[0].description : "";
@@ -237,6 +237,15 @@ class ShidurToran extends Component {
       );
     });
 
+    const count_options = [
+      { key: '0', value: 0, text: '0' },
+      { key: '1', value: 1, text: '1' },
+      { key: '2', value: 2, text: '2' },
+      { key: '3', value: 3, text: '3' },
+      { key: '4', value: 4, text: '4' },
+      { key: '5', value: 5, text: '5' },
+      { key: '6', value: 6, text: '6' },
+    ]
 
     let rooms_list = pre_groups.map((data,i) => {
       const {room, num_users, description, questions} = data;
@@ -384,8 +393,8 @@ class ShidurToran extends Component {
             </Button.Group>
           </Segment>
           <Segment className="settings_conteiner" >
-
-
+            <Select placeholder='Users count in preview: ' options={count_options} value={preusers_count}
+                    onChange={(e, {value}) => this.props.setProps({preusers_count: value})} />
           </Segment>
         </Grid.Column>
         <Grid.Column>

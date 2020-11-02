@@ -170,7 +170,7 @@ class UsersPreview extends Component {
     const muted = true;
 
     let program_feeds = mids.map((mid) => {
-      if(mid) {
+      if(mid && mid.feed_id) {
         let id = mid.feed_id;
         let talk = mid.talk;
         return (<div className="video"

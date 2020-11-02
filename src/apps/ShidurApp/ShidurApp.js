@@ -48,6 +48,7 @@ class ShidurApp extends Component {
     roomsStatistics: {},
     reinit_inst: null,
     log_list: [],
+    preusers_count: 6,
   };
 
   componentWillUnmount() {
@@ -186,7 +187,7 @@ class ShidurApp extends Component {
   };
 
   fetchRooms = () => {
-    let {disabled_rooms, groups, shidur_mode, preview_mode} = this.state;
+    let {disabled_rooms, groups, shidur_mode, preview_mode, preusers_count} = this.state;
     api.fetchActiveRooms()
       .then((data) => {
         const users_count = data.map(r => r.num_users).reduce((su, cur) => su + cur, 0);
@@ -202,7 +203,7 @@ class ShidurApp extends Component {
 
         let pre_groups = [];
         if(preview_mode) {
-          pre_groups = rooms.filter(r => !disabled_rooms.find(d => r.room === d.room) && !groups.find(g => r.room === g.room) && r.num_users < 6);
+          pre_groups = rooms.filter(r => !disabled_rooms.find(d => r.room === d.room) && !groups.find(g => r.room === g.room) && r.num_users < preusers_count);
           this.setState({pre_groups});
         } else {
           pre_groups = [];
