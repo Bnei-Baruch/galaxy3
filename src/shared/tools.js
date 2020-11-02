@@ -162,8 +162,6 @@ export const getMedia = async (media) => {
     let storage_audio = localStorage.getItem("audio_device");
     let storage_setting = JSON.parse(localStorage.getItem("video_setting"));
     if (storage_setting.height === 360 && storage_setting.width === 640 && storage_setting.ideal === 30) {
-      storage_setting.height = 180;
-      storage_setting.width = 320;
       storage_setting.ideal = 15;
     }
     video.video_device = !!storage_video ? storage_video : null;
