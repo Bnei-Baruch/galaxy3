@@ -1,6 +1,3 @@
-import { List, ListItem, ListItemText } from '@material-ui/core';
-import React from 'react';
-
 export const resources = {
   en: {
     common: {
@@ -241,7 +238,7 @@ export const resources = {
         micSource: 'Fuente de audio',
         cameraSource: 'Fuente de cámara',
         cameraQuality: 'Calidad de la cámara',
-        helloUser: 'Hello {{name}}',
+        helloUser: 'Hola {{name}}',
         beforeConnecting: 'Antes de conectarte con la DECENA, por favor chequea tus configuraciones y la del dispositivo:'
 
       },
@@ -379,9 +376,9 @@ export const resources = {
         KabbalahMedia: 'קבלה מדיה'
       },
       settings: {
-        selectCamera: 'Select camera',
-        selectMic: 'Select microphone',
-        selectSize: 'Select camera quality',
+        selectCamera: 'בחר מצלמה',
+        selectMic: 'בחר מיקרופון',
+        selectSize: 'בחר איכות של מצלמה',
         userSettings: 'הגדרות משתמש',
         screenName: 'כינוי להצגה',
         interfaceLanguage: 'שפת הממשק',
@@ -393,7 +390,7 @@ export const resources = {
         micSource: 'מקור אודיו',
         cameraSource: 'מקור וידאו',
         cameraQuality: 'איכות המצלמה',
-        helloUser: 'Hello {{name}}',
+        helloUser: 'שלום {{name}}',
         beforeConnecting: 'לפני החיבור לעשיריה, אנא אנא בידקו את ההגדרות שלכם.:'
 
       },
@@ -516,37 +513,37 @@ export const resources = {
         audio: 'Аудио',
         cameraQuality: 'Качество камеры',
         language: 'Язык',
-        joinRoom: 'Join Room',
-        drawing: 'Drawing',
-        material: 'Study Materials',
-        chat: 'Chat',
-        support: 'Support',
-        sendQuestion: 'Send a question',
-        user: 'User',
-        usefulLinks: 'Useful Links',
-        leave: 'Leave',
-        SvivaTova: 'Sviva Tova',
-        LiveGroups: 'Live Groups',
-        WorkshopQuestions: 'Workshop Questions',
-        KabbalahMedia: 'Kabbalah Media'
+        joinRoom: 'Войти в комнату',
+        drawing: 'Чертежи',
+        material: 'Учебный материал',
+        chat: 'Чат',
+        support: 'Поддержка',
+        sendQuestion: 'Отправить вопрос',
+        user: 'Пользователь',
+        usefulLinks: 'Полезные ссылки',
+        leave: 'Выйти',
+        SvivaTova: 'Свива Това',
+        LiveGroups: 'Группы онлайн',
+        WorkshopQuestions: 'Вопросы семинара',
+        KabbalahMedia: 'Каббала Медиа'
       },
       settings: {
-        selectCamera: 'Select camera',
-        selectMic: 'Select microphone',
-        selectSize: 'Select camera quality',
-        userSettings: 'User settings',
-        screenName: 'Screen name',
-        interfaceLanguage: 'Interface language',
-        broadcastSettings: 'Broadcast settings',
-        broadcastQuality: 'Broadcast quality',
-        broadcastLanguage: 'Broadcast language',
-        cameraSettings: 'Camera settings',
-        microphoneSettings: 'Microphone settings',
-        micSource: 'Microphone source',
-        cameraSource: 'Camera source',
-        cameraQuality: 'Camera quality',
-        helloUser: 'Hello {{name}}',
-        beforeConnecting: 'before connecting with the TEN, please check your settings and device setup:'
+        selectCamera: 'Выбрать камеру',
+        selectMic: 'Выбрать микрофон',
+        selectSize: 'Выбрать качество видео',
+        userSettings: 'Пользовательские настройки',
+        screenName: 'Отображаемое имя пользователя',
+        interfaceLanguage: 'Язык интерфейса',
+        broadcastSettings: 'Настройки трансляции',
+        broadcastQuality: 'Качество трансляции',
+        broadcastLanguage: 'Язык трансляции',
+        cameraSettings: 'Настройки камеры',
+        microphoneSettings: 'Настройки микрофона',
+        micSource: 'Источник звука',
+        cameraSource: 'Источник видео',
+        cameraQuality: 'Качество камеры',
+        helloUser: 'Здравствуйте {{name}}',
+        beforeConnecting: 'перед соединением с Десяткой, проверьте настройки и установки устройств:'
 
       },
       feedback: {
@@ -559,8 +556,8 @@ export const resources = {
         supportChat: 'Чат поддержки',
         send: 'послать',
         enterMessage: 'Введите сообщение',
-        msgRoomInfo: 'Messages here will be seen by all the members of the ten connected now.',
-        msgAdminInfo: 'Our support team will contact you here.'
+        msgRoomInfo: 'Сообщения будут видны всем подключенным участникам Десятки.',
+        msgAdminInfo: 'Наша команда технической поддержки свяжется с Вами здесь.'
       },
       loginPage: {
         support: 'Помощь',

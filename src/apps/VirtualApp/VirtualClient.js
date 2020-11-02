@@ -1532,8 +1532,6 @@ class VirtualClient extends Component {
             muted,
             question,
             room,
-            selected_room,
-            selftest,
             shidur,
             sourceLoading,
             user,
@@ -1696,7 +1694,6 @@ class VirtualClient extends Component {
 
   handleAsideResize = (incr) => {
     const { leftAsideSize, rightAsideName, leftAsideName } = this.state;
-    const _state                                           = {};
 
     const size = incr ? leftAsideSize + 1 : leftAsideSize - 1;
 
@@ -1821,6 +1818,7 @@ class VirtualClient extends Component {
     } else if (leftAsideName === 'drawing') {
       content = (
         <iframe
+          title={'classboard'}
           src={`https://www.kab.tv/classboard/classboard.php`}
           style={{ width: '100%', height: '100%', padding: '1rem' }}
           frameBorder="0"></iframe>
@@ -1850,7 +1848,7 @@ class VirtualClient extends Component {
   };
 
   renderNewVersionContent = (layout, isDeb, source, rooms_list, otherFeedHasQuestion, adevices_list, vdevices_list, noOfVideos, remoteVideos) => {
-    const { t, i18n } = this.props;
+    const { i18n } = this.props;
     const {
             attachedSource,
             chatVisible,
