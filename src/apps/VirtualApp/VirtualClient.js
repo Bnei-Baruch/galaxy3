@@ -171,6 +171,25 @@ class VirtualClient extends Component {
     if (isMobile) {
       window.location = '/userm';
     }
+
+		// Crisp support.
+		// TODO: Crisp language will change only after reload.
+		const { i18n } = this.props;
+    window.$crisp = [];
+    window.CRISP_WEBSITE_ID = "7feb1b3b-d46d-409c-b8ee-7a69ad7db06c";
+		window.CRISP_RUNTIME_CONFIG = {
+			locale : i18n.language,
+		};
+
+    (function() {
+      var d = document;
+      var s = d.createElement("script");
+
+      s.src = "https://client.crisp.chat/l.js";
+      s.async = 1;
+      d.getElementsByTagName("head")[0].appendChild(s);
+    })();
+
   }
 
   componentWillUnmount() {
@@ -706,7 +725,7 @@ class VirtualClient extends Component {
 			});
 
 
-    let {videoroom, remoteFeed, protocol, janus, room} = this.state;
+    let {videoroom, remoteFeed, protocol, janus, room, shidur, virtualStreamingJanus} = this.state;
     if(remoteFeed) remoteFeed.detach();
     if(videoroom) videoroom.send({"message": {request: 'leave', room}});
     let pl = {textroom: 'leave', transaction: Janus.randomString(12), 'room': PROTOCOL_ROOM};
@@ -716,15 +735,22 @@ class VirtualClient extends Component {
       this.chat.exitChatRoom(room);
     }
 
+    if (shidur) {
+      virtualStreamingJanus.destroy({
+        success: () => {
+          console.log('Virtual streaming destroyed on exit room.');
+        },
+        error: (error) => {
+          console.log('Error destroying VirtualStreaming on exit room', error);
+          captureMessage('Error destroying VirtualStreaming on exit room', {source: 'VirtualClient', err: error}, 'error');
+        },
+      });
+    }
+
     setTimeout(() => {
       if(videoroom) videoroom.detach();
       if(protocol) protocol.detach();
       if(janus) janus.destroy();
-      if (reconnect) {
-        this.state.virtualStreamingJanus.muteAudioElement();
-      } else {
-        this.state.virtualStreamingJanus.unmuteAudioElement();
-      }
       this.setState({
         cammuted: false, muted: false, question: false,
         feeds: [], mids: [],
@@ -2116,8 +2142,7 @@ class VirtualClient extends Component {
               on='click'
               closeIcon
               className='homet-limud'>
-              <iframe src={`https://groups.google.com/forum/embed/?place=forum/bb-study-materials&showpopout=true&showtabs=false&parenturl=${encodeURIComponent(window.location.href)}`}
-                      style={{ width: '100%', height: '60vh', padding: '1rem' }} frameBorder="0"></iframe>
+              <HomerLimud />
             </Modal>
           </Menu>
           <Menu icon='labeled' secondary size="mini">

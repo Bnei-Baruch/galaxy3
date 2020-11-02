@@ -55,13 +55,15 @@ class VirtualChat extends Component {
   };
 
   iceRestart = () => {
-    this.state.chatroom.send({
-      message: {request: "restart"},
-      error: (err) => {
-        console.error("[VirtualChat] ICE restart error", err);
-        captureMessage(`Chatroom error: ice restart - ${err}`, {source: "Textroom", err}, 'error');
-      }
-    });
+    if (this.state.chatroom) {
+      this.state.chatroom.send({
+        message: {request: "restart"},
+        error: (err) => {
+          console.error("[VirtualChat] ICE restart error", err);
+          captureMessage(`Chatroom error: ice restart - ${err}`, {source: "Textroom", err}, 'error');
+        }
+      });
+    }
   }
 
   initChatRoom = (janus, room, user, cb) => {
@@ -156,8 +158,18 @@ class VirtualChat extends Component {
             }
           },
           ondataerror: (error) => {
-            Janus.warn('Textroom DataChannel error: ' + error);
-            captureMessage('DataChannel error', {source: 'Textroom', err: error}, 'error');
+            let details = '';
+            if (error.isTrusted) {
+              // {RTCError} Get error from RTCErrorEvent object.
+              const rtcError = error.isTrusted.error;
+              if (rtcError) {
+                details = `Message: ${rtcError.message}, Detail: ${rtcError.errorDetail}, Received Alert: ${rtcError.receivedAlert}, ` +
+                  `SCTP Cause Code: ${rtcError.sctpCauseCode}, SDP Line Number: ${rtcError.sdpLineNumber}, Sent Alert: ${rtcError.sentAlert}`;
+              }
+            }
+            Janus.warn(`Textroom DataChannel error: ${error} details: ${details}`);
+            console.error('Textroom DataChannel error: ', error, details);
+            captureMessage('DataChannel error', {source: 'Textroom', err: error, details}, 'error');
           },
           oncleanup: () => {
             console.log("[VirtualChat] ::: Got a cleanup notification :::");
@@ -296,16 +308,18 @@ class VirtualChat extends Component {
       room: this.state.room,
       text: JSON.stringify(msg),
     };
-    this.state.chatroom.data({
-      text: JSON.stringify(message),
-      success: () => {
-        console.log('[VirtualChat] :: Cmd Message sent ::');
-      },
-      error: (err) => {
-        console.error('[VirtualChat] message error [cmd]', err);
-        captureMessage(`Chatroom error: message - ${err}`, {source: "Textroom", err}, 'error');
-      }
-    });
+    if (this.state.chatroom) {
+      this.state.chatroom.data({
+        text: JSON.stringify(message),
+        success: () => {
+          console.log('[VirtualChat] :: Cmd Message sent ::');
+        },
+        error: (err) => {
+          console.error('[VirtualChat] message error [cmd]', err);
+          captureMessage(`Chatroom error: message - ${err}`, {source: "Textroom", err}, 'error');
+        }
+      });
+    }
   };
 
   sendChatMessage = () => {
@@ -330,24 +344,26 @@ class VirtualChat extends Component {
     // server and forwarded to the recipients. If you do not want this to happen,
     // just add an ack:false property to the message above, and server won't send
     // you a response (meaning you just have to hope it succeeded).
-    this.state.chatroom.data({
-      text: JSON.stringify(message),
-      success: () => {
-        console.log('[VirtualChat]:: Message sent ::');
-        this.setState({ input_value: '' });
-        if (!room_chat) {
-          support_msgs.push(msg);
-          this.setState({ support_msgs });
+    if (this.state.chatroom) {
+      this.state.chatroom.data({
+        text: JSON.stringify(message),
+        success: () => {
+          console.log('[VirtualChat]:: Message sent ::');
+          this.setState({ input_value: '' });
+          if (!room_chat) {
+            support_msgs.push(msg);
+            this.setState({ support_msgs });
+          }
+        },
+        error: (err) => {
+          console.error('[VirtualChat] message error [chat]', err);
+          captureMessage(`Chatroom error: message - ${err}`, {source: "Textroom", err}, 'error');
         }
-      },
-      error: (err) => {
-        console.error('[VirtualChat] message error [chat]', err);
-        captureMessage(`Chatroom error: message - ${err}`, {source: "Textroom", err}, 'error');
-      }
-    });
+      });
+    }
   };
 
-  getHandle = () => (this.state.chatroom.getId());
+  getHandle = () => (this.state.chatroom?.getId() ?? 'chatroom null');
 
   scrollToBottom = () => {
     this.refs.end.scrollIntoView({ behavior: 'smooth' });
