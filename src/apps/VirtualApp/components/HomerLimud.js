@@ -1,16 +1,10 @@
 import React, {useEffect, useState} from 'react';
 import {Accordion, Box, AccordionSummary, Typography, AccordionDetails} from '@material-ui/core';
 import {STUDY_MATERIALS} from "../../../shared/env"
-import Box from '@material-ui/core/Box';
-import {List, ListItem, MenuItem, TextField} from '@material-ui/core';
-import {getLanguage} from '../../../i18n/i18n';
-import Accordion from '@material-ui/core/Accordion';
-import AccordionSummary from '@material-ui/core/AccordionSummary';
-import AccordionDetails from '@material-ui/core/AccordionDetails';
-import Typography from '@material-ui/core/Typography';
-import {STUDY_MATERIALS} from "../../../shared/env"
+// import {List, ListItem, MenuItem, TextField} from '@material-ui/core';
+// import {getLanguage} from '../../../i18n/i18n';
 import {makeStyles} from "@material-ui/core/styles";
-import {green, grey} from "@material-ui/core/colors";
+// import {green, grey} from "@material-ui/core/colors";
 
 
 const useStyles = makeStyles(
