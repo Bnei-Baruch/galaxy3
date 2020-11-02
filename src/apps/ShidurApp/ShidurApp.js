@@ -10,6 +10,7 @@ import './ShidurApp.css'
 import {USERNAME_ALREADY_EXIST_ERROR_CODE, LOST_CONNECTION, STORAN_ID} from "../../shared/consts"
 import {GuaranteeDeliveryManager} from '../../shared/GuaranteeDelivery';
 import {captureException, captureMessage, updateSentryUser} from "../../shared/sentry";
+import {getDateString} from "../../shared/tools";
 
 
 class ShidurApp extends Component {
@@ -46,10 +47,24 @@ class ShidurApp extends Component {
         lost_servers: [],
         roomsStatistics: {},
         reinit_inst: null,
+        log_list: [],
     };
 
     componentWillUnmount() {
         Object.values(this.state.gateways).forEach(x => x.destroy());
+    };
+
+    componentDidUpdate(prevProps, prevState) {
+        let {groups} = this.state;
+        if(groups.length > prevState.groups.length) {
+            let res = groups.filter(o => !prevState.groups.some(v => v.room === o.room))[0];
+            console.debug("[Shidur] :: Group enter in queue: ", res);
+            this.actionLog(res, "enter");
+        } else if(groups.length < prevState.groups.length) {
+            let res = prevState.groups.filter(o => !groups.some(v => v.room === o.room))[0];
+            console.debug("[Shidur] :: Group exit from queue: ", res);
+            this.actionLog(res, "leave");
+        }
     };
 
     checkPermission = (user) => {
@@ -194,13 +209,15 @@ class ShidurApp extends Component {
                     this.setState({pre_groups});
                 }
 
+                console.log(pre_groups)
+
                 groups = rooms.filter(r => !disabled_rooms.find(d => r.room === d.room) && !pre_groups.find(d => r.room === d.room));
                 disabled_rooms = rooms.filter(r => !groups.find(g => r.room === g.room) && !pre_groups.find(d => r.room === d.room));
-                this.setState({rooms, groups, disabled_rooms});
+                //this.setState({rooms, groups, disabled_rooms});
                 let quads = [...this.col1.state.vquad,...this.col2.state.vquad,...this.col3.state.vquad,...this.col4.state.vquad];
                 let list = groups.filter(r => !quads.find(q => q && r.room === q.room));
                 let questions = list.filter(room => room.questions);
-                this.setState({quads, questions, users_count});
+                this.setState({quads, questions, users_count, rooms, groups, disabled_rooms});
             })
             .catch(err => {
                 console.error("[Shidur] error fetching active rooms", err);
@@ -287,6 +304,14 @@ class ShidurApp extends Component {
 
     setProps = (props) => {
         this.setState({...props})
+    };
+
+    actionLog = (user, text) => {
+        let {log_list} = this.state;
+        let time = getDateString();
+        let log = {time, user, text};
+        log_list.push(log);
+        this.setState({log_list});
     };
 
     render() {

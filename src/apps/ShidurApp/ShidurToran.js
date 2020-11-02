@@ -22,11 +22,16 @@ class ShidurToran extends Component {
     };
 
     componentDidUpdate(prevProps) {
-        let {group} = this.props;
+        let {group, groups} = this.props;
         if(prevProps.group !== group && group === null) {
             this.setState({open: false});
         }
-    }
+        if(groups.length !== prevProps.groups.length) {
+            setTimeout(() => {
+                this.scrollToBottom();
+            }, 1000)
+        }
+    };
 
     selectGroup = (group, i) => {
         if(this.state.delay) return;
@@ -162,7 +167,7 @@ class ShidurToran extends Component {
       const { index } = this.props;
       const col = index === 0 ? 1 : index === 4 ? 2 : index === 8 ? 3 : index === 12 ? 4 : null;
       return { type: "sdi-"+action, status, room: null, col, i, feed};
-    }
+    };
 
     sdiAction = (action, status, i, feed) => {
         const { gateways } = this.props;
@@ -178,7 +183,7 @@ class ShidurToran extends Component {
 				.catch((error) => {
 					console.error(`${action} not delivered to ${toAck} due to ${error}`);
 				});
-    }
+    };
 
     setDelay = () => {
         this.setState({delay: true});
@@ -199,7 +204,7 @@ class ShidurToran extends Component {
             headers: {'Content-Type': 'application/json'},
             body:  JSON.stringify(request)
         }).then().catch(ex => console.log(`Reset Vote`, ex));
-    }
+    };
 
     resetRoomsStatistics = () => {
         api.adminResetRoomsStatistics()
@@ -208,17 +213,32 @@ class ShidurToran extends Component {
                 captureException(err, {source: "Shidur"});
                 alert('Error resetting rooms statistics');
             });
-    }
+    };
+
+    scrollToBottom = () => {
+       this.refs.end.scrollIntoView({ behavior: 'smooth' })
+    };
 
     render() {
 
-        const {group,pre_groups,disabled_rooms,groups,groups_queue,questions,presets,sdiout,sndman,shidur_mode,users_count,preview_mode} = this.props;
+        const {group,pre_groups,disabled_rooms,groups,groups_queue,questions,presets,sdiout,sndman,shidur_mode,users_count,preview_mode,log_list} = this.props;
         const {open,delay,vote,galaxy_mode} = this.state;
         const q = (<b style={{color: 'red', fontSize: '20px', fontFamily: 'Verdana', fontWeight: 'bold'}}>?</b>);
         const next_group = groups[groups_queue] ? groups[groups_queue].description : groups[0] ? groups[0].description : "";
         const ng = groups[groups_queue] || null;
 
-        let rooms_list = pre_groups.map((data,i) => {
+      let action_log = log_list.map((msg,i) => {
+        let {user,time,text} = msg;
+        return (
+          <div key={i}><p>
+            <i style={{color: 'grey'}}>{time}</i>&nbsp;&nbsp;--&nbsp;&nbsp;
+            <i style={{color: 'blue'}}>{user.description} &nbsp;--&nbsp;&nbsp; {text}</i>
+          </p></div>
+        );
+      });
+
+
+      let rooms_list = pre_groups.map((data,i) => {
             const {room, num_users, description, questions} = data;
             const active = group && group.room === room;
             const pr = false
@@ -297,7 +317,7 @@ class ShidurToran extends Component {
                             : ""}
                     </Segment>
                     <Message attached className='info-panel' color='grey'>
-                        {/*{action_log}*/}
+                        {action_log}
                         <div ref='end' />
                     </Message>
                     <Button.Group attached='bottom' >
