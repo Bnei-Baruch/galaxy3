@@ -160,7 +160,7 @@ export const getMedia = async (media) => {
     // Check saved devices in local storage
     let storage_video = localStorage.getItem("video_device");
     let storage_audio = localStorage.getItem("audio_device");
-    let storage_setting = JSON.parse(localStorage.getItem("video_setting"));
+    let storage_setting = JSON.parse(localStorage.getItem("video_setting")) || {};
     if (storage_setting.height === 360 && storage_setting.width === 640 && storage_setting.ideal === 30) {
       storage_setting.ideal = 15;
     }
