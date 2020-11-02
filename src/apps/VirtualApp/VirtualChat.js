@@ -193,10 +193,12 @@ class VirtualChat extends Component {
         success: () => {
           console.log('[VirtualChat] :: Text room leave callback: ');
           this.setState({ messages: [], chatroom: null, room: null });
+          chatroom.detach();
         },
         error: (err) => {
           console.error("[VirtualChat] leave error", err);
           captureMessage(`Chatroom error: leave - ${err}`, {source: "Textroom", err}, 'error');
+          chatroom.detach();
         }
       });
     }
