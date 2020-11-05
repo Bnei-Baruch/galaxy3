@@ -410,7 +410,7 @@ class ShidurToran extends Component {
                     disabled={preview_mode === 'OFF'} >
               <Dropdown className="preusers_count" item text={preusers_count}>
                 <Dropdown.Menu>
-                  {[1,2,3,4,5,6].map(c => {
+                  {['Off',1,2,3,4,5,6,7,8,9,10].map(c => {
                     return (<Dropdown.Item onClick={() => this.props.setProps({preusers_count: c})}>{c}</Dropdown.Item>)
                   })}
                 </Dropdown.Menu>
