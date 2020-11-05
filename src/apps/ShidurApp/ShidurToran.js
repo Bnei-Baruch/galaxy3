@@ -1,5 +1,5 @@
 import React, {Component} from 'react';
-import {Button, Dropdown, Grid, Label, Message, Popup, Segment, Table, Select} from "semantic-ui-react";
+import {Button, Dropdown, Grid, Label, Message, Popup, Segment, Table} from "semantic-ui-react";
 import './ShidurToran.scss';
 import UsersPreview from "./UsersPreview";
 import api from '../../shared/Api';
@@ -237,16 +237,6 @@ class ShidurToran extends Component {
       );
     });
 
-    const count_options = [
-      { key: '0', value: 0, text: '0' },
-      { key: '1', value: 1, text: '1' },
-      { key: '2', value: 2, text: '2' },
-      { key: '3', value: 3, text: '3' },
-      { key: '4', value: 4, text: '4' },
-      { key: '5', value: 5, text: '5' },
-      { key: '6', value: 6, text: '6' },
-    ]
-
     let rooms_list = pre_groups.map((data,i) => {
       const {room, num_users, description, questions} = data;
       const active = group && group.room === room;
@@ -393,8 +383,6 @@ class ShidurToran extends Component {
             </Button.Group>
           </Segment>
           <Segment className="settings_conteiner" >
-            <Select placeholder='Users count in preview: ' options={count_options} value={preusers_count}
-                    onChange={(e, {value}) => this.props.setProps({preusers_count: value})} />
           </Segment>
         </Grid.Column>
         <Grid.Column>
@@ -414,7 +402,21 @@ class ShidurToran extends Component {
               </Table.Body>
             </Table>
           </Segment>
-          <Button attached='bottom' size='mini' color='green' content={'Preview ' + (preview_mode ? 'ON' : 'OFF')} onClick={() => this.previewMode(preview_mode)} />
+          <Button.Group attached='bottom' size='mini'>
+            <Button color='green'
+                    content={'Preview ' + (preview_mode ? 'ON' : 'OFF')}
+                    onClick={() => this.previewMode(preview_mode)} />
+            <Button color='green'
+                    disabled={preview_mode === 'OFF'} >
+              <Dropdown className="preusers_count" item text={preusers_count}>
+                <Dropdown.Menu>
+                  {[1,2,3,4,5,6].map(c => {
+                    return (<Dropdown.Item onClick={() => this.props.setProps({preusers_count: c})}>{c}</Dropdown.Item>)
+                  })}
+                </Dropdown.Menu>
+              </Dropdown>
+            </Button>
+          </Button.Group>
         </Grid.Column>
       </Grid.Row>
     );
