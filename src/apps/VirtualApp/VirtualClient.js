@@ -42,9 +42,9 @@ import {
 import api from '../../shared/Api';
 import VirtualStreaming from './VirtualStreaming';
 import VirtualStreamingJanus from '../../shared/VirtualStreamingJanus';
-import {isGhostOrGuest, kc} from '../../components/UserManager';
-import LoginPage from '../../components/LoginPage';
-import {Profile} from '../../components/Profile';
+import {isGhostOrGuest, kc} from "../../components/UserManager";
+import LoginPage from "../../components/LoginPage";
+import {Profile} from "../../components/Profile";
 import {captureException, captureMessage, sentryDebugAction, updateSentryUser} from '../../shared/sentry';
 import VerifyAccount from './components/VerifyAccount';
 import GxyJanus from '../../shared/janus-utils';
@@ -300,7 +300,7 @@ class VirtualClient extends Component {
           }
         })
         .catch(err => {
-          console.error('[User] error initializing app', err);
+            console.error("[User] error initializing app", err);
           captureException(err, {source: 'VirtualClient'});
           this.setState({appInitError: err});
         });
@@ -328,7 +328,7 @@ class VirtualClient extends Component {
       }
     }, err => {
       this.exitRoom(true, () => {
-        console.error('[User] error initializing janus', err);
+        console.error("[User] error initializing janus", err);
         this.reinitClient(retry);
       });
     }, config.url, config.token, config.iceServers);
@@ -341,14 +341,14 @@ class VirtualClient extends Component {
 
   reinitClient = (retry) => {
     retry++;
-    console.error('[User] reinitializing try: ', retry);
+    console.error("[User] reinitializing try: ", retry);
     if (retry < 10) {
       setTimeout(() => {
         this.initClient(true, retry);
       }, 5000);
     } else {
       this.exitRoom(false, () => {
-        console.error('[User] reinitializing failed after: ' + retry + ' retries');
+        console.error("[User] reinitializing failed after: " + retry + " retries");
         alert(this.props.t('oldClient.networkSettingsChanged'));
       });
     }
@@ -358,7 +358,7 @@ class VirtualClient extends Component {
     const {t} = this.props;
     getMedia(this.state.media)
       .then(media => {
-        console.log('Got media: ', media);
+          console.log("Got media: ", media);
         const {audio, video} = media;
 
         if (audio.error && video.error) {
@@ -380,7 +380,7 @@ class VirtualClient extends Component {
         if (audio.stream) {
           micLevel(audio.stream, this.refs.canvas1, audioContext => {
             audio.context = audioContext;
-            this.setState({media});
+              this.setState({media})
           });
         }
 
@@ -409,68 +409,68 @@ class VirtualClient extends Component {
   setVideoSize = (video_setting) => {
     let {media} = this.state;
     if (JSON.stringify(video_setting) === JSON.stringify(media.video.setting))
-      return;
+      return
     getMediaStream(false, true, video_setting, null, media.video.video_device)
       .then(data => {
-        console.log(data);
+          console.log(data)
         const [stream, error] = data;
         if (error) {
-          console.error(error);
+            console.error(error)
         } else {
-          localStorage.setItem('video_setting', JSON.stringify(video_setting));
+            localStorage.setItem("video_setting", JSON.stringify(video_setting));
           media.video.stream = stream;
           media.video.setting = video_setting;
           let myvideo = this.refs.localVideo;
           myvideo.srcObject = stream;
           this.setState({media});
         }
-      });
+        })
   };
 
   setVideoDevice = (video_device) => {
     let {media} = this.state;
     if (video_device === media.video.video_device)
-      return;
+      return
     getMediaStream(false, true, media.video.setting, null, video_device)
       .then(data => {
-        console.log(data);
+          console.log(data)
         const [stream, error] = data;
         if (error) {
-          console.error(error);
+            console.error(error)
         } else {
-          localStorage.setItem('video_device', video_device);
+            localStorage.setItem("video_device", video_device);
           media.video.stream = stream;
           media.video.video_device = video_device;
           let myvideo = this.refs.localVideo;
           myvideo.srcObject = stream;
           this.setState({media});
         }
-      });
+        })
   };
 
   setAudioDevice = (audio_device) => {
     let {media} = this.state;
     if (audio_device === media.audio.audio_device)
-      return;
+      return
     getMediaStream(true, false, media.video.setting, audio_device, null)
       .then(data => {
-        console.log(data);
+          console.log(data)
         const [stream, error] = data;
         if (error) {
-          console.error(error);
+            console.error(error)
         } else {
-          localStorage.setItem('audio_device', audio_device);
+            localStorage.setItem("audio_device", audio_device);
           media.audio.stream = stream;
           media.audio.audio_device = audio_device;
           if (media.audio.context) {
-            media.audio.context.close();
+              media.audio.context.close()
           }
           micLevel(stream, this.refs.canvas1, audioContext => {
             media.audio.context = audioContext;
             this.setState({media});
           });
         }
-      });
+        })
   };
 
   selfTest = () => {
@@ -518,7 +518,7 @@ class VirtualClient extends Component {
     let count = 0;
     let chk = setInterval(() => {
       count++;
-      console.debug('ICE counter: ', count);
+      console.debug("ICE counter: ", count);
       let {ice} = this.state;
       if (count < 60 && ice.match(/^(connected|completed)$/)) {
         clearInterval(chk);
@@ -527,15 +527,15 @@ class VirtualClient extends Component {
         // console.log(" :: ICE Restart :: ");
         // this.iceRestart();
       }
-      if (browser.name === 'Chrome' && count === 30) {
+      if (browser.name === "Chrome" && count === 30) {
         // console.log(" :: ICE Restart :: ");
         // this.iceRestart();
       }
       if (count >= 60) {
         clearInterval(chk);
-        console.debug(' :: ICE Filed: Reconnecting... ');
+        console.debug(" :: ICE Filed: Reconnecting... ")
         this.exitRoom(true, () => {
-          console.error('ICE Disconnected');
+          console.error("ICE Disconnected");
           this.initClient(true);
         });
       }
@@ -695,7 +695,7 @@ class VirtualClient extends Component {
     this.setState({user, muted: true});
     updateSentryUser(user);
 
-    if (video_device && user.role === 'user') {
+    if(video_device && user.role === "user") {
       if (this.state.upval) {
         clearInterval(this.state.upval);
       }
@@ -710,19 +710,19 @@ class VirtualClient extends Component {
       const {textroom, error_code, error} = data;
       if (textroom === 'error') {
         if (error_code !== USERNAME_ALREADY_EXIST_ERROR_CODE) {
-          console.error('Chatroom error: ', data, error_code);
-          captureMessage(`Chatroom error: init - ${error}`, {source: 'Textroom', err: data}, 'error');
+          console.error("Chatroom error: ", data, error_code)
+          captureMessage(`Chatroom error: init - ${error}`, {source: "Textroom", err: data}, 'error');
         } else {
-          console.log('Chatroom error: ', data, error_code);
-          captureMessage(`Chatroom error: init - ${error}`, {source: 'Textroom', err: data});
+          console.log("Chatroom error: ", data, error_code);
+          captureMessage(`Chatroom error: init - ${error}`, {source: "Textroom", err: data});
         }
         this.exitRoom(false, () => {
           if (error_code === USERNAME_ALREADY_EXIST_ERROR_CODE)
             alert(this.props.t('oldClient.error') + data.error);
         }, true);
-      } else if (textroom === 'success' && data.participants) {
-        Janus.log(':: Successfully joined to chat room: ' + selected_room);
-        captureMessage('Successfully joined to chat room', {source: 'Textroom', selected_room});
+      } else if(textroom === "success" && data.participants) {
+        Janus.log(":: Successfully joined to chat room: " + selected_room );
+				captureMessage('Successfully joined to chat room', {source: "Textroom", selected_room});
         user.textroom_handle = this.chat.getHandle(); // we want this in backend for debugging of textroom based signaling
         this.setState({user});
         const {id, timestamp, role, username} = user;
@@ -734,17 +734,17 @@ class VirtualClient extends Component {
           'display': JSON.stringify(d)
         };
         videoroom.send({
-          'message': register,
+          "message": register,
           success: () => {
-            console.log('Request join success');
-            captureMessage('Request join success', {source: 'Videoroom', selected_room});
+            console.log("Request join success");
+						captureMessage('Request join success', {source: "Videoroom", selected_room});
           },
           error: (error) => {
             console.error(error);
             captureException(error, {source: 'Videoroom'});
             this.exitRoom(false);
           }
-        });
+        })
       }
     });
   };
@@ -752,7 +752,7 @@ class VirtualClient extends Component {
   exitRoom = (reconnect, callback, error) => {
     captureMessage('Exit Room', {source: 'VirtualClient', reconnect, error});
     this.setState({delay: true});
-    if (this.state.user.role === 'user') {
+    if(this.state.user.role === "user") {
       wkliLeave(this.state.user);
     }
     clearInterval(this.state.upval);
@@ -772,7 +772,7 @@ class VirtualClient extends Component {
 
     let {videoroom, remoteFeed, protocol, janus, room, shidur, virtualStreamingJanus} = this.state;
     if (remoteFeed) remoteFeed.detach();
-    if (videoroom) videoroom.send({'message': {request: 'leave', room}});
+    if(videoroom) videoroom.send({"message": {request: 'leave', room}});
     let pl = {textroom: 'leave', transaction: Janus.randomString(12), 'room': PROTOCOL_ROOM};
     if (protocol) protocol.data({text: JSON.stringify(pl)});
 
@@ -809,7 +809,7 @@ class VirtualClient extends Component {
         chatMessagesCount: 0,
         isSettings: false
       });
-      if (typeof callback === 'function') callback();
+      if(typeof callback === "function") callback();
     }, 2000);
   };
 
@@ -849,10 +849,7 @@ class VirtualClient extends Component {
       },
       error: (error) => {
         Janus.error('WebRTC error:', error);
-        captureMessage(`Videoroom error: create offer [publishOwnFeed] - ${error}`, {
-          source: 'Videoroom',
-          error
-        }, 'error');
+        captureMessage(`Videoroom error: create offer [publishOwnFeed] - ${error}`, {source: "Videoroom", error}, 'error');
       }
     });
   };
@@ -873,7 +870,7 @@ class VirtualClient extends Component {
         },
         error: (err) => {
           Janus.error('WebRTC error:', err);
-          captureMessage(`Videoroom error: create offer [ice restart] - ${err}`, {source: 'Videoroom', err}, 'error');
+          captureMessage(`Videoroom error: create offer [ice restart] - ${err}`, {source: "Videoroom", err}, 'error');
         }
       });
     }
@@ -902,7 +899,7 @@ class VirtualClient extends Component {
 
         api.updateUser(user.id, user)
           .catch(err => {
-            console.error('[User] error updating user state', user.id, err);
+							console.error("[User] error updating user state", user.id, err);
             captureException(err, {source: 'VirtualClient'});
           });
         this.keepAlive();
@@ -1139,15 +1136,15 @@ class VirtualClient extends Component {
     const subscription = [];
     newFeeds.forEach(feed => {
       const {id, streams} = feed;
-      feed.video = !!streams.find(v => v.type === 'video' && v.codec === 'h264');
-      feed.audio = !!streams.find(a => a.type === 'audio' && a.codec === 'opus');
+      feed.video = !!streams.find(v => v.type === 'video' && v.codec === "h264");
+      feed.audio = !!streams.find(a => a.type === 'audio' && a.codec === "opus");
       feed.data = !!streams.find(d => d.type === 'data');
       feed.cammute = !feed.video;
 
       streams.forEach(stream => {
-        if ((subscribeToVideo && stream.type === 'video' && stream.codec === 'h264') ||
-          (subscribeToAudio && stream.type === 'audio' && stream.codec === 'opus') ||
-          (subscribeToData && stream.type === 'data')) {
+        if ((subscribeToVideo && stream.type === "video" && stream.codec === "h264") ||
+            (subscribeToAudio && stream.type === "audio" && stream.codec === "opus") ||
+            (subscribeToData && stream.type === "data")) {
           subscription.push({feed: id, mid: stream.mid});
         }
       });
@@ -1165,13 +1162,13 @@ class VirtualClient extends Component {
         // FIXME: Can this be done by notifying only the joined feed?
         setTimeout(() => {
           if (this.state.question) {
-            const msg = {type: 'client-state', user: this.state.user};
+            const msg = {type: "client-state", user: this.state.user};
             this.chat.sendCmdMessage(msg);
           }
         }, 3000);
       }
     }
-  };
+  }
 
   subscribeTo = (subscription) => {
     // New feeds are available, do we need create a new plugin handle first?
@@ -1250,7 +1247,7 @@ class VirtualClient extends Component {
       window.location.reload();
     } else if (type === 'client-disconnect' && user.id === id) {
       this.exitRoom(false);
-    } else if (type === 'client-kicked' && user.id === id) {
+    } else if(type === "client-kicked" && user.id === id) {
       kc.logout();
       updateSentryUser(null);
     } else if (type === 'client-question' && user.id === id) {
@@ -1292,12 +1289,12 @@ class VirtualClient extends Component {
       api.updateUser(user.id, user)
         .then(data => {
           if (ConfigStore.isNewer(data.config_last_modified)) {
-            console.info('[User] there is a newer config. Reloading ', data.config_last_modified);
+            console.info("[User] there is a newer config. Reloading ", data.config_last_modified);
             this.reloadConfig();
           }
         })
         .catch(err => {
-          console.error('[User] error sending keepalive', user.id, err);
+					console.error("[User] error sending keepalive", user.id, err);
           captureException(err, {source: 'VirtualClient'});
         });
     }
@@ -1309,7 +1306,7 @@ class VirtualClient extends Component {
       clearInterval(keepalive);
     }
     this.setState({keepalive: null});
-  };
+  }
 
   reloadConfig = () => {
     api.fetchConfig()
@@ -1325,10 +1322,10 @@ class VirtualClient extends Component {
         }
       })
       .catch(err => {
-        console.error('[User] error reloading config', err);
+        console.error("[User] error reloading config", err);
         captureException(err, {source: 'VirtualClient'});
       });
-  };
+  }
 
   makeDelay = () => {
     this.setState({delay: true});
@@ -1340,7 +1337,7 @@ class VirtualClient extends Component {
   handleQuestion = () => {
     const {question} = this.state;
     const user = Object.assign({}, this.state.user);
-    if (user.role === 'ghost') return;
+    if (user.role === "ghost") return;
     this.makeDelay();
     this.questionState(user, question);
   };
@@ -1349,16 +1346,16 @@ class VirtualClient extends Component {
     user.question = !question;
     api.updateUser(user.id, user)
       .then(data => {
-        if (data.result === 'success') {
+          if(data.result === "success") {
           localStorage.setItem('question', !question);
           this.setState({user, question: !question});
           updateSentryUser(user);
-          const msg = {type: 'client-state', user};
+            const msg = {type: "client-state", user};
           this.chat.sendCmdMessage(msg);
         }
       })
       .catch(err => {
-        console.error('[User] error updating user state', user.id, err);
+					console.error("[User] error updating user state", user.id, err);
         captureException(err, {source: 'VirtualClient'});
       });
   };
@@ -1375,7 +1372,7 @@ class VirtualClient extends Component {
         source: 'VirtualClient DELIVERY',
         msg: data
       });
-      this.state.virtualStreamingJanus.streamGalaxy(data.status, 4, '');
+      this.state.virtualStreamingJanus.streamGalaxy(data.status, 4, "");
       if (data.status) {
         // remove question mark when sndman unmute our room
         if (this.state.question) {
@@ -1392,21 +1389,21 @@ class VirtualClient extends Component {
     const {videoroom} = this.state;
     if (videoroom) {
       const user = Object.assign({}, this.state.user);
-      if (user.role === 'ghost') return;
+      if (user.role === "ghost") return;
       this.makeDelay();
       user.camera = cammuted;
       api.updateUser(user.id, user)
         .then(data => {
-          if (data.result === 'success') {
+            if(data.result === "success") {
             cammuted ? videoroom.unmuteVideo() : videoroom.muteVideo();
             this.setState({user, cammuted: !cammuted});
             updateSentryUser(user);
-            const msg = {type: 'client-state', user};
+              const msg = {type: "client-state", user};
             this.chat.sendCmdMessage(msg);
           }
         })
         .catch(err => {
-          console.error('[User] error updating user state', user.id, err);
+						console.error("[User] error updating user state", user.id, err);
           captureException(err, {source: 'VirtualClient'});
         });
     }
@@ -1435,7 +1432,7 @@ class VirtualClient extends Component {
       this.state.virtualStreamingJanus.setVideo(VIDEO_360P_OPTION_VALUE);
     }
     this.setState({muteOtherCams: !muteOtherCams});
-  };
+  }
 
   toggleShidur = () => {
     const {virtualStreamingJanus, shidur, user} = this.state;
@@ -1464,7 +1461,7 @@ class VirtualClient extends Component {
     this.setState({currentLayout}, () => {
       localStorage.setItem('currentLayout', currentLayout);
     });
-  };
+  }
 
   onChatMessage = () => {
     const {asideMsgCounter, chatMessagesCount} = this.state;
@@ -1481,15 +1478,15 @@ class VirtualClient extends Component {
   connectionColor = () => {
     switch (this.state.connectionStatus) {
       case LINK_STATE_INIT:
-        return 'grey';
+        return "grey";
       case LINK_STATE_GOOD:
         return null;  // white.
       case LINK_STATE_MEDIUM:
-        return 'orange';
+        return "orange";
       case LINK_STATE_WEAK:
-        return 'red';
+        return "red";
       default:
-        return 'grey';
+        return "grey";
     }
   };
 
