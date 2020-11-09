@@ -148,6 +148,27 @@ export const resources = {
         cancel: 'Cancel',
         continueAsGuest: 'Continue as a Guest',
       },
+      registration: {
+        continueAsGuest: 'Continue as a guest',
+        selectCountry: 'Country',
+        groupCity: 'City',
+        selectGender: 'Gender',
+        selectLanguage: 'Language',
+        selectGroup: 'Ten Name',
+        telephone: 'Mobile Phone',
+        man: 'man',
+        woman: 'woman',
+        aboutYou: 'About my study framework in Bnei Baruch...',
+        submit: 'SUBMIT FOR APPROVAL',
+        welcome: 'Welcome {{name}}',
+        needVerifyAccount: 'You successfully registered to Galaxy. In order to grant you with a full access, we will need to verify your account.',
+        tellAboutYou: 'Please tell us about you:',
+        asGuestYouCan: 'As a guest, you will be able to watch the broadcast. You won’t be able to participate in the workshops or ask questions live.',
+        youRegisteredAsGuest: 'You are now registered as a guest. To be granted full access, we need to verify your account. Please complete the registration.',
+        toComplete: 'TO COMPLETE REGISTRATION',
+        completed: 'Your registration is completed and will be verified soon. Meanwhile you can watch the broadcast.',
+
+      }
     },
   },
   es: {
