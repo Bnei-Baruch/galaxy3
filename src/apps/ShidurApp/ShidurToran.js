@@ -6,6 +6,7 @@ import api from '../../shared/Api';
 import {RESET_VOTE} from "../../shared/env";
 import {SDIOUT_ID, SNDMAN_ID} from "../../shared/consts"
 import {captureException} from "../../shared/sentry";
+import UsersHandle from "./UsersHandle";
 
 
 class ShidurToran extends Component {
@@ -311,7 +312,8 @@ class ShidurToran extends Component {
             {ng ?
               <Segment className="group_segment" color='blue'>
                 <div className="shidur_overlay"><span>{ng.description}</span></div>
-                <UsersPreview pg={ng} {...this.props} next closePopup={this.closePopup} />
+                {/*<UsersPreview pg={ng} {...this.props} next closePopup={this.closePopup} />*/}
+                <UsersHandle g={ng} {...this.props} next closePopup={this.closePopup} />
               </Segment>
               : ""}
           </Segment>
@@ -373,7 +375,8 @@ class ShidurToran extends Component {
           <Segment className="preview_conteiner" >
             {open ? <Segment className="group_segment" color='green'>
               <div className="shidur_overlay"><span>{group ? group.description : ""}</span></div>
-              <UsersPreview pg={this.state.pg} {...this.props} closePopup={this.closePopup} />
+              {/*<UsersPreview pg={this.state.pg} {...this.props} closePopup={this.closePopup} />*/}
+              <UsersHandle g={this.state.pg} {...this.props} preview closePopup={this.closePopup} />
             </Segment> : ""}
           </Segment>
           <Segment textAlign='center' >
