@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useTranslation } from 'react-i18next';
+import React, {useState} from 'react';
+import {useTranslation} from 'react-i18next';
 
 import makeStyles from '@material-ui/core/styles/makeStyles';
 import {
@@ -11,8 +11,8 @@ import {
   DialogContentText,
   Dialog, Grid
 } from '@material-ui/core';
-import { RegistrationForm } from './RegistrationForm';
-import { green } from '@material-ui/core/colors';
+import {RegistrationForm} from './RegistrationForm';
+import {green} from '@material-ui/core/colors';
 import Box from '@material-ui/core/Box';
 
 const modalStateEnum = {
@@ -31,12 +31,12 @@ const useStyles = makeStyles(() => ({
   }
 }));
 
-export const RegistrationModals = ({ user: { display, role, id }, language, kc }) => {
-  const classes                     = useStyles();
-  const defState                    = role === 'guest' ? modalStateEnum.toComplete : modalStateEnum.completed;
+export const RegistrationModals = ({user: {display, role, id}, language, kc}) => {
+  const classes = useStyles();
+  const defState = role === 'guest' ? modalStateEnum.toComplete : modalStateEnum.completed;
   //const defState                    = modalStateEnum.form;
   const [modalState, setModalState] = useState(defState);
-  const { t }                       = useTranslation();
+  const {t} = useTranslation();
 
   if (role !== 'pending_new_user' && role !== 'guest')
     return null;
@@ -75,7 +75,7 @@ export const RegistrationModals = ({ user: { display, role, id }, language, kc }
       >
         <Box className={classes.toComplete}>
           <Typography variant="h4" paragraph>
-            {t('registration.welcome', { name: display })}
+            {t('registration.welcome', {name: display})}
           </Typography>
 
           <Typography paragraph>
