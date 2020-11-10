@@ -47,11 +47,8 @@ export const RegistrationForm = ({display, id, onClose, isOpen, language}) => {
 
     useEffect(() => {
       fetchRooms();
-    }, []);
-
-    useEffect(() => {
       fetchCountriesByLang(language);
-    }, [language]);
+    }, []);
 
     const fetchRooms = () => {
       api.fetchAvailableRooms()
