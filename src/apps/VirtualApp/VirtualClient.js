@@ -2359,8 +2359,8 @@ class VirtualClient extends Component {
         {
           user
           && !isMobile
-          //&& false
-          && (isUseNewDesign && Boolean(room))
+          && isUseNewDesign
+          && (Boolean(room) || notApproved)
           && (
             <SettingsJoined
               userDisplay={user.display}
