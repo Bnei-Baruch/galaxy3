@@ -136,13 +136,14 @@ class VirtualClient extends Component {
     gdm: null,
     asideMsgCounter: {drawing: 0, chat: 0},
     leftAsideSize: 3,
-    shidurForGhostReady: false
+    shidurForGuestReady: -1
   };
 
   virtualStreamingInitialized() {
+    const {user: {role}, shidurForGuestReady} = this.state;
     let newState = {sourceLoading: false};
-    if (this.state.user.role === 'guest' || this.state.user.role === 'pending_new_user') {
-      newState.shidurForGuestReady = true;
+    if (role === 'guest' || role === 'pending_new_user') {
+      newState.shidurForGuestReady = shidurForGuestReady + 1;
     }
     this.setState(newState);
   }
@@ -157,9 +158,10 @@ class VirtualClient extends Component {
     if (this.state.room && !prevState.room && this.state.shidur && !this.sourceLoading) {
       this.state.virtualStreamingJanus.unmuteAudioElement();
     }
-    if (this.state.shidurForGuestReady && !prevState.shidurForGuestReady) {
-      this.state.virtualStreamingJanus.unmuteAudioElement();
+    if (this.state.shidurForGuestReady > 0 && prevState.shidurForGuestReady <= 0) {
       this.state.virtualStreamingJanus.setVideo(this.state.videos);
+      this.state.virtualStreamingJanus.unmuteAudioElement();
+      this.state.virtualStreamingJanus.playAudioElement();
     }
     if (this.state.videoroom !== prevState.videoroom ||
       this.state.localVideoTrack !== prevState.localVideoTrack ||
@@ -1905,6 +1907,13 @@ class VirtualClient extends Component {
     );
   };
 
+  //in chrome must be any event for audio autorun https://developers.google.com/web/updates/2017/09/autoplay-policy-changes
+  startGuestAudioOnModalClose = () => {
+    const shidurForGuestReady = this.state.shidurForGuestReady + 1;
+    console.log('handleClose startGuestAudioOnModalClose', shidurForGuestReady)
+    this.setState({shidurForGuestReady});
+  }
+
   renderNewVersionContent = (layout, isDeb, source, rooms_list, otherFeedHasQuestion, adevices_list, vdevices_list, noOfVideos, remoteVideos) => {
     const { i18n } = this.props;
     const {
@@ -1923,7 +1932,8 @@ class VirtualClient extends Component {
     return (
       <div className={classNames('vclient', {'vclient--chat-open': chatVisible})}>
         <VerifyAccount user={user} loginPage={false} i18n={i18n}/>
-        <RegistrationModals user={user} language={i18n.language}/>
+        <RegistrationModals user={user} language={i18n.language}
+                            onCloseCallback={this.startGuestAudioOnModalClose.bind(this)}/>
         {this.renderTopBar(isDeb)}
 
         <Grid container className="vclient__main">
@@ -2026,7 +2036,7 @@ class VirtualClient extends Component {
     const layout = (room === '' || !shidur || !attachedSource) ? 'equal' : currentLayout;
 
     let source;
-    if ((room !== '' && shidur) || (shidurForGuestReady && notApproved)) {
+    if ((room !== '' && shidur) || (shidurForGuestReady > 0 && notApproved)) {
       source = (
         <VirtualStreaming
           virtualStreamingJanus={virtualStreamingJanus}
