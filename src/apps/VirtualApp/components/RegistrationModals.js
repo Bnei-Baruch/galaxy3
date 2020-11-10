@@ -31,12 +31,18 @@ const useStyles = makeStyles(() => ({
   }
 }));
 
-export const RegistrationModals = ({user: {display, role, id}, language, kc}) => {
+export const RegistrationModals = ({user: {display, role, id}, language, onCloseCallback}) => {
   const classes = useStyles();
   const defState = role === 'guest' ? modalStateEnum.toComplete : modalStateEnum.completed;
   //const defState                    = modalStateEnum.form;
   const [modalState, setModalState] = useState(defState);
   const {t} = useTranslation();
+
+  const handleClose = () => {
+    setModalState(modalStateEnum.close);
+    console.log('handleClose', onCloseCallback)
+    onCloseCallback();
+  }
 
   if (role !== 'pending_new_user' && role !== 'guest')
     return null;
@@ -45,7 +51,7 @@ export const RegistrationModals = ({user: {display, role, id}, language, kc}) =>
     return (
       <Dialog
         open={modalState === modalStateEnum.completed}
-        onClose={() => setModalState(modalStateEnum.close)}
+        onClose={handleClose}
       >
         <DialogContent>
           <DialogContentText>
@@ -55,7 +61,7 @@ export const RegistrationModals = ({user: {display, role, id}, language, kc}) =>
         <DialogActions>
           <Grid container justify="center">
             <Button
-              onClick={() => setModalState(modalStateEnum.close)}
+              onClick={handleClose}
             >
               {t('galaxyApp.ok')}
             </Button>
@@ -71,7 +77,7 @@ export const RegistrationModals = ({user: {display, role, id}, language, kc}) =>
       <Drawer
         anchor="top"
         open={modalState === modalStateEnum.toComplete}
-        onClose={() => setModalState(modalStateEnum.close)}
+        onClose={handleClose}
       >
         <Box className={classes.toComplete}>
           <Typography variant="h4" paragraph>
@@ -100,7 +106,7 @@ export const RegistrationModals = ({user: {display, role, id}, language, kc}) =>
     <RegistrationForm
       display={display}
       id={id}
-      onClose={() => setModalState(modalStateEnum.close)}
+      onClose={handleClose}
       isOpen={modalState === modalStateEnum.form}
     />
   );
