@@ -115,7 +115,7 @@ export const RegistrationModals = ({user: {display, role, id}, language, onClose
   return (
     <>
       {renderToComplete()}
-      {renderForm()}
+      {(modalState === modalStateEnum.form) && renderForm()}
       {renderCompleted()}
     </>
   );

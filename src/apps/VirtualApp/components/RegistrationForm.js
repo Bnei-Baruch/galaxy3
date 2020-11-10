@@ -7,7 +7,7 @@ import Box from '@material-ui/core/Box';
 import Autocomplete from '@material-ui/lab/Autocomplete';
 
 import {green, grey} from '@material-ui/core/colors';
-import {LANGUAGES, TENS} from './optionsData';
+import {LANGUAGES} from './optionsData';
 import LogoutDropdown from '../settings/LogoutDropdown';
 import {REGISTRATION_FORM_FIELDS} from '../../../shared/env';
 import api from '../../../shared/Api';
@@ -47,17 +47,17 @@ export const RegistrationForm = ({display, id, onClose, isOpen, language}) => {
 
     useEffect(() => {
       fetchRooms();
-      fetchCountriesByLang(language);
     }, []);
+
+    useEffect(() => {
+      fetchCountriesByLang(language);
+    }, [language]);
+
     const fetchRooms = () => {
       api.fetchAvailableRooms()
         .then(d => {
           const _tens = d.rooms.map(r => r.description).filter(t => !t.match(/test|info/i));
           setTens(_tens);
-        })
-        .catch(e => {
-          console.log('Need to add permissions for stitt not approved members');
-          setTens(TENS);
         });
     };
 
