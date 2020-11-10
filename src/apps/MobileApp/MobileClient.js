@@ -866,7 +866,11 @@ class MobileClient extends Component {
                   this.unsubscribeFrom([leaving], /* onlyVideo= */ false);
                   const feedsNewState = feeds.filter(feed => feed.id !== leaving);
                   this.switchVideos(/* page= */ this.state.page, userFeeds(feeds), userFeeds(feedsNewState));
-                  this.setState({feeds: feedsNewState});
+                  this.setState({feeds: feedsNewState}, () => {
+                    if (this.state.page * PAGE_SIZE === this.state.feeds.length) {
+                      this.switchPage(this.state.page - 1, this.state.feeds);
+                    }
+                 });
 
                 } else if(msg['unpublished'] !== undefined && msg['unpublished'] !== null) {
                     const unpublished = msg['unpublished'];
@@ -1152,6 +1156,7 @@ class MobileClient extends Component {
     }
 
     switchVideos = (page, oldFeeds, newFeeds) => {
+      console.log('switchVideos', 'page', page, 'PAGE_SIZE', PAGE_SIZE, 'old', oldFeeds.length, 'new', newFeeds.length);
       const {muteOtherCams} = this.state;
 
       const oldVideoSlots = [
@@ -1211,6 +1216,7 @@ class MobileClient extends Component {
       })
 
       if (!muteOtherCams) {
+        console.log('refs', this.refs, 'subscribeFeeds', subscribeFeeds, 'unsubscribeFeeds', unsubscribeFeeds, 'switchFeeds', switchFeeds);
         this.makeSubscription(subscribeFeeds, /* feedsJustJoined= */ false, /* subscribeToVideo= */ true,
                               /* subscribeToAudio= */ false, /* subscribeToData= */ false);
         this.unsubscribeFrom(unsubscribeFeeds.map(feed => feed.id), /* onlyVideo= */ true);
@@ -1549,6 +1555,7 @@ class MobileClient extends Component {
       }
 
       // TODO: Instead of 0, 3 should actuaaly map things...
+      console.log('render remote videos', feeds.length, page);
       const remoteVideos = userFeeds(feeds).slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE).map((feed, i) => {
         return (<div className="video"
                      key={"vk" + i}
