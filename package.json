@@ -4,11 +4,15 @@
   "private": true,
   "homepage": ".",
   "dependencies": {
+    "@material-ui/core": "^4.11.0",
+    "@material-ui/icons": "^4.9.1",
+    "@material-ui/lab": "^4.0.0-alpha.56",
     "@sentry/cli": "^1.56.1",
     "@sentry/react": "^5.23.0",
     "classnames": "^2.2.6",
     "debounce": "^1.2.0",
     "eqcss": "^1.9.1",
+    "i18n-iso-countries": "^6.2.2",
     "i18next": "^19.3.4",
     "keycloak-js": "^10.0.1",
     "node-sass": "^4.14.0",
@@ -26,10 +30,7 @@
     "semantic-ui-css": "^2.4.0",
     "semantic-ui-react": "^0.88.2",
     "ua-parser-js": "^0.7.21",
-    "webrtc-adapter": "^6.4.0",
-    "@material-ui/core": "^4.11.0",
-    "@material-ui/lab": "^4.0.0-alpha.56",
-    "@material-ui/icons": "^4.9.1"
+    "webrtc-adapter": "^6.4.0"
   },
   "scripts": {
     "start": "react-scripts start",

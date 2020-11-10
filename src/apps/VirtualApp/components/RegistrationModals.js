@@ -108,6 +108,7 @@ export const RegistrationModals = ({user: {display, role, id}, language, onClose
       id={id}
       onClose={handleClose}
       isOpen={modalState === modalStateEnum.form}
+      language={language}
     />
   );
 

@@ -7,10 +7,11 @@ import Box from '@material-ui/core/Box';
 import Autocomplete from '@material-ui/lab/Autocomplete';
 
 import {green, grey} from '@material-ui/core/colors';
-import {COUNTRIES, LANGUAGES, TENS} from './optionsData';
+import {LANGUAGES, TENS} from './optionsData';
 import LogoutDropdown from '../settings/LogoutDropdown';
 import {REGISTRATION_FORM_FIELDS} from '../../../shared/env';
 import api from '../../../shared/Api';
+import countries from "i18n-iso-countries";
 
 const useStyles = makeStyles(() => ({
   container: {
@@ -21,7 +22,16 @@ const useStyles = makeStyles(() => ({
   }
 }));
 
-export const RegistrationForm = ({display, id, onClose, isOpen}) => {
+let countryById;
+let countryIds;
+const fetchCountriesByLang = (lang = 'en') => {
+  countries.registerLocale(require(`i18n-iso-countries/langs/${lang}.json`));
+  countryById = countries.getNames(lang, {select: "official"});
+  countryIds = Object.keys(countryById);
+
+}
+
+export const RegistrationForm = ({display, id, onClose, isOpen, language}) => {
     const classes = useStyles();
     const [tens, setTens] = useState();
     const [city, setCity] = useState();
@@ -37,6 +47,7 @@ export const RegistrationForm = ({display, id, onClose, isOpen}) => {
 
     useEffect(() => {
       fetchRooms();
+      fetchCountriesByLang(language);
     }, []);
     const fetchRooms = () => {
       api.fetchAvailableRooms()
@@ -98,8 +109,8 @@ export const RegistrationForm = ({display, id, onClose, isOpen}) => {
         <Autocomplete
           variant="outlined"
           value={country}
-          options={COUNTRIES}
-          getOptionLabel={r => r.name}
+          options={countryIds}
+          getOptionLabel={id => countryById[id]}
           onChange={handleCountryChange}
           renderInput={
             (params) => (
