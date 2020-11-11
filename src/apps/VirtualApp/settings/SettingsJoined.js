@@ -19,8 +19,9 @@ import { vsettings_list } from '../../../shared/consts';
 import { getLanguage, languagesOptions, setLanguage } from '../../../i18n/i18n';
 import MyMedia from './MyMedia';
 import CheckMySelf from './CheckMySelf';
-import { SelectLanguage } from '../components/SelectLanguage';
-import { SelectBroadcastVideo } from '../components/SelectBroadcastVideo';
+import {SelectLanguage} from '../components/SelectLanguage';
+import {SelectBroadcastVideo} from '../components/SelectBroadcastVideo';
+import {SelectViewLanguage} from "../components/SelectViewLanguage";
 
 const useStyles = makeStyles(() => ({
   content: {
@@ -68,7 +69,6 @@ const SettingsJoined = (props) => {
   );
 
   const renderUserSettings = () => {
-    const lang = getLanguage();
     return (
       <>
         <Grid item xs={4}>
@@ -88,20 +88,7 @@ const SettingsJoined = (props) => {
           />
         </Grid>
         <Grid item={true} xs={4}>
-          <TextField
-            variant="outlined"
-            fullWidth={true}
-            label={t('settings.interfaceLanguage')}
-            onChange={e => setLanguage(e.target.value)}
-            value={lang}
-            select
-          >
-            {
-              languagesOptions.map(({ key, value, text }) => {
-                return <option key={key} value={value}>{text}</option>;
-              })
-            }
-          </TextField>
+          <SelectViewLanguage/>
         </Grid>
       </>
     );

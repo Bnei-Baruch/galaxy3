@@ -2,7 +2,7 @@ import React, {useEffect, useState} from 'react';
 import {useTranslation} from 'react-i18next';
 
 import makeStyles from '@material-ui/core/styles/makeStyles';
-import {Button, Modal, Typography, TextField, Grid, MenuItem} from '@material-ui/core';
+import {Button, Modal, Typography, TextField, Grid, MenuItem, IconButton, Divider} from '@material-ui/core';
 import Box from '@material-ui/core/Box';
 import Autocomplete from '@material-ui/lab/Autocomplete';
 
@@ -12,10 +12,13 @@ import LogoutDropdown from '../settings/LogoutDropdown';
 import {REGISTRATION_FORM_FIELDS} from '../../../shared/env';
 import api from '../../../shared/Api';
 import countries from "i18n-iso-countries";
+import {Close} from "@material-ui/icons";
+import {SelectViewLanguage} from "./SelectViewLanguage";
 
 const useStyles = makeStyles(() => ({
   container: {
-    backgroundColor: grey[100]
+    backgroundColor: grey[100],
+    padding: '0 2em 10em'
   },
   button: {
     background: green[400],
@@ -31,7 +34,7 @@ const fetchCountriesByLang = (lang = 'en') => {
 
 }
 
-export const RegistrationForm = ({display, id, onClose, isOpen, language}) => {
+export const RegistrationForm = ({display, id, onClose, onSubmit, isOpen, language}) => {
     const classes = useStyles();
     const [tens, setTens] = useState();
     const [city, setCity] = useState();
@@ -186,14 +189,14 @@ export const RegistrationForm = ({display, id, onClose, isOpen, language}) => {
       }
 
       if (hasError)
-        return onClose();
+        return onSubmit();
 
       try {
         await updateKCStatus();
       } catch (e) {
-        console.log('send form error: this is not error');
+        console.log('change kc status error', e);
       }
-      onClose();
+      onSubmit();
     };
 
     const validateForm = () => {
@@ -221,6 +224,7 @@ export const RegistrationForm = ({display, id, onClose, isOpen, language}) => {
 
     const updateKCStatus = async () => {
       const opt = api.defaultOptions();
+      opt.method = 'POST';
       return await fetch('https://acc.kli.one/api/pending', opt);
     };
 
@@ -296,21 +300,26 @@ export const RegistrationForm = ({display, id, onClose, isOpen, language}) => {
       <Modal
         open={isOpen}
         onClose={onClose}
-
+        disableBackdropClick
         style={{verticalAlign: 'middle'}}
       >
+
         <Box
           className={classes.container}
           maxWidth="md"
           m={10}
-          p={10}
         >
+          <Grid container justify="flex-end">
+            <IconButton onClick={onClose}> <Close/> </IconButton>
+          </Grid>
           <Grid container spacing={5}>
             <Grid item xs={7}>
               {renderForm()}
             </Grid>
             <Grid item xs={5}>
               <Grid container justify="flex-end">
+                <SelectViewLanguage size={'small'} fullWidth={false} hasLabel={false}/>
+                <Divider style={{marginRight: '2em'}}/>
                 <LogoutDropdown display={display}/>
               </Grid>
               <Box style={{marginTop: '10em'}}>
