@@ -1142,8 +1142,11 @@ class MobileClient extends Component {
     };
 
     switchVideoSlots = (from, to) => {
-      const fromRemoteVideo = this.refs["remoteVideo" + from];
-      const toRemoteVideo = this.refs["remoteVideo" + to];
+      const {page} = this.state;
+      const fromVideoIndex = from - page * PAGE_SIZE;
+      const toVideoIndex = to - page * PAGE_SIZE;
+      const fromRemoteVideo = this.refs["remoteVideo" + fromVideoIndex];
+      const toRemoteVideo = this.refs["remoteVideo" + toVideoIndex];
       if (!fromRemoteVideo || !toRemoteVideo) {
         console.error(`Failed switching video slots ${from} to ${to}`, fromRemoteVideo, toRemoteVideo);
         captureMessage('Mobile failed switching video slots', {source: 'MobileClient', from, to, fromRemoteVideo, toRemoteVideo}, 'error');
@@ -1159,18 +1162,16 @@ class MobileClient extends Component {
       console.log('switchVideos', 'page', page, 'PAGE_SIZE', PAGE_SIZE, 'old', oldFeeds.length, 'new', newFeeds.length);
       const {muteOtherCams} = this.state;
 
-      const oldVideoSlots = [
-        oldFeeds.findIndex(feed => feed.videoSlot === 0),
-        oldFeeds.findIndex(feed => feed.videoSlot === 1),
-        oldFeeds.findIndex(feed => feed.videoSlot === 2),
-      ];
+      const oldVideoSlots = [];
+      for (let index = 0; index < PAGE_SIZE; index++) {
+        oldVideoSlots.push(oldFeeds.findIndex(feed => feed.videoSlot === index));
+      }
       const oldVideoFeeds = oldVideoSlots.map(index => index !== -1 ? oldFeeds[index] : null);
 
-      const newVideoSlots = [
-        (page * PAGE_SIZE) + 0 >= newFeeds.length ? -1 : (page * PAGE_SIZE) + 0,
-        (page * PAGE_SIZE) + 1 >= newFeeds.length ? -1 : (page * PAGE_SIZE) + 1,
-        (page * PAGE_SIZE) + 2 >= newFeeds.length ? -1 : (page * PAGE_SIZE) + 2,
-      ];
+      const newVideoSlots = [];
+      for (let index = 0; index < PAGE_SIZE; index++) {
+        newVideoSlots.push((page * PAGE_SIZE) + index >= newFeeds.length ? -1 : (page * PAGE_SIZE) + index);
+      }
       const newVideoFeeds = newVideoSlots.map(index => index !== -1 ? newFeeds[index] : null);
 
       // Update video slots.
