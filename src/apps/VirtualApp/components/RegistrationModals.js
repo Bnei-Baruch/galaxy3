@@ -1,11 +1,8 @@
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {useTranslation} from 'react-i18next';
 
-import makeStyles from '@material-ui/core/styles/makeStyles';
 import {
   Button,
-  Typography,
-  Drawer,
   DialogActions,
   DialogContent,
   DialogContentText,
@@ -14,38 +11,39 @@ import {
 import {RegistrationForm} from './RegistrationForm';
 import {green} from '@material-ui/core/colors';
 import Box from '@material-ui/core/Box';
+import {userRolesEnum} from "../enums";
+import Chip from "@material-ui/core/Chip";
+import LogoutDropdown from "../settings/LogoutDropdown";
+import {Done} from "@material-ui/icons";
 
 const modalStateEnum = {
   close: 1,
-  toComplete: 2,
   form: 3,
   completed: 4
 };
 
-const useStyles = makeStyles(() => ({
-  toComplete: {
-    padding: '2em 4em'
-  },
-  toCompleteBtn: {
-    color: green[500]
-  }
-}));
-
-export const RegistrationModals = ({user: {display, role, id}, language, onCloseCallback}) => {
-  const classes = useStyles();
-  const defState = role === 'guest' ? modalStateEnum.toComplete : modalStateEnum.completed;
-  //const defState                    = modalStateEnum.form;
-  const [modalState, setModalState] = useState(defState);
+export const RegistrationModals = ({user: {display, role, id}, language, updateUserRole}) => {
+  const [modalState, setModalState] = useState(modalStateEnum.close);
   const {t} = useTranslation();
+
+  useEffect(() => {
+    if (!localStorage.getItem("notFirstEnter") && role === userRolesEnum.guest) {
+      setModalState(modalStateEnum.form);
+      localStorage.setItem("notFirstEnter", 'true')
+    }
+    if (role === userRolesEnum.pending_new_user) {
+      setModalState(modalStateEnum.completed);
+    }
+  }, [role]);
+
+
+  if (role !== userRolesEnum.pending_new_user && role !== userRolesEnum.guest)
+    return null;
 
   const handleClose = () => {
     setModalState(modalStateEnum.close);
-    console.log('handleClose', onCloseCallback)
-    onCloseCallback();
   }
 
-  if (role !== 'pending_new_user' && role !== 'guest')
-    return null;
 
   const renderCompleted = () => {
     return (
@@ -72,49 +70,30 @@ export const RegistrationModals = ({user: {display, role, id}, language, onClose
     );
   };
 
-  const renderToComplete = () => {
-    return (
-      <Drawer
-        anchor="top"
-        open={modalState === modalStateEnum.toComplete}
-        onClose={handleClose}
-      >
-        <Box className={classes.toComplete}>
-          <Typography variant="h4" paragraph>
-            {t('registration.welcome', {name: display})}
-          </Typography>
-
-          <Typography paragraph>
-            {t('registration.youRegisteredAsGuest')}
-          </Typography>
-          <Grid container justify="center">
-            <Button
-              size="large"
-              variant="text"
-              onClick={() => setModalState(modalStateEnum.form)}
-              className={classes.toCompleteBtn}
-            >
-              {t('registration.toComplete')}
-            </Button>
-          </Grid>
-        </Box>
-      </Drawer>
-    );
-  };
-
   const renderForm = () => (
     <RegistrationForm
       display={display}
       id={id}
+      onSubmit={updateUserRole}
       onClose={handleClose}
       isOpen={modalState === modalStateEnum.form}
       language={language}
     />
   );
 
+  const renderGoToComplete = () => (
+    <Grid container justify="center" style={{backgroundColor: "black"}}>
+      <Chip
+        label={t('registration.youRegisteredAsGuest')}
+        onDelete={() => setModalState(modalStateEnum.form)}
+        deleteIcon={<Done/>}
+      />
+    </Grid>
+  )
+
   return (
     <>
-      {renderToComplete()}
+      {role === userRolesEnum.guest && renderGoToComplete()}
       {(modalState === modalStateEnum.form) && renderForm()}
       {renderCompleted()}
     </>

@@ -42,7 +42,7 @@ import {
 import api from '../../shared/Api';
 import VirtualStreaming from './VirtualStreaming';
 import VirtualStreamingJanus from '../../shared/VirtualStreamingJanus';
-import {isGhostOrGuest, kc} from "../../components/UserManager";
+import {getUser, isGhostOrGuest, kc} from "../../components/UserManager";
 import LoginPage from "../../components/LoginPage";
 import {Profile} from "../../components/Profile";
 import {captureException, captureMessage, sentryDebugAction, updateSentryUser} from '../../shared/sentry';
@@ -54,7 +54,7 @@ import ConfigStore from '../../shared/ConfigStore';
 import {GuaranteeDeliveryManager} from '../../shared/GuaranteeDelivery';
 
 import {AppBar, Badge, Box, Button as ButtonMD, ButtonGroup, Grid, IconButton} from '@material-ui/core';
-import {ChevronLeft, ChevronRight} from '@material-ui/icons';
+import {ChevronLeft, ChevronRight, PlayCircleOutline} from '@material-ui/icons';
 import {grey, red} from '@material-ui/core/colors';
 
 import {AskQuestion, AudioMode, CloseBroadcast, Layout, Mute, MuteVideo, Vote} from './buttons';
@@ -63,12 +63,13 @@ import SettingsJoined from './settings/SettingsJoined';
 import HomerLimud from './components/HomerLimud';
 import {Help} from './components/Help';
 import {RegistrationModals} from './components/RegistrationModals';
+import {userRolesEnum} from "./enums";
 
 const sortAndFilterFeeds = (feeds) => feeds
   .filter(feed => !feed.display.role.match(/^(ghost|guest)$/))
   .sort((a, b) => a.display.timestamp - b.display.timestamp);
 
-const userFeeds = (feeds) => feeds.filter(feed => feed.display.role === 'user');
+const userFeeds = (feeds) => feeds.filter(feed => feed.display.role === userRolesEnum.user);
 
 const isUseNewDesign = new URL(window.location.href).searchParams.has('new_design');
 
@@ -136,16 +137,11 @@ class VirtualClient extends Component {
     gdm: null,
     asideMsgCounter: {drawing: 0, chat: 0},
     leftAsideSize: 3,
-    shidurForGuestReady: -1
+    shidurForGuestReady: false
   };
 
   virtualStreamingInitialized() {
-    const {user: {role}, shidurForGuestReady} = this.state;
-    let newState = {sourceLoading: false};
-    if (role === 'guest' || role === 'pending_new_user') {
-      newState.shidurForGuestReady = shidurForGuestReady + 1;
-    }
-    this.setState(newState);
+    this.setState({sourceLoading: false});
   }
 
   componentDidUpdate(prevProps, prevState) {
@@ -158,10 +154,13 @@ class VirtualClient extends Component {
     if (this.state.room && !prevState.room && this.state.shidur && !this.sourceLoading) {
       this.state.virtualStreamingJanus.unmuteAudioElement();
     }
-    if (this.state.shidurForGuestReady > 0 && prevState.shidurForGuestReady <= 0) {
+    if (
+      (!this.state.sourceLoading && this.state.shidurForGuestReady && !prevState.shidurForGuestReady)
+      || (this.state.shidurForGuestReady && !this.state.sourceLoading && prevState.sourceLoading)
+    ) {
       this.state.virtualStreamingJanus.setVideo(this.state.videos);
+      this.state.virtualStreamingJanus.audioElement.play();
       this.state.virtualStreamingJanus.unmuteAudioElement();
-      this.state.virtualStreamingJanus.playAudioElement();
     }
     if (this.state.videoroom !== prevState.videoroom ||
       this.state.localVideoTrack !== prevState.localVideoTrack ||
@@ -208,18 +207,25 @@ class VirtualClient extends Component {
     this.state.virtualStreamingJanus.destroy();
   }
 
+  getUserRole = () => {
+    switch (true) {
+      case kc.hasRealmRole('pending_approval'):
+        return userRolesEnum.ghost;
+      case kc.hasRealmRole('gxy_user'):
+        return userRolesEnum.user;
+      case kc.hasRealmRole('new_user'):
+        return userRolesEnum.guest;
+      case kc.hasRealmRole('gxy_pending_approval'):
+        return userRolesEnum.pending_new_user;
+      default:
+        return userRolesEnum.none
+    }
+  }
+
   checkPermission = (user) => {
-    let pending_approval = kc.hasRealmRole('pending_approval');
-    let gxy_user = kc.hasRealmRole('gxy_user');
-    let pending = kc.hasRealmRole('gxy_pending_approval');
-    const guest = kc.hasRealmRole('gxy_guest');
+    user.role = this.getUserRole();
 
-    pending_approval && (user.role = 'ghost');
-    gxy_user && (user.role = 'user');
-    guest && (user.role = 'guest');
-    pending && (user.role = 'pending_new_user');
-
-    if (gxy_user || pending_approval || pending || guest) {
+    if (user.role !== null) {
       this.initApp(user);
     } else {
       alert('Access denied!');
@@ -229,7 +235,7 @@ class VirtualClient extends Component {
   };
 
   initApp = (user) => {
-    if (user.role === 'pending_new_user' || user.role === 'guest') {
+    if (user.role === userRolesEnum.pending_new_user || user.role === userRolesEnum.guest) {
       const config = {
         'gateways': {
           'streaming': {
@@ -245,11 +251,11 @@ class VirtualClient extends Component {
         'dynamic_config': {'galaxy_premod': 'false'},
         'last_modified': (new Date()).toISOString()
       };
-      localStorage.setItem('room', -1);
       ConfigStore.setGlobalConfig(config);
       GxyJanus.setGlobalConfig(config);
+      localStorage.setItem('room', '-1');
       this.state.virtualStreamingJanus.init('', 'IL');
-      this.setState({user});
+      this.setState({user, sourceLoading: true});
       return;
     }
 
@@ -749,7 +755,7 @@ class VirtualClient extends Component {
   exitRoom = (reconnect, callback, error) => {
     captureMessage('Exit Room', {source: 'VirtualClient', reconnect, error});
     this.setState({delay: true});
-    if(this.state.user.role === "user") {
+    if (this.state.user.role === userRolesEnum.user) {
       wkliLeave(this.state.user);
     }
     clearInterval(this.state.upval);
@@ -1329,7 +1335,7 @@ class VirtualClient extends Component {
   handleQuestion = () => {
     const {question} = this.state;
     const user = Object.assign({}, this.state.user);
-    if (user.role === "ghost") return;
+    if (user.role === userRolesEnum.ghost) return;
     this.makeDelay();
     this.questionState(user, question);
   };
@@ -1378,7 +1384,7 @@ class VirtualClient extends Component {
     const {videoroom} = this.state;
     if (videoroom) {
       const user = Object.assign({}, this.state.user);
-      if (user.role === "ghost") return;
+      if (user.role === userRolesEnum.ghost) return;
       this.makeDelay();
       user.camera = cammuted;
       api.updateUser(user.id, user)
@@ -1631,7 +1637,7 @@ class VirtualClient extends Component {
                 t={t}
                 isOn={shidur}
                 action={this.toggleShidur.bind(this)}
-                disabled={!notApproved && (room === '' || sourceLoading)}
+                disabled={room === '' || sourceLoading}
               />
               <Layout
                 t={t}
@@ -1642,7 +1648,7 @@ class VirtualClient extends Component {
               />
               <AudioMode
                 t={t}
-                disabled={user && (user.role === 'guest' || user.role === 'pending_new_user')}
+                disabled={user && (user.role === userRolesEnum.guest || user.role === userRolesEnum.pending_new_user)}
                 action={this.otherCamsMuteToggle.bind(this)}
                 isOn={muteOtherCams} />
             </ButtonGroup>
@@ -1668,7 +1674,7 @@ class VirtualClient extends Component {
           </Grid>
           <Grid item xs={1}></Grid>
           <Grid item xs={1} style={{display: 'flex', alignItems: 'center'}}>
-            {user && !(user.role === 'guest' || user.role === 'pending_new_user') && (<ButtonMD
+            {user && !(user.role === userRolesEnum.guest || user.role === userRolesEnum.pending_new_user) && (<ButtonMD
               onClick={() => this.exitRoom(false)}
               variant="contained"
               style={{
@@ -1763,7 +1769,7 @@ class VirtualClient extends Component {
 
     const { user, asideMsgCounter, leftAsideName, rightAsideName, monitoringData, net_status, isOpenTopMenu } = this.state;
 
-    const notApproved = user && (user.role === 'guest' || user.role === 'pending_new_user');
+    const notApproved = user && (user.role === userRolesEnum.guest || user.role === userRolesEnum.pending_new_user);
 
     return (
       <Box display="flex" style={{ justifyContent: 'space-between', flexWrap: 'nowrap' }} className="vclient__toolbar">
@@ -1772,7 +1778,8 @@ class VirtualClient extends Component {
             t={t}
             openSettings={() => this.setState({ isSettings: true })}
             open={isOpenTopMenu}
-            setOpen={(isOpen) => this.setState({ isOpenTopMenu: isOpen })}
+            setOpen={(isOpen) => this.setState({isOpenTopMenu: isOpen})}
+            notApproved={notApproved}
           />
           <ButtonMD
             color="primary"
@@ -1815,34 +1822,36 @@ class VirtualClient extends Component {
         <Box style={{marginRight: '1em'}}>
           {
             !notApproved && (
-              <Badge
-                color="secondary"
-                badgeContent={asideMsgCounter.chat}
-                showZero={false}
-              >
+              <>
+                <Badge
+                  color="secondary"
+                  badgeContent={asideMsgCounter.chat}
+                  showZero={false}
+                >
+                  <ButtonMD
+                    variant={rightAsideName === 'chat' ? 'outlined' : 'contained'}
+                    size="small"
+                    onClick={() => {
+                      this.toggleRightAside('chat');
+                      this.setState({isRoomChat: true});
+                    }}
+                  >
+                    {t('oldClient.chat')}
+                  </ButtonMD>
+                </Badge>
                 <ButtonMD
-                  variant={rightAsideName === 'chat' ? 'outlined' : 'contained'}
                   size="small"
                   onClick={() => {
-                    this.toggleRightAside('chat');
-                    this.setState({isRoomChat: true});
+                    this.toggleRightAside('support');
+                    this.setState({isRoomChat: false});
                   }}
+                  variant={rightAsideName === 'support' ? 'outlined' : 'contained'}
                 >
-                  {t('oldClient.chat')}
+                  {t('oldClient.support')}
                 </ButtonMD>
-              </Badge>
+              </>
             )
           }
-          <ButtonMD
-            size="small"
-            onClick={() => {
-              this.toggleRightAside('support');
-              this.setState({ isRoomChat: false });
-            }}
-            variant={rightAsideName === 'support' ? 'outlined' : 'contained'}
-          >
-            {t('oldClient.support')}
-          </ButtonMD>
           <ButtonMD
             size="small"
             onClick={() => this.toggleRightAside('question')}
@@ -1907,12 +1916,6 @@ class VirtualClient extends Component {
     );
   };
 
-  //in chrome must be any event for audio autorun https://developers.google.com/web/updates/2017/09/autoplay-policy-changes
-  startGuestAudioOnModalClose = () => {
-    const shidurForGuestReady = this.state.shidurForGuestReady + 1;
-    console.log('handleClose startGuestAudioOnModalClose', shidurForGuestReady)
-    this.setState({shidurForGuestReady});
-  }
 
   renderNewVersionContent = (layout, isDeb, source, rooms_list, otherFeedHasQuestion, adevices_list, vdevices_list, noOfVideos, remoteVideos) => {
     const { i18n } = this.props;
@@ -1927,14 +1930,18 @@ class VirtualClient extends Component {
             leftAsideName
           }           = this.state;
 
-    const notApproved = user && (user.role === 'guest' || user.role === 'pending_new_user');
+    const notApproved = user && (user.role === userRolesEnum.guest || user.role === userRolesEnum.pending_new_user);
 
     return (
       <div className={classNames('vclient', {'vclient--chat-open': chatVisible})}>
         <VerifyAccount user={user} loginPage={false} i18n={i18n}/>
-        <RegistrationModals user={user} language={i18n.language}
-                            onCloseCallback={this.startGuestAudioOnModalClose.bind(this)}/>
         {this.renderTopBar(isDeb)}
+        <RegistrationModals
+          user={user}
+          language={i18n.language}
+          updateUserRole={this.updateUserRole.bind(this)}
+        />
+
 
         <Grid container className="vclient__main">
           {this.renderLeftAside()}
@@ -1967,14 +1974,18 @@ class VirtualClient extends Component {
 
         </Grid>
         {
-          this.renderBottomBar(layout, otherFeedHasQuestion)
+          !notApproved && this.renderBottomBar(layout, otherFeedHasQuestion)
         }
       </div>
     );
 
   };
 
-  setIsRoomChat = (isRoomChat) => this.setState({ isRoomChat });
+  updateUserRole = () => {
+    getUser(this.checkPermission)
+  }
+
+  setIsRoomChat = (isRoomChat) => this.setState({isRoomChat});
 
   selectRoomAndJoin = (room) => {
     this.selectRoom(room);
@@ -2030,13 +2041,23 @@ class VirtualClient extends Component {
     }
 
     const {t, i18n} = this.props;
-    const notApproved = user && (user.role === 'guest' || user.role === 'pending_new_user');
+    const notApproved = user && (user.role === userRolesEnum.guest || user.role === userRolesEnum.pending_new_user);
     const width = '134';
     const height = '100';
     const layout = (room === '' || !shidur || !attachedSource) ? 'equal' : currentLayout;
 
     let source;
-    if ((room !== '' && shidur) || (shidurForGuestReady > 0 && notApproved)) {
+
+    //in chrome must be any event for audio autorun https://developers.google.com/web/updates/2017/09/autoplay-policy-changes
+    if (!shidurForGuestReady && notApproved) {
+      source = (
+        <Grid container justify="center" style={{height: "100%", fontSize: '100em'}}>
+          <IconButton onClick={() => this.setState({shidurForGuestReady: true})}>
+            <PlayCircleOutline style={{fontSize: '20em', color: grey[200]}}/>
+          </IconButton>
+        </Grid>
+      );
+    } else if ((room !== '' && shidur) || notApproved) {
       source = (
         <VirtualStreaming
           virtualStreamingJanus={virtualStreamingJanus}
@@ -2360,7 +2381,7 @@ class VirtualClient extends Component {
           user
           && !isMobile
           && isUseNewDesign
-          && (Boolean(room) || notApproved)
+          && Boolean(room)
           && (
             <SettingsJoined
               userDisplay={user.display}
