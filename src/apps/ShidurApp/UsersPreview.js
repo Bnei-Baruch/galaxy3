@@ -3,6 +3,7 @@ import './UsersHandle.scss'
 import { Janus } from "../../lib/janus";
 import classNames from "classnames";
 import {Button} from "semantic-ui-react";
+import api from "../../shared/Api";
 
 class UsersPreview extends Component {
 
@@ -38,20 +39,33 @@ class UsersPreview extends Component {
   };
 
   attachPreview = (g) => {
-    this.setState({room: g.room}, () =>{
-      let subscription = [];
-      for (let i in g.users) {
-        let user = g.users[i];
-        let feed = user.rfid;
-        let mid = user?.extra?.media?.audio?.audio_device ? "1" : "0";
-        let subst = {feed, mid};
-        if(user.camera) {
-          subscription.push(subst);
+    api.adminListParticipants({request: "listparticipants", room: g.room}, g.janus)
+      .then(data => {
+        let list = data.response.participants.filter(p => p.publisher);
+        console.log(list);
+        console.log(g.users);
+        if(list.length === 0) {
+          console.error("- No feeds to show -");
         }
-      }
-      if(subscription.length > 0)
-        this.subscribeTo(subscription, g.janus);
-    });
+        this.setState({room: g.room}, () => {
+          let subscription = [];
+          for (let i in list) {
+            let feed = list[i].id;
+            let user = g.users.find(u => u.rfid === feed);
+            let mid = !user ? "1" : user.extra?.media?.audio?.audio_device ? "1" : "0";
+            let subst = {feed, mid};
+            if(user && user.camera) {
+              subscription.push(subst);
+            }
+            if(!user) {
+              subscription.push(subst);
+            }
+          }
+          if(subscription.length > 0) {
+            this.subscribeTo(subscription, g.janus);
+          }
+        });
+      })
   };
 
   newRemoteFeed = (subscription, inst) => {
