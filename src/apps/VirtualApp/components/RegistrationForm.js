@@ -21,25 +21,29 @@ const useStyles = makeStyles(() => ({
     padding: '0 2em 10em'
   },
   button: {
-    background: green[400],
+    background: green[700],
+    color: 'white',
+    fontWeight: 'bold'
   }
 }));
 
 let countryById;
 let countryIds;
-const fetchCountriesByLang = (lang = 'en') => {
-  countries.registerLocale(require(`i18n-iso-countries/langs/${lang}.json`));
+const fetchCountriesByLang = (lang) => {
+  countries.registerLocale(require(`i18n-iso-countries/langs/en.json`));
+  if (lang && lang !== 'en')
+    countries.registerLocale(require(`i18n-iso-countries/langs/${lang}.json`));
   countryById = countries.getNames(lang, {select: "official"});
   countryIds = Object.keys(countryById);
 
 }
 
-export const RegistrationForm = ({display, id, onClose, onSubmit, isOpen, language}) => {
+export const RegistrationForm = ({user: {familyname, username, email, display}, id, onClose, onSubmit, isOpen, language}) => {
     const classes = useStyles();
     const [tens, setTens] = useState();
     const [city, setCity] = useState();
     const [country, setCountry] = useState();
-    const [gender, setGender] = useState('man');
+    const [gender, setGender] = useState();
     const [telephone, setTelephone] = useState();
     const [aboutYou, setAboutYou] = useState();
     const [ten, setTen] = useState();
@@ -65,11 +69,17 @@ export const RegistrationForm = ({display, id, onClose, onSubmit, isOpen, langua
     };
 
     const handleCityChange = ({target: {value}}) => {
-      errors.city && (delete errors.city);
+      deleteErrorByKey('city');
       setCity(value);
     };
-    const handleGenderChange = ({target: {value}}) => setGender(value);
-    const handleTelephoneChange = ({target: {value}}) => setTelephone(value);
+    const handleGenderChange = ({target: {value}}) => {
+      deleteErrorByKey('gender')
+      setGender(value);
+    }
+    const handleTelephoneChange = ({target: {value}}) => {
+      deleteErrorByKey('telephone')
+      setTelephone(value)
+    };
     const handleAboutYouChange = ({target: {value}}) => setAboutYou(value);
     const handleTenChange = (e, op) => {
       if (!op)
@@ -77,18 +87,27 @@ export const RegistrationForm = ({display, id, onClose, onSubmit, isOpen, langua
       setTen(op);
     };
     const handleCountryChange = (e, op) => {
-      errors.country && (delete errors.country);
+      deleteErrorByKey('country');
       if (!op)
         return;
       setCountry(op);
     };
 
     const handleLanguageChange = (e, op) => {
-      errors.language && (delete errors.language);
+      deleteErrorByKey('language');
       if (!op)
         return;
       setUserLanguage(op);
     };
+
+    const deleteErrorByKey = (key) => {
+      if (!errors[key])
+        return;
+      const newErr = {...errors}
+      delete newErr[key];
+      setErrors(newErr)
+    }
+
 
     const renderTens = () => {
       return tens && (
@@ -108,7 +127,7 @@ export const RegistrationForm = ({display, id, onClose, onSubmit, isOpen, langua
     };
 
     const renderCountries = () => {
-      return (
+      return countryIds && (
         <Autocomplete
           variant="outlined"
           value={country}
@@ -131,7 +150,7 @@ export const RegistrationForm = ({display, id, onClose, onSubmit, isOpen, langua
     };
 
     const renderLanguages = () => {
-      return (
+      return LANGUAGES && (
         <Autocomplete
           variant="outlined"
           value={userLanguage}
@@ -162,12 +181,13 @@ export const RegistrationForm = ({display, id, onClose, onSubmit, isOpen, langua
         onChange={handleGenderChange}
         value={gender}
         required
+        error={errors.gender}
       >
-        <MenuItem key="man" value="man">
-          {t('registration.man')}
+        <MenuItem key="male" value="male">
+          {t('registration.male')}
         </MenuItem>
-        <MenuItem key="woman" value="woman">
-          {t('registration.woman')}
+        <MenuItem key="female" value="female">
+          {t('registration.female')}
         </MenuItem>
       </TextField>
     );
@@ -204,21 +224,27 @@ export const RegistrationForm = ({display, id, onClose, onSubmit, isOpen, langua
       if (!city) e.city = true;
       if (!country) e.country = true;
       if (!userLanguage) e.language = true;
+      if (!telephone) e.telephone = true;
+      if (!gender) e.gender = true;
       setErrors(e);
       return Object.keys(e).length === 0;
     };
 
     const buildRequestBody = () => {
       const body = new FormData();
-      body.set(REGISTRATION_FORM_FIELDS.country, country.code);
+      console.log('buildRequestBody', countries.getName(country, "en", {select: "official"}))
+      body.set(REGISTRATION_FORM_FIELDS.country, countries.getName(country, "en", {select: "official"}));
       body.set(REGISTRATION_FORM_FIELDS.city, city);
       body.set(REGISTRATION_FORM_FIELDS.aboutYou, aboutYou);
       body.set(REGISTRATION_FORM_FIELDS.gender, gender);
       body.set(REGISTRATION_FORM_FIELDS.ten, ten);
       body.set(REGISTRATION_FORM_FIELDS.telephone, telephone);
-      body.set(REGISTRATION_FORM_FIELDS.language, userLanguage.code);
+      body.set(REGISTRATION_FORM_FIELDS.language, userLanguage.name);
       body.set(REGISTRATION_FORM_FIELDS.userId, id);
-      body.set(REGISTRATION_FORM_FIELDS.display, display);
+      body.set(REGISTRATION_FORM_FIELDS.firstName, username);
+      body.set(REGISTRATION_FORM_FIELDS.familyName, familyname);
+      body.set(REGISTRATION_FORM_FIELDS.email, email);
+      debugger
       return body;
     };
 
@@ -268,6 +294,8 @@ export const RegistrationForm = ({display, id, onClose, onSubmit, isOpen, langua
               onChange={handleTelephoneChange}
               value={telephone}
               fullWidth
+              required
+              error={errors.telephone}
             />
           </Grid>
           <Grid item xs={6}>
@@ -316,14 +344,17 @@ export const RegistrationForm = ({display, id, onClose, onSubmit, isOpen, langua
             <Grid item xs={7}>
               {renderForm()}
             </Grid>
-            <Grid item xs={5}>
+            <Grid item xs={1}>
+              <Divider variant="middle" orientation="vertical"/>
+            </Grid>
+            <Grid item xs={4}>
               <Grid container justify="flex-end">
                 <SelectViewLanguage size={'small'} fullWidth={false} hasLabel={false}/>
                 <Divider style={{marginRight: '2em'}}/>
                 <LogoutDropdown display={display}/>
               </Grid>
               <Box style={{marginTop: '10em'}}>
-                <Typography paragraph>
+                <Typography paragraph style={{fontSize: '1.2em'}}>
                   {t('registration.asGuestYouCan')}
                 </Typography>
                 <Grid container justify="center">

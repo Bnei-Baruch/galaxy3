@@ -1,7 +1,8 @@
 export const userRolesEnum = {
   none: null,
   ghost: 'ghost',
-  guest: 'guest',
-  pending_new_user: 'pending_new_user',
+  viewer: 'viewer',
+  new_user: 'new_user',
+  pending_approve: 'pending_approve',
   user: 'user'
 }

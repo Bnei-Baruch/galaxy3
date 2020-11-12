@@ -58,11 +58,11 @@ export const getUser = (callback) => {
         if(authenticated) {
             kc.loadUserProfile()
                 .then(profile => {
-                    const {realm_access: {roles},sub,given_name,name,email} = kc.tokenParsed;
+                    const {realm_access: {roles},sub,given_name,name,email,family_name} = kc.tokenParsed;
                     const {pending, request, timestamp: request_timestamp,group,title} = profile.attributes;
                     const user = {
                         name, email, pending, request, request_timestamp, roles,
-                        id: sub, username: given_name,
+                        id: sub, username: given_name, familyname: family_name,
                         display: title && !!title[0] ? title[0] : name,
                         group: group && !!group[0] ? group[0] : "",
                     };

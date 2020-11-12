@@ -8,20 +8,15 @@ import {
   Menu,
   Divider,
   ListItemSecondaryAction,
-  ClickAwayListener
+  Collapse
 } from '@material-ui/core';
 import {AccountBox, Close, ExitToApp, Feedback, Help, Menu as MenuIcon, Settings, Translate} from '@material-ui/icons';
+import {grey} from "@material-ui/core/colors";
+import makeStyles from "@material-ui/core/styles/makeStyles";
 
 import {kc} from '../../../components/UserManager';
 import {updateSentryUser} from '../../../shared/sentry';
 import {getLanguage, languagesOptions, setLanguage} from '../../../i18n/i18n';
-import Popper from "@material-ui/core/Popper";
-import {SelectLanguage} from "./SelectLanguage";
-import Fade from "@material-ui/core/Fade";
-import Paper from "@material-ui/core/Paper";
-import {grey} from "@material-ui/core/colors";
-import Collapse from "@material-ui/core/Collapse";
-import makeStyles from "@material-ui/core/styles/makeStyles";
 
 const helpUrlsByLang = {
   'en': 'https://bit.ly/2JkBU08',

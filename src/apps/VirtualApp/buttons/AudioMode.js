@@ -25,14 +25,13 @@ const useStyles = makeStyles({
 });
 
 const AudioMode = (props) => {
-  const {action, isOn, disabled, t} = props;
+  const {action, isOn, t} = props;
   const classes = useStyles();
 
   const handleAction = () => action(isOn);
 
   return (
     <ButtonBase
-      disabled={disabled}
       onClick={() => handleAction()}
       classes={{
         root: classes.button,

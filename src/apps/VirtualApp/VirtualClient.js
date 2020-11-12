@@ -213,10 +213,12 @@ class VirtualClient extends Component {
         return userRolesEnum.ghost;
       case kc.hasRealmRole('gxy_user'):
         return userRolesEnum.user;
-      case kc.hasRealmRole('new_user'):
-        return userRolesEnum.guest;
       case kc.hasRealmRole('gxy_pending_approval'):
-        return userRolesEnum.pending_new_user;
+        return userRolesEnum.pending_approve;
+      case kc.hasRealmRole('gxy_viewer'):
+        return userRolesEnum.viewer;
+      case kc.hasRealmRole('new_user'):
+        return userRolesEnum.new_user;
       default:
         return userRolesEnum.none
     }
@@ -235,7 +237,13 @@ class VirtualClient extends Component {
   };
 
   initApp = (user) => {
-    if (user.role === userRolesEnum.pending_new_user || user.role === userRolesEnum.guest) {
+    if (!isUseNewDesign && user.role !== userRolesEnum.user) {
+      const params = new URLSearchParams(window.location.search)
+      params.set('new_design', true)
+      window.location = window.location.pathname + "?" + params.toString();
+    }
+
+    if (user.role !== userRolesEnum.user) {
       const config = {
         'gateways': {
           'streaming': {
@@ -1640,7 +1648,6 @@ class VirtualClient extends Component {
               />
               <AudioMode
                 t={t}
-                disabled={user && (user.role === userRolesEnum.guest || user.role === userRolesEnum.pending_new_user)}
                 action={this.otherCamsMuteToggle.bind(this)}
                 isOn={muteOtherCams} />
             </ButtonGroup>
@@ -1666,7 +1673,7 @@ class VirtualClient extends Component {
           </Grid>
           <Grid item xs={1}></Grid>
           <Grid item xs={1} style={{display: 'flex', alignItems: 'center'}}>
-            {user && !(user.role === userRolesEnum.guest || user.role === userRolesEnum.pending_new_user) && (<ButtonMD
+            <ButtonMD
               onClick={() => this.exitRoom(false)}
               variant="contained"
               style={{
@@ -1678,8 +1685,7 @@ class VirtualClient extends Component {
               }}
             >
               {t('oldClient.leave')}
-            </ButtonMD>)
-            }
+            </ButtonMD>
           </Grid>
         </Grid>
       </AppBar>
@@ -1761,7 +1767,7 @@ class VirtualClient extends Component {
 
     const { user, asideMsgCounter, leftAsideName, rightAsideName, monitoringData, net_status, isOpenTopMenu } = this.state;
 
-    const notApproved = user && (user.role === userRolesEnum.guest || user.role === userRolesEnum.pending_new_user);
+    const notApproved = user && user.role !== userRolesEnum.user;
 
     return (
       <Box display="flex" style={{ justifyContent: 'space-between', flexWrap: 'nowrap' }} className="vclient__toolbar">
@@ -1922,7 +1928,7 @@ class VirtualClient extends Component {
             leftAsideName
           }           = this.state;
 
-    const notApproved = user && (user.role === userRolesEnum.guest || user.role === userRolesEnum.pending_new_user);
+    const notApproved = user && user.role !== userRolesEnum.user;
 
     return (
       <div className={classNames('vclient', {'vclient--chat-open': chatVisible})}>
@@ -2033,7 +2039,7 @@ class VirtualClient extends Component {
     }
 
     const {t, i18n} = this.props;
-    const notApproved = user && (user.role === userRolesEnum.guest || user.role === userRolesEnum.pending_new_user);
+    const notApproved = user && user.role !== userRolesEnum.user;
     const width = '134';
     const height = '100';
     const layout = (room === '' || !shidur || !attachedSource) ? 'equal' : currentLayout;
