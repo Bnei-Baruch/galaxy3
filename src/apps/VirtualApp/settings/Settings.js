@@ -118,10 +118,23 @@ const Settings = (props) => {
         value={rooms.find(op => op.room === selectedRoom)}
         options={rooms}
         getOptionLabel={(option) => option.description}
+        renderOption={
+          ({description, num_users}) => (
+            <Grid container>
+              <Grid item xs={11}>{description}</Grid>
+              <Grid item xs={1}>{num_users}</Grid>
+            </Grid>
+
+          )
+        }
         onChange={handleRoomChange}
         renderInput={
           (params) => (
-            <TextField {...params} label={t('oldClient.selectRoom')} variant="outlined"/>
+            <TextField
+              {...params}
+              variant="outlined"
+              label={t('oldClient.selectRoom')}
+            />
           )
         }
       />
