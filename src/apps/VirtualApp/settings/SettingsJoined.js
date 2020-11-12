@@ -15,8 +15,7 @@ import {
 import { AccountCircle, Close, Computer, Mic, Videocam } from '@material-ui/icons';
 import makeStyles from '@material-ui/core/styles/makeStyles';
 
-import { vsettings_list } from '../../../shared/consts';
-import { getLanguage, languagesOptions, setLanguage } from '../../../i18n/i18n';
+import {vsettings_list} from '../../../shared/consts';
 import MyMedia from './MyMedia';
 import CheckMySelf from './CheckMySelf';
 import {SelectLanguage} from '../components/SelectLanguage';

@@ -6,15 +6,13 @@ import {
   DialogActions,
   DialogContent,
   DialogContentText,
-  Dialog, Grid
+  Dialog,
+  Grid,
+  Chip
 } from '@material-ui/core';
 import {RegistrationForm} from './RegistrationForm';
-import {green} from '@material-ui/core/colors';
-import Box from '@material-ui/core/Box';
 import {userRolesEnum} from "../enums";
-import Chip from "@material-ui/core/Chip";
-import LogoutDropdown from "../settings/LogoutDropdown";
-import {Done} from "@material-ui/icons";
+import {ListAlt} from "@material-ui/icons";
 
 const modalStateEnum = {
   close: 1,
@@ -22,22 +20,23 @@ const modalStateEnum = {
   completed: 4
 };
 
-export const RegistrationModals = ({user: {display, role, id}, language, updateUserRole}) => {
+export const RegistrationModals = ({user, language, updateUserRole}) => {
   const [modalState, setModalState] = useState(modalStateEnum.close);
   const {t} = useTranslation();
+  const {role, id} = user;
 
   useEffect(() => {
-    if (!localStorage.getItem("notFirstEnter") && role === userRolesEnum.guest) {
+    if (!localStorage.getItem("notFirstEnter") && role === userRolesEnum.new_user) {
       setModalState(modalStateEnum.form);
       localStorage.setItem("notFirstEnter", 'true')
     }
-    if (role === userRolesEnum.pending_new_user) {
+    if (role === userRolesEnum.pending_approve) {
       setModalState(modalStateEnum.completed);
     }
   }, [role]);
 
 
-  if (role !== userRolesEnum.pending_new_user && role !== userRolesEnum.guest)
+  if (role !== userRolesEnum.pending_approve && role !== userRolesEnum.new_user)
     return null;
 
   const handleClose = () => {
@@ -61,7 +60,7 @@ export const RegistrationModals = ({user: {display, role, id}, language, updateU
             <Button
               onClick={handleClose}
             >
-              {t('galaxyApp.ok')}
+              {t('galaxyApp.close')}
             </Button>
           </Grid>
 
@@ -72,7 +71,7 @@ export const RegistrationModals = ({user: {display, role, id}, language, updateU
 
   const renderForm = () => (
     <RegistrationForm
-      display={display}
+      user={user}
       id={id}
       onSubmit={updateUserRole}
       onClose={handleClose}
@@ -86,14 +85,14 @@ export const RegistrationModals = ({user: {display, role, id}, language, updateU
       <Chip
         label={t('registration.youRegisteredAsGuest')}
         onDelete={() => setModalState(modalStateEnum.form)}
-        deleteIcon={<Done/>}
+        deleteIcon={<ListAlt/>}
       />
     </Grid>
   )
 
   return (
     <>
-      {role === userRolesEnum.guest && renderGoToComplete()}
+      {role === userRolesEnum.new_user && renderGoToComplete()}
       {(modalState === modalStateEnum.form) && renderForm()}
       {renderCompleted()}
     </>
