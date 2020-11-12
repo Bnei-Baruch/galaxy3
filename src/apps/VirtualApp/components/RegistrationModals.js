@@ -8,11 +8,13 @@ import {
   DialogContentText,
   Dialog,
   Grid,
-  Chip
+  Typography
 } from '@material-ui/core';
+import {blue, grey} from "@material-ui/core/colors";
+import makeStyles from "@material-ui/core/styles/makeStyles";
+
 import {RegistrationForm} from './RegistrationForm';
 import {userRolesEnum} from "../enums";
-import {ListAlt} from "@material-ui/icons";
 
 const modalStateEnum = {
   close: 1,
@@ -20,7 +22,19 @@ const modalStateEnum = {
   completed: 4
 };
 
+
+const useStyles = makeStyles(() => ({
+  linkContainer: {backgroundColor: grey[200], textAlign: "center"},
+  link: {
+    color: blue[500],
+    textDecoration: 'underline',
+    cursor: 'pointer'
+  },
+
+}));
+
 export const RegistrationModals = ({user, language, updateUserRole}) => {
+  const classes = useStyles();
   const [modalState, setModalState] = useState(modalStateEnum.close);
   const {t} = useTranslation();
   const {role, id} = user;
@@ -81,13 +95,10 @@ export const RegistrationModals = ({user, language, updateUserRole}) => {
   );
 
   const renderGoToComplete = () => (
-    <Grid container justify="center" style={{backgroundColor: "black"}}>
-      <Chip
-        label={t('registration.youRegisteredAsGuest')}
-        onDelete={() => setModalState(modalStateEnum.form)}
-        deleteIcon={<ListAlt/>}
-      />
-    </Grid>
+    <Typography className={classes.linkContainer} onClick={() => setModalState(modalStateEnum.form)}>
+      {t('registration.youRegisteredAsGuest')}
+      <span className={classes.link}>{t('registration.youRegisteredAsGuestLink')}</span>
+    </Typography>
   )
 
   return (

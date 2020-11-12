@@ -2,22 +2,21 @@ import React, {useEffect, useState} from 'react';
 import {useTranslation} from 'react-i18next';
 
 import makeStyles from '@material-ui/core/styles/makeStyles';
-import {Button, Modal, Typography, TextField, Grid, MenuItem, IconButton, Divider} from '@material-ui/core';
+import {Button, Modal, Typography, TextField, Grid, MenuItem, Divider} from '@material-ui/core';
 import Box from '@material-ui/core/Box';
 import Autocomplete from '@material-ui/lab/Autocomplete';
 
-import {green, grey} from '@material-ui/core/colors';
+import {green} from '@material-ui/core/colors';
 import {LANGUAGES} from './optionsData';
 import LogoutDropdown from '../settings/LogoutDropdown';
 import {REGISTRATION_FORM_FIELDS} from '../../../shared/env';
 import api from '../../../shared/Api';
 import countries from "i18n-iso-countries";
-import {Close} from "@material-ui/icons";
 import {SelectViewLanguage} from "./SelectViewLanguage";
 
 const useStyles = makeStyles(() => ({
   container: {
-    backgroundColor: grey[100],
+    backgroundColor: "white",
     padding: '0 2em 10em'
   },
   button: {
@@ -29,9 +28,9 @@ const useStyles = makeStyles(() => ({
 
 let countryById;
 let countryIds;
-const fetchCountriesByLang = (lang) => {
+const fetchCountriesByLang = (lang = 'en') => {
   countries.registerLocale(require(`i18n-iso-countries/langs/en.json`));
-  if (lang && lang !== 'en')
+  if (lang !== 'en')
     countries.registerLocale(require(`i18n-iso-countries/langs/${lang}.json`));
   countryById = countries.getNames(lang, {select: "official"});
   countryIds = Object.keys(countryById);
@@ -57,13 +56,13 @@ export const RegistrationForm = ({user: {familyname, username, email, display}, 
       fetchCountriesByLang(language);
     }, []);
 
-    const fetchRooms = () => {
-      api.fetchAvailableRooms()
-        .then(d => {
-          const _tens = d.rooms.map(r => r.description).filter(t => !t.match(/test|info/i));
-          setTens(_tens);
-        });
-    };
+  const fetchRooms = () => {
+    api.fetchAvailableRooms()
+      .then(d => {
+        const _tens = d.rooms.map(r => r.description).filter(t => !t.match(/test|info/i));
+        setTens(_tens);
+      }).catch(()=>setTens([]));
+  };
 
     const handleCityChange = ({target: {value}}) => {
       deleteErrorByKey('city');
@@ -329,46 +328,42 @@ export const RegistrationForm = ({user: {familyname, username, email, display}, 
         style={{verticalAlign: 'middle'}}
       >
 
-        <Box
-          className={classes.container}
-          maxWidth="md"
-          m={10}
-        >
-          <Grid container justify="flex-end">
-            <IconButton onClick={onClose}> <Close/> </IconButton>
+      <Box
+        className={classes.container}
+        maxWidth="md"
+        m={10}
+      >
+        <Grid container spacing={5}>
+          <Grid item xs={7}>
+            {renderForm()}
           </Grid>
-          <Grid container spacing={5}>
-            <Grid item xs={7}>
-              {renderForm()}
+          <Grid item xs={1}>
+            <Divider variant="middle" orientation="vertical"/>
+          </Grid>
+          <Grid item xs={4}>
+            <Grid container justify="flex-end">
+              <SelectViewLanguage size={'small'} fullWidth={false} hasLabel={false}/>
+              <Divider style={{marginRight: '2em'}}/>
+              <LogoutDropdown display={display}/>
             </Grid>
-            <Grid item xs={1}>
-              <Divider variant="middle" orientation="vertical"/>
-            </Grid>
-            <Grid item xs={4}>
-              <Grid container justify="flex-end">
-                <SelectViewLanguage size={'small'} fullWidth={false} hasLabel={false}/>
-                <Divider style={{marginRight: '2em'}}/>
-                <LogoutDropdown display={display}/>
+            <Box style={{marginTop: '10em'}}>
+              <Typography paragraph style={{fontSize: '1.2em'}}>
+                {t('registration.asGuestYouCan')}
+              </Typography>
+              <Grid container justify="center">
+                <Button
+                  variant="contained"
+                  onClick={onClose}
+                  className={classes.button}
+                >
+                  {t('galaxyApp.continueAsGuest')}
+                </Button>
               </Grid>
-              <Box style={{marginTop: '10em'}}>
-                <Typography paragraph style={{fontSize: '1.2em'}}>
-                  {t('registration.asGuestYouCan')}
-                </Typography>
-                <Grid container justify="center">
-                  <Button
-                    variant="contained"
-                    onClick={onClose}
-                    className={classes.button}
-                  >
-                    {t('galaxyApp.continueAsGuest')}
-                  </Button>
-                </Grid>
-              </Box>
-            </Grid>
+            </Box>
           </Grid>
-        </Box>
-      </Modal>
-    );
-  }
-;
+        </Grid>
+      </Box>
+    </Modal>
+  );
+}
 

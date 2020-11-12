@@ -164,7 +164,8 @@ export const resources = {
         needVerifyAccount: 'You successfully registered to Galaxy. In order to grant you with a full access, we will need to verify your account.',
         tellAboutYou: 'Please tell us about you:',
         asGuestYouCan: 'As a guest, you will be able to watch the broadcast. You won’t be able to participate in the workshops or ask questions live.',
-        youRegisteredAsGuest: 'You are now registered as a guest. To be granted full access, we need to verify your account. Please complete the registration.',
+        youRegisteredAsGuest: 'You are now registered as a guest. To be granted full access, we need to verify your account. ',
+        youRegisteredAsGuestLink: 'Please complete the registration.',
         toComplete: 'TO COMPLETE REGISTRATION',
         completed: 'Your registration is completed and will be verified soon. Meanwhile you can watch the broadcast.',
 
