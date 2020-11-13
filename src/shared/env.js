@@ -27,3 +27,4 @@ export const ADMIN_SECRET = process.env.REACT_APP_ADMIN_SECRET;
 export const ADMIN_SRV_STR1 = process.env.REACT_APP_ADMIN_SRV_STR1;
 
 export const STUDY_MATERIALS = process.env.REACT_APP_STUDY_MATERIALS;
+export const JANUS_ADMIN_GXY = process.env.REACT_APP_JANUS_ADMIN_GXY;

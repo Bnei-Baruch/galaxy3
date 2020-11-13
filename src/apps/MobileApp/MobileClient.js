@@ -835,6 +835,14 @@ class MobileClient extends Component {
             } else if(event === "event") {
                 if (msg['configured'] === 'ok') {
                   // User published own feed successfully.
+                  const user = {
+                    ...this.state.user,
+                    extra: {
+                      ...(this.state.user.extra || {}),
+                      streams: msg.streams
+                    }
+                  };
+                  this.setState({user});
                   if (this.state.muteOtherCams) {
                     this.camMute(/* cammuted= */ false);
                     this.setState({videos: NO_VIDEO_OPTION_VALUE});

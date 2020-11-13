@@ -46,6 +46,16 @@ export const notifyMe = (title, message, tout) => {
     }
 };
 
+export const randomString = (len) => {
+  let charSet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  let randomString = '';
+  for (let i = 0; i < len; i++) {
+    let randomPoz = Math.floor(Math.random() * charSet.length);
+    randomString += charSet.substring(randomPoz,randomPoz+1);
+  }
+  return randomString;
+};
+
 export const genUUID = () => {
     let dt = new Date().getTime();
     let uuid = 'vrtxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {

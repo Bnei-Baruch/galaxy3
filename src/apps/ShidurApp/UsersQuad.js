@@ -210,7 +210,7 @@ class UsersQuad extends Component {
 
   switchFullScreen = (i, group, is_qst) => {
     if(!group) return;
-    let {fullscr,index,question} = this.state;
+    let {fullscr, index, question} = this.state;
 
     if(question) return;
 
@@ -227,7 +227,7 @@ class UsersQuad extends Component {
 
   switchQuestion = (i, group, is_qst) => {
     if(!group) return;
-    let {fullscr,index,question,col} = this.state;
+    let {fullscr,index,question,col,room_qst} = this.state;
 
     if(fullscr && !question) return;
 
@@ -235,6 +235,15 @@ class UsersQuad extends Component {
     if(full_qst && full_col !== col) return;
 
     if(!this["cmd"+col+i].state.videoroom) return;
+
+    if(is_qst && room_qst === group.room) return;
+
+    if(is_qst) {
+      this.setState({room_qst: group.room})
+      setTimeout(() => {
+        this.setState({room_qst: null})
+      }, 2000);
+    }
 
     if(fullscr && index === i) {
       this.toFourGroup(i, group,() => {}, is_qst);

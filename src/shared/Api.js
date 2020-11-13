@@ -1,4 +1,5 @@
-import {API_BACKEND, AUTH_API_BACKEND,} from "./env";
+import {ADMIN_SECRET, API_BACKEND, AUTH_API_BACKEND, JANUS_ADMIN_GXY,} from "./env";
+import {randomString} from "./tools";
 
 class Api {
 
@@ -102,6 +103,12 @@ class Api {
         return this.logAndParse(`admin reset rooms statistics`, fetch(this.urlFor('/admin/rooms_statistics'), options));
     }
 
+    adminListParticipants = (request, name) => {
+        let payload = { "janus": "message_plugin", "transaction": randomString(12), "admin_secret": ADMIN_SECRET, plugin: "janus.plugin.videoroom", request};
+        const options = this.makeOptions('POST', payload);
+        return this.logAndParse(`admin list participants`, fetch(this.adminUrlFor(name), options));
+    }
+
     // Auth Helper API
 
     verifyUser = (pendingEmail, action) =>
@@ -115,6 +122,7 @@ class Api {
 
     urlFor = (path) => (API_BACKEND + path)
     authUrlFor = (path) => (AUTH_API_BACKEND + path)
+    adminUrlFor = (name) => ('https://' + name + JANUS_ADMIN_GXY)
 
     defaultOptions = () => {
         const auth = this.accessToken ?

@@ -312,6 +312,7 @@ class ShidurToran extends Component {
               <Segment className="group_segment" color='blue'>
                 <div className="shidur_overlay"><span>{ng.description}</span></div>
                 <UsersPreview pg={ng} {...this.props} next closePopup={this.closePopup} />
+                {/*<UsersHandle g={ng} {...this.props} next closePopup={this.closePopup} />*/}
               </Segment>
               : ""}
           </Segment>
@@ -374,6 +375,7 @@ class ShidurToran extends Component {
             {open ? <Segment className="group_segment" color='green'>
               <div className="shidur_overlay"><span>{group ? group.description : ""}</span></div>
               <UsersPreview pg={this.state.pg} {...this.props} closePopup={this.closePopup} />
+              {/*<UsersHandle g={this.state.pg} {...this.props} preview closePopup={this.closePopup} />*/}
             </Segment> : ""}
           </Segment>
           <Segment textAlign='center' >
