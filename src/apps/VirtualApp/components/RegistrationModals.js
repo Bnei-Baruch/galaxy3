@@ -38,6 +38,7 @@ export const RegistrationModals = ({user, language, updateUserRole}) => {
   const [modalState, setModalState] = useState(modalStateEnum.close);
   const {t} = useTranslation();
   const {role, id} = user;
+  const direction = language === 'he' ? 'rtl' : '';
 
   useEffect(() => {
     if (!localStorage.getItem("notFirstEnter") && role === userRolesEnum.new_user) {
@@ -63,6 +64,7 @@ export const RegistrationModals = ({user, language, updateUserRole}) => {
       <Dialog
         open={modalState === modalStateEnum.completed}
         onClose={handleClose}
+        dir={direction}
       >
         <DialogContent>
           <DialogContentText>
@@ -95,7 +97,11 @@ export const RegistrationModals = ({user, language, updateUserRole}) => {
   );
 
   const renderGoToComplete = () => (
-    <Typography className={classes.linkContainer} onClick={() => setModalState(modalStateEnum.form)}>
+    <Typography
+      className={classes.linkContainer}
+      onClick={() => setModalState(modalStateEnum.form)}
+      dir={direction}
+    >
       {t('registration.youRegisteredAsGuest')}
       <span className={classes.link}>{t('registration.youRegisteredAsGuestLink')}</span>
     </Typography>

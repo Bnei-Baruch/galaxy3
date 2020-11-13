@@ -50,8 +50,10 @@ export const RegistrationForm = ({user: {familyname, username, email, display}, 
 
     const [userLanguage, setUserLanguage] = useState();
     const {t} = useTranslation();
+    const direction = language === 'he' ? 'rtl' : '';
 
-    useEffect(() => {
+
+  useEffect(() => {
       fetchRooms();
     }, []);
 
@@ -329,6 +331,7 @@ export const RegistrationForm = ({user: {familyname, username, email, display}, 
         onClose={onClose}
         disableBackdropClick
         style={{verticalAlign: 'middle'}}
+        dir={direction}
       >
 
       <Box
