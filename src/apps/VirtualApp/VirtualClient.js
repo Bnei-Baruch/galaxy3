@@ -215,7 +215,7 @@ class VirtualClient extends Component {
         return userRolesEnum.user;
       case kc.hasRealmRole('gxy_pending_approval'):
         return userRolesEnum.pending_approve;
-      case kc.hasRealmRole('gxy_viewer'):
+      case kc.hasRealmRole('gxy_guest'):
         return userRolesEnum.viewer;
       case kc.hasRealmRole('new_user'):
         return userRolesEnum.new_user;
