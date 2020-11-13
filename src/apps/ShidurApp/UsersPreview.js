@@ -41,18 +41,19 @@ class UsersPreview extends Component {
   attachPreview = (g) => {
     api.adminListParticipants({request: "listparticipants", room: g.room}, g.janus)
       .then(data => {
-        let list = data.response.participants.filter(p => p.publisher);
-        console.log(list);
-        console.log(g.users);
+        let list = data.response.participants.filter(p => p.publisher && (JSON.parse(p.display).role === "user"));
         if(list.length === 0) {
           console.error("- No feeds to show -");
         }
         this.setState({room: g.room}, () => {
           let subscription = [];
+          let mid = "1";
           for (let i in list) {
             let feed = list[i].id;
-            let user = g.users.find(u => u.rfid === feed);
-            let mid = !user ? "1" : user.extra?.media?.audio?.audio_device ? "1" : "0";
+            let user = g.users && g.users.find(u => u.rfid === feed);
+            if(user) {
+              mid = user.extra && user.extra.streams && user.extra.streams[0].type === "audio" ? "1" : "0";
+            }
             let subst = {feed, mid};
             if(user && user.camera) {
               subscription.push(subst);
