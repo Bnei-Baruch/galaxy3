@@ -48,11 +48,14 @@ class UsersPreview extends Component {
         this.setState({room: g.room}, () => {
           let subscription = [];
           //FIXME: If user not found in DB we can not know which mid is video from this request
+          // We skip these users
           let mid = "1";
           for (let i in list) {
             let feed = list[i].id;
             // Check if feed is in DB
             let user = g.users && g.users.find(u => u.rfid === feed);
+            // User not in DB - skip
+            if(!user) continue;
             // Check which mid is video
             if(user && user.extra && user.extra.streams) {
               // User does not have video - skip
@@ -63,9 +66,6 @@ class UsersPreview extends Component {
             }
             let subst = {feed, mid};
             if(user && user.camera) {
-              subscription.push(subst);
-            }
-            if(!user) {
               subscription.push(subst);
             }
           }
