@@ -1,23 +1,33 @@
-import React, {useEffect, useState} from 'react';
-import {useTranslation} from 'react-i18next';
+import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import makeStyles from '@material-ui/core/styles/makeStyles';
-import {Button, Modal, Typography, TextField, Grid, MenuItem, Divider} from '@material-ui/core';
+import { Button, Modal, Typography, TextField, Grid, MenuItem, Divider } from '@material-ui/core';
 import Box from '@material-ui/core/Box';
 import Autocomplete from '@material-ui/lab/Autocomplete';
 
-import {green} from '@material-ui/core/colors';
-import {LANGUAGES} from './optionsData';
+import { green } from '@material-ui/core/colors';
+import { LANGUAGES } from './optionsData';
 import LogoutDropdown from '../settings/LogoutDropdown';
-import {REGISTRATION_FORM_FIELDS} from '../../../shared/env';
+import { REGISTRATION_FORM_FIELDS } from '../../../shared/env';
 import api from '../../../shared/Api';
-import countries from "i18n-iso-countries";
-import {SelectViewLanguage} from "./SelectViewLanguage";
-import CircularProgress from "@material-ui/core/CircularProgress";
+import countries from 'i18n-iso-countries';
+import { SelectViewLanguage } from './SelectViewLanguage';
+import CircularProgress from '@material-ui/core/CircularProgress';
+
+import { MuiThemeProvider, createMuiTheme } from '@material-ui/core/styles';
+import RTL from './RTL';
+
+const rtlTheme = createMuiTheme({
+  direction: 'rtl',
+});
+const ltrTheme = createMuiTheme({
+  direction: 'ltr',
+});
 
 const useStyles = makeStyles(() => ({
   container: {
-    backgroundColor: "white",
+    backgroundColor: 'white',
     padding: '0 2em 10em'
   },
   button: {
@@ -33,27 +43,27 @@ const fetchCountriesByLang = (lang = 'en') => {
   countries.registerLocale(require(`i18n-iso-countries/langs/en.json`));
   if (lang !== 'en')
     countries.registerLocale(require(`i18n-iso-countries/langs/${lang}.json`));
-  countryById = countries.getNames(lang, {select: "official"});
-  countryIds = Object.keys(countryById);
+  countryById = countries.getNames(lang, { select: 'official' });
+  countryIds  = Object.keys(countryById);
 
-}
+};
 
-export const RegistrationForm = ({user: {familyname, username, email, display}, id, onClose, onSubmit, isOpen, language}) => {
-  const classes = useStyles();
-  const [tens, setTens] = useState();
-  const [city, setCity] = useState();
-  const [country, setCountry] = useState();
-  const [gender, setGender] = useState();
-  const [telephone, setTelephone] = useState();
-  const [aboutYou, setAboutYou] = useState();
-  const [ten, setTen] = useState();
-  const [errors, setErrors] = useState({});
+export const RegistrationForm = ({ user: { familyname, username, email, display }, id, onClose, onSubmit, isOpen, language }) => {
+  const classes                     = useStyles();
+  const [tens, setTens]             = useState();
+  const [city, setCity]             = useState();
+  const [country, setCountry]       = useState();
+  const [gender, setGender]         = useState();
+  const [telephone, setTelephone]   = useState();
+  const [aboutYou, setAboutYou]     = useState();
+  const [ten, setTen]               = useState();
+  const [errors, setErrors]         = useState({});
   const [isProgress, setIsProgress] = useState(false);
 
   const [userLanguage, setUserLanguage] = useState();
-  const {t} = useTranslation();
-  const direction = language === 'he' ? 'rtl' : '';
+  const { t }                           = useTranslation();
 
+  const isRtl = language === 'he';
 
   useEffect(() => {
     fetchRooms();
@@ -71,25 +81,25 @@ export const RegistrationForm = ({user: {familyname, username, email, display}, 
       }).catch(() => setTens([]));
   };
 
-  const handleCityChange = ({target: {value}}) => {
+  const handleCityChange      = ({ target: { value } }) => {
     deleteErrorByKey('city');
     setCity(value);
   };
-  const handleGenderChange = ({target: {value}}) => {
-    deleteErrorByKey('gender')
+  const handleGenderChange    = ({ target: { value } }) => {
+    deleteErrorByKey('gender');
     setGender(value);
-  }
-  const handleTelephoneChange = ({target: {value}}) => {
-    deleteErrorByKey('telephone')
-    setTelephone(value)
   };
-  const handleAboutYouChange = ({target: {value}}) => setAboutYou(value);
-  const handleTenChange = (e, op) => {
+  const handleTelephoneChange = ({ target: { value } }) => {
+    deleteErrorByKey('telephone');
+    setTelephone(value);
+  };
+  const handleAboutYouChange  = ({ target: { value } }) => setAboutYou(value);
+  const handleTenChange       = (e, op) => {
     if (!op)
       return;
     setTen(op);
   };
-  const handleCountryChange = (e, op) => {
+  const handleCountryChange   = (e, op) => {
     deleteErrorByKey('country');
     if (!op)
       return;
@@ -106,11 +116,10 @@ export const RegistrationForm = ({user: {familyname, username, email, display}, 
   const deleteErrorByKey = (key) => {
     if (!errors[key])
       return;
-    const newErr = {...errors}
+    const newErr = { ...errors };
     delete newErr[key];
-    setErrors(newErr)
-  }
-
+    setErrors(newErr);
+  };
 
   const renderTens = () => {
     return tens && (
@@ -122,7 +131,7 @@ export const RegistrationForm = ({user: {familyname, username, email, display}, 
         onChange={handleTenChange}
         renderInput={
           (params) => (
-            <TextField {...params} label={t('registration.selectGroup')} variant="outlined"/>
+            <TextField {...params} label={t('registration.selectGroup')} variant="outlined" />
           )
         }
       />
@@ -239,8 +248,8 @@ export const RegistrationForm = ({user: {familyname, username, email, display}, 
 
   const buildRequestBody = () => {
     const body = new FormData();
-    console.log('buildRequestBody', countries.getName(country, "en", {select: "official"}))
-    body.set(REGISTRATION_FORM_FIELDS.country, countries.getName(country, "en", {select: "official"}));
+    console.log('buildRequestBody', countries.getName(country, 'en', { select: 'official' }));
+    body.set(REGISTRATION_FORM_FIELDS.country, countries.getName(country, 'en', { select: 'official' }));
     body.set(REGISTRATION_FORM_FIELDS.city, city);
     body.set(REGISTRATION_FORM_FIELDS.aboutYou, aboutYou);
     body.set(REGISTRATION_FORM_FIELDS.gender, gender);
@@ -256,7 +265,7 @@ export const RegistrationForm = ({user: {familyname, username, email, display}, 
   };
 
   const updateKCStatus = async () => {
-    const opt = api.defaultOptions();
+    const opt  = api.defaultOptions();
     opt.method = 'POST';
     return await fetch('https://acc.kli.one/api/pending', opt);
   };
@@ -264,7 +273,7 @@ export const RegistrationForm = ({user: {familyname, username, email, display}, 
   const renderForm = () => (
     <>
       <Typography variant="h4" display={'block'} paragraph>
-        {t('registration.welcome', {name: display})}
+        {t('registration.welcome', { name: display })}
       </Typography>
       <Typography paragraph>
         {t('registration.needVerifyAccount')}
@@ -327,7 +336,7 @@ export const RegistrationForm = ({user: {familyname, username, email, display}, 
           >
             {t('registration.submit')}
             {
-              isProgress ? <CircularProgress/> : null
+              isProgress ? <CircularProgress /> : null
             }
           </Button>
         </Grid>
@@ -340,46 +349,49 @@ export const RegistrationForm = ({user: {familyname, username, email, display}, 
       open={isOpen}
       onClose={onClose}
       disableBackdropClick
-      style={{verticalAlign: 'middle'}}
-      dir={direction}
+      style={{ verticalAlign: 'middle' }}
     >
-
-      <Box
-        className={classes.container}
-        maxWidth="md"
-        m={10}
-      >
-        <Grid container spacing={5}>
-          <Grid item xs={7}>
-            {renderForm()}
-          </Grid>
-          <Grid item xs={1}>
-            <Divider variant="middle" orientation="vertical"/>
-          </Grid>
-          <Grid item xs={4}>
-            <Grid container justify="flex-end">
-              <SelectViewLanguage size={'small'} fullWidth={false} hasLabel={false}/>
-              <Divider style={{marginRight: '2em'}}/>
-              <LogoutDropdown display={display}/>
-            </Grid>
-            <Box style={{marginTop: '10em'}}>
-              <Typography paragraph style={{fontSize: '1.2em'}}>
-                {t('registration.asGuestYouCan')}
-              </Typography>
-              <Grid container justify="center">
-                <Button
-                  variant="contained"
-                  onClick={onClose}
-                  className={classes.button}
-                >
-                  {t('galaxyApp.continueAsGuest')}
-                </Button>
+      <RTL>
+        <MuiThemeProvider theme={isRtl ? rtlTheme : ltrTheme}>
+          <Box
+            className={classes.container}
+            maxWidth="md"
+            dir={isRtl ? 'rtl' : 'ltr'}
+            m={10}
+          >
+            <Grid container spacing={5}>
+              <Grid item xs={7}>
+                {renderForm()}
               </Grid>
-            </Box>
-          </Grid>
-        </Grid>
-      </Box>
+              <Grid item xs={1}>
+                <Divider variant="middle" orientation="vertical" />
+              </Grid>
+              <Grid item xs={4}>
+                <Grid container justify="flex-end">
+                  <SelectViewLanguage size={'small'} fullWidth={false} hasLabel={false} />
+                  <Divider style={{ marginRight: '2em' }} />
+                  <LogoutDropdown display={display} />
+                </Grid>
+                <Box style={{ marginTop: '10em' }}>
+                  <Typography paragraph style={{ fontSize: '1.2em' }}>
+                    {t('registration.asGuestYouCan')}
+                  </Typography>
+                  <Grid container justify="center">
+                    <Button
+                      variant="contained"
+                      onClick={onClose}
+                      className={classes.button}
+                    >
+                      {t('galaxyApp.continueAsGuest')}
+                    </Button>
+                  </Grid>
+                </Box>
+              </Grid>
+            </Grid>
+          </Box>
+        </MuiThemeProvider>
+      </RTL>
     </Modal>
   );
-}
+};
 
