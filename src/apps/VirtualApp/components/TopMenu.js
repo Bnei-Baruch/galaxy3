@@ -92,7 +92,6 @@ export const TopMenu = ({ t, openSettings, open = false, setOpen }) => {
         edge="start"
         color="inherit"
         onClick={() => toggleMenu(true)}
-        style={{ margin: '0 1em' }}
         ref={anchorRef}
       >
         {open ? <Close /> : <MenuIcon />}

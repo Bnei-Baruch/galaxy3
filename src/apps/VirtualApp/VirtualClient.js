@@ -53,9 +53,12 @@ import fullModeSvg from '../../shared/full-mode.svg';
 import ConfigStore from '../../shared/ConfigStore';
 import {GuaranteeDeliveryManager} from '../../shared/GuaranteeDelivery';
 
-import {AppBar, Badge, Box, Button as ButtonMD, ButtonGroup, Grid, IconButton} from '@material-ui/core';
+import {AppBar, Badge, Box, Button as ButtonMD, ButtonGroup, Grid, IconButton, Toolbar, Typography} from '@material-ui/core';
 import {ChevronLeft, ChevronRight} from '@material-ui/icons';
-import {grey, red} from '@material-ui/core/colors';
+
+
+
+
 
 import {AskQuestion, AudioMode, CloseBroadcast, Layout, Mute, MuteVideo, Vote} from './buttons';
 import Settings from './settings/Settings';
@@ -1519,17 +1522,23 @@ class VirtualClient extends Component {
     const { audio_device } = media.audio;
 
     return (
-      <AppBar position="sticky" color="transparent" style={{
+      <AppBar
+        position="sticky"
+        color="default"
+        
+        style={{
         top: 'auto',
         bottom: 0,
-        fontSize: '0.7rem',
-        backgroundColor: 'black'
+        // fontSize: '0.7rem',
+        // backgroundColor: 'black'
       }}>
-        <Grid container spacing={0}>
-          <Grid item xs={2}>
+        <Toolbar className="bottom-toolbar">
             <ButtonGroup
               variant="contained"
-              style={{ color: grey[50], marginLeft: '2em' }}
+              // style={{ color: grey[50], marginLeft: '2em' }}
+              className={classNames('bottom-toolbar__item')}
+              disableElevation
+              
             >
               <Mute
                 t={t}
@@ -1544,12 +1553,14 @@ class VirtualClient extends Component {
                 isOn={cammuted}
               />
             </ButtonGroup>
-          </Grid>
-          <Grid item xs={1}></Grid>
-          <Grid item xs={3}>
-            <ButtonGroup
+
+            {/* ~~~~~~~~~~~ */}
+ 
+              <ButtonGroup
+              className={classNames('bottom-toolbar__item')}
               variant="contained"
-              style={{ color: grey[50] }}
+              disableElevation
+              // style={{ color: grey[50] }}
             >
               <CloseBroadcast
                 t={t}
@@ -1569,44 +1580,44 @@ class VirtualClient extends Component {
                 action={this.otherCamsMuteToggle.bind(this)}
                 isOn={muteOtherCams} />
             </ButtonGroup>
-          </Grid>
-          <Grid item xs={1}></Grid>
-          <Grid item xs={3}>
-            <ButtonGroup
+          
+              <ButtonGroup
+              className={classNames('bottom-toolbar__item')}
               variant="contained"
-              style={{ color: grey[50] }}
-            >
+              disableElevation
+              // style={{ color: grey[50] }}
+              >
               <AskQuestion
                 t={t}
                 isOn={!!question}
                 disabled={premodStatus || !audio_device || !localAudioTrack || delay || otherFeedHasQuestion}
                 action={this.handleQuestion.bind(this)}
-              />
+                />
               <Vote
                 t={t}
                 id={user?.id}
                 disabled={!user || !user.id || room === ''}
-              />
+                />
             </ButtonGroup>
-          </Grid>
-          <Grid item xs={1}></Grid>
-          <Grid item xs={1} style={{ display: 'flex', alignItems: 'center' }}>
+     
             <ButtonMD
               onClick={() => this.exitRoom(false)}
               variant="contained"
-              style={{
-                marginRight: '1em',
-                backgroundColor: red[500],
-                fontWeight: 'bold',
-                color: 'white',
-                textTransform: 'none'
-              }}
+              color="secondary"
+              className={classNames('bottom-toolbar__item')}
+              disableElevation
+              // style={{
+              //   marginRight: '1em',
+              //   backgroundColor: red[500],
+              //   fontWeight: 'bold',
+              //   color: 'white',
+              //   textTransform: 'none'
+              // }}
             >
               {t('oldClient.leave')}
             </ButtonMD>
-          </Grid>
-        </Grid>
-      </AppBar>
+        </Toolbar>
+        </AppBar>
     );
   };
 
@@ -1687,7 +1698,114 @@ class VirtualClient extends Component {
     const { user, asideMsgCounter, leftAsideName, rightAsideName, monitoringData, net_status, isOpenTopMenu } = this.state;
 
     return (
-      <Box display="flex" style={{ justifyContent: 'space-between', flexWrap: 'nowrap' }} className="vclient__toolbar">
+      <Box>
+      <AppBar color="default">
+        <Toolbar className="top-toolbar">
+          <TopMenu
+            t={t}
+            openSettings={() => this.setState({ isSettings: true })}
+            open={isOpenTopMenu}
+            setOpen={(isOpen) => this.setState({ isOpenTopMenu: isOpen })}
+          />
+          <ButtonMD
+            color="primary"
+            variant="contained"
+            onClick={() => window.open('https://virtualhome.kli.one', '_blank')}
+            className="top-toolbar__item"
+            disableElevation
+          >
+            {t('loginPage.userFee')}
+          </ButtonMD>
+
+
+
+
+
+
+
+
+
+          <ButtonGroup
+            variant="outlined"
+            disableElevation
+            className={classNames('top-toolbar__item', 'top-toolbar__toggle')}
+          >
+            <Badge
+              color="secondary"
+              badgeContent={asideMsgCounter.drawing}
+              showZero={true}
+            >
+              <ButtonMD
+                color='default'
+                variant={leftAsideName === 'drawing' ? 'contained' : 'outlined'}
+                onClick={() => this.toggleLeftAside('drawing')}
+                disableElevation
+              >
+                {t('oldClient.drawing')}
+              </ButtonMD>
+            </Badge>
+            <ButtonMD
+              variant={leftAsideName === 'material' ? 'contained' : 'outlined'}
+              onClick={() => this.toggleLeftAside('material')}
+            >
+              {t('oldClient.material')}
+            </ButtonMD>
+          </ButtonGroup>
+          <Typography variant="h6" align="center" className={classNames('top-toolbar__item','top-toolbar__title')}>
+            {user?.group}
+          </Typography>
+
+
+
+          {/* ---------- */}
+          <ButtonGroup
+            variant="outlined"
+            disableElevation
+            className={classNames('top-toolbar__item', 'top-toolbar__toggle')}
+          >
+            <Badge
+              color="secondary"
+              badgeContent={asideMsgCounter.chat}
+              showZero={true}
+            >
+              <ButtonMD
+                variant={rightAsideName === 'chat' ? 'contained' : 'outlined'}
+                onClick={() => {
+                  this.toggleRightAside('chat');
+                  this.setState({ isRoomChat: true });
+                }}
+                disableElevation
+              >
+                {t('oldClient.chat')}
+              </ButtonMD>
+            </Badge>
+            <ButtonMD
+              onClick={() => {
+                this.toggleRightAside('support');
+                this.setState({ isRoomChat: false });
+              }}
+              variant={rightAsideName === 'support' ? 'contained' : 'outlined'}
+            >
+              {t('oldClient.support')}
+            </ButtonMD>
+            <ButtonMD
+              onClick={() => this.toggleRightAside('question')}
+              variant={rightAsideName === 'question' ? 'contained' : 'outlined'}
+            >
+              {t('oldClient.sendQuestion')}
+            </ButtonMD>
+
+            {!isDeb ? null :
+              <ButtonMD onClick={sentryDebugAction}>
+                Sentry
+              </ButtonMD>
+            }
+          </ButtonGroup>
+          {/* ---------- */}
+             
+        </Toolbar>
+      </AppBar>
+      {/* <Box display="flex" style={{ justifyContent: 'space-between', flexWrap: 'nowrap' }} className="vclient__toolbar">
         <Box display="flex" style={{ flexWrap: 'nowrap', alignItems: 'center' }}>
           <TopMenu
             t={t}
@@ -1704,27 +1822,33 @@ class VirtualClient extends Component {
             {t('loginPage.userFee')}
           </ButtonMD>
           <Box>
-            <Badge
-              color="secondary"
-              badgeContent={asideMsgCounter.drawing}
-              showZero={false}
-
-            >
+            <ButtonGroup>
+      
               <ButtonMD
-                variant={leftAsideName === 'drawing' ? 'outlined' : 'contained'}
-                size="small"
+                color={leftAsideName === 'drawing' ? 'primary' : 'default'}
+                disableElevation
                 onClick={() => this.toggleLeftAside('drawing')}
+                variant="contained"
               >
                 {t('oldClient.drawing')}
+                <Badge
+              color="secondary"
+              badgeContent={asideMsgCounter.drawing}
+              showZero={true}
+
+            >
+                 </Badge>
               </ButtonMD>
-            </Badge>
+         
             <ButtonMD
-              size="small"
+              disableElevation
               onClick={() => this.toggleLeftAside('material')}
-              variant={leftAsideName === 'material' ? 'outlined' : 'contained'}
+              color={leftAsideName === 'material' ? 'primary' : 'default'}
+              variant="contained"
             >
               {t('oldClient.material')}
             </ButtonMD>
+            </ButtonGroup>
           </Box>
         </Box>
 
@@ -1782,6 +1906,7 @@ class VirtualClient extends Component {
             (
               <Label color={net_status === 2 ? 'yellow' : net_status === 3 ? 'red' : 'green'} icon='wifi' corner='right' />)}
         </>
+      </Box> */}
       </Box>
     );
   };

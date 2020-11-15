@@ -1,55 +1,34 @@
-import React, { useRef } from 'react';
+import React, {useRef} from 'react';
+import {ButtonGroup, Tooltip, IconButton, Popover, SvgIcon} from '@material-ui/core';
 
-import { Box, Popper, Paper, ButtonGroup, ButtonBase, Button, ClickAwayListener } from '@material-ui/core';
-import { makeStyles } from '@material-ui/core/styles';
-
-const useStyles = makeStyles({
-  label: {
-    width: '100%',
-    display: 'block',
-    marginTop: '9px',
-    whiteSpace: 'nowrap'
-  },
-  disabled: {
-    opacity: 0.5
-  },
-  button: {
-    display: 'flex',
-    flexDirection: 'column',
-    margin: '0.5em 1em'
-  },
-  icon: {
-    fontSize: '1.8em !important',
-  },
-  popupIcon: {
-    lineHeight: '1em'
-  },
-  popup: {
-    zIndex: 100
-  },
-});
-
-const getLayoutIcon = (layout) => {
-  switch (layout) {
-  case 'double':
-    return 'layout-double';
-  case 'split':
-    return 'layout-split';
-  default:
-    return 'layout-equal';
-  }
-};
+function EqualIcon(){
+  return (
+    <SvgIcon>
+      <path d="M2 5H8V9H2V5Z M2 10H8V14H2V10Z M8 15H2V19H8V15Z M9 5H15V9H9V5Z M15 10H9V14H15V10Z M9 15H15V19H9V15Z M22 5H16V9H22V5Z M16 10H22V14H16V10Z M22 15H16V19H22V15Z"/>
+    </SvgIcon>
+  )
+}
+function DoubleIcon(){
+  return (
+    <SvgIcon>
+      <path d="M15 5H2V14H15V5Z M8 15H2V19H8V15Z M9 15H15V19H9V15Z M22 5H16V9H22V5Z M16 10H22V14H16V10Z M22 15H16V19H22V15Z"/>
+    </SvgIcon>
+  )
+}
+function SplitIcon(){
+  return (
+    <SvgIcon>
+      <path d="M2 5H12V19H2V5Z M13 15H17V19H13V15Z M17 10H13V14H17V10Z M13 5H17V9H13V5Z M22 15H18V19H22V15Z M18 10H22V14H18V10Z M22 5H18V9H22V5Z"/>
+    </SvgIcon>
+  )
+}
 
 const Layout = (props) => {
-  const { disabled, t, iconDisabled, action, active } = props;
-
-  const classes         = useStyles();
+  const { disabled, t, action, active } = props;
   const [open, setOpen] = React.useState(false);
-
   const anchorRef = useRef();
-
+  
   const handleMenuItemClick = (type) => {
-
     console.log('layout type', type);
     action(type);
     setOpen(false);
@@ -63,59 +42,57 @@ const Layout = (props) => {
     if (anchorRef.current && anchorRef.current.contains(event.target)) {
       return;
     }
-
     setOpen(false);
   };
 
-  const getButtonByName = (name) => (
-    <Button
+  const getButtonByName = (name) => {
+    return(
+    <IconButton
       onClick={() => handleMenuItemClick(name)}
-      variant={active === name ? 'outlined' : ''}
-      disabled={iconDisabled}
-    >
-      <Box component="i" className={`icon icon--custom layout-${name} ${classes.icon} ${classes.popupIcon}`} />
-    </Button>
-  );
+      >
+      {name === 'double' && <DoubleIcon />}
+      {name === 'split' && <SplitIcon />}
+      {name === 'equal' && <EqualIcon />}
+    </IconButton>
+    );
+  };
 
-  const renderPopup = () => (
-    <Popper
-      open={open}
-      anchorEl={anchorRef.current}
-      onClose={handleClose}
-      className={classes.popup}
-    >
-      <Paper>
-        <ClickAwayListener onClickAway={handleClose}>
-          {
+  return (
+    <div>
+      <Tooltip title={t('oldClient.layout')} >
+        <IconButton
+          aria-label={t('oldClient.layout')}
+          disabled={disabled}
+          onClick={handleToggle}
+          ref={anchorRef}
+          >
+          {active === 'double' && <DoubleIcon />}
+          {active === 'split' && <SplitIcon />}
+          {active === 'equal' && <EqualIcon />}
+        </IconButton>
+      </Tooltip>
+      <Popover
+        open={open}
+        anchorEl={anchorRef.current}
+        onClose={handleClose}
+        anchorOrigin={{
+          vertical: 'top',
+          horizontal: 'center',
+        }}
+        transformOrigin={{
+          vertical: 'bottom',
+          horizontal: 'center',
+        }}>
+          <ButtonGroup>
             <ButtonGroup variant="contained" color="default">
               {getButtonByName('double')}
               {getButtonByName('split')}
               {getButtonByName('equal')}
             </ButtonGroup>
-          }
-        </ClickAwayListener>
-      </Paper>
-    </Popper>
+          </ButtonGroup>
+      </Popover>
+   </div>
   );
-
-  return (
-    <ButtonBase
-      ref={anchorRef}
-      variant="contained"
-      color="secondary"
-      disabled={disabled}
-      onClick={handleToggle}
-      classes={{
-        root: classes.button,
-        disabled: classes.disabled
-      }}
-    >
-      <Box component="i" className={`icon icon--custom ${getLayoutIcon(active)} ${classes.icon}`} />
-      <span className={classes.label}>{t('oldClient.layout')}</span>
-      {renderPopup()}
-    </ButtonBase>
-  );
-
 };
 
 export { Layout };
