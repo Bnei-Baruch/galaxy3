@@ -9,7 +9,7 @@ import Autocomplete from '@material-ui/lab/Autocomplete';
 import { green } from '@material-ui/core/colors';
 import { LANGUAGES } from './optionsData';
 import LogoutDropdown from '../settings/LogoutDropdown';
-import { REGISTRATION_FORM_FIELDS } from '../../../shared/env';
+import { REGISTRATION_FORM_FIELDS, REGISTRATION_FORM_URL } from '../../../shared/env';
 import api from '../../../shared/Api';
 import countries from 'i18n-iso-countries';
 import { SelectViewLanguage } from './SelectViewLanguage';
@@ -216,7 +216,7 @@ export const RegistrationForm = ({ user: { familyname, username, email, display 
         body: buildRequestBody(),
         mode: 'no-cors'
       };
-      await fetch('https://docs.google.com/forms/u/0/d/e/1FAIpQLSdQZ1TZ2WihdhyuWrT7mVT8AoTHfX4dNjYtEoB5HBFP_9HttA/formResponse', formOpt);
+      await fetch(REGISTRATION_FORM_URL, formOpt);
     } catch (e) {
       (e.status === 403) && (hasError = true);
     }
