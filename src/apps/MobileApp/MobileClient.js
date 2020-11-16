@@ -15,7 +15,7 @@ import {
   VIDEO_240P_OPTION_VALUE,
   vsettings_list,
 } from "../../shared/consts";
-import {GEO_IP_INFO} from "../../shared/env";
+import { APP_JANUS_SRV_STR1, APP_STUN_SRV_STR, GEO_IP_INFO } from '../../shared/env';
 import platform from "platform";
 import {isMobile} from 'react-device-detect';
 import {withTranslation} from 'react-i18next';
@@ -29,7 +29,7 @@ import {
   MonitoringData
 } from '../../shared/MonitoringData';
 import api from '../../shared/Api';
-import {isGhostOrGuest, kc} from "../../components/UserManager";
+import { getUser, isGhostOrGuest, kc } from '../../components/UserManager';
 import LoginPage from "../../components/LoginPage";
 import GxyJanus from "../../shared/janus-utils";
 import connectionOrange from '../VirtualApp/connection-orange.png';
@@ -44,6 +44,8 @@ import VirtualChat from '../VirtualApp/VirtualChat';
 import ConfigStore from "../../shared/ConfigStore";
 import {GuaranteeDeliveryManager} from "../../shared/GuaranteeDelivery";
 import {captureException, captureMessage, updateSentryUser} from "../../shared/sentry";
+import { userRolesEnum } from '../../shared/enums';
+import { RegistrationModals } from './RegistrationModals';
 
 const sortAndFilterFeeds = (feeds) => feeds
   .filter(feed => !feed.display.role.match(/^(ghost|guest)$/))
@@ -134,11 +136,11 @@ class MobileClient extends Component {
     componentDidUpdate(prevProps, prevState) {
       const {room, shidur, shidurLoading, shidurMuted} = this.state;
       // We are in the room and shidur now enabled (not loading).
-      if (!shidurMuted && shidur && !prevState.shidur && !shidurLoading && room) {
+      if (!shidurMuted && shidur && !prevState.shidur && !shidurLoading && (room || this.state.user.role !== userRolesEnum.user)) {
         this.setShidurMuted(false);
       }
       // We are in the room shidur is on and shidur finished loading.
-      if (!shidurMuted && !shidurLoading && prevState.shidurLoading && shidur && room) {
+      if (!shidurMuted && !shidurLoading && prevState.shidurLoading && shidur && (room || this.state.user.role !== userRolesEnum.user)) {
         this.setShidurMuted(false);
       }
       if (this.state.videoroom !== prevState.videoroom ||
@@ -159,18 +161,34 @@ class MobileClient extends Component {
       }
     };
 
-    checkPermission = (user) => {
-        let pending_approval = kc.hasRealmRole("pending_approval");
-        let gxy_user = kc.hasRealmRole("gxy_user");
-        user.role = pending_approval ? 'ghost' : 'user';
-        if (gxy_user || pending_approval) {
-            this.initApp(user);
-        } else {
-            alert("Access denied!");
-            kc.logout();
-            updateSentryUser(null);
-        }
+  getUserRole = () => {
+    switch (true) {
+    case kc.hasRealmRole('pending_approval'):
+      return userRolesEnum.ghost;
+    case kc.hasRealmRole('gxy_user'):
+      return userRolesEnum.user;
+    case kc.hasRealmRole('gxy_pending_approval'):
+      return userRolesEnum.pending_approve;
+    case kc.hasRealmRole('gxy_guest'):
+      return userRolesEnum.viewer;
+    case kc.hasRealmRole('new_user'):
+      return userRolesEnum.new_user;
+    default:
+      return userRolesEnum.none
     }
+  }
+
+  checkPermission = (user) => {
+    user.role = this.getUserRole();
+
+    if (user.role !== null) {
+      this.initApp(user);
+    } else {
+      alert('Access denied!');
+      kc.logout();
+      updateSentryUser(null);
+    }
+  };
 
     componentDidMount() {
         if(!isMobile && window.location.href.indexOf("userm") > -1) {
@@ -193,6 +211,29 @@ class MobileClient extends Component {
     }
 
     initApp = (user) => {
+        if (user.role !== userRolesEnum.user) {
+          const config = {
+            'gateways': {
+              'streaming': {
+                'str': {
+                  'name': 'str',
+                  'url': APP_JANUS_SRV_STR1,
+                  'type': 'streaming',
+                  'token': ''
+                }
+              }
+            },
+            'ice_servers': {'streaming': [APP_STUN_SRV_STR]},
+            'dynamic_config': {'galaxy_premod': 'false'},
+            'last_modified': (new Date()).toISOString()
+          };
+          ConfigStore.setGlobalConfig(config);
+          GxyJanus.setGlobalConfig(config);
+          localStorage.setItem('room', '-1');
+          this.state.virtualStreamingJanus.init('', 'IL');
+          this.setState({user, sourceLoading: true});
+          return;
+        }
         let gdm = new GuaranteeDeliveryManager(user.id);
         this.setState({gdm});
         localStorage.setItem('question', false);
@@ -1482,6 +1523,9 @@ class MobileClient extends Component {
       this.setState({page});
     }
 
+    updateUserRole = () => {
+      getUser(this.checkPermission)
+    }
     render() {
       const {t, i18n} = this.props;
       const {
@@ -1608,6 +1652,19 @@ class MobileClient extends Component {
       const login = (<LoginPage user={user} checkPermission={this.checkPermission} />);
       const openVideoDisabled = video_device === null || !localAudioTrack || delay;
       const chatCountLabel = (<Label key='Carbon' floating size='mini' color='red'>{chatMessagesCount}</Label>);
+      const shidurComponent = (
+        <VirtualStreamingMobile
+        shidur={shidur}
+        shidurLoading={shidurLoading}
+        shidurJanus={virtualStreamingJanus}
+        toggleShidur={this.toggleShidur}
+        audio={this.state.virtualStreamingJanus && this.state.virtualStreamingJanus.audioElement}
+        muted={this.state.shidurMuted}
+        videos={videos}
+        setVideo={(v) => this.setState({videos: v})}
+        setMuted={(muted) => this.setShidurMuted(muted)}
+      />
+      )
       const content = (
         <div>
             <div className='vclient'>
@@ -1667,7 +1724,7 @@ class MobileClient extends Component {
                           <Accordion.Title
                             active={settingsActiveIndex === 2}
                             className={classNames({'disabled': !!room})}
-                            content={t('oldClient.cameraQuality')}
+                            content={t('settings.cameraQuality')}
                             index={2}
                             onClick={this.handleClick}
                           />
@@ -1722,18 +1779,7 @@ class MobileClient extends Component {
                 </div>
 
 								<div>
-								{room !== '' ?
-									<VirtualStreamingMobile
-										shidur={shidur}
-										shidurLoading={shidurLoading}
-										shidurJanus={virtualStreamingJanus}
-										toggleShidur={this.toggleShidur}
-										audio={this.state.virtualStreamingJanus && this.state.virtualStreamingJanus.audioElement}
-                    muted={this.state.shidurMuted}
-                    videos={videos}
-                    setVideo={(v) => this.setState({videos: v})}
-                    setMuted={(muted) => this.setShidurMuted(muted)}
-									/> : null}
+								  {room !== '' ? shidurComponent: null}
 								</div>
 
                 <div basic className="vclient__main">
@@ -1879,7 +1925,22 @@ class MobileClient extends Component {
              <MetaTags>
                 <meta name="viewport" content=" user-scalable=no" />
              </MetaTags>
-              {user ? content : login}
+            {
+              user ?
+                (user.role !== userRolesEnum.user) ?
+                  (
+                    <>
+                      {shidurComponent}
+                      <RegistrationModals
+                        user={user}
+                        language={i18n.language}
+                        updateUserRole={this.updateUserRole.bind(this)}
+                      />
+                    </>
+                  )
+                  : content
+                : login
+            }
           </Fragment>
       );
   }

@@ -63,7 +63,7 @@ import SettingsJoined from './settings/SettingsJoined';
 import HomerLimud from './components/HomerLimud';
 import {Help} from './components/Help';
 import {RegistrationModals} from './components/RegistrationModals';
-import {userRolesEnum} from "./enums";
+import {userRolesEnum} from "../../shared/enums";
 
 const sortAndFilterFeeds = (feeds) => feeds
   .filter(feed => !feed.display.role.match(/^(ghost|guest)$/))
