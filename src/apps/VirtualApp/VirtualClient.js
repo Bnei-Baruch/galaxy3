@@ -60,7 +60,7 @@ import {ChevronLeft, ChevronRight} from '@material-ui/icons';
 
 
 
-import {AskQuestion, AudioMode, CloseBroadcast, Layout, Mute, MuteVideo, Vote} from './buttons';
+import {AskQuestion, AudioMode, CloseBroadcast, Layout, Mute, MuteVideo, Vote, Fullscreen} from './buttons';
 import Settings from './settings/Settings';
 import SettingsJoined from './settings/SettingsJoined';
 import HomerLimud from './components/HomerLimud';
@@ -1523,16 +1523,18 @@ class VirtualClient extends Component {
 
     return (
       <AppBar
-        position="sticky"
+        // position="sticky"
+        position="static"
         color="default"
         
-        style={{
-        top: 'auto',
-        bottom: 0,
+        // style={{
+        // top: 'auto',
+        // bottom: 0,
         // fontSize: '0.7rem',
         // backgroundColor: 'black'
-      }}>
-        <Toolbar className="bottom-toolbar">
+      // }}
+      >
+        <Toolbar className="bottom-toolbar" variant="dense">
             <ButtonGroup
               variant="contained"
               // style={{ color: grey[50], marginLeft: '2em' }}
@@ -1556,12 +1558,16 @@ class VirtualClient extends Component {
 
             {/* ~~~~~~~~~~~ */}
  
-              <ButtonGroup
+            <ButtonGroup
               className={classNames('bottom-toolbar__item')}
               variant="contained"
               disableElevation
-              // style={{ color: grey[50] }}
-            >
+              >
+              <Fullscreen
+                t={t}
+                action={this.otherCamsMuteToggle.bind(this)}
+                isOn={muteOtherCams}
+              />
               <CloseBroadcast
                 t={t}
                 isOn={shidur}
@@ -1698,8 +1704,8 @@ class VirtualClient extends Component {
     const { user, asideMsgCounter, leftAsideName, rightAsideName, monitoringData, net_status, isOpenTopMenu } = this.state;
 
     return (
-      <Box>
-      <AppBar color="default">
+    
+      <AppBar color="default" position="static">
         <Toolbar className="top-toolbar">
           <TopMenu
             t={t}
@@ -1805,109 +1811,6 @@ class VirtualClient extends Component {
              
         </Toolbar>
       </AppBar>
-      {/* <Box display="flex" style={{ justifyContent: 'space-between', flexWrap: 'nowrap' }} className="vclient__toolbar">
-        <Box display="flex" style={{ flexWrap: 'nowrap', alignItems: 'center' }}>
-          <TopMenu
-            t={t}
-            openSettings={() => this.setState({ isSettings: true })}
-            open={isOpenTopMenu}
-            setOpen={(isOpen) => this.setState({ isOpenTopMenu: isOpen })}
-          />
-          <ButtonMD
-            color="primary"
-            variant="contained"
-            style={{ marginRight: '1em' }}
-            onClick={() => window.open('https://virtualhome.kli.one', '_blank')}
-          >
-            {t('loginPage.userFee')}
-          </ButtonMD>
-          <Box>
-            <ButtonGroup>
-      
-              <ButtonMD
-                color={leftAsideName === 'drawing' ? 'primary' : 'default'}
-                disableElevation
-                onClick={() => this.toggleLeftAside('drawing')}
-                variant="contained"
-              >
-                {t('oldClient.drawing')}
-                <Badge
-              color="secondary"
-              badgeContent={asideMsgCounter.drawing}
-              showZero={true}
-
-            >
-                 </Badge>
-              </ButtonMD>
-         
-            <ButtonMD
-              disableElevation
-              onClick={() => this.toggleLeftAside('material')}
-              color={leftAsideName === 'material' ? 'primary' : 'default'}
-              variant="contained"
-            >
-              {t('oldClient.material')}
-            </ButtonMD>
-            </ButtonGroup>
-          </Box>
-        </Box>
-
-        <Box style={{ fontWeight: 'bold' }}>
-          {user?.group}
-        </Box>
-
-
-        <Box style={{ marginRight: '1em' }}>
-          <Badge
-            color="secondary"
-            badgeContent={asideMsgCounter.chat}
-            showZero={false}
-          >
-            <ButtonMD
-              variant={rightAsideName === 'chat' ? 'outlined' : 'contained'}
-              size="small"
-              onClick={() => {
-                this.toggleRightAside('chat');
-                this.setState({ isRoomChat: true });
-              }}
-            >
-              {t('oldClient.chat')}
-            </ButtonMD>
-          </Badge>
-          <ButtonMD
-            size="small"
-            onClick={() => {
-              this.toggleRightAside('support');
-              this.setState({ isRoomChat: false });
-            }}
-            variant={rightAsideName === 'support' ? 'outlined' : 'contained'}
-          >
-            {t('oldClient.support')}
-          </ButtonMD>
-          <ButtonMD
-            size="small"
-            onClick={() => this.toggleRightAside('question')}
-            variant={rightAsideName === 'question' ? 'outlined' : 'contained'}
-          >
-            {t('oldClient.sendQuestion')}
-          </ButtonMD>
-
-          {!isDeb ? null :
-            <ButtonMD onClick={sentryDebugAction}>
-              Sentry
-            </ButtonMD>
-          }
-
-        </Box>
-        <>
-          <Monitoring monitoringData={monitoringData} />
-
-          {!(new URL(window.location.href).searchParams.has('lost')) ? null :
-            (
-              <Label color={net_status === 2 ? 'yellow' : net_status === 3 ? 'red' : 'green'} icon='wifi' corner='right' />)}
-        </>
-      </Box> */}
-      </Box>
     );
   };
 
@@ -1968,7 +1871,9 @@ class VirtualClient extends Component {
 
         <Grid container className="vclient__main">
           {this.renderLeftAside()}
-          <Grid item xs={12 - (!leftAsideName ? 0 : leftAsideSize) - (!rightAsideName ? 0 : 3)}>
+          <Grid item xs={12 - (!leftAsideName ? 0 : leftAsideSize) - (!rightAsideName ? 0 : 3)}
+          style={{ display: 'flex', flexDirection: 'column', overflow:'hidden' }}
+          >
             <div className={`
             vclient__main-wrapper
             no-of-videos-${noOfVideos}
@@ -1991,14 +1896,14 @@ class VirtualClient extends Component {
               </div>
 
             </div>
+            {
+              this.renderBottomBar(layout, otherFeedHasQuestion)
+            }
           </Grid>
 
           {this.renderRightAside()}
 
         </Grid>
-        {
-          this.renderBottomBar(layout, otherFeedHasQuestion)
-        }
       </div>
     );
 
