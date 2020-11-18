@@ -52,6 +52,7 @@ import audioModeSvg from '../../shared/audio-mode.svg';
 import fullModeSvg from '../../shared/full-mode.svg';
 import ConfigStore from '../../shared/ConfigStore';
 import {GuaranteeDeliveryManager} from '../../shared/GuaranteeDelivery';
+import {CheckAlive} from '../../shared/CheckAlive';
 
 import {AppBar, Badge, Box, Button as ButtonMD, ButtonGroup, Grid, IconButton} from '@material-ui/core';
 import {ChevronLeft, ChevronRight} from '@material-ui/icons';
@@ -134,7 +135,8 @@ class VirtualClient extends Component {
     premodStatus: false,
     gdm: null,
     asideMsgCounter: { drawing: 0, chat: 0 },
-    leftAsideSize: 3
+    leftAsideSize: 3,
+    checkAlive: new CheckAlive(),
   };
 
   virtualStreamingInitialized() {
@@ -665,23 +667,37 @@ class VirtualClient extends Component {
       this.setState({upval});
     }
 
-    this.chat.initChatRoom(janus, selected_room, user, data => {
-      const { textroom, error_code, error } = data;
+    this.chat.initChatRoom(janus, selected_room, user, this.initChatroomCallback(videoroom, selected_room, user).bind(this));
+  };
+
+  checkAliveDebugAction = () => {
+    const {selected_room, user} = this.state;
+    this.chat.joinChatRoom(this.chat.state.chatroom, selected_room, user);
+  }
+
+  initChatroomCallback = (videoroom, selected_room, user) => {
+    return data => {
+      if (this.state.checkAlive.checkAlive(data)) {
+        // This is a check-alive message ignore it.
+        return;
+      }
+      const { textroom, error_code } = data;
       if (textroom === 'error') {
         if (error_code !== USERNAME_ALREADY_EXIST_ERROR_CODE) {
           console.error("Chatroom error: ", data, error_code)
-          captureMessage(`Chatroom error: init - ${error}`, {source: "Textroom", err: data}, 'error');
+          captureMessage('Chatroom error: init', {source: "Textroom", err: data}, 'error');
         } else {
           console.log("Chatroom error: ", data, error_code);
-          captureMessage(`Chatroom error: init - ${error}`, {source: "Textroom", err: data});
+          captureMessage('Chatroom error: init', {source: "Textroom", err: data});
         }
         this.exitRoom(false, () => {
           if(error_code === USERNAME_ALREADY_EXIST_ERROR_CODE)
             alert(this.props.t('oldClient.error') + data.error);
         }, true);
       } else if(textroom === "success" && data.participants) {
+        this.state.checkAlive.start(this.chat.state.chatroom, selected_room, user);
         Janus.log(":: Successfully joined to chat room: " + selected_room );
-				captureMessage('Successfully joined to chat room', {source: "Textroom", selected_room});
+        captureMessage('Successfully joined to chat room', {source: "Textroom", selected_room});
         user.textroom_handle = this.chat.getHandle(); // we want this in backend for debugging of textroom based signaling
         this.setState({user});
         const {id, timestamp, role, username} = user;
@@ -691,16 +707,16 @@ class VirtualClient extends Component {
           "message": register,
           success: () => {
             console.log("Request join success");
-						captureMessage('Request join success', {source: "Videoroom", selected_room});
+            captureMessage('Request join success', {source: "Videoroom", selected_room});
           },
           error: (error) => {
             console.error(error);
-						captureException(error, {source: 'Videoroom'});
+            captureException(error, {source: 'Videoroom'});
             this.exitRoom(false);
           }
         })
       }
-    });
+    };
   };
 
   exitRoom = (reconnect, callback, error) => {
@@ -732,6 +748,7 @@ class VirtualClient extends Component {
     if(protocol) protocol.data({text: JSON.stringify(pl)});
 
     if (this.chat && !error) {
+      this.state.checkAlive.stop();
       this.chat.exitChatRoom(room);
     }
 
@@ -2229,6 +2246,11 @@ class VirtualClient extends Component {
             {!isDeb ? null :
               <Menu.Item onClick={sentryDebugAction}>
                 Sentry
+              </Menu.Item>
+            }
+            {!isDeb ? null :
+              <Menu.Item onClick={this.checkAliveDebugAction.bind(this)}>
+                Check Alive
               </Menu.Item>
             }
           </Menu>
