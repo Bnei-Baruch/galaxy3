@@ -40,10 +40,13 @@ const useStyles = makeStyles(() => ({
   },
   textSize: {
     fontSize: '2rem',
-    lineHeight: '4rem'
   },
   inputTextSize: {
-    fontSize: '2rem',
+    fontSize: '2.5rem',
+    lineHeight: '3rem'
+  },
+  inputLabelSize: {
+    fontSize: '2.5rem',
     lineHeight: '2rem'
   },
   button: {
@@ -159,7 +162,7 @@ export const RegistrationForm = ({ user: { familyname, username, email, display 
               }}
               InputLabelProps={{
                 classes: {
-                  root: classes.inputTextSize
+                  root: classes.inputLabelSize
                 }
               }}
             />
@@ -192,7 +195,7 @@ export const RegistrationForm = ({ user: { familyname, username, email, display 
               }}
               InputLabelProps={{
                 classes: {
-                  root: classes.inputTextSize
+                  root: classes.inputLabelSize
                 }
               }}
             />
@@ -225,7 +228,7 @@ export const RegistrationForm = ({ user: { familyname, username, email, display 
               }}
               InputLabelProps={{
                 classes: {
-                  root: classes.inputTextSize
+                  root: classes.inputLabelSize
                 }
               }}
             />
@@ -253,7 +256,7 @@ export const RegistrationForm = ({ user: { familyname, username, email, display 
       }}
       InputLabelProps={{
         classes: {
-          root: classes.inputTextSize
+          root: classes.inputLabelSize
         }
       }}
     >
@@ -333,7 +336,7 @@ export const RegistrationForm = ({ user: { familyname, username, email, display 
 
   const renderForm = () => (
     <>
-      <Typography variant="h4" paragraph>
+      <Typography variant="h3" paragraph>
         {t('registration.welcome', { name: display })}
       </Typography>
       <Typography paragraph className={classes.textSize}>
@@ -358,7 +361,7 @@ export const RegistrationForm = ({ user: { familyname, username, email, display 
             InputProps={{ classes: { root: classes.inputTextSize } }}
             InputLabelProps={{
               classes: {
-                root: classes.inputTextSize
+                root: classes.inputLabelSize
               }
             }}
           />
@@ -381,7 +384,7 @@ export const RegistrationForm = ({ user: { familyname, username, email, display 
             InputProps={{ classes: { root: classes.inputTextSize } }}
             InputLabelProps={{
               classes: {
-                root: classes.inputTextSize
+                root: classes.inputLabelSize
               }
             }}
           />
@@ -400,7 +403,7 @@ export const RegistrationForm = ({ user: { familyname, username, email, display 
             InputProps={{ classes: { root: classes.inputTextSize } }}
             InputLabelProps={{
               classes: {
-                root: classes.inputTextSize
+                root: classes.inputLabelSize
               }
             }}
           />

@@ -10,7 +10,7 @@ import {
   Grid,
   Typography
 } from '@material-ui/core';
-import { blue, green, grey } from '@material-ui/core/colors';
+import { green } from '@material-ui/core/colors';
 import makeStyles from '@material-ui/core/styles/makeStyles';
 
 import { RegistrationForm } from './RegistrationForm';
@@ -62,7 +62,7 @@ export const RegistrationModals = ({ user, language, updateUserRole }) => {
         dir={direction}
       >
         <DialogContent>
-          <DialogContentText style={{ textAlign: 'center', fontSize: '2rem' }}>
+          <DialogContentText style={{ textAlign: 'center', fontSize: '2.5rem' }}>
             {t('registration.completed')}
           </DialogContentText>
         </DialogContent>
@@ -96,7 +96,7 @@ export const RegistrationModals = ({ user, language, updateUserRole }) => {
     <>
       <Typography
         dir={direction}
-        style={{ textAlign: 'center', fontSize: '2rem' }}
+        style={{ textAlign: 'center', fontSize: '2.5rem' }}
       >
         {t('registration.youRegisteredAsGuest')}
       </Typography>
