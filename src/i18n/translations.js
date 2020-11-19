@@ -669,7 +669,7 @@ export const resources = {
         close: 'Закрыть',
       },
       registration: {
-        continueAsGuest: 'Continue as a guest',
+        continueAsGuest: 'Продолжить как гость',
         selectCountry: 'Страна',
         groupCity: 'Город',
         selectGender: 'Пол',
@@ -687,7 +687,7 @@ export const resources = {
         youRegisteredAsGuest: 'Вы зарегистрированы как гость. Чтобы получить полный доступ, нам необходимо подтвердить вашу учетную запись. ',
         youRegisteredAsGuestLink: 'Пожалуйста, завершите регистрацию.',
         toComplete: 'ЗАВЕРШИТЬ РЕГИСТРАЦИЮ',
-        completed: 'Вы зарегистрированы как гость. Чтобы получить полный доступ, нам необходимо подтвердить вашу учетную запись.',
+        completed: 'Ваша регистрация завершена и скоро будет проверена. А пока вы можете смотреть трансляцию.',
       },
     },
   },

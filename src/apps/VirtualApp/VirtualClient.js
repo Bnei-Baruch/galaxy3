@@ -243,6 +243,12 @@ class VirtualClient extends Component {
       window.location = window.location.pathname + "?" + params.toString();
     }
 
+    if (isUseNewDesign && user.role === userRolesEnum.user) {
+      const params = new URLSearchParams(window.location.search)
+      params.delete('new_design')
+      window.location = window.location.pathname + "?" + params.toString();
+    }
+
     if (user.role !== userRolesEnum.user) {
       const config = {
         'gateways': {
