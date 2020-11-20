@@ -2,8 +2,8 @@ import { Janus } from "./../lib/janus";
 import {captureMessage} from './sentry';
 import {ALREADY_IN_ROOM_ERROR_CODE} from './consts';
 
-export const SEND_ALIVE_INTERVAL = 2 * 60 * 1000;   // 2 minutes in milliseconds.
-export const CHECK_ALIVE_DELAY = 3 * 60 * 1000;  // 3 minutes in milliseconds. Should be larger than SEND_ALIVE_INTERVAL.
+export const SEND_ALIVE_INTERVAL = 1 * 60 * 1000;   // 1 minutes in milliseconds.
+export const CHECK_ALIVE_DELAY = 1.5 * 60 * 1000;  // 1.5 minutes in milliseconds. Should be larger than SEND_ALIVE_INTERVAL.
 export const CHECK_ALIVE_INTERVAL = 100; // 100ms.
 
 export class CheckAlive {
@@ -55,10 +55,11 @@ export class CheckAlive {
     if (!this.notAliveCaptured && (this.lastAlive === null || now - this.lastAlive >= this.checkAliveDelay)) {
       const msg = `Expected now (${now}) - lastAlive (${this.lastAlive}) to be less than ${this.checkAliveDelay}.`
 			captureMessage('Not alive.', {source: 'CheckAlive', msg, room: this.roomid});
-      console.log('[CheckAlive]', msg);
+      console.log('[CheckAlive] Not alive.', msg);
       this.notAliveCaptured = true;
     } else if (this.notAliveCaptured && this.lastAlive !== null && now - this.lastAlive < this.checkAliveDelay) {
       this.notAliveCaptured = false;
+			captureMessage('Back alive.', {source: 'CheckAlive', room: this.roomid});
       console.log('[CheckAlive] Back alive.');
     }
   }
