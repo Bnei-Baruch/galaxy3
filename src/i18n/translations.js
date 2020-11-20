@@ -161,7 +161,7 @@ export const resources = {
         aboutYou: 'About my study framework in Bnei Baruch...',
         submit: 'SUBMIT FOR APPROVAL',
         welcome: 'Welcome {{name}}',
-        needVerifyAccount: 'You successfully registered to Galaxy. In order to grant you with a full access, we will need to verify your account.',
+        needVerifyAccount: 'You successfully registered to Arvut system. In order to grant you with a full access, we will need to verify your account.',
         tellAboutYou: 'Please tell us about you:',
         asGuestYouCan: 'As a guest, you will be able to watch the broadcast. You won’t be able to participate in the workshops or ask questions live.',
         youRegisteredAsGuest: 'You are now registered as a guest. To be granted full access, we need to verify your account. ',
