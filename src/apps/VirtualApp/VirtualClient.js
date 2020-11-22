@@ -42,7 +42,7 @@ import {
 import api from '../../shared/Api';
 import VirtualStreaming from './VirtualStreaming';
 import VirtualStreamingJanus from '../../shared/VirtualStreamingJanus';
-import {getUser, isGhostOrGuest, kc} from "../../components/UserManager";
+import {getUser, kc} from "../../components/UserManager";
 import LoginPage from "../../components/LoginPage";
 import {Profile} from "../../components/Profile";
 import {captureException, captureMessage, sentryDebugAction, updateSentryUser} from '../../shared/sentry';
@@ -929,7 +929,7 @@ class VirtualClient extends Component {
           Janus.log(feeds);
           this.makeSubscription(feeds, /* feedsJustJoined= */ false,
                                 /* subscribeToVideo= */ !this.state.muteOtherCams,
-                                /* subscribeToAudio= */ !isGhostOrGuest(user.role), /* subscribeToData= */ true);
+                                /* subscribeToAudio= */ true, /* subscribeToData= */ true);
         }
       } else if (event === 'talking') {
         const feeds = Object.assign([], this.state.feeds);
@@ -972,13 +972,12 @@ class VirtualClient extends Component {
           }
         } else if (msg['publishers'] !== undefined && msg['publishers'] !== null) {
           // User just joined the room.
-          const {user: {role}} = this.state;
           const feeds = sortAndFilterFeeds(msg['publishers'].filter(l => l.display = (JSON.parse(l.display))));
           Janus.debug('New list of available publishers/feeds:');
           Janus.debug(feeds);
           this.makeSubscription(feeds, /* feedsJustJoined= */ true,
                                 /* subscribeToVideo= */ !this.state.muteOtherCams,
-                                /* subscribeToAudio= */ !isGhostOrGuest(role), /* subscribeToData= */ true);
+                                /* subscribeToAudio= */ true, /* subscribeToData= */ true);
         } else if (msg['leaving'] !== undefined && msg['leaving'] !== null) {
           // One of the publishers has gone away?
           const leaving = msg['leaving'];
@@ -1612,7 +1611,6 @@ class VirtualClient extends Component {
 
     const { video_device } = media.video;
     const { audio_device } = media.audio;
-    const notApproved = user && (user.role === 'guest' || user.role === 'pending_new_user');
 
     return (
       <AppBar position="sticky" color="transparent" style={{
@@ -2144,7 +2142,6 @@ class VirtualClient extends Component {
         break;
       }
       content = (<div className={classNames('vclient', { 'vclient--chat-open': chatVisible })}>
-        <VerifyAccount user={user} loginPage={false} i18n={i18n} />
         <div className="vclient__toolbar">
           <Input>
             <Select

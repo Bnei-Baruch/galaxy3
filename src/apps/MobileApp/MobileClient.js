@@ -29,7 +29,7 @@ import {
   MonitoringData
 } from '../../shared/MonitoringData';
 import api from '../../shared/Api';
-import { getUser, isGhostOrGuest, kc } from '../../components/UserManager';
+import { getUser, kc } from '../../components/UserManager';
 import LoginPage from "../../components/LoginPage";
 import GxyJanus from "../../shared/janus-utils";
 import connectionOrange from '../VirtualApp/connection-orange.png';
@@ -847,7 +847,7 @@ class MobileClient extends Component {
 
                   this.makeSubscription(feeds, /* feedsJustJoined= */ false,
                                         /* subscribeToVideo= */ false,
-                                        /* subscribeToAudio= */ !isGhostOrGuest(user.role), /* subscribeToData= */ true);
+                                        /* subscribeToAudio= */ true, /* subscribeToData= */ true);
                   this.switchVideos(/* page= */ this.state.page, [], userFeeds(feeds));
                   this.setState({feeds});
                 }
@@ -897,7 +897,7 @@ class MobileClient extends Component {
                   const newFeeds = sortAndFilterFeeds(msg['publishers'].filter(l => l.display = (JSON.parse(l.display))));
                   Janus.debug('New list of available publishers/feeds:', newFeeds);
                   const newFeedsIds = new Set(newFeeds.map(feed => feed.id));
-                  const {feeds, user: {role}} = this.state;
+                  const {feeds} = this.state;
                   if (feeds.some(feed => newFeedsIds.has(feed.id))) {
                     Janus.error(`New feed joining but one of the feeds already exist`, newFeeds, feeds);
                     return;
@@ -906,7 +906,7 @@ class MobileClient extends Component {
                   const feedsNewState = sortAndFilterFeeds([...newFeeds, ...feeds]);
                   this.makeSubscription(newFeeds, /* feedsJustJoined= */ true,
                                         /* subscribeToVideo= */ false,
-                                        /* subscribeToAudio= */ !isGhostOrGuest(role), /* subscribeToData= */ true);
+                                        /* subscribeToAudio= */ true, /* subscribeToData= */ true);
                   this.switchVideos(/* page= */ this.state.page, userFeeds(feeds), userFeeds(feedsNewState));
                   this.setState({feeds: feedsNewState});
 
