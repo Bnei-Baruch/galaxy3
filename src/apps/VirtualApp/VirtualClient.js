@@ -3,6 +3,7 @@ import {Janus} from '../../lib/janus';
 import classNames from 'classnames';
 import {isMobile} from 'react-device-detect';
 import {Button, Icon, Image, Input, Label, Menu, Modal, Popup, Select} from 'semantic-ui-react';
+import {FullScreen as FullScreenWraper} from 'react-full-screen';
 import {
   checkNotification,
   geoInfo,
@@ -73,6 +74,15 @@ const sortAndFilterFeeds = (feeds) => feeds
 const userFeeds = (feeds) => feeds.filter(feed => feed.display.role === 'user');
 
 const isUseNewDesign = new URL(window.location.href).searchParams.has('new_design');
+
+const foolScreenHandler = {
+  active: false,
+  enter: () => {
+  },
+  exit: () => {
+  },
+  node: null
+};
 
 class VirtualClient extends Component {
 
@@ -1865,16 +1875,17 @@ class VirtualClient extends Component {
           }           = this.state;
 
     return (
-      <div className={classNames('vclient', { 'vclient--chat-open': chatVisible })}>
-        <VerifyAccount user={user} loginPage={false} i18n={i18n} />
-        {this.renderTopBar(isDeb)}
+      <FullScreenWraper handle={foolScreenHandler}>
+        <div className={classNames('vclient', { 'vclient--chat-open': chatVisible })}>
+          <VerifyAccount user={user} loginPage={false} i18n={i18n} />
+          {this.renderTopBar(isDeb)}
 
-        <Grid container className="vclient__main">
-          {this.renderLeftAside()}
-          <Grid item xs={12 - (!leftAsideName ? 0 : leftAsideSize) - (!rightAsideName ? 0 : 3)}
-          style={{ display: 'flex', flexDirection: 'column', overflow:'hidden' }}
-          >
-            <div className={`
+          <Grid container className="vclient__main">
+            {this.renderLeftAside()}
+            <Grid item xs={12 - (!leftAsideName ? 0 : leftAsideSize) - (!rightAsideName ? 0 : 3)}
+                  style={{ display: 'flex', flexDirection: 'column', overflow:'hidden' }}
+            >
+              <div className={`
             vclient__main-wrapper
             no-of-videos-${noOfVideos}
             layout--${layout}
@@ -1882,29 +1893,30 @@ class VirtualClient extends Component {
             ${!attachedSource ? ' broadcast--popup' : 'broadcast--inline'}
            `}>
 
-              <div className="broadcast-panel">
-                <div className="broadcast__wrapper">
-                  {layout === 'split' && source}
+                <div className="broadcast-panel">
+                  <div className="broadcast__wrapper">
+                    {layout === 'split' && source}
+                  </div>
                 </div>
-              </div>
 
-              <div className="videos-panel">
-                <div className="videos__wrapper">
-                  {(layout === 'equal' || layout === 'double') && source}
-                  {remoteVideos}
+                <div className="videos-panel">
+                  <div className="videos__wrapper">
+                    {(layout === 'equal' || layout === 'double') && source}
+                    {remoteVideos}
+                  </div>
                 </div>
-              </div>
 
-            </div>
-            {
-              this.renderBottomBar(layout, otherFeedHasQuestion)
-            }
+              </div>
+              {
+                this.renderBottomBar(layout, otherFeedHasQuestion)
+              }
+            </Grid>
+
+            {this.renderRightAside()}
+
           </Grid>
-
-          {this.renderRightAside()}
-
-        </Grid>
-      </div>
+        </div>
+      </FullScreenWraper>
     );
 
   };
