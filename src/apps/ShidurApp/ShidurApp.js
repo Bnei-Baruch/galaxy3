@@ -38,6 +38,7 @@ class ShidurApp extends Component {
     gatewaysInitialized: false,
     appInitError: null,
     presets: {1:[],2:[],3:[],4:[]},
+    region: null,
     sdiout: false,
     sndman: false,
     users_count: 0,

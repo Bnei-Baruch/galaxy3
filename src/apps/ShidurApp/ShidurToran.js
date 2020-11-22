@@ -7,6 +7,18 @@ import {RESET_VOTE} from "../../shared/env";
 import {SDIOUT_ID, SNDMAN_ID} from "../../shared/consts"
 import {captureException} from "../../shared/sentry";
 
+const short_regions = {
+  'petach-tikva': 'PT',
+  'israel': 'IL',
+  'russia': 'RU',
+  'ukraine': 'UK',
+  'europe': 'EU',
+  'asia': 'AS',
+  'north-america': 'NA',
+  'latin-america': 'LA',
+  'africa': 'AF',
+};
+
 
 class ShidurToran extends Component {
 
@@ -66,6 +78,10 @@ class ShidurToran extends Component {
 
   shidurMode = (shidur_mode) => {
     this.props.setProps({shidur_mode});
+  };
+
+  setRegion = (region) => {
+    this.props.setProps({region});
   };
 
   galaxyMode = (galaxy_mode) => {
@@ -221,7 +237,7 @@ class ShidurToran extends Component {
 
   render() {
 
-    const {group,pre_groups,disabled_rooms,groups,groups_queue,questions,presets,sdiout,sndman,shidur_mode,users_count,preview_mode,log_list,preusers_count} = this.props;
+    const {group,pre_groups,disabled_rooms,groups,groups_queue,questions,presets,sdiout,sndman,shidur_mode,users_count,preview_mode,log_list,preusers_count,region} = this.props;
     const {open,delay,vote,galaxy_mode} = this.state;
     const q = (<b style={{color: 'red', fontSize: '20px', fontFamily: 'Verdana', fontWeight: 'bold'}}>?</b>);
     const next_group = groups[groups_queue] ? groups[groups_queue].description : groups[0] ? groups[0].description : "";
@@ -312,7 +328,6 @@ class ShidurToran extends Component {
               <Segment className="group_segment" color='blue'>
                 <div className="shidur_overlay"><span>{ng.description}</span></div>
                 <UsersPreview pg={ng} {...this.props} next closePopup={this.closePopup} />
-                {/*<UsersHandle g={ng} {...this.props} next closePopup={this.closePopup} />*/}
               </Segment>
               : ""}
           </Segment>
@@ -375,7 +390,6 @@ class ShidurToran extends Component {
             {open ? <Segment className="group_segment" color='green'>
               <div className="shidur_overlay"><span>{group ? group.description : ""}</span></div>
               <UsersPreview pg={this.state.pg} {...this.props} closePopup={this.closePopup} />
-              {/*<UsersHandle g={this.state.pg} {...this.props} preview closePopup={this.closePopup} />*/}
             </Segment> : ""}
           </Segment>
           <Segment textAlign='center' >
@@ -385,6 +399,11 @@ class ShidurToran extends Component {
             </Button.Group>
           </Segment>
           <Segment attached className="settings_conteiner" >
+            <Button.Group size='mini' >
+              {Object.keys(short_regions).map(r => {
+                return(<Button disabled={region === r} content={short_regions[r]} onClick={() => this.setRegion(r)} />)
+              })}
+            </Button.Group>
           </Segment>
           <Button.Group attached='bottom' size='mini' >
             <Button disabled={shidur_mode === "gvarim"} color='teal' content='Gvarim' onClick={() => this.shidurMode("gvarim")} />
