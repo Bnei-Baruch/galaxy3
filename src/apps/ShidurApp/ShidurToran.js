@@ -384,18 +384,18 @@ class ShidurToran extends Component {
               <Button color='blue' onClick={this.resetVote} >Reset Vote</Button>
             </Button.Group>
           </Segment>
-          <Segment className="settings_conteiner" >
+          <Segment attached className="settings_conteiner" >
           </Segment>
+          <Button.Group attached='bottom' size='mini' >
+            <Button disabled={shidur_mode === "gvarim"} color='teal' content='Gvarim' onClick={() => this.shidurMode("gvarim")} />
+            <Button disabled={shidur_mode === "nashim"} color='teal' content='Nashim' onClick={() => this.shidurMode("nashim")} />
+            <Button disabled={shidur_mode === "beyahad" || shidur_mode === ""} color='teal' content='Beyahad' onClick={() => this.shidurMode("beyahad")} />
+          </Button.Group>
         </Grid.Column>
         <Grid.Column>
           <Button.Group attached='top' size='mini' >
             <Button disabled={galaxy_mode === "lesson"} color='grey' content='Preview' onClick={() => this.galaxyMode("lesson")} />
             <Button disabled={galaxy_mode === "shidur"} color='grey' content='Disabled' onClick={() => this.galaxyMode("shidur")} />
-          </Button.Group>
-          <Button.Group attached='top' size='mini' >
-            <Button disabled={shidur_mode === "gvarim"} color='teal' content='Gvarim' onClick={() => this.shidurMode("gvarim")} />
-            <Button disabled={shidur_mode === "nashim"} color='teal' content='Nashim' onClick={() => this.shidurMode("nashim")} />
-            <Button disabled={shidur_mode === "beyahad" || shidur_mode === ""} color='teal' content='Beyahad' onClick={() => this.shidurMode("beyahad")} />
           </Button.Group>
           <Segment attached textAlign='center' className="disabled_groups">
             <Table selectable compact='very' basic structured className="admin_table" unstackable>
