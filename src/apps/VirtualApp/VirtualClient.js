@@ -51,7 +51,8 @@ import GxyJanus from '../../shared/janus-utils';
 import audioModeSvg from '../../shared/audio-mode.svg';
 import fullModeSvg from '../../shared/full-mode.svg';
 import ConfigStore from '../../shared/ConfigStore';
-import {GuaranteeDeliveryManager} from '../../shared/GuaranteeDelivery';
+import { GuaranteeDeliveryManager } from '../../shared/GuaranteeDelivery';
+import FullScreenHelper from './FullScreenHelper';
 
 import {AppBar, Badge, Box, Button as ButtonMD, ButtonGroup, Grid, IconButton, Toolbar, Typography} from '@material-ui/core';
 import {ChevronLeft, ChevronRight} from '@material-ui/icons';
@@ -1515,7 +1516,8 @@ class VirtualClient extends Component {
             sourceLoading,
             user,
             premodStatus,
-            media
+            media,
+            fullScreenHelper
           }     = this.state;
 
     const { video_device } = media.video;
@@ -1526,7 +1528,7 @@ class VirtualClient extends Component {
         // position="sticky"
         position="static"
         color="default"
-        
+
         // style={{
         // top: 'auto',
         // bottom: 0,
@@ -1540,7 +1542,7 @@ class VirtualClient extends Component {
               // style={{ color: grey[50], marginLeft: '2em' }}
               className={classNames('bottom-toolbar__item')}
               disableElevation
-              
+
             >
               <Mute
                 t={t}
@@ -1556,72 +1558,73 @@ class VirtualClient extends Component {
               />
             </ButtonGroup>
 
-            {/* ~~~~~~~~~~~ */}
- 
-            <ButtonGroup
-              className={classNames('bottom-toolbar__item')}
-              variant="contained"
-              disableElevation
-              >
-              <Fullscreen
-                t={t}
-                action={this.otherCamsMuteToggle.bind(this)}
-                isOn={muteOtherCams}
-              />
-              <CloseBroadcast
-                t={t}
-                isOn={shidur}
-                action={this.toggleShidur.bind(this)}
-                disabled={room === '' || sourceLoading}
-              />
-              <Layout
-                t={t}
-                active={layout}
-                action={this.updateLayout.bind(this)}
-                disabled={room === '' || !shidur || sourceLoading || !attachedSource}
-                iconDisabled={sourceLoading}
-              />
-              <AudioMode
-                t={t}
-                action={this.otherCamsMuteToggle.bind(this)}
-                isOn={muteOtherCams} />
-            </ButtonGroup>
-          
-              <ButtonGroup
-              className={classNames('bottom-toolbar__item')}
-              variant="contained"
-              disableElevation
-              // style={{ color: grey[50] }}
-              >
-              <AskQuestion
-                t={t}
-                isOn={!!question}
-                disabled={premodStatus || !audio_device || !localAudioTrack || delay || otherFeedHasQuestion}
-                action={this.handleQuestion.bind(this)}
-                />
-              <Vote
-                t={t}
-                id={user?.id}
-                disabled={!user || !user.id || room === ''}
-                />
-            </ButtonGroup>
-     
-            <ButtonMD
-              onClick={() => this.exitRoom(false)}
-              variant="contained"
-              color="secondary"
-              className={classNames('bottom-toolbar__item')}
-              disableElevation
-              // style={{
-              //   marginRight: '1em',
-              //   backgroundColor: red[500],
-              //   fontWeight: 'bold',
-              //   color: 'white',
-              //   textTransform: 'none'
-              // }}
-            >
-              {t('oldClient.leave')}
-            </ButtonMD>
+          {/* ~~~~~~~~~~~ */}
+
+          <ButtonGroup
+            className={classNames('bottom-toolbar__item')}
+            variant="contained"
+            disableElevation
+          >
+            <Fullscreen
+              t={t}
+              isOn={fullScreenHelper?.isFullScreen()}
+              action={fullScreenHelper?.toggle}
+              disabled={!fullScreenHelper}
+            />
+            <CloseBroadcast
+              t={t}
+              isOn={shidur}
+              action={this.toggleShidur.bind(this)}
+              disabled={room === '' || sourceLoading}
+            />
+            <Layout
+              t={t}
+              active={layout}
+              action={this.updateLayout.bind(this)}
+              disabled={room === '' || !shidur || sourceLoading || !attachedSource}
+              iconDisabled={sourceLoading}
+            />
+            <AudioMode
+              t={t}
+              action={this.otherCamsMuteToggle.bind(this)}
+              isOn={muteOtherCams} />
+          </ButtonGroup>
+
+          <ButtonGroup
+            className={classNames('bottom-toolbar__item')}
+            variant="contained"
+            disableElevation
+            // style={{ color: grey[50] }}
+          >
+            <AskQuestion
+              t={t}
+              isOn={!!question}
+              disabled={premodStatus || !audio_device || !localAudioTrack || delay || otherFeedHasQuestion}
+              action={this.handleQuestion.bind(this)}
+            />
+            <Vote
+              t={t}
+              id={user?.id}
+              disabled={!user || !user.id || room === ''}
+            />
+          </ButtonGroup>
+
+          <ButtonMD
+            onClick={() => this.exitRoom(false)}
+            variant="contained"
+            color="secondary"
+            className={classNames('bottom-toolbar__item')}
+            disableElevation
+            // style={{
+            //   marginRight: '1em',
+            //   backgroundColor: red[500],
+            //   fontWeight: 'bold',
+            //   color: 'white',
+            //   textTransform: 'none'
+            // }}
+          >
+            {t('oldClient.leave')}
+          </ButtonMD>
         </Toolbar>
         </AppBar>
     );
@@ -1704,7 +1707,7 @@ class VirtualClient extends Component {
     const { user, asideMsgCounter, leftAsideName, rightAsideName, monitoringData, net_status, isOpenTopMenu } = this.state;
 
     return (
-    
+
       <AppBar color="default" position="static">
         <Toolbar className="top-toolbar">
           <TopMenu
@@ -1808,7 +1811,7 @@ class VirtualClient extends Component {
             }
           </ButtonGroup>
           {/* ---------- */}
-             
+
         </Toolbar>
       </AppBar>
     );
@@ -1851,8 +1854,13 @@ class VirtualClient extends Component {
     );
   };
 
+  initFullScreenHelper = (ref) => {
+    const fullScreenHelper = new FullScreenHelper(ref);
+    this.setState({ fullScreenHelper });
+  };
+
   renderNewVersionContent = (layout, isDeb, source, rooms_list, otherFeedHasQuestion, adevices_list, vdevices_list, noOfVideos, remoteVideos) => {
-    const { t, i18n } = this.props;
+    const { i18n } = this.props;
     const {
             attachedSource,
             chatVisible,
@@ -1865,14 +1873,14 @@ class VirtualClient extends Component {
           }           = this.state;
 
     return (
-      <div className={classNames('vclient', { 'vclient--chat-open': chatVisible })}>
+      <div className={classNames('vclient', { 'vclient--chat-open': chatVisible })} ref={this.initFullScreenHelper}>
         <VerifyAccount user={user} loginPage={false} i18n={i18n} />
         {this.renderTopBar(isDeb)}
 
         <Grid container className="vclient__main">
           {this.renderLeftAside()}
           <Grid item xs={12 - (!leftAsideName ? 0 : leftAsideSize) - (!rightAsideName ? 0 : 3)}
-          style={{ display: 'flex', flexDirection: 'column', overflow:'hidden' }}
+                style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
           >
             <div className={`
             vclient__main-wrapper
@@ -1906,7 +1914,6 @@ class VirtualClient extends Component {
         </Grid>
       </div>
     );
-
   };
 
   setIsRoomChat = (isRoomChat) => this.setState({ isRoomChat });
