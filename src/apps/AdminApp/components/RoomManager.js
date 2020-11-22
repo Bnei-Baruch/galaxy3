@@ -1,22 +1,37 @@
 import React, {Component, Fragment} from 'react';
 import {
-    Button,
-    Confirm,
-    Dropdown,
-    Form,
-    Header,
-    Icon,
-    Input,
-    Menu,
-    Message,
-    Modal,
-    Pagination,
-    Table
+  Button,
+  Confirm,
+  Dropdown,
+  Form,
+  Header,
+  Icon,
+  Input,
+  Menu,
+  Message,
+  Modal,
+  Pagination,
+  Table
 } from 'semantic-ui-react'
 import {debounce} from 'debounce';
 import api from "../../../shared/Api";
 
 const pageSize = 10;
+
+// key should be up to 32 characters (DB column size)
+const regions = {
+  'petach-tikva': 'Petach Tikva',
+  'israel': 'Israel',
+  'russia': 'Russia',
+  'ukraine': 'Ukraine',
+  'europe': 'Europe',
+  'asia': 'Asia',
+  'north-america': 'North America',
+  'latin-america': 'Latin America',
+  'africa': 'Africa',
+};
+
+const regionOptions = Object.entries(regions).map(([value, text]) => ({value, text, key: value}));
 
 class RoomManager extends Component {
 
@@ -171,6 +186,15 @@ class RoomManager extends Component {
         });
     }
 
+    onCurrentRoomRegionChange = (e, data) => {
+        this.setState({
+          currentRoom: {
+            ...this.state.currentRoom,
+            region: data.value,
+          }
+        });
+    }
+
     doSaveRoom = () => {
         const {currentRoom} = this.state;
         console.info("[Admin-Rooms] save room", currentRoom);
@@ -288,6 +312,7 @@ class RoomManager extends Component {
                             <Table.HeaderCell singleLine>Gateway</Table.HeaderCell>
                             <Table.HeaderCell singleLine>Gateway UID</Table.HeaderCell>
                             <Table.HeaderCell>Name</Table.HeaderCell>
+                            <Table.HeaderCell>Region</Table.HeaderCell>
                             <Table.HeaderCell>Actions</Table.HeaderCell>
                         </Table.Row>
                     </Table.Header>
@@ -318,6 +343,7 @@ class RoomManager extends Component {
                                                     null
                                             }
                                         </Table.Cell>
+                                      <Table.Cell collapsing textAlign='center'>{regions[x.region]}</Table.Cell>
                                         <Table.Cell collapsing textAlign='center'>
                                             <Button.Group basic>
                                                 <Button
@@ -395,6 +421,12 @@ class RoomManager extends Component {
                                     onChange={this.onCurrentRoomGatewayChange}
                                     required
                                 />
+                              <Form.Select
+                                label='Region'
+                                options={regionOptions}
+                                value={currentRoom.region}
+                                onChange={this.onCurrentRoomRegionChange}
+                              />
                             </Form>
                             {err ?
                                 <Message negative>
