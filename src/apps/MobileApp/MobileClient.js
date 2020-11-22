@@ -874,7 +874,11 @@ class MobileClient extends Component {
                   this.unsubscribeFrom([leaving], /* onlyVideo= */ false);
                   const feedsNewState = feeds.filter(feed => feed.id !== leaving);
                   this.switchVideos(/* page= */ this.state.page, userFeeds(feeds), userFeeds(feedsNewState));
-                  this.setState({feeds: feedsNewState});
+                  this.setState({feeds: feedsNewState}, () => {
+                    if (this.state.page * PAGE_SIZE === this.state.feeds.length) {
+                      this.switchPage(this.state.page - 1, this.state.feeds);
+                    }
+                 });
 
                 } else if(msg['unpublished'] !== undefined && msg['unpublished'] !== null) {
                     const unpublished = msg['unpublished'];
@@ -1146,8 +1150,11 @@ class MobileClient extends Component {
     };
 
     switchVideoSlots = (from, to) => {
-      const fromRemoteVideo = this.refs["remoteVideo" + from];
-      const toRemoteVideo = this.refs["remoteVideo" + to];
+      const {page} = this.state;
+      const fromVideoIndex = from - page * PAGE_SIZE;
+      const toVideoIndex = to - page * PAGE_SIZE;
+      const fromRemoteVideo = this.refs["remoteVideo" + fromVideoIndex];
+      const toRemoteVideo = this.refs["remoteVideo" + toVideoIndex];
       if (!fromRemoteVideo || !toRemoteVideo) {
         console.error(`Failed switching video slots ${from} to ${to}`, fromRemoteVideo, toRemoteVideo);
         captureMessage('Mobile failed switching video slots', {source: 'MobileClient', from, to, fromRemoteVideo, toRemoteVideo}, 'error');
@@ -1160,20 +1167,19 @@ class MobileClient extends Component {
     }
 
     switchVideos = (page, oldFeeds, newFeeds) => {
+      console.log('switchVideos', 'page', page, 'PAGE_SIZE', PAGE_SIZE, 'old', oldFeeds.length, 'new', newFeeds.length);
       const {muteOtherCams} = this.state;
 
-      const oldVideoSlots = [
-        oldFeeds.findIndex(feed => feed.videoSlot === 0),
-        oldFeeds.findIndex(feed => feed.videoSlot === 1),
-        oldFeeds.findIndex(feed => feed.videoSlot === 2),
-      ];
+      const oldVideoSlots = [];
+      for (let index = 0; index < PAGE_SIZE; index++) {
+        oldVideoSlots.push(oldFeeds.findIndex(feed => feed.videoSlot === index));
+      }
       const oldVideoFeeds = oldVideoSlots.map(index => index !== -1 ? oldFeeds[index] : null);
 
-      const newVideoSlots = [
-        (page * PAGE_SIZE) + 0 >= newFeeds.length ? -1 : (page * PAGE_SIZE) + 0,
-        (page * PAGE_SIZE) + 1 >= newFeeds.length ? -1 : (page * PAGE_SIZE) + 1,
-        (page * PAGE_SIZE) + 2 >= newFeeds.length ? -1 : (page * PAGE_SIZE) + 2,
-      ];
+      const newVideoSlots = [];
+      for (let index = 0; index < PAGE_SIZE; index++) {
+        newVideoSlots.push((page * PAGE_SIZE) + index >= newFeeds.length ? -1 : (page * PAGE_SIZE) + index);
+      }
       const newVideoFeeds = newVideoSlots.map(index => index !== -1 ? newFeeds[index] : null);
 
       // Update video slots.
@@ -1219,6 +1225,7 @@ class MobileClient extends Component {
       })
 
       if (!muteOtherCams) {
+        console.log('refs', this.refs, 'subscribeFeeds', subscribeFeeds, 'unsubscribeFeeds', unsubscribeFeeds, 'switchFeeds', switchFeeds);
         this.makeSubscription(subscribeFeeds, /* feedsJustJoined= */ false, /* subscribeToVideo= */ true,
                               /* subscribeToAudio= */ false, /* subscribeToData= */ false);
         this.unsubscribeFrom(unsubscribeFeeds.map(feed => feed.id), /* onlyVideo= */ true);
@@ -1557,6 +1564,7 @@ class MobileClient extends Component {
       }
 
       // TODO: Instead of 0, 3 should actuaaly map things...
+      console.log('render remote videos', feeds.length, page);
       const remoteVideos = userFeeds(feeds).slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE).map((feed, i) => {
         return (<div className="video"
                      key={"vk" + i}

@@ -7,6 +7,7 @@ export const LOST_CONNECTION = 'Lost connection to the server (is it down?)';
 
 
 export const USERNAME_ALREADY_EXIST_ERROR_CODE = 420;
+export const ALREADY_IN_ROOM_ERROR_CODE = 421;
 
 export const SHIDUR_ID = "4ab867e5-46f9-47b9-bd6d-47a6df784d92";
 export const SNDMAN_ID = "720f133f-b8e2-49a8-a148-7bd80763ae55";

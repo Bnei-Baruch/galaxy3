@@ -64,6 +64,11 @@ class Api {
         return this.logAndParse(`update user ${id}`, fetch(this.urlFor(`/users/${id}`), options));
     }
 
+    updateRoom = (id, data) => {
+        const options = this.makeOptions('PUT', data);
+        return this.logAndParse(`update room ${id}`, fetch(this.urlFor(`/rooms/${id}`), options));
+    }
+
     // Admin API
 
     adminFetchGateways = (params = {}) =>
