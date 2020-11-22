@@ -129,23 +129,6 @@ export const RegistrationForm = ({ user: { familyname, username, email, display 
     setErrors(newErr);
   };
 
-  const renderTens = () => {
-    return tens && (
-      <Autocomplete
-        variant="outlined"
-        value={ten}
-        options={tens}
-        getOptionLabel={r => r}
-        onChange={handleTenChange}
-        renderInput={
-          (params) => (
-            <TextField {...params} label={t('registration.selectGroup')} variant="outlined" />
-          )
-        }
-      />
-    );
-  };
-
   const renderCountries = () => {
     return countryIds && (
       <Autocomplete
@@ -322,7 +305,13 @@ export const RegistrationForm = ({ user: { familyname, username, email, display 
           />
         </Grid>
         <Grid item xs={6}>
-          {renderTens()}
+          <TextField
+            label={t('registration.selectGroup')}
+            variant="outlined"
+            onChange={handleTenChange}
+            value={ten}
+            fullWidth
+          />
         </Grid>
         <Grid item xs={12}>
           <TextField

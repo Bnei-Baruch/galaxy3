@@ -141,37 +141,6 @@ export const RegistrationForm = ({ user: { familyname, username, email, display 
     setErrors(newErr);
   };
 
-  const renderTens = () => {
-    return tens && (
-      <Autocomplete
-        variant="outlined"
-        value={ten}
-        options={tens}
-        getOptionLabel={r => r}
-        classes={{ option: classes.inputTextSize }}
-        onChange={handleTenChange}
-        renderInput={
-          (params) => (
-            <TextField
-              {...params}
-              label={t('registration.selectGroup')}
-              variant="outlined"
-              InputProps={{
-                ...params.InputProps,
-                classes: { root: classes.inputTextSize }
-              }}
-              InputLabelProps={{
-                classes: {
-                  root: classes.inputLabelSize
-                }
-              }}
-            />
-          )
-        }
-      />
-    );
-  };
-
   const renderCountries = () => {
     return countryIds && (
       <Autocomplete
@@ -390,7 +359,19 @@ export const RegistrationForm = ({ user: { familyname, username, email, display 
           />
         </Grid>
         <Grid item xs={6} sm={12}>
-          {renderTens()}
+          <TextField
+            label={t('registration.selectGroup')}
+            variant="outlined"
+            onChange={handleTenChange}
+            value={ten}
+            fullWidth
+            InputProps={{ classes: { root: classes.inputTextSize } }}
+            InputLabelProps={{
+              classes: {
+                root: classes.inputLabelSize
+              }
+            }}
+          />
         </Grid>
         <Grid item xs={12}>
           <TextField
