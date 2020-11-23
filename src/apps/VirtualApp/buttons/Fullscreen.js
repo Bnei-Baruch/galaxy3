@@ -7,9 +7,9 @@ const Fullscreen = (props) => {
   const handleAction = () => action(isOn);
 
   return (
-    <Tooltip title={t(isOn ? 'oldClient.fullMode' : 'oldClient.audioMode')} >
+    <Tooltip title={t(isOn ? 'oldClient.openFullScreen' : 'oldClient.closeFullScreen')} >
       <IconButton
-        aria-label={t(isOn ? 'oldClient.fullMode' : 'oldClient.audioMode')}
+        aria-label={t(isOn ? 'oldClient.openFullScreen' : 'oldClient.closeFullScreen')}
         disabled={disabled}
         onClick={() => handleAction()}>
         {isOn ? <FullscreenExit/> : <FullscreenIcon  />}
