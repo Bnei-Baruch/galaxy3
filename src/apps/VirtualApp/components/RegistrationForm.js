@@ -46,20 +46,19 @@ const useStyles = makeStyles(() => ({
 }));
 
 let countryById;
-let countryIds;
 const fetchCountriesByLang = (lang = 'en') => {
   countries.registerLocale(require(`i18n-iso-countries/langs/en.json`));
   if (lang !== 'en')
     countries.registerLocale(require(`i18n-iso-countries/langs/${lang}.json`));
   countryById = countries.getNames(lang, { select: 'official' });
-  countryIds  = Object.keys(countryById);
+  return Object.keys(countryById);
 
 };
 
 export const RegistrationForm = ({ user: { familyname, username, email, display }, id, onClose, onSubmit, isOpen, language }) => {
   const classes                     = useStyles();
-  const [tens, setTens]             = useState();
   const [city, setCity]             = useState();
+  const [countryIds, setCountryIds] = useState([]);
   const [country, setCountry]       = useState();
   const [gender, setGender]         = useState();
   const [telephone, setTelephone]   = useState();
@@ -74,20 +73,9 @@ export const RegistrationForm = ({ user: { familyname, username, email, display 
   const isRtl = language === 'he';
 
   useEffect(() => {
-    fetchRooms();
-  }, []);
-
-  useEffect(() => {
-    fetchCountriesByLang(language);
+    const ids = fetchCountriesByLang(language);
+    setCountryIds(ids);
   }, [language]);
-
-  const fetchRooms = () => {
-    api.fetchAvailableRooms()
-      .then(d => {
-        const _tens = d.rooms.map(r => r.description).filter(t => !t.match(/test|info/i));
-        setTens(_tens);
-      }).catch(() => setTens([]));
-  };
 
   const handleCityChange      = ({ target: { value } }) => {
     deleteErrorByKey('city');
@@ -102,12 +90,10 @@ export const RegistrationForm = ({ user: { familyname, username, email, display 
     setTelephone(value);
   };
   const handleAboutYouChange  = ({ target: { value } }) => setAboutYou(value);
-  const handleTenChange       = (e, op) => {
-    if (!op)
-      return;
-    setTen(op);
-  };
-  const handleCountryChange   = (e, op) => {
+
+  const handleTenChange = ({ target: { value } }) => setTen(value);
+
+  const handleCountryChange = (e, op) => {
     deleteErrorByKey('country');
     if (!op)
       return;
@@ -341,14 +327,14 @@ export const RegistrationForm = ({ user: { familyname, username, email, display 
   );
 
   return (
-    <Modal
-      open={isOpen}
-      onClose={onClose}
-      disableBackdropClick
-      style={{ verticalAlign: 'middle' }}
-    >
-      <RTL>
-        <MuiThemeProvider theme={isRtl ? rtlTheme : ltrTheme}>
+    <RTL>
+      <MuiThemeProvider theme={isRtl ? rtlTheme : ltrTheme}>
+        <Modal
+          open={isOpen}
+          onClose={onClose}
+          disableBackdropClick
+          style={{ verticalAlign: 'middle' }}
+        >
           <Box
             className={classes.container}
             maxWidth="md"
@@ -385,9 +371,9 @@ export const RegistrationForm = ({ user: { familyname, username, email, display 
               </Grid>
             </Grid>
           </Box>
-        </MuiThemeProvider>
-      </RTL>
-    </Modal>
+        </Modal>
+      </MuiThemeProvider>
+    </RTL>
   );
 };
 
