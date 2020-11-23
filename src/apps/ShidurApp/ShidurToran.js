@@ -80,8 +80,9 @@ class ShidurToran extends Component {
     this.props.setProps({shidur_mode});
   };
 
-  setRegion = (region) => {
-    this.props.setProps({region});
+  setRegion = (value) => {
+    let {region} = this.props;
+    this.props.setProps({region : region === value ? null : value});
   };
 
   galaxyMode = (galaxy_mode) => {
@@ -94,13 +95,22 @@ class ShidurToran extends Component {
     this.setState({galaxy_mode});
   };
 
+  getRoomID = (room) => {
+    const {admin_rooms} = this.props;
+    return admin_rooms.find(r => r.gateway_uid === room).id
+  }
+
   disableRoom = (data) => {
     if(this.state.delay) return;
+    data = {...data, extra: {...(data.extra || {}), disabled: true}};
+    delete data.users;
+    console.log(data)
     let {disabled_rooms} = this.props;
     let group = disabled_rooms.find(r => r.room === data.room);
     if (group) return;
-    disabled_rooms.push(data);
-    this.props.setProps({disabled_rooms});
+    api.updateRoom(data.room, data);
+    // disabled_rooms.push(data);
+    // this.props.setProps({disabled_rooms});
     this.setDelay();
   };
 
@@ -108,22 +118,30 @@ class ShidurToran extends Component {
     let {groups} = this.props;
     let group = groups.find(r => r.room === data.room);
     if (group) return;
-    groups.push(data);
-    this.props.setProps({groups});
+    data = {...data, extra: {...(data.extra || {}), timestamp: Date.now()}};
+    delete data.users;
+    console.log(data)
+    api.updateRoom(data.room, data);
+    // groups.push(data);
+    // this.props.setProps({groups});
   };
 
   restoreRoom = (e, data, i) => {
     if(this.state.delay) return;
     e.preventDefault();
     if (e.type === 'contextmenu') {
-      let {disabled_rooms} = this.props;
-      for(let i = 0; i < disabled_rooms.length; i++){
-        if(disabled_rooms[i].room === data.room) {
-          disabled_rooms.splice(i, 1);
-          this.props.setProps({disabled_rooms});
-          this.setDelay();
-        }
-      }
+      data.extra = null;
+      delete data.users;
+      api.updateRoom(data.room, data);
+      this.setDelay();
+      // let {disabled_rooms} = this.props;
+      // for(let i = 0; i < disabled_rooms.length; i++){
+      //   if(disabled_rooms[i].room === data.room) {
+      //     disabled_rooms.splice(i, 1);
+      //     this.props.setProps({disabled_rooms});
+      //     this.setDelay();
+      //   }
+      // }
     }
   };
 
@@ -401,7 +419,7 @@ class ShidurToran extends Component {
           <Segment attached className="settings_conteiner" >
             <Button.Group size='mini' >
               {Object.keys(short_regions).map(r => {
-                return(<Button disabled={region === r} content={short_regions[r]} onClick={() => this.setRegion(r)} />)
+                return(<Button color={region === r ? '' : 'grey'} content={short_regions[r]} onClick={() => this.setRegion(r)} />)
               })}
             </Button.Group>
           </Segment>
