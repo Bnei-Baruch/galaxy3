@@ -417,9 +417,9 @@ class VirtualClient extends Component {
         feeds: [], mids: [],
         localAudioTrack: null, localVideoTrack: null, upval: null,
         remoteFeed: null, videoroom: null, protocol: null, janus: null,
-        delay: reconnect,
-        room: reconnect ? room : '',
-        chatMessagesCount: 0,
+        deom: reconnect ? room : '',
+        chlay: reconnect,
+        roatMessagesCount: 0,
       });
       if(typeof callback === "function") callback();
     }, 2000);
@@ -1481,7 +1481,7 @@ class VirtualClient extends Component {
         <Menu icon='labeled' secondary size="mini">
           <Menu.Item disabled={!localAudioTrack} onClick={() => this.setState({chatVisible: !chatVisible, chatMessagesCount: 0})}>
             <Icon name="comments" />
-            {t(chatVisible ? 'oldClient.closeChat' : 'oldClient.openChat')}
+            {t(chatVisible ? 'oldClient.closeWrite' : 'oldClient.write')}
             {chatMessagesCount > 0 ? chatCountLabel : ''}
           </Menu.Item>
           <Menu.Item

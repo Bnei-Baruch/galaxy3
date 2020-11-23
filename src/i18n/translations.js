@@ -23,6 +23,8 @@ export const resources = {
         askQuestion: 'Ask a Question',
         openBroadcast: 'Open Broadcast',
         closeBroadcast: 'Close Broadcast',
+        write: 'Write',
+        closeWrite:'Close Write',
         broadcast: 'Broadcast',
         layout: 'Layout',
         mute: 'Mute',
@@ -65,10 +67,14 @@ export const resources = {
         help: 'Help',
       },
       virtualChat: {
-        roomChat: 'Room chat',
-        supportChat: 'Support chat',
+        roomChat: 'Chat',
+        supportChat: 'Support',
+        questions: 'Questions',
         send: 'Send',
+        sendQuestion:'Send Question',
         enterMessage: 'Type your message',
+        enterQuestion: 'Type your question',
+        moderator:'Moderator: Selected questions related to the theam of the lesson will be asked during the broadcast'
       },
       loginPage: {
         support: 'Help',

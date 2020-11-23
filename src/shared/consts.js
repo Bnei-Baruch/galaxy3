@@ -141,3 +141,9 @@ export const trllang = {
         "Heb-Eng": 303,
         "Heb-Rus": 302,
 };
+
+export const TABS = {
+    CHAT : "chat",
+    QUESTIONS : "questions",
+    SUPPORT : "support"
+};
