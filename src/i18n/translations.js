@@ -24,6 +24,8 @@ export const resources = {
         cancelQuestion: 'Cancel the Question',
         openBroadcast: 'Open Broadcast',
         closeBroadcast: 'Close Broadcast',
+        openFullScreen:'Open in full screen',
+        closeFullScreen:'Close full screen',
         broadcast: 'Broadcast',
         layout: 'Layout',
         mute: 'Mute',

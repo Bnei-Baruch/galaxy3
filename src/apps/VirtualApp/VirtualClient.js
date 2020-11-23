@@ -57,10 +57,6 @@ import FullScreenHelper from './FullScreenHelper';
 import {AppBar, Badge, Box, Button as ButtonMD, ButtonGroup, Grid, IconButton, Toolbar, Typography} from '@material-ui/core';
 import {ChevronLeft, ChevronRight} from '@material-ui/icons';
 
-
-
-
-
 import {AskQuestion, AudioMode, CloseBroadcast, Layout, Mute, MuteVideo, Vote, Fullscreen} from './buttons';
 import Settings from './settings/Settings';
 import SettingsJoined from './settings/SettingsJoined';
@@ -138,7 +134,8 @@ class VirtualClient extends Component {
     premodStatus: false,
     gdm: null,
     asideMsgCounter: { drawing: 0, chat: 0 },
-    leftAsideSize: 3
+    leftAsideSize: 3,
+    fullScreenHelper: new FullScreenHelper()
   };
 
   virtualStreamingInitialized() {
@@ -1567,8 +1564,8 @@ class VirtualClient extends Component {
           >
             <Fullscreen
               t={t}
-              isOn={fullScreenHelper?.isFullScreen()}
-              action={fullScreenHelper?.toggle}
+              isOn={fullScreenHelper.isFullScreen()}
+              action={fullScreenHelper.toggle}
               disabled={!fullScreenHelper}
             />
             <CloseBroadcast
@@ -1854,11 +1851,6 @@ class VirtualClient extends Component {
     );
   };
 
-  initFullScreenHelper = (ref) => {
-    const fullScreenHelper = new FullScreenHelper(ref);
-    this.setState({ fullScreenHelper });
-  };
-
   renderNewVersionContent = (layout, isDeb, source, rooms_list, otherFeedHasQuestion, adevices_list, vdevices_list, noOfVideos, remoteVideos) => {
     const { i18n } = this.props;
     const {
@@ -1873,7 +1865,7 @@ class VirtualClient extends Component {
           }           = this.state;
 
     return (
-      <div className={classNames('vclient', { 'vclient--chat-open': chatVisible })} ref={this.initFullScreenHelper}>
+      <div className={classNames('vclient', { 'vclient--chat-open': chatVisible })}>
         <VerifyAccount user={user} loginPage={false} i18n={i18n} />
         {this.renderTopBar(isDeb)}
 

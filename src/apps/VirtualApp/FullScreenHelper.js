@@ -1,22 +1,23 @@
 export default class FullScreenHelper {
-  constructor(el) {
-    this.el = el;
+  constructor(el = document.body) {
+    this.el    = el;
+    this.owner = el.ownerDocument;
   }
 
   isFullScreen = () => {
-    return !!this.el && (this.el.ownerDocument.fullscreenElement
-      || this.el.ownerDocument.mozFullScreenElemen
-      || this.el.ownerDocument.webkitFullscreenElement);
+    return !!this.el && (this.owner.fullscreenElement
+      || this.owner.mozFullScreenElemen
+      || this.owner.webkitFullscreenElement);
   };
 
   toggle = () => {
     if (this.isFullScreen()) {
-      if (this.el.ownerDocument.exitFullscreen) {
-        this.el.ownerDocument.exitFullscreen();
-      } else if (this.el.ownerDocument.webkitExitFullscreen) {
-        this.el.ownerDocument.webkitExitFullscreen();
-      } else if (this.el.ownerDocument.mozCancelFullScreen) {
-        this.el.ownerDocument.mozCancelFullScreen();
+      if (this.owner.exitFullscreen) {
+        this.owner.exitFullscreen();
+      } else if (this.el.webkitExitFullscreen) {
+        this.owner.webkitExitFullscreen();
+      } else if (this.el.mozCancelFullScreen) {
+        this.owner.mozCancelFullScreen();
       }
     } else {
       if (this.el.requestFullscreen) {
@@ -25,8 +26,8 @@ export default class FullScreenHelper {
         this.el.webkitRequestFullscreen();
       } else if (this.el.mozRequestFullScreen) {
         this.el.mozRequestFullScreen();
-      } else if (this.video.webkitEnterFullscreen) {
-        this.video.webkitEnterFullscreen();
+      } else if (this.el.webkitEnterFullscreen) {
+        this.el.webkitEnterFullscreen();
       }
     }
   };
