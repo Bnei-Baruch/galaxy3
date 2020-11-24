@@ -1873,11 +1873,16 @@ class VirtualClient extends Component {
             leftAsideName,
             sourceLoading,
             virtualStreamingJanus,
-            isKliOlamiShown
+            isKliOlamiShown,
+            muteOtherCams
           }           = this.state;
+    if ((!sourceLoading && isKliOlamiShown && !muteOtherCams)) {
+      noOfVideos += (layout === 'equal') ? 1 : (layout === 'double') ? 4 : 0;
+    }
 
-    noOfVideos += (layout === 'equal') ? 1 : (layout === 'double') ? 4 : 0;
-    const kliOlami = !sourceLoading && isKliOlamiShown ? <KliOlamiStream janus={virtualStreamingJanus.janus} /> : null;
+    const kliOlami = (!sourceLoading && isKliOlamiShown && !muteOtherCams)
+      ? <KliOlamiStream janus={virtualStreamingJanus.janus} />
+      : null;
     return (
       <div className={classNames('vclient', { 'vclient--chat-open': chatVisible })}>
         <VerifyAccount user={user} loginPage={false} i18n={i18n} />

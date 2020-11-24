@@ -1,17 +1,53 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import Box from '@material-ui/core/Box';
 import { Janus } from '../../../lib/janus';
-import { captureMessage } from '../../../shared/sentry';
-import FullScreenHelper from '../FullScreenHelper';
+import GxyJanus from '../../../shared/janus-utils';
 
 const ALL_KLI_OLAMI_STREAM_ID = 102;
+let janus;
 let streamHandle;
 
-const initStream = (janus, updateStream) => {
+const initJanus = () => {
+  return new Promise((resolve) => {
+    if (janus)
+      return resolve();
+
+    Janus.init({
+      debug: process.env.NODE_ENV !== 'production' ? ['log', 'error'] : ['log', 'error'],
+
+      callback: () => {
+        const gateways = GxyJanus.gatewayNames('streaming');
+        const gateway  = gateways[Math.floor(Math.random() * gateways.length)];
+        const config   = GxyJanus.instanceConfig(gateway);
+
+        janus = new Janus({
+          server: config.url,
+          iceServers: config.iceServers,
+          success: () => {
+            Janus.log(' :: Connected to JANUS');
+            resolve(true);
+          },
+          error: (err) => {
+            Janus.log(JSON.stringify(err));
+            console.error('RELOAD ON ERROR', err);
+          },
+          destroyed: () => {
+            Janus.log('Janus handle successfully destroyed.');
+          }
+        });
+      }
+    });
+  });
+};
+
+const initStream = async (updateStream) => {
+  await initJanus();
+
   return janus.attach({
     plugin: 'janus.plugin.streaming',
     success: (videostream) => {
       Janus.debug(`connected to videostream:${videostream}`);
+
       streamHandle = videostream;
       videostream.send({ 'message': { 'request': 'watch', id: ALL_KLI_OLAMI_STREAM_ID } });
     },
@@ -32,12 +68,12 @@ const initStream = (janus, updateStream) => {
       Janus.log(`Got a message ${JSON.stringify(msg)}`);
       if (streamHandle !== null && jsep !== undefined && jsep !== null) {
         Janus.log('Handling SDP as well...', jsep);
-
         // Answer
         streamHandle.createAnswer({
           jsep: jsep,
           media: { audioSend: false, videoSend: false },
           success: (jsep) => {
+
             Janus.log('Got SDP!', jsep);
             streamHandle.send({ message: { request: 'start' }, jsep: jsep });
           },
@@ -69,7 +105,9 @@ const initStream = (janus, updateStream) => {
 };
 
 const detach = () => {
-  streamHandle && streamHandle.detach({
+  if (!streamHandle)
+    return;
+  streamHandle.detach({
     success: () => streamHandle = null,
     error: () => streamHandle = null
   });
@@ -79,8 +117,11 @@ const KliOlamiStream = ({ janus }) => {
   const ref = useRef();
 
   useEffect(() => {
-    initStream(janus, attachStream);
-    return detach;
+    initStream(attachStream);
+    return () => {
+      Janus.detachMediaStream(ref);
+      detach();
+    };
   }, []);
 
   const attachStream = (stream) => Janus.attachMediaStream(ref.current, stream);
