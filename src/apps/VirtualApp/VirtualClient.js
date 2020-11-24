@@ -62,6 +62,8 @@ import Settings from './settings/Settings';
 import SettingsJoined from './settings/SettingsJoined';
 import HomerLimud from './components/HomerLimud';
 import {Help} from './components/Help';
+import KliOlamiStream from './components/KliOlamiStream';
+import KliOlamiToggle from './buttons/KliOlamiToggle';
 
 const sortAndFilterFeeds = (feeds) => feeds
   .filter(feed => !feed.display.role.match(/^(ghost|guest)$/))
@@ -1370,6 +1372,8 @@ class VirtualClient extends Component {
     }
   };
 
+  toggleKliOlami = (isKliOlamiShown = !this.state.isKliOlamiShown) => this.setState({ isKliOlamiShown });
+
   updateLayout = (currentLayout) => {
     this.setState({ currentLayout }, () => {
       localStorage.setItem('currentLayout', currentLayout);
@@ -1514,7 +1518,8 @@ class VirtualClient extends Component {
             user,
             premodStatus,
             media,
-            fullScreenHelper
+            fullScreenHelper,
+            isKliOlamiShown
           }     = this.state;
 
     const { video_device } = media.video;
@@ -1567,6 +1572,10 @@ class VirtualClient extends Component {
               isOn={fullScreenHelper.isFullScreen()}
               action={fullScreenHelper.toggle}
               disabled={!fullScreenHelper}
+            />
+            <KliOlamiToggle
+              isOn={isKliOlamiShown}
+              action={this.toggleKliOlami}
             />
             <CloseBroadcast
               t={t}
@@ -1861,9 +1870,14 @@ class VirtualClient extends Component {
             user,
             rightAsideName,
             leftAsideSize,
-            leftAsideName
+            leftAsideName,
+            sourceLoading,
+            virtualStreamingJanus,
+            isKliOlamiShown
           }           = this.state;
 
+    noOfVideos += (layout === 'equal') ? 1 : (layout === 'double') ? 4 : 0;
+    const kliOlami = !sourceLoading && isKliOlamiShown ? <KliOlamiStream janus={virtualStreamingJanus.janus} /> : null;
     return (
       <div className={classNames('vclient', { 'vclient--chat-open': chatVisible })}>
         <VerifyAccount user={user} loginPage={false} i18n={i18n} />
@@ -1885,12 +1899,14 @@ class VirtualClient extends Component {
               <div className="broadcast-panel">
                 <div className="broadcast__wrapper">
                   {layout === 'split' && source}
+                  {layout === 'split' && kliOlami}
                 </div>
               </div>
 
               <div className="videos-panel">
                 <div className="videos__wrapper">
-                  {(layout === 'equal' || layout === 'double') && source}
+                  {((layout === 'equal' || layout === 'double')) && source}
+                  {((layout === 'equal' || layout === 'double')) && kliOlami}
                   {remoteVideos}
                 </div>
               </div>
