@@ -52,7 +52,7 @@ import audioModeSvg from '../../shared/audio-mode.svg';
 import fullModeSvg from '../../shared/full-mode.svg';
 import ConfigStore from '../../shared/ConfigStore';
 import { GuaranteeDeliveryManager } from '../../shared/GuaranteeDelivery';
-import FullScreenHelper from './FullScreenHelper';
+import { toggleFullScreen, isFullScreen } from './FullScreenHelper';
 
 import {AppBar, Badge, Box, Button as ButtonMD, ButtonGroup, Grid, IconButton, Toolbar, Typography} from '@material-ui/core';
 import {ChevronLeft, ChevronRight} from '@material-ui/icons';
@@ -137,7 +137,7 @@ class VirtualClient extends Component {
     gdm: null,
     asideMsgCounter: { drawing: 0, chat: 0 },
     leftAsideSize: 3,
-    fullScreenHelper: new FullScreenHelper()
+    kliOlamiAttached: true
   };
 
   virtualStreamingInitialized() {
@@ -1569,9 +1569,8 @@ class VirtualClient extends Component {
           >
             <Fullscreen
               t={t}
-              isOn={fullScreenHelper.isFullScreen()}
-              action={fullScreenHelper.toggle}
-              disabled={!fullScreenHelper}
+              isOn={isFullScreen()}
+              action={toggleFullScreen}
             />
             <KliOlamiToggle
               isOn={isKliOlamiShown}
@@ -1874,14 +1873,21 @@ class VirtualClient extends Component {
             sourceLoading,
             virtualStreamingJanus,
             isKliOlamiShown,
-            muteOtherCams
-          }           = this.state;
+            muteOtherCams,
+            kliOlamiAttached
+          }        = this.state;
     if ((!sourceLoading && isKliOlamiShown && !muteOtherCams)) {
       noOfVideos += (layout === 'equal') ? 1 : (layout === 'double') ? 4 : 0;
     }
 
     const kliOlami = (!sourceLoading && isKliOlamiShown && !muteOtherCams)
-      ? <KliOlamiStream janus={virtualStreamingJanus.janus} />
+      ? (
+        <KliOlamiStream
+          close={() => this.setState({ isKliOlamiShown: !isKliOlamiShown })}
+          toggleAttach={(val = !kliOlamiAttached) => this.setState({ kliOlamiAttached: val })}
+          attached={kliOlamiAttached}
+        />
+      )
       : null;
     return (
       <div className={classNames('vclient', { 'vclient--chat-open': chatVisible })}>

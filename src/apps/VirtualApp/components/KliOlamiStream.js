@@ -1,142 +1,116 @@
-import React, { useEffect, useRef } from 'react';
-import Box from '@material-ui/core/Box';
+import React, { Component } from 'react';
 import { Janus } from '../../../lib/janus';
-import GxyJanus from '../../../shared/janus-utils';
+import NewWindow from 'react-new-window';
+import { isFullScreen, toggleFullScreen } from '../FullScreenHelper';
+import { Fullscreen } from '../buttons';
+import { Close, OpenInNew } from '@material-ui/icons';
+import IconButton from '@material-ui/core/IconButton';
+import { initStream, detach } from './KliOlamiStreamHelper';
 
-const ALL_KLI_OLAMI_STREAM_ID = 102;
-let janus;
-let streamHandle;
-
-const initJanus = () => {
-  return new Promise((resolve) => {
-    if (janus)
-      return resolve();
-
-    Janus.init({
-      debug: process.env.NODE_ENV !== 'production' ? ['log', 'error'] : ['log', 'error'],
-
-      callback: () => {
-        const gateways = GxyJanus.gatewayNames('streaming');
-        const gateway  = gateways[Math.floor(Math.random() * gateways.length)];
-        const config   = GxyJanus.instanceConfig(gateway);
-
-        janus = new Janus({
-          server: config.url,
-          iceServers: config.iceServers,
-          success: () => {
-            Janus.log(' :: Connected to JANUS');
-            resolve(true);
-          },
-          error: (err) => {
-            Janus.log(JSON.stringify(err));
-            console.error('RELOAD ON ERROR', err);
-          },
-          destroyed: () => {
-            Janus.log('Janus handle successfully destroyed.');
-          }
-        });
-      }
-    });
-  });
-};
-
-const initStream = async (updateStream) => {
-  await initJanus();
-
-  return janus.attach({
-    plugin: 'janus.plugin.streaming',
-    success: (videostream) => {
-      Janus.debug(`connected to videostream:${videostream}`);
-
-      streamHandle = videostream;
-      videostream.send({ 'message': { 'request': 'watch', id: ALL_KLI_OLAMI_STREAM_ID } });
-    },
-    error: (error) => {
-      Janus.warn('Error attaching plugin: ' + error);
-    },
-    iceState: (state) => {
-      Janus.warn('ICE state changed to ' + state);
-    },
-    webrtcState: (on) => {
-      Janus.warn('Janus says our WebRTC PeerConnection is ' + (on ? 'up' : 'down') + ' now');
-    },
-    slowLink: (uplink, lost, mid) => {
-      Janus.warn('Janus reports problems ' + (uplink ? 'sending' : 'receiving') +
-        ' packets on mid ' + mid + ' (' + lost + ' lost packets)');
-    },
-    onmessage: (msg, jsep) => {
-      Janus.log(`Got a message ${JSON.stringify(msg)}`);
-      if (streamHandle !== null && jsep !== undefined && jsep !== null) {
-        Janus.log('Handling SDP as well...', jsep);
-        // Answer
-        streamHandle.createAnswer({
-          jsep: jsep,
-          media: { audioSend: false, videoSend: false },
-          success: (jsep) => {
-
-            Janus.log('Got SDP!', jsep);
-            streamHandle.send({ message: { request: 'start' }, jsep: jsep });
-          },
-          customizeSdp: (jsep) => {
-            Janus.log(':: Modify original SDP: ', jsep);
-            jsep.sdp = jsep.sdp.replace(/a=fmtp:111 minptime=10;useinbandfec=1\r\n/g, 'a=fmtp:111 minptime=10;useinbandfec=1;stereo=1;sprop-stereo=1\r\n');
-          },
-          error: (error) => {
-            Janus.log('WebRTC error: ' + error);
-          }
-        });
-      }
-    },
-    onremotetrack: (track, mid, on) => {
-      Janus.warn(' ::: Got a remote video track event :::');
-      Janus.warn('Remote video track (mid=' + mid + ') ' + (on ? 'added' : 'removed') + ':', track);
-      if (!on) {
-        return;
-      }
-
-      let stream = new MediaStream();
-      stream.addTrack(track.clone());
-      updateStream(stream);
-    },
-    oncleanup: () => {
-      Janus.warn('Got a cleanup notification - videostream.');
-    }
-  });
-};
-
-const detach = () => {
-  if (!streamHandle)
-    return;
-  streamHandle.detach({
-    success: () => streamHandle = null,
-    error: () => streamHandle = null
-  });
-};
-
-const KliOlamiStream = ({ janus }) => {
-  const ref = useRef();
-
-  useEffect(() => {
-    initStream(attachStream);
-    return () => {
-      Janus.detachMediaStream(ref);
-      detach();
+class KliOlamiStream extends Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      fullScreen: false,
+      stream: null,
     };
-  }, []);
+  }
 
-  const attachStream = (stream) => Janus.attachMediaStream(ref.current, stream);
+  componentDidMount() {
+    if (!this.state.stream)
+      initStream((stream) => this.setState({ stream }));
+  }
 
-  return (
-    <Box className="video">
-      <video
-        ref={ref}
-        autoPlay={true}
-        controls={true}
-        muted={true}
-        playsInline={true}
-      />
-    </Box>
-  );
-};
+  componentWillUnmount() {
+    if (this.videoWrapper) {
+      detach(this.videoWrapper);
+    }
+    this.props.toggleAttach(true);
+  };
+
+  shouldComponentUpdate(nextProps, nextState, nextContext) {
+    return nextProps.attached !== this.props.attached
+      || nextState.stream !== this.state.stream
+      || nextState.fullScreen !== this.state.fullScreen;
+  }
+
+  videoRef(ref) {
+    if (ref) {
+      Janus.attachMediaStream(ref, this.state.stream);
+    }
+  }
+
+  setVideoWrapperRef(ref) {
+    if (ref && ref !== this.videoWrapper) {
+      this.videoWrapper = ref;
+      this.setState({ fullScreen: isFullScreen(this.videoWrapper) });
+    }
+  }
+
+  onBlock() {
+    alert('You browser is blocking our popup! You need to allow it');
+  };
+
+  handleFullScreen() {
+    const fullScreen = toggleFullScreen(this.videoWrapper);
+    this.setState({ fullScreen });
+  }
+
+  render() {
+    const { attached, close, toggleAttach } = this.props;
+    const { stream, fullScreen }            = this.state;
+
+    const inLine = stream && (
+      <div className="video video--broadcast" key='v0' ref={(ref) => this.setVideoWrapperRef(ref)} id='video0'
+           style={{ height: !attached ? '100%' : null, width: !attached ? '100%' : null }}>
+        <div className="video__overlay">
+          <div className="controls">
+            <div className="controls__top">
+              <IconButton onClick={close}>
+                <Close style={{ color: 'white', fontWeight: 'bold' }} />
+              </IconButton>
+            </div>
+            <div className="controls__bottom">
+              <div className="controls__spacer"></div>
+              <Fullscreen
+                isOn={fullScreen}
+                action={this.handleFullScreen.bind(this)}
+                color={'white'}
+              />
+              {!attached ? null :
+                <IconButton onClick={() => toggleAttach()}>
+                  <OpenInNew style={{ color: 'white', fontWeight: 'bold' }} />
+                </IconButton>
+              }
+            </div>
+          </div>
+        </div>
+        <div className='mediaplayer'>
+          <video ref={(ref) => this.videoRef(ref)}
+                 id="remoteVideo"
+                 width="134"
+                 height="100"
+                 autoPlay={true}
+                 controls={false}
+                 muted={true}
+                 playsInline={true} />
+        </div>
+      </div>
+    );
+
+    return (
+      <>
+        {attached && inLine}
+        {!attached &&
+        <NewWindow
+          features={{ width: '725', height: '635', left: '200', top: '200', location: 'no' }}
+          title='KliOlami' onUnload={() => toggleAttach()} onBlock={this.onBlock}>
+          {inLine}
+        </NewWindow>
+        }
+      </>
+    );
+  }
+}
 
 export default KliOlamiStream;
