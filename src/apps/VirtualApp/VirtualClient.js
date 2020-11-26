@@ -25,6 +25,7 @@ import {
   USERNAME_ALREADY_EXIST_ERROR_CODE,
   VIDEO_360P_OPTION_VALUE,
   vsettings_list,
+  TABS,
 } from '../../shared/consts';
 import {GEO_IP_INFO} from '../../shared/env';
 import platform from 'platform';
@@ -137,6 +138,7 @@ class VirtualClient extends Component {
     asideMsgCounter: { drawing: 0, chat: 0 },
     leftAsideSize: 3,
     checkAlive: new CheckAlive(),
+    roomChat: TABS.CHAT,
   };
 
   virtualStreamingInitialized() {
@@ -1681,7 +1683,7 @@ class VirtualClient extends Component {
 
   renderRightAside = () => {
     const { t }                                             = this.props;
-    const { janus, user, room, rightAsideName, isRoomChat } = this.state;
+    const { janus, user, room, rightAsideName, roomChat } = this.state;
 
     let content;
     let displayChat = 'none';
@@ -1704,8 +1706,8 @@ class VirtualClient extends Component {
           gdm={this.state.gdm}
           onCmdMsg={this.handleCmdData}
           onNewMsg={this.onChatMessage}
-          room_chat={isRoomChat}
-          setIsRoomChat={this.setIsRoomChat}
+          room_chat={roomChat}
+          setRoomChat={this.setRoomChat}
         />
       </Box>
     );
@@ -1792,7 +1794,7 @@ class VirtualClient extends Component {
               size="small"
               onClick={() => {
                 this.toggleRightAside('chat');
-                this.setState({ isRoomChat: true });
+                this.setState({ roomChat: TABS.CHAT });
               }}
             >
               {t('oldClient.chat')}
@@ -1802,7 +1804,7 @@ class VirtualClient extends Component {
             size="small"
             onClick={() => {
               this.toggleRightAside('support');
-              this.setState({ isRoomChat: false });
+              this.setState({ roomChat: TABS.SUPPORT });
             }}
             variant={rightAsideName === 'support' ? 'outlined' : 'contained'}
           >
@@ -1928,7 +1930,7 @@ class VirtualClient extends Component {
 
   };
 
-  setIsRoomChat = (isRoomChat) => this.setState({ isRoomChat });
+  setRoomChat = (roomChat) => this.setState({roomChat});
 
   selectRoomAndJoin = (room) => {
     this.selectRoom(room);
@@ -2119,7 +2121,7 @@ class VirtualClient extends Component {
               chatMessagesCount: 0
             })}>
               <Icon name="comments" />
-              {t(chatVisible ? 'oldClient.closeChat' : 'oldClient.openChat')}
+              {t(chatVisible ? 'oldClient.closeWrite' : 'oldClient.write')}
               {chatMessagesCount > 0 ? chatCountLabel : ''}
             </Menu.Item>
             <Menu.Item

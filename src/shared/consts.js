@@ -159,4 +159,10 @@ export const trllang = {
     Persian: 327,
     "Heb-Eng": 303,
     "Heb-Rus": 302,
-}
+};
+
+export const TABS = {
+    CHAT : "chat",
+    QUESTIONS : "questions",
+    SUPPORT : "support"
+};

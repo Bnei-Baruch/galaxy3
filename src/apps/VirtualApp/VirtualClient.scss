@@ -124,7 +124,10 @@
     @include portrait {
         padding: 10px;
     }
-
+    .moderator-messages{
+        background: rgba(197, 198, 202, 0.2);
+        padding: 10px;
+    }
 }
 
 
@@ -250,4 +253,8 @@
     padding: 0px 10px;
     z-index: 2147483647;
     float: right !important;
+}
+
+.ui.button.inactive {
+    opacity:.45;
 }

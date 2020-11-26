@@ -1,12 +1,17 @@
 import React, {Component} from 'react';
 import {Janus} from '../../lib/janus';
-import {Button, Input, Message} from 'semantic-ui-react';
+import {Button, Input, Message, TextArea, Form} from 'semantic-ui-react';
 import {getDateString, notifyMe,} from '../../shared/tools';
-import {SHIDUR_ID} from '../../shared/consts';
+import {SHIDUR_ID, TABS} from '../../shared/consts';
 import {captureMessage} from '../../shared/sentry';
+import api from '../../shared/Api';
 
 const isUseNewDesign = new URL(window.location.href).searchParams.has('new_design');
 class VirtualChat extends Component {
+  constructor(props){
+    super(props);
+    this.onKeyPressed = this.onKeyPressed.bind(this);
+  }
 
   state = {
     chatroom: null,
@@ -14,8 +19,12 @@ class VirtualChat extends Component {
     input_value: '',
     messages: [],
     support_msgs: [],
-    room_chat: true,
+    questions:[],
+    room_chat: TABS.CHAT,
     from: null,
+    quest_input_username:'',
+    quest_input_usergroup:'',
+    quest_input_message:''
   };
 
   componentDidMount() {
@@ -159,9 +168,9 @@ class VirtualChat extends Component {
           },
           ondataerror: (error) => {
             let details = '';
-            if (error.isTrusted) {
+            if (error) {
               // {RTCError} Get error from RTCErrorEvent object.
-              const rtcError = error.isTrusted.error;
+              const rtcError = error?.isTrusted?.error ?? error?.error;
               if (rtcError) {
                 details = `Message: ${rtcError.message}, Detail: ${rtcError.errorDetail}, Received Alert: ${rtcError.receivedAlert}, ` +
                   `SCTP Cause Code: ${rtcError.sctpCauseCode}, SDP Line Number: ${rtcError.sdpLineNumber}, Sent Alert: ${rtcError.sentAlert}`;
@@ -180,8 +189,10 @@ class VirtualChat extends Component {
   };
 
   onKeyPressed = (e) => {
-    if (e.code === 'Enter') {
-      this.sendChatMessage();
+    if (e.key === 'Enter') {
+      if(this.state.room_chat !== TABS.QUESTIONS){
+        this.sendChatMessage();
+      }
     }
   };
 
@@ -244,7 +255,7 @@ class VirtualChat extends Component {
             this.scrollToBottom();
           } else {
             notifyMe('Shidur', message.text, true);
-            isUseNewDesign ? this.props.setIsRoomChat(false) : this.setState({ room_chat: false });
+            isUseNewDesign ? this.props.setIsRoomChat(TABS.SUPPORT) : this.setState({room_chat: TABS.SUPPORT});
             this.props.onNewMsg(true);
           }
         }
@@ -297,7 +308,7 @@ class VirtualChat extends Component {
       this.scrollToBottom();
     } else {
       notifyMe('Shidur', message.text, true);
-      isUseNewDesign ? this.props.setIsRoomChat(false) : this.setState({ room_chat: false });
+      isUseNewDesign ? this.props.setIsRoomChat(TABS.SUPPORT) : this.setState({room_chat: TABS.SUPPORT});
       this.props.onNewMsg(true);
     }
   };
@@ -325,17 +336,17 @@ class VirtualChat extends Component {
   };
 
   sendChatMessage = () => {
-    const {  room_chat } = isUseNewDesign ? this.props : this.state;
-    let { id, role, display } = this.props.user;
-    let { input_value, from,  support_msgs } = this.state;
+    const {room_chat} = isUseNewDesign ? this.props : this.state;
+    const {role} = this.props.user;
+    const {input_value, from, support_msgs, messages} = this.state;
     if (!role.match(/^(user|guest)$/) || input_value === '') {
       return;
     }
-    let msg = { user: {id, role, display}, type: 'chat', text: input_value };
-    let pvt = room_chat ? '' : from ? { 'to': from } : { 'to': `${SHIDUR_ID}` };
-    let message = {
+    const msg = {user: this.props.user, type: 'chat', text: input_value, time: getDateString()};
+    const pvt = room_chat ? '' : from ? {'to': from } : {'to': `${SHIDUR_ID}`};
+    const message = {
       ack: false,
-      textroom: 'message',
+      textroom: room_chat === TABS.QUESTIONS ? 'localmessage' : 'message',
       transaction: Janus.randomString(12),
       room: this.state.room,
       ...pvt,
@@ -352,9 +363,12 @@ class VirtualChat extends Component {
         success: () => {
           console.log('[VirtualChat]:: Message sent ::');
           this.setState({ input_value: '' });
-          if (!room_chat) {
+          if (room_chat === TABS.SUPPORT){
             support_msgs.push(msg);
             this.setState({ support_msgs });
+          } else if (room_chat === TABS.QUESTIONS) {
+            messages.push(msg);
+            this.setState({ messages });
           }
         },
         error: (err) => {
@@ -365,6 +379,39 @@ class VirtualChat extends Component {
     }
   };
 
+  sendQuestionMessage = () => {
+    const {user} = this.props;
+    let {quest_input_message, quest_input_usergroup, quest_input_username} = this.state;
+    if (!user.role.match(/^(user|guest)$/) || quest_input_message === '') {
+      return;
+    }
+
+    let msg = {
+      serialUserId: user.id,
+      question: {
+        content: quest_input_message
+      },
+      user: {
+          name: quest_input_username === ""?user.name:quest_input_username,
+          gender: !user.group.match(/^W\s/) ? 'male':'female',
+          galaxyRoom: quest_input_usergroup === ""?user.group:quest_input_usergroup
+        }
+      }
+    api.sendQuestion(msg)
+    .then(data => {
+        this.setState({ quest_input_message: '' },
+        () => this.getQuestions());
+      })
+    .catch(err => console.error("Error saving questions", user.name, err))
+  };
+
+  getQuestions = () => {
+    const {user} = this.props;
+    api.getQuestions({serialUserId: user.id})
+    .then(data => this.setState({questions: data.feed}))
+    .catch(err => console.error("Error gatting questions", err));
+  }
+
   getHandle = () => (this.state.chatroom?.getId() ?? 'chatroom null');
 
   scrollToBottom = () => {
@@ -373,16 +420,22 @@ class VirtualChat extends Component {
 
   tooggleChat = (room_chat) => {
     isUseNewDesign ? this.props.setIsRoomChat(room_chat) : this.setState({ room_chat });
+    if(room_chat === TABS.QUESTIONS){
+      this.getQuestions();
+    }
   };
 
   render() {
-    const { t } = this.props;
-    const { room_chat } = isUseNewDesign ? this.props : this.state;
-    const { messages, support_msgs } = this.state;
+    const {t, user} = this.props;
+    const {room_chat} = isUseNewDesign ? this.props : this.state;
+    const {messages, support_msgs, questions} = this.state;
 
     const urlRegex =/(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#/%?=~_|!:,.;()]*[-A-Z0-9+&@#/%=~_|()])/ig;
     const textWithLinks = (text) => {
       const parts = [];
+      if (typeof text === 'undefined') {
+    		return parts;
+    	}
       let start = 0;
       // Polyfil for Safari <13
       let matchAll = null;
@@ -410,6 +463,9 @@ class VirtualChat extends Component {
     const isAscii = /[\x20-\x7F]/;
     const isAsciiChar = /[a-zA-Z]/;
     const isRTLString = (text) => {
+      if (typeof text === 'undefined') {
+        return 0;
+      }
       let rtl = 0;
       let ltr = 0;
       for (let i = 0; i < text.length; i++){
@@ -428,10 +484,13 @@ class VirtualChat extends Component {
       let { user, time, text } = msg;
       if(text) {
         return (
-            <p key={i} style={{direction: isRTLString(text) ? 'rtl' : 'ltr', textAlign: isRTLString(text) ? 'right' : 'left'}}><span style={{display: 'block'}}>
-          <i style={{ color: 'grey' }}>{time}</i> -
-          <b style={{ color: user.role.match(/^(admin|root)$/) ? 'red' : 'blue' }}>{user.display}</b>:
-        </span>{textWithLinks(text)}</p>
+          <p key={i} style={{direction: isRTLString(text) ? 'rtl' : 'ltr', textAlign: isRTLString(text) ? 'right' : 'left'}}>
+            <span style={{display: 'block'}}>
+              <i style={{ color: 'grey' }}>{time}</i> -
+              <b style={{ color: user.role.match(/^(admin|root)$/) ? 'red' : 'blue' }}>{user.display}</b>:
+            </span>
+            {textWithLinks(text)}
+          </p>
         );
       }
 			return null;
@@ -439,15 +498,33 @@ class VirtualChat extends Component {
 
     let admin_msgs = support_msgs.map((msg, i) => {
       let { user, time, text } = msg;
-      if(text) {
+      //  console.log('messages.map', 'user', user, 'time', time, 'text5555!!!!!', text, 'msg', msg);
+      if (text) {
         return (
-            <p key={i} style={{direction: isRTLString(text) ? 'rtl' : 'ltr', textAlign: isRTLString(text) ? 'right' : 'left'}}><span style={{display: 'block'}}>
-          <i style={{ color: 'grey' }}>{time}</i> -
-          <b style={{ color: user.role.match(/^(admin|root)$/) ? 'red' : 'blue' }}>{user.role === 'admin' ? user.username : user.display}</b>:
-        </span>{textWithLinks(text)}</p>
+          <p key={i} style={{direction: isRTLString(text) ? 'rtl' : 'ltr', textAlign: isRTLString(text) ? 'right' : 'left'}}>
+            <span style={{display: 'block'}}>
+              <i style={{ color: 'grey' }}>{time}</i> -
+              <b style={{ color: user.role.match(/^(admin|root)$/) ? 'red' : 'blue' }}>{user.role === 'admin' ? user.username : user.display}</b>:
+            </span>
+            {textWithLinks(text)}
+          </p>
         );
       }
 			return null;
+    });
+
+    let questions_msgs = questions.map((msg, i) => {
+      let { user, askForMe,timestamp, question} = msg;
+      var _time = new Date(timestamp);
+      _time = getDateString(_time);
+      return (
+        <p key={i} style={{direction: isRTLString(question.content) ? 'rtl' : 'ltr', textAlign: isRTLString(question.content) ? 'right' : 'left'}}>
+          <span style={{display: 'block'}}>
+          <i style={{ color: 'grey' }}>{_time}</i> -
+          <i style={{ color: 'grey' }}>{user.galaxyRoom}</i> -
+          <b style={{ color: !askForMe ? 'green' : 'blue' }}>{user.name}</b>:
+        </span>{textWithLinks(question.content)}</p>
+      );
     });
 
     return (
@@ -457,29 +534,61 @@ class VirtualChat extends Component {
               ? null
               : (
                 <Button.Group attached="top">
-                  <Button disabled={room_chat} color="blue" onClick={() => this.tooggleChat(true)}>{t('virtualChat.roomChat')}</Button>
-                  <Button disabled={!room_chat} color="blue" onClick={() => this.tooggleChat(false)}>{t('virtualChat.supportChat')}</Button>
+                  <Button className={room_chat !== TABS.CHAT ? 'inactive':''} color='blue' onClick={() => this.tooggleChat(TABS.CHAT)}>{t('virtualChat.roomChat')}</Button>
+                  <Button className={room_chat !== TABS.QUESTIONS ?'inactive':''} color='blue' onClick={() => this.tooggleChat(TABS.QUESTIONS)}>{t('virtualChat.questions')}</Button>
+                  <Button className={room_chat !== TABS.SUPPORT ?'inactive':''} color='blue' onClick={() => this.tooggleChat(TABS.SUPPORT)}>{t('virtualChat.supportChat')}</Button>
                 </Button.Group>
               )
           }
           <Message attached className="messages_list">
             <div className="messages-wrapper">
               <Message size="mini" color="grey">{t(room_chat ? 'virtualChat.msgRoomInfo' : 'virtualChat.msgAdminInfo')}</Message>
-              {room_chat ? room_msgs : admin_msgs}
+              <div className={room_chat===TABS.QUESTIONS ? 'moderator-messages' : 'hidden'}>{t('virtualChat.moderator')}</div>
+              {room_chat === TABS.CHAT ? room_msgs : room_chat === TABS.SUPPORT ? admin_msgs : questions_msgs}
               <div ref="end" />
             </div>
           </Message>
-
-          <Input ref="input"
-                 fluid type="text"
-                 placeholder={t('virtualChat.enterMessage')}
-                 action
-                 value={this.state.input_value}
-                 onChange={(v, { value }) => this.setState({ input_value: value })}>
-            <input dir={isRTLString(this.state.input_value) ? 'rtl' : 'ltr'}
-                   style={{textAlign: isRTLString(this.state.input_value) ? 'right' : 'left'}}/>
-            <Button size="mini" positive onClick={this.sendChatMessage}>{t('virtualChat.send')}</Button>
-          </Input>
+          <div className = {room_chat === TABS.QUESTIONS ? 'hidden' : ''}>
+            <Input ref="input"
+                   fluid type="text"
+                   placeholder={t('virtualChat.enterMessage')}
+                   action
+                   value={this.state.input_value}
+                   onChange={(v, { value }) => this.setState({ input_value: value })}>
+              <input dir={isRTLString(this.state.input_value) ? 'rtl' : 'ltr'}
+                     style={{textAlign: isRTLString(this.state.input_value) ? 'right' : 'left'}}/>
+              <Button size="mini" positive onClick={this.sendChatMessage}>{t('virtualChat.send')}</Button>
+            </Input>
+          </div>
+          <div className={room_chat===TABS.QUESTIONS ? 'questions_form':'hidden'}>
+            <Input ref='input'
+              fluid type='text'
+              action
+              value={this.quest_input_username}
+              placeholder={user.name}
+              onChange={(v, { value }) => this.setState({ quest_input_username: value })}
+              dir={isRTLString(this.state.quest_input_username) ? 'rtl' : 'ltr'}
+              style={{textAlign: isRTLString(this.state.quest_input_username) ? 'right' : 'left'}}/ >
+            <Input ref='input'
+              fluid type='text'
+              action
+              value={this.quest_input_usergroup}
+              placeholder={user.group}
+              onChange={(v, {value }) => this.setState({ quest_input_usergroup: value })}
+              dir={isRTLString(this.state.quest_input_group) ? 'rtl' : 'ltr'}
+              style={{textAlign: isRTLString(this.state.quest_input_usergroup) ? 'right' : 'left'}}/ >
+                <Form>
+            <TextArea
+              rows='4'
+              value={this.state.quest_input_message}
+              placeholder={t('virtualChat.enterQuestion')}
+              onChange={(v,{ value }) => this.setState({ quest_input_message: value })}
+              dir={isRTLString(this.state.quest_input_message) ? 'rtl' : 'ltr'}
+              style={{textAlign: isRTLString(this.state.quest_input_message) ? 'right' : 'left'}}>
+            </TextArea>
+            </Form>
+            <Button positive onClick={this.sendQuestionMessage}>{t('virtualChat.sendQuestion')}</Button>
+          </div>
         </div>
     );
 

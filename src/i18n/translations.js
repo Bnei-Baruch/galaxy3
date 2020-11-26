@@ -23,6 +23,8 @@ export const resources = {
         askQuestion: 'Ask a Question',
         openBroadcast: 'Open Broadcast',
         closeBroadcast: 'Close Broadcast',
+        write: 'Write',
+        closeWrite:'Close Write',
         broadcast: 'Broadcast',
         layout: 'Layout',
         mute: 'Mute',
@@ -88,7 +90,6 @@ export const resources = {
         cameraQuality: 'Camera quality',
         helloUser: 'Hello {{name}}',
         beforeConnecting: 'before connecting with the TEN, please check your settings and device setup:'
-
       },
       feedback: {
         feedbackHelp: 'Feedback/Help',
@@ -96,10 +97,14 @@ export const resources = {
         help: 'Help',
       },
       virtualChat: {
-        roomChat: 'Room chat',
-        supportChat: 'Support chat',
+        roomChat: 'Chat',
+        supportChat: 'Support',
+        questions: 'Questions',
         send: 'Send',
+        sendQuestion:'Send Question',
         enterMessage: 'Type your message',
+        enterQuestion: 'Type your question',
+        moderator:'Moderator: Selected questions related to the theam of the lesson will be asked during the broadcast',
         msgRoomInfo: 'Messages here will be seen by all the members of the ten connected now.',
         msgAdminInfo: 'Our support team will contact you here.'
       },
