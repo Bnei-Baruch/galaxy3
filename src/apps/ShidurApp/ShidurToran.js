@@ -255,7 +255,7 @@ class ShidurToran extends Component {
 
   render() {
 
-    const {group,pre_groups,disabled_rooms,groups,groups_queue,questions,presets,sdiout,sndman,shidur_mode,users_count,preview_mode,log_list,preusers_count,region} = this.props;
+    const {group,pre_groups,disabled_rooms,groups,groups_queue,questions,presets,sdiout,sndman,shidur_mode,users_count,preview_mode,log_list,preusers_count,region,region_groups} = this.props;
     const {open,delay,vote,galaxy_mode} = this.state;
     const q = (<b style={{color: 'red', fontSize: '20px', fontFamily: 'Verdana', fontWeight: 'bold'}}>?</b>);
     const next_group = groups[groups_queue] ? groups[groups_queue].description : groups[0] ? groups[0].description : "";
@@ -291,6 +291,27 @@ class ShidurToran extends Component {
     });
 
     let groups_list = groups.map((data,i) => {
+      const {room, num_users, description, questions} = data;
+      const next = data.description === next_group;
+      const active = group && group.room === room;
+      //const pr = presets.find(pst => pst.room === room);
+      const pr = false
+      const p = pr ? (<Label size='mini' color='teal' >4</Label>) : "";
+      return (
+        <Table.Row positive={group && group.description === description}
+                   className={active ? 'active' : next ? 'warning' : 'no'}
+                   key={room}
+                   onClick={() => this.selectGroup(data, i)}
+                   onContextMenu={(e) => this.handleDisableRoom(e, data)} >
+          <Table.Cell width={5}>{description}</Table.Cell>
+          <Table.Cell width={1}>{p}</Table.Cell>
+          <Table.Cell width={1}>{num_users}</Table.Cell>
+          <Table.Cell width={1}>{questions ? q : ""}</Table.Cell>
+        </Table.Row>
+      )
+    });
+
+    let region_list = region_groups.map((data,i) => {
       const {room, num_users, description, questions} = data;
       const next = data.description === next_group;
       const active = group && group.room === room;
@@ -393,7 +414,7 @@ class ShidurToran extends Component {
           <Segment textAlign='center' className="group_list" raised disabled={delay} >
             <Table selectable compact='very' basic structured className="admin_table" unstackable>
               <Table.Body>
-                {groups_list}
+                {region ? region_list : groups_list}
               </Table.Body>
             </Table>
           </Segment>

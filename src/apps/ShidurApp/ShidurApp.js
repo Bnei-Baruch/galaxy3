@@ -38,6 +38,7 @@ class ShidurApp extends Component {
     gatewaysInitialized: false,
     appInitError: null,
     presets: {1:[],2:[],3:[],4:[]},
+    region_groups: [],
     region: null,
     sdiout: false,
     sndman: false,
@@ -188,7 +189,7 @@ class ShidurApp extends Component {
   };
 
   fetchRooms = () => {
-    let {disabled_rooms, groups, shidur_mode, preview_mode, preusers_count, region} = this.state;
+    let {disabled_rooms, groups, shidur_mode, preview_mode, preusers_count, region, region_groups} = this.state;
     api.fetchActiveRooms()
       .then((data) => {
         const users_count = data.map(r => r.num_users).reduce((su, cur) => su + cur, 0);
@@ -208,12 +209,14 @@ class ShidurApp extends Component {
           // Extra exist and disabled
           if(preusers_count !== 'Off') {
             pre_groups = rooms.filter(r => !r.extra && r.users.filter(r => r.camera).length < preusers_count)
-            groups = rooms.filter(r => (r.extra && !r.extra.disabled) || r.users.filter(r => r.camera).length >= preusers_count)
+            groups = rooms.filter(r => r.users.filter(r => r.camera).length >= preusers_count && !r.extra?.disabled)
           } else {
             pre_groups =  rooms;
             groups = rooms.filter(r => !r.extra?.disabled);
           }
-          if(region) pre_groups = rooms.filter(r => r.region === region)
+          if(region) {
+            region_groups = rooms.filter(r => r.region === region)
+          }
         } else {
           groups = rooms.filter(r => !r.extra?.disabled);
         }
@@ -224,7 +227,7 @@ class ShidurApp extends Component {
         let quads = [...this.col1.state.vquad,...this.col2.state.vquad,...this.col3.state.vquad,...this.col4.state.vquad];
         let list = groups.filter(r => !quads.find(q => q && r.room === q.room));
         let questions = list.filter(room => room.questions);
-        this.setState({quads, questions, users_count, rooms, groups, disabled_rooms, pre_groups});
+        this.setState({quads, questions, users_count, rooms, groups, disabled_rooms, pre_groups, region_groups});
       })
       .catch(err => {
         console.error("[Shidur] error fetching active rooms", err);

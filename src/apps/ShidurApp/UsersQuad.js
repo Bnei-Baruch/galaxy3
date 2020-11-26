@@ -113,11 +113,11 @@ class UsersQuad extends Component {
     }
 
     this.setState({vquad});
-    api.updateQuad(col, {vquad})
-      .catch(err => {
-        console.error("[Shidur] error updating quad state", col, err);
-        captureException(err, {source: "Shidur"});
-      });
+    // api.updateQuad(col, {vquad})
+    //   .catch(err => {
+    //     console.error("[Shidur] error updating quad state", col, err);
+    //     captureException(err, {source: "Shidur"});
+    //   });
   };
 
   switchFour = () => {
@@ -153,11 +153,11 @@ class UsersQuad extends Component {
       this.props.setProps({groups_queue: 0});
     }
 
-    api.updateQuad(col, {vquad})
-      .catch(err => {
-        console.error("[Shidur] error updating quad state", col, err);
-        captureException(err, {source: "Shidur"});
-      });
+    // api.updateQuad(col, {vquad})
+    //   .catch(err => {
+    //     console.error("[Shidur] error updating quad state", col, err);
+    //     captureException(err, {source: "Shidur"});
+    //   });
   };
 
   setPreset = () => {
@@ -171,11 +171,11 @@ class UsersQuad extends Component {
     }
     this.setState({vquad});
 
-    api.updateQuad(col, {vquad})
-      .catch(err => {
-        console.error("[Shidur] error updating quad state", col, err);
-        captureException(err, {source: "Shidur"});
-      });
+    // api.updateQuad(col, {vquad})
+    //   .catch(err => {
+    //     console.error("[Shidur] error updating quad state", col, err);
+    //     captureException(err, {source: "Shidur"});
+    //   });
   };
 
   sdiActionMessage_ = (action, status, i, group, qst) => {
