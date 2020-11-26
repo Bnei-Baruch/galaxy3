@@ -51,6 +51,7 @@ class ShidurApp extends Component {
     reinit_inst: null,
     log_list: [],
     preusers_count: 6,
+    pnum: {},
   };
 
   componentWillUnmount() {
@@ -208,17 +209,18 @@ class ShidurApp extends Component {
         if(preview_mode) {
           // Extra exist and disabled
           if(preusers_count !== 'Off') {
-            pre_groups = rooms.filter(r => !r.extra && r.users.filter(r => r.camera).length < preusers_count)
-            groups = rooms.filter(r => r.users.filter(r => r.camera).length >= preusers_count && !r.extra?.disabled)
+            pre_groups = rooms.filter(r => !r.extra && r.users.filter(r => r.camera).length < preusers_count);
+            groups = rooms.filter(r => r.users.filter(r => r.camera).length >= preusers_count && !r.extra?.disabled);
           } else {
-            pre_groups =  rooms;
+            pre_groups = rooms;
             groups = rooms.filter(r => !r.extra?.disabled);
-          }
-          if(region) {
-            region_groups = rooms.filter(r => r.region === region)
           }
         } else {
           groups = rooms.filter(r => !r.extra?.disabled);
+        }
+
+        if(region) {
+          region_groups = groups.filter(r => r.region === region);
         }
 
         // Extra exist and disabled

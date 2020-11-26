@@ -249,13 +249,17 @@ class ShidurToran extends Component {
       });
   };
 
+  resetProgramStat = () => {
+    this.props.setProps({pnum: {}});
+  };
+
   scrollToBottom = () => {
     this.refs.end.scrollIntoView({ behavior: 'smooth' })
   };
 
   render() {
 
-    const {group,pre_groups,disabled_rooms,groups,groups_queue,questions,presets,sdiout,sndman,shidur_mode,users_count,preview_mode,log_list,preusers_count,region,region_groups} = this.props;
+    const {group,pre_groups,disabled_rooms,groups,groups_queue,questions,presets,sdiout,sndman,shidur_mode,users_count,preview_mode,log_list,preusers_count,region,region_groups,pnum} = this.props;
     const {open,delay,vote,galaxy_mode} = this.state;
     const q = (<b style={{color: 'red', fontSize: '20px', fontFamily: 'Verdana', fontWeight: 'bold'}}>?</b>);
     const next_group = groups[groups_queue] ? groups[groups_queue].description : groups[0] ? groups[0].description : "";
@@ -303,6 +307,7 @@ class ShidurToran extends Component {
                    key={room}
                    onClick={() => this.selectGroup(data, i)}
                    onContextMenu={(e) => this.handleDisableRoom(e, data)} >
+          <Table.Cell width={1}><Label circular content={pnum[room]} /></Table.Cell>
           <Table.Cell width={5}>{description}</Table.Cell>
           <Table.Cell width={1}>{p}</Table.Cell>
           <Table.Cell width={1}>{num_users}</Table.Cell>
@@ -324,6 +329,7 @@ class ShidurToran extends Component {
                    key={room}
                    onClick={() => this.selectGroup(data, i)}
                    onContextMenu={(e) => this.handleDisableRoom(e, data)} >
+          <Table.Cell width={1}><Label circular content={pnum[room]} /></Table.Cell>
           <Table.Cell width={5}>{description}</Table.Cell>
           <Table.Cell width={1}>{p}</Table.Cell>
           <Table.Cell width={1}>{num_users}</Table.Cell>
@@ -388,7 +394,11 @@ class ShidurToran extends Component {
             <Button
               color="green"
               onClick={this.resetRoomsStatistics}>
-              Reset Stats</Button>
+              Reset QStats</Button>
+            <Button
+              color="green"
+              onClick={this.resetProgramStat}>
+              Reset PStats</Button>
           </Button.Group>
         </Grid.Column>
         <Grid.Column>

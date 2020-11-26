@@ -85,7 +85,7 @@ class UsersQuad extends Component {
   };
 
   switchProgram = (i, leave) => {
-    let {group,groups,groups_queue,round} = this.props;
+    let {group,groups,groups_queue,round,pnum} = this.props;
     let {vquad,col} = this.state;
 
     if(leave)
@@ -98,7 +98,8 @@ class UsersQuad extends Component {
       // From preview
       delete group.users;
       vquad[i] = group;
-      this.props.setProps({group: null});
+      pnum[vquad[i].room] ? pnum[vquad[i].room]++ : pnum[vquad[i].room] = 1;
+      this.props.setProps({group: null, pnum});
     } else {
       // Next in queue
       if(groups_queue >= groups.length) {
@@ -109,19 +110,20 @@ class UsersQuad extends Component {
       }
       vquad[i] = groups.length < 4 ? null : this.quadGroup(groups_queue);
       groups_queue++;
-      this.props.setProps({groups_queue,round});
+      pnum[vquad[i].room] ? pnum[vquad[i].room]++ : pnum[vquad[i].room] = 1;
+      this.props.setProps({groups_queue, round, pnum});
     }
 
     this.setState({vquad});
-    // api.updateQuad(col, {vquad})
-    //   .catch(err => {
-    //     console.error("[Shidur] error updating quad state", col, err);
-    //     captureException(err, {source: "Shidur"});
-    //   });
+    api.updateQuad(col, {vquad})
+      .catch(err => {
+        console.error("[Shidur] error updating quad state", col, err);
+        captureException(err, {source: "Shidur"});
+      });
   };
 
   switchFour = () => {
-    let {groups_queue,groups,round} = this.props;
+    let {groups_queue,groups,round,pnum} = this.props;
     let {vquad,col} = this.state;
 
     this.setDelay();
@@ -139,12 +141,13 @@ class UsersQuad extends Component {
         console.log("[Shidur] -- ROUND END --");
         groups_queue = 0;
         round++;
-        this.props.setProps({groups_queue,round});
+        this.props.setProps({groups_queue, round});
       }
 
       vquad[i] = this.quadGroup(groups_queue);
       groups_queue++;
-      this.props.setProps({groups_queue});
+      pnum[vquad[i].room] ? pnum[vquad[i].room]++ : pnum[vquad[i].room] = 1;
+      this.props.setProps({groups_queue, pnum});
     }
     this.setState({vquad});
 
@@ -153,11 +156,11 @@ class UsersQuad extends Component {
       this.props.setProps({groups_queue: 0});
     }
 
-    // api.updateQuad(col, {vquad})
-    //   .catch(err => {
-    //     console.error("[Shidur] error updating quad state", col, err);
-    //     captureException(err, {source: "Shidur"});
-    //   });
+    api.updateQuad(col, {vquad})
+      .catch(err => {
+        console.error("[Shidur] error updating quad state", col, err);
+        captureException(err, {source: "Shidur"});
+      });
   };
 
   setPreset = () => {
@@ -171,11 +174,11 @@ class UsersQuad extends Component {
     }
     this.setState({vquad});
 
-    // api.updateQuad(col, {vquad})
-    //   .catch(err => {
-    //     console.error("[Shidur] error updating quad state", col, err);
-    //     captureException(err, {source: "Shidur"});
-    //   });
+    api.updateQuad(col, {vquad})
+      .catch(err => {
+        console.error("[Shidur] error updating quad state", col, err);
+        captureException(err, {source: "Shidur"});
+      });
   };
 
   sdiActionMessage_ = (action, status, i, group, qst) => {
