@@ -159,9 +159,9 @@ class VirtualChat extends Component {
           },
           ondataerror: (error) => {
             let details = '';
-            if (error.isTrusted) {
+            if (error) {
               // {RTCError} Get error from RTCErrorEvent object.
-              const rtcError = error.isTrusted.error;
+              const rtcError = error?.isTrusted?.error ?? error?.error;
               if (rtcError) {
                 details = `Message: ${rtcError.message}, Detail: ${rtcError.errorDetail}, Received Alert: ${rtcError.receivedAlert}, ` +
                   `SCTP Cause Code: ${rtcError.sctpCauseCode}, SDP Line Number: ${rtcError.sdpLineNumber}, Sent Alert: ${rtcError.sentAlert}`;
