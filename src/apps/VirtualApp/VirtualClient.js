@@ -46,7 +46,6 @@ import {getUser, kc} from "../../components/UserManager";
 import LoginPage from "../../components/LoginPage";
 import {Profile} from "../../components/Profile";
 import {captureException, captureMessage, sentryDebugAction, updateSentryUser} from '../../shared/sentry';
-import VerifyAccount from './components/VerifyAccount';
 import GxyJanus from '../../shared/janus-utils';
 import audioModeSvg from '../../shared/audio-mode.svg';
 import fullModeSvg from '../../shared/full-mode.svg';
@@ -1961,7 +1960,6 @@ class VirtualClient extends Component {
 
     return (
       <div className={classNames('vclient', {'vclient--chat-open': chatVisible})}>
-        <VerifyAccount user={user} loginPage={false} i18n={i18n}/>
         {this.renderTopBar(isDeb)}
         <RegistrationModals
           user={user}
