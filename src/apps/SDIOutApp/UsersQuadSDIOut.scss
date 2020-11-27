@@ -64,7 +64,7 @@
     // left:0;
     margin: 0 2px;
     color: #FFF;
-    
+
     font-size: 45px;
     line-height: 60px;
     background-color: #2185d0;
@@ -149,7 +149,10 @@
     z-index: 2;
     + .video_title {
         right: 42px;
-        
+    }
+    &__first_time {
+        color: red;
+        background-color: yellow;
     }
 }
 
@@ -174,7 +177,10 @@
     + .fullscrvideo_title {
         margin-right:62px;
     }
-
+    &__first_time {
+        color: white;
+        background-color: #21ba45;
+    }
 }
 
 .group_conteiner {

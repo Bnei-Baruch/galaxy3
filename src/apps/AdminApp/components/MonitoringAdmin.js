@@ -14,16 +14,183 @@ import {
 
 import './MonitoringAdmin.css';
 import {
-  audioVideoScore,
   dataValues,
   fetchData,
   popup,
-  shortNumber,
-  sinceTimestamp,
   system,
   userRow,
 } from '../../../shared/MonitoringUtils';
 
+const usersDataValues = (usersData, now) => (userId) => {
+	let ud = {};
+	if (userId in usersData) {
+		ud = usersData[userId];
+	}
+	const values = dataValues(ud, now);
+	if (userId === 'c69d7189-4bda-4472-8fdf-812abe3f6bfc') {
+		console.log(ud, values);
+	}
+	return values;
+};
+
+const compareArr = (aValues, bValues) => {
+	const index = aValues.findIndex((value, index) => value !== bValues[index]);
+	if (index === -1) {
+		return 0;
+	}
+	return aValues[index] - bValues[index];
+}
+
+const sortView = columnToSort => (a, b) => {
+	if (['email', 'group', 'janus', 'role'].includes(columnToSort)) {
+		return a.user[columnToSort].localeCompare(b.user[columnToSort]);
+	} else if (columnToSort === 'version') {
+		return a.user.galaxyVersion.localeCompare(b.user.galaxyVersion);
+	} else if (columnToSort === 'streaming') {
+		return a.user.streamingGateway.localeCompare(b.user.streamingGateway);
+	} else if (columnToSort === 'name') {
+		return a.user.display.localeCompare(b.user.display);
+	} else if (columnToSort === 'login') {
+		return a.user.timestamp - b.user.timestamp;
+	} else if (columnToSort === 'system') {
+		return system(a.user).localeCompare(system(b.user));
+	} else if (columnToSort === 'update') {
+		return ((a.stats.update && a.stats.update.value) || 0) - ((b.stats.update && b.stats.update.value) || 0);
+	} else if (columnToSort.startsWith('audio')) {
+		if (columnToSort.endsWith('jitter')) {
+			return ((b.stats.audio && b.stats.audio.jitter.score.value) || 0) - ((a.stats.audio && a.stats.audio.jitter.score.value) || 0);
+		} else if (columnToSort.endsWith('packetsLost')) {
+			return ((b.stats.audio && b.stats.audio.packetsLost.score.value) || 0) - ((a.stats.audio && a.stats.audio.packetsLost.score.value) || 0);
+		} else if (columnToSort.endsWith('roundTripTime')) {
+			return ((b.stats.audio && b.stats.audio.roundTripTime.score.value) || 0) - ((a.stats.audio && a.stats.audio.roundTripTime.score.value) || 0);
+		}
+	} else if (columnToSort.startsWith('video')) {
+		if (columnToSort.endsWith('jitter')) {
+			return ((b.stats.video && b.stats.video.jitter.score.value) || 0) - ((a.stats.video && a.stats.video.jitter.score.value) || 0);
+		} else if (columnToSort.endsWith('packetsLost')) {
+			return ((b.stats.video && b.stats.video.packetsLost.score.value) || 0) - ((a.stats.video && a.stats.video.packetsLost.score.value) || 0);
+		} else if (columnToSort.endsWith('roundTripTime')) {
+			return ((b.stats.video && b.stats.video.roundTripTime.score.value) || 0) - ((a.stats.video && a.stats.video.roundTripTime.score.value) || 0);
+		}
+	} else if (columnToSort === 'score') {
+		return b.stats.score.value - a.stats.score.value;
+	} else if (columnToSort.startsWith('misc')) {
+		if (columnToSort.endsWith('iceState')) {
+			return ((a.stats.misc && a.stats.misc.iceState.last.value) || '').localeCompare((b.stats.misc && b.stats.misc.iceState.last.value) || '');
+		} else if (columnToSort.endsWith('slowLink')) {
+			return compareArr([(b.stats.misc && b.stats.misc.slowLink.score.value) || 0, (b.stats.misc && b.stats.misc.slowLink.last.value) || 0],
+												[(a.stats.misc && a.stats.misc.slowLink.score.value) || 0, (a.stats.misc && a.stats.misc.slowLink.last.value) || 0]);
+		} else if (columnToSort.endsWith('slowLinkLost')) {
+			return compareArr([(b.stats.misc && b.stats.misc.slowLinkLost.score.value) || 0, (b.stats.misc && b.stats.misc.slowLinkLost.last.value) || 0],
+												[(a.stats.misc && a.stats.misc.slowLinkLost.score.value) || 0, (a.stats.misc && a.stats.misc.slowLinkLost.last.value) || 0]);
+		}
+	}
+	console.error('Should not get here!');
+	return 0;
+};
+
+const updateFilter = (filters, setFilters, name, value) => {
+	const valueRe = new RegExp(value, 'i');
+	if (!(name in filters) || filters[name].source !== value) {
+		const newFilters = Object.assign({}, filters);
+		if (!(name in filters)) {
+			if (value) {
+				newFilters[name] = valueRe;
+			}
+		} else {
+			if (!value) {
+				delete newFilters[name];  // Remove filter for empty value.
+			} else {
+				newFilters[name] = valueRe;
+			}
+		}
+		setFilters(newFilters);
+	}
+};
+
+const filterView = (filters) => ({user, stats}) => {
+	let keep = true;
+	const filterChecks = new Map([
+		['name', (re) => re.test(user.display)],
+		['email', (re) => re.test(user.email)],
+		['group', (re) => re.test(user.group)],
+		['system', (re) => re.test(system(user))],
+		['role', (re) => re.test(user.role)],
+		['janus', (re) => re.test(user.janus)],
+		['streaming', (re) => re.test(user.streamingGateway)],
+		['version', (re) => re.test(user.galaxyVersion)],
+	]);
+	for (const [name, re] of Object.entries(filters)) {
+		keep = keep && filterChecks.get(name)(re);
+	}
+	return keep;
+};
+
+const init = (users, usersDataValues, sortView, setFullView, setUsersTableView, filterViewInternal, filters) => {
+	const filterOptions = {
+		name: [],
+		email: [],
+		group: [],
+		system: [],
+		role: [],
+		janus: [],
+		streaming: [],
+		version: [],
+	};
+
+	const nameSet = new Set();
+	const emailSet = new Set();
+	const groupSet = new Set();
+	const systemSet = new Set();
+	const roleSet = new Set();
+	const janusSet = new Set();
+	const streamingSet = new Set();
+	const versionSet = new Set();
+
+	const newFullView = Object.values(users).map(user => ({
+		user,
+		stats: usersDataValues(user.id),
+	})).sort(sortView('score'));
+
+	newFullView.forEach(({user, stats}) => {
+		if (!nameSet.has(user.display)) {
+			nameSet.add(user.display);
+			filterOptions.name.push({title: user.display});
+		}
+		if (!emailSet.has(user.email)) {
+			emailSet.add(user.email);
+			filterOptions.email.push({title: user.email});
+		}
+		if (!groupSet.has(user.group)) {
+			groupSet.add(user.group);
+			filterOptions.group.push({title: user.group});
+		}
+		const s = system(user);
+		if (!systemSet.has(s)) {
+			systemSet.add(s);
+			filterOptions.system.push({title: s});
+		}
+		if (!roleSet.has(user.role)) {
+			roleSet.add(user.role);
+			filterOptions.role.push({title: user.role});
+		}
+		if (!janusSet.has(user.janus)) {
+			janusSet.add(user.janus);
+			filterOptions.janus.push({title: user.janus});
+		}
+		if (!streamingSet.has(user.streamingGateway)) {
+			streamingSet.add(user.streamingGateway);
+			filterOptions.streaming.push({title: user.streamingGateway});
+		}
+		if (!versionSet.has(user.galaxyVersion)) {
+			versionSet.add(user.galaxyVersion);
+			filterOptions.version.push({title: user.galaxyVersion});
+		}
+	});
+
+	setFullView({fullView: newFullView, filterOptions});
+	setUsersTableView({view: newFullView.slice().filter(filterViewInternal), column: 'score', direction: 'descending'});
+}
 
 const MonitoringAdmin = (props) => {
   const [loadingCount, setLoadingCount] = useState(0);
@@ -32,11 +199,16 @@ const MonitoringAdmin = (props) => {
   const [users, setUsers] = useState({});
   const [usersData, setUsersData] = useState({});
   const [{fullView, filterOptions}, setFullView] = useState({
-    filterView:[],
+    filterView: [],
     filterOptions: {
       name: [],
+      email: [],
       group: [],
       system: [],
+      janus: [],
+      streaming: [],
+      role: [],
+      version: [],
     },
   });
   const [filters, setFilters] = useState({});
@@ -111,145 +283,17 @@ const MonitoringAdmin = (props) => {
     };
   }, []);
 
-  const usersDataValues = (userId) => {
-    let ud = {};
-    if (userId in usersData) {
-      ud = usersData[userId];
-    }
-    const values = dataValues(ud, now);
-    if (userId === 'c69d7189-4bda-4472-8fdf-812abe3f6bfc') {
-      console.log(ud, values);
-    }
-    return values;
-  }
-
-  useEffect(() => {
-    const filterOptions = {
-      name: [],
-      group: [],
-      system: [],
-    };
-
-    const nameSet = new Set();
-    const groupSet = new Set();
-    const systemSet = new Set();
-
-    const newFullView = Object.values(users).map(user => ({
-      user,
-      stats: usersDataValues(user.id),
-    })).sort(sortView('score'));
-
-    newFullView.forEach(({user, stats}) => {
-      if (!nameSet.has(user.display)) {
-        nameSet.add(user.display);
-        filterOptions.name.push({title: user.display});
-      }
-      if (!groupSet.has(user.group)) {
-        groupSet.add(user.group);
-        filterOptions.group.push({title: user.group});
-      }
-      const s = system(user);
-      if (!systemSet.has(s)) {
-        systemSet.add(s);
-        filterOptions.system.push({title: s});
-      }
-    });
-
-    setFullView({fullView: newFullView, filterOptions});
-    setUsersTableView({view: newFullView.slice().filter(filterView), column: 'score', direction: 'descending'});
-  }, [users, usersData]);
-
-  const filterView = ({user, stats}) => {
-    for (const [name, re] of Object.entries(filters)) {
-      if (name === 'name') {
-        return re.test(user.display);
-      } else if (name === 'group') {
-        return re.test(user.group);
-      } else if (name === 'system') {
-        return re.test(system(user));
-      }
-
-    }
-    return true;
-  }
-
-  const updateFilter = (name, value) => {
-    const valueRe = new RegExp(value, 'i');
-    if (!(name in filters) || filters[name].source !== value) {
-      const newFilters = Object.assign({}, filters);
-      if (!(name in filters)) {
-        if (value) {
-          newFilters[name] = valueRe;
-        }
-      } else {
-        if (!value) {
-          delete newFilters[name];  // Remove filter for empty value.
-        } else {
-          newFilters[name] = valueRe;
-        }
-      }
-      setFilters(newFilters);
-    }
-  }
+  useEffect(
+		() => init(users, usersDataValues(usersData, now), sortView, setFullView, setUsersTableView, filterView(filters), filters),
+		[users, usersData, filters, now]);
 
   useEffect(() => {
     if (fullView) {
-      const filtered = fullView.slice().filter(filterView);
+			const filterFunc = filterView(filters);
+      const filtered = fullView.slice().filter(filterFunc);
       setUsersTableView({view: filtered, column, direction});
     }
-  }, [filters]);
-
-  const compareArr = (aValues, bValues) => {
-    const index = aValues.findIndex((value, index) => value !== bValues[index]);
-    if (index === -1) {
-      return 0;
-    }
-    return aValues[index] - bValues[index];
-  }
-
-  const sortView = columnToSort => (a, b) => {
-    if (['group', 'janus'].includes(columnToSort)) {
-      return a.user[columnToSort].localeCompare(b.user[columnToSort]);
-    } else if (columnToSort === 'name') {
-      return a.user.display.localeCompare(b.user.display);
-    } else if (columnToSort === 'login') {
-      return a.user.timestamp - b.user.timestamp;
-    } else if (columnToSort === 'system') {
-      return system(a.user).localeCompare(system(b.user));
-    } else if (columnToSort === 'update') {
-      return ((a.stats.update && a.stats.update.value) || 0) - ((b.stats.update && b.stats.update.value) || 0);
-    } else if (columnToSort.startsWith('audio')) {
-      if (columnToSort.endsWith('jitter')) {
-        return ((b.stats.audio && b.stats.audio.jitter.score.value) || 0) - ((a.stats.audio && a.stats.audio.jitter.score.value) || 0);
-      } else if (columnToSort.endsWith('packetsLost')) {
-        return ((b.stats.audio && b.stats.audio.packetsLost.score.value) || 0) - ((a.stats.audio && a.stats.audio.packetsLost.score.value) || 0);
-      } else if (columnToSort.endsWith('roundTripTime')) {
-        return ((b.stats.audio && b.stats.audio.roundTripTime.score.value) || 0) - ((a.stats.audio && a.stats.audio.roundTripTime.score.value) || 0);
-      }
-    } else if (columnToSort.startsWith('video')) {
-      if (columnToSort.endsWith('jitter')) {
-        return ((b.stats.video && b.stats.video.jitter.score.value) || 0) - ((a.stats.video && a.stats.video.jitter.score.value) || 0);
-      } else if (columnToSort.endsWith('packetsLost')) {
-        return ((b.stats.video && b.stats.video.packetsLost.score.value) || 0) - ((a.stats.video && a.stats.video.packetsLost.score.value) || 0);
-      } else if (columnToSort.endsWith('roundTripTime')) {
-        return ((b.stats.video && b.stats.video.roundTripTime.score.value) || 0) - ((a.stats.video && a.stats.video.roundTripTime.score.value) || 0);
-      }
-    } else if (columnToSort === 'score') {
-      return b.stats.score.value - a.stats.score.value;
-    } else if (columnToSort.startsWith('misc')) {
-      if (columnToSort.endsWith('iceState')) {
-        return ((a.stats.misc && a.stats.misc.iceState.last.value) || '').localeCompare((b.stats.misc && b.stats.misc.iceState.last.value) || '');
-      } else if (columnToSort.endsWith('slowLink')) {
-        return compareArr([(b.stats.misc && b.stats.misc.slowLink.score.value) || 0, (b.stats.misc && b.stats.misc.slowLink.last.value) || 0],
-                          [(a.stats.misc && a.stats.misc.slowLink.score.value) || 0, (a.stats.misc && a.stats.misc.slowLink.last.value) || 0]);
-      } else if (columnToSort.endsWith('slowLinkLost')) {
-        return compareArr([(b.stats.misc && b.stats.misc.slowLinkLost.score.value) || 0, (b.stats.misc && b.stats.misc.slowLinkLost.last.value) || 0],
-                          [(a.stats.misc && a.stats.misc.slowLinkLost.score.value) || 0, (a.stats.misc && a.stats.misc.slowLinkLost.last.value) || 0]);
-      }
-    }
-    console.error('Should not get here!');
-    return 0;
-  };
+  }, [filters, column, direction, fullView]);
 
   useEffect(() => {
     if (sortingColumn) {
@@ -271,7 +315,7 @@ const MonitoringAdmin = (props) => {
       }
     }
     setSortingColumn('');
-  }, [sortingColumn]);
+  }, [sortingColumn, column, direction, view]);
 
   const handleSort = (clickedColumn) => () => {
     setSortingColumn(clickedColumn);
@@ -290,15 +334,25 @@ const MonitoringAdmin = (props) => {
           <Table.Row textAlign='center'>
             <Table.HeaderCell rowSpan="2"
                               sorted={column === 'name' ? direction : null}
-                              onClick={handleSort('name')}>
-              {popup('Name')}
-            </Table.HeaderCell>
+                              onClick={handleSort('name')}>{popup('Name')}</Table.HeaderCell>
+            <Table.HeaderCell rowSpan="2"
+                              sorted={column === 'email' ? direction : null}
+                              onClick={handleSort('email')}>{popup('Email')}</Table.HeaderCell>
             <Table.HeaderCell rowSpan="2"
                               sorted={column === 'group' ? direction : null}
                               onClick={handleSort('group')}>{popup('Group')}</Table.HeaderCell>
             <Table.HeaderCell rowSpan="2"
+                              sorted={column === 'role' ? direction : null}
+                              onClick={handleSort('role')}>{popup('Role')}</Table.HeaderCell>
+            <Table.HeaderCell rowSpan="2"
                               sorted={column === 'janus' ? direction : null}
                               onClick={handleSort('janus')}>{popup('Janus')}</Table.HeaderCell>
+            <Table.HeaderCell rowSpan="2"
+                              sorted={column === 'streaming' ? direction : null}
+                              onClick={handleSort('streaming')}>{popup('Streaming')}</Table.HeaderCell>
+            <Table.HeaderCell rowSpan="2"
+                              sorted={column === 'version' ? direction : null}
+                              onClick={handleSort('version')}>{popup('version')}</Table.HeaderCell>
             <Table.HeaderCell rowSpan="2"
                               sorted={column === 'login' ? direction : null}
                               onClick={handleSort('login')}>{popup('Login')}</Table.HeaderCell>
@@ -339,30 +393,70 @@ const MonitoringAdmin = (props) => {
             <Table.HeaderCell>
               <Search className='monitoring-search'
                 minCharacters={0}
-                onResultSelect={(e, search) => updateFilter('name', `^${search.result.title}$`)}
-                onSearchChange={(e, search) => updateFilter('name', search.value)}
+                onResultSelect={(e, search) => updateFilter(filters, setFilters, 'name', `^${search.result.title}$`)}
+                onSearchChange={(e, search) => updateFilter(filters, setFilters, 'name', search.value)}
                 results={filterOptions.name.filter(name => !filters.name || filters.name.test(name.title))}
               />
             </Table.HeaderCell>
             <Table.HeaderCell>
               <Search className='monitoring-search'
                 minCharacters={0}
-                onResultSelect={(e, search) => updateFilter('group', `^${search.result.title}$`)}
-                onSearchChange={(e, search) => updateFilter('group', search.value)}
+                onResultSelect={(e, search) => updateFilter(filters, setFilters, 'email', `^${search.result.title}$`)}
+                onSearchChange={(e, search) => updateFilter(filters, setFilters, 'email', search.value)}
+                results={filterOptions.email.filter(email => !filters.email || filters.email.test(email.title))}
+              />
+            </Table.HeaderCell>
+            <Table.HeaderCell>
+              <Search className='monitoring-search'
+                minCharacters={0}
+                onResultSelect={(e, search) => updateFilter(filters, setFilters, 'group', `^${search.result.title}$`)}
+                onSearchChange={(e, search) => updateFilter(filters, setFilters, 'group', search.value)}
                 results={filterOptions.group.filter(group => !filters.group || filters.group.test(group.title))}
               />
             </Table.HeaderCell>
             <Table.HeaderCell>
+              <Search className='monitoring-search'
+                minCharacters={0}
+                onResultSelect={(e, search) => updateFilter(filters, setFilters, 'role', `^${search.result.title}$`)}
+                onSearchChange={(e, search) => updateFilter(filters, setFilters, 'role', search.value)}
+                results={filterOptions.role.filter(role => !filters.role || filters.role.test(role.title))}
+              />
+            </Table.HeaderCell>
+            <Table.HeaderCell>
+              <Search className='monitoring-search'
+                minCharacters={0}
+                onResultSelect={(e, search) => updateFilter(filters, setFilters, 'janus', `^${search.result.title}$`)}
+                onSearchChange={(e, search) => updateFilter(filters, setFilters, 'janus', search.value)}
+                results={filterOptions.janus.filter(janus => !filters.janus || filters.janus.test(janus.title))}
+              />
+            </Table.HeaderCell>
+            <Table.HeaderCell>
+              <Search className='monitoring-search'
+                minCharacters={0}
+                onResultSelect={(e, search) => updateFilter(filters, setFilters, 'streaming', `^${search.result.title}$`)}
+                onSearchChange={(e, search) => updateFilter(filters, setFilters, 'streaming', search.value)}
+                results={filterOptions.streaming.filter(streaming => !filters.streaming || filters.streaming.test(streaming.title))}
+              />
+            </Table.HeaderCell>
+            <Table.HeaderCell>
+              <Search className='monitoring-search'
+                minCharacters={0}
+                onResultSelect={(e, search) => updateFilter(filters, setFilters, 'version', `^${search.result.title}$`)}
+                onSearchChange={(e, search) => updateFilter(filters, setFilters, 'version', search.value)}
+                results={filterOptions.version.filter(version => !filters.version || filters.version.test(version.title))}
+              />
             </Table.HeaderCell>
             <Table.HeaderCell>
             </Table.HeaderCell>
             <Table.HeaderCell>
               <Search className='monitoring-search'
                 minCharacters={0}
-                onResultSelect={(e, search) => updateFilter('system', `^${search.result.title}$`)}
-                onSearchChange={(e, search) => updateFilter('system', search.value)}
+                onResultSelect={(e, search) => updateFilter(filters, setFilters, 'system', `^${search.result.title}$`)}
+                onSearchChange={(e, search) => updateFilter(filters, setFilters, 'system', search.value)}
                 results={filterOptions.system.filter(system => !filters.system || filters.system.test(system.title))}
               />
+            </Table.HeaderCell>
+            <Table.HeaderCell>
             </Table.HeaderCell>
           </Table.Row>
         </Table.Header>

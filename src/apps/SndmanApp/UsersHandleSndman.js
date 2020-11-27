@@ -93,12 +93,12 @@ class UsersHandleSndman extends Component {
 
     publishOwnFeed = () => {
         this.state.videoroom.createOffer({
-            media: {audio: false, video: false, data: true},
+            media: {audio: false, video: false, data: false},
             simulcast: false,
             success: (jsep) => {
                 Janus.debug('Got publisher SDP!');
                 Janus.debug(jsep);
-                let publish = { request: 'configure', audio: false, video: false, data: true };
+                let publish = { request: 'configure', audio: false, video: false, data: false };
                 this.state.videoroom.send({ 'message': publish, 'jsep': jsep });
             },
             error: (error) => {
@@ -116,7 +116,7 @@ class UsersHandleSndman extends Component {
                 let mypvtid = msg["private_id"];
                 this.setState({myid, mypvtid});
                 console.debug(`[Sndman] [room ${roomid}] Successfully joined room`, myid);
-                this.publishOwnFeed();
+                //this.publishOwnFeed();
                 if (msg["publishers"] !== undefined && msg["publishers"] !== null) {
                     let list = msg["publishers"];
                     //FIXME: Tmp fix for black screen in room caoused by feed with video_codec = none

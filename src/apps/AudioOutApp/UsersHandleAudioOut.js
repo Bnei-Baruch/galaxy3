@@ -8,7 +8,7 @@ class UsersHandleAudioOut extends Component {
         feeds: [],
         mids: [],
         name: "",
-        room: "",
+        room: null,
         myid: null,
     };
 
@@ -24,10 +24,13 @@ class UsersHandleAudioOut extends Component {
                 this.initVideoRoom(g.room, g.janus);
             }
         }
+        if(g === null && room) {
+            this.exitVideoRoom(room, () => {});
+        }
     }
 
     componentWillUnmount() {
-        this.exitVideoRoom(this.state.room, () =>{})
+        this.exitVideoRoom(this.state.room, () => {})
     };
 
     initVideoRoom = (roomid, inst) => {
@@ -74,10 +77,14 @@ class UsersHandleAudioOut extends Component {
             let leave_room = {request : "leave", "room": roomid};
             this.state.videoroom.send({"message": leave_room,
                 success: () => {
-                    this.setState({feeds: [], mids: []});
+                    this.setState({feeds: [], mids: [], room: null});
                     this.state.videoroom.detach();
                     if(this.state.remoteFeed)
                         this.state.remoteFeed.detach();
+                    callback();
+                },
+                error: () => {
+                    this.setState({feeds: [], mids: [], room: null});
                     callback();
                 }
             });

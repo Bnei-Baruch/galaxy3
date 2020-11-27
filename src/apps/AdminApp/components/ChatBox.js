@@ -2,11 +2,7 @@ import React, {Component} from 'react';
 import {Button, Input, Message, Segment, Select} from "semantic-ui-react";
 import {Janus} from "../../../lib/janus";
 import {getDateString} from "../../../shared/tools";
-
-const send_options = [
-    {key: 'all', text: 'All', value: 'all'},
-    {key: 'private', text: 'Private', value: 'private'},
-];
+import {captureException} from "../../../shared/sentry";
 
 class ChatBox extends Component {
 
@@ -35,9 +31,10 @@ class ChatBox extends Component {
     componentWillUnmount() {
         document.removeEventListener("keydown", this.onKeyPressed);
         const {gateways} = this.props;
-        Object.values(gateways).forEach(gateway => {
-            gateway.detachChatRoom();
-        });
+        Promise.all(Object.values(gateways).map(gateway => gateway.detachChatRoom()))
+					.catch(error => {
+						captureException(error, {source: 'AdminRoot ChatBox'});
+					});
     };
 
     componentDidUpdate(prevProps) {
@@ -51,23 +48,33 @@ class ChatBox extends Component {
         console.log("[Admin] [ChatBox] initGateways", gateways);
 
         Promise.all(Object.values(gateways).map(gateway => {
-            if (!gateway.chatroom) {
-                gateway.initChatRoom(data => this.onChatData(gateway, data))
-                    .catch(err => {
-                        console.error("[Admin] [ChatBox] gateway.initChatRoom error", gateway.name, err);
-                    });
-            }
+          if (gateway.chatroom) {
+            return Promise.resolve();
+          }
+          return gateway.initChatRoom(data => this.onChatData(gateway, data))
+						.catch(error => {
+							console.error("[Admin] [ChatBox] gateway.initChatRoom error", gateway.name, error);
+							captureException(error, {source: 'AdminRoot ChatBox', gateway: gateway.name});
+							throw error;
+						});
         }))
-            .then(() => {
-                if (!!this.props.onChatRoomsInitialized) {
-                    this.props.onChatRoomsInitialized();
-                }
-            });
+					.then(() => {
+						if (!!this.props.onChatRoomsInitialized) {
+								this.props.onChatRoomsInitialized();
+						}
+					})
+					.catch((error) => {
+						console.error("[Admin] [ChatBox] error initializing gateways", error);
+						captureException(error, {source: 'AdminRoot ChatBox'});
+						if (!!this.props.onChatRoomsInitialized) {
+								this.props.onChatRoomsInitialized(error);
+						}
+					});
     };
 
     onKeyPressed = (e) => {
         if (e.code === "Enter")
-            this.sendPrivateMessage();
+            this.sendMessage();
     };
 
     onChatData = (gateway, data) => {
@@ -81,18 +88,36 @@ class ChatBox extends Component {
             let from = json["from"];
             let dateString = getDateString(json["date"]);
             let whisper = json["whisper"];
+            let message = JSON.parse(msg);
+
+            const { gdm } = this.props;
+            if (gdm.checkAck(message)) {
+                // Ack received, do nothing.
+                return;
+            }
+
+            if(message.type && message.type !== "chat") {
+                console.log(':: It\'s remote command :: ');
+                return;
+            }
+
+            message.user.username = message.user.display;
+            message.time = dateString;
             if (whisper === true) {
                 // Private message
-                let message = JSON.parse(msg);
-                message.user.username = message.user.display;
-                message.time = dateString;
                 console.log("[Admin] [ChatBox] private message", gateway.name, from, message);
                 let {messages} = this.state;
                 messages.push(message);
                 this.setState({messages});
                 this.scrollToBottom();
             } else {
-                console.warn("[Admin] [ChatBox] unexpected public chat message", json);
+                // Public message
+                console.log("[Admin] [ChatBox] public message", gateway.name, from, message);
+                let {messages} = this.state;
+                message.to = this.props.selected_group;
+                messages.push(message);
+                this.setState({messages});
+                this.scrollToBottom();
             }
         } else if (what === "join") {
             gateway.log("[chatroom] Somebody joined", json["username"], json["display"]);
@@ -106,7 +131,7 @@ class ChatBox extends Component {
     };
 
     sendPrivateMessage = () => {
-        const {user, selected_room, selected_user, gateways} = this.props;
+        const {user: {role, display, username}, selected_room, selected_user, gateways} = this.props;
         const {input_value} = this.state;
         if (!selected_user) {
             alert("Choose user");
@@ -114,7 +139,7 @@ class ChatBox extends Component {
         }
 
         const gateway = gateways[selected_user.janus];
-        const msg = {user, text: input_value};
+        const msg = {user: {role, display, username}, text: input_value};
         gateway.data("chatroom", gateway.chatroom, {
             ack: false,
             textroom: "message",
@@ -123,18 +148,50 @@ class ChatBox extends Component {
             to: selected_user.id,
             text: JSON.stringify(msg),
         })
-            .then(() => {
-                const {messages} = this.state;
-                msg.time = getDateString();
-                msg.to = selected_user.display;
-                messages.push(msg);
-                this.setState({messages, input_value: ""}, this.scrollToBottom);
-            })
-            .catch(alert);
+					.then(() => {
+            const {messages} = this.state;
+            msg.time = getDateString();
+            msg.to = selected_user.display;
+            messages.push(msg);
+            this.setState({ input_value: ""}, this.scrollToBottom);
+					})
+					.catch((error) => {
+						captureException(error, {source: 'AdminRoot ChatBox'});
+						alert(error);
+					});
     };
 
-    sendBroadcastMessage = () => {
-        const {user, selected_room, rooms, gateways} = this.props;
+    sendPublicMessage = () => {
+        const {user: {role, display, username}, selected_janus, selected_room, gateways} = this.props;
+        const {input_value} = this.state;
+        if (!selected_room) {
+            alert("Enter room");
+            return;
+        }
+
+        const gateway = gateways[selected_janus];
+        const msg = {user: {role, display, username}, text: input_value};
+        gateway.data("chatroom", gateway.chatroom, {
+            ack: false,
+            textroom: "message",
+            transaction: Janus.randomString(12),
+            room: selected_room,
+            text: JSON.stringify(msg),
+        })
+        .then(() => {
+            // const {messages} = this.state;
+            // msg.time = getDateString();
+            // messages.push(msg);
+            this.setState({input_value: ""}, this.scrollToBottom);
+        }).catch((error) => {
+          captureException(error, {source: 'AdminRoot ChatBox'});
+          alert(error);
+        });
+    };
+
+    /* Temporary comment out. Code not used, never called. */
+    /* sendBroadcastMessage = () => {
+        const {user: {role, display, username}, selected_room, rooms, gateways} = this.props;
         const {input_value, messages} = this.state;
 
         const room_data = rooms.find(x => x.room === selected_room);
@@ -145,20 +202,21 @@ class ChatBox extends Component {
         }
 
         const gateway = gateways[room_data.janus];
-        const msg = {type: "chat-broadcast", room: selected_room, user, text: input_value};
-        gateway.sendProtocolMessage(msg)
-            .then(() => {
-                msg.time = getDateString();
-                msg.to = "all";
-                messages.push(msg);
-                this.setState({messages, input_value: "", msg_type: "private"}, this.scrollToBottom);
-            })
-            .catch(alert);
-    };
+        const msg = {type: "chat-broadcast", room: selected_room, user: {role, display, username}, text: input_value};
+        gateway.sendProtocolMessage(msg).then(() => {
+          msg.time = getDateString();
+          msg.to = "all";
+          messages.push(msg);
+          this.setState({messages, input_value: "", msg_type: "private"}, this.scrollToBottom);
+        }).catch(error => {
+          captureException(error, {source: 'AdminRoot ChatBox'});
+          alert(error);
+        });
+    }; */
 
     sendMessage = () => {
         const {msg_type} = this.state;
-        msg_type === "private" ? this.sendPrivateMessage() : this.sendBroadcastMessage();
+        msg_type === "private" ? this.sendPrivateMessage() : this.sendPublicMessage();
     };
 
     scrollToBottom = () => {
@@ -170,7 +228,15 @@ class ChatBox extends Component {
     };
 
     render() {
+        const {selected_user, selected_group} = this.props;
         const {messages, msg_type, input_value} = this.state;
+        const to = selected_user && selected_user.display ? selected_user.display : 'Select User:';
+        const group = selected_group ? selected_group : 'All:';
+
+        const send_options = [
+            {key: 'all', text: group, value: 'all'},
+            {key: 'private', text: to, value: 'private'},
+        ];
 
         const list_msgs = messages.map((msg, i) => {
             const {user, time, text, to} = msg;

@@ -7,6 +7,9 @@ import LoginPage from "../../components/LoginPage";
 import {Grid} from "semantic-ui-react";
 import UsersQuadSndman from "./UsersQuadSndman";
 import GxyJanus from "../../shared/janus-utils";
+import {USERNAME_ALREADY_EXIST_ERROR_CODE, SNDMAN_ID} from "../../shared/consts"
+import {GuaranteeDeliveryManager} from '../../shared/GuaranteeDelivery';
+import {captureException, captureMessage, updateSentryUser} from "../../shared/sentry";
 
 
 class SndmanApp extends Component {
@@ -16,6 +19,7 @@ class SndmanApp extends Component {
         gateways: {},
         gatewaysInitialized: false,
         appInitError: null,
+        gdm: new GuaranteeDeliveryManager(SNDMAN_ID),
     };
 
     componentWillUnmount() {
@@ -32,11 +36,13 @@ class SndmanApp extends Component {
         } else {
             alert("Access denied!");
             kc.logout();
+            updateSentryUser(null);
         }
     };
 
     initApp = (user) => {
         this.setState({user});
+        updateSentryUser(user);
 
         api.fetchConfig()
             .then(data => GxyJanus.setGlobalConfig(data))
@@ -44,6 +50,7 @@ class SndmanApp extends Component {
             .catch(err => {
                 console.error("[Sndman] error initializing app", err);
                 this.setState({appInitError: err});
+                captureException(err, {source: 'Sndman'});
             });
     }
 
@@ -51,70 +58,88 @@ class SndmanApp extends Component {
         const gateways = GxyJanus.makeGateways("rooms");
         this.setState({gateways});
 
-        return Promise.all(Object.values(gateways).map(gateway => (this.initGateway(user, gateway))))
-            .then(() => {
-                console.log("[Sndman] gateways initialization complete");
-                this.setState({gatewaysInitialized: true});
-            });
+        const gatewayToInitPromise = (gateway) => this.initGateway(user, gateway)
+					.catch(error => {
+						captureException(error, {source: 'Sndman', gateway: gateway.name});
+						throw error;
+					});
+
+        return Promise.all(Object.values(gateways).map(gatewayToInitPromise))
+					.then(() => {
+							console.log("[Sndman] gateways initialization complete");
+							this.setState({gatewaysInitialized: true});
+					});
     }
 
     initGateway = (user, gateway) => {
         console.log("[Sndman] initializing gateway", gateway.name);
 
-        // we re-initialize the whole gateway on protocols error
         gateway.destroy();
 
         return gateway.init()
             .then(() => {
-                return gateway.initGxyProtocol(user, data => this.onProtocolData(gateway, data))
-                    .then(() => {
-                        if (gateway.name === "gxy3") {
-                            return gateway.initServiceProtocol(user, data => this.onServiceData(gateway, data))
-                        }
-                    });
+                if (gateway.name === "gxy3") {
+                    return gateway.initServiceProtocol(user, data => this.onServiceData(gateway, data));
+                }
+                return Promise.resolve();
             })
             .catch(err => {
-                console.error("[Sndman] error initializing gateway", gateway.name, err);
+                console.error("[Sndman] error initializing gateway. Will retry in 10 sec.", gateway.name, err);
+                captureException(err, {source: 'Sndman', gateway: gateway.name});
                 setTimeout(() => {
-                    this.initGateway(user, gateway);
+                    this.initGateway(user, gateway)
+											.catch(err => {
+												console.error("[Sndman] error initializing gateway.", gateway.name, err);
+												captureException(err, {source: 'Sndman', gateway: gateway.name});
+											});
                 }, 10000);
             });
     }
 
     onServiceData = (gateway, data) => {
-        if (data.type === "error" && data.error_code === 420) {
-            console.error("[Sndman] service error message (reloading in 10 seconds)", data.error);
-            setTimeout(() => {
-                this.initGateway(this.state.user, gateway);
-            }, 10000);
+        const { gdm } = this.state;
+        if (gdm.checkAck(data)) {
+          // Ack received, do nothing.
+          return;
         }
+        gdm.accept(data, (msg) => gateway.sendServiceMessage(msg)).then((data) => {
+          if (data === null) {
+            console.log('Message received more then once.');
+            return;
+          }
 
-        let {col, group, i, status} = data;
+          if (data.type === "error") {
+            if (data.error_code === USERNAME_ALREADY_EXIST_ERROR_CODE) {
+              console.error("[Sndman] service error message (reloading in 10 seconds)", data.error);
+              captureMessage(data.error, {source: "Sndman", msg: data});
+              setTimeout(() => {
+                  this.initGateway(this.state.user, gateway);
+              }, 10000);
+            } else {
+              captureException(data.error, {source: "Sndman", msg: data});
+            }
+          }
 
-        // Shidur action
-        if(data.type === "sdi-fullscr_group" && status) {
-            this["col"+col].fullScreenGroup(i,group);
-        } else if(data.type === "sdi-fullscr_group" && !status) {
-            this["col"+col].toFourGroup(i,group);
-        }
+          let {col, group, i, status} = data;
 
-        if(data.type === "event") {
-            delete data.type;
-            this.setState({...data});
-        }
+          // Shidur action
+          if(data.type === "sdi-fullscr_group" && status) {
+              this["col"+col].fullScreenGroup(i,group);
+          } else if(data.type === "sdi-fullscr_group" && !status) {
+              this["col"+col].toFourGroup(i,group);
+          }
 
-        if(data.type === "sdi-restart_sndman") {
-            window.location.reload();
-        }
-    };
+          if(data.type === "event") {
+              delete data.type;
+              this.setState({...data});
+          }
 
-    onProtocolData = (gateway, data) => {
-        if (data.type === "error" && data.error_code === 420) {
-            console.error("[Sndman] protocol error message (reloading in 10 seconds)", data.error);
-            setTimeout(() => {
-                this.initGateway(this.state.user, gateway);
-            }, 10000);
-        }
+          if(data.type === "sdi-restart_sndman") {
+              window.location.reload();
+          }
+        }).catch((error) => {
+          console.error(`Failed receiving ${data}: ${error}`);
+        });
     };
 
     setProps = (props) => {

@@ -1,4 +1,5 @@
-import {API_BACKEND, AUTH_API_BACKEND,} from "./env";
+import {ADMIN_SECRET, API_BACKEND, AUTH_API_BACKEND, JANUS_ADMIN_GXY,} from "./env";
+import {randomString} from "./tools";
 
 class Api {
 
@@ -50,6 +51,9 @@ class Api {
     fetchProgram = () =>
         this.logAndParse('fetch program', fetch(this.urlFor('/qids'), this.defaultOptions()));
 
+    fetchRoomsStatistics = () =>
+        this.logAndParse('fetch rooms statistics', fetch(this.urlFor('/v2/rooms_statistics'), this.defaultOptions()));
+
     updateQuad = (col, data) => {
         const options = this.makeOptions('PUT', data);
         return this.logAndParse(`update quad ${col}`, fetch(this.urlFor(`/qids/q${col}`), options));
@@ -60,6 +64,10 @@ class Api {
         return this.logAndParse(`update user ${id}`, fetch(this.urlFor(`/users/${id}`), options));
     }
 
+    updateRoom = (id, data) => {
+        const options = this.makeOptions('PUT', data);
+        return this.logAndParse(`update room ${id}`, fetch(this.urlFor(`/rooms/${id}`), options));
+    }
 
     // Admin API
 
@@ -90,6 +98,22 @@ class Api {
         return this.logAndParse(`admin delete room`, fetch(this.urlFor(`/admin/rooms/${id}`), options));
     }
 
+    adminSetConfig = (key, value) => {
+        const options = this.makeOptions('POST', {value});
+        return this.logAndParse(`admin set config`, fetch(this.urlFor(`/admin/dynamic_config/${key}`), options));
+    }
+
+    adminResetRoomsStatistics = () => {
+        const options = this.makeOptions('DELETE');
+        return this.logAndParse(`admin reset rooms statistics`, fetch(this.urlFor('/admin/rooms_statistics'), options));
+    }
+
+    adminListParticipants = (request, name) => {
+        let payload = { "janus": "message_plugin", "transaction": randomString(12), "admin_secret": ADMIN_SECRET, plugin: "janus.plugin.videoroom", request};
+        const options = this.makeOptions('POST', payload);
+        return this.logAndParse(`admin list participants`, fetch(this.adminUrlFor(name), options));
+    }
+
     // Auth Helper API
 
     verifyUser = (pendingEmail, action) =>
@@ -103,6 +127,7 @@ class Api {
 
     urlFor = (path) => (API_BACKEND + path)
     authUrlFor = (path) => (AUTH_API_BACKEND + path)
+    adminUrlFor = (name) => ('https://' + name + JANUS_ADMIN_GXY)
 
     defaultOptions = () => {
         const auth = this.accessToken ?
@@ -157,13 +182,13 @@ class Api {
 }
 
 // Helpers for tests / local dev
-class MockApi {
+/* class MockApi {
     fetchConfig = () =>
         new Promise((resolve, reject) => resolve({
             gateways: [{name: "gxytest", url: "http://localhost:8088/janus", type: "rooms", token: "secret"}],
             ice_servers: [],
         }))
-}
+} */
 
 // const defaultApi = new MockApi();
 

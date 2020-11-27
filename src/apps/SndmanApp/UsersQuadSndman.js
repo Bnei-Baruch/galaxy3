@@ -3,6 +3,7 @@ import {Button, Icon, Label, Segment} from "semantic-ui-react";
 import './UsersQuadSndman.scss'
 import UsersHandleSndman from "./UsersHandleSndman";
 import api from '../../shared/Api';
+import {captureException} from "../../shared/sentry";
 
 class UsersQuadSndman extends Component {
 
@@ -18,18 +19,19 @@ class UsersQuadSndman extends Component {
         let { index } = this.props;
         let col = index === 0 ? 1 : index === 4 ? 2 : index === 8 ? 3 : index === 12 ? 4 : null;
         this.setState({col});
-        document.addEventListener("keydown", this.onKeyPressed);
+        //document.addEventListener("keydown", this.onKeyPressed);
         setInterval(() => {
             api.fetchQuad(col)
                 .then(data => this.setState({vquad: data.vquad}))
                 .catch(err => {
-                    console.error("[Sndman] error fetching quad state", col, err);
+									console.error("[Sndman] error fetching quad state", col, err);
+									captureException(err, {source: "Sndman", col});
                 });
         }, 1000);
     };
 
     componentWillUnmount() {
-        document.removeEventListener("keydown", this.onKeyPressed);
+        //document.removeEventListener("keydown", this.onKeyPressed);
     };
 
     onKeyPressed = (e) => {
@@ -95,12 +97,12 @@ class UsersQuadSndman extends Component {
         const {gateways} = this.props;
         //TODO: Send data in room channel
         //this.sendDataMessage(status);
-        gateways[inst].sendProtocolMessage(msg);
+        //gateways[inst].sendProtocolMessage(msg);
         gateways["gxy3"].sendServiceMessage(msg);
     };
 
   render() {
-      const {full_group,full_feed,fullscr,vquad,forward,forward_request,col} = this.state;
+      const {full_group,full_feed,fullscr,vquad,forward, /*forward_request,*/ col} = this.state;
       const q = (<div className="question">
           <svg viewBox="0 0 50 50">
               <text x="25" y="25" textAnchor="middle" alignmentBaseline="central" dominantBaseline="central">&#xF128;</text>
@@ -129,11 +131,12 @@ class UsersQuadSndman extends Component {
               </div>
           </Segment>
               <Button className='fours_button'
-                      disabled={!fullscr || forward_request}
+                      disabled
+                      // disabled={!fullscr || forward_request}
                       attached='bottom'
                       positive={!forward}
                       negative={forward}
-                      onKeyDown={(e) => this.onKeyPressed(e)}
+                      //onKeyDown={(e) => this.onKeyPressed(e)}
                       onClick={() => this.forwardStream(full_group)}>
                   <Icon size='large' name={forward ? 'microphone' : 'microphone slash' } />
                   <Label attached='top left' color='grey'>{this.state.col}</Label>

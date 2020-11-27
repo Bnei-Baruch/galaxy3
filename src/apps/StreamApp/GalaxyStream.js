@@ -9,7 +9,7 @@ import LoginPage from "../../components/LoginPage";
 import './GalaxyStream.css'
 import api from "../../shared/Api";
 import GxyJanus from "../../shared/janus-utils";
-
+import {updateSentryUser} from "../../shared/sentry";
 
 class GalaxyStream extends Component {
 
@@ -36,9 +36,11 @@ class GalaxyStream extends Component {
             delete user.roles;
             user.role = gxy_group ? "group" : gxy_user ? "user" : "public";
             this.initApp(user);
+            updateSentryUser(user);
         } else {
             alert("Access denied!");
             kc.logout();
+            updateSentryUser(null);
         }
     };
 
@@ -59,6 +61,7 @@ class GalaxyStream extends Component {
                                 .then(() => this.initJanus(info.country))
                                 .catch(err => {
                                     console.error("[GalaxyStream] error initializing app", err);
+																		captureException(err, {source: "GalaxyStream", col});
                                     this.setState({appInitError: err});
                                 });
                         }
@@ -74,7 +77,9 @@ class GalaxyStream extends Component {
         if(this.state.janus)
             this.state.janus.destroy();
 
-        const gateway = country === "IL" ? 'str4' : 'str3';
+        // const gateway = country === "IL" ? 'str4' : 'str3';
+        const streamingGateways = GxyJanus.gatewayNames("streaming");
+        const gateway = streamingGateways[Math.floor(Math.random() * streamingGateways.length)];
         const config = GxyJanus.instanceConfig(gateway);
 
         Janus.init({

@@ -3,19 +3,23 @@ export const DATA_PORT = 5102;
 export const PROTOCOL_ROOM = 1000;
 export const SERVICE_ROOM = 1001;
 export const GROUPS_ROOM = 1234;
+export const LOST_CONNECTION = 'Lost connection to the server (is it down?)';
+
+
+export const USERNAME_ALREADY_EXIST_ERROR_CODE = 420;
+export const ALREADY_IN_ROOM_ERROR_CODE = 421;
+
 export const SHIDUR_ID = "4ab867e5-46f9-47b9-bd6d-47a6df784d92";
 export const SNDMAN_ID = "720f133f-b8e2-49a8-a148-7bd80763ae55";
 export const SDIOUT_ID = "91966d26-0777-4179-9773-d7cd5456a5ed";
 export const STORAN_ID = "28c8d37e-d86f-4c8c-9f89-f3b92e81f13e";
-
-export const JANUS_GATEWAYS = ["gxy1", "gxy2", "gxy3"];
-// TODO (edo): put all janus instance configs in a single object
+export const AUDIOOUT_ID = 'something-constant....';
 
 export const vsettings_list = [
     { key: 0, text: '320 x 180, 15 fps', value: {width: 320, height: 180, ideal: 15}, mobileText: 'low'},
     { key: 1, text: '320 x 180, 30 fps', value: {width: 320, height: 180, ideal: 30}, mobileText: 'medium'},
-    { key: 2, text: '640 x 360, 15 fps', value: {width: 640, height: 360, ideal: 15} },
-    { key: 3, text: '640 x 360, 30 fps', value: {width: 640, height: 360, ideal: 30}, mobileText: 'high'},
+    { key: 2, text: '640 x 360, 15 fps', value: {width: 640, height: 360, ideal: 15}, mobileText: 'high'},
+    /*{ key: 3, text: '640 x 360, 30 fps', value: {width: 640, height: 360, ideal: 30}, mobileText: 'high'},*/
 ];
 
 export const NO_VIDEO_OPTION_VALUE = -1;
@@ -38,7 +42,7 @@ export const videos_options2 = [
     { key: 4, text: 'oldClient.noVideo', description:"oldClient.audioOnly", value: NO_VIDEO_OPTION_VALUE },
 ];
 export const audiog_options2 = [
-    
+
     { header: true, text: 'oldClient.streamForWorkshop', description:'oldClient.streamForWorkshopDescription', icon: 'group'},
     { key: 2, value: 2, flag: 'il', icon:'group', eng_text: 'Hebrew', text:'עברית' },
     { key: 3, value: 3, flag: 'ru', icon:'group', eng_text: 'Russian', text:'Русский' },
@@ -126,24 +130,33 @@ export const audiog_options = [
 export const gxycol = [0, 201, 203, 202, 204];
 
 export const trllang = {
-        "Hebrew": 301,
-        "Russian": 302,
-        "English": 303,
-        "French": 305,
-        "Spanish": 304,
-        "German": 307,
-        "Italian": 306,
-        "Turkish": 308,
-        "Bulgarian": 310,
-        "Romanian": 312,
-        "Lithuanian": 315,
-        "Ukrainian": 322,
-        "Heb-Eng": 303,
-        "Heb-Rus": 302,
-};
-
-export const TABS = {
-    CHAT : "chat",
-    QUESTIONS : "questions",
-    SUPPORT : "support"
-};
+    Hebrew: 301,
+    Russian: 302,
+    English: 303,
+    Spanish: 304,
+    French: 305,
+    Italian: 306,
+    German: 307,
+    Turkish: 308,
+    Portuguese: 309,
+    Bulgarian: 310,
+    Georgian: 311,
+    Romanian: 312,
+    Hungarian: 313,
+    Swedish: 314,
+    Lithuanian: 315,
+    Croatian: 316,
+    Japanese: 317,
+    Slovenian: 318,
+    Polish: 319,
+    Norwegian: 320,
+    Latvian: 321,
+    Ukrainian: 322,
+    Dutch: 323,
+    Chinese: 324,
+    Amharic: 325,
+    Hindi: 326,
+    Persian: 327,
+    "Heb-Eng": 303,
+    "Heb-Rus": 302,
+}

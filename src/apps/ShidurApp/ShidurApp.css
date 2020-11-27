@@ -1,154 +1,153 @@
 .virtual {
-    position: absolute!important;
-    right: 0px!important;
-    padding-right: 3rem!important;
-    width: 75% !important;
+  position: absolute!important;
+  right: 0px!important;
+  padding-right: 3rem!important;
+  width: 75% !important;
 }
 
 .vquad2 {
-    right: 2rem!important;
+  right: 2rem!important;
 }
 
 .vquad3 {
-    right: 1rem!important;
+  right: 1rem!important;
 }
 
 .vtoran {
-    position: absolute!important;
-    right: 20px!important;
-    width: 475px;
+  position: absolute!important;
+  right: 20px!important;
+  width: 475px;
 }
 
 .videos-panel {
-    width: 100%;
-    height: 100%;
-    flex-direction: column;
-    display: flex;
-    background:#000;
-    padding: 0.3em;
-    flex: 1 0 100%;
-    transition: .2s all linear;
+  width: 100%;
+  height: 100%;
+  flex-direction: column;
+  display: flex;
+  background:#000;
+  padding: 0.3em;
+  flex: 1 0 100%;
+  transition: .2s all linear;
 }
 
 .virtual_segment {
-    width: 100vw;
-    height: 100vh;
-    display: flex;
-    flex-direction: column;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 .ingest_segment{
-    display: flex;
-    align-items: center;
-    padding: .8rem .5rem;
-    flex-wrap:wrap;
+  display: flex;
+  align-items: center;
+  padding: .8rem .5rem;
+  flex-wrap:wrap;
 }
 
 .ingest_segment > .menu,
 .ingest_segment >.input {
-    margin: .2rem .5rem !important;
+  margin: .2rem .5rem !important;
 }
 .ingest_segment .menu:nth-child(2) {
-    flex: 1 0 auto;
+  flex: 1 0 auto;
 }
 .videos_segment {
-    flex: 1 0 auto;
-    display: flex;
+  flex: 1 0 auto;
+  display: flex;
 }
 
 .video-wrapper {
-    display: flex;
-    background: #000;
-    padding: 1.6em;
-    flex: 1 0 100%;
-    transition: .2s all linear;
+  display: flex;
+  background: #000;
+  padding: 1.6em;
+  flex: 1 0 100%;
+  transition: .2s all linear;
 
 }
 .virtual_segment--chat-open .video-wrapper{
-    flex: 1 0 calc(100% - 400px);
+  flex: 1 0 calc(100% - 400px);
 }
 .chat-wrapper {
-    flex: 0 0 400px;
-    padding: 0 10px 10px 10px;
-    display: flex;
-    flex-direction: column;
+  flex: 0 0 400px;
+  padding: 0 10px 10px 10px;
+  display: flex;
+  flex-direction: column;
 }
 
 .ui.selection.dropdown .menu {
-    max-height: 30rem;
+  max-height: 30rem;
 }
 
 .talk {
-    border: 1px solid yellow;
+  border: 1px solid yellow;
 }
 
 .mirror {
-    -webkit-transform: scaleX(-1);
-    transform: scaleX(-1);
+  -webkit-transform: scaleX(-1);
+  transform: scaleX(-1);
 }
 
 .hidden {
-    display: none;
+  display: none;
 }
 
 /*.select_device {*/
-    /*min-width: 10em!important;*/
+/*min-width: 10em!important;*/
 /*}*/
 
 .vumeter {
-    width: 15px;
-    height: 35px;
-    top: 150px;
-    left: 45%;
-    text-align: center;
-    margin-left: 5px;
-    border: 1px solid #a5e4b5;
+  width: 15px;
+  height: 35px;
+  top: 150px;
+  left: 45%;
+  text-align: center;
+  margin-left: 5px;
+  border: 1px solid #a5e4b5;
 }
 
 .ui.massive.menu {
-    font-size: 1.28571429rem;
+  font-size: 1.28571429rem;
 }
 
 .admin_table {
-    cursor: pointer!important;
+  cursor: pointer!important;
 }
 
 .messages_list {
-    overflow-y:scroll;
-    flex: 1 0 auto;
+  overflow-y:scroll;
+  flex: 1 0 auto;
 
-    /* top:0px; left:0px;
-    width:100%; height:400px; */
+  /* top:0px; left:0px;
+  width:100%; height:400px; */
 }
 
 .preview_segment {
-    width: 430px;
-    height: 250px;
-    cursor: pointer!important;
-    background-color: silver!important;
+  width: 430px;
+  height: 250px;
+  cursor: pointer!important;
+  background-color: silver!important;
 }
 
 .program_segment {
-    width: 430px;
-    height: 250px;
-    background-color: silver!important;
+  width: 430px;
+  height: 250px;
+  background-color: silver!important;
 }
 
 .users_container {
-    width: 490px;
-    /*height: 920px;*/
+  width: 490px;
+  /*height: 920px;*/
 }
 
 .shidur_overlay {
-    font-family: "Liberation Serif";
-    line-height: 1.1285em;
-    position: absolute;
-    right: 50px;
-    color: #FFF;
-    text-align: center;
-    font-size: 20px;
-    background-color: blue;
-    width: auto;
-    padding: 0px 10px;
-    z-index: 1;
-    float: right !important;
+  line-height: 1.1285em;
+  position: absolute;
+  right: 50px;
+  color: #FFF;
+  text-align: center;
+  font-size: 30px;
+  background-color: #2185d0;
+  width: auto;
+  padding: 0px 10px;
+  z-index: 1;
+  float: right !important;
 }

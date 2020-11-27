@@ -78,6 +78,7 @@ class GxyJanus extends EventTarget {
                         },
                         error: (err) => {
                             this.error("Janus.init error", err);
+                            this.dispatchEvent(new CustomEvent("net-lost", {detail: err}));
                             reject(err);
                             if (this.gateway.getSessionId()) {
                                 this.reconnect();
@@ -154,7 +155,7 @@ class GxyJanus extends EventTarget {
     }
 
     debug = (...args) => {
-        //console.debug(`[${this.name}]`, ...args)
+        console.debug(`[${this.name}]`, ...args)
     };
     log = (...args) => {
         console.log(`[${this.name}]`, ...args)
@@ -335,7 +336,7 @@ class GxyJanus extends EventTarget {
                             textroom: "join",
                             transaction: Janus.randomString(12),
                             room: GxyJanus.protocolRoom(name),
-                            username: user.id || user.sub,
+                            username: user && user.id ? user.id : user.sub,
                             display: user.display
                         });
                     },
@@ -477,6 +478,16 @@ class GxyJanus extends EventTarget {
         });
     };
 
+    sendCmdMessage = (msg) => {
+        return this.data("command", this.chatroom, {
+            ack: false,
+            textroom: "message",
+            transaction: Janus.randomString(12),
+            room: msg.room,
+            text: JSON.stringify(msg),
+        });
+    };
+
     initVideoRoom = (callbacks) => {
         return new Promise((resolve, reject) => {
             this.gateway.attach({
@@ -523,6 +534,10 @@ class GxyJanus extends EventTarget {
                 ondata: (data) => {
                     this.log("[videoroom] data (publisher) ", data);
                     if (callbacks.ondata) callbacks.ondata(data);
+                },
+                ondataerror: (error) => {
+                    this.warn("[videoroom] data (publisher) ", error);
+                    if (callbacks.ondataerror) callbacks.ondataerror(error);
                 },
                 onmessage: (msg, jsep) => {
                     this.log("[videoroom] message", msg);
@@ -600,6 +615,10 @@ class GxyJanus extends EventTarget {
                         " packets on mid " + mid + " (" + lost + " lost packets)");
                     if (callbacks.slowLink) callbacks.slowLink(uplink, lost, mid);
                 },
+                onmessage: (msg, jsep) => {
+                    this.log("[remoteFeed] message", msg);
+                    if (callbacks.onmessage) callbacks.onmessage(msg, jsep);
+                },
                 onlocaltrack: (track, on) => {
                     // The subscriber stream is recvonly, we don't expect anything here
                     this.warn("[remoteFeed] ::: unexpected local track ::: ")
@@ -611,17 +630,17 @@ class GxyJanus extends EventTarget {
                     this.log("[remoteFeed] Remote track (mid=" + mid + ") " + (on ? "added" : "removed") + ":", track);
                     if (callbacks.onremotetrack) callbacks.onremotetrack(track, mid, on);
                 },
-                ondataopen: () => {
+                ondataopen: (label) => {
                     this.log("[remoteFeed] The DataChannel is available!");
-                    if (callbacks.ondataopen) callbacks.ondataopen();
+                    if (callbacks.ondataopen) callbacks.ondataopen(label);
                 },
-                ondata: (data) => {
+                ondata: (data, label) => {
                     this.log("[remoteFeed] data", data);
-                    if (callbacks.ondata) callbacks.ondata(data);
+                    if (callbacks.ondata) callbacks.ondata(data, label);
                 },
-                onmessage: (msg, jsep) => {
-                    this.log("[remoteFeed] message", msg);
-                    if (callbacks.onmessage) callbacks.onmessage(msg, jsep);
+                ondataerror: (error) => {
+                    this.warn("[remoteFeed] data (subscriber) ", error);
+                    if (callbacks.ondataerror) callbacks.ondataerror(error);
                 },
                 oncleanup: () => {
                     this.log("[remoteFeed] cleanup");
@@ -651,7 +670,7 @@ class GxyJanus extends EventTarget {
         });
     };
 
-    initForward = () => {
+    initForward = (onDataErrorCallback) => {
         return new Promise((resolve, reject) => {
             this.gateway.attach({
                 plugin: "janus.plugin.videoroom",
@@ -745,6 +764,12 @@ class GxyJanus extends EventTarget {
                 },
                 ondata: (data) => {
                     this.warn("[forward] ::: data from the DataChannel! :::", data);
+                },
+                ondataerror: (error) => {
+                  this.error("[forward] on data error", error);
+                  if (onDataErrorCallback) {
+                    onDataErrorCallback(error);
+                  }
                 },
                 oncleanup: () => {
                     this.log("[forward] cleanup");

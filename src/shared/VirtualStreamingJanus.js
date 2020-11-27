@@ -1,21 +1,36 @@
 import { Janus } from '../lib/janus';
 import {gxycol, trllang, NO_VIDEO_OPTION_VALUE,} from './consts';
 import GxyJanus from "./janus-utils";
+import {captureMessage} from './sentry';
 
 export default class VirtualStreamingJanus {
 
   constructor(onInitialized) {
     this.janus = null;
+
+    // Streaming plugin for video.
     this.videoJanusStream = null;
-    this.audioJanusStream = null;
-    this.trlAudioJanusStream = null;
     this.videoMediaStream = null;
+    // Array of callbacks for cleanup.
+    this.videoJanusStreamCleanup = [];
+
+    // Streaming plugin for audio.
+    this.audioJanusStream = null;
     this.audioMediaStream = null;
+    // Array of callbacks for cleanup.
+    this.audioJanusStreamCleanup = [];
+
+    // Streaing plugin for trlAudio
+    this.trlAudioJanusStream = null;
     this.trlAudioMediaStream = null;
+    // Array of callbacks for cleanup.
+    this.trlAudioJanusStreamCleanup = [];
+
     this.videos = Number(localStorage.getItem('vrt_video')) || 1;
     this.audios = Number(localStorage.getItem('vrt_lang')) || 2;
     this.mixvolume = null;
     this.talking = null;
+    this.streamingGateway = '';
 
     this.videoElement = null;
     this.audioElement = new Audio();
@@ -49,17 +64,111 @@ export default class VirtualStreamingJanus {
     }
   }
 
-  detachVideo_() {
-    this.videoJanusStream = null;
-    this.videoMediaStream = null;
+  /**
+   * Detaches video. |callbacks| may be undefined.
+   * @param {{success: function, error: function}} callbacks
+   */
+  detachVideo_(callbacks) {
+    this.videoJanusStreamCleanup.push(() => {
+      this.videoJanusStream.detach({
+        success: () => {
+          this.videoJanusStream = null;
+          this.videoMediaStream = null;
+          if (callbacks?.success) {
+            callbacks.success();
+          }
+        },
+        error: (error) => {
+          this.videoJanusStream = null;
+          this.videoMediaStream = null;
+          captureMessage('JanusVirtualStreaming error detaching video stream', {source: 'VirtualStreaming', err: error}, 'error');
+          if (callbacks?.error) {
+            callbacks.error(error);
+          }
+        },
+      });
+    });
+    if (!this.videoJanusStream) {
+      if (callbacks?.success) {
+        callbacks.success();
+      }
+      return;
+    }
+    this.videoJanusStream.hangup();
   }
 
-  detach_() {
-    this.detachVideo_();
-    this.audioJanusStream = null;
-    this.trlAudioJanusStream = null;
-    this.audioMediaStream = null;
-    this.trlAudioMediaStream = null;
+  /**
+   * Detaches audio.
+   * @param {{success: function, error: function}} callbacks
+   */
+  detachAudio_(callbacks) {
+    this.audioJanusStreamCleanup.push(() => {
+      this.audioJanusStream.detach({
+        success: () => {
+          this.audioJanusStream = null;
+          this.audioMediaStream = null;
+          callbacks.success();
+        },
+        error: (error) => {
+          this.audioJanusStream = null;
+          this.audioMediaStream = null;
+          captureMessage('JanusVirtualStreaming error detaching audio stream', {source: 'VirtualStreaming', err: error}, 'error');
+          callbacks.error(error);
+        },
+      });
+    });
+    if (!this.audioJanusStream) {
+      if (callbacks?.success) {
+        callbacks.success();
+      }
+      return;
+    }
+    this.audioJanusStream.hangup();
+  }
+
+  /**
+   * Detaches translation audio.
+   * @param {{success: function, error: function}} callbacks
+   */
+  detachTrlAudio_(callbacks) {
+    this.trlAudioJanusStreamCleanup.push(() => {
+      this.trlAudioJanusStream.detach({
+        success: () => {
+          this.trlAudioJanusStream = null;
+          this.trlAudioMediaStream = null;
+          callbacks.success();
+        },
+        error: (error) => {
+          this.trlAudioJanusStream = null;
+          this.trlAudioMediaStream = null;
+          captureMessage('JanusVirtualStreaming error detaching trlAudio stream', {source: 'VirtualStreaming', err: error}, 'error');
+          callbacks.error(error);
+        },
+      });
+    });
+    if (!this.trlAudioJanusStream) {
+      callbacks.success();
+      return;
+    }
+    this.trlAudioJanusStream.hangup();
+  }
+
+  detach_(callbacks) {
+    let success = 0;
+    const threeCallbacks = {
+      success: () => {
+        success++;
+        if (success === 3) {
+          callbacks.success();
+        }
+      },
+      error: (error) => {
+        callbacks.error(error);
+      },
+    };
+    this.detachVideo_(threeCallbacks);
+    this.detachAudio_(threeCallbacks);
+    this.detachTrlAudio_(threeCallbacks);
   }
 
   attachVideoStream(videoElement) {
@@ -105,10 +214,10 @@ export default class VirtualStreamingJanus {
 
   init(ip, country) {
     localStorage.setItem('vrt_extip', ip);
-    this.initJanus_(country);
+    this.destroyAndInitJanus_(country);
   }
 
-  destroy() {
+  destroy(callbacks) {
     if (this.talking) {
       clearInterval(this.talking);
       this.talking = null;
@@ -123,22 +232,53 @@ export default class VirtualStreamingJanus {
       if (this.trlAudioElement) {
         this.trlAudioElement.srcObject = null;
       }
-      if (this.janus.destroy && typeof this.janus.destroy === 'function') {
-        this.janus.destroy();
-      }
-      this.janus = null;
-      this.detach_();
+      const destroy = () => {
+        if (this.janus && this.janus.destroy && typeof this.janus.destroy === 'function') {
+          this.janus.destroy(callbacks);
+        } else {
+          callbacks.success();
+        }
+        this.janus = null;
+      };
+      this.detach_({
+        success: () => {
+          destroy();
+        },
+        error: (error) => {
+          captureMessage('JanusVirtualStreaming error detaching.', {source: 'VirtualStreaming', err: error}, 'error');
+          callbacks.error(error);
+          destroy();
+        },
+      });
+    } else {
+      callbacks.success();
     }
   }
 
-  initJanus_(country) {
-    this.destroy();
+  destroyAndInitJanus_(country) {
+    console.log('Trying to destroy and init!');
+    this.destroy({
+      error: (error) => {
+        console.log('JanusVirtualStreaming error destroying before init', error);
+        captureMessage('JanusVirtualStreaming error destroying before init', {source: 'VirtualStreaming', err: error}, 'error');
+        // Still we are trying to init.
+        this.initJanus_(country);
+      },
+      success: () => {
+        console.log('JanusVirtualStreaming destroy success, now init.');
+        this.initJanus_(country);
+      },
+    });
+  };
 
-    const gateway = country === "IL" ? 'str4' : 'str3';
-    const config = GxyJanus.instanceConfig(gateway);
+  initJanus_(country) {
+    // const gateway = country === "IL" ? 'str4' : 'str3';
+    const streamingGateways = GxyJanus.gatewayNames("streaming");
+    this.streamingGateway = streamingGateways[Math.floor(Math.random() * streamingGateways.length)];
+    const config = GxyJanus.instanceConfig(this.streamingGateway);
 
     Janus.init({
-      debug: process.env.NODE_ENV !== 'production' ? [/*'log', 'warn',*/ 'error'] : ['error'],
+      debug: process.env.NODE_ENV !== 'production' ? ['log', 'error'] : ['log', 'error'],
       callback: () => {
         this.janus = new Janus({
           server: config.url,
@@ -158,6 +298,7 @@ export default class VirtualStreamingJanus {
               this.initJanus_(country);
             }, 5000);
             console.error('RELOAD ON ERROR', err);
+            captureMessage('JanusVirtualStreaming error', {source: 'VirtualStreaming', err}, 'error');
           },
           destroyed: () => {
             Janus.log('Janus handle successfully destroyed.');
@@ -165,7 +306,17 @@ export default class VirtualStreamingJanus {
         });
       }
     });
-  };
+  }
+
+  iceRestart = () => {
+    let id = trllang[localStorage.getItem('vrt_langtext')] || 301;
+    if(this.videoJanusStream)
+      this.videoJanusStream.send({ message: { request: 'watch', id: this.videos, restart: true } });
+    if(this.audioJanusStream)
+      this.audioJanusStream.send({ message: { request: 'watch', id: this.audios, restart: true } });
+    if(this.trlAudioJanusStream)
+      this.trlAudioJanusStream.send({ message: { request: 'watch', id, restart: true } });
+  }
 
   initVideoStream = (janus) => {
     janus.attach({
@@ -205,7 +356,10 @@ export default class VirtualStreamingJanus {
         this.onInitialized_();
       },
       oncleanup: () => {
-        Janus.warn('Got a cleanup notification');
+        Janus.warn('Got a cleanup notification - videostream.');
+        const callbacks = [...this.videoJanusStreamCleanup];
+        this.videoJanusStreamCleanup.length = 0;
+        callbacks.forEach(callback => callback());
       }
     });
   };
@@ -248,7 +402,10 @@ export default class VirtualStreamingJanus {
         this.onInitialized_();
       },
       oncleanup: () => {
-        Janus.log('Got a cleanup notification');
+        Janus.log('Got a cleanup notification - audiostream.');
+        const callbacks = [...this.audioJanusStreamCleanup];
+        this.audioJanusStreamCleanup.length = 0;
+        callbacks.forEach(callback => callback());
       }
     });
   };
@@ -291,13 +448,16 @@ export default class VirtualStreamingJanus {
         this.onInitialized_();
       },
       oncleanup: () => {
-        Janus.log('Got a cleanup notification');
+        Janus.log('Got a cleanup notification - trlstream.');
+        const callbacks = [...this.trlAudioJanusStreamCleanup];
+        this.trlAudioJanusStreamCleanup.length = 0;
+        callbacks.forEach(callback => callback());
       }
     });
   };
 
   onStreamingMessage = (handle, msg, jsep, initdata) => {
-    Janus.log('Got a message', msg);
+    Janus.log(`Got a message ${JSON.stringify(msg)}`);
 
     if (handle !== null && jsep !== undefined && jsep !== null) {
       Janus.log('Handling SDP as well...', jsep);
@@ -417,4 +577,12 @@ export default class VirtualStreamingJanus {
     localStorage.setItem('vrt_lang', audios);
     localStorage.setItem('vrt_langtext', text);
   };
+
+  unmuteAudioElement = () => {
+    this.audioElement.muted = false;
+  }
+
+  muteAudioElement = () => {
+    this.audioElement.muted = true;
+  }
 };

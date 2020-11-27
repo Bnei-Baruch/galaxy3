@@ -2,6 +2,7 @@ import React from 'react';
 import {Popup, Table} from 'semantic-ui-react';
 import parser from 'ua-parser-js';
 import {MONITORING_BACKEND} from "./env";
+import './LinkButton.css';
 
 export const system = (user) => {
   const {system: userAgent, ram, cpu, network} = user;
@@ -108,11 +109,15 @@ export const userRow = (user, stats, now, onUser) => {
   }
   return (
     <Table.Row key={user.id} style={{backgroundColor: color}}>
-      <Table.Cell><a style={{cursor: 'pointer'}} onClick={onUser ? () => onUser() : null}>{popup(user.display)}</a></Table.Cell>
-      <Table.Cell>{popup(user.group)}</Table.Cell>
-      <Table.Cell>{popup(user.janus)}</Table.Cell>
-      <Table.Cell>{popup(sinceTimestamp(user.timestamp, now))}</Table.Cell>
-      <Table.Cell>{popup(system(user))}</Table.Cell>
+      <Table.Cell className='monitoring-cell'><button className="link-button" onClick={onUser ? () => onUser() : null}>{popup(user.display)}</button></Table.Cell>
+			<Table.Cell className='monitoring-cell'>{popup(user.email)}</Table.Cell>
+      <Table.Cell className='monitoring-cell'>{popup(user.group)}</Table.Cell>
+      <Table.Cell className='monitoring-cell'>{popup(user.role)}</Table.Cell>
+      <Table.Cell className='monitoring-cell'>{popup(user.janus)}</Table.Cell>
+      <Table.Cell className='monitoring-cell'>{popup(user.streamingGateway)}</Table.Cell>
+      <Table.Cell className='monitoring-cell'>{popup(user.galaxyVersion || '')}</Table.Cell>
+      <Table.Cell className='monitoring-cell'>{popup(sinceTimestamp(user.timestamp, now))}</Table.Cell>
+      <Table.Cell className='monitoring-cell'>{popup(system(user))}</Table.Cell>
       <Table.Cell key={'update'}>
         {stats.update && stats.update.value !== undefined && stats.update.value !== null ? popup(stats.update.view) : null}
       </Table.Cell>
@@ -232,7 +237,7 @@ export const dataValues = (data, now) => {
       if (!(metricField in values)) {
         values[metricField] = {};
       }
-      const metricName = metric.split('.').slice(-1)[0];
+      let metricName = metric.split('.').slice(-1)[0];
       const metricNames = new Map([['slow-link-receiving', 'slowLink'], ['slow-link-receiving-lost', 'slowLinkLost']]);
       if (metricNames.has(metricName)) {
         metricName = metricNames.get(metricName);

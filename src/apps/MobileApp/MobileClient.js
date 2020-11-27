@@ -1,24 +1,35 @@
 import React, {Component, Fragment} from 'react';
+import MetaTags from 'react-meta-tags';
 import {Janus} from "../../lib/janus";
 import classNames from 'classnames';
-
 import Dots from 'react-carousel-dots';
 import {Accordion, Button, Icon, Image, Input, Label, Menu, Modal, Select} from "semantic-ui-react";
 import {checkNotification, geoInfo, getMedia, getMediaStream, initJanus, micLevel, wkliLeave} from "../../shared/tools";
 import './MobileClient.scss'
 import './MobileConteiner.scss'
 import 'eqcss'
-import {initGxyProtocol} from "../../shared/protocol";
-import {PROTOCOL_ROOM, VIDEO_240P_OPTION_VALUE, NO_VIDEO_OPTION_VALUE, vsettings_list} from "../../shared/consts";
+import {
+  NO_VIDEO_OPTION_VALUE,
+  PROTOCOL_ROOM,
+  USERNAME_ALREADY_EXIST_ERROR_CODE,
+  VIDEO_240P_OPTION_VALUE,
+  vsettings_list,
+} from "../../shared/consts";
 import {GEO_IP_INFO} from "../../shared/env";
 import platform from "platform";
-import { isMobile } from 'react-device-detect';
+import {isMobile} from 'react-device-detect';
 import {withTranslation} from 'react-i18next';
 import {languagesOptions, setLanguage} from '../../i18n/i18n';
 import {Monitoring} from '../../components/Monitoring';
-import {MonitoringData, LINK_STATE_INIT, LINK_STATE_GOOD, LINK_STATE_MEDIUM, LINK_STATE_WEAK} from '../../shared/MonitoringData';
+import {
+  LINK_STATE_GOOD,
+  LINK_STATE_INIT,
+  LINK_STATE_MEDIUM,
+  LINK_STATE_WEAK,
+  MonitoringData
+} from '../../shared/MonitoringData';
 import api from '../../shared/Api';
-import {kc} from "../../components/UserManager";
+import {isGhostOrGuest, kc} from "../../components/UserManager";
 import LoginPage from "../../components/LoginPage";
 import GxyJanus from "../../shared/janus-utils";
 import connectionOrange from '../VirtualApp/connection-orange.png';
@@ -27,15 +38,18 @@ import connectionRed from '../VirtualApp/connection-red.png';
 import connectionGray from '../VirtualApp/connection-gray.png';
 import audioModeSvg from '../../shared/audio-mode.svg';
 import fullModeSvg from '../../shared/full-mode-white.svg';
-
 import VirtualStreamingMobile from './VirtualStreamingMobile';
 import VirtualStreamingJanus from '../../shared/VirtualStreamingJanus';
-
 import VirtualChat from '../VirtualApp/VirtualChat';
+import ConfigStore from "../../shared/ConfigStore";
+import {GuaranteeDeliveryManager} from "../../shared/GuaranteeDelivery";
+import {captureException, captureMessage, updateSentryUser} from "../../shared/sentry";
 
 const sortAndFilterFeeds = (feeds) => feeds
   .filter(feed => !feed.display.role.match(/^(ghost|guest)$/))
   .sort((a, b) => a.display.timestamp - b.display.timestamp);
+
+const userFeeds = (feeds) => feeds.filter(feed => feed.display.role === 'user');
 
 const PAGE_SIZE = 3;
 
@@ -62,16 +76,13 @@ class MobileClient extends Component {
         audio: null,
         video: null,
         janus: null,
-
-
         feeds: [],
         streamsMids: new Map(),
-        creatingFeed: false,  
+        creatingFeed: false,
         switchToPage: -1,
         page: 0,
         muteOtherCams: false,
         videos: Number(localStorage.getItem('vrt_video')) || 1,
-
         rooms: [],
         room: '',
         selected_room: parseInt(localStorage.getItem("room"), 10) || "",
@@ -97,12 +108,14 @@ class MobileClient extends Component {
         keepalive: null,
         shidur: false,
         shidurLoading: false,
-        shidurJanus: new VirtualStreamingJanus(() => this.shidurInitialized()),
+        virtualStreamingJanus: new VirtualStreamingJanus(() => this.shidurInitialized()),
         shidurMuted: false,
         talking: false,
         chatMessagesCount: 0,
         chatVisible: false,
         settingsActiveIndex: -1,
+        gdm: null,
+        premodStatus: false,
     };
 
     shidurInitialized() {
@@ -110,7 +123,11 @@ class MobileClient extends Component {
     }
 
     setShidurMuted(muted) {
-      this.state.shidurJanus.audioElement.muted = muted;
+      if (muted) {
+        this.state.virtualStreamingJanus.muteAudioElement();
+      } else {
+        this.state.virtualStreamingJanus.unmuteAudioElement();
+      }
       this.setState({shidurMuted: muted});
     }
 
@@ -132,7 +149,8 @@ class MobileClient extends Component {
           this.state.videoroom,
           this.state.localAudioTrack,
           this.state.localVideoTrack,
-          this.state.user);
+          this.state.user,
+          this.state.virtualStreamingJanus);
         this.state.monitoringData.setOnStatus((connectionStatus, connectionStatusMessage) => {
           if (this.state.connectionStatus !== connectionStatus) {
             this.setState({connectionStatus});
@@ -150,6 +168,7 @@ class MobileClient extends Component {
         } else {
             alert("Access denied!");
             kc.logout();
+            updateSentryUser(null);
         }
     }
 
@@ -158,14 +177,24 @@ class MobileClient extends Component {
             window.location = '/user/';
             return;
         }
-        this.state.shidurJanus.onTalking((talking) => this.setState({talking}));
+        this.state.virtualStreamingJanus.onTalking((talking) => this.setState({talking}));
     };
 
     componentWillUnmount() {
-      this.state.shidurJanus.destroy();
+      this.state.virtualStreamingJanus.destroy({
+        success: () => {
+          console.log('Mobile Virtual streming destroyed.');
+        },
+        error: (error) => {
+          console.log('Mobile Error destroying VirtualStreaming', error);
+          captureMessage('Mobile Error destroying VirtualStreaming', {source: 'MobileClient', err: error}, 'error');
+        },
+      });
     }
 
     initApp = (user) => {
+        let gdm = new GuaranteeDeliveryManager(user.id);
+        this.setState({gdm});
         localStorage.setItem('question', false);
         localStorage.setItem('sound_test', false);
         localStorage.setItem('uuid', user.id);
@@ -187,10 +216,15 @@ class MobileClient extends Component {
             user.ip = data && data.ip ? data.ip : '127.0.0.1';
             user.country = data && data.country ? data.country : 'XX';
             this.setState({user});
+            updateSentryUser(user);
 
             api.fetchConfig()
-                .then(data => GxyJanus.setGlobalConfig(data))
-                .then(() => (api.fetchAvailableRooms({with_num_users: true})))
+                .then(data => {
+                    ConfigStore.setGlobalConfig(data);
+                    this.setState({premodStatus: ConfigStore.dynamicConfig(ConfigStore.PRE_MODERATION_KEY) === 'true'});
+                    GxyJanus.setGlobalConfig(data);
+                })
+                .then(() => api.fetchAvailableRooms({with_num_users: true}))
                 .then(data => {
                     const {rooms} = data;
                     this.setState({rooms});
@@ -203,6 +237,7 @@ class MobileClient extends Component {
                             user.janus = room.janus;
                             user.group = room.description;
                             this.setState({delay: false, user});
+                            updateSentryUser(user);
                         } else {
                             this.setState({selected_room: "", delay: false});
                         }
@@ -212,12 +247,14 @@ class MobileClient extends Component {
                 })
                 .catch(err => {
                     console.error("[MobileClient] error initializing app", err);
+										captureException(err, {source: 'MobileClient'});
                     this.setState({appInitError: err});
                 });
         });
     };
 
     initClient = (reconnect, retry = 0) => {
+      captureMessage('InitClient', {source: 'MobileClient', reconnect, retry});
       this.setState({delay: true});
       const user = Object.assign({}, this.state.user);
       const {t} = this.props;
@@ -231,16 +268,20 @@ class MobileClient extends Component {
           if (Janus.unifiedPlan) {
             user.session = janus.getSessionId();
             this.setState({janus});
-            this.chat.initChat(janus);
             this.initVideoRoom(reconnect, user);
           } else {
             alert(t('oldClient.unifiedPlanNotSupported'));
           }
       }, err => {
-          this.exitRoom(true, () => {
-              console.error("[VirtualClient] error initializing janus", err);
-              this.reinitClient(retry);
+          this.exitRoom(false, () => {
+              console.error("Disconnected duo: ", err);
+              alert("Lost connection to the server!");
           });
+          // FIXME: reconnect does not work as expected
+          // this.exitRoom(true, () => {
+          //     console.error("[VirtualClient] error initializing janus", err);
+          //     this.reinitClient(retry);
+          // });
       }, config.url, config.token, config.iceServers);
     };
 
@@ -287,7 +328,25 @@ class MobileClient extends Component {
                     });
                 }
 
-                this.setState({media})
+              // we dup this info on user so it goes into the backend.
+              // from there it propagates into other components (e.g. shidur preview)
+              const user = {
+                ...this.state.user,
+                extra: {
+                  ...(this.state.user.extra || {}),
+                  media: {
+                    audio: {
+                      audio_device: audio.audio_device,
+                    },
+                    video: {
+                      setting: video.setting,
+                      video_device: video.video_device,
+                    },
+                  }
+                }
+              };
+
+                this.setState({media, user});
             });
     };
 
@@ -368,24 +427,39 @@ class MobileClient extends Component {
         user.group = name;
         user.janus = room.janus;
         this.setState({selected_room, user});
+        updateSentryUser(user);
     };
 
     iceState = () => {
+        let {user: {system}} = this.state;
+        let browser = platform.parse(system);
         let count = 0;
         let chk = setInterval(() => {
             count++;
+            console.debug("ICE counter: ", count);
             let {ice} = this.state;
-            if(count < 11 && ice === "connected") {
+            if (count < 60 && ice.match(/^(connected|completed)$/)) {
                 clearInterval(chk);
             }
-            if(count >= 10) {
-                clearInterval(chk);
-                this.exitRoom(true, () => {
-                    console.error("ICE Disconnected");
-                    this.initClient(true);
-                });
+            if (browser.name.match(/^(Safari|Firefox)$/) && count === 10) {
+                // console.log(" :: ICE Restart :: ");
+                // this.iceRestart();
             }
-        }, 3000);
+            if (browser.name === "Chrome" && count === 30) {
+                // console.log(" :: ICE Restart :: ");
+                // this.iceRestart();
+            }
+            if (count >= 60) {
+                clearInterval(chk);
+                console.debug(" :: ICE Filed: Reconnecting... ");
+                this.exitRoom(false);
+                // FIXME: reconnect does not work as expected
+                // this.exitRoom(true, () => {
+                //     console.error("ICE Disconnected");
+                //     this.initClient(true);
+                // });
+            }
+        }, 1000);
     };
 
     mediaState = (media) => {
@@ -450,17 +524,18 @@ class MobileClient extends Component {
     initVideoRoom = (reconnect, user) => {
         this.state.janus.attach({
             plugin: "janus.plugin.videoroom",
-            opaqueId: "videoroom_user",
+            opaqueId: user.id,
             success: (videoroom) => {
                 Janus.log(' :: My handle: ', videoroom);
                 Janus.log('Plugin attached! (' + videoroom.getPlugin() + ', id=' + videoroom.getId() + ')');
                 Janus.log('  -- This is a publisher/manager');
-                user.handle = videoroom.getId();
+                user.handle = videoroom.getId();  // User state updated in this.joinRoom.
                 this.setState({videoroom});
                 this.joinRoom(reconnect, videoroom, user);
             },
             error: (error) => {
                 Janus.log("Error attaching plugin: " + error);
+                captureMessage('Error attaching videoroom plugin', {source: 'Videoroom', err: error});
             },
             consentDialog: (on) => {
                 Janus.debug("Consent dialog should be " + (on ? "on" : "off") + " now");
@@ -515,54 +590,119 @@ class MobileClient extends Component {
             ondata: (data, label) => {
                 Janus.log("Publisher - Got data from the DataChannel! ("+label+")" + data);
             },
+            ondataerror: (error) => {
+                Janus.warn('Publisher - DataChannel error: ' + error);
+                captureException(error, {source: 'Videoroom'});
+                captureMessage('Publisher - DataChannel error', {source: 'Videoroom', err: error});
+            },
             oncleanup: () => {
                 Janus.log(" ::: Got a cleanup notification: we are unpublished now :::");
             }
         });
     };
 
-    onRoomData = (data) => {
-        const {user, cammuted} = this.state;
-        const {camera,question,rcmd,type,id} = data;
-        // CHECK: Looks like this code never run!
-        if(rcmd) {
-            if (type === 'client-reconnect' && user.id === id) {
-                this.exitRoom(true);
-            } else if (type === 'client-reload' && user.id === id) {
-                window.location.reload();
-            } else if (type === 'client-disconnect' && user.id === id) {
-                this.exitRoom(false);
-            } else if(type === "client-kicked" && user.id === id) {
-                kc.logout();
-            } else if (type === 'client-question' && user.id === id) {
-                this.handleQuestion();
-            } else if (type === 'client-mute' && user.id === id) {
-                this.micMute();
-            } else if (type === 'video-mute' && user.id === id) {
-                this.camMute(cammuted);
-            } else if (type === 'sound_test' && user.id === id) {
-                user.sound_test = true;
-                localStorage.setItem('sound_test', true);
+    joinRoom = (reconnect, videoroom, user) => {
+        let {janus, selected_room, media} = this.state;
+        const {video: {video_device}} = media;
+        user.question = false;
+        user.camera = !!video_device;
+        user.timestamp = Date.now();
+        this.setState({user, muted: true});
+        updateSentryUser(user);
+
+        this.chat.initChatRoom(janus, selected_room, user, data => {
+            const { textroom, error_code, error } = data;
+            if (textroom === 'error') {
+                if(error_code !== USERNAME_ALREADY_EXIST_ERROR_CODE) {
+                  console.error("Chatroom error: ", data, error_code)
+                  captureMessage(`Chatroom error: init - ${error}`, {source: "Textroom", err: data}, 'error');
+                } else {
+                  console.log("Chatroom error: ", data, error_code);
+                  captureMessage(`Chatroom error: init - ${error}`, {source: "Textroom", err: data});
+                }
+                this.exitRoom(false, () => {
+                    if(error_code === USERNAME_ALREADY_EXIST_ERROR_CODE)
+                        alert(this.props.t('oldClient.error') + data.error);
+                }, true);
+            } else if(textroom === "success" && data.participants) {
+                Janus.log(":: Successfully joined to chat room: " + selected_room );
+								captureMessage('Successfully joined to chat room', {source: "Textroom", selected_room});
+                user.textroom_handle = this.chat.getHandle(); // we want this in backend for debugging of textroom based signaling
                 this.setState({user});
-            } else if (type === 'audio-out') {
-                this.handleAudioOut(data);
+                const {id, timestamp, role, username} = user;
+                const d = {id, timestamp, role, display: username};
+                const register = {'request': 'join', 'room': selected_room, 'ptype': 'publisher', 'display': JSON.stringify(d)};
+                videoroom.send({
+                    "message": register,
+                    success: () => {
+                        console.log("Request join success");
+												captureMessage('Request join success', {source: "Videoroom", selected_room});
+                    },
+                    error: (error) => {
+                        console.error(error);
+												captureException(error, {source: 'Videoroom'});
+                        this.exitRoom(false);
+                    }
+                })
             }
-        } else {
-          const feeds = Object.assign([], this.state.feeds);
-          const feed = feeds.find(feed => feed && feed.id === data.rfid);
-          if (feed) {
-            feed.cammute = !camera;
-            feed.question = question;
-            this.setState({feeds});
-          }
+        });
+    };
+
+    exitRoom = (reconnect, callback, error) => {
+        captureMessage('Exit Room', {source: 'MobileClient', reconnect, error});
+        this.setState({delay: true})
+        let {videoroom, remoteFeed, protocol, janus, room} = this.state;
+        wkliLeave(this.state.user);
+        clearInterval(this.state.upval);
+        this.clearKeepAlive();
+
+        if(remoteFeed) remoteFeed.detach();
+        if(videoroom) videoroom.send({"message": {request: 'leave', room}});
+        let pl = {textroom: 'leave', transaction: Janus.randomString(12), 'room': PROTOCOL_ROOM};
+        if(protocol) protocol.data({text: JSON.stringify(pl)});
+
+        localStorage.setItem('question', false);
+
+        api.fetchAvailableRooms({with_num_users: true})
+					.then(data => {
+							const {rooms} = data;
+							this.setState({rooms});
+					})
+					.catch(err => {
+						console.error("[MobileClient] error exiting room", err);
+						captureException(err, {source: 'MobileClient'});
+					});
+
+        if (this.chat && !error) {
+            this.chat.exitChatRoom(room);
         }
+
+        if (this.state.shidur) {
+            this.toggleShidur();
+        }
+
+        setTimeout(() => {
+            if(videoroom) videoroom.detach();
+            if(protocol) protocol.detach();
+            if(janus) janus.destroy();
+            this.setState({
+                cammuted: false, muted: false, question: false,
+                feeds: [], /*mids: [], showed_mids:[],*/
+                localAudioTrack: null, localVideoTrack: null, upval: null,
+                remoteFeed: null, videoroom: null, protocol: null, janus: null,
+                delay: reconnect,
+                room: reconnect ? room : '',
+                chatMessagesCount: 0,
+            });
+            if(typeof callback === "function") callback();
+        }, 2000);
     };
 
     publishOwnFeed = (useVideo, useAudio) => {
       console.log('publishOwnFeed');
       const {videoroom, media} = this.state;
       const {audio: {audio_device}, video: {setting,video_device}} = media;
-      const offer = {audioRecv: false, videoRecv: false, audioSend: useAudio, videoSend: useVideo, data: true};
+      const offer = {audioRecv: false, videoRecv: false, audioSend: useAudio, videoSend: useVideo, data: false};
 
       if(useVideo) {
           const {width,height,ideal} = setting;
@@ -580,7 +720,7 @@ class MobileClient extends Component {
             console.log('publishOwnFeed createOffer success!');
             Janus.debug("Got publisher SDP!");
             Janus.debug(jsep);
-            const publish = { request: "configure", audio: useAudio, video: useVideo, data: true };
+            const publish = { request: "configure", audio: useAudio, video: useVideo, data: false };
             videoroom.send({"message": publish, "jsep": jsep});
           },
           error: (error) => {
@@ -592,6 +732,33 @@ class MobileClient extends Component {
             }
           }
       });
+    };
+
+    iceRestart = () => {
+        const {videoroom, remoteFeed} = this.state;
+
+        if(videoroom) {
+            videoroom.createOffer({
+                media: { audioRecv: false, videoRecv: false, audioSend: true, videoSend: true },
+                iceRestart: true,
+                simulcast: false,
+                success: (jsep) => {
+                    Janus.debug('Got publisher SDP!');
+                    Janus.debug(jsep);
+                    const publish = { request: 'configure', restart: true };
+                    videoroom.send({ 'message': publish, 'jsep': jsep });
+                },
+                error: (error) => {
+                    Janus.error('WebRTC error:', error);
+                }
+            });
+        }
+
+        if(remoteFeed) remoteFeed.send({message: {request: "configure", restart: true}});
+        if(this.chat) this.chat.iceRestart();
+        if(this.state.virtualStreamingJanus) this.state.virtualStreamingJanus.iceRestart();
+
+        captureMessage("ICE Restart", {source: "icestate"});
     };
 
     onMessage = (videoroom, msg, jsep) => {
@@ -607,9 +774,13 @@ class MobileClient extends Component {
 
                 user.rfid = myid;
                 this.setState({user, myid, mypvtid, room: msg['room'], delay: false});
+                updateSentryUser(user);
 
                 api.updateUser(user.id, user)
-                    .catch(err => console.error("[User] error updating user state", user.id, err));
+                    .catch(err => {
+											console.error("[User] error updating user state", user.id, err);
+											captureException(err, {source: 'MobileClient'});
+										});
                 this.keepAlive();
 
                 const {media: {audio: {audio_device}, video: {video_device}}} = this.state;
@@ -623,7 +794,7 @@ class MobileClient extends Component {
                   Janus.log(':: Got Publishers list: ', msg['publishers'], feeds);
 
                   // Feeds count with user role
-                  const feedsCount = feeds.filter(feed => feed.display.role === 'user').length;
+                  const feedsCount = userFeeds(feeds).length;
                   if (feedsCount > 25) {
                     alert(`Max users in this room is reached (${feedsCount}).`);
                     this.exitRoom(false);
@@ -632,8 +803,8 @@ class MobileClient extends Component {
 
                   this.makeSubscription(feeds, /* feedsJustJoined= */ false,
                                         /* subscribeToVideo= */ false,
-                                        /* subscribeToAudio= */ true, /* subscribeToData= */ true);
-                  this.switchVideos(/* page= */ this.state.page, [], feeds, /* isWaiting= */ false);
+                                        /* subscribeToAudio= */ !isGhostOrGuest(user.role), /* subscribeToData= */ true);
+                  this.switchVideos(/* page= */ this.state.page, [], userFeeds(feeds));
                   this.setState({feeds});
                 }
             } else if(event === 'talking') {
@@ -656,7 +827,7 @@ class MobileClient extends Component {
                 Janus.error(`Did not find user ${id}.`);
                 return;
               }
-              feed.taking = false;
+              feed.talking = false;
               this.setState({feeds});
             } else if(event === "destroyed") {
                 // The room has been destroyed
@@ -664,17 +835,25 @@ class MobileClient extends Component {
             } else if(event === "event") {
                 if (msg['configured'] === 'ok') {
                   // User published own feed successfully.
+                  const user = {
+                    ...this.state.user,
+                    extra: {
+                      ...(this.state.user.extra || {}),
+                      streams: msg.streams
+                    }
+                  };
+                  this.setState({user});
                   if (this.state.muteOtherCams) {
                     this.camMute(/* cammuted= */ false);
                     this.setState({videos: NO_VIDEO_OPTION_VALUE});
-                    this.state.shidurJanus.setVideo(NO_VIDEO_OPTION_VALUE);
+                    this.state.virtualStreamingJanus.setVideo(NO_VIDEO_OPTION_VALUE);
                   }
                 } else if(msg["publishers"] !== undefined && msg["publishers"] !== null) {
                   // User just joined the room.
                   const newFeeds = sortAndFilterFeeds(msg['publishers'].filter(l => l.display = (JSON.parse(l.display))));
                   Janus.debug('New list of available publishers/feeds:', newFeeds);
                   const newFeedsIds = new Set(newFeeds.map(feed => feed.id));
-                  const {feeds} = this.state;
+                  const {feeds, user: {role}} = this.state;
                   if (feeds.some(feed => newFeedsIds.has(feed.id))) {
                     Janus.error(`New feed joining but one of the feeds already exist`, newFeeds, feeds);
                     return;
@@ -683,8 +862,8 @@ class MobileClient extends Component {
                   const feedsNewState = sortAndFilterFeeds([...newFeeds, ...feeds]);
                   this.makeSubscription(newFeeds, /* feedsJustJoined= */ true,
                                         /* subscribeToVideo= */ false,
-                                        /* subscribeToAudio= */ true, /* subscribeToData= */ true);
-                  this.switchVideos(/* page= */ this.state.page, feeds, feedsNewState, /* isWaiting= */ false);
+                                        /* subscribeToAudio= */ !isGhostOrGuest(role), /* subscribeToData= */ true);
+                  this.switchVideos(/* page= */ this.state.page, userFeeds(feeds), userFeeds(feedsNewState));
                   this.setState({feeds: feedsNewState});
 
                 } else if(msg["leaving"] !== undefined && msg["leaving"] !== null) {
@@ -694,8 +873,12 @@ class MobileClient extends Component {
                   const {feeds} = this.state;
                   this.unsubscribeFrom([leaving], /* onlyVideo= */ false);
                   const feedsNewState = feeds.filter(feed => feed.id !== leaving);
-                  this.switchVideos(/* page= */ this.state.page, feeds, feedsNewState, /* isWaiting= */ false);
-                  this.setState({feeds: feedsNewState});
+                  this.switchVideos(/* page= */ this.state.page, userFeeds(feeds), userFeeds(feedsNewState));
+                  this.setState({feeds: feedsNewState}, () => {
+                    if (this.state.page * PAGE_SIZE === this.state.feeds.length) {
+                      this.switchPage(this.state.page - 1, this.state.feeds);
+                    }
+                 });
 
                 } else if(msg['unpublished'] !== undefined && msg['unpublished'] !== null) {
                     const unpublished = msg['unpublished'];
@@ -738,6 +921,7 @@ class MobileClient extends Component {
                 },
                 error: (error) => {
                     Janus.error("  -- Error attaching plugin...", error);
+                    captureMessage('Error attaching videoroo plugin', {source: 'Videoroom', err: error});
                 },
                 iceState: (state) => {
                     Janus.log("ICE state (remote feed) changed to " + state);
@@ -770,8 +954,6 @@ class MobileClient extends Component {
                           event === 'updated') {
                         if (msg['streams']) {
                           // Update map of subscriptions by mid
-                          const {streamsMids} = this.state;
-                          const old = Array.from(streamsMids.entries());
                           const newStreamsMids = new Map(msg['streams'].map(stream => [stream.mid, stream.feed_id]));
                           this.setState({streamsMids: newStreamsMids});
                         }
@@ -788,7 +970,7 @@ class MobileClient extends Component {
                                 jsep: jsep,
                                 // Add data:true here if you want to subscribe to datachannels as well
                                 // (obviously only works if the publisher offered them in the first place)
-                                media: { audioSend: false, videoSend: false, data:true },	// We want recvonly audio/video
+                                media: { audioSend: false, videoSend: false, data: false },	// We want recvonly audio/video
                                 success: (jsep) => {
                                     Janus.debug("Got SDP!");
                                     Janus.debug(jsep);
@@ -850,9 +1032,11 @@ class MobileClient extends Component {
                 },
                 ondata: (data, label) => {
                     Janus.log("Feed - Got data from the DataChannel! ("+label+")" + data);
-                    let msg = JSON.parse(data);
-                    this.onRoomData(msg);
-                    Janus.log(" :: We got msg via DataChannel: ",msg)
+                },
+                ondataerror: (error) => {
+                    Janus.warn('Feed - DataChannel error: ' + error);
+                    captureException(error, {source: 'RemoteFeed'});
+                    captureMessage('Remotefeed - DataChannel error', {source: 'Remotefeed', err: error});
                 },
                 oncleanup: () => {
                     Janus.log(" ::: Got a cleanup notification (remote feed) :::");
@@ -869,36 +1053,37 @@ class MobileClient extends Component {
     // Subscribes selectively to different stream types |subscribeToVideo|, |subscribeToAudio|, |subscribeToData|.
     // This is required to stop and then start only the videos to save bandwidth.
     makeSubscription = (newFeeds, feedsJustJoined, subscribeToVideo, subscribeToAudio, subscribeToData) => {
-      const subscription = [];
-      newFeeds.forEach((feed, feedIndex) => {
-        const {id, streams} = feed;
-        feed.video = !!streams.find(v => v.type === 'video' && v.codec === "h264");
-        feed.audio = !!streams.find(a => a.type === 'audio' && a.codec === "opus");
-        feed.data = !!streams.find(d => d.type === 'data');
-        feed.cammute = !feed.video;
+        const subscription = [];
+        newFeeds.forEach((feed, feedIndex) => {
+            const {id, streams} = feed;
+            feed.video = !!streams.find(v => v.type === 'video' && v.codec === "h264");
+            feed.audio = !!streams.find(a => a.type === 'audio' && a.codec === "opus");
+            feed.data = !!streams.find(d => d.type === 'data');
+            feed.cammute = !feed.video;
 
-        streams.forEach(stream => {
-          if ((subscribeToVideo && stream.type === "video" && stream.codec === "h264") ||
-              (subscribeToAudio && stream.type === "audio" && stream.codec === "opus") ||
-              (subscribeToData && stream.type === "data")) {
-            subscription.push({feed: id, mid: stream.mid});
-          }
+            streams.forEach(stream => {
+                if ((subscribeToVideo && stream.type === "video" && stream.codec === "h264") ||
+                    (subscribeToAudio && stream.type === "audio" && stream.codec === "opus") ||
+                    (subscribeToData && stream.type === "data")) {
+                    subscription.push({feed: id, mid: stream.mid});
+                }
+            });
         });
-      });
 
-      if (subscription.length > 0) {
-        this.subscribeTo(subscription);
-        if(feedsJustJoined) {
-          // Send question event for new feed, by notifying the whole room.
-          // FIXME: Can this be done by notifying only the joined feed?
-          setTimeout(() => {
-            if (this.state.question) {
-              this.sendDataMessage('question', true);
+        if (subscription.length > 0) {
+            this.subscribeTo(subscription);
+            if(feedsJustJoined) {
+                // Send question event for new feed, by notifying the whole room.
+                // FIXME: Can this be done by notifying only the joined feed?
+                setTimeout(() => {
+                    if (this.state.question) {
+                        const msg = {type: "client-state", user: this.state.user};
+                        this.chat.sendCmdMessage(msg);
+                    }
+                }, 3000);
             }
-          }, 3000);
         }
-      }
-    }
+    };
 
     subscribeTo = (subscription) => {
         // New feeds are available, do we need create a new plugin handle first?
@@ -908,7 +1093,7 @@ class MobileClient extends Component {
                     {request: "subscribe", streams: subscription}
             });
             return;
-        } 
+        }
 
         // We don't have a handle yet, but we may be creating one already
         if (this.state.creatingFeed) {
@@ -950,30 +1135,51 @@ class MobileClient extends Component {
       }
     };
 
+    userState = (user) => {
+        const feeds = Object.assign([], this.state.feeds);
+        const {camera, question, rfid} = user;
+
+        for (let i = 0; i < feeds.length; i++) {
+            if (feeds[i] && feeds[i].id === rfid) {
+                feeds[i].cammute = !camera;
+                feeds[i].question = question;
+                this.setState({feeds});
+                break;
+            }
+        }
+    };
+
     switchVideoSlots = (from, to) => {
-      const fromRemoteVideo = this.refs["remoteVideo" + from];
-      const toRemoteVideo = this.refs["remoteVideo" + to];
+      const {page} = this.state;
+      const fromVideoIndex = from - page * PAGE_SIZE;
+      const toVideoIndex = to - page * PAGE_SIZE;
+      const fromRemoteVideo = this.refs["remoteVideo" + fromVideoIndex];
+      const toRemoteVideo = this.refs["remoteVideo" + toVideoIndex];
+      if (!fromRemoteVideo || !toRemoteVideo) {
+        console.error(`Failed switching video slots ${from} to ${to}`, fromRemoteVideo, toRemoteVideo);
+        captureMessage('Mobile failed switching video slots', {source: 'MobileClient', from, to, fromRemoteVideo, toRemoteVideo}, 'error');
+        return;
+      }
       const stream = fromRemoteVideo.srcObject;
       Janus.log(`Switching stream from ${from} to ${to}`, stream, fromRemoteVideo, toRemoteVideo);
       Janus.attachMediaStream(toRemoteVideo, stream);
       Janus.attachMediaStream(fromRemoteVideo, null);
     }
 
-    switchVideos = (page, oldFeeds, newFeeds, isWaiting) => {
+    switchVideos = (page, oldFeeds, newFeeds) => {
+      console.log('switchVideos', 'page', page, 'PAGE_SIZE', PAGE_SIZE, 'old', oldFeeds.length, 'new', newFeeds.length);
       const {muteOtherCams} = this.state;
-      
-      const oldVideoSlots = [
-        oldFeeds.findIndex(feed => feed.videoSlot === 0),
-        oldFeeds.findIndex(feed => feed.videoSlot === 1),
-        oldFeeds.findIndex(feed => feed.videoSlot === 2),
-      ];
+
+      const oldVideoSlots = [];
+      for (let index = 0; index < PAGE_SIZE; index++) {
+        oldVideoSlots.push(oldFeeds.findIndex(feed => feed.videoSlot === index));
+      }
       const oldVideoFeeds = oldVideoSlots.map(index => index !== -1 ? oldFeeds[index] : null);
 
-      const newVideoSlots = [
-        (page * PAGE_SIZE) + 0 >= newFeeds.length ? -1 : (page * PAGE_SIZE) + 0,
-        (page * PAGE_SIZE) + 1 >= newFeeds.length ? -1 : (page * PAGE_SIZE) + 1,
-        (page * PAGE_SIZE) + 2 >= newFeeds.length ? -1 : (page * PAGE_SIZE) + 2,
-      ];
+      const newVideoSlots = [];
+      for (let index = 0; index < PAGE_SIZE; index++) {
+        newVideoSlots.push((page * PAGE_SIZE) + index >= newFeeds.length ? -1 : (page * PAGE_SIZE) + index);
+      }
       const newVideoFeeds = newVideoSlots.map(index => index !== -1 ? newFeeds[index] : null);
 
       // Update video slots.
@@ -1019,6 +1225,7 @@ class MobileClient extends Component {
       })
 
       if (!muteOtherCams) {
+        console.log('refs', this.refs, 'subscribeFeeds', subscribeFeeds, 'unsubscribeFeeds', unsubscribeFeeds, 'switchFeeds', switchFeeds);
         this.makeSubscription(subscribeFeeds, /* feedsJustJoined= */ false, /* subscribeToVideo= */ true,
                               /* subscribeToAudio= */ false, /* subscribeToData= */ false);
         this.unsubscribeFrom(unsubscribeFeeds.map(feed => feed.id), /* onlyVideo= */ true);
@@ -1028,107 +1235,40 @@ class MobileClient extends Component {
       }
     }
 
-    sendDataMessage = (user) => {
-        const {videoroom} = this.state;
-        const message = JSON.stringify(user);
-        Janus.log(':: Sending message: ', message);
-        videoroom.data({ text: message });
-    };
-
-    joinRoom = (reconnect, videoroom, user) => {
-        let {janus, selected_room, media} = this.state;
-        const {video: {video_device}} = media;
-        user.question = false;
-        user.camera = !!video_device;
-        user.timestamp = Date.now();
-        this.setState({user, muted: true});
-        initGxyProtocol(janus, user, protocol => {
-            this.setState({protocol});
-        }, ondata => {
-            Janus.log("-- :: It's protocol public message: ", ondata);
-            const {type, error_code, id, room} = ondata;
-            if(ondata.type === "error" && error_code === 420) {
-                this.exitRoom(false, () => {
-                    alert(ondata.error);
-                });
-            } else if(ondata.type === "joined") {
-                const {id,timestamp,role,username} = user;
-                const d = {id,timestamp,role,display: username};
-                let register = {"request": "join", "room": selected_room, "ptype": "publisher", "display": JSON.stringify(d)};
-                videoroom.send({"message": register,
-                    success: () => {
-                        this.chat.initChatRoom(user, selected_room);
-                    },
-                    error: (error) => {
-                        console.error(error);
-                        this.exitRoom(false);
-                    }
-                });
-            } else if (type === 'chat-broadcast' && room === selected_room) {
-              this.chat.showSupportMessage(ondata);
-            } else if(type === "client-reconnect" && user.id === id) {
-                this.exitRoom(true);
-            } else if(type === "client-reload" && user.id === id) {
-                window.location.reload();
-            } else if(type === "client-disconnect" && user.id === id) {
-                this.exitRoom();
-            } else if(type === "client-kicked" && user.id === id) {
-                kc.logout();
-            } else if(type === "client-question" && user.id === id) {
-                this.handleQuestion();
-            } else if(type === "client-mute" && user.id === id) {
-                this.micMute();
-            } else if(type === "video-mute" && user.id === id) {
-                this.camMute(this.state.cammuted);
-            } else if (type === 'audio-out' && room === selected_room) {
-                this.handleAudioOut(ondata);
-            }
-        });
-    };
-
-    exitRoom = (reconnect, callback) => {
-        this.setState({delay: true})
-        let {videoroom, remoteFeed, protocol, janus, room} = this.state;
-        wkliLeave(this.state.user);
-        clearInterval(this.state.upval);
-        this.clearKeepAlive();
-
-        if(remoteFeed) remoteFeed.detach();
-        if(videoroom) videoroom.send({"message": {request: 'leave', room}});
-        let pl = {textroom: 'leave', transaction: Janus.randomString(12), 'room': PROTOCOL_ROOM};
-        if(protocol) protocol.data({text: JSON.stringify(pl)});
-
-        localStorage.setItem('question', false);
-
-        api.fetchAvailableRooms({with_num_users: true})
-            .then(data => {
-                const {rooms} = data;
-                this.setState({rooms});
+    handleCmdData = (data) => {
+        const {user, cammuted} = this.state;
+        const {type,id} = data;
+        if (type === 'client-reconnect' && user.id === id) {
+            this.exitRoom(true, () => {
+                this.initClient(true);
             });
-
-        if (this.chat) {
-          this.chat.exitChatRoom(room);
+        } else if (type === 'client-reload' && user.id === id) {
+            window.location.reload();
+        } else if (type === 'client-disconnect' && user.id === id) {
+            this.exitRoom(false);
+        } else if(type === "client-kicked" && user.id === id) {
+            kc.logout();
+            updateSentryUser(null);
+        } else if (type === 'client-question' && user.id === id) {
+            this.handleQuestion();
+        } else if (type === 'client-mute' && user.id === id) {
+            this.micMute();
+        } else if (type === 'video-mute' && user.id === id) {
+            this.camMute(cammuted);
+        } else if (type === 'sound_test' && user.id === id) {
+            user.sound_test = true;
+            localStorage.setItem('sound_test', true);
+            this.setState({user});
+            updateSentryUser(user);
+        } else if (type === 'audio-out') {
+            this.handleAudioOut(data);
+        }  else if (type === 'reload-config') {
+            this.reloadConfig();
+        } else if (type === 'client-reload-all') {
+            window.location.reload();
+        } else if (type === 'client-state') {
+            this.userState(data.user);
         }
-
-        if (this.state.shidur) {
-          this.toggleShidur();
-        }
-
-        setTimeout(() => {
-            if(videoroom) videoroom.detach();
-            if(protocol) protocol.detach();
-            if(janus) janus.destroy();
-            this.setState({
-                cammuted: false, muted: false, question: false,
-                feeds: [], /*mids: [], showed_mids:[],*/
-                localAudioTrack: null, localVideoTrack: null, upval: null,
-                remoteFeed: null, videoroom: null, protocol: null, janus: null,
-                delay: reconnect,
-                room: reconnect ? room : '',
-                chatMessagesCount: 0,
-            });
-            if(typeof callback === "function") callback();
-        }, 2000);
     };
 
     keepAlive = () => {
@@ -1145,9 +1285,17 @@ class MobileClient extends Component {
     sendKeepAlive = () => {
         const {user, janus} = this.state;
         if (user && janus && janus.isConnected() && user.session && user.handle) {
-            console.debug("[User] sendKeepAlive", new Date());
             api.updateUser(user.id, user)
-                .catch(err => console.error("[User] error sending keepalive", user.id, err));
+                .then(data => {
+                    if (ConfigStore.isNewer(data.config_last_modified)) {
+                        console.info("[User] there is a newer config. Reloading ", data.config_last_modified);
+                        this.reloadConfig();
+                    }
+                })
+                .catch(err => {
+									console.error("[User] error sending keepalive", user.id, err);
+									captureException(err, {source: 'MobileClient'});
+								});
         }
     };
 
@@ -1157,6 +1305,25 @@ class MobileClient extends Component {
             clearInterval(keepalive);
         }
         this.setState({keepalive: null});
+    }
+
+    reloadConfig = () => {
+        api.fetchConfig()
+            .then((data) => {
+                ConfigStore.setGlobalConfig(data);
+                const {premodStatus, question} = this.state;
+                const newPremodStatus = ConfigStore.dynamicConfig(ConfigStore.PRE_MODERATION_KEY) === 'true';
+                if (newPremodStatus !== premodStatus) {
+                    this.setState({premodStatus: newPremodStatus});
+                    if(question) {
+                        this.handleQuestion();
+                    }
+                }
+            })
+            .catch(err => {
+                console.error("[User] error reloading config", err);
+								captureException(err, {source: 'MobileClient'});
+            });
     }
 
     makeDelay = () => {
@@ -1171,26 +1338,48 @@ class MobileClient extends Component {
         const user = Object.assign({}, this.state.user);
         if(user.role === 'ghost') return;
         this.makeDelay();
+        this.questionState(user, question);
+    };
+
+    questionState = (user, question) => {
         user.question = !question;
         api.updateUser(user.id, user)
             .then(data => {
-                if(data.result === 'success') {
+                if(data.result === "success") {
                     localStorage.setItem('question', !question);
                     this.setState({user, question: !question});
-                    this.sendDataMessage(user);
+                    updateSentryUser(user);
+                    const msg = {type: "client-state", user};
+                    this.chat.sendCmdMessage(msg);
                 }
             })
-            .catch(err => console.error('[User] error updating user state', user.id, err))
+            .catch(err => {
+							console.error("[User] error updating user state", user.id, err);
+							captureException(err, {source: 'MobileClient'});
+						});
     };
 
     handleAudioOut = (data) => {
-      this.state.shidurJanus.streamGalaxy(data.status, 4, '');
-      if (data.status) {
-        // remove question mark when sndman unmute our room
-        if (this.state.question) {
-          this.handleQuestion();
-        }
-      }
+        const { gdm } = this.state;
+
+        gdm.accept(data, (msg) => this.chat.sendCmdMessage(msg)).then((data) => {
+            if (data === null) {
+                console.log('Message received more then once.');
+								captureMessage('Message received more then once.', {source: 'MobileClient DELIVERY', msg: data});
+                return;
+            }
+						captureMessage(`MobileClient DELIVERY ${data.status ? 'ON' : 'OFF'}`, {source: 'MobileClient DELIVERY', msg: data});
+            this.state.virtualStreamingJanus.streamGalaxy(data.status, 4, "");
+            if (data.status) {
+                // remove question mark when sndman unmute our room
+                if (this.state.question) {
+                    this.handleQuestion();
+                }
+            }
+        }).catch((error) => {
+            console.error(`Failed receiving ${data}: ${error}`);
+						captureException(error, {source: 'MobileClient DELIVERY', msg: data});
+        });
     };
 
     otherCamsMuteToggle = () => {
@@ -1201,14 +1390,14 @@ class MobileClient extends Component {
         this.unsubscribeFrom(activeFeeds.map(feed => feed.id), /* onlyVideo= */ true);
         this.camMute(/* cammuted= */ false);
         this.setState({videos: NO_VIDEO_OPTION_VALUE});
-        this.state.shidurJanus.setVideo(NO_VIDEO_OPTION_VALUE);
+        this.state.virtualStreamingJanus.setVideo(NO_VIDEO_OPTION_VALUE);
       } else {
         // Should unmute/show now all videos.false,
         this.makeSubscription(activeFeeds, /* feedsJustJoined= */ false, /* subscribeToVideo= */ true,
                               /* subscribeToAudio= */ false, /* subscribeToData= */ false);
         this.camMute(/* cammuted= */ true);
         this.setState({videos: VIDEO_240P_OPTION_VALUE});
-        this.state.shidurJanus.setVideo(VIDEO_240P_OPTION_VALUE);
+        this.state.virtualStreamingJanus.setVideo(VIDEO_240P_OPTION_VALUE);
       }
       this.setState({muteOtherCams: !muteOtherCams});
     }
@@ -1217,7 +1406,7 @@ class MobileClient extends Component {
       let {videoroom} = this.state;
       if (videoroom) {
         const user = Object.assign({}, this.state.user);
-        if(user.role === "ghost") return;
+        if (user.role === "ghost") return;
         this.makeDelay();
         user.camera = cammuted;
         api.updateUser(user.id, user)
@@ -1225,10 +1414,15 @@ class MobileClient extends Component {
                 if(data.result === "success") {
                     cammuted ? videoroom.unmuteVideo() : videoroom.muteVideo();
                     this.setState({user, cammuted: !cammuted});
-                    this.sendDataMessage(user);
+                    updateSentryUser(user);
+                    const msg = {type: "client-state", user};
+                    this.chat.sendCmdMessage(msg);
                 }
             })
-            .catch(err => console.error("[User] error updating user state", user.id, err))
+            .catch(err => {
+							console.error("[User] error updating user state", user.id, err);
+							captureException(err, {source: 'MobileClient'});
+						});
       }
     };
 
@@ -1239,16 +1433,26 @@ class MobileClient extends Component {
     };
 
     toggleShidur = () => {
-      const {shidurJanus, shidur, user} = this.state;
+      const {virtualStreamingJanus, shidur, user} = this.state;
       const stateUpdate = {shidur: !shidur};
       if (shidur) {
-        shidurJanus.destroy();
+        virtualStreamingJanus.destroy({
+        success: () => {
+          console.log('Mobile Virtual streming destroyed toggle.');
+          this.setState(stateUpdate);
+        },
+        error: (error) => {
+          console.log('Mobile Error destroying VirtualStreaming toggle', error);
+          captureMessage('Mobile Error destroying VirtualStreaming toggle', {source: 'MobileClient', err: error}, 'error');
+          this.setState(stateUpdate);
+        },
+      });
       } else {
         const {ip, country} = user;
-        shidurJanus.init(ip, country);
+        virtualStreamingJanus.init(ip, country);
         stateUpdate.shidurLoading = true;
+        this.setState(stateUpdate);
       }
-      this.setState(stateUpdate);
     };
 
     onChatMessage = () => {
@@ -1269,19 +1473,6 @@ class MobileClient extends Component {
       }
     }
 
-    homerLimudCss = (ref) => {
-      return;
-
-      if (ref) {
-        ref.onload = () => {
-          var body = ref.contentWindow.document.querySelector('body');
-          body.style.color = 'red';
-          body.style.fontSize = '3rem';
-          body.style.lineHeight = '3rem';
-        }
-      }
-    }
-
     handleClick = (e, titleProps) => {
       const { index } = titleProps;
       const { settingsActiveIndex } = this.state;
@@ -1292,9 +1483,10 @@ class MobileClient extends Component {
 
     switchPage = (page, feeds) => {
       // Normalize page, e.g., if it is -1 or too large...
-      const numPages = Math.ceil(feeds.length / PAGE_SIZE);
+      const onlyUserFeeds = userFeeds(feeds);
+      const numPages = Math.ceil(onlyUserFeeds.length / PAGE_SIZE);
       page = numPages === 0 ? 0 : (numPages + page) % numPages;
-      this.switchVideos(page, feeds, feeds, /* isWaiting= */ false);
+      this.switchVideos(page, onlyUserFeeds, onlyUserFeeds);
       this.setState({page});
     }
 
@@ -1322,13 +1514,14 @@ class MobileClient extends Component {
         selected_room,
         settingsActiveIndex,
         shidur,
-        shidurJanus,
+        virtualStreamingJanus,
         shidurLoading,
         talking,
         user,
         feeds,
         page,
         videos,
+        premodStatus,
       } = this.state;
       const {video_device} = media.video;
       const {audio_device} = media.audio;
@@ -1371,12 +1564,13 @@ class MobileClient extends Component {
       }
 
       // TODO: Instead of 0, 3 should actuaaly map things...
-      const remoteVideos = feeds.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE).map((feed, i) => {
+      console.log('render remote videos', feeds.length, page);
+      const remoteVideos = userFeeds(feeds).slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE).map((feed, i) => {
         return (<div className="video"
                      key={"vk" + i}
                      ref={"video" + i}
                      id={"video" + i}>
-            <div className={classNames('video__overlay', {'talk': feed.taking})}>
+            <div className={classNames('video__overlay', {'talk': feed.talking})}>
                 {feed.question ? <div className="question">
                     <svg viewBox="0 0 50 50">
                         <text x="25" y="25" textAnchor="middle" alignmentBaseline="central"
@@ -1384,7 +1578,7 @@ class MobileClient extends Component {
                     </svg>
                 </div> : ''}
                 <div className="video__title">
-                  {!feed.taking ?  <Icon name="microphone slash" color="red"/> : ''}
+                  {!feed.talking ?  <Icon name="microphone slash" color="red"/> : ''}
                   <div className='title-name'>{feed.display.display}</div>
                 </div>
             </div>
@@ -1524,7 +1718,7 @@ class MobileClient extends Component {
                             onClick={() => window.open('https://accounts.kbb1.com/auth/realms/main/account')} />}
                         {settingsActiveIndex === 4 && <Menu.Item
                             name={t('oldClient.signOut')}
-                            onClick={() => kc.logout()} />}
+                            onClick={() => { kc.logout(); updateSentryUser(null); }} />}
                       </Accordion>
                     </Modal>
                   </Menu>
@@ -1540,9 +1734,9 @@ class MobileClient extends Component {
 									<VirtualStreamingMobile
 										shidur={shidur}
 										shidurLoading={shidurLoading}
-										shidurJanus={shidurJanus}
+										shidurJanus={virtualStreamingJanus}
 										toggleShidur={this.toggleShidur}
-										audio={this.state.shidurJanus && this.state.shidurJanus.audioElement}
+										audio={this.state.virtualStreamingJanus && this.state.virtualStreamingJanus.audioElement}
                     muted={this.state.shidurMuted}
                     videos={videos}
                     setVideo={(v) => this.setState({videos: v})}
@@ -1591,8 +1785,8 @@ class MobileClient extends Component {
                             </div>
                             {remoteVideos.length > 0 ?
                               <div className="dots">
-                                <Dots length={Math.ceil(feeds.length/PAGE_SIZE)}
-                                      visible={Math.ceil(feeds.length/PAGE_SIZE)}
+                                <Dots length={Math.ceil(userFeeds(feeds).length/PAGE_SIZE)}
+                                      visible={Math.ceil(userFeeds(feeds).length/PAGE_SIZE)}
                                       active={page}
                                       margin={10} />
                               </div>
@@ -1632,7 +1826,7 @@ class MobileClient extends Component {
                     <Image className='audio-mode' src={muteOtherCams ? audioModeSvg : fullModeSvg} />
                     <span>{t(muteOtherCams ? 'oldClient.fullMode' : 'oldClient.audioMode')}</span>
                   </Menu.Item>
-                  <Menu.Item disabled={questionDisabled} onClick={this.handleQuestion}>
+                  <Menu.Item disabled={premodStatus || questionDisabled} onClick={this.handleQuestion}>
                     <Icon name='question' style={{color: question ? '#21ba45' : null}} />
                     <span>
                       {t('oldClient.askQuestion')}
@@ -1666,8 +1860,8 @@ class MobileClient extends Component {
                     className='vote'
                   >
                     <Button.Group>
-                      <iframe src={`https://vote.kli.one/button.html?answerId=1&userId=${user && user.id}`} frameBorder="0"></iframe>
-                      <iframe src={`https://vote.kli.one/button.html?answerId=2&userId=${user && user.id}`} frameBorder="0"></iframe>
+                      <iframe title={`${t('oldClient.vote')} 1`} src={`https://vote.kli.one/button.html?answerId=1&userId=${user && user.id}`} frameBorder="0"></iframe>
+                      <iframe title={`${t('oldClient.vote')} 2`} src={`https://vote.kli.one/button.html?answerId=2&userId=${user && user.id}`} frameBorder="0"></iframe>
                     </Button.Group>
                   </Modal>
                   <Monitoring monitoringData={monitoringData} />
@@ -1681,6 +1875,8 @@ class MobileClient extends Component {
               janus={janus}
               room={room}
               user={user}
+              gdm={this.state.gdm}
+              onCmdMsg={this.handleCmdData}
               onNewMsg={this.onChatMessage} />
           </div>
         </div>
@@ -1688,6 +1884,9 @@ class MobileClient extends Component {
 
       return (
           <Fragment>
+             <MetaTags>
+                <meta name="viewport" content=" user-scalable=no" />
+             </MetaTags>
               {user ? content : login}
           </Fragment>
       );
