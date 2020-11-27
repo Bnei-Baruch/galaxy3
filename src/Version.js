@@ -1,1 +1,1 @@
-export default `3.5.4${process.env.NODE_ENV === 'development' ? '-dev' : ''}`;
+export default `3.6.0${process.env.NODE_ENV === 'development' ? '-dev' : ''}`;
