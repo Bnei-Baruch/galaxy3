@@ -105,7 +105,7 @@ export const resources = {
         sendQuestion:'Send Question',
         enterMessage: 'Type your message',
         msgRoomInfo: 'Messages here will be seen by all the members of the ten connected now.',
-        msgAdminInfo: 'Our support team will contact you here.'
+        msgAdminInfo: 'Our support team will contact you here.',
         enterQuestion: 'Type your question',
         moderator:'Moderator: Selected questions related to the theam of the lesson will be asked during the broadcast'
       },

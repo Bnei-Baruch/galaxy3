@@ -1,24 +1,37 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { sendQuestion, getQuestions } from './api.sendQuestions';
-import { getDateString } from '../../../../shared/tools';
+import { getDateString, isRTLString } from '../../../../shared/tools';
 import SendQuestion from './sendQuestions';
 
-const SendQuestionContainer = ({ user }) => {
+const SendQuestionContainer = ({ user = {} }) => {
   const [messages, setMessages] = useState();
-  const { t }                   = useTranslation();
+  const [userInfo, setUserInfo] = useState();
 
-  const send = async ({ userName = user.name, content, userGroup = user.group }) => {
-    const { galaxyRoom, group } = user;
+  useEffect(() => {
+    fetchData();
+  },[]);
+
+  useEffect(() => {
+    setUserInfo(mapUserInfo(user));
+  }, [user]);
+
+  const mapUserInfo = (data) => {
+    const { id, galaxyRoom, group, name } = user;
+    return {
+      gender: !group.match(/^W\s/) ? 'male' : 'female',
+      name, galaxyRoom, id
+    };
+  };
+
+  const send = async (payload) => {
+    const { gender, id }                = userInfo;
+    const { name, content, galaxyRoom } = payload;
 
     let msg = {
-      serialUserId: user.id,
+      serialUserId: id,
       question: { content },
-      user: {
-        name: userName,
-        gender: !group.match(/^W\s/) ? 'male' : 'female',
-        galaxyRoom
-      }
+      user: { name, gender, galaxyRoom }
     };
 
     try {
@@ -40,16 +53,13 @@ const SendQuestionContainer = ({ user }) => {
     }
   };
 
-  const mapMessage = ({ content, timestamp }) => {
-    const { galaxyRoom, name, group } = user;
+  const mapMessage = (feed) => {
+    const { question: { content, askForMe }, user: { galaxyRoom, name }, timestamp } = feed;
     return {
+      galaxyRoom, name, content, askForMe,
       time: getDateString(new Date(timestamp)),
-      galaxyRoom,
-      userName: user.name,
-      gender: !user.group.match(/^W\s/) ? 'male' : 'female'
       direction: isRTLString(content) ? 'rtl' : 'ltr',
       textAlign: isRTLString(content) ? 'right' : 'left',
-      content: content
     };
   };
 

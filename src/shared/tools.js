@@ -299,37 +299,10 @@ export const wkliLeave = (user) => {
 };
 
 //chat tools
-const urlRegex    = /(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#/%?=~_|!:,.;()]*[-A-Z0-9+&@#/%=~_|()])/ig;
-const isRTLChar   = /[\u0590-\u07FF\u200F\u202B\u202E\uFB1D-\uFDFD\uFE70-\uFEFC]/;
-const isAscii     = /[\x00-\x7F]/;
-const isAsciiChar = /[a-zA-Z]/;
-export const textWithLinks = (text) => {
-  const parts = [];
-  if (typeof text === 'undefined') {
-    return parts;
-  }
-  let start    = 0;
-  // Polyfil for Safari <13
-  let matchAll = null;
-  if (text.matchAll) {
-    matchAll = (re) => text.matchAll(re);
-  } else {
-    matchAll = (re) => text.match(re);
-  }
-  for (const match of matchAll(urlRegex)) {
-    const url   = match[0];
-    const index = match.index;
-    if (index > start) {
-      parts.push(<span key={start}>{text.slice(start, index)}</span>);
-    }
-    parts.push(<a key={index} target='blank_' href={url}>{url}</a>);
-    start = index + url.length;
-  }
-  if (start < text.length) {
-    parts.push(<span key={start}>{text.slice(start, text.length)}</span>);
-  }
-  return parts;
-};
+export const urlRegex    = /(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#/%?=~_|!:,.;()]*[-A-Z0-9+&@#/%=~_|()])/ig;
+export const isRTLChar   = /[\u0590-\u07FF\u200F\u202B\u202E\uFB1D-\uFDFD\uFE70-\uFEFC]/;
+export const isAscii     = /[\x00-\x7F]/;
+export const isAsciiChar = /[a-zA-Z]/;
 
 export const isRTLString = (text) => {
   if (typeof text === 'undefined') {

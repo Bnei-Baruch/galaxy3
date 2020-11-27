@@ -62,7 +62,8 @@ import {AskQuestion, AudioMode, CloseBroadcast, Layout, Mute, MuteVideo, Vote} f
 import Settings from './settings/Settings';
 import SettingsJoined from './settings/SettingsJoined';
 import HomerLimud from './components/HomerLimud';
-import {Help} from './components/Help';
+import { Help } from './components/Help';
+import SendQuestionContainer from './components/SendQuestions/container';
 
 const sortAndFilterFeeds = (feeds) => feeds
   .filter(feed => !feed.display.role.match(/^(ghost|guest)$/))
@@ -1709,6 +1710,11 @@ class VirtualClient extends Component {
         />
       </Box>
     );
+
+    if (rightAsideName === 'question') {
+      content = (<SendQuestionContainer user={user} />);
+    }
+
     return (
       <Grid item xs={rightAsideName ? 3 : false}>
         {content}

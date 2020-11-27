@@ -1,81 +1,98 @@
 import React, { useState } from 'react';
-import { Button, Input, Message, TextArea, Form } from 'semantic-ui-react';
+import { Message } from 'semantic-ui-react';
 import { useTranslation } from 'react-i18next';
-import { isRTLString } from '../../../../shared/tools';
+import { Box, Button } from '@material-ui/core';
+import TextField from '@material-ui/core/TextField';
+import green from '@material-ui/core/colors/green';
+import ButtonBase from '@material-ui/core/ButtonBase';
+import { makeStyles } from '@material-ui/core/styles';
 
-const SendQuestion = ({ questions, send }) => {
-  const [userName, setUserName]   = useState();
-  const [userGroup, setUserGroup] = useState();
-  const [content, setContent]     = useState();
-  const { t }                     = useTranslation();
+const useStyles = makeStyles({
+  disabled: {
+    opacity: 0.8,
+  },
+  root: {
+    color: 'white',
+    background: green[500]
+  }
+});
 
-  const handleUserNameChange = ({ value }) => setUserName(value);
+const SendQuestion = ({ questions, send, user = {} }) => {
+  const [name, setName]             = useState();
+  const [galaxyRoom, setGalaxyRoom] = useState();
+  const [content, setContent]       = useState();
+  const { t }                       = useTranslation();
+  const classes                     = useStyles();
 
-  const handleUserGroupChange = ({ value }) => setUserGroup(value);
+  const handleNameChange = ({ target: { value } }) => setName(value);
 
-  const handleContentChange = ({ value }) => setContent(value);
+  const handleGalaxyRoomChange = ({ target: { value } }) => setGalaxyRoom(value);
 
-  const handleSend = async () => {
-    const res = await send(userName, content);
+  const handleContentChange = ({ target: { value } }) => setContent(value);
+
+  const handleSubmit = async () => {
+    await send({ name, content, galaxyRoom });
+    setContent('');
   };
 
   const renderQuestion = (q, i) => {
-    let { askForMe, time, galaxyRoom: room, userName: name, direction, textAlign, content } = q;
+    const { askForMe, time, galaxyRoom: room, name: userName, direction, textAlign, content: msgContent } = q;
 
     return (
       <p key={i} style={{ direction, textAlign }}>
         <span style={{ display: 'block' }}>
           <i style={{ color: 'grey' }}>{time}</i> -
           <i style={{ color: 'grey' }}>{room}</i> -
-          <b style={{ color: !askForMe ? 'green' : 'blue' }}>{name}</b>:
+          <b style={{ color: !askForMe ? 'green' : 'blue' }}>{userName}</b>:
         </span>
-        {content}
+        {msgContent}
       </p>
     );
   };
 
   return (
-    <div className="chat-panel">
+    <Box className="chat-panel">
       <Message attached className='messages_list'>
-        <div className='messages-wrapper'>
-          {questions.map(renderQuestion)}
-        </div>
+        <span className='messages-wrapper'>
+          {questions?.map(renderQuestion)}
+        </span>
       </Message>
 
-      <div className={'questions_form'}>
-        <Input ref='input'
-               fluid type='text'
-               action
-               value={userName}
-               placeholder={user.name}
-               onChange={handleUserNameChange}
-               dir={isRTLString(userName) ? 'rtl' : 'ltr'}
-               style={{ textAlign: isRTLString(userName) ? 'right' : 'left' }}
-        />
-        <Input ref='input'
-               fluid
-               type='text'
-               action
-               value={userGroup}
-               placeholder={user.group}
-               onChange={handleUserGroupChange}
-               dir={isRTLString(userGroup) ? 'rtl' : 'ltr'}
-               style={{ textAlign: isRTLString(userGroup) ? 'right' : 'left' }}
-        />
-        <Form>
-          <TextArea
-            rows='4'
-            value={this.state.quest_input_message}
-            placeholder={t('virtualChat.enterQuestion')}
-            onChange={handleContentChange}
-            dir={isRTLString(content) ? 'rtl' : 'ltr'}
-            style={{ textAlign: isRTLString(content) ? 'right' : 'left' }}>
-          </TextArea>
-        </Form>
+      <TextField
+        fullWidth
+        label={t('name')}
+        value={name}
+        variant="outlined"
+        onChange={handleNameChange}
+        margin="dense"
+      />
+      <TextField
+        fullWidth
+        label={t('galaxyRoom')}
+        value={galaxyRoom}
+        variant="outlined"
+        onChange={handleGalaxyRoomChange}
+        margin="dense"
+      />
+      <TextField
+        fullWidth
+        multiline
+        label={t('content')}
+        value={content}
+        variant="outlined"
+        onChange={handleContentChange}
+        margin="dense"
+      />
+      <Button
+        onClick={handleSubmit}
+        variant="contained"
+        classes={{ ...classes }}
+        disabled={!name || !galaxyRoom || !content}
+      >
+        {t('virtualChat.sendQuestion')}
+      </Button>
 
-        <Button positive onClick={handleSend}>{t('virtualChat.sendQuestion')}</Button>
-      </div>
-    </div>
+    </Box>
   );
 };
 
