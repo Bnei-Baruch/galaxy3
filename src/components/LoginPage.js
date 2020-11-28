@@ -8,6 +8,7 @@ import {Terms} from "./Terms";
 import {Profile} from "./Profile";
 import internet from './internet.png';
 import './LoginPage.css';
+import {Help} from '../apps/VirtualApp/components/Help';
 
 class LoginPage extends Component {
 
@@ -71,10 +72,7 @@ class LoginPage extends Component {
                                     onChange={(e, { value }) => {setLanguage(value)}} />
                         </Menu.Item>
                         <Menu.Item>
-                            <Button size='massive' color='violet'
-                                    onClick={() => window.open("https://forms.gle/F6Lm2KMLUkU4hrmK8","_blank")}>
-                                {t('loginPage.support')}
-                            </Button>
+                            <Help t={t} i18n={i18n} user={this.props.user} />
                         </Menu.Item>
                     </Menu.Menu>
                 </Menu>
