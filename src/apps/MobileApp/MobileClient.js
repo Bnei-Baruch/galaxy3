@@ -44,7 +44,7 @@ import VirtualChat from '../VirtualApp/VirtualChat';
 import ConfigStore from "../../shared/ConfigStore";
 import {GuaranteeDeliveryManager} from "../../shared/GuaranteeDelivery";
 import {captureException, captureMessage, updateSentryUser} from "../../shared/sentry";
-import { userRolesEnum } from '../../shared/enums';
+import {getUserRole, userRolesEnum} from '../../shared/enums';
 import { RegistrationModals } from './RegistrationModals';
 
 const sortAndFilterFeeds = (feeds) => feeds
@@ -164,25 +164,8 @@ class MobileClient extends Component {
     }
   };
 
-  getUserRole = () => {
-    switch (true) {
-    case kc.hasRealmRole('pending_approval'):
-      return userRolesEnum.ghost;
-    case kc.hasRealmRole('gxy_user'):
-      return userRolesEnum.user;
-    case kc.hasRealmRole('gxy_pending_approval'):
-      return userRolesEnum.pending_approve;
-    case kc.hasRealmRole('gxy_guest'):
-      return userRolesEnum.viewer;
-    case kc.hasRealmRole('new_user'):
-      return userRolesEnum.new_user;
-    default:
-      return userRolesEnum.none
-    }
-  }
-
   checkPermission = (user) => {
-    user.role = this.getUserRole();
+    user.role = getUserRole();
 
     if (user.role !== null) {
       this.initApp(user);

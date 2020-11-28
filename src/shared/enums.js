@@ -1,3 +1,5 @@
+import {kc} from "../components/UserManager";
+
 export const userRolesEnum = {
   none: null,
   ghost: 'ghost',
@@ -5,4 +7,21 @@ export const userRolesEnum = {
   new_user: 'new_user',
   pending_approve: 'pending_approve',
   user: 'user'
+}
+
+export const getUserRole = () => {
+  switch (true) {
+    case kc.hasRealmRole('pending_approval'):
+      return userRolesEnum.ghost;
+    case kc.hasRealmRole('gxy_user'):
+      return userRolesEnum.user;
+    case kc.hasRealmRole('gxy_pending_approval'):
+      return userRolesEnum.pending_approve;
+    case kc.hasRealmRole('gxy_guest'):
+      return userRolesEnum.viewer;
+    case kc.hasRealmRole('new_user'):
+      return userRolesEnum.new_user;
+    default:
+      return userRolesEnum.none
+  }
 }

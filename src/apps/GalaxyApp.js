@@ -5,6 +5,7 @@ import {kc} from "../components/UserManager";
 import {withTranslation} from "react-i18next";
 import {languagesOptions, setLanguage} from "../i18n/i18n";
 import {updateSentryUser} from "../shared/sentry";
+import {getUserRole} from "../shared/enums";
 
 class GalaxyApp extends Component {
 
@@ -27,13 +28,13 @@ class GalaxyApp extends Component {
     }
 
     checkPermission = (user) => {
-        const allow = kc.hasRealmRole("gxy_user");
+        const allow = getUserRole();
         const options = this.buttonOptions(user.roles);
         this.setState({options: options.length});
-        if(options.length > 1 && allow) {
+        if(options.length > 1 && allow !== null) {
             this.setState({user, roles: user.roles});
             updateSentryUser(user);
-        } else if(allow && options.length === 1) {
+        } else if(allow !== null && options.length === 1) {
             window.location = '/user';
         } else {
             alert("Access denied.");
@@ -44,7 +45,7 @@ class GalaxyApp extends Component {
 
     buttonOptions = (roles) => {
         return roles.map((role, i) => {
-            if(role === "gxy_user") {
+            if(role.match(/^(new_user|gxy_guest|gxy_pending_approval|gxy_user|pending_approval)$/)) {
                 return (<Button key={i} size='massive' color='green' onClick={() => window.open("user","_self")}>
                     Galaxy
                 </Button>);

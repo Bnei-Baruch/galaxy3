@@ -63,7 +63,7 @@ import SettingsJoined from './settings/SettingsJoined';
 import HomerLimud from './components/HomerLimud';
 import {Help} from './components/Help';
 import {RegistrationModals} from './components/RegistrationModals';
-import {userRolesEnum} from "../../shared/enums";
+import {getUserRole, userRolesEnum} from "../../shared/enums";
 
 const sortAndFilterFeeds = (feeds) => feeds
   .filter(feed => !feed.display.role.match(/^(ghost|guest)$/))
@@ -208,25 +208,8 @@ class VirtualClient extends Component {
     this.state.virtualStreamingJanus.destroy();
   }
 
-  getUserRole = () => {
-    switch (true) {
-      case kc.hasRealmRole('pending_approval'):
-        return userRolesEnum.ghost;
-      case kc.hasRealmRole('gxy_user'):
-        return userRolesEnum.user;
-      case kc.hasRealmRole('gxy_pending_approval'):
-        return userRolesEnum.pending_approve;
-      case kc.hasRealmRole('gxy_guest'):
-        return userRolesEnum.viewer;
-      case kc.hasRealmRole('new_user'):
-        return userRolesEnum.new_user;
-      default:
-        return userRolesEnum.none
-    }
-  }
-
   checkPermission = (user) => {
-    user.role = this.getUserRole();
+    user.role = getUserRole();
 
     if (user.role !== null) {
       this.initApp(user);
