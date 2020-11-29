@@ -42,17 +42,17 @@ import {
 import api from '../../shared/Api';
 import VirtualStreaming from './VirtualStreaming';
 import VirtualStreamingJanus from '../../shared/VirtualStreamingJanus';
-import {isGhostOrGuest, kc} from "../../components/UserManager";
+import {getUser, kc} from "../../components/UserManager";
 import LoginPage from "../../components/LoginPage";
 import {Profile} from "../../components/Profile";
 import {captureException, captureMessage, sentryDebugAction, updateSentryUser} from '../../shared/sentry';
-import VerifyAccount from './components/VerifyAccount';
 import GxyJanus from '../../shared/janus-utils';
 import audioModeSvg from '../../shared/audio-mode.svg';
 import fullModeSvg from '../../shared/full-mode.svg';
 import ConfigStore from '../../shared/ConfigStore';
 import { GuaranteeDeliveryManager } from '../../shared/GuaranteeDelivery';
 import { toggleFullScreen, isFullScreen } from './FullScreenHelper';
+import {CheckAlive} from '../../shared/CheckAlive';
 
 import {AppBar, Badge, Box, Button as ButtonMD, ButtonGroup, Grid, IconButton, Toolbar, Typography} from '@material-ui/core';
 import {ChevronLeft, ChevronRight} from '@material-ui/icons';
@@ -62,6 +62,7 @@ import Settings from './settings/Settings';
 import SettingsJoined from './settings/SettingsJoined';
 import HomerLimud from './components/HomerLimud';
 import {Help} from './components/Help';
+import {getUserRole, userRolesEnum} from "../../shared/enums";
 import KliOlamiStream from './components/KliOlamiStream';
 import KliOlamiToggle from './buttons/KliOlamiToggle';
 
@@ -137,6 +138,8 @@ class VirtualClient extends Component {
     gdm: null,
     asideMsgCounter: { drawing: 0, chat: 0 },
     leftAsideSize: 3,
+    shidurForGuestReady: false,
+    checkAlive: new CheckAlive(),
     kliOlamiAttached: true
   };
 
@@ -181,10 +184,9 @@ class VirtualClient extends Component {
   }
 
   checkPermission = (user) => {
-    let pending_approval = kc.hasRealmRole('pending_approval');
-    let gxy_user         = kc.hasRealmRole('gxy_user');
-    user.role            = pending_approval ? 'ghost' : 'user';
-    if (gxy_user || pending_approval) {
+    user.role = getUserRole();
+
+    if (user.role !== null) {
       this.initApp(user);
     } else {
       alert('Access denied!');
@@ -194,6 +196,42 @@ class VirtualClient extends Component {
   };
 
   initApp = (user) => {
+    if (!isUseNewDesign && user.role !== userRolesEnum.user) {
+      const params = new URLSearchParams(window.location.search)
+      params.set('new_design', true)
+      window.location = window.location.pathname + "?" + params.toString();
+    }
+
+    if (isUseNewDesign && user.role === userRolesEnum.user) {
+      const params = new URLSearchParams(window.location.search)
+      params.delete('new_design')
+      window.location = window.location.pathname + "?" + params.toString();
+    }
+
+    if (user.role !== userRolesEnum.user) {
+      const config = {
+        'gateways': {
+          'streaming': {
+            'str': {
+              'name': 'str',
+              'url': APP_JANUS_SRV_STR1,
+              'type': 'streaming',
+              'token': ''
+            }
+          }
+        },
+        'ice_servers': {'streaming': [APP_STUN_SRV_STR]},
+        'dynamic_config': {'galaxy_premod': 'false'},
+        'last_modified': (new Date()).toISOString()
+      };
+      ConfigStore.setGlobalConfig(config);
+      GxyJanus.setGlobalConfig(config);
+      localStorage.setItem('room', '-1');
+      this.state.virtualStreamingJanus.init('', 'IL');
+      this.setState({user, sourceLoading: true});
+      return;
+    }
+
     const gdm = new GuaranteeDeliveryManager(user.id);
     this.setState({gdm});
     const {t} = this.props;
@@ -649,23 +687,37 @@ class VirtualClient extends Component {
       this.setState({upval});
     }
 
-    this.chat.initChatRoom(janus, selected_room, user, data => {
-      const { textroom, error_code, error } = data;
+    this.chat.initChatRoom(janus, selected_room, user, this.initChatroomCallback(videoroom, selected_room, user).bind(this));
+  };
+
+  checkAliveDebugAction = () => {
+    const {selected_room, user} = this.state;
+    this.chat.joinChatRoom(this.chat.state.chatroom, selected_room, user);
+  }
+
+  initChatroomCallback = (videoroom, selected_room, user) => {
+    return data => {
+      if (this.state.checkAlive.checkAlive(data)) {
+        // This is a check-alive message ignore it.
+        return;
+      }
+      const { textroom, error_code } = data;
       if (textroom === 'error') {
         if (error_code !== USERNAME_ALREADY_EXIST_ERROR_CODE) {
           console.error("Chatroom error: ", data, error_code)
-          captureMessage(`Chatroom error: init - ${error}`, {source: "Textroom", err: data}, 'error');
+          captureMessage('Chatroom error: init', {source: "Textroom", err: data}, 'error');
         } else {
           console.log("Chatroom error: ", data, error_code);
-          captureMessage(`Chatroom error: init - ${error}`, {source: "Textroom", err: data});
+          captureMessage('Chatroom error: init', {source: "Textroom", err: data});
         }
         this.exitRoom(false, () => {
           if(error_code === USERNAME_ALREADY_EXIST_ERROR_CODE)
             alert(this.props.t('oldClient.error') + data.error);
         }, true);
       } else if(textroom === "success" && data.participants) {
+        this.state.checkAlive.start(this.chat.state.chatroom, selected_room, user);
         Janus.log(":: Successfully joined to chat room: " + selected_room );
-				captureMessage('Successfully joined to chat room', {source: "Textroom", selected_room});
+        captureMessage('Successfully joined to chat room', {source: "Textroom", selected_room});
         user.textroom_handle = this.chat.getHandle(); // we want this in backend for debugging of textroom based signaling
         this.setState({user});
         const {id, timestamp, role, username} = user;
@@ -675,16 +727,16 @@ class VirtualClient extends Component {
           "message": register,
           success: () => {
             console.log("Request join success");
-						captureMessage('Request join success', {source: "Videoroom", selected_room});
+            captureMessage('Request join success', {source: "Videoroom", selected_room});
           },
           error: (error) => {
             console.error(error);
-						captureException(error, {source: 'Videoroom'});
+            captureException(error, {source: 'Videoroom'});
             this.exitRoom(false);
           }
         })
       }
-    });
+    };
   };
 
   exitRoom = (reconnect, callback, error) => {
@@ -716,6 +768,7 @@ class VirtualClient extends Component {
     if(protocol) protocol.data({text: JSON.stringify(pl)});
 
     if (this.chat && !error) {
+      this.state.checkAlive.stop();
       this.chat.exitChatRoom(room);
     }
 
@@ -843,7 +896,7 @@ class VirtualClient extends Component {
           Janus.log(feeds);
           this.makeSubscription(feeds, /* feedsJustJoined= */ false,
                                 /* subscribeToVideo= */ !this.state.muteOtherCams,
-                                /* subscribeToAudio= */ !isGhostOrGuest(user.role), /* subscribeToData= */ true);
+                                /* subscribeToAudio= */ true, /* subscribeToData= */ true);
         }
       } else if (event === 'talking') {
         const feeds = Object.assign([], this.state.feeds);
@@ -871,6 +924,14 @@ class VirtualClient extends Component {
       } else if (event === 'event') {
         if (msg['configured'] === 'ok') {
           // User published own feed successfully.
+          const user = {
+            ...this.state.user,
+            extra: {
+              ...(this.state.user.extra || {}),
+              streams: msg.streams
+            }
+          };
+          this.setState({user});
           if (this.state.muteOtherCams) {
             this.setState({videos: NO_VIDEO_OPTION_VALUE});
             this.state.virtualStreamingJanus.setVideo(NO_VIDEO_OPTION_VALUE);
@@ -878,13 +939,12 @@ class VirtualClient extends Component {
           }
         } else if (msg['publishers'] !== undefined && msg['publishers'] !== null) {
           // User just joined the room.
-          const {user: {role}} = this.state;
           const feeds = sortAndFilterFeeds(msg['publishers'].filter(l => l.display = (JSON.parse(l.display))));
           Janus.debug('New list of available publishers/feeds:');
           Janus.debug(feeds);
           this.makeSubscription(feeds, /* feedsJustJoined= */ true,
                                 /* subscribeToVideo= */ !this.state.muteOtherCams,
-                                /* subscribeToAudio= */ !isGhostOrGuest(role), /* subscribeToData= */ true);
+                                /* subscribeToAudio= */ true, /* subscribeToData= */ true);
         } else if (msg['leaving'] !== undefined && msg['leaving'] !== null) {
           // One of the publishers has gone away?
           const leaving = msg['leaving'];
@@ -1891,7 +1951,6 @@ class VirtualClient extends Component {
       : null;
     return (
       <div className={classNames('vclient', { 'vclient--chat-open': chatVisible })}>
-        <VerifyAccount user={user} loginPage={false} i18n={i18n} />
         {this.renderTopBar(isDeb)}
 
         <Grid container className="vclient__main">
@@ -2066,7 +2125,6 @@ class VirtualClient extends Component {
         break;
       }
       content = (<div className={classNames('vclient', { 'vclient--chat-open': chatVisible })}>
-        <VerifyAccount user={user} loginPage={false} i18n={i18n} />
         <div className="vclient__toolbar">
           <Input>
             <Select
@@ -2254,6 +2312,11 @@ class VirtualClient extends Component {
             {!isDeb ? null :
               <Menu.Item onClick={sentryDebugAction}>
                 Sentry
+              </Menu.Item>
+            }
+            {!isDeb ? null :
+              <Menu.Item onClick={this.checkAliveDebugAction.bind(this)}>
+                Check Alive
               </Menu.Item>
             }
           </Menu>

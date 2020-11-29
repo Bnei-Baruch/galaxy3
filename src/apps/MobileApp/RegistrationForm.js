@@ -18,30 +18,42 @@ import { green } from '@material-ui/core/colors';
 import { MuiThemeProvider, createMuiTheme } from '@material-ui/core/styles';
 import countries from 'i18n-iso-countries';
 
-import { LANGUAGES } from '../../../shared/consts';
-import LogoutDropdown from '../settings/LogoutDropdown';
-import { REGISTRATION_FORM_FIELDS, REGISTRATION_FORM_URL } from '../../../shared/env';
+import { LANGUAGES } from '../../shared/consts';
+import { REGISTRATION_FORM_FIELDS, REGISTRATION_FORM_URL } from '../../shared/env';
 
-import api from '../../../shared/Api';
-import { SelectViewLanguage } from './SelectViewLanguage';
-import RTL from '../../../components/RTL';
+import api from '../../shared/Api';
+import RTL from '../../components/RTL';
 
 const rtlTheme = createMuiTheme({
-  direction: 'rtl',
+  direction: 'rtl'
 });
 const ltrTheme = createMuiTheme({
-  direction: 'ltr',
+  direction: 'ltr'
 });
 
 const useStyles = makeStyles(() => ({
   container: {
     backgroundColor: 'white',
-    padding: '0 2em 10em'
+    padding: '2em',
+    fontSize: '2rem',
+    height: '100%'
+  },
+  textSize: {
+    fontSize: '2rem',
+  },
+  inputTextSize: {
+    fontSize: '2.5rem',
+    lineHeight: '3rem'
+  },
+  inputLabelSize: {
+    fontSize: '2.5rem',
+    lineHeight: '2rem'
   },
   button: {
     background: green[700],
     color: 'white',
-    fontWeight: 'bold'
+    fontWeight: 'bold',
+    fontSize: '2rem'
   }
 }));
 
@@ -123,6 +135,7 @@ export const RegistrationForm = ({ user: { familyname, username, email, display 
         options={countryIds}
         getOptionLabel={id => countryById[id]}
         onChange={handleCountryChange}
+        classes={{ option: classes.inputTextSize }}
         renderInput={
           (params) => (
             <TextField
@@ -131,6 +144,15 @@ export const RegistrationForm = ({ user: { familyname, username, email, display 
               variant="outlined"
               required
               error={errors.country}
+              InputProps={{
+                ...params.InputProps,
+                classes: { root: classes.inputTextSize }
+              }}
+              InputLabelProps={{
+                classes: {
+                  root: classes.inputLabelSize
+                }
+              }}
             />
           )
         }
@@ -146,6 +168,7 @@ export const RegistrationForm = ({ user: { familyname, username, email, display 
         options={LANGUAGES}
         getOptionLabel={r => r.nativeName}
         onChange={handleLanguageChange}
+        classes={{ option: classes.inputTextSize }}
         renderInput={
           (params) => (
             <TextField
@@ -154,6 +177,15 @@ export const RegistrationForm = ({ user: { familyname, username, email, display 
               variant="outlined"
               required
               error={errors.language}
+              InputProps={{
+                ...params.InputProps,
+                classes: { root: classes.inputTextSize }
+              }}
+              InputLabelProps={{
+                classes: {
+                  root: classes.inputLabelSize
+                }
+              }}
             />
           )
         }
@@ -171,11 +203,22 @@ export const RegistrationForm = ({ user: { familyname, username, email, display 
       value={gender}
       required
       error={errors.gender}
+      className={classes.inputTextSize}
+      InputProps={{
+        classes: {
+          root: classes.inputTextSize
+        }
+      }}
+      InputLabelProps={{
+        classes: {
+          root: classes.inputLabelSize
+        }
+      }}
     >
-      <MenuItem key="male" value="male">
+      <MenuItem key="male" value="male" className={classes.inputTextSize}>
         {t('registration.male')}
       </MenuItem>
-      <MenuItem key="female" value="female">
+      <MenuItem key="female" value="female" className={classes.inputTextSize}>
         {t('registration.female')}
       </MenuItem>
     </TextField>
@@ -248,21 +291,20 @@ export const RegistrationForm = ({ user: { familyname, username, email, display 
 
   const renderForm = () => (
     <>
-      <Typography variant="h4" display={'block'} paragraph>
+      <Typography variant="h3" paragraph>
         {t('registration.welcome', { name: display })}
       </Typography>
-      <Typography paragraph>
+      <Typography paragraph className={classes.textSize}>
         {t('registration.needVerifyAccount')}
       </Typography>
-      <Typography paragraph>
+      <Typography paragraph className={classes.textSize}>
         {t('registration.tellAboutYou')}
       </Typography>
-
       <Grid container spacing={6}>
-        <Grid item xs={6}>
+        <Grid item xs={6} sm={12}>
           {renderCountries()}
         </Grid>
-        <Grid item xs={6}>
+        <Grid item xs={6} sm={12}>
           <TextField
             label={t('registration.groupCity')}
             variant="outlined"
@@ -271,15 +313,21 @@ export const RegistrationForm = ({ user: { familyname, username, email, display 
             fullWidth
             required
             error={errors.city}
+            InputProps={{ classes: { root: classes.inputTextSize } }}
+            InputLabelProps={{
+              classes: {
+                root: classes.inputLabelSize
+              }
+            }}
           />
         </Grid>
-        <Grid item xs={6}>
+        <Grid item xs={6} sm={12}>
           {renderGender()}
         </Grid>
-        <Grid item xs={6}>
+        <Grid item xs={6} sm={12}>
           {renderLanguages()}
         </Grid>
-        <Grid item xs={6}>
+        <Grid item xs={6} sm={12}>
           <TextField
             label={t('registration.telephone')}
             variant="outlined"
@@ -288,15 +336,27 @@ export const RegistrationForm = ({ user: { familyname, username, email, display 
             fullWidth
             required
             error={errors.telephone}
+            InputProps={{ classes: { root: classes.inputTextSize } }}
+            InputLabelProps={{
+              classes: {
+                root: classes.inputLabelSize
+              }
+            }}
           />
         </Grid>
-        <Grid item xs={6}>
+        <Grid item xs={6} sm={12}>
           <TextField
             label={t('registration.selectGroup')}
             variant="outlined"
             onChange={handleTenChange}
             value={ten}
             fullWidth
+            InputProps={{ classes: { root: classes.inputTextSize } }}
+            InputLabelProps={{
+              classes: {
+                root: classes.inputLabelSize
+              }
+            }}
           />
         </Grid>
         <Grid item xs={12}>
@@ -307,6 +367,12 @@ export const RegistrationForm = ({ user: { familyname, username, email, display 
             value={aboutYou}
             multiline
             fullWidth
+            InputProps={{ classes: { root: classes.inputTextSize } }}
+            InputLabelProps={{
+              classes: {
+                root: classes.inputLabelSize
+              }
+            }}
           />
         </Grid>
         <Grid container justify="center">
@@ -333,28 +399,21 @@ export const RegistrationForm = ({ user: { familyname, username, email, display 
           open={isOpen}
           onClose={onClose}
           disableBackdropClick
-          style={{ verticalAlign: 'middle' }}
         >
           <Box
             className={classes.container}
             maxWidth="md"
             dir={isRtl ? 'rtl' : 'ltr'}
-            m={10}
           >
             <Grid container spacing={5}>
-              <Grid item xs={7}>
+              <Grid item xs={12}>
                 {renderForm()}
               </Grid>
-              <Grid item xs={1}>
-                <Divider variant="middle" orientation="vertical" />
+              <Grid item xs={12}>
+                <Divider variant="middle" />
               </Grid>
-              <Grid item xs={4}>
-                <Grid container justify="flex-end">
-                  <SelectViewLanguage size={'small'} fullWidth={false} hasLabel={false} />
-                  <Divider style={{ marginRight: '2em' }} />
-                  <LogoutDropdown display={display} />
-                </Grid>
-                <Box style={{ marginTop: '10em' }}>
+              <Grid item xs={12}>
+                <Box style={{ marginTop: '2em' }}>
                   <Typography paragraph style={{ fontSize: '1.2em' }}>
                     {t('registration.asGuestYouCan')}
                   </Typography>

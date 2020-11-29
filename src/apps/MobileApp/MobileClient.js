@@ -15,7 +15,7 @@ import {
   VIDEO_240P_OPTION_VALUE,
   vsettings_list,
 } from "../../shared/consts";
-import {GEO_IP_INFO} from "../../shared/env";
+import { APP_JANUS_SRV_STR1, APP_STUN_SRV_STR, GEO_IP_INFO } from '../../shared/env';
 import platform from "platform";
 import {isMobile} from 'react-device-detect';
 import {withTranslation} from 'react-i18next';
@@ -29,7 +29,7 @@ import {
   MonitoringData
 } from '../../shared/MonitoringData';
 import api from '../../shared/Api';
-import {isGhostOrGuest, kc} from "../../components/UserManager";
+import { getUser, kc } from '../../components/UserManager';
 import LoginPage from "../../components/LoginPage";
 import GxyJanus from "../../shared/janus-utils";
 import connectionOrange from '../VirtualApp/connection-orange.png';
@@ -44,6 +44,8 @@ import VirtualChat from '../VirtualApp/VirtualChat';
 import ConfigStore from "../../shared/ConfigStore";
 import {GuaranteeDeliveryManager} from "../../shared/GuaranteeDelivery";
 import {captureException, captureMessage, updateSentryUser} from "../../shared/sentry";
+import {getUserRole, userRolesEnum} from '../../shared/enums';
+import { RegistrationModals } from './RegistrationModals';
 
 const sortAndFilterFeeds = (feeds) => feeds
   .filter(feed => !feed.display.role.match(/^(ghost|guest)$/))
@@ -118,9 +120,11 @@ class MobileClient extends Component {
         premodStatus: false,
     };
 
-    shidurInitialized() {
-      this.setState({shidurLoading: false});
-    }
+  shidurInitialized() {
+    if (this.state.user.role !== userRolesEnum.user && this.state.virtualStreamingJanus.videoElement)
+      this.state.virtualStreamingJanus.videoElement.pause();
+    this.setState({ shidurLoading: false });
+  }
 
     setShidurMuted(muted) {
       if (muted) {
@@ -131,46 +135,46 @@ class MobileClient extends Component {
       this.setState({shidurMuted: muted});
     }
 
-    componentDidUpdate(prevProps, prevState) {
-      const {room, shidur, shidurLoading, shidurMuted} = this.state;
-      // We are in the room and shidur now enabled (not loading).
-      if (!shidurMuted && shidur && !prevState.shidur && !shidurLoading && room) {
-        this.setShidurMuted(false);
-      }
-      // We are in the room shidur is on and shidur finished loading.
-      if (!shidurMuted && !shidurLoading && prevState.shidurLoading && shidur && room) {
-        this.setShidurMuted(false);
-      }
-      if (this.state.videoroom !== prevState.videoroom ||
-          this.state.localVideoTrack !== prevState.localVideoTrack ||
-          this.state.localAudioTrack !== prevState.localAudioTrack ||
-          JSON.stringify(this.state.user) !== JSON.stringify(prevState.user)) {
-        this.state.monitoringData.setConnection(
-          this.state.videoroom,
-          this.state.localAudioTrack,
-          this.state.localVideoTrack,
-          this.state.user,
-          this.state.virtualStreamingJanus);
-        this.state.monitoringData.setOnStatus((connectionStatus, connectionStatusMessage) => {
-          if (this.state.connectionStatus !== connectionStatus) {
-            this.setState({connectionStatus});
-          }
-        });
-      }
-    };
-
-    checkPermission = (user) => {
-        let pending_approval = kc.hasRealmRole("pending_approval");
-        let gxy_user = kc.hasRealmRole("gxy_user");
-        user.role = pending_approval ? 'ghost' : 'user';
-        if (gxy_user || pending_approval) {
-            this.initApp(user);
-        } else {
-            alert("Access denied!");
-            kc.logout();
-            updateSentryUser(null);
-        }
+  componentDidUpdate(prevProps, prevState) {
+    const { room, shidur, shidurLoading, shidurMuted } = this.state;
+    // We are in the room and shidur now enabled (not loading).
+    if (!shidurMuted && shidur && !prevState.shidur && !shidurLoading && (room || this.state.user.role !== userRolesEnum.user)) {
+      this.setShidurMuted(false);
     }
+    // We are in the room shidur is on and shidur finished loading.
+    if (!shidurMuted && !shidurLoading && prevState.shidurLoading && shidur && (room || this.state.user.role !== userRolesEnum.user)) {
+      this.setShidurMuted(false);
+      this.state.virtualStreamingJanus.videoElement.play();
+    }
+    if (this.state.videoroom !== prevState.videoroom ||
+      this.state.localVideoTrack !== prevState.localVideoTrack ||
+      this.state.localAudioTrack !== prevState.localAudioTrack ||
+      JSON.stringify(this.state.user) !== JSON.stringify(prevState.user)) {
+      this.state.monitoringData.setConnection(
+        this.state.videoroom,
+        this.state.localAudioTrack,
+        this.state.localVideoTrack,
+        this.state.user,
+        this.state.virtualStreamingJanus);
+      this.state.monitoringData.setOnStatus((connectionStatus, connectionStatusMessage) => {
+        if (this.state.connectionStatus !== connectionStatus) {
+          this.setState({ connectionStatus });
+        }
+      });
+    }
+  };
+
+  checkPermission = (user) => {
+    user.role = getUserRole();
+
+    if (user.role !== null) {
+      this.initApp(user);
+    } else {
+      alert('Access denied!');
+      kc.logout();
+      updateSentryUser(null);
+    }
+  };
 
     componentDidMount() {
         if(!isMobile && window.location.href.indexOf("userm") > -1) {
@@ -193,6 +197,29 @@ class MobileClient extends Component {
     }
 
     initApp = (user) => {
+        if (user.role !== userRolesEnum.user) {
+          const config = {
+            'gateways': {
+              'streaming': {
+                'str': {
+                  'name': 'str',
+                  'url': APP_JANUS_SRV_STR1,
+                  'type': 'streaming',
+                  'token': ''
+                }
+              }
+            },
+            'ice_servers': {'streaming': [APP_STUN_SRV_STR]},
+            'dynamic_config': {'galaxy_premod': 'false'},
+            'last_modified': (new Date()).toISOString()
+          };
+          ConfigStore.setGlobalConfig(config);
+          GxyJanus.setGlobalConfig(config);
+          localStorage.setItem('room', '-1');
+          this.state.virtualStreamingJanus.init('', 'IL');
+          this.setState({user, sourceLoading: true});
+          return;
+        }
         let gdm = new GuaranteeDeliveryManager(user.id);
         this.setState({gdm});
         localStorage.setItem('question', false);
@@ -803,7 +830,7 @@ class MobileClient extends Component {
 
                   this.makeSubscription(feeds, /* feedsJustJoined= */ false,
                                         /* subscribeToVideo= */ false,
-                                        /* subscribeToAudio= */ !isGhostOrGuest(user.role), /* subscribeToData= */ true);
+                                        /* subscribeToAudio= */ true, /* subscribeToData= */ true);
                   this.switchVideos(/* page= */ this.state.page, [], userFeeds(feeds));
                   this.setState({feeds});
                 }
@@ -835,6 +862,14 @@ class MobileClient extends Component {
             } else if(event === "event") {
                 if (msg['configured'] === 'ok') {
                   // User published own feed successfully.
+                  const user = {
+                    ...this.state.user,
+                    extra: {
+                      ...(this.state.user.extra || {}),
+                      streams: msg.streams
+                    }
+                  };
+                  this.setState({user});
                   if (this.state.muteOtherCams) {
                     this.camMute(/* cammuted= */ false);
                     this.setState({videos: NO_VIDEO_OPTION_VALUE});
@@ -845,7 +880,7 @@ class MobileClient extends Component {
                   const newFeeds = sortAndFilterFeeds(msg['publishers'].filter(l => l.display = (JSON.parse(l.display))));
                   Janus.debug('New list of available publishers/feeds:', newFeeds);
                   const newFeedsIds = new Set(newFeeds.map(feed => feed.id));
-                  const {feeds, user: {role}} = this.state;
+                  const {feeds} = this.state;
                   if (feeds.some(feed => newFeedsIds.has(feed.id))) {
                     Janus.error(`New feed joining but one of the feeds already exist`, newFeeds, feeds);
                     return;
@@ -854,7 +889,7 @@ class MobileClient extends Component {
                   const feedsNewState = sortAndFilterFeeds([...newFeeds, ...feeds]);
                   this.makeSubscription(newFeeds, /* feedsJustJoined= */ true,
                                         /* subscribeToVideo= */ false,
-                                        /* subscribeToAudio= */ !isGhostOrGuest(role), /* subscribeToData= */ true);
+                                        /* subscribeToAudio= */ true, /* subscribeToData= */ true);
                   this.switchVideos(/* page= */ this.state.page, userFeeds(feeds), userFeeds(feedsNewState));
                   this.setState({feeds: feedsNewState});
 
@@ -1482,6 +1517,9 @@ class MobileClient extends Component {
       this.setState({page});
     }
 
+    updateUserRole = () => {
+      getUser(this.checkPermission)
+    }
     render() {
       const {t, i18n} = this.props;
       const {
@@ -1608,113 +1646,138 @@ class MobileClient extends Component {
       const login = (<LoginPage user={user} checkPermission={this.checkPermission} />);
       const openVideoDisabled = video_device === null || !localAudioTrack || delay;
       const chatCountLabel = (<Label key='Carbon' floating size='mini' color='red'>{chatMessagesCount}</Label>);
-      const content = (
-        <div>
-            <div className='vclient'>
-                <div className="vclient__toolbar">
-                  <Input iconPosition='left' action>
-                      <Select className='select_room'
-                              search
-                              disabled={!!room}
-                              error={!selected_room}
-                              placeholder=" Select Room: "
-                              value={selected_room}
-                              text={name}
-                              options={rooms_list}
-                              onChange={(e, {value}) => this.selectRoom(value)} />
-                      {room ? <Button size='massive' className="login-icon" negative icon='sign-out' disabled={delay} onClick={() => this.exitRoom(false)} />:""}
-                      {!room ? <Button size='massive' className="login-icon" primary icon='sign-in' loading={delay} disabled={delay || !selected_room} onClick={() => this.initClient(false)} />:""}
-                  </Input>
-                  <Menu icon="labeled" size="massive" secondary>
-                    <Modal trigger={<Menu.Item icon="setting" name={t('oldClient.settings')} position="right" />}
-                           on='click'
-                           closeIcon
-                           className='settings'>
-                      <Accordion as={Menu} vertical>
-                        <Menu.Item className='settings-title'>
-                          <Accordion.Title
-                            active={settingsActiveIndex === 0}
-                            className={classNames({'disabled': !!room})}
-                            content={t('oldClient.video')}
-                            index={0}
-                            onClick={this.handleClick}
-                          />
-                        </Menu.Item>
-                        {!room && settingsActiveIndex === 0 && media.video.devices.map((device, i) => (
-                          <Menu.Item key={`video-${i}`}
-                                     disabled={!!room}
-                                     name={device.label}
-                                     className={video_device === device.deviceId ? 'selected' : null}
-                                     onClick={() => this.setVideoDevice(device.deviceId)} />
-                        ))}
-                        <Menu.Item className='settings-title'>
-                          <Accordion.Title
-                            active={settingsActiveIndex === 1}
-                            className={classNames({'disabled': !!room})}
-                            content={t('oldClient.audio')}
-                            index={1}
-                            onClick={this.handleClick}
-                          />
-                        </Menu.Item>
-                        {!room && settingsActiveIndex === 1 && media.audio.devices.map((device, i) => (
-                          <Menu.Item key={`audio-${i}`}
-                                     disabled={!!room}
-                                     name={device.label}
-                                     className={audio_device === device.deviceId ? 'selected' : null}
-                                     onClick={() => this.setAudioDevice(device.deviceId)} />
-                        ))}
-                        <Menu.Item className='settings-title'>
-                          <Accordion.Title
-                            active={settingsActiveIndex === 2}
-                            className={classNames({'disabled': !!room})}
-                            content={t('oldClient.cameraQuality')}
-                            index={2}
-                            onClick={this.handleClick}
-                          />
-                        </Menu.Item>
-                        {!room && settingsActiveIndex === 2 && vsettings_list.filter((quality) => quality.mobileText).map((quality, i) => (
-                          <Menu.Item key={`quality-${i}`}
-                                     disabled={!!room}
-                                     name={t(`oldClient.${quality.mobileText}`)}
-                                     className={JSON.stringify(media.video.setting) ===
-                                                JSON.stringify(quality.value) ? 'selected' : null}
-                                     onClick={() => this.setVideoSize(quality.value)} />
-                        ))}
-                        <Menu.Item className='settings-title'>
-                          <Accordion.Title
-                            active={settingsActiveIndex === 3}
-                            content={t('oldClient.language')}
-                            index={3}
-                            onClick={this.handleClick}
-                          />
-                        </Menu.Item>
-                        {settingsActiveIndex === 3 && languagesOptions.map((language) => (
-                          <Menu.Item key={`lang-${language.key}`}
-                                     name={language.text}
-                                     className={i18n.language === language.value ? 'selected' : null}
-                                     onClick={() => setLanguage(language.value)} />
-                        ))}
-                        <Menu.Item className='settings-title'>
-                          <Accordion.Title
-                            active={settingsActiveIndex === 4}
-                            index={4}
-                            onClick={this.handleClick}>
-                            <Icon name="user circle" />
-                            <span className='name'>{user ? user.display : ''}</span>
-                            <Icon name={settingsActiveIndex === 4 ? 'caret down' : 'caret left'}
-                                  style={{float: 'right'}} />
-                          </Accordion.Title>
-                        </Menu.Item>
-                        {settingsActiveIndex === 4 && <Menu.Item
-                            name={t('oldClient.myAccount')}
-                            onClick={() => window.open('https://accounts.kbb1.com/auth/realms/main/account')} />}
-                        {settingsActiveIndex === 4 && <Menu.Item
-                            name={t('oldClient.signOut')}
-                            onClick={() => { kc.logout(); updateSentryUser(null); }} />}
-                      </Accordion>
-                    </Modal>
-                  </Menu>
-                </div>
+      const shidurComponent = (
+        <VirtualStreamingMobile
+        shidur={shidur}
+        shidurLoading={shidurLoading}
+        shidurJanus={virtualStreamingJanus}
+        toggleShidur={this.toggleShidur}
+        audio={this.state.virtualStreamingJanus && this.state.virtualStreamingJanus.audioElement}
+        muted={this.state.shidurMuted}
+        videos={videos}
+        setVideo={(v) => this.setState({videos: v})}
+        setMuted={(muted) => this.setShidurMuted(muted)}
+      />
+    );
+
+    const topToolBar = (
+      <div className="vclient__toolbar">
+        {
+          (user?.role === userRolesEnum.user) && (<Input iconPosition='left' action>
+            <Select className='select_room'
+                    search
+                    disabled={!!room}
+                    error={!selected_room}
+                    placeholder=" Select Room: "
+                    value={selected_room}
+                    text={name}
+                    options={rooms_list}
+                    onChange={(e, { value }) => this.selectRoom(value)} />
+            {room ?
+              <Button size='massive' className="login-icon" negative icon='sign-out' disabled={delay} onClick={() => this.exitRoom(false)} /> : ''}
+            {!room ?
+              <Button size='massive' className="login-icon" primary icon='sign-in' loading={delay} disabled={delay || !selected_room} onClick={() => this.initClient(false)} /> : ''}
+          </Input>)
+        }
+        <Menu icon="labeled" size="massive" secondary>
+          <Modal trigger={<Menu.Item icon="setting" name={t('oldClient.settings')} position="right" />}
+                 on='click'
+                 closeIcon
+                 className='settings'>
+            <Accordion as={Menu} vertical>
+              <Menu.Item className='settings-title'>
+                <Accordion.Title
+                  active={settingsActiveIndex === 0}
+                  className={classNames({ 'disabled': !!room })}
+                  content={t('oldClient.video')}
+                  index={0}
+                  onClick={this.handleClick}
+                />
+              </Menu.Item>
+              {!room && settingsActiveIndex === 0 && media.video.devices.map((device, i) => (
+                <Menu.Item key={`video-${i}`}
+                           disabled={!!room}
+                           name={device.label}
+                           className={video_device === device.deviceId ? 'selected' : null}
+                           onClick={() => this.setVideoDevice(device.deviceId)} />
+              ))}
+              <Menu.Item className='settings-title'>
+                <Accordion.Title
+                  active={settingsActiveIndex === 1}
+                  className={classNames({ 'disabled': !!room })}
+                  content={t('oldClient.audio')}
+                  index={1}
+                  onClick={this.handleClick}
+                />
+              </Menu.Item>
+              {!room && settingsActiveIndex === 1 && media.audio.devices.map((device, i) => (
+                <Menu.Item key={`audio-${i}`}
+                           disabled={!!room}
+                           name={device.label}
+                           className={audio_device === device.deviceId ? 'selected' : null}
+                           onClick={() => this.setAudioDevice(device.deviceId)} />
+              ))}
+              <Menu.Item className='settings-title'>
+                <Accordion.Title
+                  active={settingsActiveIndex === 2}
+                  className={classNames({ 'disabled': !!room })}
+                  content={t('settings.cameraQuality')}
+                  index={2}
+                  onClick={this.handleClick}
+                />
+              </Menu.Item>
+              {!room && settingsActiveIndex === 2 && vsettings_list.filter((quality) => quality.mobileText).map((quality, i) => (
+                <Menu.Item key={`quality-${i}`}
+                           disabled={!!room}
+                           name={t(`oldClient.${quality.mobileText}`)}
+                           className={JSON.stringify(media.video.setting) ===
+                           JSON.stringify(quality.value) ? 'selected' : null}
+                           onClick={() => this.setVideoSize(quality.value)} />
+              ))}
+              <Menu.Item className='settings-title'>
+                <Accordion.Title
+                  active={settingsActiveIndex === 3}
+                  content={t('oldClient.language')}
+                  index={3}
+                  onClick={this.handleClick}
+                />
+              </Menu.Item>
+              {settingsActiveIndex === 3 && languagesOptions.map((language) => (
+                <Menu.Item key={`lang-${language.key}`}
+                           name={language.text}
+                           className={i18n.language === language.value ? 'selected' : null}
+                           onClick={() => setLanguage(language.value)} />
+              ))}
+              <Menu.Item className='settings-title'>
+                <Accordion.Title
+                  active={settingsActiveIndex === 4}
+                  index={4}
+                  onClick={this.handleClick}>
+                  <Icon name="user circle" />
+                  <span className='name'>{user ? user.display : ''}</span>
+                  <Icon name={settingsActiveIndex === 4 ? 'caret down' : 'caret left'}
+                        style={{ float: 'right' }} />
+                </Accordion.Title>
+              </Menu.Item>
+              {settingsActiveIndex === 4 && <Menu.Item
+                name={t('oldClient.myAccount')}
+                onClick={() => window.open('https://accounts.kbb1.com/auth/realms/main/account')} />}
+              {settingsActiveIndex === 4 && <Menu.Item
+                name={t('oldClient.signOut')}
+                onClick={() => {
+                  kc.logout();
+                  updateSentryUser(null);
+                }} />}
+            </Accordion>
+          </Modal>
+        </Menu>
+      </div>
+    );
+
+    const content = (
+      <div>
+        <div className='vclient'>
+          {topToolBar}
 
                 <div style={{height: '0px', zIndex: 1, position: 'sticky', top: 0}}>
                   {talking && <Label className='talk' size='massive' color='red' style={{margin: '1rem'}}>
@@ -1722,18 +1785,7 @@ class MobileClient extends Component {
                 </div>
 
 								<div>
-								{room !== '' ?
-									<VirtualStreamingMobile
-										shidur={shidur}
-										shidurLoading={shidurLoading}
-										shidurJanus={virtualStreamingJanus}
-										toggleShidur={this.toggleShidur}
-										audio={this.state.virtualStreamingJanus && this.state.virtualStreamingJanus.audioElement}
-                    muted={this.state.shidurMuted}
-                    videos={videos}
-                    setVideo={(v) => this.setState({videos: v})}
-                    setMuted={(muted) => this.setShidurMuted(muted)}
-									/> : null}
+								  {room !== '' ? shidurComponent: null}
 								</div>
 
                 <div basic className="vclient__main">
@@ -1874,14 +1926,32 @@ class MobileClient extends Component {
         </div>
       );
 
-      return (
-          <Fragment>
-             <MetaTags>
-                <meta name="viewport" content=" user-scalable=no" />
-             </MetaTags>
-              {user ? content : login}
-          </Fragment>
-      );
+    return (
+      <Fragment>
+        <MetaTags>
+          <meta name="viewport" content=" user-scalable=no" />
+        </MetaTags>
+        {
+          user ?
+            (user.role !== userRolesEnum.user) ?
+              (
+                <div>
+                  <div className='vclient'>
+                    {topToolBar}
+                    <div>{shidurComponent}</div>
+                    <RegistrationModals
+                      user={user}
+                      language={i18n.language}
+                      updateUserRole={this.updateUserRole.bind(this)}
+                    />
+                  </div>
+                </div>
+              )
+              : content
+            : login
+        }
+      </Fragment>
+    );
   }
 }
 

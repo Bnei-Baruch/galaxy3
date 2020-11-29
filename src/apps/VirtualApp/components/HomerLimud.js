@@ -41,7 +41,8 @@ const HomerLimud = () => {
 
   const initMessages = async () => {
     const msgs = await fetchMessages();
-    setMessages(msgs);
+    if (msgs?.length > 0)
+      setMessages(msgs);
   };
 
   const handleAccordionChange = (name) => name !== expanded ? setExpanded(name) : setExpanded(null);

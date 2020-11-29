@@ -1,5 +1,5 @@
-import React, {useEffect, useState} from 'react';
-import {useTranslation} from 'react-i18next';
+import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import {
   Button,
@@ -10,11 +10,11 @@ import {
   Grid,
   Typography
 } from '@material-ui/core';
-import {blue, grey} from "@material-ui/core/colors";
-import makeStyles from "@material-ui/core/styles/makeStyles";
+import { green } from '@material-ui/core/colors';
+import makeStyles from '@material-ui/core/styles/makeStyles';
 
-import {RegistrationForm} from './RegistrationForm';
-import {userRolesEnum} from "../../../shared/enums";
+import { RegistrationForm } from './RegistrationForm';
+import { userRolesEnum } from '../../shared/enums';
 
 const modalStateEnum = {
   close: 1,
@@ -22,42 +22,37 @@ const modalStateEnum = {
   completed: 4
 };
 
-
 const useStyles = makeStyles(() => ({
-  linkContainer: {backgroundColor: grey[200], textAlign: "center"},
-  link: {
-    color: blue[500],
-    textDecoration: 'underline',
-    cursor: 'pointer'
-  },
-
+  button: {
+    background: green[700],
+    color: 'white',
+    fontWeight: 'bold'
+  }
 }));
 
-export const RegistrationModals = ({user, language, updateUserRole}) => {
-  const classes = useStyles();
+export const RegistrationModals = ({ user, language, updateUserRole }) => {
+  const classes                     = useStyles();
   const [modalState, setModalState] = useState(modalStateEnum.close);
-  const {t} = useTranslation();
-  const {role, id} = user;
-  const direction = language === 'he' ? 'rtl' : '';
+  const { t }                       = useTranslation();
+  const { role, id }                = user;
+  const direction                   = language === 'he' ? 'rtl' : '';
 
   useEffect(() => {
-    if (!localStorage.getItem("notFirstEnter") && role === userRolesEnum.new_user) {
+    if (!localStorage.getItem('notFirstEnter') && role === userRolesEnum.new_user) {
       setModalState(modalStateEnum.form);
-      localStorage.setItem("notFirstEnter", 'true')
+      localStorage.setItem('notFirstEnter', 'true');
     }
     if (role === userRolesEnum.pending_approve) {
       setModalState(modalStateEnum.completed);
     }
   }, [role]);
 
-
   if (role !== userRolesEnum.pending_approve && role !== userRolesEnum.new_user)
     return null;
 
   const handleClose = () => {
     setModalState(modalStateEnum.close);
-  }
-
+  };
 
   const renderCompleted = () => {
     return (
@@ -67,7 +62,7 @@ export const RegistrationModals = ({user, language, updateUserRole}) => {
         dir={direction}
       >
         <DialogContent>
-          <DialogContentText>
+          <DialogContentText style={{ textAlign: 'center', fontSize: '2.5rem' }}>
             {t('registration.completed')}
           </DialogContentText>
         </DialogContent>
@@ -75,6 +70,7 @@ export const RegistrationModals = ({user, language, updateUserRole}) => {
           <Grid container justify="center">
             <Button
               onClick={handleClose}
+              style={{ textAlign: 'center', fontSize: '2rem' }}
             >
               {t('galaxyApp.close')}
             </Button>
@@ -97,21 +93,30 @@ export const RegistrationModals = ({user, language, updateUserRole}) => {
   );
 
   const renderGoToComplete = () => (
-    <Typography
-      className={classes.linkContainer}
-      onClick={() => setModalState(modalStateEnum.form)}
-      dir={direction}
-    >
-      {t('registration.youRegisteredAsGuest')}
-      <span className={classes.link}>{t('registration.youRegisteredAsGuestLink')}</span>
-    </Typography>
-  )
+    <>
+      <Typography
+        dir={direction}
+        style={{ textAlign: 'center', fontSize: '2.5rem' }}
+      >
+        {t('registration.youRegisteredAsGuest')}
+      </Typography>
+      <Grid container justify="center">
+        <Button
+          className={classes.button}
+          style={{ fontSize: '2rem' }}
+          onClick={() => setModalState(modalStateEnum.form)}
+        >
+          {t('registration.youRegisteredAsGuestLink')}
+        </Button>
+      </Grid>
+    </>
+  );
 
   return (
     <>
-      {role === userRolesEnum.new_user && renderGoToComplete()}
       {(modalState === modalStateEnum.form) && renderForm()}
       {renderCompleted()}
+      {role === userRolesEnum.new_user && renderGoToComplete()}
     </>
   );
 };
