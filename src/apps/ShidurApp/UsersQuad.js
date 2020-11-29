@@ -32,22 +32,23 @@ class UsersQuad extends Component {
           this.switchFour();
         }, col*1000);
       }
-    } else if(groups.length < prevProps.groups.length) {
-      let res = prevProps.groups.filter(o => !groups.some(v => v.room === o.room))[0];
-      for(let i=0; i<4; i++) {
-        if(vquad[i] && vquad[i].room === res.room) {
-          // Check question state
-          const {full_qst, full_col, full_group} = this.props;
-          if(full_qst && full_group.room === res.room) {
-            this.toFourGroup(i,full_group,() => {},true);
-            this.props.setProps({full_qst: false, full_col, full_group});
-          }
-          // FIXME: Does we need send leave room request?
-          this.switchProgram(i, true);
-          break;
-        }
-      }
     }
+    // else if(groups.length < prevProps.groups.length) {
+    //   let res = prevProps.groups.filter(o => !groups.some(v => v.room === o.room))[0];
+    //   for(let i=0; i<4; i++) {
+    //     if(vquad[i] && vquad[i].room === res.room) {
+    //       // Check question state
+    //       const {full_qst, full_col, full_group} = this.props;
+    //       if(full_qst && full_group.room === res.room) {
+    //         this.toFourGroup(i,full_group,() => {},true);
+    //         this.props.setProps({full_qst: false, full_col, full_group});
+    //       }
+    //       // FIXME: Does we need send leave room request?
+    //       this.switchProgram(i, true);
+    //       break;
+    //     }
+    //   }
+    // }
   };
 
   // quadCheckDup = () => {
