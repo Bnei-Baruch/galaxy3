@@ -24,7 +24,7 @@ export const resources = {
         openBroadcast: 'Open Broadcast',
         closeBroadcast: 'Close Broadcast',
         write: 'Write',
-        closeWrite:'Close Write',
+        closeWrite: 'Close Write',
         broadcast: 'Broadcast',
         layout: 'Layout',
         mute: 'Mute',
@@ -102,12 +102,18 @@ export const resources = {
         supportChat: 'Support',
         questions: 'Questions',
         send: 'Send',
-        sendQuestion:'Send Question',
+        sendQuestion: 'Send Question',
         enterMessage: 'Type your message',
         msgRoomInfo: 'Messages here will be seen by all the members of the ten connected now.',
         msgAdminInfo: 'Our support team will contact you here.',
+        moderator: 'Moderator: Selected questions related to the theam of the lesson will be asked during the broadcast',
+
+      },
+      questions: {
         enterQuestion: 'Type your question',
-        moderator:'Moderator: Selected questions related to the theam of the lesson will be asked during the broadcast'
+        userName: 'You name',
+        galaxyRoom: 'you group',
+        sendQuestion: 'send'
       },
       loginPage: {
         support: 'Help',

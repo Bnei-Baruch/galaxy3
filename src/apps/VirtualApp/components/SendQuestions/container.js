@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { useTranslation } from 'react-i18next';
 import { sendQuestion, getQuestions } from './api.sendQuestions';
 import { getDateString, isRTLString } from '../../../../shared/tools';
 import SendQuestion from './sendQuestions';
@@ -10,17 +9,18 @@ const SendQuestionContainer = ({ user = {} }) => {
 
   useEffect(() => {
     fetchData();
-  },[]);
+  }, []);
 
   useEffect(() => {
-    setUserInfo(mapUserInfo(user));
+    user && setUserInfo(mapUserInfo(user));
   }, [user]);
 
   const mapUserInfo = (data) => {
-    const { id, galaxyRoom, group, name } = user;
+    const { id, group, name } = data;
     return {
+      id, name,
+      galaxyRoom: group,
       gender: !group.match(/^W\s/) ? 'male' : 'female',
-      name, galaxyRoom, id
     };
   };
 
@@ -63,7 +63,7 @@ const SendQuestionContainer = ({ user = {} }) => {
     };
   };
 
-  return <SendQuestion questions={messages} send={send} />;
+  return <SendQuestion questions={messages} send={send} user={userInfo} />;
 };
 
 export default SendQuestionContainer;

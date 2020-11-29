@@ -1,15 +1,14 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Message } from 'semantic-ui-react';
 import { useTranslation } from 'react-i18next';
-import { Box, Button } from '@material-ui/core';
-import TextField from '@material-ui/core/TextField';
-import green from '@material-ui/core/colors/green';
-import ButtonBase from '@material-ui/core/ButtonBase';
+import { Box, Button, Typography, TextField } from '@material-ui/core';
 import { makeStyles } from '@material-ui/core/styles';
+import { grey, blue, green } from '@material-ui/core/colors';
 
 const useStyles = makeStyles({
   disabled: {
     opacity: 0.8,
+    background: `${green[500]} !important`
   },
   root: {
     color: 'white',
@@ -23,6 +22,11 @@ const SendQuestion = ({ questions, send, user = {} }) => {
   const [content, setContent]       = useState();
   const { t }                       = useTranslation();
   const classes                     = useStyles();
+
+  useEffect(() => {
+    (!name) && setName(user.name);
+    (!galaxyRoom) && setGalaxyRoom(user.galaxyRoom);
+  }, [user.name, user.galaxyRoom]);
 
   const handleNameChange = ({ target: { value } }) => setName(value);
 
@@ -39,14 +43,17 @@ const SendQuestion = ({ questions, send, user = {} }) => {
     const { askForMe, time, galaxyRoom: room, name: userName, direction, textAlign, content: msgContent } = q;
 
     return (
-      <p key={i} style={{ direction, textAlign }}>
-        <span style={{ display: 'block' }}>
-          <i style={{ color: 'grey' }}>{time}</i> -
-          <i style={{ color: 'grey' }}>{room}</i> -
-          <b style={{ color: !askForMe ? 'green' : 'blue' }}>{userName}</b>:
-        </span>
-        {msgContent}
-      </p>
+      <Typography key={i} style={{ direction, textAlign }}>
+        <Typography style={{ color: grey['500'] }}>
+          {time} - {room} -
+          <Typography display="inline" style={{ color: !askForMe ? green['A700'] : blue['300'] }}>
+            {userName}
+          </Typography>:
+        </Typography>
+        <Typography style={{ color: grey['800'] }}>
+          {msgContent}
+        </Typography>
+      </Typography>
     );
   };
 
@@ -60,7 +67,7 @@ const SendQuestion = ({ questions, send, user = {} }) => {
 
       <TextField
         fullWidth
-        label={t('name')}
+        label={t('questions.userName')}
         value={name}
         variant="outlined"
         onChange={handleNameChange}
@@ -68,7 +75,7 @@ const SendQuestion = ({ questions, send, user = {} }) => {
       />
       <TextField
         fullWidth
-        label={t('galaxyRoom')}
+        label={t('questions.galaxyRoom')}
         value={galaxyRoom}
         variant="outlined"
         onChange={handleGalaxyRoomChange}
@@ -77,7 +84,7 @@ const SendQuestion = ({ questions, send, user = {} }) => {
       <TextField
         fullWidth
         multiline
-        label={t('content')}
+        label={t('questions.enterQuestion')}
         value={content}
         variant="outlined"
         onChange={handleContentChange}
@@ -89,7 +96,7 @@ const SendQuestion = ({ questions, send, user = {} }) => {
         classes={{ ...classes }}
         disabled={!name || !galaxyRoom || !content}
       >
-        {t('virtualChat.sendQuestion')}
+        {t('questions.sendQuestion')}
       </Button>
 
     </Box>
