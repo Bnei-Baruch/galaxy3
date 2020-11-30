@@ -744,7 +744,7 @@ class VirtualClient extends Component {
         this.exitRoom(false, () => {
           if(error_code === USERNAME_ALREADY_EXIST_ERROR_CODE)
             alert(this.props.t('oldClient.error') + data.error);
-        }, true);
+        }, false);
       } else if(textroom === "success" && data.participants) {
         this.state.checkAlive.start(this.chat.state.chatroom, selected_room, user);
         Janus.log(":: Successfully joined to chat room: " + selected_room );
