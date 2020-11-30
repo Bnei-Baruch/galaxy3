@@ -26,7 +26,7 @@ import {
   VIDEO_360P_OPTION_VALUE,
   vsettings_list,
 } from '../../shared/consts';
-import { APP_JANUS_SRV_STR1, APP_STUN_SRV_STR, GEO_IP_INFO } from '../../shared/env';
+import {GEO_IP_INFO, APP_STUN_SRV_STR, APP_JANUS_SRV_STR1} from '../../shared/env';
 import platform from 'platform';
 import {TopMenu} from './components/TopMenu';
 import {withTranslation} from 'react-i18next';
@@ -54,23 +54,27 @@ import { GuaranteeDeliveryManager } from '../../shared/GuaranteeDelivery';
 import { toggleFullScreen, isFullScreen } from './FullScreenHelper';
 import {CheckAlive} from '../../shared/CheckAlive';
 
-import {AppBar, Badge, Box, Button as ButtonMD, ButtonGroup, Grid, IconButton, Toolbar, Typography} from '@material-ui/core';
-import {ChevronLeft, ChevronRight} from '@material-ui/icons';
+import {AppBar, Badge, Box, Button as ButtonMD, ButtonGroup, Grid, IconButton} from '@material-ui/core';
+import {ChevronLeft, ChevronRight, PlayCircleOutline} from '@material-ui/icons';
+import {grey, red} from '@material-ui/core/colors';
 
 import {AskQuestion, AudioMode, CloseBroadcast, Layout, Mute, MuteVideo, Vote, Fullscreen} from './buttons';
 import Settings from './settings/Settings';
 import SettingsJoined from './settings/SettingsJoined';
 import HomerLimud from './components/HomerLimud';
 import {Help} from './components/Help';
+import {RegistrationModals} from './components/RegistrationModals';
 import {getUserRole, userRolesEnum} from "../../shared/enums";
 import KliOlamiStream from './components/KliOlamiStream';
 import KliOlamiToggle from './buttons/KliOlamiToggle';
+import Toolbar from '@material-ui/core/Toolbar';
+import Typography from '@material-ui/core/Typography';
 
 const sortAndFilterFeeds = (feeds) => feeds
   .filter(feed => !feed.display.role.match(/^(ghost|guest)$/))
   .sort((a, b) => a.display.timestamp - b.display.timestamp);
 
-const userFeeds = (feeds) => feeds.filter(feed => feed.display.role === 'user');
+const userFeeds = (feeds) => feeds.filter(feed => feed.display.role === userRolesEnum.user);
 
 const isUseNewDesign = new URL(window.location.href).searchParams.has('new_design');
 
@@ -157,6 +161,14 @@ class VirtualClient extends Component {
     if (this.state.room && !prevState.room && this.state.shidur && !this.sourceLoading) {
       this.state.virtualStreamingJanus.unmuteAudioElement();
     }
+    if (
+      (!this.state.sourceLoading && this.state.shidurForGuestReady && !prevState.shidurForGuestReady)
+      || (this.state.shidurForGuestReady && !this.state.sourceLoading && prevState.sourceLoading)
+    ) {
+      this.state.virtualStreamingJanus.setVideo(this.state.videos);
+      this.state.virtualStreamingJanus.audioElement.play();
+      this.state.virtualStreamingJanus.unmuteAudioElement();
+    }
     if (this.state.videoroom !== prevState.videoroom ||
       this.state.localVideoTrack !== prevState.localVideoTrack ||
       this.state.localAudioTrack !== prevState.localAudioTrack ||
@@ -177,6 +189,25 @@ class VirtualClient extends Component {
     if (isMobile) {
       window.location = '/userm';
     }
+
+		// Crisp support.
+		// TODO: Crisp language will change only after reload.
+		// const { i18n } = this.props;
+    // window.$crisp = [];
+    // window.CRISP_WEBSITE_ID = "7feb1b3b-d46d-409c-b8ee-7a69ad7db06c";
+		// window.CRISP_RUNTIME_CONFIG = {
+		// 	locale : i18n.language,
+		// };
+    //
+    // (function() {
+    //   var d = document;
+    //   var s = d.createElement("script");
+    //
+    //   s.src = "https://client.crisp.chat/l.js";
+    //   s.async = 1;
+    //   d.getElementsByTagName("head")[0].appendChild(s);
+    // })();
+
   }
 
   componentWillUnmount() {
@@ -202,7 +233,7 @@ class VirtualClient extends Component {
       window.location = window.location.pathname + "?" + params.toString();
     }
 
-    if (isUseNewDesign && user.role === userRolesEnum.user) {
+    if (false && isUseNewDesign && user.role === userRolesEnum.user) {
       const params = new URLSearchParams(window.location.search)
       params.delete('new_design')
       window.location = window.location.pathname + "?" + params.toString();
@@ -742,7 +773,7 @@ class VirtualClient extends Component {
   exitRoom = (reconnect, callback, error) => {
     captureMessage('Exit Room', {source: 'VirtualClient', reconnect, error});
     this.setState({delay: true});
-    if(this.state.user.role === "user") {
+    if (this.state.user.role === userRolesEnum.user) {
       wkliLeave(this.state.user);
     }
     clearInterval(this.state.upval);
@@ -761,7 +792,7 @@ class VirtualClient extends Component {
 			});
 
 
-    let {videoroom, remoteFeed, protocol, janus, room} = this.state;
+    let {videoroom, remoteFeed, protocol, janus, room, shidur, virtualStreamingJanus} = this.state;
     if(remoteFeed) remoteFeed.detach();
     if(videoroom) videoroom.send({"message": {request: 'leave', room}});
     let pl = {textroom: 'leave', transaction: Janus.randomString(12), 'room': PROTOCOL_ROOM};
@@ -770,6 +801,18 @@ class VirtualClient extends Component {
     if (this.chat && !error) {
       this.state.checkAlive.stop();
       this.chat.exitChatRoom(room);
+    }
+
+    if (shidur) {
+      virtualStreamingJanus.destroy({
+        success: () => {
+          console.log('Virtual streaming destroyed on exit room.');
+        },
+        error: (error) => {
+          console.log('Error destroying VirtualStreaming on exit room', error);
+          captureMessage('Error destroying VirtualStreaming on exit room', {source: 'VirtualClient', err: error}, 'error');
+        },
+      });
     }
 
     setTimeout(() => {
@@ -1315,7 +1358,7 @@ class VirtualClient extends Component {
   handleQuestion = () => {
     const {question} = this.state;
     const user = Object.assign({}, this.state.user);
-    if (user.role === "ghost") return;
+    if (user.role === userRolesEnum.ghost) return;
     this.makeDelay();
     this.questionState(user, question);
   };
@@ -1364,7 +1407,7 @@ class VirtualClient extends Component {
     const {videoroom} = this.state;
     if (videoroom) {
       const user = Object.assign({}, this.state.user);
-      if (user.role === "ghost") return;
+      if (user.role === userRolesEnum.ghost) return;
       this.makeDelay();
       user.camera = cammuted;
       api.updateUser(user.id, user)
@@ -1771,6 +1814,8 @@ class VirtualClient extends Component {
 
     const { user, asideMsgCounter, leftAsideName, rightAsideName, monitoringData, net_status, isOpenTopMenu } = this.state;
 
+    const notApproved = user && user.role !== userRolesEnum.user;
+
     return (
 
       <AppBar color="default" position="static">
@@ -1780,6 +1825,7 @@ class VirtualClient extends Component {
             openSettings={() => this.setState({ isSettings: true })}
             open={isOpenTopMenu}
             setOpen={(isOpen) => this.setState({ isOpenTopMenu: isOpen })}
+            notApproved={notApproved}
           />
           <ButtonMD
             color="primary"
@@ -1891,6 +1937,7 @@ class VirtualClient extends Component {
     } else if (leftAsideName === 'drawing') {
       content = (
         <iframe
+          title={'classboard'}
           src={`https://www.kab.tv/classboard/classboard.php`}
           style={{ width: '100%', height: '100%', padding: '1rem' }}
           frameBorder="0"></iframe>
@@ -1936,6 +1983,9 @@ class VirtualClient extends Component {
             muteOtherCams,
             kliOlamiAttached
           }        = this.state;
+
+    const notApproved = user && user.role !== userRolesEnum.user;
+
     if ((!sourceLoading && isKliOlamiShown && !muteOtherCams)) {
       noOfVideos += (layout === 'equal') ? 1 : (layout === 'double') ? 4 : 0;
     }
@@ -1952,6 +2002,12 @@ class VirtualClient extends Component {
     return (
       <div className={classNames('vclient', { 'vclient--chat-open': chatVisible })}>
         {this.renderTopBar(isDeb)}
+        <RegistrationModals
+          user={user}
+          language={i18n.language}
+          updateUserRole={this.updateUserRole.bind(this)}
+        />
+
 
         <Grid container className="vclient__main">
           {this.renderLeftAside()}
@@ -1968,22 +2024,22 @@ class VirtualClient extends Component {
 
               <div className="broadcast-panel">
                 <div className="broadcast__wrapper">
-                  {layout === 'split' && source}
-                  {layout === 'split' && kliOlami}
+                  {layout === 'split' && !notApproved && source}
+                  {layout === 'split' && !notApproved && kliOlami}
                 </div>
               </div>
 
               <div className="videos-panel">
                 <div className="videos__wrapper">
-                  {((layout === 'equal' || layout === 'double')) && source}
-                  {((layout === 'equal' || layout === 'double')) && kliOlami}
-                  {remoteVideos}
+                  {((layout === 'equal' || layout === 'double') || notApproved) && source}
+                  {((layout === 'equal' || layout === 'double') || notApproved) && kliOlami}
+                  {!notApproved && remoteVideos}
                 </div>
               </div>
 
             </div>
             {
-              this.renderBottomBar(layout, otherFeedHasQuestion)
+              !notApproved && this.renderBottomBar(layout, otherFeedHasQuestion)
             }
           </Grid>
 
@@ -1993,6 +2049,10 @@ class VirtualClient extends Component {
       </div>
     );
   };
+
+  updateUserRole = () => {
+    getUser(this.checkPermission)
+  }
 
   setIsRoomChat = (isRoomChat) => this.setState({ isRoomChat });
 
@@ -2033,7 +2093,8 @@ class VirtualClient extends Component {
             videos,
             premodStatus,
             isSettings,
-            audios
+            audios,
+            shidurForGuestReady
           } = this.state;
 
     const { video_device } = media.video;
@@ -2049,26 +2110,40 @@ class VirtualClient extends Component {
     }
 
     const { t, i18n } = this.props;
+    const notApproved = user && user.role !== userRolesEnum.user;
     const width       = '134';
     const height      = '100';
     const layout      = (room === '' || !shidur || !attachedSource) ? 'equal' : currentLayout;
 
-    let source = room !== '' && shidur &&
-      <VirtualStreaming
-        virtualStreamingJanus={virtualStreamingJanus}
-        attached={attachedSource}
-        closeShidur={this.toggleShidur}
-        setVideo={(v) => this.setState({ videos: v })}
-        setDetached={() => {
-          this.setState({ attachedSource: false });
-        }}
-        setAttached={() => {
-          this.setState({ attachedSource: true });
-        }}
-        videos={videos}
-        audios={audios}
-      />;
+    let source;
 
+    //in chrome must be any event for audio autorun https://developers.google.com/web/updates/2017/09/autoplay-policy-changes
+    if (!shidurForGuestReady && notApproved) {
+      source = (
+        <Grid container justify="center" style={{height: "100%", fontSize: '100em'}}>
+          <IconButton onClick={() => this.setState({shidurForGuestReady: true})}>
+            <PlayCircleOutline style={{fontSize: '20em', color: grey[200]}}/>
+          </IconButton>
+        </Grid>
+      );
+    } else if ((room !== '' && shidur) || notApproved) {
+      source = (
+        <VirtualStreaming
+          virtualStreamingJanus={virtualStreamingJanus}
+          attached={attachedSource}
+          closeShidur={this.toggleShidur}
+          setVideo={(v) => this.setState({ videos: v })}
+          setDetached={() => {
+            this.setState({ attachedSource: false });
+          }}
+          setAttached={() => {
+            this.setState({ attachedSource: true });
+          }}
+          videos={videos}
+          audios={audios}
+        />
+      );
+    }
     let rooms_list = rooms.map((data, i) => {
       const { room, description, num_users } = data;
       return ({ key: i, text: description, description: num_users, value: room });
@@ -2125,7 +2200,7 @@ class VirtualClient extends Component {
         break;
       }
       content = (<div className={classNames('vclient', { 'vclient--chat-open': chatVisible })}>
-        <div className="vclient__toolbar">
+        <div className={`vclient__toolbar ${!isUseNewDesign ? 'old' : ''}`}>
           <Input>
             <Select
               className="room-selection"
@@ -2232,8 +2307,7 @@ class VirtualClient extends Component {
               on='click'
               closeIcon
               className='homet-limud'>
-              <iframe src={`https://groups.google.com/forum/embed/?place=forum/bb-study-materials&showpopout=true&showtabs=false&parenturl=${encodeURIComponent(window.location.href)}`}
-                      style={{ width: '100%', height: '60vh', padding: '1rem' }} frameBorder="0"></iframe>
+              <HomerLimud />
             </Modal>
           </Menu>
           <Menu icon='labeled' secondary size="mini">
@@ -2378,8 +2452,8 @@ class VirtualClient extends Component {
         {
           user
           && !isMobile
-          //&& false
-          && (isUseNewDesign && Boolean(room))
+          && isUseNewDesign
+          && Boolean(room)
           && (
             <SettingsJoined
               userDisplay={user.display}
@@ -2402,7 +2476,7 @@ class VirtualClient extends Component {
         {
           user
           && !isMobile
-          //&& false
+          && !notApproved
           && (isUseNewDesign && !Boolean(room))
           && (
             <Settings

@@ -32,8 +32,7 @@
     "semantic-ui-css": "^2.4.0",
     "semantic-ui-react": "^0.88.2",
     "ua-parser-js": "^0.7.21",
-    "webrtc-adapter": "^6.4.0",
-    "react-full-screen": "^0.3.1"
+    "webrtc-adapter": "^6.4.0"
   },
   "scripts": {
     "start": "react-scripts start",
