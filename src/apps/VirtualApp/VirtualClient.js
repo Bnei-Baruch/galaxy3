@@ -26,7 +26,7 @@ import {
   VIDEO_360P_OPTION_VALUE,
   vsettings_list,
 } from '../../shared/consts';
-import {GEO_IP_INFO} from '../../shared/env';
+import { APP_JANUS_SRV_STR1, APP_STUN_SRV_STR, GEO_IP_INFO } from '../../shared/env';
 import platform from 'platform';
 import {TopMenu} from './components/TopMenu';
 import {withTranslation} from 'react-i18next';
