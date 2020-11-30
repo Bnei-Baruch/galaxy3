@@ -1,8 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  Dropdown,
-} from 'semantic-ui-react';
+import {Dropdown} from 'semantic-ui-react';
 import {updateSentryUser} from '../shared/sentry';
 
 

@@ -3,6 +3,25 @@
       @content;
     }
   }
+@mixin spacing($i:1){
+    margin: 0 8px*$i !important;
+}
+
+// material fixes
+
+.MuiButtonGroup-groupedHorizontal:not(:first-child) .MuiButton-root{
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+}
+
+.MuiButtonGroup-groupedHorizontal:not(:last-child) .MuiButton-root{
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+// end of material fixes
+
+
 .vclient {
     width: 100vw;
     height: 100vh;
@@ -12,30 +31,46 @@
         border-radius:.28571429rem 0 0 .28571429rem!important;
     }
     &__toolbar {
+        .MuiToolbar-root{
+            display: flex;
+            > * {
+                @include spacing(10);
+            }
+        }
+        .MuiTypography-root {
+            flex-grow: 1;
+            text-align: center;
+        }
+
+      &.old {
         display: flex;
         align-items: center;
-        // padding: .8rem .5rem;
-        flex-wrap:wrap;
+        padding: .8rem .5rem;
+        flex-wrap: wrap;
 
         & > .menu,
         & > .input {
-            margin: .15rem .5rem !important;
+          margin: .15rem .5rem !important;
         }
+
         & > .menu {
-            .item {
-                padding:.5rem !important;
-                margin: 0 !important;
-            }
+          .item {
+            padding: .5rem !important;
+            margin: 0 !important;
+          }
         }
-        .floating.label{
-            margin:0!important;
-            left: auto;
-            right: 2px;
-            top: 2px;
+
+        .floating.label {
+          margin: 0 !important;
+          left: auto;
+          right: 2px;
+          top: 2px;
         }
+
         .menu:nth-child(2) {
-            flex: 1 0 auto;
+          flex: 1 0 auto;
         }
+      }
     }
 
     &__main {
@@ -78,6 +113,41 @@
      }
 
 }
+.top-toolbar,
+.bottom-toolbar {
+    display: flex;
+    &__item {
+        @include spacing();
+        &:first-child{
+            margin-left: 0!important;
+        }
+        &:last-child{
+            margin-right: 0!important
+        }
+        // background:rgba(255,0,0,.2);
+    }
+    &__title {
+        flex-grow: 1;
+    }
+    &__toggle {
+        button {
+            border: 1px solid rgba(0, 0, 0, 0.23)!important;
+            padding: 5px 9px!important;
+        }
+    }
+}
+.bottom-toolbar {
+    // background: black;
+    &__item{
+        &:nth-child(2),
+        &:nth-child(3) {
+            flex-grow: 1;
+        }
+        &:nth-child(2){
+            justify-content: flex-end;
+        }
+    }
+}
 .videos-panel {
     // display: flex;
     background:#000;
@@ -100,7 +170,7 @@
 }
 
 .broadcast-panel {
-    
+
     background:#000;
     // padding: 1.6em;
     position: relative;

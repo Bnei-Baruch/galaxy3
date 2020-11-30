@@ -307,6 +307,17 @@ Janus.init = function(options) {
 				}
 			}
 		};
+		Janus.detachMediaStream = function(element) {
+			try {
+				element.srcObject = null;
+			} catch (e) {
+				try {
+					element.src = null;
+				} catch (e) {
+					Janus.error("Error deataching stream from element");
+				}
+			}
+		};
 		Janus.reattachMediaStream = function(to, from) {
 			try {
 				to.srcObject = from.srcObject;

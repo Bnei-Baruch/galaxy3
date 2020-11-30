@@ -6,3 +6,4 @@ export * from './Mute';
 export * from './MuteVideo';
 export * from './OpenChat';
 export * from './Vote';
+export * from './Fullscreen';
