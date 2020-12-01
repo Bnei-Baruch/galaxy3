@@ -1,19 +1,19 @@
-import React, {memo} from 'react';
-import {useTranslation} from 'react-i18next';
+import React, { memo } from 'react';
+import { useTranslation } from 'react-i18next';
 
-import {Button, Checkbox, FormControlLabel, Modal, Grid, Typography, TextField, MenuItem} from '@material-ui/core';
+import { Button, Checkbox, FormControlLabel, Modal, Grid, Typography, TextField, MenuItem } from '@material-ui/core';
 import Autocomplete from '@material-ui/lab/Autocomplete';
 import makeStyles from '@material-ui/core/styles/makeStyles';
 import green from '@material-ui/core/colors/green';
 
 import MyMedia from './MyMedia';
 import CheckMySelf from './CheckMySelf';
-import {vsettings_list} from '../../../shared/consts';
+import { vsettings_list } from '../../../shared/consts';
 import LogoutDropdown from './LogoutDropdown';
 
-const settingsList = vsettings_list.map(({key, text, value}) => ({key, text, value: JSON.stringify(value)}));
-const mapDevice = ({label, deviceId}) => ({text: label, value: deviceId});
-const mapOption = ({text, value}) => {
+const settingsList = vsettings_list.map(({ key, text, value }) => ({ key, text, value: JSON.stringify(value) }));
+const mapDevice    = ({ label, deviceId }) => ({ text: label, value: deviceId });
+const mapOption    = ({ text, value }) => {
   return (
     <MenuItem key={value} value={value} button>
       {text}
@@ -32,31 +32,39 @@ const useStyles = makeStyles(() => ({
     alignItems: 'center',
     justifyContent: 'center',
     border: 'none'
-  }
+  },
+  submitRoot: {
+    background: green[500],
+    height: '100%'
+  },
+  submitDisabled: {
+    opacity: '0.8'
+  },
+
 }));
 
 const Settings = (props) => {
   const classes = useStyles();
 
-  const {t} = useTranslation();
+  const { t } = useTranslation();
   const {
-    audio,
-    video,
-    rooms,
-    isAudioMode,
-    initClient,
-    selectedRoom,
-    selectRoom,
-    setAudioDevice,
-    setVideoDevice,
-    settingsChange,
-    audioModeChange,
-    videoLength,
-    videoSettings,
-    audioDevice = audio.devices[0]?.deviceId,
-    videoDevice = video?.devices[0]?.deviceId,
-    userDisplay
-  } = props;
+          audio,
+          video,
+          rooms,
+          isAudioMode,
+          initClient,
+          selectedRoom,
+          selectRoom,
+          setAudioDevice,
+          setVideoDevice,
+          settingsChange,
+          audioModeChange,
+          videoLength,
+          videoSettings,
+          audioDevice = audio.devices[0]?.deviceId,
+          videoDevice = video?.devices[0]?.deviceId,
+          userDisplay
+        }     = props;
 
   const renderCameras = () => {
     if (!videoLength)
@@ -119,7 +127,7 @@ const Settings = (props) => {
         options={rooms}
         getOptionLabel={(option) => option.description}
         renderOption={
-          ({description, num_users}) => (
+          ({ description, num_users }) => (
             <Grid container>
               <Grid item xs={11}>{description}</Grid>
               <Grid item xs={1}>{num_users}</Grid>
@@ -164,14 +172,14 @@ const Settings = (props) => {
       <Grid container spacing={4} className={classes.content}>
         <Grid item xs={9}>
           <Typography variant="h3" display={'block'}>
-            {t('settings.helloUser', {name: userDisplay})}
+            {t('settings.helloUser', { name: userDisplay })}
           </Typography>
           <Typography>
             {t('settings.beforeConnecting')}
           </Typography>
         </Grid>
-        <Grid item xs={3} style={{justifyContent: 'flex-end', display: 'flex', alignItems: 'center'}}>
-          <LogoutDropdown display={userDisplay}/>
+        <Grid item xs={3} style={{ justifyContent: 'flex-end', display: 'flex', alignItems: 'center' }}>
+          <LogoutDropdown display={userDisplay} />
         </Grid>
         <Grid item xs={4}>
           {renderCameras()}
@@ -183,10 +191,10 @@ const Settings = (props) => {
           {renderSounds()}
         </Grid>
         <Grid item xs={8}>
-          {<MyMedia cammuted={false} video={video}/>}
+          {<MyMedia cammuted={false} video={video} />}
         </Grid>
         <Grid item xs={4}>
-          {<CheckMySelf device={audioDevice}/>}
+          {<CheckMySelf device={audioDevice} />}
         </Grid>
         <Grid item xs={12}>
           <FormControlLabel
@@ -208,8 +216,12 @@ const Settings = (props) => {
           <Button
             variant="contained"
             color="primary"
-            style={{background: green[500], height: '100%'}}
+            classes={{
+              root: classes.submitRoot,
+              disabled: classes.submitDisabled
+            }}
             size="large"
+            disabled={!selectedRoom}
             onClick={handleInitClient}>
             {t('oldClient.joinRoom')}
           </Button>
@@ -223,7 +235,7 @@ const Settings = (props) => {
       open={true}
       disableBackdropClick={true}
       BackdropProps={{
-        style: {backgroundColor: 'white'}
+        style: { backgroundColor: 'white' }
       }}
       className={classes.modal}
     >
