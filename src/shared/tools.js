@@ -297,3 +297,27 @@ export const wkliLeave = (user) => {
         body:  JSON.stringify(request)
     }).then().catch(ex => console.log(`Leave User:`, ex));
 };
+
+//chat tools
+export const urlRegex    = /(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#/%?=~_|!:,.;()]*[-A-Z0-9+&@#/%=~_|()])/ig;
+export const isRTLChar   = /[\u0590-\u07FF\u200F\u202B\u202E\uFB1D-\uFDFD\uFE70-\uFEFC]/;
+export const isAscii     = /[\x00-\x7F]/;
+export const isAsciiChar = /[a-zA-Z]/;
+
+export const isRTLString = (text) => {
+  if (typeof text === 'undefined') {
+    return 0;
+  }
+  let rtl = 0;
+  let ltr = 0;
+  for (let i = 0; i < text.length; i++) {
+    if (!isAscii.test(text[i]) || isAsciiChar.test(text[i])) {
+      if (isRTLChar.test(text[i])) {
+        rtl++;
+      } else {
+        ltr++;
+      }
+    }
+  }
+  return rtl > ltr;
+};

@@ -104,7 +104,14 @@ export const resources = {
         send: 'Send',
         enterMessage: 'Type your message',
         msgRoomInfo: 'Messages here will be seen by all the members of the ten connected now.',
-        msgAdminInfo: 'Our support team will contact you here.'
+        msgAdminInfo: 'Our support team will contact you here.',
+        moderator: 'Moderator: Selected questions related to the theam of the lesson will be asked during the broadcast',
+      },
+      questions: {
+        enterQuestion: 'My question is...',
+        userName: 'My name',
+        galaxyRoom: 'Ten name',
+        sendQuestion: 'SEND A QUESTION'
       },
       loginPage: {
         support: 'Help',
@@ -279,6 +286,12 @@ export const resources = {
         enterMessage: 'Escriba su mensaje',
         msgRoomInfo: 'Los mensajes de aquí serán vistos por todos los miembros de la decena que están conectados ahora.',
         msgAdminInfo: 'Nuestro equipo de soporte te contactará aquí'
+      },
+      questions: {
+        enterQuestion: 'Mi pregunta es...',
+        userName: 'Mi nombre',
+        galaxyRoom: 'Nombre de decena',
+        sendQuestion: 'Enviar una pregunta'
       },
       loginPage: {
         support: 'Ayuda',
@@ -455,6 +468,12 @@ export const resources = {
         msgRoomInfo: 'ההודעות כאן  יוצגו לכל חברי העשיריה המחוברים כעת.',
         msgAdminInfo: 'צוות התמיכה שלנו יצור איתכם קשר כאן.'
       },
+      questions: {
+        enterQuestion: 'השאלה שלי היא...',
+        userName: 'השם שלי',
+        galaxyRoom: 'שם העשיריה',
+        sendQuestion: 'שלח שאלה'
+      },
       loginPage: {
         support: 'עזרה',
         galaxy: 'גלאקסי',
@@ -628,6 +647,12 @@ export const resources = {
         enterMessage: 'Введите сообщение',
         msgRoomInfo: 'Сообщения будут видны всем подключенным участникам Десятки.',
         msgAdminInfo: 'Наша команда технической поддержки свяжется с Вами здесь.'
+      },
+      questions: {
+        enterQuestion: 'У меня вопрос ...',
+        userName: 'Мое имя',
+        galaxyRoom: 'Название десятки',
+        sendQuestion: 'Отправить вопрос'
       },
       loginPage: {
         support: 'Помощь',

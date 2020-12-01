@@ -62,7 +62,8 @@ import {AskQuestion, AudioMode, CloseBroadcast, Layout, Mute, MuteVideo, Vote, F
 import Settings from './settings/Settings';
 import SettingsJoined from './settings/SettingsJoined';
 import HomerLimud from './components/HomerLimud';
-import {Help} from './components/Help';
+import { Help } from './components/Help';
+import SendQuestionContainer from './components/SendQuestions/container';
 import {RegistrationModals} from './components/RegistrationModals';
 import {getUserRole, userRolesEnum} from "../../shared/enums";
 import KliOlamiStream from './components/KliOlamiStream';
@@ -1789,6 +1790,11 @@ class VirtualClient extends Component {
         />
       </Box>
     );
+
+    if (rightAsideName === 'question') {
+      content = (<SendQuestionContainer user={user} />);
+    }
+
     return (
       <Grid item xs={rightAsideName ? 3 : false}>
         {content}
