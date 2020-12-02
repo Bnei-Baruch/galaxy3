@@ -138,6 +138,7 @@ class VirtualClient extends Component {
     net_status: 1,
     keepalive: null,
     muteOtherCams: false,
+    muteMyCamOnInit: false,
     videos: Number(localStorage.getItem('vrt_video')) || 1,
     premodStatus: false,
     gdm: null,
@@ -340,7 +341,7 @@ class VirtualClient extends Component {
         alert(t('oldClient.unifiedPlanNotSupported'));
       }
     }, err => {
-      this.exitRoom(true, () => {
+      this.exitRoom(/* reconnect= */ true, () => {
         console.error("[User] error initializing janus", err);
         this.reinitClient(retry);
       });
@@ -357,10 +358,10 @@ class VirtualClient extends Component {
     console.error("[User] reinitializing try: ", retry);
     if(retry < 10) {
       setTimeout(() => {
-        this.initClient(true, retry);
+        this.initClient(/* reconnect= */ true, retry);
       }, 5000);
     } else {
-      this.exitRoom(false, () => {
+      this.exitRoom(/* reconnect= */ false, () => {
         console.error("[User] reinitializing failed after: " + retry + " retries");
         alert(this.props.t('oldClient.networkSettingsChanged'));
       });
@@ -547,9 +548,9 @@ class VirtualClient extends Component {
       if (count >= 60) {
         clearInterval(chk);
         console.debug(" :: ICE Filed: Reconnecting... ")
-        this.exitRoom(true, () => {
+        this.exitRoom(/* reconnect= */ true, () => {
           console.error("ICE Disconnected");
-          this.initClient(true);
+          this.initClient(/* reconnect= */ true);
         });
       }
     }, 1000);
@@ -742,7 +743,7 @@ class VirtualClient extends Component {
           console.log("Chatroom error: ", data, error_code);
           captureMessage('Chatroom error: init', {source: "Textroom", err: data});
         }
-        this.exitRoom(false, () => {
+        this.exitRoom(/* reconnect= */ false, () => {
           if(error_code === USERNAME_ALREADY_EXIST_ERROR_CODE)
             alert(this.props.t('oldClient.error') + data.error);
         }, false);
@@ -764,7 +765,7 @@ class VirtualClient extends Component {
           error: (error) => {
             console.error(error);
             captureException(error, {source: 'Videoroom'});
-            this.exitRoom(false);
+            this.exitRoom(/* reconnect= */ false);
           }
         })
       }
@@ -773,7 +774,7 @@ class VirtualClient extends Component {
 
   exitRoom = (reconnect, callback, error) => {
     captureMessage('Exit Room', {source: 'VirtualClient', reconnect, error});
-    this.setState({delay: true});
+    this.setState({delay: true, muteMyCamOnInit: reconnect && this.state.cammuted});
     if (this.state.user.role === userRolesEnum.user) {
       wkliLeave(this.state.user);
     }
@@ -826,7 +827,7 @@ class VirtualClient extends Component {
         this.state.virtualStreamingJanus.unmuteAudioElement();
       }
       this.setState({
-        cammuted: false, muted: false, question: false,
+        cammuted: this.state.muteMyCamOnInit, muted: false, question: false,
         feeds: [], mids: [],
         localAudioTrack: null, localVideoTrack: null, upval: null,
         remoteFeed: null, videoroom: null, protocol: null, janus: null,
@@ -933,7 +934,7 @@ class VirtualClient extends Component {
           let feeds_count = userFeeds(feeds).length;
           if (feeds_count > 25) {
             alert(t('oldClient.maxUsersInRoom'));
-            this.exitRoom(false);
+            this.exitRoom(/* reconnect= */ false);
           }
 
           Janus.debug('Got a list of available publishers/feeds:');
@@ -979,7 +980,9 @@ class VirtualClient extends Component {
           if (this.state.muteOtherCams) {
             this.setState({videos: NO_VIDEO_OPTION_VALUE});
             this.state.virtualStreamingJanus.setVideo(NO_VIDEO_OPTION_VALUE);
-            this.camMute(/* cammuted= */ false);
+          }
+          if (this.state.cammuted !== this.state.muteMyCamOnInit) {
+            this.camMute(!this.state.muteMyCamOnInit);
           }
         } else if (msg['publishers'] !== undefined && msg['publishers'] !== null) {
           // User just joined the room.
@@ -1262,13 +1265,13 @@ class VirtualClient extends Component {
     const {user, cammuted} = this.state;
     const {type,id} = data;
     if (type === 'client-reconnect' && user.id === id) {
-      this.exitRoom(true, () => {
-        this.initClient(true);
+      this.exitRoom(/* reconnect= */ true, () => {
+        this.initClient(/* reconnect= */ true);
       });
     } else if (type === 'client-reload' && user.id === id) {
       window.location.reload();
     } else if (type === 'client-disconnect' && user.id === id) {
-      this.exitRoom(false);
+      this.exitRoom(/* reconnect= */ false);
     } else if(type === "client-kicked" && user.id === id) {
       kc.logout();
       updateSentryUser(null);
@@ -2221,9 +2224,9 @@ class VirtualClient extends Component {
               //onClick={this.getRoomList}
               onChange={(e, { value }) => this.selectRoom(value)} />
             {room ?
-              <Button attached='right' negative icon='sign-out' disabled={delay} onClick={() => this.exitRoom(false)} /> : ''}
+              <Button attached='right' negative icon='sign-out' disabled={delay} onClick={() => this.exitRoom(/* reconnect= */ false)} /> : ''}
             {!room ?
-              <Button attached='right' primary icon='sign-in' loading={delay} disabled={delay || !selected_room} onClick={() => this.initClient(false)} /> : ''}
+              <Button attached='right' primary icon='sign-in' loading={delay} disabled={delay || !selected_room} onClick={() => this.initClient(/* reconnect= */ false)} /> : ''}
           </Input>
           {!isDeb ? null : (
             <Input>
