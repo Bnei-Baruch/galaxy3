@@ -2300,8 +2300,8 @@ class VirtualClient extends Component {
             >
               <Popup.Content>
                 <Button.Group>
-                  <iframe src={`https://vote.kli.one/button.html?answerId=1&userId=${user && user.id}`} width="40px" height="36px" frameBorder="0" title="vote_1"></iframe>
-                  <iframe src={`https://vote.kli.one/button.html?answerId=2&userId=${user && user.id}`} width="40px" height="36px" frameBorder="0" title="vote_2"></iframe>
+                  <iframe title={`${t('oldClient.vote')} 1`} src={`https://vote.kli.one/button.html?answerId=1&userId=${user && user.id}`} width="40px" height="36px" frameBorder="0"></iframe>
+                  <iframe title={`${t('oldClient.vote')} 1`} src={`https://vote.kli.one/button.html?answerId=2&userId=${user && user.id}`} width="40px" height="36px" frameBorder="0"></iframe>
                 </Button.Group>
               </Popup.Content>
             </Popup>
