@@ -56,7 +56,7 @@ import {CheckAlive} from '../../shared/CheckAlive';
 
 import {AppBar, Badge, Box, Button as ButtonMD, ButtonGroup, Grid, IconButton} from '@material-ui/core';
 import {ChevronLeft, ChevronRight, PlayCircleOutline} from '@material-ui/icons';
-import {grey, red} from '@material-ui/core/colors';
+import {grey} from '@material-ui/core/colors';
 
 import {AskQuestion, AudioMode, CloseBroadcast, Layout, Mute, MuteVideo, Vote, Fullscreen} from './buttons';
 import Settings from './settings/Settings';
@@ -1618,14 +1618,11 @@ class VirtualClient extends Component {
             muted,
             question,
             room,
-            selected_room,
-            selftest,
             shidur,
             sourceLoading,
             user,
             premodStatus,
             media,
-            fullScreenHelper,
             isKliOlamiShown
           }     = this.state;
 
@@ -1808,7 +1805,6 @@ class VirtualClient extends Component {
 
   handleAsideResize = (incr) => {
     const { leftAsideSize, rightAsideName, leftAsideName } = this.state;
-    const _state                                           = {};
 
     const size = incr ? leftAsideSize + 1 : leftAsideSize - 1;
 
@@ -1822,12 +1818,11 @@ class VirtualClient extends Component {
   renderTopBar = (isDeb) => {
     const { t } = this.props;
 
-    const { user, asideMsgCounter, leftAsideName, rightAsideName, monitoringData, net_status, isOpenTopMenu } = this.state;
+    const { user, asideMsgCounter, leftAsideName, rightAsideName, isOpenTopMenu } = this.state;
 
     const notApproved = user && user.role !== userRolesEnum.user;
 
     return (
-
       <AppBar color="default" position="static">
         <Toolbar className="top-toolbar">
           <TopMenu
@@ -1988,7 +1983,6 @@ class VirtualClient extends Component {
             leftAsideSize,
             leftAsideName,
             sourceLoading,
-            virtualStreamingJanus,
             isKliOlamiShown,
             muteOtherCams,
             kliOlamiAttached
@@ -2306,8 +2300,8 @@ class VirtualClient extends Component {
             >
               <Popup.Content>
                 <Button.Group>
-                  <iframe src={`https://vote.kli.one/button.html?answerId=1&userId=${user && user.id}`} width="40px" height="36px" frameBorder="0"></iframe>
-                  <iframe src={`https://vote.kli.one/button.html?answerId=2&userId=${user && user.id}`} width="40px" height="36px" frameBorder="0"></iframe>
+                  <iframe src={`https://vote.kli.one/button.html?answerId=1&userId=${user && user.id}`} width="40px" height="36px" frameBorder="0" title="vote_1"></iframe>
+                  <iframe src={`https://vote.kli.one/button.html?answerId=2&userId=${user && user.id}`} width="40px" height="36px" frameBorder="0" title="vote_2"></iframe>
                 </Button.Group>
               </Popup.Content>
             </Popup>
