@@ -1,110 +1,85 @@
-import React, {useEffect, useState} from 'react';
-import {useTranslation} from 'react-i18next';
+import React, { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import makeStyles from '@material-ui/core/styles/makeStyles';
-import {Button, Modal, Typography, CircularProgress} from '@material-ui/core';
+import { Button, Typography } from '@material-ui/core';
 
-import {getMediaStream, recordAudio, sleep} from '../../../shared/tools';
+import { micLevel, recordAudio, sleep } from '../../../shared/tools';
 import Box from '@material-ui/core/Box';
+import { FiberManualRecord, PlayCircleFilled } from '@material-ui/icons';
+import { red } from '@material-ui/core/colors';
 
 const INTERVAL_STEP_MLS = 250;
 
-const useStyles = makeStyles((theme) => ({
-    modal: {
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    content: {
-      backgroundColor: 'white',
-      border: '2px solid #000',
-      height: 200,
-      width: 300,
-    }
-  }))
-;
+const useStyles = makeStyles(() => (
+  {
+    canvas: { margin: '0 1em', width: '15px', verticalAlign: 'bottom' },
+    controlBtn: { fontSize: 30, color: red[500] },
+    text: { fontSize: '1.2em', margin: '0 1em' }
+  }
+));
+
 let recorder;
 
-const CheckMySelf = ({device}) => {
-  const classes = useStyles();
+const CheckMySelf = ({ audio }) => {
+  const classes   = useStyles();
+  const canvasRef = useRef();
 
-  const {t} = useTranslation();
-  const [isOpen, setIsOpen] = useState(false);
-  const [process, setProcess] = useState(0);
-  const [stream, setStream] = useState(0);
+  const { t }                         = useTranslation();
+  const [process, setProcess]         = useState(0);
+  const [processType, setProcesstype] = useState();
 
   useEffect(() => {
-    updateStream();
-  }, [device]);
-
-  const updateStream = async () => {
-    const deviceId = localStorage.getItem('audio_device') ?? null;
-    const [s, error] = await getMediaStream(true, false, {}, deviceId, null);
-    if (error)
-      return console.log(error);
-    setStream(s);
-  };
+    if (audio.stream && canvasRef.current) {
+      micLevel(audio.stream, canvasRef.current, audioContext => {
+        audio.context = audioContext;
+      });
+    }
+  }, [audio.stream, canvasRef]);
 
   const runInterval = async (processVal = 0, increase = 1) => {
     for (let i = 0; i < 10; i++) {
       await sleep(INTERVAL_STEP_MLS);
-      const next = processVal + increase * i * 10;
-      setProcess(next);
+      setProcess(i);
     }
   };
 
   const run = async () => {
-    recorder = await recordAudio(stream);
-    recorder.start();
-    await runInterval(10);
-    const rec = await recorder.stop();
-    rec.play();
-    await runInterval(90, -1);
-  };
-
-  const handleOpen = async (e) => {
     setProcess(0);
-    setIsOpen(true);
-    await run();
-    setIsOpen(false);
-  };
+    recorder = await recordAudio(audio.stream);
+    recorder.start();
+    setProcesstype('recording');
+    await runInterval(10);
 
-  const handleClose = (e) => {
-    setIsOpen(false);
-    recorder.broke();
+    setProcesstype('playing');
+    await runInterval(0);
+    await recorder.stop();
+    setProcesstype(null);
   };
 
   return (
     <>
-      <Button
-        onClick={handleOpen}
-        variant={'contained'}
-        color="primary"
-        fullWidth
-      >
+      <Typography variant="h6" paragraph>
         {t('oldClient.selfAudioTest')}
-      </Button>
-      <Modal
-        className={classes.modal}
-        open={isOpen}
-        onClose={handleClose}
-        disableBackdropClick={true}
-      >
-        <Box position="relative" display="inline-flex" style={{backgroundColor: 'white'}}>
-          <CircularProgress variant="static" value={process} style={{height: '100px', width: '100px'}}/>
-          <Box
-            top={0}
-            left={0}
-            bottom={0}
-            right={0}
-            position="absolute"
-            display="flex"
-            alignItems="center"
-            justifyContent="center"
-          >
-            <Typography variant="caption" component="div" color="textSecondary">{`${Math.round(process)}%`}</Typography>
-          </Box>
+      </Typography>
+      <Box style={{ display: 'flex' }}>
+        <Box className={classes.canvas}>
+          <canvas ref={canvasRef} width="15" height="35" />
         </Box>
-      </Modal>
+        <Button
+          onClick={run}
+          variant={'contained'}
+          disabled={!!processType}
+        >
+          {
+            processType === 'playing' ?
+              <PlayCircleFilled className={classes.controlBtn} />
+              : <FiberManualRecord className={classes.controlBtn} />
+          }
+        </Button>
+        <Typography variant="caption" className={classes.text}>
+          {processType && `${t('oldClient.' + processType)} - ${Math.round(process)}`}
+        </Typography>
+      </Box>
     </>
   );
 

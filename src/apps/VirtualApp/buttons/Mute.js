@@ -8,7 +8,7 @@ const Mute = React.forwardRef((props, ref) => {
 
   return (
     <Box>
-      <canvas className={disabled ? 'hidden' : 'vumeter'} ref={ref} id="canvas1" width="10" height="35" />
+      <canvas className={isOn ? 'hidden' : 'vumeter'} ref={ref} id="canvas1" width="10" height="35" />
       <Tooltip title={t(isOn ? 'oldClient.unMute' : 'oldClient.mute')}>
         <IconButton
           aria-label={t(isOn ? 'oldClient.unMute' : 'oldClient.mute')}

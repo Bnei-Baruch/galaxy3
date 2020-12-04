@@ -194,7 +194,7 @@ const Settings = (props) => {
           {<MyMedia cammuted={false} video={video} />}
         </Grid>
         <Grid item xs={4}>
-          {<CheckMySelf device={audioDevice} />}
+          {<CheckMySelf audio={audio} />}
         </Grid>
         <Grid item xs={12}>
           <FormControlLabel
