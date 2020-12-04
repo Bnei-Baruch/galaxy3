@@ -1796,7 +1796,7 @@ class VirtualClient extends Component {
     }
 
     return (
-      <Grid item xs={rightAsideName ? 3 : false}>
+      <Grid item xs={rightAsideName ? 3 : false} style={{ backgroundColor: 'white' }}>
         {content}
         {chat}
       </Grid>
@@ -1950,7 +1950,7 @@ class VirtualClient extends Component {
     }
 
     return (
-      <Grid item xs={(leftAsideSize >= 3 && leftAsideName) ? leftAsideSize : false}>
+      <Grid item xs={(leftAsideSize >= 3 && leftAsideName) ? leftAsideSize : false} style={{backgroundColor: 'white'}}>
         {
           //buttons for resize tab (if want open study materials on browser tab)
           leftAsideName && false ?
