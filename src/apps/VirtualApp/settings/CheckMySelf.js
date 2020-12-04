@@ -34,7 +34,7 @@ const CheckMySelf = ({ audio }) => {
         audio.context = audioContext;
       });
     }
-  }, [audio.stream, canvasRef]);
+  }, [audio.stream, canvasRef]);// eslint-disable-line  react-hooks/exhaustive-deps
 
   const runInterval = async (processVal = 0, increase = 1) => {
     for (let i = 0; i < 10; i++) {

@@ -1,10 +1,14 @@
 export const isFullScreen = (el = document.body) => {
   const owner = el.ownerDocument;
-  return !!el && (owner.fullscreenElement || owner.mozFullScreenElemen || owner.webkitFullscreenElement);
+  return el && (
+    owner.fullscreenElement === el
+    || owner.mozFullScreenElemen === el
+    || owner.webkitFullscreenElement === el
+  );
 };
 
 export const toggleFullScreen = (el = document.body) => {
-  const owner  = el.ownerDocument;
+  const owner = el.ownerDocument;
   const isFull = isFullScreen(el);
   if (isFull) {
     if (owner.exitFullscreen) {

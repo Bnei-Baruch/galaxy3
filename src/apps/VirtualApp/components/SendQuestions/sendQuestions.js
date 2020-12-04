@@ -26,7 +26,7 @@ const SendQuestion = ({ questions, send, user = {} }) => {
   useEffect(() => {
     (!name) && setName(user.name);
     (!galaxyRoom) && setGalaxyRoom(user.galaxyRoom);
-  }, [user.name, user.galaxyRoom]);
+  }, [user.name, user.galaxyRoom]);// eslint-disable-line  react-hooks/exhaustive-deps
 
   const handleNameChange = ({ target: { value } }) => setName(value);
 
