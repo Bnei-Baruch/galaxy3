@@ -9,7 +9,7 @@ const SendQuestionContainer = ({ user = {} }) => {
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, []); // eslint-disable-line  react-hooks/exhaustive-deps
 
   useEffect(() => {
     user && setUserInfo(mapUserInfo(user));
