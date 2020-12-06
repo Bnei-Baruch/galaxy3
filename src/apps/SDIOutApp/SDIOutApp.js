@@ -207,18 +207,22 @@ class SDIOutApp extends Component {
             <Grid columns={2} className="sdi_container">
                 <Grid.Row>
                     <Grid.Column>
-                        <UsersQuadSDIOut index={0} {...qids.q1} gateways={gateways} roomsStatistics={roomsStatistics} ref={col => {this.col1 = col;}} />
+                        <UsersQuadSDIOut index={0} {...qids.q1} qst={qg} gateways={gateways}
+                                         roomsStatistics={roomsStatistics} ref={col => {this.col1 = col;}} />
                     </Grid.Column>
                     <Grid.Column>
-                        <UsersQuadSDIOut index={4} {...qids.q2} gateways={gateways} roomsStatistics={roomsStatistics} ref={col => {this.col2 = col;}} />
+                        <UsersQuadSDIOut index={4} {...qids.q2} qst={qg} gateways={gateways}
+                                         roomsStatistics={roomsStatistics} ref={col => {this.col2 = col;}} />
                     </Grid.Column>
                 </Grid.Row>
                 <Grid.Row>
                     <Grid.Column>
-                        <UsersQuadSDIOut index={8} {...qids.q3} gateways={gateways} roomsStatistics={roomsStatistics} ref={col => {this.col3 = col;}} />
+                        <UsersQuadSDIOut index={8} {...qids.q3} qst={qg} gateways={gateways}
+                                         roomsStatistics={roomsStatistics} ref={col => {this.col3 = col;}} />
                     </Grid.Column>
                     <Grid.Column>
-                        <UsersQuadSDIOut index={12} {...qids.q4} gateways={gateways} roomsStatistics={roomsStatistics} ref={col => {this.col4 = col;}} />
+                        <UsersQuadSDIOut index={12} {...qids.q4} qst={qg} gateways={gateways}
+                                         roomsStatistics={roomsStatistics} ref={col => {this.col4 = col;}} />
                     </Grid.Column>
                 </Grid.Row>
                 <Grid.Row>
@@ -227,7 +231,8 @@ class SDIOutApp extends Component {
                             <div className="usersvideo_grid">
                                 <div className="video_full">
                                     {vote ?
-                                        <iframe title="Vote" src='https://vote.kli.one' width="100%" height="100%" frameBorder="0" />
+                                        <iframe title="Vote" src='https://vote.kli.one'
+                                                width="100%" height="100%" frameBorder="0" />
                                     :
                                         qg ? <Fragment>
                                         {/*{group && group.questions ? <div className="qst_fullscreentitle">?</div> : ""}*/}
