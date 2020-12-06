@@ -26,6 +26,7 @@
 // List of sessions
 Janus.sessions = {};
 const adapter = require('webrtc-adapter');
+
 Janus.isExtensionEnabled = function() {
 	if(navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia) {
 		// No need for the extension, getDisplayMedia is supported
@@ -349,8 +350,8 @@ Janus.init = function(options) {
 		});
 		// If this is a Safari Technology Preview, check if VP8 is supported
 		Janus.safariVp8 = false;
-		if(Janus.webRTCAdapter.browserDetails.browser === 'safari' &&
-				Janus.webRTCAdapter.browserDetails.version >= 605) {
+		if(Janus.webRTCAdapter.default.browserDetails.browser === 'safari' &&
+				Janus.webRTCAdapter.default.browserDetails.version >= 605) {
 			// Let's see if RTCRtpSender.getCapabilities() is there
 			if(RTCRtpSender && RTCRtpSender.getCapabilities && RTCRtpSender.getCapabilities("video") &&
 					RTCRtpSender.getCapabilities("video").codecs && RTCRtpSender.getCapabilities("video").codecs.length) {
@@ -386,12 +387,12 @@ Janus.init = function(options) {
 		// Check if this browser supports Unified Plan and transceivers
 		// Based on https://codepen.io/anon/pen/ZqLwWV?editors=0010
 		Janus.unifiedPlan = false;
-		if(Janus.webRTCAdapter.browserDetails.browser === 'firefox' &&
-				Janus.webRTCAdapter.browserDetails.version >= 59) {
+		if(Janus.webRTCAdapter.default.browserDetails.browser === 'firefox' &&
+				Janus.webRTCAdapter.default.browserDetails.version >= 59) {
 			// Firefox definitely does, starting from version 59
 			Janus.unifiedPlan = true;
-		} else if(Janus.webRTCAdapter.browserDetails.browser === 'chrome' &&
-				Janus.webRTCAdapter.browserDetails.version >= 72) {
+		} else if(Janus.webRTCAdapter.default.browserDetails.browser === 'chrome' &&
+				Janus.webRTCAdapter.default.browserDetails.version >= 72) {
 			// Chrome does, but it's only usable from version 72 on
 			Janus.unifiedPlan = true;
 		} else if(!window.RTCRtpTransceiver || !('currentDirection' in RTCRtpTransceiver.prototype)) {
@@ -1710,9 +1711,9 @@ export function Janus(gatewayCallbacks) {
 		// If we still need to create a PeerConnection, let's do that
 		if(!config.pc) {
 			var pc_config = {"iceServers": iceServers, "iceTransportPolicy": iceTransportPolicy, "bundlePolicy": bundlePolicy};
-			if(Janus.webRTCAdapter.browserDetails.browser === "chrome") {
+			if(Janus.webRTCAdapter.default.browserDetails.browser === "chrome") {
 				// For Chrome versions before 72, we force a plan-b semantic, and unified-plan otherwise
-				pc_config["sdpSemantics"] = (Janus.webRTCAdapter.browserDetails.version < 72) ? "plan-b" : "unified-plan";
+				pc_config["sdpSemantics"] = (Janus.webRTCAdapter.default.browserDetails.version < 72) ? "plan-b" : "unified-plan";
 			}
 			var pc_constraints = {
 				"optional": [{"DtlsSrtpKeyAgreement": true}]
@@ -1727,7 +1728,7 @@ export function Janus(gatewayCallbacks) {
 					pc_constraints.optional.push(callbacks.rtcConstraints[i]);
 				}
 			}
-			if(Janus.webRTCAdapter.browserDetails.browser === "edge") {
+			if(Janus.webRTCAdapter.default.browserDetails.browser === "edge") {
 				// This is Edge, enable BUNDLE explicitly
 				pc_config.bundlePolicy = "max-bundle";
 			}
@@ -1756,7 +1757,7 @@ export function Janus(gatewayCallbacks) {
 			};
 			config.pc.onicecandidate = function(event) {
 				if (!event.candidate ||
-						(Janus.webRTCAdapter.browserDetails.browser === 'edge' && event.candidate.candidate.indexOf('endOfCandidates') > 0)) {
+						(Janus.webRTCAdapter.default.browserDetails.browser === 'edge' && event.candidate.candidate.indexOf('endOfCandidates') > 0)) {
 					Janus.log("End of candidates.");
 					config.iceDone = true;
 					if(config.trickle === true) {
@@ -2367,8 +2368,8 @@ export function Janus(gatewayCallbacks) {
 							})
 							.catch(function(error) { pluginHandle.consentDialog(false); gsmCallback(error); });
 					}
-					if(Janus.webRTCAdapter.browserDetails.browser === 'chrome') {
-						var chromever = Janus.webRTCAdapter.browserDetails.version;
+					if(Janus.webRTCAdapter.default.browserDetails.browser === 'chrome') {
+						var chromever = Janus.webRTCAdapter.default.browserDetails.version;
 						var maxver = 33;
 						if(window.navigator.userAgent.match('Linux'))
 							maxver = 35;	// "known" crash in chrome 34 and 35 on linux
@@ -2416,8 +2417,8 @@ export function Janus(gatewayCallbacks) {
 									isAudioSendEnabled(media) && !media.keepAudio);
 							});
 						}
-					} else if(Janus.webRTCAdapter.browserDetails.browser === 'firefox') {
-						if(Janus.webRTCAdapter.browserDetails.version >= 33) {
+					} else if(Janus.webRTCAdapter.default.browserDetails.browser === 'firefox') {
+						if(Janus.webRTCAdapter.default.browserDetails.version >= 33) {
 							// Firefox 33+ has experimental support for screen sharing
 							constraints = {
 								video: {
@@ -2715,7 +2716,7 @@ export function Janus(gatewayCallbacks) {
 		Janus.debug(mediaConstraints);
 		// Check if this is Firefox and we've been asked to do simulcasting
 		var sendVideo = isVideoSendEnabled(media);
-		if(sendVideo && simulcast && Janus.webRTCAdapter.browserDetails.browser === "firefox") {
+		if(sendVideo && simulcast && Janus.webRTCAdapter.default.browserDetails.browser === "firefox") {
 			// FIXME Based on https://gist.github.com/voluntas/088bc3cc62094730647b
 			Janus.log("Enabling Simulcasting for Firefox (RID)");
 			var sender = config.pc.getSenders().find(function(s) {return s.track.kind === "video"});
@@ -2747,11 +2748,11 @@ export function Janus(gatewayCallbacks) {
 				Janus.log("Setting local description");
 				if(sendVideo && simulcast) {
 					// This SDP munging only works with Chrome (Safari STP may support it too)
-					if(Janus.webRTCAdapter.browserDetails.browser === "chrome" ||
-							Janus.webRTCAdapter.browserDetails.browser === "safari") {
+					if(Janus.webRTCAdapter.default.browserDetails.browser === "chrome" ||
+							Janus.webRTCAdapter.default.browserDetails.browser === "safari") {
 						Janus.log("Enabling Simulcasting for Chrome (SDP munging)");
 						offer.sdp = mungeSdpForSimulcasting(offer.sdp);
-					} else if(Janus.webRTCAdapter.browserDetails.browser !== "firefox") {
+					} else if(Janus.webRTCAdapter.default.browserDetails.browser !== "firefox") {
 						Janus.warn("simulcast=true, but this is not Chrome nor Firefox, ignoring");
 					}
 				}
@@ -2941,7 +2942,7 @@ export function Janus(gatewayCallbacks) {
 				}
 			}
 		} else {
-			if(Janus.webRTCAdapter.browserDetails.browser === "firefox" || Janus.webRTCAdapter.browserDetails.browser === "edge") {
+			if(Janus.webRTCAdapter.default.browserDetails.browser === "firefox" || Janus.webRTCAdapter.default.browserDetails.browser === "edge") {
 				mediaConstraints = {
 					offerToReceiveAudio: isAudioRecvEnabled(media),
 					offerToReceiveVideo: isVideoRecvEnabled(media)
@@ -2958,7 +2959,7 @@ export function Janus(gatewayCallbacks) {
 		Janus.debug(mediaConstraints);
 		// Check if this is Firefox and we've been asked to do simulcasting
 		var sendVideo = isVideoSendEnabled(media);
-		if(sendVideo && simulcast && Janus.webRTCAdapter.browserDetails.browser === "firefox") {
+		if(sendVideo && simulcast && Janus.webRTCAdapter.default.browserDetails.browser === "firefox") {
 			// FIXME Based on https://gist.github.com/voluntas/088bc3cc62094730647b
 			Janus.log("Enabling Simulcasting for Firefox (RID)");
 			var sender = config.pc.getSenders()[1];
@@ -2987,12 +2988,12 @@ export function Janus(gatewayCallbacks) {
 				Janus.log("Setting local description");
 				if(sendVideo && simulcast) {
 					// This SDP munging only works with Chrome
-					if(Janus.webRTCAdapter.browserDetails.browser === "chrome") {
+					if(Janus.webRTCAdapter.default.browserDetails.browser === "chrome") {
 						// FIXME Apparently trying to simulcast when answering breaks video in Chrome...
 						//~ Janus.log("Enabling Simulcasting for Chrome (SDP munging)");
 						//~ answer.sdp = mungeSdpForSimulcasting(answer.sdp);
 						Janus.warn("simulcast=true, but this is an answer, and video breaks in Chrome if we enable it");
-					} else if(Janus.webRTCAdapter.browserDetails.browser !== "firefox") {
+					} else if(Janus.webRTCAdapter.default.browserDetails.browser !== "firefox") {
 						Janus.warn("simulcast=true, but this is not Chrome nor Firefox, ignoring");
 					}
 				}
@@ -3053,8 +3054,8 @@ export function Janus(gatewayCallbacks) {
 			config.volume[stream] = { value: 0 };
 		// Start getting the volume, if audioLevel in getStats is supported (apparently
 		// they're only available in Chrome/Safari right now: https://webrtc-stats.callstats.io/)
-		if(config.pc.getStats && (Janus.webRTCAdapter.browserDetails.browser === "chrome" ||
-				Janus.webRTCAdapter.browserDetails.browser === "safari")) {
+		if(config.pc.getStats && (Janus.webRTCAdapter.default.browserDetails.browser === "chrome" ||
+				Janus.webRTCAdapter.default.browserDetails.browser === "safari")) {
 			if(remote && !config.remoteStream) {
 				Janus.warn("Remote stream unavailable");
 				result(0);
@@ -3293,10 +3294,10 @@ export function Janus(gatewayCallbacks) {
 									} else {
 										// Calculate bitrate
 										var timePassed = config.bitrate[target].tsnow - config.bitrate[target].tsbefore;
-										if(Janus.webRTCAdapter.browserDetails.browser === "safari")
+										if(Janus.webRTCAdapter.default.browserDetails.browser === "safari")
 											timePassed = timePassed/1000;	// Apparently the timestamp is in microseconds, in Safari
 										var bitRate = Math.round((config.bitrate[target].bsnow - config.bitrate[target].bsbefore) * 8 / timePassed);
-										if(Janus.webRTCAdapter.browserDetails.browser === "safari")
+										if(Janus.webRTCAdapter.default.browserDetails.browser === "safari")
 											bitRate = parseInt(bitRate/1000);
 										config.bitrate[target].value = bitRate + ' kbits/sec';
 										//~ Janus.log("Estimated bitrate is " + config.bitrate.value);
@@ -3684,7 +3685,7 @@ export function Janus(gatewayCallbacks) {
 
 	function isDataEnabled(media) {
 		Janus.debug("isDataEnabled:", media);
-		if(Janus.webRTCAdapter.browserDetails.browser === "edge") {
+		if(Janus.webRTCAdapter.default.browserDetails.browser === "edge") {
 			Janus.warn("Edge doesn't support data channels yet");
 			return false;
 		}

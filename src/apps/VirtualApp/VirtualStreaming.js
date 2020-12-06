@@ -5,7 +5,7 @@ import {
   Header,
   Icon,
 } from 'semantic-ui-react';
-import NewWindow from 'react-new-window';
+import NewWindow from '@hinaser/react-new-window';
 import {
   videos_options2,
   audiog_options2,
