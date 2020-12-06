@@ -24,8 +24,8 @@ export const resources = {
         cancelQuestion: 'Cancel the Question',
         openBroadcast: 'Open Broadcast',
         closeBroadcast: 'Close Broadcast',
-        openFullScreen:'Open in full screen',
-        closeFullScreen:'Close full screen',
+        openFullScreen: 'Open in full screen',
+        closeFullScreen: 'Close full screen',
         broadcast: 'Broadcast',
         layout: 'Layout',
         mute: 'Mute',
@@ -90,7 +90,9 @@ export const resources = {
         cameraSource: 'Camera source',
         cameraQuality: 'Camera quality',
         helloUser: 'Hello {{name}}',
-        beforeConnecting: 'before connecting with the TEN, please check your settings and device setup:'
+        beforeConnecting: 'before connecting with the TEN, please check your settings and device setup:',
+        openKliOlami: 'Open groups',
+        closeKliOlami: 'Close groups'
 
       },
       feedback: {
@@ -271,7 +273,9 @@ export const resources = {
         cameraSource: 'Fuente de cámara',
         cameraQuality: 'Calidad de la cámara',
         helloUser: 'Hola {{name}}',
-        beforeConnecting: 'Antes de conectarte con la DECENA, por favor chequea tus configuraciones y la del dispositivo:'
+        beforeConnecting: 'Antes de conectarte con la DECENA, por favor chequea tus configuraciones y la del dispositivo:',
+        openKliOlami: 'Abrir grupos',
+        closeKliOlami: 'Cerrar grupos'
 
       },
       feedback: {
@@ -452,7 +456,9 @@ export const resources = {
         cameraSource: 'מקור וידאו',
         cameraQuality: 'איכות המצלמה',
         helloUser: 'שלום {{name}}',
-        beforeConnecting: 'לפני החיבור לעשיריה, אנא אנא בידקו את ההגדרות שלכם.:'
+        beforeConnecting: 'לפני החיבור לעשיריה, אנא אנא בידקו את ההגדרות שלכם.:',
+        openKliOlami: 'פתח קבוצות',
+        closeKliOlami: 'סגור קבוצות'
 
       },
       feedback: {
@@ -632,7 +638,9 @@ export const resources = {
         cameraSource: 'Источник видео',
         cameraQuality: 'Качество камеры',
         helloUser: 'Здравствуйте {{name}}',
-        beforeConnecting: 'перед соединением с Десяткой, проверьте настройки и установки устройств:'
+        beforeConnecting: 'перед соединением с Десяткой, проверьте настройки и установки устройств:',
+        openKliOlami: 'Открыть группы',
+        closeKliOlami: 'Закрыть группы'
 
       },
       feedback: {

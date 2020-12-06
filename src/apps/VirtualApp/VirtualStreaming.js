@@ -18,18 +18,12 @@ import { withTranslation } from 'react-i18next';
 import { isFullScreen, toggleFullScreen } from './FullScreenHelper';
 
 class VirtualStreaming extends Component {
-  constructor(props) {
-    super(props);
-    this.handleFullScreenChange = this.handleFullScreenChange.bind(this);
-  }
-
   state = {
     audios: Number(localStorage.getItem('vrt_lang')) || 2,
     room: Number(localStorage.getItem('room')) || null,
     user: {},
     cssFixInterval: null,
-    talking: false,
-    fullScreen: false,
+    talking: false
   };
 
   videoRef(ref) {
@@ -39,13 +33,7 @@ class VirtualStreaming extends Component {
   setVideoWrapperRef(ref) {
     if (ref && ref !== this.videoWrapper) {
       this.videoWrapper = ref;
-      this.videoWrapper.ownerDocument.defaultView.removeEventListener('resize', this.handleFullScreenChange);
-      this.videoWrapper.ownerDocument.defaultView.addEventListener('resize', this.handleFullScreenChange);
     }
-  }
-
-  handleFullScreenChange() {
-    this.setState({ fullScreen: isFullScreen(this.videoWrapper) });
   }
 
   componentDidMount() {
@@ -75,9 +63,6 @@ class VirtualStreaming extends Component {
   componentWillUnmount() {
     if (this.state.cssFixInterval) {
       clearInterval(this.state.cssFixInterval);
-    }
-    if (this.videoWrapper) {
-      this.videoWrapper.ownerDocument.defaultView.removeEventListener('resize', this.handleFullScreenChange);
     }
   };
 
@@ -117,7 +102,6 @@ class VirtualStreaming extends Component {
           } = this.props;
     const {
             audios,
-            fullScreen,
             room,
             talking,
           } = this.state;
@@ -217,7 +201,7 @@ class VirtualStreaming extends Component {
               <Volume media={virtualStreamingJanus.audioElement} />
               <div className="controls__spacer"></div>
               <button onClick={this.toggleFullScreen}>
-                <Icon name={fullScreen ? 'compress' : 'expand'} />
+                <Icon name={isFullScreen(this.videoWrapper) ? 'compress' : 'expand'} />
               </button>
               {!attached ? null :
                 <button onClick={this.toggleNewWindow}>
