@@ -1,7 +1,17 @@
 import React, { memo } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { Button, Checkbox, FormControlLabel, Modal, Grid, Typography, TextField, MenuItem } from '@material-ui/core';
+import {
+  Button,
+  Checkbox,
+  FormControlLabel,
+  Modal,
+  Grid,
+  Typography,
+  TextField,
+  MenuItem,
+  Divider
+} from '@material-ui/core';
 import Autocomplete from '@material-ui/lab/Autocomplete';
 import makeStyles from '@material-ui/core/styles/makeStyles';
 import green from '@material-ui/core/colors/green';
@@ -10,6 +20,10 @@ import MyMedia from './MyMedia';
 import CheckMySelf from './CheckMySelf';
 import { vsettings_list } from '../../../shared/consts';
 import LogoutDropdown from './LogoutDropdown';
+import { SelectViewLanguage } from '../components/SelectViewLanguage';
+import { AccountCircle, Computer, Mic, Videocam } from '@material-ui/icons';
+import { SelectBroadcastVideo } from '../components/SelectBroadcastVideo';
+import { SelectLanguage } from '../components/SelectLanguage';
 
 const settingsList = vsettings_list.map(({ key, text, value }) => ({ key, text, value: JSON.stringify(value) }));
 const mapDevice    = ({ label, deviceId }) => ({ text: label, value: deviceId });
@@ -167,33 +181,86 @@ const Settings = (props) => {
 
   const handleInitClient = () => initClient(false);
 
-  const renderContent = () => {
-    return (
-      <Grid container spacing={4} className={classes.content}>
-        <Grid item xs={9}>
-          <Typography variant="h3" display={'block'}>
-            {t('settings.helloUser', { name: userDisplay })}
-          </Typography>
-          <Typography>
-            {t('settings.beforeConnecting')}
-          </Typography>
-        </Grid>
-        <Grid item xs={3} style={{ justifyContent: 'flex-end', display: 'flex', alignItems: 'center' }}>
+  const renderHeader = () => (
+    <>
+      <Grid item xs={9}>
+        <Typography variant="h3" display={'block'}>
+          {t('settings.helloUser', { name: userDisplay })}
+        </Typography>
+        <Typography>
+          {t('settings.beforeConnecting')}
+        </Typography>
+      </Grid>
+      <Grid item xs={3}>
+        <Grid container justify="flex-end">
           <LogoutDropdown display={userDisplay} />
         </Grid>
+      </Grid>
+    </>
+  );
+
+  const renderUserSettings = () => {
+    return (
+      <>
         <Grid item xs={4}>
+          <AccountCircle style={{ fontSize: '2em' }} />
+          <Typography variant="h6" display="inline" style={{ verticalAlign: 'top' }}>
+            {t('settings.userSettings')}
+          </Typography>
+        </Grid>
+        <Grid item={true} xs={4}>
+          <TextField
+            label={t('settings.screenName')}
+            fullWidth={true}
+            variant="outlined"
+            value={userDisplay}
+            disabled
+          />
+        </Grid>
+        <Grid item={true} xs={4}>
+          <SelectViewLanguage />
+        </Grid>
+      </>
+    );
+  };
+
+  const renderContent = () => {
+    return (
+      <Grid container spacing={3} className={classes.content}>
+        {renderHeader()}
+        <Divider variant="fullWidth" style={{ width: '100%' }} />
+        {renderUserSettings()}
+        <Divider variant="fullWidth" style={{ width: '100%' }} />
+
+        <Grid item xs={6}>
+          <Videocam style={{ fontSize: '2em' }} />
+          <Typography variant="h6" display="inline" style={{ verticalAlign: 'top' }}>
+            {t('settings.cameraSettings')}
+          </Typography>
+        </Grid>
+        <Grid item xs={4}>
+          <Mic style={{ fontSize: '2em' }} />
+          <Typography variant="h6" display="inline" style={{ verticalAlign: 'top' }}>
+            {t('settings.microphoneSettings')}
+          </Typography>
+        </Grid>
+
+        <Grid item xs={3}>
           {renderCameras()}
         </Grid>
-        <Grid item xs={4}>
+        <Grid item xs={3}>
           {renderVideoSize()}
         </Grid>
-        <Grid item xs={4}>
+
+        <Grid item xs={6}>
           {renderSounds()}
         </Grid>
-        <Grid item xs={8}>
+
+
+        <Grid item xs={6}>
           {<MyMedia cammuted={false} video={video} />}
         </Grid>
-        <Grid item xs={4}>
+        <Grid item xs={6}>
           {<CheckMySelf audio={audio} />}
         </Grid>
         <Grid item xs={12}>
@@ -209,7 +276,7 @@ const Settings = (props) => {
           />
         </Grid>
 
-        <Grid item xs={8}>
+        <Grid item xs={6}>
           {renderRooms()}
         </Grid>
         <Grid item xs={4}>

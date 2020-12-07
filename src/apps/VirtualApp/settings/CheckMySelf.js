@@ -9,7 +9,7 @@ import { FiberManualRecord, PlayCircleFilled } from '@material-ui/icons';
 import { red } from '@material-ui/core/colors';
 
 const INTERVAL_STEP_MLS = 1000;
-const CANVAS_WIDTH      = 100;
+const CANVAS_WIDTH      = 150;
 const CANVAS_HEIGHT     = 30;
 const useStyles         = makeStyles(() => (
   {

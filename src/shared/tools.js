@@ -128,6 +128,7 @@ const renderCanvas = (c, node, analyser) => {
   gradient.addColorStop(1, 'red');
 
   node.onaudioprocess = function () {
+    cc.clearRect(0, 0, w, h);
     var array = new Uint8Array(analyser.frequencyBinCount);
     analyser.getByteFrequencyData(array);
     var values = 0;
@@ -139,7 +140,6 @@ const renderCanvas = (c, node, analyser) => {
 
     const barWidth = (values / length) * 2.5 - 1;
 
-    cc.clearRect(0, 0, w, h);
     cc.fillStyle = gradient;
     cc.fillRect(0, 0, barWidth, h);
   };
