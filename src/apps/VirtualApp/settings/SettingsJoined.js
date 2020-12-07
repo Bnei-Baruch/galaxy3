@@ -15,12 +15,12 @@ import {
 import { AccountCircle, Close, Computer, Mic, Videocam } from '@material-ui/icons';
 import makeStyles from '@material-ui/core/styles/makeStyles';
 
-import {vsettings_list} from '../../../shared/consts';
+import { vsettings_list } from '../../../shared/consts';
 import MyMedia from './MyMedia';
 import CheckMySelf from './CheckMySelf';
-import {SelectLanguage} from '../components/SelectLanguage';
-import {SelectBroadcastVideo} from '../components/SelectBroadcastVideo';
-import {SelectViewLanguage} from "../components/SelectViewLanguage";
+import { SelectLanguage } from '../components/SelectLanguage';
+import { SelectBroadcastVideo } from '../components/SelectBroadcastVideo';
+import { SelectViewLanguage } from '../components/SelectViewLanguage';
 
 const useStyles = makeStyles(() => ({
   content: {
@@ -87,7 +87,7 @@ const SettingsJoined = (props) => {
           />
         </Grid>
         <Grid item={true} xs={4}>
-          <SelectViewLanguage/>
+          <SelectViewLanguage />
         </Grid>
       </>
     );
@@ -170,7 +170,7 @@ const SettingsJoined = (props) => {
               </Tooltip>
             </Grid>
             <Grid item xs={12}>
-              <CheckMySelf />
+              <CheckMySelf audio={audio} />
             </Grid>
           </Grid>
         </Grid>

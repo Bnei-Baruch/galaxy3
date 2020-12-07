@@ -1,19 +1,24 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import makeStyles from '@material-ui/core/styles/makeStyles';
-import { Button, Typography } from '@material-ui/core';
+import { Button, Grid, Typography } from '@material-ui/core';
 
 import { micLevel, recordAudio, sleep } from '../../../shared/tools';
 import Box from '@material-ui/core/Box';
 import { FiberManualRecord, PlayCircleFilled } from '@material-ui/icons';
 import { red } from '@material-ui/core/colors';
 
-const INTERVAL_STEP_MLS = 250;
-
-const useStyles = makeStyles(() => (
+const INTERVAL_STEP_MLS = 1000;
+const CANVAS_WIDTH      = 100;
+const CANVAS_HEIGHT     = 30;
+const useStyles         = makeStyles(() => (
   {
-    canvas: { margin: '0 1em', width: '15px', verticalAlign: 'bottom' },
-    controlBtn: { fontSize: 30, color: red[500] },
+    canvas: {
+      width: `${CANVAS_WIDTH}px`,
+      height: `${CANVAS_HEIGHT}px`,
+      border: '1px solid black'
+    },
+    runButton: { textTransform: 'none' },
     text: { fontSize: '1.2em', margin: '0 1em' }
   }
 ));
@@ -32,14 +37,15 @@ const CheckMySelf = ({ audio }) => {
     if (audio.stream && canvasRef.current) {
       micLevel(audio.stream, canvasRef.current, audioContext => {
         audio.context = audioContext;
-      });
+      }, false);
     }
   }, [audio.stream, canvasRef]);// eslint-disable-line  react-hooks/exhaustive-deps
 
   const runInterval = async (processVal = 0, increase = 1) => {
-    for (let i = 0; i < 10; i++) {
+    for (let i = 0; i <= 10; i++) {
       await sleep(INTERVAL_STEP_MLS);
-      setProcess(i);
+      const next = processVal + increase * i;
+      setProcess(next);
     }
   };
 
@@ -48,39 +54,37 @@ const CheckMySelf = ({ audio }) => {
     recorder = await recordAudio(audio.stream);
     recorder.start();
     setProcesstype('recording');
-    await runInterval(10);
-
-    setProcesstype('playing');
     await runInterval(0);
-    await recorder.stop();
+
+    const a = await recorder.stop();
+    a.play();
+    setProcesstype('playing');
+    await runInterval(10, -1);
     setProcesstype(null);
   };
 
   return (
-    <>
-      <Typography variant="h6" paragraph>
-        {t('oldClient.selfAudioTest')}
-      </Typography>
-      <Box style={{ display: 'flex' }}>
-        <Box className={classes.canvas}>
-          <canvas ref={canvasRef} width="15" height="35" />
-        </Box>
+    <Grid container spacing={1}>
+      <Grid item>
         <Button
           onClick={run}
-          variant={'contained'}
+          color="primary"
+          variant={!processType ? 'contained' : 'outlined'}
           disabled={!!processType}
+          className={classes.runButton}
         >
           {
-            processType === 'playing' ?
-              <PlayCircleFilled className={classes.controlBtn} />
-              : <FiberManualRecord className={classes.controlBtn} />
+            !processType ? t('oldClient.selfAudioTest') : `${t('oldClient.' + processType)} - ${Math.round(process)}`
           }
         </Button>
-        <Typography variant="caption" className={classes.text}>
-          {processType && `${t('oldClient.' + processType)} - ${Math.round(process)}`}
-        </Typography>
-      </Box>
-    </>
+
+      </Grid>
+      <Grid item>
+        <Box className={classes.canvas}>
+          <canvas ref={canvasRef} width={CANVAS_WIDTH} height={CANVAS_HEIGHT} />
+        </Box>
+      </Grid>
+    </Grid>
   );
 
 };

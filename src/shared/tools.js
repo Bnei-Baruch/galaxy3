@@ -93,15 +93,15 @@ export const getDateString = (jsonDate) => {
     return dateString;
 };
 
-export const micLevel = (stream, canvas, cb) => {
-    window.AudioContext = window.AudioContext || window.webkitAudioContext;
-    //let audioContext = null;
-    //let mn = 25/128;
-    let audioContext = new AudioContext();
-    cb(audioContext);
-    let analyser = audioContext.createAnalyser();
-    let microphone = audioContext.createMediaStreamSource(stream);
-    let javascriptNode = audioContext.createScriptProcessor(2048, 1, 1);
+export const micLevel = (stream, canvas, cb, isOld = true) => {
+  window.AudioContext = window.AudioContext || window.webkitAudioContext;
+  //let audioContext = null;
+  //let mn = 25/128;
+  let audioContext = new AudioContext();
+  cb(audioContext);
+  let analyser       = audioContext.createAnalyser();
+  let microphone     = audioContext.createMediaStreamSource(stream);
+  let javascriptNode = audioContext.createScriptProcessor(2048, 1, 1);
 
     analyser.smoothingTimeConstant = 0.8;
     analyser.fftSize = 2048;
@@ -111,34 +111,67 @@ export const micLevel = (stream, canvas, cb) => {
 
     javascriptNode.connect(audioContext.destination);
 
-    if (!canvas)
-        return;
-    let canvasContext = canvas.getContext("2d");
-    let gradient = canvasContext.createLinearGradient(0,0,0,55);
-    gradient.addColorStop(1,'green');
-    gradient.addColorStop(0.35,'#80ff00');
-    gradient.addColorStop(0.10,'orange');
-    gradient.addColorStop(0,'red');
+  if (!canvas)
+    return;
+  isOld ? renderCanvasOld(canvas, javascriptNode, analyser) : renderCanvas(canvas, javascriptNode, analyser);
 
-    javascriptNode.onaudioprocess = function() {
-        var array = new Uint8Array(analyser.frequencyBinCount);
-        analyser.getByteFrequencyData(array);
-        var values = 0;
+};
 
-        var length = array.length;
-        for (var i = 0; i < length; i++) {
-            values += (array[i]);
-        }
+const renderCanvas = (c, node, analyser) => {
+  let cc       = c.getContext('2d');
+  const w      = c.width;
+  const h      = c.height;
+  let gradient = cc.createLinearGradient(0, 0, w, 0);
+  gradient.addColorStop(0, 'green');
+  gradient.addColorStop(0.3, '#80ff00');
+  gradient.addColorStop(0.5, 'orange');
+  gradient.addColorStop(1, 'red');
 
-        var average = values / length;
+  node.onaudioprocess = function () {
+    var array = new Uint8Array(analyser.frequencyBinCount);
+    analyser.getByteFrequencyData(array);
+    var values = 0;
+
+    var length = array.length;
+    for (var i = 0; i < length; i++) {
+      values += (array[i]);
+    }
+
+    const barWidth = (values / length) * 2.5 - 1;
+
+    cc.clearRect(0, 0, w, h);
+    cc.fillStyle = gradient;
+    cc.fillRect(0, 0, barWidth, h);
+  };
+};
+
+const renderCanvasOld = (canvas, javascriptNode, analyser) => {
+  let canvasContext = canvas.getContext('2d');
+  let gradient      = canvasContext.createLinearGradient(0, 0, 0, 55);
+  gradient.addColorStop(1, 'green');
+  gradient.addColorStop(0.35, '#80ff00');
+  gradient.addColorStop(0.10, 'orange');
+  gradient.addColorStop(0, 'red');
+
+  javascriptNode.onaudioprocess = function () {
+    var array = new Uint8Array(analyser.frequencyBinCount);
+    analyser.getByteFrequencyData(array);
+    var values = 0;
+
+    var length = array.length;
+    for (var i = 0; i < length; i++) {
+      values += (array[i]);
+    }
+
+    var average = values / length;
 
 //          Janus.log(Math.round(average - 40));
 
-        canvasContext.clearRect(0, 0, 15, 35);
-        canvasContext.fillStyle = gradient;
-        //canvasContext.fillRect(0, 35-average*mn, 15, 35);
-        canvasContext.fillRect(0, 35-average, 15, 35);
-    }
+    canvasContext.clearRect(0, 0, 15, 35);
+    canvasContext.fillStyle = gradient;
+    //canvasContext.fillRect(0, 35-average*mn, 15, 35);
+    canvasContext.fillRect(0, 35 - average, 15, 35);
+  };
 };
 
 export const checkNotification = () => {
