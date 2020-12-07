@@ -75,8 +75,8 @@ export const resources = {
         KabbalahMedia: 'Kabbalah Media',
         openKliOlami: 'Open groups',
         closeKliOlami: 'Close groups',
-        oldDesign: "Old Design",
-        newDesign: "New Design",
+        oldDesign: 'OLD VERSION',
+        newDesign: 'NEW VERSION',
       },
       settings: {
         selectCamera: 'Select camera',
@@ -259,7 +259,9 @@ export const resources = {
         WorkshopQuestions: 'Preguntas del taller',
         KabbalahMedia: 'Cabalá media',
         openKliOlami: 'Abrir grupos',
-        closeKliOlami: 'Cerrar grupos'
+        closeKliOlami: 'Cerrar grupos',
+        oldDesign: 'VIEJA VERSION',
+        newDesign: 'NUEVA VERSIÓN',
       },
       settings: {
         selectCamera: 'Select camera',
@@ -442,7 +444,9 @@ export const resources = {
         WorkshopQuestions: 'שאלות סדנא',
         KabbalahMedia: 'קבלה מדיה',
         openKliOlami: 'פתח קבוצות',
-        closeKliOlami: 'סגור קבוצות'
+        closeKliOlami: 'סגור קבוצות',
+        oldDesign: 'גרסא ישנה',
+        newDesign: 'גרסא חדשה',
       },
       settings: {
         selectCamera: 'בחר מצלמה',
@@ -624,7 +628,9 @@ export const resources = {
         WorkshopQuestions: 'Вопросы семинара',
         KabbalahMedia: 'Каббала Медиа',
         openKliOlami: 'Открыть группы',
-        closeKliOlami: 'Закрыть группы'
+        closeKliOlami: 'Закрыть группы',
+        oldDesign: 'СТАРАЯ ВЕРСИЯ',
+        newDesign: 'НОВАЯ ВЕРСИЯ',
       },
       settings: {
         selectCamera: 'Выбрать камеру',

@@ -93,7 +93,7 @@ export const getDateString = (jsonDate) => {
     return dateString;
 };
 
-export const micLevel = (stream, canvas, cb, isOld = true) => {
+export const micLevel = (stream, canvas, cb, renderType = 'old') => {
   window.AudioContext = window.AudioContext || window.webkitAudioContext;
   //let audioContext = null;
   //let mn = 25/128;
@@ -103,21 +103,26 @@ export const micLevel = (stream, canvas, cb, isOld = true) => {
   let microphone     = audioContext.createMediaStreamSource(stream);
   let javascriptNode = audioContext.createScriptProcessor(2048, 1, 1);
 
-    analyser.smoothingTimeConstant = 0.8;
-    analyser.fftSize = 2048;
+  analyser.smoothingTimeConstant = 0.8;
+  analyser.fftSize               = 2048;
 
-    microphone.connect(analyser);
-    analyser.connect(javascriptNode);
+  microphone.connect(analyser);
+  analyser.connect(javascriptNode);
 
-    javascriptNode.connect(audioContext.destination);
+  javascriptNode.connect(audioContext.destination);
 
   if (!canvas)
     return;
-  isOld ? renderCanvasOld(canvas, javascriptNode, analyser) : renderCanvas(canvas, javascriptNode, analyser);
+
+  renderType === 'old'
+    ? renderCanvasOld(canvas, javascriptNode, analyser)
+    : renderType === 'vertical'
+    ? renderVerticalCanvas(canvas, javascriptNode, analyser)
+    : renderHorizontalCanvas(canvas, javascriptNode, analyser);
 
 };
 
-const renderCanvas = (c, node, analyser) => {
+const renderHorizontalCanvas = (c, node, analyser) => {
   let cc       = c.getContext('2d');
   const w      = c.width;
   const h      = c.height;
@@ -145,7 +150,8 @@ const renderCanvas = (c, node, analyser) => {
   };
 };
 
-const renderCanvasOld = (canvas, javascriptNode, analyser) => {
+
+const renderVerticalCanvas = (canvas, javascriptNode, analyser) => {
   const w = canvas.width;
   const h = canvas.height;
   let canvasContext = canvas.getContext('2d');
@@ -175,6 +181,37 @@ const renderCanvasOld = (canvas, javascriptNode, analyser) => {
     canvasContext.fillRect(0, w - average, w, h);
   };
 };
+
+
+const renderCanvasOld = (canvas, javascriptNode, analyser) => {
+  let canvasContext = canvas.getContext("2d");
+  let gradient = canvasContext.createLinearGradient(0,0,0,55);
+  gradient.addColorStop(1,'green');
+  gradient.addColorStop(0.35,'#80ff00');
+  gradient.addColorStop(0.10,'orange');
+  gradient.addColorStop(0,'red');
+
+  javascriptNode.onaudioprocess = function() {
+    var array = new Uint8Array(analyser.frequencyBinCount);
+    analyser.getByteFrequencyData(array);
+    var values = 0;
+
+    var length = array.length;
+    for (var i = 0; i < length; i++) {
+      values += (array[i]);
+    }
+
+    var average = values / length;
+
+//          Janus.log(Math.round(average - 40));
+
+    canvasContext.clearRect(0, 0, 15, 35);
+    canvasContext.fillStyle = gradient;
+    //canvasContext.fillRect(0, 35-average*mn, 15, 35);
+    canvasContext.fillRect(0, 35-average, 15, 35);
+  }
+};
+
 export const checkNotification = () => {
     if ( !!window.Notification && Notification.permission !== "granted") {
         Notification.requestPermission();

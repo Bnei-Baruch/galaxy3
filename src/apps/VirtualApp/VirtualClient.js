@@ -391,7 +391,7 @@ class VirtualClient extends Component {
             micLevel(audio.stream, this.refs.canvas1, audioContext => {
               audio.context = audioContext;
               this.setState({media})
-            });
+            }, isUseNewDesign ? 'vertical': 'old');
           }
 
           // we dup this info on user so it goes into the backend.
@@ -478,7 +478,7 @@ class VirtualClient extends Component {
             micLevel(stream, this.refs.canvas1, audioContext => {
               media.audio.context = audioContext;
               this.setState({media});
-            });
+            },isUseNewDesign ? 'vertical': 'old');
           }
         })
   };
@@ -2303,10 +2303,7 @@ class VirtualClient extends Component {
               className='homet-limud'>
               <HomerLimud />
             </Modal>
-
-            <Menu.Item>
-              <Button primary onClick={() => toggleLocationParam()}>{t('oldClient.newDesign')}</Button>
-            </Menu.Item>
+            <Button primary  style={{ margin: 'auto 0' }} onClick={() => toggleLocationParam()}>{t('oldClient.newDesign')}</Button>
           </Menu>
           <Menu icon='labeled' secondary size="mini">
             {!room ?
