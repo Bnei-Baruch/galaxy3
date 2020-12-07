@@ -1,11 +1,9 @@
 import {Janus} from "../lib/janus";
-import * as Sentry from '@sentry/browser';
-import {STUN_SRV_GXY, WKLI_ENTER, WKLI_LEAVE
-} from "./env";
+import {STUN_SRV_GXY, WKLI_ENTER, WKLI_LEAVE} from "./env";
 
 export const initJanus = (cb,er,server,token="",iceServers=[{urls: STUN_SRV_GXY}]) => {
     Janus.init({
-        debug: process.env.NODE_ENV !== 'production' ? ["log","error"] : ["log", "error"],
+        debug: process.env.NODE_ENV !== 'production' ? ["debug", "log","error"] : ["log", "error"],
         callback: () => {
             let janus = new Janus({
                 server,
@@ -27,101 +25,6 @@ export const initJanus = (cb,er,server,token="",iceServers=[{urls: STUN_SRV_GXY}
     })
 };
 
-export const reportToSentry = (title, data, user, level) => {
-    level = level || 'info';
-    data  = data  || {};
-    Sentry.withScope(scope => {
-        Object.keys(data).forEach((key) => {
-            scope.setExtra(key, data[key]);
-        });
-        scope.setLevel(level);
-        if(user) {
-            const {id,username,email} = user;
-            Sentry.setUser({id,username,email});
-        }
-        Sentry.captureMessage(title);
-    });
-}
-
-export const joinChatRoom = (textroom, roomid, user) => {
-    let transaction = Janus.randomString(12);
-    let register = {
-        textroom: "join",
-        transaction: transaction,
-        room: roomid,
-        username: user.id,
-        display: user.display
-    };
-    textroom.data({
-        text: JSON.stringify(register),
-        error: (reason) => {
-            alert(reason);
-        }
-    });
-};
-
-export const initChatRoom = (janus, user, handle, cb) => {
-    let textroom = null;
-    janus.attach(
-        {
-            plugin: "janus.plugin.textroom",
-            opaqueId: "chatroom_user",
-            success: (pluginHandle) => {
-                textroom = pluginHandle;
-                handle(textroom);
-                Janus.log("Plugin attached! (" + textroom.getPlugin() + ", id=" + textroom.getId() + ")");
-                // Setup the DataChannel
-                let body = {"request": "setup"};
-                Janus.debug("Sending message (" + JSON.stringify(body) + ")");
-                textroom.send({"message": body});
-            },
-            error: (error) => {
-                console.error("  -- Error attaching plugin...", error);
-                reportToSentry(error, {source: "Textroom"}, user);
-            },
-            webrtcState: (on) => {
-                Janus.log("Janus says our WebRTC PeerConnection is " + (on ? "up" : "down") + " now");
-            },
-            onmessage: (msg, jsep) => {
-                Janus.debug(" ::: Got a message :::");
-                Janus.debug(msg);
-                if (msg["error"] !== undefined && msg["error"] !== null) {
-                    console.error(msg["error"]);
-                    reportToSentry(msg["error"], {source: "Onmessage"}, user);
-                }
-                if (jsep !== undefined && jsep !== null) {
-                    // Answer
-                    textroom.createAnswer(
-                        {
-                            jsep: jsep,
-                            media: {audio: false, video: false, data: true},	// We only use datachannels
-                            success: (jsep) => {
-                                Janus.debug("Got SDP!");
-                                Janus.debug(jsep);
-                                let body = {"request": "ack"};
-                                textroom.send({"message": body, "jsep": jsep});
-                            },
-                            error: (error) => {
-                                Janus.error("WebRTC error:", error);
-                                console.error("WebRTC error... " + JSON.stringify(error));
-                                reportToSentry(msg["error"], {source: "Offer"}, user);
-                            }
-                        });
-                }
-            },
-            ondataopen: () => {
-                Janus.log("The DataChannel is available!");
-            },
-            ondata: (data) => {
-                Janus.debug("We got data from the DataChannel! " + data);
-                cb(data);
-            },
-            oncleanup: () => {
-                Janus.log(" ::: Got a cleanup notification :::");
-            }
-        });
-};
-
 export const notifyMe = (title, message, tout) => {
     if (!!window.Notification) {
         if (Notification.permission !== "granted")
@@ -141,6 +44,16 @@ export const notifyMe = (title, message, tout) => {
             };
         }
     }
+};
+
+export const randomString = (len) => {
+  let charSet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  let randomString = '';
+  for (let i = 0; i < len; i++) {
+    let randomPoz = Math.floor(Math.random() * charSet.length);
+    randomString += charSet.substring(randomPoz,randomPoz+1);
+  }
+  return randomString;
 };
 
 export const genUUID = () => {
@@ -198,6 +111,8 @@ export const micLevel = (stream, canvas, cb) => {
 
     javascriptNode.connect(audioContext.destination);
 
+    if (!canvas)
+        return;
     let canvasContext = canvas.getContext("2d");
     let gradient = canvasContext.createLinearGradient(0,0,0,55);
     gradient.addColorStop(1,'green');
@@ -381,4 +296,28 @@ export const wkliLeave = (user) => {
         headers: {'Content-Type': 'application/json'},
         body:  JSON.stringify(request)
     }).then().catch(ex => console.log(`Leave User:`, ex));
+};
+
+//chat tools
+export const urlRegex    = /(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#/%?=~_|!:,.;()]*[-A-Z0-9+&@#/%=~_|()])/ig;
+export const isRTLChar   = /[\u0590-\u07FF\u200F\u202B\u202E\uFB1D-\uFDFD\uFE70-\uFEFC]/;
+export const isAscii     = /[\x00-\x7F]/;
+export const isAsciiChar = /[a-zA-Z]/;
+
+export const isRTLString = (text) => {
+  if (typeof text === 'undefined') {
+    return 0;
+  }
+  let rtl = 0;
+  let ltr = 0;
+  for (let i = 0; i < text.length; i++) {
+    if (!isAscii.test(text[i]) || isAsciiChar.test(text[i])) {
+      if (isRTLChar.test(text[i])) {
+        rtl++;
+      } else {
+        ltr++;
+      }
+    }
+  }
+  return rtl > ltr;
 };

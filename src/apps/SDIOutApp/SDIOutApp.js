@@ -2,13 +2,14 @@ import React, {Component, Fragment} from 'react';
 import {Grid, Segment} from "semantic-ui-react";
 import './SDIOutApp.css';
 import './UsersQuadSDIOut.scss'
-import {SDIOUT_ID} from "../../shared/consts";
+import {USERNAME_ALREADY_EXIST_ERROR_CODE, SDIOUT_ID} from "../../shared/consts";
 import api from "../../shared/Api";
 import {API_BACKEND_PASSWORD, API_BACKEND_USERNAME} from "../../shared/env";
 import GxyJanus from "../../shared/janus-utils";
 import UsersHandleSDIOut from "./UsersHandleSDIOut";
 import UsersQuadSDIOut from "./UsersQuadSDIOut";
 import {GuaranteeDeliveryManager} from '../../shared/GuaranteeDelivery';
+import {captureException, captureMessage} from "../../shared/sentry";
 
 
 class SDIOutApp extends Component {
@@ -23,8 +24,7 @@ class SDIOutApp extends Component {
             role: "sdiout",
             display: "sdiout",
             id: SDIOUT_ID,
-            //id: "SDIOUT_ID",
-            name: "sdiout"
+            name: "sdiout",
         },
         qids: [],
         qcol: 0,
@@ -33,6 +33,8 @@ class SDIOutApp extends Component {
         appInitError: null,
         vote: false,
         gdm: new GuaranteeDeliveryManager(SDIOUT_ID),
+        roomsStatistics: {},
+        reinit_inst: null,
     };
 
     componentDidMount() {
@@ -47,6 +49,16 @@ class SDIOutApp extends Component {
                 })
                 .catch(err => {
                     console.error("[SDIOut] error fetching quad state", err);
+                    captureException(err, {source: "SDIOut"});
+                });
+
+            api.fetchRoomsStatistics()
+                .then((roomsStatistics) => {
+                    this.setState({roomsStatistics});
+                })
+                .catch(err => {
+                    console.error("[SDIOut] error fetching rooms statistics", err);
+                    captureException(err, {source: "SDIOut"});
                 });
         }, 1000);
         this.initApp();
@@ -66,51 +78,57 @@ class SDIOutApp extends Component {
             .catch(err => {
                 console.error("[SDIOut] error initializing app", err);
                 this.setState({appInitError: err});
+                captureException(err, {source: 'SDIOut'});
             });
-    }
+    };
 
     initGateways = (user) => {
         const gateways = GxyJanus.makeGateways("rooms");
         this.setState({gateways});
 
-        return Promise.all(Object.values(gateways).map(gateway => (this.initGateway(user, gateway))))
-            .then(() => {
-                console.log("[SDIOut] gateways initialization complete");
-                this.setState({gatewaysInitialized: true});
-            });
-    }
+        const gatewayToInitPromise = (gateway) => this.initGateway(user, gateway)
+					.catch(error => {
+						captureException(error, {source: 'SDIOut', gateway: gateway.name});
+						throw error;
+					});
+
+        return Promise.all(Object.values(gateways).map(gatewayToInitPromise))
+					.then(() => {
+						console.log("[SDIOut] gateways initialization complete");
+						this.setState({gatewaysInitialized: true});
+					});
+    };
 
     initGateway = (user, gateway) => {
         console.log("[SDIOut] initializing gateway", gateway.name);
 
         gateway.addEventListener("reinit", () => {
+                this.setState({reinit_inst: gateway.name});
                 this.postInitGateway(user, gateway)
                     .catch(err => {
                         console.error("[SDIOut] postInitGateway error after reinit. Reloading", gateway.name, err);
-                        window.location.reload();
+                        captureException(err, {source: 'SDIOut', gateway: gateway.name});
+                        this.initGateway(user, gateway);
                     });
             }
         );
 
-        gateway.addEventListener("reinit_failure", (e) => {
-            if (e.detail > 10) {
-                console.error("[SDIOut] too many reinit_failure. Reloading", gateway.name, e);
-                window.location.reload();
-            }
-        });
-
         return gateway.init()
-            .then(() => this.postInitGateway(user, gateway));
-    }
+            .then(() => this.postInitGateway(user, gateway))
+            .catch(err => {
+                console.error("[SDIOut] error initializing gateway", gateway.name, err);
+                setTimeout(() => {
+                    this.initGateway(user, gateway)
+                        .catch(err => captureException(err, {source: 'SDIOut', gateway: gateway.name}));
+                }, 10000);
+            });
+    };
 
     postInitGateway = (user, gateway) => {
-        console.log("[SDIOut] initializing gateway", gateway.name);
-
         if (gateway.name === "gxy3") {
-            return gateway.initServiceProtocol(user, data => this.onServiceData(gateway, data, user))
-        } else {
-            return Promise.resolve();
+            return gateway.initServiceProtocol(user, data => this.onServiceData(gateway, data));
         }
+        return Promise.resolve();
     };
 
     onServiceData = (gateway, data, user) => {
@@ -125,12 +143,17 @@ class SDIOutApp extends Component {
             return;
           }
 
-          if (data.type === "error" && data.error_code === 420) {
+          if (data.type === "error") {
+            if (data.error_code === USERNAME_ALREADY_EXIST_ERROR_CODE) {
               console.error("[SDIOut] service error message (reloading in 10 seconds)", data.error);
-                  setTimeout(() => {
-                  this.initGateway(user, gateway);
-                  }, 10000);
-              }
+              captureMessage(data.error, {source: "SDIOut", msg: data});
+              setTimeout(() => {
+                this.initGateway(user, gateway);
+              }, 10000);
+            } else {
+              captureException(data.error, {source: "SDIOut", msg: data});
+            }
+          }
 
           const {room, col, feed, group, i, status, qst} = data;
 
@@ -163,7 +186,7 @@ class SDIOutApp extends Component {
     };
 
     render() {
-        let {vote,appInitError, gatewaysInitialized,group,qids,qg,gateways} = this.state;
+        let {vote,appInitError, gatewaysInitialized,group,qids,qg,gateways, roomsStatistics} = this.state;
         // let qst = g && g.questions;
         let name = group && group.description;
 
@@ -184,18 +207,22 @@ class SDIOutApp extends Component {
             <Grid columns={2} className="sdi_container">
                 <Grid.Row>
                     <Grid.Column>
-                        <UsersQuadSDIOut index={0} {...qids.q1} gateways={gateways} ref={col => {this.col1 = col;}} />
+                        <UsersQuadSDIOut index={0} {...qids.q1} qst={qg} gateways={gateways}
+                                         roomsStatistics={roomsStatistics} ref={col => {this.col1 = col;}} />
                     </Grid.Column>
                     <Grid.Column>
-                        <UsersQuadSDIOut index={4} {...qids.q2} gateways={gateways} ref={col => {this.col2 = col;}} />
+                        <UsersQuadSDIOut index={4} {...qids.q2} qst={qg} gateways={gateways}
+                                         roomsStatistics={roomsStatistics} ref={col => {this.col2 = col;}} />
                     </Grid.Column>
                 </Grid.Row>
                 <Grid.Row>
                     <Grid.Column>
-                        <UsersQuadSDIOut index={8} {...qids.q3} gateways={gateways} ref={col => {this.col3 = col;}} />
+                        <UsersQuadSDIOut index={8} {...qids.q3} qst={qg} gateways={gateways}
+                                         roomsStatistics={roomsStatistics} ref={col => {this.col3 = col;}} />
                     </Grid.Column>
                     <Grid.Column>
-                        <UsersQuadSDIOut index={12} {...qids.q4} gateways={gateways} ref={col => {this.col4 = col;}} />
+                        <UsersQuadSDIOut index={12} {...qids.q4} qst={qg} gateways={gateways}
+                                         roomsStatistics={roomsStatistics} ref={col => {this.col4 = col;}} />
                     </Grid.Column>
                 </Grid.Row>
                 <Grid.Row>
@@ -204,7 +231,8 @@ class SDIOutApp extends Component {
                             <div className="usersvideo_grid">
                                 <div className="video_full">
                                     {vote ?
-                                        <iframe src='https://vote.kli.one' width="100%" height="100%" frameBorder="0" />
+                                        <iframe title="Vote" src='https://vote.kli.one'
+                                                width="100%" height="100%" frameBorder="0" />
                                     :
                                         qg ? <Fragment>
                                         {/*{group && group.questions ? <div className="qst_fullscreentitle">?</div> : ""}*/}

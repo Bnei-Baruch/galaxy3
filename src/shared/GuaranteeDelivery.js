@@ -1,8 +1,13 @@
 import { Janus } from "./../lib/janus";
+import {captureMessage} from './sentry';
 
 export const MAX_DELAY = 5 * 1000;  // 5 seconds.
 export const RETRY_DELAY = 500;     // 0.5 seconds.
 export const INTERVALS_DELAY = 100; // 100ms.
+
+// After that time we can delete older accepted transactions.
+// We do keep them so that not to accept the same message more than once.
+export const MAX_ACCEPTED_DELAY = 3* 60 * 60 * 1000; // 3 hours.
 
 const ACK_FIELD = '__gack__';
 const FROM_FIELD = '__from__';
@@ -12,12 +17,18 @@ const RETRY_FIELD = '__gretry__';
 const TRANSACTION_FIELD = 'transaction';
 export const DEADLINE_EXCEEDED = 'DEADLINE_EXCEEDED';
 
-// Class for sending and receiving messages that we validate they were eventually received. If not we raise an error after MAX_DELAY.
-export class GuaranteeDeliveryManager {
-	constructor(userId, maxDelay = MAX_DELAY, retryDelay = RETRY_DELAY, intervalsDelay = INTERVALS_DELAY) {
+// Options to specify max delay and retry delay.
+export class SendOptions {
+  constructor(maxDelay = MAX_DELAY, retryDelay = RETRY_DELAY) {
     this.maxDelay = maxDelay;
     this.retryDelay = retryDelay;
-    this.intervalsDelay = intervalsDelay;
+  }
+}
+
+// Class for sending and receiving messages that we validate they were eventually received. If not we raise an error after MAX_DELAY.
+export class GuaranteeDeliveryManager {
+	constructor(userId, intervalsDelay = INTERVALS_DELAY, defaultSendOptions = null) {
+    this.defaultSendOptions = defaultSendOptions || new SendOptions();
 
     // Map from transaction to timestamp that message was sent and promise resolving or success
     // or rejecting on failure.
@@ -28,7 +39,7 @@ export class GuaranteeDeliveryManager {
     this.accepted = new Map();
 
     // Process pending messages status.
-    this.intervalIdentifier = setInterval(() => this.iterate_(), this.intervalsDelay);
+    this.intervalIdentifier = setInterval(() => this.iterate_(), intervalsDelay);
 
     if (!userId) {
       throw new Error(`Unique userId has to be set for GuaranteeDeliveryManager, got [${userId}].`);
@@ -42,12 +53,13 @@ export class GuaranteeDeliveryManager {
     const now = Number(new Date());
     for (const [transaction, state] of this.pending) {
       const interval = now - state.sent;
-      if (interval > this.maxDelay) {
+      const sendOptions = state.sendOptions || this.defaultSendOptions;
+      if (interval > sendOptions.maxDelay) {
         console.error('[GDM] Did not get all ack as required', state.ack);
         // Failed sending message on timeout. Delete and reject.
         this.pending.delete(transaction);
         state.delivery.reject({reason: DEADLINE_EXCEEDED, message: state.message});  // Note that if reject is computation heavy action, our timings might be not accurate.
-      } else if (now - state.sent >= (state.message[RETRY_FIELD] + 1) * this.retryDelay) {
+      } else if (now - state.sent >= (state.message[RETRY_FIELD] + 1) * sendOptions.retryDelay) {
         // We should retry.
         state.message[RETRY_FIELD]++;
         // Update the toAck and acked fields.
@@ -67,9 +79,8 @@ export class GuaranteeDeliveryManager {
     // Garbage collect accepted messages.
     for (const [transaction, accepted] of this.accepted) {
       const interval = now - accepted;
-      if (interval > 10 * this.maxDelay) {
-        // We don't expect messages to arrive after 10 * MAX_DELAY time, it is safe to delete
-        // them now.
+      if (interval > MAX_ACCEPTED_DELAY) {
+        // We don't expect messages to arrive after MAX_ACCEPTED_DELAY, it is safe to delete them now.
         this.accepted.delete(transaction);
       }
     }
@@ -80,14 +91,14 @@ export class GuaranteeDeliveryManager {
   // @param {!Array<string>} toAck List of userIds that are expected to ack. If empty will expect any non-self user to ack.
   // @param {function(!Object)} sendMessage
   // @return {!Promise}  <====  Resolve for success, reject for failure.
-  send(message, toAck, sendMessage) {
+  send(message, toAck, sendMessage, sendOptions = null) {
     // Make sure we have unique key in each message. Potentially use existing transaction.
     if (!(TRANSACTION_FIELD in message)) {
       message[TRANSACTION_FIELD] = Janus.randomString(12);
     }
     if (this.pending.has(message[TRANSACTION_FIELD])) {
       // Should not happen, sending new message with existing transaction.
-      return Promise.reject(new Error('Error, not expected new message with same transaction.', message));
+      return Promise.reject(new Error(`Duplicate transaction ${message[TRANSACTION_FIELD]}`));
     }
     message[RETRY_FIELD] = 0;
     message[TO_ACK_FIELD] = toAck;
@@ -109,6 +120,7 @@ export class GuaranteeDeliveryManager {
       sendMessage,
       message,
       ack,
+      sendOptions,
     });
     sendMessage(message);
     return ret;
@@ -159,7 +171,7 @@ export class GuaranteeDeliveryManager {
     }
     [TRANSACTION_FIELD, FROM_FIELD].forEach((field) => {
       if (!(field in message)) {
-        return Promise.reject(`All guarantee messages expect to have ${field} field.`);
+        return Promise.reject(new Error(`Message missing field: ${field}`));
       }
     });
     const ack = {
@@ -171,6 +183,7 @@ export class GuaranteeDeliveryManager {
     const toAck = (TO_ACK_FIELD in message && message[TO_ACK_FIELD]) || [];
     if ((toAck.length === 0 && this.userId !== message[FROM_FIELD]) ||
         toAck.includes(this.userId)) {
+			captureMessage('Sending ack back', {source: 'Guarantee', msg: message, ack});
       sendAckBack(ack);
     }
     if (this.accepted.has(message[TRANSACTION_FIELD])) {

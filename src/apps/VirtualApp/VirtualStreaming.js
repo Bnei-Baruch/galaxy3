@@ -1,4 +1,4 @@
-import React, {Component, Fragment} from 'react';
+import React, { Component, Fragment } from 'react';
 import {
   Label,
   Dropdown,
@@ -6,7 +6,7 @@ import {
   Icon,
   Flag
 } from 'semantic-ui-react';
-import NewWindow from 'react-new-window';
+import NewWindow from '@hinaser/react-new-window';
 import {
   videos_options2,
   audiog_options2,
@@ -14,24 +14,19 @@ import {
 } from '../../shared/consts';
 // import '../StreamApp/GalaxyStream.css';
 import './BroadcastStream.scss';
-import Volume from './components/Volume'
-import {withTranslation} from 'react-i18next';
+import Volume from './components/Volume';
+import { withTranslation } from 'react-i18next';
+import { isFullScreen, toggleFullScreen } from './FullScreenHelper';
 import VirtualWorkshopQuestion from './VirtualWorkshopQuestion';
 import classNames from 'classnames';
 
 class VirtualStreaming extends Component {
-  constructor(props) {
-    super(props);
-    this.handleFullScreenChange = this.handleFullScreenChange.bind(this);
-  }
-
   state = {
     audios: Number(localStorage.getItem('vrt_lang')) || 2,
     room: Number(localStorage.getItem('room')) || null,
     user: {},
     cssFixInterval: null,
-    talking: false,
-    fullScreen: false
+    talking: false
   };
 
   videoRef(ref) {
@@ -41,19 +36,20 @@ class VirtualStreaming extends Component {
   setVideoWrapperRef(ref) {
     if (ref && ref !== this.videoWrapper) {
       this.videoWrapper = ref;
-      this.videoWrapper.ownerDocument.defaultView.removeEventListener('resize', this.handleFullScreenChange);
-      this.videoWrapper.ownerDocument.defaultView.addEventListener('resize', this.handleFullScreenChange);
     }
   }
 
-  handleFullScreenChange() {
-    this.setState({fullScreen: this.isFullScreen()});
-  }
-
   componentDidMount() {
-    this.props.virtualStreamingJanus.onTalking((talking) => this.setState({talking}));
-    this.setState({cssFixInterval: setInterval(() => this.cssFix(), 500)});
+    this.props.virtualStreamingJanus.onTalking((talking) => this.setState({ talking }));
+    this.setState({ cssFixInterval: setInterval(() => this.cssFix(), 500) });
   };
+
+  componentDidUpdate(prevProps, prevState, snapshot) {
+    if (this.props.audios && this.props.audios.audios !== prevState.audios) {
+      const { audios, text } = this.props.audios;
+      this.setAudio(audios, text);
+    }
+  }
 
   cssFix() {
     const d = document.getElementsByClassName('controls__dropdown');
@@ -71,36 +67,11 @@ class VirtualStreaming extends Component {
     if (this.state.cssFixInterval) {
       clearInterval(this.state.cssFixInterval);
     }
-    if (this.videoWrapper) {
-      this.videoWrapper.ownerDocument.defaultView.removeEventListener('resize', this.handleFullScreenChange);
-    }
   };
 
-  isFullScreen = () => {
-    return !!this.videoWrapper && (this.videoWrapper.ownerDocument.fullscreenElement
-      || this.videoWrapper.ownerDocument.mozFullScreenElemen
-      || this.videoWrapper.ownerDocument.webkitFullscreenElement);
-  };
+  isFullScreen = () => isFullScreen(this.videoWrapper);
 
-  toggleFullScreen = () => {
-    if (this.state.fullScreen) {
-      if (this.videoWrapper.ownerDocument.exitFullscreen) {
-        this.videoWrapper.ownerDocument.exitFullscreen();
-      } else if (this.videoWrapper.ownerDocument.webkitExitFullscreen) {
-        this.videoWrapper.ownerDocument.webkitExitFullscreen();
-      } else if (this.videoWrapper.ownerDocument.mozCancelFullScreen) {
-        this.videoWrapper.ownerDocument.mozCancelFullScreen();
-      }
-    } else {
-      if (this.videoWrapper.requestFullScreen) {
-        this.videoWrapper.requestFullScreen();
-      } else if (this.videoWrapper.webkitRequestFullScreen) {
-        this.videoWrapper.webkitRequestFullScreen();
-      } else if (this.videoWrapper.mozRequestFullScreen) {
-        this.videoWrapper.mozRequestFullScreen();
-      }
-    }
-  };
+  toggleFullScreen = () => toggleFullScreen(this.videoWrapper);
 
   toggleNewWindow = () => {
     this.props.attached ? this.props.setDetached() : this.props.setAttached();
@@ -120,25 +91,24 @@ class VirtualStreaming extends Component {
   }
 
   setAudio(audios, text) {
-    this.setState({audios});
+    this.setState({ audios });
     this.props.virtualStreamingJanus.setAudio(audios, text);
   }
 
   render() {
     const {
-      attached,
-      closeShidur,
-      virtualStreamingJanus,
-      t,
-      videos,
-      layout
-    } = this.props;
+            attached,
+            closeShidur,
+            virtualStreamingJanus,
+            t,
+            videos,
+            layout
+          } = this.props;
     const {
-      audios,
-      fullScreen,
-      room,
-      talking,
-    } = this.state;
+            audios,
+            room,
+            talking,
+          } = this.state;
 
     if (!room) {
       return (<b> :: THIS PAGE CAN NOT BE OPENED DIRECTLY ::</b>);
@@ -148,121 +118,106 @@ class VirtualStreaming extends Component {
     const audio_option = audiog_options2.find((option) => option.value === audios);
 
     const inLine = (
-      <div className={classNames('video video--broadcast', {'video--fullscreen': fullScreen, 'video--pop': !attached})}
-           key='v0'
-           ref={(ref) => this.setVideoWrapperRef(ref)}
-           id='video0'
-           style={{height: !attached ? '100%' : null, width: !attached ? '100%' : null}}>
+      <div className="video video--broadcast" key='v0' ref={(ref) => this.setVideoWrapperRef(ref)} id='video0'
+           style={{ height: !attached ? '100%' : null, width: !attached ? '100%' : null }}>
         <div className="video__overlay">
           <div className="activities">
-            <VirtualWorkshopQuestion layout={fullScreen ? 'fullscreen' : !attached ? 'detached' : layout}/>
+            <VirtualWorkshopQuestion layout={isFullScreen ? 'fullscreen' : !attached ? 'detached' : layout}/>
             <div className="controls">
-              <div className="controls__top">
-                <button>
-                  <Icon name='close' onClick={closeShidur}/>
-                </button>
-              </div>
-              <div className="controls__bottom">
-                <div>
-                  <Dropdown
-                    upward
-                    floating
-                    scrolling
-                    icon={null}
-                    selectOnBlur={false}
-                    trigger={
-                      <button>{video_option ? (video_option.value === NO_VIDEO_OPTION_VALUE ? t(video_option.description) : video_option.description) : ''}</button>}
-                    className="video-selection"
-                  >
-                    <Dropdown.Menu className='controls__dropdown'>
-                      {videos_options2.map((option, i) => {
-                        if (option.divider === true) return (<Dropdown.Divider key={i}/>);
-                        if (option.header === true) return (
-                          <Dropdown.Header className='ui blue' icon={option.icon}>
-                            {t(option.text)}
-                            {(option.description ?
-                              <Header as='div' size='tiny' color='grey' content={t(option.description)}/> : '')}
-                          </Dropdown.Header>
-                        );
-                        return (
-                          <Dropdown.Item
-                            key={i}
-                            text={t(option.text)}
-                            selected={option.value === videos}
-                            icon={option.icon}
-                            description={t(option.description)}
-                            action={option.action}
-                            onClick={() => this.setVideo(option.value)}
-                          />
-                        );
-                      })}
-                    </Dropdown.Menu>
-                  </Dropdown>
+            <div className="controls__top">
+              <button>
+                <Icon name='close' onClick={closeShidur} />
+              </button>
+            </div>
+            <div className="controls__bottom">
+              <Dropdown
+                upward
+                floating
+                scrolling
+                icon={null}
+                selectOnBlur={false}
+                trigger={
+                  <button>{video_option ? (video_option.value === NO_VIDEO_OPTION_VALUE ? t(video_option.description) : video_option.description) : ''}</button>}
+                className="video-selection"
+              >
+                <Dropdown.Menu className='controls__dropdown'>
+                  {videos_options2.map((option, i) => {
+                    if (option.divider === true) return (<Dropdown.Divider key={i} />);
+                    if (option.header === true) return (
+                      <Dropdown.Header className='ui blue' icon={option.icon}>
+                        {t(option.text)}
+                        {(option.description ?
+                          <Header as='div' size='tiny' color='grey' content={t(option.description)} /> : '')}
+                      </Dropdown.Header>
+                    );
+                    return (
+                      <Dropdown.Item
+                        key={i}
+                        text={t(option.text)}
+                        selected={option.value === videos}
+                        icon={option.icon}
+                        description={t(option.description)}
+                        action={option.action}
+                        onClick={() => this.setVideo(option.value)}
+                      />
+                    );
+                  })}
+                </Dropdown.Menu>
+              </Dropdown>
 
-                  <Dropdown
-                    upward
-                    floating
-                    scrolling
-                    icon={null}
-                    selectOnBlur={false}
-                    trigger={
-                      <button>
-                        <span className="audio-big-screen">
-                          {audio_option.icon ? <Icon name={audio_option.icon}/> : ''}
-                          {audio_option.text ? `${audio_option.text}` : ''}
-                        </span>
-                        <span className="audio-small-screen">
-                           {audio_option.flag ? <Flag name={audio_option.flag}/> : ''}
-                        </span>
-                      </button>
-                    }
-                    className="audio-selection"
-                  >
-                    <Dropdown.Menu className='controls__dropdown'>
-                      {audiog_options2.map((option, i) => {
-                        if (option.divider === true) return (<Dropdown.Divider key={i}/>);
-                        if (option.header === true) return (
-                          <Dropdown.Header className='ui blue' key={i}>
-                            <Icon name={option.icon}/>
-                            <div>
-                              {t(option.text)}
-                              <br/>
-                              {(option.description ?
-                                <Header as='span' size='tiny' color='grey' content={t(option.description)}/> : '')}
-                            </div>
-                          </Dropdown.Header>
-                        );
-                        return (
-                          <Dropdown.Item
-                            key={i}
-                            text={option.text}
-                            selected={option.value === audios}
-                            // icon={option.icon}
-                            flag={option.flag}
-                            description={option.description}
-                            action={option.action}
-                            onClick={() => this.setAudio(option.value, option.eng_text)}
-                          />
-                        );
-                      })}
-                    </Dropdown.Menu>
-                  </Dropdown>
-                  <Volume media={virtualStreamingJanus.audioElement}/>
-                </div>
-                <div>
-                  <button onClick={this.toggleFullScreen}>
-                    <Icon name={fullScreen ? 'compress' : 'expand'}/>
-                  </button>
-                  {!attached ? null :
-                    <button onClick={this.toggleNewWindow}>
-                      <Icon name="external square"/>
-                    </button>
-                  }
-                </div>
-              </div>
+              <Dropdown
+                upward
+                floating
+                scrolling
+                icon={null}
+                selectOnBlur={false}
+                trigger={<button>{audio_option.icon ?
+                  <Icon name={audio_option.icon} /> : ''}{audio_option.text ? `${audio_option.text}` : ''}</button>}
+                className="audio-selection"
+              >
+                <Dropdown.Menu className='controls__dropdown'>
+                  {audiog_options2.map((option, i) => {
+                    if (option.divider === true) return (<Dropdown.Divider key={i} />);
+                    if (option.header === true) return (
+                      <Dropdown.Header className='ui blue' key={i}>
+                        <Icon name={option.icon} />
+                        <div>
+                          {t(option.text)}
+                          <br />
+                          {(option.description ?
+                            <Header as='span' size='tiny' color='grey' content={t(option.description)} /> : '')}
+                        </div>
+                      </Dropdown.Header>
+                    );
+                    return (
+                      <Dropdown.Item
+                        key={i}
+                        text={option.text}
+                        selected={option.value === audios}
+                        // icon={option.icon}
+                        flag={option.flag}
+                        description={option.description}
+                        action={option.action}
+                        onClick={() => this.setAudio(option.value, option.eng_text)}
+                      />
+                    );
+                  })}
+                </Dropdown.Menu>
+              </Dropdown>
+              <Volume media={virtualStreamingJanus.audioElement} />
+            </div>
+              <div className="controls__spacer"></div>
+              <button onClick={this.toggleFullScreen}>
+                <Icon name={isFullScreen(this.videoWrapper) ? 'compress' : 'expand'} />
+              </button>
+              {!attached ? null :
+                <button onClick={this.toggleNewWindow}>
+                  <Icon name="external square" />
+                </button>
+              }
             </div>
           </div>
-          {talking && <Label className='talk' size='massive' color='red'><Icon name='microphone'/>On</Label>}
+          {talking && <Label className='talk' size='massive' color='red'><Icon name='microphone' />On</Label>}
         </div>
         <div className='mediaplayer'>
           <video ref={(ref) => this.videoRef(ref)}
@@ -272,7 +227,7 @@ class VirtualStreaming extends Component {
                  autoPlay={true}
                  controls={false}
                  muted={true}
-                 playsInline={true}/>
+                 playsInline={true} />
         </div>
       </div>
     );
@@ -282,8 +237,8 @@ class VirtualStreaming extends Component {
         {attached && inLine}
         {!attached &&
         <NewWindow
-          features={{width: '725', height: '635', left: '200', top: '200', location: 'no'}}
-          title='Broadcast' onUnload={this.onUnload} onBlock={this.onBlock}>
+          features={{ width: '725', height: '635', left: '200', top: '200', location: 'no' }}
+          title='V4G' onUnload={this.onUnload} onBlock={this.onBlock}>
           {inLine}
         </NewWindow>
         }

@@ -1,10 +1,11 @@
 import React, {Component, Fragment,} from 'react';
-import {Button, Divider, Grid,} from "semantic-ui-react";
+import {Button, Grid,} from "semantic-ui-react";
 import LoginPage from '../components/LoginPage';
 import {kc} from "../components/UserManager";
 import {withTranslation} from "react-i18next";
 import {languagesOptions, setLanguage} from "../i18n/i18n";
-import VerifyAccount from './VirtualApp/components/VerifyAccount';
+import {updateSentryUser} from "../shared/sentry";
+import {getUserRole} from "../shared/enums";
 
 class GalaxyApp extends Component {
 
@@ -27,31 +28,26 @@ class GalaxyApp extends Component {
     }
 
     checkPermission = (user) => {
-        const approval = kc.hasRealmRole("pending_approval");
-        const options = this.options(user.roles, approval);
+        const allow = getUserRole();
+        const options = this.buttonOptions(user.roles);
         this.setState({options: options.length});
-        user.role = approval ? 'ghost' : 'user';
-        const requested = this.requested(user);
-        if(options.length > 1 || (approval && !requested)) {
+        if(options.length > 1 && allow !== null) {
             this.setState({user, roles: user.roles});
-        } else if(requested || options.length === 1) {
+            updateSentryUser(user);
+        } else if(allow !== null && options.length === 1) {
             window.location = '/user';
         } else {
             alert("Access denied.");
             kc.logout();
+            updateSentryUser(null);
         }
     }
 
-    requested = (user) => {
-        return user && !!user.request && !!user.request.length;
-    }
-
-    options = (roles, approval) => {
-        const {t} = this.props;
+    buttonOptions = (roles) => {
         return roles.map((role, i) => {
-            if(role === "gxy_user" || role === "pending_approval") {
+            if(role.match(/^(new_user|gxy_guest|gxy_pending_approval|gxy_user|pending_approval)$/)) {
                 return (<Button key={i} size='massive' color='green' onClick={() => window.open("user","_self")}>
-                    {approval ? t('galaxyApp.continueAsGuest') : 'Galaxy'}
+                    Galaxy
                 </Button>);
             }
             if(role === "gxy_shidur") {
@@ -74,21 +70,13 @@ class GalaxyApp extends Component {
     }
 
     render() {
-        const {i18n} = this.props;
-        const {user, roles, options} = this.state;
-        const approval = kc.hasRealmRole("pending_approval");
-        const requested = this.requested(user);
+        const {user, roles} = this.state;
 
         const enter = (
-            <Grid columns={(!approval || requested) ? 1 : 2}>
+            <Grid>
                 <Grid.Row>
-                    {user && options > 1 ? null : <Divider className="whole-divider" vertical />}
-                    {(!approval || requested) ? null :
-                        <Grid.Column>
-                        <VerifyAccount user={user} loginPage={true} i18n={i18n} onUserUpdate={(user) => this.checkPermission(user)} />
-                    </Grid.Column>}
                     <Grid.Column style={{display: 'flex', justifyContent: 'center', alignItems: 'center'}}>
-                        {this.options(roles, approval)}
+                        {this.buttonOptions(roles)}
                     </Grid.Column>
                 </Grid.Row>
             </Grid>

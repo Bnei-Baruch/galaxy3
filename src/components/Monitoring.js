@@ -22,6 +22,7 @@ const usePrevious = (value) => {
 export const Monitoring = (props) => {
   const {monitoringData} = props;
   const [data, setData] = useState([]);
+  const [registered, setRegistered] = useState(false);
 
   const prevMonitoringData = usePrevious(monitoringData)
 
@@ -31,12 +32,13 @@ export const Monitoring = (props) => {
     return null;
   }
 
-  if (prevMonitoringData !== monitoringData) {
+  if (prevMonitoringData !== monitoringData || !registered) {
     if (prevMonitoringData) {
       prevMonitoringData.unregister();
     }
     if (monitoringData) {
       monitoringData.register((data) => setData(data));
+      setRegistered(true);
     }
   }
 

@@ -1,6 +1,6 @@
 import React, {Component, Fragment} from 'react';
 import {Janus} from "../../lib/janus";
-import {Button, Confirm, Grid, Header, Icon, Label, List, Menu, Popup, Segment, Tab, Table} from "semantic-ui-react";
+import {Button, Confirm, Dropdown, Grid, Header, Icon, List, Menu, Popup, Segment, Tab, Table} from "semantic-ui-react";
 import './AdminRoot.css';
 import './AdminRootVideo.scss'
 import classNames from "classnames";
@@ -15,6 +15,8 @@ import RoomManager from "./components/RoomManager";
 import api from "../../shared/Api";
 import ConfigStore from "../../shared/ConfigStore";
 import {GuaranteeDeliveryManager} from "../../shared/GuaranteeDelivery";
+import StatNotes from "./components/StatNotes";
+import {captureException, captureMessage, updateSentryUser} from "../../shared/sentry";
 
 class AdminRoot extends Component {
 
@@ -22,6 +24,7 @@ class AdminRoot extends Component {
         activeTab: 0,
         audio: null,
         chatRoomsInitialized: false,
+        chatRoomsInitializedError: null,
         current_room: "",
         current_janus: "",
         feedStreams: {},
@@ -40,20 +43,14 @@ class AdminRoot extends Component {
         mystream: null,
         rooms: [],
         users: [],
+        rooms_question: [],
         user: null,
         usersTabs: [],
         appInitError: null,
         users_count: 0,
-        gxy1_count: 0,
-        gxy2_count: 0,
-        gxy3_count: 0,
-        gxy4_count: 0,
-        gxy5_count: 0,
-        gxy6_count: 0,
-        gxy7_count: 0,
         command_status: true,
         gdm: null,
-        premodStatus: false,
+        // premodStatus: false, Temporary not used.
         showConfirmReloadAll: false,
     };
 
@@ -74,7 +71,7 @@ class AdminRoot extends Component {
              nextState.activeTab === 0 ||
              activeTab !== nextState.activeTab ||
              nextState.usersTabs.length !== usersTabs.length;
-    }
+    };
 
     checkPermission = (user) => {
         const roles = new Set(user.roles || []);
@@ -96,6 +93,7 @@ class AdminRoot extends Component {
         } else {
             alert("Access denied!");
             kc.logout();
+            updateSentryUser(null);
         }
     };
 
@@ -122,27 +120,35 @@ class AdminRoot extends Component {
 
     initApp = (user) => {
         let gdm = new GuaranteeDeliveryManager(user.id);
-        this.setState({user,gdm});
+        this.setState({user, gdm});
+        updateSentryUser(user);
 
         api.fetchConfig()
             .then(data => {
                 ConfigStore.setGlobalConfig(data);
-                this.setState({premodStatus: ConfigStore.dynamicConfig(ConfigStore.PRE_MODERATION_KEY) === 'true'});
+                // this.setState({premodStatus: ConfigStore.dynamicConfig(ConfigStore.PRE_MODERATION_KEY) === 'true'});  Temporary not used.
                 GxyJanus.setGlobalConfig(data);
             })
             .then(() => this.initGateways(user))
             .then(this.pollRooms)
-            .catch(err => {
-                console.error("[Admin] error initializing app", err);
-                this.setState({appInitError: err});
+            .catch(error => {
+                console.error("[Admin] error initializing app", error);
+                captureException(error, {source: 'AdminRoot'});
+                this.setState({appInitError: error});
             });
-    }
+    };
 
     initGateways = (user) => {
         const gateways = GxyJanus.makeGateways("rooms");
         this.setState({gateways});
 
-        return Promise.all(Object.values(gateways).map(gateway => (this.initGateway(user, gateway))))
+        const gatewayToInitPromise = (gateway) => this.initGateway(user, gateway)
+					.catch(error => {
+						captureException(error, {source: 'AdminRoot', gateway: gateway.name});
+						throw error;
+					});
+
+        return Promise.all(Object.values(gateways).map(gatewayToInitPromise))
             .then(() => {
                 console.info("[Admin] gateways initialization complete");
                 this.setState({gatewaysInitialized: true});
@@ -152,63 +158,40 @@ class AdminRoot extends Component {
     initGateway = (user, gateway) => {
         console.info("[Admin] initializing gateway", gateway.name);
 
-        gateway.addEventListener("reinit", () => {
-                this.postInitGateway(user, gateway)
-                    .catch(err => {
-                        console.error("[Admin] postInitGateway error after reinit. Reloading", gateway.name, err);
-                        window.location.reload();
-                    });
-            }
-        );
-
         gateway.addEventListener("reinit_failure", (e) => {
             if (e.detail > 10) {
                 console.error("[Admin] too many reinit_failure. Reloading", gateway.name, e);
+                captureException(e, {source: 'AdminRoot', gateway: gateway.name});
                 window.location.reload();
             }
         });
 
-        return gateway.init()
-            .then(() => this.postInitGateway(user, gateway));
-    }
-
-    postInitGateway = (user, gateway) => {
-        console.info("[Admin] gateway post initialization", gateway.name);
-        if (this.isAllowed("admin")) {
-            return gateway.initGxyProtocol(user, data => this.onProtocolData(gateway, data))
-        } else {
-            return Promise.resolve();
-        }
-    }
+        return gateway.init();
+    };
 
     pollRooms = () => {
         this.fetchRooms();
         setInterval(this.fetchRooms, 10 * 1000)
-    }
+    };
 
     fetchRooms = () => {
         api.fetchActiveRooms()
             .then((data) => {
                 const {current_room} = this.state;
                 const users_count = data.map(r => r.num_users).reduce((su, cur) => su + cur, 0);
-                const gxy1_count = data.filter(r => r.janus === "gxy1").map(r => r.num_users).reduce((su, cur) => su + cur, 0);
-                const gxy2_count = data.filter(r => r.janus === "gxy2").map(r => r.num_users).reduce((su, cur) => su + cur, 0);
-                const gxy3_count = data.filter(r => r.janus === "gxy3").map(r => r.num_users).reduce((su, cur) => su + cur, 0);
-                const gxy4_count = data.filter(r => r.janus === "gxy4").map(r => r.num_users).reduce((su, cur) => su + cur, 0);
-                const gxy5_count = data.filter(r => r.janus === "gxy5").map(r => r.num_users).reduce((su, cur) => su + cur, 0);
-                const gxy6_count = data.filter(r => r.janus === "gxy6").map(r => r.num_users).reduce((su, cur) => su + cur, 0);
-                const gxy7_count = data.filter(r => r.janus === "gxy7").map(r => r.num_users).reduce((su, cur) => su + cur, 0);
                 const room = data.find(r => r.room === current_room);
+                const rooms_question = data.filter(r => r.questions);
                 let users = current_room && room ? room.users : [];
                 data.sort((a, b) => {
                     if (a.description > b.description) return 1;
                     if (a.description < b.description) return -1;
                     return 0;
                 });
-                this.setState({rooms: data, users, users_count, gxy1_count, gxy2_count, gxy3_count, gxy4_count, gxy5_count, gxy6_count, gxy7_count});
+                this.setState({rooms: data, users, users_count, rooms_question});
             })
             .catch(err => {
                 console.error("[Admin] error fetching active rooms", err);
+                captureException(err, {source: 'AdminRoot'});
             })
     }
 
@@ -216,24 +199,35 @@ class AdminRoot extends Component {
         console.log("[Admin] newVideoRoom", room);
 
         return gateway.initVideoRoom({
-            onmessage: (msg, jsep) => {
-                this.onVideoroomMessage(gateway, msg, jsep);
-            }
+          onmessage: (msg, jsep) => {
+            this.onVideoroomMessage(gateway, msg, jsep);
+          },
+          ondataerror: (error) => {
+            console.error("[Admin] video room on data error", error);
+            captureMessage('[Admin] video room on data error', {source: 'AdminRoot', err: error, gateway: gateway.name}, 'error');
+          },
         });
     };
 
     publishOwnFeed = (gateway) => {
+        console.log("[Admin] publishOwnFeed", gateway.name);
         gateway.videoroom.createOffer({
-            media: {audio: false, video: false, data: true},
+            media: {audio: false, video: false, data: false},
             simulcast: false,
             success: (jsep) => {
-                Janus.debug('Got publisher SDP!');
-                Janus.debug(jsep);
-                let publish = { request: 'configure', audio: false, video: false, data: true };
-                gateway.videoroom.send({ 'message': publish, 'jsep': jsep });
+                gateway.debug('Got publisher SDP!', jsep);
+                gateway.videoroom.send({
+                    jsep,
+                    message: {request: 'configure', audio: false, video: false, data: false},
+                    error: (err) => {
+                        gateway.error('videoroom configure error:', err);
+                        captureMessage(`Videoroom error: configure [publishOwnFeed] - ${err}`, {source: 'AdminRoot', err}, 'error');
+                    },
+                });
             },
-            error: (error) => {
-                Janus.error('WebRTC error:', error);
+            error: (err) => {
+                gateway.error('videoroom createOffer error:', err);
+                captureMessage(`Videoroom error: create offer [publishOwnFeed] - ${err}`, {source: 'AdminRoot', err}, 'error');
             }
         });
     };
@@ -247,7 +241,7 @@ class AdminRoot extends Component {
                 let mypvtid = msg["private_id"];
                 this.setState({myid, mypvtid});
                 console.log("[Admin] Successfully joined room " + msg["room"] + " with ID " + myid + " on " + gateway.name);
-                this.publishOwnFeed(gateway);
+                //this.publishOwnFeed(gateway);
                 // Any new feed to attach to?
                 if (msg["publishers"] !== undefined && msg["publishers"] !== null) {
                     let list = msg["publishers"];
@@ -368,22 +362,31 @@ class AdminRoot extends Component {
                     } else {
                         console.error("[Admin] videoroom error message", msg);
                     }
+                    captureMessage(`Videoroom error: message - ${msg["error"]}`, {source: "AdminRoot", err: msg, gateway: gateway.name}, 'error');
                 }
             }
         }
 
         if (jsep !== undefined && jsep !== null) {
             gateway.debug("[videoroom] Handling SDP as well...", jsep);
-            gateway.videoroom.handleRemoteJsep({jsep});
+            gateway.videoroom.handleRemoteJsep({
+                jsep,
+                error: (err) => {
+                    gateway.error('videoroom handleRemoteJsep error:', err);
+                    captureMessage(`Videoroom error: handleRemoteJsep - ${err}`, {source: 'AdminRoot', err, gateway: gateway.name}, 'error');
+                },
+            });
         }
     };
 
     newRemoteFeed = (gateway, subscription) => {
+        console.log("[Admin] newRemoteFeed", gateway.name);
         gateway.newRemoteFeed({
             onmessage: (msg, jsep) => {
                 let event = msg["videoroom"];
                 if (msg["error"] !== undefined && msg["error"] !== null) {
                     gateway.error("[remoteFeed] error message:", msg["error"]);
+                    captureMessage(`remoteFeed error: message - ${msg["error"]}`, {source: "AdminRoot", err: msg, gateway: gateway.name}, 'error');
                 } else if (event !== undefined && event !== null) {
                     if (event === "attached") {
                         gateway.log("[remoteFeed] Successfully attached to feed in room " + msg["room"]);
@@ -410,14 +413,21 @@ class AdminRoot extends Component {
                     gateway.remoteFeed.createAnswer(
                         {
                             jsep: jsep,
-                            media: {audioSend: false, videoSend: false, data: true},	// We want recvonly audio/video
+                            media: {audioSend: false, videoSend: false, data: false},	// We want recvonly audio/video
                             success: (jsep) => {
                                 gateway.debug("[remoteFeed] Got SDP", jsep);
-                                let body = {request: "start", room: this.state.current_room, data: true};
-                                gateway.remoteFeed.send({message: body, jsep: jsep});
+                                gateway.remoteFeed.send({
+                                    jsep,
+                                    message: {request: "start", room: this.state.current_room, data: false},
+                                    error: (err) => {
+                                        gateway.error('[remoteFeed] start error', err);
+                                        captureMessage(`remoteFeed error: start - ${err}`, {source: 'AdminRoot', err, gateway: gateway.name}, 'error');
+                                    }
+                                });
                             },
-                            error: (error) => {
-                                gateway.error("[remoteFeed] createAnswer error", error);
+                            error: (err) => {
+                                gateway.error("[remoteFeed] createAnswer error", err);
+                                captureMessage(`remoteFeed error: createAnswer - ${err}`, {source: 'AdminRoot', err, gateway: gateway.name}, 'error');
                             }
                         });
                 }
@@ -448,6 +458,9 @@ class AdminRoot extends Component {
                     console.debug("[Admin] Track already attached: ", track);
                 }
             },
+            ondataerror: (error) => {
+              captureMessage('[Admin] remotefeed on data error', {source: 'AdminRoot', err: error, gateway: gateway.name}, 'error');
+            },
         })
             .then(() => {
                 const subscribe = {
@@ -460,15 +473,17 @@ class AdminRoot extends Component {
                 gateway.remoteFeed.send({
                     message: subscribe,
                     success: () => {
-                        gateway.log('[remoteFeed] join as subscriber success', subscribe)
+                        gateway.log('[remoteFeed] join as subscriber success', subscribe);
                     },
                     error: (err) => {
-                        gateway.error('[remoteFeed] error join as subscriber', subscribe, err)
+                        gateway.error('[remoteFeed] error join as subscriber', subscribe, err);
+                        captureMessage(`remoteFeed error: join - ${err}`, {source: 'AdminRoot', err, gateway: gateway.name}, 'error');
                     }
                 });
             })
             .catch(err => {
                 console.error("[Admin] gateway.newRemoteFeed error", err);
+                captureException(err, {source: 'AdminRoot', gateway: gateway.name});
             });
     };
 
@@ -482,10 +497,11 @@ class AdminRoot extends Component {
             gateway.remoteFeed.send({
                 message: subscribe,
                 success: () => {
-                    gateway.log('[remoteFeed] subscribe success', subscribe)
+                    gateway.log('[remoteFeed] subscribe success', subscribe);
                 },
                 error: (err) => {
-                    gateway.error('[remoteFeed] error subscribe', subscribe, err)
+                    gateway.error('[remoteFeed] error subscribe', subscribe, err);
+                    captureMessage(`remoteFeed error: subscribe - ${err}`, {source: "AdminRoot", err, gateway: gateway.name}, 'error');
                 }
             });
         } else {
@@ -510,10 +526,11 @@ class AdminRoot extends Component {
                 gateway.remoteFeed.send({
                     message: unsubscribe,
                     success: () => {
-                        gateway.log('[remoteFeed] unsubscribe success', unsubscribe)
+                        gateway.log('[remoteFeed] unsubscribe success', unsubscribe);
                     },
                     error: (err) => {
-                        gateway.error('[remoteFeed] error unsubscribe', unsubscribe, err)
+                        gateway.error('[remoteFeed] error unsubscribe', unsubscribe, err);
+                        captureMessage(`remoteFeed error: unsubscribe - ${err}`, {source: "AdminRoot", err}, 'error');
                     }
                 });
 
@@ -527,37 +544,41 @@ class AdminRoot extends Component {
         }
     };
 
-    onProtocolData = (gateway, data) => {
-        const { gdm } = this.state;
-        if (gdm.checkAck(data)) {
-            // Ack received, do nothing.
-            return;
+    sendCommandMessage = (command_type) => {
+        const {gateways, feed_user, current_janus, current_room, command_status, gdm} = this.state;
+        const gateway = gateways[current_janus];
+        const cmd = {type: command_type, rcmd: true, room: current_room, status: command_status, id: feed_user.id, user: feed_user};
+        const toAck = [feed_user.id];
+
+        if(command_type === "audio-out") {
+            gdm.send(cmd, toAck, (cmd) => gateway.sendCmdMessage(cmd))
+                .then(() => {
+                    console.log(`[Admin] MIC delivered.`);
+                }).catch((err) => {
+                    console.error('[Admin] not delivered', err);
+                    captureException(err, {source: 'AdminRoot', gateway: gateway.name});
+                });
+        } else {
+            gateway.sendCmdMessage(cmd)
+                .catch((err) => {
+                    console.error('[Admin] sendCmdMessage error', err);
+                    captureException(err, {source: 'AdminRoot', gateway: gateway.name});
+                    alert(err);
+                });
         }
 
-        // let {users} = this.state;
-        //
-        // // Set status in users list
-        // if (data.type.match(/^(camera|question|sound_test)$/)) {
-        //     gateway.log("[protocol] user", data.type, data.status, data.user.id);
-        //     if (users[data.user.id]) {
-        //         users[data.user.id][data.type] = data.status;
-        //         this.setState({users});
-        //     } else {
-        //         users[data.user.id] = {[data.type]: data.status};
-        //         this.setState({users});
-        //     }
-        // }
-        //
-        // // Save user on enter
-        // if (data.type.match(/^(enter)$/)) {
-        //     gateway.log("[protocol] user entered", data.user);
-        //     users[data.user.id] = data.user;
-        //     this.setState({users});
-        // }
+        if (command_type === "audio-out") {
+            this.setState({command_status: !command_status})
+        }
+
     };
 
     sendRemoteCommand = (command_type) => {
-        const {gateways, feed_user, current_janus, current_room, command_status, gdm} = this.state;
+        this.sendCommandMessage(command_type);
+        return;
+
+        /* TEMPORARY NOT USED */
+        /* const {gateways, feed_user, current_janus, current_room, command_status, gdm} = this.state;
 
         if (command_type === "premoder-mode") {
             const value = !this.state.premodStatus;
@@ -577,7 +598,10 @@ class AdminRoot extends Component {
                         gateway.sendProtocolMessage(msg)
                             .catch(alert));
                 })
-                .catch(alert)
+                .catch(err => {
+									alert(err);
+									captureException(err, {source: 'AdminRoot'});
+								});
             return;
         }
         if (command_type === "client-reload-all") {
@@ -622,61 +646,59 @@ class AdminRoot extends Component {
 
         if (command_type === "audio-out") {
             this.setState({command_status: !command_status})
-        }
+        }*/
     };
 
-    sendDataMessage = (msg) => {
-        const {gateways, feed_user, current_janus} = this.state;
-        const gateway = gateways[current_janus];
-        const cmd = {type: msg, rcmd: true, id: feed_user.id}
-        const message = JSON.stringify(cmd);
-        console.log(':: Sending message: ', message);
-        gateway.videoroom.data({ text: message });
-    };
-
-    joinRoom = (data, i) => {
-        console.log("[Admin] joinRoom", data, i);
-        const {rooms, user, current_room} = this.state;
-        const {room, janus: inst} = rooms[i];
+    joinRoom = (data) => {
+        console.log("[Admin] joinRoom", data);
+        const {user, current_room} = this.state;
+        const {room, janus: inst} = data;
 
         if (current_room === room)
             return;
 
         console.log("[Admin] joinRoom", room, inst);
-        this.setState({users: rooms[i].users})
+        this.setState({users: data.users})
 
         let promise;
-
         if (current_room) {
             promise = this.exitRoom(current_room);
         } else {
             promise = new Promise((resolve, _) => {
                 resolve()
-            })
+            });
         }
 
         promise
             .then(() => {
                 this.setState({
                     current_room: room,
+                    current_group: data.description,
                     current_janus: inst,
                     feeds: [],
                     feed_user: null,
                     feed_id: null,
                     command_status: true,
+                    chatRoomsInitialized: false,
+                    chatRoomsInitializedError: null,
+                }, () => {
+                    const gateway = this.state.gateways[inst];
+
+                    this.newVideoRoom(gateway, room)
+                        .then(() => (gateway.videoRoomJoin(room, user)))
+                        .catch(err => captureException(err, {source: 'AdminRoot', gateway: gateway.name}));
+
+                    if (this.isAllowed("admin")) {
+                        gateway.chatRoomJoin(room, user)
+                            .catch((err) => {
+                                this.setState({chatRoomsInitializedError: err});
+                                captureException(err, {source: 'AdminRoot', gateway: gateway.name});
+                            })
+                            .finally(() => this.setState({chatRoomsInitialized: true}));
+                    }
                 });
-
-                const gateway = this.state.gateways[inst];
-
-                this.newVideoRoom(gateway, room)
-                    .then(() => {
-                        gateway.videoRoomJoin(room, user);
-                    });
-
-                if (this.isAllowed("admin")) {
-                    gateway.chatRoomJoin(room, user);
-                }
             })
+            .catch(err => captureException(err, {source: 'AdminRoot'}));
     };
 
     exitRoom = (room) => {
@@ -686,7 +708,7 @@ class AdminRoot extends Component {
         const room_data = rooms.find(x => x.room === room);
         if (!room_data) {
             console.warn("[Admin] exitRoom. no room data in state");
-            return;
+            return Promise.resolve();
         }
 
         const gateway = gateways[room_data.janus];
@@ -730,20 +752,32 @@ class AdminRoot extends Component {
             if (janus && session && handle) {
                 api.fetchHandleInfo(janus, session, handle)
                     .then(data => {
-                            console.debug("[Admin] Publisher info", data);
-                            const video = data.info.webrtc.media[1].rtcp.main;
-                            const audio = data.info.webrtc.media[0].rtcp.main;
-                            this.setState({feed_rtcp: {video, audio}});
+                        console.debug("[Admin] Publisher info", data);
+                        const m0 = data.info.webrtc.media[0];
+                        const m1 = data.info.webrtc.media[1];
+                        let video = null; let audio = null;
+                        if(m0 && m1) {
+                            audio = data.info.webrtc.media[0].rtcp.main;
+                            video = data.info.webrtc.media[1].rtcp.main;
+                        } else if(m0.type === "audio") {
+                            audio = data.info.webrtc.media[0].rtcp.main;
+                        } else if(m0.type === "video") {
+                            video = data.info.webrtc.media[0].rtcp.main;
+                        }
+                        this.setState({feed_rtcp: {video, audio}});
                         }
                     )
-                    .catch(err => alert("Error fetching handle_info: " + err))
+                    .catch(err => {
+                        captureException(err, {source: 'AdminRoot'});
+                        alert("Error fetching handle_info: " + err);
+                    });
             }
         }
     };
 
-    onChatRoomsInitialized = () => {
-        this.setState({chatRoomsInitialized: true});
-    };
+	onChatRoomsInitialized = (error) => {
+		this.setState({chatRoomsInitialized: true, chatRoomsInitializedError: error});
+	};
 
   addUserTab(user, stats) {
     const { usersTabs } = this.state;
@@ -775,30 +809,27 @@ class AdminRoot extends Component {
   render() {
       const {
           activeTab,
+          chatRoomsInitialized,
+          chatRoomsInitializedError,
+          current_janus,
           current_room,
+          current_group,
           feed_id,
           feed_info,
           feed_rtcp,
           feed_user,
           feeds,
           users,
+          rooms_question,
           gateways,
           gatewaysInitialized,
           rooms,
           user,
           usersTabs,
           users_count,
-          gxy1_count,
-          gxy2_count,
-          gxy3_count,
-          gxy4_count,
-          gxy5_count,
-          gxy6_count,
-          gxy7_count,
-          chatRoomsInitialized,
           appInitError,
           command_status,
-          premodStatus,
+          // premodStatus, Temporary not used.
           showConfirmReloadAll,
       } = this.state;
 
@@ -826,34 +857,51 @@ class AdminRoot extends Component {
       //const v = (<Icon name='checkmark' />);
       //const x = (<Icon name='close' />);
 
-      let rooms_grid = rooms.map((data,i) => {
+      let group_options = rooms.map((feed,i) => {
+          const display = feed.description;
+          return ({ key: i, value: feed, text: display })
+      });
+
+      let rooms_question_grid = rooms_question.map((data,i) => {
           const {room, num_users, description, questions} = data;
           return (
               <Table.Row active={current_room === room}
-                         key={i} onClick={() => this.joinRoom(data, i)} >
+                         key={i+"q"} onClick={() => this.joinRoom(data)} >
                   <Table.Cell width={5}>{questions ? q : ""}{description}</Table.Cell>
                   <Table.Cell width={1}>{num_users}</Table.Cell>
               </Table.Row>
           )
       });
 
-      let users_grid = feeds.map((feed,i) => {
-          if(feed) {
-              //let qt = users[feed.display.id].question;
-              //let st = users[feed.display.id].sound_test;
-              let feed_user = users.find(u => feed.id === u.rfid);
-              let qt = feed_user && !!feed_user.question;
-              return (
-                  <Table.Row active={feed.id === this.state.feed_id} key={i} onClick={() => this.getUserInfo(feed_user)} >
-                      <Table.Cell width={10}>{qt ? q : ""}{feed.display.display}</Table.Cell>
-                      {/*<Table.Cell positive={st} width={1}>{st ? v : ""}</Table.Cell>*/}
-                      <Table.Cell width={1}></Table.Cell>
-                  </Table.Row>
-              )
-          }
+      let rooms_grid = rooms.map((data,i) => {
+          const {room, num_users, description, questions} = data;
+          return (
+              <Table.Row active={current_room === room}
+                         key={i} onClick={() => this.joinRoom(data)} >
+                  <Table.Cell width={5}>{questions ? q : ""}{description}</Table.Cell>
+                  <Table.Cell width={1}>{num_users}</Table.Cell>
+              </Table.Row>
+          )
       });
 
-      let videos = this.state.feeds.map((feed) => {
+      const users_grid = feeds.map((feed,i) => {
+          if (!feed) {
+            return null;
+          }
+          //let qt = users[feed.display.id].question;
+          //let st = users[feed.display.id].sound_test;
+          let feed_user = users.find(u => feed.id === u.rfid);
+          let qt = feed_user && !!feed_user.question;
+          return (
+              <Table.Row active={feed.id === this.state.feed_id} key={i} onClick={() => this.getUserInfo(feed_user)} >
+                  <Table.Cell width={10}>{qt ? q : ""}{feed.display.display}</Table.Cell>
+                  {/*<Table.Cell positive={st} width={1}>{st ? v : ""}</Table.Cell>*/}
+                  <Table.Cell width={1}></Table.Cell>
+              </Table.Row>
+          )
+      });
+
+      let videos = feeds.map((feed) => {
           if(feed) {
               let id = feed.id;
               let talk = feed.talk;
@@ -892,93 +940,88 @@ class AdminRoot extends Component {
 
       let login = (<LoginPage user={user} checkPermission={this.checkPermission} />);
 
-      let adminContent = (
-          <Fragment>
+			const infoPopup =
+				<Popup trigger={<Button positive icon='info' onClick={this.getFeedInfo} />}
+					position='bottom left'
+					content={
+						<List as='ul'>
+							<List.Item as='li'>System
+								<List.List as='ul'>
+									<List.Item as='li'>OS: {feed_info ? feed_info.os.toString() : ""}</List.Item>
+									<List.Item as='li'>Browser: {feed_info ? feed_info.name : ""}</List.Item>
+									<List.Item as='li'>Version: {feed_info ? feed_info.version : ""}</List.Item>
+								</List.List>
+							</List.Item>
+							{feed_rtcp.video ? <List.Item as='li'>Video
+								<List.List as='ul'>
+									<List.Item as='li'>in-link-quality: {feed_rtcp.video["in-link-quality"]}</List.Item>
+									<List.Item as='li'>in-media-link-quality: {feed_rtcp.video["in-media-link-quality"]}</List.Item>
+									<List.Item as='li'>jitter-local: {feed_rtcp.video["jitter-local"]}</List.Item>
+									<List.Item as='li'>jitter-remote: {feed_rtcp.video["jitter-remote"]}</List.Item>
+									<List.Item as='li'>lost: {feed_rtcp.video["lost"]}</List.Item>
+								</List.List>
+							</List.Item> : null}
+							{feed_rtcp.audio ? <List.Item as='li'>Audio
+								<List.List as='ul'>
+									<List.Item as='li'>in-link-quality: {feed_rtcp.audio["in-link-quality"]}</List.Item>
+									<List.Item as='li'>in-media-link-quality: {feed_rtcp.audio["in-media-link-quality"]}</List.Item>
+									<List.Item as='li'>jitter-local: {feed_rtcp.audio["jitter-local"]}</List.Item>
+									<List.Item as='li'>jitter-remote: {feed_rtcp.audio["jitter-remote"]}</List.Item>
+									<List.Item as='li'>lost: {feed_rtcp.audio["lost"]}</List.Item>
+								</List.List>
+							</List.Item> : null}
+						</List>
+					}
+					on='click'
+					hideOnScroll />;
+		  const chatRoomStatus = <Popup
+				trigger={<Icon color={chatRoomsInitialized ? (chatRoomsInitializedError ? 'red' : 'green') : 'grey'} circular="true" icon="circle" inverted />}
+				content={`Chat status: ${chatRoomsInitializedError || 'OK'}`} />;
 
+			const rootControlPanel = [];
+			if (this.isAllowed('root')) {
+				rootControlPanel.push(...[
+					<Popup trigger={<Button color="yellow" icon='question' onClick={() => this.sendRemoteCommand("client-question")} />} content='Set/Unset question' inverted />,
+					<Popup trigger={<Button color="brown" icon='sync alternate' alt="test" onClick={() => this.sendRemoteCommand("client-reconnect")} />} content='Reconnect' inverted />,
+					<Popup trigger={<Button color="olive" icon='redo alternate' onClick={() => this.sendRemoteCommand("client-reload")} />} content='Reload page(LOST FEED HERE!)' inverted />,
+					<Popup trigger={<Button color="teal" icon='microphone' onClick={() => this.sendRemoteCommand("client-mute")} />} content='Mic Mute/Unmute' inverted />,
+					<Popup trigger={<Button color="pink" icon='eye' onClick={() => this.sendRemoteCommand("video-mute")} />} content='Cam Mute/Unmute' inverted />,
+					<Popup trigger={<Button color="orange" icon={command_status ? 'volume off' : 'volume up'} onClick={() => this.sendRemoteCommand("audio-out")} />} content='Talk event' inverted />,
+					<Popup trigger={<Button negative icon='user x' onClick={() => this.sendRemoteCommand("client-kicked")} />} content='Kick' inverted />,
+					/*<Popup trigger={<Button color="pink" icon='eye' onClick={() => this.sendDataMessage("video-mute")} />} content='Cam Mute/Unmute' inverted />,*/
+					/*<Popup trigger={<Button color="blue" icon='power off' onClick={() => this.sendRemoteCommand("client-disconnect")} />} content='Disconnect(LOST FEED HERE!)' inverted />,*/
+					/*<Popup inverted
+					       content={`${premodStatus ? 'Disable' : 'Enable'} Pre Moderation Mode`}
+					       trigger={
+					           <Button color="blue"
+					                   icon='copyright'
+					                   inverted={premodStatus}
+					                   onClick={() => this.sendRemoteCommand("premoder-mode")}/>
+					       }/>,*/
+					/*<Popup trigger={<Button color="red" icon='redo' onClick={() => this.setState({showConfirmReloadAll: !showConfirmReloadAll})} />} content='RELOAD ALL' inverted />,*/
+					chatRoomStatus,
+				]);
+			}
+
+      let adminContent = (
+          <Grid>
+              <Grid.Row>
+                  <Grid.Column>
               {
                   this.isAllowed("admin") ?
                       <Segment textAlign='center' className="ingest_segment">
-                          {/*<Button color='blue' icon='sound' onClick={() => this.sendRemoteCommand("sound_test")} />*/}
-                          <Popup
-                              trigger={<Button positive icon='info' onClick={this.getFeedInfo} />}
-                              position='bottom left'
-                              content={
-                                  <List as='ul'>
-                                      <List.Item as='li'>System
-                                          <List.List as='ul'>
-                                              <List.Item as='li'>OS: {feed_info ? feed_info.os.toString() : ""}</List.Item>
-                                              <List.Item as='li'>Browser: {feed_info ? feed_info.name : ""}</List.Item>
-                                              <List.Item as='li'>Version: {feed_info ? feed_info.version : ""}</List.Item>
-                                          </List.List>
-                                      </List.Item>
-                                      <List.Item as='li'>Video
-                                          <List.List as='ul'>
-                                              <List.Item as='li'>in-link-quality: {feed_rtcp.video ? feed_rtcp.video["in-link-quality"] : ""}</List.Item>
-                                              <List.Item as='li'>in-media-link-quality: {feed_rtcp.video ? feed_rtcp.video["in-media-link-quality"] : ""}</List.Item>
-                                              <List.Item as='li'>jitter-local: {feed_rtcp.video ? feed_rtcp.video["jitter-local"] : ""}</List.Item>
-                                              <List.Item as='li'>jitter-remote: {feed_rtcp.video ? feed_rtcp.video["jitter-remote"] : ""}</List.Item>
-                                              <List.Item as='li'>lost: {feed_rtcp.video ? feed_rtcp.video["lost"] : ""}</List.Item>
-                                          </List.List>
-                                      </List.Item>
-                                      <List.Item as='li'>Audio
-                                          <List.List as='ul'>
-                                              <List.Item as='li'>in-link-quality: {feed_rtcp.audio ? feed_rtcp.audio["in-link-quality"] : ""}</List.Item>
-                                              <List.Item as='li'>in-media-link-quality: {feed_rtcp.audio ? feed_rtcp.audio["in-media-link-quality"] : ""}</List.Item>
-                                              <List.Item as='li'>jitter-local: {feed_rtcp.audio ? feed_rtcp.audio["jitter-local"] : ""}</List.Item>
-                                              <List.Item as='li'>jitter-remote: {feed_rtcp.audio ? feed_rtcp.audio["jitter-remote"] : ""}</List.Item>
-                                              <List.Item as='li'>lost: {feed_rtcp.audio ? feed_rtcp.audio["lost"] : ""}</List.Item>
-                                          </List.List>
-                                      </List.Item>
-                                  </List>
-                              }
-                              on='click'
-                              hideOnScroll
-                          />
-                          <Popup trigger={<Button color="yellow" icon='question' onClick={() => this.sendRemoteCommand("client-question")} />} content='Set/Unset question' inverted />
-                          <Label attached='top right' size='mini'>
-                              <List>
-                                  <List.Item className="gxy_count">gxy1: <b>{gxy1_count}</b></List.Item>
-                                  <List.Item className="gxy_count">gxy2: <b>{gxy2_count}</b></List.Item>
-                                  <List.Item className="gxy_count">gxy3: <b>{gxy3_count}</b></List.Item>
-                                  <List.Item className="gxy_count">gxy4: <b>{gxy4_count}</b></List.Item>
-                                  <List.Item className="gxy_count">gxy5: <b>{gxy5_count}</b></List.Item>
-                                  <List.Item className="gxy_count">gxy6: <b>{gxy6_count}</b></List.Item>
-                                  <List.Item className="gxy_count">gxy7: <b>{gxy7_count}</b></List.Item>
-                              </List>
-                          </Label>
+												{/*<Button color='blue' icon='sound' onClick={() => this.sendRemoteCommand("sound_test")} />*/}
+												{infoPopup}
+												{rootControlPanel}
+												<StatNotes data={rooms} />
                       </Segment>
                       : null
               }
-
-              <Grid>
+                  </Grid.Column>
+              </Grid.Row>
                   <Grid.Row columns='equal'>
                       <Grid.Column width={4}>
-                          <Segment.Group className="group_list">
-                              {
-                                  this.isAllowed("root") ?
-                                      <Segment textAlign='center'>
-                                          <Popup trigger={<Button negative icon='user x' onClick={() => this.sendRemoteCommand("client-kicked")} />} content='Kick' inverted />
-                                          <Popup trigger={<Button color="brown" icon='sync alternate' alt="test" onClick={() => this.sendRemoteCommand("client-reconnect")} />} content='Reconnect' inverted />
-                                          <Popup trigger={<Button color="olive" icon='redo alternate' onClick={() => this.sendRemoteCommand("client-reload")} />} content='Reload page(LOST FEED HERE!)' inverted />
-                                          <Popup trigger={<Button color="teal" icon='microphone' onClick={() => this.sendRemoteCommand("client-mute")} />} content='Mic Mute/Unmute' inverted />
-                                          <Popup trigger={<Button color="pink" icon='eye' onClick={() => this.sendRemoteCommand("video-mute")} />} content='Cam Mute/Unmute' inverted />
-                                          <Popup trigger={<Button color="orange" icon={command_status ? 'volume off' : 'volume up'} onClick={() => this.sendRemoteCommand("audio-out")} />} content='Talk event' inverted />
-                                          {/*<Popup trigger={<Button color="pink" icon='eye' onClick={() => this.sendDataMessage("video-mute")} />} content='Cam Mute/Unmute' inverted />*/}
-                                          {/*<Popup trigger={<Button color="blue" icon='power off' onClick={() => this.sendRemoteCommand("client-disconnect")} />} content='Disconnect(LOST FEED HERE!)' inverted />*/}
-                                          <Popup inverted
-                                                 content={`${premodStatus ? 'Disable' : 'Enable'} Pre Moderation Mode`}
-                                                 trigger={
-                                                     <Button color="blue"
-                                                             icon='copyright'
-                                                             inverted={premodStatus}
-                                                             onClick={() => this.sendRemoteCommand("premoder-mode")}/>
-                                                 }/>
-                                          <Popup trigger={<Button color="yellow" icon='question' onClick={() => this.sendRemoteCommand("client-question")} />} content='Set/Unset question' inverted />
-                                          <Popup trigger={<Button color="red" icon='redo' onClick={() => this.setState({showConfirmReloadAll: !showConfirmReloadAll})} />} content='RELOAD ALL' inverted />
-                                      </Segment>
-                                      : null
-                              }
-
+                          <Segment.Group className="user_list">
                               <Segment textAlign='center' raised>
                                   <Table selectable compact='very' basic structured className="admin_table" unstackable>
                                       <Table.Body>
@@ -1007,31 +1050,56 @@ class AdminRoot extends Component {
                           </div>
                       </Grid.Column>
                       <Grid.Column width={3}>
-
-                          <Segment textAlign='center' className="group_list" raised>
+                          <Dropdown placeholder='Search..'
+                                    fluid
+                                    search
+                                    selection
+                                    options={group_options}
+                                    onClick={this.sortGroups}
+                                    onChange={(e,{value}) => this.joinRoom(value)} />
+                          <Segment textAlign='center' className="group_list">
                               <Table selectable compact='very' basic structured className="admin_table" unstackable>
                                   <Table.Body>
                                       <Table.Row disabled positive>
-                                          <Table.Cell width={5} >Rooms</Table.Cell>
+                                          <Table.Cell width={5} >Rooms: {rooms.length}</Table.Cell>
                                           <Table.Cell width={1} >{users_count}</Table.Cell>
                                       </Table.Row>
                                       {rooms_grid}
                                   </Table.Body>
                               </Table>
                           </Segment>
-
                       </Grid.Column>
                   </Grid.Row>
-              </Grid>
 
               {
                   this.isAllowed("admin") ?
-                      <ChatBox user={user}
-                               rooms={rooms}
-                               selected_room={current_room}
-                               selected_user={feed_user}
-                               gateways={gateways}
-                               onChatRoomsInitialized={this.onChatRoomsInitialized}/>
+                      <Grid.Row>
+                          <Grid.Column width={13}>
+                          <ChatBox user={user}
+                                   rooms={rooms}
+                                   selected_janus={current_janus}
+                                   selected_room={current_room}
+                                   selected_group={current_group}
+                                   selected_user={feed_user}
+                                   gateways={gateways}
+                                   gdm={this.state.gdm}
+																	 onChatRoomsInitialized={this.onChatRoomsInitialized}/>
+
+                          </Grid.Column>
+                          <Grid.Column width={3}>
+                              <Segment textAlign='center' className="vip_list">
+                                  <Table selectable compact='very' basic structured className="admin_table" unstackable>
+                                      <Table.Body>
+                                          <Table.Row disabled positive>
+                                              <Table.Cell width={5} >Question Rooms: {rooms_question.length}</Table.Cell>
+                                              <Table.Cell width={1} >{}</Table.Cell>
+                                          </Table.Row>
+                                          {rooms_question_grid}
+                                      </Table.Body>
+                                  </Table>
+                              </Segment>
+                          </Grid.Column>
+                      </Grid.Row>
                       : null
               }
 
@@ -1049,32 +1117,32 @@ class AdminRoot extends Component {
                       : null
               }
 
-          </Fragment>
+          </Grid>
       );
 
       const panes = [
-        { menuItem: 'Admin', render: () => <Tab.Pane>{adminContent}</Tab.Pane> },
+          { menuItem: 'Admin', render: () => <Tab.Pane className="grid_tab">{adminContent}</Tab.Pane> },
       ];
       if (this.isAllowed('root')) {
-        panes.push({ menuItem: 'Rooms', render: () => <Tab.Pane><RoomManager /></Tab.Pane> });
-        panes.push({ menuItem: 'Monitor', render: () => <Tab.Pane><MonitoringAdmin addUserTab={(user, stats) => this.addUserTab(user, stats)}/></Tab.Pane> });
-        usersTabs.forEach(({user, stats}, index) => panes.push({
-          menuItem: (
-            <Menu.Item key={user.id}>
-              {user.display || user.name}&nbsp;
-              <Icon name='window close' style={{cursor: 'pointer'}} onClick={(e) => { e.stopPropagation(); this.removeUserTab(index); }} />
-            </Menu.Item>
-          ),
-          render: () => <Tab.Pane><MonitoringUser user={user} stats={stats} /></Tab.Pane>,
-        }));
+          panes.push({ menuItem: 'Rooms', render: () => <Tab.Pane><RoomManager /></Tab.Pane> });
+          panes.push({ menuItem: 'Monitor', render: () => <Tab.Pane><MonitoringAdmin addUserTab={(user, stats) => this.addUserTab(user, stats)}/></Tab.Pane> });
+          usersTabs.forEach(({user, stats}, index) => panes.push({
+              menuItem: (
+                  <Menu.Item key={user.id}>
+                      {user.display || user.name}&nbsp;
+                      <Icon name='window close' style={{cursor: 'pointer'}} onClick={(e) => { e.stopPropagation(); this.removeUserTab(index); }} />
+                  </Menu.Item>
+              ),
+              render: () => <Tab.Pane><MonitoringUser user={user} stats={stats} /></Tab.Pane>,
+          }));
       }
 
       const content = (
-        <Tab menu={{ secondary: true, pointing: true, color: "blue" }}
-             panes={panes}
-             activeIndex={activeTab || 0}
-             onTabChange={(e, {activeIndex}) => this.setState({activeTab: activeIndex})}
-             renderActiveOnly={true} />
+          <Tab menu={{ secondary: true, pointing: true, color: "blue" }}
+               panes={panes}
+               activeIndex={activeTab || 0}
+               onTabChange={(e, {activeIndex}) => this.setState({activeTab: activeIndex})}
+               renderActiveOnly={true} />
       );
 
       return (
