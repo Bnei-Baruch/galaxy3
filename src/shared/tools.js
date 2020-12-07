@@ -146,6 +146,8 @@ const renderCanvas = (c, node, analyser) => {
 };
 
 const renderCanvasOld = (canvas, javascriptNode, analyser) => {
+  const w = canvas.width;
+  const h = canvas.height;
   let canvasContext = canvas.getContext('2d');
   let gradient      = canvasContext.createLinearGradient(0, 0, 0, 55);
   gradient.addColorStop(1, 'green');
@@ -167,13 +169,12 @@ const renderCanvasOld = (canvas, javascriptNode, analyser) => {
 
 //          Janus.log(Math.round(average - 40));
 
-    canvasContext.clearRect(0, 0, 15, 35);
+    canvasContext.clearRect(0, 0, w, h);
     canvasContext.fillStyle = gradient;
     //canvasContext.fillRect(0, 35-average*mn, 15, 35);
-    canvasContext.fillRect(0, 35 - average, 15, 35);
+    canvasContext.fillRect(0, w - average, w, h);
   };
 };
-
 export const checkNotification = () => {
     if ( !!window.Notification && Notification.permission !== "granted") {
         Notification.requestPermission();

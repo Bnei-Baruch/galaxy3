@@ -25,12 +25,13 @@ import {
   USERNAME_ALREADY_EXIST_ERROR_CODE,
   VIDEO_360P_OPTION_VALUE,
   vsettings_list,
+  sketchesByLang
 } from '../../shared/consts';
 import {GEO_IP_INFO, APP_STUN_SRV_STR, APP_JANUS_SRV_STR1} from '../../shared/env';
 import platform from 'platform';
 import {TopMenu} from './components/TopMenu';
 import {withTranslation} from 'react-i18next';
-import {languagesOptions, setLanguage} from '../../i18n/i18n';
+import { languagesOptions, setLanguage } from '../../i18n/i18n';
 import {Monitoring} from '../../components/Monitoring';
 import {
   LINK_STATE_GOOD,
@@ -146,7 +147,8 @@ class VirtualClient extends Component {
     leftAsideSize: 3,
     shidurForGuestReady: false,
     checkAlive: new CheckAlive(),
-    kliOlamiAttached: true
+    kliOlamiAttached: true,
+    isKliOlamiShown: true
   };
 
   virtualStreamingInitialized() {
@@ -1841,15 +1843,6 @@ class VirtualClient extends Component {
           >
             {t('loginPage.userFee')}
           </ButtonMD>
-
-
-
-
-
-
-
-
-
           <ButtonGroup
             variant="outlined"
             disableElevation
@@ -1858,7 +1851,7 @@ class VirtualClient extends Component {
             <Badge
               color="secondary"
               badgeContent={asideMsgCounter.drawing}
-              showZero={true}
+              showZero={false}
             >
               <ButtonMD
                 color='default'
@@ -1891,7 +1884,7 @@ class VirtualClient extends Component {
             <Badge
               color="secondary"
               badgeContent={asideMsgCounter.chat}
-              showZero={true}
+              showZero={false}
             >
               <ButtonMD
                 variant={rightAsideName === 'chat' ? 'contained' : 'outlined'}
@@ -1934,7 +1927,8 @@ class VirtualClient extends Component {
   };
 
   renderLeftAside = () => {
-    const { leftAsideName, leftAsideSize } = this.state;
+    const { leftAsideName, leftAsideSize, } = this.state;
+    const { i18n: { language } } = this.props;
 
     let content;
     if (leftAsideName === 'material') {
@@ -1943,14 +1937,14 @@ class VirtualClient extends Component {
       content = (
         <iframe
           title={'classboard'}
-          src={`https://www.kab.tv/classboard/classboard.php`}
+          src={`https://www.kab.tv/classboard/classboard.php?lang=${sketchesByLang[language]}`}
           style={{ width: '100%', height: '100%', padding: '1rem' }}
           frameBorder="0"></iframe>
       );
     }
 
     return (
-      <Grid item xs={(leftAsideSize >= 3 && leftAsideName) ? leftAsideSize : false} style={{backgroundColor: 'white'}}>
+      <Grid item xs={(leftAsideSize >= 3 && leftAsideName) ? leftAsideSize : false} style={{ backgroundColor: 'white' }}>
         {
           //buttons for resize tab (if want open study materials on browser tab)
           leftAsideName && false ?
