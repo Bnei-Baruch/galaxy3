@@ -38,6 +38,8 @@ class ShidurApp extends Component {
     gatewaysInitialized: false,
     appInitError: null,
     presets: {1:[],2:[],3:[],4:[]},
+    region_groups: [],
+    region: null,
     sdiout: false,
     sndman: false,
     users_count: 0,
@@ -49,6 +51,7 @@ class ShidurApp extends Component {
     reinit_inst: null,
     log_list: [],
     preusers_count: 6,
+    pnum: {},
   };
 
   componentWillUnmount() {
@@ -187,12 +190,13 @@ class ShidurApp extends Component {
   };
 
   fetchRooms = () => {
-    let {disabled_rooms, groups, shidur_mode, preview_mode, preusers_count} = this.state;
+    let {disabled_rooms, groups, shidur_mode, preview_mode, preusers_count, region, region_groups} = this.state;
     api.fetchActiveRooms()
       .then((data) => {
         const users_count = data.map(r => r.num_users).reduce((su, cur) => su + cur, 0);
 
         let rooms = data;
+
         if(shidur_mode === "nashim") {
           rooms = rooms.filter(r => r.description.match(/^W /));
         } else if(shidur_mode === "gvarim") {
@@ -203,21 +207,29 @@ class ShidurApp extends Component {
 
         let pre_groups = [];
         if(preview_mode) {
-          pre_groups = preusers_count !== 'Off' ?
-            rooms.filter(r => !disabled_rooms.find(d => r.room === d.room) && !groups.find(g => r.room === g.room) && r.users.filter(r => r.camera).length < preusers_count) :
-            rooms.filter(r => !disabled_rooms.find(d => r.room === d.room) && !groups.find(g => r.room === g.room));
-          this.setState({pre_groups});
+          // Extra exist and disabled
+          if(preusers_count !== 'Off') {
+            pre_groups = rooms.filter(r => !r.extra && r.users.filter(r => r.camera).length < preusers_count);
+            groups = rooms.filter(r => r.users.filter(r => r.camera).length >= preusers_count && !r.extra?.disabled);
+          } else {
+            pre_groups = rooms;
+            groups = rooms.filter(r => !r.extra?.disabled);
+          }
         } else {
-          pre_groups = [];
-          this.setState({pre_groups});
+          groups = rooms.filter(r => !r.extra?.disabled);
         }
 
-        groups = rooms.filter(r => !disabled_rooms.find(d => r.room === d.room) && !pre_groups.find(d => r.room === d.room));
-        disabled_rooms = rooms.filter(r => !groups.find(g => r.room === g.room) && !pre_groups.find(d => r.room === d.room));
+        if(region) {
+          region_groups = groups.filter(r => r.region === region);
+        }
+
+        // Extra exist and disabled
+        disabled_rooms = rooms.filter(r => r.extra?.disabled);
+
         let quads = [...this.col1.state.vquad,...this.col2.state.vquad,...this.col3.state.vquad,...this.col4.state.vquad];
         let list = groups.filter(r => !quads.find(q => q && r.room === q.room));
         let questions = list.filter(room => room.questions);
-        this.setState({quads, questions, users_count, rooms, groups, disabled_rooms});
+        this.setState({quads, questions, users_count, rooms, groups, disabled_rooms, pre_groups, region_groups});
       })
       .catch(err => {
         console.error("[Shidur] error fetching active rooms", err);

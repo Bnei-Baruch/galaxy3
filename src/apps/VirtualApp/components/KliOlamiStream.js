@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import { Janus } from '../../../lib/janus';
-import NewWindow from 'react-new-window';
+import NewWindow from '@hinaser/react-new-window';
 import { isFullScreen, toggleFullScreen } from '../FullScreenHelper';
 import { Fullscreen } from '../buttons';
 import { Close, OpenInNew } from '@material-ui/icons';

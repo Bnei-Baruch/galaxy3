@@ -32,22 +32,23 @@ class UsersQuad extends Component {
           this.switchFour();
         }, col*1000);
       }
-    } else if(groups.length < prevProps.groups.length) {
-      let res = prevProps.groups.filter(o => !groups.some(v => v.room === o.room))[0];
-      for(let i=0; i<4; i++) {
-        if(vquad[i] && vquad[i].room === res.room) {
-          // Check question state
-          const {full_qst, full_col, full_group} = this.props;
-          if(full_qst && full_group.room === res.room) {
-            this.toFourGroup(i,full_group,() => {},true);
-            this.props.setProps({full_qst: false, full_col, full_group});
-          }
-          // FIXME: Does we need send leave room request?
-          this.switchProgram(i, true);
-          break;
-        }
-      }
     }
+    // else if(groups.length < prevProps.groups.length) {
+    //   let res = prevProps.groups.filter(o => !groups.some(v => v.room === o.room))[0];
+    //   for(let i=0; i<4; i++) {
+    //     if(vquad[i] && vquad[i].room === res.room) {
+    //       // Check question state
+    //       const {full_qst, full_col, full_group} = this.props;
+    //       if(full_qst && full_group.room === res.room) {
+    //         this.toFourGroup(i,full_group,() => {},true);
+    //         this.props.setProps({full_qst: false, full_col, full_group});
+    //       }
+    //       // FIXME: Does we need send leave room request?
+    //       this.switchProgram(i, true);
+    //       break;
+    //     }
+    //   }
+    // }
   };
 
   // quadCheckDup = () => {
@@ -85,7 +86,7 @@ class UsersQuad extends Component {
   };
 
   switchProgram = (i, leave) => {
-    let {group,groups,groups_queue,round} = this.props;
+    let {group,groups,groups_queue,round,pnum} = this.props;
     let {vquad,col} = this.state;
 
     if(leave)
@@ -98,7 +99,8 @@ class UsersQuad extends Component {
       // From preview
       delete group.users;
       vquad[i] = group;
-      this.props.setProps({group: null});
+      pnum[vquad[i].room] ? pnum[vquad[i].room]++ : pnum[vquad[i].room] = 1;
+      this.props.setProps({group: null, pnum});
     } else {
       // Next in queue
       if(groups_queue >= groups.length) {
@@ -109,7 +111,8 @@ class UsersQuad extends Component {
       }
       vquad[i] = groups.length < 4 ? null : this.quadGroup(groups_queue);
       groups_queue++;
-      this.props.setProps({groups_queue,round});
+      pnum[vquad[i].room] ? pnum[vquad[i].room]++ : pnum[vquad[i].room] = 1;
+      this.props.setProps({groups_queue, round, pnum});
     }
 
     this.setState({vquad});
@@ -121,7 +124,7 @@ class UsersQuad extends Component {
   };
 
   switchFour = () => {
-    let {groups_queue,groups,round} = this.props;
+    let {groups_queue,groups,round,pnum} = this.props;
     let {vquad,col} = this.state;
 
     this.setDelay();
@@ -139,12 +142,13 @@ class UsersQuad extends Component {
         console.log("[Shidur] -- ROUND END --");
         groups_queue = 0;
         round++;
-        this.props.setProps({groups_queue,round});
+        this.props.setProps({groups_queue, round});
       }
 
       vquad[i] = this.quadGroup(groups_queue);
       groups_queue++;
-      this.props.setProps({groups_queue});
+      pnum[vquad[i].room] ? pnum[vquad[i].room]++ : pnum[vquad[i].room] = 1;
+      this.props.setProps({groups_queue, pnum});
     }
     this.setState({vquad});
 
