@@ -21,9 +21,7 @@ import CheckMySelf from './CheckMySelf';
 import { vsettings_list } from '../../../shared/consts';
 import LogoutDropdown from './LogoutDropdown';
 import { SelectViewLanguage } from '../components/SelectViewLanguage';
-import { AccountCircle, Computer, Mic, Videocam } from '@material-ui/icons';
-import { SelectBroadcastVideo } from '../components/SelectBroadcastVideo';
-import { SelectLanguage } from '../components/SelectLanguage';
+import { AccountCircle, Mic, Videocam } from '@material-ui/icons';
 
 const settingsList = vsettings_list.map(({ key, text, value }) => ({ key, text, value: JSON.stringify(value) }));
 const mapDevice    = ({ label, deviceId }) => ({ text: label, value: deviceId });
@@ -184,7 +182,7 @@ const Settings = (props) => {
   const renderHeader = () => (
     <>
       <Grid item xs={9}>
-        <Typography variant="h3" display={'block'}>
+        <Typography variant="h4" display={'block'}>
           {t('settings.helloUser', { name: userDisplay })}
         </Typography>
         <Typography>
@@ -226,7 +224,7 @@ const Settings = (props) => {
 
   const renderContent = () => {
     return (
-      <Grid container spacing={3} className={classes.content}>
+      <Grid container spacing={4} className={classes.content}>
         {renderHeader()}
         <Divider variant="fullWidth" style={{ width: '100%' }} />
         {renderUserSettings()}

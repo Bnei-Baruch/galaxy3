@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import classNames from 'classnames';
 import { Icon } from 'semantic-ui-react';
 import { renderUserName, renderNoCam, renderQuestion } from './helper';
