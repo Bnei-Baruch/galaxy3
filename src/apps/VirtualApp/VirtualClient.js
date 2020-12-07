@@ -72,6 +72,12 @@ import KliOlamiToggle from './buttons/KliOlamiToggle';
 import Toolbar from '@material-ui/core/Toolbar';
 import Typography from '@material-ui/core/Typography';
 
+const toggleLocationParam = (name = 'new_design', value = true) => {
+  const params = new URLSearchParams(window.location.search);
+  params.has(name) ? params.delete(name) : params.set(name, value);
+  window.location = window.location.pathname + '?' + params.toString();
+};
+
 const sortAndFilterFeeds = (feeds) => feeds
   .filter(feed => !feed.display.role.match(/^(ghost|guest)$/))
   .sort((a, b) => a.display.timestamp - b.display.timestamp);
@@ -231,18 +237,6 @@ class VirtualClient extends Component {
   };
 
   initApp = (user) => {
-    if (!isUseNewDesign && user.role !== userRolesEnum.user) {
-      const params = new URLSearchParams(window.location.search)
-      params.set('new_design', true)
-      window.location = window.location.pathname + "?" + params.toString();
-    }
-
-    if (isUseNewDesign && user.role === userRolesEnum.user && !kc.hasRealmRole('gxy_admin')) {
-      const params = new URLSearchParams(window.location.search);
-      params.delete('new_design');
-      window.location = window.location.pathname + '?' + params.toString();
-    }
-
     if (user.role !== userRolesEnum.user) {
       const config = {
         'gateways': {
@@ -1722,18 +1716,20 @@ class VirtualClient extends Component {
           </ButtonGroup>
 
           <ButtonMD
+            onClick={() => toggleLocationParam()}
+            variant="contained"
+            color="primary"
+            className={classNames('bottom-toolbar__item')}
+            disableElevation
+          >
+            {t('oldClient.oldDesign')}
+          </ButtonMD>
+          <ButtonMD
             onClick={() => this.exitRoom(false)}
             variant="contained"
             color="secondary"
             className={classNames('bottom-toolbar__item')}
             disableElevation
-            // style={{
-            //   marginRight: '1em',
-            //   backgroundColor: red[500],
-            //   fontWeight: 'bold',
-            //   color: 'white',
-            //   textTransform: 'none'
-            // }}
           >
             {t('oldClient.leave')}
           </ButtonMD>
@@ -2307,6 +2303,10 @@ class VirtualClient extends Component {
               className='homet-limud'>
               <HomerLimud />
             </Modal>
+
+            <Menu.Item>
+              <Button primary onClick={() => toggleLocationParam()}>{t('oldClient.newDesign')}</Button>
+            </Menu.Item>
           </Menu>
           <Menu icon='labeled' secondary size="mini">
             {!room ?

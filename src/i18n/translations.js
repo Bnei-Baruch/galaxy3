@@ -74,7 +74,9 @@ export const resources = {
         WorkshopQuestions: 'Workshop Questions',
         KabbalahMedia: 'Kabbalah Media',
         openKliOlami: 'Open groups',
-        closeKliOlami: 'Close groups'
+        closeKliOlami: 'Close groups',
+        oldDesign: "Old Design",
+        newDesign: "New Design",
       },
       settings: {
         selectCamera: 'Select camera',
