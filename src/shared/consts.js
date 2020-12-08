@@ -348,3 +348,5 @@ export const LANGUAGES = [
   { 'code': 'yo', 'name': 'Yoruba', 'nativeName': 'Yorùbá' },
   { 'code': 'za', 'name': 'Zhuang, Chuang', 'nativeName': 'Saɯ cueŋƅ, Saw cuengh' }
 ];
+
+export const sketchesByLang = { he: 'Hebrew', ru: 'Russian', es: 'Spanish', en: 'English' };

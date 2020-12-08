@@ -72,7 +72,11 @@ export const resources = {
         SvivaTova: 'Sviva Tova',
         LiveGroups: 'Live Groups',
         WorkshopQuestions: 'Workshop Questions',
-        KabbalahMedia: 'Kabbalah Media'
+        KabbalahMedia: 'Kabbalah Media',
+        openKliOlami: 'Open groups',
+        closeKliOlami: 'Close groups',
+        oldDesign: 'OLD VERSION',
+        newDesign: 'NEW VERSION',
       },
       settings: {
         selectCamera: 'Select camera',
@@ -91,9 +95,7 @@ export const resources = {
         cameraQuality: 'Camera quality',
         helloUser: 'Hello {{name}}',
         beforeConnecting: 'before connecting with the TEN, please check your settings and device setup:',
-        openKliOlami: 'Open groups',
-        closeKliOlami: 'Close groups'
-
+        backToTen: 'BACK TO TEN'
       },
       feedback: {
         feedbackHelp: 'Feedback/Help',
@@ -255,7 +257,11 @@ export const resources = {
         SvivaTova: 'Sviva Tova',
         LiveGroups: 'Grupos en vivo',
         WorkshopQuestions: 'Preguntas del taller',
-        KabbalahMedia: 'Cabalá media'
+        KabbalahMedia: 'Cabalá media',
+        openKliOlami: 'Abrir grupos',
+        closeKliOlami: 'Cerrar grupos',
+        oldDesign: 'VIEJA VERSION',
+        newDesign: 'NUEVA VERSIÓN',
       },
       settings: {
         selectCamera: 'Select camera',
@@ -274,8 +280,7 @@ export const resources = {
         cameraQuality: 'Calidad de la cámara',
         helloUser: 'Hola {{name}}',
         beforeConnecting: 'Antes de conectarte con la DECENA, por favor chequea tus configuraciones y la del dispositivo:',
-        openKliOlami: 'Abrir grupos',
-        closeKliOlami: 'Cerrar grupos'
+        backToTen: 'VOLVER A DECENA'
 
       },
       feedback: {
@@ -438,7 +443,11 @@ export const resources = {
         SvivaTova: 'סביבה טובה',
         LiveGroups: 'קבוצות בלייב',
         WorkshopQuestions: 'שאלות סדנא',
-        KabbalahMedia: 'קבלה מדיה'
+        KabbalahMedia: 'קבלה מדיה',
+        openKliOlami: 'פתח קבוצות',
+        closeKliOlami: 'סגור קבוצות',
+        oldDesign: 'גרסא ישנה',
+        newDesign: 'גרסא חדשה',
       },
       settings: {
         selectCamera: 'בחר מצלמה',
@@ -457,8 +466,7 @@ export const resources = {
         cameraQuality: 'איכות המצלמה',
         helloUser: 'שלום {{name}}',
         beforeConnecting: 'לפני החיבור לעשיריה, אנא אנא בידקו את ההגדרות שלכם.:',
-        openKliOlami: 'פתח קבוצות',
-        closeKliOlami: 'סגור קבוצות'
+        backToTen: 'בחזרה לעשיריה'
 
       },
       feedback: {
@@ -620,7 +628,11 @@ export const resources = {
         SvivaTova: 'Свива Това',
         LiveGroups: 'Группы онлайн',
         WorkshopQuestions: 'Вопросы семинара',
-        KabbalahMedia: 'Каббала Медиа'
+        KabbalahMedia: 'Каббала Медиа',
+        openKliOlami: 'Открыть группы',
+        closeKliOlami: 'Закрыть группы',
+        oldDesign: 'СТАРАЯ ВЕРСИЯ',
+        newDesign: 'НОВАЯ ВЕРСИЯ',
       },
       settings: {
         selectCamera: 'Выбрать камеру',
@@ -639,8 +651,7 @@ export const resources = {
         cameraQuality: 'Качество камеры',
         helloUser: 'Здравствуйте {{name}}',
         beforeConnecting: 'перед соединением с Десяткой, проверьте настройки и установки устройств:',
-        openKliOlami: 'Открыть группы',
-        closeKliOlami: 'Закрыть группы'
+        backToTen: 'НАЗАД К ДЕСЯТКЕ'
 
       },
       feedback: {
