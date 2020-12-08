@@ -10,7 +10,7 @@ import {
   Typography,
   TextField,
   MenuItem,
-  Divider
+  Divider, Box
 } from '@material-ui/core';
 import Autocomplete from '@material-ui/lab/Autocomplete';
 import makeStyles from '@material-ui/core/styles/makeStyles';
@@ -39,11 +39,17 @@ const useStyles = makeStyles(() => ({
     outline: 'none'
   },
   modal: {
-    backgroundColor: 'white',
+    border: 'none',
+    outline: 'none'
+  },
+  paper: {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    border: 'none'
+    height: '100%',
+    overflowX: 'hidden',
+    overflowY: 'auto',
+    outline: 'none'
   },
   submitRoot: {
     background: green[500],
@@ -304,7 +310,9 @@ const Settings = (props) => {
       }}
       className={classes.modal}
     >
-      {renderContent()}
+      <Box className={classes.paper}>
+        {renderContent()}
+      </Box>
     </Modal>
   );
 };

@@ -94,8 +94,8 @@ export const resources = {
         cameraSource: 'Camera source',
         cameraQuality: 'Camera quality',
         helloUser: 'Hello {{name}}',
-        beforeConnecting: 'before connecting with the TEN, please check your settings and device setup:'
-
+        beforeConnecting: 'before connecting with the TEN, please check your settings and device setup:',
+        backToTen: 'BACK TO TEN'
       },
       feedback: {
         feedbackHelp: 'Feedback/Help',
@@ -279,7 +279,8 @@ export const resources = {
         cameraSource: 'Fuente de cámara',
         cameraQuality: 'Calidad de la cámara',
         helloUser: 'Hola {{name}}',
-        beforeConnecting: 'Antes de conectarte con la DECENA, por favor chequea tus configuraciones y la del dispositivo:'
+        beforeConnecting: 'Antes de conectarte con la DECENA, por favor chequea tus configuraciones y la del dispositivo:',
+        backToTen: 'VOLVER A DECENA'
 
       },
       feedback: {
@@ -464,7 +465,8 @@ export const resources = {
         cameraSource: 'מקור וידאו',
         cameraQuality: 'איכות המצלמה',
         helloUser: 'שלום {{name}}',
-        beforeConnecting: 'לפני החיבור לעשיריה, אנא אנא בידקו את ההגדרות שלכם.:'
+        beforeConnecting: 'לפני החיבור לעשיריה, אנא אנא בידקו את ההגדרות שלכם.:',
+        backToTen: 'בחזרה לעשיריה'
 
       },
       feedback: {
@@ -648,7 +650,8 @@ export const resources = {
         cameraSource: 'Источник видео',
         cameraQuality: 'Качество камеры',
         helloUser: 'Здравствуйте {{name}}',
-        beforeConnecting: 'перед соединением с Десяткой, проверьте настройки и установки устройств:'
+        beforeConnecting: 'перед соединением с Десяткой, проверьте настройки и установки устройств:',
+        backToTen: 'НАЗАД К ДЕСЯТКЕ'
 
       },
       feedback: {
