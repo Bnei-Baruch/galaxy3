@@ -1,5 +1,6 @@
 @import "VirtualWorkshopQuestionHelpers";
 
+
 .wq-overlay {
   width: 100%;
   display: flex;
@@ -256,4 +257,9 @@
   .layout--equal {
     @include wq-overlay-full-height();
   }
+}
+
+
+.activities.on_full_browser .wq-overlay .wq-container .question-container {
+  max-height: 100%;
 }
