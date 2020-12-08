@@ -3,7 +3,7 @@ import api from '../shared/Api';
 import {updateSentryUser} from '../shared/sentry'
 
 const userManagerConfig = {
-    url: 'https://accounts.kbb1.com/auth',
+    url: 'https://accounts.kab.info/auth',
     realm: 'main',
     clientId: 'galaxy',
     scope: 'profile',

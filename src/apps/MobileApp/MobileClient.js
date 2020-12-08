@@ -1761,7 +1761,7 @@ class MobileClient extends Component {
               </Menu.Item>
               {settingsActiveIndex === 4 && <Menu.Item
                 name={t('oldClient.myAccount')}
-                onClick={() => window.open('https://accounts.kbb1.com/auth/realms/main/account')} />}
+                onClick={() => window.open('https://accounts.kab.info/auth/realms/main/account')} />}
               {settingsActiveIndex === 4 && <Menu.Item
                 name={t('oldClient.signOut')}
                 onClick={() => {

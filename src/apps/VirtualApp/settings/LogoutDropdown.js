@@ -64,7 +64,7 @@ const LogoutDropdown = ({ display }) => {
               <ListItemSecondaryAction><ExitToApp /></ListItemSecondaryAction>
             </ListItem>
             <ListItem button key={'account'} onClick={() => {
-              window.open('https://accounts.kbb1.com/auth/realms/main/account', '_blank');
+              window.open('https://accounts.kab.info/auth/realms/main/account', '_blank');
               handleClose();
             }}>
               <ListItemText primary={t('oldClient.myAccount')} />
