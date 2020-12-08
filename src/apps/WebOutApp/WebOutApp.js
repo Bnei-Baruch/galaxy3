@@ -27,10 +27,10 @@ class WebOutApp extends Component {
     user: {
       session: 0,
       handle: 0,
-      role: "sdiout",
-      display: "sdiout",
+      role: "webout",
+      display: "webout",
       id: "webout",
-      name: "sdiout",
+      name: "webout",
     },
     qcol: 0,
     gateways: {},
@@ -53,7 +53,7 @@ class WebOutApp extends Component {
 
   pollRooms = () => {
     this.fetchRooms();
-    setInterval(this.fetchRooms, 2 * 1000)
+    setInterval(this.fetchRooms, 10 * 1000)
   };
 
   fetchRooms = () => {

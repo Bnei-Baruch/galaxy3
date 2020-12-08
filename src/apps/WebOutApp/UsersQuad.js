@@ -13,18 +13,20 @@ class UsersQuad extends Component {
     let {index} = this.props;
     let col = index === 0 ? 1 : index === 4 ? 2 : index === 8 ? 3 : index === 12 ? 4 : null;
     this.setState({col});
+    this.autoSwitch(0)
+    setTimeout(() => {
+      this.switchFour();
+    }, col * 1000);
   };
 
-  componentDidUpdate(prevProps) {
-    let {groups,index} = this.props;
-    let {vquad,col} = this.state;
-    if(groups.length > prevProps.groups.length) {
-      if(vquad[0] === null && groups.length > index+4) {
-        setTimeout(() => {
-          this.switchFour();
-        }, col*1000);
-      }
-    }
+  autoSwitch = (i) => {
+    i++
+    setTimeout(() => {
+      const {col} = this.state;
+      if(col === i) this.switchFour()
+      if(i === 4) i = 0
+      this.autoSwitch(i)
+    }, 60 * 1000);
   };
 
   quadGroup = (queue) => {
