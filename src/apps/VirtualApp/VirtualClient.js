@@ -25,12 +25,13 @@ import {
   USERNAME_ALREADY_EXIST_ERROR_CODE,
   VIDEO_360P_OPTION_VALUE,
   vsettings_list,
+  sketchesByLang
 } from '../../shared/consts';
 import {GEO_IP_INFO, APP_STUN_SRV_STR, APP_JANUS_SRV_STR1} from '../../shared/env';
 import platform from 'platform';
 import {TopMenu} from './components/TopMenu';
 import {withTranslation} from 'react-i18next';
-import {languagesOptions, setLanguage} from '../../i18n/i18n';
+import { languagesOptions, setLanguage } from '../../i18n/i18n';
 import {Monitoring} from '../../components/Monitoring';
 import {
   LINK_STATE_GOOD,
@@ -70,6 +71,12 @@ import KliOlamiStream from './components/KliOlamiStream';
 import KliOlamiToggle from './buttons/KliOlamiToggle';
 import Toolbar from '@material-ui/core/Toolbar';
 import Typography from '@material-ui/core/Typography';
+
+const toggleLocationParam = (name = 'new_design', value = true) => {
+  const params = new URLSearchParams(window.location.search);
+  params.has(name) ? params.delete(name) : params.set(name, value);
+  window.location = window.location.pathname + '?' + params.toString();
+};
 
 const sortAndFilterFeeds = (feeds) => feeds
   .filter(feed => !feed.display.role.match(/^(ghost|guest)$/))
@@ -146,7 +153,8 @@ class VirtualClient extends Component {
     leftAsideSize: 3,
     shidurForGuestReady: false,
     checkAlive: new CheckAlive(),
-    kliOlamiAttached: true
+    kliOlamiAttached: true,
+    isKliOlamiShown: true
   };
 
   virtualStreamingInitialized() {
@@ -229,18 +237,6 @@ class VirtualClient extends Component {
   };
 
   initApp = (user) => {
-    if (!isUseNewDesign && user.role !== userRolesEnum.user) {
-      const params = new URLSearchParams(window.location.search)
-      params.set('new_design', true)
-      window.location = window.location.pathname + "?" + params.toString();
-    }
-
-    if (isUseNewDesign && user.role === userRolesEnum.user && !kc.hasRealmRole('gxy_admin')) {
-      const params = new URLSearchParams(window.location.search);
-      params.delete('new_design');
-      window.location = window.location.pathname + '?' + params.toString();
-    }
-
     if (user.role !== userRolesEnum.user) {
       const config = {
         'gateways': {
@@ -395,7 +391,7 @@ class VirtualClient extends Component {
             micLevel(audio.stream, this.refs.canvas1, audioContext => {
               audio.context = audioContext;
               this.setState({media})
-            });
+            }, isUseNewDesign ? 'vertical': 'old');
           }
 
           // we dup this info on user so it goes into the backend.
@@ -482,7 +478,7 @@ class VirtualClient extends Component {
             micLevel(stream, this.refs.canvas1, audioContext => {
               media.audio.context = audioContext;
               this.setState({media});
-            });
+            },isUseNewDesign ? 'vertical': 'old');
           }
         })
   };
@@ -1720,18 +1716,20 @@ class VirtualClient extends Component {
           </ButtonGroup>
 
           <ButtonMD
+            onClick={() => toggleLocationParam()}
+            variant="contained"
+            color="primary"
+            className={classNames('bottom-toolbar__item')}
+            disableElevation
+          >
+            {t('oldClient.oldDesign')}
+          </ButtonMD>
+          <ButtonMD
             onClick={() => this.exitRoom(false)}
             variant="contained"
             color="secondary"
             className={classNames('bottom-toolbar__item')}
             disableElevation
-            // style={{
-            //   marginRight: '1em',
-            //   backgroundColor: red[500],
-            //   fontWeight: 'bold',
-            //   color: 'white',
-            //   textTransform: 'none'
-            // }}
           >
             {t('oldClient.leave')}
           </ButtonMD>
@@ -1841,15 +1839,6 @@ class VirtualClient extends Component {
           >
             {t('loginPage.userFee')}
           </ButtonMD>
-
-
-
-
-
-
-
-
-
           <ButtonGroup
             variant="outlined"
             disableElevation
@@ -1858,7 +1847,7 @@ class VirtualClient extends Component {
             <Badge
               color="secondary"
               badgeContent={asideMsgCounter.drawing}
-              showZero={true}
+              showZero={false}
             >
               <ButtonMD
                 color='default'
@@ -1891,7 +1880,7 @@ class VirtualClient extends Component {
             <Badge
               color="secondary"
               badgeContent={asideMsgCounter.chat}
-              showZero={true}
+              showZero={false}
             >
               <ButtonMD
                 variant={rightAsideName === 'chat' ? 'contained' : 'outlined'}
@@ -1934,7 +1923,8 @@ class VirtualClient extends Component {
   };
 
   renderLeftAside = () => {
-    const { leftAsideName, leftAsideSize } = this.state;
+    const { leftAsideName, leftAsideSize, } = this.state;
+    const { i18n: { language } } = this.props;
 
     let content;
     if (leftAsideName === 'material') {
@@ -1943,14 +1933,14 @@ class VirtualClient extends Component {
       content = (
         <iframe
           title={'classboard'}
-          src={`https://www.kab.tv/classboard/classboard.php`}
+          src={`https://www.kab.tv/classboard/classboard.php?lang=${sketchesByLang[language]}`}
           style={{ width: '100%', height: '100%', padding: '1rem' }}
           frameBorder="0"></iframe>
       );
     }
 
     return (
-      <Grid item xs={(leftAsideSize >= 3 && leftAsideName) ? leftAsideSize : false} style={{backgroundColor: 'white'}}>
+      <Grid item xs={(leftAsideSize >= 3 && leftAsideName) ? leftAsideSize : false} style={{ backgroundColor: 'white' }}>
         {
           //buttons for resize tab (if want open study materials on browser tab)
           leftAsideName && false ?
@@ -2313,6 +2303,7 @@ class VirtualClient extends Component {
               className='homet-limud'>
               <HomerLimud />
             </Modal>
+            <Button primary  style={{ margin: 'auto 0' }} onClick={() => toggleLocationParam()}>{t('oldClient.newDesign')}</Button>
           </Menu>
           <Menu icon='labeled' secondary size="mini">
             {!room ?

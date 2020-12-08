@@ -10,17 +10,18 @@ import {
   TextField,
   Tooltip,
   FormControlLabel,
-  Checkbox
+  Checkbox, Box, Button
 } from '@material-ui/core';
-import { AccountCircle, Close, Computer, Mic, Videocam } from '@material-ui/icons';
+import { AccountCircle, ArrowBackIos, Close, Computer, Mic, Videocam } from '@material-ui/icons';
 import makeStyles from '@material-ui/core/styles/makeStyles';
 
-import {vsettings_list} from '../../../shared/consts';
+import { vsettings_list } from '../../../shared/consts';
 import MyMedia from './MyMedia';
 import CheckMySelf from './CheckMySelf';
-import {SelectLanguage} from '../components/SelectLanguage';
-import {SelectBroadcastVideo} from '../components/SelectBroadcastVideo';
-import {SelectViewLanguage} from "../components/SelectViewLanguage";
+import { SelectLanguage } from '../components/SelectLanguage';
+import { SelectBroadcastVideo } from '../components/SelectBroadcastVideo';
+import { SelectViewLanguage } from '../components/SelectViewLanguage';
+import green from '@material-ui/core/colors/green';
 
 const useStyles = makeStyles(() => ({
   content: {
@@ -28,11 +29,20 @@ const useStyles = makeStyles(() => ({
     outline: 'none'
   },
   modal: {
-    backgroundColor: 'white',
+    border: 'none',
+    outline: 'none'
+  },
+  paper: {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    border: 'none'
+    height: '100%',
+    overflowX: 'hidden',
+    overflowY: 'auto',
+    outline: 'none'
+  },
+  backBtn: {
+    background: green[500]
   }
 }));
 
@@ -87,7 +97,7 @@ const SettingsJoined = (props) => {
           />
         </Grid>
         <Grid item={true} xs={4}>
-          <SelectViewLanguage/>
+          <SelectViewLanguage />
         </Grid>
       </>
     );
@@ -170,7 +180,7 @@ const SettingsJoined = (props) => {
               </Tooltip>
             </Grid>
             <Grid item xs={12}>
-              <CheckMySelf />
+              <CheckMySelf audio={audio} />
             </Grid>
           </Grid>
         </Grid>
@@ -201,6 +211,18 @@ const SettingsJoined = (props) => {
             }
           />
         </Grid>
+        <Grid item xs={12}>
+          <Button
+            variant="contained"
+            color="primary"
+            size="large"
+            onClick={closeModal}
+            className={classes.backBtn}
+          >
+            <ArrowBackIos />
+            {t('settings.backToTen')}
+          </Button>
+        </Grid>
       </Grid>
     );
   };
@@ -214,7 +236,10 @@ const SettingsJoined = (props) => {
       }}
       className={classes.modal}
     >
-      {renderContent()}
+
+      <Box className={classes.paper}>
+        {renderContent()}
+      </Box>
     </Modal>
   );
 };

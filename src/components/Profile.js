@@ -12,7 +12,7 @@ export const Profile = (props) => {
     <Dropdown inline text={title}>
         <Dropdown.Menu>
             <Dropdown.Item content={t('oldClient.profile')} disabled />
-            <Dropdown.Item text={t('oldClient.myAccount')} onClick={() => window.open("https://accounts.kbb1.com/auth/realms/main/account", "_blank")} />
+            <Dropdown.Item text={t('oldClient.myAccount')} onClick={() => window.open("https://accounts.kab.info/auth/realms/main/account", "_blank")} />
             <Dropdown.Item text={t('oldClient.signOut')} onClick={() => {kc.logout(); updateSentryUser(null);}} />
         </Dropdown.Menu>
     </Dropdown>

@@ -75,7 +75,7 @@ export const TopMenu = ({ t, openSettings, open = false, setOpen, notApproved })
     return (
       <List>
         <ListItem style={{ fontWeight: 'bold' }}>{t('oldClient.user')}</ListItem>
-        <ListItem button key={'account'} onClick={() => window.open('https://accounts.kbb1.com/auth/realms/main/account', '_blank')}>
+        <ListItem button key={'account'} onClick={() => window.open('https://accounts.kab.info/auth/realms/main/account', '_blank')}>
           <ListItemText primary={t('oldClient.myAccount')} />
           <ListItemSecondaryAction><AccountBox /></ListItemSecondaryAction>
         </ListItem>

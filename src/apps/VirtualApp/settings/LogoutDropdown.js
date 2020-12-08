@@ -20,7 +20,12 @@ import { updateSentryUser } from '../../../shared/sentry';
 const useStyles      = makeStyles({
   root: {
     textTransform: 'none',
-    whiteSpace: 'nowrap'
+  },
+  label: {
+    display: 'inline-block',
+    whiteSpace: 'nowrap',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis'
   },
   popper: {
     zIndex: 1,
@@ -45,8 +50,12 @@ const LogoutDropdown = ({ display }) => {
         onClick={handleOpen}
         className={classes.root}
         endIcon={open ? <ArrowDropUp /> : <ArrowDropDown />}
+        tex
+
       >
-        {display}
+        <span className={classes.label}>
+          {display}
+        </span>
       </Button>
       <Popper
         anchorEl={anchorRef.current}
@@ -64,7 +73,7 @@ const LogoutDropdown = ({ display }) => {
               <ListItemSecondaryAction><ExitToApp /></ListItemSecondaryAction>
             </ListItem>
             <ListItem button key={'account'} onClick={() => {
-              window.open('https://accounts.kbb1.com/auth/realms/main/account', '_blank');
+              window.open('https://accounts.kab.info/auth/realms/main/account', '_blank');
               handleClose();
             }}>
               <ListItemText primary={t('oldClient.myAccount')} />
