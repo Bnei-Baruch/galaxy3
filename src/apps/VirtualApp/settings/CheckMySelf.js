@@ -1,12 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import makeStyles from '@material-ui/core/styles/makeStyles';
-import { Button, Grid, Typography } from '@material-ui/core';
+import { Button, Grid } from '@material-ui/core';
 
 import { micLevel, recordAudio, sleep } from '../../../shared/tools';
 import Box from '@material-ui/core/Box';
-import { FiberManualRecord, PlayCircleFilled } from '@material-ui/icons';
-import { red } from '@material-ui/core/colors';
 
 const INTERVAL_STEP_MLS = 1000;
 const CANVAS_WIDTH      = 150;
