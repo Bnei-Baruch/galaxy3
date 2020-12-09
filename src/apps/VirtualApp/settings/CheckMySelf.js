@@ -12,7 +12,7 @@ const useStyles         = makeStyles(() => (
   {
     canvas: {
       width: `${CANVAS_WIDTH}px`,
-      height: `${CANVAS_HEIGHT}px`,
+      height: `${CANVAS_HEIGHT+2}px`,
       border: '1px solid black'
     },
     runButton: { textTransform: 'none' },
