@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { Icon } from 'semantic-ui-react';
+import React, {useEffect, useState} from 'react';
+import {Icon} from 'semantic-ui-react';
 
 import './Volume.css';
 
@@ -103,9 +103,7 @@ const Volume = ({ media }) => {
   };
 
   const volumePopoverStyle = {
-    bottom: '100%',
-    top: 'auto',
-    visibility: volumeHover || wasMouseDown ? 'visible' : 'hidden',
+    visibility: volumeHover || wasMouseDown ? 'visible' : 'hidden'
   };
 
   const styleFull = {
@@ -168,8 +166,7 @@ const Volume = ({ media }) => {
 const arePropsEqual = (props, nextProps) => {
   const { media } = props;
 
-	const ret = media === nextProps.media;
-	return ret;
+  return media === nextProps.media;
 };
 
 export default React.memo(Volume, arePropsEqual);

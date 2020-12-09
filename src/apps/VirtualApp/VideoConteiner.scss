@@ -1,34 +1,37 @@
+@import "VirtualWorkshopQuestionHelpers";
+
 @function list-remove($list, $index) {
-	$newList: ();
-	@for $i from 1 through length($list) {
-		@if $i != $index {
-			$newList: append($newList, nth($list,$i), 'space');
-		}
-	}
-	@return $newList;
+  $newList: ();
+  @for $i from 1 through length($list) {
+    @if $i != $index {
+      $newList: append($newList, nth($list, $i), 'space');
+    }
+  }
+  @return $newList;
 }
+
 @function list-sort($list) {
-	$sortedlist: ();
-	@while length($list) > 0 {
-		$value: nth($list,1);
-		@each $item in $list {
-			@if $item > $value {
-				$value: $item;
-			}
-		}
-		$sortedlist: append($sortedlist, $value, 'space');
-		$list: list-remove($list, index($list, $value));
-	}
-	@return $sortedlist;
+  $sortedlist: ();
+  @while length($list) > 0 {
+    $value: nth($list, 1);
+    @each $item in $list {
+      @if $item > $value {
+        $value: $item;
+      }
+    }
+    $sortedlist: append($sortedlist, $value, 'space');
+    $list: list-remove($list, index($list, $value));
+  }
+  @return $sortedlist;
 }
 
 @function map-sort($map) {
-	$keys: list-sort(map-keys($map));
-	$sortedMap: ();
-	@each $key in $keys {
-		$sortedMap: map-merge($sortedMap, ($key: map-get($map, $key)));
-	}
-	@return $sortedMap;
+  $keys: list-sort(map-keys($map));
+  $sortedMap: ();
+  @each $key in $keys {
+    $sortedMap: map-merge($sortedMap, ($key: map-get($map, $key)));
+  }
+  @return $sortedMap;
 }
 
 //////////////////////////////////////////////
@@ -37,50 +40,50 @@
 *,
 *:before,
 *:after {
-	box-sizing: border-box;
+  box-sizing: border-box;
 }
 
 .title {
-	font-family: "Liberation Serif";
-	font-size: 45px;
-	text-align: right;
-	margin-bottom: .1em;
-	margin-top: .2em;
+  font-family: "Liberation Serif";
+  font-size: 45px;
+  text-align: right;
+  margin-bottom: .1em;
+  margin-top: .2em;
 
-	span {
-		display: inline-block;
-		background: blue;
-		line-height: 1.1em;
-		color: white;
-		padding: 0 .7em;
-	}
+  span {
+    display: inline-block;
+    background: blue;
+    line-height: 1.1em;
+    color: white;
+    padding: 0 .7em;
+  }
 }
 
-	// flex: 1 1 auto;
-	// position: relative;
+// flex: 1 1 auto;
+// position: relative;
 
-	// margin: -1px;
+// margin: -1px;
 .videos__wrapper {
-		// display: flex;
+  // display: flex;
 
-		position: absolute;
-		display: grid;
-		grid-auto-flow: column;
-		// justify-content: center;
-		// align-items: center;
-		// align-content: center;
-		// display: grid;
-		// grid-template-columns: repeat( 120,  1fr );
-		// grid-template-rows: repeat(120, percentage(1/120));
-		grid-gap: 2px;
-		overflow: hidden;
-		top: 2px;
-		right: 2px;
-		left: 2px;
-		bottom: 2px;
+  position: absolute;
+  display: grid;
+  grid-auto-flow: column;
+  // justify-content: center;
+  // align-items: center;
+  // align-content: center;
+  // display: grid;
+  // grid-template-columns: repeat( 120,  1fr );
+  // grid-template-rows: repeat(120, percentage(1/120));
+  grid-gap: 2px;
+  overflow: hidden;
+  top: 2px;
+  right: 2px;
+  left: 2px;
+  bottom: 2px;
 
-		// width: 100%;
-	}
+  // width: 100%;
+}
 
 
 .video {
@@ -95,59 +98,59 @@
 	// border: 2px solid #000;
 	// overflow: hidden;
 
- 
-	&__overlay {
-		position: absolute;
-		width: 100%;
-		height: 100%;
-		z-index: 1;
 
-		&.talk-frame {
-			border: 4px solid rgba(yellow, .6);
-		}
-	}
+  &__overlay {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
 
-	.nowebcam {
+    &.talk-frame {
+      border: 4px solid rgba(yellow, .6);
+    }
+  }
+
+  .nowebcam {
     background-color: rgb(34, 34, 34);
-		top: 0;
-		position: absolute;
-		fill: #fff;
-		font-family: Icons;
-		font-size: .8rem;
-		object-fit: contain;
-		width: 100%;
-		height: 100%;
-	}
+    top: 0;
+    position: absolute;
+    fill: #fff;
+    font-family: Icons;
+    font-size: .8rem;
+    object-fit: contain;
+    width: 100%;
+    height: 100%;
+  }
 
-	.question {
-		&:before {
-			display: block;
-			content: "";
-			padding-top: 100%;
-		}
+  .question {
+    &:before {
+      display: block;
+      content: "";
+      padding-top: 100%;
+    }
 
-		position: absolute;
-		top:50%;
-		left:50%;
-		transform: translate(-50%, -50%);
-		max-width: 30%;
-		width: 400px;
-		min-width: 60px;
-		background:rgba(34, 34, 34, .9);
-		border-radius: 10%;
-		border: 6px solid white;
-		// animation: blinker 1s linear infinite;
-		font-family: Icons;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    max-width: 30%;
+    width: 400px;
+    min-width: 60px;
+    background: rgba(34, 34, 34, .9);
+    border-radius: 10%;
+    border: 6px solid white;
+    // animation: blinker 1s linear infinite;
+    font-family: Icons;
 
-		svg {
-			position: absolute;
-			top: 0;
-			left: 0;
-			font-size: 2.5rem;
-			fill: white;
-		}
+    svg {
+      position: absolute;
+      top: 0;
+      left: 0;
+      font-size: 2.5rem;
+      fill: white;
+    }
 
-	}
+  }
 
 	&__title {
 		position: absolute;
@@ -181,99 +184,107 @@
 		// color:yellow;
 	}
 
-	video {
-		object-fit: contain;
-		width: 100%;
-		height: 100%;
-	}
+  video {
+    object-fit: contain;
+    width: 100%;
+    height: 100%;
+  }
 }
 
-$vw : 16;
+$vw: 16;
 $vh: 9;
 
 
 @keyframes blinker {
-	50% {
-		opacity: 0;
-	}
+  50% {
+    opacity: 0;
+  }
 }
 
 $all: ();
 @for $i from 2 through 26 {
-	@for $x from ($i - 1)  through 1 {
-		// $keyname: #{$vw*($x+1)}/#{$vh*ceil($i/$x)};
-		$keyname: ($vw*($x+1))/($vh*ceil($i/$x));
-		@if map-has-key($all, $keyname) {
-			$list2update: map-get($all, $keyname);
-			$list2update: append($list2update, ($i,$x));
-			$key2update: ($keyname: $list2update);
-			$all: map-merge($all , $key2update);
-		}@else{
-			$key2add: ($keyname: (($i,$x),()));
-			$all: map-merge($all, $key2add);
-		}
-	}
+  @for $x from ($i - 1) through 1 {
+    // $keyname: #{$vw*($x+1)}/#{$vh*ceil($i/$x)};
+    $keyname: ($vw*($x+1))/($vh*ceil($i/$x));
+    @if map-has-key($all, $keyname) {
+      $list2update: map-get($all, $keyname);
+      $list2update: append($list2update, ($i, $x));
+      $key2update: ($keyname: $list2update);
+      $all: map-merge($all, $key2update);
+    } @else {
+      $key2add: ($keyname: (($i, $x), ()));
+      $all: map-merge($all, $key2add);
+    }
+  }
 }
-
-
 
 
 $all: map-sort($all);
 
 body:before {
-	// content: "#{$all}";
+  // content: "#{$all}";
 
 }
+
 @each $ratio, $values in $all {
-	$i: nth(nth($values, 1),1);
-	$x: nth(nth($values, 1),2);
-	$querymax: #{$vw*($x+1)}/#{$vh*ceil($i/$x)};
-	// $querymin: #{$vw*($x - 1)}/#{$vh*ceil($i/$x)};
-	@element .videos__wrapper and (max-aspect-ratio: #{$querymax}){
-		@each $pair in $values {
-			@if length($pair) > 0 {
-				$i: nth($pair, 1);
-				$x: nth($pair, 2);
-				.no-of-videos-#{$i} {
-					:self {
-						grid-auto-flow: row;
-						grid-template-columns: repeat(#{$x}, minmax(0, 1fr));
-						grid-template-rows: repeat(#{ceil($i/$x)}, minmax(0, 1fr));
-					}
-					&.layout--double {
-						:self{
-							&:before {
-								// content: "#{ceil($i/$x)}";
-							}
-						}
-						$h: ceil($i/$x);
-						@if $x != 1{
+  $i: nth(nth($values, 1), 1);
+  $x: nth(nth($values, 1), 2);
+  $querymax: #{$vw*($x+1)}/#{$vh*ceil($i/$x)};
+  // $querymin: #{$vw*($x - 1)}/#{$vh*ceil($i/$x)};
+  @element .videos__wrapper and (max-aspect-ratio: #{$querymax}) {
+    @each $pair in $values {
+      @if length($pair) > 0 {
+        $i: nth($pair, 1);
+        $x: nth($pair, 2);
+        .no-of-videos-#{$i} {
+          :self {
+            grid-auto-flow: row;
+            grid-template-columns: repeat(#{$x}, minmax(0, 1fr));
+            grid-template-rows: repeat(#{ceil($i/$x)}, minmax(0, 1fr));
+          }
 
-							$i: $i+3;
-							.video:first-child {
+          &.layout--double {
+            :self {
+              &:before {
+                // content: "#{ceil($i/$x)}";
+              }
+            }
 
-								grid-column: span 2;
-								grid-row: span 2;
-							}
-						}@else{
+            $h: ceil($i/$x);
+            @if $x != 1 {
 
-							.video:first-child {
+              $i: $i+3;
+              .video:first-child {
 
-								grid-column: span 1!important;
-								grid-row: span 1!important;
-							}						
-						}
-						:self {
-							grid-template-columns: repeat(#{$x}, minmax(0, 1fr));
-							grid-template-rows: repeat(#{ceil($i/$x)}, minmax(0, 1fr));
-						}
-					}
-				}
-			}
-		}
-	}
+                grid-column: span 2;
+                grid-row: span 2;
+              }
+            } @else {
+
+              .video:first-child {
+
+                grid-column: span 1 !important;
+                grid-row: span 1 !important;
+              }
+            }
+
+            :self {
+              grid-template-columns: repeat(#{$x}, minmax(0, 1fr));
+              grid-template-rows: repeat(#{ceil($i/$x)}, minmax(0, 1fr));
+            }
+          }
+
+          &.layout--double,
+          &.layout--equal {
+            @include wq-overlay-full-height();
+          }
+        }
+      }
+    }
+  }
 }
+
 .layout--double {
-// // .broadcast--on.broadcast--inline.layout--double {
+  // // .broadcast--on.broadcast--inline.layout--double {
 
 }

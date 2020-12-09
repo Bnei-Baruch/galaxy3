@@ -29,6 +29,7 @@
     "react-meta-tags": "^1.0.0",
     "react-rangeslider": "^2.2.0",
     "react-scripts": "4.0.1",
+    "reconnectingwebsocket": "^1.0.0",
     "semantic-ui-css": "^2.4.0",
     "semantic-ui-react": "^2.0.1",
     "ua-parser-js": "^0.7.21",

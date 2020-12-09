@@ -162,6 +162,13 @@ export const resources = {
         cancel: 'Cancel',
         continueAsGuest: 'Continue as a Guest',
       },
+      workshop: {
+        hideQuestion: 'Hide question',
+        showQuestion: 'Show question',
+        copyQuestion: 'Copy question',
+        manageFontSize: 'Manage font size',
+        inProcess: 'In process... Available in'
+      },
       registration: {
         continueAsGuest: 'Continue as a guest',
         selectCountry: 'Country',
@@ -371,6 +378,13 @@ export const resources = {
         completed: 'Tu registración fue completada y será verificada pronto. Mientras tanto puedes ver la transmisión.',
 
       },
+      workshop: {
+        hideQuestion: 'Ocultar pregunta',
+        showQuestion: 'Mostrar pregunta',
+        copyQuestion: 'Copiar pregunta',
+        manageFontSize: 'Cambiar el tamaño de la fuente',
+        inProcess: 'En proceso… Disponible en'
+      }
     },
   },
   he: {
@@ -536,6 +550,13 @@ export const resources = {
         ok: 'אשר',
         cancel: 'בטל',
         continueAsGuest: 'המשך כאורח',
+      },
+      workshop: {
+        hideQuestion: 'להחביא את השאלה',
+        showQuestion: 'להראות את השאלה',
+        copyQuestion: 'להעתיק את השאלה',
+        manageFontSize: 'להגדיר את גודל האותיות',
+        inProcess: 'בתהליך... זמין בשפות'
       },
       registration: {
         continueAsGuest: 'המשך כאורח',
@@ -723,6 +744,13 @@ export const resources = {
         continueAsGuest: 'Продолжить как гость',
         terms: 'Условия использования системы Галакси',
         close: 'Закрыть',
+      },
+      workshop: {
+        hideQuestion: 'Скрыть вопрос',
+        showQuestion: 'Показать вопрос',
+        copyQuestion: 'Копировать вопрос',
+        manageFontSize: 'Изменить размер шрифта',
+        inProcess: 'В процессе... Доступно на'
       },
       registration: {
         continueAsGuest: 'Продолжить как гость',

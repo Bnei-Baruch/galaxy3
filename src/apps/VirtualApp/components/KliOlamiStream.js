@@ -64,24 +64,26 @@ class KliOlamiStream extends Component {
       <div className="video video--broadcast" key='v0' ref={(ref) => this.setVideoWrapperRef(ref)} id='video0'
            style={{ height: !attached ? '100%' : null, width: !attached ? '100%' : null }}>
         <div className="video__overlay">
-          <div className="controls">
-            <div className="controls__top">
-              <IconButton onClick={close}>
-                <Close style={{ color: 'white', fontWeight: 'bold' }} />
-              </IconButton>
-            </div>
-            <div className="controls__bottom">
-              <div className="controls__spacer"></div>
-              <Fullscreen
-                isOn={fullScreen}
-                action={this.handleFullScreen.bind(this)}
-                color={'white'}
-              />
-              {!attached ? null :
-                <IconButton onClick={() => toggleAttach()}>
-                  <OpenInNew style={{ color: 'white', fontWeight: 'bold' }} />
+          <div className={'activities'}>
+            <div className="controls">
+              <div className="controls__top">
+                <IconButton onClick={close}>
+                  <Close style={{ color: 'white', fontWeight: 'bold' }} />
                 </IconButton>
-              }
+              </div>
+              <div className="controls__bottom">
+                <div className="controls__spacer"></div>
+                <Fullscreen
+                  isOn={fullScreen}
+                  action={this.handleFullScreen.bind(this)}
+                  color={'white'}
+                />
+                {!attached ? null :
+                  <IconButton onClick={() => toggleAttach()}>
+                    <OpenInNew style={{ color: 'white', fontWeight: 'bold' }} />
+                  </IconButton>
+                }
+              </div>
             </div>
           </div>
         </div>

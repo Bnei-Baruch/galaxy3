@@ -10067,6 +10067,11 @@ readdirp@~3.5.0:
   dependencies:
     picomatch "^2.2.1"
 
+reconnectingwebsocket@^1.0.0:
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/reconnectingwebsocket/-/reconnectingwebsocket-1.0.0.tgz#0b825babb37b670445c65aa7d3ed978300205444"
+  integrity sha1-C4Jbq7N7ZwRFxlqn0+2XgwAgVEQ=
+
 recursive-readdir@2.2.2:
   version "2.2.2"
   resolved "https://registry.yarnpkg.com/recursive-readdir/-/recursive-readdir-2.2.2.tgz#9946fb3274e1628de6e36b2f6714953b4845094f"

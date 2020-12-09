@@ -1,53 +1,54 @@
 .mediaplayer__volume {
   position: relative;
   height: 40px;
+  display: inline-block;
 }
 
 .mediaplayer__volume button {
-    background: none;
-    border: 0;
-    border-radius: 4px;
-    height: 40px;
-    min-width: 40px;
-    padding: 0 .5rem;
-    text-transform: lowercase;
-    cursor: pointer;
+  background: none;
+  border: 0;
+  border-radius: 4px;
+  height: 40px;
+  min-width: 40px;
+  padding: 0 .5rem;
+  text-transform: lowercase;
+  cursor: pointer;
 }
 
 .volume-popover {
-    background: rgba(27,28,29,.9);
-    display: flex;
-    justify-content: center;
-    position: absolute;
-    width: 100%;
-    z-index: 1;
-    
+  background: rgba(27,28,29,.9);
+  display: flex;
+  justify-content: center;
+  position: absolute;
+  bottom: 100%;
+  width: 100%;
+  z-index: 1;
 }
 
 .volume-popover__wrapper {
-    background: #000;
-    border-radius: 3px;
-    display: flex;
-    flex-direction: column-reverse;
-    margin: 1rem 0;
-    width: 6px;
-    
+  background: #000;
+  border-radius: 3px;
+  display: flex;
+  flex-direction: column-reverse;
+  margin: 1rem 0;
+  width: 6px;
+
 }
 .volume-popover__wrapper:focus{
-    outline: none;
+  outline: none;
 }
 
 .volume-popover__bar.is-full {
-    background: #fff;
-    border-radius: 0 0 3px 3px;
+  background: #fff;
+  border-radius: 0 0 3px 3px;
 }
 
 .volume-popover__knob {
-    background: #fff;
-    border-radius: 6px;
-    height: 12px;
-    left: -3px;
-    position: relative;
-    top: -6px;
-    width: 12px;
+  background: #fff;
+  border-radius: 6px;
+  height: 12px;
+  left: -3px;
+  position: relative;
+  top: -6px;
+  width: 12px;
 }
