@@ -25,21 +25,21 @@ import green from '@material-ui/core/colors/green';
 
 const useStyles = makeStyles(() => ({
   content: {
-    maxWidth: 800,
-    outline: 'none'
+    outline: 'none',
   },
   modal: {
     border: 'none',
-    outline: 'none'
+    outline: 'none',
+
   },
   paper: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    height: '100%',
+    padding: '2em 2em 0',
+    outline: 'none',
     overflowX: 'hidden',
     overflowY: 'auto',
-    outline: 'none'
+    height: '100%',
+    maxWidth: 900,
+    margin: '0 auto',
   },
   backBtn: {
     background: green[500]
@@ -236,7 +236,6 @@ const SettingsJoined = (props) => {
       }}
       className={classes.modal}
     >
-
       <Box className={classes.paper}>
         {renderContent()}
       </Box>
