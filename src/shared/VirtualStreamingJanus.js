@@ -1,7 +1,6 @@
 import { Janus } from '../lib/janus';
 import {gxycol, trllang, NO_VIDEO_OPTION_VALUE,} from './consts';
 import GxyJanus from "./janus-utils";
-import {captureMessage} from './sentry';
 
 export default class VirtualStreamingJanus {
 
@@ -81,7 +80,6 @@ export default class VirtualStreamingJanus {
         error: (error) => {
           this.videoJanusStream = null;
           this.videoMediaStream = null;
-          captureMessage('JanusVirtualStreaming error detaching video stream', {source: 'VirtualStreaming', err: error}, 'error');
           if (callbacks?.error) {
             callbacks.error(error);
           }
@@ -112,7 +110,6 @@ export default class VirtualStreamingJanus {
         error: (error) => {
           this.audioJanusStream = null;
           this.audioMediaStream = null;
-          captureMessage('JanusVirtualStreaming error detaching audio stream', {source: 'VirtualStreaming', err: error}, 'error');
           callbacks.error(error);
         },
       });
@@ -141,7 +138,6 @@ export default class VirtualStreamingJanus {
         error: (error) => {
           this.trlAudioJanusStream = null;
           this.trlAudioMediaStream = null;
-          captureMessage('JanusVirtualStreaming error detaching trlAudio stream', {source: 'VirtualStreaming', err: error}, 'error');
           callbacks.error(error);
         },
       });
@@ -245,7 +241,6 @@ export default class VirtualStreamingJanus {
           destroy();
         },
         error: (error) => {
-          captureMessage('JanusVirtualStreaming error detaching.', {source: 'VirtualStreaming', err: error}, 'error');
           callbacks.error(error);
           destroy();
         },
@@ -260,7 +255,6 @@ export default class VirtualStreamingJanus {
     this.destroy({
       error: (error) => {
         console.log('JanusVirtualStreaming error destroying before init', error);
-        captureMessage('JanusVirtualStreaming error destroying before init', {source: 'VirtualStreaming', err: error}, 'error');
         // Still we are trying to init.
         this.initJanus_(country);
       },
@@ -298,7 +292,6 @@ export default class VirtualStreamingJanus {
               this.initJanus_(country);
             }, 5000);
             console.error('RELOAD ON ERROR', err);
-            captureMessage('JanusVirtualStreaming error', {source: 'VirtualStreaming', err}, 'error');
           },
           destroyed: () => {
             Janus.log('Janus handle successfully destroyed.');

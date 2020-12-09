@@ -61,7 +61,6 @@ class VirtualChat extends Component {
         message: {request: 'restart'},
         error: (err) => {
           console.error('[VirtualChat] ICE restart error', err);
-          captureMessage('Chatroom error: ice restart', {source: 'Textroom', err}, 'error');
         }
       });
     }
@@ -85,39 +84,32 @@ class VirtualChat extends Component {
               },
               error: (err) => {
                 console.error('[VirtualChat] setup error', err);
-                captureMessage('Chatroom error: setup', {source: 'Textroom', err}, 'error');
               }
             });
           },
           error: (err) => {
             console.error('[VirtualChat] Error attaching plugin...', err);
-						captureMessage('Chatroom error: attach', {source: 'Textroom', err}, 'error');
           },
           iceState: (state) => {
             console.log('[VirtualChat] ICE state', state);
-						captureMessage(`Chatroom: ICE state changed to ${state}`, {source: 'Textroom'});
           },
           mediaState: (medium, on) => {
 						const message = `Janus ${on ? 'started' : 'stopped'} receiving our ${medium}`;
             console.log(`[VirtualChat] ${message}`);
-						captureMessage(`Chatroom: ${message}`, {source: 'Textroom'});
           },
           webrtcState: (on) => {
 						const message = `Janus says our WebRTC PeerConnection is ${on ? 'up' : 'down'} now`;
             console.log(`[VirtualChat] ${message}`);
-            captureMessage(`Chatroom: ${message}`, {source: 'Textroom'});
           },
           slowLink: (uplink, lost, mid) => {
             const slowLinkType = uplink ? 'sending' : 'receiving';
             const message = 'Janus reports slow link problems ' + slowLinkType + ' packets on mid ' + mid + ' (' + lost + ' lost packets)';
             console.log(message);
-            captureMessage(`Chatroom: Janus reports slow link problems ${slowLinkType}`, {source: 'Textroom', msg: message});
           },
           onmessage: (msg, jsep) => {
             console.debug('[VirtualChat] ::: Got a message :::', msg);
             if (msg['error'] !== undefined && msg['error'] !== null) {
               console.error('[VirtualChat] textroom error message', msg);
-							captureMessage('Chatroom error: message', {source: 'Textroom', err: msg}, 'error');
             }
             if (jsep !== undefined && jsep !== null) {
               // Answer
@@ -132,13 +124,11 @@ class VirtualChat extends Component {
                       message: {request: 'ack'},
                       error: (err) => {
                         console.debug('[VirtualChat] ack error', err);
-                        captureMessage('Chatroom error: ack', {source: 'Textroom', err}, 'error');
                       }
                     });
                   },
                   error: (err) => {
                     console.error('[VirtualChat] createAnswer error', err);
-                    captureMessage('Chatroom error: createAnswer', {source: 'Textroom', err}, 'error');
                   }
                 });
             }
@@ -170,7 +160,6 @@ class VirtualChat extends Component {
             }
             Janus.warn(`Textroom DataChannel error: ${error} details: ${details}`);
             console.error('Textroom DataChannel error: ', error, details);
-            captureMessage('DataChannel error', {source: 'Textroom', err: error, details}, 'error');
           },
           oncleanup: () => {
             console.log('[VirtualChat] ::: Got a cleanup notification :::');
@@ -198,7 +187,6 @@ class VirtualChat extends Component {
         },
         error: (err) => {
           console.error('[VirtualChat] leave error', err);
-          captureMessage('Chatroom error: leave', {source: 'Textroom', err}, 'error');
           chatroom.detach();
         }
       });
@@ -319,7 +307,6 @@ class VirtualChat extends Component {
         },
         error: (err) => {
           console.error('[VirtualChat] message error [cmd]', err);
-          captureMessage('Chatroom error: message', {source: 'Textroom', err}, 'error');
         }
       });
     }
@@ -360,7 +347,6 @@ class VirtualChat extends Component {
         },
         error: (err) => {
           console.error('[VirtualChat] message error [chat]', err);
-          captureMessage('Chatroom error: message', {source: 'Textroom', err}, 'error');
         }
       });
     }

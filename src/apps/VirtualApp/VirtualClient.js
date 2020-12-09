@@ -46,7 +46,7 @@ import VirtualStreamingJanus from '../../shared/VirtualStreamingJanus';
 import {getUser, kc} from "../../components/UserManager";
 import LoginPage from "../../components/LoginPage";
 import {Profile} from "../../components/Profile";
-import {captureException, captureMessage, sentryDebugAction, updateSentryUser} from '../../shared/sentry';
+import {captureException, sentryDebugAction, updateSentryUser} from '../../shared/sentry';
 import GxyJanus from '../../shared/janus-utils';
 import audioModeSvg from '../../shared/audio-mode.svg';
 import fullModeSvg from '../../shared/full-mode.svg';
@@ -324,7 +324,6 @@ class VirtualClient extends Component {
   };
 
   initClient = (reconnect, retry = 0) => {
-    captureMessage('InitClient', {source: 'VirtualClient', reconnect, retry});
     this.setState({delay: true});
     const user = Object.assign({}, this.state.user);
     const {t} = this.props;
@@ -633,7 +632,6 @@ class VirtualClient extends Component {
       },
       error: (error) => {
         Janus.log('Error attaching plugin: ' + error);
-        captureMessage('Error attaching videoroom plugin', {source: 'Videoroom', err: error}, 'error');
       },
       consentDialog: (on) => {
         Janus.debug('Consent dialog should be ' + (on ? 'on' : 'off') + ' now');
@@ -692,7 +690,6 @@ class VirtualClient extends Component {
       },
       ondataerror: (error) => {
         Janus.warn('Publisher - DataChannel error: ' + error);
-        captureMessage('Publisher - DataChannel error', {source: 'Videoroom', err: error}, 'error');
       },
       oncleanup: () => {
         Janus.log(' ::: Got a cleanup notification: we are unpublished now :::');
@@ -740,10 +737,8 @@ class VirtualClient extends Component {
       if (textroom === 'error') {
         if (error_code !== USERNAME_ALREADY_EXIST_ERROR_CODE) {
           console.error("Chatroom error: ", data, error_code)
-          captureMessage('Chatroom error: init', {source: "Textroom", err: data}, 'error');
         } else {
           console.log("Chatroom error: ", data, error_code);
-          captureMessage('Chatroom error: init', {source: "Textroom", err: data});
         }
         this.exitRoom(/* reconnect= */ false, () => {
           if(error_code === USERNAME_ALREADY_EXIST_ERROR_CODE)
@@ -752,7 +747,6 @@ class VirtualClient extends Component {
       } else if(textroom === "success" && data.participants) {
         this.state.checkAlive.start(this.chat.state.chatroom, selected_room, user);
         Janus.log(":: Successfully joined to chat room: " + selected_room );
-        captureMessage('Successfully joined to chat room', {source: "Textroom", selected_room});
         user.textroom_handle = this.chat.getHandle(); // we want this in backend for debugging of textroom based signaling
         this.setState({user});
         const {id, timestamp, role, username} = user;
@@ -762,7 +756,6 @@ class VirtualClient extends Component {
           "message": register,
           success: () => {
             console.log("Request join success");
-            captureMessage('Request join success', {source: "Videoroom", selected_room});
           },
           error: (error) => {
             console.error(error);
@@ -775,7 +768,6 @@ class VirtualClient extends Component {
   };
 
   exitRoom = (reconnect, callback, error) => {
-    captureMessage('Exit Room', {source: 'VirtualClient', reconnect, error});
     this.setState({delay: true, muteMyCamOnInit: reconnect && this.state.cammuted});
     if (this.state.user.role === userRolesEnum.user) {
       wkliLeave(this.state.user);
@@ -814,7 +806,6 @@ class VirtualClient extends Component {
         },
         error: (error) => {
           console.log('Error destroying VirtualStreaming on exit room', error);
-          captureMessage('Error destroying VirtualStreaming on exit room', {source: 'VirtualClient', err: error}, 'error');
         },
       });
     }
@@ -867,7 +858,6 @@ class VirtualClient extends Component {
       },
       error: (error) => {
         Janus.error('WebRTC error:', error);
-        captureMessage(`Videoroom error: create offer [publishOwnFeed] - ${error}`, {source: "Videoroom", error}, 'error');
       }
     });
   };
@@ -888,7 +878,6 @@ class VirtualClient extends Component {
         },
         error: (err) => {
           Janus.error('WebRTC error:', err);
-          captureMessage(`Videoroom error: create offer [ice restart] - ${err}`, {source: "Videoroom", err}, 'error');
         }
       });
     }
@@ -896,8 +885,6 @@ class VirtualClient extends Component {
     if(remoteFeed) remoteFeed.send({message: {request: 'configure', restart: true}});
     if(this.chat) this.chat.iceRestart();
     if(this.state.virtualStreamingJanus) this.state.virtualStreamingJanus.iceRestart();
-
-    captureMessage('ICE Restart', {source: 'icestate'});
   };
 
   onMessage = (videoroom, msg, jsep) => {
@@ -1044,7 +1031,6 @@ class VirtualClient extends Component {
         },
         error: (error) => {
           Janus.error('  -- Error attaching plugin...', error);
-          captureMessage('Error attaching remotefeed plugin', {source: 'Remotefeed', err: error}, 'error');
         },
         iceState: (state) => {
           Janus.log('ICE state (remote feed) changed to ' + state);
@@ -1143,7 +1129,6 @@ class VirtualClient extends Component {
         },
         ondataerror: (error) => {
           Janus.warn('Feed - DataChannel error: ' + error);
-          captureMessage('Remotefeed - DataChannel error', {source: 'Remotefeed', err: error}, 'error');
         },
         oncleanup: () => {
           Janus.log(' ::: Got a cleanup notification (remote feed) :::');
@@ -1392,10 +1377,8 @@ class VirtualClient extends Component {
     gdm.accept(data, (msg) => this.chat.sendCmdMessage(msg)).then((data) => {
       if (data === null) {
         console.log('Message received more then once.');
-				captureMessage('Message received more then once.', {source: 'VirtualClient DELIVERY', msg: data});
         return;
       }
-			captureMessage(`VirtualClient DELIVERY ${data.status ? 'ON' : 'OFF'}`, {source: 'VirtualClient DELIVERY', msg: data});
       this.state.virtualStreamingJanus.streamGalaxy(data.status, 4, "");
       if (data.status) {
         // remove question mark when sndman unmute our room
@@ -1469,7 +1452,6 @@ class VirtualClient extends Component {
         },
         error: (error) => {
           console.log('Error destroying VirtualStreaming', error);
-          captureMessage('Error destroying VirtualStreaming', {source: 'VirtualClient', err: error}, 'error');
           this.setState(stateUpdate);
         },
       });

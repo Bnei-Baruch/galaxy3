@@ -43,7 +43,7 @@ import VirtualStreamingJanus from '../../shared/VirtualStreamingJanus';
 import VirtualChat from '../VirtualApp/VirtualChat';
 import ConfigStore from "../../shared/ConfigStore";
 import {GuaranteeDeliveryManager} from "../../shared/GuaranteeDelivery";
-import {captureException, captureMessage, updateSentryUser} from "../../shared/sentry";
+import {captureException, updateSentryUser} from "../../shared/sentry";
 import {getUserRole, userRolesEnum} from '../../shared/enums';
 import { RegistrationModals } from './RegistrationModals';
 
@@ -191,7 +191,6 @@ class MobileClient extends Component {
         },
         error: (error) => {
           console.log('Mobile Error destroying VirtualStreaming', error);
-          captureMessage('Mobile Error destroying VirtualStreaming', {source: 'MobileClient', err: error}, 'error');
         },
       });
     }
@@ -281,7 +280,6 @@ class MobileClient extends Component {
     };
 
     initClient = (reconnect, retry = 0) => {
-      captureMessage('InitClient', {source: 'MobileClient', reconnect, retry});
       this.setState({delay: true});
       const user = Object.assign({}, this.state.user);
       const {t} = this.props;
@@ -562,7 +560,6 @@ class MobileClient extends Component {
             },
             error: (error) => {
                 Janus.log("Error attaching plugin: " + error);
-                captureMessage('Error attaching videoroom plugin', {source: 'Videoroom', err: error});
             },
             consentDialog: (on) => {
                 Janus.debug("Consent dialog should be " + (on ? "on" : "off") + " now");
@@ -620,7 +617,6 @@ class MobileClient extends Component {
             ondataerror: (error) => {
                 Janus.warn('Publisher - DataChannel error: ' + error);
                 captureException(error, {source: 'Videoroom'});
-                captureMessage('Publisher - DataChannel error', {source: 'Videoroom', err: error});
             },
             oncleanup: () => {
                 Janus.log(" ::: Got a cleanup notification: we are unpublished now :::");
@@ -642,10 +638,8 @@ class MobileClient extends Component {
             if (textroom === 'error') {
                 if(error_code !== USERNAME_ALREADY_EXIST_ERROR_CODE) {
                   console.error("Chatroom error: ", data, error_code)
-                  captureMessage(`Chatroom error: init - ${error}`, {source: "Textroom", err: data}, 'error');
                 } else {
                   console.log("Chatroom error: ", data, error_code);
-                  captureMessage(`Chatroom error: init - ${error}`, {source: "Textroom", err: data});
                 }
                 this.exitRoom(false, () => {
                     if(error_code === USERNAME_ALREADY_EXIST_ERROR_CODE)
@@ -653,7 +647,6 @@ class MobileClient extends Component {
                 }, true);
             } else if(textroom === "success" && data.participants) {
                 Janus.log(":: Successfully joined to chat room: " + selected_room );
-								captureMessage('Successfully joined to chat room', {source: "Textroom", selected_room});
                 user.textroom_handle = this.chat.getHandle(); // we want this in backend for debugging of textroom based signaling
                 this.setState({user});
                 const {id, timestamp, role, username} = user;
@@ -663,7 +656,6 @@ class MobileClient extends Component {
                     "message": register,
                     success: () => {
                         console.log("Request join success");
-												captureMessage('Request join success', {source: "Videoroom", selected_room});
                     },
                     error: (error) => {
                         console.error(error);
@@ -676,7 +668,6 @@ class MobileClient extends Component {
     };
 
     exitRoom = (reconnect, callback, error) => {
-        captureMessage('Exit Room', {source: 'MobileClient', reconnect, error});
         this.setState({delay: true})
         let {videoroom, remoteFeed, protocol, janus, room} = this.state;
         wkliLeave(this.state.user);
@@ -784,8 +775,6 @@ class MobileClient extends Component {
         if(remoteFeed) remoteFeed.send({message: {request: "configure", restart: true}});
         if(this.chat) this.chat.iceRestart();
         if(this.state.virtualStreamingJanus) this.state.virtualStreamingJanus.iceRestart();
-
-        captureMessage("ICE Restart", {source: "icestate"});
     };
 
     onMessage = (videoroom, msg, jsep) => {
@@ -948,7 +937,6 @@ class MobileClient extends Component {
                 },
                 error: (error) => {
                     Janus.error("  -- Error attaching plugin...", error);
-                    captureMessage('Error attaching videoroo plugin', {source: 'Videoroom', err: error});
                 },
                 iceState: (state) => {
                     Janus.log("ICE state (remote feed) changed to " + state);
@@ -1063,7 +1051,6 @@ class MobileClient extends Component {
                 ondataerror: (error) => {
                     Janus.warn('Feed - DataChannel error: ' + error);
                     captureException(error, {source: 'RemoteFeed'});
-                    captureMessage('Remotefeed - DataChannel error', {source: 'Remotefeed', err: error});
                 },
                 oncleanup: () => {
                     Janus.log(" ::: Got a cleanup notification (remote feed) :::");
@@ -1184,7 +1171,6 @@ class MobileClient extends Component {
       const toRemoteVideo = this.refs["remoteVideo" + toVideoIndex];
       if (!fromRemoteVideo || !toRemoteVideo) {
         console.error(`Failed switching video slots ${from} to ${to}`, fromRemoteVideo, toRemoteVideo);
-        captureMessage('Mobile failed switching video slots', {source: 'MobileClient', from, to, fromRemoteVideo, toRemoteVideo}, 'error');
         return;
       }
       const stream = fromRemoteVideo.srcObject;
@@ -1392,10 +1378,8 @@ class MobileClient extends Component {
         gdm.accept(data, (msg) => this.chat.sendCmdMessage(msg)).then((data) => {
             if (data === null) {
                 console.log('Message received more then once.');
-								captureMessage('Message received more then once.', {source: 'MobileClient DELIVERY', msg: data});
                 return;
             }
-						captureMessage(`MobileClient DELIVERY ${data.status ? 'ON' : 'OFF'}`, {source: 'MobileClient DELIVERY', msg: data});
             this.state.virtualStreamingJanus.streamGalaxy(data.status, 4, "");
             if (data.status) {
                 // remove question mark when sndman unmute our room
@@ -1470,7 +1454,6 @@ class MobileClient extends Component {
         },
         error: (error) => {
           console.log('Mobile Error destroying VirtualStreaming toggle', error);
-          captureMessage('Mobile Error destroying VirtualStreaming toggle', {source: 'MobileClient', err: error}, 'error');
           this.setState(stateUpdate);
         },
       });

@@ -16,7 +16,7 @@ import api from "../../shared/Api";
 import ConfigStore from "../../shared/ConfigStore";
 import {GuaranteeDeliveryManager} from "../../shared/GuaranteeDelivery";
 import StatNotes from "./components/StatNotes";
-import {captureException, captureMessage, updateSentryUser} from "../../shared/sentry";
+import {captureException, updateSentryUser} from "../../shared/sentry";
 
 class AdminRoot extends Component {
 
@@ -204,7 +204,6 @@ class AdminRoot extends Component {
           },
           ondataerror: (error) => {
             console.error("[Admin] video room on data error", error);
-            captureMessage('[Admin] video room on data error', {source: 'AdminRoot', err: error, gateway: gateway.name}, 'error');
           },
         });
     };
@@ -221,13 +220,11 @@ class AdminRoot extends Component {
                     message: {request: 'configure', audio: false, video: false, data: false},
                     error: (err) => {
                         gateway.error('videoroom configure error:', err);
-                        captureMessage(`Videoroom error: configure [publishOwnFeed] - ${err}`, {source: 'AdminRoot', err}, 'error');
                     },
                 });
             },
             error: (err) => {
                 gateway.error('videoroom createOffer error:', err);
-                captureMessage(`Videoroom error: create offer [publishOwnFeed] - ${err}`, {source: 'AdminRoot', err}, 'error');
             }
         });
     };
@@ -362,7 +359,6 @@ class AdminRoot extends Component {
                     } else {
                         console.error("[Admin] videoroom error message", msg);
                     }
-                    captureMessage(`Videoroom error: message - ${msg["error"]}`, {source: "AdminRoot", err: msg, gateway: gateway.name}, 'error');
                 }
             }
         }
@@ -373,7 +369,6 @@ class AdminRoot extends Component {
                 jsep,
                 error: (err) => {
                     gateway.error('videoroom handleRemoteJsep error:', err);
-                    captureMessage(`Videoroom error: handleRemoteJsep - ${err}`, {source: 'AdminRoot', err, gateway: gateway.name}, 'error');
                 },
             });
         }
@@ -386,7 +381,6 @@ class AdminRoot extends Component {
                 let event = msg["videoroom"];
                 if (msg["error"] !== undefined && msg["error"] !== null) {
                     gateway.error("[remoteFeed] error message:", msg["error"]);
-                    captureMessage(`remoteFeed error: message - ${msg["error"]}`, {source: "AdminRoot", err: msg, gateway: gateway.name}, 'error');
                 } else if (event !== undefined && event !== null) {
                     if (event === "attached") {
                         gateway.log("[remoteFeed] Successfully attached to feed in room " + msg["room"]);
@@ -421,13 +415,11 @@ class AdminRoot extends Component {
                                     message: {request: "start", room: this.state.current_room, data: false},
                                     error: (err) => {
                                         gateway.error('[remoteFeed] start error', err);
-                                        captureMessage(`remoteFeed error: start - ${err}`, {source: 'AdminRoot', err, gateway: gateway.name}, 'error');
                                     }
                                 });
                             },
                             error: (err) => {
                                 gateway.error("[remoteFeed] createAnswer error", err);
-                                captureMessage(`remoteFeed error: createAnswer - ${err}`, {source: 'AdminRoot', err, gateway: gateway.name}, 'error');
                             }
                         });
                 }
@@ -459,7 +451,7 @@ class AdminRoot extends Component {
                 }
             },
             ondataerror: (error) => {
-              captureMessage('[Admin] remotefeed on data error', {source: 'AdminRoot', err: error, gateway: gateway.name}, 'error');
+                console.error(error)
             },
         })
             .then(() => {
@@ -477,7 +469,6 @@ class AdminRoot extends Component {
                     },
                     error: (err) => {
                         gateway.error('[remoteFeed] error join as subscriber', subscribe, err);
-                        captureMessage(`remoteFeed error: join - ${err}`, {source: 'AdminRoot', err, gateway: gateway.name}, 'error');
                     }
                 });
             })
@@ -501,7 +492,6 @@ class AdminRoot extends Component {
                 },
                 error: (err) => {
                     gateway.error('[remoteFeed] error subscribe', subscribe, err);
-                    captureMessage(`remoteFeed error: subscribe - ${err}`, {source: "AdminRoot", err, gateway: gateway.name}, 'error');
                 }
             });
         } else {
@@ -530,7 +520,6 @@ class AdminRoot extends Component {
                     },
                     error: (err) => {
                         gateway.error('[remoteFeed] error unsubscribe', unsubscribe, err);
-                        captureMessage(`remoteFeed error: unsubscribe - ${err}`, {source: "AdminRoot", err}, 'error');
                     }
                 });
 

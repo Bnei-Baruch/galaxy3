@@ -320,7 +320,6 @@ class UsersQuad extends Component {
           }, new SendOptions(/* maxDelay= */ 10000, /* retryDelay= */ 1000))
             .then(() => {
               console.log('[Shidur] MIC ON delivered');
-              captureMessage("Delivery ON success", {source: "Shidur"});
             })
             .catch((err) => {
               console.error('[Shidur] MIC ON not delivered' , err);
@@ -340,7 +339,6 @@ class UsersQuad extends Component {
       })
         .then(() => {
           console.log('[Shidur] MIC OFF delivered');
-          captureMessage("Delivery OFF success",{source: "Shidur"});
         })
         .catch((err) => {
           console.error('[Shidur] MIC OFF not delivered', err);
