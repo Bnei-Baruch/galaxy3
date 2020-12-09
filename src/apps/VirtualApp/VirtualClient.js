@@ -136,7 +136,7 @@ class VirtualClient extends Component {
     monitoringData: new MonitoringData(),
     connectionStatus: '',
     numberOfVirtualUsers: localStorage.getItem('number_of_virtual_users') || '1',
-    currentLayout: localStorage.getItem('currentLayout') || 'double',
+    currentLayout: localStorage.getItem('currentLayout') || 'split',
     attachedSource: true,
     sourceLoading: true,
     virtualStreamingJanus: new VirtualStreamingJanus(() => this.virtualStreamingInitialized()),
@@ -1981,7 +1981,7 @@ class VirtualClient extends Component {
     const notApproved = user && user.role !== userRolesEnum.user;
 
     if ((!sourceLoading && isKliOlamiShown && !muteOtherCams)) {
-      noOfVideos += (layout === 'equal') ? 1 : (layout === 'double') ? 4 : 0;
+      noOfVideos += (layout === 'equal' || layout === 'double') ? 1 : 0;
     }
 
     const kliOlami = (!sourceLoading && isKliOlamiShown && !muteOtherCams)
