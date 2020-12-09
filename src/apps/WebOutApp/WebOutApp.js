@@ -19,7 +19,7 @@ class WebOutApp extends Component {
     room: null,
     groups: [],
     groups_queue: 0,
-    shidur_mode: "",
+    shidur_mode: "nashim",
     round: 0,
     questions: [],
     quads: [],
@@ -60,7 +60,7 @@ class WebOutApp extends Component {
     let {disabled_rooms, groups, shidur_mode, preusers_count, region, region_groups} = this.state;
     api.fetchActiveRooms()
       .then((data) => {
-        const users_count = data.map(r => r.num_users).reduce((su, cur) => su + cur, 0);
+        //const users_count = data.map(r => r.num_users).reduce((su, cur) => su + cur, 0);
 
         let rooms = data;
 
@@ -72,15 +72,16 @@ class WebOutApp extends Component {
           this.setState({shidur_mode: ""})
         }
 
-        groups = rooms.filter(r => !r.extra?.disabled);
+        groups = rooms.filter(r => r.users.filter(r => r.camera).length > 0);
+        //groups = rooms.filter(r => !r.extra?.disabled);
 
         // Extra exist and disabled
-        disabled_rooms = rooms.filter(r => r.extra?.disabled);
+        //disabled_rooms = rooms.filter(r => r.extra?.disabled);
 
         //let quads = [...this.col1.state.vquad,...this.col2.state.vquad,...this.col3.state.vquad,...this.col4.state.vquad];
         //let list = groups.filter(r => !quads.find(q => q && r.room === q.room));
         //let questions = list.filter(room => room.questions);
-        this.setState({users_count, rooms, groups, disabled_rooms, region_groups});
+        this.setState({rooms, groups, disabled_rooms, region_groups});
       })
       .catch(err => {
         console.error("[Shidur] error fetching active rooms", err);
@@ -145,9 +146,9 @@ class WebOutApp extends Component {
   };
 
   postInitGateway = (user, gateway) => {
-    if (gateway.name === "gxy3") {
-      return gateway.initServiceProtocol(user, data => this.onServiceData(gateway, data));
-    }
+    // if (gateway.name === "gxy3") {
+    //   return gateway.initServiceProtocol(user, data => this.onServiceData(gateway, data));
+    // }
     return Promise.resolve();
   };
 

@@ -87,7 +87,7 @@ class UsersQuad extends Component {
     const {roomsStatistics = {}, qst} = this.props;
 
     let program = vquad.map((g, i) => {
-      let qst_group = g?.room === qst?.room;
+      let qst_group = g && g.room === qst?.room;
       let qst_mark = "";
       let name = "";
       if (g) {
