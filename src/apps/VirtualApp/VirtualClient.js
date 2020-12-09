@@ -72,10 +72,14 @@ import KliOlamiToggle from './buttons/KliOlamiToggle';
 import Toolbar from '@material-ui/core/Toolbar';
 import Typography from '@material-ui/core/Typography';
 
-const toggleLocationParam = (name = 'new_design', value = true) => {
+const toggleDesignVersions = () => {
+  window.location = isUseNewDesign ? 'https://galaxy.kli.one/user/' : 'https://arvut.kli.one/user/';
+  /*
+  //for test server
   const params = new URLSearchParams(window.location.search);
   params.has(name) ? params.delete(name) : params.set(name, value);
   window.location = window.location.pathname + '?' + params.toString();
+  **/
 };
 
 const sortAndFilterFeeds = (feeds) => feeds
@@ -84,7 +88,9 @@ const sortAndFilterFeeds = (feeds) => feeds
 
 const userFeeds = (feeds) => feeds.filter(feed => feed.display.role === userRolesEnum.user);
 
-const isUseNewDesign = new URL(window.location.href).searchParams.has('new_design');
+//for test server
+// const isUseNewDesign = new URL(window.location.href).searchParams.has('new_design');
+const isUseNewDesign = window.location.hostname === 'arvut.kli.one';
 
 class VirtualClient extends Component {
 
@@ -1716,7 +1722,7 @@ class VirtualClient extends Component {
           </ButtonGroup>
 
           <ButtonMD
-            onClick={() => toggleLocationParam()}
+            onClick={() => toggleDesignVersions()}
             variant="contained"
             color="primary"
             className={classNames('bottom-toolbar__item')}
@@ -2303,7 +2309,7 @@ class VirtualClient extends Component {
               className='homet-limud'>
               <HomerLimud />
             </Modal>
-            <Button primary  style={{ margin: 'auto 0' }} onClick={() => toggleLocationParam()}>{t('oldClient.newDesign')}</Button>
+            <Button primary  style={{ margin: 'auto 0' }} onClick={() => toggleDesignVersions()}>{t('oldClient.newDesign')}</Button>
           </Menu>
           <Menu icon='labeled' secondary size="mini">
             {!room ?

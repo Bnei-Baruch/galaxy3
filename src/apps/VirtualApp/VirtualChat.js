@@ -5,7 +5,8 @@ import {getDateString, notifyMe,} from '../../shared/tools';
 import {SHIDUR_ID} from '../../shared/consts';
 import {captureMessage} from '../../shared/sentry';
 
-const isUseNewDesign = new URL(window.location.href).searchParams.has('new_design');
+//const isUseNewDesign = new URL(window.location.href).searchParams.has('new_design');
+const isUseNewDesign = window.location.hostname === 'arvut.kli.one';
 class VirtualChat extends Component {
 
   state = {
