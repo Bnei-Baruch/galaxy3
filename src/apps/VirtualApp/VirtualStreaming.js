@@ -217,9 +217,9 @@ class VirtualStreaming extends Component {
               </div>
 
             </div>
-            {talking && <Label className='talk' size='massive' color='red'><Icon name='microphone' />On</Label>}
             <VirtualWorkshopQuestion layout={isOnFullScreen ? 'fullscreen' : !attached ? 'detached' : layout} />
           </div>
+          {talking && <Label className='talk' size='massive' color='red'><Icon name='microphone' />On</Label>}
         </div>
         <div className='mediaplayer'>
           <video ref={(ref) => this.videoRef(ref)}
