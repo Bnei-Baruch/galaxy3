@@ -745,7 +745,7 @@ class VirtualClient extends Component {
             alert(this.props.t('oldClient.error') + data.error);
         }, false);
       } else if(textroom === "success" && data.participants) {
-        this.state.checkAlive.start(this.chat.state.chatroom, selected_room, user);
+        //this.state.checkAlive.start(this.chat.state.chatroom, selected_room, user);
         Janus.log(":: Successfully joined to chat room: " + selected_room );
         user.textroom_handle = this.chat.getHandle(); // we want this in backend for debugging of textroom based signaling
         this.setState({user});
@@ -795,7 +795,7 @@ class VirtualClient extends Component {
     if(protocol) protocol.data({text: JSON.stringify(pl)});
 
     if (this.chat && !error) {
-      this.state.checkAlive.stop();
+      //this.state.checkAlive.stop();
       this.chat.exitChatRoom(room);
     }
 
