@@ -14,6 +14,7 @@ export const initSentry = () => {
     environment: process.env.NODE_ENV,
     attachStacktrace: true,
     maxBreadcrumbs: 100,
+    ignoreErrors: ['ResizeObserver loop limit exceeded'],
   });
 
   Sentry.configureScope((scope) => {
@@ -33,7 +34,7 @@ export const captureException = (exception, data = {}) => {
 export const captureMessage = (title, data = {}, level = 'info') => {
 	 Sentry.withScope(scope => {
     // Always group by title when reporting manually to Sentry.
-    scope.setFingerprint([title]);  
+    scope.setFingerprint([title]);
     scope.setExtras(data);
     scope.setLevel(level);
     Sentry.captureMessage(title);
