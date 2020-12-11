@@ -134,9 +134,8 @@ class UsersHandle extends Component {
                 console.debug(`[SDIOut] [room ${roomid}] Successfully joined room`, myid);
                 if (msg["publishers"] !== undefined && msg["publishers"] !== null) {
                     let list = msg["publishers"];
-                    //FIXME: Tmp fix for black screen in room caoused by feed with video_codec = none
-                    let feeds         = list.sort((a, b) => JSON.parse(a.display).timestamp - JSON.parse(b.display).timestamp)
-                        .filter(feeder => JSON.parse(feeder.display).role === 'user' && feeder.video_codec !== 'none');
+                    let feeds = list.sort((a, b) => JSON.parse(a.display).timestamp - JSON.parse(b.display).timestamp)
+                        .filter(feeder => JSON.parse(feeder.display).role === 'user');
                     console.log(`[SDIOut] [room ${roomid}] :: Got publishers list: `, feeds);
                     let subscription = [];
                     for (let f in feeds) {
@@ -151,7 +150,7 @@ class UsersHandle extends Component {
                             let stream = streams[i];
                             stream["id"] = id;
                             stream["display"] = display;
-                            if (stream.type === "video") {
+                            if (stream.type === "video" && feeds[f].video_codec === "h264") {
                                 subst.mid = stream.mid;
                             }
                         }
@@ -210,7 +209,7 @@ class UsersHandle extends Component {
                             let stream = streams[i];
                             stream["id"] = id;
                             stream["display"] = display;
-                            if(stream.type === "video") {
+                            if(stream.type === "video" && feeds[f].video_codec === "h264") {
                                 subst.mid = stream.mid;
                             }
                         }
