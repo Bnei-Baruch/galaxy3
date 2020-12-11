@@ -1,5 +1,4 @@
 import { Janus } from "./../lib/janus";
-import {captureMessage} from './sentry';
 
 export const MAX_DELAY = 5 * 1000;  // 5 seconds.
 export const RETRY_DELAY = 500;     // 0.5 seconds.
@@ -182,8 +181,7 @@ export class GuaranteeDeliveryManager {
     // my userId explicitly set in the toAck field (event if this is me).
     const toAck = (TO_ACK_FIELD in message && message[TO_ACK_FIELD]) || [];
     if ((toAck.length === 0 && this.userId !== message[FROM_FIELD]) ||
-        toAck.includes(this.userId)) {
-			captureMessage('Sending ack back', {source: 'Guarantee', msg: message, ack});
+      toAck.includes(this.userId)) {
       sendAckBack(ack);
     }
     if (this.accepted.has(message[TRANSACTION_FIELD])) {
