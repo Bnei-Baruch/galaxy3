@@ -246,7 +246,7 @@ class AdminRoot extends Component {
 
                     // Filter service feeds and sort by timestamp
                     let feeds = list.sort((a, b) => JSON.parse(a.display).timestamp - JSON.parse(b.display).timestamp)
-                        .filter(feeder => JSON.parse(feeder.display).role.match(/^(user|guest|ghost)$/) && feeder.video_codec !== 'none');
+                        .filter(feeder => JSON.parse(feeder.display).role.match(/^(user|guest|ghost)$/));
 
                     console.log("[Admin] available feeds", feeds);
                     const subscription = [];
@@ -262,9 +262,10 @@ class AdminRoot extends Component {
                             let stream = streams[i];
                             stream["id"] = id;
                             stream["display"] = display;
-                            if (!this.withAudio() && stream.type === "video") {
+                            if (stream.type === "video" && feeds[f].video_codec === "h264") {
                                 subscription.push({feed: id, mid: stream.mid});
-                            } else {
+                            }
+                            if (this.withAudio() && stream.type === "audio" && feeds[f].audio_codec === "opus") {
                                 subscription.push({feed: id, mid: stream.mid});
                             }
                         }
@@ -323,9 +324,10 @@ class AdminRoot extends Component {
                             let stream = streams[i];
                             stream["id"] = id;
                             stream["display"] = display;
-                            if (!this.withAudio() && stream.type === "video") {
+                            if (stream.type === "video" && feeds[f].video_codec === "h264") {
                                 subscription.push({feed: id, mid: stream.mid});
-                            } else {
+                            }
+                            if (this.withAudio() && stream.type === "audio" && feeds[f].audio_codec === "opus") {
                                 subscription.push({feed: id, mid: stream.mid});
                             }
                         }
