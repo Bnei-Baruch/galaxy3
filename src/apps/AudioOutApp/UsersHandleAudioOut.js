@@ -104,7 +104,7 @@ class UsersHandleAudioOut extends Component {
                     let list = msg["publishers"];
                     //FIXME: Tmp fix for black screen in room caoused by feed with video_codec = none
                     let feeds         = list.sort((a, b) => JSON.parse(a.display).timestamp - JSON.parse(b.display).timestamp)
-                        .filter(feeder => JSON.parse(feeder.display).role === 'user' && feeder.video_codec !== 'none');
+                        .filter(feeder => JSON.parse(feeder.display).role === 'user');
                     console.log(`[AudioOut] [room ${roomid}] :: Got publishers list: `, feeds);
                     let subscription = [];
                     for (let f in feeds) {
@@ -114,16 +114,14 @@ class UsersHandleAudioOut extends Component {
                         let streams = feeds[f]["streams"];
                         feeds[f].display = display;
                         feeds[f].talk = talk;
-                        let subst = {feed: id};
                         for (let i in streams) {
                             let stream = streams[i];
                             stream["id"] = id;
                             stream["display"] = display;
-                            if(stream.type === "audio") {
-                                subst.mid = stream.mid;
+                            if(stream.type === "audio" && stream.codec === "opus") {
+                               subscription.push({feed: id, mid: stream.mid});
                             }
                         }
-                        subscription.push(subst);
                     }
                     this.setState({feeds});
                     if (subscription.length > 0) {
@@ -173,16 +171,14 @@ class UsersHandleAudioOut extends Component {
                             return;
                         let streams = feed[f]["streams"];
                         feed[f].display = display;
-                        let subst = {feed: id};
                         for (let i in streams) {
                             let stream = streams[i];
                             stream["id"] = id;
                             stream["display"] = display;
-                            if(stream.type === "audio") {
-                                subst.mid = stream.mid;
+                            if(stream.type === "audio" && stream.codec === "opus") {
+                               subscription.push({feed: id, mid: stream.mid});
                             }
                         }
-                        subscription.push(subst);
                     }
                     feeds.push(feed[0]);
                     this.setState({feeds});

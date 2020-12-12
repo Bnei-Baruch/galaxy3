@@ -145,7 +145,7 @@ class UsersHandle extends Component {
           let list = msg["publishers"];
           //FIXME: Tmp fix for black screen in room caoused by feed with video_codec = none
           let feeds = list.sort((a, b) => JSON.parse(a.display).timestamp - JSON.parse(b.display).timestamp)
-            .filter(feeder => JSON.parse(feeder.display).role === 'user' && feeder.video_codec !== 'none');
+            .filter(feeder => JSON.parse(feeder.display).role === 'user');
           console.log(`[Shidur] [room ${roomid}] :: Got publishers list: `, feeds);
           let subscription = [];
           for(let f in feeds) {
@@ -161,7 +161,7 @@ class UsersHandle extends Component {
               // Janus bug: if try subscribe to only video and data
               // the data pass only one way so we subscribe here to all
               // streams in feed
-              if(stream.type === "video") {
+              if(stream.type === "video" && feeds[f].video_codec === "h264") {
                 subscription.push({feed: id, mid: stream.mid});
               }
             }
@@ -202,7 +202,7 @@ class UsersHandle extends Component {
               // Janus bug: if try subscribe to only video and data
               // the data pass only one way so we subscribe here to all
               // streams in feed
-              if(stream.type === "video") {
+              if(stream.type === "video" && feeds[f].video_codec === "h264") {
                 subscription.push({feed: id, mid: stream.mid});
               }
             }
