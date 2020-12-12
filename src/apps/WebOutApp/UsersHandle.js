@@ -145,16 +145,14 @@ class UsersHandle extends Component {
                         let streams = feeds[f]["streams"];
                         feeds[f].display = display;
                         feeds[f].talk = talk;
-                        let subst = {feed: id};
                         for (let i in streams) {
                             let stream = streams[i];
                             stream["id"] = id;
                             stream["display"] = display;
                             if (stream.type === "video" && feeds[f].video_codec === "h264") {
-                                subst.mid = stream.mid;
+                               subscription.push({feed: id, mid: stream.mid});
                             }
                         }
-                        subscription.push(subst);
                     }
                     this.setState({feeds});
                     if (subscription.length > 0) {
@@ -204,16 +202,14 @@ class UsersHandle extends Component {
                             return;
                         let streams = feed[f]["streams"];
                         feed[f].display = display;
-                        let subst = {feed: id};
                         for (let i in streams) {
                             let stream = streams[i];
                             stream["id"] = id;
                             stream["display"] = display;
                             if(stream.type === "video" && feeds[f].video_codec === "h264") {
-                                subst.mid = stream.mid;
+                                subscription.push({feed: id, mid: stream.mid});
                             }
                         }
-                        subscription.push(subst);
                     }
                     feeds.push(feed[0]);
                     this.setState({feeds});

@@ -72,7 +72,7 @@ class WebOutApp extends Component {
           this.setState({shidur_mode: ""})
         }
 
-        groups = rooms.filter(r => r.users.filter(r => r.camera).length > 0);
+        groups = rooms.filter(r => r.users.filter(r => r.camera).length > 3);
         //groups = rooms.filter(r => !r.extra?.disabled);
 
         // Extra exist and disabled
