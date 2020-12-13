@@ -134,7 +134,7 @@ class VirtualStreaming extends Component {
       <div className="video video--broadcast" key='v0' ref={(ref) => this.setVideoWrapperRef(ref)} id='video0'
            style={{ height: !attached ? '100%' : null, width: !attached ? '100%' : null }}>
         <div className="video__overlay">
-          <div className={`activities ${(isOnFullScreen || !attached) && 'on_full_browser'}`}>
+          <div className={`activities ${(isOnFullScreen || !attached) ? 'on_full_browser' : ''}`}>
             <div className="controls">
               <div className="controls__top">
                 <button>
