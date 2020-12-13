@@ -147,7 +147,16 @@
             justify-content: flex-end;
         }
     }
+  .MuiSvgIcon-root {
+    height: 2rem;
+    width: 2rem;
+  }
 }
+
+.MuiTooltip-popper .MuiTooltip-tooltip {
+  font-size: 1rem;
+}
+
 .videos-panel {
     // display: flex;
     background:#000;

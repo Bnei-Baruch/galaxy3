@@ -14,6 +14,8 @@ class KliOlamiStream extends Component {
       fullScreen: false,
       stream: null,
     };
+
+    this.handleFullScreenChange = this.handleFullScreenChange.bind(this);
   }
 
   componentDidMount() {
@@ -24,6 +26,7 @@ class KliOlamiStream extends Component {
   componentWillUnmount() {
     if (this.videoWrapper) {
       detach(this.videoWrapper);
+      this.videoWrapper.ownerDocument.defaultView.removeEventListener('resize', this.handleFullScreenChange);
     }
     this.props.toggleAttach(true);
   };
@@ -43,8 +46,14 @@ class KliOlamiStream extends Component {
   setVideoWrapperRef(ref) {
     if (ref && ref !== this.videoWrapper) {
       this.videoWrapper = ref;
+      ref.ownerDocument.defaultView.removeEventListener('resize', this.handleFullScreenChange);
+      ref.ownerDocument.defaultView.addEventListener('resize', this.handleFullScreenChange);
       this.setState({ fullScreen: isFullScreen(this.videoWrapper) });
     }
+  }
+
+  handleFullScreenChange() {
+    this.setState({ fullScreen: isFullScreen(this.videoWrapper) });
   }
 
   onBlock() {

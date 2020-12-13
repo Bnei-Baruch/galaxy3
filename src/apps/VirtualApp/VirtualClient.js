@@ -90,6 +90,7 @@ const userFeeds = (feeds) => feeds.filter(feed => feed.display.role === userRole
 
 //for test server
 // const isUseNewDesign = new URL(window.location.href).searchParams.has('new_design');
+//const isUseNewDesign = true;
 const isUseNewDesign = window.location.hostname === 'arvut.kli.one';
 
 class VirtualClient extends Component {
@@ -1998,6 +1999,7 @@ class VirtualClient extends Component {
             vclient__main-wrapper
             no-of-videos-${noOfVideos}
             layout--${layout}
+          ${!isKliOlamiShown ? '' : 'with-kli-olami'}
             broadcast--${room !== '' && shidur ? 'on' : 'off'}
             ${!attachedSource ? ' broadcast--popup' : 'broadcast--inline'}
            `}>
@@ -2074,7 +2076,8 @@ class VirtualClient extends Component {
             premodStatus,
             isSettings,
             audios,
-            shidurForGuestReady
+            shidurForGuestReady,
+            isKliOlamiShown
           } = this.state;
 
     const { video_device } = media.video;
@@ -2386,6 +2389,7 @@ class VirtualClient extends Component {
           vclient__main-wrapper
           no-of-videos-${noOfVideos}
           layout--${layout}
+          ${!isKliOlamiShown ? '' : 'with-kli-olami'}
           broadcast--${room !== '' && shidur ? 'on' : 'off'}
           ${!attachedSource ? ' broadcast--popup' : 'broadcast--inline'}
          `}>

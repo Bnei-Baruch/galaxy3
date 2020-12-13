@@ -194,6 +194,8 @@ class VirtualWorkshopQuestion extends Component {
     this.resetWebsocketAttempts();
 
     try {
+      //mock of WS message
+      // const _data  = {"id":96058,"message":" סדנה שקטה: כיצד נישאר במצב איחוד ואהבה עד הכנס? סדנה שקטה: כיצד נישאר במצב איחוד ואהבה עד הכנס? סדנה שקטה: כיצד נישאר במצב איחוד ואהבה עד הכנס?","user_name":"עורך","type":"question","language":"he","approved":true};
       const wsData = JSON.parse(event.data);
       if (wsData.questions) {
         this.clearQuestions();
