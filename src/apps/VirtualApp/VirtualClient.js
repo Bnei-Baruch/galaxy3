@@ -769,7 +769,8 @@ class VirtualClient extends Component {
   };
 
   exitRoom = (reconnect, callback, error) => {
-    this.setState({delay: true, muteMyCamOnInit: reconnect && this.state.cammuted});
+    const muteMyCamOnInit = reconnect ? this.state.cammuted:  this.state.muteOtherCams;
+    this.setState({delay: true, muteMyCamOnInit});
     if (this.state.user.role === userRolesEnum.user) {
       wkliLeave(this.state.user);
     }

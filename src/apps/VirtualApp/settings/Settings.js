@@ -1,4 +1,4 @@
-import React, { memo } from 'react';
+import React, { memo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import {
@@ -62,7 +62,8 @@ const useStyles = makeStyles(() => ({
 }));
 
 const Settings = (props) => {
-  const classes = useStyles();
+  const classes       = useStyles();
+  const [wip, setWip] = useState(false);
 
   const { t } = useTranslation();
   const {
@@ -183,7 +184,10 @@ const Settings = (props) => {
     !isNaN(num) && selectRoom(num);
   };
 
-  const handleInitClient = () => initClient(false);
+  const handleInitClient = () => {
+    initClient(false);
+    setWip(true);
+  };
 
   const renderHeader = () => (
     <>
@@ -292,7 +296,7 @@ const Settings = (props) => {
               disabled: classes.submitDisabled
             }}
             size="large"
-            disabled={!selectedRoom}
+            disabled={!selectedRoom || wip}
             onClick={handleInitClient}>
             {t('oldClient.joinRoom')}
           </Button>
