@@ -289,66 +289,70 @@ class UsersQuad extends Component {
     const cmd = {type: "audio-out", rcmd: true, status, room, i}
     const group = this.props.rooms.filter(g => g.room === room)[0];
     //const ask_feed = group.users.filter(u => u.question)[0];
-    let toAck = [];
 
-    if(group && group.users) {
-      toAck = group.users.map(u => u.role.match(/^(user|ghost|guest)$/) ? u.id : null).filter(id => !!id);
-      if(toAck.length === 0) return;
-    } else {
-      return;
-    }
+    if (group && group.users) {
+      // let toAck = group.users.map(u => u.role.match(/^(user|ghost|guest)$/) ? u.id : null).filter(id => !!id);
+      // if(toAck.length === 0) return;
+      api.adminListParticipants({request: "listparticipants", room: group.room}, group.janus)
+        .then(data => {
+          let list = data.response.participants.filter(p => p.publisher && (JSON.parse(p.display).role === "user"));
+          if (list.length === 0) {
+            console.error("- Empty room -");
+            return
+          }
 
-    const {gateways, gdm} = this.props;
+          let toAck = list.map(u => {return JSON.parse(u.display).id});
 
-    // TODO: should be using gdm as well.
-    // Maybe revive https://github.com/Bnei-Baruch/galaxy3/pull/158
-    gateways["gxy3"].sendServiceMessage(msg)
-      .catch(err => {
-        captureException(err, {source: "Shidur"});
-      });
+          const {gateways, gdm} = this.props;
+          gateways["gxy3"].sendServiceMessage(msg)
+            .catch(err => {
+              captureException(err, {source: "Shidur"});
+            });
 
-    if(status) {
-      gateways[inst].chatRoomJoin(room, this.props.user)
-        .then(() => {
-          gdm.send(cmd, toAck, (cmd) => {
-            // TODO: retry this on errors
-            gateways[inst].sendCmdMessage(cmd)
+          if (status) {
+            gateways[inst].chatRoomJoin(room, this.props.user)
+              .then(() => {
+                gdm.send(cmd, toAck, (cmd) => {
+                  // TODO: retry this on errors
+                  gateways[inst].sendCmdMessage(cmd)
+                    .catch(err => {
+                      captureException(err, {source: "Shidur"});
+                    });
+                  // Setting special send options, we want here GDM to wait for 10 seconds and retry every 1 second.
+                }, new SendOptions(/* maxDelay= */ 10000, /* retryDelay= */ 1000))
+                  .then(() => {
+                    console.log('[Shidur] MIC ON delivered');
+                  })
+                  .catch((err) => {
+                    console.error('[Shidur] MIC ON not delivered', err);
+                    captureMessage("Delivery ON failed", {source: "Shidur", err}, 'error');
+                  });
+              })
               .catch(err => {
                 captureException(err, {source: "Shidur"});
               });
-            // Setting special send options, we want here GDM to wait for 10 seconds and retry every 1 second.
-          }, new SendOptions(/* maxDelay= */ 10000, /* retryDelay= */ 1000))
-            .then(() => {
-              console.log('[Shidur] MIC ON delivered');
+          } else {
+            gdm.send(cmd, toAck, (cmd) => {
+              // TODO: retry this on errors
+              gateways[inst].sendCmdMessage(cmd)
+                .catch(err => {
+                  captureException(err, {source: "Shidur"});
+                });
             })
-            .catch((err) => {
-              console.error('[Shidur] MIC ON not delivered' , err);
-              captureMessage("Delivery ON failed", {source: "Shidur", err}, 'error');
+              .then(() => {
+                console.log('[Shidur] MIC OFF delivered');
+              })
+              .catch((err) => {
+                console.error('[Shidur] MIC OFF not delivered', err);
+                captureMessage("Delivery OFF failed", {source: "Shidur", err}, 'error');
+              }).finally(() => {
+              gateways[inst].chatRoomLeave(room)
+                .catch(err => {
+                  captureException(err, {source: "Shidur"});
+                });
             });
+          }
         })
-        .catch(err => {
-          captureException(err, {source: "Shidur"});
-        });
-    } else {
-      gdm.send(cmd, toAck, (cmd) => {
-        // TODO: retry this on errors
-        gateways[inst].sendCmdMessage(cmd)
-          .catch(err => {
-            captureException(err, {source: "Shidur"});
-          });
-      })
-        .then(() => {
-          console.log('[Shidur] MIC OFF delivered');
-        })
-        .catch((err) => {
-          console.error('[Shidur] MIC OFF not delivered', err);
-          captureMessage("Delivery OFF failed", {source: "Shidur", err}, 'error');
-        }).finally(() => {
-        gateways[inst].chatRoomLeave(room)
-          .catch(err => {
-            captureException(err, {source: "Shidur"});
-          });
-      });
     }
   };
 
