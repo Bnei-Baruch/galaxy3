@@ -21,6 +21,12 @@ import VirtualWorkshopQuestion from './VirtualWorkshopQuestion';
 import classNames from 'classnames';
 
 class VirtualStreaming extends Component {
+
+  constructor(props) {
+    super(props);
+    this.handleFullScreenChange = this.handleFullScreenChange.bind(this);
+  }
+
   state = {
     audios: Number(localStorage.getItem('vrt_lang')) || 2,
     room: Number(localStorage.getItem('room')) || null,
@@ -36,7 +42,13 @@ class VirtualStreaming extends Component {
   setVideoWrapperRef(ref) {
     if (ref && ref !== this.videoWrapper) {
       this.videoWrapper = ref;
+      this.videoWrapper.ownerDocument.defaultView.removeEventListener('resize', this.handleFullScreenChange);
+      this.videoWrapper.ownerDocument.defaultView.addEventListener('resize', this.handleFullScreenChange);
     }
+  }
+
+  handleFullScreenChange() {
+    this.setState({ fullScreen: isFullScreen(this.videoWrapper) });
   }
 
   componentDidMount() {
