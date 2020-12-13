@@ -1429,14 +1429,14 @@ class VirtualClient extends Component {
       // Should hide/mute now all videos.
       this.unsubscribeFrom(feeds.map(feed => feed.id), /* onlyVideo= */ true);
       this.camMute(/* cammuted= */ false);
-      this.setState({ videos: NO_VIDEO_OPTION_VALUE, isKliOlamiShown: false });
+      this.setState({ videos: NO_VIDEO_OPTION_VALUE, isKliOlamiShown: false, muteMyCamOnInit: true });
       this.state.virtualStreamingJanus.setVideo(NO_VIDEO_OPTION_VALUE);
     } else {
       // Should unmute/show now all videos.
       this.makeSubscription(feeds, /* feedsJustJoined= */ false, /* subscribeToVideo= */ true,
                             /* subscribeToAudio= */ false, /* subscribeToData= */ false);
       this.camMute(/* cammuted= */ true);
-      this.setState({ videos: VIDEO_360P_OPTION_VALUE, isKliOlamiShown: true });
+      this.setState({ videos: VIDEO_360P_OPTION_VALUE, isKliOlamiShown: true, muteMyCamOnInit: false });
       this.state.virtualStreamingJanus.setVideo(VIDEO_360P_OPTION_VALUE);
     }
     this.setState({muteOtherCams: !muteOtherCams});
