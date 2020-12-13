@@ -1428,14 +1428,14 @@ class VirtualClient extends Component {
       // Should hide/mute now all videos.
       this.unsubscribeFrom(feeds.map(feed => feed.id), /* onlyVideo= */ true);
       this.camMute(/* cammuted= */ false);
-      this.setState({videos: NO_VIDEO_OPTION_VALUE});
+      this.setState({ videos: NO_VIDEO_OPTION_VALUE, isKliOlamiShown: false });
       this.state.virtualStreamingJanus.setVideo(NO_VIDEO_OPTION_VALUE);
     } else {
       // Should unmute/show now all videos.
       this.makeSubscription(feeds, /* feedsJustJoined= */ false, /* subscribeToVideo= */ true,
                             /* subscribeToAudio= */ false, /* subscribeToData= */ false);
       this.camMute(/* cammuted= */ true);
-      this.setState({videos: VIDEO_360P_OPTION_VALUE});
+      this.setState({ videos: VIDEO_360P_OPTION_VALUE, isKliOlamiShown: true });
       this.state.virtualStreamingJanus.setVideo(VIDEO_360P_OPTION_VALUE);
     }
     this.setState({muteOtherCams: !muteOtherCams});
@@ -1968,19 +1968,17 @@ class VirtualClient extends Component {
 
     const notApproved = user && user.role !== userRolesEnum.user;
 
-    if ((!sourceLoading && isKliOlamiShown && !muteOtherCams)) {
+    if (!sourceLoading && isKliOlamiShown) {
       noOfVideos += (layout === 'equal' || layout === 'double') ? 1 : 0;
     }
 
-    const kliOlami = (!sourceLoading && isKliOlamiShown && !muteOtherCams)
-      ? (
-        <KliOlamiStream
-          close={() => this.setState({ isKliOlamiShown: !isKliOlamiShown })}
-          toggleAttach={(val = !kliOlamiAttached) => this.setState({ kliOlamiAttached: val })}
-          attached={kliOlamiAttached}
-        />
-      )
-      : null;
+    const kliOlami = (!sourceLoading && isKliOlamiShown) && (
+      <KliOlamiStream
+        close={() => this.toggleKliOlami(false)}
+        toggleAttach={(val = !kliOlamiAttached) => this.setState({ kliOlamiAttached: val })}
+        attached={kliOlamiAttached}
+      />
+    );
     return (
       <div className={classNames('vclient', { 'vclient--chat-open': chatVisible })}>
         {this.renderTopBar(isDeb)}
