@@ -16,7 +16,7 @@ import api from "../../shared/Api";
 import ConfigStore from "../../shared/ConfigStore";
 import {GuaranteeDeliveryManager} from "../../shared/GuaranteeDelivery";
 import StatNotes from "./components/StatNotes";
-import {captureException, updateSentryUser} from "../../shared/sentry";
+import {updateSentryUser} from "../../shared/sentry";
 
 class AdminRoot extends Component {
 
@@ -133,7 +133,6 @@ class AdminRoot extends Component {
             .then(this.pollRooms)
             .catch(error => {
                 console.error("[Admin] error initializing app", error);
-                captureException(error, {source: 'AdminRoot'});
                 this.setState({appInitError: error});
             });
     };
@@ -144,7 +143,6 @@ class AdminRoot extends Component {
 
         const gatewayToInitPromise = (gateway) => this.initGateway(user, gateway)
 					.catch(error => {
-						captureException(error, {source: 'AdminRoot', gateway: gateway.name});
 						throw error;
 					});
 
@@ -161,7 +159,6 @@ class AdminRoot extends Component {
         gateway.addEventListener("reinit_failure", (e) => {
             if (e.detail > 10) {
                 console.error("[Admin] too many reinit_failure. Reloading", gateway.name, e);
-                captureException(e, {source: 'AdminRoot', gateway: gateway.name});
                 window.location.reload();
             }
         });
@@ -191,7 +188,6 @@ class AdminRoot extends Component {
             })
             .catch(err => {
                 console.error("[Admin] error fetching active rooms", err);
-                captureException(err, {source: 'AdminRoot'});
             })
     }
 
@@ -476,7 +472,6 @@ class AdminRoot extends Component {
             })
             .catch(err => {
                 console.error("[Admin] gateway.newRemoteFeed error", err);
-                captureException(err, {source: 'AdminRoot', gateway: gateway.name});
             });
     };
 
@@ -547,13 +542,11 @@ class AdminRoot extends Component {
                     console.log(`[Admin] MIC delivered.`);
                 }).catch((err) => {
                     console.error('[Admin] not delivered', err);
-                    captureException(err, {source: 'AdminRoot', gateway: gateway.name});
                 });
         } else {
             gateway.sendCmdMessage(cmd)
                 .catch((err) => {
                     console.error('[Admin] sendCmdMessage error', err);
-                    captureException(err, {source: 'AdminRoot', gateway: gateway.name});
                     alert(err);
                 });
         }
@@ -677,19 +670,18 @@ class AdminRoot extends Component {
 
                     this.newVideoRoom(gateway, room)
                         .then(() => (gateway.videoRoomJoin(room, user)))
-                        .catch(err => captureException(err, {source: 'AdminRoot', gateway: gateway.name}));
+                        .catch(err => console.error(err));
 
                     if (this.isAllowed("admin")) {
                         gateway.chatRoomJoin(room, user)
                             .catch((err) => {
                                 this.setState({chatRoomsInitializedError: err});
-                                captureException(err, {source: 'AdminRoot', gateway: gateway.name});
                             })
                             .finally(() => this.setState({chatRoomsInitialized: true}));
                     }
                 });
             })
-            .catch(err => captureException(err, {source: 'AdminRoot'}));
+            .catch(err => console.error(err));
     };
 
     exitRoom = (room) => {
@@ -759,7 +751,6 @@ class AdminRoot extends Component {
                         }
                     )
                     .catch(err => {
-                        captureException(err, {source: 'AdminRoot'});
                         alert("Error fetching handle_info: " + err);
                     });
             }
