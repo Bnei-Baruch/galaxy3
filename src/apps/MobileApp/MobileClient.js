@@ -43,7 +43,7 @@ import VirtualStreamingJanus from '../../shared/VirtualStreamingJanus';
 import VirtualChat from '../VirtualApp/VirtualChat';
 import ConfigStore from "../../shared/ConfigStore";
 import {GuaranteeDeliveryManager} from "../../shared/GuaranteeDelivery";
-import {captureException, updateSentryUser} from "../../shared/sentry";
+import {updateSentryUser} from "../../shared/sentry";
 import {getUserRole, userRolesEnum} from '../../shared/enums';
 import { RegistrationModals } from './RegistrationModals';
 
@@ -273,7 +273,6 @@ class MobileClient extends Component {
                 })
                 .catch(err => {
                     console.error("[MobileClient] error initializing app", err);
-										captureException(err, {source: 'MobileClient'});
                     this.setState({appInitError: err});
                 });
         });
@@ -616,7 +615,6 @@ class MobileClient extends Component {
             },
             ondataerror: (error) => {
                 Janus.warn('Publisher - DataChannel error: ' + error);
-                captureException(error, {source: 'Videoroom'});
             },
             oncleanup: () => {
                 Janus.log(" ::: Got a cleanup notification: we are unpublished now :::");
@@ -659,7 +657,6 @@ class MobileClient extends Component {
                     },
                     error: (error) => {
                         console.error(error);
-												captureException(error, {source: 'Videoroom'});
                         this.exitRoom(false);
                     }
                 })
@@ -688,7 +685,6 @@ class MobileClient extends Component {
 					})
 					.catch(err => {
 						console.error("[MobileClient] error exiting room", err);
-						captureException(err, {source: 'MobileClient'});
 					});
 
         if (this.chat && !error) {
@@ -795,7 +791,6 @@ class MobileClient extends Component {
                 api.updateUser(user.id, user)
                     .catch(err => {
 											console.error("[User] error updating user state", user.id, err);
-											captureException(err, {source: 'MobileClient'});
 										});
                 this.keepAlive();
 
@@ -1050,7 +1045,6 @@ class MobileClient extends Component {
                 },
                 ondataerror: (error) => {
                     Janus.warn('Feed - DataChannel error: ' + error);
-                    captureException(error, {source: 'RemoteFeed'});
                 },
                 oncleanup: () => {
                     Janus.log(" ::: Got a cleanup notification (remote feed) :::");
@@ -1307,7 +1301,6 @@ class MobileClient extends Component {
                 })
                 .catch(err => {
 									console.error("[User] error sending keepalive", user.id, err);
-									captureException(err, {source: 'MobileClient'});
 								});
         }
     };
@@ -1335,7 +1328,6 @@ class MobileClient extends Component {
             })
             .catch(err => {
                 console.error("[User] error reloading config", err);
-								captureException(err, {source: 'MobileClient'});
             });
     }
 
@@ -1368,7 +1360,6 @@ class MobileClient extends Component {
             })
             .catch(err => {
 							console.error("[User] error updating user state", user.id, err);
-							captureException(err, {source: 'MobileClient'});
 						});
     };
 
@@ -1389,7 +1380,6 @@ class MobileClient extends Component {
             }
         }).catch((error) => {
             console.error(`Failed receiving ${data}: ${error}`);
-						captureException(error, {source: 'MobileClient DELIVERY', msg: data});
         });
     };
 
@@ -1432,7 +1422,6 @@ class MobileClient extends Component {
             })
             .catch(err => {
 							console.error("[User] error updating user state", user.id, err);
-							captureException(err, {source: 'MobileClient'});
 						});
       }
     };

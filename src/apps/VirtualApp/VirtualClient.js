@@ -46,7 +46,7 @@ import VirtualStreamingJanus from '../../shared/VirtualStreamingJanus';
 import {getUser, kc} from "../../components/UserManager";
 import LoginPage from "../../components/LoginPage";
 import {Profile} from "../../components/Profile";
-import {captureException, sentryDebugAction, updateSentryUser} from '../../shared/sentry';
+import {sentryDebugAction, updateSentryUser} from '../../shared/sentry';
 import GxyJanus from '../../shared/janus-utils';
 import audioModeSvg from '../../shared/audio-mode.svg';
 import fullModeSvg from '../../shared/full-mode.svg';
@@ -318,7 +318,6 @@ class VirtualClient extends Component {
           })
           .catch(err => {
             console.error("[User] error initializing app", err);
-						captureException(err, {source: 'VirtualClient'});
             this.setState({appInitError: err});
           });
     });
@@ -760,7 +759,6 @@ class VirtualClient extends Component {
           },
           error: (error) => {
             console.error(error);
-            captureException(error, {source: 'Videoroom'});
             this.exitRoom(/* reconnect= */ false);
           }
         })
@@ -785,7 +783,6 @@ class VirtualClient extends Component {
         })
 			.catch(err => {
 				console.error('Error exiting room', err);
-				captureException(err, {source: 'VirtualClient'});
 			});
 
 
@@ -906,7 +903,6 @@ class VirtualClient extends Component {
         api.updateUser(user.id, user)
             .catch(err => {
 							console.error("[User] error updating user state", user.id, err);
-							captureException(err, {source: 'VirtualClient'});
 						});
         this.keepAlive();
 
@@ -1308,7 +1304,6 @@ class VirtualClient extends Component {
         })
         .catch(err => {
 					console.error("[User] error sending keepalive", user.id, err);
-					captureException(err, {source: 'VirtualClient'});
 				});
     }
   };
@@ -1336,7 +1331,6 @@ class VirtualClient extends Component {
       })
       .catch(err => {
         console.error("[User] error reloading config", err);
-				captureException(err, {source: 'VirtualClient'});
       });
   }
 
@@ -1369,7 +1363,6 @@ class VirtualClient extends Component {
         })
         .catch(err => {
 					console.error("[User] error updating user state", user.id, err);
-					captureException(err, {source: 'VirtualClient'});
 				});
   };
 
@@ -1389,7 +1382,6 @@ class VirtualClient extends Component {
       }
     }).catch((error) => {
       console.error(`Failed receiving ${data}: ${error}`);
-			captureException(error, {source: 'VirtualClient DELIVERY', msg: data});
     });
   };
 
@@ -1412,7 +1404,6 @@ class VirtualClient extends Component {
           })
           .catch(err => {
 						console.error("[User] error updating user state", user.id, err);
-						captureException(err, {source: 'VirtualClient'});
 					});
     }
   };
