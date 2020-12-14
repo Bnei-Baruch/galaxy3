@@ -1,4 +1,4 @@
-import React, { memo } from 'react';
+import React, { memo, useContext } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import {
@@ -13,7 +13,7 @@ import {
   Checkbox, Box, Button
 } from '@material-ui/core';
 import { AccountCircle, ArrowBackIos, Close, Computer, Mic, Videocam } from '@material-ui/icons';
-import makeStyles from '@material-ui/core/styles/makeStyles';
+import { makeStyles, useTheme } from '@material-ui/core/styles';
 
 import { vsettings_list } from '../../../shared/consts';
 import MyMedia from './MyMedia';
@@ -22,6 +22,7 @@ import { SelectLanguage } from '../components/SelectLanguage';
 import { SelectBroadcastVideo } from '../components/SelectBroadcastVideo';
 import { SelectViewLanguage } from '../components/SelectViewLanguage';
 import green from '@material-ui/core/colors/green';
+import { ThemeContext } from '../components/ThemeSwitcher/ThemeSwitcher';
 
 const useStyles = makeStyles(() => ({
   content: {
@@ -43,12 +44,15 @@ const useStyles = makeStyles(() => ({
   },
   backBtn: {
     background: green[500]
-  }
+  },
+  icon: { fontSize: '2em', marginRight: '0.5rem' }
 }));
 
 const SettingsJoined = (props) => {
-  const classes = useStyles();
-  const { t }   = useTranslation();
+  const classes                                = useStyles();
+  const { t }                                  = useTranslation();
+  const { palette: { background: { paper } } } = useTheme();
+  const { isDark, toggleTheme }                = useContext(ThemeContext);
 
   const { audio, video, isOpen = false, closeModal, setAudio, setVideo, videos, userDisplay, audioModeChange, isAudioMode } = props;
 
@@ -65,12 +69,12 @@ const SettingsJoined = (props) => {
   const renderHeader = () => (
     <>
       <Grid item xs={11}>
-        <Typography variant="h5" display="block">
+        <Typography variant="h5" display="block" color="textPrimary">
           {t('oldClient.settings')}
         </Typography>
       </Grid>
       <Grid item xs={1}>
-        <IconButton onClick={closeModal}>
+        <IconButton onClick={closeModal} color="textPrimary">
           <Close />
         </IconButton>
       </Grid>
@@ -81,9 +85,8 @@ const SettingsJoined = (props) => {
     return (
       <>
         <Grid item xs={4}>
-
-          <AccountCircle style={{ fontSize: '2em' }} />
-          <Typography variant="h6" display="inline" style={{ verticalAlign: 'top' }}>
+          <AccountCircle className={classes.icon} color="action" />
+          <Typography variant="h6" display="inline" style={{ verticalAlign: 'top' }} color="textPrimary">
             {t('settings.userSettings')}
           </Typography>
         </Grid>
@@ -94,6 +97,7 @@ const SettingsJoined = (props) => {
             variant="outlined"
             value={userDisplay}
             disabled
+            color="textPrimary"
           />
         </Grid>
         <Grid item={true} xs={4}>
@@ -107,8 +111,8 @@ const SettingsJoined = (props) => {
     return (
       <>
         <Grid item={true} xs={4}>
-          <Computer style={{ fontSize: '2em' }} />
-          <Typography variant="h6" display="inline" style={{ verticalAlign: 'top' }}>
+          <Computer className={classes.icon} color="action" />
+          <Typography variant="h6" display="inline" style={{ verticalAlign: 'top' }} color="textPrimary">
             {t('settings.broadcastSettings')}
           </Typography>
         </Grid>
@@ -128,8 +132,8 @@ const SettingsJoined = (props) => {
         <Grid item xs={6}>
           <Grid container spacing={4}>
             <Grid item xs={12}>
-              <Videocam style={{ fontSize: '2em' }} />
-              <Typography variant="h6" display="inline" style={{ verticalAlign: 'top' }}>
+              <Videocam className={classes.icon} color="action" />
+              <Typography variant="h6" display="inline" style={{ verticalAlign: 'top' }} color="textPrimary">
                 {t('settings.cameraSettings')}
               </Typography>
             </Grid>
@@ -141,6 +145,7 @@ const SettingsJoined = (props) => {
                   disabled={true}
                   variant="outlined"
                   value={videoLabel}
+                  color="textPrimary"
                 />
               </Tooltip>
             </Grid>
@@ -152,6 +157,7 @@ const SettingsJoined = (props) => {
                   variant="outlined"
                   disabled={true}
                   value={settingsLabel}
+                  color="textPrimary"
                 />
               </Tooltip>
             </Grid>
@@ -163,8 +169,8 @@ const SettingsJoined = (props) => {
         <Grid item xs={6}>
           <Grid container spacing={4}>
             <Grid item xs={12}>
-              <Mic style={{ fontSize: '2em' }} />
-              <Typography variant="h6" display="inline" style={{ verticalAlign: 'top' }}>
+              <Mic className={classes.icon} color="action" />
+              <Typography variant="h6" display="inline" style={{ verticalAlign: 'top' }} color="textPrimary">
                 {t('settings.microphoneSettings')}
               </Typography>
             </Grid>
@@ -199,14 +205,35 @@ const SettingsJoined = (props) => {
         <Divider variant="fullWidth" style={{ width: '100%' }} />
         {renderMediaSettings()}
 
-        <Grid item xs={12}>
+        <Grid item xs={3}>
           <FormControlLabel
-            label={t('oldClient.audioMode')}
+            label={
+              <Typography color="textPrimary">
+                {t('oldClient.audioMode')}
+              </Typography>
+            }
             control={
               <Checkbox
                 checked={!!isAudioMode}
                 onChange={handleAudioModeChange}
                 name="isAudioMode"
+              />
+            }
+          />
+        </Grid>
+        <Grid item xs={9}>
+          <FormControlLabel
+            label={
+              <Typography color="textPrimary">
+                {t('oldClient.darkTheme')}
+              </Typography>
+            }
+            control={
+              <Checkbox
+                checked={isDark}
+                onChange={toggleTheme}
+                name="isAudioMode"
+                color="secondary"
               />
             }
           />
@@ -232,7 +259,7 @@ const SettingsJoined = (props) => {
       open={isOpen}
       disableBackdropClick={true}
       BackdropProps={{
-        style: { backgroundColor: 'white' }
+        style: { backgroundColor: paper }
       }}
       className={classes.modal}
     >

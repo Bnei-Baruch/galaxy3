@@ -4,6 +4,13 @@ import { red } from '@material-ui/core/colors';
 const dark = createMuiTheme({
   palette: {
     type: 'dark',
+    overrides: {
+      MuiButton: {
+        border: {
+          color: 'white',
+        },
+      },
+    }
   },
 });
 

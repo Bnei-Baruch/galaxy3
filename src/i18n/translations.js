@@ -77,8 +77,7 @@ export const resources = {
         closeKliOlami: 'Close groups',
         oldDesign: 'OLD VERSION',
         newDesign: 'NEW VERSION',
-        toDarkTheme: '',
-        toLightTheme: ''
+        darkTheme: 'Dark Theme'
       },
       settings: {
         selectCamera: 'Select camera',
@@ -273,6 +272,7 @@ export const resources = {
         closeKliOlami: 'Cerrar grupos',
         oldDesign: 'VIEJA VERSION',
         newDesign: 'NUEVA VERSIÓN',
+        darkTheme: 'Tema oscuro',
       },
       settings: {
         selectCamera: 'Select camera',
@@ -468,6 +468,7 @@ export const resources = {
         closeKliOlami: 'סגור קבוצות',
         oldDesign: 'גרסא ישנה',
         newDesign: 'גרסא חדשה',
+        darkTheme: 'עיצוב כהה',
       },
       settings: {
         selectCamera: 'בחר מצלמה',
@@ -662,6 +663,7 @@ export const resources = {
         closeKliOlami: 'Закрыть группы',
         oldDesign: 'СТАРАЯ ВЕРСИЯ',
         newDesign: 'НОВАЯ ВЕРСИЯ',
+        darkTheme: 'Тёмная тема',
       },
       settings: {
         selectCamera: 'Выбрать камеру',

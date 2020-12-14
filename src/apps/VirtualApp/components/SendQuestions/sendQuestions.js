@@ -50,7 +50,7 @@ const SendQuestion = ({ questions, send, user = {} }) => {
             {userName}
           </Typography>:
         </Typography>
-        <Typography style={{ color: grey['800'] }}>
+        <Typography color="textPrimary">
           {msgContent}
         </Typography>
       </Typography>

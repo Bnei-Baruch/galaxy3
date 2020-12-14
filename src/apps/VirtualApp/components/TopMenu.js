@@ -1,4 +1,4 @@
-import React, { useContext, useRef, useState } from 'react';
+import React, { useRef, useState } from 'react';
 
 import {
   List,
@@ -17,7 +17,7 @@ import {
   Feedback,
   Help,
   Menu as MenuIcon,
-  Settings, ToggleOff, ToggleOn,
+  Settings,
   Translate
 } from '@material-ui/icons';
 import { grey } from '@material-ui/core/colors';
@@ -26,7 +26,6 @@ import makeStyles from '@material-ui/core/styles/makeStyles';
 import { kc } from '../../../components/UserManager';
 import { updateSentryUser } from '../../../shared/sentry';
 import { getLanguage, languagesOptions, setLanguage } from '../../../i18n/i18n';
-import { ThemeContext } from './ThemeSwitcher/ThemeSwitcher';
 
 const helpUrlsByLang = {
   'en': 'https://bit.ly/2JkBU08',
@@ -45,7 +44,6 @@ export const TopMenu = ({ t, openSettings, open = false, setOpen, notApproved })
   const classes                           = useStyles();
   const menuRef                           = useRef();
   const [openLanguages, setOpenLanguages] = useState(false);
-  const { isDark, toggleTheme }           = useContext(ThemeContext);
 
   const handleClose = () => {
     setOpen(false);
@@ -109,10 +107,6 @@ export const TopMenu = ({ t, openSettings, open = false, setOpen, notApproved })
         }}>
           <ListItemText primary={t('oldClient.signOut')} />
           <ListItemSecondaryAction><ExitToApp /></ListItemSecondaryAction>
-        </ListItem>
-        <ListItem button key={'switchTheme'} onClick={toggleTheme}>
-          <ListItemText primary={t(isDark ? 'oldClient.toDarkTheme' : 'oldClient.toLightTheme')} />
-          {isDark ? <ToggleOff /> : <ToggleOn />}
         </ListItem>
         <Divider />
         <ListItem style={{ fontWeight: 'bold' }}>{t('oldClient.support')}</ListItem>
