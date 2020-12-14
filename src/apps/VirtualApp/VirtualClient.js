@@ -73,6 +73,7 @@ import Toolbar from '@material-ui/core/Toolbar';
 import Typography from '@material-ui/core/Typography';
 
 import { withTheme } from '@material-ui/core/styles';
+import ThemeSwitcher from './components/ThemeSwitcher/ThemeSwitcher';
 
 const toggleDesignVersions = () => {
   window.location = isUseNewDesign ? 'https://galaxy.kli.one/user/' : 'https://arvut.kli.one/user/';
@@ -1957,7 +1958,6 @@ class VirtualClient extends Component {
             leftAsideName,
             sourceLoading,
             isKliOlamiShown,
-            muteOtherCams,
             kliOlamiAttached
           }        = this.state;
 
@@ -2484,4 +2484,13 @@ class VirtualClient extends Component {
   }
 }
 
-export default withTranslation()(withTheme(VirtualClient));
+const WrappedClass = withTranslation()(withTheme(VirtualClient));
+
+export default class WrapperForThemes extends React.Component {
+  render() {
+    return (<ThemeSwitcher>
+        <WrappedClass />
+      </ThemeSwitcher>
+    );
+  }
+}
