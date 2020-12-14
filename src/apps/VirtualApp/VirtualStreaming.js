@@ -3,8 +3,7 @@ import {
   Label,
   Dropdown,
   Header,
-  Icon,
-  Flag
+  Icon
 } from 'semantic-ui-react';
 import NewWindow from '@hinaser/react-new-window';
 import {
@@ -18,7 +17,6 @@ import Volume from './components/Volume';
 import { withTranslation } from 'react-i18next';
 import { isFullScreen, toggleFullScreen } from './FullScreenHelper';
 import VirtualWorkshopQuestion from './VirtualWorkshopQuestion';
-import classNames from 'classnames';
 
 class VirtualStreaming extends Component {
 
