@@ -93,8 +93,8 @@ const userFeeds = (feeds) => feeds.filter(feed => feed.display.role === userRole
 
 //for test server
 // const isUseNewDesign = new URL(window.location.href).searchParams.has('new_design');
-const isUseNewDesign = true;
-//const isUseNewDesign = window.location.hostname === 'arvut.kli.one';
+//const isUseNewDesign = true;
+const isUseNewDesign = window.location.hostname === 'arvut.kli.one';
 
 class VirtualClient extends Component {
 
