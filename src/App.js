@@ -6,7 +6,8 @@ import i18n from 'i18next';
 import './i18n/i18n';
 // import GalaxyApp from "./apps/GalaxyApp";
 // import MobileClient from "./apps/MobileApp/MobileClient";
-import VirtualClient from "./apps/VirtualApp/VirtualClient";
+import VirtualClient from './apps/VirtualApp/VirtualClient';
+import ThemeSwitcher from './apps/VirtualApp/components/ThemeSwitcher/ThemeSwitcher';
 // import GalaxyStream from "./apps/StreamApp/GalaxyStream";
 // import AdminRoot from "./apps/AdminApp/AdminRoot";
 // import ShidurApp from "./apps/ShidurApp/ShidurApp";
@@ -21,7 +22,7 @@ class App extends Component {
       <I18nextProvider i18n={i18n}>
         {/*{<GalaxyApp />}*/}
         {/*<MobileClient />*/}
-        <VirtualClient />
+        <ThemeSwitcher children={<VirtualClient />} />
         {/*<GalaxyStream/>*/}
         {/*{<AdminRoot />}*/}
         {/*<ShidurApp />*/}
