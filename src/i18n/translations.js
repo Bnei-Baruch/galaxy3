@@ -77,6 +77,8 @@ export const resources = {
         closeKliOlami: 'Close groups',
         oldDesign: 'OLD VERSION',
         newDesign: 'NEW VERSION',
+        toDarkTheme: '',
+        toLightTheme: ''
       },
       settings: {
         selectCamera: 'Select camera',
