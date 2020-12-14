@@ -1,4 +1,4 @@
-import React, { memo, useState } from 'react';
+import React, { memo, useContext, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import {
@@ -13,7 +13,7 @@ import {
   Divider, Box
 } from '@material-ui/core';
 import Autocomplete from '@material-ui/lab/Autocomplete';
-import makeStyles from '@material-ui/core/styles/makeStyles';
+import { makeStyles, useTheme } from '@material-ui/core/styles';
 import green from '@material-ui/core/colors/green';
 
 import MyMedia from './MyMedia';
@@ -22,6 +22,7 @@ import { vsettings_list } from '../../../shared/consts';
 import LogoutDropdown from './LogoutDropdown';
 import { SelectViewLanguage } from '../components/SelectViewLanguage';
 import { AccountCircle, Mic, Videocam } from '@material-ui/icons';
+import { ThemeContext } from '../components/ThemeSwitcher/ThemeSwitcher';
 
 const settingsList = vsettings_list.map(({ key, text, value }) => ({ key, text, value: JSON.stringify(value) }));
 const mapDevice    = ({ label, deviceId }) => ({ text: label, value: deviceId });
@@ -58,14 +59,17 @@ const useStyles = makeStyles(() => ({
   submitDisabled: {
     opacity: '0.8'
   },
-
+  icon: { fontSize: '2em', marginRight: '0.5rem' }
 }));
 
 const Settings = (props) => {
   const classes       = useStyles();
   const [wip, setWip] = useState(false);
 
-  const { t } = useTranslation();
+  const { t }                                  = useTranslation();
+  const { palette: { background: { paper } } } = useTheme();
+  const { isDark, toggleTheme }                = useContext(ThemeContext);
+
   const {
           audio,
           video,
@@ -83,7 +87,7 @@ const Settings = (props) => {
           audioDevice = audio.devices[0]?.deviceId,
           videoDevice = video?.devices[0]?.deviceId,
           userDisplay
-        }     = props;
+        } = props;
 
   const renderCameras = () => {
     if (!videoLength)
@@ -110,7 +114,9 @@ const Settings = (props) => {
       variant="outlined"
       label={t('settings.selectSize')}
       onChange={handleSettingsChange}
-      value={videoSettings}>
+      value={videoSettings}
+      color="primary"
+    >
       {
         settingsList.map(mapOption)
       }
@@ -192,10 +198,10 @@ const Settings = (props) => {
   const renderHeader = () => (
     <>
       <Grid item xs={9}>
-        <Typography variant="h4" display={'block'}>
+        <Typography variant="h4" display={'block'} color="textPrimary">
           {t('settings.helloUser', { name: userDisplay })}
         </Typography>
-        <Typography>
+        <Typography color="textPrimary">
           {t('settings.beforeConnecting')}
         </Typography>
       </Grid>
@@ -211,8 +217,8 @@ const Settings = (props) => {
     return (
       <>
         <Grid item xs={4}>
-          <AccountCircle style={{ fontSize: '2em' }} />
-          <Typography variant="h6" display="inline" style={{ verticalAlign: 'top' }}>
+          <AccountCircle className={classes.icon} color="action" />
+          <Typography variant="h6" display="inline" style={{ verticalAlign: 'top' }} color="textPrimary">
             {t('settings.userSettings')}
           </Typography>
         </Grid>
@@ -241,14 +247,14 @@ const Settings = (props) => {
         <Divider variant="fullWidth" style={{ width: '100%' }} />
 
         <Grid item xs={6}>
-          <Videocam style={{ fontSize: '2em' }} />
-          <Typography variant="h6" display="inline" style={{ verticalAlign: 'top' }}>
+          <Videocam className={classes.icon} color="action" />
+          <Typography variant="h6" display="inline" style={{ verticalAlign: 'top' }} color="textPrimary">
             {t('settings.cameraSettings')}
           </Typography>
         </Grid>
         <Grid item xs={4}>
-          <Mic style={{ fontSize: '2em' }} />
-          <Typography variant="h6" display="inline" style={{ verticalAlign: 'top' }}>
+          <Mic className={classes.icon} color="action" />
+          <Typography variant="h6" display="inline" style={{ verticalAlign: 'top' }} color="textPrimary">
             {t('settings.microphoneSettings')}
           </Typography>
         </Grid>
@@ -271,14 +277,37 @@ const Settings = (props) => {
         <Grid item xs={6}>
           {<CheckMySelf audio={audio} />}
         </Grid>
-        <Grid item xs={12}>
+        <Grid item xs={3}>
           <FormControlLabel
-            label={t('oldClient.audioMode')}
+            label={
+              <Typography color="textPrimary">
+                {t('oldClient.audioMode')}
+              </Typography>
+            }
+            color="textPrimary"
             control={
               <Checkbox
                 checked={!!isAudioMode}
                 onChange={handleAudioModeChange}
                 name="isAudioMode"
+                color="secondary"
+              />
+            }
+          />
+        </Grid>
+        <Grid item xs={9}>
+          <FormControlLabel
+            label={
+              <Typography color="textPrimary">
+                {t('oldClient.darkTheme')}
+              </Typography>
+            }
+            control={
+              <Checkbox
+                checked={isDark}
+                onChange={toggleTheme}
+                name="isAudioMode"
+                color="secondary"
               />
             }
           />
@@ -310,7 +339,7 @@ const Settings = (props) => {
       open={true}
       disableBackdropClick={true}
       BackdropProps={{
-        style: { backgroundColor: 'white' }
+        style: { backgroundColor: paper }
       }}
       className={classes.modal}
     >

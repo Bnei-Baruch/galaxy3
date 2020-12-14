@@ -131,7 +131,7 @@
     }
     &__toggle {
         button {
-            border: 1px solid rgba(0, 0, 0, 0.23)!important;
+            //border: 1px solid rgba(0, 0, 0, 0.23)!important;
             padding: 5px 9px!important;
         }
     }
@@ -214,6 +214,7 @@
     overflow-y:scroll;
     flex: 1 0 auto;
     position: relative;
+    background-color: transparent !important;
     .messages-wrapper {
         position: absolute;
         top:0;

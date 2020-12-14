@@ -72,6 +72,8 @@ import KliOlamiToggle from './buttons/KliOlamiToggle';
 import Toolbar from '@material-ui/core/Toolbar';
 import Typography from '@material-ui/core/Typography';
 
+import { withTheme } from '@material-ui/core/styles';
+
 const toggleDesignVersions = () => {
   window.location = isUseNewDesign ? 'https://galaxy.kli.one/user/' : 'https://arvut.kli.one/user/';
   /*
@@ -1740,7 +1742,7 @@ class VirtualClient extends Component {
   };
 
   renderRightAside = () => {
-    const { t }                                             = this.props;
+    const { t, theme }                                             = this.props;
     const { janus, user, room, rightAsideName, isRoomChat } = this.state;
 
     let content;
@@ -1775,7 +1777,7 @@ class VirtualClient extends Component {
     }
 
     return (
-      <Grid item xs={rightAsideName ? 3 : false} style={{ backgroundColor: 'white' }}>
+      <Grid item xs={rightAsideName ? 3 : false} style={{  backgroundColor: theme.palette.background.paper  }}>
         {content}
         {chat}
       </Grid>
@@ -1905,7 +1907,7 @@ class VirtualClient extends Component {
 
   renderLeftAside = () => {
     const { leftAsideName, leftAsideSize, } = this.state;
-    const { i18n: { language } } = this.props;
+    const { i18n: { language }, theme } = this.props;
 
     let content;
     if (leftAsideName === 'material') {
@@ -1921,7 +1923,7 @@ class VirtualClient extends Component {
     }
 
     return (
-      <Grid item xs={(leftAsideSize >= 3 && leftAsideName) ? leftAsideSize : false} style={{ backgroundColor: 'white' }}>
+      <Grid item xs={(leftAsideSize >= 3 && leftAsideName) ? leftAsideSize : false} style={{ backgroundColor: theme.palette.background.paper }}>
         {
           //buttons for resize tab (if want open study materials on browser tab)
           leftAsideName && false ?
@@ -2482,4 +2484,4 @@ class VirtualClient extends Component {
   }
 }
 
-export default withTranslation()(VirtualClient);
+export default withTranslation()(withTheme(VirtualClient));
