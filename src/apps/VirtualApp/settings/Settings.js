@@ -1,4 +1,4 @@
-import React, { memo, useContext, useState } from 'react';
+import React, { memo, useContext, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import {
@@ -62,9 +62,13 @@ const useStyles = makeStyles(() => ({
   icon: { fontSize: '2em', marginRight: '0.5rem' }
 }));
 
+const roomDescriptionById = new Map();
+
 const Settings = (props) => {
-  const classes       = useStyles();
-  const [wip, setWip] = useState(false);
+  const classes = useStyles();
+
+  const [wip, setWip]             = useState(false);
+  const [roomInput, setRoomInput] = useState();
 
   const { t }                                  = useTranslation();
   const { palette: { background: { paper } } } = useTheme();
@@ -88,6 +92,12 @@ const Settings = (props) => {
           videoDevice = video?.devices[0]?.deviceId,
           userDisplay
         } = props;
+
+  useEffect(() => {
+    for (const r of rooms) {
+      roomDescriptionById.set(r.room, r);
+    }
+  }, [rooms]);
 
   const renderCameras = () => {
     if (!videoLength)
@@ -148,7 +158,9 @@ const Settings = (props) => {
     return (
       <Autocomplete
         variant="outlined"
-        value={rooms.find(op => op.room === selectedRoom)}
+        value={roomDescriptionById.size !== 0 ? roomDescriptionById.get(selectedRoom) : {}}
+        inputValue={roomInput}
+        onInputChange={(e, v) => setRoomInput(v)}
         options={rooms}
         getOptionLabel={(option) => option.description}
         renderOption={
@@ -325,7 +337,7 @@ const Settings = (props) => {
               disabled: classes.submitDisabled
             }}
             size="large"
-            disabled={!selectedRoom || wip}
+            disabled={!selectedRoom || wip || !roomInput || (roomDescriptionById.size !== 0 && (roomInput !== roomDescriptionById.get(selectedRoom).description))}
             onClick={handleInitClient}>
             {t('oldClient.joinRoom')}
           </Button>
