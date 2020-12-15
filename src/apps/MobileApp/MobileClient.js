@@ -1084,7 +1084,7 @@ class MobileClient extends Component {
                 // Send question event for new feed, by notifying the whole room.
                 // FIXME: Can this be done by notifying only the joined feed?
                 setTimeout(() => {
-                    if (this.state.question) {
+                    if (this.state.question || this.state.cammuted) {
                         const msg = {type: "client-state", user: this.state.user};
                         this.chat.sendCmdMessage(msg);
                     }
