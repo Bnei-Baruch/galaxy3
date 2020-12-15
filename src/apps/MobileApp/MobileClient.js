@@ -1842,7 +1842,7 @@ class MobileClient extends Component {
                     <Image className='audio-mode' src={muteOtherCams ? audioModeSvg : fullModeSvg} />
                     <span>{t(muteOtherCams ? 'oldClient.fullMode' : 'oldClient.audioMode')}</span>
                   </Menu.Item>
-                  <Menu.Item disabled={premodStatus || questionDisabled} onClick={this.handleQuestion}>
+                  <Menu.Item disabled={premodStatus || questionDisabled || cammuted} onClick={this.handleQuestion}>
                     <Icon name='question' style={{color: question ? '#21ba45' : null}} />
                     <span>
                       {t('oldClient.askQuestion')}
