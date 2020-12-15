@@ -811,7 +811,9 @@ class VirtualClient extends Component {
         },
       });
     }
-
+    if(!reconnect && isFullScreen()){
+      toggleFullScreen();
+    }
     setTimeout(() => {
       if(videoroom) videoroom.detach();
       if(protocol) protocol.detach();
