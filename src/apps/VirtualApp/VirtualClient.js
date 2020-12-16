@@ -746,6 +746,7 @@ class VirtualClient extends Component {
         this.exitRoom(/* reconnect= */ false, () => {
           if(error_code === USERNAME_ALREADY_EXIST_ERROR_CODE)
             alert(this.props.t('oldClient.error') + data.error);
+            this.setState({wipSettings: false});
         }, false);
       } else if(textroom === "success" && data.participants) {
         //this.state.checkAlive.start(this.chat.state.chatroom, selected_room, user);
@@ -2073,7 +2074,8 @@ class VirtualClient extends Component {
             isSettings,
             audios,
             shidurForGuestReady,
-            isKliOlamiShown
+            isKliOlamiShown,
+            wipSettings
           } = this.state;
 
     const { video_device } = media.video;
@@ -2477,6 +2479,8 @@ class VirtualClient extends Component {
               audioDevice={media.audio.audio_device}
               videoLength={media.video?.devices.length}
               videoSettings={JSON.stringify(media.video.setting)}
+              wip={wipSettings}
+              setWip={(wip) => this.setState({ wipSettings: wip })}
             />
           )
         }

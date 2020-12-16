@@ -67,7 +67,6 @@ const roomDescriptionById = new Map();
 const Settings = (props) => {
   const classes = useStyles();
 
-  const [wip, setWip]             = useState(false);
   const [roomInput, setRoomInput] = useState();
 
   const { t }                                  = useTranslation();
@@ -90,7 +89,9 @@ const Settings = (props) => {
           videoSettings,
           audioDevice = audio.devices[0]?.deviceId,
           videoDevice = video?.devices[0]?.deviceId,
-          userDisplay
+          userDisplay,
+          wip,
+          setWip
         } = props;
 
   useEffect(() => {
@@ -371,6 +372,7 @@ export default memo(Settings, (props, next) => {
       && props.isAudioMode === next.isAudioMode
       && props.selectedRoom === next.selectedRoom
       && props.rooms === next.rooms
+      && props.wip === next.wip
     );
   }
 );
