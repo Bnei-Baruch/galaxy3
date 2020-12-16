@@ -904,7 +904,7 @@ class VirtualClient extends Component {
         Janus.log('Successfully joined room ' + msg['room'] + ' with ID ' + myid);
 
         user.rfid = myid;
-        this.setState({user, myid, mypvtid, room: msg['room'], delay: false});
+        this.setState({user, myid, mypvtid, room: msg['room'], delay: false, wipSettings: false});
         updateSentryUser(user);
 
         api.updateUser(user.id, user)
