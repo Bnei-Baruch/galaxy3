@@ -5,9 +5,15 @@ import {getDateString, notifyMe,} from '../../shared/tools';
 import {SHIDUR_ID} from '../../shared/consts';
 import {captureMessage} from '../../shared/sentry';
 import { Typography } from '@material-ui/core';
+import { CheckAlive } from '../../shared/CheckAlive';
 
 //const isUseNewDesign = new URL(window.location.href).searchParams.has('new_design');
 const isUseNewDesign = window.location.hostname === 'arvut.kli.one';
+
+
+const checkAlive = new CheckAlive();
+
+
 class VirtualChat extends Component {
 
   state = {
@@ -145,8 +151,10 @@ class VirtualChat extends Component {
             let what = json['textroom'];
             if (what.match(/^(success|error)$/)) {
               cb(json);
+              what === 'success' && checkAlive.start(this.state.chatroom, room, user);
             } else {
               this.onData(json);
+              checkAlive.checkAlive(json)
             }
           },
           ondataerror: (error) => {
@@ -178,6 +186,7 @@ class VirtualChat extends Component {
 
   exitChatRoom = (room) => {
     const {chatroom} = this.state;
+    checkAlive.stop();
     if(chatroom) {
       chatroom.data({
         text: JSON.stringify({textroom: 'leave', transaction: Janus.randomString(12), room}),

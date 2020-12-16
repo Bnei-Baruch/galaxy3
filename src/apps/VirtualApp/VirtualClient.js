@@ -162,7 +162,6 @@ class VirtualClient extends Component {
     asideMsgCounter: { drawing: 0, chat: 0 },
     leftAsideSize: 3,
     shidurForGuestReady: false,
-    checkAlive: new CheckAlive(),
     kliOlamiAttached: true,
     isKliOlamiShown: true
   };
@@ -732,10 +731,6 @@ class VirtualClient extends Component {
 
   initChatroomCallback = (videoroom, selected_room, user) => {
     return data => {
-      if (this.state.checkAlive.checkAlive(data)) {
-        // This is a check-alive message ignore it.
-        return;
-      }
       const { textroom, error_code } = data;
       if (textroom === 'error') {
         if (error_code !== USERNAME_ALREADY_EXIST_ERROR_CODE) {
