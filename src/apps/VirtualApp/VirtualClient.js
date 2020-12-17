@@ -746,6 +746,7 @@ class VirtualClient extends Component {
         this.exitRoom(/* reconnect= */ false, () => {
           if(error_code === USERNAME_ALREADY_EXIST_ERROR_CODE)
             alert(this.props.t('oldClient.error') + data.error);
+            this.setState({wipSettings: false});
         }, false);
       } else if(textroom === "success" && data.participants) {
         //this.state.checkAlive.start(this.chat.state.chatroom, selected_room, user);
@@ -811,7 +812,9 @@ class VirtualClient extends Component {
         },
       });
     }
-
+    if(!reconnect && isFullScreen()){
+      toggleFullScreen();
+    }
     setTimeout(() => {
       if(videoroom) videoroom.detach();
       if(protocol) protocol.detach();
@@ -901,7 +904,7 @@ class VirtualClient extends Component {
         Janus.log('Successfully joined room ' + msg['room'] + ' with ID ' + myid);
 
         user.rfid = myid;
-        this.setState({user, myid, mypvtid, room: msg['room'], delay: false});
+        this.setState({user, myid, mypvtid, room: msg['room'], delay: false, wipSettings: false});
         updateSentryUser(user);
 
         api.updateUser(user.id, user)
@@ -1174,7 +1177,7 @@ class VirtualClient extends Component {
         // Send question event for new feed, by notifying all room.
         // FIXME: Can this be done by notifying only the joined feed?
         setTimeout(() => {
-          if (this.state.question) {
+          if (this.state.question || this.state.cammuted ) {
             const msg = {type: "client-state", user: this.state.user};
             this.chat.sendCmdMessage(msg);
           }
@@ -2071,7 +2074,8 @@ class VirtualClient extends Component {
             isSettings,
             audios,
             shidurForGuestReady,
-            isKliOlamiShown
+            isKliOlamiShown,
+            wipSettings
           } = this.state;
 
     const { video_device } = media.video;
@@ -2475,6 +2479,8 @@ class VirtualClient extends Component {
               audioDevice={media.audio.audio_device}
               videoLength={media.video?.devices.length}
               videoSettings={JSON.stringify(media.video.setting)}
+              wip={wipSettings}
+              setWip={(wip) => this.setState({ wipSettings: wip })}
             />
           )
         }
