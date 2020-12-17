@@ -1,4 +1,4 @@
-import { Janus } from './../lib/janus';
+import { Janus } from '../lib/janus';
 import { captureMessage } from './sentry';
 import { ALREADY_IN_ROOM_ERROR_CODE, SHIDUR_ID } from './consts';
 
@@ -33,6 +33,10 @@ export class CheckAlive {
 
     this.lastAlive = Date.now();
 
+    if (this.tickIntervalId) {
+      clearInterval(this.tickIntervalId);
+    }
+
     // run tick
     this.tickIntervalId = setInterval(this.tick.bind(this), SEND_ALIVE_INTERVAL);
   }
@@ -47,19 +51,22 @@ export class CheckAlive {
   }
 
   tick() {
-    if (this.attemptCounter > MAX_ATTEMPT_WAIT) {
+    // if (this.attemptCounter > MAX_ATTEMPT_WAIT) {
+    //   const msg = `Last alive was at: (${this.lastAlive}). Expected transaction: ${this.sendTransactionId}, Last transaction:  ${this.respTransactionId}.`;
+    //   captureMessage('Not alive.', { source: 'CheckAlive', msg, room: this.roomid });
+    //   console.log('[CheckAlive] Not alive.', msg);
+    //   this.restart();
+    //   return;
+    // }
+
+    if (this.sendTransactionId !== this.respTransactionId) {
       const msg = `Last alive was at: (${this.lastAlive}). Expected transaction: ${this.sendTransactionId}, Last transaction:  ${this.respTransactionId}.`;
       captureMessage('Not alive.', { source: 'CheckAlive', msg, room: this.roomid });
       console.log('[CheckAlive] Not alive.', msg);
-      this.restart();
-      return;
+      // this.attemptCounter++;
+      // console.log(`[CheckAlive] Not alive, attempt ${this.attemptCounter}`);
     }
 
-    if (this.sendTransactionId !== this.respTransactionId) {
-      this.attemptCounter++;
-      console.log(`[CheckAlive] Not alive, attempt ${this.attemptCounter}`);
-      return;
-    }
     this.sendAlive_();
   }
 
@@ -80,10 +87,10 @@ export class CheckAlive {
     this.textroom.data({
       text: JSON.stringify(message),
       success: () => {
-        console.log('[CheckAlive] join sent successfully.', this.roomid);
+        console.log('[CheckAlive] message sent successfully.', this.roomid, transaction);
       },
       error: (err) => {
-        console.error('[CheckAlive] try join error', this.roomid, err);
+        console.error('[CheckAlive] message send error', this.roomid, transaction, err);
         captureMessage(`CheckAlive error: join - ${err}`, {
           source: 'CheckAlive',
           err,
@@ -100,10 +107,11 @@ export class CheckAlive {
     }
 
     const text = JSON.parse(data.text);
-    if (text.type !== 'checkAlive' || text.transaction !== this.sendTransactionId) {
+    if (text.type !== 'checkAlive') {
       return false;
     }
 
+    //console.log(`[CheckAlive] Expected transaction: ${this.sendTransactionId}, Got transaction:  ${text.transaction}.`)
     this.respTransactionId = text.transaction;
     this.lastAlive         = Date.now();
     return true;
