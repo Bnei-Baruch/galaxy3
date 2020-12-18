@@ -4,9 +4,16 @@ import {Button, Input, Message} from 'semantic-ui-react';
 import {getDateString, notifyMe,} from '../../shared/tools';
 import {SHIDUR_ID} from '../../shared/consts';
 import {captureMessage} from '../../shared/sentry';
+import { Typography } from '@material-ui/core';
+import { CheckAlive } from '../../shared/CheckAlive';
 
 //const isUseNewDesign = new URL(window.location.href).searchParams.has('new_design');
 const isUseNewDesign = window.location.hostname === 'arvut.kli.one';
+
+
+const checkAlive = new CheckAlive();
+
+
 class VirtualChat extends Component {
 
   state = {
@@ -144,8 +151,10 @@ class VirtualChat extends Component {
             let what = json['textroom'];
             if (what.match(/^(success|error)$/)) {
               cb(json);
+              what === 'success' && checkAlive.start(this.state.chatroom, room, user);
             } else {
               this.onData(json);
+              checkAlive.checkAlive(json)
             }
           },
           ondataerror: (error) => {
@@ -177,6 +186,7 @@ class VirtualChat extends Component {
 
   exitChatRoom = (room) => {
     const {chatroom} = this.state;
+    checkAlive.stop();
     if(chatroom) {
       chatroom.data({
         text: JSON.stringify({textroom: 'leave', transaction: Janus.randomString(12), room}),
@@ -413,28 +423,62 @@ class VirtualChat extends Component {
 
     let room_msgs = messages.map((msg, i) => {
       let { user, time, text } = msg;
-      if(text) {
+      if (text) {
         return (
-            <p key={i} style={{direction: isRTLString(text) ? 'rtl' : 'ltr', textAlign: isRTLString(text) ? 'right' : 'left'}}><span style={{display: 'block'}}>
-          <i style={{ color: 'grey' }}>{time}</i> -
-          <b style={{ color: user.role.match(/^(admin|root)$/) ? 'red' : 'blue' }}>{user.display}</b>:
-        </span>{textWithLinks(text)}</p>
+          <Typography
+            color={isUseNewDesign ? 'textPrimary' : 'inherit'}
+            paragraph
+            key={i}
+            style={{
+              direction: isRTLString(text) ? 'rtl' : 'ltr',
+              textAlign: isRTLString(text) ? 'right' : 'left'
+            }}
+          >
+            <Typography display="block">
+              <i style={{ color: 'grey' }}>{time}</i> -
+              <Typography
+                display="inline"
+                color={user.role.match(/^(admin|root)$/) ? 'secondary' : 'textSecondary'}
+                style={isUseNewDesign ?{}: { color: user.role.match(/^(admin|root)$/) ? 'red' : 'blue' }}
+              >
+                {user.display}
+              </Typography>:
+            </Typography>
+            {textWithLinks(text)}
+          </Typography>
         );
       }
-			return null;
+      return null;
     });
 
     let admin_msgs = support_msgs.map((msg, i) => {
       let { user, time, text } = msg;
-      if(text) {
+      if (text) {
         return (
-            <p key={i} style={{direction: isRTLString(text) ? 'rtl' : 'ltr', textAlign: isRTLString(text) ? 'right' : 'left'}}><span style={{display: 'block'}}>
-          <i style={{ color: 'grey' }}>{time}</i> -
-          <b style={{ color: user.role.match(/^(admin|root)$/) ? 'red' : 'blue' }}>{user.role === 'admin' ? user.username : user.display}</b>:
-        </span>{textWithLinks(text)}</p>
+          <Typography
+            paragraph
+            color={isUseNewDesign ? "textPrimary": "inherit"}
+            key={i}
+            style={{
+              direction: isRTLString(text) ? 'rtl' : 'ltr',
+              textAlign: isRTLString(text) ? 'right' : 'left'
+            }}>
+            <Typography display="block">
+              <i style={{ color: 'grey' }}>{time}</i> -
+              <Typography
+                display="inline"
+                color={user.role.match(/^(admin|root)$/) ? 'secondary' : 'textSecondary'}
+                style={isUseNewDesign ?{}: { color: user.role.match(/^(admin|root)$/) ? 'red' : 'blue' }}
+              >
+                {user.role === 'admin' ? user.username : user.display}
+              </Typography>
+              :
+            </Typography>
+            {textWithLinks(text)}
+          </Typography>
         );
       }
-			return null;
+      return null;
     });
 
     return (

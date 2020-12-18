@@ -1,104 +1,119 @@
-import { Janus } from "./../lib/janus";
-import {captureMessage} from './sentry';
-import {ALREADY_IN_ROOM_ERROR_CODE} from './consts';
+import { Janus } from '../lib/janus';
+import { captureMessage } from './sentry';
+import { ALREADY_IN_ROOM_ERROR_CODE, SHIDUR_ID } from './consts';
 
-export const SEND_ALIVE_INTERVAL = 1 * 60 * 1000;   // 1 minutes in milliseconds.
-export const CHECK_ALIVE_DELAY = 1.5 * 60 * 1000;  // 1.5 minutes in milliseconds. Should be larger than SEND_ALIVE_INTERVAL.
-export const CHECK_ALIVE_INTERVAL = 100; // 100ms.
+const SEND_ALIVE_INTERVAL = 1 * 60 * 1000;   // 1 minutes in milliseconds.
+const MAX_ATTEMPT_WAIT    = 3;
 
 export class CheckAlive {
-  constructor(sendAliveInterval = SEND_ALIVE_INTERVAL, checkAliveDelay = CHECK_ALIVE_DELAY, checkAliveInterval = CHECK_ALIVE_INTERVAL) {
-    this.sendAliveInterval = sendAliveInterval;
-    this.checkAliveDelay = checkAliveDelay;
-    this.checkAliveInterval = checkAliveInterval;
-
+  constructor() {
     this.stop();
   }
 
   stop() {
     this.textroom = null;
-    this.roomid = 0;
-    this.user = null;
+    this.roomid   = 0;
+    this.user     = null;
 
-    this.lastAlive = 0;
-    this.notAliveCaptured = false;
+    this.lastAlive              = 0;
+    this.notAliveCaptured       = false;
     this.checkAliveTransactions = null;
 
-    if (this.sendAliveIntervalId) {
-      clearInterval(this.sendAliveIntervalId);
+    if (this.tickIntervalId) {
+      clearInterval(this.tickIntervalId);
     }
-    this.sendAliveIntervalId = 0;
-
-    if (this.checkAliveIntervalId) {
-      clearInterval(this.checkAliveIntervalId);
-    }
-    this.checkAliveIntervalId = 0;
+    this.tickIntervalId = 0;
   }
 
   start(textroom, roomid, user) {
-    this.textroom = textroom;
-    this.roomid = roomid;
-    this.user = user;
+    this.textroom       = textroom;
+    this.roomid         = roomid;
+    this.user           = user;
+    this.attemptCounter = 0;
 
     this.lastAlive = Date.now();
-    this.notAliveCaptured = false;
-    this.checkAliveTransactions = new Set();
 
-    // Send alive periodically.
-    this.sendAliveIntervalId = setInterval(() => this.sendAlive_(), this.sendAliveInterval);
-    // Check alive periodically.
-    this.checkAliveIntervalId = setInterval(() => this.checkAlive_(), this.checkAliveInterval);
+    if (this.tickIntervalId) {
+      clearInterval(this.tickIntervalId);
+    }
+
+    // run tick
+    this.tickIntervalId = setInterval(this.tick.bind(this), SEND_ALIVE_INTERVAL);
   }
 
-  checkAlive_() {
-    const now = Date.now();
-    if (!this.notAliveCaptured && (this.lastAlive === null || now - this.lastAlive >= this.checkAliveDelay)) {
-      const msg = `Expected now (${now}) - lastAlive (${this.lastAlive}) to be less than ${this.checkAliveDelay}.`
-			captureMessage('Not alive.', {source: 'CheckAlive', msg, room: this.roomid});
-      console.log('[CheckAlive] Not alive.', msg);
-      this.notAliveCaptured = true;
-    } else if (this.notAliveCaptured && this.lastAlive !== null && now - this.lastAlive < this.checkAliveDelay) {
-      this.notAliveCaptured = false;
-			captureMessage('Back alive.', {source: 'CheckAlive', room: this.roomid});
-      console.log('[CheckAlive] Back alive.');
+  restart() {
+    this.attemptCounter = 0;
+    this.lastAlive      = Date.now();
+    if (this.tickIntervalId) {
+      clearInterval(this.tickIntervalId);
     }
+    this.tickIntervalId = setInterval(this.tick.bind(this), SEND_ALIVE_INTERVAL);
+  }
+
+  tick() {
+    // if (this.attemptCounter > MAX_ATTEMPT_WAIT) {
+    //   const msg = `Last alive was at: (${this.lastAlive}). Expected transaction: ${this.sendTransactionId}, Last transaction:  ${this.respTransactionId}.`;
+    //   captureMessage('Not alive.', { source: 'CheckAlive', msg, room: this.roomid });
+    //   console.log('[CheckAlive] Not alive.', msg);
+    //   this.restart();
+    //   return;
+    // }
+
+    if (this.sendTransactionId !== this.respTransactionId) {
+      const msg = `Last alive was at: (${this.lastAlive}). Expected transaction: ${this.sendTransactionId}, Last transaction:  ${this.respTransactionId}.`;
+      captureMessage('Not alive.', { source: 'CheckAlive', msg, room: this.roomid });
+      console.log('[CheckAlive] Not alive.', msg);
+      // this.attemptCounter++;
+      // console.log(`[CheckAlive] Not alive, attempt ${this.attemptCounter}`);
+    }
+
+    this.sendAlive_();
   }
 
   sendAlive_() {
-    const transaction = Janus.randomString(12);
-    this.checkAliveTransactions.add(transaction);
-    const register = {
-      textroom: "join",
-      transaction: transaction,
+    const transaction      = Janus.randomString(12);
+    this.sendTransactionId = transaction;
+
+    let message = {
+      ack: false,
+      textroom: 'message',
+      to: this.user.id,
       room: this.roomid,
       username: this.user.id,
-      display: this.user.display
+      transaction,
+      text: JSON.stringify({ display: this.user.display, type: 'checkAlive', transaction }),
     };
+
     this.textroom.data({
-      text: JSON.stringify(register),
+      text: JSON.stringify(message),
       success: () => {
-        console.log("[CheckAlive] join sent successfully.", this.roomid);
+        console.log('[CheckAlive] message sent successfully.', this.roomid, transaction);
       },
       error: (err) => {
-        console.error("[CheckAlive] try join error", this.roomid, err);
-        captureMessage(`CheckAlive error: join - ${err}`, {source: "CheckAlive", err, room: this.roomid}, 'error');
+        console.error('[CheckAlive] message send error', this.roomid, transaction, err);
+        captureMessage(`CheckAlive error: join - ${err}`, {
+          source: 'CheckAlive',
+          err,
+          room: this.roomid,
+          sendAt: this.lastAlive
+        }, 'error');
       }
     });
   }
 
-  // Check if the message is check-alive message and handles it.
-  // Returns true if this is a check-alive message.
-  checkAlive(message) {
-    if (!message?.transaction || !this?.checkAliveTransactions?.has(message.transaction)) {
+  checkAlive(data) {
+    if (data?.from !== this.user?.id || !data.text) {
       return false;
     }
-    this.checkAliveTransactions.delete(message?.transaction);
-    const {textroom, error_code} = message;
-    if (textroom !== 'error' || error_code !== ALREADY_IN_ROOM_ERROR_CODE) {
-      console.error('CheckAlive, expected already in room error.', message, error_code)
-      captureMessage('CheckAlive, expected already in room error.', {source: "CheckAlive", err: message});
+
+    const text = JSON.parse(data.text);
+    if (text.type !== 'checkAlive') {
+      return false;
     }
-    this.lastAlive = Date.now();
+
+    //console.log(`[CheckAlive] Expected transaction: ${this.sendTransactionId}, Got transaction:  ${text.transaction}.`)
+    this.respTransactionId = text.transaction;
+    this.lastAlive         = Date.now();
     return true;
   }
 }
