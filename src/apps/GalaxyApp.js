@@ -6,6 +6,7 @@ import {withTranslation} from "react-i18next";
 import {languagesOptions, setLanguage} from "../i18n/i18n";
 import {updateSentryUser} from "../shared/sentry";
 import {getUserRole} from "../shared/enums";
+import {mqttInit} from "../shared/mqtt";
 
 class GalaxyApp extends Component {
 
@@ -31,6 +32,7 @@ class GalaxyApp extends Component {
         const allow = getUserRole();
         const options = this.buttonOptions(user.roles);
         this.setState({options: options.length});
+        mqttInit(user.id);
         if(options.length > 1 && allow !== null) {
             this.setState({user, roles: user.roles});
             updateSentryUser(user);
