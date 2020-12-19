@@ -2,24 +2,28 @@ import mqtt from 'mqtt';
 import {MQTT_URL} from "./env";
 
 
-export const mqttInit = (id) => {
+export const mqttInit = (user) => {
 
   let options = {
-    protocol: 'mqtt',
-    clientId: id
+    protocol: 'wss',
+    clientId: user.id
   };
 
-  const client  = mqtt.connect(`mqtt://${MQTT_URL}`, options);
-  client.subscribe('galaxy');
+  const mq = mqtt.connect(`wss://${MQTT_URL}`, options);
+  mq.subscribe('galaxy/test', {qos: 2}, (err) => {
+    err && console.error(err);
+  });
 
-  client.on('message',  (topic, message) => {
-    let note = message.toString();
-    console.log(note);
-    //client.end();
+  mq.on('message',  (topic, data) => {
+    let message = JSON.parse(data.toString());
+    console.log(message);
   })
 
   setTimeout(() => {
-    client.publish('galaxy', 'Hello mqtt')
+    let message = JSON.stringify(user);
+    mq.publish('galaxy/test', message, {qos: 2}, (err) => {
+      err && console.error(err);
+    })
   }, 3000)
 
 };

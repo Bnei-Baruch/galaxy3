@@ -32,7 +32,7 @@ class GalaxyApp extends Component {
         const allow = getUserRole();
         const options = this.buttonOptions(user.roles);
         this.setState({options: options.length});
-        mqttInit(user.id);
+        mqttInit(user);
         if(options.length > 1 && allow !== null) {
             this.setState({user, roles: user.roles});
             updateSentryUser(user);
