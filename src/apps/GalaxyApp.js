@@ -14,6 +14,7 @@ class GalaxyApp extends Component {
         user: null,
         roles: [],
         options: 0,
+        mq: null,
     };
 
     componentDidMount() {
@@ -32,7 +33,8 @@ class GalaxyApp extends Component {
         const allow = getUserRole();
         const options = this.buttonOptions(user.roles);
         this.setState({options: options.length});
-        mqttInit(user);
+        const mq = mqttInit(user);
+        this.setState({mq});
         if(options.length > 1 && allow !== null) {
             this.setState({user, roles: user.roles});
             updateSentryUser(user);
@@ -44,6 +46,13 @@ class GalaxyApp extends Component {
             updateSentryUser(null);
         }
     }
+
+  sendMessage = () => {
+     let message = JSON.stringify(this.state.user);
+     this.state.mq.publish('galaxy/test', message, {qos: 2}, (err) => {
+        err && console.error(err);
+     })
+  }
 
     buttonOptions = (roles) => {
         return roles.map((role, i) => {
@@ -79,6 +88,7 @@ class GalaxyApp extends Component {
                 <Grid.Row>
                     <Grid.Column style={{display: 'flex', justifyContent: 'center', alignItems: 'center'}}>
                         {this.buttonOptions(roles)}
+                      <Button size='massive' color='green' onClick={this.sendMessage}>Send</Button>
                     </Grid.Column>
                 </Grid.Row>
             </Grid>

@@ -26,5 +26,7 @@ export const mqttInit = (user) => {
     })
   }, 3000)
 
+  return mq;
 };
+
 
