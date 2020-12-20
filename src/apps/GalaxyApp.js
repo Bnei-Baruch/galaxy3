@@ -6,7 +6,7 @@ import {withTranslation} from "react-i18next";
 import {languagesOptions, setLanguage} from "../i18n/i18n";
 import {updateSentryUser} from "../shared/sentry";
 import {getUserRole} from "../shared/enums";
-import {mqttInit} from "../shared/mqtt";
+import mqtt from '../shared/mqtt';
 
 class GalaxyApp extends Component {
 
@@ -33,8 +33,14 @@ class GalaxyApp extends Component {
         const allow = getUserRole();
         const options = this.buttonOptions(user.roles);
         this.setState({options: options.length});
-        const mq = mqttInit(user);
-        this.setState({mq});
+
+        mqtt.init(user, (connected) => {
+          console.log("Connection to MQTT Server: ", connected)
+          if(connected) {
+            mqtt.watch((message) => {console.log(message)})
+          }
+        })
+
         if(options.length > 1 && allow !== null) {
             this.setState({user, roles: user.roles});
             updateSentryUser(user);
@@ -48,10 +54,7 @@ class GalaxyApp extends Component {
     }
 
   sendMessage = () => {
-     let message = JSON.stringify(this.state.user);
-     this.state.mq.publish('galaxy/test', message, {qos: 2, retain: true, properties: {messageExpiryInterval: 3}}, (err) => {
-        err && console.error(err);
-     })
+    mqtt.send(JSON.stringify(this.state.user));
   }
 
     buttonOptions = (roles) => {

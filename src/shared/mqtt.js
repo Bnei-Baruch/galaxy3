@@ -1,47 +1,71 @@
 import mqtt from 'mqtt';
 import {MQTT_URL} from "./env";
 
+class MqttMsg {
 
-export const mqttInit = (user) => {
+  constructor() {
+    this.user = null;
+    this.mq = null;
+    this.topic = 'galaxy/test';
+    this.connected = false;
+  }
 
-  let options = {
-    keepalive: 10,
-    connectTimeout: 10 * 1000,
-    clientId: user.id,
-    protocolId: 'MQTT',
-    protocolVersion: 5,
-    clean: false,
-    properties: {
-      sessionExpiryInterval: 5,
-      maximumPacketSize: 10000,
-      requestResponseInformation: true,
-      requestProblemInformation: true,
-      userProperties: {
-        'test': 'test'
-      },
-    }
-  };
+  init = (user, callback) => {
+    this.user = user;
 
-  const mq = mqtt.connect(`wss://${MQTT_URL}`, options);
-  mq.subscribe('galaxy/test', {qos: 2}, (err) => {
-    err && console.error(err);
-  });
+    let options = {
+      keepalive: 10,
+      connectTimeout: 10 * 1000,
+      clientId: this.user.id,
+      protocolId: 'MQTT',
+      protocolVersion: 5,
+      clean: false,
+      properties: {
+        sessionExpiryInterval: 5,
+        maximumPacketSize: 10000,
+        requestResponseInformation: true,
+        requestProblemInformation: true,
+      }
+    };
 
-  mq.on('message',  (topic, data, packet) => {
-    packet.payload = packet.payload.toString();
-    console.log(packet);
-    let message = JSON.parse(data.toString());
-    console.log(message);
-  })
+    const mq = mqtt.connect(`wss://${MQTT_URL}`, options);
+    this.mq = mq;
 
-  setTimeout(() => {
-    let message = JSON.stringify(user);
-    mq.publish('galaxy/test', message, {qos: 2, properties: {messageExpiryInterval: 3, userProperties: user}}, (err) => {
+    mq.on('connect', (data) => {
+      if(data && !this.connected) {
+        mq.subscribe(this.topic, {qos: 2}, (err) => {
+          callback(data)
+          this.connected = true;
+          err && console.error(err);
+        })
+      }
+    });
+
+    mq.on('error', (data) => console.error(data));
+    mq.on('disconnect', (data) => console.error(data));
+  }
+
+  send = (message) => {
+    let properties = {messageExpiryInterval: 3, userProperties: this.user};
+    this.mq.publish(this.topic, message, {qos: 2, properties}, (err) => {
       err && console.error(err);
     })
-  }, 3000)
+  }
 
-  return mq;
-};
+  watch = (callback) => {
+    this.mq.on('message',  (topic, data, packet) => {
+      // packet.payload = packet.payload.toString();
+      // callback(packet);
+      let message = JSON.parse(data.toString());
+      callback(message)
+    })
+  }
+
+}
+
+const defaultMqtt = new MqttMsg();
+
+export default defaultMqtt;
+
 
 
