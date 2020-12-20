@@ -49,7 +49,7 @@ class GalaxyApp extends Component {
 
   sendMessage = () => {
      let message = JSON.stringify(this.state.user);
-     this.state.mq.publish('galaxy/test', message, {qos: 2}, (err) => {
+     this.state.mq.publish('galaxy/test', message, {qos: 2, retain: true, properties: {messageExpiryInterval: 3}}, (err) => {
         err && console.error(err);
      })
   }
