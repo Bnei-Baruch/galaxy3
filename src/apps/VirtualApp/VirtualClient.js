@@ -74,6 +74,7 @@ import Typography from '@material-ui/core/Typography';
 
 import { withTheme } from '@material-ui/core/styles';
 import ThemeSwitcher from './components/ThemeSwitcher/ThemeSwitcher';
+import mqtt from "../../shared/mqtt";
 
 const toggleDesignVersions = () => {
   window.location = isUseNewDesign ? 'https://galaxy.kli.one/user/' : 'https://arvut.kli.one/user/';
@@ -269,6 +270,10 @@ class VirtualClient extends Component {
       this.setState({user, sourceLoading: true});
       return;
     }
+
+    mqtt.init(user, (connected) => {
+      console.log("Connection to MQTT Server: ", connected);
+    })
 
     const gdm = new GuaranteeDeliveryManager(user.id);
     this.setState({gdm});
@@ -720,6 +725,13 @@ class VirtualClient extends Component {
       }, 10*60000);
       this.setState({upval});
     }
+
+    mqtt.join(selected_room, () => {
+      mqtt.watch((message) => {
+        console.log(" GOT MESSAGE: ", message)
+        this.handleCmdData(message);
+      })
+    })
 
     this.chat.initChatRoom(janus, selected_room, user, this.initChatroomCallback(videoroom, selected_room, user).bind(this));
   };
@@ -1174,7 +1186,8 @@ class VirtualClient extends Component {
         setTimeout(() => {
           if (this.state.question || this.state.cammuted ) {
             const msg = {type: "client-state", user: this.state.user};
-            this.chat.sendCmdMessage(msg);
+            //this.chat.sendCmdMessage(msg);
+            mqtt.send(JSON.stringify(msg));
           }
         }, 3000);
       }
@@ -1360,7 +1373,8 @@ class VirtualClient extends Component {
             this.setState({user, question: !question});
             updateSentryUser(user);
             const msg = {type: "client-state", user};
-            this.chat.sendCmdMessage(msg);
+            //this.chat.sendCmdMessage(msg);
+            mqtt.send(JSON.stringify(msg));
           }
         })
         .catch(err => {
@@ -1401,7 +1415,8 @@ class VirtualClient extends Component {
               this.setState({user, cammuted: !cammuted});
               updateSentryUser(user);
               const msg = {type: "client-state", user};
-              this.chat.sendCmdMessage(msg);
+              //this.chat.sendCmdMessage(msg);
+              mqtt.send(JSON.stringify(msg));
             }
           })
           .catch(err => {

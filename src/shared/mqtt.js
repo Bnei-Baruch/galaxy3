@@ -6,8 +6,9 @@ class MqttMsg {
   constructor() {
     this.user = null;
     this.mq = null;
-    this.topic = 'galaxy/test';
+    this.topic = 'galaxy/user';
     this.connected = false;
+    this.room = null;
   }
 
   init = (user, callback) => {
@@ -33,11 +34,8 @@ class MqttMsg {
 
     mq.on('connect', (data) => {
       if(data && !this.connected) {
-        mq.subscribe(this.topic, {qos: 2}, (err) => {
-          callback(data)
-          this.connected = true;
-          err && console.error(err);
-        })
+        this.connected = true;
+        callback(data)
       }
     });
 
@@ -45,9 +43,18 @@ class MqttMsg {
     mq.on('disconnect', (data) => console.error(data));
   }
 
+  join = (room, callback) => {
+    this.room = room;
+    this.mq.subscribe(this.topic + '/' + room, {qos: 2}, (err) => {
+      err && console.error(err);
+    })
+    callback();
+  }
+
   send = (message) => {
+    console.log("SENDING: ", message)
     let properties = {messageExpiryInterval: 3, userProperties: this.user};
-    this.mq.publish(this.topic, message, {qos: 2, properties}, (err) => {
+    this.mq.publish(this.topic + '/' + this.room, message, {qos: 2, properties}, (err) => {
       err && console.error(err);
     })
   }
