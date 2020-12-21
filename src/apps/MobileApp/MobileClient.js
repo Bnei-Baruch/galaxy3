@@ -46,6 +46,7 @@ import {GuaranteeDeliveryManager} from "../../shared/GuaranteeDelivery";
 import {updateSentryUser} from "../../shared/sentry";
 import {getUserRole, userRolesEnum} from '../../shared/enums';
 import { RegistrationModals } from './RegistrationModals';
+import mqtt from "../../shared/mqtt";
 
 const sortAndFilterFeeds = (feeds) => feeds
   .filter(feed => !feed.display.role.match(/^(ghost|guest)$/))
@@ -219,6 +220,15 @@ class MobileClient extends Component {
           this.setState({user, sourceLoading: true});
           return;
         }
+
+        mqtt.init(user, (connected) => {
+          console.log("Connection to MQTT Server: ", connected);
+          mqtt.watch((message) => {
+            console.log(" GOT MESSAGE: ", message)
+            this.handleCmdData(message);
+          })
+        })
+
         let gdm = new GuaranteeDeliveryManager(user.id);
         this.setState({gdm});
         localStorage.setItem('question', false);
@@ -691,6 +701,8 @@ class MobileClient extends Component {
             this.chat.exitChatRoom(room);
         }
 
+        mqtt.exit(room);
+
         if (this.state.shidur) {
             this.toggleShidur();
         }
@@ -929,6 +941,8 @@ class MobileClient extends Component {
                     // We wait for the plugin to send us an offer
                     let subscribe = {request: "join", room: this.state.room, ptype: "subscriber", streams: subscription};
                     remoteFeed.send({ message: subscribe });
+                    // Subscribe to mqtt topic
+                    mqtt.join(this.state.room);
                 },
                 error: (error) => {
                     Janus.error("  -- Error attaching plugin...", error);
@@ -1084,9 +1098,10 @@ class MobileClient extends Component {
                 // Send question event for new feed, by notifying the whole room.
                 // FIXME: Can this be done by notifying only the joined feed?
                 setTimeout(() => {
-                    if (this.state.question || this.state.cammuted) {
+                    if (this.state.cammuted) {
                         const msg = {type: "client-state", user: this.state.user};
-                        this.chat.sendCmdMessage(msg);
+                        //this.chat.sendCmdMessage(msg);
+                        mqtt.send(JSON.stringify(msg), false);
                     }
                 }, 3000);
             }
@@ -1355,7 +1370,8 @@ class MobileClient extends Component {
                     this.setState({user, question: !question});
                     updateSentryUser(user);
                     const msg = {type: "client-state", user};
-                    this.chat.sendCmdMessage(msg);
+                    //this.chat.sendCmdMessage(msg);
+                    mqtt.send(JSON.stringify(msg), true);
                 }
             })
             .catch(err => {
@@ -1417,7 +1433,8 @@ class MobileClient extends Component {
                     this.setState({user, cammuted: !cammuted});
                     updateSentryUser(user);
                     const msg = {type: "client-state", user};
-                    this.chat.sendCmdMessage(msg);
+                    //this.chat.sendCmdMessage(msg);
+                    mqtt.send(JSON.stringify(msg), false);
                 }
             })
             .catch(err => {

@@ -53,7 +53,6 @@ import fullModeSvg from '../../shared/full-mode.svg';
 import ConfigStore from '../../shared/ConfigStore';
 import { GuaranteeDeliveryManager } from '../../shared/GuaranteeDelivery';
 import { toggleFullScreen, isFullScreen } from './FullScreenHelper';
-import {CheckAlive} from '../../shared/CheckAlive';
 
 import {AppBar, Badge, Box, Button as ButtonMD, ButtonGroup, Grid, IconButton} from '@material-ui/core';
 import {ChevronLeft, ChevronRight, PlayCircleOutline} from '@material-ui/icons';
@@ -1034,7 +1033,7 @@ class VirtualClient extends Component {
           const subscribe = {request: 'join', room: this.state.room, ptype: 'subscriber', streams: subscription};
           remoteFeed.send({message: subscribe});
           // Subscribe to mqtt topic
-          mqtt.join(this.state.room)
+          mqtt.join(this.state.room);
         },
         error: (error) => {
           Janus.error('  -- Error attaching plugin...', error);
@@ -1169,7 +1168,7 @@ class VirtualClient extends Component {
       });
     });
     // Merge |newFeeds| with existing feeds.
-    const {feeds, selected_room} = this.state;
+    const {feeds} = this.state;
     const feedsIds = new Set(feeds.map(feed => feed.id));
     // Add only non yet existing feeds.
     this.setState({feeds: sortAndFilterFeeds([...feeds, ...newFeeds.filter(feed => !feedsIds.has(feed.id))])});
