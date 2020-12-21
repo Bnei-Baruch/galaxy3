@@ -6,7 +6,7 @@ class MqttMsg {
   constructor() {
     this.user = null;
     this.mq = null;
-    this.topic = 'galaxy/user';
+    this.topic = 'galaxy/room';
     this.connected = false;
     this.room = null;
   }
@@ -20,7 +20,7 @@ class MqttMsg {
       clientId: this.user.id,
       protocolId: 'MQTT',
       protocolVersion: 5,
-      clean: false,
+      clean: true,
       properties: {
         sessionExpiryInterval: 5,
         maximumPacketSize: 10000,
@@ -43,18 +43,26 @@ class MqttMsg {
     mq.on('disconnect', (data) => console.error(data));
   }
 
-  join = (room, callback) => {
+  join = (room) => {
     this.room = room;
-    this.mq.subscribe(this.topic + '/' + room, {qos: 2}, (err) => {
+    let options = {qos: 2, nl: true}
+    this.mq.subscribe(this.topic + '/' + room, {...options}, (err) => {
       err && console.error(err);
     })
-    callback();
   }
 
-  send = (message) => {
+  exit = (room) => {
+    this.room = room;
+    let options = {}
+    this.mq.unsubscribe(this.topic + '/' + room, {...options} ,(err) => {
+      err && console.error(err);
+    })
+  }
+
+  send = (message, retain) => {
     console.log("SENDING: ", message)
-    let properties = {messageExpiryInterval: 3, userProperties: this.user};
-    this.mq.publish(this.topic + '/' + this.room, message, {qos: 2, properties}, (err) => {
+    let options = {qos: 2, retain, properties: {messageExpiryInterval: 0, userProperties: this.user}};
+    this.mq.publish(this.topic + '/' + this.room, message, {...options}, (err) => {
       err && console.error(err);
     })
   }

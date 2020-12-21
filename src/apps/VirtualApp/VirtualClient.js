@@ -273,6 +273,10 @@ class VirtualClient extends Component {
 
     mqtt.init(user, (connected) => {
       console.log("Connection to MQTT Server: ", connected);
+      mqtt.watch((message) => {
+        console.log(" GOT MESSAGE: ", message)
+        this.handleCmdData(message);
+      })
     })
 
     const gdm = new GuaranteeDeliveryManager(user.id);
@@ -726,13 +730,6 @@ class VirtualClient extends Component {
       this.setState({upval});
     }
 
-    mqtt.join(selected_room, () => {
-      mqtt.watch((message) => {
-        console.log(" GOT MESSAGE: ", message)
-        this.handleCmdData(message);
-      })
-    })
-
     this.chat.initChatRoom(janus, selected_room, user, this.initChatroomCallback(videoroom, selected_room, user).bind(this));
   };
 
@@ -808,6 +805,8 @@ class VirtualClient extends Component {
       //this.state.checkAlive.stop();
       this.chat.exitChatRoom(room);
     }
+
+    mqtt.exit(room);
 
     if (shidur) {
       virtualStreamingJanus.destroy({
@@ -1032,13 +1031,10 @@ class VirtualClient extends Component {
           Janus.log(`2 Plugin attached! (${remoteFeed.getPlugin()}, id=${remoteFeed.getId()}). -- This is a multistream subscriber ${remoteFeed}`);
           this.setState({remoteFeed, creatingFeed: false});
           // We wait for the plugin to send us an offer
-          const subscribe = {
-            request: 'join',
-            room: this.state.room,
-            ptype: 'subscriber',
-            streams: subscription
-          };
+          const subscribe = {request: 'join', room: this.state.room, ptype: 'subscriber', streams: subscription};
           remoteFeed.send({message: subscribe});
+          // Subscribe to mqtt topic
+          mqtt.join(this.state.room)
         },
         error: (error) => {
           Janus.error('  -- Error attaching plugin...', error);
@@ -1173,7 +1169,7 @@ class VirtualClient extends Component {
       });
     });
     // Merge |newFeeds| with existing feeds.
-    const {feeds} = this.state;
+    const {feeds, selected_room} = this.state;
     const feedsIds = new Set(feeds.map(feed => feed.id));
     // Add only non yet existing feeds.
     this.setState({feeds: sortAndFilterFeeds([...feeds, ...newFeeds.filter(feed => !feedsIds.has(feed.id))])});
@@ -1184,10 +1180,10 @@ class VirtualClient extends Component {
         // Send question event for new feed, by notifying all room.
         // FIXME: Can this be done by notifying only the joined feed?
         setTimeout(() => {
-          if (this.state.question || this.state.cammuted ) {
+          if (this.state.cammuted) {
             const msg = {type: "client-state", user: this.state.user};
             //this.chat.sendCmdMessage(msg);
-            mqtt.send(JSON.stringify(msg));
+            mqtt.send(JSON.stringify(msg), false);
           }
         }, 3000);
       }
@@ -1374,7 +1370,7 @@ class VirtualClient extends Component {
             updateSentryUser(user);
             const msg = {type: "client-state", user};
             //this.chat.sendCmdMessage(msg);
-            mqtt.send(JSON.stringify(msg));
+            mqtt.send(JSON.stringify(msg), true);
           }
         })
         .catch(err => {
@@ -1416,7 +1412,7 @@ class VirtualClient extends Component {
               updateSentryUser(user);
               const msg = {type: "client-state", user};
               //this.chat.sendCmdMessage(msg);
-              mqtt.send(JSON.stringify(msg));
+              mqtt.send(JSON.stringify(msg), false);
             }
           })
           .catch(err => {
