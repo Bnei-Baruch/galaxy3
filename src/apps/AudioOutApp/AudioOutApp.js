@@ -43,12 +43,14 @@ class AudioOutApp extends Component {
     initApp = () => {
         const {user} = this.state;
 
-        mqtt.init(user, (connected) => {
+      mqtt.init(user, (connected) => {
+        setTimeout(() => {
           mqtt.watch((data) => {
-            this.onServiceData(data);
+            this.onMqttData(data);
           })
           mqtt.join('galaxy/service/#');
-        })
+        }, 3000);
+      })
 
         api.setBasicAuth(API_BACKEND_USERNAME, API_BACKEND_PASSWORD);
 
@@ -113,6 +115,23 @@ class AudioOutApp extends Component {
             return Promise.resolve();
         }
     };
+
+  onMqttData = (data) => {
+    const {room, group, status, qst} = data;
+
+    if (data.type === "sdi-fullscr_group" && status && qst) {
+      this.setState({group, room});
+    } else if (data.type === "sdi-fullscr_group" && !status && qst) {
+      this.setState({group: null, room: null});
+    } else if (data.type === "sdi-restart_sdiout") {
+      window.location.reload();
+    } else if (data.type === "audio-out") {
+      this.setState({audio: status});
+    } else if (data.type === "event") {
+      delete data.type;
+      this.setState({...data});
+    }
+  };
 
     onServiceData = (gateway, data, user) => {
       const { gdm } = this.state;

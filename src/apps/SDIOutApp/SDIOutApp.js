@@ -73,10 +73,12 @@ class SDIOutApp extends Component {
         const {user} = this.state;
 
         mqtt.init(user, (connected) => {
-          mqtt.watch((data) => {
-            this.onServiceData(data);
-          })
-          mqtt.join('galaxy/service/#');
+          setTimeout(() => {
+            mqtt.watch((data) => {
+              this.onMqttData(data);
+            })
+            mqtt.join('galaxy/service/#');
+          }, 3000);
         })
 
         api.setBasicAuth(API_BACKEND_USERNAME, API_BACKEND_PASSWORD);
@@ -139,6 +141,34 @@ class SDIOutApp extends Component {
         }
         return Promise.resolve();
     };
+
+  onMqttData = (data) => {
+    const {room, col, feed, group, i, status, qst} = data;
+
+    if(data.type === "sdi-fullscr_group" && status) {
+      if(qst) {
+        this.setState({col, i, group, room, qg: this.state.qids["q"+col].vquad[i]})
+      } else {
+        this["col"+col].toFullGroup(i,feed);
+      }
+    } else if(data.type === "sdi-fullscr_group" && !status) {
+      let {col, feed, i} = data;
+      if(qst) {
+        this.setState({group: null, room: null, qg: null});
+      } else {
+        this["col"+col].toFourGroup(i,feed);
+      }
+    } else if(data.type === "sdi-vote") {
+      if(this.state.group)
+        return
+      this.setState({vote: status, qg: null});
+    } else if(data.type === "sdi-restart_sdiout") {
+      window.location.reload();
+    } else if(data.type === "event") {
+      delete data.type;
+      this.setState({...data});
+    }
+  };
 
     onServiceData = (gateway, data, user) => {
         const { gdm } = this.state;
