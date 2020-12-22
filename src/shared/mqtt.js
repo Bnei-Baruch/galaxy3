@@ -70,8 +70,8 @@ class MqttMsg {
   watch = (callback, stat) => {
     this.mq.on('message',  (topic, data, packet) => {
       let message = stat ? data.toString() : JSON.parse(data.toString());
-      console.log("[mqtt] Got data on topic: ", topic, message);
-      callback(message)
+      //console.log("[mqtt] Got data on topic: ", topic, message);
+      callback(message, topic)
     })
   }
 

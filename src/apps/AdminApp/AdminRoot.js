@@ -124,38 +124,7 @@ class AdminRoot extends Component {
         this.setState({user, gdm});
         updateSentryUser(user);
 
-      mqtt.init(user, (connected) => {
-        mqtt.watch((data) => {
-          //this.onMqttData(data);
-        }, true)
-        //mqtt.join('$SYS/#');
-        // mqtt.join('$SYS/broker/load/bytes/received');
-        // mqtt.join('$SYS/broker/load/bytes/sent');
-        mqtt.join('$SYS/broker/load/messages/received/1min');
-        mqtt.join('$SYS/broker/clients/connected');
-      })
-
-      // mqtt.js:73 [mqtt] Got data on topic:  $SYS/broker/uptime 74102 seconds
-      // 17:21:51.552 mqtt.js:73 [mqtt] Got data on topic:  $SYS/broker/clients/inactive 1
-      // 17:21:51.553 mqtt.js:73 [mqtt] Got data on topic:  $SYS/broker/clients/disconnected 1
-      // 17:21:51.553 mqtt.js:73 [mqtt] Got data on topic:  $SYS/broker/clients/active 4
-      // 17:21:51.554 mqtt.js:73 [mqtt] Got data on topic:  $SYS/broker/clients/connected 4
-      // 17:21:51.554 mqtt.js:73 [mqtt] Got data on topic:  $SYS/broker/load/messages/received/1min 133.49
-      // 17:21:51.554 mqtt.js:73 [mqtt] Got data on topic:  $SYS/broker/load/messages/sent/1min 179.29
-      // 17:21:51.555 mqtt.js:73 [mqtt] Got data on topic:  $SYS/broker/load/bytes/received/1min 857.55
-      // 17:21:51.555 mqtt.js:73 [mqtt] Got data on topic:  $SYS/broker/load/bytes/sent/1min 4131.63
-      // 17:21:51.556 mqtt.js:73 [mqtt] Got data on topic:  $SYS/broker/load/connections/1min 3.54
-      // 17:21:51.830 mqtt.js:73 [mqtt] Got data on topic:  $SYS/broker/messages/stored 37
-      // 17:21:51.830 mqtt.js:73 [mqtt] Got data on topic:  $SYS/broker/store/messages/count 37
-      // 17:21:51.831 mqtt.js:73 [mqtt] Got data on topic:  $SYS/broker/store/messages/bytes 590
-      // 17:21:51.831 mqtt.js:73 [mqtt] Got data on topic:  $SYS/broker/heap/current 205888
-      // 17:21:51.831 mqtt.js:73 [mqtt] Got data on topic:  $SYS/broker/heap/maximum 223328
-      // 17:21:51.832 mqtt.js:73 [mqtt] Got data on topic:  $SYS/broker/messages/received 16556
-      // 17:21:51.832 mqtt.js:73 [mqtt] Got data on topic:  $SYS/broker/messages/sent 19445
-      // 17:21:51.832 mqtt.js:73 [mqtt] Got data on topic:  $SYS/broker/bytes/received 136433
-      // 17:21:51.833 mqtt.js:73 [mqtt] Got data on topic:  $SYS/broker/bytes/sent 410439
-      // 17:21:51.833 mqtt.js:73 [mqtt] Got data on topic:  $SYS/broker/publish/bytes/sent 68174
-      // 17:22:02.523 mqtt.js:73
+      mqtt.init(user, () => {})
 
       api.fetchConfig()
             .then(data => {
