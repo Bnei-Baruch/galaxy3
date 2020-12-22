@@ -300,6 +300,7 @@ class UsersQuad extends Component {
     if(tcp === "mqtt") {
       status ? mqtt.join('galaxy/room/' + room) : mqtt.exit('galaxy/room/' + room)
       mqtt.send(JSON.stringify(cmd), true, 'galaxy/room/' + room);
+      mqtt.send(JSON.stringify(msg), true, 'galaxy/service/shidur');
     } else {
       if (group && group.users) {
         // let toAck = group.users.map(u => u.role.match(/^(user|ghost|guest)$/) ? u.id : null).filter(id => !!id);

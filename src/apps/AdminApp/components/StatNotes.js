@@ -2,6 +2,7 @@ import React, {Component} from "react";
 import {Label, Table} from "semantic-ui-react";
 import {ADMIN_SECRET, ADMIN_SRV_STR1, MONITOR_SRV} from "../../../shared/env";
 import {genUUID} from "../../../shared/tools";
+import mqtt from "../../../shared/mqtt";
 
 
 class StatNotes extends Component {
@@ -25,7 +26,16 @@ class StatNotes extends Component {
     };
 
     componentDidMount() {
-        setInterval(this.getCounts, 10 * 1000)
+        setInterval(this.getCounts, 10 * 1000);
+        // setTimeout(() => {
+        //   mqtt.watch(() => {
+        //     //this.onMqttData(data);
+        //   }, true);
+        //   mqtt.join('$SYS/broker/load/bytes/received');
+        //   mqtt.join('$SYS/broker/load/bytes/sent');
+        //   mqtt.join('$SYS/broker/clients/connected');
+        // }, 3000)
+
     };
 
     getCounts = () => {

@@ -804,6 +804,9 @@ class MobileClient extends Component {
 										});
                 this.keepAlive();
 
+                // Subscribe to mqtt topic
+                mqtt.join('galaxy/room/' + msg['room']);
+
                 const {media: {audio: {audio_device}, video: {video_device}}} = this.state;
                 this.publishOwnFeed(!!video_device, !!audio_device);
 
@@ -939,8 +942,6 @@ class MobileClient extends Component {
                     // We wait for the plugin to send us an offer
                     let subscribe = {request: "join", room: this.state.room, ptype: "subscriber", streams: subscription};
                     remoteFeed.send({ message: subscribe });
-                    // Subscribe to mqtt topic
-                    mqtt.join('galaxy/room/' + this.state.room);
                 },
                 error: (error) => {
                     Janus.error("  -- Error attaching plugin...", error);
