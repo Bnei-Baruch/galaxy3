@@ -10,6 +10,7 @@ import GxyJanus from "../../shared/janus-utils";
 import {USERNAME_ALREADY_EXIST_ERROR_CODE, SNDMAN_ID} from "../../shared/consts"
 import {GuaranteeDeliveryManager} from '../../shared/GuaranteeDelivery';
 import {captureException, captureMessage, updateSentryUser} from "../../shared/sentry";
+import mqtt from "../../shared/mqtt";
 
 
 class SndmanApp extends Component {
@@ -43,6 +44,14 @@ class SndmanApp extends Component {
     initApp = (user) => {
         this.setState({user});
         updateSentryUser(user);
+
+        mqtt.init(user, (connected) => {
+          console.log("Connection to MQTT Server: ", connected);
+          mqtt.watch((data) => {
+            this.onServiceData(data);
+          })
+          mqtt.join(null, 'galaxy/service/#');
+        })
 
         api.fetchConfig()
             .then(data => GxyJanus.setGlobalConfig(data))

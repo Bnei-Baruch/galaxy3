@@ -9,6 +9,7 @@ import GxyJanus from "../../shared/janus-utils";
 import {USERNAME_ALREADY_EXIST_ERROR_CODE, AUDIOOUT_ID} from "../../shared/consts"
 import {GuaranteeDeliveryManager} from '../../shared/GuaranteeDelivery';
 import {captureException, captureMessage} from "../../shared/sentry";
+import mqtt from "../../shared/mqtt";
 
 
 class AudioOutApp extends Component {
@@ -41,6 +42,15 @@ class AudioOutApp extends Component {
 
     initApp = () => {
         const {user} = this.state;
+
+        mqtt.init(user, (connected) => {
+          console.log("Connection to MQTT Server: ", connected);
+          mqtt.watch((data) => {
+            this.onServiceData(data);
+          })
+          mqtt.join(null, 'galaxy/service/#');
+        })
+
         api.setBasicAuth(API_BACKEND_USERNAME, API_BACKEND_PASSWORD);
 
         api.fetchConfig()
@@ -142,7 +152,7 @@ class AudioOutApp extends Component {
 				})
 				.catch((error) => {
 						console.error(`Failed receiving ${data}: ${error}`);
-					
+
 				});
 		};
 

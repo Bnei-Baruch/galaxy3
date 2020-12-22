@@ -10,6 +10,7 @@ import UsersHandleSDIOut from "./UsersHandleSDIOut";
 import UsersQuadSDIOut from "./UsersQuadSDIOut";
 import {GuaranteeDeliveryManager} from '../../shared/GuaranteeDelivery';
 import {captureException, captureMessage} from "../../shared/sentry";
+import mqtt from "../../shared/mqtt";
 
 
 class SDIOutApp extends Component {
@@ -70,6 +71,15 @@ class SDIOutApp extends Component {
 
     initApp = () => {
         const {user} = this.state;
+
+        mqtt.init(user, (connected) => {
+          console.log("Connection to MQTT Server: ", connected);
+          mqtt.watch((data) => {
+            this.onServiceData(data);
+          })
+          mqtt.join(null, 'galaxy/service/#');
+        })
+
         api.setBasicAuth(API_BACKEND_USERNAME, API_BACKEND_PASSWORD);
 
         api.fetchConfig()
