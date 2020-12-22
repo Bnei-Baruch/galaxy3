@@ -89,11 +89,10 @@ class ShidurApp extends Component {
 
   initApp = (user) => {
     mqtt.init(user, (connected) => {
-      console.log("Connection to MQTT Server: ", connected);
       mqtt.watch((data) => {
         this.onMqttData(data);
       })
-      mqtt.join(null, 'galaxy/service/#');
+      mqtt.join('galaxy/service/#');
     })
 
     this.setState({user});
@@ -271,7 +270,6 @@ class ShidurApp extends Component {
   };
 
   onMqttData = (data) => {
-    console.log(" GOT MESSAGE: ", data);
     if(data.type === "event") {
       delete data.type;
       this.setState({...data});

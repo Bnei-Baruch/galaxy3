@@ -46,11 +46,10 @@ class SndmanApp extends Component {
         updateSentryUser(user);
 
         mqtt.init(user, (connected) => {
-          console.log("Connection to MQTT Server: ", connected);
           mqtt.watch((data) => {
             this.onServiceData(data);
           })
-          mqtt.join(null, 'galaxy/service/#');
+          mqtt.join('galaxy/service/#');
         })
 
         api.fetchConfig()

@@ -271,9 +271,7 @@ class VirtualClient extends Component {
     }
 
     mqtt.init(user, (connected) => {
-      console.log("Connection to MQTT Server: ", connected);
       mqtt.watch((message) => {
-        console.log(" GOT MESSAGE: ", message)
         this.handleCmdData(message);
       })
     })
@@ -805,7 +803,7 @@ class VirtualClient extends Component {
       this.chat.exitChatRoom(room);
     }
 
-    mqtt.exit(room);
+    mqtt.exit('galaxy/room/' + room);
 
     if (shidur) {
       virtualStreamingJanus.destroy({
@@ -1033,7 +1031,7 @@ class VirtualClient extends Component {
           const subscribe = {request: 'join', room: this.state.room, ptype: 'subscriber', streams: subscription};
           remoteFeed.send({message: subscribe});
           // Subscribe to mqtt topic
-          mqtt.join(this.state.room);
+          mqtt.join('galaxy/room/' + this.state.room);
         },
         error: (error) => {
           Janus.error('  -- Error attaching plugin...', error);
@@ -1182,7 +1180,7 @@ class VirtualClient extends Component {
           if (this.state.cammuted) {
             const msg = {type: "client-state", user: this.state.user};
             //this.chat.sendCmdMessage(msg);
-            mqtt.send(JSON.stringify(msg), false);
+            mqtt.send(JSON.stringify(msg), false, 'galaxy/room/' + this.state.room);
           }
         }, 3000);
       }
@@ -1369,7 +1367,7 @@ class VirtualClient extends Component {
             updateSentryUser(user);
             const msg = {type: "client-state", user};
             //this.chat.sendCmdMessage(msg);
-            mqtt.send(JSON.stringify(msg), true);
+            mqtt.send(JSON.stringify(msg), true, 'galaxy/room/' + this.state.room);
           }
         })
         .catch(err => {
@@ -1411,7 +1409,7 @@ class VirtualClient extends Component {
               updateSentryUser(user);
               const msg = {type: "client-state", user};
               //this.chat.sendCmdMessage(msg);
-              mqtt.send(JSON.stringify(msg), false);
+              mqtt.send(JSON.stringify(msg), false, 'galaxy/room/' + this.state.room);
             }
           })
           .catch(err => {

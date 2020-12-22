@@ -6,7 +6,6 @@ class MqttMsg {
   constructor() {
     this.user = null;
     this.mq = null;
-    this.topic = 'galaxy/room'; //TODO: take it from argument
     this.connected = false;
     this.room = null;
   }
@@ -34,36 +33,37 @@ class MqttMsg {
 
     mq.on('connect', (data) => {
       if(data && !this.connected) {
+        console.log("[mqtt] Connected to server: ", data);
         this.connected = true;
         callback(data)
       }
     });
 
-    mq.on('error', (data) => console.error(data));
-    mq.on('disconnect', (data) => console.error(data));
+    mq.on('error', (data) => console.error('[mqtt] Error: ', data));
+    mq.on('disconnect', (data) => console.error('[mqtt] Error: ', data));
   }
 
-  join = (room, topic) => {
-    this.room = room;
+  join = (topic) => {
+    console.log("[mqtt] Subscribe to: ", topic)
     let options = {qos: 2, nl: true}
-    this.mq.subscribe(topic || this.topic + '/' + room, {...options}, (err) => {
-      err && console.error(err);
+    this.mq.subscribe(topic, {...options}, (err) => {
+      err && console.error('[mqtt] Error: ', err);
     })
   }
 
-  exit = (room, topic) => {
-    this.room = room;
+  exit = (topic) => {
     let options = {}
-    this.mq.unsubscribe(topic || this.topic + '/' + room, {...options} ,(err) => {
-      err && console.error(err);
+    console.log("[mqtt] Unsubscribe from: ", topic)
+    this.mq.unsubscribe(topic, {...options} ,(err) => {
+      err && console.error('[mqtt] Error: ',err);
     })
   }
 
   send = (message, retain, topic) => {
-    console.log("SENDING: ", message)
+    console.log("[mqtt] Send data on topic: ", topic, message)
     let options = {qos: 2, retain, properties: {messageExpiryInterval: 0, userProperties: this.user}};
     this.mq.publish(topic, message, {...options}, (err) => {
-      err && console.error(err);
+      err && console.error('[mqtt] Error: ',err);
     })
   }
 
@@ -72,6 +72,7 @@ class MqttMsg {
       // packet.payload = packet.payload.toString();
       // callback(packet);
       let message = JSON.parse(data.toString());
+      console.log("[mqtt] Got data on topic: ", topic, message);
       callback(message)
     })
   }

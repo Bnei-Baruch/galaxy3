@@ -44,11 +44,10 @@ class AudioOutApp extends Component {
         const {user} = this.state;
 
         mqtt.init(user, (connected) => {
-          console.log("Connection to MQTT Server: ", connected);
           mqtt.watch((data) => {
             this.onServiceData(data);
           })
-          mqtt.join(null, 'galaxy/service/#');
+          mqtt.join('galaxy/service/#');
         })
 
         api.setBasicAuth(API_BACKEND_USERNAME, API_BACKEND_PASSWORD);

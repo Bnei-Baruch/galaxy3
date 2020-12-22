@@ -298,7 +298,7 @@ class UsersQuad extends Component {
     //const ask_feed = group.users.filter(u => u.question)[0];
 
     if(tcp === "mqtt") {
-      status ? mqtt.join(room) : mqtt.exit(room)
+      status ? mqtt.join('galaxy/room/' + room) : mqtt.exit('galaxy/room/' + room)
       mqtt.send(JSON.stringify(cmd), true, 'galaxy/room/' + room);
     } else {
       if (group && group.users) {
