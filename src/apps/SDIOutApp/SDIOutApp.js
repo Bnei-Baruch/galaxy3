@@ -77,7 +77,8 @@ class SDIOutApp extends Component {
             mqtt.watch((data) => {
               this.onMqttData(data);
             })
-            mqtt.join('galaxy/service/#');
+            mqtt.join('galaxy/service/shidur');
+            mqtt.send(JSON.stringify({type: "event", [user.role]: true}), true, 'galaxy/service/' + user.role);
           }, 3000);
         })
 

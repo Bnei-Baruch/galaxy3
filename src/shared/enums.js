@@ -1,4 +1,5 @@
 import {kc} from "../components/UserManager";
+import {AUDOUT_ID, SDIOUT_ID, SHIDUR_ID, SNDMAN_ID, STORAN_ID} from "./consts";
 
 export const userRolesEnum = {
   none: null,
@@ -24,4 +25,8 @@ export const getUserRole = () => {
     default:
       return userRolesEnum.none
   }
+}
+
+export const isServiceID = (id) => {
+  return [SHIDUR_ID,SNDMAN_ID,SDIOUT_ID,STORAN_ID,AUDOUT_ID].includes(id);
 }

@@ -42,7 +42,7 @@ class ShidurApp extends Component {
     region_groups: [],
     region: null,
     sdiout: false,
-    sndman: false,
+    audout: false,
     users_count: 0,
     gdm: new GuaranteeDeliveryManager(STORAN_ID),
     alert: false,
@@ -93,6 +93,7 @@ class ShidurApp extends Component {
         this.onMqttData(data);
       })
       mqtt.join('galaxy/service/#');
+      mqtt.send(JSON.stringify({type: "event", [user.role]: true}), true, 'galaxy/service/' + user.role);
     })
 
     this.setState({user});
@@ -273,7 +274,7 @@ class ShidurApp extends Component {
     if(data.type === "event") {
       delete data.type;
       this.setState({...data});
-      if(data.sdiout || data.sndman) {
+      if(data.sdiout || data.audout) {
         setTimeout(() => {
           console.log("[Shidur] :: Check Full Screen state :: ");
           this.checkFullScreen();
@@ -305,7 +306,7 @@ class ShidurApp extends Component {
     if(data.type === "event") {
       delete data.type;
       this.setState({...data});
-      if(data.sdiout || data.sndman) {
+      if(data.sdiout || data.audout) {
         setTimeout(() => {
           console.log("[Shidur] :: Check Full Screen state :: ");
           this.checkFullScreen();
