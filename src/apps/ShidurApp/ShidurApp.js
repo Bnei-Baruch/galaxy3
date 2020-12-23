@@ -93,6 +93,7 @@ class ShidurApp extends Component {
         this.onMqttData(data);
       })
       mqtt.join('galaxy/service/#');
+      mqtt.send(JSON.stringify({type: "event", [user.role]: true}), true, 'galaxy/service/' + user.role);
     })
 
     this.setState({user});

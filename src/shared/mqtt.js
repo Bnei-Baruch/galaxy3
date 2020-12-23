@@ -1,5 +1,7 @@
 import mqtt from 'mqtt';
 import {MQTT_URL} from "./env";
+import {isServiceID} from "./enums";
+import {STORAN_ID} from "./consts";
 
 class MqttMsg {
 
@@ -27,6 +29,15 @@ class MqttMsg {
         requestProblemInformation: true,
       }
     };
+
+    if(isServiceID(user.id)) {
+      options.will = {
+        qos: 2,
+        retain: true,
+        topic: 'galaxy/service/' + user.role,
+        payload: {type: "event", [user.role]: false},
+        properties: {messageExpiryInterval: 0, userProperties: user}}
+    }
 
     const mq = mqtt.connect(`wss://${MQTT_URL}`, options);
     this.mq = mq;

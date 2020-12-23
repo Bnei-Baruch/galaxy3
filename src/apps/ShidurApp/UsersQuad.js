@@ -3,7 +3,7 @@ import {Segment, Icon, Button} from "semantic-ui-react";
 import './UsersQuad.scss'
 import UsersHandle from "./UsersHandle";
 import api from '../../shared/Api';
-//import {AUDIOOUT_ID, SDIOUT_ID, SNDMAN_ID} from "../../shared/consts"
+//import {AUDOUT_ID, SDIOUT_ID, SNDMAN_ID} from "../../shared/consts"
 import {captureException, captureMessage} from "../../shared/sentry";
 import {SendOptions} from '../../shared/GuaranteeDelivery';
 import mqtt from "../../shared/mqtt";
@@ -213,7 +213,7 @@ class UsersQuad extends Component {
     let {fullscr,index,vquad,question} = this.state;
     if(fullscr) {
       console.log("[Shidur] :: Group: " + index + " , sending sdi-action...");
-      //this.sdiGuaranteeAction("fullscr_group" , true, index, vquad[index], question, [AUDIOOUT_ID, SDIOUT_ID, SNDMAN_ID]);
+      //this.sdiGuaranteeAction("fullscr_group" , true, index, vquad[index], question, [AUDOUT_ID, SDIOUT_ID, SNDMAN_ID]);
       this.sdiAction("fullscr_group" , true, index, vquad[index], question);
     }
   };
@@ -274,7 +274,7 @@ class UsersQuad extends Component {
     let {room,janus} = group;
     console.log("[Shidur]:: Make Full Screen Group: ", group);
     this.setState({fullscr: true, index: i, question: is_qst});
-    //this.sdiGuaranteeAction("fullscr_group" , true, i, group, is_qst, [AUDIOOUT_ID, SDIOUT_ID, SNDMAN_ID]);
+    //this.sdiGuaranteeAction("fullscr_group" , true, i, group, is_qst, [AUDOUT_ID, SDIOUT_ID, SNDMAN_ID]);
     this.sdiAction("fullscr_group" , true, i, group, is_qst);
     if(is_qst) this.micMute(true, room, janus, i);
   };
@@ -282,7 +282,7 @@ class UsersQuad extends Component {
   toFourGroup = (i, group, cb , is_qst) => {
     let {room,janus} = group;
     console.log("[Shidur]:: Back to four: ");
-    //this.sdiGuaranteeAction("fullscr_group" , false, i, group, is_qst, [AUDIOOUT_ID, SDIOUT_ID, SNDMAN_ID]);
+    //this.sdiGuaranteeAction("fullscr_group" , false, i, group, is_qst, [AUDOUT_ID, SDIOUT_ID, SNDMAN_ID]);
     this.sdiAction("fullscr_group" , false, i, group, is_qst);
     if(is_qst) this.micMute(false, room, janus, i);
     this.setState({fullscr: false, index: null, question: false}, () => {
