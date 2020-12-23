@@ -11,6 +11,7 @@ import {USERNAME_ALREADY_EXIST_ERROR_CODE, LOST_CONNECTION, STORAN_ID} from "../
 import {GuaranteeDeliveryManager} from '../../shared/GuaranteeDelivery';
 import {captureException, captureMessage, updateSentryUser} from "../../shared/sentry";
 import {getDateString} from "../../shared/tools";
+import mqtt from "../../shared/mqtt";
 
 
 class ShidurApp extends Component {
@@ -52,6 +53,7 @@ class ShidurApp extends Component {
     log_list: [],
     preusers_count: 6,
     pnum: {},
+    tcp: "mqtt",
   };
 
   componentWillUnmount() {
@@ -86,6 +88,13 @@ class ShidurApp extends Component {
   };
 
   initApp = (user) => {
+    mqtt.init(user, (connected) => {
+      mqtt.watch((data) => {
+        this.onMqttData(data);
+      })
+      mqtt.join('galaxy/service/#');
+    })
+
     this.setState({user});
     updateSentryUser(user);
     api.fetchConfig()
@@ -256,6 +265,19 @@ class ShidurApp extends Component {
       if (gdm.checkAck(message)) {
         // Ack received, do nothing.
         return;
+      }
+    }
+  };
+
+  onMqttData = (data) => {
+    if(data.type === "event") {
+      delete data.type;
+      this.setState({...data});
+      if(data.sdiout || data.sndman) {
+        setTimeout(() => {
+          console.log("[Shidur] :: Check Full Screen state :: ");
+          this.checkFullScreen();
+        }, 3000);
       }
     }
   };

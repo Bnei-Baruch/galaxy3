@@ -1,7 +1,9 @@
 import React, {Component} from "react";
-import {Label, Table} from "semantic-ui-react";
+import {Label, Popup, Table, Icon} from "semantic-ui-react";
 import {ADMIN_SECRET, ADMIN_SRV_STR1, MONITOR_SRV} from "../../../shared/env";
 import {genUUID} from "../../../shared/tools";
+import mqtt from "../../../shared/mqtt";
+import {mqtt_sys} from "../../../shared/consts";
 
 
 class StatNotes extends Component {
@@ -22,10 +24,25 @@ class StatNotes extends Component {
         str5_count: 0,
         str6_count: 0,
         str7_count: 0,
+        sys: {...mqtt_sys}
     };
 
     componentDidMount() {
-        setInterval(this.getCounts, 10 * 1000)
+        setInterval(this.getCounts, 10 * 1000);
+        mqtt.watch((data, topic) => {
+            this.onMqttData(data, topic);
+        }, true)
+        Object.keys(mqtt_sys).map(t => mqtt.join(t))
+    };
+
+    onMqttData = (data, topic) => {
+      const {sys} = this.state;
+      Object.keys(sys).map(t => {
+        if(t === topic) {
+          sys[t].value = data;
+        }
+      })
+      this.setState({sys})
     };
 
     getCounts = () => {
@@ -64,7 +81,19 @@ class StatNotes extends Component {
 
     render() {
         const {gxy1_count, gxy2_count, gxy3_count, gxy4_count, gxy5_count, gxy6_count, gxy7_count, gxy8_count,
-            str1_count, str2_count, str3_count, str4_count, str5_count, str6_count, str7_count} = this.state;
+            str1_count, str2_count, str3_count, str4_count, str5_count, str6_count, str7_count, sys} = this.state;
+
+        const i = (<Icon name='heart' size='small' />);
+
+        const sys_info = Object.keys(sys).map(v => {
+            return (
+              <div><Table.Cell>{sys[v].name} :</Table.Cell>
+              <Table.Cell>
+                {sys[v].name.match(/^(brecv|bsent)$/) ? (sys[v].value/1000).toFixed(0) + " Kb" : sys[v].value}
+              </Table.Cell>
+            </div>
+            )}
+        )
 
         return (
             <Label attached='top right' size='mini' className='gxy_count' >
@@ -119,8 +148,24 @@ class StatNotes extends Component {
                             <Table.Cell>|</Table.Cell>
                             <Table.Cell>str4 :</Table.Cell>
                             <Table.Cell>{str4_count}</Table.Cell>
-                            <Table.Cell>str8 :</Table.Cell>
-                            <Table.Cell>---</Table.Cell>
+                            <Table.Cell>{i}{i}</Table.Cell>
+                            <Table.Cell>
+                              <Popup trigger={i}
+                                     position='bottom left'
+                                     content={
+                                       <Label className='gxy_count' >
+                                       <Table compact='very'>
+                                         <Table.Body>
+                                           <Table.Row>
+                                             {sys_info}
+                                           </Table.Row>
+                                         </Table.Body>
+                                       </Table>
+                                       </Label>
+                                     }
+                                     on='click'
+                                     hideOnScroll />
+                            </Table.Cell>
                         </Table.Row>
                     </Table.Body>
                 </Table>

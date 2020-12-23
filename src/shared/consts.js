@@ -350,3 +350,14 @@ export const LANGUAGES = [
 ];
 
 export const sketchesByLang = { he: 'Hebrew', ru: 'Russian', es: 'Spanish', en: 'English' };
+
+export const mqtt_sys = {
+  '$SYS/broker/clients/connected': {name: 'clcon', value: 0},
+  '$SYS/broker/messages/received': {name: 'mresv', value: 0},
+  '$SYS/broker/messages/sent': {name: 'msent', value: 0},
+  '$SYS/broker/bytes/received': {name: 'brecv', value: 0},
+  '$SYS/broker/bytes/sent': {name: 'bsent', value: 0},
+  '$SYS/broker/subscriptions/count': {name: 'subnm', value: 0},
+  '$SYS/broker/publish/messages/dropped': {name: 'mdrop', value: 0},
+  '$SYS/broker/clients/maximum': {name: 'clmax', value: 0}
+}

@@ -17,6 +17,7 @@ import ConfigStore from "../../shared/ConfigStore";
 import {GuaranteeDeliveryManager} from "../../shared/GuaranteeDelivery";
 import StatNotes from "./components/StatNotes";
 import {updateSentryUser} from "../../shared/sentry";
+import mqtt from "../../shared/mqtt";
 
 class AdminRoot extends Component {
 
@@ -52,6 +53,7 @@ class AdminRoot extends Component {
         gdm: null,
         // premodStatus: false, Temporary not used.
         showConfirmReloadAll: false,
+        tcp: "mqtt"
     };
 
     componentWillUnmount() {
@@ -123,7 +125,9 @@ class AdminRoot extends Component {
         this.setState({user, gdm});
         updateSentryUser(user);
 
-        api.fetchConfig()
+      mqtt.init(user, () => {})
+
+      api.fetchConfig()
             .then(data => {
                 ConfigStore.setGlobalConfig(data);
                 // this.setState({premodStatus: ConfigStore.dynamicConfig(ConfigStore.PRE_MODERATION_KEY) === 'true'});  Temporary not used.
@@ -243,6 +247,8 @@ class AdminRoot extends Component {
                     // Filter service feeds and sort by timestamp
                     let feeds = list.sort((a, b) => JSON.parse(a.display).timestamp - JSON.parse(b.display).timestamp)
                         .filter(feeder => JSON.parse(feeder.display).role.match(/^(user|guest|ghost)$/));
+
+                    mqtt.join('galaxy/room/' + msg["room"])
 
                     console.log("[Admin] available feeds", feeds);
                     const subscription = [];
@@ -531,28 +537,32 @@ class AdminRoot extends Component {
     };
 
     sendCommandMessage = (command_type) => {
-        const {gateways, feed_user, current_janus, current_room, command_status, gdm} = this.state;
+        const {gateways, feed_user, current_janus, current_room, command_status, gdm, tcp} = this.state;
         const gateway = gateways[current_janus];
         const cmd = {type: command_type, rcmd: true, room: current_room, status: command_status, id: feed_user.id, user: feed_user};
         const toAck = [feed_user.id];
 
-        if(command_type === "audio-out") {
-            gdm.send(cmd, toAck, (cmd) => gateway.sendCmdMessage(cmd))
-                .then(() => {
-                    console.log(`[Admin] MIC delivered.`);
-                }).catch((err) => {
+        if(tcp === "mqtt") {
+            mqtt.send(JSON.stringify(cmd), false, 'galaxy/room/' + current_room);
+        } else {
+            if(command_type === "audio-out") {
+                gdm.send(cmd, toAck, (cmd) => gateway.sendCmdMessage(cmd))
+                    .then(() => {
+                        console.log(`[Admin] MIC delivered.`);
+                    }).catch((err) => {
                     console.error('[Admin] not delivered', err);
                 });
-        } else {
-            gateway.sendCmdMessage(cmd)
-                .catch((err) => {
-                    console.error('[Admin] sendCmdMessage error', err);
-                    alert(err);
-                });
+            } else {
+                gateway.sendCmdMessage(cmd)
+                    .catch((err) => {
+                        console.error('[Admin] sendCmdMessage error', err);
+                      alert(err);
+                  });
+            }
         }
 
         if (command_type === "audio-out") {
-            this.setState({command_status: !command_status})
+           this.setState({command_status: !command_status})
         }
 
     };
@@ -647,6 +657,7 @@ class AdminRoot extends Component {
         let promise;
         if (current_room) {
             promise = this.exitRoom(current_room);
+            mqtt.exit('galaxy/room/' + current_room)
         } else {
             promise = new Promise((resolve, _) => {
                 resolve()
@@ -813,6 +824,7 @@ class AdminRoot extends Component {
           command_status,
           // premodStatus, Temporary not used.
           showConfirmReloadAll,
+          tcp
       } = this.state;
 
       if (appInitError) {
@@ -956,9 +968,6 @@ class AdminRoot extends Component {
 					}
 					on='click'
 					hideOnScroll />;
-		  const chatRoomStatus = <Popup
-				trigger={<Icon color={chatRoomsInitialized ? (chatRoomsInitializedError ? 'red' : 'green') : 'grey'} circular="true" icon="circle" inverted />}
-				content={`Chat status: ${chatRoomsInitializedError || 'OK'}`} />;
 
 			const rootControlPanel = [];
 			if (this.isAllowed('root')) {
@@ -981,7 +990,12 @@ class AdminRoot extends Component {
 					                   onClick={() => this.sendRemoteCommand("premoder-mode")}/>
 					       }/>,*/
 					/*<Popup trigger={<Button color="red" icon='redo' onClick={() => this.setState({showConfirmReloadAll: !showConfirmReloadAll})} />} content='RELOAD ALL' inverted />,*/
-					chatRoomStatus,
+          <Dropdown icon='plug' className='button icon' inline item text={tcp === "mqtt" ? 'MQTT' : 'WebRTC'} >
+            <Dropdown.Menu>
+              <Dropdown.Item onClick={() => this.setState({tcp: "mqtt"})}>MQTT</Dropdown.Item>
+              <Dropdown.Item onClick={() => this.setState({tcp: "webrtc"})}>WebRTC</Dropdown.Item>
+            </Dropdown.Menu>
+          </Dropdown>
 				]);
 			}
 
@@ -1065,6 +1079,7 @@ class AdminRoot extends Component {
                                    selected_user={feed_user}
                                    gateways={gateways}
                                    gdm={this.state.gdm}
+                                   chatRoomsInitializedError={chatRoomsInitializedError}
 																	 onChatRoomsInitialized={this.onChatRoomsInitialized}/>
 
                           </Grid.Column>

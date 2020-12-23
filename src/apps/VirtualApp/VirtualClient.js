@@ -53,7 +53,6 @@ import fullModeSvg from '../../shared/full-mode.svg';
 import ConfigStore from '../../shared/ConfigStore';
 import { GuaranteeDeliveryManager } from '../../shared/GuaranteeDelivery';
 import { toggleFullScreen, isFullScreen } from './FullScreenHelper';
-import {CheckAlive} from '../../shared/CheckAlive';
 
 import {AppBar, Badge, Box, Button as ButtonMD, ButtonGroup, Grid, IconButton} from '@material-ui/core';
 import {ChevronLeft, ChevronRight, PlayCircleOutline} from '@material-ui/icons';
@@ -74,6 +73,7 @@ import Typography from '@material-ui/core/Typography';
 
 import { withTheme } from '@material-ui/core/styles';
 import ThemeSwitcher from './components/ThemeSwitcher/ThemeSwitcher';
+import mqtt from "../../shared/mqtt";
 
 const toggleDesignVersions = () => {
   window.location = isUseNewDesign ? 'https://galaxy.kli.one/user/' : 'https://arvut.kli.one/user/';
@@ -269,6 +269,12 @@ class VirtualClient extends Component {
       this.setState({user, sourceLoading: true});
       return;
     }
+
+    mqtt.init(user, (connected) => {
+      mqtt.watch((message) => {
+        this.handleCmdData(message);
+      })
+    })
 
     const gdm = new GuaranteeDeliveryManager(user.id);
     this.setState({gdm});
@@ -797,6 +803,8 @@ class VirtualClient extends Component {
       this.chat.exitChatRoom(room);
     }
 
+    mqtt.exit('galaxy/room/' + room);
+
     if (shidur) {
       virtualStreamingJanus.destroy({
         success: () => {
@@ -907,6 +915,9 @@ class VirtualClient extends Component {
 							console.error("[User] error updating user state", user.id, err);
 						});
         this.keepAlive();
+
+        // Subscribe to mqtt topic
+        mqtt.join('galaxy/room/' + msg['room']);
 
         const {media: {audio: {audio_device}, video: {video_device}}} = this.state;
         this.publishOwnFeed(!!video_device, !!audio_device);
@@ -1020,12 +1031,7 @@ class VirtualClient extends Component {
           Janus.log(`2 Plugin attached! (${remoteFeed.getPlugin()}, id=${remoteFeed.getId()}). -- This is a multistream subscriber ${remoteFeed}`);
           this.setState({remoteFeed, creatingFeed: false});
           // We wait for the plugin to send us an offer
-          const subscribe = {
-            request: 'join',
-            room: this.state.room,
-            ptype: 'subscriber',
-            streams: subscription
-          };
+          const subscribe = {request: 'join', room: this.state.room, ptype: 'subscriber', streams: subscription};
           remoteFeed.send({message: subscribe});
         },
         error: (error) => {
@@ -1172,9 +1178,10 @@ class VirtualClient extends Component {
         // Send question event for new feed, by notifying all room.
         // FIXME: Can this be done by notifying only the joined feed?
         setTimeout(() => {
-          if (this.state.question || this.state.cammuted ) {
+          if (this.state.cammuted) {
             const msg = {type: "client-state", user: this.state.user};
-            this.chat.sendCmdMessage(msg);
+            //this.chat.sendCmdMessage(msg);
+            mqtt.send(JSON.stringify(msg), false, 'galaxy/room/' + this.state.room);
           }
         }, 3000);
       }
@@ -1360,7 +1367,8 @@ class VirtualClient extends Component {
             this.setState({user, question: !question});
             updateSentryUser(user);
             const msg = {type: "client-state", user};
-            this.chat.sendCmdMessage(msg);
+            //this.chat.sendCmdMessage(msg);
+            mqtt.send(JSON.stringify(msg), true, 'galaxy/room/' + this.state.room);
           }
         })
         .catch(err => {
@@ -1401,7 +1409,8 @@ class VirtualClient extends Component {
               this.setState({user, cammuted: !cammuted});
               updateSentryUser(user);
               const msg = {type: "client-state", user};
-              this.chat.sendCmdMessage(msg);
+              //this.chat.sendCmdMessage(msg);
+              mqtt.send(JSON.stringify(msg), false, 'galaxy/room/' + this.state.room);
             }
           })
           .catch(err => {

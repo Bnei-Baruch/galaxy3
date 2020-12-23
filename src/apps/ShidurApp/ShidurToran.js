@@ -1,11 +1,12 @@
 import React, {Component} from 'react';
-import {Button, Dropdown, Grid, Label, Message, Popup, Segment, Table} from "semantic-ui-react";
+import {Button, Dropdown, Grid, Label, Message, Popup, Segment, Table, Divider} from "semantic-ui-react";
 import './ShidurToran.scss';
 import UsersPreview from "./UsersPreview";
 import api from '../../shared/Api';
 import {RESET_VOTE} from "../../shared/env";
 import {SDIOUT_ID, SNDMAN_ID} from "../../shared/consts"
 import {captureException} from "../../shared/sentry";
+import mqtt from "../../shared/mqtt";
 
 const short_regions = {
   'petach-tikva': 'PT',
@@ -204,8 +205,13 @@ class ShidurToran extends Component {
   };
 
   sdiAction = (action, status, i, feed) => {
-    const { gateways } = this.props;
-    gateways["gxy3"].sendServiceMessage(this.sdiActionMessage_(action, status, i, feed));
+    const { gateways, tcp } = this.props;
+    const msg = this.sdiActionMessage_(action, status, i, feed);
+    if(tcp === "mqtt") {
+      mqtt.send(JSON.stringify(msg), true, 'galaxy/service/shidur');
+    } else {
+      gateways["gxy3"].sendServiceMessage(msg);
+    }
   };
 
   sdiGuaranteeAction = (action, status, i, feed, toAck) => {
@@ -259,7 +265,7 @@ class ShidurToran extends Component {
 
   render() {
 
-    const {group,pre_groups,disabled_rooms,groups,groups_queue,questions,presets,sdiout,sndman,shidur_mode,users_count,preview_mode,log_list,preusers_count,region,region_groups,pnum} = this.props;
+    const {group,pre_groups,disabled_rooms,groups,groups_queue,questions,presets,sdiout,sndman,shidur_mode,users_count,preview_mode,log_list,preusers_count,region,region_groups,pnum, tcp} = this.props;
     const {open,delay,vote,galaxy_mode} = this.state;
     const q = (<b style={{color: 'red', fontSize: '20px', fontFamily: 'Verdana', fontWeight: 'bold'}}>?</b>);
     const next_group = groups[groups_queue] ? groups[groups_queue].description : groups[0] ? groups[0].description : "";
@@ -453,6 +459,14 @@ class ShidurToran extends Component {
                 return(<Button color={region === r ? '' : 'grey'} content={short_regions[r]} onClick={() => this.setRegion(r)} />)
               })}
             </Button.Group>
+            <Divider />
+            <Dropdown icon='plug' className='button icon' inline item text={tcp === "mqtt" ? 'MQTT' : 'WebRTC'} >
+              <Dropdown.Menu>
+                <Dropdown.Item onClick={() => this.props.setProps({tcp: "mqtt"})}>MQTT</Dropdown.Item>
+                <Dropdown.Item onClick={() => this.props.setProps({tcp: "webrtc"})}>WebRTC</Dropdown.Item>
+              </Dropdown.Menu>
+            </Dropdown>
+            <Divider />
           </Segment>
           <Button.Group attached='bottom' size='mini' >
             <Button disabled={shidur_mode === "gvarim"} color='teal' content='Gvarim' onClick={() => this.shidurMode("gvarim")} />

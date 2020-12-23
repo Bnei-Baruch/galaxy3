@@ -46,6 +46,7 @@ import {GuaranteeDeliveryManager} from "../../shared/GuaranteeDelivery";
 import {updateSentryUser} from "../../shared/sentry";
 import {getUserRole, userRolesEnum} from '../../shared/enums';
 import { RegistrationModals } from './RegistrationModals';
+import mqtt from "../../shared/mqtt";
 
 const sortAndFilterFeeds = (feeds) => feeds
   .filter(feed => !feed.display.role.match(/^(ghost|guest)$/))
@@ -219,6 +220,13 @@ class MobileClient extends Component {
           this.setState({user, sourceLoading: true});
           return;
         }
+
+        mqtt.init(user, (connected) => {
+          mqtt.watch((message) => {
+            this.handleCmdData(message);
+          })
+        })
+
         let gdm = new GuaranteeDeliveryManager(user.id);
         this.setState({gdm});
         localStorage.setItem('question', false);
@@ -691,6 +699,8 @@ class MobileClient extends Component {
             this.chat.exitChatRoom(room);
         }
 
+        mqtt.exit('galaxy/room/' + room);
+
         if (this.state.shidur) {
             this.toggleShidur();
         }
@@ -793,6 +803,9 @@ class MobileClient extends Component {
 											console.error("[User] error updating user state", user.id, err);
 										});
                 this.keepAlive();
+
+                // Subscribe to mqtt topic
+                mqtt.join('galaxy/room/' + msg['room']);
 
                 const {media: {audio: {audio_device}, video: {video_device}}} = this.state;
                 this.publishOwnFeed(!!video_device, !!audio_device);
@@ -1084,9 +1097,10 @@ class MobileClient extends Component {
                 // Send question event for new feed, by notifying the whole room.
                 // FIXME: Can this be done by notifying only the joined feed?
                 setTimeout(() => {
-                    if (this.state.question || this.state.cammuted) {
+                    if (this.state.cammuted) {
                         const msg = {type: "client-state", user: this.state.user};
-                        this.chat.sendCmdMessage(msg);
+                        //this.chat.sendCmdMessage(msg);
+                        mqtt.send(JSON.stringify(msg), false, 'galaxy/room/' + this.state.room);
                     }
                 }, 3000);
             }
@@ -1355,7 +1369,8 @@ class MobileClient extends Component {
                     this.setState({user, question: !question});
                     updateSentryUser(user);
                     const msg = {type: "client-state", user};
-                    this.chat.sendCmdMessage(msg);
+                    //this.chat.sendCmdMessage(msg);
+                    mqtt.send(JSON.stringify(msg), true, 'galaxy/room/' + this.state.room);
                 }
             })
             .catch(err => {
@@ -1417,7 +1432,8 @@ class MobileClient extends Component {
                     this.setState({user, cammuted: !cammuted});
                     updateSentryUser(user);
                     const msg = {type: "client-state", user};
-                    this.chat.sendCmdMessage(msg);
+                    //this.chat.sendCmdMessage(msg);
+                    mqtt.send(JSON.stringify(msg), false, 'galaxy/room/' + this.state.room);
                 }
             })
             .catch(err => {

@@ -9,6 +9,7 @@ import GxyJanus from "../../shared/janus-utils";
 import {USERNAME_ALREADY_EXIST_ERROR_CODE, AUDIOOUT_ID} from "../../shared/consts"
 import {GuaranteeDeliveryManager} from '../../shared/GuaranteeDelivery';
 import {captureException, captureMessage} from "../../shared/sentry";
+import mqtt from "../../shared/mqtt";
 
 
 class AudioOutApp extends Component {
@@ -41,6 +42,16 @@ class AudioOutApp extends Component {
 
     initApp = () => {
         const {user} = this.state;
+
+      mqtt.init(user, (connected) => {
+        setTimeout(() => {
+          mqtt.watch((data) => {
+            this.onMqttData(data);
+          })
+          mqtt.join('galaxy/service/#');
+        }, 3000);
+      })
+
         api.setBasicAuth(API_BACKEND_USERNAME, API_BACKEND_PASSWORD);
 
         api.fetchConfig()
@@ -105,6 +116,23 @@ class AudioOutApp extends Component {
         }
     };
 
+  onMqttData = (data) => {
+    const {room, group, status, qst} = data;
+
+    if (data.type === "sdi-fullscr_group" && status && qst) {
+      this.setState({group, room});
+    } else if (data.type === "sdi-fullscr_group" && !status && qst) {
+      this.setState({group: null, room: null});
+    } else if (data.type === "sdi-restart_sdiout") {
+      window.location.reload();
+    } else if (data.type === "audio-out") {
+      this.setState({audio: status});
+    } else if (data.type === "event") {
+      delete data.type;
+      this.setState({...data});
+    }
+  };
+
     onServiceData = (gateway, data, user) => {
       const { gdm } = this.state;
       if (gdm.checkAck(data)) {
@@ -142,7 +170,7 @@ class AudioOutApp extends Component {
 				})
 				.catch((error) => {
 						console.error(`Failed receiving ${data}: ${error}`);
-					
+
 				});
 		};
 
