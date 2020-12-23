@@ -10,6 +10,7 @@ import GxyJanus from "../../shared/janus-utils";
 import {USERNAME_ALREADY_EXIST_ERROR_CODE, SNDMAN_ID} from "../../shared/consts"
 import {GuaranteeDeliveryManager} from '../../shared/GuaranteeDelivery';
 import {captureException, captureMessage, updateSentryUser} from "../../shared/sentry";
+import mqtt from "../../shared/mqtt";
 
 
 class SndmanApp extends Component {
@@ -43,6 +44,16 @@ class SndmanApp extends Component {
     initApp = (user) => {
         this.setState({user});
         updateSentryUser(user);
+
+      mqtt.init(user, (connected) => {
+        setTimeout(() => {
+          mqtt.watch((data) => {
+            this.onMqttData(data);
+          })
+          mqtt.join('galaxy/service/#');
+          mqtt.send(JSON.stringify({type: "event", [user.role]: true}), true, 'galaxy/service/' + user.role);
+        }, 3000);
+      })
 
         api.fetchConfig()
             .then(data => GxyJanus.setGlobalConfig(data))
@@ -95,6 +106,26 @@ class SndmanApp extends Component {
                 }, 10000);
             });
     }
+
+  onMqttData = (data) => {
+    let {col, group, i, status} = data;
+
+    // Shidur action
+    if(data.type === "sdi-fullscr_group" && status) {
+      this["col"+col].fullScreenGroup(i,group);
+    } else if(data.type === "sdi-fullscr_group" && !status) {
+      this["col"+col].toFourGroup(i,group);
+    }
+
+    if(data.type === "event") {
+      delete data.type;
+      this.setState({...data});
+    }
+
+    if(data.type === "sdi-restart_sndman") {
+      window.location.reload();
+    }
+  };
 
     onServiceData = (gateway, data) => {
         const { gdm } = this.state;

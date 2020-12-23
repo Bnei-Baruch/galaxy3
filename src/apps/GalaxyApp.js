@@ -13,6 +13,7 @@ class GalaxyApp extends Component {
         user: null,
         roles: [],
         options: 0,
+        mq: null,
     };
 
     componentDidMount() {
@@ -31,6 +32,7 @@ class GalaxyApp extends Component {
         const allow = getUserRole();
         const options = this.buttonOptions(user.roles);
         this.setState({options: options.length});
+
         if(options.length > 1 && allow !== null) {
             this.setState({user, roles: user.roles});
             updateSentryUser(user);

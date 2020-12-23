@@ -8,7 +8,7 @@ import { Typography } from '@material-ui/core';
 import { CheckAlive } from '../../shared/CheckAlive';
 
 //const isUseNewDesign = new URL(window.location.href).searchParams.has('new_design');
-const isUseNewDesign = window.location.hostname === 'arvut.kli.one';
+const isUseNewDesign = window.location.hostname === 'arvut.kli.one' && window.location.pathname.search(/userm/) === -1;
 
 
 const checkAlive = new CheckAlive();
@@ -151,10 +151,10 @@ class VirtualChat extends Component {
             let what = json['textroom'];
             if (what.match(/^(success|error)$/)) {
               cb(json);
-              what === 'success' && checkAlive.start(this.state.chatroom, room, user);
+              //what === 'success' && checkAlive.start(this.state.chatroom, room, user);
             } else {
               this.onData(json);
-              checkAlive.checkAlive(json)
+              //checkAlive.checkAlive(json)
             }
           },
           ondataerror: (error) => {

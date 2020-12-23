@@ -11,6 +11,7 @@ import {USERNAME_ALREADY_EXIST_ERROR_CODE, LOST_CONNECTION, STORAN_ID} from "../
 import {GuaranteeDeliveryManager} from '../../shared/GuaranteeDelivery';
 import {captureException, captureMessage, updateSentryUser} from "../../shared/sentry";
 import {getDateString} from "../../shared/tools";
+import mqtt from "../../shared/mqtt";
 
 
 class ShidurApp extends Component {
@@ -41,7 +42,7 @@ class ShidurApp extends Component {
     region_groups: [],
     region: null,
     sdiout: false,
-    sndman: false,
+    audout: false,
     users_count: 0,
     gdm: new GuaranteeDeliveryManager(STORAN_ID),
     alert: false,
@@ -52,6 +53,7 @@ class ShidurApp extends Component {
     log_list: [],
     preusers_count: 6,
     pnum: {},
+    tcp: "mqtt",
   };
 
   componentWillUnmount() {
@@ -86,6 +88,14 @@ class ShidurApp extends Component {
   };
 
   initApp = (user) => {
+    mqtt.init(user, (connected) => {
+      mqtt.watch((data) => {
+        this.onMqttData(data);
+      })
+      mqtt.join('galaxy/service/#');
+      mqtt.send(JSON.stringify({type: "event", [user.role]: true}), true, 'galaxy/service/' + user.role);
+    })
+
     this.setState({user});
     updateSentryUser(user);
     api.fetchConfig()
@@ -260,6 +270,19 @@ class ShidurApp extends Component {
     }
   };
 
+  onMqttData = (data) => {
+    if(data.type === "event") {
+      delete data.type;
+      this.setState({...data});
+      if(data.sdiout || data.audout) {
+        setTimeout(() => {
+          console.log("[Shidur] :: Check Full Screen state :: ");
+          this.checkFullScreen();
+        }, 3000);
+      }
+    }
+  };
+
   onServiceData = (gateway, data) => {
     const { gdm } = this.state;
     if (gdm.checkAck(data)) {
@@ -283,7 +306,7 @@ class ShidurApp extends Component {
     if(data.type === "event") {
       delete data.type;
       this.setState({...data});
-      if(data.sdiout || data.sndman) {
+      if(data.sdiout || data.audout) {
         setTimeout(() => {
           console.log("[Shidur] :: Check Full Screen state :: ");
           this.checkFullScreen();

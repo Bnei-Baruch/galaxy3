@@ -6,9 +6,10 @@ import UsersHandleAudioOut from "./UsersHandleAudioOut";
 import api from "../../shared/Api";
 import {API_BACKEND_PASSWORD, API_BACKEND_USERNAME} from "../../shared/env";
 import GxyJanus from "../../shared/janus-utils";
-import {USERNAME_ALREADY_EXIST_ERROR_CODE, AUDIOOUT_ID} from "../../shared/consts"
+import {USERNAME_ALREADY_EXIST_ERROR_CODE, AUDOUT_ID} from "../../shared/consts"
 import {GuaranteeDeliveryManager} from '../../shared/GuaranteeDelivery';
 import {captureException, captureMessage} from "../../shared/sentry";
+import mqtt from "../../shared/mqtt";
 
 
 class AudioOutApp extends Component {
@@ -20,15 +21,15 @@ class AudioOutApp extends Component {
         user: {
             session: 0,
             handle: 0,
-            role: "audioout",
-            display: "audioout",
-            id: AUDIOOUT_ID,
-            name: "audioout"
+            role: "audout",
+            display: "audout",
+            id: AUDOUT_ID,
+            name: "audout"
         },
         gateways: {},
         gatewaysInitialized: false,
         appInitError: null,
-        gdm: new GuaranteeDeliveryManager(AUDIOOUT_ID),
+        gdm: new GuaranteeDeliveryManager(AUDOUT_ID),
     };
 
     componentDidMount() {
@@ -41,6 +42,17 @@ class AudioOutApp extends Component {
 
     initApp = () => {
         const {user} = this.state;
+
+      mqtt.init(user, (connected) => {
+        setTimeout(() => {
+          mqtt.watch((data) => {
+            this.onMqttData(data);
+          })
+          mqtt.join('galaxy/service/shidur');
+          mqtt.send(JSON.stringify({type: "event", [user.role]: true}), true, 'galaxy/service/' + user.role);
+        }, 3000);
+      })
+
         api.setBasicAuth(API_BACKEND_USERNAME, API_BACKEND_PASSWORD);
 
         api.fetchConfig()
@@ -105,6 +117,23 @@ class AudioOutApp extends Component {
         }
     };
 
+  onMqttData = (data) => {
+    const {room, group, status, qst} = data;
+
+    if (data.type === "sdi-fullscr_group" && status && qst) {
+      this.setState({group, room});
+    } else if (data.type === "sdi-fullscr_group" && !status && qst) {
+      this.setState({group: null, room: null});
+    } else if (data.type === "sdi-restart_audout") {
+      window.location.reload();
+    } else if (data.type === "audio-out") {
+      this.setState({audio: status});
+    } else if (data.type === "event") {
+      delete data.type;
+      this.setState({...data});
+    }
+  };
+
     onServiceData = (gateway, data, user) => {
       const { gdm } = this.state;
       if (gdm.checkAck(data)) {
@@ -131,7 +160,7 @@ class AudioOutApp extends Component {
 						this.setState({group, room});
 					} else if (data.type === "sdi-fullscr_group" && !status && qst) {
 						this.setState({group: null, room: null});
-					} else if (data.type === "sdi-restart_sdiout") {
+					} else if (data.type === "sdi-restart_audout") {
 						window.location.reload();
 					} else if (data.type === "audio-out") {
 							this.setState({audio: status});
@@ -142,7 +171,7 @@ class AudioOutApp extends Component {
 				})
 				.catch((error) => {
 						console.error(`Failed receiving ${data}: ${error}`);
-					
+
 				});
 		};
 
