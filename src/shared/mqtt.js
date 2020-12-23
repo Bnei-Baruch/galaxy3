@@ -35,9 +35,11 @@ class MqttMsg {
         qos: 2,
         retain: true,
         topic: 'galaxy/service/' + user.role,
-        payload: {type: "event", [user.role]: false},
-        properties: {messageExpiryInterval: 0, userProperties: user}}
+        payload: JSON.stringify({type: "event", [user.role]: false}),
+        properties: {userProperties: user}}
     }
+
+    console.log("[mqtt] Options: ", options)
 
     const mq = mqtt.connect(`wss://${MQTT_URL}`, options);
     this.mq = mq;
@@ -81,7 +83,7 @@ class MqttMsg {
   watch = (callback, stat) => {
     this.mq.on('message',  (topic, data, packet) => {
       let message = stat ? data.toString() : JSON.parse(data.toString());
-      //console.log("[mqtt] Got data on topic: ", topic, message);
+      console.log("[mqtt] Got data on topic: ", topic, message);
       callback(message, topic)
     })
   }

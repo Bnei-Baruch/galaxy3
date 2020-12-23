@@ -4,7 +4,7 @@ import './ShidurToran.scss';
 import UsersPreview from "./UsersPreview";
 import api from '../../shared/Api';
 import {RESET_VOTE} from "../../shared/env";
-import {SDIOUT_ID, SNDMAN_ID} from "../../shared/consts"
+import {AUDOUT_ID, SDIOUT_ID} from "../../shared/consts"
 import {captureException} from "../../shared/sentry";
 import mqtt from "../../shared/mqtt";
 
@@ -208,7 +208,8 @@ class ShidurToran extends Component {
     const { gateways, tcp } = this.props;
     const msg = this.sdiActionMessage_(action, status, i, feed);
     if(tcp === "mqtt") {
-      mqtt.send(JSON.stringify(msg), true, 'galaxy/service/shidur');
+      let retain = action.match(/^(restart_audout|restart_sdiout)$/)
+      mqtt.send(JSON.stringify(msg), !retain, 'galaxy/service/shidur');
     } else {
       gateways["gxy3"].sendServiceMessage(msg);
     }
@@ -265,7 +266,7 @@ class ShidurToran extends Component {
 
   render() {
 
-    const {group,pre_groups,disabled_rooms,groups,groups_queue,questions,presets,sdiout,sndman,shidur_mode,users_count,preview_mode,log_list,preusers_count,region,region_groups,pnum, tcp} = this.props;
+    const {group,pre_groups,disabled_rooms,groups,groups_queue,questions,presets,sdiout,audout,shidur_mode,users_count,preview_mode,log_list,preusers_count,region,region_groups,pnum, tcp} = this.props;
     const {open,delay,vote,galaxy_mode} = this.state;
     const q = (<b style={{color: 'red', fontSize: '20px', fontFamily: 'Verdana', fontWeight: 'bold'}}>?</b>);
     const next_group = groups[groups_queue] ? groups[groups_queue].description : groups[0] ? groups[0].description : "";
@@ -388,14 +389,14 @@ class ShidurToran extends Component {
           </Message>
           <Button.Group attached='bottom' >
             <Button
-              color={sndman ? "green" : "red"}
-              disabled={!sndman}
-              onClick={() => this.sdiGuaranteeAction("restart_sndman", false, 1, null, [SNDMAN_ID])}>
-              SndMan</Button>
+              color={audout ? "green" : "red"}
+              disabled={!audout}
+              onClick={() => this.sdiAction("restart_audout", false, 1, null)}>
+              AudOut</Button>
             <Button
               color={sdiout ? "green" : "red"}
               disabled={!sdiout}
-              onClick={() => this.sdiGuaranteeAction("restart_sdiout", false, 1, null, [SDIOUT_ID])}>
+              onClick={() => this.sdiAction("restart_sdiout", false, 1, null)}>
               SdiOut</Button>
             <Button
               color="green"

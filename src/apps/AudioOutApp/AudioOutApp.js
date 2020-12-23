@@ -48,7 +48,7 @@ class AudioOutApp extends Component {
           mqtt.watch((data) => {
             this.onMqttData(data);
           })
-          mqtt.join('galaxy/service/#');
+          mqtt.join('galaxy/service/shidur');
           mqtt.send(JSON.stringify({type: "event", [user.role]: true}), true, 'galaxy/service/' + user.role);
         }, 3000);
       })
@@ -124,7 +124,7 @@ class AudioOutApp extends Component {
       this.setState({group, room});
     } else if (data.type === "sdi-fullscr_group" && !status && qst) {
       this.setState({group: null, room: null});
-    } else if (data.type === "sdi-restart_sdiout") {
+    } else if (data.type === "sdi-restart_audout") {
       window.location.reload();
     } else if (data.type === "audio-out") {
       this.setState({audio: status});
