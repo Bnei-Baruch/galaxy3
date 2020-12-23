@@ -8,7 +8,7 @@ import { Typography } from '@material-ui/core';
 import { CheckAlive } from '../../shared/CheckAlive';
 
 //const isUseNewDesign = new URL(window.location.href).searchParams.has('new_design');
-const isUseNewDesign = window.location.hostname === 'arvut.kli.one';
+const isUseNewDesign = window.location.hostname === 'arvut.kli.one' && window.location.pathname.search(/userm/) === -1;
 
 
 const checkAlive = new CheckAlive();
