@@ -228,7 +228,7 @@ class ChatBox extends Component {
     };
 
     render() {
-        const {selected_user, selected_group} = this.props;
+        const {selected_user, selected_group, chatRoomsInitializedError} = this.props;
         const {messages, msg_type, input_value} = this.state;
         const to = selected_user && selected_user.display ? selected_user.display : 'Select User:';
         const group = selected_group ? selected_group : 'All:';
@@ -250,20 +250,21 @@ class ChatBox extends Component {
         });
 
         return (
-            <Segment className='chat_segment'>
-                <Message className='messages_list'>
+            <Segment className='chat_segment' disabled={chatRoomsInitializedError} error>
+                <Message className='messages_list' error={chatRoomsInitializedError} >
                     {list_msgs}
                     <div ref='end'/>
                 </Message>
 
                 <Input fluid type='text' placeholder='Type your message' action value={input_value}
-                       onChange={this.handleInputChange}>
+                       onChange={this.handleInputChange} disabled={chatRoomsInitializedError} error={chatRoomsInitializedError} >
                     <input/>
                     <Select options={send_options}
                             value={msg_type}
                             error={msg_type === "all"}
+                            disabled={chatRoomsInitializedError}
                             onChange={(e, {value}) => this.setState({msg_type: value})}/>
-                    <Button positive negative={msg_type === "all"} onClick={this.sendMessage}>Send</Button>
+                    <Button positive negative={msg_type === "all"} onClick={this.sendMessage} disabled={chatRoomsInitializedError}>Send</Button>
                 </Input>
             </Segment>
         );
