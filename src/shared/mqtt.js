@@ -1,7 +1,7 @@
 import mqtt from 'mqtt';
 import {MQTT_URL} from "./env";
 import {isServiceID} from "./enums";
-import {STORAN_ID} from "./consts";
+import {randomString} from "./tools";
 
 class MqttMsg {
 
@@ -15,10 +15,12 @@ class MqttMsg {
   init = (user, callback) => {
     this.user = user;
 
+    const id = user.role === "user" ? user.id + "-" + randomString(3) : user.id;
+
     let options = {
       keepalive: 10,
       connectTimeout: 10 * 1000,
-      clientId: this.user.id,
+      clientId: id,
       protocolId: 'MQTT',
       protocolVersion: 5,
       clean: true,
