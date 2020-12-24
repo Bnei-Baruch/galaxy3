@@ -29,20 +29,31 @@ class StatNotes extends Component {
 
     componentDidMount() {
         setInterval(this.getCounts, 10 * 1000);
-        mqtt.watch((data, topic) => {
+        if(this.props.root) {
+          mqtt.watch((data, topic) => {
             this.onMqttData(data, topic);
-        }, true)
-        Object.keys(mqtt_sys).map(t => mqtt.join(t))
+          }, true)
+        }
     };
 
     onMqttData = (data, topic) => {
       const {sys} = this.state;
       Object.keys(sys).map(t => {
-        if(t === topic) {
+        if(t === topic && data) {
           sys[t].value = data;
         }
       })
       this.setState({sys})
+    };
+
+    subStat = () => {
+      if(this.props.root)
+        Object.keys(mqtt_sys).map(t => mqtt.join(t))
+    };
+
+    unsubStat = () => {
+      if(this.props.root)
+        Object.keys(mqtt_sys).map(t => mqtt.exit(t))
     };
 
     getCounts = () => {
@@ -163,6 +174,8 @@ class StatNotes extends Component {
                                        </Table>
                                        </Label>
                                      }
+                                     onOpen={this.subStat}
+                                     onClose={this.unsubStat}
                                      on='click'
                                      hideOnScroll />
                             </Table.Cell>

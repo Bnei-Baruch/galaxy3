@@ -1009,7 +1009,7 @@ class AdminRoot extends Component {
 												{/*<Button color='blue' icon='sound' onClick={() => this.sendRemoteCommand("sound_test")} />*/}
 												{infoPopup}
 												{rootControlPanel}
-												<StatNotes data={rooms} />
+												<StatNotes data={rooms} root={this.isAllowed("root")} />
                       </Segment>
                       : null
               }
