@@ -917,7 +917,10 @@ class VirtualClient extends Component {
         this.keepAlive();
 
         // Subscribe to mqtt topic
-        mqtt.join('galaxy/room/' + msg['room']);
+        // FIXME: Make sure here the stream is initialized
+        setTimeout(() => {
+          mqtt.join('galaxy/room/' + msg['room']);
+        }, 3000)
 
         const {media: {audio: {audio_device}, video: {video_device}}} = this.state;
         this.publishOwnFeed(!!video_device, !!audio_device);
