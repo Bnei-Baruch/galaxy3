@@ -163,7 +163,8 @@ class VirtualClient extends Component {
     leftAsideSize: 3,
     shidurForGuestReady: false,
     kliOlamiAttached: true,
-    isKliOlamiShown: true
+    isKliOlamiShown: true,
+    audios: { audios: Number(localStorage.getItem('vrt_lang')) || 2 }
   };
 
   virtualStreamingInitialized() {
@@ -2046,6 +2047,11 @@ class VirtualClient extends Component {
     this.selectRoom(room);
   };
 
+  setAudio(audios, text) {
+    this.setState({ audios: { audios, text } });
+    this.state.virtualStreamingJanus.setAudio(audios, text);
+  }
+
   render() {
     const {
             appInitError,
@@ -2128,7 +2134,8 @@ class VirtualClient extends Component {
             this.setState({ attachedSource: true });
           }}
           videos={videos}
-          audios={audios}
+          setAudio={this.setAudio.bind(this)}
+          audios={audios.audios}
         />
       );
     }
@@ -2451,7 +2458,7 @@ class VirtualClient extends Component {
               audio={media.audio}
               video={media.video}
               closeModal={() => this.setState({ isSettings: false, isOpenTopMenu: false })}
-              setAudio={((a, t) => this.setState({ audios: { audios: a, text: t } }))}
+              setAudio={this.setAudio.bind(this)}
               setVideo={((v) => {
                 virtualStreamingJanus.setVideo(v);
                 this.setState({ videos: v });
