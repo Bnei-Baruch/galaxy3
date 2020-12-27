@@ -103,6 +103,11 @@ class Api {
         return this.logAndParse(`admin set config`, fetch(this.urlFor(`/admin/dynamic_config/${key}`), options));
     }
 
+    adminNewConfig = (data) => {
+        const options = this.makeOptions('POST', data);
+        return this.logAndParse(`admin new config`, fetch(this.urlFor(`/admin/dynamic_config`), options));
+    }
+
     adminResetRoomsStatistics = () => {
         const options = this.makeOptions('DELETE');
         return this.logAndParse(`admin reset rooms statistics`, fetch(this.urlFor('/admin/rooms_statistics'), options));
