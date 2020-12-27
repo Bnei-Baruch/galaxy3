@@ -110,7 +110,7 @@ class AudioOutApp extends Component {
     postInitGateway = (user, gateway) => {
         console.log("[AudioOut] initializing gateway", gateway.name);
 
-        if (gateway.name === "gxy3") {
+        if (gateway.name === "gxy3" && GxyJanus.globalConfig.dynamic_config.galaxy_protocol !== "mqtt") {
             return gateway.initServiceProtocol(user, data => this.onServiceData(gateway, data, user))
         } else {
             return Promise.resolve();
@@ -136,6 +136,9 @@ class AudioOutApp extends Component {
 
     onServiceData = (gateway, data, user) => {
       const { gdm } = this.state;
+      if(GxyJanus.globalConfig.dynamic_config.galaxy_protocol === "mqtt") {
+        return
+      }
       if (gdm.checkAck(data)) {
         // Ack received, do nothing.
         return;

@@ -137,7 +137,7 @@ class SDIOutApp extends Component {
     };
 
     postInitGateway = (user, gateway) => {
-        if (gateway.name === "gxy3") {
+        if (gateway.name === "gxy3" && GxyJanus.globalConfig.dynamic_config.galaxy_protocol !== "mqtt") {
             return gateway.initServiceProtocol(user, data => this.onServiceData(gateway, data));
         }
         return Promise.resolve();
@@ -173,6 +173,9 @@ class SDIOutApp extends Component {
 
     onServiceData = (gateway, data, user) => {
         const { gdm } = this.state;
+        if(GxyJanus.globalConfig.dynamic_config.galaxy_protocol === "mqtt") {
+          return
+        }
         if (gdm.checkAck(data)) {
           // Ack received, do nothing.
           return;
