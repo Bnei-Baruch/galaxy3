@@ -2,6 +2,7 @@ import mqtt from 'mqtt';
 import {MQTT_URL} from "./env";
 import {isServiceID} from "./enums";
 import {randomString} from "./tools";
+import ConfigStore from "./ConfigStore";
 
 class MqttMsg {
 
@@ -24,6 +25,8 @@ class MqttMsg {
       protocolId: 'MQTT',
       protocolVersion: 5,
       clean: true,
+      username: user.email,
+      password: ConfigStore.dynamicConfig("mqtt_auth"),
       properties: {
         sessionExpiryInterval: 5,
         maximumPacketSize: 10000,

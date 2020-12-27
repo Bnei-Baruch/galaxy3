@@ -221,12 +221,6 @@ class MobileClient extends Component {
           return;
         }
 
-        mqtt.init(user, (connected) => {
-          mqtt.watch((message) => {
-            this.handleCmdData(message);
-          })
-        })
-
         let gdm = new GuaranteeDeliveryManager(user.id);
         this.setState({gdm});
         localStorage.setItem('question', false);
@@ -257,6 +251,13 @@ class MobileClient extends Component {
                     ConfigStore.setGlobalConfig(data);
                     this.setState({premodStatus: ConfigStore.dynamicConfig(ConfigStore.PRE_MODERATION_KEY) === 'true'});
                     GxyJanus.setGlobalConfig(data);
+
+                    // Protocol init
+                    mqtt.init(user, (connected) => {
+                      mqtt.watch((message) => {
+                        this.handleCmdData(message);
+                      })
+                    })
                 })
                 .then(() => api.fetchAvailableRooms({with_num_users: true}))
                 .then(data => {

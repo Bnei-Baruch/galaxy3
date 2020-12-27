@@ -270,12 +270,6 @@ class VirtualClient extends Component {
       return;
     }
 
-    mqtt.init(user, (connected) => {
-      mqtt.watch((message) => {
-        this.handleCmdData(message);
-      })
-    })
-
     const gdm = new GuaranteeDeliveryManager(user.id);
     this.setState({gdm});
     const {t} = this.props;
@@ -302,6 +296,13 @@ class VirtualClient extends Component {
             ConfigStore.setGlobalConfig(data);
             this.setState({premodStatus: ConfigStore.dynamicConfig(ConfigStore.PRE_MODERATION_KEY) === 'true'});
             GxyJanus.setGlobalConfig(data);
+
+            // Protocol init
+            mqtt.init(user, () => {
+              mqtt.watch((message) => {
+                this.handleCmdData(message);
+              })
+            })
           })
           .then(() => (api.fetchAvailableRooms({with_num_users: true})))
           .then(data => {
