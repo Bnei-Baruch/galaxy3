@@ -506,7 +506,7 @@ export default class VirtualStreamingJanus {
         clearInterval(this.talking);
       }
       this.audioElement.volume = this.mixvolume;
-      const id = Number(localStorage.getItem('vrt_lang')) || 15;
+      const id = Number(localStorage.getItem('vrt_lang')) || 2;
       console.log(' :: Switch STR Stream: ', localStorage.getItem('vrt_lang'), id);
       this.audioJanusStream.send({'message': { 'request': 'switch', 'id': id }});
       console.log(' :: Stop TRL Stream: ');
