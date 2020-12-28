@@ -1508,7 +1508,7 @@ class VirtualClient extends Component {
     const {user, cammuted, question, muted} = this.state;
 
     return (<div className="video" key={index}>
-      <div className={classNames('video__overlay')}>
+      <div className={classNames('video__overlay', { 'talk-frame': !muted })}>
         {question ?
           <div className="question">
             <svg viewBox="0 0 50 50">
