@@ -87,15 +87,17 @@ class StatNotes extends Component {
 
         const sys_info = mqtt_stat.data.map(n => {
           return (
+              <Table.Cell>
             <List as='ul' key={n.node}>
               <List.Item as='li' key={n.node + 'li'} >{n.node}
-                <List.List as='ul' key={n.node + 'ul'} >
+                <List.List as='ul' key={n.node + 'ul'} style={{width: "max-content"}}>
                 {Object.keys(n.stats).map(s => {
                   return (<List.Item key={n.node + s} as='li'>{s}: {n.stats[s]}</List.Item>)
                 })}
                 </List.List>
               </List.Item>
             </List>
+              </Table.Cell>
           )
         })
 
@@ -152,7 +154,7 @@ class StatNotes extends Component {
                             <Table.Cell>|</Table.Cell>
                             <Table.Cell>str4 :</Table.Cell>
                             <Table.Cell>{str4_count}</Table.Cell>
-                            <Table.Cell>{i}{i}</Table.Cell>
+                            <Table.Cell>emq :</Table.Cell>
                             <Table.Cell>
                               <Popup trigger={i}
                                      position='bottom left'
