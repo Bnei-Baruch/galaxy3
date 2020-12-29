@@ -303,13 +303,8 @@ class UsersQuad extends Component {
       mqtt.send(JSON.stringify(msg), true, 'galaxy/service/shidur');
 
       // FIXME: We need it for question statistics!
-      if (status) {
-        gateways[inst].chatRoomJoin(room, this.props.user)
-          .then(() => gateways[inst].sendCmdMessage(cmd))
-      } else {
-        gateways[inst].sendCmdMessage(cmd)
-          .then(() => gateways[inst].chatRoomLeave(room));
-      }
+      gateways["gxy3"].sendServiceMessage(msg)
+
     } else {
       if (group && group.users) {
         // let toAck = group.users.map(u => u.role.match(/^(user|ghost|guest)$/) ? u.id : null).filter(id => !!id);
