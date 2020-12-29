@@ -125,13 +125,12 @@ class AdminRoot extends Component {
         this.setState({user, gdm});
         updateSentryUser(user);
 
-      mqtt.init(user, () => {})
-
       api.fetchConfig()
             .then(data => {
                 ConfigStore.setGlobalConfig(data);
                 this.setState({premodStatus: ConfigStore.dynamicConfig(ConfigStore.PRE_MODERATION_KEY) === 'true'});
                 GxyJanus.setGlobalConfig(data);
+                mqtt.init(user, (data) => console.log("[Admin] mqtt init: ", data))
             })
             .then(() => this.initGateways(user))
             .then(this.pollRooms)

@@ -302,7 +302,8 @@ class VirtualClient extends Component {
             GxyJanus.setGlobalConfig(data);
 
             // Protocol init
-            mqtt.init(user, () => {
+            mqtt.init(user, (data) => {
+              console.log("[mqtt] init: ", data);
               mqtt.watch((message) => {
                 this.handleCmdData(message);
               })
@@ -1266,10 +1267,9 @@ class VirtualClient extends Component {
   };
 
   handleCmdData = (data) => {
-    const {user, cammuted, gxy_protocol} = this.state;
-    if(gxy_protocol === "mqtt") return;
-
+    const {user, cammuted} = this.state;
     const {type,id} = data;
+
     if (type === 'client-reconnect' && user.id === id) {
       this.exitRoom(/* reconnect= */ true, () => {
         this.initClient(/* reconnect= */ true);
@@ -1791,6 +1791,7 @@ class VirtualClient extends Component {
           room={room}
           user={user}
           gdm={this.state.gdm}
+          msg_protocol={this.state.msg_protocol}
           onCmdMsg={this.handleCmdData}
           onNewMsg={this.onChatMessage}
           room_chat={isRoomChat}
@@ -2445,6 +2446,7 @@ class VirtualClient extends Component {
               room={room}
               user={user}
               gdm={this.state.gdm}
+              msg_protocol={this.state.msg_protocol}
               onCmdMsg={this.handleCmdData}
               onNewMsg={this.onChatMessage} />
           </div>

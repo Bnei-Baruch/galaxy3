@@ -257,7 +257,8 @@ class MobileClient extends Component {
                     GxyJanus.setGlobalConfig(data);
 
                     // Protocol init
-                    mqtt.init(user, (connected) => {
+                    mqtt.init(user, (data) => {
+                      console.log("[mqtt] init: ", data);
                       mqtt.watch((message) => {
                         this.handleCmdData(message);
                       })
@@ -1268,10 +1269,9 @@ class MobileClient extends Component {
     }
 
     handleCmdData = (data) => {
-        const {user, cammuted, gxy_protocol} = this.state;
-      if(gxy_protocol === "mqtt") return;
-
+        const {user, cammuted} = this.state;
         const {type,id} = data;
+
         if (type === 'client-reconnect' && user.id === id) {
             this.exitRoom(true, () => {
                 this.initClient(true);
