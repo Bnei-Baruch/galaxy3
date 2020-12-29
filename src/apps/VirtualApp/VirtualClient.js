@@ -163,7 +163,9 @@ class VirtualClient extends Component {
     leftAsideSize: 3,
     shidurForGuestReady: false,
     kliOlamiAttached: true,
-    isKliOlamiShown: true
+    isKliOlamiShown: true,
+    audios: { audios: Number(localStorage.getItem('vrt_lang')) || 2 },
+    msg_protocol: "mqtt"
   };
 
   virtualStreamingInitialized() {
@@ -251,12 +253,6 @@ class VirtualClient extends Component {
       return;
     }
 
-    mqtt.init(user, (connected) => {
-      mqtt.watch((message) => {
-        this.handleCmdData(message);
-      })
-    })
-
     const gdm = new GuaranteeDeliveryManager(user.id);
     this.setState({gdm});
     const {t} = this.props;
@@ -281,8 +277,19 @@ class VirtualClient extends Component {
       api.fetchConfig()
           .then(data => {
             ConfigStore.setGlobalConfig(data);
-            this.setState({premodStatus: ConfigStore.dynamicConfig(ConfigStore.PRE_MODERATION_KEY) === 'true'});
+            this.setState({
+              premodStatus: ConfigStore.dynamicConfig(ConfigStore.PRE_MODERATION_KEY) === 'true',
+              msg_protocol: ConfigStore.dynamicConfig("galaxy_protocol")
+            });
             GxyJanus.setGlobalConfig(data);
+
+            // Protocol init
+            mqtt.init(user, (data) => {
+              console.log("[mqtt] init: ", data);
+              mqtt.watch((message) => {
+                this.handleCmdData(message);
+              })
+            })
           })
           .then(() => (api.fetchAvailableRooms({with_num_users: true})))
           .then(data => {
@@ -898,7 +905,10 @@ class VirtualClient extends Component {
         this.keepAlive();
 
         // Subscribe to mqtt topic
-        mqtt.join('galaxy/room/' + msg['room']);
+        // FIXME: Make sure here the stream is initialized
+        setTimeout(() => {
+          mqtt.join('galaxy/room/' + msg['room']);
+        }, 3000)
 
         const {media: {audio: {audio_device}, video: {video_device}}} = this.state;
         this.publishOwnFeed(!!video_device, !!audio_device);
@@ -1161,8 +1171,11 @@ class VirtualClient extends Component {
         setTimeout(() => {
           if (this.state.cammuted) {
             const msg = {type: "client-state", user: this.state.user};
-            //this.chat.sendCmdMessage(msg);
-            mqtt.send(JSON.stringify(msg), false, 'galaxy/room/' + this.state.room);
+            if(this.state.msg_protocol === "mqtt") {
+              mqtt.send(JSON.stringify(msg), false, 'galaxy/room/' + this.state.room);
+            } else {
+              this.chat.sendCmdMessage(msg);
+            }
           }
         }, 3000);
       }
@@ -1238,6 +1251,7 @@ class VirtualClient extends Component {
   handleCmdData = (data) => {
     const {user, cammuted} = this.state;
     const {type,id} = data;
+
     if (type === 'client-reconnect' && user.id === id) {
       this.exitRoom(/* reconnect= */ true, () => {
         this.initClient(/* reconnect= */ true);
@@ -1348,8 +1362,11 @@ class VirtualClient extends Component {
             this.setState({user, question: !question});
             updateSentryUser(user);
             const msg = {type: "client-state", user};
-            //this.chat.sendCmdMessage(msg);
-            mqtt.send(JSON.stringify(msg), true, 'galaxy/room/' + this.state.room);
+            if(this.state.msg_protocol === "mqtt") {
+              mqtt.send(JSON.stringify(msg), true, 'galaxy/room/' + this.state.room);
+            } else {
+              this.chat.sendCmdMessage(msg);
+            }
           }
         })
         .catch(err => {
@@ -1390,8 +1407,11 @@ class VirtualClient extends Component {
               this.setState({user, cammuted: !cammuted});
               updateSentryUser(user);
               const msg = {type: "client-state", user};
-              //this.chat.sendCmdMessage(msg);
-              mqtt.send(JSON.stringify(msg), false, 'galaxy/room/' + this.state.room);
+              if(this.state.msg_protocol === "mqtt") {
+                mqtt.send(JSON.stringify(msg), false, 'galaxy/room/' + this.state.room);
+              } else {
+                this.chat.sendCmdMessage(msg);
+              }
             }
           })
           .catch(err => {
@@ -1753,6 +1773,7 @@ class VirtualClient extends Component {
           room={room}
           user={user}
           gdm={this.state.gdm}
+          msg_protocol={this.state.msg_protocol}
           onCmdMsg={this.handleCmdData}
           onNewMsg={this.onChatMessage}
           room_chat={isRoomChat}
@@ -2024,6 +2045,11 @@ class VirtualClient extends Component {
     this.selectRoom(room);
   };
 
+  setAudio(audios, text) {
+    this.setState({ audios: { audios, text } });
+    this.state.virtualStreamingJanus.setAudio(audios, text);
+  }
+
   render() {
     const {
             appInitError,
@@ -2106,7 +2132,8 @@ class VirtualClient extends Component {
             this.setState({ attachedSource: true });
           }}
           videos={videos}
-          audios={audios}
+          setAudio={this.setAudio.bind(this)}
+          audios={audios.audios}
         />
       );
     }
@@ -2407,6 +2434,7 @@ class VirtualClient extends Component {
               room={room}
               user={user}
               gdm={this.state.gdm}
+              msg_protocol={this.state.msg_protocol}
               onCmdMsg={this.handleCmdData}
               onNewMsg={this.onChatMessage} />
           </div>
@@ -2429,7 +2457,7 @@ class VirtualClient extends Component {
               audio={media.audio}
               video={media.video}
               closeModal={() => this.setState({ isSettings: false, isOpenTopMenu: false })}
-              setAudio={((a, t) => this.setState({ audios: { audios: a, text: t } }))}
+              setAudio={this.setAudio.bind(this)}
               setVideo={((v) => {
                 virtualStreamingJanus.setVideo(v);
                 this.setState({ videos: v });

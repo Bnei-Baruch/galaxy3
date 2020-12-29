@@ -51,7 +51,7 @@ class AdminRoot extends Component {
         users_count: 0,
         command_status: true,
         gdm: null,
-        // premodStatus: false, Temporary not used.
+        premodStatus: false,
         showConfirmReloadAll: false,
         tcp: "mqtt"
     };
@@ -125,13 +125,12 @@ class AdminRoot extends Component {
         this.setState({user, gdm});
         updateSentryUser(user);
 
-      mqtt.init(user, () => {})
-
       api.fetchConfig()
             .then(data => {
                 ConfigStore.setGlobalConfig(data);
-                // this.setState({premodStatus: ConfigStore.dynamicConfig(ConfigStore.PRE_MODERATION_KEY) === 'true'});  Temporary not used.
+                this.setState({premodStatus: ConfigStore.dynamicConfig(ConfigStore.PRE_MODERATION_KEY) === 'true'});
                 GxyJanus.setGlobalConfig(data);
+                mqtt.init(user, (data) => console.log("[Admin] mqtt init: ", data))
             })
             .then(() => this.initGateways(user))
             .then(this.pollRooms)
@@ -569,32 +568,23 @@ class AdminRoot extends Component {
 
     sendRemoteCommand = (command_type) => {
         this.sendCommandMessage(command_type);
-        return;
 
-        /* TEMPORARY NOT USED */
-        /* const {gateways, feed_user, current_janus, current_room, command_status, gdm} = this.state;
+        const {gateways, feed_user, current_janus, current_room, command_status, gdm} = this.state;
 
         if (command_type === "premoder-mode") {
             const value = !this.state.premodStatus;
-            api.adminSetConfig(ConfigStore.PRE_MODERATION_KEY, value.toString())
+            api.adminSetConfig(ConfigStore.PRE_MODERATION_KEY, value)
                 .then(() => {
-                    ConfigStore.setDynamicConfig(ConfigStore.PRE_MODERATION_KEY, value.toString());
+                    ConfigStore.setDynamicConfig(ConfigStore.PRE_MODERATION_KEY, JSON.stringify(value));
                     this.setState({premodStatus: value});
 
-                    const msg = {
-                        type: "reload-config",
-                        status: value,
-                        id: null,
-                        user: null,
-                        room: null,
-                    };
+                    const msg = {type: "reload-config", status: value, id: null, user: null, room: null};
                     Object.values(gateways).forEach(gateway =>
                         gateway.sendProtocolMessage(msg)
                             .catch(alert));
                 })
                 .catch(err => {
 									alert(err);
-									captureException(err, {source: 'AdminRoot'});
 								});
             return;
         }
@@ -640,7 +630,7 @@ class AdminRoot extends Component {
 
         if (command_type === "audio-out") {
             this.setState({command_status: !command_status})
-        }*/
+        }
     };
 
     joinRoom = (data) => {
@@ -822,7 +812,7 @@ class AdminRoot extends Component {
           users_count,
           appInitError,
           command_status,
-          // premodStatus, Temporary not used.
+          premodStatus,
           showConfirmReloadAll,
           tcp
       } = this.state;
@@ -981,15 +971,15 @@ class AdminRoot extends Component {
 					<Popup trigger={<Button negative icon='user x' onClick={() => this.sendRemoteCommand("client-kicked")} />} content='Kick' inverted />,
 					/*<Popup trigger={<Button color="pink" icon='eye' onClick={() => this.sendDataMessage("video-mute")} />} content='Cam Mute/Unmute' inverted />,*/
 					/*<Popup trigger={<Button color="blue" icon='power off' onClick={() => this.sendRemoteCommand("client-disconnect")} />} content='Disconnect(LOST FEED HERE!)' inverted />,*/
-					/*<Popup inverted
+					<Popup inverted
 					       content={`${premodStatus ? 'Disable' : 'Enable'} Pre Moderation Mode`}
 					       trigger={
 					           <Button color="blue"
 					                   icon='copyright'
 					                   inverted={premodStatus}
 					                   onClick={() => this.sendRemoteCommand("premoder-mode")}/>
-					       }/>,*/
-					/*<Popup trigger={<Button color="red" icon='redo' onClick={() => this.setState({showConfirmReloadAll: !showConfirmReloadAll})} />} content='RELOAD ALL' inverted />,*/
+					       }/>,
+					<Popup trigger={<Button color="red" icon='redo' onClick={() => this.setState({showConfirmReloadAll: !showConfirmReloadAll})} />} content='RELOAD ALL' inverted />,
           <Dropdown icon='plug' className='button icon' inline item text={tcp === "mqtt" ? 'MQTT' : 'WebRTC'} >
             <Dropdown.Menu>
               <Dropdown.Item onClick={() => this.setState({tcp: "mqtt"})}>MQTT</Dropdown.Item>
@@ -1009,7 +999,7 @@ class AdminRoot extends Component {
 												{/*<Button color='blue' icon='sound' onClick={() => this.sendRemoteCommand("sound_test")} />*/}
 												{infoPopup}
 												{rootControlPanel}
-												<StatNotes data={rooms} />
+												<StatNotes data={rooms} root={this.isAllowed("root")} />
                       </Segment>
                       : null
               }

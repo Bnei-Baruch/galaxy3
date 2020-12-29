@@ -233,6 +233,7 @@ class VirtualChat extends Component {
         console.log('[VirtualChat]:: It\'s private message: ' + dateString + ' : ' + from + ' : ' + msg);
         let { support_msgs } = this.state;
         if(message.type && message.type !== 'chat') {
+          if(this.props.msg_protocol === "mqtt") return;
           console.log('[VirtualChat] :: It\'s remote command :: ', message);
           this.props.onCmdMsg(message);
         } else {
@@ -252,6 +253,7 @@ class VirtualChat extends Component {
         let { messages } = this.state;
         console.log('[VirtualChat]-:: It\'s public message: ' + msg);
         if(message.type && message.type !== 'chat') {
+          if(this.props.msg_protocol === "mqtt") return;
           console.log('[VirtualChat]:: It\'s remote command :: ', message);
           this.props.onCmdMsg(message);
         } else {

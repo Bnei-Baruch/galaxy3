@@ -119,6 +119,7 @@ class MobileClient extends Component {
         settingsActiveIndex: -1,
         gdm: null,
         premodStatus: false,
+        msg_protocol: "mqtt"
     };
 
   shidurInitialized() {
@@ -221,12 +222,6 @@ class MobileClient extends Component {
           return;
         }
 
-        mqtt.init(user, (connected) => {
-          mqtt.watch((message) => {
-            this.handleCmdData(message);
-          })
-        })
-
         let gdm = new GuaranteeDeliveryManager(user.id);
         this.setState({gdm});
         localStorage.setItem('question', false);
@@ -255,8 +250,19 @@ class MobileClient extends Component {
             api.fetchConfig()
                 .then(data => {
                     ConfigStore.setGlobalConfig(data);
-                    this.setState({premodStatus: ConfigStore.dynamicConfig(ConfigStore.PRE_MODERATION_KEY) === 'true'});
+                    this.setState({
+                      premodStatus: ConfigStore.dynamicConfig(ConfigStore.PRE_MODERATION_KEY) === 'true',
+                      msg_protocol: ConfigStore.dynamicConfig("galaxy_protocol")
+                    });
                     GxyJanus.setGlobalConfig(data);
+
+                    // Protocol init
+                    mqtt.init(user, (data) => {
+                      console.log("[mqtt] init: ", data);
+                      mqtt.watch((message) => {
+                        this.handleCmdData(message);
+                      })
+                    })
                 })
                 .then(() => api.fetchAvailableRooms({with_num_users: true}))
                 .then(data => {
@@ -805,7 +811,10 @@ class MobileClient extends Component {
                 this.keepAlive();
 
                 // Subscribe to mqtt topic
-                mqtt.join('galaxy/room/' + msg['room']);
+                // FIXME: Make sure here the stream is initialized
+                setTimeout(() => {
+                  mqtt.join('galaxy/room/' + msg['room']);
+                }, 3000)
 
                 const {media: {audio: {audio_device}, video: {video_device}}} = this.state;
                 this.publishOwnFeed(!!video_device, !!audio_device);
@@ -1099,8 +1108,11 @@ class MobileClient extends Component {
                 setTimeout(() => {
                     if (this.state.cammuted) {
                         const msg = {type: "client-state", user: this.state.user};
-                        //this.chat.sendCmdMessage(msg);
-                        mqtt.send(JSON.stringify(msg), false, 'galaxy/room/' + this.state.room);
+                        if(this.state.msg_protocol === "mqtt") {
+                          mqtt.send(JSON.stringify(msg), false, 'galaxy/room/' + this.state.room);
+                        } else {
+                          this.chat.sendCmdMessage(msg);
+                        }
                     }
                 }, 3000);
             }
@@ -1259,6 +1271,7 @@ class MobileClient extends Component {
     handleCmdData = (data) => {
         const {user, cammuted} = this.state;
         const {type,id} = data;
+
         if (type === 'client-reconnect' && user.id === id) {
             this.exitRoom(true, () => {
                 this.initClient(true);
@@ -1369,8 +1382,11 @@ class MobileClient extends Component {
                     this.setState({user, question: !question});
                     updateSentryUser(user);
                     const msg = {type: "client-state", user};
-                    //this.chat.sendCmdMessage(msg);
-                    mqtt.send(JSON.stringify(msg), true, 'galaxy/room/' + this.state.room);
+                    if(this.state.msg_protocol === "mqtt") {
+                      mqtt.send(JSON.stringify(msg), true, 'galaxy/room/' + this.state.room);
+                    } else {
+                      this.chat.sendCmdMessage(msg);
+                    }
                 }
             })
             .catch(err => {
@@ -1432,8 +1448,11 @@ class MobileClient extends Component {
                     this.setState({user, cammuted: !cammuted});
                     updateSentryUser(user);
                     const msg = {type: "client-state", user};
-                    //this.chat.sendCmdMessage(msg);
-                    mqtt.send(JSON.stringify(msg), false, 'galaxy/room/' + this.state.room);
+                    if(this.state.msg_protocol === "mqtt") {
+                      mqtt.send(JSON.stringify(msg), false, 'galaxy/room/' + this.state.room);
+                    } else {
+                      this.chat.sendCmdMessage(msg);
+                    }
                 }
             })
             .catch(err => {
