@@ -79,6 +79,7 @@ class ShidurApp extends Component {
       delete user.roles;
       user.role = "shidur";
       user.session = 0;
+      user.email = "toran@galaxy.kli.one"
       this.initApp(user);
     } else {
       alert("Access denied!");
@@ -88,14 +89,6 @@ class ShidurApp extends Component {
   };
 
   initApp = (user) => {
-    mqtt.init(user, (connected) => {
-      mqtt.watch((data) => {
-        this.onMqttData(data);
-      })
-      mqtt.join('galaxy/service/#');
-      mqtt.send(JSON.stringify({type: "event", [user.role]: true}), true, 'galaxy/service/' + user.role);
-    })
-
     this.setState({user});
     updateSentryUser(user);
     api.fetchConfig()
@@ -110,6 +103,15 @@ class ShidurApp extends Component {
   };
 
   initGateways = (user) => {
+    mqtt.init(user, (data) => {
+      console.log("[Shidur] mqtt init: ", data);
+      mqtt.watch((data) => {
+        this.onMqttData(data);
+      })
+      mqtt.join('galaxy/service/#');
+      mqtt.send(JSON.stringify({type: "event", [user.role]: true}), true, 'galaxy/service/' + user.role);
+    })
+
     const gateways = GxyJanus.makeGateways("rooms");
     this.setState({gateways});
 

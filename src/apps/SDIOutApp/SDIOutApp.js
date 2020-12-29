@@ -26,6 +26,7 @@ class SDIOutApp extends Component {
             display: "sdiout",
             id: SDIOUT_ID,
             name: "sdiout",
+            email: "sdiout@galaxy.kli.one"
         },
         qids: [],
         qcol: 0,
@@ -72,16 +73,6 @@ class SDIOutApp extends Component {
     initApp = () => {
         const {user} = this.state;
 
-        mqtt.init(user, (connected) => {
-          setTimeout(() => {
-            mqtt.watch((data) => {
-              this.onMqttData(data);
-            })
-            mqtt.join('galaxy/service/shidur');
-            mqtt.send(JSON.stringify({type: "event", [user.role]: true}), true, 'galaxy/service/' + user.role);
-          }, 3000);
-        })
-
         api.setBasicAuth(API_BACKEND_USERNAME, API_BACKEND_PASSWORD);
 
         api.fetchConfig()
@@ -95,6 +86,16 @@ class SDIOutApp extends Component {
     };
 
     initGateways = (user) => {
+        mqtt.init(user, (data) => {
+          console.log("[SDIOut] mqtt init: ", data)
+          setTimeout(() => {
+            mqtt.watch((data) => {
+              this.onMqttData(data);
+            })
+            mqtt.join('galaxy/service/shidur');
+            mqtt.send(JSON.stringify({type: "event", [user.role]: true}), true, 'galaxy/service/' + user.role);
+          }, 3000);
+        })
         const gateways = GxyJanus.makeGateways("rooms");
         this.setState({gateways});
 
@@ -137,7 +138,7 @@ class SDIOutApp extends Component {
     };
 
     postInitGateway = (user, gateway) => {
-        if (gateway.name === "gxy3") {
+        if (gateway.name === "gxy3" && GxyJanus.globalConfig.dynamic_config.galaxy_protocol !== "mqtt") {
             return gateway.initServiceProtocol(user, data => this.onServiceData(gateway, data));
         }
         return Promise.resolve();
@@ -173,6 +174,9 @@ class SDIOutApp extends Component {
 
     onServiceData = (gateway, data, user) => {
         const { gdm } = this.state;
+        if(GxyJanus.globalConfig.dynamic_config.galaxy_protocol === "mqtt") {
+          return
+        }
         if (gdm.checkAck(data)) {
           // Ack received, do nothing.
           return;

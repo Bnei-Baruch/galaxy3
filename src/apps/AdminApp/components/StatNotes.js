@@ -1,9 +1,7 @@
 import React, {Component} from "react";
-import {Label, Popup, Table, Icon} from "semantic-ui-react";
-import {ADMIN_SECRET, ADMIN_SRV_STR1, MONITOR_SRV} from "../../../shared/env";
+import {Label, Popup, Table, Icon, List} from "semantic-ui-react";
+import {ADMIN_MQTT_AUTH, ADMIN_MQTT_URL, ADMIN_SECRET, ADMIN_SRV_STR1, MONITOR_SRV} from "../../../shared/env";
 import {genUUID} from "../../../shared/tools";
-import mqtt from "../../../shared/mqtt";
-import {mqtt_sys} from "../../../shared/consts";
 
 
 class StatNotes extends Component {
@@ -24,40 +22,18 @@ class StatNotes extends Component {
         str5_count: 0,
         str6_count: 0,
         str7_count: 0,
-        sys: {...mqtt_sys}
+        mqtt_stat: {data: []}
     };
 
     componentDidMount() {
         setInterval(this.getCounts, 10 * 1000);
-        if(this.props.root) {
-          mqtt.watch((data, topic) => {
-            this.onMqttData(data, topic);
-          }, true)
-        }
-    };
-
-    onMqttData = (data, topic) => {
-      const {sys} = this.state;
-      Object.keys(sys).map(t => {
-        if(t === topic && data) {
-          sys[t].value = data;
-        }
-      })
-      this.setState({sys})
-    };
-
-    subStat = () => {
-      if(this.props.root)
-        Object.keys(mqtt_sys).map(t => mqtt.join(t))
-    };
-
-    unsubStat = () => {
-      if(this.props.root)
-        Object.keys(mqtt_sys).map(t => mqtt.exit(t))
     };
 
     getCounts = () => {
         this.getStr1Count();
+        if(this.props.root) {
+           this.getMqttStat();
+        }
         fetch(`${MONITOR_SRV}`)
             .then((response) => {
             if (response.ok) {
@@ -90,21 +66,40 @@ class StatNotes extends Component {
         });
     };
 
+    getMqttStat = () => {
+        fetch(`${ADMIN_MQTT_URL}`,{
+          method: 'GET',
+          headers: {'Authorization': 'Basic ' + btoa(`${ADMIN_MQTT_AUTH}`)},
+        }).then((response) => {
+          if (response.ok) {
+            return response.json().then(mqtt => {
+              this.setState({mqtt_stat: mqtt});
+            });
+          }
+        }).catch(err => console.log(err));
+    };
+
     render() {
         const {gxy1_count, gxy2_count, gxy3_count, gxy4_count, gxy5_count, gxy6_count, gxy7_count, gxy8_count,
-            str1_count, str2_count, str3_count, str4_count, str5_count, str6_count, str7_count, sys} = this.state;
+            str1_count, str2_count, str3_count, str4_count, str5_count, str6_count, str7_count, mqtt_stat} = this.state;
 
         const i = (<Icon name='heart' size='small' />);
 
-        const sys_info = Object.keys(sys).map(v => {
-            return (
-              <div><Table.Cell>{sys[v].name} :</Table.Cell>
+        const sys_info = mqtt_stat.data.map(n => {
+          return (
               <Table.Cell>
-                {sys[v].name.match(/^(brecv|bsent)$/) ? (sys[v].value/1000).toFixed(0) + " Kb" : sys[v].value}
+            <List as='ul' key={n.node}>
+              <List.Item as='li' key={n.node + 'li'} >{n.node}
+                <List.List as='ul' key={n.node + 'ul'} style={{width: "max-content"}}>
+                {Object.keys(n.stats).map(s => {
+                  return (<List.Item key={n.node + s} as='li'>{s}: {n.stats[s]}</List.Item>)
+                })}
+                </List.List>
+              </List.Item>
+            </List>
               </Table.Cell>
-            </div>
-            )}
-        )
+          )
+        })
 
         return (
             <Label attached='top right' size='mini' className='gxy_count' >
@@ -159,7 +154,7 @@ class StatNotes extends Component {
                             <Table.Cell>|</Table.Cell>
                             <Table.Cell>str4 :</Table.Cell>
                             <Table.Cell>{str4_count}</Table.Cell>
-                            <Table.Cell>{i}{i}</Table.Cell>
+                            <Table.Cell>emq :</Table.Cell>
                             <Table.Cell>
                               <Popup trigger={i}
                                      position='bottom left'
@@ -174,8 +169,6 @@ class StatNotes extends Component {
                                        </Table>
                                        </Label>
                                      }
-                                     onOpen={this.subStat}
-                                     onClose={this.unsubStat}
                                      on='click'
                                      hideOnScroll />
                             </Table.Cell>
