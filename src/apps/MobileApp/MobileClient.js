@@ -259,6 +259,7 @@ class MobileClient extends Component {
                     // Protocol init
                     mqtt.init(user, (data) => {
                       console.log("[mqtt] init: ", data);
+                      mqtt.join('galaxy/users/broadcast');
                       mqtt.watch((message) => {
                         this.handleCmdData(message);
                       })

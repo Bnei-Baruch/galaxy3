@@ -33,6 +33,7 @@ class SndmanApp extends Component {
             delete user.roles;
             user.role = "sndman";
             user.session = 0;
+            user.email = "sndman@galaxy.kli.one";
             this.initApp(user);
         } else {
             alert("Access denied!");
@@ -45,16 +46,6 @@ class SndmanApp extends Component {
         this.setState({user});
         updateSentryUser(user);
 
-      mqtt.init(user, (connected) => {
-        setTimeout(() => {
-          mqtt.watch((data) => {
-            this.onMqttData(data);
-          })
-          mqtt.join('galaxy/service/#');
-          mqtt.send(JSON.stringify({type: "event", [user.role]: true}), true, 'galaxy/service/' + user.role);
-        }, 3000);
-      })
-
         api.fetchConfig()
             .then(data => GxyJanus.setGlobalConfig(data))
             .then(() => this.initGateways(user))
@@ -66,6 +57,17 @@ class SndmanApp extends Component {
     }
 
     initGateways = (user) => {
+        mqtt.init(user, (data) => {
+          console.log("[Sndman] mqtt init: ", data)
+          setTimeout(() => {
+            mqtt.watch((data) => {
+              this.onMqttData(data);
+            })
+            mqtt.join('galaxy/service/shidur');
+            mqtt.join('galaxy/users/broadcast');
+            mqtt.send(JSON.stringify({type: "event", [user.role]: true}), true, 'galaxy/service/' + user.role);
+          }, 3000);
+        })
         const gateways = GxyJanus.makeGateways("rooms");
         this.setState({gateways});
 
