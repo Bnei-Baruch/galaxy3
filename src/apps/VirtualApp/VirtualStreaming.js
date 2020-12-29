@@ -26,7 +26,6 @@ class VirtualStreaming extends Component {
   }
 
   state = {
-    audios: Number(localStorage.getItem('vrt_lang')) || 2,
     room: Number(localStorage.getItem('room')) || null,
     user: {},
     cssFixInterval: null,
@@ -53,13 +52,6 @@ class VirtualStreaming extends Component {
     this.props.virtualStreamingJanus.onTalking((talking) => this.setState({ talking }));
     this.setState({ cssFixInterval: setInterval(() => this.cssFix(), 500) });
   };
-
-  componentDidUpdate(prevProps, prevState, snapshot) {
-    if (this.props.audios && this.props.audios.audios !== prevState.audios) {
-      const { audios, text } = this.props.audios;
-      this.setAudio(audios, text);
-    }
-  }
 
   cssFix() {
     const d = document.getElementsByClassName('controls__dropdown');
@@ -100,10 +92,6 @@ class VirtualStreaming extends Component {
     this.props.setVideo(videos);
   }
 
-  setAudio(audios, text) {
-    this.setState({ audios });
-    this.props.virtualStreamingJanus.setAudio(audios, text);
-  }
 
   render() {
     const {
@@ -112,13 +100,11 @@ class VirtualStreaming extends Component {
             virtualStreamingJanus,
             t,
             videos,
-            layout
-          } = this.props;
-    const {
+            layout,
             audios,
-            room,
-            talking,
-          } = this.state;
+            setAudio
+          } = this.props;
+    const { room, talking, } = this.state;
 
     if (!room) {
       return (<b> :: THIS PAGE CAN NOT BE OPENED DIRECTLY ::</b>);
@@ -208,7 +194,7 @@ class VirtualStreaming extends Component {
                           flag={option.flag}
                           description={option.description}
                           action={option.action}
-                          onClick={() => this.setAudio(option.value, option.eng_text)}
+                          onClick={() => setAudio(option.value, option.eng_text)}
                         />
                       );
                     })}
