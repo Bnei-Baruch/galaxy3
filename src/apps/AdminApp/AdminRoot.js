@@ -540,26 +540,30 @@ class AdminRoot extends Component {
         const gateway = gateways[current_janus];
         const cmd = {type: command_type, rcmd: true, room: current_room, status: command_status, id: feed_user?.id, user: feed_user};
 
-        if(tcp === "mqtt") {
-            let topic = command_type === "reload-config" ? 'galaxy/users/broadcast' : 'galaxy/room/' + current_room;
-            mqtt.send(JSON.stringify(cmd), false, topic);
-        } else {
-            if(command_type === "audio-out") {
-                const toAck = [feed_user.id];
-                gdm.send(cmd, toAck, (cmd) => gateway.sendCmdMessage(cmd))
-                    .then(() => {
-                        console.log(`[Admin] MIC delivered.`);
-                    }).catch((err) => {
-                    console.error('[Admin] not delivered', err);
-                });
-            } else {
-                gateway.sendCmdMessage(cmd)
-                    .catch((err) => {
-                        console.error('[Admin] sendCmdMessage error', err);
-                      alert(err);
-                  });
-            }
-        }
+      let topic = command_type.match(/^(reload-config|client-reload-all)$/) ? 'galaxy/users/broadcast' : 'galaxy/room/' + current_room;
+      mqtt.send(JSON.stringify(cmd), false, topic);
+
+        // FIXME: make datachannel usage on webrtc protocol?
+        // if(tcp === "mqtt") {
+        //     let topic = command_type.match(/^(reload-config|client-reload-all)$/) ? 'galaxy/users/broadcast' : 'galaxy/room/' + current_room;
+        //     mqtt.send(JSON.stringify(cmd), false, topic);
+        // } else {
+        //     if(command_type === "audio-out") {
+        //         const toAck = [feed_user.id];
+        //         gdm.send(cmd, toAck, (cmd) => gateway.sendCmdMessage(cmd))
+        //             .then(() => {
+        //                 console.log(`[Admin] MIC delivered.`);
+        //             }).catch((err) => {
+        //             console.error('[Admin] not delivered', err);
+        //         });
+        //     } else {
+        //         gateway.sendCmdMessage(cmd)
+        //             .catch((err) => {
+        //                 console.error('[Admin] sendCmdMessage error', err);
+        //               alert(err);
+        //           });
+        //     }
+        // }
 
         if (command_type === "audio-out") {
            this.setState({command_status: !command_status})
