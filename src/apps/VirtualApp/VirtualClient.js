@@ -1296,7 +1296,7 @@ class VirtualClient extends Component {
       updateSentryUser(user);
     } else if (type === 'audio-out') {
       this.handleAudioOut(data);
-    }  else if (type === 'reload-config') {
+    } else if (type === 'reload-config') {
       this.reloadConfig();
     } else if (type === 'client-reload-all') {
       window.location.reload();

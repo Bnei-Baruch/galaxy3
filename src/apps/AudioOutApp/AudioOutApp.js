@@ -10,6 +10,7 @@ import {USERNAME_ALREADY_EXIST_ERROR_CODE, AUDOUT_ID} from "../../shared/consts"
 import {GuaranteeDeliveryManager} from '../../shared/GuaranteeDelivery';
 import {captureException, captureMessage} from "../../shared/sentry";
 import mqtt from "../../shared/mqtt";
+import ConfigStore from "../../shared/ConfigStore";
 
 
 class AudioOutApp extends Component {
@@ -112,7 +113,7 @@ class AudioOutApp extends Component {
     postInitGateway = (user, gateway) => {
         console.log("[AudioOut] initializing gateway", gateway.name);
 
-        if (gateway.name === "gxy3" && GxyJanus.globalConfig.dynamic_config.galaxy_protocol !== "mqtt") {
+        if (gateway.name === "gxy3") {
             return gateway.initServiceProtocol(user, data => this.onServiceData(gateway, data, user))
         } else {
             return Promise.resolve();
@@ -130,6 +131,8 @@ class AudioOutApp extends Component {
       window.location.reload();
     } else if (data.type === "audio-out") {
       this.setState({audio: status});
+    } else if (data.type === 'reload-config') {
+      this.reloadConfig();
     } else if (data.type === "event") {
       delete data.type;
       this.setState({...data});
@@ -168,7 +171,9 @@ class AudioOutApp extends Component {
 					} else if (data.type === "sdi-restart_audout") {
 						window.location.reload();
 					} else if (data.type === "audio-out") {
-							this.setState({audio: status});
+            this.setState({audio: status});
+          } else if (data.type === 'reload-config') {
+              this.reloadConfig();
 					} else if (data.type === "event") {
 							delete data.type;
 							this.setState({...data});
@@ -179,6 +184,16 @@ class AudioOutApp extends Component {
 
 				});
 		};
+
+  reloadConfig = () => {
+    api.fetchConfig()
+      .then((data) => {
+        ConfigStore.setGlobalConfig(data);
+      })
+      .catch(err => {
+        console.error("[User] error reloading config", err);
+      });
+  }
 
     setProps = (props) => {
         this.setState({...props})

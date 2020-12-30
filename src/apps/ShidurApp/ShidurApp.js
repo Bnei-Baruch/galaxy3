@@ -12,6 +12,7 @@ import {GuaranteeDeliveryManager} from '../../shared/GuaranteeDelivery';
 import {captureException, captureMessage, updateSentryUser} from "../../shared/sentry";
 import {getDateString} from "../../shared/tools";
 import mqtt from "../../shared/mqtt";
+import ConfigStore from "../../shared/ConfigStore";
 
 
 class ShidurApp extends Component {
@@ -283,6 +284,8 @@ class ShidurApp extends Component {
           this.checkFullScreen();
         }, 3000);
       }
+    } else if (data.type === 'reload-config') {
+      this.reloadConfig();
     }
   };
 
@@ -315,9 +318,20 @@ class ShidurApp extends Component {
           this.checkFullScreen();
         }, 3000);
       }
-      return;
+    } else if (data.type === 'reload-config') {
+      this.reloadConfig();
     }
   };
+
+  reloadConfig = () => {
+    api.fetchConfig()
+      .then((data) => {
+        ConfigStore.setGlobalConfig(data);
+      })
+      .catch(err => {
+        console.error("[User] error reloading config", err);
+      });
+  }
 
   nextInQueue = () => {
     let {groups_queue,groups,round} = this.state;

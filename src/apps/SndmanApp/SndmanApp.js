@@ -11,6 +11,7 @@ import {USERNAME_ALREADY_EXIST_ERROR_CODE, SNDMAN_ID} from "../../shared/consts"
 import {GuaranteeDeliveryManager} from '../../shared/GuaranteeDelivery';
 import {captureException, captureMessage, updateSentryUser} from "../../shared/sentry";
 import mqtt from "../../shared/mqtt";
+import ConfigStore from "../../shared/ConfigStore";
 
 
 class SndmanApp extends Component {
@@ -127,9 +128,16 @@ class SndmanApp extends Component {
     if(data.type === "sdi-restart_sndman") {
       window.location.reload();
     }
+    if (data.type === 'reload-config') {
+      this.reloadConfig();
+    }
+
   };
 
     onServiceData = (gateway, data) => {
+        if(GxyJanus.globalConfig.dynamic_config.galaxy_protocol === "mqtt") {
+          return
+        }
         const { gdm } = this.state;
         if (gdm.checkAck(data)) {
           // Ack received, do nothing.
@@ -170,6 +178,10 @@ class SndmanApp extends Component {
           if(data.type === "sdi-restart_sndman") {
               window.location.reload();
           }
+
+          if (data.type === 'reload-config') {
+            this.reloadConfig();
+          }
         }).catch((error) => {
           console.error(`Failed receiving ${data}: ${error}`);
         });
@@ -177,6 +189,16 @@ class SndmanApp extends Component {
 
     setProps = (props) => {
         this.setState({...props})
+    };
+
+    reloadConfig = () => {
+      api.fetchConfig()
+        .then((data) => {
+          ConfigStore.setGlobalConfig(data);
+        })
+        .catch(err => {
+          console.error("[User] error reloading config", err);
+        });
     };
 
     render() {
