@@ -128,7 +128,10 @@ class AdminRoot extends Component {
       api.fetchConfig()
             .then(data => {
                 ConfigStore.setGlobalConfig(data);
-                this.setState({premodStatus: ConfigStore.dynamicConfig(ConfigStore.PRE_MODERATION_KEY) === 'true'});
+                this.setState({
+                  premodStatus: ConfigStore.dynamicConfig(ConfigStore.PRE_MODERATION_KEY) === 'true',
+                  tcp: ConfigStore.dynamicConfig("galaxy_protocol")
+                });
                 GxyJanus.setGlobalConfig(data);
                 mqtt.init(user, (data) => console.log("[Admin] mqtt init: ", data))
             })
