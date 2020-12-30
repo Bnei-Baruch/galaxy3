@@ -104,6 +104,7 @@ class ShidurApp extends Component {
   };
 
   initGateways = (user) => {
+    this.setState({tcp: GxyJanus.globalConfig.dynamic_config.galaxy_protocol});
     mqtt.init(user, (data) => {
       console.log("[Shidur] mqtt init: ", data);
       mqtt.watch((data) => {
@@ -326,7 +327,8 @@ class ShidurApp extends Component {
   reloadConfig = () => {
     api.fetchConfig()
       .then((data) => {
-        ConfigStore.setGlobalConfig(data);
+        GxyJanus.setGlobalConfig(data)
+        this.setState({tcp: GxyJanus.globalConfig.dynamic_config.galaxy_protocol});
       })
       .catch(err => {
         console.error("[User] error reloading config", err);

@@ -188,7 +188,7 @@ class AudioOutApp extends Component {
   reloadConfig = () => {
     api.fetchConfig()
       .then((data) => {
-        ConfigStore.setGlobalConfig(data);
+        GxyJanus.setGlobalConfig(data);
       })
       .catch(err => {
         console.error("[User] error reloading config", err);
