@@ -790,6 +790,18 @@ class AdminRoot extends Component {
         this.sendRemoteCommand("client-reload-all");
     }
 
+    setProtocol = () => {
+      let {tcp} = this.state;
+      const value = tcp === "mqtt" ? "webrtc" : "mqtt";
+      api.adminSetConfig("galaxy_protocol", value)
+        .then(() => {
+          this.setState({tcp: value});
+          const msg = {type: "reload-config", status: value, id: null, user: null, room: null};
+          mqtt.send(JSON.stringify(msg), false, 'galaxy/users/broadcast');
+        })
+        .catch(err => alert(err))
+    }
+
   render() {
       const {
           activeTab,
@@ -984,8 +996,8 @@ class AdminRoot extends Component {
 					<Popup trigger={<Button color="red" icon='redo' onClick={() => this.setState({showConfirmReloadAll: !showConfirmReloadAll})} />} content='RELOAD ALL' inverted />,
           <Dropdown icon='plug' className='button icon' inline item text={tcp === "mqtt" ? 'MQTT' : 'WebRTC'} >
             <Dropdown.Menu>
-              <Dropdown.Item onClick={() => this.setState({tcp: "mqtt"})}>MQTT</Dropdown.Item>
-              <Dropdown.Item onClick={() => this.setState({tcp: "webrtc"})}>WebRTC</Dropdown.Item>
+              <Dropdown.Item onClick={this.setProtocol}>MQTT</Dropdown.Item>
+              <Dropdown.Item onClick={this.setProtocol}>WebRTC</Dropdown.Item>
             </Dropdown.Menu>
           </Dropdown>
 				]);
