@@ -291,7 +291,7 @@ class UsersQuad extends Component {
   };
 
   micMute = (status, room, inst, i) => {
-    const {tcp, gateways} = this.props;
+    const {tcp} = this.props;
     const msg = {type: "audio-out", status, room, col: null, i, feed: null};
     const cmd = {type: "audio-out", rcmd: true, status, room, i}
     const group = this.props.rooms.filter(g => g.room === room)[0];
@@ -301,10 +301,6 @@ class UsersQuad extends Component {
       status ? mqtt.join('galaxy/room/' + room) : mqtt.exit('galaxy/room/' + room)
       mqtt.send(JSON.stringify(cmd), true, 'galaxy/room/' + room);
       mqtt.send(JSON.stringify(msg), true, 'galaxy/service/shidur');
-
-      // FIXME: We need it for question statistics!
-      gateways["gxy3"].sendServiceMessage(msg)
-
     } else {
       if (group && group.users) {
         // let toAck = group.users.map(u => u.role.match(/^(user|ghost|guest)$/) ? u.id : null).filter(id => !!id);
