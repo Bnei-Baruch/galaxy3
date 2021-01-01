@@ -67,6 +67,7 @@ import SendQuestionContainer from './components/SendQuestions/container';
 import {RegistrationModals} from './components/RegistrationModals';
 import {getUserRole, userRolesEnum} from "../../shared/enums";
 import KliOlamiStream from './components/KliOlamiStream';
+import { iceRestart as iceRestartKliOlami } from './components/KliOlamiStreamHelper';
 import KliOlamiToggle from './buttons/KliOlamiToggle';
 import Toolbar from '@material-ui/core/Toolbar';
 import Typography from '@material-ui/core/Typography';
@@ -901,6 +902,7 @@ class VirtualClient extends Component {
     if(remoteFeed) remoteFeed.send({message: {request: 'configure', restart: true}});
     if(this.chat) this.chat.iceRestart();
     if(this.state.virtualStreamingJanus) this.state.virtualStreamingJanus.iceRestart();
+    iceRestartKliOlami()
   };
 
   onMessage = (videoroom, msg, jsep) => {
@@ -1526,7 +1528,7 @@ class VirtualClient extends Component {
     const {user, cammuted, question, muted} = this.state;
 
     return (<div className="video" key={index}>
-      <div className={classNames('video__overlay')}>
+      <div className={classNames('video__overlay', { 'talk-frame': !muted })}>
         {question ?
           <div className="question">
             <svg viewBox="0 0 50 50">

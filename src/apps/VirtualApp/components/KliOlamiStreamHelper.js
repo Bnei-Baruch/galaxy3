@@ -38,6 +38,14 @@ const initJanus = () => {
   });
 };
 
+export const iceRestart = () => streamHandle && streamHandle.send({
+  message: {
+    request: 'watch',
+    id: ALL_KLI_OLAMI_STREAM_ID,
+    restart: true
+  }
+});
+
 export const initStream = async (updateStream) => {
   await initJanus();
 
