@@ -14,7 +14,10 @@ export const initSentry = () => {
     environment: process.env.NODE_ENV,
     attachStacktrace: true,
     maxBreadcrumbs: 100,
-    ignoreErrors: ['ResizeObserver loop limit exceeded'],
+    ignoreErrors: [
+      'ResizeObserver loop limit exceeded',
+      'InvalidAccessError: There is no sender or receiver for the track'
+    ],
   });
 
   Sentry.configureScope((scope) => {

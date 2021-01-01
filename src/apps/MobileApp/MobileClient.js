@@ -475,7 +475,7 @@ class MobileClient extends Component {
         let count = 0;
         let chk = setInterval(() => {
             count++;
-            console.debug("ICE counter: ", count);
+            //console.debug("ICE counter: ", count);
             let {ice} = this.state;
             if (count < 60 && ice.match(/^(connected|completed)$/)) {
                 clearInterval(chk);
@@ -490,7 +490,7 @@ class MobileClient extends Component {
             }
             if (count >= 60) {
                 clearInterval(chk);
-                console.debug(" :: ICE Filed: Reconnecting... ");
+                console.log(" :: ICE Filed: Reconnecting... ");
                 this.exitRoom(false);
                 // FIXME: reconnect does not work as expected
                 // this.exitRoom(true, () => {
