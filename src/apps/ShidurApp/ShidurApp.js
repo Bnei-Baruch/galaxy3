@@ -276,10 +276,10 @@ class ShidurApp extends Component {
   };
 
   onMqttData = (data) => {
-    if(data.type === "event") {
+    if(data.type === "event" && !data.hasOwnProperty('user')) {
       delete data.type;
+      this.setState({...data});
       if(data.sdiout || data.audout) {
-        this.setState({...data});
         setTimeout(() => {
           console.log("[Shidur] :: Check Full Screen state :: ");
           this.checkFullScreen();
@@ -310,7 +310,7 @@ class ShidurApp extends Component {
       }
     }
 
-    if(data.type === "event") {
+    if(data.type === "event" && !data.hasOwnProperty('user')) {
       delete data.type;
       this.setState({...data});
       if(data.sdiout || data.audout) {
