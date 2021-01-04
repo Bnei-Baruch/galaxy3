@@ -3,7 +3,7 @@ import MetaTags from 'react-meta-tags';
 import { Janus } from '../../lib/janus';
 import classNames from 'classnames';
 import Dots from 'react-carousel-dots';
-import { Accordion, Button, Icon, Image, Input, Label, Menu, Modal, Select } from 'semantic-ui-react';
+import { Accordion, Button, Icon, Image, Input, Label, Menu, Modal, Segment, Select } from 'semantic-ui-react';
 import {
   checkNotification,
   geoInfo,
@@ -127,7 +127,8 @@ class MobileClient extends Component {
     settingsActiveIndex: -1,
     gdm: null,
     premodStatus: false,
-    msg_protocol: 'mqtt'
+    msg_protocol: 'mqtt',
+    chatIsActive: false
   };
 
   shidurInitialized() {
@@ -1518,20 +1519,6 @@ class MobileClient extends Component {
     this.setState({ chatMessagesCount: this.state.chatMessagesCount + 1 });
   };
 
-  chatMount = () => {
-    if (this.chatModal && this.chatWrapper && this.chatWrapper.firstChild) {
-      this.chatModal.appendChild(this.chatWrapper.firstChild);
-      this.setState({ chatVisible: true, chatMessagesCount: 0 });
-    }
-  };
-
-  chatUnmount = () => {
-    if (this.chatWrapper && this.chatModal && this.chatModal.firstChild) {
-      this.chatWrapper.appendChild(this.chatModal.firstChild);
-      this.setState({ chatVisible: false });
-    }
-  };
-
   handleClick = (e, titleProps) => {
     const { index }               = titleProps;
     const { settingsActiveIndex } = this.state;
@@ -1551,6 +1538,11 @@ class MobileClient extends Component {
 
   updateUserRole = () => {
     getUser(this.checkPermission);
+  };
+
+  toggleChatActivity = () => {
+    console.log('bag mobile chat toggle Activity', this.state.chatIsActive);
+    this.setState({ chatIsActive: !this.state.chatIsActive });
   };
 
   render() {
@@ -1585,6 +1577,7 @@ class MobileClient extends Component {
             page,
             videos,
             premodStatus,
+            chatIsActive
           }                = this.state;
     const { video_device } = media.video;
     const { audio_device } = media.audio;
@@ -1918,25 +1911,14 @@ class MobileClient extends Component {
                       {t('oldClient.askQuestion')}
                     </span>
             </Menu.Item>
-            <Modal
-              trigger={
-                <Menu.Item disabled={!localAudioTrack}>
-                  <Icon name="comments" />
-                  {t('oldClient.openChat')}
-                  {chatMessagesCount > 0 ? chatCountLabel : ''}
-                </Menu.Item>
-              }
+            <Menu.Item
               disabled={!localAudioTrack}
-              on='click'
-              closeIcon
-              className='chat'
-              onMount={() => this.chatMount()}
-              onUnmount={() => this.chatUnmount()}
+              onClick={this.toggleChatActivity.bind(this)}
             >
-              <div ref={chatModal => {
-                this.chatModal = chatModal;
-              }}></div>
-            </Modal>
+              <Icon name="comments" />
+              {t('oldClient.openChat')}
+              {chatMessagesCount > 0 ? chatCountLabel : ''}
+            </Menu.Item>
             <Menu.Item icon='book'
                        name={t('oldClient.homerLimud')}
                        onClick={() => window.open('https://groups.google.com/forum/m/#!forum/bb-study-materials')} />
@@ -1956,9 +1938,16 @@ class MobileClient extends Component {
             <Monitoring monitoringData={monitoringData} />
           </Menu>
         </div>
-        <div className='chat-wrapper' ref={chatWrapper => {
-          this.chatWrapper = chatWrapper;
-        }}>
+        <div className={classNames('chat-wrapper', { 'chat': chatIsActive })}>
+          <div style={{ textAlign: 'right', height: '1.5em' }}>
+            <Icon
+              name="close"
+              className="close"
+
+              onClick={this.toggleChatActivity.bind(this)}
+            />
+          </div>
+
           <VirtualChat
             t={t}
             ref={chat => {
