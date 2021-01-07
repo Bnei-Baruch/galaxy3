@@ -127,8 +127,7 @@ class MobileClient extends Component {
     settingsActiveIndex: -1,
     gdm: null,
     premodStatus: false,
-    msg_protocol: 'mqtt',
-    chatIsActive: false
+    msg_protocol: 'mqtt'
   };
 
   shidurInitialized() {
@@ -1541,8 +1540,7 @@ class MobileClient extends Component {
   };
 
   toggleChatActivity = () => {
-    console.log('bag mobile chat toggle Activity', this.state.chatIsActive);
-    this.setState({ chatIsActive: !this.state.chatIsActive });
+    this.setState({ chatVisible: !this.state.chatVisible, chatMessagesCount: 0 });
   };
 
   render() {
@@ -1576,8 +1574,7 @@ class MobileClient extends Component {
             feeds,
             page,
             videos,
-            premodStatus,
-            chatIsActive
+            premodStatus
           }                = this.state;
     const { video_device } = media.video;
     const { audio_device } = media.audio;
@@ -1938,28 +1935,30 @@ class MobileClient extends Component {
             <Monitoring monitoringData={monitoringData} />
           </Menu>
         </div>
-        <div className={classNames('chat-wrapper', { 'chat': chatIsActive })}>
-          <div style={{ textAlign: 'right', height: '1.5em' }}>
-            <Icon
-              name="close"
-              className="close"
+        <div className={classNames('chat-wrapper', { 'chat': chatVisible })}>
+          <div className="center_chat">
+            <div style={{ textAlign: 'right', height: '1.5em' }}>
+              <Icon
+                name="close"
+                className="close"
 
-              onClick={this.toggleChatActivity.bind(this)}
-            />
+                onClick={this.toggleChatActivity.bind(this)}
+              />
+            </div>
+
+            <VirtualChat
+              t={t}
+              ref={chat => {
+                this.chat = chat;
+              }}
+              visible={chatVisible}
+              janus={janus}
+              room={room}
+              user={user}
+              gdm={this.state.gdm}
+              onCmdMsg={this.handleCmdData}
+              onNewMsg={this.onChatMessage} />
           </div>
-
-          <VirtualChat
-            t={t}
-            ref={chat => {
-              this.chat = chat;
-            }}
-            visible={chatVisible}
-            janus={janus}
-            room={room}
-            user={user}
-            gdm={this.state.gdm}
-            onCmdMsg={this.handleCmdData}
-            onNewMsg={this.onChatMessage} />
         </div>
       </div>
     );

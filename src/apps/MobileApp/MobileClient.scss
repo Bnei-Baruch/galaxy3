@@ -427,7 +427,7 @@
   position: absolute;
   top: 0;
   left: 0;
-  background: white;
+  background: rgba(0, 0, 0, 0.87);
   z-index: 100;
   height: 100vh;
   width: 100%;
@@ -437,7 +437,17 @@
   }
 
   @include portrait {
-    font-size: 3rem;
+    font-size: 4rem;
+  }
+
+  .center_chat {
+    position: fixed;
+    top: 2em;
+    bottom: 3em;
+    right: 1em;
+    left: 1em;
+    background: white;
+
   }
 
   .close {
@@ -454,7 +464,7 @@
   }
 
   .messages_list {
-    height: calc(100vh - 6em);
+    height: calc(100vh - 12em);
 
     .messages-wrapper {
       width: 100%;
