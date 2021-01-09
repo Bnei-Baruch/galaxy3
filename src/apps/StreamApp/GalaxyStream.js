@@ -61,7 +61,6 @@ class GalaxyStream extends Component {
                                 .then(() => this.initJanus(info.country))
                                 .catch(err => {
                                     console.error("[GalaxyStream] error initializing app", err);
-																		captureException(err, {source: "GalaxyStream", col});
                                     this.setState({appInitError: err});
                                 });
                         }
