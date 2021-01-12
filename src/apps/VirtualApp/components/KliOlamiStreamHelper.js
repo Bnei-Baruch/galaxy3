@@ -28,6 +28,10 @@ const initJanus = () => {
           error: (err) => {
             Janus.log(JSON.stringify(err));
             console.error('RELOAD ON ERROR', err);
+            janus = null
+            setTimeout(() => {
+              initJanus();
+            }, 5000);
           },
           destroyed: () => {
             Janus.log('Janus handle successfully destroyed.');
