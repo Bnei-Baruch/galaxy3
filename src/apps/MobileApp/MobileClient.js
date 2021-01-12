@@ -3,7 +3,7 @@ import MetaTags from 'react-meta-tags';
 import { Janus } from '../../lib/janus';
 import classNames from 'classnames';
 import Dots from 'react-carousel-dots';
-import { Accordion, Button, Icon, Image, Input, Label, Menu, Modal, Segment, Select } from 'semantic-ui-react';
+import { Accordion, Button, Icon, Image, Input, Label, Menu, Modal, Select } from 'semantic-ui-react';
 import {
   checkNotification,
   geoInfo,
@@ -11,6 +11,7 @@ import {
   getMediaStream,
   initJanus,
   micLevel,
+  updateGxyUser,
   wkliLeave
 } from '../../shared/tools';
 import './MobileClient.scss';
@@ -827,12 +828,10 @@ class MobileClient extends Component {
 
         user.rfid = myid;
         this.setState({ user, myid, mypvtid, room: msg['room'], delay: false });
-        updateSentryUser(user);
 
-        api.updateUser(user.id, user)
-          .catch(err => {
-            console.error('[User] error updating user state', user.id, err);
-          });
+        updateSentryUser(user);
+        updateGxyUser(user);
+
         this.keepAlive();
 
         // Subscribe to mqtt topic
@@ -1400,23 +1399,19 @@ class MobileClient extends Component {
 
   questionState = (user, question) => {
     user.question = !question;
-    api.updateUser(user.id, user)
-      .then(data => {
-        if (data.result === 'success') {
-          localStorage.setItem('question', !question);
-          this.setState({ user, question: !question });
-          updateSentryUser(user);
-          const msg = { type: 'client-state', user };
-          if (this.state.msg_protocol === 'mqtt') {
-            mqtt.send(JSON.stringify(msg), true, 'galaxy/room/' + this.state.room);
-          } else {
-            this.chat.sendCmdMessage(msg);
-          }
-        }
-      })
-      .catch(err => {
-        console.error('[User] error updating user state', user.id, err);
-      });
+
+    localStorage.setItem('question', !question);
+    this.setState({ user, question: !question });
+
+    updateSentryUser(user);
+    updateGxyUser(user);
+
+    const msg = { type: 'client-state', user };
+    if (this.state.msg_protocol === 'mqtt') {
+      mqtt.send(JSON.stringify(msg), true, 'galaxy/room/' + this.state.room);
+    } else {
+      this.chat.sendCmdMessage(msg);
+    }
   };
 
   handleAudioOut = (data) => {
@@ -1466,23 +1461,18 @@ class MobileClient extends Component {
       if (user.role === 'ghost') return;
       this.makeDelay();
       user.camera = cammuted;
-      api.updateUser(user.id, user)
-        .then(data => {
-          if (data.result === 'success') {
-            cammuted ? videoroom.unmuteVideo() : videoroom.muteVideo();
-            this.setState({ user, cammuted: !cammuted });
-            updateSentryUser(user);
-            const msg = { type: 'client-state', user };
-            if (this.state.msg_protocol === 'mqtt') {
-              mqtt.send(JSON.stringify(msg), false, 'galaxy/room/' + this.state.room);
-            } else {
-              this.chat.sendCmdMessage(msg);
-            }
-          }
-        })
-        .catch(err => {
-          console.error('[User] error updating user state', user.id, err);
-        });
+      cammuted ? videoroom.unmuteVideo() : videoroom.muteVideo();
+      this.setState({ user, cammuted: !cammuted });
+
+      updateSentryUser(user);
+      updateGxyUser(user);
+
+      const msg = { type: 'client-state', user };
+      if (this.state.msg_protocol === 'mqtt') {
+        mqtt.send(JSON.stringify(msg), false, 'galaxy/room/' + this.state.room);
+      } else {
+        this.chat.sendCmdMessage(msg);
+      }
     }
   };
 
@@ -1912,10 +1902,10 @@ class MobileClient extends Component {
               disabled={!localAudioTrack}
               onClick={this.toggleChatActivity.bind(this)}
             >
-              <Icon name="comments" />
-              {t('oldClient.openChat')}
-              {chatMessagesCount > 0 ? chatCountLabel : ''}
-            </Menu.Item>
+                  <Icon name="comments" />
+                  {t('oldClient.openChat')}
+                  {chatMessagesCount > 0 ? chatCountLabel : ''}
+                </Menu.Item>
             <Menu.Item icon='book'
                        name={t('oldClient.homerLimud')}
                        onClick={() => window.open('https://groups.google.com/forum/m/#!forum/bb-study-materials')} />
@@ -1946,20 +1936,20 @@ class MobileClient extends Component {
               />
             </div>
 
-            <VirtualChat
-              t={t}
-              ref={chat => {
-                this.chat = chat;
-              }}
-              visible={chatVisible}
-              janus={janus}
-              room={room}
-              user={user}
-              gdm={this.state.gdm}
-              onCmdMsg={this.handleCmdData}
-              onNewMsg={this.onChatMessage} />
-          </div>
+          <VirtualChat
+            t={t}
+            ref={chat => {
+              this.chat = chat;
+            }}
+            visible={chatVisible}
+            janus={janus}
+            room={room}
+            user={user}
+            gdm={this.state.gdm}
+            onCmdMsg={this.handleCmdData}
+            onNewMsg={this.onChatMessage} />
         </div>
+      </div>
       </div>
     );
 

@@ -1,5 +1,8 @@
 import {Janus} from "../lib/janus";
 import {STUN_SRV_GXY, WKLI_ENTER, WKLI_LEAVE} from "./env";
+import * as Sentry from "@sentry/react";
+import api from "./Api";
+import {captureMessage} from "./sentry";
 
 export const initJanus = (cb,er,server,token="",iceServers=[{urls: STUN_SRV_GXY}]) => {
     Janus.init({
@@ -297,6 +300,19 @@ export const geoInfo = (url,cb) => fetch(`${url}`)
     }
 })
     .catch(ex => console.log(`get geoInfo`, ex));
+
+export const updateGxyUser = (user) => {
+  api.updateUser(user.id, user)
+    .then(data => {
+      if(data.result === "success") {
+        console.log("[User] success updating user state", user.id);
+      }
+    })
+    .catch(err => {
+      console.error("[User] error updating user state", user.id, err);
+      captureMessage('Error updating user state', {source: 'user', err}, 'warning');
+    });
+}
 
 export const recordAudio = (stream) =>
     new Promise(async resolve => {
