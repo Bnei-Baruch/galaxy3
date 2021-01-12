@@ -1508,20 +1508,6 @@ class MobileClient extends Component {
     this.setState({ chatMessagesCount: this.state.chatMessagesCount + 1 });
   };
 
-  chatMount = () => {
-    if (this.chatModal && this.chatWrapper && this.chatWrapper.firstChild) {
-      this.chatModal.appendChild(this.chatWrapper.firstChild);
-      this.setState({ chatVisible: true, chatMessagesCount: 0 });
-    }
-  };
-
-  chatUnmount = () => {
-    if (this.chatWrapper && this.chatModal && this.chatModal.firstChild) {
-      this.chatWrapper.appendChild(this.chatModal.firstChild);
-      this.setState({ chatVisible: false });
-    }
-  };
-
   handleClick = (e, titleProps) => {
     const { index }               = titleProps;
     const { settingsActiveIndex } = this.state;
@@ -1541,6 +1527,10 @@ class MobileClient extends Component {
 
   updateUserRole = () => {
     getUser(this.checkPermission);
+  };
+
+  toggleChatActivity = () => {
+    this.setState({ chatVisible: !this.state.chatVisible, chatMessagesCount: 0 });
   };
 
   render() {
@@ -1574,7 +1564,7 @@ class MobileClient extends Component {
             feeds,
             page,
             videos,
-            premodStatus,
+            premodStatus
           }                = this.state;
     const { video_device } = media.video;
     const { audio_device } = media.audio;
@@ -1908,25 +1898,14 @@ class MobileClient extends Component {
                       {t('oldClient.askQuestion')}
                     </span>
             </Menu.Item>
-            <Modal
-              trigger={
-                <Menu.Item disabled={!localAudioTrack}>
+            <Menu.Item
+              disabled={!localAudioTrack}
+              onClick={this.toggleChatActivity.bind(this)}
+            >
                   <Icon name="comments" />
                   {t('oldClient.openChat')}
                   {chatMessagesCount > 0 ? chatCountLabel : ''}
                 </Menu.Item>
-              }
-              disabled={!localAudioTrack}
-              on='click'
-              closeIcon
-              className='chat'
-              onMount={() => this.chatMount()}
-              onUnmount={() => this.chatUnmount()}
-            >
-              <div ref={chatModal => {
-                this.chatModal = chatModal;
-              }}></div>
-            </Modal>
             <Menu.Item icon='book'
                        name={t('oldClient.homerLimud')}
                        onClick={() => window.open('https://groups.google.com/forum/m/#!forum/bb-study-materials')} />
@@ -1946,9 +1925,17 @@ class MobileClient extends Component {
             <Monitoring monitoringData={monitoringData} />
           </Menu>
         </div>
-        <div className='chat-wrapper' ref={chatWrapper => {
-          this.chatWrapper = chatWrapper;
-        }}>
+        <div className={classNames('chat-wrapper', { 'chat': chatVisible })}>
+          <div className="center_chat">
+            <div style={{ textAlign: 'right', height: '1.5em' }}>
+              <Icon
+                name="close"
+                className="close"
+
+                onClick={this.toggleChatActivity.bind(this)}
+              />
+            </div>
+
           <VirtualChat
             t={t}
             ref={chat => {
@@ -1962,6 +1949,7 @@ class MobileClient extends Component {
             onCmdMsg={this.handleCmdData}
             onNewMsg={this.onChatMessage} />
         </div>
+      </div>
       </div>
     );
 
