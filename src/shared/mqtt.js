@@ -3,6 +3,7 @@ import {MQTT_URL} from "./env";
 import {isServiceID} from "./enums";
 import {randomString} from "./tools";
 import {kc} from '../components/UserManager';
+import GxyJanus from "./janus-utils";
 
 class MqttMsg {
 
@@ -26,7 +27,7 @@ class MqttMsg {
       protocolVersion: 5,
       clean: true,
       username: user.email,
-      password: kc.token,
+      password: kc.token || GxyJanus.globalConfig.dynamic_config.mqtt_auth,
       properties: {
         sessionExpiryInterval: 5,
         maximumPacketSize: 10000,
