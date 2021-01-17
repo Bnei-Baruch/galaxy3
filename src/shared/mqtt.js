@@ -2,7 +2,6 @@ import mqtt from 'mqtt';
 import {MQTT_URL} from "./env";
 import {isServiceID} from "./enums";
 import {randomString} from "./tools";
-import {kc} from '../components/UserManager';
 import GxyJanus from "./janus-utils";
 
 class MqttMsg {
@@ -12,6 +11,7 @@ class MqttMsg {
     this.mq = null;
     this.connected = false;
     this.room = null;
+    this.token = null;
   }
 
   init = (user, callback) => {
@@ -27,7 +27,7 @@ class MqttMsg {
       protocolVersion: 5,
       clean: true,
       username: user.email,
-      password: kc.token || GxyJanus.globalConfig.dynamic_config.mqtt_auth,
+      password: this.token || GxyJanus.globalConfig.dynamic_config.mqtt_auth,
       properties: {
         sessionExpiryInterval: 5,
         maximumPacketSize: 10000,
@@ -92,6 +92,10 @@ class MqttMsg {
       console.log("[mqtt] Got data on topic: ", topic, message);
       callback(message, topic)
     })
+  }
+
+  setToken = (token) => {
+    this.token = token;
   }
 
 }

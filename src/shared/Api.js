@@ -1,5 +1,6 @@
 import {ADMIN_SECRET, API_BACKEND, AUTH_API_BACKEND, JANUS_ADMIN_GXY,} from "./env";
 import {randomString} from "./tools";
+import mqtt from "../shared/mqtt";
 
 class Api {
 
@@ -178,6 +179,7 @@ class Api {
 
     setAccessToken = (token) => {
         this.accessToken = token;
+        mqtt.setToken(token);
     }
 
     setBasicAuth = (username, password) => {
