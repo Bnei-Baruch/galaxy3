@@ -207,6 +207,8 @@ class MobileClient extends Component {
   }
 
   initApp = (user) => {
+
+    //Clients not authorized to app may see shidur only
     if (user.role !== userRolesEnum.user) {
       const config = {
         'gateways': {
@@ -230,6 +232,15 @@ class MobileClient extends Component {
       this.setState({ user, sourceLoading: true });
       return;
     }
+
+    // Protocol init
+    mqtt.init(user, (data) => {
+      console.log('[mqtt] init: ', data);
+      mqtt.join('galaxy/users/broadcast');
+      mqtt.watch((message) => {
+        this.handleCmdData(message);
+      });
+    });
 
     let gdm = new GuaranteeDeliveryManager(user.id);
     this.setState({ gdm });
@@ -264,15 +275,6 @@ class MobileClient extends Component {
             msg_protocol: ConfigStore.dynamicConfig('galaxy_protocol')
           });
           GxyJanus.setGlobalConfig(data);
-
-          // Protocol init
-          mqtt.init(user, (data) => {
-            console.log('[mqtt] init: ', data);
-            mqtt.join('galaxy/users/broadcast');
-            mqtt.watch((message) => {
-              this.handleCmdData(message);
-            });
-          });
         })
         .then(() => api.fetchAvailableRooms({ with_num_users: true }))
         .then(data => {
