@@ -212,25 +212,6 @@ class VirtualClient extends Component {
     if (isMobile) {
       window.location = '/userm';
     }
-
-		// Crisp support.
-		// TODO: Crisp language will change only after reload.
-		// const { i18n } = this.props;
-    // window.$crisp = [];
-    // window.CRISP_WEBSITE_ID = "7feb1b3b-d46d-409c-b8ee-7a69ad7db06c";
-		// window.CRISP_RUNTIME_CONFIG = {
-		// 	locale : i18n.language,
-		// };
-    //
-    // (function() {
-    //   var d = document;
-    //   var s = d.createElement("script");
-    //
-    //   s.src = "https://client.crisp.chat/l.js";
-    //   s.async = 1;
-    //   d.getElementsByTagName("head")[0].appendChild(s);
-    // })();
-
   }
 
   componentWillUnmount() {
@@ -2390,7 +2371,7 @@ class VirtualClient extends Component {
                         }} />
               </Popup.Content>
             </Popup>
-            <Help t={t} />
+            <Help t={t} i18n={i18n} user={user} />
             <Button primary style={{ margin: 'auto' }} onClick={() => window.open('https://virtualhome.kli.one', '_blank')}>{t('loginPage.userFee')}</Button>
             <Monitoring monitoringData={monitoringData} />
             {!isDeb ? null :
