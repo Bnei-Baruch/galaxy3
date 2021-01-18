@@ -30,7 +30,7 @@ const initCrisp = (locale, uiLocale, user, callback) => {
     if (callback) {
       window.$crisp.push(['on', 'session:loaded', callback]);
     }
-    window.CRISP_WEBSITE_ID = "7feb1b3b-d46d-409c-b8ee-7a69ad7db06c";
+    window.CRISP_WEBSITE_ID = "a88f7eac-d881-450b-b589-ab82160fb08a";
     window.CRISP_RUNTIME_CONFIG = {locale: locale || uiLocale};
 
     (() => {
