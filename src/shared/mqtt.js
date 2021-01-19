@@ -27,7 +27,7 @@ class MqttMsg {
       protocolVersion: 5,
       clean: true,
       username: user.email,
-      password: this.token || GxyJanus.globalConfig.dynamic_config.mqtt_auth,
+      password: GxyJanus.globalConfig.dynamic_config.mqtt_auth,
       properties: {
         sessionExpiryInterval: 5,
         maximumPacketSize: 10000,
