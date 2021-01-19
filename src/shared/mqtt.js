@@ -19,6 +19,11 @@ class MqttMsg {
 
     const id = user.role === "user" ? user.id + "-" + randomString(3) : user.id;
 
+    const transformUrl = (url, options, client) => {
+      client.options.password = this.token;
+      return url;
+    };
+
     let options = {
       keepalive: 10,
       connectTimeout: 10 * 1000,
@@ -27,7 +32,8 @@ class MqttMsg {
       protocolVersion: 5,
       clean: true,
       username: user.email,
-      password: GxyJanus.globalConfig.dynamic_config.mqtt_auth,
+      password: this.token || GxyJanus.globalConfig.dynamic_config.mqtt_auth,
+      transformWsUrl: transformUrl,
       properties: {
         sessionExpiryInterval: 5,
         maximumPacketSize: 10000,
@@ -45,12 +51,9 @@ class MqttMsg {
         properties: {userProperties: user}}
     }
 
-    console.log("[mqtt] Options: ", options)
+    this.mq = mqtt.connect(`wss://${MQTT_URL}`, options);
 
-    const mq = mqtt.connect(`wss://${MQTT_URL}`, options);
-    this.mq = mq;
-
-    mq.on('connect', (data) => {
+    this.mq.on('connect', (data) => {
       if(data && !this.connected) {
         console.log("[mqtt] Connected to server: ", data);
         this.connected = true;
@@ -58,8 +61,8 @@ class MqttMsg {
       }
     });
 
-    mq.on('error', (data) => console.error('[mqtt] Error: ', data));
-    mq.on('disconnect', (data) => console.error('[mqtt] Error: ', data));
+    this.mq.on('error', (data) => console.error('[mqtt] Error: ', data));
+    this.mq.on('disconnect', (data) => console.error('[mqtt] Error: ', data));
   }
 
   join = (topic) => {

@@ -257,6 +257,16 @@ class VirtualClient extends Component {
       return;
     }
 
+    // Protocol init
+    mqtt.init(user, (data) => {
+      console.log("[mqtt] init: ", data);
+      mqtt.join('galaxy/users/broadcast');
+      mqtt.join('galaxy/users/' + user.id);
+      mqtt.watch((message) => {
+        this.handleCmdData(message);
+      })
+    })
+
     const gdm = new GuaranteeDeliveryManager(user.id);
     this.setState({gdm});
     const {t} = this.props;
@@ -286,16 +296,6 @@ class VirtualClient extends Component {
               msg_protocol: ConfigStore.dynamicConfig("galaxy_protocol")
             });
             GxyJanus.setGlobalConfig(data);
-
-            // Protocol init
-            mqtt.init(user, (data) => {
-              console.log("[mqtt] init: ", data);
-              mqtt.join('galaxy/users/broadcast');
-              mqtt.join('galaxy/users/' + user.id);
-              mqtt.watch((message) => {
-                this.handleCmdData(message);
-              })
-            })
           })
           .then(() => (api.fetchAvailableRooms({with_num_users: true})))
           .then(data => {
