@@ -12,6 +12,7 @@ import {GuaranteeDeliveryManager} from '../../shared/GuaranteeDelivery';
 import {captureException, captureMessage, updateSentryUser} from "../../shared/sentry";
 import {getDateString} from "../../shared/tools";
 import mqtt from "../../shared/mqtt";
+import ConfigStore from "../../shared/ConfigStore";
 
 
 class ShidurApp extends Component {
@@ -103,12 +104,14 @@ class ShidurApp extends Component {
   };
 
   initGateways = (user) => {
+    this.setState({tcp: GxyJanus.globalConfig.dynamic_config.galaxy_protocol});
     mqtt.init(user, (data) => {
       console.log("[Shidur] mqtt init: ", data);
       mqtt.watch((data) => {
         this.onMqttData(data);
       })
       mqtt.join('galaxy/service/#');
+      mqtt.join('galaxy/users/broadcast');
       mqtt.send(JSON.stringify({type: "event", [user.role]: true}), true, 'galaxy/service/' + user.role);
     })
 
@@ -273,7 +276,7 @@ class ShidurApp extends Component {
   };
 
   onMqttData = (data) => {
-    if(data.type === "event") {
+    if(data.type === "event" && !data.hasOwnProperty('user')) {
       delete data.type;
       this.setState({...data});
       if(data.sdiout || data.audout) {
@@ -282,6 +285,8 @@ class ShidurApp extends Component {
           this.checkFullScreen();
         }, 3000);
       }
+    } else if (data.type === 'reload-config') {
+      this.reloadConfig();
     }
   };
 
@@ -305,7 +310,7 @@ class ShidurApp extends Component {
       }
     }
 
-    if(data.type === "event") {
+    if(data.type === "event" && !data.hasOwnProperty('user')) {
       delete data.type;
       this.setState({...data});
       if(data.sdiout || data.audout) {
@@ -314,9 +319,21 @@ class ShidurApp extends Component {
           this.checkFullScreen();
         }, 3000);
       }
-      return;
+    } else if (data.type === 'reload-config') {
+      this.reloadConfig();
     }
   };
+
+  reloadConfig = () => {
+    api.fetchConfig()
+      .then((data) => {
+        GxyJanus.setGlobalConfig(data)
+        this.setState({tcp: GxyJanus.globalConfig.dynamic_config.galaxy_protocol});
+      })
+      .catch(err => {
+        console.error("[User] error reloading config", err);
+      });
+  }
 
   nextInQueue = () => {
     let {groups_queue,groups,round} = this.state;

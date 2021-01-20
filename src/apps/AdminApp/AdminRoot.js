@@ -128,7 +128,10 @@ class AdminRoot extends Component {
       api.fetchConfig()
             .then(data => {
                 ConfigStore.setGlobalConfig(data);
-                this.setState({premodStatus: ConfigStore.dynamicConfig(ConfigStore.PRE_MODERATION_KEY) === 'true'});
+                this.setState({
+                  premodStatus: ConfigStore.dynamicConfig(ConfigStore.PRE_MODERATION_KEY) === 'true',
+                  tcp: ConfigStore.dynamicConfig("galaxy_protocol")
+                });
                 GxyJanus.setGlobalConfig(data);
                 mqtt.init(user, (data) => console.log("[Admin] mqtt init: ", data))
             })
@@ -538,27 +541,32 @@ class AdminRoot extends Component {
     sendCommandMessage = (command_type) => {
         const {gateways, feed_user, current_janus, current_room, command_status, gdm, tcp} = this.state;
         const gateway = gateways[current_janus];
-        const cmd = {type: command_type, rcmd: true, room: current_room, status: command_status, id: feed_user.id, user: feed_user};
-        const toAck = [feed_user.id];
+        const cmd = {type: command_type, rcmd: true, room: current_room, status: command_status, id: feed_user?.id, user: feed_user};
 
-        if(tcp === "mqtt") {
-            mqtt.send(JSON.stringify(cmd), false, 'galaxy/room/' + current_room);
-        } else {
-            if(command_type === "audio-out") {
-                gdm.send(cmd, toAck, (cmd) => gateway.sendCmdMessage(cmd))
-                    .then(() => {
-                        console.log(`[Admin] MIC delivered.`);
-                    }).catch((err) => {
-                    console.error('[Admin] not delivered', err);
-                });
-            } else {
-                gateway.sendCmdMessage(cmd)
-                    .catch((err) => {
-                        console.error('[Admin] sendCmdMessage error', err);
-                      alert(err);
-                  });
-            }
-        }
+      let topic = command_type.match(/^(reload-config|client-reload-all)$/) ? 'galaxy/users/broadcast' : 'galaxy/room/' + current_room;
+      mqtt.send(JSON.stringify(cmd), false, topic);
+
+        // FIXME: make datachannel usage on webrtc protocol?
+        // if(tcp === "mqtt") {
+        //     let topic = command_type.match(/^(reload-config|client-reload-all)$/) ? 'galaxy/users/broadcast' : 'galaxy/room/' + current_room;
+        //     mqtt.send(JSON.stringify(cmd), false, topic);
+        // } else {
+        //     if(command_type === "audio-out") {
+        //         const toAck = [feed_user.id];
+        //         gdm.send(cmd, toAck, (cmd) => gateway.sendCmdMessage(cmd))
+        //             .then(() => {
+        //                 console.log(`[Admin] MIC delivered.`);
+        //             }).catch((err) => {
+        //             console.error('[Admin] not delivered', err);
+        //         });
+        //     } else {
+        //         gateway.sendCmdMessage(cmd)
+        //             .catch((err) => {
+        //                 console.error('[Admin] sendCmdMessage error', err);
+        //               alert(err);
+        //           });
+        //     }
+        // }
 
         if (command_type === "audio-out") {
            this.setState({command_status: !command_status})
@@ -569,68 +577,68 @@ class AdminRoot extends Component {
     sendRemoteCommand = (command_type) => {
         this.sendCommandMessage(command_type);
 
-        const {gateways, feed_user, current_janus, current_room, command_status, gdm} = this.state;
-
-        if (command_type === "premoder-mode") {
-            const value = !this.state.premodStatus;
-            api.adminSetConfig(ConfigStore.PRE_MODERATION_KEY, value)
-                .then(() => {
-                    ConfigStore.setDynamicConfig(ConfigStore.PRE_MODERATION_KEY, JSON.stringify(value));
-                    this.setState({premodStatus: value});
-
-                    const msg = {type: "reload-config", status: value, id: null, user: null, room: null};
-                    Object.values(gateways).forEach(gateway =>
-                        gateway.sendProtocolMessage(msg)
-                            .catch(alert));
-                })
-                .catch(err => {
-									alert(err);
-								});
-            return;
-        }
-        if (command_type === "client-reload-all") {
-            const msg = {
-                type: "client-reload-all",
-                status: true,
-                id: null,
-                user: null,
-                room: null,
-            };
-            Object.values(gateways).forEach(gateway =>
-                gateway.sendProtocolMessage(msg)
-                    .catch(alert));
-            return;
-        }
-
-        if (!feed_user) {
-            alert("Choose user");
-            return;
-        }
-
-        if (command_type === "sound_test") {
-            feed_user.sound_test = true;
-        }
-
-        const gateway = gateways[current_janus];
-        const msg = {type: command_type, room: current_room, status: command_status, id: feed_user.id, user: feed_user};
-        const toAck = [feed_user.id];
-
-        if(command_type === "audio-out") {
-            gdm.send(msg, toAck, (msg) => gateway.sendProtocolMessage(msg).catch(alert)).
-            then(() => {
-                console.log(`MIC delivered to ${toAck}.`);
-            }).catch((error) => {
-                console.error(`MIC not delivered to ${toAck} due to ` , error);
-            });
-        } else {
-            const gateway = gateways[current_janus];
-            gateway.sendProtocolMessage({type: command_type, room: current_room, status: command_status, id: feed_user.id, user: feed_user})
-                .catch(alert);
-        }
-
-        if (command_type === "audio-out") {
-            this.setState({command_status: !command_status})
-        }
+        // const {gateways, feed_user, current_janus, current_room, command_status, gdm} = this.state;
+        //
+        // if (command_type === "premoder-mode") {
+        //     const value = !this.state.premodStatus;
+        //     api.adminSetConfig(ConfigStore.PRE_MODERATION_KEY, value)
+        //         .then(() => {
+        //             ConfigStore.setDynamicConfig(ConfigStore.PRE_MODERATION_KEY, JSON.stringify(value));
+        //             this.setState({premodStatus: value});
+        //
+        //             const msg = {type: "reload-config", status: value, id: null, user: null, room: null};
+        //             Object.values(gateways).forEach(gateway =>
+        //                 gateway.sendProtocolMessage(msg)
+        //                     .catch(alert));
+        //         })
+        //         .catch(err => {
+				// 					alert(err);
+				// 				});
+        //     return;
+        // }
+        // if (command_type === "client-reload-all") {
+        //     const msg = {
+        //         type: "client-reload-all",
+        //         status: true,
+        //         id: null,
+        //         user: null,
+        //         room: null,
+        //     };
+        //     Object.values(gateways).forEach(gateway =>
+        //         gateway.sendProtocolMessage(msg)
+        //             .catch(alert));
+        //     return;
+        // }
+        //
+        // if (!feed_user) {
+        //     alert("Choose user");
+        //     return;
+        // }
+        //
+        // if (command_type === "sound_test") {
+        //     feed_user.sound_test = true;
+        // }
+        //
+        // const gateway = gateways[current_janus];
+        // const msg = {type: command_type, room: current_room, status: command_status, id: feed_user.id, user: feed_user};
+        // const toAck = [feed_user.id];
+        //
+        // if(command_type === "audio-out") {
+        //     gdm.send(msg, toAck, (msg) => gateway.sendProtocolMessage(msg).catch(alert)).
+        //     then(() => {
+        //         console.log(`MIC delivered to ${toAck}.`);
+        //     }).catch((error) => {
+        //         console.error(`MIC not delivered to ${toAck} due to ` , error);
+        //     });
+        // } else {
+        //     const gateway = gateways[current_janus];
+        //     gateway.sendProtocolMessage({type: command_type, room: current_room, status: command_status, id: feed_user.id, user: feed_user})
+        //         .catch(alert);
+        // }
+        //
+        // if (command_type === "audio-out") {
+        //     this.setState({command_status: !command_status})
+        // }
     };
 
     joinRoom = (data) => {
@@ -787,6 +795,18 @@ class AdminRoot extends Component {
     onConfirmReloadAllConfirm = (e, data) => {
         this.setState({showConfirmReloadAll: false});
         this.sendRemoteCommand("client-reload-all");
+    }
+
+    setProtocol = () => {
+      let {tcp} = this.state;
+      const value = tcp === "mqtt" ? "webrtc" : "mqtt";
+      api.adminSetConfig("galaxy_protocol", value)
+        .then(() => {
+          this.setState({tcp: value});
+          const msg = {type: "reload-config", status: value, id: null, user: null, room: null};
+          mqtt.send(JSON.stringify(msg), false, 'galaxy/users/broadcast');
+        })
+        .catch(err => alert(err))
     }
 
   render() {
@@ -971,19 +991,20 @@ class AdminRoot extends Component {
 					<Popup trigger={<Button negative icon='user x' onClick={() => this.sendRemoteCommand("client-kicked")} />} content='Kick' inverted />,
 					/*<Popup trigger={<Button color="pink" icon='eye' onClick={() => this.sendDataMessage("video-mute")} />} content='Cam Mute/Unmute' inverted />,*/
 					/*<Popup trigger={<Button color="blue" icon='power off' onClick={() => this.sendRemoteCommand("client-disconnect")} />} content='Disconnect(LOST FEED HERE!)' inverted />,*/
-					<Popup inverted
-					       content={`${premodStatus ? 'Disable' : 'Enable'} Pre Moderation Mode`}
-					       trigger={
-					           <Button color="blue"
-					                   icon='copyright'
-					                   inverted={premodStatus}
-					                   onClick={() => this.sendRemoteCommand("premoder-mode")}/>
-					       }/>,
+					// <Popup inverted
+					//        content={`${premodStatus ? 'Disable' : 'Enable'} Pre Moderation Mode`}
+					//        trigger={
+					//            <Button color="blue"
+					//                    icon='copyright'
+					//                    inverted={premodStatus}
+					//                    onClick={() => this.sendRemoteCommand("premoder-mode")}/>
+					//        }/>,
+          <Popup trigger={<Button color="blue" icon='cloud download' onClick={() => this.sendRemoteCommand("reload-config")} />} content='Silently reload dynamic config on ALL clients' inverted />,
 					<Popup trigger={<Button color="red" icon='redo' onClick={() => this.setState({showConfirmReloadAll: !showConfirmReloadAll})} />} content='RELOAD ALL' inverted />,
           <Dropdown icon='plug' className='button icon' inline item text={tcp === "mqtt" ? 'MQTT' : 'WebRTC'} >
             <Dropdown.Menu>
-              <Dropdown.Item onClick={() => this.setState({tcp: "mqtt"})}>MQTT</Dropdown.Item>
-              <Dropdown.Item onClick={() => this.setState({tcp: "webrtc"})}>WebRTC</Dropdown.Item>
+              <Dropdown.Item onClick={this.setProtocol}>MQTT</Dropdown.Item>
+              <Dropdown.Item onClick={this.setProtocol}>WebRTC</Dropdown.Item>
             </Dropdown.Menu>
           </Dropdown>
 				]);

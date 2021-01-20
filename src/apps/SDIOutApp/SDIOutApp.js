@@ -11,6 +11,7 @@ import UsersQuadSDIOut from "./UsersQuadSDIOut";
 import {GuaranteeDeliveryManager} from '../../shared/GuaranteeDelivery';
 import {captureException, captureMessage} from "../../shared/sentry";
 import mqtt from "../../shared/mqtt";
+import ConfigStore from "../../shared/ConfigStore";
 
 
 class SDIOutApp extends Component {
@@ -93,6 +94,7 @@ class SDIOutApp extends Component {
               this.onMqttData(data);
             })
             mqtt.join('galaxy/service/shidur');
+            mqtt.join('galaxy/users/broadcast');
             mqtt.send(JSON.stringify({type: "event", [user.role]: true}), true, 'galaxy/service/' + user.role);
           }, 3000);
         })
@@ -138,7 +140,7 @@ class SDIOutApp extends Component {
     };
 
     postInitGateway = (user, gateway) => {
-        if (gateway.name === "gxy3" && GxyJanus.globalConfig.dynamic_config.galaxy_protocol !== "mqtt") {
+        if (gateway.name === "gxy3") {
             return gateway.initServiceProtocol(user, data => this.onServiceData(gateway, data));
         }
         return Promise.resolve();
@@ -166,6 +168,8 @@ class SDIOutApp extends Component {
       this.setState({vote: status, qg: null});
     } else if(data.type === "sdi-restart_sdiout") {
       window.location.reload();
+    } else if (data.type === 'reload-config') {
+      this.reloadConfig();
     } else if(data.type === "event") {
       delete data.type;
       this.setState({...data});
@@ -220,6 +224,8 @@ class SDIOutApp extends Component {
               this.setState({vote: status, qg: null});
           } else if(data.type === "sdi-restart_sdiout") {
               window.location.reload();
+          } else if (data.type === 'reload-config') {
+            this.reloadConfig();
           } else if(data.type === "event") {
               delete data.type;
               this.setState({...data});
@@ -228,6 +234,16 @@ class SDIOutApp extends Component {
           console.error(`Failed receiving ${data}: ${error}`);
         });
     };
+
+    reloadConfig = () => {
+      api.fetchConfig()
+        .then((data) => {
+          GxyJanus.setGlobalConfig(data);
+        })
+        .catch(err => {
+          console.error("[User] error reloading config", err);
+        });
+    }
 
     render() {
         let {vote,appInitError, gatewaysInitialized,group,qids,qg,gateways, roomsStatistics} = this.state;

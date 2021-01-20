@@ -6,7 +6,7 @@ import {initSentry} from './shared/sentry';
 
 import * as serviceWorker from './serviceWorker';
 
-//initSentry();
+initSentry();
 ReactDOM.render(<App />, document.getElementById('root'));
 
 // If you want your app to work offline and load faster, you can change

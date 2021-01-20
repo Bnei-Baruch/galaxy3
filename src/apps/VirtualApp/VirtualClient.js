@@ -12,6 +12,7 @@ import {
   micLevel,
   takeImage,
   testMic,
+  updateGxyUser,
   wkliLeave
 } from '../../shared/tools';
 import './VirtualClient.scss';
@@ -67,6 +68,7 @@ import SendQuestionContainer from './components/SendQuestions/container';
 import {RegistrationModals} from './components/RegistrationModals';
 import {getUserRole, userRolesEnum} from "../../shared/enums";
 import KliOlamiStream from './components/KliOlamiStream';
+import { iceRestart as iceRestartKliOlami } from './components/KliOlamiStreamHelper';
 import KliOlamiToggle from './buttons/KliOlamiToggle';
 import Toolbar from '@material-ui/core/Toolbar';
 import Typography from '@material-ui/core/Typography';
@@ -229,6 +231,8 @@ class VirtualClient extends Component {
   };
 
   initApp = (user) => {
+
+    //Clients not authorized to app may see shidur only
     if (user.role !== userRolesEnum.user) {
       const config = {
         'gateways': {
@@ -252,6 +256,16 @@ class VirtualClient extends Component {
       this.setState({user, sourceLoading: true});
       return;
     }
+
+    // Protocol init
+    mqtt.init(user, (data) => {
+      console.log("[mqtt] init: ", data);
+      mqtt.join('galaxy/users/broadcast');
+      mqtt.join('galaxy/users/' + user.id);
+      mqtt.watch((message) => {
+        this.handleCmdData(message);
+      })
+    })
 
     const gdm = new GuaranteeDeliveryManager(user.id);
     this.setState({gdm});
@@ -282,14 +296,6 @@ class VirtualClient extends Component {
               msg_protocol: ConfigStore.dynamicConfig("galaxy_protocol")
             });
             GxyJanus.setGlobalConfig(data);
-
-            // Protocol init
-            mqtt.init(user, (data) => {
-              console.log("[mqtt] init: ", data);
-              mqtt.watch((message) => {
-                this.handleCmdData(message);
-              })
-            })
           })
           .then(() => (api.fetchAvailableRooms({with_num_users: true})))
           .then(data => {
@@ -529,7 +535,7 @@ class VirtualClient extends Component {
     let count = 0;
     let chk = setInterval(() => {
       count++;
-      console.debug("ICE counter: ", count);
+      //console.debug("ICE counter: ", count);
       let {ice} = this.state;
       if (count < 60 && ice.match(/^(connected|completed)$/)) {
         clearInterval(chk);
@@ -544,7 +550,7 @@ class VirtualClient extends Component {
       }
       if (count >= 60) {
         clearInterval(chk);
-        console.debug(" :: ICE Filed: Reconnecting... ")
+        console.log(" :: ICE Filed: Reconnecting... ")
         this.exitRoom(/* reconnect= */ true, () => {
           console.error("ICE Disconnected");
           this.initClient(/* reconnect= */ true);
@@ -881,6 +887,7 @@ class VirtualClient extends Component {
     if(remoteFeed) remoteFeed.send({message: {request: 'configure', restart: true}});
     if(this.chat) this.chat.iceRestart();
     if(this.state.virtualStreamingJanus) this.state.virtualStreamingJanus.iceRestart();
+    iceRestartKliOlami()
   };
 
   onMessage = (videoroom, msg, jsep) => {
@@ -896,12 +903,10 @@ class VirtualClient extends Component {
 
         user.rfid = myid;
         this.setState({user, myid, mypvtid, room: msg['room'], delay: false, wipSettings: false});
-        updateSentryUser(user);
 
-        api.updateUser(user.id, user)
-            .catch(err => {
-							console.error("[User] error updating user state", user.id, err);
-						});
+        updateSentryUser(user);
+        updateGxyUser(user);
+
         this.keepAlive();
 
         // Subscribe to mqtt topic
@@ -1276,7 +1281,7 @@ class VirtualClient extends Component {
       updateSentryUser(user);
     } else if (type === 'audio-out') {
       this.handleAudioOut(data);
-    }  else if (type === 'reload-config') {
+    } else if (type === 'reload-config') {
       this.reloadConfig();
     } else if (type === 'client-reload-all') {
       window.location.reload();
@@ -1355,23 +1360,19 @@ class VirtualClient extends Component {
 
   questionState = (user, question) => {
     user.question = !question;
-    api.updateUser(user.id, user)
-        .then(data => {
-          if(data.result === "success") {
-            localStorage.setItem('question', !question);
-            this.setState({user, question: !question});
-            updateSentryUser(user);
-            const msg = {type: "client-state", user};
-            if(this.state.msg_protocol === "mqtt") {
-              mqtt.send(JSON.stringify(msg), true, 'galaxy/room/' + this.state.room);
-            } else {
-              this.chat.sendCmdMessage(msg);
-            }
-          }
-        })
-        .catch(err => {
-					console.error("[User] error updating user state", user.id, err);
-				});
+
+    localStorage.setItem('question', !question);
+    this.setState({user, question: !question});
+
+    updateSentryUser(user);
+    updateGxyUser(user);
+
+    const msg = {type: "client-state", user};
+    if(this.state.msg_protocol === "mqtt") {
+      mqtt.send(JSON.stringify(msg), true, 'galaxy/room/' + this.state.room);
+    } else {
+      this.chat.sendCmdMessage(msg);
+    }
   };
 
   handleAudioOut = (data) => {
@@ -1395,28 +1396,24 @@ class VirtualClient extends Component {
 
   camMute = (cammuted) => {
     const {videoroom} = this.state;
+    const user = Object.assign({}, this.state.user);
+    if (user.role === userRolesEnum.ghost) return;
+    this.makeDelay();
+
     if (videoroom) {
-      const user = Object.assign({}, this.state.user);
-      if (user.role === userRolesEnum.ghost) return;
-      this.makeDelay();
       user.camera = cammuted;
-      api.updateUser(user.id, user)
-          .then(data => {
-            if(data.result === "success") {
-              cammuted ? videoroom.unmuteVideo() : videoroom.muteVideo();
-              this.setState({user, cammuted: !cammuted});
-              updateSentryUser(user);
-              const msg = {type: "client-state", user};
-              if(this.state.msg_protocol === "mqtt") {
-                mqtt.send(JSON.stringify(msg), false, 'galaxy/room/' + this.state.room);
-              } else {
-                this.chat.sendCmdMessage(msg);
-              }
-            }
-          })
-          .catch(err => {
-						console.error("[User] error updating user state", user.id, err);
-					});
+      cammuted ? videoroom.unmuteVideo() : videoroom.muteVideo();
+      this.setState({user, cammuted: !cammuted});
+
+      updateSentryUser(user);
+      updateGxyUser(user);
+
+      const msg = {type: "client-state", user};
+      if(this.state.msg_protocol === "mqtt") {
+        mqtt.send(JSON.stringify(msg), false, 'galaxy/room/' + this.state.room);
+      } else {
+        this.chat.sendCmdMessage(msg);
+      }
     }
   };
 
@@ -1506,7 +1503,7 @@ class VirtualClient extends Component {
     const {user, cammuted, question, muted} = this.state;
 
     return (<div className="video" key={index}>
-      <div className={classNames('video__overlay')}>
+      <div className={classNames('video__overlay', { 'talk-frame': !muted })}>
         {question ?
           <div className="question">
             <svg viewBox="0 0 50 50">

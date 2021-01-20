@@ -461,7 +461,7 @@ class ShidurToran extends Component {
               })}
             </Button.Group>
             <Divider />
-            <Dropdown icon='plug' className='button icon' inline item text={tcp === "mqtt" ? 'MQTT' : 'WebRTC'} >
+            <Dropdown icon='plug' className='button icon' inline item text={tcp === "mqtt" ? 'MQTT' : 'WebRTC'} disabled >
               <Dropdown.Menu>
                 <Dropdown.Item onClick={() => this.props.setProps({tcp: "mqtt"})}>MQTT</Dropdown.Item>
                 <Dropdown.Item onClick={() => this.props.setProps({tcp: "webrtc"})}>WebRTC</Dropdown.Item>

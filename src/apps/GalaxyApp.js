@@ -49,7 +49,7 @@ class GalaxyApp extends Component {
         return roles.map((role, i) => {
             if(role.match(/^(new_user|gxy_guest|gxy_pending_approval|gxy_user|pending_approval)$/)) {
                 return (<Button key={i} size='massive' color='green' onClick={() => window.open("user","_self")}>
-                    Galaxy
+                    Arvut
                 </Button>);
             }
             if(role === "gxy_shidur") {
