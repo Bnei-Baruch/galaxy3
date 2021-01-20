@@ -25,6 +25,7 @@ import makeStyles from '@material-ui/core/styles/makeStyles';
 
 import { kc } from '../../../components/UserManager';
 import { updateSentryUser } from '../../../shared/sentry';
+import { Help as HelpCrisp } from '../../../apps/VirtualApp/components/Help';
 import { getLanguage, languagesOptions, setLanguage } from '../../../i18n/i18n';
 
 const helpUrlsByLang = {
@@ -40,7 +41,7 @@ const useStyles      = makeStyles(() => ({
     background: grey[300]
   }
 }));
-export const TopMenu = ({ t, openSettings, open = false, setOpen, notApproved }) => {
+export const TopMenu = ({ t, openSettings, open = false, setOpen, notApproved, i18n, user }) => {
   const classes                           = useStyles();
   const menuRef                           = useRef();
   const [openLanguages, setOpenLanguages] = useState(false);
@@ -110,11 +111,8 @@ export const TopMenu = ({ t, openSettings, open = false, setOpen, notApproved })
         </ListItem>
         <Divider />
         <ListItem style={{ fontWeight: 'bold' }}>{t('oldClient.support')}</ListItem>
-        <ListItem button onClick={() => window.open('https://forms.gle/F6Lm2KMLUkU4hrmK8', '_blank')}>
-          <ListItemText>
-            {t('feedback.feedback')}
-          </ListItemText>
-          <ListItemSecondaryAction><Feedback /></ListItemSecondaryAction>
+        <ListItem>
+          <HelpCrisp t={t} i18n={i18n} user={user} />
         </ListItem>
         {helpByLang()}
         <Divider />
