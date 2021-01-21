@@ -1804,7 +1804,7 @@ class VirtualClient extends Component {
   };
 
   renderTopBar = (isDeb) => {
-    const { t } = this.props;
+    const { t, i18n } = this.props;
 
     const { user, asideMsgCounter, leftAsideName, rightAsideName, isOpenTopMenu } = this.state;
 
@@ -1819,6 +1819,8 @@ class VirtualClient extends Component {
             open={isOpenTopMenu}
             setOpen={(isOpen) => this.setState({ isOpenTopMenu: isOpen })}
             notApproved={notApproved}
+            user={user}
+            i18n={i18n}
           />
           <ButtonMD
             color="primary"
