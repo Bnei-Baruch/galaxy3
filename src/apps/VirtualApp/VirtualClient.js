@@ -846,7 +846,7 @@ class VirtualClient extends Component {
     }
 
     if(useAudio) {
-      offer.audio = {deviceId: {exact: audio_device}};
+      offer.audio = {autoGainControl: false, deviceId: {exact: audio_device}};
     }
 
     videoroom.createOffer({
