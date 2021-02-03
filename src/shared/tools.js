@@ -228,7 +228,7 @@ export const getMediaStream = (audio, video, setting={width: 320, height: 180, i
     } else if(video && !videoid) {
         video = {width, height, frameRate: {ideal, min: 1}};
     }
-    audio = audioid ? {autoGainControl: false, deviceId: {exact: audioid}} : audio;
+    audio = audioid ? {noiseSuppression: true, deviceId: {exact: audioid}} : audio;
     return navigator.mediaDevices.getUserMedia({audio, video})
         .then(data => ([data, null]))
         .catch(error => Promise.resolve([null, error.name]));
