@@ -63,7 +63,8 @@ import {AskQuestion, AudioMode, CloseBroadcast, Layout, Mute, MuteVideo, Vote, F
 import Settings from './settings/Settings';
 import SettingsJoined from './settings/SettingsJoined';
 import HomerLimud from './components/HomerLimud';
-import { Help } from './components/Help';
+import { SupportOld } from './components/Support/SupportOld';
+import { Support } from './components/Support/Support';
 import SendQuestionContainer from './components/SendQuestions/container';
 import {RegistrationModals} from './components/RegistrationModals';
 import {getUserRole, userRolesEnum} from "../../shared/enums";
@@ -1886,15 +1887,6 @@ class VirtualClient extends Component {
               </ButtonMD>
             </Badge>
             <ButtonMD
-              onClick={() => {
-                this.toggleRightAside('support');
-                this.setState({ isRoomChat: false });
-              }}
-              variant={rightAsideName === 'support' ? 'contained' : 'outlined'}
-            >
-              {t('oldClient.support')}
-            </ButtonMD>
-            <ButtonMD
               onClick={() => this.toggleRightAside('question')}
               variant={rightAsideName === 'question' ? 'contained' : 'outlined'}
             >
@@ -1907,6 +1899,8 @@ class VirtualClient extends Component {
               </ButtonMD>
             }
           </ButtonGroup>
+
+          <Support user={user} />
           {/* ---------- */}
 
         </Toolbar>
@@ -2373,7 +2367,7 @@ class VirtualClient extends Component {
                         }} />
               </Popup.Content>
             </Popup>
-            <Help t={t} i18n={i18n} user={user} />
+            <SupportOld t={t} i18n={i18n} user={user} />
             <Button primary style={{ margin: 'auto' }} onClick={() => window.open('https://virtualhome.kli.one', '_blank')}>{t('loginPage.userFee')}</Button>
             <Monitoring monitoringData={monitoringData} />
             {!isDeb ? null :
