@@ -10,10 +10,7 @@ export const Support = ({ user }) => {
     initCrisp(null, i18n.language, user, null);
   }, [i18n.language, user]);
 
-  const handleOpenCrisp = () => {
-    openCrisp();
-
-  };
+  const handleOpenCrisp = () => openCrisp();
 
   return (
     <Button
@@ -21,7 +18,7 @@ export const Support = ({ user }) => {
       variant="outlined"
       onClick={handleOpenCrisp}
     >
-      {t('loginPage.support')}
+      {t('oldClient.support')}
     </Button>
   );
 };
