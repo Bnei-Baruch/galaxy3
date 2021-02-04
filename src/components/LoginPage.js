@@ -8,7 +8,7 @@ import {Terms} from "./Terms";
 import {Profile} from "./Profile";
 import internet from './internet.png';
 import './LoginPage.css';
-import {Help} from '../apps/VirtualApp/components/Help';
+import {SupportOld} from '../apps/VirtualApp/components/Support/SupportOld';
 
 class LoginPage extends Component {
 
@@ -72,7 +72,7 @@ class LoginPage extends Component {
                                     onChange={(e, { value }) => {setLanguage(value)}} />
                         </Menu.Item>
                         <Menu.Item>
-                            <Help t={t} i18n={i18n} user={this.props.user} />
+                            <SupportOld t={t} i18n={i18n} user={this.props.user} />
                         </Menu.Item>
                     </Menu.Menu>
                 </Menu>

@@ -10,23 +10,13 @@ import {
   ListItemSecondaryAction,
   Collapse
 } from '@material-ui/core';
-import {
-  AccountBox,
-  Close,
-  ExitToApp,
-  Feedback,
-  Help,
-  Menu as MenuIcon,
-  Settings,
-  Translate
-} from '@material-ui/icons';
+import { AccountBox, Close, ExitToApp, Menu as MenuIcon, Settings, Translate } from '@material-ui/icons';
 import { grey } from '@material-ui/core/colors';
 import makeStyles from '@material-ui/core/styles/makeStyles';
 
 import { kc } from '../../../components/UserManager';
 import { updateSentryUser } from '../../../shared/sentry';
-import { Help as HelpCrisp } from '../../../apps/VirtualApp/components/Help';
-import { getLanguage, languagesOptions, setLanguage } from '../../../i18n/i18n';
+import { languagesOptions, setLanguage } from '../../../i18n/i18n';
 
 const helpUrlsByLang = {
   'en': 'https://bit.ly/2JkBU08',
@@ -51,17 +41,6 @@ export const TopMenu = ({ t, openSettings, open = false, setOpen, notApproved, i
   };
 
   const toggleMenu = (o = !open) => setOpen(o);
-
-  const helpByLang = () => {
-    let url = helpUrlsByLang[getLanguage()];
-
-    return (
-      <ListItem button key={'help'} onClick={() => window.open(url, '_blank')}>
-        <ListItemText primary={t('feedback.help')} />
-        <ListItemSecondaryAction><Help /></ListItemSecondaryAction>
-      </ListItem>
-    );
-  };
 
   const renderLanguage = ({ key, text, value }) => {
     return (
@@ -109,12 +88,6 @@ export const TopMenu = ({ t, openSettings, open = false, setOpen, notApproved, i
           <ListItemText primary={t('oldClient.signOut')} />
           <ListItemSecondaryAction><ExitToApp /></ListItemSecondaryAction>
         </ListItem>
-        <Divider />
-        <ListItem style={{ fontWeight: 'bold' }}>{t('oldClient.support')}</ListItem>
-        <ListItem>
-          <HelpCrisp t={t} i18n={i18n} user={user} />
-        </ListItem>
-        {helpByLang()}
         <Divider />
 
         <ListItem style={{ fontWeight: 'bold' }}>{t('oldClient.usefulLinks')}</ListItem>
