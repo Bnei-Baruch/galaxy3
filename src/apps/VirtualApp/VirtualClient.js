@@ -800,7 +800,7 @@ class VirtualClient extends Component {
 
     mqtt.exit('galaxy/room/' + room);
 
-    if (shidur) {
+    if (shidur && !reconnect) {
       virtualStreamingJanus.destroy({
         success: () => {
           console.log('Virtual streaming destroyed on exit room.');
