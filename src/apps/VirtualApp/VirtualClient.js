@@ -63,8 +63,7 @@ import {AskQuestion, AudioMode, CloseBroadcast, Layout, Mute, MuteVideo, Vote, F
 import Settings from './settings/Settings';
 import SettingsJoined from './settings/SettingsJoined';
 import HomerLimud from './components/HomerLimud';
-import { SupportOld } from './components/Support/SupportOld';
-import { Support } from './components/Support/Support';
+import { SupportOld, Support, initCrisp } from './components/Support';
 import SendQuestionContainer from './components/SendQuestions/container';
 import {RegistrationModals} from './components/RegistrationModals';
 import {getUserRole, userRolesEnum} from "../../shared/enums";
@@ -233,6 +232,7 @@ class VirtualClient extends Component {
 
   initApp = (user) => {
 
+    initCrisp();
     //Clients not authorized to app may see shidur only
     if (user.role !== userRolesEnum.user) {
       const config = {

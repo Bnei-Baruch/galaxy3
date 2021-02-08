@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Button, Popup } from 'semantic-ui-react';
 import { languagesOptions } from '../../../../i18n/i18n';
-import { initCrisp, openCrisp } from './helper';
+import { configCrisp, openCrisp } from './helper';
 
 const usePrevious = (value) => {
   const ref = useRef();
@@ -24,7 +24,7 @@ export const SupportOld = ({ t, i18n, user }) => {
     if (crispState.locale !== undefined) {
       const locale = crispState.locale || i18n.language;
       if (prevLocale === undefined || (locale && prevLocale !== locale) || !!prevUser !== !!user) {
-        initCrisp(crispState.locale, i18n.language, user, crispState.open ? () => openCrisp() : undefined);
+        configCrisp(crispState.locale, i18n.language, user);
       }
     }
   }, [crispState, user]);
