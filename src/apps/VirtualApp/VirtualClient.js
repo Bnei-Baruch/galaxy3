@@ -232,7 +232,7 @@ class VirtualClient extends Component {
 
   initApp = (user) => {
 
-    initCrisp();
+    initCrisp(user, this.props.i18n.language);
     //Clients not authorized to app may see shidur only
     if (user.role !== userRolesEnum.user) {
       const config = {
