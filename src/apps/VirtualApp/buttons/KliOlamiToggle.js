@@ -10,13 +10,15 @@ const KliOlamiToggle = (props) => {
   const handleAction = () => action();
 
   return (
-    <Tooltip title={isOn ? t('oldClient.closeKliOlami') : t('oldClient.openKliOlami')}>
-      <IconButton
-        aria-label={isOn ? t('oldClient.closeKliOlami') : t('oldClient.openKliOlami')}
-        disabled={disabled}
-        onClick={() => handleAction()}>
-        {isOn ? <Public /> : <Public color="secondary" />}
-      </IconButton>
+    <Tooltip title={isOn ? t('oldClient.closeKliOlami') : t('oldClient.openKliOlami')} disableTouchListener={true}>
+      <span>
+        <IconButton
+          aria-label={isOn ? t('oldClient.closeKliOlami') : t('oldClient.openKliOlami')}
+          disabled={disabled}
+          onClick={() => handleAction()}>
+          {isOn ? <Public /> : <Public color="secondary" />}
+        </IconButton>
+      </span>
     </Tooltip>
   );
 };
