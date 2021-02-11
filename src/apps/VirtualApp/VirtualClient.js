@@ -1900,7 +1900,7 @@ class VirtualClient extends Component {
             }
           </ButtonGroup>
 
-          <Support user={user} />
+          <Support />
           {/* ---------- */}
 
         </Toolbar>

@@ -23,6 +23,7 @@ import LogoutDropdown from './LogoutDropdown';
 import { SelectViewLanguage } from '../components/SelectViewLanguage';
 import { AccountCircle, Mic, Videocam } from '@material-ui/icons';
 import { ThemeContext } from '../components/ThemeSwitcher/ThemeSwitcher';
+import { Support } from '../components/Support';
 
 const settingsList = vsettings_list.map(({ key, text, value }) => ({ key, text, value: JSON.stringify(value) }));
 const mapDevice    = ({ label, deviceId }) => ({ text: label, value: deviceId });
@@ -210,7 +211,7 @@ const Settings = (props) => {
 
   const renderHeader = () => (
     <>
-      <Grid item xs={9}>
+      <Grid item xs={8}>
         <Typography variant="h4" display={'block'} color="textPrimary">
           {t('settings.helloUser', { name: userDisplay })}
         </Typography>
@@ -218,9 +219,14 @@ const Settings = (props) => {
           {t('settings.beforeConnecting')}
         </Typography>
       </Grid>
-      <Grid item xs={3}>
-        <Grid container justify="flex-end">
-          <LogoutDropdown display={userDisplay} />
+      <Grid item xs={4}>
+        <Grid container justify="flex-end" spacing={2}>
+          <Grid item>
+            <LogoutDropdown display={userDisplay} />
+          </Grid>
+          <Grid item>
+            <Support />
+          </Grid>
         </Grid>
       </Grid>
     </>

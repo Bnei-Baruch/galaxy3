@@ -3,7 +3,7 @@ import { Button } from '@material-ui/core';
 import { configCrisp, openCrisp, resetCrisp } from './helper';
 import { useTranslation } from 'react-i18next';
 
-export const Support = ({ user }) => {
+export const Support = () => {
   const { t, i18n } = useTranslation();
 
   useEffect(() => {
