@@ -11,14 +11,16 @@ const Fullscreen = (props) => {
   const handleAction = () => action();
 
   return (
-    <Tooltip title={t(!isOn ? 'oldClient.openFullScreen' : 'oldClient.closeFullScreen')}>
-      <IconButton
-        style={{ color }}
-        aria-label={t(!isOn ? 'oldClient.openFullScreen' : 'oldClient.closeFullScreen')}
-        disabled={disabled}
-        onClick={handleAction}>
-        {isOn ? <FullscreenExit /> : <FullscreenIcon />}
-      </IconButton>
+    <Tooltip title={t(!isOn ? 'oldClient.openFullScreen' : 'oldClient.closeFullScreen')} disableTouchListener={true}>
+      <span>
+        <IconButton
+          style={{ color }}
+          aria-label={t(!isOn ? 'oldClient.openFullScreen' : 'oldClient.closeFullScreen')}
+          disabled={disabled}
+          onClick={handleAction}>
+          {isOn ? <FullscreenExit /> : <FullscreenIcon />}
+        </IconButton>
+      </span>
     </Tooltip>
   );
 };

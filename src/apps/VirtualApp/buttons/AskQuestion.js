@@ -7,13 +7,15 @@ const AskQuestion = (props) => {
   const handleAction                  = () => action();
 
   return (
-    <Tooltip title={t(isOn ? 'oldClient.cancelQuestion' : 'oldClient.askQuestion')}>
-      <IconButton
-        aria-label={t(isOn ? 'oldClient.cancelQuestion' : 'oldClient.askQuestion')}
-        disabled={disabled}
-        onClick={() => handleAction()}>
-        {isOn ? <LiveHelp color="secondary" /> : <LiveHelp />}
-      </IconButton>
+    <Tooltip title={t(isOn ? 'oldClient.cancelQuestion' : 'oldClient.askQuestion')} disableTouchListener={true}>
+      <span>
+        <IconButton
+          aria-label={t(isOn ? 'oldClient.cancelQuestion' : 'oldClient.askQuestion')}
+          disabled={disabled}
+          onClick={() => handleAction()}>
+          {isOn ? <LiveHelp color="secondary" /> : <LiveHelp />}
+        </IconButton>
+      </span>
     </Tooltip>
   );
 };

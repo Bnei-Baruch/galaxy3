@@ -16,15 +16,17 @@ const Vote = (props) => {
 
   return (
     <div>
-      <Tooltip title={t('oldClient.vote')} >
-        <IconButton
-          aria-label={t('oldClient.vote')}
-          disabled={disabled}
-          onClick={handleClick}
-          ref={ref}
-          >
-          <ThumbsUpDown />
-        </IconButton>
+      <Tooltip title={t('oldClient.vote')} disableTouchListener={true}>
+        <span>
+          <IconButton
+            aria-label={t('oldClient.vote')}
+            disabled={disabled}
+            onClick={handleClick}
+            ref={ref}
+            >
+            <ThumbsUpDown />
+          </IconButton>
+        </span>
       </Tooltip>
       <Popover
         open={open}

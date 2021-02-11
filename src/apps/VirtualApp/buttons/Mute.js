@@ -12,13 +12,15 @@ const Mute = React.forwardRef((props, ref) => {
         width: '45px',
         height: '45px'
       }} width="45" height="45" />
-      <Tooltip title={t(isOn ? 'oldClient.unMute' : 'oldClient.mute')}>
-        <IconButton
-          aria-label={t(isOn ? 'oldClient.unMute' : 'oldClient.mute')}
-          disabled={disabled}
-          onClick={() => handleAction()}>
-          {isOn ? <MicOff color="secondary" /> : <Mic />}
-        </IconButton>
+      <Tooltip title={t(isOn ? 'oldClient.unMute' : 'oldClient.mute')} disableTouchListener={true}>
+        <span>
+          <IconButton
+            aria-label={t(isOn ? 'oldClient.unMute' : 'oldClient.mute')}
+            disabled={disabled}
+            onClick={() => handleAction()}>
+            {isOn ? <MicOff color="secondary" /> : <Mic />}
+          </IconButton>
+        </span>
       </Tooltip>
     </Box>
   );
