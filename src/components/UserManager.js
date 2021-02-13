@@ -24,6 +24,7 @@ kc.onAuthLogout = () => {
 };
 
 const renewToken = (retry) => {
+    retry++;
     kc.updateToken(70)
         .then(refreshed => {
             if(refreshed) {
@@ -31,24 +32,28 @@ const renewToken = (retry) => {
                 api.setAccessToken(kc.token);
             } else {
                 console.warn('Token is still valid?..');
-                captureMessage('Refresh valid token', {source: 'kc'}, 'fatal');
+                captureMessage('Refresh valid token', {source: 'kc', refreshed}, 'fatal');
+                renewRetry(retry, refreshed);
             }
         })
         .catch(err => {
-            retry++;
-            if(retry > 5) {
-                captureMessage('Error refresh token', {source: 'kc'}, 'fatal');
-                console.error("Refresh retry: failed");
-                console.debug("-- Refresh Failed --");
-                kc.clearToken();
-                window.location.reload();
-            } else {
-                setTimeout(() => {
-                    console.error("Refresh retry: " + retry);
-                    renewToken(retry);
-                }, 10000);
-            }
+            renewRetry(retry, err);
         });
+};
+
+const renewRetry = (retry, err) => {
+    if(retry > 5) {
+        captureMessage('Error refresh token', {source: 'kc', err}, 'fatal');
+        console.error("Refresh retry: failed");
+        console.debug("-- Refresh Failed --");
+        kc.clearToken();
+        window.location.reload();
+    } else {
+        setTimeout(() => {
+            console.error("Refresh retry: " + retry);
+            renewToken(retry);
+        }, 10000);
+    }
 };
 
 export const getUser = (callback) => {
