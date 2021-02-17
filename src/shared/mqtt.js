@@ -18,9 +18,10 @@ class MqttMsg {
     this.user = user;
 
     const id = user.role === "user" ? user.id + "-" + randomString(3) : user.id;
+    const token = isServiceID(user.id) ? GxyJanus.globalConfig.dynamic_config.mqtt_auth : this.token;
 
     const transformUrl = (url, options, client) => {
-      client.options.password = this.token;
+      client.options.password = token;
       return url;
     };
 
@@ -32,7 +33,7 @@ class MqttMsg {
       protocolVersion: 5,
       clean: true,
       username: user.email,
-      password: this.token || GxyJanus.globalConfig.dynamic_config.mqtt_auth,
+      password: token,
       transformWsUrl: transformUrl,
       properties: {
         sessionExpiryInterval: 5,

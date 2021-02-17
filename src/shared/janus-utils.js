@@ -79,10 +79,8 @@ class GxyJanus extends EventTarget {
                         error: (err) => {
                             this.error("Janus.init error", err);
                             this.dispatchEvent(new CustomEvent("net-lost", {detail: err}));
-                            reject(err);
-                            if (this.gateway.getSessionId()) {
-                                this.reconnect();
-                            }
+                            resolve();
+                            this.reconnect();
                         },
                         destroyed: () => {
                             this.error(":: Janus destroyed ::");
