@@ -1,17 +1,13 @@
 import React, {Component, Fragment} from 'react';
 import {Janus} from "../../lib/janus";
-import {Button, Confirm, Dropdown, Grid, Header, Icon, List, Menu, Popup, Segment, Tab, Table} from "semantic-ui-react";
+import {Button, Confirm, Dropdown, Grid, Header, Icon, List, Popup, Segment, Table} from "semantic-ui-react";
 import './AdminRoot.css';
 import './AdminRootVideo.scss'
 import classNames from "classnames";
 import platform from "platform";
-import {kc} from "../../components/UserManager";
 import LoginPage from "../../components/LoginPage";
 import GxyJanus from "../../shared/janus-utils";
 import ChatBox from "./components/ChatBox";
-import MonitoringAdmin from "./components/MonitoringAdmin";
-import MonitoringUser from "./components/MonitoringUser";
-import RoomManager from "./components/RoomManager";
 import api from "../../shared/Api";
 import ConfigStore from "../../shared/ConfigStore";
 import {GuaranteeDeliveryManager} from "../../shared/GuaranteeDelivery";
@@ -22,7 +18,6 @@ import mqtt from "../../shared/mqtt";
 class AdminRoot extends Component {
 
     state = {
-        activeTab: 0,
         audio: null,
         chatRoomsInitialized: false,
         chatRoomsInitializedError: null,
@@ -46,7 +41,6 @@ class AdminRoot extends Component {
         users: [],
         rooms_question: [],
         user: null,
-        usersTabs: [],
         appInitError: null,
         users_count: 0,
         command_status: true,
@@ -56,51 +50,16 @@ class AdminRoot extends Component {
         tcp: "mqtt"
     };
 
+    componentDidMount() {
+      this.initApp(this.props.user);
+    };
+
     componentWillUnmount() {
         Object.values(this.state.gateways).forEach(x => x.destroy());
     };
 
-    shouldComponentUpdate(nextProps, nextState) {
-      const {
-        activeTab,
-        gatewaysInitialized,
-        user,
-        usersTabs,
-      } = this.state;
-      return user === null ||
-             gatewaysInitialized === false ||
-             activeTab === 0 ||
-             nextState.activeTab === 0 ||
-             activeTab !== nextState.activeTab ||
-             nextState.usersTabs.length !== usersTabs.length;
-    };
-
-    checkPermission = (user) => {
-        const roles = new Set(user.roles || []);
-
-        let role = null;
-        if (roles.has("gxy_root")) {
-            role = "root";
-        } else if (roles.has("gxy_admin")) {
-            role = "admin";
-        } else if (roles.has("gxy_viewer")) {
-            role = "viewer";
-        }
-
-        if (role) {
-            console.log("[Admin] checkPermission role is", role);
-            delete user.roles;
-            user.role = role;
-            this.initApp(user);
-        } else {
-            alert("Access denied!");
-            kc.logout();
-            updateSentryUser(null);
-        }
-    };
-
     isAllowed = (level) => {
-        const {user} = this.state;
+        const {user} = this.props;
         if (!user) {
             return false;
         }
@@ -770,24 +729,6 @@ class AdminRoot extends Component {
 		this.setState({chatRoomsInitialized: true, chatRoomsInitializedError: error});
 	};
 
-  addUserTab(user, stats) {
-    const { usersTabs } = this.state;
-    if (!usersTabs.find(u => u.id === user.id)) {
-      const newUsersTabs = usersTabs.slice();
-      newUsersTabs.push({user, stats});
-      this.setState({usersTabs: newUsersTabs, activeTab: 2 + newUsersTabs.length - 1});
-    }
-  }
-
-  removeUserTab(index) {
-    const { usersTabs } = this.state;
-    if (index < usersTabs.length) {
-      const newUsersTabs = usersTabs.slice();
-      newUsersTabs.splice(index, 1);
-      this.setState({usersTabs: newUsersTabs, activeTab: 2});
-    }
-  }
-
     onConfirmReloadAllCancel = (e, data) => {
         this.setState({showConfirmReloadAll: false});
     }
@@ -810,8 +751,8 @@ class AdminRoot extends Component {
     }
 
   render() {
+    const {user} = this.props;
       const {
-          activeTab,
           chatRoomsInitialized,
           chatRoomsInitializedError,
           current_janus,
@@ -827,8 +768,6 @@ class AdminRoot extends Component {
           gateways,
           gatewaysInitialized,
           rooms,
-          user,
-          usersTabs,
           users_count,
           appInitError,
           command_status,
@@ -1128,34 +1067,9 @@ class AdminRoot extends Component {
           </Grid>
       );
 
-      const panes = [
-          { menuItem: 'Admin', render: () => <Tab.Pane className="grid_tab">{adminContent}</Tab.Pane> },
-      ];
-      if (this.isAllowed('root')) {
-          panes.push({ menuItem: 'Rooms', render: () => <Tab.Pane><RoomManager /></Tab.Pane> });
-          panes.push({ menuItem: 'Monitor', render: () => <Tab.Pane><MonitoringAdmin addUserTab={(user, stats) => this.addUserTab(user, stats)}/></Tab.Pane> });
-          usersTabs.forEach(({user, stats}, index) => panes.push({
-              menuItem: (
-                  <Menu.Item key={user.id}>
-                      {user.display || user.name}&nbsp;
-                      <Icon name='window close' style={{cursor: 'pointer'}} onClick={(e) => { e.stopPropagation(); this.removeUserTab(index); }} />
-                  </Menu.Item>
-              ),
-              render: () => <Tab.Pane><MonitoringUser user={user} stats={stats} /></Tab.Pane>,
-          }));
-      }
-
-      const content = (
-          <Tab menu={{ secondary: true, pointing: true, color: "blue" }}
-               panes={panes}
-               activeIndex={activeTab || 0}
-               onTabChange={(e, {activeIndex}) => this.setState({activeTab: activeIndex})}
-               renderActiveOnly={true} />
-      );
-
       return (
           <div>
-              {user ? content : login}
+              {user ? adminContent : login}
           </div>
       );
   }

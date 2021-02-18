@@ -11,7 +11,8 @@ import './i18n/i18n';
 // import AdminRoot from "./apps/AdminApp/AdminRoot";
 // import ShidurApp from "./apps/ShidurApp/ShidurApp";
 // import SndmanApp from "./apps/SndmanApp/SndmanApp";
-import AudioOutApp from "./apps/AudioOutApp/AudioOutApp";
+// import AudioOutApp from "./apps/AudioOutApp/AudioOutApp";
+import AdminApp from "./apps/AdminApp/AdminApp";
 // import SDIOutApp from "./apps/SDIOutApp/SDIOutApp";
 // import WebOutApp from "./apps/WebOutApp/WebOutApp";
 
@@ -24,9 +25,10 @@ class App extends Component {
         {/*<VirtualClient />*/}
         {/*<GalaxyStream/>*/}
         {/*{<AdminRoot />}*/}
+        <AdminApp />
         {/*<ShidurApp />*/}
         {/*<SndmanApp />*/}
-        <AudioOutApp />
+        {/*<AudioOutApp />*/}
         {/*<SDIOutApp />*/}
         {/*<WebOutApp />*/}
       </I18nextProvider>
