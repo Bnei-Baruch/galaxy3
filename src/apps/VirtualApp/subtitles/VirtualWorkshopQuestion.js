@@ -137,11 +137,8 @@ class VirtualWorkshopQuestion extends Component {
     this.closeWebsocket();
     window.removeEventListener('beforeunload', this.closeWebsocket);
     if (mqtt && mqtt.mq) {
-      const mq                                         = mqtt.mq;
-      const { selectedLanguageValue, languageOptions } = this.state;
-      const lang                                       = languageOptions[selectedLanguageValue];
       mqtt.mq.off('MqttSubtitlesEvent', this.msgStack.pushSubtitles);
-      mqtt.exit('subtitles/galaxy/' + lang);
+      mqtt.exit('subtitles/galaxy/' + this.msgStack.lang);
     }
   }
 
@@ -153,7 +150,12 @@ class VirtualWorkshopQuestion extends Component {
       localStorage.setItem(WQ_FONT_SIZE, fontSize.current);
     }
     const last = this.msgStack.last();
-    if (last && (prevState.lastMsgAddedAt !== last.addedAt)) {
+    if (!last) {
+      if (prevState.lastMsgAddedAt !== 0) {
+        this.setState({ lastMsgAddedAt: 0 });
+        this.printLast();
+      }
+    } else if (prevState.lastMsgAddedAt !== last.addedAt) {
       this.setState({ lastMsgAddedAt: last.addedAt });
       this.printLast();
     }
@@ -219,13 +221,11 @@ class VirtualWorkshopQuestion extends Component {
     this.resetWebsocketAttempts();
     try {
       let wsData = JSON.parse(event.data);
-      if (!wsData.questions)
-        wsData = { message: 'clear' };
-      else {
-        const { selectedLanguageValue, languageOptions } = this.state;
-
-        const selLang = languageOptions[selectedLanguageValue];
-        wsData        = wsData.questions.find(q => q.language === selLang.key);
+      if (wsData.questions === null) {
+        wsData = { clear: true };
+      }
+      if (wsData.questions?.length > 0) {
+        wsData = wsData.questions.find(q => q.language === this.msgStack.lang);
       }
       this.msgStack.pushWorkshop(wsData);
     } catch (e) {
@@ -238,12 +238,13 @@ class VirtualWorkshopQuestion extends Component {
   }
 
   printLast() {
-    const last = this.msgStack.last();
-    if (!last?.data)
-      return;
-    const { message, language } = last.data;
-    const { languageOptions }   = this.state;
-    const lang                  = languageOptions.find(l => l.key === language);
+    let last = this.msgStack.last();
+    console.log('VirtualWorkshopQuestion printLast last: ', last);
+    if (!last)
+      last = { message: null };
+    const { message }         = last;
+    const { languageOptions } = this.state;
+    const lang                = languageOptions.find(l => l.key === this.msgStack.lang);
     if (!lang) return;
 
     lang.question = message;
@@ -251,12 +252,12 @@ class VirtualWorkshopQuestion extends Component {
   }
 
   changeLanguage({ value }) {
-    const prev = this.state.languageOptions[this.state.selectedLanguageValue];
-    const next = this.state.languageOptions[value];
+    const prevKey = this.msgStack.lang;
+    const next    = this.state.languageOptions[value];
 
     this.msgStack = new MessagesForShowStack(next.key);
     this.msgStack.pushWorkshop({ message: next.question, language: next.key });
-    this.updateMqttLang(prev.key, next.key);
+    this.updateMqttLang(prevKey, next.key);
     this.setState({ selectedLanguageValue: value });
     localStorage.setItem(WQ_LANG, value);
   }

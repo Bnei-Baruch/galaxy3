@@ -12,17 +12,22 @@ export class MessagesForShowStack {
   }
 
   push(data, type) {
+    console.log('MessagesForShowStack push', data, type, this.msgs);
+    if (data.language !== this.lang && !data.clear) return;
+
     const forRemove = this.msgs.findIndex(m => m.type === type);
     (forRemove > -1) && this.msgs.splice(forRemove, 1);
-    const m = data.message;
-    if (data.message === 'clear') {
+    if (data.clear) {
       return;
     }
-    this.msgs.push({ data, addedAt: Date.now(), type });
+    this.msgs.push({ message: data.message, addedAt: Date.now(), type });
   }
 
   pushSubtitles(msg) {
-    this.push(JSON.parse(msg.toString()), MSGS_TYPES.subtitle);
+    let data = JSON.parse(msg.toString());
+    if (data.message === 'clear')
+      data = { clear: true };
+    this.push(data, MSGS_TYPES.subtitle);
   }
 
   pushWorkshop(msg) {
