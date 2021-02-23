@@ -16,7 +16,7 @@ import './BroadcastStream.scss';
 import Volume from './components/Volume';
 import { withTranslation } from 'react-i18next';
 import { isFullScreen, toggleFullScreen } from './FullScreenHelper';
-import VirtualWorkshopQuestion from './VirtualWorkshopQuestion';
+import VirtualWorkshopQuestion from './subtitles/VirtualWorkshopQuestion';
 
 class VirtualStreaming extends Component {
 

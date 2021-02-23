@@ -8,8 +8,10 @@ import Button from 'semantic-ui-react/dist/commonjs/elements/Button';
 import Icon from 'semantic-ui-react/dist/commonjs/elements/Icon';
 import Slider from 'react-rangeslider';
 import ReconnectingWebSocket from 'reconnectingwebsocket';
-import { GET_WORKSHOP_QUESTIONS, WEB_SOCKET_WORKSHOP_QUESTION } from '../../shared/env';
-import { getLanguage } from '../../i18n/i18n';
+import { GET_WORKSHOP_QUESTIONS, WEB_SOCKET_WORKSHOP_QUESTION } from '../../../shared/env';
+import { getLanguage } from '../../../i18n/i18n';
+import mqtt from '../../../shared/mqtt';
+import { MessagesForShowStack } from './MessagesForShowStack';
 
 const WQ_FONT_SIZE           = 'wq-font-size';
 const WQ_LANG                = 'wq-lang';
@@ -89,16 +91,19 @@ class VirtualWorkshopQuestion extends Component {
   constructor(props) {
     super(props);
 
-    const languageOptions = setLanguageOptions();
+    const languageOptions       = setLanguageOptions();
+    const selectedLanguageValue = getSelectedLanguageValue(languageOptions);
+    this.msgStack               = new MessagesForShowStack(languageOptions[selectedLanguageValue].key);
 
     this.state = {
       languageOptions,
-      selectedLanguageValue: getSelectedLanguageValue(languageOptions),
+      selectedLanguageValue,
       fontSize: setFontSize(currentLayout, +localStorage.getItem(WQ_FONT_SIZE)),
       mountView: false,
       showQuestion: true,
       openSettings: false,
-      fontPopVisible: false
+      fontPopVisible: false,
+      lastMsgAddedAt: 0
     };
 
     this.websocket         = null;
@@ -119,23 +124,38 @@ class VirtualWorkshopQuestion extends Component {
   }
 
   componentDidMount() {
-    this.websocket           = new ReconnectingWebSocket(WEB_SOCKET_WORKSHOP_QUESTION);
-    this.websocket.onopen    = this.onWebsocketOpen;
-    this.websocket.onmessage = this.onWebsocketMessage;
+    this.websocket                                   = new ReconnectingWebSocket(WEB_SOCKET_WORKSHOP_QUESTION);
+    this.websocket.onopen                            = this.onWebsocketOpen;
+    this.websocket.onmessage                         = this.onWebsocketMessage;
+    const { selectedLanguageValue, languageOptions } = this.state;
+    const lang                                       = languageOptions[selectedLanguageValue];
+    this.updateMqttLang(null, lang.key);
     window.addEventListener('beforeunload', this.closeWebsocket);
   }
 
   componentWillUnmount() {
     this.closeWebsocket();
     window.removeEventListener('beforeunload', this.closeWebsocket);
+    if (mqtt && mqtt.mq) {
+      const mq                                         = mqtt.mq;
+      const { selectedLanguageValue, languageOptions } = this.state;
+      const lang                                       = languageOptions[selectedLanguageValue];
+      mqtt.mq.off('MqttSubtitlesEvent', this.msgStack.pushSubtitles);
+      mqtt.exit('subtitles/galaxy/' + lang);
+    }
   }
 
-  componentDidUpdate(prevProps) {
+  componentDidUpdate(prevProps, prevState) {
     if (this.props.layout !== currentLayout) {
       currentLayout  = this.props.layout;
       const fontSize = setFontSize(this.props.layout);
       this.setState({ fontSize });
       localStorage.setItem(WQ_FONT_SIZE, fontSize.current);
+    }
+    const last = this.msgStack.last();
+    if (last && (prevState.lastMsgAddedAt !== last.addedAt)) {
+      this.setState({ lastMsgAddedAt: last.addedAt });
+      this.printLast();
     }
   }
 
@@ -175,10 +195,13 @@ class VirtualWorkshopQuestion extends Component {
         }
 
         this.resetWebsocketAttempts();
+
+        const { selectedLanguageValue, languageOptions } = this.state;
+        const selLang                                    = languageOptions[selectedLanguageValue];
         this.setState(({ languageOptions }) => ({
           mountView: true,
           languageOptions: languageOptions.map(l => {
-            const current = questions.find(a => a.language === l.key);
+            const current = questions.find(a => a.language === l.key && a.language !== selLang.key);
             if (current) {
               l.question = current.message;
             }
@@ -186,28 +209,25 @@ class VirtualWorkshopQuestion extends Component {
             return l;
           })
         }));
+        const l = languageOptions[selLang.value];
+        this.msgStack.pushWorkshop({ message: l.question, language: l.key });
       })
       .catch(e => console.error('Could not get workshop questions', e));
   }
 
   onWebsocketMessage(event) {
     this.resetWebsocketAttempts();
-
     try {
-      //mock of WS message
-      // const _data  = {"id":96058,"message":" סדנה שקטה: כיצד נישאר במצב איחוד ואהבה עד הכנס? סדנה שקטה: כיצד נישאר במצב איחוד ואהבה עד הכנס? סדנה שקטה: כיצד נישאר במצב איחוד ואהבה עד הכנס?","user_name":"עורך","type":"question","language":"he","approved":true};
-      const wsData = JSON.parse(event.data);
-      if (wsData.clear) {
-        this.clearQuestions();
-        return;
+      let wsData = JSON.parse(event.data);
+      if (!wsData.questions)
+        wsData = { message: 'clear' };
+      else {
+        const { selectedLanguageValue, languageOptions } = this.state;
+
+        const selLang = languageOptions[selectedLanguageValue];
+        wsData        = wsData.questions.find(q => q.language === selLang.key);
       }
-
-      const { languageOptions } = this.state;
-      const lang                = languageOptions.find(l => l.key === wsData.language);
-      if (!lang) return;
-
-      lang.question = wsData.message;
-      this.setState({ languageOptions, mountView: true });
+      this.msgStack.pushWorkshop(wsData);
     } catch (e) {
       console.error('Workshop onmessage parse error', e);
     }
@@ -217,7 +237,26 @@ class VirtualWorkshopQuestion extends Component {
     this.websocket && this.websocket.close();
   }
 
+  printLast() {
+    const last = this.msgStack.last();
+    if (!last?.data)
+      return;
+    const { message, language } = last.data;
+    const { languageOptions }   = this.state;
+    const lang                  = languageOptions.find(l => l.key === language);
+    if (!lang) return;
+
+    lang.question = message;
+    this.setState({ languageOptions, mountView: true });
+  }
+
   changeLanguage({ value }) {
+    const prev = this.state.languageOptions[this.state.selectedLanguageValue];
+    const next = this.state.languageOptions[value];
+
+    this.msgStack = new MessagesForShowStack(next.key);
+    this.msgStack.pushWorkshop({ message: next.question, language: next.key });
+    this.updateMqttLang(prev.key, next.key);
     this.setState({ selectedLanguageValue: value });
     localStorage.setItem(WQ_LANG, value);
   }
@@ -256,6 +295,17 @@ class VirtualWorkshopQuestion extends Component {
     }
   }
 
+  updateMqttLang = (prevLang, nextlang) => {
+    if (prevLang === nextlang)
+      return;
+
+    prevLang && mqtt.exit('subtitles/galaxy/' + prevLang);
+
+    mqtt.join('subtitles/galaxy/' + nextlang);
+
+    mqtt.mq.on('MqttSubtitlesEvent', this.msgStack.pushSubtitles.bind(this.msgStack));
+  };
+
   render() {
     const { t }                   = this.props;
     const {
@@ -281,9 +331,10 @@ class VirtualWorkshopQuestion extends Component {
         <div className="wq-container">
           <div className={classNames('question-container', { 'overlay-visible': showQuestion })}>
             <div className="wq__question" style={{ fontSize: `${fontSize.current}px` }}>
-              <div className={classNames('lang-question', { 'show-question': question, rtl: key === 'he' })}>
-                {question}
-              </div>
+              <div
+                className={classNames('lang-question slide', { 'show-question': question, rtl: key === 'he' })}
+                dangerouslySetInnerHTML={{ __html: question }}
+              />
               <div className={classNames('in-process', { 'show-question': !question && hasQuestion })}>
                 <div className={classNames('in-process-text', { rtl: galaxyLang === 'he' })}>
                   <span>{t('workshop.inProcess')} </span>
