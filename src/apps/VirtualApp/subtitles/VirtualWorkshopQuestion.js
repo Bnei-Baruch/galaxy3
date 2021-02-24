@@ -320,17 +320,17 @@ class VirtualWorkshopQuestion extends Component {
             fontPopVisible,
             languageOptions
           }                       = this.state;
-    const hasQuestion             = !!languageOptions.find(l => l.question);
+    const hasQuestion             = !!languageOptions.find(l => l.question && l.type === MSGS_TYPES.workshop);
     const { key, flag, question } = languageOptions[selectedLanguageValue];
     const galaxyLang              = getLanguage();
 
-    if (!hasQuestion) {
+    if (!hasQuestion && !question) {
       if (!mountView) return null;
       this.unmountView();
     }
 
     return (
-      <div className={classNames('wq-overlay', { 'overlay-visible': hasQuestion })}>
+      <div className={classNames('wq-overlay', { 'overlay-visible': hasQuestion || question })}>
         <div className="wq-container">
           <div className={classNames('question-container', { 'overlay-visible': showQuestion })}>
             <div className="wq__question" style={{ fontSize: `${fontSize.current}px` }}>
@@ -341,7 +341,7 @@ class VirtualWorkshopQuestion extends Component {
               <div className={classNames('in-process', { 'show-question': !question && hasQuestion })}>
                 <div className={classNames('in-process-text', { rtl: galaxyLang === 'he' })}>
                   <span>{t('workshop.inProcess')} </span>
-                  {languageOptions.filter(l => l.question).map(l =>
+                  {languageOptions.filter(l => l.question && l.type === MSGS_TYPES.workshop).map(l =>
                     <Button className={l.selected ? 'selected' : ''}
                             compact
                             key={l.key}
@@ -363,7 +363,7 @@ class VirtualWorkshopQuestion extends Component {
                         icon={null}
                         upward
                         compact
-                        options={languageOptions}
+                        options={languageOptions.filter(l => l.type === MSGS_TYPES.workshop)}
                         onChange={(event, data) => this.changeLanguage(data, true)}
                         trigger={<Flag name={flag} />}
               />
