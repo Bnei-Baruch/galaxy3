@@ -11,7 +11,7 @@ import ReconnectingWebSocket from 'reconnectingwebsocket';
 import { GET_WORKSHOP_QUESTIONS, WEB_SOCKET_WORKSHOP_QUESTION } from '../../../shared/env';
 import { getLanguage } from '../../../i18n/i18n';
 import mqtt from '../../../shared/mqtt';
-import { MessagesForShowStack } from './MessagesForShowStack';
+import { MessagesForShowStack, MSGS_TYPES } from './MessagesForShowStack';
 
 const WQ_FONT_SIZE           = 'wq-font-size';
 const WQ_LANG                = 'wq-lang';
@@ -149,7 +149,7 @@ class VirtualWorkshopQuestion extends Component {
     }
     if (this.props.playerLang !== prevProps.playerLang) {
       const lang = getSelectedLanguageItem(this.state.languageOptions, this.props.playerLang);
-      (lang.value !== this.state.selectedLanguageValue) && this.setState({ selectedLanguageValue: lang.value });
+      (lang.value !== prevState.selectedLanguageValue) && this.changeLanguage(lang, false);
     }
     const last = this.msgStack.last();
     if (!last) {
@@ -244,24 +244,24 @@ class VirtualWorkshopQuestion extends Component {
     console.log('VirtualWorkshopQuestion printLast last: ', last);
     if (!last)
       last = { message: null };
-    const { message }         = last;
+    const { message, type }   = last;
     const { languageOptions } = this.state;
     const lang                = languageOptions.find(l => l.key === this.msgStack.lang);
     if (!lang) return;
-
+    lang.type     = type;
     lang.question = message;
     this.setState({ languageOptions, mountView: true });
   }
 
-  changeLanguage({ value }) {
+  changeLanguage({ value }, save) {
     const prevKey = this.msgStack.lang;
     const next    = this.state.languageOptions[value];
 
     this.msgStack = new MessagesForShowStack(next.key);
-    this.msgStack.pushWorkshop({ message: next.question, language: next.key });
+    (next.type === MSGS_TYPES.workshop) && this.msgStack.pushWorkshop({ message: next.question, language: next.key });
     this.updateMqttLang(prevKey, next.key);
     this.setState({ selectedLanguageValue: value });
-    localStorage.setItem(WQ_LANG, value);
+    save && localStorage.setItem(WQ_LANG, value);
   }
 
   manageFontSize(current) {
@@ -364,7 +364,7 @@ class VirtualWorkshopQuestion extends Component {
                         upward
                         compact
                         options={languageOptions}
-                        onChange={(event, data) => this.changeLanguage(data)}
+                        onChange={(event, data) => this.changeLanguage(data, true)}
                         trigger={<Flag name={flag} />}
               />
               <Dropdown className="wq-settings"

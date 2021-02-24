@@ -1,6 +1,6 @@
 import mqtt from '../../../shared/mqtt';
 
-const MSGS_TYPES = {
+export const MSGS_TYPES = {
   subtitle: 'subtitle',
   workshop: 'workshop'
 };
