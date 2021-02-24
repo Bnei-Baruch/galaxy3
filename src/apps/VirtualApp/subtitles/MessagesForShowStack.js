@@ -24,14 +24,20 @@ export class MessagesForShowStack {
   }
 
   pushSubtitles(msg) {
-    let data = JSON.parse(msg.toString());
-    if (data.message === 'clear')
-      data = { clear: true };
-    this.push(data, MSGS_TYPES.subtitle);
+    let data                    = JSON.parse(msg.toString());
+    const { language, message } = data;
+    if (message === 'on_air') return;
+
+    if (message === 'clear')
+      this.push({ clear: true, language }, MSGS_TYPES.subtitle);
+    else {
+      this.push({ language, message: message.content }, MSGS_TYPES.subtitle);
+    }
+
   }
 
-  pushWorkshop(msg) {
-    this.push(msg, MSGS_TYPES.workshop);
+  pushWorkshop(data) {
+    this.push(data, MSGS_TYPES.workshop);
   }
 
   last() {

@@ -113,7 +113,7 @@ class VirtualStreaming extends Component {
 
     const video_option   = videos_options2.find((option) => option.value === videos);
     const audio_option   = audiog_options2.find((option) => option.value === audios);
-
+    const playerLang = audio_option.langKey || audio_option.key;
     const inLine = (
       <div className="video video--broadcast" key='v0' ref={(ref) => this.setVideoWrapperRef(ref)} id='video0'
            style={{ height: !attached ? '100%' : null, width: !attached ? '100%' : null }}>
@@ -213,7 +213,7 @@ class VirtualStreaming extends Component {
               </div>
 
             </div>
-            <VirtualWorkshopQuestion layout={isOnFullScreen ? 'fullscreen' : !attached ? 'detached' : layout} />
+            <VirtualWorkshopQuestion layout={isOnFullScreen ? 'fullscreen' : !attached ? 'detached' : layout} playerLang={playerLang} />
           </div>
           {talking && <Label className='talk' size='massive' color='red'><Icon name='microphone' />On</Label>}
         </div>

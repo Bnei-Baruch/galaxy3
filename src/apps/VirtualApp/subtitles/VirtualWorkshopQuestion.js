@@ -54,22 +54,20 @@ const setLanguageOptions = () => {
   return languageOptions;
 };
 
-const getSelectedLanguageValue = (languageOptions) => {
+const getSelectedLanguageItem = (languageOptions, playerLang) => {
   const storageLang = parseInt(localStorage.getItem(WQ_LANG));
-  const galaxyLang  = getLanguage();
   let langValue     = 2;
 
   if (!isNaN(storageLang)) {
     langValue = storageLang;
-  } else if (galaxyLang) {
-    const lang = languageOptions.find(l => l.key === galaxyLang);
+  } else if (playerLang) {
+    const lang = languageOptions.find(l => l.key === playerLang);
     if (lang) {
       langValue = lang.value;
-      localStorage.setItem(WQ_LANG, lang.value);
     }
   }
 
-  return langValue;
+  return languageOptions[langValue];
 };
 
 const setFontSize = (layout, current) => {
@@ -91,13 +89,13 @@ class VirtualWorkshopQuestion extends Component {
   constructor(props) {
     super(props);
 
-    const languageOptions       = setLanguageOptions();
-    const selectedLanguageValue = getSelectedLanguageValue(languageOptions);
-    this.msgStack               = new MessagesForShowStack(languageOptions[selectedLanguageValue].key);
+    const languageOptions      = setLanguageOptions();
+    const selectedLanguageItem = getSelectedLanguageItem(languageOptions, props.playerLang);
+    this.msgStack              = new MessagesForShowStack(selectedLanguageItem.key);
 
     this.state = {
       languageOptions,
-      selectedLanguageValue,
+      selectedLanguageValue: selectedLanguageItem.value,
       fontSize: setFontSize(currentLayout, +localStorage.getItem(WQ_FONT_SIZE)),
       mountView: false,
       showQuestion: true,
@@ -148,6 +146,10 @@ class VirtualWorkshopQuestion extends Component {
       const fontSize = setFontSize(this.props.layout);
       this.setState({ fontSize });
       localStorage.setItem(WQ_FONT_SIZE, fontSize.current);
+    }
+    if (this.props.playerLang !== prevProps.playerLang) {
+      const lang = getSelectedLanguageItem(this.state.languageOptions, this.props.playerLang);
+      (lang.value !== this.state.selectedLanguageValue) && this.setState({ selectedLanguageValue: lang.value });
     }
     const last = this.msgStack.last();
     if (!last) {
