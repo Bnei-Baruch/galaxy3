@@ -208,6 +208,7 @@ class VirtualWorkshopQuestion extends Component {
             const current = questions.find(a => a.language === l.key && a.language !== selLang.key);
             if (current) {
               l.question = current.message;
+              l.type     = MSGS_TYPES.workshop;
             }
 
             return l;
@@ -229,7 +230,22 @@ class VirtualWorkshopQuestion extends Component {
       if (wsData.questions?.length > 0) {
         wsData = wsData.questions.find(q => q.language === this.msgStack.lang);
       }
-      this.msgStack.pushWorkshop(wsData);
+
+      const { languageOptions } = this.state;
+      if (wsData.language === this.msgStack.lang)
+        this.msgStack.pushWorkshop(wsData);
+      else if (!wsData.clear) {
+        const l    = languageOptions.find(x => wsData.language === x.key);
+        l.question = wsData.message;
+        l.type     = MSGS_TYPES.workshop;
+        this.setState({ languageOptions });
+      } else {
+        this.msgStack.pushWorkshop(wsData);
+        languageOptions.forEach(l => {
+          l.type     = null;
+          l.question = null;
+        });
+      }
     } catch (e) {
       console.error('Workshop onmessage parse error', e);
     }
@@ -364,7 +380,9 @@ class VirtualWorkshopQuestion extends Component {
                         upward
                         compact
                         options={languageOptions.filter(l => l.type === MSGS_TYPES.workshop)}
-                        onChange={(event, data) => this.changeLanguage(data, true)}
+                        onChange={(event, data) => {
+                          this.changeLanguage(data, true);
+                        }}
                         trigger={<Flag name={flag} />}
               />
               <Dropdown className="wq-settings"
