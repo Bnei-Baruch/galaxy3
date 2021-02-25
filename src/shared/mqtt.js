@@ -92,7 +92,7 @@ class MqttMsg {
 
   watch = (callback, stat) => {
     this.mq.on('message', (topic, data, packet) => {
-      console.log('[mqtt] Got data on topic: ', topic);
+      console.debug('[mqtt] Got data on topic: ', topic);
       if (/subtitles\/galaxy\//.test(topic)) {
         this.mq.emit('MqttSubtitlesEvent', data);
       } else {
