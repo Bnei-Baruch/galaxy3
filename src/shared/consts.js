@@ -44,13 +44,13 @@ export const videos_options2 = [
 export const audiog_options2 = [
 
     { header: true, text: 'oldClient.streamForWorkshop', description:'oldClient.streamForWorkshopDescription', icon: 'group'},
-    { key: 2, value: 2, flag: 'il', icon:'group', eng_text: 'Hebrew', text:'עברית' },
-    { key: 3, value: 3, flag: 'ru', icon:'group', eng_text: 'Russian', text:'Русский' },
-    { key: 4, value: 4, flag: 'us', icon:'group', eng_text: 'English', text:'English' },
-    { key: 6, value: 6, flag: 'es', icon:'group', eng_text: 'Spanish', text:'Español' },
-    { key: 5, value: 5, flag: 'fr', icon:'group', eng_text: 'French', text:'Français' },
-    { key: 8, value: 8, flag: 'it', icon:'group', eng_text: 'Italian', text:'Italiano' },
-    { key: 7, value: 7, flag: 'de', icon:'group', eng_text: 'German', text:'Deutsch' },
+    { key: 2, value: 2, flag: 'il', icon:'group', eng_text: 'Hebrew', text:'עברית', langKey: "he" },
+    { key: 3, value: 3, flag: 'ru', icon:'group', eng_text: 'Russian', text:'Русский', langKey: "ru" },
+    { key: 4, value: 4, flag: 'us', icon:'group', eng_text: 'English', text:'English', langKey: "en" },
+    { key: 6, value: 6, flag: 'es', icon:'group', eng_text: 'Spanish', text:'Español', langKey: "es" },
+    { key: 5, value: 5, flag: 'fr', icon:'group', eng_text: 'French', text:'Français', langKey: "fr" },
+    { key: 8, value: 8, flag: 'it', icon:'group', eng_text: 'Italian', text:'Italiano', langKey: "it" },
+    { key: 7, value: 7, flag: 'de', icon:'group', eng_text: 'German', text:'Deutsch', langKey: "de" },
     {divider:true},
     { header: true, text: 'oldClient.sourceStream', description:'oldClient.sourceStreamDescription', icon: 'crosshairs'},
     { key: 'he', value: 15, flag: 'il', icon:'crosshairs', eng_text: 'Hebrew', text:'עברית' },
@@ -82,8 +82,8 @@ export const audiog_options2 = [
     { key: 'ir', value: 60, flag: 'ir', icon:'crosshairs', eng_text: 'Persian', text: 'فارسی' },
     {divider:true},
     { header: true, text: 'oldClient.dualLnaguagesStream', description:'oldClient.dualLnaguagesStreamDescription', icon: 'group'},
-    { key: 'heru', value: 10, icon:'group', eng_text: 'Heb-Rus', text:'Русский-עברית' },
-    { key: 'heen', value: 17, icon:'group', eng_text: 'Heb-Eng', text:'English-עברית' },
+    { key: 'heru', value: 10, icon:'group', eng_text: 'Heb-Rus', text:'Русский-עברית', langKey: "ru" },
+    { key: 'heen', value: 17, icon:'group', eng_text: 'Heb-Eng', text:'English-עברית', langKey: "en" },
 ];
 export const audiog_options = [
     { key: 101, value: 101, text: 'Workshop', disabled: true, icon: "tags", selected: true},

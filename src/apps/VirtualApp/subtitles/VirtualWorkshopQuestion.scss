@@ -1,4 +1,4 @@
-@import "VirtualWorkshopQuestionHelpers";
+@import "../subtitles/VirtualWorkshopQuestionHelpers";
 
 
 .wq-overlay {
@@ -266,4 +266,38 @@
 
 .activities.on_full_browser .wq-overlay .wq-container .question-container {
   max-height: 100%;
+}
+
+.slide {
+  & h3 {
+    margin: 0 0 0 1em;
+    line-height: 1em;
+    font-size: 1.4em;
+    text-align: center;
+  }
+
+  & h4 {
+    margin: 0 0 0 1em;
+    line-height: 1em;
+    font-size: 1.0em;
+    text-align: center;
+  }
+
+  & h5 {
+    margin: 0 0 0 1em;
+    line-height: 1em;
+    font-size: 0.8em;
+    text-align: center;
+  }
+
+  & .source {
+    margin-top: 0.3em;
+    font-size: smaller;
+    font-style: italic;
+    border-top: 3px solid;
+    display: inline-block;
+    width: 100%;
+    padding-top: 0.25em;
+    text-align: left;
+  }
 }

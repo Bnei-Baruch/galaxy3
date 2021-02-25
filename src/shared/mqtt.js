@@ -1,23 +1,23 @@
 import mqtt from 'mqtt';
-import {MQTT_URL} from "./env";
-import {isServiceID} from "./enums";
-import {randomString} from "./tools";
-import GxyJanus from "./janus-utils";
+import { MQTT_URL } from './env';
+import { isServiceID } from './enums';
+import { randomString } from './tools';
+import GxyJanus from './janus-utils';
 
 class MqttMsg {
 
   constructor() {
-    this.user = null;
-    this.mq = null;
+    this.user      = null;
+    this.mq        = null;
     this.connected = false;
-    this.room = null;
-    this.token = null;
+    this.room      = null;
+    this.token     = null;
   }
 
   init = (user, callback) => {
     this.user = user;
 
-    const id = user.role === "user" ? user.id + "-" + randomString(3) : user.id;
+    const id = user.role === 'user' ? user.id + '-' + randomString(3) : user.id;
 
     const transformUrl = (url, options, client) => {
       client.options.password = this.token;
@@ -42,64 +42,70 @@ class MqttMsg {
       }
     };
 
-    if(isServiceID(user.id)) {
+    if (isServiceID(user.id)) {
       options.will = {
         qos: 2,
         retain: true,
         topic: 'galaxy/service/' + user.role,
-        payload: JSON.stringify({type: "event", [user.role]: false}),
-        properties: {userProperties: user}}
+        payload: JSON.stringify({ type: 'event', [user.role]: false }),
+        properties: { userProperties: user }
+      };
     }
 
     this.mq = mqtt.connect(`wss://${MQTT_URL}`, options);
 
     this.mq.on('connect', (data) => {
-      if(data && !this.connected) {
-        console.log("[mqtt] Connected to server: ", data);
+      if (data && !this.connected) {
+        console.log('[mqtt] Connected to server: ', data);
         this.connected = true;
-        callback(data)
+        callback(data);
       }
     });
 
     this.mq.on('error', (data) => console.error('[mqtt] Error: ', data));
     this.mq.on('disconnect', (data) => console.error('[mqtt] Error: ', data));
-  }
+  };
 
   join = (topic) => {
-    console.log("[mqtt] Subscribe to: ", topic)
-    let options = {qos: 2, nl: true}
-    this.mq.subscribe(topic, {...options}, (err) => {
+    console.log('[mqtt] Subscribe to: ', topic);
+    let options = { qos: 2, nl: true };
+    this.mq.subscribe(topic, { ...options }, (err) => {
       err && console.error('[mqtt] Error: ', err);
-    })
-  }
+    });
+  };
 
   exit = (topic) => {
-    let options = {}
-    console.log("[mqtt] Unsubscribe from: ", topic)
-    this.mq.unsubscribe(topic, {...options} ,(err) => {
-      err && console.error('[mqtt] Error: ',err);
-    })
-  }
+    let options = {};
+    console.log('[mqtt] Unsubscribe from: ', topic);
+    this.mq.unsubscribe(topic, { ...options }, (err) => {
+      err && console.error('[mqtt] Error: ', err);
+    });
+  };
 
   send = (message, retain, topic) => {
-    console.log("[mqtt] Send data on topic: ", topic, message)
-    let options = {qos: 2, retain, properties: {messageExpiryInterval: 0, userProperties: this.user}};
-    this.mq.publish(topic, message, {...options}, (err) => {
-      err && console.error('[mqtt] Error: ',err);
-    })
-  }
+    console.log('[mqtt] Send data on topic: ', topic, message);
+    let options = { qos: 2, retain, properties: { messageExpiryInterval: 0, userProperties: this.user } };
+    this.mq.publish(topic, message, { ...options }, (err) => {
+      err && console.error('[mqtt] Error: ', err);
+    });
+  };
 
   watch = (callback, stat) => {
-    this.mq.on('message',  (topic, data, packet) => {
-      let message = stat ? data.toString() : JSON.parse(data.toString());
-      console.log("[mqtt] Got data on topic: ", topic, message);
-      callback(message, topic)
-    })
-  }
+    this.mq.on('message', (topic, data, packet) => {
+      console.log('[mqtt] Got data on topic: ', topic);
+      if (/subtitles\/galaxy\//.test(topic)) {
+        this.mq.emit('MqttSubtitlesEvent', data);
+      } else {
+        let message = stat ? data.toString() : JSON.parse(data.toString());
+        console.log('[mqtt] Got data on topic: ', topic, message);
+        callback(message, topic);
+      }
+    });
+  };
 
   setToken = (token) => {
     this.token = token;
-  }
+  };
 
 }
 
