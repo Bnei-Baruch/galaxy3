@@ -67,6 +67,7 @@ class MqttMsg {
   };
 
   join = (topic) => {
+    if (!this.mq) return;
     console.log('[mqtt] Subscribe to: ', topic);
     let options = { qos: 2, nl: true };
     this.mq.subscribe(topic, { ...options }, (err) => {
@@ -75,6 +76,7 @@ class MqttMsg {
   };
 
   exit = (topic) => {
+    if (!this.mq) return;
     let options = {};
     console.log('[mqtt] Unsubscribe from: ', topic);
     this.mq.unsubscribe(topic, { ...options }, (err) => {
@@ -83,6 +85,7 @@ class MqttMsg {
   };
 
   send = (message, retain, topic) => {
+    if (!this.mq) return;
     console.log('[mqtt] Send data on topic: ', topic, message);
     let options = { qos: 2, retain, properties: { messageExpiryInterval: 0, userProperties: this.user } };
     this.mq.publish(topic, message, { ...options }, (err) => {

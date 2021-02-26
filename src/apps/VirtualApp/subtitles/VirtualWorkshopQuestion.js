@@ -245,6 +245,7 @@ class VirtualWorkshopQuestion extends Component {
           l.type     = null;
           l.question = null;
         });
+        this.setState({ languageOptions });
       }
     } catch (e) {
       console.error('Workshop onmessage parse error', e);
@@ -315,7 +316,7 @@ class VirtualWorkshopQuestion extends Component {
   }
 
   updateMqttLang = (prevLang, nextlang) => {
-    if (prevLang === nextlang)
+    if (prevLang === nextlang || !mqtt.mq)
       return;
 
     prevLang && mqtt.exit('subtitles/galaxy/' + prevLang);
