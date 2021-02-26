@@ -315,7 +315,7 @@ class VirtualWorkshopQuestion extends Component {
   }
 
   updateMqttLang = (prevLang, nextlang) => {
-    if (prevLang === nextlang)
+    if (prevLang === nextlang || !mqtt.mq)
       return;
 
     prevLang && mqtt.exit('subtitles/galaxy/' + prevLang);
