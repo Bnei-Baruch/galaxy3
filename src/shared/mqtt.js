@@ -67,6 +67,7 @@ class MqttMsg {
   };
 
   join = (topic) => {
+    if (!this.mq) return;
     console.log('[mqtt] Subscribe to: ', topic);
     let options = { qos: 2, nl: true };
     this.mq.subscribe(topic, { ...options }, (err) => {
