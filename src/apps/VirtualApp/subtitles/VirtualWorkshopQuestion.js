@@ -245,6 +245,7 @@ class VirtualWorkshopQuestion extends Component {
           l.type     = null;
           l.question = null;
         });
+        this.setState({ languageOptions });
       }
     } catch (e) {
       console.error('Workshop onmessage parse error', e);
