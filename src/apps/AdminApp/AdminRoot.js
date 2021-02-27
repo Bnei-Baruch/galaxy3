@@ -225,10 +225,10 @@ class AdminRoot extends Component {
                             let stream = streams[i];
                             stream["id"] = id;
                             stream["display"] = display;
-                            if (stream.type === "video" && feeds[f].video_codec === "h264") {
+                            if (stream.type === "video" && stream.codec === "h264") {
                                 subscription.push({feed: id, mid: stream.mid});
                             }
-                            if (this.withAudio() && stream.type === "audio" && feeds[f].audio_codec === "opus") {
+                            if (this.withAudio() && stream.type === "audio" && stream.codec === "opus") {
                                 subscription.push({feed: id, mid: stream.mid});
                             }
                         }
@@ -287,10 +287,10 @@ class AdminRoot extends Component {
                             let stream = streams[i];
                             stream["id"] = id;
                             stream["display"] = display;
-                            if (stream.type === "video" && feeds[f].video_codec === "h264") {
+                            if (stream.type === "video" && stream.codec === "h264") {
                                 subscription.push({feed: id, mid: stream.mid});
                             }
-                            if (this.withAudio() && stream.type === "audio" && feeds[f].audio_codec === "opus") {
+                            if (this.withAudio() && stream.type === "audio" && stream.codec === "opus") {
                                 subscription.push({feed: id, mid: stream.mid});
                             }
                         }
