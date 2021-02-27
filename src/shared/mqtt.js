@@ -17,8 +17,9 @@ class MqttMsg {
   init = (user, callback) => {
     this.user = user;
 
-    const id = user.role === "user" ? user.id + "-" + randomString(3) : user.id;
-    const token = isServiceID(user.id) ? GxyJanus.globalConfig.dynamic_config.mqtt_auth : this.token;
+    const service = isServiceID(user.id);
+    const token = service ? GxyJanus.globalConfig.dynamic_config.mqtt_auth : this.token;
+    const id = service ? user.id : user.id + "-" + randomString(3);
 
     const transformUrl = (url, options, client) => {
       client.options.password = token;
@@ -43,7 +44,7 @@ class MqttMsg {
       }
     };
 
-    if (isServiceID(user.id)) {
+    if (service) {
       options.will = {
         qos: 2,
         retain: true,
