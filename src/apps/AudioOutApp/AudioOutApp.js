@@ -1,4 +1,4 @@
-import React, {Component, Fragment} from 'react';
+import React, {Component} from 'react';
 import {Segment} from "semantic-ui-react";
 import './AudioOutApp.css';
 import './UsersAudioOut.css'
@@ -6,119 +6,73 @@ import UsersHandleAudioOut from "./UsersHandleAudioOut";
 import api from "../../shared/Api";
 import {API_BACKEND_PASSWORD, API_BACKEND_USERNAME} from "../../shared/env";
 import GxyJanus from "../../shared/janus-utils";
-import {USERNAME_ALREADY_EXIST_ERROR_CODE, AUDOUT_ID} from "../../shared/consts"
-import {GuaranteeDeliveryManager} from '../../shared/GuaranteeDelivery';
-import {captureException, captureMessage} from "../../shared/sentry";
+import {AUDOUT_ID} from "../../shared/consts"
 import mqtt from "../../shared/mqtt";
-import ConfigStore from "../../shared/ConfigStore";
 
 
 class AudioOutApp extends Component {
 
-    state = {
-        audio: false,
-        group: null,
-        room: null,
-        user: {
-            session: 0,
-            handle: 0,
-            role: "audout",
-            display: "audout",
-            id: AUDOUT_ID,
-            name: "audout",
-            email: "audout@galaxy.kli.one"
-        },
-        gateways: {},
-        gatewaysInitialized: false,
-        appInitError: null,
-        gdm: new GuaranteeDeliveryManager(AUDOUT_ID),
-    };
+  state = {
+    audio: false,
+    group: null,
+    room: null,
+    user: {
+      session: 0,
+      handle: 0,
+      role: "audout",
+      display: "audout",
+      id: AUDOUT_ID,
+      name: "audout",
+      email: "audout@galaxy.kli.one"
+    },
+    gateways: {},
+    gatewaysInitialized: false,
+    appInitError: null,
+  };
 
-    componentDidMount() {
-        this.initApp();
-    };
+  componentDidMount() {
+    this.initApp();
+  };
 
-    componentWillUnmount() {
-        Object.values(this.state.gateways).forEach(x => x.destroy());
-    };
+  componentWillUnmount() {
+    Object.values(this.state.gateways).forEach(x => x.destroy());
+  };
 
-    initApp = () => {
-        const {user} = this.state;
+  initApp = () => {
+    const {user} = this.state;
 
-        api.setBasicAuth(API_BACKEND_USERNAME, API_BACKEND_PASSWORD);
+    api.setBasicAuth(API_BACKEND_USERNAME, API_BACKEND_PASSWORD);
 
-        api.fetchConfig()
-            .then(data => GxyJanus.setGlobalConfig(data))
-            .then(() => this.initGateways(user))
-            .catch(err => {
-                console.error("[AudioOut] error initializing app", err);
-                this.setState({appInitError: err});
-                captureException(err, {source: 'AudioOut'});
-            });
-    }
+    api.fetchConfig()
+      .then(data => GxyJanus.setGlobalConfig(data))
+      .then(() => {
+        this.initMqtt(user);
+        this.initGateways(user);
+      })
+      .catch(err => {
+        console.error("[AudioOut] error initializing app", err);
+      });
+  };
 
-    initGateways = (user) => {
-        mqtt.init(user, (data) => {
-          console.log("[Shidur] mqtt init: ", data);
-          setTimeout(() => {
-            mqtt.watch((data) => {
-              this.onMqttData(data);
-            })
-            mqtt.join('galaxy/service/shidur');
-            mqtt.join('galaxy/users/broadcast');
-            mqtt.send(JSON.stringify({type: "event", [user.role]: true}), true, 'galaxy/service/' + user.role);
-          }, 3000);
+  initMqtt = (user) => {
+    mqtt.init(user, (data) => {
+      console.log("[Shidur] mqtt init: ", data);
+      setTimeout(() => {
+        mqtt.watch((data) => {
+          this.onMqttData(data);
         })
-        const gateways = GxyJanus.makeGateways("rooms");
-        this.setState({gateways});
+        mqtt.join('galaxy/service/shidur');
+        mqtt.join('galaxy/users/broadcast');
+        mqtt.send(JSON.stringify({type: "event", [user.role]: true}), true, 'galaxy/service/' + user.role);
+      }, 3000);
+    })
+  };
 
-        const gatewayToInitPromise = (gateway) => this.initGateway(user, gateway)
-					.catch(error => {
-						captureException(error, {source: 'AudioOut', gateway: gateway.name});
-						throw error;
-					});
-
-        return Promise.all(Object.values(gateways).map(gatewayToInitPromise))
-					.then(() => {
-						console.log("[AudioOut] gateways initialization complete");
-						this.setState({gatewaysInitialized: true});
-					});
-    }
-
-    initGateway = (user, gateway) => {
-        console.log("[AudioOut] initializing gateway", gateway.name);
-
-        gateway.addEventListener("reinit", () => {
-                this.postInitGateway(user, gateway)
-                    .catch(err => {
-                        console.error("[AudioOut] postInitGateway error after reinit. Reloading", gateway.name, err);
-                        captureException(err, {source: 'AudioOut', gateway: gateway.name});
-                        window.location.reload();
-                    });
-            }
-        );
-
-        gateway.addEventListener("reinit_failure", (e) => {
-            if (e.detail > 10) {
-                console.error("[AudioOut] too many reinit_failure. Reloading", gateway.name, e);
-                captureException(e, {source: 'Audioout', gateway: gateway.name});
-                window.location.reload();
-            }
-        });
-
-        return gateway.init()
-            .then(() => this.postInitGateway(user, gateway));
-    }
-
-    postInitGateway = (user, gateway) => {
-        console.log("[AudioOut] initializing gateway", gateway.name);
-
-        if (gateway.name === "gxy3") {
-            return gateway.initServiceProtocol(user, data => this.onServiceData(gateway, data, user))
-        } else {
-            return Promise.resolve();
-        }
-    };
+  initGateways = (user) => {
+    const gateways = GxyJanus.makeGateways("rooms");
+    this.setState({gateways});
+    Object.values(gateways).map(gateway => gateway.init())
+  };
 
   onMqttData = (data) => {
     const {room, group, status, qst} = data;
@@ -139,52 +93,6 @@ class AudioOutApp extends Component {
     }
   };
 
-    onServiceData = (gateway, data, user) => {
-      const { gdm } = this.state;
-      if(GxyJanus.globalConfig.dynamic_config.galaxy_protocol === "mqtt") {
-        return
-      }
-      if (gdm.checkAck(data)) {
-        // Ack received, do nothing.
-        return;
-      }
-      gdm.accept(data, (msg) => gateway.sendServiceMessage(msg))
-				.then((data) => {
-					if (data.type === "error") {
-						if (data.error_code === USERNAME_ALREADY_EXIST_ERROR_CODE) {
-							console.error("[AudioOut] service error message (reloading in 10 seconds)", data.error);
-							captureMessage(data.error, {source: "AudioOut", msg: data});
-							setTimeout(() => {
-									this.initGateway(user, gateway);
-							}, 10000);
-						} else {
-							captureException(data.error, {source: "AudioOut", msg: data});
-						}
-					}
-
-					const {room, group, status, qst} = data;
-
-					if (data.type === "sdi-fullscr_group" && status && qst) {
-						this.setState({group, room});
-					} else if (data.type === "sdi-fullscr_group" && !status && qst) {
-						this.setState({group: null, room: null});
-					} else if (data.type === "sdi-restart_audout") {
-						window.location.reload();
-					} else if (data.type === "audio-out") {
-            this.setState({audio: status});
-          } else if (data.type === 'reload-config') {
-              this.reloadConfig();
-					} else if (data.type === "event") {
-							delete data.type;
-							this.setState({...data});
-					}
-				})
-				.catch((error) => {
-						console.error(`Failed receiving ${data}: ${error}`);
-
-				});
-		};
-
   reloadConfig = () => {
     api.fetchConfig()
       .then((data) => {
@@ -195,39 +103,26 @@ class AudioOutApp extends Component {
       });
   }
 
-    setProps = (props) => {
-        this.setState({...props})
-    };
+  setProps = (props) => {
+    this.setState({...props})
+  };
 
-    render() {
-        const {gateways, group, appInitError, gatewaysInitialized, audio} = this.state;
+  render() {
+    const {gateways, group, audio} = this.state;
 
-        if (appInitError) {
-            return (
-                <Fragment>
-                    <h1>Error Initializing Application</h1>
-                    {`${appInitError}`}
-                </Fragment>
-            );
-        }
+    const name = group && group.description;
 
-        if (!gatewaysInitialized) {
-            return "Initializing WebRTC gateways...";
-        }
-
-        const name = group && group.description;
-
-        return (
-            <Segment className="preview_sdi">
-                <div className="usersvideo_grid">
-                    <div className="video_full">
-                        <div className="title">{name}</div>
-                        <UsersHandleAudioOut g={group} gateways={gateways} audio={audio} setProps={this.setProps}/>
-                    </div>
-                </div>
-            </Segment>
-        );
-    }
+    return (
+      <Segment className="preview_sdi">
+        <div className="usersvideo_grid">
+          <div className="video_full">
+            <div className="title">{name}</div>
+            <UsersHandleAudioOut g={group} gateways={gateways} audio={audio} setProps={this.setProps}/>
+          </div>
+        </div>
+      </Segment>
+    );
+  }
 }
 
 export default AudioOutApp;
