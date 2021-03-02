@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import './VirtualWorkshopQuestion.scss';
+import './subtitles.scss';
 import { withTranslation } from 'react-i18next';
 import classNames from 'classnames';
 import Dropdown from 'semantic-ui-react/dist/commonjs/modules/Dropdown';
@@ -9,7 +9,7 @@ import Icon from 'semantic-ui-react/dist/commonjs/elements/Icon';
 import Slider from 'react-rangeslider';
 import ReconnectingWebSocket from 'reconnectingwebsocket';
 import { GET_WORKSHOP_QUESTIONS, WEB_SOCKET_WORKSHOP_QUESTION } from '../../../shared/env';
-import { getLanguage } from '../../../i18n/i18n';
+import { getLanguage, languagesOptions } from '../../../i18n/i18n';
 import mqtt from '../../../shared/mqtt';
 import { MessagesForShowStack, MSGS_TYPES } from './MessagesForShowStack';
 
@@ -19,71 +19,6 @@ const WQ_IN_PROCESS_SELECTED = 'wq-in-process-selected';
 const EQUAL                  = 'equal';
 const FULLSCREEN             = 'fullscreen';
 const DETACHED               = 'detached';
-
-class Language {
-  constructor(key, value, flag) {
-    this.key      = key;
-    this.value    = value;
-    this.flag     = flag;
-    this.question = null;
-    this.selected = false;
-  }
-}
-
-class FontSize {
-  constructor(min, max, current) {
-    this.min     = min;
-    this.max     = max;
-    this.current = current > max ? max : current;
-  }
-}
-
-const setLanguageOptions = () => {
-  const languageOptions = [
-    new Language('he', 0, 'il'),
-    new Language('ru', 1, 'ru'),
-    new Language('en', 2, 'us'),
-    new Language('es', 3, 'es')
-  ];
-
-  const selected = JSON.parse(localStorage.getItem(WQ_IN_PROCESS_SELECTED));
-  if (selected) {
-    languageOptions.forEach(l => l.selected = selected.indexOf(l.value) !== -1);
-  }
-
-  return languageOptions;
-};
-
-const getSelectedLanguageItem = (languageOptions, playerLang) => {
-  const storageLang = parseInt(localStorage.getItem(WQ_LANG));
-  let langValue     = 2;
-
-  if (!isNaN(storageLang)) {
-    langValue = storageLang;
-  } else if (playerLang) {
-    const lang = languageOptions.find(l => l.key === playerLang);
-    if (lang) {
-      langValue = lang.value;
-    }
-  }
-
-  return languageOptions[langValue];
-};
-
-const setFontSize = (layout, current) => {
-  switch (layout) {
-  case EQUAL:
-    return new FontSize(16, 20, current || 16);
-  case FULLSCREEN:
-    return new FontSize(30, 40, current || 34);
-  case DETACHED:
-    return new FontSize(20, 40, current || 24);
-  default:
-    return new FontSize(20, 28, current || 24);
-  }
-};
-
-let currentLayout = localStorage.getItem('currentLayout') || EQUAL;
 
 class VirtualWorkshopQuestion extends Component {
   constructor(props) {
@@ -245,7 +180,6 @@ class VirtualWorkshopQuestion extends Component {
           l.type     = null;
           l.question = null;
         });
-        this.setState({ languageOptions });
       }
     } catch (e) {
       console.error('Workshop onmessage parse error', e);
@@ -316,7 +250,7 @@ class VirtualWorkshopQuestion extends Component {
   }
 
   updateMqttLang = (prevLang, nextlang) => {
-    if (prevLang === nextlang || !mqtt.mq)
+    if (prevLang === nextlang)
       return;
 
     prevLang && mqtt.exit('subtitles/galaxy/' + prevLang);
@@ -382,6 +316,7 @@ class VirtualWorkshopQuestion extends Component {
                         compact
                         options={languageOptions.filter(l => l.type === MSGS_TYPES.workshop)}
                         onChange={(event, data) => {
+                          console.log('Dropdown selectedLanguageValue', event, data, this);
                           this.changeLanguage(data, true);
                         }}
                         trigger={<Flag name={flag} />}

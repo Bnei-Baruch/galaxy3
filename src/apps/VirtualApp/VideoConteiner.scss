@@ -1,4 +1,4 @@
-@import "subtitles/VirtualWorkshopQuestionHelpers";
+@import "subtitles/subtitlesHelpers";
 
 @function list-remove($list, $index) {
   $newList: ();
