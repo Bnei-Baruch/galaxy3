@@ -16,7 +16,7 @@ import './BroadcastStream.scss';
 import Volume from './components/Volume';
 import { withTranslation } from 'react-i18next';
 import { isFullScreen, toggleFullScreen } from './FullScreenHelper';
-import { SubtitlesView } from './subtitles/SubtitlesView';
+import { SubtitlesContainer } from './subtitles/SubtitlesContainer';
 
 class VirtualStreaming extends Component {
 
@@ -212,7 +212,7 @@ class VirtualStreaming extends Component {
               </div>
 
             </div>
-            <SubtitlesView layout={isOnFullScreen ? 'fullscreen' : !attached ? 'detached' : layout} playerLang={playerLang} />
+            <SubtitlesContainer layout={isOnFullScreen ? 'fullscreen' : !attached ? 'detached' : layout} playerLang={playerLang} />
           </div>
           {talking && <Label className='talk' size='massive' color='red'><Icon name='microphone' />On</Label>}
         </div>
