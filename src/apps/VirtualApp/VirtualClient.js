@@ -817,7 +817,7 @@ class VirtualClient extends Component {
       if(videoroom) videoroom.detach();
       if(protocol) protocol.detach();
       if(janus) janus.destroy();
-      if (reconnect) {
+      if (!reconnect) {
         this.state.virtualStreamingJanus.muteAudioElement();
       } else {
         this.state.virtualStreamingJanus.unmuteAudioElement();
