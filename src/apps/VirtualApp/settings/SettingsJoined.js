@@ -122,20 +122,14 @@ const SettingsJoined = (props) => {
     );
   };
 
-  const renderBroadcastSettings = () => {
+  const renderSubtitleSettings = () => {
     return (
       <>
         <Grid item={true} xs={4}>
           <Computer className={classes.icon} color="action" />
           <Typography variant="h6" display="inline" style={{ verticalAlign: 'top' }} color="textPrimary">
-            {t('settings.broadcastSettings')}
+            {t('settings.subtitlesSettings')}
           </Typography>
-        </Grid>
-        <Grid item={true} xs={4}>
-          <SelectBroadcastVideo videos={videos} setVideo={setVideo} />
-        </Grid>
-        <Grid item={true} xs={4}>
-          <SelectLanguage setAudio={setAudio} />
         </Grid>
         <Grid item={true} xs={4}>
           <TextField
@@ -258,7 +252,7 @@ const SettingsJoined = (props) => {
         <Divider variant="fullWidth" style={{ width: '100%' }} />
         {renderUserSettings()}
         <Divider variant="fullWidth" style={{ width: '100%' }} />
-        {renderBroadcastSettings()}
+        {renderSubtitleSettings()}
         <Divider variant="fullWidth" style={{ width: '100%' }} />
         {renderMediaSettings()}
 

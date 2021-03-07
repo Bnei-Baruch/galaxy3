@@ -1,3 +1,5 @@
+import { subtitle_options } from '../../../shared/consts';
+
 export const MSGS_TYPES = {
   subtitle: 'subtitle',
   workshop: 'workshop'
@@ -9,6 +11,10 @@ export class MessageManager {
   subtitleMsgs = [];
 
   constructor() {
+    this.subtitleLangByLang = subtitle_options.reduce((result, o) => {
+      return { ...result, [o.key]: o.key };
+    }, { 'ua': 'ru' });
+
     this.push              = this.push.bind(this);
     this.clear             = this.clear.bind(this);
     this.last              = this.last.bind(this);
@@ -46,13 +52,16 @@ export class MessageManager {
   }
 
   last(lang) {
+    const wLang = this.subtitleLangByLang[lang] || 'en';
     return [...this.subtitleMsgs, ...this.wqMsgs]
-      .filter(m => m.language === lang)
+      //for workshop use default language
+      .filter(m => (m.type === MSGS_TYPES.subtitle && m.language === lang) || (m.type === MSGS_TYPES.workshop && m.language === wLang))
       .sort((a, b) => b.addedAt - a.addedAt)
       [0];
   }
 
   getWQByLang(lang) {
+    lang = this.subtitleLangByLang[lang] || 'en';
     return this.wqMsgs.find(m => m.language === lang);
   }
 

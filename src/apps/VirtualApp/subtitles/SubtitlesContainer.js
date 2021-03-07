@@ -16,7 +16,7 @@ export const SubtitlesContainer = ({ playerLang, layout }) => {
   const subtitleLang    = localStorage.getItem(SUBTITLE_LANG) || playerLang;
   langForCloser.wqLang  = wqLang;
 
-  const wqAvailable     = messageManager.getAvailableLangs();
+  const wqAvailable = messageManager.getAvailableLangs();
 
   const onMsgHandler = data => {
     let item;
@@ -29,12 +29,12 @@ export const SubtitlesContainer = ({ playerLang, layout }) => {
     setLast(item);
   };
 
-  useEffect(async () => {
+  useEffect(() => {
     initWQ(onMsgHandler);
   }, []);
 
-  useEffect(async () => {
-    subtitleLang && await initSubtitle(subtitleLang, onMsgHandler);
+  useEffect(() => {
+    subtitleLang && initSubtitle(subtitleLang, onMsgHandler);
   }, [subtitleLang]);
 
   useEffect(async () => {

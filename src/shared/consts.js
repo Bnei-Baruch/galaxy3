@@ -43,13 +43,11 @@ export const videos_options2 = [
 ];
 
 export const subtitle_options = [
-  { key: 'il', value: 'il', eng_text: 'Hebrew', text: 'עברית' },
+  { key: '', value: '', eng_text: 'blank', text: 'Player language' },
+  { key: 'he', value: 'he', eng_text: 'Hebrew', text: 'עברית' },
   { key: 'ru', value: 'ru', eng_text: 'Russian', text: 'Русский' },
-  { key: 'us', value: 'us', eng_text: 'English', text: 'English' },
+  { key: 'en', value: 'en', eng_text: 'English', text: 'English' },
   { key: 'es', value: 'es', eng_text: 'Spanish', text: 'Español' },
-  { key: 'fr', value: 'fr', eng_text: 'French', text: 'Français' },
-  { key: 'it', value: 'it', eng_text: 'Italian', text: 'Italiano' },
-  { key: 'de', value: 'de', eng_text: 'German', text: 'Deutsch' },
 ];
 export const audiog_options2 = [
 
