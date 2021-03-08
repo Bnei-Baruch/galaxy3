@@ -233,16 +233,6 @@ class MobileClient extends Component {
       return;
     }
 
-    // Protocol init
-    mqtt.init(user, (data) => {
-      console.log('[mqtt] init: ', data);
-      mqtt.join('galaxy/users/broadcast');
-      mqtt.join('galaxy/users/' + user.id);
-      mqtt.watch((message) => {
-        this.handleCmdData(message);
-      });
-    });
-
     let gdm = new GuaranteeDeliveryManager(user.id);
     this.setState({ gdm });
     localStorage.setItem('question', false);
@@ -276,6 +266,17 @@ class MobileClient extends Component {
             msg_protocol: ConfigStore.dynamicConfig('galaxy_protocol')
           });
           GxyJanus.setGlobalConfig(data);
+
+          // Protocol init
+          mqtt.init(user, (data) => {
+            console.log('[mqtt] init: ', data);
+            mqtt.join('galaxy/users/broadcast');
+            mqtt.join('galaxy/users/' + user.id);
+            mqtt.watch((message) => {
+              this.handleCmdData(message);
+            });
+          });
+
         })
         .then(() => api.fetchAvailableRooms({ with_num_users: true }))
         .then(data => {
