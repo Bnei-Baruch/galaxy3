@@ -7,12 +7,11 @@ import LoginPage from "../../components/LoginPage";
 import ShidurToran from "./ShidurToran";
 import UsersQuad from "./UsersQuad";
 import './ShidurApp.css'
-import {USERNAME_ALREADY_EXIST_ERROR_CODE, LOST_CONNECTION, STORAN_ID} from "../../shared/consts"
+import {LOST_CONNECTION, STORAN_ID} from "../../shared/consts"
 import {GuaranteeDeliveryManager} from '../../shared/GuaranteeDelivery';
-import {captureException, captureMessage, updateSentryUser} from "../../shared/sentry";
+import {captureException, updateSentryUser} from "../../shared/sentry";
 import {getDateString} from "../../shared/tools";
 import mqtt from "../../shared/mqtt";
-import ConfigStore from "../../shared/ConfigStore";
 
 
 class ShidurApp extends Component {
@@ -134,16 +133,6 @@ class ShidurApp extends Component {
   initGateway = (user, gateway) => {
     console.log("[Shidur] initializing gateway", gateway.name);
 
-    gateway.addEventListener("reinit", () => {
-        this.setState({reinit_inst: gateway.name});
-        this.postInitGateway(user, gateway)
-          .catch(err => {
-            console.error("[Shidur] postInitGateway error after reinit. Reloading", gateway.name, err);
-            this.initGateway(user, gateway);
-          });
-      }
-    );
-
     gateway.addEventListener("net-lost", (err) => {
         if(err.detail === LOST_CONNECTION)
           this.reinitTimer(gateway);
@@ -151,18 +140,6 @@ class ShidurApp extends Component {
     );
 
     return gateway.init()
-      .then(() => this.postInitGateway(user, gateway))
-      .catch(err => {
-        console.error("[Shidur] error initializing gateway. Will retry postInitGateway in 10 seconds.", gateway.name, err);
-        captureException(err, {source: 'ShidurApp', gateway: gateway.name});
-        setTimeout(() => {
-          this.initGateway(user, gateway)
-            .catch(err => {
-              console.error("[Shidur] error initializing gateway.", gateway.name, err);
-              captureException(err, {source: 'ShidurApp', gateway: gateway.name});
-            });
-        }, 10000);
-      });
   };
 
   reinitTimer = (gateway) => {
@@ -187,16 +164,6 @@ class ShidurApp extends Component {
         }
       }
     }, 1000);
-  };
-
-  postInitGateway = (user, gateway) => {
-    return gateway.initChatRoom(data => this.onChatData(gateway, data))
-      .then(() => {
-        if (gateway.name === "gxy3") {
-          return gateway.initServiceProtocol(user, data => this.onServiceData(gateway, data))
-        }
-        return Promise.resolve();
-      })
   };
 
   pollRooms = () => {
@@ -261,55 +228,7 @@ class ShidurApp extends Component {
       });
   };
 
-  onChatData = (gateway, data) => {
-    const json = JSON.parse(data);
-    const what = json["textroom"];
-    if (what === "message") {
-      let msg = json['text'];
-      let message = JSON.parse(msg);
-      const { gdm } = this.state;
-      if (gdm.checkAck(message)) {
-        // Ack received, do nothing.
-        return;
-      }
-    }
-  };
-
   onMqttData = (data) => {
-    if(data.type === "event" && !data.hasOwnProperty('user')) {
-      delete data.type;
-      this.setState({...data});
-      if(data.sdiout || data.audout) {
-        setTimeout(() => {
-          console.log("[Shidur] :: Check Full Screen state :: ");
-          this.checkFullScreen();
-        }, 3000);
-      }
-    } else if (data.type === 'reload-config') {
-      this.reloadConfig();
-    }
-  };
-
-  onServiceData = (gateway, data) => {
-    const { gdm } = this.state;
-    if (gdm.checkAck(data)) {
-      // Ack received, do nothing.
-      return;
-    }
-
-    if (data.type === "error") {
-      if (data.error_code === USERNAME_ALREADY_EXIST_ERROR_CODE) {
-        console.error("[Shidur] service error message (reloading in 10 seconds)", data.error);
-        captureMessage(data.error, {source: "Shidur", msg: data});
-        setTimeout(() => {
-          this.initGateway(this.state.user, gateway);
-        }, 10000);
-        return;
-      } else {
-        captureException(data.error, {source: "Shidur", msg: data});
-      }
-    }
-
     if(data.type === "event" && !data.hasOwnProperty('user')) {
       delete data.type;
       this.setState({...data});

@@ -65,7 +65,7 @@ class GxyJanus extends EventTarget {
     init = () => {
         return new Promise((resolve, reject) => {
             Janus.init({
-                debug: process.env.NODE_ENV !== 'production' ? ["log", "warn", "error"] : ["warn", "error"],
+                debug: process.env.NODE_ENV !== 'production' ? ["error"] : ["error"],
                 callback: () => {
                     const config = this.getConfig();
                     this.gateway = new Janus({
