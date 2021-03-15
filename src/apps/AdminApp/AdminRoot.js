@@ -940,12 +940,12 @@ class AdminRoot extends Component {
 					//        }/>,
           <Popup trigger={<Button color="blue" icon='cloud download' onClick={() => this.sendRemoteCommand("reload-config")} />} content='Silently reload dynamic config on ALL clients' inverted />,
 					<Popup trigger={<Button color="red" icon='redo' onClick={() => this.setState({showConfirmReloadAll: !showConfirmReloadAll})} />} content='RELOAD ALL' inverted />,
-          <Dropdown icon='plug' className='button icon' inline item text={tcp === "mqtt" ? 'MQTT' : 'WebRTC'} >
-            <Dropdown.Menu>
-              <Dropdown.Item onClick={this.setProtocol}>MQTT</Dropdown.Item>
-              <Dropdown.Item onClick={this.setProtocol}>WebRTC</Dropdown.Item>
-            </Dropdown.Menu>
-          </Dropdown>
+          // <Dropdown icon='plug' className='button icon' inline item text={tcp === "mqtt" ? 'MQTT' : 'WebRTC'} >
+          //   <Dropdown.Menu>
+          //     <Dropdown.Item onClick={this.setProtocol}>MQTT</Dropdown.Item>
+          //     <Dropdown.Item onClick={this.setProtocol}>WebRTC</Dropdown.Item>
+          //   </Dropdown.Menu>
+          // </Dropdown>
 				]);
 			}
 

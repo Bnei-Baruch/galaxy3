@@ -10,7 +10,7 @@ class StatNotes extends Component {
 
     componentDidMount() {
         let state = {gxy_sum: 0, str_sum: 0};
-        for(let i=1; i<12; i++) {
+        for(let i=1; i<8; i++) {
             state["gxy" + i + "_count"] = 0;
             state["str" + i + "_count"] = 0;
         }
@@ -78,60 +78,60 @@ class StatNotes extends Component {
                             <Table.Cell>{gxy1_count}</Table.Cell>
                             <Table.Cell>gxy5 :</Table.Cell>
                             <Table.Cell>{gxy5_count}</Table.Cell>
-                            <Table.Cell>gxy9 :</Table.Cell>
-                            <Table.Cell>{gxy9_count}</Table.Cell>
+                            {/*<Table.Cell>gxy9 :</Table.Cell>*/}
+                            {/*<Table.Cell>{gxy9_count}</Table.Cell>*/}
                             <Table.Cell>|</Table.Cell>
                             <Table.Cell>str1 :</Table.Cell>
                             <Table.Cell>{str1_count}</Table.Cell>
                             <Table.Cell>str5 :</Table.Cell>
                             <Table.Cell>{str5_count}</Table.Cell>
-                            <Table.Cell>str9 :</Table.Cell>
-                            <Table.Cell>{str9_count}</Table.Cell>
+                            {/*<Table.Cell>str9 :</Table.Cell>*/}
+                            {/*<Table.Cell>{str9_count}</Table.Cell>*/}
                         </Table.Row>
                         <Table.Row>
                             <Table.Cell>gxy2 :</Table.Cell>
                             <Table.Cell>{gxy2_count}</Table.Cell>
                             <Table.Cell>gxy6 :</Table.Cell>
                             <Table.Cell>{gxy6_count}</Table.Cell>
-                            <Table.Cell>gxy10 :</Table.Cell>
-                            <Table.Cell>{gxy10_count}</Table.Cell>
+                            {/*<Table.Cell>gxy10 :</Table.Cell>*/}
+                            {/*<Table.Cell>{gxy10_count}</Table.Cell>*/}
                             <Table.Cell>|</Table.Cell>
                             <Table.Cell>str2 :</Table.Cell>
                             <Table.Cell>{str2_count}</Table.Cell>
                             <Table.Cell>str6 :</Table.Cell>
                             <Table.Cell>{str6_count}</Table.Cell>
-                            <Table.Cell>str10 :</Table.Cell>
-                            <Table.Cell>{str10_count}</Table.Cell>
+                            {/*<Table.Cell>str10 :</Table.Cell>*/}
+                            {/*<Table.Cell>{str10_count}</Table.Cell>*/}
                         </Table.Row>
                         <Table.Row>
                             <Table.Cell>gxy3 :</Table.Cell>
                             <Table.Cell>{gxy3_count}</Table.Cell>
                             <Table.Cell>gxy7 :</Table.Cell>
                             <Table.Cell>{gxy7_count}</Table.Cell>
-                            <Table.Cell>gxy11 :</Table.Cell>
-                            <Table.Cell>{gxy11_count}</Table.Cell>
+                            {/*<Table.Cell>gxy11 :</Table.Cell>*/}
+                            {/*<Table.Cell>{gxy11_count}</Table.Cell>*/}
                             <Table.Cell>|</Table.Cell>
                             <Table.Cell>str3 :</Table.Cell>
                             <Table.Cell>{str3_count}</Table.Cell>
                             <Table.Cell>str7 :</Table.Cell>
                             <Table.Cell>{str7_count}</Table.Cell>
-                            <Table.Cell>str11 :</Table.Cell>
-                            <Table.Cell>{str11_count}</Table.Cell>
+                            {/*<Table.Cell>str11 :</Table.Cell>*/}
+                            {/*<Table.Cell>{str11_count}</Table.Cell>*/}
                         </Table.Row>
                         <Table.Row>
                             <Table.Cell>gxy4 :</Table.Cell>
                             <Table.Cell>{gxy4_count}</Table.Cell>
                             <Table.Cell>gxy8 :</Table.Cell>
                             <Table.Cell>{gxy8_count}</Table.Cell>
-                            <Table.Cell>sum :</Table.Cell>
-                            <Table.Cell>{gxy_sum}</Table.Cell>
+                            {/*<Table.Cell>sum :</Table.Cell>*/}
+                            {/*<Table.Cell>{gxy_sum}</Table.Cell>*/}
                             <Table.Cell>|</Table.Cell>
                             <Table.Cell>str4 :</Table.Cell>
                             <Table.Cell>{str4_count}</Table.Cell>
                             <Table.Cell>str8 :</Table.Cell>
                             <Table.Cell>{str8_count}</Table.Cell>
-                          <Table.Cell>sum :</Table.Cell>
-                          <Table.Cell>{str_sum}</Table.Cell>
+                          {/*<Table.Cell>sum :</Table.Cell>*/}
+                          {/*<Table.Cell>{str_sum}</Table.Cell>*/}
                         </Table.Row>
                     </Table.Body>
                 </Table>
