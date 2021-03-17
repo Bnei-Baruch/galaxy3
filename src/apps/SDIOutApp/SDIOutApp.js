@@ -96,7 +96,7 @@ class SDIOutApp extends Component {
     })
     const gateways = GxyJanus.makeGateways("rooms");
     this.setState({gateways});
-    Object.values(gateways).map(gateway => gateway.init())
+    Object.values(gateways).map(gateway => gateway.init());
   };
 
   onMqttData = (data) => {
