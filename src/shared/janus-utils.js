@@ -538,7 +538,7 @@ class GxyJanus extends EventTarget {
                     if (callbacks.ondataerror) callbacks.ondataerror(error);
                 },
                 onmessage: (msg, jsep) => {
-                    this.log("[videoroom] message", msg);
+                    //this.log("[videoroom] message", msg);
                     if (callbacks.onmessage) callbacks.onmessage(msg, jsep);
                 },
                 oncleanup: () => {
@@ -625,7 +625,7 @@ class GxyJanus extends EventTarget {
                     if (!mid) {
                         mid = track.id.split("janus")[1];
                     }
-                    this.log("[remoteFeed] Remote track (mid=" + mid + ") " + (on ? "added" : "removed") + ":", track);
+                    //this.log("[remoteFeed] Remote track (mid=" + mid + ") " + (on ? "added" : "removed") + ":", track);
                     if (callbacks.onremotetrack) callbacks.onremotetrack(track, mid, on);
                 },
                 ondataopen: (label) => {
