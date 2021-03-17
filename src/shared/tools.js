@@ -1,12 +1,11 @@
 import {Janus} from "../lib/janus";
 import {STUN_SRV_GXY, WKLI_ENTER, WKLI_LEAVE} from "./env";
-import * as Sentry from "@sentry/react";
 import api from "./Api";
 import {captureMessage} from "./sentry";
 
 export const initJanus = (cb,er,server,token="",iceServers=[{urls: STUN_SRV_GXY}]) => {
     Janus.init({
-        debug: process.env.NODE_ENV !== 'production' ? ["debug", "log","error"] : ["log", "error"],
+        debug: process.env.NODE_ENV !== 'production' ? ["error"] : ["error"],
         callback: () => {
             let janus = new Janus({
                 server,

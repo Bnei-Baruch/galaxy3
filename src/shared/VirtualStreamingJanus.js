@@ -272,7 +272,7 @@ export default class VirtualStreamingJanus {
     const config = GxyJanus.instanceConfig(this.streamingGateway);
 
     Janus.init({
-      debug: process.env.NODE_ENV !== 'production' ? ['log', 'error'] : ['log', 'error'],
+      debug: process.env.NODE_ENV !== 'production' ? ['error'] : ['error'],
       callback: () => {
         this.janus = new Janus({
           server: config.url,

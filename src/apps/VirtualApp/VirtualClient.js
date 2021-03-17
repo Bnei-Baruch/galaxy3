@@ -10,10 +10,8 @@ import {
   getMediaStream,
   initJanus,
   micLevel,
-  takeImage,
   testMic,
   updateGxyUser,
-  wkliLeave
 } from '../../shared/tools';
 import './VirtualClient.scss';
 import './VideoConteiner.scss';
@@ -712,16 +710,16 @@ class VirtualClient extends Component {
     this.setState({user, muted: true});
     updateSentryUser(user);
 
-    if(video_device && user.role === "user") {
-      if(this.state.upval) {
-        clearInterval(this.state.upval);
-      }
-      takeImage(user);
-      let upval = setInterval(() => {
-        takeImage(user);
-      }, 10*60000);
-      this.setState({upval});
-    }
+    // if(video_device && user.role === "user") {
+    //   if(this.state.upval) {
+    //     clearInterval(this.state.upval);
+    //   }
+    //   takeImage(user);
+    //   let upval = setInterval(() => {
+    //     takeImage(user);
+    //   }, 10*60000);
+    //   this.setState({upval});
+    // }
 
     this.chat.initChatRoom(janus, selected_room, user, this.initChatroomCallback(videoroom, selected_room, user).bind(this));
   };
@@ -746,7 +744,6 @@ class VirtualClient extends Component {
             this.setState({wipSettings: false});
         }, false);
       } else if(textroom === "success" && data.participants) {
-        //this.state.checkAlive.start(this.chat.state.chatroom, selected_room, user);
         Janus.log(":: Successfully joined to chat room: " + selected_room );
         user.textroom_handle = this.chat.getHandle(); // we want this in backend for debugging of textroom based signaling
         this.setState({user});
@@ -770,9 +767,9 @@ class VirtualClient extends Component {
   exitRoom = (reconnect, callback, error) => {
     const muteMyCamOnInit = reconnect ? this.state.cammuted:  this.state.muteOtherCams;
     this.setState({delay: true, muteMyCamOnInit});
-    if (this.state.user.role === userRolesEnum.user) {
-      wkliLeave(this.state.user);
-    }
+    // if (this.state.user.role === userRolesEnum.user) {
+    //   wkliLeave(this.state.user);
+    // }
     clearInterval(this.state.upval);
     this.clearKeepAlive();
 
@@ -795,7 +792,6 @@ class VirtualClient extends Component {
     if(protocol) protocol.data({text: JSON.stringify(pl)});
 
     if (this.chat && !error) {
-      //this.state.checkAlive.stop();
       this.chat.exitChatRoom(room);
     }
 

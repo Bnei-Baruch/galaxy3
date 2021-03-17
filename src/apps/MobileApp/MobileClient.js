@@ -12,7 +12,6 @@ import {
   initJanus,
   micLevel,
   updateGxyUser,
-  wkliLeave
 } from '../../shared/tools';
 import './MobileClient.scss';
 import './MobileConteiner.scss';
@@ -700,7 +699,6 @@ class MobileClient extends Component {
   exitRoom = (reconnect, callback, error) => {
     this.setState({ delay: true });
     let { videoroom, remoteFeed, protocol, janus, room } = this.state;
-    wkliLeave(this.state.user);
     clearInterval(this.state.upval);
     this.clearKeepAlive();
 
