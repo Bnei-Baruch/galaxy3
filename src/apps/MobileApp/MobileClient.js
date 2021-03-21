@@ -187,8 +187,7 @@ class MobileClient extends Component {
   };
 
   componentDidMount() {
-    console.log(isMobile)
-    if (!isMobile && window.location.href.indexOf('userm') > -1) {
+    if (!isMobile && window.location.pathname.split('/')[1] !== "userm") {
       window.location = '/user/';
       return;
     }
