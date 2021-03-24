@@ -4,8 +4,8 @@ import { MessageManager, MSGS_TYPES } from './MessageManager';
 import { initSubtitle, initWQ } from './httpHelper';
 import { SubtitlesView } from './SubtitlesView';
 
-export const WQ_LANG       = 'wq-lang';
-export const SUBTITLE_LANG = 'subtitle-lang';
+export const WQ_LANG       = 'wq-language';
+export const SUBTITLE_LANG = 'subtitle-language';
 
 const messageManager = new MessageManager();
 

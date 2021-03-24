@@ -43,7 +43,6 @@ export const videos_options2 = [
 ];
 
 export const subtitle_options = [
-  { key: '', value: '', eng_text: 'blank', text: 'Player language' },
   { key: 'he', value: 'he', eng_text: 'Hebrew', text: 'עברית' },
   { key: 'ru', value: 'ru', eng_text: 'Russian', text: 'Русский' },
   { key: 'en', value: 'en', eng_text: 'English', text: 'English' },
