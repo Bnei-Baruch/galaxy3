@@ -10,10 +10,8 @@ import {
   getMediaStream,
   initJanus,
   micLevel,
-  takeImage,
   testMic,
   updateGxyUser,
-  wkliLeave
 } from '../../shared/tools';
 import './VirtualClient.scss';
 import './VideoConteiner.scss';
@@ -259,16 +257,6 @@ class VirtualClient extends Component {
       return;
     }
 
-    // Protocol init
-    mqtt.init(user, (data) => {
-      console.log('[mqtt] init: ', data);
-      mqtt.join('galaxy/users/broadcast');
-      mqtt.join('galaxy/users/' + user.id);
-      mqtt.watch((message) => {
-        this.handleCmdData(message);
-      });
-    });
-
     const gdm = new GuaranteeDeliveryManager(user.id);
     this.setState({ gdm });
     const { t } = this.props;
@@ -291,39 +279,50 @@ class VirtualClient extends Component {
       updateSentryUser(user);
 
       api.fetchConfig()
-        .then(data => {
-          ConfigStore.setGlobalConfig(data);
-          this.setState({
-            premodStatus: ConfigStore.dynamicConfig(ConfigStore.PRE_MODERATION_KEY) === 'true',
-            msg_protocol: ConfigStore.dynamicConfig('galaxy_protocol')
-          });
-          GxyJanus.setGlobalConfig(data);
-        })
-        .then(() => (api.fetchAvailableRooms({ with_num_users: true })))
-        .then(data => {
-          const { rooms } = data;
-          this.setState({ rooms });
-          this.initDevices();
-          const { selected_room } = this.state;
-          if (selected_room !== '') {
-            const room = rooms.find(r => r.room === selected_room);
-            if (room) {
-              user.room  = selected_room;
-              user.janus = room.janus;
-              user.group = room.description;
-              this.setState({ delay: false, user });
-              updateSentryUser(user);
+          .then(data => {
+            ConfigStore.setGlobalConfig(data);
+            this.setState({
+              premodStatus: ConfigStore.dynamicConfig(ConfigStore.PRE_MODERATION_KEY) === 'true',
+              msg_protocol: ConfigStore.dynamicConfig("galaxy_protocol")
+            });
+            GxyJanus.setGlobalConfig(data);
+
+            // Protocol init
+            mqtt.init(user, (data) => {
+              console.log("[mqtt] init: ", data);
+              mqtt.join('galaxy/users/broadcast');
+              mqtt.join('galaxy/users/' + user.id);
+              mqtt.watch((message) => {
+                this.handleCmdData(message);
+              })
+            })
+
+          })
+          .then(() => (api.fetchAvailableRooms({with_num_users: true})))
+          .then(data => {
+            const {rooms} = data;
+            this.setState({rooms});
+            this.initDevices();
+            const {selected_room} = this.state;
+            if (selected_room !== '') {
+              const room = rooms.find(r => r.room === selected_room);
+              if (room) {
+                user.room = selected_room;
+                user.janus = room.janus;
+                user.group = room.description;
+                this.setState({delay: false, user});
+                updateSentryUser(user);
+              } else {
+                this.setState({selected_room: '', delay: false});
+              }
             } else {
-              this.setState({ selected_room: '', delay: false });
+              this.setState({delay: false});
             }
-          } else {
-            this.setState({ delay: false });
-          }
-        })
-        .catch(err => {
-          console.error('[User] error initializing app', err);
-          this.setState({ appInitError: err });
-        });
+          })
+          .catch(err => {
+            console.error("[User] error initializing app", err);
+            this.setState({appInitError: err});
+          });
     });
   };
 
@@ -712,16 +711,16 @@ class VirtualClient extends Component {
     this.setState({ user, muted: true });
     updateSentryUser(user);
 
-    if (video_device && user.role === 'user') {
-      if (this.state.upval) {
-        clearInterval(this.state.upval);
-      }
-      takeImage(user);
-      let upval = setInterval(() => {
-        takeImage(user);
-      }, 10 * 60000);
-      this.setState({ upval });
-    }
+    // if(video_device && user.role === "user") {
+    //   if(this.state.upval) {
+    //     clearInterval(this.state.upval);
+    //   }
+    //   takeImage(user);
+    //   let upval = setInterval(() => {
+    //     takeImage(user);
+    //   }, 10*60000);
+    //   this.setState({upval});
+    // }
 
     this.chat.initChatRoom(janus, selected_room, user, this.initChatroomCallback(videoroom, selected_room, user).bind(this));
   };
@@ -745,9 +744,8 @@ class VirtualClient extends Component {
             alert(this.props.t('oldClient.error') + data.error);
           this.setState({ wipSettings: false });
         }, false);
-      } else if (textroom === 'success' && data.participants) {
-        //this.state.checkAlive.start(this.chat.state.chatroom, selected_room, user);
-        Janus.log(':: Successfully joined to chat room: ' + selected_room);
+      } else if(textroom === "success" && data.participants) {
+        Janus.log(":: Successfully joined to chat room: " + selected_room );
         user.textroom_handle = this.chat.getHandle(); // we want this in backend for debugging of textroom based signaling
         this.setState({ user });
         const { id, timestamp, role, username } = user;
@@ -773,11 +771,11 @@ class VirtualClient extends Component {
   };
 
   exitRoom = (reconnect, callback, error) => {
-    const muteMyCamOnInit = reconnect ? this.state.cammuted : this.state.muteOtherCams;
-    this.setState({ delay: true, muteMyCamOnInit });
-    if (this.state.user.role === userRolesEnum.user) {
-      wkliLeave(this.state.user);
-    }
+    const muteMyCamOnInit = reconnect ? this.state.cammuted:  this.state.muteOtherCams;
+    this.setState({delay: true, muteMyCamOnInit});
+    // if (this.state.user.role === userRolesEnum.user) {
+    //   wkliLeave(this.state.user);
+    // }
     clearInterval(this.state.upval);
     this.clearKeepAlive();
 
@@ -799,7 +797,6 @@ class VirtualClient extends Component {
     if (protocol) protocol.data({ text: JSON.stringify(pl) });
 
     if (this.chat && !error) {
-      //this.state.checkAlive.stop();
       this.chat.exitChatRoom(room);
     }
 
@@ -819,10 +816,10 @@ class VirtualClient extends Component {
       toggleFullScreen();
     }
     setTimeout(() => {
-      if (videoroom) videoroom.detach();
-      if (protocol) protocol.detach();
-      if (janus) janus.destroy();
-      if (reconnect) {
+      if(videoroom) videoroom.detach();
+      if(protocol) protocol.detach();
+      if(janus) janus.destroy();
+      if (!reconnect) {
         this.state.virtualStreamingJanus.muteAudioElement();
       } else {
         this.state.virtualStreamingJanus.unmuteAudioElement();

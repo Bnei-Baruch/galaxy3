@@ -3052,6 +3052,10 @@ export function Janus(gatewayCallbacks) {
 		var config = pluginHandle.webrtcStuff;
 		if(!config.volume[stream])
 			config.volume[stream] = { value: 0 };
+		if(!config.pc || !config.pc.getStats) {
+      result(-1);
+      return;
+    }
 		// Start getting the volume, if audioLevel in getStats is supported (apparently
 		// they're only available in Chrome/Safari right now: https://webrtc-stats.callstats.io/)
 		if(config.pc.getStats && (Janus.webRTCAdapter.default.browserDetails.browser === "chrome" ||

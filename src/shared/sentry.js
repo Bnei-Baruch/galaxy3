@@ -1,4 +1,5 @@
 import * as Sentry from "@sentry/react";
+import { Integrations } from "@sentry/tracing";
 
 import {SENTRY_KEY} from './env';
 import version from '../Version';
@@ -10,6 +11,7 @@ export const updateSentryUser = (user) => {
 export const initSentry = () => {
   Sentry.init({
     dsn: `https://${SENTRY_KEY}@sentry.kli.one/2`,
+    integrations: [new Integrations.BrowserTracing()],
     release: version,
     environment: process.env.NODE_ENV,
     attachStacktrace: true,
@@ -18,6 +20,7 @@ export const initSentry = () => {
       'ResizeObserver loop limit exceeded',
       'InvalidAccessError: There is no sender or receiver for the track'
     ],
+    tracesSampleRate: 1.0,
   });
 
   Sentry.configureScope((scope) => {

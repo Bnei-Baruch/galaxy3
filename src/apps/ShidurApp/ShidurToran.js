@@ -4,7 +4,6 @@ import './ShidurToran.scss';
 import UsersPreview from "./UsersPreview";
 import api from '../../shared/Api';
 import {RESET_VOTE} from "../../shared/env";
-import {AUDOUT_ID, SDIOUT_ID} from "../../shared/consts"
 import {captureException} from "../../shared/sentry";
 import mqtt from "../../shared/mqtt";
 
@@ -198,32 +197,12 @@ class ShidurToran extends Component {
       this.selectGroup(questions[0], null);
   };
 
-  sdiActionMessage_ = (action, status, i, feed) => {
+  sdiAction = (action, status, i, feed) => {
     const { index } = this.props;
     const col = index === 0 ? 1 : index === 4 ? 2 : index === 8 ? 3 : index === 12 ? 4 : null;
-    return { type: "sdi-"+action, status, room: null, col, i, feed};
-  };
-
-  sdiAction = (action, status, i, feed) => {
-    const { gateways, tcp } = this.props;
-    const msg = this.sdiActionMessage_(action, status, i, feed);
-    if(tcp === "mqtt") {
-      let retain = action.match(/^(restart_audout|restart_sdiout)$/)
-      mqtt.send(JSON.stringify(msg), !retain, 'galaxy/service/shidur');
-    } else {
-      gateways["gxy3"].sendServiceMessage(msg);
-    }
-  };
-
-  sdiGuaranteeAction = (action, status, i, feed, toAck) => {
-    const { gateways, gdm } = this.props;
-    gdm.send(this.sdiActionMessage_(action, status, i, feed), toAck, (msg) => gateways["gxy3"].sendServiceMessage(msg))
-      .then(() => {
-        console.log(`${action} delivered to ${toAck}.`);
-      })
-      .catch((error) => {
-        console.error(`${action} not delivered to ${toAck} due to ${error}`);
-      });
+    const msg = { type: "sdi-"+action, status, room: null, col, i, feed};
+    let retain = action.match(/^(restart_audout|restart_sdiout)$/)
+    mqtt.send(JSON.stringify(msg), !retain, 'galaxy/service/shidur');
   };
 
   setDelay = () => {
@@ -461,12 +440,12 @@ class ShidurToran extends Component {
               })}
             </Button.Group>
             <Divider />
-            <Dropdown icon='plug' className='button icon' inline item text={tcp === "mqtt" ? 'MQTT' : 'WebRTC'} disabled >
-              <Dropdown.Menu>
-                <Dropdown.Item onClick={() => this.props.setProps({tcp: "mqtt"})}>MQTT</Dropdown.Item>
-                <Dropdown.Item onClick={() => this.props.setProps({tcp: "webrtc"})}>WebRTC</Dropdown.Item>
-              </Dropdown.Menu>
-            </Dropdown>
+            {/*<Dropdown icon='plug' className='button icon' inline item text={tcp === "mqtt" ? 'MQTT' : 'WebRTC'} disabled >*/}
+            {/*  <Dropdown.Menu>*/}
+            {/*    <Dropdown.Item onClick={() => this.props.setProps({tcp: "mqtt"})}>MQTT</Dropdown.Item>*/}
+            {/*    <Dropdown.Item onClick={() => this.props.setProps({tcp: "webrtc"})}>WebRTC</Dropdown.Item>*/}
+            {/*  </Dropdown.Menu>*/}
+            {/*</Dropdown>*/}
             <Divider />
           </Segment>
           <Button.Group attached='bottom' size='mini' >

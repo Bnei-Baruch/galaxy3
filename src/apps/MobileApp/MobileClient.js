@@ -12,7 +12,6 @@ import {
   initJanus,
   micLevel,
   updateGxyUser,
-  wkliLeave
 } from '../../shared/tools';
 import './MobileClient.scss';
 import './MobileConteiner.scss';
@@ -188,7 +187,7 @@ class MobileClient extends Component {
   };
 
   componentDidMount() {
-    if (!isMobile && window.location.href.indexOf('userm') > -1) {
+    if (!isMobile && window.location.pathname.split('/')[1] !== "userm") {
       window.location = '/user/';
       return;
     }
@@ -233,16 +232,6 @@ class MobileClient extends Component {
       return;
     }
 
-    // Protocol init
-    mqtt.init(user, (data) => {
-      console.log('[mqtt] init: ', data);
-      mqtt.join('galaxy/users/broadcast');
-      mqtt.join('galaxy/users/' + user.id);
-      mqtt.watch((message) => {
-        this.handleCmdData(message);
-      });
-    });
-
     let gdm = new GuaranteeDeliveryManager(user.id);
     this.setState({ gdm });
     localStorage.setItem('question', false);
@@ -276,6 +265,17 @@ class MobileClient extends Component {
             msg_protocol: ConfigStore.dynamicConfig('galaxy_protocol')
           });
           GxyJanus.setGlobalConfig(data);
+
+          // Protocol init
+          mqtt.init(user, (data) => {
+            console.log('[mqtt] init: ', data);
+            mqtt.join('galaxy/users/broadcast');
+            mqtt.join('galaxy/users/' + user.id);
+            mqtt.watch((message) => {
+              this.handleCmdData(message);
+            });
+          });
+
         })
         .then(() => api.fetchAvailableRooms({ with_num_users: true }))
         .then(data => {
@@ -699,7 +699,6 @@ class MobileClient extends Component {
   exitRoom = (reconnect, callback, error) => {
     this.setState({ delay: true });
     let { videoroom, remoteFeed, protocol, janus, room } = this.state;
-    wkliLeave(this.state.user);
     clearInterval(this.state.upval);
     this.clearKeepAlive();
 

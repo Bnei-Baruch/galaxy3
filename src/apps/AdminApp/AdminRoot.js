@@ -102,11 +102,11 @@ class AdminRoot extends Component {
             });
     };
 
-    initGateways = (user) => {
+    initGateways = () => {
         const gateways = GxyJanus.makeGateways("rooms");
         this.setState({gateways});
 
-        const gatewayToInitPromise = (gateway) => this.initGateway(user, gateway)
+        const gatewayToInitPromise = (gateway) => gateway.init()
 					.catch(error => {
 						throw error;
 					});
@@ -116,19 +116,6 @@ class AdminRoot extends Component {
                 console.info("[Admin] gateways initialization complete");
                 this.setState({gatewaysInitialized: true});
             });
-    };
-
-    initGateway = (user, gateway) => {
-        console.info("[Admin] initializing gateway", gateway.name);
-
-        gateway.addEventListener("reinit_failure", (e) => {
-            if (e.detail > 10) {
-                console.error("[Admin] too many reinit_failure. Reloading", gateway.name, e);
-                window.location.reload();
-            }
-        });
-
-        return gateway.init();
     };
 
     pollRooms = () => {
@@ -240,7 +227,7 @@ class AdminRoot extends Component {
             } else if (event === "talking") {
                 let {feeds} = this.state;
                 let id = msg["id"];
-                console.debug("[Admin] User start talking", id);
+                //console.debug("[Admin] User start talking", id);
                 for (let i = 0; i < feeds.length; i++) {
                     if (feeds[i] && feeds[i].id === id) {
                         feeds[i].talk = true;
@@ -250,7 +237,7 @@ class AdminRoot extends Component {
             } else if (event === "stopped-talking") {
                 let {feeds} = this.state;
                 let id = msg["id"];
-                console.debug("[Admin] User stop talking", id);
+                //console.debug("[Admin] User stop talking", id);
                 for (let i = 0; i < feeds.length; i++) {
                     if (feeds[i] && feeds[i].id === id) {
                         feeds[i].talk = false;
@@ -940,12 +927,12 @@ class AdminRoot extends Component {
 					//        }/>,
           <Popup trigger={<Button color="blue" icon='cloud download' onClick={() => this.sendRemoteCommand("reload-config")} />} content='Silently reload dynamic config on ALL clients' inverted />,
 					<Popup trigger={<Button color="red" icon='redo' onClick={() => this.setState({showConfirmReloadAll: !showConfirmReloadAll})} />} content='RELOAD ALL' inverted />,
-          <Dropdown icon='plug' className='button icon' inline item text={tcp === "mqtt" ? 'MQTT' : 'WebRTC'} >
-            <Dropdown.Menu>
-              <Dropdown.Item onClick={this.setProtocol}>MQTT</Dropdown.Item>
-              <Dropdown.Item onClick={this.setProtocol}>WebRTC</Dropdown.Item>
-            </Dropdown.Menu>
-          </Dropdown>
+          // <Dropdown icon='plug' className='button icon' inline item text={tcp === "mqtt" ? 'MQTT' : 'WebRTC'} >
+          //   <Dropdown.Menu>
+          //     <Dropdown.Item onClick={this.setProtocol}>MQTT</Dropdown.Item>
+          //     <Dropdown.Item onClick={this.setProtocol}>WebRTC</Dropdown.Item>
+          //   </Dropdown.Menu>
+          // </Dropdown>
 				]);
 			}
 

@@ -272,7 +272,7 @@ export default class VirtualStreamingJanus {
     const config = GxyJanus.instanceConfig(this.streamingGateway);
 
     Janus.init({
-      debug: process.env.NODE_ENV !== 'production' ? ['log', 'error'] : ['log', 'error'],
+      debug: process.env.NODE_ENV !== 'production' ? ['error'] : ['error'],
       callback: () => {
         this.janus = new Janus({
           server: config.url,
@@ -523,6 +523,12 @@ export default class VirtualStreamingJanus {
     if(this.isInitialized_()) {
       // Get remote volume of translator stream (FYI in case of Hebrew, this will be 0 - no translation).
       this.trlAudioJanusStream.getVolume(null, volume => {
+        if(volume === -1) {
+          if (this.talking) {
+            clearInterval(this.talking);
+            return
+          }
+        }
         if (this.prevAudioVolume !== this.audioElement.volume || this.prevMuted !== this.audioElement.muted) {
           // This happens only when user changes audio, update mixvolume.
           this.mixvolume = this.audioElement.muted ? 0 : this.audioElement.volume;

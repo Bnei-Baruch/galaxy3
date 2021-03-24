@@ -37,9 +37,6 @@ class UsersHandle extends Component {
 
   initVideoRoom = (roomid, inst) => {
     const gateway = this.props.gateways[inst];
-    // gateway.addEventListener("reinit", () => {
-    //     this.reinitVideoRoom();
-    // });
     gateway.gateway.attach({
       plugin: "janus.plugin.videoroom",
       opaqueId: "preview_shidur",
@@ -70,12 +67,6 @@ class UsersHandle extends Component {
       },
       onlocalstream: (mystream) => {
         gateway.log(`[room ${roomid}] ::: Got a local stream :::`, mystream);
-      },
-      ondataopen: (label) => {
-        gateway.log('Publisher - DataChannel is available! (' + label + ')');
-      },
-      ondata: (data, label) => {
-        gateway.log('Publisher - Got data from the DataChannel! (' + label + ')' + data);
       },
       oncleanup: () => {
         gateway.log(`[room ${roomid}] ::: Got a cleanup notification: we are unpublished now :::`);
@@ -161,7 +152,7 @@ class UsersHandle extends Component {
               // Janus bug: if try subscribe to only video and data
               // the data pass only one way so we subscribe here to all
               // streams in feed
-              if(stream.type === "video" && feeds[f].video_codec === "h264") {
+              if(stream.type === "video" && stream.codec === "h264") {
                 subscription.push({feed: id, mid: stream.mid});
               }
             }
@@ -202,7 +193,7 @@ class UsersHandle extends Component {
               // Janus bug: if try subscribe to only video and data
               // the data pass only one way so we subscribe here to all
               // streams in feed
-              if(stream.type === "video" && feeds[f].video_codec === "h264") {
+              if(stream.type === "video" && stream.codec === "h264") {
                 subscription.push({feed: id, mid: stream.mid});
               }
             }
@@ -317,44 +308,10 @@ class UsersHandle extends Component {
             Janus.attachMediaStream(remotevideo, stream);
           }
         },
-        ondataopen: (label) => {
-          gateway.log('Feed - DataChannel is available! (' + label + ')');
-        },
-        ondata: (data, label) => {
-          gateway.log('Feed - Got data from the DataChannel! (' + label + ')' + data);
-          let msg = JSON.parse(data);
-          this.onRoomData(gateway, msg);
-          gateway.log(' :: We got msg via DataChannel: ', msg);
-        },
         oncleanup: () => {
           gateway.debug(`[room ${roomid}] [remoteFeed] ::: Got a cleanup notification :::`);
         }
       });
-  };
-
-  sendDataMessage = (cmd) => {
-    const message = JSON.stringify(cmd);
-    console.log(':: Sending message: ', message);
-    this.state.videoroom.data({ text: message });
-  };
-
-  onRoomData = (gateway, data) => {
-    const { gdm } = this.props;
-    if (gdm.checkAck(data)) {
-      // Ack received, do nothing.
-      return;
-    }
-
-    const {type} = data;
-    if (type === 'shidur-ping') {
-      gdm.accept(data, (msg) => this.sendDataMessage(msg)).then((data) => {
-        if (data === null) {
-          console.log('Message received more then once.');
-        }
-      }).catch((error) => {
-        console.error(`Failed receiving ${data}: ${error}`);
-      });
-    }
   };
 
   subscribeTo = (gateway, roomid, subscription) => {

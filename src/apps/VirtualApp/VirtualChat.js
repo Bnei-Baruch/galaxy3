@@ -52,11 +52,11 @@ class VirtualChat extends Component {
     textroom.data({
       text: JSON.stringify(register),
       success: () => {
-        console.log('[VirtualChat] join success', roomid);
+        Janus.log('[VirtualChat] join success', roomid);
         this.setState({room: roomid});
       },
       error: (err) => {
-        console.error('[VirtualChat] join error', roomid, err);
+        Janus.error('[VirtualChat] join error', roomid, err);
         captureMessage('Chatroom error: join', {source: 'Textroom', err, room: roomid}, 'error');
       }
     });
@@ -67,7 +67,7 @@ class VirtualChat extends Component {
       this.state.chatroom.send({
         message: {request: 'restart'},
         error: (err) => {
-          console.error('[VirtualChat] ICE restart error', err);
+          Janus.error('[VirtualChat] ICE restart error', err);
         }
       });
     }
@@ -81,42 +81,42 @@ class VirtualChat extends Component {
           opaqueId: user.id,
           success: (pluginHandle) => {
             chatroom = pluginHandle;
-            console.log('[VirtualChat] Plugin attached! (' + chatroom.getPlugin() + ', id=' + chatroom.getId() + ')');
+            Janus.log('[VirtualChat] Plugin attached! (' + chatroom.getPlugin() + ', id=' + chatroom.getId() + ')');
             this.setState({ chatroom });
             // Setup the DataChannel
             chatroom.send({
               message: {request: 'setup'},
               success: () => {
-                console.log('[VirtualChat] setup success');
+                Janus.log('[VirtualChat] setup success');
               },
               error: (err) => {
-                console.error('[VirtualChat] setup error', err);
+                Janus.error('[VirtualChat] setup error', err);
               }
             });
           },
           error: (err) => {
-            console.error('[VirtualChat] Error attaching plugin...', err);
+            Janus.error('[VirtualChat] Error attaching plugin...', err);
           },
           iceState: (state) => {
-            console.log('[VirtualChat] ICE state', state);
+            Janus.log('[VirtualChat] ICE state', state);
           },
           mediaState: (medium, on) => {
 						const message = `Janus ${on ? 'started' : 'stopped'} receiving our ${medium}`;
-            console.log(`[VirtualChat] ${message}`);
+            Janus.log(`[VirtualChat] ${message}`);
           },
           webrtcState: (on) => {
 						const message = `Janus says our WebRTC PeerConnection is ${on ? 'up' : 'down'} now`;
-            console.log(`[VirtualChat] ${message}`);
+            Janus.log(`[VirtualChat] ${message}`);
           },
           slowLink: (uplink, lost, mid) => {
             const slowLinkType = uplink ? 'sending' : 'receiving';
             const message = 'Janus reports slow link problems ' + slowLinkType + ' packets on mid ' + mid + ' (' + lost + ' lost packets)';
-            console.log(message);
+            Janus.log(message);
           },
           onmessage: (msg, jsep) => {
-            console.debug('[VirtualChat] ::: Got a message :::', msg);
+            Janus.debug('[VirtualChat] ::: Got a message :::', msg);
             if (msg['error'] !== undefined && msg['error'] !== null) {
-              console.error('[VirtualChat] textroom error message', msg);
+              Janus.error('[VirtualChat] textroom error message', msg);
             }
             if (jsep !== undefined && jsep !== null) {
               // Answer
@@ -125,28 +125,28 @@ class VirtualChat extends Component {
                   jsep: jsep,
                   media: {audio: false, video: false, data: true},	// We only use datachannels
                   success: (jsep) => {
-                    console.debug('[VirtualChat] Got SDP!', jsep);
+                    Janus.debug('[VirtualChat] Got SDP!', jsep);
                     chatroom.send({
                       jsep,
                       message: {request: 'ack'},
                       error: (err) => {
-                        console.debug('[VirtualChat] ack error', err);
+                        Janus.debug('[VirtualChat] ack error', err);
                       }
                     });
                   },
                   error: (err) => {
-                    console.error('[VirtualChat] createAnswer error', err);
+                    Janus.error('[VirtualChat] createAnswer error', err);
                   }
                 });
             }
           },
           ondataopen: () => {
-            console.log('[VirtualChat] The DataChannel is available! ');
+            Janus.log('[VirtualChat] The DataChannel is available! ');
             if(!this.state.room)
               this.joinChatRoom(chatroom, room, user);
           },
           ondata: (data) => {
-            console.debug('[VirtualChat] We got message from Data Channel', data);
+            Janus.debug('[VirtualChat] We got message from Data Channel', data);
             let json = JSON.parse(data);
             let what = json['textroom'];
             if (what.match(/^(success|error)$/)) {
@@ -157,21 +157,8 @@ class VirtualChat extends Component {
               //checkAlive.checkAlive(json)
             }
           },
-          ondataerror: (error) => {
-            let details = '';
-            if (error) {
-              // {RTCError} Get error from RTCErrorEvent object.
-              const rtcError = error?.isTrusted?.error ?? error?.error;
-              if (rtcError) {
-                details = `Message: ${rtcError.message}, Detail: ${rtcError.errorDetail}, Received Alert: ${rtcError.receivedAlert}, ` +
-                  `SCTP Cause Code: ${rtcError.sctpCauseCode}, SDP Line Number: ${rtcError.sdpLineNumber}, Sent Alert: ${rtcError.sentAlert}`;
-              }
-            }
-            Janus.warn(`Textroom DataChannel error: ${error} details: ${details}`);
-            console.error('Textroom DataChannel error: ', error, details);
-          },
           oncleanup: () => {
-            console.log('[VirtualChat] ::: Got a cleanup notification :::');
+            Janus.log('[VirtualChat] ::: Got a cleanup notification :::');
             if(this.state.room)
               this.setState({ messages: [], chatroom: null, room: null });
           }
@@ -191,12 +178,12 @@ class VirtualChat extends Component {
       chatroom.data({
         text: JSON.stringify({textroom: 'leave', transaction: Janus.randomString(12), room}),
         success: () => {
-          console.log('[VirtualChat] :: Text room leave callback: ');
+          Janus.log('[VirtualChat] :: Text room leave callback: ');
           this.setState({ messages: [], chatroom: null, room: null });
           chatroom.detach();
         },
         error: (err) => {
-          console.error('[VirtualChat] leave error', err);
+          Janus.error('[VirtualChat] leave error', err);
           chatroom.detach();
         }
       });
@@ -230,11 +217,11 @@ class VirtualChat extends Component {
 
       if (whisper === true) {
         // Private message
-        console.log('[VirtualChat]:: It\'s private message: ' + dateString + ' : ' + from + ' : ' + msg);
+        Janus.log('[VirtualChat]:: It\'s private message: ' + dateString + ' : ' + from + ' : ' + msg);
         let { support_msgs } = this.state;
         if(message.type && message.type !== 'chat') {
           if(this.props.msg_protocol === "mqtt") return;
-          console.log('[VirtualChat] :: It\'s remote command :: ', message);
+          Janus.log('[VirtualChat] :: It\'s remote command :: ', message);
           this.props.onCmdMsg(message);
         } else {
           message.time = dateString;
@@ -251,10 +238,10 @@ class VirtualChat extends Component {
       } else {
         // Public message
         let { messages } = this.state;
-        console.log('[VirtualChat]-:: It\'s public message: ' + msg);
+        Janus.log('[VirtualChat]-:: It\'s public message: ' + msg);
         if(message.type && message.type !== 'chat') {
           if(this.props.msg_protocol === "mqtt") return;
-          console.log('[VirtualChat]:: It\'s remote command :: ', message);
+          Janus.log('[VirtualChat]:: It\'s remote command :: ', message);
           this.props.onCmdMsg(message);
         } else {
           message.time = dateString;
@@ -274,18 +261,18 @@ class VirtualChat extends Component {
       // Somebody joined
       let username = json['username'];
       let display = json['display'];
-      console.log('[VirtualChat]-:: Somebody joined - username: ' + username + ' : display: ' + display);
+      Janus.log('[VirtualChat]-:: Somebody joined - username: ' + username + ' : display: ' + display);
     } else if (what === 'leave') {
       // Somebody left
       let username = json['username'];
       //var when = new Date();
-      console.log('[VirtualChat]-:: Somebody left - username: ' + username + ' : Time: ' + getDateString());
+      Janus.log('[VirtualChat]-:: Somebody left - username: ' + username + ' : Time: ' + getDateString());
     } else if (what === 'kicked') {
       // Somebody was kicked
       // var username = json['username'];
     } else if (what === 'destroyed') {
       let room = json['room'];
-      console.log('[VirtualChat] room destroyed', room);
+      Janus.log('[VirtualChat] room destroyed', room);
     }
   };
 
@@ -315,10 +302,10 @@ class VirtualChat extends Component {
       this.state.chatroom.data({
         text: JSON.stringify(message),
         success: () => {
-          console.log('[VirtualChat] :: Cmd Message sent ::');
+          Janus.log('[VirtualChat] :: Cmd Message sent ::');
         },
         error: (err) => {
-          console.error('[VirtualChat] message error [cmd]', err);
+          Janus.error('[VirtualChat] message error [cmd]', err);
         }
       });
     }
@@ -350,7 +337,7 @@ class VirtualChat extends Component {
       this.state.chatroom.data({
         text: JSON.stringify(message),
         success: () => {
-          console.log('[VirtualChat]:: Message sent ::');
+          Janus.log('[VirtualChat]:: Message sent ::');
           this.setState({ input_value: '' });
           if (!room_chat) {
             support_msgs.push(msg);
@@ -358,7 +345,7 @@ class VirtualChat extends Component {
           }
         },
         error: (err) => {
-          console.error('[VirtualChat] message error [chat]', err);
+          Janus.error('[VirtualChat] message error [chat]', err);
         }
       });
     }

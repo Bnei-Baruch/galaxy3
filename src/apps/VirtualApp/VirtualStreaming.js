@@ -50,7 +50,7 @@ class VirtualStreaming extends Component {
 
   componentDidMount() {
     this.props.virtualStreamingJanus.onTalking((talking) => this.setState({ talking }));
-    this.setState({ cssFixInterval: setInterval(() => this.cssFix(), 500) });
+    //this.setState({ cssFixInterval: setInterval(() => this.cssFix(), 500) });
   };
 
   cssFix() {
