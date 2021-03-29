@@ -2,6 +2,23 @@
   position: absolute;
   width: 100%;
   height: 100%;
+
+  .grid {
+    height: 100%;
+  }
+
+  .column {
+    text-align: center !important;
+  }
+
+  .noVideoPlayerIcon {
+    line-height: 200%;
+    font-size: 20em;
+
+    &.ui.image {
+      display: inline-block;
+    }
+  }
 }
 
 .broadcast__wrapper {
