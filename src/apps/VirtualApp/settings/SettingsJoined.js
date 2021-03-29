@@ -1,4 +1,4 @@
-import React, { memo, useContext } from 'react';
+import React, { memo, useContext, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import {
@@ -10,19 +10,18 @@ import {
   TextField,
   Tooltip,
   FormControlLabel,
-  Checkbox, Box, Button
+  Checkbox, Box, Button, ListItem
 } from '@material-ui/core';
 import { AccountCircle, ArrowBackIos, Close, Computer, Mic, Videocam } from '@material-ui/icons';
 import { makeStyles, useTheme } from '@material-ui/core/styles';
 
-import { vsettings_list } from '../../../shared/consts';
+import { audiog_options2, subtitle_options, vsettings_list } from '../../../shared/consts';
 import MyMedia from './MyMedia';
 import CheckMySelf from './CheckMySelf';
-import { SelectLanguage } from '../components/SelectLanguage';
-import { SelectBroadcastVideo } from '../components/SelectBroadcastVideo';
 import { SelectViewLanguage } from '../components/SelectViewLanguage';
 import green from '@material-ui/core/colors/green';
 import { ThemeContext } from '../components/ThemeSwitcher/ThemeSwitcher';
+import { SUBTITLE_LANG, WQ_LANG } from '../subtitles/SubtitlesContainer';
 
 const useStyles = makeStyles(() => ({
   content: {
@@ -54,7 +53,10 @@ const SettingsJoined = (props) => {
   const { palette: { background: { paper } } } = useTheme();
   const { isDark, toggleTheme }                = useContext(ThemeContext);
 
-  const { audio, video, isOpen = false, closeModal, setAudio, setVideo, videos, userDisplay, audioModeChange, isAudioMode } = props;
+  const [subtitleWQ, setSubtitleWQ]     = useState(localStorage.getItem(WQ_LANG));
+  const [subtitleMQTT, setSubtitleMQTT] = useState(localStorage.getItem(SUBTITLE_LANG));
+
+  const { audio, video, audios = 2, isOpen = false, closeModal, userDisplay, audioModeChange, isAudioMode } = props;
 
   const audio_device = audio?.audio_device || audio?.devices[0]?.deviceId;
   const audioLabel   = audio?.devices.find(d => d.deviceId === audio_device)?.label;
@@ -63,6 +65,14 @@ const SettingsJoined = (props) => {
   const videoLabel   = video?.devices.find(d => d.deviceId === video_device)?.label;
 
   const settingsLabel = vsettings_list.find(d => JSON.stringify(video?.setting) === JSON.stringify(d.value))?.text;
+
+  useEffect(() => {
+    const op  = audiog_options2.find(op => op.value === audios);
+    const key = op.langKey || op.key;
+    if (!localStorage.getItem(WQ_LANG)) setSubtitleWQ(key);
+    if (!localStorage.getItem(SUBTITLE_LANG)) setSubtitleMQTT(key);
+
+  }, [audios]);
 
   const handleAudioModeChange = () => audioModeChange();
 
@@ -107,20 +117,56 @@ const SettingsJoined = (props) => {
     );
   };
 
-  const renderBroadcastSettings = () => {
+  const renderSubtitleSettings = () => {
     return (
       <>
         <Grid item={true} xs={4}>
           <Computer className={classes.icon} color="action" />
           <Typography variant="h6" display="inline" style={{ verticalAlign: 'top' }} color="textPrimary">
-            {t('settings.broadcastSettings')}
+            {t('settings.subtitlesSettings')}
           </Typography>
         </Grid>
         <Grid item={true} xs={4}>
-          <SelectBroadcastVideo videos={videos} setVideo={setVideo} />
+          <TextField
+            variant="outlined"
+            fullWidth
+            label={t('settings.workshopLanguage')}
+            onChange={({ target: { value } }) => {
+              localStorage.setItem(WQ_LANG, value);
+              setSubtitleWQ(value);
+            }}
+            value={subtitleWQ}
+            select
+          >
+            {subtitle_options.map(({ key, text }) =>
+              (
+                <ListItem key={key} value={key} button>
+                  <Typography>{text}</Typography>
+                </ListItem>
+              )
+            )}
+          </TextField>
         </Grid>
         <Grid item={true} xs={4}>
-          <SelectLanguage setAudio={setAudio} />
+          <TextField
+            variant="outlined"
+            fullWidth
+            label={t('settings.subtitleLanguage')}
+            onChange={({ target: { value } }) => {
+              localStorage.setItem(SUBTITLE_LANG, value);
+              setSubtitleMQTT(value);
+            }}
+            value={subtitleMQTT}
+            select
+          >
+            {subtitle_options.map(({ key, text }) =>
+              (
+                <ListItem key={key} value={key} button>
+                  <Typography>{text}</Typography>
+                </ListItem>
+              )
+            )}
+          </TextField>
         </Grid>
       </>
     );
@@ -201,7 +247,7 @@ const SettingsJoined = (props) => {
         <Divider variant="fullWidth" style={{ width: '100%' }} />
         {renderUserSettings()}
         <Divider variant="fullWidth" style={{ width: '100%' }} />
-        {renderBroadcastSettings()}
+        {renderSubtitleSettings()}
         <Divider variant="fullWidth" style={{ width: '100%' }} />
         {renderMediaSettings()}
 
@@ -271,11 +317,11 @@ const SettingsJoined = (props) => {
 };
 
 export default memo(SettingsJoined, ((prevProps, nextProps) => {
-  const { videoLength, isOpen, videos, userDisplay } = prevProps;
+  const { videoLength, isOpen, audios, userDisplay } = prevProps;
   return (
     videoLength === nextProps.videoLength
-    && videos === nextProps.videos
     && userDisplay === nextProps.userDisplay
     && isOpen === nextProps.isOpen
+    && audios === nextProps.audios
   );
 }));

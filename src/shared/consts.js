@@ -35,11 +35,18 @@ export const videos_options = [
 ];
 
 export const videos_options2 = [
-    { key: 1, text: 'oldClient.lowQuality', description:"240p", value: 11 },
-    { key: 2, text: 'oldClient.mediumQuality', description:"360p", value: 1 },
-    { key: 3, text: 'oldClient.highQuality', description:"720p", value: 16 },
-    {divider:true},
-    { key: 4, text: 'oldClient.noVideo', description:"oldClient.audioOnly", value: NO_VIDEO_OPTION_VALUE },
+  { key: 1, text: 'oldClient.lowQuality', description: '240p', value: 11 },
+  { key: 2, text: 'oldClient.mediumQuality', description: '360p', value: 1 },
+  { key: 3, text: 'oldClient.highQuality', description: '720p', value: 16 },
+  { divider: true },
+  { key: 4, text: 'oldClient.noVideo', description: 'oldClient.audioOnly', value: NO_VIDEO_OPTION_VALUE },
+];
+
+export const subtitle_options = [
+  { key: 'he', value: 'he', eng_text: 'Hebrew', text: 'עברית' },
+  { key: 'ru', value: 'ru', eng_text: 'Russian', text: 'Русский' },
+  { key: 'en', value: 'en', eng_text: 'English', text: 'English' },
+  { key: 'es', value: 'es', eng_text: 'Spanish', text: 'Español' },
 ];
 export const audiog_options2 = [
 
