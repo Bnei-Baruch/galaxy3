@@ -12,14 +12,14 @@ import VirtualClient from './apps/VirtualApp/VirtualClient';
 // import ShidurApp from "./apps/ShidurApp/ShidurApp";
 // import SndmanApp from "./apps/SndmanApp/SndmanApp";
 // import AudioOutApp from "./apps/AudioOutApp/AudioOutApp";
-// import AdminApp from "./apps/AdminApp/AdminApp";
+// import Admin App from "./apps/AdminApp/AdminApp";
 // import SDIOutApp from "./apps/SDIOutApp/SDIOutApp";
 // import WebOutApp from "./apps/WebOutApp/WebOutApp";
 
 class App extends Component {
   render() {
     return (
-      <I18nextProvider i18n={i18n}>
+      <I18nextProvider i18n={ i18n }>
         {/*{<GalaxyApp />}*/}
         {/*<MobileClient />*/}
         <VirtualClient />
