@@ -1,9 +1,8 @@
-import React, {Component} from 'react';
+import React, {Component} from "react";
 import {Segment} from "semantic-ui-react";
 import UsersHandleSDIOut from "./UsersHandleSDIOut";
 
 class UsersQuadSDIOut extends Component {
-
   state = {
     col: null,
   };
@@ -12,7 +11,7 @@ class UsersQuadSDIOut extends Component {
     let {index} = this.props;
     let col = index === 0 ? 1 : index === 4 ? 2 : index === 8 ? 3 : index === 12 ? 4 : null;
     this.setState({col});
-  };
+  }
 
   toFullGroup = (i, g) => {
     this.setState({fullscr: true, full_feed: i});
@@ -43,22 +42,27 @@ class UsersQuadSDIOut extends Component {
 
       return (
         <div
-          className={fullscr && full_feed === i ?
-            "video_full" : fullscr && full_feed !== i ?
-              "hidden" : qst_group ?
-                "usersvideo_qst" : "usersvideo_box"}
-          key={"pr" + i}>
+          className={
+            fullscr && full_feed === i
+              ? "video_full"
+              : fullscr && full_feed !== i
+              ? "hidden"
+              : qst_group
+              ? "usersvideo_qst"
+              : "usersvideo_box"
+          }
+          key={"pr" + i}
+        >
           {qst_mark}
           <div className={fullscr ? "fullscrvideo_title" : "video_title"}>{name}</div>
           <UsersHandleSDIOut key={"q" + i} g={g} index={i} {...this.props} />
-        </div>);
+        </div>
+      );
     });
 
     return (
       <Segment className="preview_sdi">
-        <div className="usersvideo_grid">
-          {program}
-        </div>
+        <div className="usersvideo_grid">{program}</div>
       </Segment>
     );
   }

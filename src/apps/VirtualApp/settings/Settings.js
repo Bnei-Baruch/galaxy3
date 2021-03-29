@@ -1,5 +1,5 @@
-import React, { memo, useContext, useEffect, useState } from 'react';
-import { useTranslation } from 'react-i18next';
+import React, {memo, useContext, useEffect, useState} from "react";
+import {useTranslation} from "react-i18next";
 
 import {
   Button,
@@ -10,24 +10,25 @@ import {
   Typography,
   TextField,
   MenuItem,
-  Divider, Box
-} from '@material-ui/core';
-import Autocomplete from '@material-ui/lab/Autocomplete';
-import { makeStyles, useTheme } from '@material-ui/core/styles';
-import green from '@material-ui/core/colors/green';
+  Divider,
+  Box,
+} from "@material-ui/core";
+import Autocomplete from "@material-ui/lab/Autocomplete";
+import {makeStyles, useTheme} from "@material-ui/core/styles";
+import green from "@material-ui/core/colors/green";
 
-import MyMedia from './MyMedia';
-import CheckMySelf from './CheckMySelf';
-import { vsettings_list } from '../../../shared/consts';
-import LogoutDropdown from './LogoutDropdown';
-import { SelectViewLanguage } from '../components/SelectViewLanguage';
-import { AccountCircle, Mic, Videocam } from '@material-ui/icons';
-import { ThemeContext } from '../components/ThemeSwitcher/ThemeSwitcher';
-import { Support } from '../components/Support';
+import MyMedia from "./MyMedia";
+import CheckMySelf from "./CheckMySelf";
+import {vsettings_list} from "../../../shared/consts";
+import LogoutDropdown from "./LogoutDropdown";
+import {SelectViewLanguage} from "../components/SelectViewLanguage";
+import {AccountCircle, Mic, Videocam} from "@material-ui/icons";
+import {ThemeContext} from "../components/ThemeSwitcher/ThemeSwitcher";
+import {Support} from "../components/Support";
 
-const settingsList = vsettings_list.map(({ key, text, value }) => ({ key, text, value: JSON.stringify(value) }));
-const mapDevice    = ({ label, deviceId }) => ({ text: label, value: deviceId });
-const mapOption    = ({ text, value }) => {
+const settingsList = vsettings_list.map(({key, text, value}) => ({key, text, value: JSON.stringify(value)}));
+const mapDevice = ({label, deviceId}) => ({text: label, value: deviceId});
+const mapOption = ({text, value}) => {
   return (
     <MenuItem key={value} value={value} button>
       {text}
@@ -37,30 +38,29 @@ const mapOption    = ({ text, value }) => {
 
 const useStyles = makeStyles(() => ({
   content: {
-    outline: 'none',
+    outline: "none",
   },
   modal: {
-    border: 'none',
-    outline: 'none',
-
+    border: "none",
+    outline: "none",
   },
   paper: {
-    padding: '2em 2em 0',
-    outline: 'none',
-    overflowX: 'hidden',
-    overflowY: 'auto',
-    height: '100%',
+    padding: "2em 2em 0",
+    outline: "none",
+    overflowX: "hidden",
+    overflowY: "auto",
+    height: "100%",
     maxWidth: 900,
-    margin: '0 auto',
+    margin: "0 auto",
   },
   submitRoot: {
     background: green[500],
-    height: '100%'
+    height: "100%",
   },
   submitDisabled: {
-    opacity: '0.8'
+    opacity: "0.8",
   },
-  icon: { fontSize: '2em', marginRight: '0.5rem' }
+  icon: {fontSize: "2em", marginRight: "0.5rem"},
 }));
 
 const roomDescriptionById = new Map();
@@ -70,30 +70,34 @@ const Settings = (props) => {
 
   const [roomInput, setRoomInput] = useState();
 
-  const { t }                                  = useTranslation();
-  const { palette: { background: { paper } } } = useTheme();
-  const { isDark, toggleTheme }                = useContext(ThemeContext);
+  const {t} = useTranslation();
+  const {
+    palette: {
+      background: {paper},
+    },
+  } = useTheme();
+  const {isDark, toggleTheme} = useContext(ThemeContext);
 
   const {
-          audio,
-          video,
-          rooms,
-          isAudioMode,
-          initClient,
-          selectedRoom,
-          selectRoom,
-          setAudioDevice,
-          setVideoDevice,
-          settingsChange,
-          audioModeChange,
-          videoLength,
-          videoSettings,
-          audioDevice = audio.devices[0]?.deviceId,
-          videoDevice = video?.devices[0]?.deviceId,
-          userDisplay,
-          wip,
-          setWip
-        } = props;
+    audio,
+    video,
+    rooms,
+    isAudioMode,
+    initClient,
+    selectedRoom,
+    selectRoom,
+    setAudioDevice,
+    setVideoDevice,
+    settingsChange,
+    audioModeChange,
+    videoLength,
+    videoSettings,
+    audioDevice = audio.devices[0]?.deviceId,
+    videoDevice = video?.devices[0]?.deviceId,
+    userDisplay,
+    wip,
+    setWip,
+  } = props;
 
   useEffect(() => {
     for (const r of rooms) {
@@ -102,15 +106,14 @@ const Settings = (props) => {
   }, [rooms]);
 
   const renderCameras = () => {
-    if (!videoLength)
-      return null;
+    if (!videoLength) return null;
 
     return (
       <TextField
         select
         fullWidth={true}
         variant="outlined"
-        label={t('settings.selectCamera')}
+        label={t("settings.selectCamera")}
         onChange={handleVideoChange}
         value={videoDevice}
       >
@@ -124,20 +127,17 @@ const Settings = (props) => {
       select
       fullWidth={true}
       variant="outlined"
-      label={t('settings.selectSize')}
+      label={t("settings.selectSize")}
       onChange={handleSettingsChange}
       value={videoSettings}
       color="primary"
     >
-      {
-        settingsList.map(mapOption)
-      }
+      {settingsList.map(mapOption)}
     </TextField>
   );
 
   const renderSounds = () => {
-    if (!audio?.devices || audio.devices.length === 0)
-      return null;
+    if (!audio?.devices || audio.devices.length === 0) return null;
 
     return (
       <TextField
@@ -145,7 +145,7 @@ const Settings = (props) => {
         fullWidth={true}
         onChange={handleAudioChange}
         value={audioDevice}
-        label={t('settings.selectMic')}
+        label={t("settings.selectMic")}
         select
       >
         {audio.devices.map(mapDevice).map(mapOption)}
@@ -154,8 +154,7 @@ const Settings = (props) => {
   };
 
   const renderRooms = () => {
-    if (!rooms || rooms.length === 0)
-      return null;
+    if (!rooms || rooms.length === 0) return null;
 
     return (
       <Autocomplete
@@ -165,40 +164,32 @@ const Settings = (props) => {
         onInputChange={(e, v) => setRoomInput(v)}
         options={rooms}
         getOptionLabel={(option) => option.description}
-        renderOption={
-          ({ description, num_users }) => (
-            <Grid container>
-              <Grid item xs={11}>{description}</Grid>
-              <Grid item xs={1}>{num_users}</Grid>
+        renderOption={({description, num_users}) => (
+          <Grid container>
+            <Grid item xs={11}>
+              {description}
             </Grid>
-
-          )
-        }
+            <Grid item xs={1}>
+              {num_users}
+            </Grid>
+          </Grid>
+        )}
         onChange={handleRoomChange}
-        renderInput={
-          (params) => (
-            <TextField
-              {...params}
-              variant="outlined"
-              label={t('oldClient.selectRoom')}
-            />
-          )
-        }
+        renderInput={(params) => <TextField {...params} variant="outlined" label={t("oldClient.selectRoom")} />}
       />
     );
   };
 
-  const handleVideoChange = e => setVideoDevice(e.target.value);
+  const handleVideoChange = (e) => setVideoDevice(e.target.value);
 
-  const handleSettingsChange = e => settingsChange(JSON.parse(e.target.value));
+  const handleSettingsChange = (e) => settingsChange(JSON.parse(e.target.value));
 
-  const handleAudioChange = e => setAudioDevice(e.target.value);
+  const handleAudioChange = (e) => setAudioDevice(e.target.value);
 
   const handleAudioModeChange = () => audioModeChange();
 
   const handleRoomChange = (e, op) => {
-    if (!op?.room)
-      return;
+    if (!op?.room) return;
 
     const num = Number(op.room);
     !isNaN(num) && selectRoom(num);
@@ -212,12 +203,10 @@ const Settings = (props) => {
   const renderHeader = () => (
     <>
       <Grid item xs={8}>
-        <Typography variant="h4" display={'block'} color="textPrimary">
-          {t('settings.helloUser', { name: userDisplay })}
+        <Typography variant="h4" display={"block"} color="textPrimary">
+          {t("settings.helloUser", {name: userDisplay})}
         </Typography>
-        <Typography color="textPrimary">
-          {t('settings.beforeConnecting')}
-        </Typography>
+        <Typography color="textPrimary">{t("settings.beforeConnecting")}</Typography>
       </Grid>
       <Grid item xs={4}>
         <Grid container justify="flex-end" spacing={2}>
@@ -237,13 +226,13 @@ const Settings = (props) => {
       <>
         <Grid item xs={4}>
           <AccountCircle className={classes.icon} color="action" />
-          <Typography variant="h6" display="inline" style={{ verticalAlign: 'top' }} color="textPrimary">
-            {t('settings.userSettings')}
+          <Typography variant="h6" display="inline" style={{verticalAlign: "top"}} color="textPrimary">
+            {t("settings.userSettings")}
           </Typography>
         </Grid>
         <Grid item={true} xs={4}>
           <TextField
-            label={t('settings.screenName')}
+            label={t("settings.screenName")}
             fullWidth={true}
             variant="outlined"
             value={userDisplay}
@@ -261,20 +250,20 @@ const Settings = (props) => {
     return (
       <Grid container spacing={4} className={classes.content}>
         {renderHeader()}
-        <Divider variant="fullWidth" style={{ width: '100%' }} />
+        <Divider variant="fullWidth" style={{width: "100%"}} />
         {renderUserSettings()}
-        <Divider variant="fullWidth" style={{ width: '100%' }} />
+        <Divider variant="fullWidth" style={{width: "100%"}} />
 
         <Grid item xs={6}>
           <Videocam className={classes.icon} color="action" />
-          <Typography variant="h6" display="inline" style={{ verticalAlign: 'top' }} color="textPrimary">
-            {t('settings.cameraSettings')}
+          <Typography variant="h6" display="inline" style={{verticalAlign: "top"}} color="textPrimary">
+            {t("settings.cameraSettings")}
           </Typography>
         </Grid>
         <Grid item xs={4}>
           <Mic className={classes.icon} color="action" />
-          <Typography variant="h6" display="inline" style={{ verticalAlign: 'top' }} color="textPrimary">
-            {t('settings.microphoneSettings')}
+          <Typography variant="h6" display="inline" style={{verticalAlign: "top"}} color="textPrimary">
+            {t("settings.microphoneSettings")}
           </Typography>
         </Grid>
 
@@ -289,7 +278,6 @@ const Settings = (props) => {
           {renderSounds()}
         </Grid>
 
-
         <Grid item xs={6}>
           {<MyMedia cammuted={false} video={video} />}
         </Grid>
@@ -298,37 +286,17 @@ const Settings = (props) => {
         </Grid>
         <Grid item xs={3}>
           <FormControlLabel
-            label={
-              <Typography color="textPrimary">
-                {t('oldClient.audioMode')}
-              </Typography>
-            }
+            label={<Typography color="textPrimary">{t("oldClient.audioMode")}</Typography>}
             color="textPrimary"
             control={
-              <Checkbox
-                checked={!!isAudioMode}
-                onChange={handleAudioModeChange}
-                name="isAudioMode"
-                color="secondary"
-              />
+              <Checkbox checked={!!isAudioMode} onChange={handleAudioModeChange} name="isAudioMode" color="secondary" />
             }
           />
         </Grid>
         <Grid item xs={9}>
           <FormControlLabel
-            label={
-              <Typography color="textPrimary">
-                {t('oldClient.darkTheme')}
-              </Typography>
-            }
-            control={
-              <Checkbox
-                checked={isDark}
-                onChange={toggleTheme}
-                name="isAudioMode"
-                color="secondary"
-              />
-            }
+            label={<Typography color="textPrimary">{t("oldClient.darkTheme")}</Typography>}
+            control={<Checkbox checked={isDark} onChange={toggleTheme} name="isAudioMode" color="secondary" />}
           />
         </Grid>
 
@@ -341,12 +309,18 @@ const Settings = (props) => {
             color="primary"
             classes={{
               root: classes.submitRoot,
-              disabled: classes.submitDisabled
+              disabled: classes.submitDisabled,
             }}
             size="large"
-            disabled={!selectedRoom || wip || !roomInput || (roomDescriptionById.size !== 0 && (roomInput !== roomDescriptionById.get(selectedRoom).description))}
-            onClick={handleInitClient}>
-            {t('oldClient.joinRoom')}
+            disabled={
+              !selectedRoom ||
+              wip ||
+              !roomInput ||
+              (roomDescriptionById.size !== 0 && roomInput !== roomDescriptionById.get(selectedRoom).description)
+            }
+            onClick={handleInitClient}
+          >
+            {t("oldClient.joinRoom")}
           </Button>
         </Grid>
       </Grid>
@@ -358,27 +332,24 @@ const Settings = (props) => {
       open={true}
       disableBackdropClick={true}
       BackdropProps={{
-        style: { backgroundColor: paper }
+        style: {backgroundColor: paper},
       }}
       className={classes.modal}
     >
-      <Box className={classes.paper}>
-        {renderContent()}
-      </Box>
+      <Box className={classes.paper}>{renderContent()}</Box>
     </Modal>
   );
 };
 
 export default memo(Settings, (props, next) => {
-    return (
-      props.videoLength === next.videoLength
-      && props.audioDevice === next.audioDevice
-      && props.videoDevice === next.videoDevice
-      && props.videoSettings === next.videoSettings
-      && props.isAudioMode === next.isAudioMode
-      && props.selectedRoom === next.selectedRoom
-      && props.rooms === next.rooms
-      && props.wip === next.wip
-    );
-  }
-);
+  return (
+    props.videoLength === next.videoLength &&
+    props.audioDevice === next.audioDevice &&
+    props.videoDevice === next.videoDevice &&
+    props.videoSettings === next.videoSettings &&
+    props.isAudioMode === next.isAudioMode &&
+    props.selectedRoom === next.selectedRoom &&
+    props.rooms === next.rooms &&
+    props.wip === next.wip
+  );
+});

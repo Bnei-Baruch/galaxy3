@@ -1,27 +1,25 @@
-import React, {Component} from 'react';
+import React, {Component} from "react";
 import {Button, Dropdown, Grid, Label, Message, Popup, Segment, Table, Divider} from "semantic-ui-react";
-import './ShidurToran.scss';
+import "./ShidurToran.scss";
 import UsersPreview from "./UsersPreview";
-import api from '../../shared/Api';
+import api from "../../shared/Api";
 import {RESET_VOTE} from "../../shared/env";
 import {captureException} from "../../shared/sentry";
 import mqtt from "../../shared/mqtt";
 
 const short_regions = {
-  'petach-tikva': 'PT',
-  'israel': 'IL',
-  'russia': 'RU',
-  'ukraine': 'UK',
-  'europe': 'EU',
-  'asia': 'AS',
-  'north-america': 'NA',
-  'latin-america': 'LA',
-  'africa': 'AF',
+  "petach-tikva": "PT",
+  israel: "IL",
+  russia: "RU",
+  ukraine: "UK",
+  europe: "EU",
+  asia: "AS",
+  "north-america": "NA",
+  "latin-america": "LA",
+  africa: "AF",
 };
 
-
 class ShidurToran extends Component {
-
   state = {
     galaxy_mode: "lesson",
     delay: false,
@@ -35,43 +33,42 @@ class ShidurToran extends Component {
 
   componentDidUpdate(prevProps) {
     let {group, groups} = this.props;
-    if(prevProps.group !== group && group === null) {
+    if (prevProps.group !== group && group === null) {
       this.setState({open: false});
     }
-    if(groups.length !== prevProps.groups.length) {
+    if (groups.length !== prevProps.groups.length) {
       setTimeout(() => {
         this.scrollToBottom();
-      }, 1000)
+      }, 1000);
     }
-  };
+  }
 
   selectGroup = (group, i) => {
-    if(this.state.delay) return;
+    if (this.state.delay) return;
     console.log(group, i);
     this.setState({pg: group, open: true});
     group.queue = i;
     this.props.setProps({group});
   };
 
-  closePopup = ({disable=false}={}, next) => {
+  closePopup = ({disable = false} = {}, next) => {
     const g = next || this.props.group;
     if (disable) {
       this.disableRoom(g);
     }
-    if(!next)
-      this.props.setProps({group: null});
+    if (!next) this.props.setProps({group: null});
   };
 
   handleDisableRoom = (e, data) => {
     e.preventDefault();
-    if (e.type === 'contextmenu') {
+    if (e.type === "contextmenu") {
       this.disableRoom(data);
     }
   };
 
   handlePreviewRoom = (e, data) => {
     e.preventDefault();
-    if (e.type === 'contextmenu') {
+    if (e.type === "contextmenu") {
       this.allowRoom(data);
     }
   };
@@ -82,11 +79,11 @@ class ShidurToran extends Component {
 
   setRegion = (value) => {
     let {region} = this.props;
-    this.props.setProps({region : region === value ? null : value});
+    this.props.setProps({region: region === value ? null : value});
   };
 
   galaxyMode = (galaxy_mode) => {
-    this.setState({galaxy_mode})
+    this.setState({galaxy_mode});
   };
 
   previewMode = (preview_mode) => {
@@ -97,16 +94,16 @@ class ShidurToran extends Component {
 
   getRoomID = (room) => {
     const {admin_rooms} = this.props;
-    return admin_rooms.find(r => r.gateway_uid === room).id
-  }
+    return admin_rooms.find((r) => r.gateway_uid === room).id;
+  };
 
   disableRoom = (data) => {
-    if(this.state.delay) return;
+    if (this.state.delay) return;
     data = {...data, extra: {...(data.extra || {}), disabled: true}};
     delete data.users;
-    console.log(data)
+    console.log(data);
     let {disabled_rooms} = this.props;
-    let group = disabled_rooms.find(r => r.room === data.room);
+    let group = disabled_rooms.find((r) => r.room === data.room);
     if (group) return;
     api.updateRoom(data.room, data);
     // disabled_rooms.push(data);
@@ -116,20 +113,20 @@ class ShidurToran extends Component {
 
   allowRoom = (data) => {
     let {groups} = this.props;
-    let group = groups.find(r => r.room === data.room);
+    let group = groups.find((r) => r.room === data.room);
     if (group) return;
     data = {...data, extra: {...(data.extra || {}), timestamp: Date.now()}};
     delete data.users;
-    console.log(data)
+    console.log(data);
     api.updateRoom(data.room, data);
     // groups.push(data);
     // this.props.setProps({groups});
   };
 
   restoreRoom = (e, data, i) => {
-    if(this.state.delay) return;
+    if (this.state.delay) return;
     e.preventDefault();
-    if (e.type === 'contextmenu') {
+    if (e.type === "contextmenu") {
       data.extra = null;
       delete data.users;
       api.updateRoom(data.room, data);
@@ -156,53 +153,51 @@ class ShidurToran extends Component {
   };
 
   savePreset = (p) => {
-    let {presets,group} = this.props;
+    let {presets, group} = this.props;
 
     // Take to preset from preview
-    if(!group) return
+    if (!group) return;
 
     // First group to preset
-    if(presets[p].length === 0) {
+    if (presets[p].length === 0) {
       delete group.users;
       presets[p][0] = group;
       this.props.setProps({presets});
-      return
+      return;
     }
 
     //Don't allow group be twice in presets
-    for(let i=0; i<presets[p].length; i++) {
+    for (let i = 0; i < presets[p].length; i++) {
       //remove from presets
-      if(presets[p][i].room === group.room) {
+      if (presets[p][i].room === group.room) {
         presets[p].splice(i, 1);
         this.props.setProps({presets});
-        return
+        return;
       }
     }
 
     // Presets is full
-    if(presets[p].length === 4)
-      return;
+    if (presets[p].length === 4) return;
 
     //Add to presets
     delete group.users;
     presets[p].push(group);
     this.props.setProps({presets});
 
-    console.log(presets)
+    console.log(presets);
   };
 
   previewQuestion = () => {
     let {questions} = this.props;
-    if(questions.length > 0)
-      this.selectGroup(questions[0], null);
+    if (questions.length > 0) this.selectGroup(questions[0], null);
   };
 
   sdiAction = (action, status, i, feed) => {
-    const { index } = this.props;
+    const {index} = this.props;
     const col = index === 0 ? 1 : index === 4 ? 2 : index === 8 ? 3 : index === 12 ? 4 : null;
-    const msg = { type: "sdi-"+action, status, room: null, col, i, feed};
-    let retain = action.match(/^(restart_audout|restart_sdiout)$/)
-    mqtt.send(JSON.stringify(msg), !retain, 'galaxy/service/shidur');
+    const msg = {type: "sdi-" + action, status, room: null, col, i, feed};
+    let retain = action.match(/^(restart_audout|restart_sdiout)$/);
+    mqtt.send(JSON.stringify(msg), !retain, "galaxy/service/shidur");
   };
 
   setDelay = () => {
@@ -219,20 +214,21 @@ class ShidurToran extends Component {
 
   resetVote = () => {
     let request = {auth: "alexmizrachi"};
-    fetch(`${RESET_VOTE}`,{
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body:  JSON.stringify(request)
-    }).then().catch(ex => console.log(`Reset Vote`, ex));
+    fetch(`${RESET_VOTE}`, {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify(request),
+    })
+      .then()
+      .catch((ex) => console.log(`Reset Vote`, ex));
   };
 
   resetRoomsStatistics = () => {
-    api.adminResetRoomsStatistics()
-      .catch(err => {
-        console.error('[Shidur] [Toran] error resetting rooms statistics', err);
-        captureException(err, {source: "Shidur"});
-        alert('Error resetting rooms statistics');
-      });
+    api.adminResetRoomsStatistics().catch((err) => {
+      console.error("[Shidur] [Toran] error resetting rooms statistics", err);
+      captureException(err, {source: "Shidur"});
+      alert("Error resetting rooms statistics");
+    });
   };
 
   resetProgramStat = () => {
@@ -240,203 +236,285 @@ class ShidurToran extends Component {
   };
 
   scrollToBottom = () => {
-    this.refs.end.scrollIntoView({ behavior: 'smooth' })
+    this.refs.end.scrollIntoView({behavior: "smooth"});
   };
 
   render() {
-
-    const {group,pre_groups,disabled_rooms,groups,groups_queue,questions,presets,sdiout,audout,shidur_mode,users_count,preview_mode,log_list,preusers_count,region,region_groups,pnum, tcp} = this.props;
-    const {open,delay,vote,galaxy_mode} = this.state;
-    const q = (<b style={{color: 'red', fontSize: '20px', fontFamily: 'Verdana', fontWeight: 'bold'}}>?</b>);
+    const {
+      group,
+      pre_groups,
+      disabled_rooms,
+      groups,
+      groups_queue,
+      questions,
+      presets,
+      sdiout,
+      audout,
+      shidur_mode,
+      users_count,
+      preview_mode,
+      log_list,
+      preusers_count,
+      region,
+      region_groups,
+      pnum,
+      tcp,
+    } = this.props;
+    const {open, delay, vote, galaxy_mode} = this.state;
+    const q = <b style={{color: "red", fontSize: "20px", fontFamily: "Verdana", fontWeight: "bold"}}>?</b>;
     const next_group = groups[groups_queue] ? groups[groups_queue].description : groups[0] ? groups[0].description : "";
     const ng = groups[groups_queue] || null;
 
-    let action_log = log_list.map((msg,i) => {
-      let {user,time,text} = msg;
+    let action_log = log_list.map((msg, i) => {
+      let {user, time, text} = msg;
       return (
-        <div key={i}><p>
-          <i style={{color: 'grey'}}>{time}</i>&nbsp;&nbsp;--&nbsp;&nbsp;
-          <i style={{color: 'blue'}}>{user.description} &nbsp;--&nbsp;&nbsp; {text}</i>
-        </p></div>
+        <div key={i}>
+          <p>
+            <i style={{color: "grey"}}>{time}</i>&nbsp;&nbsp;--&nbsp;&nbsp;
+            <i style={{color: "blue"}}>
+              {user.description} &nbsp;--&nbsp;&nbsp; {text}
+            </i>
+          </p>
+        </div>
       );
     });
 
-    let rooms_list = pre_groups.map((data,i) => {
+    let rooms_list = pre_groups.map((data, i) => {
       const {room, num_users, description, questions} = data;
       const active = group && group.room === room;
-      const pr = false
-      const p = pr ? (<Label size='mini' color='teal' >4</Label>) : "";
+      const pr = false;
+      const p = pr ? (
+        <Label size="mini" color="teal">
+          4
+        </Label>
+      ) : (
+        ""
+      );
       return (
-        <Table.Row positive={group && group.description === description}
-                   className={active ? 'active' : 'no'}
-                   key={room}
-                   onClick={() => this.selectGroup(data, i)}
-                   onContextMenu={(e) => this.handlePreviewRoom(e, data)} >
+        <Table.Row
+          positive={group && group.description === description}
+          className={active ? "active" : "no"}
+          key={room}
+          onClick={() => this.selectGroup(data, i)}
+          onContextMenu={(e) => this.handlePreviewRoom(e, data)}
+        >
           <Table.Cell width={5}>{description}</Table.Cell>
           <Table.Cell width={1}>{p}</Table.Cell>
           <Table.Cell width={1}>{num_users}</Table.Cell>
           <Table.Cell width={1}>{questions ? q : ""}</Table.Cell>
         </Table.Row>
-      )
+      );
     });
 
-    let groups_list = groups.map((data,i) => {
+    let groups_list = groups.map((data, i) => {
       const {room, num_users, description, questions} = data;
       const next = data.description === next_group;
       const active = group && group.room === room;
       //const pr = presets.find(pst => pst.room === room);
-      const pr = false
-      const p = pr ? (<Label size='mini' color='teal' >4</Label>) : "";
+      const pr = false;
+      const p = pr ? (
+        <Label size="mini" color="teal">
+          4
+        </Label>
+      ) : (
+        ""
+      );
       return (
-        <Table.Row positive={group && group.description === description}
-                   className={active ? 'active' : next ? 'warning' : 'no'}
-                   key={room}
-                   onClick={() => this.selectGroup(data, i)}
-                   onContextMenu={(e) => this.handleDisableRoom(e, data)} >
-          <Table.Cell width={1}><Label circular content={pnum[room]} /></Table.Cell>
+        <Table.Row
+          positive={group && group.description === description}
+          className={active ? "active" : next ? "warning" : "no"}
+          key={room}
+          onClick={() => this.selectGroup(data, i)}
+          onContextMenu={(e) => this.handleDisableRoom(e, data)}
+        >
+          <Table.Cell width={1}>
+            <Label circular content={pnum[room]} />
+          </Table.Cell>
           <Table.Cell width={5}>{description}</Table.Cell>
           <Table.Cell width={1}>{p}</Table.Cell>
           <Table.Cell width={1}>{num_users}</Table.Cell>
           <Table.Cell width={1}>{questions ? q : ""}</Table.Cell>
         </Table.Row>
-      )
+      );
     });
 
-    let region_list = region_groups.map((data,i) => {
+    let region_list = region_groups.map((data, i) => {
       const {room, num_users, description, questions} = data;
       const next = data.description === next_group;
       const active = group && group.room === room;
       //const pr = presets.find(pst => pst.room === room);
-      const pr = false
-      const p = pr ? (<Label size='mini' color='teal' >4</Label>) : "";
+      const pr = false;
+      const p = pr ? (
+        <Label size="mini" color="teal">
+          4
+        </Label>
+      ) : (
+        ""
+      );
       return (
-        <Table.Row positive={group && group.description === description}
-                   className={active ? 'active' : next ? 'warning' : 'no'}
-                   key={room}
-                   onClick={() => this.selectGroup(data, i)}
-                   onContextMenu={(e) => this.handleDisableRoom(e, data)} >
-          <Table.Cell width={1}><Label circular content={pnum[room]} /></Table.Cell>
+        <Table.Row
+          positive={group && group.description === description}
+          className={active ? "active" : next ? "warning" : "no"}
+          key={room}
+          onClick={() => this.selectGroup(data, i)}
+          onContextMenu={(e) => this.handleDisableRoom(e, data)}
+        >
+          <Table.Cell width={1}>
+            <Label circular content={pnum[room]} />
+          </Table.Cell>
           <Table.Cell width={5}>{description}</Table.Cell>
           <Table.Cell width={1}>{p}</Table.Cell>
           <Table.Cell width={1}>{num_users}</Table.Cell>
           <Table.Cell width={1}>{questions ? q : ""}</Table.Cell>
         </Table.Row>
-      )
+      );
     });
 
-    let disabled_list = disabled_rooms.map((data,i) => {
+    let disabled_list = disabled_rooms.map((data, i) => {
       const {room, num_users, description, questions} = data;
       return (
-        <Table.Row key={room} error
-                   onClick={() => this.selectGroup(data, i)}
-                   onContextMenu={(e) => this.restoreRoom(e, data, i)} >
+        <Table.Row
+          key={room}
+          error
+          onClick={() => this.selectGroup(data, i)}
+          onContextMenu={(e) => this.restoreRoom(e, data, i)}
+        >
           <Table.Cell width={5}>{description}</Table.Cell>
           <Table.Cell width={1}>{num_users}</Table.Cell>
           <Table.Cell width={1}>{questions ? q : ""}</Table.Cell>
         </Table.Row>
-      )
+      );
     });
 
-    let group_options = this.state.sorted_feeds.map((feed,i) => {
+    let group_options = this.state.sorted_feeds.map((feed, i) => {
       const display = feed.description;
-      return ({ key: i, value: feed, text: display })
+      return {key: i, value: feed, text: display};
     });
 
-    let pst_buttons = Object.keys(presets).map(p => {
-      let preset = presets[p].map(data => {
-        const {room,description} = data;
-        return (<p key={room}>{description}</p>)
+    let pst_buttons = Object.keys(presets).map((p) => {
+      let preset = presets[p].map((data) => {
+        const {room, description} = data;
+        return <p key={room}>{description}</p>;
       });
-      return (<Popup on='hover' trigger={<Button color='teal' content={p} onClick={() => this.savePreset(p)} />} content={preset} />)
-    })
-
+      return (
+        <Popup
+          on="hover"
+          trigger={<Button color="teal" content={p} onClick={() => this.savePreset(p)} />}
+          content={preset}
+        />
+      );
+    });
 
     return (
       <Grid.Row>
         <Grid.Column>
           <Segment className="preview_conteiner">
-            {ng ?
-              <Segment className="group_segment" color='blue'>
-                <div className="shidur_overlay"><span>{ng.description}</span></div>
+            {ng ? (
+              <Segment className="group_segment" color="blue">
+                <div className="shidur_overlay">
+                  <span>{ng.description}</span>
+                </div>
                 <UsersPreview pg={ng} {...this.props} next closePopup={this.closePopup} />
               </Segment>
-              : ""}
+            ) : (
+              ""
+            )}
           </Segment>
-          <Message attached className='info-panel' color='grey'>
+          <Message attached className="info-panel" color="grey">
             {action_log}
-            <div ref='end' />
+            <div ref="end" />
           </Message>
-          <Button.Group attached='bottom' >
+          <Button.Group attached="bottom">
             <Button
               color={audout ? "green" : "red"}
               disabled={!audout}
-              onClick={() => this.sdiAction("restart_audout", false, 1, null)}>
-              AudOut</Button>
+              onClick={() => this.sdiAction("restart_audout", false, 1, null)}
+            >
+              AudOut
+            </Button>
             <Button
               color={sdiout ? "green" : "red"}
               disabled={!sdiout}
-              onClick={() => this.sdiAction("restart_sdiout", false, 1, null)}>
-              SdiOut</Button>
-            <Button
-              color="green"
-              onClick={this.resetRoomsStatistics}>
-              Reset QStats</Button>
-            <Button
-              color="green"
-              onClick={this.resetProgramStat}>
-              Reset PStats</Button>
+              onClick={() => this.sdiAction("restart_sdiout", false, 1, null)}
+            >
+              SdiOut
+            </Button>
+            <Button color="green" onClick={this.resetRoomsStatistics}>
+              Reset QStats
+            </Button>
+            <Button color="green" onClick={this.resetProgramStat}>
+              Reset PStats
+            </Button>
           </Button.Group>
         </Grid.Column>
         <Grid.Column>
-          <Segment attached textAlign='center' >
-            <Label attached='top right' color='green' >
+          <Segment attached textAlign="center">
+            <Label attached="top right" color="green">
               Users: {users_count}
             </Label>
-            <Dropdown className='select_group'
-                      placeholder='Search..'
-                      fluid
-                      search
-                      selection
-                      options={group_options}
-                      onClick={this.sortGroups}
-                      onChange={(e,{value}) => this.selectGroup(value)} />
-            <Label attached='top left' color='blue'>
+            <Dropdown
+              className="select_group"
+              placeholder="Search.."
+              fluid
+              search
+              selection
+              options={group_options}
+              onClick={this.sortGroups}
+              onChange={(e, {value}) => this.selectGroup(value)}
+            />
+            <Label attached="top left" color="blue">
               Groups: {groups.length}
             </Label>
           </Segment>
-          <Button.Group attached='bottom' size='mini' >
+          <Button.Group attached="bottom" size="mini">
             {pst_buttons}
           </Button.Group>
-          <Segment textAlign='center' className="group_list" raised disabled={delay} >
-            <Table selectable compact='very' basic structured className="admin_table" unstackable>
-              <Table.Body>
-                {region ? region_list : groups_list}
-              </Table.Body>
+          <Segment textAlign="center" className="group_list" raised disabled={delay}>
+            <Table selectable compact="very" basic structured className="admin_table" unstackable>
+              <Table.Body>{region ? region_list : groups_list}</Table.Body>
             </Table>
           </Segment>
-          <Segment textAlign='center' >
-            <Button.Group attached='bottom' size='mini' >
-              <Button color={questions.length > 0 ? 'red' : 'grey'} onClick={this.previewQuestion} >Questions: {questions.length}</Button>
+          <Segment textAlign="center">
+            <Button.Group attached="bottom" size="mini">
+              <Button color={questions.length > 0 ? "red" : "grey"} onClick={this.previewQuestion}>
+                Questions: {questions.length}
+              </Button>
             </Button.Group>
           </Segment>
         </Grid.Column>
         <Grid.Column>
-          <Segment className="preview_conteiner" >
-            {open ? <Segment className="group_segment" color='green'>
-              <div className="shidur_overlay"><span>{group ? group.description : ""}</span></div>
-              <UsersPreview pg={this.state.pg} {...this.props} closePopup={this.closePopup} />
-            </Segment> : ""}
+          <Segment className="preview_conteiner">
+            {open ? (
+              <Segment className="group_segment" color="green">
+                <div className="shidur_overlay">
+                  <span>{group ? group.description : ""}</span>
+                </div>
+                <UsersPreview pg={this.state.pg} {...this.props} closePopup={this.closePopup} />
+              </Segment>
+            ) : (
+              ""
+            )}
           </Segment>
-          <Segment textAlign='center' >
-            <Button.Group attached='bottom' size='mini' >
-              <Button color='green' onClick={this.handleVote} >{vote ? 'Hide' : 'Show'} Vote</Button>
-              <Button color='blue' onClick={this.resetVote} >Reset Vote</Button>
+          <Segment textAlign="center">
+            <Button.Group attached="bottom" size="mini">
+              <Button color="green" onClick={this.handleVote}>
+                {vote ? "Hide" : "Show"} Vote
+              </Button>
+              <Button color="blue" onClick={this.resetVote}>
+                Reset Vote
+              </Button>
             </Button.Group>
           </Segment>
-          <Segment attached className="settings_conteiner" >
-            <Button.Group size='mini' >
-              {Object.keys(short_regions).map(r => {
-                return(<Button color={region === r ? '' : 'grey'} content={short_regions[r]} onClick={() => this.setRegion(r)} />)
+          <Segment attached className="settings_conteiner">
+            <Button.Group size="mini">
+              {Object.keys(short_regions).map((r) => {
+                return (
+                  <Button
+                    color={region === r ? "" : "grey"}
+                    content={short_regions[r]}
+                    onClick={() => this.setRegion(r)}
+                  />
+                );
               })}
             </Button.Group>
             <Divider />
@@ -448,34 +526,58 @@ class ShidurToran extends Component {
             {/*</Dropdown>*/}
             <Divider />
           </Segment>
-          <Button.Group attached='bottom' size='mini' >
-            <Button disabled={shidur_mode === "gvarim"} color='teal' content='Gvarim' onClick={() => this.shidurMode("gvarim")} />
-            <Button disabled={shidur_mode === "nashim"} color='teal' content='Nashim' onClick={() => this.shidurMode("nashim")} />
-            <Button disabled={shidur_mode === "beyahad" || shidur_mode === ""} color='teal' content='Beyahad' onClick={() => this.shidurMode("beyahad")} />
+          <Button.Group attached="bottom" size="mini">
+            <Button
+              disabled={shidur_mode === "gvarim"}
+              color="teal"
+              content="Gvarim"
+              onClick={() => this.shidurMode("gvarim")}
+            />
+            <Button
+              disabled={shidur_mode === "nashim"}
+              color="teal"
+              content="Nashim"
+              onClick={() => this.shidurMode("nashim")}
+            />
+            <Button
+              disabled={shidur_mode === "beyahad" || shidur_mode === ""}
+              color="teal"
+              content="Beyahad"
+              onClick={() => this.shidurMode("beyahad")}
+            />
           </Button.Group>
         </Grid.Column>
         <Grid.Column>
-          <Button.Group attached='top' size='mini' >
-            <Button disabled={galaxy_mode === "lesson"} color='grey' content='Preview' onClick={() => this.galaxyMode("lesson")} />
-            <Button disabled={galaxy_mode === "shidur"} color='grey' content='Disabled' onClick={() => this.galaxyMode("shidur")} />
+          <Button.Group attached="top" size="mini">
+            <Button
+              disabled={galaxy_mode === "lesson"}
+              color="grey"
+              content="Preview"
+              onClick={() => this.galaxyMode("lesson")}
+            />
+            <Button
+              disabled={galaxy_mode === "shidur"}
+              color="grey"
+              content="Disabled"
+              onClick={() => this.galaxyMode("shidur")}
+            />
           </Button.Group>
-          <Segment attached textAlign='center' className="disabled_groups">
-            <Table selectable compact='very' basic structured className="admin_table" unstackable>
-              <Table.Body>
-                {galaxy_mode === "lesson" ? rooms_list : disabled_list}
-              </Table.Body>
+          <Segment attached textAlign="center" className="disabled_groups">
+            <Table selectable compact="very" basic structured className="admin_table" unstackable>
+              <Table.Body>{galaxy_mode === "lesson" ? rooms_list : disabled_list}</Table.Body>
             </Table>
           </Segment>
-          <Button.Group attached='bottom' size='mini'>
-            <Button color='green'
-                    content={'Preview ' + (preview_mode ? 'ON' : 'OFF')}
-                    onClick={() => this.previewMode(preview_mode)} />
-            <Button color='green'
-                    disabled={preview_mode === 'OFF'} >
+          <Button.Group attached="bottom" size="mini">
+            <Button
+              color="green"
+              content={"Preview " + (preview_mode ? "ON" : "OFF")}
+              onClick={() => this.previewMode(preview_mode)}
+            />
+            <Button color="green" disabled={preview_mode === "OFF"}>
               <Dropdown className="preusers_count" item text={preusers_count}>
                 <Dropdown.Menu>
-                  {['Off',1,2,3,4,5,6,7,8,9,10].map(c => {
-                    return (<Dropdown.Item onClick={() => this.props.setProps({preusers_count: c})}>{c}</Dropdown.Item>)
+                  {["Off", 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((c) => {
+                    return <Dropdown.Item onClick={() => this.props.setProps({preusers_count: c})}>{c}</Dropdown.Item>;
                   })}
                 </Dropdown.Menu>
               </Dropdown>

@@ -1,20 +1,20 @@
-import { Janus } from "./../lib/janus";
+import {Janus} from "./../lib/janus";
 
-export const MAX_DELAY = 5 * 1000;  // 5 seconds.
-export const RETRY_DELAY = 500;     // 0.5 seconds.
+export const MAX_DELAY = 5 * 1000; // 5 seconds.
+export const RETRY_DELAY = 500; // 0.5 seconds.
 export const INTERVALS_DELAY = 100; // 100ms.
 
 // After that time we can delete older accepted transactions.
 // We do keep them so that not to accept the same message more than once.
-export const MAX_ACCEPTED_DELAY = 3* 60 * 60 * 1000; // 3 hours.
+export const MAX_ACCEPTED_DELAY = 3 * 60 * 60 * 1000; // 3 hours.
 
-const ACK_FIELD = '__gack__';
-const FROM_FIELD = '__from__';
-const TO_ACK_FIELD = '__to_ack__';
-const ACKED_FIELD = '__acked__';
-const RETRY_FIELD = '__gretry__';
-const TRANSACTION_FIELD = 'transaction';
-export const DEADLINE_EXCEEDED = 'DEADLINE_EXCEEDED';
+const ACK_FIELD = "__gack__";
+const FROM_FIELD = "__from__";
+const TO_ACK_FIELD = "__to_ack__";
+const ACKED_FIELD = "__acked__";
+const RETRY_FIELD = "__gretry__";
+const TRANSACTION_FIELD = "transaction";
+export const DEADLINE_EXCEEDED = "DEADLINE_EXCEEDED";
 
 // Options to specify max delay and retry delay.
 export class SendOptions {
@@ -26,7 +26,7 @@ export class SendOptions {
 
 // Class for sending and receiving messages that we validate they were eventually received. If not we raise an error after MAX_DELAY.
 export class GuaranteeDeliveryManager {
-	constructor(userId, intervalsDelay = INTERVALS_DELAY, defaultSendOptions = null) {
+  constructor(userId, intervalsDelay = INTERVALS_DELAY, defaultSendOptions = null) {
     this.defaultSendOptions = defaultSendOptions || new SendOptions();
 
     // Map from transaction to timestamp that message was sent and promise resolving or success
@@ -44,7 +44,7 @@ export class GuaranteeDeliveryManager {
       throw new Error(`Unique userId has to be set for GuaranteeDeliveryManager, got [${userId}].`);
     }
     this.userId = userId;
-	}
+  }
 
   // Iterate over exising pending messages and retries them if needed, when max delay
   // passes, delete them and reject.
@@ -54,10 +54,10 @@ export class GuaranteeDeliveryManager {
       const interval = now - state.sent;
       const sendOptions = state.sendOptions || this.defaultSendOptions;
       if (interval > sendOptions.maxDelay) {
-        console.error('[GDM] Did not get all ack as required', state.ack);
+        console.error("[GDM] Did not get all ack as required", state.ack);
         // Failed sending message on timeout. Delete and reject.
         this.pending.delete(transaction);
-        state.delivery.reject({reason: DEADLINE_EXCEEDED, message: state.message});  // Note that if reject is computation heavy action, our timings might be not accurate.
+        state.delivery.reject({reason: DEADLINE_EXCEEDED, message: state.message}); // Note that if reject is computation heavy action, our timings might be not accurate.
       } else if (now - state.sent >= (state.message[RETRY_FIELD] + 1) * sendOptions.retryDelay) {
         // We should retry.
         state.message[RETRY_FIELD]++;
@@ -123,7 +123,7 @@ export class GuaranteeDeliveryManager {
     });
     sendMessage(message);
     return ret;
-	}
+  }
 
   // Check if ack message was received, handle it.
   // @param {!Object} message
@@ -138,7 +138,7 @@ export class GuaranteeDeliveryManager {
       const userId = message[FROM_FIELD];
       if (!userId) {
         console.error(`This should never happen, expecting userId in ack, got [${userId}].`);
-        return true;  // Don't ack.
+        return true; // Don't ack.
       }
       if (Object.keys(ack).length !== 0) {
         if (userId in ack) {
@@ -180,8 +180,7 @@ export class GuaranteeDeliveryManager {
     // Sent ack back if toAck field is not set and I'm not sending ack to myself or
     // my userId explicitly set in the toAck field (event if this is me).
     const toAck = (TO_ACK_FIELD in message && message[TO_ACK_FIELD]) || [];
-    if ((toAck.length === 0 && this.userId !== message[FROM_FIELD]) ||
-      toAck.includes(this.userId)) {
+    if ((toAck.length === 0 && this.userId !== message[FROM_FIELD]) || toAck.includes(this.userId)) {
       sendAckBack(ack);
     }
     if (this.accepted.has(message[TRANSACTION_FIELD])) {
@@ -193,4 +192,3 @@ export class GuaranteeDeliveryManager {
     }
   }
 }
-

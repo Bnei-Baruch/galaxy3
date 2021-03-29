@@ -1,15 +1,15 @@
-import { createMuiTheme } from '@material-ui/core/styles';
+import {createMuiTheme} from "@material-ui/core/styles";
 
 const dark = createMuiTheme({
   palette: {
-    type: 'dark',
+    type: "dark",
     overrides: {
       MuiButton: {
         border: {
-          color: 'white',
+          color: "white",
         },
       },
-    }
+    },
   },
 });
 

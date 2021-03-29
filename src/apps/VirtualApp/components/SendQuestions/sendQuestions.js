@@ -1,73 +1,70 @@
-import React, { useEffect, useState } from 'react';
-import { Message } from 'semantic-ui-react';
-import { useTranslation } from 'react-i18next';
-import { Box, Button, Typography, TextField } from '@material-ui/core';
-import { makeStyles } from '@material-ui/core/styles';
-import { grey, blue, green } from '@material-ui/core/colors';
+import React, {useEffect, useState} from "react";
+import {Message} from "semantic-ui-react";
+import {useTranslation} from "react-i18next";
+import {Box, Button, Typography, TextField} from "@material-ui/core";
+import {makeStyles} from "@material-ui/core/styles";
+import {grey, blue, green} from "@material-ui/core/colors";
 
 const useStyles = makeStyles({
   disabled: {
     opacity: 0.8,
-    background: `${green[500]} !important`
+    background: `${green[500]} !important`,
   },
   root: {
-    color: 'white',
-    background: green[500]
-  }
+    color: "white",
+    background: green[500],
+  },
 });
 
-const SendQuestion = ({ questions, send, user = {} }) => {
-  const [name, setName]             = useState();
+const SendQuestion = ({questions, send, user = {}}) => {
+  const [name, setName] = useState();
   const [galaxyRoom, setGalaxyRoom] = useState();
-  const [content, setContent]       = useState();
-  const { t }                       = useTranslation();
-  const classes                     = useStyles();
+  const [content, setContent] = useState();
+  const {t} = useTranslation();
+  const classes = useStyles();
 
   useEffect(() => {
-    (!name) && setName(user.name);
-    (!galaxyRoom) && setGalaxyRoom(user.galaxyRoom);
-  }, [user.name, user.galaxyRoom]);// eslint-disable-line  react-hooks/exhaustive-deps
+    !name && setName(user.name);
+    !galaxyRoom && setGalaxyRoom(user.galaxyRoom);
+  }, [user.name, user.galaxyRoom]); // eslint-disable-line  react-hooks/exhaustive-deps
 
-  const handleNameChange = ({ target: { value } }) => setName(value);
+  const handleNameChange = ({target: {value}}) => setName(value);
 
-  const handleGalaxyRoomChange = ({ target: { value } }) => setGalaxyRoom(value);
+  const handleGalaxyRoomChange = ({target: {value}}) => setGalaxyRoom(value);
 
-  const handleContentChange = ({ target: { value } }) => setContent(value);
+  const handleContentChange = ({target: {value}}) => setContent(value);
 
   const handleSubmit = async () => {
-    await send({ name, content, galaxyRoom });
-    setContent('');
+    await send({name, content, galaxyRoom});
+    setContent("");
   };
 
   const renderQuestion = (q, i) => {
-    const { askForMe, time, galaxyRoom: room, name: userName, direction, textAlign, content: msgContent } = q;
+    const {askForMe, time, galaxyRoom: room, name: userName, direction, textAlign, content: msgContent} = q;
 
     return (
-      <Typography key={i} style={{ direction, textAlign }}>
-        <Typography style={{ color: grey['500'] }}>
+      <Typography key={i} style={{direction, textAlign}}>
+        <Typography style={{color: grey["500"]}}>
           {time} - {room} -
-          <Typography display="inline" style={{ color: !askForMe ? green['A700'] : blue['300'] }}>
+          <Typography display="inline" style={{color: !askForMe ? green["A700"] : blue["300"]}}>
             {userName}
-          </Typography>:
+          </Typography>
+          :
         </Typography>
-        <Typography color="textPrimary">
-          {msgContent}
-        </Typography>
+        <Typography color="textPrimary">{msgContent}</Typography>
       </Typography>
     );
   };
 
   return (
     <Box className="chat-panel">
-      <Message attached className='messages_list'>
-        <span className='messages-wrapper'>
-          {questions?.map(renderQuestion)}
-        </span>
+      <Message attached className="messages_list">
+        <span className="messages-wrapper">{questions?.map(renderQuestion)}</span>
       </Message>
 
       <TextField
         fullWidth
-        label={t('questions.userName')}
+        label={t("questions.userName")}
         value={name}
         variant="outlined"
         onChange={handleNameChange}
@@ -75,7 +72,7 @@ const SendQuestion = ({ questions, send, user = {} }) => {
       />
       <TextField
         fullWidth
-        label={t('questions.galaxyRoom')}
+        label={t("questions.galaxyRoom")}
         value={galaxyRoom}
         variant="outlined"
         onChange={handleGalaxyRoomChange}
@@ -84,7 +81,7 @@ const SendQuestion = ({ questions, send, user = {} }) => {
       <TextField
         fullWidth
         multiline
-        label={t('questions.enterQuestion')}
+        label={t("questions.enterQuestion")}
         value={content}
         variant="outlined"
         onChange={handleContentChange}
@@ -93,12 +90,11 @@ const SendQuestion = ({ questions, send, user = {} }) => {
       <Button
         onClick={handleSubmit}
         variant="contained"
-        classes={{ ...classes }}
+        classes={{...classes}}
         disabled={!name || !galaxyRoom || !content}
       >
-        {t('questions.sendQuestion')}
+        {t("questions.sendQuestion")}
       </Button>
-
     </Box>
   );
 };

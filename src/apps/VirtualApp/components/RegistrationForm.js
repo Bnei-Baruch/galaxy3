@@ -1,163 +1,155 @@
-import React, { useEffect, useState } from 'react';
-import { useTranslation } from 'react-i18next';
+import React, {useEffect, useState} from "react";
+import {useTranslation} from "react-i18next";
 
-import makeStyles from '@material-ui/core/styles/makeStyles';
-import {
-  Button,
-  Modal,
-  Typography,
-  TextField,
-  Grid,
-  MenuItem,
-  Divider,
-  CircularProgress,
-  Box
-} from '@material-ui/core';
-import Autocomplete from '@material-ui/lab/Autocomplete';
-import { green } from '@material-ui/core/colors';
-import { MuiThemeProvider, createMuiTheme } from '@material-ui/core/styles';
-import countries from 'i18n-iso-countries';
+import makeStyles from "@material-ui/core/styles/makeStyles";
+import {Button, Modal, Typography, TextField, Grid, MenuItem, Divider, CircularProgress, Box} from "@material-ui/core";
+import Autocomplete from "@material-ui/lab/Autocomplete";
+import {green} from "@material-ui/core/colors";
+import {MuiThemeProvider, createMuiTheme} from "@material-ui/core/styles";
+import countries from "i18n-iso-countries";
 
-import { LANGUAGES } from '../../../shared/consts';
-import LogoutDropdown from '../settings/LogoutDropdown';
-import { REGISTRATION_FORM_FIELDS, REGISTRATION_FORM_URL } from '../../../shared/env';
+import {LANGUAGES} from "../../../shared/consts";
+import LogoutDropdown from "../settings/LogoutDropdown";
+import {REGISTRATION_FORM_FIELDS, REGISTRATION_FORM_URL} from "../../../shared/env";
 
-import api from '../../../shared/Api';
-import { SelectViewLanguage } from './SelectViewLanguage';
-import RTL from '../../../components/RTL';
+import api from "../../../shared/Api";
+import {SelectViewLanguage} from "./SelectViewLanguage";
+import RTL from "../../../components/RTL";
 
 const rtlTheme = createMuiTheme({
-  direction: 'rtl',
+  direction: "rtl",
 });
 const ltrTheme = createMuiTheme({
-  direction: 'ltr',
+  direction: "ltr",
 });
 
 const useStyles = makeStyles(() => ({
   container: {
-    backgroundColor: 'white',
-    padding: '0 2em 10em'
+    backgroundColor: "white",
+    padding: "0 2em 10em",
   },
   button: {
     background: green[700],
-    color: 'white',
-    fontWeight: 'bold'
-  }
+    color: "white",
+    fontWeight: "bold",
+  },
 }));
 
 let countryById;
-const fetchCountriesByLang = (lang = 'en') => {
+const fetchCountriesByLang = (lang = "en") => {
   countries.registerLocale(require(`i18n-iso-countries/langs/en.json`));
-  if (lang !== 'en')
-    countries.registerLocale(require(`i18n-iso-countries/langs/${lang}.json`));
-  countryById = countries.getNames(lang, { select: 'official' });
+  if (lang !== "en") countries.registerLocale(require(`i18n-iso-countries/langs/${lang}.json`));
+  countryById = countries.getNames(lang, {select: "official"});
   return Object.keys(countryById);
-
 };
 
-export const RegistrationForm = ({ user: { familyname, username, email, display }, id, onClose, onSubmit, isOpen, language }) => {
-  const classes                     = useStyles();
-  const [city, setCity]             = useState();
+export const RegistrationForm = ({
+  user: {familyname, username, email, display},
+  id,
+  onClose,
+  onSubmit,
+  isOpen,
+  language,
+}) => {
+  const classes = useStyles();
+  const [city, setCity] = useState();
   const [countryIds, setCountryIds] = useState([]);
-  const [country, setCountry]       = useState();
-  const [gender, setGender]         = useState();
-  const [telephone, setTelephone]   = useState();
-  const [aboutYou, setAboutYou]     = useState();
-  const [ten, setTen]               = useState();
-  const [errors, setErrors]         = useState({});
+  const [country, setCountry] = useState();
+  const [gender, setGender] = useState();
+  const [telephone, setTelephone] = useState();
+  const [aboutYou, setAboutYou] = useState();
+  const [ten, setTen] = useState();
+  const [errors, setErrors] = useState({});
   const [isProgress, setIsProgress] = useState(false);
 
   const [userLanguage, setUserLanguage] = useState();
-  const { t }                           = useTranslation();
+  const {t} = useTranslation();
 
-  const isRtl = language === 'he';
+  const isRtl = language === "he";
 
   useEffect(() => {
     const ids = fetchCountriesByLang(language);
     setCountryIds(ids);
   }, [language]);
 
-  const handleCityChange      = ({ target: { value } }) => {
-    deleteErrorByKey('city');
+  const handleCityChange = ({target: {value}}) => {
+    deleteErrorByKey("city");
     setCity(value);
   };
-  const handleGenderChange    = ({ target: { value } }) => {
-    deleteErrorByKey('gender');
+  const handleGenderChange = ({target: {value}}) => {
+    deleteErrorByKey("gender");
     setGender(value);
   };
-  const handleTelephoneChange = ({ target: { value } }) => {
-    deleteErrorByKey('telephone');
+  const handleTelephoneChange = ({target: {value}}) => {
+    deleteErrorByKey("telephone");
     setTelephone(value);
   };
-  const handleAboutYouChange  = ({ target: { value } }) => setAboutYou(value);
+  const handleAboutYouChange = ({target: {value}}) => setAboutYou(value);
 
-  const handleTenChange = ({ target: { value } }) => setTen(value);
+  const handleTenChange = ({target: {value}}) => setTen(value);
 
   const handleCountryChange = (e, op) => {
-    deleteErrorByKey('country');
-    if (!op)
-      return;
+    deleteErrorByKey("country");
+    if (!op) return;
     setCountry(op);
   };
 
   const handleLanguageChange = (e, op) => {
-    deleteErrorByKey('language');
-    if (!op)
-      return;
+    deleteErrorByKey("language");
+    if (!op) return;
     setUserLanguage(op);
   };
 
   const deleteErrorByKey = (key) => {
-    if (!errors[key])
-      return;
-    const newErr = { ...errors };
+    if (!errors[key]) return;
+    const newErr = {...errors};
     delete newErr[key];
     setErrors(newErr);
   };
 
   const renderCountries = () => {
-    return countryIds && (
-      <Autocomplete
-        variant="outlined"
-        value={country}
-        options={countryIds}
-        getOptionLabel={id => countryById[id]}
-        onChange={handleCountryChange}
-        renderInput={
-          (params) => (
+    return (
+      countryIds && (
+        <Autocomplete
+          variant="outlined"
+          value={country}
+          options={countryIds}
+          getOptionLabel={(id) => countryById[id]}
+          onChange={handleCountryChange}
+          renderInput={(params) => (
             <TextField
               {...params}
-              label={t('registration.selectCountry')}
+              label={t("registration.selectCountry")}
               variant="outlined"
               required
               error={errors.country}
             />
-          )
-        }
-      />
+          )}
+        />
+      )
     );
   };
 
   const renderLanguages = () => {
-    return LANGUAGES && (
-      <Autocomplete
-        variant="outlined"
-        value={userLanguage}
-        options={LANGUAGES}
-        getOptionLabel={r => r.nativeName}
-        onChange={handleLanguageChange}
-        renderInput={
-          (params) => (
+    return (
+      LANGUAGES && (
+        <Autocomplete
+          variant="outlined"
+          value={userLanguage}
+          options={LANGUAGES}
+          getOptionLabel={(r) => r.nativeName}
+          onChange={handleLanguageChange}
+          renderInput={(params) => (
             <TextField
               {...params}
-              label={t('registration.selectLanguage')}
+              label={t("registration.selectLanguage")}
               variant="outlined"
               required
               error={errors.language}
             />
-          )
-        }
-      />
+          )}
+        />
+      )
     );
   };
 
@@ -166,36 +158,35 @@ export const RegistrationForm = ({ user: { familyname, username, email, display 
       select
       fullWidth={true}
       variant="outlined"
-      label={t('registration.selectGender')}
+      label={t("registration.selectGender")}
       onChange={handleGenderChange}
       value={gender}
       required
       error={errors.gender}
     >
       <MenuItem key="male" value="male">
-        {t('registration.male')}
+        {t("registration.male")}
       </MenuItem>
       <MenuItem key="female" value="female">
-        {t('registration.female')}
+        {t("registration.female")}
       </MenuItem>
     </TextField>
   );
 
   const submit = async () => {
-    if (!validateForm())
-      return;
+    if (!validateForm()) return;
 
     setIsProgress(true);
     let hasError = false;
     try {
       const formOpt = {
-        method: 'POST',
+        method: "POST",
         body: buildRequestBody(),
-        mode: 'no-cors'
+        mode: "no-cors",
       };
       await fetch(REGISTRATION_FORM_URL, formOpt);
     } catch (e) {
-      (e.status === 403) && (hasError = true);
+      e.status === 403 && (hasError = true);
     }
 
     if (hasError) {
@@ -206,7 +197,7 @@ export const RegistrationForm = ({ user: { familyname, username, email, display 
     try {
       await updateKCStatus();
     } catch (e) {
-      console.log('change kc status error', e);
+      console.log("change kc status error", e);
     }
     setIsProgress(false);
     onSubmit();
@@ -225,8 +216,8 @@ export const RegistrationForm = ({ user: { familyname, username, email, display 
 
   const buildRequestBody = () => {
     const body = new FormData();
-    console.log('buildRequestBody', countries.getName(country, 'en', { select: 'official' }));
-    body.set(REGISTRATION_FORM_FIELDS.country, countries.getName(country, 'en', { select: 'official' }));
+    console.log("buildRequestBody", countries.getName(country, "en", {select: "official"}));
+    body.set(REGISTRATION_FORM_FIELDS.country, countries.getName(country, "en", {select: "official"}));
     body.set(REGISTRATION_FORM_FIELDS.city, city);
     body.set(REGISTRATION_FORM_FIELDS.aboutYou, aboutYou);
     body.set(REGISTRATION_FORM_FIELDS.gender, gender);
@@ -241,22 +232,18 @@ export const RegistrationForm = ({ user: { familyname, username, email, display 
   };
 
   const updateKCStatus = async () => {
-    const opt  = api.defaultOptions();
-    opt.method = 'POST';
-    return await fetch('https://acc.kli.one/api/pending', opt);
+    const opt = api.defaultOptions();
+    opt.method = "POST";
+    return await fetch("https://acc.kli.one/api/pending", opt);
   };
 
   const renderForm = () => (
     <>
-      <Typography variant="h4" display={'block'} paragraph>
-        {t('registration.welcome', { name: display })}
+      <Typography variant="h4" display={"block"} paragraph>
+        {t("registration.welcome", {name: display})}
       </Typography>
-      <Typography paragraph>
-        {t('registration.needVerifyAccount')}
-      </Typography>
-      <Typography paragraph>
-        {t('registration.tellAboutYou')}
-      </Typography>
+      <Typography paragraph>{t("registration.needVerifyAccount")}</Typography>
+      <Typography paragraph>{t("registration.tellAboutYou")}</Typography>
 
       <Grid container spacing={6}>
         <Grid item xs={6}>
@@ -264,7 +251,7 @@ export const RegistrationForm = ({ user: { familyname, username, email, display 
         </Grid>
         <Grid item xs={6}>
           <TextField
-            label={t('registration.groupCity')}
+            label={t("registration.groupCity")}
             variant="outlined"
             onChange={handleCityChange}
             value={city}
@@ -281,7 +268,7 @@ export const RegistrationForm = ({ user: { familyname, username, email, display 
         </Grid>
         <Grid item xs={6}>
           <TextField
-            label={t('registration.telephone')}
+            label={t("registration.telephone")}
             variant="outlined"
             onChange={handleTelephoneChange}
             value={telephone}
@@ -292,7 +279,7 @@ export const RegistrationForm = ({ user: { familyname, username, email, display 
         </Grid>
         <Grid item xs={6}>
           <TextField
-            label={t('registration.selectGroup')}
+            label={t("registration.selectGroup")}
             variant="outlined"
             onChange={handleTenChange}
             value={ten}
@@ -301,7 +288,7 @@ export const RegistrationForm = ({ user: { familyname, username, email, display 
         </Grid>
         <Grid item xs={12}>
           <TextField
-            label={t('registration.aboutYou')}
+            label={t("registration.aboutYou")}
             variant="outlined"
             onChange={handleAboutYouChange}
             value={aboutYou}
@@ -310,16 +297,9 @@ export const RegistrationForm = ({ user: { familyname, username, email, display 
           />
         </Grid>
         <Grid container justify="center">
-          <Button
-            variant="contained"
-            onClick={submit}
-            className={classes.button}
-            disabled={isProgress}
-          >
-            {t('registration.submit')}
-            {
-              isProgress ? <CircularProgress /> : null
-            }
+          <Button variant="contained" onClick={submit} className={classes.button} disabled={isProgress}>
+            {t("registration.submit")}
+            {isProgress ? <CircularProgress /> : null}
           </Button>
         </Grid>
       </Grid>
@@ -329,18 +309,8 @@ export const RegistrationForm = ({ user: { familyname, username, email, display 
   return (
     <RTL>
       <MuiThemeProvider theme={isRtl ? rtlTheme : ltrTheme}>
-        <Modal
-          open={isOpen}
-          onClose={onClose}
-          disableBackdropClick
-          style={{ verticalAlign: 'middle' }}
-        >
-          <Box
-            className={classes.container}
-            maxWidth="md"
-            dir={isRtl ? 'rtl' : 'ltr'}
-            m={10}
-          >
+        <Modal open={isOpen} onClose={onClose} disableBackdropClick style={{verticalAlign: "middle"}}>
+          <Box className={classes.container} maxWidth="md" dir={isRtl ? "rtl" : "ltr"} m={10}>
             <Grid container spacing={5}>
               <Grid item xs={7}>
                 {renderForm()}
@@ -350,21 +320,17 @@ export const RegistrationForm = ({ user: { familyname, username, email, display 
               </Grid>
               <Grid item xs={4}>
                 <Grid container justify="flex-end">
-                  <SelectViewLanguage size={'small'} fullWidth={false} hasLabel={false} />
-                  <Divider style={{ marginRight: '2em' }} />
+                  <SelectViewLanguage size={"small"} fullWidth={false} hasLabel={false} />
+                  <Divider style={{marginRight: "2em"}} />
                   <LogoutDropdown display={display} />
                 </Grid>
-                <Box style={{ marginTop: '10em' }}>
-                  <Typography paragraph style={{ fontSize: '1.2em' }}>
-                    {t('registration.asGuestYouCan')}
+                <Box style={{marginTop: "10em"}}>
+                  <Typography paragraph style={{fontSize: "1.2em"}}>
+                    {t("registration.asGuestYouCan")}
                   </Typography>
                   <Grid container justify="center">
-                    <Button
-                      variant="contained"
-                      onClick={onClose}
-                      className={classes.button}
-                    >
-                      {t('galaxyApp.continueAsGuest')}
+                    <Button variant="contained" onClick={onClose} className={classes.button}>
+                      {t("galaxyApp.continueAsGuest")}
                     </Button>
                   </Grid>
                 </Box>
@@ -376,4 +342,3 @@ export const RegistrationForm = ({ user: { familyname, username, email, display 
     </RTL>
   );
 };
-

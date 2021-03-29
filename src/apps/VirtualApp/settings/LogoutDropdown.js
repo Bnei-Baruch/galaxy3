@@ -1,5 +1,5 @@
-import React, { useRef, useState } from 'react';
-import { useTranslation } from 'react-i18next';
+import React, {useRef, useState} from "react";
+import {useTranslation} from "react-i18next";
 
 import {
   Button,
@@ -8,35 +8,35 @@ import {
   ListItemSecondaryAction,
   Popper,
   List,
-  ClickAwayListener
-} from '@material-ui/core';
-import { AccountBox, ArrowDropDown, ArrowDropUp, ExitToApp } from '@material-ui/icons';
-import { grey } from '@material-ui/core/colors';
-import { makeStyles } from '@material-ui/core/styles';
+  ClickAwayListener,
+} from "@material-ui/core";
+import {AccountBox, ArrowDropDown, ArrowDropUp, ExitToApp} from "@material-ui/icons";
+import {grey} from "@material-ui/core/colors";
+import {makeStyles} from "@material-ui/core/styles";
 
-import { kc } from '../../../components/UserManager';
-import { updateSentryUser } from '../../../shared/sentry';
+import {kc} from "../../../components/UserManager";
+import {updateSentryUser} from "../../../shared/sentry";
 
-const useStyles      = makeStyles({
+const useStyles = makeStyles({
   root: {
-    textTransform: 'none',
+    textTransform: "none",
   },
   label: {
-    display: 'inline-block',
-    whiteSpace: 'nowrap',
-    overflow: 'hidden',
-    textOverflow: 'ellipsis'
+    display: "inline-block",
+    whiteSpace: "nowrap",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
   },
   popper: {
     zIndex: 1,
-    background: grey[50]
-  }
+    background: grey[50],
+  },
 });
-const LogoutDropdown = ({ display }) => {
-  const { t }           = useTranslation();
+const LogoutDropdown = ({display}) => {
+  const {t} = useTranslation();
   const [open, setOpen] = useState(false);
-  const anchorRef       = useRef();
-  const classes         = useStyles();
+  const anchorRef = useRef();
+  const classes = useStyles();
 
   const handleClose = () => setOpen(false);
 
@@ -51,33 +51,37 @@ const LogoutDropdown = ({ display }) => {
         className={classes.root}
         endIcon={open ? <ArrowDropUp /> : <ArrowDropDown />}
         tex
-
       >
-        <span className={classes.label}>
-          {display}
-        </span>
+        <span className={classes.label}>{display}</span>
       </Button>
-      <Popper
-        anchorEl={anchorRef.current}
-        className={classes.popper}
-        disablePortal
-        open={open}
-      >
+      <Popper anchorEl={anchorRef.current} className={classes.popper} disablePortal open={open}>
         <ClickAwayListener onClickAway={handleClose}>
           <List>
-            <ListItem button key={'signOut'} onClick={() => {
-              kc.logout();
-              updateSentryUser(null);
-            }}>
-              <ListItemText primary={t('oldClient.signOut')} />
-              <ListItemSecondaryAction><ExitToApp /></ListItemSecondaryAction>
+            <ListItem
+              button
+              key={"signOut"}
+              onClick={() => {
+                kc.logout();
+                updateSentryUser(null);
+              }}
+            >
+              <ListItemText primary={t("oldClient.signOut")} />
+              <ListItemSecondaryAction>
+                <ExitToApp />
+              </ListItemSecondaryAction>
             </ListItem>
-            <ListItem button key={'account'} onClick={() => {
-              window.open('https://accounts.kab.info/auth/realms/main/account', '_blank');
-              handleClose();
-            }}>
-              <ListItemText primary={t('oldClient.myAccount')} />
-              <ListItemSecondaryAction><AccountBox /></ListItemSecondaryAction>
+            <ListItem
+              button
+              key={"account"}
+              onClick={() => {
+                window.open("https://accounts.kab.info/auth/realms/main/account", "_blank");
+                handleClose();
+              }}
+            >
+              <ListItemText primary={t("oldClient.myAccount")} />
+              <ListItemSecondaryAction>
+                <AccountBox />
+              </ListItemSecondaryAction>
             </ListItem>
           </List>
         </ClickAwayListener>

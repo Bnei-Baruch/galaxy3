@@ -1,21 +1,22 @@
-import React from 'react';
-import { Public } from '@material-ui/icons';
-import { Tooltip, IconButton } from '@material-ui/core';
-import { useTranslation } from 'react-i18next';
+import React from "react";
+import {Public} from "@material-ui/icons";
+import {Tooltip, IconButton} from "@material-ui/core";
+import {useTranslation} from "react-i18next";
 
 const KliOlamiToggle = (props) => {
-  const { action, isOn, disabled } = props;
-  const { t }                          = useTranslation();
+  const {action, isOn, disabled} = props;
+  const {t} = useTranslation();
 
   const handleAction = () => action();
 
   return (
-    <Tooltip title={isOn ? t('oldClient.closeKliOlami') : t('oldClient.openKliOlami')} disableTouchListener={true}>
+    <Tooltip title={isOn ? t("oldClient.closeKliOlami") : t("oldClient.openKliOlami")} disableTouchListener={true}>
       <span>
         <IconButton
-          aria-label={isOn ? t('oldClient.closeKliOlami') : t('oldClient.openKliOlami')}
+          aria-label={isOn ? t("oldClient.closeKliOlami") : t("oldClient.openKliOlami")}
           disabled={disabled}
-          onClick={() => handleAction()}>
+          onClick={() => handleAction()}
+        >
           {isOn ? <Public /> : <Public color="secondary" />}
         </IconButton>
       </span>
@@ -23,5 +24,5 @@ const KliOlamiToggle = (props) => {
   );
 };
 
-export { KliOlamiToggle };
+export {KliOlamiToggle};
 export default KliOlamiToggle;

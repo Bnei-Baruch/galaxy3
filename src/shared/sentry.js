@@ -1,12 +1,12 @@
 import * as Sentry from "@sentry/react";
-import { Integrations } from "@sentry/tracing";
+import {Integrations} from "@sentry/tracing";
 
-import {SENTRY_KEY} from './env';
-import version from '../Version';
+import {SENTRY_KEY} from "./env";
+import version from "../Version";
 
 export const updateSentryUser = (user) => {
   Sentry.setUser(user);
-}
+};
 
 export const initSentry = () => {
   Sentry.init({
@@ -17,43 +17,42 @@ export const initSentry = () => {
     attachStacktrace: true,
     maxBreadcrumbs: 100,
     ignoreErrors: [
-      'ResizeObserver loop limit exceeded',
-      'InvalidAccessError: There is no sender or receiver for the track'
+      "ResizeObserver loop limit exceeded",
+      "InvalidAccessError: There is no sender or receiver for the track",
     ],
     tracesSampleRate: 1.0,
   });
 
   Sentry.configureScope((scope) => {
-    const isDeb = window.location.host.startsWith('bbdev6') ||
-      new URL(window.location.href).searchParams.has('deb');
-    scope.setTag('deb', isDeb);
+    const isDeb = window.location.host.startsWith("bbdev6") || new URL(window.location.href).searchParams.has("deb");
+    scope.setTag("deb", isDeb);
   });
 };
 
 export const captureException = (exception, data = {}) => {
-  Sentry.withScope(scope => {
+  Sentry.withScope((scope) => {
     scope.setExtras(data);
     Sentry.captureException(exception);
   });
-}
+};
 
-export const captureMessage = (title, data = {}, level = 'info') => {
-	 Sentry.withScope(scope => {
+export const captureMessage = (title, data = {}, level = "info") => {
+  Sentry.withScope((scope) => {
     // Always group by title when reporting manually to Sentry.
     scope.setFingerprint([title]);
     scope.setExtras(data);
     scope.setLevel(level);
     Sentry.captureMessage(title);
   });
-}
+};
 
 export const sentryDebugAction = () => {
-	console.log('stack: ' + (new Error()).stack);
-	//this.tryThisOut();  // Should generate runtime exception and send to Sentry.
+  console.log("stack: " + new Error().stack);
+  //this.tryThisOut();  // Should generate runtime exception and send to Sentry.
   //try {
   //  throw new Error('This is an error');
   //} catch (e) {
   //  captureException(e, {source: 'some-src'});
   //}
-  captureMessage('Try capture message', {source: 'sentry-test'}, 'error');
-}
+  captureMessage("Try capture message", {source: "sentry-test"}, "error");
+};

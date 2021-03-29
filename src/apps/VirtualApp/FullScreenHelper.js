@@ -1,9 +1,7 @@
 export const isFullScreen = (el = document.body) => {
   const owner = el.ownerDocument;
-  return el && (
-    owner.fullscreenElement === el
-    || owner.mozFullScreenElemen === el
-    || owner.webkitFullscreenElement === el
+  return (
+    el && (owner.fullscreenElement === el || owner.mozFullScreenElemen === el || owner.webkitFullscreenElement === el)
   );
 };
 

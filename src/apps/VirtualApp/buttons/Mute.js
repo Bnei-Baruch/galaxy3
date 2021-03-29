@@ -1,23 +1,31 @@
-import React from 'react';
-import { Mic, MicOff } from '@material-ui/icons';
-import { Tooltip, IconButton, Box } from '@material-ui/core';
+import React from "react";
+import {Mic, MicOff} from "@material-ui/icons";
+import {Tooltip, IconButton, Box} from "@material-ui/core";
 
 const Mute = React.forwardRef((props, ref) => {
-  const { action, isOn, disabled, t } = props;
-  const handleAction                  = () => action(isOn);
+  const {action, isOn, disabled, t} = props;
+  const handleAction = () => action(isOn);
 
   return (
-    <Box style={{ position: 'relative' }}>
-      <canvas className={isOn ? 'hidden' : 'vumeter'} ref={ref} id="canvas1" style={{
-        width: '45px',
-        height: '45px'
-      }} width="45" height="45" />
-      <Tooltip title={t(isOn ? 'oldClient.unMute' : 'oldClient.mute')} disableTouchListener={true}>
+    <Box style={{position: "relative"}}>
+      <canvas
+        className={isOn ? "hidden" : "vumeter"}
+        ref={ref}
+        id="canvas1"
+        style={{
+          width: "45px",
+          height: "45px",
+        }}
+        width="45"
+        height="45"
+      />
+      <Tooltip title={t(isOn ? "oldClient.unMute" : "oldClient.mute")} disableTouchListener={true}>
         <span>
           <IconButton
-            aria-label={t(isOn ? 'oldClient.unMute' : 'oldClient.mute')}
+            aria-label={t(isOn ? "oldClient.unMute" : "oldClient.mute")}
             disabled={disabled}
-            onClick={() => handleAction()}>
+            onClick={() => handleAction()}
+          >
             {isOn ? <MicOff color="secondary" /> : <Mic />}
           </IconButton>
         </span>
@@ -26,5 +34,5 @@ const Mute = React.forwardRef((props, ref) => {
   );
 });
 
-export { Mute };
+export {Mute};
 export default Mute;

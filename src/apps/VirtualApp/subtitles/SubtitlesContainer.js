@@ -1,27 +1,27 @@
-import React, { useEffect, useState } from 'react';
-import './subtitles.scss';
-import { MessageManager, MSGS_TYPES } from './MessageManager';
-import { initSubtitle, initWQ } from './httpHelper';
-import { SubtitlesView } from './SubtitlesView';
+import React, {useEffect, useState} from "react";
+import "./subtitles.scss";
+import {MessageManager, MSGS_TYPES} from "./MessageManager";
+import {initSubtitle, initWQ} from "./httpHelper";
+import {SubtitlesView} from "./SubtitlesView";
 
-export const WQ_LANG       = 'wq-language';
-export const SUBTITLE_LANG = 'subtitle-language';
+export const WQ_LANG = "wq-language";
+export const SUBTITLE_LANG = "subtitle-language";
 
 const messageManager = new MessageManager();
 
-const langForCloser             = {};
-export const SubtitlesContainer = ({ playerLang, layout }) => {
+const langForCloser = {};
+export const SubtitlesContainer = ({playerLang, layout}) => {
   const [last, setLast] = useState();
-  const wqLang          = localStorage.getItem(WQ_LANG) || playerLang;
-  const subtitleLang    = localStorage.getItem(SUBTITLE_LANG) || playerLang;
-  langForCloser.wqLang  = wqLang;
+  const wqLang = localStorage.getItem(WQ_LANG) || playerLang;
+  const subtitleLang = localStorage.getItem(SUBTITLE_LANG) || playerLang;
+  langForCloser.wqLang = wqLang;
 
   const wqAvailable = messageManager.getAvailableLangs();
 
-  const onMsgHandler = data => {
+  const onMsgHandler = (data) => {
     let item;
     const lang = data.type === MSGS_TYPES.workshop ? langForCloser.wqLang : subtitleLang;
-    if (data.message === 'clear') {
+    if (data.message === "clear") {
       item = messageManager.clear(data, lang);
     } else {
       item = messageManager.push(data, lang);
@@ -44,8 +44,7 @@ export const SubtitlesContainer = ({ playerLang, layout }) => {
     }
   }, [wqLang]);
 
-  if (!last && wqAvailable.length === 0)
-    return null;
+  if (!last && wqAvailable.length === 0) return null;
 
   return (
     <SubtitlesView

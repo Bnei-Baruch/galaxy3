@@ -1,11 +1,11 @@
-import React, {useEffect, useState} from 'react';
-import {Icon} from 'semantic-ui-react';
+import React, {useEffect, useState} from "react";
+import {Icon} from "semantic-ui-react";
 
-import './Volume.css';
+import "./Volume.css";
 
-const Volume = ({ media }) => {
-  const [element, setElement]           = useState(null);
-  const [volumeHover, setVolumeHover]   = useState(false);
+const Volume = ({media}) => {
+  const [element, setElement] = useState(null);
+  const [volumeHover, setVolumeHover] = useState(false);
   const [wasMouseDown, setWasMouseDown] = useState(false);
   const [volumeState, setVolumeState] = useState(0);
   const [mutedState, setMutedState] = useState(0);
@@ -13,52 +13,52 @@ const Volume = ({ media }) => {
 
   // Handle volume change on bar
   useEffect(() => {
-		if (documentElem) {
-			documentElem.addEventListener('mousemove', handleMove, { passive: false });
-			documentElem.addEventListener('touchmove', handleMove, { passive: false });
-			documentElem.addEventListener('mouseup', handleEnd, { passive: false });
-			documentElem.addEventListener('touchend', handleEnd, { passive: false });
-			window.addEventListener('beforeunload', handleClose, { passive: false });
-			return () => {
-				documentElem.removeEventListener('mousemove', handleMove);
-				documentElem.removeEventListener('touchmove', handleMove);
-				documentElem.removeEventListener('mouseup', handleEnd);
-				documentElem.removeEventListener('touchend', handleEnd);
-				window.removeEventListener('beforeunload', handleClose)
-			};
-		}
+    if (documentElem) {
+      documentElem.addEventListener("mousemove", handleMove, {passive: false});
+      documentElem.addEventListener("touchmove", handleMove, {passive: false});
+      documentElem.addEventListener("mouseup", handleEnd, {passive: false});
+      documentElem.addEventListener("touchend", handleEnd, {passive: false});
+      window.addEventListener("beforeunload", handleClose, {passive: false});
+      return () => {
+        documentElem.removeEventListener("mousemove", handleMove);
+        documentElem.removeEventListener("touchmove", handleMove);
+        documentElem.removeEventListener("mouseup", handleEnd);
+        documentElem.removeEventListener("touchend", handleEnd);
+        window.removeEventListener("beforeunload", handleClose);
+      };
+    }
   });
 
-	useEffect(() => {
-		setVolumeState((media && media.volume) || 0);
-		setMutedState(!media || media.muted);
-	}, [media]);
+  useEffect(() => {
+    setVolumeState((media && media.volume) || 0);
+    setMutedState(!media || media.muted);
+  }, [media]);
 
   const setVolume = (clientY) => {
-    const { top, bottom } = element.getBoundingClientRect();
-    const offset          = Math.min(Math.max(0, clientY - top), bottom - top);
-    const newVolume       = 1 - (offset / (bottom - top));
+    const {top, bottom} = element.getBoundingClientRect();
+    const offset = Math.min(Math.max(0, clientY - top), bottom - top);
+    const newVolume = 1 - offset / (bottom - top);
     media.volume = newVolume;
-		setVolumeState(newVolume);
-		if (newVolume > 0 && media && media.muted) {
-			media.muted = false;
-			setMutedState(false);
-		}
+    setVolumeState(newVolume);
+    if (newVolume > 0 && media && media.muted) {
+      media.muted = false;
+      setMutedState(false);
+    }
   };
 
-	const handleClose = () => documentElem.defaultView.close();
+  const handleClose = () => documentElem.defaultView.close();
 
   const handleMuteUnmute = () => {
     media.muted = !media.muted;
-		setMutedState(media.muted);
-		if (media.muted) {
-			setVolumeState(0);
-		} else {
-			if (media.volume === 0) {
-				media.volume = 0.6;  // Default volume.
-			}
-			setVolumeState(media.volume);
-		}
+    setMutedState(media.muted);
+    if (media.muted) {
+      setVolumeState(0);
+    } else {
+      if (media.volume === 0) {
+        media.volume = 0.6; // Default volume.
+      }
+      setVolumeState(media.volume);
+    }
   };
 
   const handleMouseEnter = () => {
@@ -103,7 +103,7 @@ const Volume = ({ media }) => {
   };
 
   const volumePopoverStyle = {
-    visibility: volumeHover || wasMouseDown ? 'visible' : 'hidden'
+    visibility: volumeHover || wasMouseDown ? "visible" : "hidden",
   };
 
   const styleFull = {
@@ -115,29 +115,11 @@ const Volume = ({ media }) => {
   };
 
   return (
-    <div ref={(ref) => ref && ref.ownerDocument && setDocument(ref.ownerDocument)}
-				 className="mediaplayer__volume">
-      <button
-        type="button"
-        onClick={handleMuteUnmute}
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={handleMouseLeave}
-      >
-        {
-          (mutedState || volumeState === 0) && (
-            <Icon key="mute" name="volume off" />
-          )
-        }
-        {
-          !mutedState && volumeState > 0 && volumeState < 0.5 && (
-            <Icon key="volume-down" name="volume down" />
-          )
-        }
-        {
-          !mutedState && volumeState >= 0.5 && (
-            <Icon key="volume-up" name="volume up" />
-          )
-        }
+    <div ref={(ref) => ref && ref.ownerDocument && setDocument(ref.ownerDocument)} className="mediaplayer__volume">
+      <button type="button" onClick={handleMuteUnmute} onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
+        {(mutedState || volumeState === 0) && <Icon key="mute" name="volume off" />}
+        {!mutedState && volumeState > 0 && volumeState < 0.5 && <Icon key="volume-down" name="volume down" />}
+        {!mutedState && volumeState >= 0.5 && <Icon key="volume-up" name="volume up" />}
       </button>
       <div
         className="volume-popover"
@@ -146,7 +128,7 @@ const Volume = ({ media }) => {
         onMouseLeave={handleMouseLeave}
       >
         <div
-          ref={c => setElement(c)}
+          ref={(c) => setElement(c)}
           className="volume-popover__wrapper"
           role="button"
           tabIndex="0"
@@ -164,7 +146,7 @@ const Volume = ({ media }) => {
 };
 
 const arePropsEqual = (props, nextProps) => {
-  const { media } = props;
+  const {media} = props;
 
   return media === nextProps.media;
 };

@@ -1,5 +1,5 @@
-import React, { useRef } from 'react';
-import { ButtonGroup, Tooltip, IconButton, Popover, SvgIcon } from '@material-ui/core';
+import React, {useRef} from "react";
+import {ButtonGroup, Tooltip, IconButton, Popover, SvgIcon} from "@material-ui/core";
 
 function EqualIcon() {
   return (
@@ -26,12 +26,12 @@ function SplitIcon() {
 }
 
 const Layout = (props) => {
-  const { disabled, t, action, active } = props;
-  const [open, setOpen]                 = React.useState(false);
-  const anchorRef                       = useRef();
+  const {disabled, t, action, active} = props;
+  const [open, setOpen] = React.useState(false);
+  const anchorRef = useRef();
 
   const handleMenuItemClick = (type) => {
-    console.log('layout type', type);
+    console.log("layout type", type);
     action(type);
     setOpen(false);
   };
@@ -49,29 +49,22 @@ const Layout = (props) => {
 
   const getButtonByName = (name) => {
     return (
-      <IconButton
-        onClick={() => handleMenuItemClick(name)}
-      >
-        {name === 'double' && <DoubleIcon />}
-        {name === 'split' && <SplitIcon />}
-        {name === 'equal' && <EqualIcon />}
+      <IconButton onClick={() => handleMenuItemClick(name)}>
+        {name === "double" && <DoubleIcon />}
+        {name === "split" && <SplitIcon />}
+        {name === "equal" && <EqualIcon />}
       </IconButton>
     );
   };
 
   return (
     <div>
-      <Tooltip title={t('oldClient.layout')} disableTouchListener={true}>
+      <Tooltip title={t("oldClient.layout")} disableTouchListener={true}>
         <span>
-          <IconButton
-            aria-label={t('oldClient.layout')}
-            disabled={disabled}
-            onClick={handleToggle}
-            ref={anchorRef}
-          >
-            {active === 'double' && <DoubleIcon />}
-            {active === 'split' && <SplitIcon />}
-            {active === 'equal' && <EqualIcon />}
+          <IconButton aria-label={t("oldClient.layout")} disabled={disabled} onClick={handleToggle} ref={anchorRef}>
+            {active === "double" && <DoubleIcon />}
+            {active === "split" && <SplitIcon />}
+            {active === "equal" && <EqualIcon />}
           </IconButton>
         </span>
       </Tooltip>
@@ -80,18 +73,19 @@ const Layout = (props) => {
         anchorEl={anchorRef.current}
         onClose={handleClose}
         anchorOrigin={{
-          vertical: 'top',
-          horizontal: 'center',
+          vertical: "top",
+          horizontal: "center",
         }}
         transformOrigin={{
-          vertical: 'bottom',
-          horizontal: 'center',
-        }}>
+          vertical: "bottom",
+          horizontal: "center",
+        }}
+      >
         <ButtonGroup>
           <ButtonGroup variant="contained" color="default">
-            {getButtonByName('double')}
-            {getButtonByName('split')}
-            {getButtonByName('equal')}
+            {getButtonByName("double")}
+            {getButtonByName("split")}
+            {getButtonByName("equal")}
           </ButtonGroup>
         </ButtonGroup>
       </Popover>
@@ -99,5 +93,5 @@ const Layout = (props) => {
   );
 };
 
-export { Layout };
+export {Layout};
 export default Layout;

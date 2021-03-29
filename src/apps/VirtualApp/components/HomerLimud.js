@@ -1,28 +1,25 @@
-import React, {useEffect, useState} from 'react';
-import {Accordion, Box, AccordionSummary, Typography, AccordionDetails} from '@material-ui/core';
-import {STUDY_MATERIALS} from "../../../shared/env"
+import React, {useEffect, useState} from "react";
+import {Accordion, Box, AccordionSummary, Typography, AccordionDetails} from "@material-ui/core";
+import {STUDY_MATERIALS} from "../../../shared/env";
 // import {List, ListItem, MenuItem, TextField} from '@material-ui/core';
 // import {getLanguage} from '../../../i18n/i18n';
 import {makeStyles} from "@material-ui/core/styles";
 // import {green, grey} from "@material-ui/core/colors";
 
-
-const useStyles = makeStyles(
-  {
-    title: {
-      fontWeight: 'bold',
-    },
-    content: {
-      overflow: 'auto',
-      textOverflow: 'ellipsis',
-      textAlign: 'initial'
-    }
-  }
-);
+const useStyles = makeStyles({
+  title: {
+    fontWeight: "bold",
+  },
+  content: {
+    overflow: "auto",
+    textOverflow: "ellipsis",
+    textAlign: "initial",
+  },
+});
 
 const fetchMessages = async () => {
   try {
-    const res = await fetch(STUDY_MATERIALS, {method: 'GET'});
+    const res = await fetch(STUDY_MATERIALS, {method: "GET"});
     return res.json();
   } catch (e) {
     return null;
@@ -41,11 +38,10 @@ const HomerLimud = () => {
 
   const initMessages = async () => {
     const msgs = await fetchMessages();
-    if (msgs?.length > 0)
-      setMessages(msgs);
+    if (msgs?.length > 0) setMessages(msgs);
   };
 
-  const handleAccordionChange = (name) => name !== expanded ? setExpanded(name) : setExpanded(null);
+  const handleAccordionChange = (name) => (name !== expanded ? setExpanded(name) : setExpanded(null));
 
   const renderMessage = ({Title, Description: __html}, i) => {
     return (
@@ -62,12 +58,7 @@ const HomerLimud = () => {
     );
   };
 
-  return (
-    <Box style={{height: 'calc(100vh - 140px)', overflow: 'auto'}}>
-      {messages.map(renderMessage)}
-    </Box>
-  );
-
+  return <Box style={{height: "calc(100vh - 140px)", overflow: "auto"}}>{messages.map(renderMessage)}</Box>;
 };
 
 export default HomerLimud;

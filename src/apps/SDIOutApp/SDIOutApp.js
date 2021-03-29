@@ -1,7 +1,7 @@
-import React, {Component, Fragment} from 'react';
+import React, {Component, Fragment} from "react";
 import {Grid, Segment} from "semantic-ui-react";
-import './SDIOutApp.css';
-import './UsersQuadSDIOut.scss'
+import "./SDIOutApp.css";
+import "./UsersQuadSDIOut.scss";
 import {SDIOUT_ID} from "../../shared/consts";
 import api from "../../shared/Api";
 import {API_BACKEND_PASSWORD, API_BACKEND_USERNAME} from "../../shared/env";
@@ -11,9 +11,7 @@ import UsersQuadSDIOut from "./UsersQuadSDIOut";
 import {captureException} from "../../shared/sentry";
 import mqtt from "../../shared/mqtt";
 
-
 class SDIOutApp extends Component {
-
   state = {
     qg: null,
     group: null,
@@ -25,7 +23,7 @@ class SDIOutApp extends Component {
       display: "sdiout",
       id: SDIOUT_ID,
       name: "sdiout",
-      email: "sdiout@galaxy.kli.one"
+      email: "sdiout@galaxy.kli.one",
     },
     qids: [],
     qcol: 0,
@@ -38,109 +36,112 @@ class SDIOutApp extends Component {
 
   componentDidMount() {
     setInterval(() => {
-      api.fetchProgram()
-        .then(qids => {
+      api
+        .fetchProgram()
+        .then((qids) => {
           this.setState({qids});
-          if(this.state.qg) {
+          if (this.state.qg) {
             const {col, i} = this.state;
-            this.setState({qg: this.state.qids["q"+col].vquad[i]})
+            this.setState({qg: this.state.qids["q" + col].vquad[i]});
           }
         })
-        .catch(err => {
+        .catch((err) => {
           console.error("[SDIOut] error fetching quad state", err);
           captureException(err, {source: "SDIOut"});
         });
 
-      api.fetchRoomsStatistics()
+      api
+        .fetchRoomsStatistics()
         .then((roomsStatistics) => {
           this.setState({roomsStatistics});
         })
-        .catch(err => {
+        .catch((err) => {
           console.error("[SDIOut] error fetching rooms statistics", err);
           captureException(err, {source: "SDIOut"});
         });
     }, 1000);
     this.initApp();
-  };
+  }
 
   componentWillUnmount() {
-    Object.values(this.state.gateways).forEach(x => x.destroy());
-  };
+    Object.values(this.state.gateways).forEach((x) => x.destroy());
+  }
 
   initApp = () => {
     const {user} = this.state;
 
     api.setBasicAuth(API_BACKEND_USERNAME, API_BACKEND_PASSWORD);
 
-    api.fetchConfig()
-      .then(data => GxyJanus.setGlobalConfig(data))
+    api
+      .fetchConfig()
+      .then((data) => GxyJanus.setGlobalConfig(data))
       .then(() => this.initGateways(user))
-      .catch(err => {
+      .catch((err) => {
         console.error("[SDIOut] error initializing app", err);
         this.setState({appInitError: err});
-        captureException(err, {source: 'SDIOut'});
+        captureException(err, {source: "SDIOut"});
       });
   };
 
   initGateways = (user) => {
     mqtt.init(user, (data) => {
-      console.log("[SDIOut] mqtt init: ", data)
+      console.log("[SDIOut] mqtt init: ", data);
       setTimeout(() => {
         mqtt.watch((data) => {
           this.onMqttData(data);
-        })
-        mqtt.join('galaxy/service/shidur');
-        mqtt.join('galaxy/users/broadcast');
-        mqtt.send(JSON.stringify({type: "event", [user.role]: true}), true, 'galaxy/service/' + user.role);
+        });
+        mqtt.join("galaxy/service/shidur");
+        mqtt.join("galaxy/users/broadcast");
+        mqtt.send(JSON.stringify({type: "event", [user.role]: true}), true, "galaxy/service/" + user.role);
       }, 3000);
-    })
+    });
     const gateways = GxyJanus.makeGateways("rooms");
     this.setState({gateways});
-    Object.values(gateways).map(gateway => gateway.init());
+    Object.values(gateways).map((gateway) => gateway.init());
   };
 
   onMqttData = (data) => {
     const {room, col, feed, group, i, status, qst} = data;
 
-    if(data.type === "sdi-fullscr_group" && status) {
-      if(qst) {
-        this.setState({col, i, group, room, qg: this.state.qids["q"+col].vquad[i]})
+    if (data.type === "sdi-fullscr_group" && status) {
+      if (qst) {
+        this.setState({col, i, group, room, qg: this.state.qids["q" + col].vquad[i]});
       } else {
-        this["col"+col].toFullGroup(i,feed);
+        this["col" + col].toFullGroup(i, feed);
       }
-    } else if(data.type === "sdi-fullscr_group" && !status) {
+    } else if (data.type === "sdi-fullscr_group" && !status) {
       let {col, feed, i} = data;
-      if(qst) {
+      if (qst) {
         this.setState({group: null, room: null, qg: null});
       } else {
-        this["col"+col].toFourGroup(i,feed);
+        this["col" + col].toFourGroup(i, feed);
       }
-    } else if(data.type === "sdi-vote") {
-      if(this.state.group)
-        return
+    } else if (data.type === "sdi-vote") {
+      if (this.state.group) return;
       this.setState({vote: status, qg: null});
-    } else if(data.type === "sdi-restart_sdiout") {
+    } else if (data.type === "sdi-restart_sdiout") {
       window.location.reload();
-    } else if (data.type === 'reload-config') {
+    } else if (data.type === "reload-config") {
       this.reloadConfig();
-    } else if(data.type === "event") {
+    } else if (data.type === "event") {
       delete data.type;
       this.setState({...data});
     }
   };
 
   reloadConfig = () => {
-    api.fetchConfig()
+    api
+      .fetchConfig()
       .then((data) => {
         GxyJanus.setGlobalConfig(data);
       })
-      .catch(err => {
+      .catch((err) => {
         console.error("[User] error reloading config", err);
       });
-  }
+  };
 
   render() {
-    let {vote,group,qids,qg,gateways, roomsStatistics} = this.state;
+    let {vote, group, qids, qg, gateways, roomsStatistics} = this.state;
     // let qst = g && g.questions;
     let name = group && group.description;
 
@@ -148,22 +149,54 @@ class SDIOutApp extends Component {
       <Grid columns={2} className="sdi_container">
         <Grid.Row>
           <Grid.Column>
-            <UsersQuadSDIOut index={0} {...qids.q1} qst={qg} gateways={gateways}
-                             roomsStatistics={roomsStatistics} ref={col => {this.col1 = col;}} />
+            <UsersQuadSDIOut
+              index={0}
+              {...qids.q1}
+              qst={qg}
+              gateways={gateways}
+              roomsStatistics={roomsStatistics}
+              ref={(col) => {
+                this.col1 = col;
+              }}
+            />
           </Grid.Column>
           <Grid.Column>
-            <UsersQuadSDIOut index={4} {...qids.q2} qst={qg} gateways={gateways}
-                             roomsStatistics={roomsStatistics} ref={col => {this.col2 = col;}} />
+            <UsersQuadSDIOut
+              index={4}
+              {...qids.q2}
+              qst={qg}
+              gateways={gateways}
+              roomsStatistics={roomsStatistics}
+              ref={(col) => {
+                this.col2 = col;
+              }}
+            />
           </Grid.Column>
         </Grid.Row>
         <Grid.Row>
           <Grid.Column>
-            <UsersQuadSDIOut index={8} {...qids.q3} qst={qg} gateways={gateways}
-                             roomsStatistics={roomsStatistics} ref={col => {this.col3 = col;}} />
+            <UsersQuadSDIOut
+              index={8}
+              {...qids.q3}
+              qst={qg}
+              gateways={gateways}
+              roomsStatistics={roomsStatistics}
+              ref={(col) => {
+                this.col3 = col;
+              }}
+            />
           </Grid.Column>
           <Grid.Column>
-            <UsersQuadSDIOut index={12} {...qids.q4} qst={qg} gateways={gateways}
-                             roomsStatistics={roomsStatistics} ref={col => {this.col4 = col;}} />
+            <UsersQuadSDIOut
+              index={12}
+              {...qids.q4}
+              qst={qg}
+              gateways={gateways}
+              roomsStatistics={roomsStatistics}
+              ref={(col) => {
+                this.col4 = col;
+              }}
+            />
           </Grid.Column>
         </Grid.Row>
         <Grid.Row>
@@ -171,22 +204,22 @@ class SDIOutApp extends Component {
             <Segment className="preview_sdi">
               <div className="usersvideo_grid">
                 <div className="video_full">
-                  {vote ?
-                    <iframe title="Vote" src='https://vote.kli.one'
-                            width="100%" height="100%" frameBorder="0" />
-                    :
-                    qg ? <Fragment>
+                  {vote ? (
+                    <iframe title="Vote" src="https://vote.kli.one" width="100%" height="100%" frameBorder="0" />
+                  ) : qg ? (
+                    <Fragment>
                       {/*{group && group.questions ? <div className="qst_fullscreentitle">?</div> : ""}*/}
-                      <div className="fullscrvideo_title" >{name}</div>
+                      <div className="fullscrvideo_title">{name}</div>
                       <UsersHandleSDIOut key={"q5"} g={qg} group={group} index={13} gateways={gateways} />
-                    </Fragment> : ""
-                  }
+                    </Fragment>
+                  ) : (
+                    ""
+                  )}
                 </div>
               </div>
             </Segment>
           </Grid.Column>
-          <Grid.Column>
-          </Grid.Column>
+          <Grid.Column></Grid.Column>
         </Grid.Row>
       </Grid>
     );

@@ -1,11 +1,9 @@
 // Monitoring library to track connection stats.
-import pako from 'pako';
-import {
-  MONITORING_BACKEND,
-} from "./env";
+import pako from "pako";
+import {MONITORING_BACKEND} from "./env";
 
-import { dataValues } from './MonitoringUtils';
-import Version from '../Version';
+import {dataValues} from "./MonitoringUtils";
+import Version from "../Version";
 
 const ONE_SECOND_IN_MS = 1000;
 const ONE_MINUTE_IN_MS = 60 * 1000;
@@ -19,10 +17,10 @@ const INITIAL_STORE_INTERVAL = 5 * ONE_MINUTE_IN_MS;
 const INITIAL_SAMPLE_INTERVAL = FIVE_SECONDS_IN_MS;
 const MAX_EXPONENTIAL_BACKOFF_MS = 10 * ONE_MINUTE_IN_MS;
 
-export const LINK_STATE_INIT = 'init';
-export const LINK_STATE_GOOD = 'good';
-export const LINK_STATE_MEDIUM = 'medium';
-export const LINK_STATE_WEAK = 'weak';
+export const LINK_STATE_INIT = "init";
+export const LINK_STATE_GOOD = "good";
+export const LINK_STATE_MEDIUM = "medium";
+export const LINK_STATE_WEAK = "weak";
 
 export const Stats = class {
   constructor() {
@@ -46,7 +44,9 @@ export const Stats = class {
     if (timestamp > this.maxAddedTimestamp) {
       this.maxAddedTimestamp = timestamp;
     } else {
-      console.error(`Expecting to add only new values, old timestamp: ${timestamp} found, max ${this.maxAddedTimestamp}.`);
+      console.error(
+        `Expecting to add only new values, old timestamp: ${timestamp} found, max ${this.maxAddedTimestamp}.`
+      );
     }
     this.length++;
 
@@ -54,15 +54,15 @@ export const Stats = class {
     const newMean = this.mean + meanIncrement;
 
     const dSquaredIncrement = (value - newMean) * (value - this.mean);
-    let newDSquared = (this.dSquared*(this.length-1) + dSquaredIncrement) / this.length;
+    let newDSquared = (this.dSquared * (this.length - 1) + dSquaredIncrement) / this.length;
     if (isNaN(newDSquared)) {
-      console.log('add newDSquared', newDSquared, this.dSquared, this.length, dSquaredIncrement);
+      console.log("add newDSquared", newDSquared, this.dSquared, this.length, dSquaredIncrement);
     }
-    if (newDSquared < 0) { 
+    if (newDSquared < 0) {
       // Correcting float inaccuracy.
       if (newDSquared < -0.00001) {
         console.warn(`Add: newDSquared negative: ${newDSquared}. Setting to 0. ${value}, ${timestamp} ${this}`);
-      }   
+      }
       newDSquared = 0;
     }
 
@@ -78,14 +78,16 @@ export const Stats = class {
     if (timestamp > this.maxRemovedTimestamp) {
       this.maxRemovedTimestamp = timestamp;
     } else {
-      console.warn(`Expecting to remove only new values, old timestamp: ${timestamp} found, max ${this.maxRemovedTimestamp}.`);
+      console.warn(
+        `Expecting to remove only new values, old timestamp: ${timestamp} found, max ${this.maxRemovedTimestamp}.`
+      );
     }
-    if (this.length <= 1) { 
-      if (this.length === 1) { 
+    if (this.length <= 1) {
+      if (this.length === 1) {
         this.numRemoves++;
       } else {
         this.numEmptyRemoves++;
-      }   
+      }
       console.warn(`Empty stats (${value}, ${timestamp}, ${this}).`);
       this.mean = 0;
       this.dSquared = 0;
@@ -98,16 +100,16 @@ export const Stats = class {
     const meanIncrement = (this.mean - value) / this.length;
     const newMean = this.mean + meanIncrement;
 
-    const dSquaredIncrement = ((newMean - value) * (value - this.mean));
-    let newDSquared = (this.dSquared*(this.length+1) + dSquaredIncrement) / this.length;
+    const dSquaredIncrement = (newMean - value) * (value - this.mean);
+    let newDSquared = (this.dSquared * (this.length + 1) + dSquaredIncrement) / this.length;
     if (isNaN(newDSquared)) {
-      console.log('remove newDSquared', newDSquared, this.dSquared, this.length, dSquaredIncrement);
+      console.log("remove newDSquared", newDSquared, this.dSquared, this.length, dSquaredIncrement);
     }
-    if (newDSquared < 0) { 
+    if (newDSquared < 0) {
       // Correcting float inaccuracy.
       if (newDSquared < -0.00001) {
         console.warn(`Remove: newDSquared negative: ${newDSquared}. Setting to 0. ${value}, ${timestamp} ${this}`);
-      }   
+      }
       newDSquared = 0;
     }
 
@@ -124,8 +126,8 @@ export const MonitoringData = class {
     this.localVideoTrack = null;
     this.user = null;
     this.monitorIntervalId = 0;
-    this.storedData = [];  // Data saved using spec to indentify how much.
-    this.scoreData = [];  // Same data, buf filtered and saved for 10 minutes for calculating score.
+    this.storedData = []; // Data saved using spec to indentify how much.
+    this.scoreData = []; // Same data, buf filtered and saved for 10 minutes for calculating score.
     this.onDataCallback = null;
     this.onStatus = null;
     this.fetchErrors = 0;
@@ -133,7 +135,7 @@ export const MonitoringData = class {
     this.lastUpdateTimestamp = 0;
     this.sentDataCount = 0;
     this.miscData = {};
-    this.scoreFormula = '';
+    this.scoreFormula = "";
     this.virtualStreamingJanus = null;
 
     this.spec = {
@@ -153,14 +155,18 @@ export const MonitoringData = class {
     if (!isNaN(spec.store_interval) && spec.store_interval >= ONE_MINUTE_IN_MS) {
       this.spec.store_interval = spec.store_interval;
     }
-    if (Array.isArray(spec.metrics_whitelist) &&
-        spec.metrics_whitelist.length > 0 &&
-        spec.metrics_whitelist.every((metric) => typeof metric === 'string')) {
+    if (
+      Array.isArray(spec.metrics_whitelist) &&
+      spec.metrics_whitelist.length > 0 &&
+      spec.metrics_whitelist.every((metric) => typeof metric === "string")
+    ) {
       this.spec.metrics_whitelist = spec.metrics_whitelist;
     }
-    if (!isNaN(spec.sample_interval) &&
-        this.spec.sample_interval !== spec.sample_interval &&
-        spec.sample_interval >= ONE_SECOND_IN_MS) {
+    if (
+      !isNaN(spec.sample_interval) &&
+      this.spec.sample_interval !== spec.sample_interval &&
+      spec.sample_interval >= ONE_SECOND_IN_MS
+    ) {
       this.spec.sample_interval = spec.sample_interval;
       this.restartMonitoring();
     }
@@ -179,12 +185,15 @@ export const MonitoringData = class {
     this.localAudioTrack = localAudioTrack;
     this.localVideoTrack = localVideoTrack;
     this.virtualStreamingJanus = virtualStreamingJanus;
-    this.user = Object.assign({
-      cpu: (navigator && navigator.hardwareConcurrency) || 0,
-      ram: (navigator && navigator.deviceMemory) || 0,
-      network: (navigator && navigator.connection && navigator.connection.type) || '',
-      galaxyVersion: Version,
-    }, user);
+    this.user = Object.assign(
+      {
+        cpu: (navigator && navigator.hardwareConcurrency) || 0,
+        ram: (navigator && navigator.deviceMemory) || 0,
+        network: (navigator && navigator.connection && navigator.connection.type) || "",
+        galaxyVersion: Version,
+      },
+      user
+    );
   }
 
   restartMonitoring() {
@@ -216,7 +225,7 @@ export const MonitoringData = class {
       rtt: c.rtt,
       saveData: c.saveData,
       type: c.type,
-    }
+    };
   }
 
   onSlowLink(slowLinkType, lost) {
@@ -237,47 +246,54 @@ export const MonitoringData = class {
   }
 
   getMiscData(timestamp) {
-    return Object.assign({timestamp, type: 'misc'}, this.miscData);
+    return Object.assign({timestamp, type: "misc"}, this.miscData);
   }
 
   monitor_() {
     if (!this.pluginHandle || !this.localAudioTrack || !this.user) {
-      return;  // User not connected.
+      return; // User not connected.
     }
     const pc = (this.pluginHandle && this.pluginHandle.webrtcStuff && this.pluginHandle.webrtcStuff.pc) || null;
     const defaultTimestamp = new Date().getTime();
-    if (pc && this.localAudioTrack.constructor.name === 'MediaStreamTrack' &&
-        (!this.localVideoTrack || this.localVideoTrack.constructor.name === 'MediaStreamTrack')) {
+    if (
+      pc &&
+      this.localAudioTrack.constructor.name === "MediaStreamTrack" &&
+      (!this.localVideoTrack || this.localVideoTrack.constructor.name === "MediaStreamTrack")
+    ) {
       const datas = [];
-      const SKIP_REPORTS = ['certificate', 'codec', 'track', 'local-candidate', 'remote-candidate'];
+      const SKIP_REPORTS = ["certificate", "codec", "track", "local-candidate", "remote-candidate"];
       const getStatsPromises = [];
-      getStatsPromises.push(pc.getStats(this.localAudioTrack).then(stats => {
-        const audioReports = {name: 'audio', reports: [], timestamp: defaultTimestamp};
-        stats.forEach(report => {
-          // Remove not necessary reports.
-          if (!SKIP_REPORTS.includes(report.type)) {
-            if (report.timestamp) {
-              audioReports.timestamp = report.timestamp;
-            }
-            audioReports.reports.push(report);
-          }
-        });
-        datas.push(audioReports);
-      }))
-      if (this.localVideoTrack) {
-        getStatsPromises.push(pc.getStats(this.localVideoTrack).then((stats) => {
-          const videoReports = {name: 'video', reports: [], timestamp: defaultTimestamp};
-          stats.forEach(report => {
+      getStatsPromises.push(
+        pc.getStats(this.localAudioTrack).then((stats) => {
+          const audioReports = {name: "audio", reports: [], timestamp: defaultTimestamp};
+          stats.forEach((report) => {
             // Remove not necessary reports.
             if (!SKIP_REPORTS.includes(report.type)) {
-            if (report.timestamp) {
-              videoReports.timestamp = report.timestamp;
-            }
-              videoReports.reports.push(report);
+              if (report.timestamp) {
+                audioReports.timestamp = report.timestamp;
+              }
+              audioReports.reports.push(report);
             }
           });
-          datas.push(videoReports);
-        }));
+          datas.push(audioReports);
+        })
+      );
+      if (this.localVideoTrack) {
+        getStatsPromises.push(
+          pc.getStats(this.localVideoTrack).then((stats) => {
+            const videoReports = {name: "video", reports: [], timestamp: defaultTimestamp};
+            stats.forEach((report) => {
+              // Remove not necessary reports.
+              if (!SKIP_REPORTS.includes(report.type)) {
+                if (report.timestamp) {
+                  videoReports.timestamp = report.timestamp;
+                }
+                videoReports.reports.push(report);
+              }
+            });
+            datas.push(videoReports);
+          })
+        );
       }
 
       // Missing some important reports. Add them manually.
@@ -287,39 +303,45 @@ export const MonitoringData = class {
       }
       let mediaSourceIds = [];
       let ssrcs = [];
-      getStatsPromises.push(pc.getStats(null).then((stats) => {
-        stats.forEach(report => {
-          if (ids.includes(report.trackIdentifier)) {
-            if (report.mediaSourceId && !mediaSourceIds.includes(report.mediaSourceId)) {
-              mediaSourceIds.push(report.mediaSourceId);
-            }
-          }
-        });
-        if (mediaSourceIds.length) {
-          stats.forEach(report => {
-            if (mediaSourceIds.includes(report.mediaSourceId)) {
-              if (report.ssrc && !ssrcs.includes(report.ssrc)) {
-                ssrcs.push(report.ssrc);
+      getStatsPromises.push(
+        pc.getStats(null).then((stats) => {
+          stats.forEach((report) => {
+            if (ids.includes(report.trackIdentifier)) {
+              if (report.mediaSourceId && !mediaSourceIds.includes(report.mediaSourceId)) {
+                mediaSourceIds.push(report.mediaSourceId);
               }
             }
           });
-        }
-        if (ssrcs.length) {
-          stats.forEach(report => {
-            if (ssrcs.includes(report.ssrc) || mediaSourceIds.includes(report.mediaSourceId) || ids.includes(report.trackIdentifier)) {
-              const kind = report.kind;
-              const type = report.type;
-              const data = datas.find((data) => data.name === kind);
-              if (data && data.reports) {
-                const r = data.reports.find((r) => r.type === type);
-                if (!r) {
-                  data.reports.push(report);
+          if (mediaSourceIds.length) {
+            stats.forEach((report) => {
+              if (mediaSourceIds.includes(report.mediaSourceId)) {
+                if (report.ssrc && !ssrcs.includes(report.ssrc)) {
+                  ssrcs.push(report.ssrc);
                 }
               }
-            }
-          });
-        }
-      }));
+            });
+          }
+          if (ssrcs.length) {
+            stats.forEach((report) => {
+              if (
+                ssrcs.includes(report.ssrc) ||
+                mediaSourceIds.includes(report.mediaSourceId) ||
+                ids.includes(report.trackIdentifier)
+              ) {
+                const kind = report.kind;
+                const type = report.type;
+                const data = datas.find((data) => data.name === kind);
+                if (data && data.reports) {
+                  const r = data.reports.find((r) => r.type === type);
+                  if (!r) {
+                    data.reports.push(report);
+                  }
+                }
+              }
+            });
+          }
+        })
+      );
 
       Promise.all(getStatsPromises).then(() => {
         this.forEachMonitor_(datas, defaultTimestamp);
@@ -333,11 +355,11 @@ export const MonitoringData = class {
     const dataTimestamp = (datas && datas.length && datas[0].timestamp) || defaultTimestamp;
     const navigatorConnection = this.navigatorConnectionData(dataTimestamp);
     if (navigatorConnection) {
-      datas.push({name: 'NetworkInformation', reports: [navigatorConnection], timestamp: dataTimestamp});
+      datas.push({name: "NetworkInformation", reports: [navigatorConnection], timestamp: dataTimestamp});
     }
     const misc = this.getMiscData(dataTimestamp);
     if (misc) {
-      datas.push({name: 'Misc', reports: [misc], timestamp: dataTimestamp});
+      datas.push({name: "Misc", reports: [misc], timestamp: dataTimestamp});
     }
     if (datas.length) {
       this.storedData.push(datas);
@@ -356,33 +378,54 @@ export const MonitoringData = class {
     this.updateScore();
 
     const backoff = Math.min(MAX_EXPONENTIAL_BACKOFF_MS, FIVE_SECONDS_IN_MS * Math.pow(2, this.fetchErrors));
-    if ((!this.lastUpdateTimestamp && !this.fetchErrors) /* Fetch for the first time */ ||
-        ((lastTimestamp - this.lastUpdateTimestamp > this.spec.store_interval) /* Fetch after STORE_INTERVAL */ &&
-         (lastTimestamp - this.lastFetchTimestamp > backoff) /* Fetch after errors backoff */)) {
-      this.update(/*logToConsole=*/false);
+    if (
+      (!this.lastUpdateTimestamp && !this.fetchErrors) /* Fetch for the first time */ ||
+      (lastTimestamp - this.lastUpdateTimestamp > this.spec.store_interval /* Fetch after STORE_INTERVAL */ &&
+        lastTimestamp - this.lastFetchTimestamp > backoff) /* Fetch after errors backoff */
+    ) {
+      this.update(/*logToConsole=*/ false);
     }
   }
 
   lastTimestamp() {
-    return (this.storedData.length &&
-            this.storedData[this.storedData.length - 1] &&
-            this.storedData[this.storedData.length - 1].length) ?
-              this.storedData[this.storedData.length - 1][0].timestamp : 0;
+    return this.storedData.length &&
+      this.storedData[this.storedData.length - 1] &&
+      this.storedData[this.storedData.length - 1].length
+      ? this.storedData[this.storedData.length - 1][0].timestamp
+      : 0;
   }
 
   filterData(data, metrics, prefix) {
     if (Array.isArray(data)) {
-      return data.filter(e =>
-        metrics.some(m => m.startsWith([prefix, e.name ? `[name:${e.name}]` : `[type:${e.type}]`].filter(part => part).join('.'))))
-          .map(e => this.filterData(e, metrics, [prefix, e.name ? `[name:${e.name}]` : `[type:${e.type}]`].filter(part => part).join('.')));
-    } else if (typeof data === 'object') {
-      const filterField = ['type', 'name'].find(f => prefix.split('.').slice(-1)[0].startsWith(`[${f}`))
+      return data
+        .filter((e) =>
+          metrics.some((m) =>
+            m.startsWith([prefix, e.name ? `[name:${e.name}]` : `[type:${e.type}]`].filter((part) => part).join("."))
+          )
+        )
+        .map((e) =>
+          this.filterData(
+            e,
+            metrics,
+            [prefix, e.name ? `[name:${e.name}]` : `[type:${e.type}]`].filter((part) => part).join(".")
+          )
+        );
+    } else if (typeof data === "object") {
+      const filterField = ["type", "name"].find((f) => prefix.split(".").slice(-1)[0].startsWith(`[${f}`));
       const copy = {};
-      Object.entries(data).filter(([key, value]) => metrics.some(m => m.startsWith(`${prefix}.${key}`) || [filterField, 'timestamp'].includes(key)))
-        .forEach(([key, value]) => copy[key] = [filterField, 'timestamp'].includes(key) ? value : this.filterData(value, metrics, `${prefix}.${key}`));
+      Object.entries(data)
+        .filter(([key, value]) =>
+          metrics.some((m) => m.startsWith(`${prefix}.${key}`) || [filterField, "timestamp"].includes(key))
+        )
+        .forEach(
+          ([key, value]) =>
+            (copy[key] = [filterField, "timestamp"].includes(key)
+              ? value
+              : this.filterData(value, metrics, `${prefix}.${key}`))
+        );
       return copy;
     }
-    if (!metrics.some(m => m === prefix)) {
+    if (!metrics.some((m) => m === prefix)) {
       console.log(`Expected leaf ${data} to fully match prefix ${prefix} to one of the metrics ${metrics}`);
     }
     return data;
@@ -390,12 +433,18 @@ export const MonitoringData = class {
 
   getMetricValue(data, metric, prefix) {
     if (Array.isArray(data)) {
-      const e = data.find(e => metric.startsWith([prefix, e.name ? `[name:${e.name}]` : `[type:${e.type}]`].filter(part => part).join('.')));
+      const e = data.find((e) =>
+        metric.startsWith([prefix, e.name ? `[name:${e.name}]` : `[type:${e.type}]`].filter((part) => part).join("."))
+      );
       if (e === undefined) {
         return undefined;
       }
-      return this.getMetricValue(e, metric, [prefix, e.name ? `[name:${e.name}]` : `[type:${e.type}]`].filter(part => part).join('.'));
-    } else if (data && typeof data === 'object') {
+      return this.getMetricValue(
+        e,
+        metric,
+        [prefix, e.name ? `[name:${e.name}]` : `[type:${e.type}]`].filter((part) => part).join(".")
+      );
+    } else if (data && typeof data === "object") {
       for (const [key, value] of Object.entries(data)) {
         if (metric.startsWith(`${prefix}.${key}`)) {
           const ret = this.getMetricValue(value, metric, `${prefix}.${key}`);
@@ -415,7 +464,7 @@ export const MonitoringData = class {
   }
 
   updateScore() {
-    const data = this.storedData.map(d => this.filterData(d, this.spec.metrics_whitelist, ''));
+    const data = this.storedData.map((d) => this.filterData(d, this.spec.metrics_whitelist, ""));
     data.forEach((d) => {
       if (d.length && d[0].timestamp) {
         const timestamp = d[0].timestamp;
@@ -429,7 +478,7 @@ export const MonitoringData = class {
     const last = this.scoreData[this.scoreData.length - 1];
     if (last && last.length && /* [0] - audio */ last[0].timestamp) {
       const lastTimestamp = last[0].timestamp;
-      this.scoreData = this.scoreData.filter(d => {
+      this.scoreData = this.scoreData.filter((d) => {
         const timestamp = d[0].timestamp;
         return timestamp && timestamp >= lastTimestamp - FULL_BUCKET;
       });
@@ -437,38 +486,42 @@ export const MonitoringData = class {
         // Last timestamp.
         timestamp: [lastTimestamp],
         // Last timestamp values.
-        data: this.spec.metrics_whitelist.map(metric => [this.getMetricValue(last, metric, '')]),
+        data: this.spec.metrics_whitelist.map((metric) => [this.getMetricValue(last, metric, "")]),
         // Mapping form metric to it's index.
         index: this.spec.metrics_whitelist.reduce((acc, metric, idx) => {
           acc[metric] = idx;
           return acc;
         }, {}),
-        stats: this.spec.metrics_whitelist.map(metric => {
+        stats: this.spec.metrics_whitelist.map((metric) => {
           const stats = [new Stats(), new Stats(), new Stats()];
-          stats.forEach((stat, statIndex) => this.scoreData.map(d => {
-            return [d[0].timestamp, this.getMetricValue(d, metric, '')];
-          }).forEach(([timestamp, v]) => {
-            switch (statIndex) {
-              case 0: // Smallest time bucket.
-                if (lastTimestamp - timestamp > FIRST_BUCKET) {
-                  return;  // Skipp add.
+          stats.forEach((stat, statIndex) =>
+            this.scoreData
+              .map((d) => {
+                return [d[0].timestamp, this.getMetricValue(d, metric, "")];
+              })
+              .forEach(([timestamp, v]) => {
+                switch (statIndex) {
+                  case 0: // Smallest time bucket.
+                    if (lastTimestamp - timestamp > FIRST_BUCKET) {
+                      return; // Skipp add.
+                    }
+                    break;
+                  case 1: // Medium time bucket.
+                    if (lastTimestamp - timestamp > MEDIUM_BUCKET) {
+                      return; // Skipp add.
+                    }
+                    break;
+                  case 2: // Full time bucket
+                    if (lastTimestamp - timestamp > FULL_BUCKET) {
+                      return; // Skipp add.
+                    }
+                    break;
+                  default:
+                    break;
                 }
-                break;
-              case 1: // Medium time bucket.
-                if (lastTimestamp - timestamp > MEDIUM_BUCKET) {
-                  return;  // Skipp add.
-                }
-                break;
-              case 2: // Full time bucket
-                if (lastTimestamp - timestamp > FULL_BUCKET) {
-                  return;  // Skipp add.
-                }
-                break;
-              default:
-                break;
-            }
-            stat.add(v, timestamp);
-          }));
+                stat.add(v, timestamp);
+              })
+          );
           return stats;
         }),
       };
@@ -504,10 +557,12 @@ export const MonitoringData = class {
     const lastTimestamp = this.lastTimestamp();
     this.lastFetchTimestamp = lastTimestamp;
 
-    const sentData = this.storedData.map((d, index) => this.sentDataCount++ % 100 === 0 ? d : this.filterData(d, this.spec.metrics_whitelist, ''));
-    this.sentDataCount = this.sentDataCount % 100;  // Keep count small.
+    const sentData = this.storedData.map((d, index) =>
+      this.sentDataCount++ % 100 === 0 ? d : this.filterData(d, this.spec.metrics_whitelist, "")
+    );
+    this.sentDataCount = this.sentDataCount % 100; // Keep count small.
     // Update user network. We just need the latest and don't want to monitor this.
-    this.user.network = (navigator && navigator.connection && navigator.connection.type) || '';
+    this.user.network = (navigator && navigator.connection && navigator.connection.type) || "";
     // Update last streaming server from virtualStreamingJanus.
     this.user.streamingGateway = this.virtualStreamingJanus.streamingGateway;
     const data = {
@@ -515,36 +570,38 @@ export const MonitoringData = class {
       data: sentData,
     };
     if (logToConsole) {
-      console.log('Spec', this.spec);
-      console.log('Update', data);
+      console.log("Spec", this.spec);
+      console.log("Update", data);
     }
     // Update backend.
     fetch(`${MONITORING_BACKEND}/update`, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
-        'Content-Encoding': 'gzip',
+        "Content-Type": "application/json",
+        "Content-Encoding": "gzip",
       },
       body: pako.gzip(JSON.stringify(data)),
-    }).then((response) => {
-      if (response.ok) {
-        this.fetchErrors = 0;
-        return response.json();
-      } else {
-        throw new Error(`Fetch error: ${response.status}`);
-      }
-    }).then((data) => {
-      if (data && data.spec) {
-        this.updateSpec(data.spec);
-      }
-      this.lastUpdateTimestamp = lastTimestamp;
-      if (logToConsole) {
-        console.log('Update success.');
-      }
     })
-    .catch((error) => {
-      console.error('Update monitoring error:', error);
-      this.fetchErrors++;
-    });
+      .then((response) => {
+        if (response.ok) {
+          this.fetchErrors = 0;
+          return response.json();
+        } else {
+          throw new Error(`Fetch error: ${response.status}`);
+        }
+      })
+      .then((data) => {
+        if (data && data.spec) {
+          this.updateSpec(data.spec);
+        }
+        this.lastUpdateTimestamp = lastTimestamp;
+        if (logToConsole) {
+          console.log("Update success.");
+        }
+      })
+      .catch((error) => {
+        console.error("Update monitoring error:", error);
+        this.fetchErrors++;
+      });
   }
 };

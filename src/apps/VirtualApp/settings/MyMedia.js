@@ -1,13 +1,13 @@
-import React, { useEffect, useRef } from 'react';
-import classNames from 'classnames';
-import { Icon } from 'semantic-ui-react';
-import { renderUserName, renderNoCam, renderQuestion } from './helper';
-import Box from '@material-ui/core/Box';
+import React, {useEffect, useRef} from "react";
+import classNames from "classnames";
+import {Icon} from "semantic-ui-react";
+import {renderUserName, renderNoCam, renderQuestion} from "./helper";
+import Box from "@material-ui/core/Box";
 
 const MyMedia = (props) => {
-  const { cammuted, user, question, muted, connectionIcon, video = {} } = props;
-  const { setting: { height, width } = {}, stream }                     = video;
-  const videoRef                                                        = useRef();
+  const {cammuted, user, question, muted, connectionIcon, video = {}} = props;
+  const {setting: {height, width} = {}, stream} = video;
+  const videoRef = useRef();
 
   useEffect(() => {
     stream && videoRef && (videoRef.current.srcObject = stream);
@@ -22,26 +22,25 @@ const MyMedia = (props) => {
       autoPlay={true}
       controls={false}
       muted={true}
-      playsInline={true} />
+      playsInline={true}
+    />
   );
 
-  if (!video)
-    return null;
+  if (!video) return null;
 
   return (
     <Box className="video">
-      <div className={classNames('video__overlay')}>
+      <div className={classNames("video__overlay")}>
         {question ? renderQuestion() : null}
         <div className="video__title">
-          {muted ? <Icon name="microphone slash" size="small" color="red" /> : ''}
+          {muted ? <Icon name="microphone slash" size="small" color="red" /> : ""}
           {renderUserName(user)}
-          <Icon style={{ marginLeft: '0.3rem' }} name="signal" size="small" color={connectionIcon} />
+          <Icon style={{marginLeft: "0.3rem"}} name="signal" size="small" color={connectionIcon} />
         </div>
       </div>
       {cammuted ? renderNoCam() : renderVideo()}
     </Box>
   );
-
 };
 
 export default MyMedia;

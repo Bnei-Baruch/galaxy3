@@ -1,23 +1,24 @@
-import React from 'react';
-import { Fullscreen as FullscreenIcon, FullscreenExit } from '@material-ui/icons';
-import { Tooltip, IconButton } from '@material-ui/core';
-import { useTranslation } from 'react-i18next';
-import { grey } from '@material-ui/core/colors';
+import React from "react";
+import {Fullscreen as FullscreenIcon, FullscreenExit} from "@material-ui/icons";
+import {Tooltip, IconButton} from "@material-ui/core";
+import {useTranslation} from "react-i18next";
+import {grey} from "@material-ui/core/colors";
 
 const Fullscreen = (props) => {
-  const { action, isOn, disabled, color = grey['800'] } = props;
-  const { t }                                           = useTranslation();
+  const {action, isOn, disabled, color = grey["800"]} = props;
+  const {t} = useTranslation();
 
   const handleAction = () => action();
 
   return (
-    <Tooltip title={t(!isOn ? 'oldClient.openFullScreen' : 'oldClient.closeFullScreen')} disableTouchListener={true}>
+    <Tooltip title={t(!isOn ? "oldClient.openFullScreen" : "oldClient.closeFullScreen")} disableTouchListener={true}>
       <span>
         <IconButton
-          style={{ color }}
-          aria-label={t(!isOn ? 'oldClient.openFullScreen' : 'oldClient.closeFullScreen')}
+          style={{color}}
+          aria-label={t(!isOn ? "oldClient.openFullScreen" : "oldClient.closeFullScreen")}
           disabled={disabled}
-          onClick={handleAction}>
+          onClick={handleAction}
+        >
           {isOn ? <FullscreenExit /> : <FullscreenIcon />}
         </IconButton>
       </span>
@@ -25,5 +26,5 @@ const Fullscreen = (props) => {
   );
 };
 
-export { Fullscreen };
+export {Fullscreen};
 export default Fullscreen;

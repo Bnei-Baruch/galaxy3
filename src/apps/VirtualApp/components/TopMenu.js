@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, {useRef, useState} from "react";
 
 import {
   List,
@@ -8,32 +8,32 @@ import {
   Menu,
   Divider,
   ListItemSecondaryAction,
-  Collapse
-} from '@material-ui/core';
-import { AccountBox, Close, ExitToApp, Menu as MenuIcon, Settings, Translate } from '@material-ui/icons';
-import { grey } from '@material-ui/core/colors';
-import makeStyles from '@material-ui/core/styles/makeStyles';
+  Collapse,
+} from "@material-ui/core";
+import {AccountBox, Close, ExitToApp, Menu as MenuIcon, Settings, Translate} from "@material-ui/icons";
+import {grey} from "@material-ui/core/colors";
+import makeStyles from "@material-ui/core/styles/makeStyles";
 
-import { kc } from '../../../components/UserManager';
-import { updateSentryUser } from '../../../shared/sentry';
-import { languagesOptions, setLanguage } from '../../../i18n/i18n';
+import {kc} from "../../../components/UserManager";
+import {updateSentryUser} from "../../../shared/sentry";
+import {languagesOptions, setLanguage} from "../../../i18n/i18n";
 
 const helpUrlsByLang = {
-  'en': 'https://bit.ly/2JkBU08',
-  'es': 'https://bit.ly/39miYbJ',
-  'he': 'https://bit.ly/3amR5BV',
-  'ru': 'https://bit.ly/2UE1l1Y'
+  en: "https://bit.ly/2JkBU08",
+  es: "https://bit.ly/39miYbJ",
+  he: "https://bit.ly/3amR5BV",
+  ru: "https://bit.ly/2UE1l1Y",
 };
 
-const useStyles      = makeStyles(() => ({
+const useStyles = makeStyles(() => ({
   submenuItem: {
-    paddingLeft: '2em',
-    background: grey[300]
-  }
+    paddingLeft: "2em",
+    background: grey[300],
+  },
 }));
-export const TopMenu = ({ t, openSettings, open = false, setOpen, notApproved, i18n, user }) => {
-  const classes                           = useStyles();
-  const menuRef                           = useRef();
+export const TopMenu = ({t, openSettings, open = false, setOpen, notApproved, i18n, user}) => {
+  const classes = useStyles();
+  const menuRef = useRef();
   const [openLanguages, setOpenLanguages] = useState(false);
 
   const handleClose = () => {
@@ -42,9 +42,9 @@ export const TopMenu = ({ t, openSettings, open = false, setOpen, notApproved, i
 
   const toggleMenu = (o = !open) => setOpen(o);
 
-  const renderLanguage = ({ key, text, value }) => {
+  const renderLanguage = ({key, text, value}) => {
     return (
-      <ListItem button key={key} className={classes.submenuItem} onClick={e => setLanguage(value)}>
+      <ListItem button key={key} className={classes.submenuItem} onClick={(e) => setLanguage(value)}>
         <ListItemText primary={text} />
         <Divider />
       </ListItem>
@@ -54,54 +54,66 @@ export const TopMenu = ({ t, openSettings, open = false, setOpen, notApproved, i
   const renderMenu = () => {
     return (
       <List>
-        <ListItem style={{ fontWeight: 'bold' }}>{t('oldClient.user')}</ListItem>
-        <ListItem button key={'account'} onClick={() => window.open('https://accounts.kab.info/auth/realms/main/account', '_blank')}>
-          <ListItemText primary={t('oldClient.myAccount')} />
-          <ListItemSecondaryAction><AccountBox /></ListItemSecondaryAction>
+        <ListItem style={{fontWeight: "bold"}}>{t("oldClient.user")}</ListItem>
+        <ListItem
+          button
+          key={"account"}
+          onClick={() => window.open("https://accounts.kab.info/auth/realms/main/account", "_blank")}
+        >
+          <ListItemText primary={t("oldClient.myAccount")} />
+          <ListItemSecondaryAction>
+            <AccountBox />
+          </ListItemSecondaryAction>
         </ListItem>
-        {
-          notApproved
-            ? (
-              <>
-                <ListItem button key={'languages'} onClick={() => setOpenLanguages(!openLanguages)}>
-                  <ListItemText primary={t('oldClient.language')} />
-                  <ListItemSecondaryAction><Translate /></ListItemSecondaryAction>
-                </ListItem>
-                <Collapse in={openLanguages} timeout="auto" unmountOnExit>
-                  <List component="div" disablePadding>
-                    {languagesOptions.map(renderLanguage)}
-                  </List>
-                </Collapse>
-              </>
-            )
-            : (
-              <ListItem button key={'settings'} onClick={openSettings}>
-                <ListItemText primary={t('oldClient.settings')} />
-                <ListItemSecondaryAction><Settings /></ListItemSecondaryAction>
-              </ListItem>
-            )
-        }
-        <ListItem button key={'signOut'} onClick={() => {
-          kc.logout();
-          updateSentryUser(null);
-        }}>
-          <ListItemText primary={t('oldClient.signOut')} />
-          <ListItemSecondaryAction><ExitToApp /></ListItemSecondaryAction>
+        {notApproved ? (
+          <>
+            <ListItem button key={"languages"} onClick={() => setOpenLanguages(!openLanguages)}>
+              <ListItemText primary={t("oldClient.language")} />
+              <ListItemSecondaryAction>
+                <Translate />
+              </ListItemSecondaryAction>
+            </ListItem>
+            <Collapse in={openLanguages} timeout="auto" unmountOnExit>
+              <List component="div" disablePadding>
+                {languagesOptions.map(renderLanguage)}
+              </List>
+            </Collapse>
+          </>
+        ) : (
+          <ListItem button key={"settings"} onClick={openSettings}>
+            <ListItemText primary={t("oldClient.settings")} />
+            <ListItemSecondaryAction>
+              <Settings />
+            </ListItemSecondaryAction>
+          </ListItem>
+        )}
+        <ListItem
+          button
+          key={"signOut"}
+          onClick={() => {
+            kc.logout();
+            updateSentryUser(null);
+          }}
+        >
+          <ListItemText primary={t("oldClient.signOut")} />
+          <ListItemSecondaryAction>
+            <ExitToApp />
+          </ListItemSecondaryAction>
         </ListItem>
         <Divider />
 
-        <ListItem style={{ fontWeight: 'bold' }}>{t('oldClient.usefulLinks')}</ListItem>
-        <ListItem button onClick={() => window.open('https://kabbalahgroup.info/internet/', '_blank')}>
-          <ListItemText>{t('oldClient.SvivaTova')}</ListItemText>
+        <ListItem style={{fontWeight: "bold"}}>{t("oldClient.usefulLinks")}</ListItem>
+        <ListItem button onClick={() => window.open("https://kabbalahgroup.info/internet/", "_blank")}>
+          <ListItemText>{t("oldClient.SvivaTova")}</ListItemText>
         </ListItem>
-        <ListItem button onClick={() => window.open('https://bb.kli.one', '_blank')}>
-          <ListItemText>{t('oldClient.LiveGroups')}</ListItemText>
+        <ListItem button onClick={() => window.open("https://bb.kli.one", "_blank")}>
+          <ListItemText>{t("oldClient.LiveGroups")}</ListItemText>
         </ListItem>
-        <ListItem button onClick={() => window.open('https://ktuviot.kbb1.com/three_languages', '_blank')}>
-          <ListItemText>{t('oldClient.WorkshopQuestions')}</ListItemText>
+        <ListItem button onClick={() => window.open("https://ktuviot.kbb1.com/three_languages", "_blank")}>
+          <ListItemText>{t("oldClient.WorkshopQuestions")}</ListItemText>
         </ListItem>
-        <ListItem button onClick={() => window.open('https://kabbalahmedia.info/', '_blank')}>
-          <ListItemText>{t('oldClient.KabbalahMedia')}</ListItemText>
+        <ListItem button onClick={() => window.open("https://kabbalahmedia.info/", "_blank")}>
+          <ListItemText>{t("oldClient.KabbalahMedia")}</ListItemText>
         </ListItem>
       </List>
     );
@@ -109,13 +121,7 @@ export const TopMenu = ({ t, openSettings, open = false, setOpen, notApproved, i
 
   return (
     <>
-      <IconButton
-        edge="start"
-        color="inherit"
-        onClick={() => toggleMenu(true)}
-        style={{ margin: '0 1em' }}
-        ref={menuRef}
-      >
+      <IconButton edge="start" color="inherit" onClick={() => toggleMenu(true)} style={{margin: "0 1em"}} ref={menuRef}>
         {open ? <Close /> : <MenuIcon />}
       </IconButton>
       <Menu
@@ -124,8 +130,8 @@ export const TopMenu = ({ t, openSettings, open = false, setOpen, notApproved, i
         open={open}
         onClose={handleClose}
         getContentAnchorEl={null}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-        transformOrigin={{ vertical: 'top', horizontal: 'center' }}
+        anchorOrigin={{vertical: "bottom", horizontal: "center"}}
+        transformOrigin={{vertical: "top", horizontal: "center"}}
       >
         {renderMenu()}
       </Menu>
