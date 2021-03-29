@@ -3,7 +3,8 @@ import {
   Label,
   Dropdown,
   Header,
-  Icon
+  Icon,
+  Grid, Image
 } from 'semantic-ui-react';
 import NewWindow from '@hinaser/react-new-window';
 import {
@@ -16,6 +17,7 @@ import './BroadcastStream.scss';
 import Volume from './components/Volume';
 import { withTranslation } from 'react-i18next';
 import { isFullScreen, toggleFullScreen } from './FullScreenHelper';
+import audioOnly from '../../shared/audio_only.svg';
 import { SubtitlesContainer } from './subtitles/SubtitlesContainer';
 
 class VirtualStreaming extends Component {
@@ -217,14 +219,25 @@ class VirtualStreaming extends Component {
           {talking && <Label className='talk' size='massive' color='red'><Icon name='microphone' />On</Label>}
         </div>
         <div className='mediaplayer'>
-          <video ref={(ref) => this.videoRef(ref)}
-                 id="remoteVideo"
-                 width="134"
-                 height="100"
-                 autoPlay={true}
-                 controls={false}
-                 muted={true}
-                 playsInline={true} />
+          {videos === NO_VIDEO_OPTION_VALUE ?
+            <Grid verticalAlign='middle' columns={1} centered>
+              <Grid.Row>
+                <Grid.Column>
+                  <Image className="noVideoPlayerIcon" src={audioOnly} />
+                </Grid.Column>
+              </Grid.Row>
+            </Grid>
+            : (
+              <video ref={(ref) => this.videoRef(ref)}
+                     id="remoteVideo"
+                     width="134"
+                     height="100"
+                     autoPlay={true}
+                     controls={false}
+                     muted={true}
+                     playsInline={true} />
+            )
+          }
         </div>
       </div>
     );
