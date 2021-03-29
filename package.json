@@ -42,6 +42,7 @@
     "starts": "HTTPS=true react-scripts start",
     "build": "react-scripts build",
     "deploy": "react-scripts build && scripts/deploy.sh",
+    "format": "yarn run prettier --no-bracket-spacing --print-width 120  --no-single-quote --write 'src/**/*.js'",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },
