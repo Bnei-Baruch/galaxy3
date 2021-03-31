@@ -35,6 +35,7 @@ export const initSubtitle = (lang, onMessage) => {
   currentMqttLang && mqtt.exit("subtitles/galaxy/" + currentMqttLang);
   mqtt.join("subtitles/galaxy/" + lang);
   currentMqttLang = lang;
+  if (!mqtt.mq) return;
   mqtt.mq.on("MqttSubtitlesEvent", (json) => {
     let msg = JSON.parse(json);
     if (msg.message === "on_air") return;
