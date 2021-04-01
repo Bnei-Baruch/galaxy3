@@ -2,6 +2,7 @@ import ReconnectingWebSocket from "reconnectingwebsocket";
 import {WEB_SOCKET_WORKSHOP_QUESTION} from "../../../shared/env";
 import {MSGS_TYPES} from "./MessageManager";
 import mqtt from "../../../shared/mqtt";
+import kc from "../../../components/UserManager";
 
 let currentMqttLang;
 export const initWQ = (onMessage) => {
@@ -29,13 +30,31 @@ export const initWQ = (onMessage) => {
   });
 };
 
-export const initSubtitle = (lang, onMessage) => {
+export const initSubtitle = (lang, onMessage, attempts = 0) => {
   if (!lang) return;
 
+  if (!mqtt.mq) {
+    if (attempts > 0) return;
+    const {
+      sessionId: id,
+      profile: {email},
+      idToken: token,
+    } = kc;
+    mqtt.setToken(token);
+    return mqtt.init(
+      {id, email},
+      () => {
+        mqtt.watch((msg) => console.log("[mqtt] Message for not gxy user: ", msg));
+        initSubtitle(lang, onMessage, ++attempts);
+      },
+      true
+    );
+  }
+
+  currentMqttLang = lang;
   currentMqttLang && mqtt.exit("subtitles/galaxy/" + currentMqttLang);
   mqtt.join("subtitles/galaxy/" + lang);
-  currentMqttLang = lang;
-  if (!mqtt.mq) return;
+
   mqtt.mq.on("MqttSubtitlesEvent", (json) => {
     let msg = JSON.parse(json);
     if (msg.message === "on_air") return;

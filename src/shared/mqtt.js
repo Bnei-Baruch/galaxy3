@@ -18,7 +18,7 @@ class MqttMsg {
 
     const service = isServiceID(user.id);
     //const token = service ? GxyJanus.globalConfig.dynamic_config.mqtt_auth : this.token;
-    const token = GxyJanus.globalConfig.dynamic_config.mqtt_auth;
+    const token = GxyJanus?.globalConfig?.dynamic_config?.mqtt_auth || this.token;
     const id = service ? user.id : user.id + "-" + randomString(3);
 
     // const transformUrl = (url, options, client) => {
