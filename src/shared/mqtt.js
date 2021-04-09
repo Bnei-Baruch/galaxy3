@@ -96,12 +96,23 @@ class MqttMsg {
   };
 
   watch = (callback, stat) => {
+    let message;
     this.mq.on("message", (topic, data, packet) => {
       console.debug("[mqtt] Got data on topic: ", topic);
       if (/subtitles\/galaxy\//.test(topic)) {
         this.mq.emit("MqttSubtitlesEvent", data);
       } else {
-        let message = stat ? data.toString() : JSON.parse(data.toString());
+        if (stat) {
+          message = data.toString();
+        } else {
+          try {
+            message = JSON.parse(data.toString());
+          } catch (e) {
+            console.error(e);
+            console.error("[mqtt] Not valid JSON, ", data.toString());
+            return;
+          }
+        }
         console.log("[mqtt] Got data on topic: ", topic, message);
         callback(message, topic);
       }
