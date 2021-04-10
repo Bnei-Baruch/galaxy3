@@ -17,14 +17,15 @@ class MqttMsg {
     this.user = user;
 
     const service = isServiceID(user.id);
-    //const token = service ? GxyJanus.globalConfig.dynamic_config.mqtt_auth : this.token;
-    const token = GxyJanus?.globalConfig?.dynamic_config?.mqtt_auth || this.token;
+    const svc_token = GxyJanus?.globalConfig?.dynamic_config?.mqtt_auth;
+    const token = service ? svc_token : this.token;
     const id = service ? user.id : user.id + "-" + randomString(3);
 
-    // const transformUrl = (url, options, client) => {
-    //   client.options.password = token;
-    //   return url;
-    // };
+    const transformUrl = (url, options, client) => {
+      client.options.clientId = service ? user.id : user.id + "-" + randomString(3);
+      client.options.password = service ? svc_token : this.token;
+      return url;
+    };
 
     let options = {
       keepalive: 10,
@@ -35,7 +36,7 @@ class MqttMsg {
       clean: true,
       username: user.email,
       password: token,
-      //transformWsUrl: transformUrl,
+      transformWsUrl: transformUrl,
       properties: {
         sessionExpiryInterval: 5,
         maximumPacketSize: 10000,
