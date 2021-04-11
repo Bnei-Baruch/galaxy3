@@ -50,7 +50,6 @@ import GxyJanus from "../../shared/janus-utils";
 import audioModeSvg from "../../shared/audio-mode.svg";
 import fullModeSvg from "../../shared/full-mode.svg";
 import ConfigStore from "../../shared/ConfigStore";
-import {GuaranteeDeliveryManager} from "../../shared/GuaranteeDelivery";
 import {toggleFullScreen, isFullScreen} from "./FullScreenHelper";
 
 import {AppBar, Badge, Box, Button as ButtonMD, ButtonGroup, Grid, IconButton} from "@material-ui/core";
@@ -158,7 +157,6 @@ class VirtualClient extends Component {
     muteMyCamOnInit: false,
     videos: Number(localStorage.getItem("vrt_video")) || 1,
     premodStatus: false,
-    gdm: null,
     asideMsgCounter: {drawing: 0, chat: 0},
     leftAsideSize: 3,
     shidurForGuestReady: false,
@@ -258,8 +256,6 @@ class VirtualClient extends Component {
       return;
     }
 
-    const gdm = new GuaranteeDeliveryManager(user.id);
-    this.setState({gdm});
     const {t} = this.props;
     localStorage.setItem("question", false);
     localStorage.setItem("sound_test", false);
@@ -1433,25 +1429,13 @@ class VirtualClient extends Component {
   };
 
   handleAudioOut = (data) => {
-    const {gdm} = this.state;
-    gdm
-      .accept(data, (msg) => this.chat.sendCmdMessage(msg))
-      .then((data) => {
-        if (data === null) {
-          console.log("Message received more then once.");
-          return;
-        }
-        this.state.virtualStreamingJanus.streamGalaxy(data.status, 4, "");
-        if (data.status) {
-          // remove question mark when sndman unmute our room
-          if (this.state.question) {
-            this.handleQuestion();
-          }
-        }
-      })
-      .catch((error) => {
-        console.error(`Failed receiving ${data}: ${error}`);
-      });
+    this.state.virtualStreamingJanus.streamGalaxy(data.status, 4, "");
+    if (data.status) {
+      // remove question mark when sndman unmute our room
+      if (this.state.question) {
+        this.handleQuestion();
+      }
+    }
   };
 
   camMute = (cammuted) => {
@@ -1839,7 +1823,6 @@ class VirtualClient extends Component {
           janus={janus}
           room={room}
           user={user}
-          gdm={this.state.gdm}
           msg_protocol={this.state.msg_protocol}
           onCmdMsg={this.handleCmdData}
           onNewMsg={this.onChatMessage}
@@ -2591,7 +2574,6 @@ class VirtualClient extends Component {
                 janus={janus}
                 room={room}
                 user={user}
-                gdm={this.state.gdm}
                 msg_protocol={this.state.msg_protocol}
                 onCmdMsg={this.handleCmdData}
                 onNewMsg={this.onChatMessage}

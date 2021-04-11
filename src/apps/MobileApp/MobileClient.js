@@ -50,7 +50,6 @@ import VirtualStreamingMobile from "./VirtualStreamingMobile";
 import VirtualStreamingJanus from "../../shared/VirtualStreamingJanus";
 import VirtualChat from "../VirtualApp/VirtualChat";
 import ConfigStore from "../../shared/ConfigStore";
-import {GuaranteeDeliveryManager} from "../../shared/GuaranteeDelivery";
 import {updateSentryUser} from "../../shared/sentry";
 import {getUserRole, userRolesEnum} from "../../shared/enums";
 import {RegistrationModals} from "./RegistrationModals";
@@ -125,7 +124,6 @@ class MobileClient extends Component {
     chatMessagesCount: 0,
     chatVisible: false,
     settingsActiveIndex: -1,
-    gdm: null,
     premodStatus: false,
     msg_protocol: "mqtt",
   };
@@ -246,8 +244,6 @@ class MobileClient extends Component {
       return;
     }
 
-    let gdm = new GuaranteeDeliveryManager(user.id);
-    this.setState({gdm});
     localStorage.setItem("question", false);
     localStorage.setItem("sound_test", false);
     localStorage.setItem("uuid", user.id);
@@ -1489,26 +1485,13 @@ class MobileClient extends Component {
   };
 
   handleAudioOut = (data) => {
-    const {gdm} = this.state;
-
-    gdm
-      .accept(data, (msg) => this.chat.sendCmdMessage(msg))
-      .then((data) => {
-        if (data === null) {
-          console.log("Message received more then once.");
-          return;
-        }
-        this.state.virtualStreamingJanus.streamGalaxy(data.status, 4, "");
-        if (data.status) {
-          // remove question mark when sndman unmute our room
-          if (this.state.question) {
-            this.handleQuestion();
-          }
-        }
-      })
-      .catch((error) => {
-        console.error(`Failed receiving ${data}: ${error}`);
-      });
+    this.state.virtualStreamingJanus.streamGalaxy(data.status, 4, "");
+    if (data.status) {
+      // remove question mark when sndman unmute our room
+      if (this.state.question) {
+        this.handleQuestion();
+      }
+    }
   };
 
   otherCamsMuteToggle = () => {
@@ -2136,7 +2119,6 @@ class MobileClient extends Component {
               janus={janus}
               room={room}
               user={user}
-              gdm={this.state.gdm}
               onCmdMsg={this.handleCmdData}
               onNewMsg={this.onChatMessage}
             />

@@ -209,11 +209,6 @@ class VirtualChat extends Component {
       let whisper = json["whisper"];
 
       let message = JSON.parse(msg);
-      const {gdm} = this.props;
-      if (gdm.checkAck(message)) {
-        // Ack received, do nothing.
-        return;
-      }
 
       if (whisper === true) {
         // Private message
