@@ -51,8 +51,8 @@ export const initSubtitle = (lang, onMessage, attempts = 0) => {
     );
   }
 
-  currentMqttLang = lang;
   currentMqttLang && mqtt.exit("subtitles/galaxy/" + currentMqttLang);
+  currentMqttLang = lang;
   mqtt.join("subtitles/galaxy/" + lang);
 
   mqtt.mq.on("MqttSubtitlesEvent", (json) => {
