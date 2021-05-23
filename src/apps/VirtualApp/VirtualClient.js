@@ -449,9 +449,9 @@ class VirtualClient extends Component {
     });
   };
 
-  setVideoDevice = (video_device) => {
+  setVideoDevice = (video_device, reconnect) => {
     let {media} = this.state;
-    if (video_device === media.video.video_device) return;
+    if (video_device === media.video.video_device && !reconnect) return;
     getMediaStream(false, true, media.video.setting, null, video_device).then((data) => {
       console.log(data);
       const [stream, error] = data;
@@ -570,29 +570,7 @@ class VirtualClient extends Component {
   mediaState = (media) => {
     const {t} = this.props;
     // Handle video
-    if (media === "video") {
-      let count = 0;
-      let chk = setInterval(() => {
-        count++;
-        let {video, ice} = this.state;
-
-        // Video is back stop counter
-        if (count < 11 && video) {
-          clearInterval(chk);
-        }
-
-        // Network problem handled in iceState
-        if (count < 11 && ice === "disconnected") {
-          clearInterval(chk);
-        }
-
-        // Video still not back disconnecting
-        if (count >= 10) {
-          clearInterval(chk);
-          alert(t("oldClient.serverStoppedReceiveOurMedia"));
-        }
-      }, 3000);
-    }
+    if (media === "video") return;
 
     //Handle audio
     if (media === "audio") {
@@ -677,7 +655,23 @@ class VirtualClient extends Component {
       onlocaltrack: (track, on) => {
         Janus.log(" ::: Got a local track event :::");
         Janus.log("Local track " + (on ? "added" : "removed") + ":", track);
-        let {videoroom} = this.state;
+        let {videoroom, media} = this.state;
+        if (!on) {
+          if (track?.kind === "video") {
+            const {localVideo} = this.refs;
+            Janus.log("Remove local video");
+            media.video.stream.getTracks().forEach((t) => t.stop());
+            Janus.detachMediaStream(localVideo);
+          }
+        } else {
+          if (track?.kind === "video") {
+            Janus.log("Add local video");
+            const {video} = media;
+
+            this.setVideoDevice(video.devices[0].deviceId, true);
+          }
+        }
+
         videoroom.muteAudio();
         if (track && track.kind) {
           if (track.kind === "video") {
@@ -884,6 +878,10 @@ class VirtualClient extends Component {
         Janus.debug(jsep);
         const publish = {request: "configure", audio: useAudio, video: useVideo, data: false};
         videoroom.send({message: publish, jsep: jsep});
+        if (!useVideo) {
+          media.video.stream.getTracks().forEach((t) => t.stop());
+          this.setState({cammuted: true});
+        }
       },
       error: (error) => {
         Janus.error("WebRTC error:", error);
@@ -947,8 +945,10 @@ class VirtualClient extends Component {
             audio: {audio_device},
             video: {video_device},
           },
+          cammuted,
+          muteMyCamOnInit,
         } = this.state;
-        this.publishOwnFeed(!!video_device, !!audio_device);
+        this.publishOwnFeed(!!video_device && !cammuted && !muteMyCamOnInit, !!audio_device);
 
         // Any new feed to attach to?
         if (msg["publishers"] !== undefined && msg["publishers"] !== null) {
@@ -1010,9 +1010,6 @@ class VirtualClient extends Component {
           if (this.state.muteOtherCams) {
             this.setState({videos: NO_VIDEO_OPTION_VALUE});
             this.state.virtualStreamingJanus.setVideo(NO_VIDEO_OPTION_VALUE);
-          }
-          if (this.state.cammuted !== this.state.muteMyCamOnInit) {
-            this.camMute(!this.state.muteMyCamOnInit);
           }
         } else if (msg["publishers"] !== undefined && msg["publishers"] !== null) {
           // User just joined the room.
@@ -1151,21 +1148,33 @@ class VirtualClient extends Component {
         let {mids} = this.state;
         let feed = mids[mid].feed_id;
         Janus.log(" >> This track is coming from feed " + feed + ":", mid);
-        // If we're here, a new track was added
-        if (track.kind === "audio" && on) {
-          // New audio track: create a stream out of it, and use a hidden <audio> element
-          let stream = new MediaStream();
-          stream.addTrack(track.clone());
-          Janus.log("Created remote audio stream:", stream);
-          let remoteaudio = this.refs["remoteAudio" + feed];
-          Janus.attachMediaStream(remoteaudio, stream);
-        } else if (track.kind === "video" && on) {
-          // New video track: create a stream out of it
-          let stream = new MediaStream();
-          stream.addTrack(track.clone());
-          Janus.log("Created remote video stream:", stream);
-          let remotevideo = this.refs["remoteVideo" + feed];
-          Janus.attachMediaStream(remotevideo, stream);
+        if (on) {
+          // If we're here, a new track was added
+          if (track.kind === "audio") {
+            // New audio track: create a stream out of it, and use a hidden <audio> element
+            let stream = new MediaStream();
+            stream.addTrack(track.clone());
+            Janus.log("Created remote audio stream:", stream);
+            let remoteaudio = this.refs["remoteAudio" + feed];
+            Janus.attachMediaStream(remoteaudio, stream);
+          } else if (track.kind === "video") {
+            // New video track: create a stream out of it
+            let stream = new MediaStream();
+            stream.addTrack(track.clone());
+            Janus.log("Created remote video stream:", stream);
+            let remotevideo = this.refs["remoteVideo" + feed];
+            Janus.attachMediaStream(remotevideo, stream);
+          }
+        } else {
+          if (track.kind === "video") {
+            Janus.log("Removed remote video");
+            let remotevideo = this.refs["remoteVideo" + feed];
+
+            if (remotevideo?.getTracks) {
+              remotevideo.getTracks().forEach((t) => t.stop());
+              Janus.detachMediaStream(remotevideo);
+            }
+          }
         }
       },
       ondataopen: (label) => {
@@ -1439,14 +1448,48 @@ class VirtualClient extends Component {
   };
 
   camMute = (cammuted) => {
-    const {videoroom} = this.state;
+    const {videoroom, media} = this.state;
+    const {
+      video: {setting, video_device},
+    } = media;
+    const {width, height, ideal} = setting;
+
     const user = Object.assign({}, this.state.user);
     if (user.role === userRolesEnum.ghost) return;
     this.makeDelay();
 
     if (videoroom) {
       user.camera = cammuted;
-      cammuted ? videoroom.unmuteVideo() : videoroom.muteVideo();
+      if (!cammuted) {
+        videoroom.createOffer({
+          media: {removeVideo: true},
+          simulcast: false,
+          success: (jsep) => {
+            Janus.debug("Got publisher SDP!");
+            Janus.debug(jsep);
+            videoroom.send({message: {request: "configure"}, jsep: jsep});
+          },
+          error: (error) => {
+            Janus.error("WebRTC error:", error);
+          },
+        });
+      } else {
+        videoroom.createOffer({
+          media: {
+            addVideo: true,
+            video: {width, height, frameRate: {ideal, min: 1}, deviceId: {exact: video_device}},
+          },
+          simulcast: false,
+          success: (jsep) => {
+            Janus.debug("Got publisher SDP!");
+            Janus.debug(jsep);
+            videoroom.send({message: {request: "configure"}, jsep: jsep});
+          },
+          error: (error) => {
+            Janus.error("WebRTC error:", error);
+          },
+        });
+      }
       this.setState({user, cammuted: !cammuted});
 
       updateSentryUser(user);
@@ -1719,7 +1762,7 @@ class VirtualClient extends Component {
             <MuteVideo
               t={t}
               action={this.camMute.bind(this)}
-              disabled={video_device === null || !localVideoTrack || delay}
+              disabled={video_device === null || delay}
               isOn={cammuted}
             />
           </ButtonGroup>
@@ -2440,10 +2483,7 @@ class VirtualClient extends Component {
                 <Icon color={muted ? "red" : null} name={!muted ? "microphone" : "microphone slash"} />
                 {t(muted ? "oldClient.unMute" : "oldClient.mute")}
               </Menu.Item>
-              <Menu.Item
-                disabled={video_device === null || !localVideoTrack || delay}
-                onClick={() => this.camMute(cammuted)}
-              >
+              <Menu.Item disabled={video_device === null || delay} onClick={() => this.camMute(cammuted)}>
                 <Icon color={cammuted ? "red" : null} name={!cammuted ? "eye" : "eye slash"} />
                 {t(cammuted ? "oldClient.startVideo" : "oldClient.stopVideo")}
               </Menu.Item>
