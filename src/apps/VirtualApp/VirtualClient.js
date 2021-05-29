@@ -1092,7 +1092,7 @@ class VirtualClient extends Component {
       },
       onmessage: (msg, jsep) => {
         const event = msg["videoroom"];
-        Janus.log(`::: Got a message (subscriber) ::: Event: ${event} Msg: ${JSON.stringify(msg)}`);
+        Janus.log(`::: Got a message (subscriber) ::: Event: ${event} SUBCRIBER: `, msg);
         if (msg["error"] !== undefined && msg["error"] !== null) {
           Janus.debug("-- ERROR: " + msg["error"]);
         } else if (event !== undefined && event !== null) {

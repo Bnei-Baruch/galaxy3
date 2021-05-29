@@ -102,6 +102,8 @@ class MqttMsg {
       console.debug("[mqtt] Got data on topic: ", topic);
       if (/subtitles\/galaxy\//.test(topic)) {
         this.mq.emit("MqttSubtitlesEvent", data);
+      } else if (/galaxy\/room\//.test(topic)) {
+        this.mq.emit("MqttChatEvent", data);
       } else {
         if (stat) {
           message = data.toString();

@@ -6,6 +6,7 @@ import {SHIDUR_ID} from "../../shared/consts";
 import {captureMessage} from "../../shared/sentry";
 import {Typography} from "@material-ui/core";
 import {CheckAlive} from "../../shared/CheckAlive";
+import mqtt from "../../shared/mqtt";
 
 //const isUseNewDesign = new URL(window.location.href).searchParams.has('new_design');
 const isUseNewDesign = window.location.hostname === "arvut.kli.one" && window.location.pathname.search(/userm/) === -1;
@@ -145,6 +146,11 @@ class VirtualChat extends Component {
       ondataopen: () => {
         Janus.log("[VirtualChat] The DataChannel is available! ");
         if (!this.state.room) this.joinChatRoom(chatroom, room, user);
+
+        mqtt.mq.on("MqttChatEvent", (data) => {
+          let json = JSON.parse(data);
+          this.onData(json);
+        });
       },
       ondata: (data) => {
         Janus.debug("[VirtualChat] We got message from Data Channel", data);
@@ -323,12 +329,16 @@ class VirtualChat extends Component {
       ...pvt,
       text: JSON.stringify(msg),
     };
-    // Note: messages are always acknowledged by default. This means that you'll
-    // always receive a confirmation back that the message has been received by the
-    // server and forwarded to the recipients. If you do not want this to happen,
-    // just add an ack:false property to the message above, and server won't send
-    // you a response (meaning you just have to hope it succeeded).
-    if (this.state.chatroom) {
+
+    let mqtt_chat = true;
+    mqtt.send(JSON.stringify(message), false, "galaxy/room/" + this.state.room);
+    this.setState({input_value: ""});
+    if (!room_chat) {
+      support_msgs.push(msg);
+      this.setState({support_msgs});
+    }
+
+    if (!mqtt_chat) {
       this.state.chatroom.data({
         text: JSON.stringify(message),
         success: () => {
