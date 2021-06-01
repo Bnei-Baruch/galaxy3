@@ -53,7 +53,7 @@ import ConfigStore from "../../shared/ConfigStore";
 import {toggleFullScreen, isFullScreen} from "./FullScreenHelper";
 
 import {AppBar, Badge, Box, Button as ButtonMD, ButtonGroup, Grid, IconButton} from "@material-ui/core";
-import {ChevronLeft, ChevronRight, PlayCircleOutline} from "@material-ui/icons";
+import {ChevronLeft, ChevronRight, PlayCircleOutline, OpenInNewOutlined} from "@material-ui/icons";
 import {grey} from "@material-ui/core/colors";
 
 import {AskQuestion, AudioMode, CloseBroadcast, Layout, Mute, MuteVideo, Vote, Fullscreen} from "./buttons";
@@ -1906,6 +1906,21 @@ class VirtualClient extends Component {
               {t("oldClient.material")}
             </ButtonMD>
           </ButtonGroup>
+
+          <ButtonMD
+            color="secondary"
+            variant="contained"
+            onClick={() =>
+              window.open(`https://convention.kli.one/${i18n.language === "en" ? "" : i18n.language}`, "_blank")
+            }
+            className="top-toolbar__item"
+            disableElevation
+            style={{backgroundColor: "#97119e"}}
+          >
+            <OpenInNewOutlined style={{marginRight: "5px"}} />
+            {t("temp.linkToCongress")}
+          </ButtonMD>
+
           <Typography variant="h6" align="center" className={classNames("top-toolbar__item", "top-toolbar__title")}>
             {user?.group}
           </Typography>
