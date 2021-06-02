@@ -1878,7 +1878,7 @@ class VirtualClient extends Component {
           <ButtonMD
             color="primary"
             variant="contained"
-            onClick={() => window.open("https://virtualhome.kli.one", "_blank")}
+            onClick={() => window.open("https://kli.one/", "_blank")}
             className="top-toolbar__item"
             disableElevation
           >
@@ -2525,11 +2525,7 @@ class VirtualClient extends Component {
                 </Popup.Content>
               </Popup>
               <SupportOld t={t} i18n={i18n} user={user} />
-              <Button
-                primary
-                style={{margin: "auto"}}
-                onClick={() => window.open("https://virtualhome.kli.one", "_blank")}
-              >
+              <Button primary style={{margin: "auto"}} onClick={() => window.open("https://kli.one/", "_blank")}>
                 {t("loginPage.userFee")}
               </Button>
               <Monitoring monitoringData={monitoringData} />
