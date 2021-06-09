@@ -53,7 +53,7 @@ import ConfigStore from "../../shared/ConfigStore";
 import {toggleFullScreen, isFullScreen} from "./FullScreenHelper";
 
 import {AppBar, Badge, Box, Button as ButtonMD, ButtonGroup, Grid, IconButton} from "@material-ui/core";
-import {ChevronLeft, ChevronRight, PlayCircleOutline, OpenInNewOutlined} from "@material-ui/icons";
+import {ChevronLeft, ChevronRight, PlayCircleOutline /*, OpenInNewOutlined*/} from "@material-ui/icons"; //button of congress
 import {grey} from "@material-ui/core/colors";
 
 import {AskQuestion, AudioMode, CloseBroadcast, Layout, Mute, MuteVideo, Vote, Fullscreen} from "./buttons";
@@ -1906,7 +1906,7 @@ class VirtualClient extends Component {
               {t("oldClient.material")}
             </ButtonMD>
           </ButtonGroup>
-
+          {/*  button of congress
           <ButtonMD
             color="secondary"
             variant="contained"
@@ -1920,6 +1920,7 @@ class VirtualClient extends Component {
             <OpenInNewOutlined style={{marginRight: "5px"}} />
             {t("temp.linkToCongress")}
           </ButtonMD>
+*/}
 
           <Typography variant="h6" align="center" className={classNames("top-toolbar__item", "top-toolbar__title")}>
             {user?.group}
