@@ -660,7 +660,7 @@ class VirtualClient extends Component {
           if (track?.kind === "video") {
             const {localVideo} = this.refs;
             Janus.log("Remove local video");
-            media.video.stream.getTracks().forEach((t) => t.stop());
+            media.video?.stream?.getTracks().forEach((t) => t.stop());
             Janus.detachMediaStream(localVideo);
           }
         } else {
@@ -879,7 +879,7 @@ class VirtualClient extends Component {
         const publish = {request: "configure", audio: useAudio, video: useVideo, data: false};
         videoroom.send({message: publish, jsep: jsep});
         if (!useVideo) {
-          media.video.stream.getTracks().forEach((t) => t.stop());
+          media.video?.stream?.getTracks().forEach((t) => t.stop());
           this.setState({cammuted: true});
         }
       },
