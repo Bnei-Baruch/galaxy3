@@ -74,7 +74,7 @@ const SettingsJoined = (props) => {
 
   useEffect(() => {
     const op = audiog_options2.find((op) => op.value === audios);
-    const key = op.langKey || op.key;
+    const key = op.langKey || "en";
     if (!localStorage.getItem(WQ_LANG)) setSubtitleWQ(key);
     if (!localStorage.getItem(SUBTITLE_LANG)) setSubtitleMQTT(key);
   }, [audios]);

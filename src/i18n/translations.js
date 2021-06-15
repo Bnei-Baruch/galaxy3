@@ -207,6 +207,9 @@ export const resources = {
         toComplete: "TO COMPLETE REGISTRATION",
         completed: "Your registration is completed and will be verified soon. Meanwhile you can watch the broadcast.",
       },
+      temp: {
+        linkToCongress: "convention site",
+      },
     },
   },
   es: {
@@ -419,6 +422,9 @@ export const resources = {
         manageFontSize: "Cambiar el tamaño de la fuente",
         inProcess: "En proceso… Disponible en",
       },
+      temp: {
+        linkToCongress: "sitio del congreso",
+      },
     },
   },
   he: {
@@ -621,6 +627,9 @@ export const resources = {
         youRegisteredAsGuestLink: "אנא השלם את תהליך ההרשמה.",
         toComplete: "להשלים את ההרשמה",
         completed: "הרשמתך הושלמה ותאושר בקרוב. בינתיים תוכל לצפות בשידור החי.",
+      },
+      temp: {
+        linkToCongress: "אתר הכנס",
       },
     },
   },
@@ -830,6 +839,9 @@ export const resources = {
         youRegisteredAsGuestLink: "Пожалуйста, завершите регистрацию.",
         toComplete: "ЗАВЕРШИТЬ РЕГИСТРАЦИЮ",
         completed: "Ваша регистрация завершена и скоро будет проверена. А пока вы можете смотреть трансляцию.",
+      },
+      temp: {
+        linkToCongress: "сайт конгресса",
       },
     },
   },
