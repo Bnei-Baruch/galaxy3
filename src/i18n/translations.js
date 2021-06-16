@@ -283,7 +283,7 @@ export const resources = {
         sendQuestion: "Enviar una pregunta",
         user: "Usuario",
         usefulLinks: "Enlaces útiles",
-        leave: "Sallir",
+        leave: "Salir",
         SvivaTova: "Sviva Tova",
         LiveGroups: "Grupos en vivo",
         WorkshopQuestions: "Preguntas del taller",
