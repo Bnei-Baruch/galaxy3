@@ -330,12 +330,15 @@ class VirtualChat extends Component {
       text: JSON.stringify(msg),
     };
 
-    let mqtt_chat = true;
-    mqtt.send(JSON.stringify(message), false, "galaxy/room/" + this.state.room);
-    this.setState({input_value: ""});
-    if (!room_chat) {
-      support_msgs.push(msg);
-      this.setState({support_msgs});
+    let mqtt_chat = false;
+
+    if (mqtt_chat) {
+      mqtt.send(JSON.stringify(message), false, "galaxy/room/" + this.state.room);
+      this.setState({input_value: ""});
+      if (!room_chat) {
+        support_msgs.push(msg);
+        this.setState({support_msgs});
+      }
     }
 
     if (!mqtt_chat) {

@@ -5,7 +5,7 @@ import {captureMessage} from "./sentry";
 
 export const initJanus = (cb, er, server, token = "", iceServers = [{urls: STUN_SRV_GXY}]) => {
   Janus.init({
-    debug: process.env.NODE_ENV !== "production" ? ["debug", "log", "error"] : ["debug", "log", "error"],
+    debug: process.env.NODE_ENV !== "production" ? ["log", "error"] : ["error"],
     callback: () => {
       let janus = new Janus({
         server,

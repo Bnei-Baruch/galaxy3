@@ -69,10 +69,10 @@ class MqttMsg {
     this.mq.on("disconnect", (data) => console.error("[mqtt] Error: ", data));
   };
 
-  join = (topic) => {
+  join = (topic, chat) => {
     if (!this.mq) return;
     console.log("[mqtt] Subscribe to: ", topic);
-    let options = {qos: 2, nl: true};
+    let options = chat ? {qos: 0, nl: false} : {qos: 2, nl: true};
     this.mq.subscribe(topic, {...options}, (err) => {
       err && console.error("[mqtt] Error: ", err);
     });

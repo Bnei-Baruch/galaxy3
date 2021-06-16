@@ -939,7 +939,7 @@ class VirtualClient extends Component {
         // Subscribe to mqtt topic
         // FIXME: Make sure here the stream is initialized
         setTimeout(() => {
-          mqtt.join("galaxy/room/" + msg["room"]);
+          mqtt.join("galaxy/room/" + msg["room"], true);
         }, 3000);
 
         const {
