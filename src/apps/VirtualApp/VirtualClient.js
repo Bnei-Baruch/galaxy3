@@ -659,10 +659,12 @@ class VirtualClient extends Component {
         videoroom.muteAudio();
         if (track && track.kind) {
           if (track.kind === "video") {
-            this.setState({localVideoTrack: track});
+            const localVideoTrack = on ? track : null;
+            this.setState({localVideoTrack});
           }
           if (track.kind === "audio") {
-            this.setState({localAudioTrack: track});
+            const localAudioTrack = on ? track : null;
+            this.setState({localAudioTrack});
           }
         }
       },
