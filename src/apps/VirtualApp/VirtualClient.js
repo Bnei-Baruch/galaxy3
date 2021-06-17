@@ -1158,12 +1158,14 @@ class VirtualClient extends Component {
             let remoteaudio = this.refs["remoteAudio" + feed];
             Janus.attachMediaStream(remoteaudio, stream);
           } else if (track.kind === "video") {
-            // New video track: create a stream out of it
-            let stream = new MediaStream();
-            stream.addTrack(track.clone());
-            Janus.log("Created remote video stream:", stream);
-            let remotevideo = this.refs["remoteVideo" + feed];
-            Janus.attachMediaStream(remotevideo, stream);
+            const remotevideo = this.refs["remoteVideo" + feed];
+            if (!remotevideo.srcObject && !remotevideo.src) {
+              // New video track: create a stream out of it
+              const stream = new MediaStream();
+              stream.addTrack(track.clone());
+              Janus.log("Created remote video stream:", stream);
+              Janus.attachMediaStream(remotevideo, stream);
+            }
           }
         } else {
           if (track.kind === "video") {
