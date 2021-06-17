@@ -333,7 +333,7 @@ class VirtualChat extends Component {
     let mqtt_chat = false;
 
     if (mqtt_chat) {
-      mqtt.send(JSON.stringify(message), false, "galaxy/room/" + this.state.room);
+      mqtt.send(JSON.stringify(message), false, `galaxy/room/${this.state.room}/chat`);
       this.setState({input_value: ""});
       if (!room_chat) {
         support_msgs.push(msg);

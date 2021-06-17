@@ -655,23 +655,7 @@ class VirtualClient extends Component {
       onlocaltrack: (track, on) => {
         Janus.log(" ::: Got a local track event :::");
         Janus.log("Local track " + (on ? "added" : "removed") + ":", track);
-        let {videoroom, media} = this.state;
-        if (!on) {
-          if (track?.kind === "video") {
-            const {localVideo} = this.refs;
-            Janus.log("Remove local video");
-            media.video?.stream?.getTracks().forEach((t) => t.stop());
-            Janus.detachMediaStream(localVideo);
-          }
-        } else {
-          if (track?.kind === "video") {
-            Janus.log("Add local video");
-            const {video} = media;
-
-            this.setVideoDevice(video.devices[0].deviceId, true);
-          }
-        }
-
+        let {videoroom} = this.state;
         videoroom.muteAudio();
         if (track && track.kind) {
           if (track.kind === "video") {
@@ -1475,6 +1459,7 @@ class VirtualClient extends Component {
             Janus.error("WebRTC error:", error);
           },
         });
+        this.stopLocalMedia();
       } else {
         videoroom.createOffer({
           media: {
@@ -1491,6 +1476,7 @@ class VirtualClient extends Component {
             Janus.error("WebRTC error:", error);
           },
         });
+        this.startLocalMedia();
       }
       this.setState({user, cammuted: !cammuted});
 
@@ -1504,6 +1490,20 @@ class VirtualClient extends Component {
         this.chat.sendCmdMessage(msg);
       }
     }
+  };
+
+  stopLocalMedia = () => {
+    const {
+      media: {video},
+    } = this.state;
+    video?.stream?.getTracks().forEach((t) => t.stop());
+  };
+
+  startLocalMedia = () => {
+    const {
+      media: {video},
+    } = this.state;
+    video?.devices[0] && this.setVideoDevice(video.devices[0].deviceId, true);
   };
 
   micMute = () => {
