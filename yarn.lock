@@ -8234,10 +8234,10 @@ keyboard-key@^1.1.0:
   resolved "https://registry.yarnpkg.com/keyboard-key/-/keyboard-key-1.1.0.tgz#6f2e8e37fa11475bb1f1d65d5174f1b35653f5b7"
   integrity sha512-qkBzPTi3rlAKvX7k0/ub44sqOfXeLc/jcnGGmj5c7BJpU8eDrEVPyhCvNYAaoubbsLm9uGWwQJO1ytQK1a9/dQ==
 
-keycloak-js@^12.0.2:
-  version "12.0.2"
-  resolved "https://registry.yarnpkg.com/keycloak-js/-/keycloak-js-12.0.2.tgz#ffb3740c1c2eefed48ec8c4d4d0179977239d5a2"
-  integrity sha512-wiONyeVlKFMqYvfKsGwjBJbB1AQJfTnDcJzxEKuPkk6dA7AEnl1IdT2sytxr4Fatwm7kNgmgmK8qKjRI1pBwkQ==
+keycloak-js@^13.0.1:
+  version "13.0.1"
+  resolved "https://registry.yarnpkg.com/keycloak-js/-/keycloak-js-13.0.1.tgz#4aae6a8fe1301aa3d7a12b2de6227a23b42f275d"
+  integrity sha512-S9mFX8HHlgw+i2HAIhteccrkffQmUn4CpYcU8ViGnODSBcnaf2YTtLhiiRH/a6SaOBpxmJTN3XVIZbE9d/HyXQ==
   dependencies:
     base64-js "1.3.1"
     js-sha256 "0.9.0"
