@@ -154,7 +154,6 @@ class VirtualClient extends Component {
     net_status: 1,
     keepalive: null,
     muteOtherCams: false,
-    muteMyCamOnInit: false,
     videos: Number(localStorage.getItem("vrt_video")) || 1,
     premodStatus: false,
     asideMsgCounter: {drawing: 0, chat: 0},
@@ -763,8 +762,7 @@ class VirtualClient extends Component {
   };
 
   exitRoom = (reconnect, callback, error) => {
-    const muteMyCamOnInit = reconnect ? this.state.cammuted : this.state.muteOtherCams;
-    this.setState({delay: true, muteMyCamOnInit});
+    this.setState({delay: true});
     // if (this.state.user.role === userRolesEnum.user) {
     //   wkliLeave(this.state.user);
     // }
@@ -818,7 +816,6 @@ class VirtualClient extends Component {
         this.state.virtualStreamingJanus.unmuteAudioElement();
       }
       this.setState({
-        cammuted: this.state.muteMyCamOnInit,
         muted: false,
         question: false,
         feeds: [],
@@ -933,9 +930,8 @@ class VirtualClient extends Component {
             video: {video_device},
           },
           cammuted,
-          muteMyCamOnInit,
         } = this.state;
-        this.publishOwnFeed(!!video_device && !cammuted && !muteMyCamOnInit, !!audio_device);
+        this.publishOwnFeed(!!video_device && !cammuted, !!audio_device);
 
         // Any new feed to attach to?
         if (msg["publishers"] !== undefined && msg["publishers"] !== null) {
@@ -1492,6 +1488,12 @@ class VirtualClient extends Component {
       } else {
         this.chat.sendCmdMessage(msg);
       }
+    } else {
+      if (!cammuted) {
+        this.stopLocalMedia();
+      } else {
+        this.startLocalMedia();
+      }
     }
   };
 
@@ -1531,7 +1533,7 @@ class VirtualClient extends Component {
         /* onlyVideo= */ true
       );
       this.camMute(/* cammuted= */ false);
-      this.setState({videos: NO_VIDEO_OPTION_VALUE, isKliOlamiShown: false, muteMyCamOnInit: true});
+      this.setState({videos: NO_VIDEO_OPTION_VALUE, isKliOlamiShown: false});
       this.state.virtualStreamingJanus.setVideo(NO_VIDEO_OPTION_VALUE);
     } else {
       // Should unmute/show now all videos.
@@ -1543,7 +1545,7 @@ class VirtualClient extends Component {
         /* subscribeToData= */ false
       );
       this.camMute(/* cammuted= */ true);
-      this.setState({videos: VIDEO_360P_OPTION_VALUE, isKliOlamiShown: true, muteMyCamOnInit: false});
+      this.setState({videos: VIDEO_360P_OPTION_VALUE, isKliOlamiShown: true});
       this.state.virtualStreamingJanus.setVideo(VIDEO_360P_OPTION_VALUE);
     }
     this.setState({muteOtherCams: !muteOtherCams});
