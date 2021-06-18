@@ -214,7 +214,7 @@ class VirtualClient extends Component {
   }
 
   componentWillUnmount() {
-    this.state.virtualStreamingJanus.destroy();
+    //this.state.virtualStreamingJanus.destroy();
   }
 
   checkPermission = (user) => {
@@ -391,10 +391,7 @@ class VirtualClient extends Component {
         this.setState({cammuted: true});
       }
 
-      if (video.stream) {
-        let myvideo = this.refs.localVideo;
-        if (myvideo) myvideo.srcObject = media.video.stream;
-      }
+      if (video.stream) this.startLocalMedia();
 
       if (audio.stream) {
         micLevel(
@@ -1478,7 +1475,7 @@ class VirtualClient extends Component {
         });
         this.startLocalMedia();
       }
-      this.setState({user, cammuted: !cammuted});
+      this.setState({user});
 
       updateSentryUser(user);
       updateGxyUser(user);
@@ -1496,14 +1493,18 @@ class VirtualClient extends Component {
     const {
       media: {video},
     } = this.state;
+    console.log("Stop local video stream");
     video?.stream?.getTracks().forEach((t) => t.stop());
+    this.setState({cammuted: true});
   };
 
   startLocalMedia = () => {
     const {
       media: {video},
     } = this.state;
+    console.log("Bind local video stream");
     video?.devices[0] && this.setVideoDevice(video.devices[0].deviceId, true);
+    this.setState({cammuted: false});
   };
 
   micMute = () => {
@@ -2688,12 +2689,15 @@ class VirtualClient extends Component {
             audioModeChange={this.otherCamsMuteToggle}
             audio={media.audio}
             video={media.video}
-            videoDevice={media.video.video_device}
-            audioDevice={media.audio.audio_device}
+            cammuted={cammuted}
+            videoDevice={media.video?.video_device}
+            audioDevice={media.audio?.audio_device}
             videoLength={media.video?.devices.length}
             videoSettings={JSON.stringify(media.video.setting)}
             wip={wipSettings}
             setWip={(wip) => this.setState({wipSettings: wip})}
+            startLocalMedia={this.startLocalMedia.bind(this)}
+            stopLocalMedia={this.stopLocalMedia.bind(this)}
           />
         )}
         {user && !isMobile ? content : !isMobile ? login : ""}
