@@ -214,7 +214,7 @@ class VirtualClient extends Component {
   }
 
   componentWillUnmount() {
-    this.state.virtualStreamingJanus.destroy();
+    //this.state.virtualStreamingJanus.destroy();
   }
 
   checkPermission = (user) => {
@@ -452,7 +452,7 @@ class VirtualClient extends Component {
   setVideoDevice = (video_device, reconnect) => {
     let {media} = this.state;
     if (video_device === media.video.video_device && !reconnect) return;
-    getMediaStream(false, true, media.video.setting, null, video_device).then((data) => {
+    return getMediaStream(false, true, media.video.setting, null, video_device).then((data) => {
       console.log(data);
       const [stream, error] = data;
       if (error) {
@@ -1481,7 +1481,7 @@ class VirtualClient extends Component {
         });
         this.startLocalMedia();
       }
-      this.setState({user, cammuted: !cammuted});
+      this.setState({user});
 
       updateSentryUser(user);
       updateGxyUser(user);
@@ -1499,14 +1499,21 @@ class VirtualClient extends Component {
     const {
       media: {video},
     } = this.state;
+    console.log("Stop local video stream");
     video?.stream?.getTracks().forEach((t) => t.stop());
+    this.setState({cammuted: true});
   };
 
   startLocalMedia = () => {
     const {
       media: {video},
     } = this.state;
-    video?.devices[0] && this.setVideoDevice(video.devices[0].deviceId, true);
+    console.log("Bind local video stream");
+    if (video?.devices[0]) {
+      this.setVideoDevice(video.devices[0].deviceId, true).then(() => {
+        this.setState({cammuted: false});
+      });
+    }
   };
 
   micMute = () => {
@@ -2691,12 +2698,15 @@ class VirtualClient extends Component {
             audioModeChange={this.otherCamsMuteToggle}
             audio={media.audio}
             video={media.video}
-            videoDevice={media.video.video_device}
-            audioDevice={media.audio.audio_device}
+            cammuted={cammuted}
+            videoDevice={media.video?.video_device}
+            audioDevice={media.audio?.audio_device}
             videoLength={media.video?.devices.length}
             videoSettings={JSON.stringify(media.video.setting)}
             wip={wipSettings}
             setWip={(wip) => this.setState({wipSettings: wip})}
+            startLocalMedia={this.startLocalMedia.bind(this)}
+            stopLocalMedia={this.stopLocalMedia.bind(this)}
           />
         )}
         {user && !isMobile ? content : !isMobile ? login : ""}
