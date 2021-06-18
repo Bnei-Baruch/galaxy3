@@ -391,7 +391,10 @@ class VirtualClient extends Component {
         this.setState({cammuted: true});
       }
 
-      if (video.stream) this.startLocalMedia();
+      if (video.stream) {
+        let myvideo = this.refs.localVideo;
+        if (myvideo) myvideo.srcObject = media.video.stream;
+      }
 
       if (audio.stream) {
         micLevel(
@@ -449,7 +452,7 @@ class VirtualClient extends Component {
   setVideoDevice = (video_device, reconnect) => {
     let {media} = this.state;
     if (video_device === media.video.video_device && !reconnect) return;
-    getMediaStream(false, true, media.video.setting, null, video_device).then((data) => {
+    return getMediaStream(false, true, media.video.setting, null, video_device).then((data) => {
       console.log(data);
       const [stream, error] = data;
       if (error) {
@@ -1503,8 +1506,11 @@ class VirtualClient extends Component {
       media: {video},
     } = this.state;
     console.log("Bind local video stream");
-    video?.devices[0] && this.setVideoDevice(video.devices[0].deviceId, true);
-    this.setState({cammuted: false});
+    if (video?.devices[0]) {
+      this.setVideoDevice(video.devices[0].deviceId, true).then(() => {
+        this.setState({cammuted: false});
+      });
+    }
   };
 
   micMute = () => {

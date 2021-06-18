@@ -314,7 +314,11 @@ const Settings = (props) => {
         </Grid>
         <Grid item xs={6}>
           <FormControlLabel
-            label={<Typography color="textPrimary">{t("oldClient.turnOffCamera")}</Typography>}
+            label={
+              <Typography color="textPrimary">
+                {t(cammuted ? "oldClient.startVideo" : "oldClient.stopVideo")}
+              </Typography>
+            }
             control={<Checkbox value={!cammuted} onChange={toggleCamera} name="turnOffCamera" color="secondary" />}
           />
         </Grid>
