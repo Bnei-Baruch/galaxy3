@@ -29,13 +29,11 @@ const MyMedia = (props) => {
       <video
         ref={videoRef}
         id="localVideo"
-        width={width}
-        height={height}
         autoPlay={true}
         controls={false}
         muted={true}
         playsInline={true}
-        style={{width: `${width}px`, height: `${height}px`}}
+        style={{width: "100%"}}
       />
     </Box>
   );
