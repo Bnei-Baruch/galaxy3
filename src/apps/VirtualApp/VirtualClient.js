@@ -1510,13 +1510,14 @@ class VirtualClient extends Component {
 
   startLocalMedia = () => {
     const {
-      media: {video},
+      media: {video: {devices, video_device} = {}},
       cammuted,
     } = this.state;
     if (!cammuted) return;
     console.log("Bind local video stream");
-    if (video?.devices[0]) {
-      this.setVideoDevice(video.devices[0].deviceId, true).then(() => {
+    const deviceId = video_device || devices?.[0]?.deviceId;
+    if (deviceId) {
+      this.setVideoDevice(deviceId, true).then(() => {
         this.setState({cammuted: false});
       });
     }
