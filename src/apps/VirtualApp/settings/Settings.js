@@ -299,6 +299,12 @@ const Settings = (props) => {
         </Grid>
         <Grid item xs={3}>
           <FormControlLabel
+            label={<Typography color="textPrimary">{t("oldClient.stopVideo")}</Typography>}
+            control={<Checkbox checked={cammuted} onChange={toggleCamera} name="turnOffCamera" color="secondary" />}
+          />
+        </Grid>
+        <Grid item xs={3}>
+          <FormControlLabel
             label={<Typography color="textPrimary">{t("oldClient.audioMode")}</Typography>}
             color="textPrimary"
             control={
@@ -306,20 +312,10 @@ const Settings = (props) => {
             }
           />
         </Grid>
-        <Grid item xs={3}>
+        <Grid item xs={6}>
           <FormControlLabel
             label={<Typography color="textPrimary">{t("oldClient.darkTheme")}</Typography>}
             control={<Checkbox checked={isDark} onChange={toggleTheme} name="isAudioMode" color="secondary" />}
-          />
-        </Grid>
-        <Grid item xs={6}>
-          <FormControlLabel
-            label={
-              <Typography color="textPrimary">
-                {t(cammuted ? "oldClient.startVideo" : "oldClient.stopVideo")}
-              </Typography>
-            }
-            control={<Checkbox value={!cammuted} onChange={toggleCamera} name="turnOffCamera" color="secondary" />}
           />
         </Grid>
 

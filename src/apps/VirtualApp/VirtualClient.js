@@ -1500,7 +1500,9 @@ class VirtualClient extends Component {
   stopLocalMedia = () => {
     const {
       media: {video},
+      cammuted,
     } = this.state;
+    if (cammuted) return;
     console.log("Stop local video stream");
     video?.stream?.getTracks().forEach((t) => t.stop());
     this.setState({cammuted: true});
@@ -1509,7 +1511,9 @@ class VirtualClient extends Component {
   startLocalMedia = () => {
     const {
       media: {video},
+      cammuted,
     } = this.state;
+    if (!cammuted) return;
     console.log("Bind local video stream");
     if (video?.devices[0]) {
       this.setVideoDevice(video.devices[0].deviceId, true).then(() => {
