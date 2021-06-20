@@ -297,13 +297,13 @@ const Settings = (props) => {
         <Grid item xs={6}>
           {<CheckMySelf audio={audio} />}
         </Grid>
-        <Grid item xs={3}>
+
+        <Grid item xs={12}>
           <FormControlLabel
             label={<Typography color="textPrimary">{t("oldClient.stopVideo")}</Typography>}
             control={<Checkbox checked={cammuted} onChange={toggleCamera} name="turnOffCamera" color="secondary" />}
           />
-        </Grid>
-        <Grid item xs={3}>
+
           <FormControlLabel
             label={<Typography color="textPrimary">{t("oldClient.audioMode")}</Typography>}
             color="textPrimary"
@@ -311,8 +311,6 @@ const Settings = (props) => {
               <Checkbox checked={!!isAudioMode} onChange={handleAudioModeChange} name="isAudioMode" color="secondary" />
             }
           />
-        </Grid>
-        <Grid item xs={6}>
           <FormControlLabel
             label={<Typography color="textPrimary">{t("oldClient.darkTheme")}</Typography>}
             control={<Checkbox checked={isDark} onChange={toggleTheme} name="isAudioMode" color="secondary" />}
