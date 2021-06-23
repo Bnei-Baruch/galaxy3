@@ -257,18 +257,18 @@ class AdminRoot extends Component {
             stream["display"] = user;
           }
         } else if (msg["publishers"] !== undefined && msg["publishers"] !== null) {
-          let feed = msg["publishers"];
-          console.log("[Admin] Got Publishers (event)", feed);
+          let new_feed = msg["publishers"];
+          console.log("[Admin] Got Publishers (event)", new_feed);
 
           let {feeds} = this.state;
           let subscription = [];
-          for (let f in feed) {
-            let id = feed[f]["id"];
-            let display = JSON.parse(feed[f]["display"]);
+          for (let f in new_feed) {
+            let id = new_feed[f]["id"];
+            let display = JSON.parse(new_feed[f]["display"]);
             if (!display.role.match(/^(user|guest|ghost)$/)) return;
-            let streams = feed[f]["streams"];
-            feed[f].display = display;
-            feed[f].janus = gateway.name;
+            let streams = new_feed[f]["streams"];
+            new_feed[f].display = display;
+            new_feed[f].janus = gateway.name;
             for (let i in streams) {
               let stream = streams[i];
               stream["id"] = id;
@@ -281,13 +281,11 @@ class AdminRoot extends Component {
               }
             }
           }
-          feeds.push(feed[0]);
-          feeds.sort((a, b) => {
-            if (a.display.username > b.display.username) return 1;
-            if (a.display.username < b.display.username) return -1;
-            return 0;
-          });
-          this.setState({feeds});
+          const isExistFeed = feeds.find((f) => f.id === new_feed[0].id);
+          if (!isExistFeed) {
+            feeds.push(new_feed[0]);
+            this.setState({feeds});
+          }
           if (subscription.length > 0) this.subscribeTo(subscription, gateway.name);
         } else if (msg["leaving"] !== undefined && msg["leaving"] !== null) {
           // One of the publishers has gone away?
