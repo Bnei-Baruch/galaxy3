@@ -147,9 +147,25 @@ class VirtualChat extends Component {
         Janus.log("[VirtualChat] The DataChannel is available! ");
         if (!this.state.room) this.joinChatRoom(chatroom, room, user);
 
+        // Public chat
         mqtt.mq.on("MqttChatEvent", (data) => {
           let json = JSON.parse(data);
           this.onData(json);
+        });
+
+        // Private chat
+        mqtt.mq.on("MqttPrivateMessage", (data) => {
+          let json = JSON.parse(data);
+          json["whisper"] = true;
+          this.onData(json);
+        });
+
+        // Broadcast message
+        mqtt.mq.on("MqttBroadcastMessage", (data) => {
+          let json = JSON.parse(data);
+          let message = JSON.parse(json.text);
+          message.time = getDateString(json["date"]);
+          notifyMe("Arvut System", message.text, true);
         });
       },
       ondata: (data) => {

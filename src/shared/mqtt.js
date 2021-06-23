@@ -104,6 +104,12 @@ class MqttMsg {
         this.mq.emit("MqttSubtitlesEvent", data);
       } else if (/galaxy\/room\/\d+\/chat/.test(topic)) {
         this.mq.emit("MqttChatEvent", data);
+      } else if (/galaxy\/users\//.test(topic)) {
+        if (topic.split("/")[2] === "broadcast") {
+          this.mq.emit("MqttBroadcastMessage", data);
+        } else {
+          this.mq.emit("MqttPrivateMessage", data);
+        }
       } else {
         if (stat) {
           message = data.toString();
