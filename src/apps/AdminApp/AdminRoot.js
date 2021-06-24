@@ -678,7 +678,9 @@ class AdminRoot extends Component {
     }
 
     if (this.isAllowed("admin")) {
-      promises.push(gateway.chatRoomLeave(room));
+      const {feed_user} = this.state;
+      if (feed_user) mqtt.exit("galaxy/users/" + feed_user.id);
+      //promises.push(gateway.chatRoomLeave(room));
     }
 
     return Promise.all(promises);
