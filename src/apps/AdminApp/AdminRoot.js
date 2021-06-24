@@ -10,7 +10,6 @@ import GxyJanus from "../../shared/janus-utils";
 import ChatBox from "./components/ChatBox";
 import api from "../../shared/Api";
 import ConfigStore from "../../shared/ConfigStore";
-import {GuaranteeDeliveryManager} from "../../shared/GuaranteeDelivery";
 import StatNotes from "./components/StatNotes";
 import {updateSentryUser} from "../../shared/sentry";
 import mqtt from "../../shared/mqtt";
@@ -43,7 +42,6 @@ class AdminRoot extends Component {
     appInitError: null,
     users_count: 0,
     command_status: true,
-    gdm: null,
     premodStatus: false,
     showConfirmReloadAll: false,
     tcp: "mqtt",
@@ -79,8 +77,7 @@ class AdminRoot extends Component {
   withAudio = () => this.isAllowed("admin");
 
   initApp = (user) => {
-    let gdm = new GuaranteeDeliveryManager(user.id);
-    this.setState({user, gdm});
+    this.setState({user});
     updateSentryUser(user);
 
     api
@@ -481,8 +478,7 @@ class AdminRoot extends Component {
   };
 
   sendCommandMessage = (command_type) => {
-    const {gateways, feed_user, current_janus, current_room, command_status, gdm, tcp} = this.state;
-    const gateway = gateways[current_janus];
+    const {gateways, feed_user, current_janus, current_room, command_status} = this.state;
     const cmd = {
       type: command_type,
       rcmd: true,
@@ -496,28 +492,6 @@ class AdminRoot extends Component {
       ? "galaxy/users/broadcast"
       : "galaxy/room/" + current_room;
     mqtt.send(JSON.stringify(cmd), false, topic);
-
-    // FIXME: make datachannel usage on webrtc protocol?
-    // if(tcp === "mqtt") {
-    //     let topic = command_type.match(/^(reload-config|client-reload-all)$/) ? 'galaxy/users/broadcast' : 'galaxy/room/' + current_room;
-    //     mqtt.send(JSON.stringify(cmd), false, topic);
-    // } else {
-    //     if(command_type === "audio-out") {
-    //         const toAck = [feed_user.id];
-    //         gdm.send(cmd, toAck, (cmd) => gateway.sendCmdMessage(cmd))
-    //             .then(() => {
-    //                 console.log(`[Admin] MIC delivered.`);
-    //             }).catch((err) => {
-    //             console.error('[Admin] not delivered', err);
-    //         });
-    //     } else {
-    //         gateway.sendCmdMessage(cmd)
-    //             .catch((err) => {
-    //                 console.error('[Admin] sendCmdMessage error', err);
-    //               alert(err);
-    //           });
-    //     }
-    // }
 
     if (command_type === "audio-out") {
       this.setState({command_status: !command_status});
@@ -1109,7 +1083,6 @@ class AdminRoot extends Component {
                 selected_group={current_group}
                 selected_user={feed_user}
                 gateways={gateways}
-                gdm={this.state.gdm}
                 chatRoomsInitializedError={chatRoomsInitializedError}
                 onChatRoomsInitialized={this.onChatRoomsInitialized}
               />
