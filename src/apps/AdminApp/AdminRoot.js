@@ -632,14 +632,16 @@ class AdminRoot extends Component {
               .then(() => gateway.videoRoomJoin(room, user))
               .catch((err) => console.error(err));
 
-            if (this.isAllowed("admin")) {
-              gateway
-                .chatRoomJoin(room, user)
-                .catch((err) => {
-                  this.setState({chatRoomsInitializedError: err});
-                })
-                .finally(() => this.setState({chatRoomsInitialized: true}));
-            }
+            this.setState({chatRoomsInitialized: true});
+
+            // if (this.isAllowed("admin")) {
+            //   gateway
+            //     .chatRoomJoin(room, user)
+            //     .catch((err) => {
+            //       this.setState({chatRoomsInitializedError: err});
+            //     })
+            //     .finally(() => this.setState({chatRoomsInitialized: true}));
+            // }
           }
         );
       })
@@ -682,11 +684,14 @@ class AdminRoot extends Component {
     return Promise.all(promises);
   };
 
-  getUserInfo = (feed_user) => {
-    console.log("[Admin] getUserInfo", feed_user);
-    if (feed_user) {
-      const feed_info = feed_user.system ? platform.parse(feed_user.system) : null;
-      this.setState({feed_id: feed_user.rfid, feed_user, feed_info});
+  getUserInfo = (selected_user) => {
+    const {feed_user} = this.state;
+    if (feed_user) mqtt.exit("galaxy/users/" + feed_user.id);
+    console.log("[Admin] getUserInfo", selected_user);
+    if (selected_user) {
+      mqtt.join("galaxy/users/" + selected_user.id);
+      const feed_info = selected_user.system ? platform.parse(selected_user.system) : null;
+      this.setState({feed_id: selected_user.rfid, feed_user: selected_user, feed_info});
     }
   };
 
