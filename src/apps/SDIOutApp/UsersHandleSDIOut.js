@@ -215,8 +215,11 @@ class UsersHandleSDIOut extends Component {
               }
             }
           }
-          feeds.push(feed[0]);
-          this.setState({feeds});
+          const isExistFeed = feeds.find((f) => f.id === feed[0].id);
+          if (!isExistFeed) {
+            feeds.push(feed[0]);
+            this.setState({feeds});
+          }
           if (subscription.length > 0) {
             this.subscribeTo(gateway, roomid, subscription);
           }
