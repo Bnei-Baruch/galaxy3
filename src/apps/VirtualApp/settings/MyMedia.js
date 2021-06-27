@@ -5,26 +5,13 @@ import {renderUserName, renderNoCam, renderQuestion} from "./helper";
 import Box from "@material-ui/core/Box";
 
 const MyMedia = (props) => {
-  const {cammuted, user, question, muted, connectionIcon, video = {}} = props;
+  const {user, question, muted, cammuted, connectionIcon, video = {}} = props;
   const {setting: {height, width} = {}, stream} = video;
   const videoRef = useRef();
 
   useEffect(() => {
-    stream && videoRef && (videoRef.current.srcObject = stream);
+    stream && videoRef?.current && (videoRef.current.srcObject = stream);
   }, [stream, videoRef]);
-
-  const renderVideo = () => (
-    <video
-      ref={videoRef}
-      id="localVideo"
-      width={width}
-      height={height}
-      autoPlay={true}
-      controls={false}
-      muted={true}
-      playsInline={true}
-    />
-  );
 
   if (!video) return null;
 
@@ -38,9 +25,17 @@ const MyMedia = (props) => {
           <Icon style={{marginLeft: "0.3rem"}} name="signal" size="small" color={connectionIcon} />
         </div>
       </div>
-      {cammuted ? renderNoCam() : renderVideo()}
+      {renderNoCam(cammuted)}
+      <video
+        ref={videoRef}
+        id="localVideo"
+        autoPlay={true}
+        controls={false}
+        muted={true}
+        playsInline={true}
+        style={{width: "100%"}}
+      />
     </Box>
   );
 };
-
 export default MyMedia;

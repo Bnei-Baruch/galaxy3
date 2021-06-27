@@ -17,7 +17,7 @@ class UsersHandleSDIOut extends Component {
 
   componentDidMount() {
     let {g} = this.props;
-    let num_videos = g && g.users && g.users.filter((u) => u.camera).length;
+    let num_videos = g?.users?.filter((u) => u.camera).length;
     if (num_videos > 25) num_videos = 25;
     this.setState({num_videos});
   }
@@ -215,8 +215,11 @@ class UsersHandleSDIOut extends Component {
               }
             }
           }
-          feeds.push(feed[0]);
-          this.setState({feeds});
+          const isExistFeed = feeds.find((f) => f.id === feed[0].id);
+          if (!isExistFeed) {
+            feeds.push(feed[0]);
+            this.setState({feeds});
+          }
           if (subscription.length > 0) {
             this.subscribeTo(gateway, roomid, subscription);
           }

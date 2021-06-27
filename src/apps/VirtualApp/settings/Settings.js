@@ -97,6 +97,9 @@ const Settings = (props) => {
     userDisplay,
     wip,
     setWip,
+    startLocalMedia,
+    stopLocalMedia,
+    cammuted,
   } = props;
 
   useEffect(() => {
@@ -120,6 +123,16 @@ const Settings = (props) => {
         {video.devices.map(mapDevice).map(mapOption)}
       </TextField>
     );
+  };
+
+  const toggleCamera = () => {
+    if (!video || !video.stream) return;
+
+    if (!video.stream.active) {
+      startLocalMedia();
+    } else {
+      stopLocalMedia();
+    }
   };
 
   const renderVideoSize = () => (
@@ -279,12 +292,18 @@ const Settings = (props) => {
         </Grid>
 
         <Grid item xs={6}>
-          {<MyMedia cammuted={false} video={video} />}
+          {<MyMedia cammuted={cammuted} video={video} />}
         </Grid>
         <Grid item xs={6}>
           {<CheckMySelf audio={audio} />}
         </Grid>
-        <Grid item xs={3}>
+
+        <Grid item xs={12}>
+          <FormControlLabel
+            label={<Typography color="textPrimary">{t("oldClient.stopVideo")}</Typography>}
+            control={<Checkbox checked={cammuted} onChange={toggleCamera} name="turnOffCamera" color="secondary" />}
+          />
+
           <FormControlLabel
             label={<Typography color="textPrimary">{t("oldClient.audioMode")}</Typography>}
             color="textPrimary"
@@ -292,8 +311,6 @@ const Settings = (props) => {
               <Checkbox checked={!!isAudioMode} onChange={handleAudioModeChange} name="isAudioMode" color="secondary" />
             }
           />
-        </Grid>
-        <Grid item xs={9}>
           <FormControlLabel
             label={<Typography color="textPrimary">{t("oldClient.darkTheme")}</Typography>}
             control={<Checkbox checked={isDark} onChange={toggleTheme} name="isAudioMode" color="secondary" />}
@@ -346,6 +363,7 @@ export default memo(Settings, (props, next) => {
     props.videoLength === next.videoLength &&
     props.audioDevice === next.audioDevice &&
     props.videoDevice === next.videoDevice &&
+    props.cammuted === next.cammuted &&
     props.videoSettings === next.videoSettings &&
     props.isAudioMode === next.isAudioMode &&
     props.selectedRoom === next.selectedRoom &&
