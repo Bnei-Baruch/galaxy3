@@ -636,15 +636,21 @@ class MobileClient extends Component {
         Janus.log("Local track " + (on ? "added" : "removed") + ":", track);
         let {videoroom} = this.state;
         videoroom.muteAudio();
-        if (on && track && track.kind === "video") {
-          let stream = new MediaStream();
-          stream.addTrack(track.clone());
-          let myvideo = this.refs.localVideo;
-          Janus.attachMediaStream(myvideo, stream);
-          this.setState({localVideoTrack: track});
-        }
-        if (on && track && track.kind === "audio") {
-          this.setState({localAudioTrack: track});
+        if (track && track.kind) {
+          if (track.kind === "video") {
+            const localVideoTrack = on ? track : null;
+            if (track) {
+              let stream = new MediaStream();
+              stream.addTrack(track.clone());
+              let myvideo = this.refs.localVideo;
+              Janus.attachMediaStream(myvideo, stream);
+            }
+            this.setState({localVideoTrack});
+          }
+          if (track.kind === "audio") {
+            const localAudioTrack = on ? track : null;
+            this.setState({localAudioTrack});
+          }
         }
       },
       onremotestream: (stream) => {
@@ -872,6 +878,7 @@ class MobileClient extends Component {
         // FIXME: Make sure here the stream is initialized
         setTimeout(() => {
           mqtt.join("galaxy/room/" + msg["room"]);
+          mqtt.join("galaxy/room/" + msg["room"] + "/chat", true);
         }, 3000);
 
         const {
