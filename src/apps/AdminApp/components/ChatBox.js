@@ -3,6 +3,7 @@ import {Button, Input, Message, Segment, Select} from "semantic-ui-react";
 import {Janus} from "../../../lib/janus";
 import {getDateString} from "../../../shared/tools";
 import {captureException} from "../../../shared/sentry";
+import mqtt from "../../../shared/mqtt";
 
 class ChatBox extends Component {
   /*
@@ -24,22 +25,22 @@ class ChatBox extends Component {
 
   componentDidMount() {
     document.addEventListener("keydown", this.onKeyPressed);
-    this.initGateways();
+    //this.initGateways();
   }
 
   componentWillUnmount() {
     document.removeEventListener("keydown", this.onKeyPressed);
-    const {gateways} = this.props;
-    Promise.all(Object.values(gateways).map((gateway) => gateway.detachChatRoom())).catch((error) => {
-      captureException(error, {source: "AdminRoot ChatBox"});
-    });
+    // const {gateways} = this.props;
+    // Promise.all(Object.values(gateways).map((gateway) => gateway.detachChatRoom())).catch((error) => {
+    //   captureException(error, {source: "AdminRoot ChatBox"});
+    // });
   }
 
-  componentDidUpdate(prevProps) {
-    if (prevProps.gateways !== this.props.gateways) {
-      this.initGateways();
-    }
-  }
+  // componentDidUpdate(prevProps) {
+  //   if (prevProps.gateways !== this.props.gateways) {
+  //     this.initGateways();
+  //   }
+  // }
 
   initGateways = () => {
     const {gateways} = this.props;
@@ -90,11 +91,11 @@ class ChatBox extends Component {
       let whisper = json["whisper"];
       let message = JSON.parse(msg);
 
-      const {gdm} = this.props;
-      if (gdm.checkAck(message)) {
-        // Ack received, do nothing.
-        return;
-      }
+      // const {gdm} = this.props;
+      // if (gdm.checkAck(message)) {
+      //   // Ack received, do nothing.
+      //   return;
+      // }
 
       if (message.type && message.type !== "chat") {
         console.log(":: It's remote command :: ");
@@ -145,26 +146,42 @@ class ChatBox extends Component {
 
     const gateway = gateways[selected_user.janus];
     const msg = {user: {role, display, username}, text: input_value};
-    gateway
-      .data("chatroom", gateway.chatroom, {
-        ack: false,
-        textroom: "message",
-        transaction: Janus.randomString(12),
-        room: selected_room,
-        to: selected_user.id,
-        text: JSON.stringify(msg),
-      })
-      .then(() => {
-        const {messages} = this.state;
-        msg.time = getDateString();
-        msg.to = selected_user.display;
-        messages.push(msg);
-        this.setState({input_value: ""}, this.scrollToBottom);
-      })
-      .catch((error) => {
-        captureException(error, {source: "AdminRoot ChatBox"});
-        alert(error);
-      });
+    const message = {
+      ack: false,
+      textroom: "message",
+      transaction: Janus.randomString(12),
+      room: selected_room,
+      to: selected_user.id,
+      text: JSON.stringify(msg),
+    };
+
+    let mqtt_chat = true;
+
+    if (mqtt_chat) {
+      mqtt.send(JSON.stringify(message), false, `galaxy/users/${selected_user.id}`);
+      this.setState({input_value: ""});
+      const {messages} = this.state;
+      msg.time = getDateString();
+      msg.to = selected_user.display;
+      messages.push(msg);
+      this.setState({input_value: ""}, this.scrollToBottom);
+    }
+
+    if (!mqtt_chat) {
+      gateway
+        .data("chatroom", gateway.chatroom, message)
+        .then(() => {
+          const {messages} = this.state;
+          msg.time = getDateString();
+          msg.to = selected_user.display;
+          messages.push(msg);
+          this.setState({input_value: ""}, this.scrollToBottom);
+        })
+        .catch((error) => {
+          captureException(error, {source: "AdminRoot ChatBox"});
+          alert(error);
+        });
+    }
   };
 
   sendPublicMessage = () => {
@@ -182,24 +199,39 @@ class ChatBox extends Component {
 
     const gateway = gateways[selected_janus];
     const msg = {user: {role, display, username}, text: input_value};
-    gateway
-      .data("chatroom", gateway.chatroom, {
-        ack: false,
-        textroom: "message",
-        transaction: Janus.randomString(12),
-        room: selected_room,
-        text: JSON.stringify(msg),
-      })
-      .then(() => {
-        // const {messages} = this.state;
-        // msg.time = getDateString();
-        // messages.push(msg);
-        this.setState({input_value: ""}, this.scrollToBottom);
-      })
-      .catch((error) => {
-        captureException(error, {source: "AdminRoot ChatBox"});
-        alert(error);
-      });
+    const message = {
+      ack: false,
+      textroom: "message",
+      transaction: Janus.randomString(12),
+      room: selected_room,
+      text: JSON.stringify(msg),
+    };
+
+    let mqtt_chat = true;
+
+    if (mqtt_chat) {
+      mqtt.send(JSON.stringify(message), false, `galaxy/users/broadcast`);
+      this.setState({input_value: ""});
+      const {messages} = this.state;
+      msg.time = getDateString();
+      messages.push(msg);
+      this.setState({input_value: ""}, this.scrollToBottom);
+    }
+
+    if (!mqtt_chat) {
+      gateway
+        .data("chatroom", gateway.chatroom, message)
+        .then(() => {
+          // const {messages} = this.state;
+          // msg.time = getDateString();
+          // messages.push(msg);
+          this.setState({input_value: ""}, this.scrollToBottom);
+        })
+        .catch((error) => {
+          captureException(error, {source: "AdminRoot ChatBox"});
+          alert(error);
+        });
+    }
   };
 
   /* Temporary comment out. Code not used, never called. */
