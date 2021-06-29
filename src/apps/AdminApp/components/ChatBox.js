@@ -1,8 +1,7 @@
 import React, {Component} from "react";
 import {Button, Confirm, Header, Icon, Input, Message, Segment, Select} from "semantic-ui-react";
 import {Janus} from "../../../lib/janus";
-import {getDateString} from "../../../shared/tools";
-import {captureException} from "../../../shared/sentry";
+import {getDateString, notifyMe} from "../../../shared/tools";
 import mqtt from "../../../shared/mqtt";
 
 class ChatBox extends Component {
@@ -17,7 +16,7 @@ class ChatBox extends Component {
     */
 
   state = {
-    msg_type: "private",
+    msg_type: "public",
     messages: [],
     visible: false,
     input_value: "",
@@ -25,56 +24,49 @@ class ChatBox extends Component {
   };
 
   componentDidMount() {
+    this.props.onRef(this);
+    this.initMqttEvents();
     document.addEventListener("keydown", this.onKeyPressed);
   }
 
   componentWillUnmount() {
     document.removeEventListener("keydown", this.onKeyPressed);
+    this.props.onRef(undefined);
   }
+
+  initMqttEvents = () => {
+    // Public chat
+    mqtt.mq.on("MqttChatEvent", (data) => {
+      let json = JSON.parse(data);
+      this.onChatData(json);
+    });
+
+    // Private chat
+    mqtt.mq.on("MqttPrivateMessage", (data) => {
+      let json = JSON.parse(data);
+      json["whisper"] = true;
+      this.onChatData(json);
+    });
+
+    // Broadcast message
+    mqtt.mq.on("MqttBroadcastMessage", (data) => {
+      let json = JSON.parse(data);
+      let message = JSON.parse(json.text);
+      message.time = getDateString(json["date"]);
+      notifyMe("Arvut System", message.text, true);
+    });
+  };
 
   onConfirmBroadcast = (sure) => {
     this.setState({showConfirmBroadcast: false});
     if (sure) this.sendBroadcastMessage();
   };
 
-  initGateways = () => {
-    const {gateways} = this.props;
-    console.log("[Admin] [ChatBox] initGateways", gateways);
-
-    Promise.all(
-      Object.values(gateways).map((gateway) => {
-        if (gateway.chatroom) {
-          return Promise.resolve();
-        }
-        return gateway
-          .initChatRoom((data) => this.onChatData(gateway, data))
-          .catch((error) => {
-            console.error("[Admin] [ChatBox] gateway.initChatRoom error", gateway.name, error);
-            captureException(error, {source: "AdminRoot ChatBox", gateway: gateway.name});
-            throw error;
-          });
-      })
-    )
-      .then(() => {
-        if (!!this.props.onChatRoomsInitialized) {
-          this.props.onChatRoomsInitialized();
-        }
-      })
-      .catch((error) => {
-        console.error("[Admin] [ChatBox] error initializing gateways", error);
-        captureException(error, {source: "AdminRoot ChatBox"});
-        if (!!this.props.onChatRoomsInitialized) {
-          this.props.onChatRoomsInitialized(error);
-        }
-      });
-  };
-
   onKeyPressed = (e) => {
     if (e.code === "Enter") this.sendMessage();
   };
 
-  onChatData = (gateway, data) => {
-    const json = JSON.parse(data);
+  onChatData = (json) => {
     const what = json["textroom"];
     if (what === "message") {
       // Incoming message: public or private?
@@ -101,28 +93,20 @@ class ChatBox extends Component {
       message.time = dateString;
       if (whisper === true) {
         // Private message
-        console.log("[Admin] [ChatBox] private message", gateway.name, from, message);
+        console.log("[Admin] [ChatBox] private message", from, message);
         let {messages} = this.state;
         messages.push(message);
         this.setState({messages});
         this.scrollToBottom();
       } else {
         // Public message
-        console.log("[Admin] [ChatBox] public message", gateway.name, from, message);
+        console.log("[Admin] [ChatBox] public message", from, message);
         let {messages} = this.state;
         message.to = this.props.selected_group;
         messages.push(message);
         this.setState({messages});
         this.scrollToBottom();
       }
-    } else if (what === "join") {
-      gateway.log("[chatroom] Somebody joined", json["username"], json["display"]);
-    } else if (what === "leave") {
-      gateway.log("[chatroom] Somebody left", json["username"], getDateString());
-    } else if (what === "kicked") {
-      gateway.log("[chatroom] Somebody was kicked", json["username"], getDateString());
-    } else if (what === "destroyed") {
-      gateway.log("[chatroom] room destroyed", json["room"]);
     }
   };
 
@@ -181,7 +165,7 @@ class ChatBox extends Component {
     this.setState({input_value: ""});
     const {messages} = this.state;
     msg.time = getDateString();
-    messages.push(msg);
+    //messages.push(msg);
     this.setState({input_value: ""}, this.scrollToBottom);
   };
 
@@ -227,15 +211,15 @@ class ChatBox extends Component {
   };
 
   render() {
-    const {selected_user, selected_group, chatRoomsInitializedError} = this.props;
+    const {selected_user, selected_group} = this.props;
     const {messages, msg_type, input_value, showConfirmBroadcast} = this.state;
     const to = selected_user && selected_user.display ? selected_user.display : "Select User:";
     const group = selected_group ? selected_group : "Select Group:";
 
     const send_options = [
-      {key: "all", text: "Everyone", value: "all"},
+      {key: "all", text: "Everyone", value: "all", disabled: true},
       {key: "public", text: group, value: "public"},
-      {key: "private", text: to, value: "private"},
+      {key: "private", text: to, value: "private", disabled: true},
     ];
 
     const list_msgs = messages.map((msg, i) => {
@@ -253,8 +237,8 @@ class ChatBox extends Component {
     });
 
     return (
-      <Segment className="chat_segment" disabled={chatRoomsInitializedError} error>
-        <Message className="messages_list" error={chatRoomsInitializedError}>
+      <Segment className="chat_segment">
+        <Message className="messages_list">
           {list_msgs}
           <div ref="end" />
         </Message>
@@ -265,23 +249,15 @@ class ChatBox extends Component {
           action
           value={input_value}
           onChange={this.handleInputChange}
-          disabled={chatRoomsInitializedError}
-          error={chatRoomsInitializedError}
         >
           <input />
           <Select
             options={send_options}
             value={msg_type}
             error={msg_type === "all"}
-            disabled={chatRoomsInitializedError}
             onChange={(e, {value}) => this.setState({msg_type: value})}
           />
-          <Button
-            positive
-            negative={msg_type === "all"}
-            onClick={this.sendMessage}
-            disabled={chatRoomsInitializedError}
-          >
+          <Button positive negative={msg_type === "all"} onClick={this.sendMessage}>
             Send
           </Button>
         </Input>

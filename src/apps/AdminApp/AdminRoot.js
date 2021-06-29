@@ -89,7 +89,6 @@ class AdminRoot extends Component {
           tcp: ConfigStore.dynamicConfig("galaxy_protocol"),
         });
         GxyJanus.setGlobalConfig(data);
-        mqtt.init(user, (data) => console.log("[Admin] mqtt init: ", data));
       })
       .then(() => this.initGateways(user))
       .then(this.pollRooms)
@@ -1078,15 +1077,12 @@ class AdminRoot extends Component {
           <Grid.Row>
             <Grid.Column width={13}>
               <ChatBox
+                onRef={(ref) => (this.chat = ref)}
                 user={user}
                 rooms={rooms}
-                selected_janus={current_janus}
                 selected_room={current_room}
                 selected_group={current_group}
                 selected_user={feed_user}
-                gateways={gateways}
-                chatRoomsInitializedError={chatRoomsInitializedError}
-                onChatRoomsInitialized={this.onChatRoomsInitialized}
               />
             </Grid.Column>
             <Grid.Column width={3}>
