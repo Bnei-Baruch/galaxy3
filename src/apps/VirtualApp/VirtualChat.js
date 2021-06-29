@@ -346,7 +346,7 @@ class VirtualChat extends Component {
       text: JSON.stringify(msg),
     };
 
-    let mqtt_chat = false;
+    let mqtt_chat = true;
 
     if (mqtt_chat) {
       mqtt.send(JSON.stringify(message), false, `galaxy/room/${this.state.room}/chat`);
