@@ -195,6 +195,7 @@ class AdminRoot extends Component {
             .filter((feeder) => JSON.parse(feeder.display).role.match(/^(user|guest|ghost)$/));
 
           mqtt.join("galaxy/room/" + msg["room"]);
+          mqtt.join("galaxy/room/" + msg["room"] + "/chat", true);
 
           console.log("[Admin] available feeds", feeds);
           const subscription = [];
@@ -579,6 +580,7 @@ class AdminRoot extends Component {
     if (current_room) {
       promise = this.exitRoom(current_room);
       mqtt.exit("galaxy/room/" + current_room);
+      mqtt.exit("galaxy/room/" + current_room + "/chat");
     } else {
       promise = new Promise((resolve, _) => {
         resolve();

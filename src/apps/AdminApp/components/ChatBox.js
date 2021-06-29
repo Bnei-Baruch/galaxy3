@@ -1,5 +1,5 @@
 import React, {Component} from "react";
-import {Button, Input, Message, Segment, Select} from "semantic-ui-react";
+import {Button, Confirm, Header, Icon, Input, Message, Segment, Select} from "semantic-ui-react";
 import {Janus} from "../../../lib/janus";
 import {getDateString} from "../../../shared/tools";
 import {captureException} from "../../../shared/sentry";
@@ -21,26 +21,21 @@ class ChatBox extends Component {
     messages: [],
     visible: false,
     input_value: "",
+    showConfirmBroadcast: false,
   };
 
   componentDidMount() {
     document.addEventListener("keydown", this.onKeyPressed);
-    //this.initGateways();
   }
 
   componentWillUnmount() {
     document.removeEventListener("keydown", this.onKeyPressed);
-    // const {gateways} = this.props;
-    // Promise.all(Object.values(gateways).map((gateway) => gateway.detachChatRoom())).catch((error) => {
-    //   captureException(error, {source: "AdminRoot ChatBox"});
-    // });
   }
 
-  // componentDidUpdate(prevProps) {
-  //   if (prevProps.gateways !== this.props.gateways) {
-  //     this.initGateways();
-  //   }
-  // }
+  onConfirmBroadcast = (sure) => {
+    this.setState({showConfirmBroadcast: false});
+    if (sure) this.sendBroadcastMessage();
+  };
 
   initGateways = () => {
     const {gateways} = this.props;
@@ -136,7 +131,6 @@ class ChatBox extends Component {
       user: {role, display, username},
       selected_room,
       selected_user,
-      gateways,
     } = this.props;
     const {input_value} = this.state;
     if (!selected_user) {
@@ -144,7 +138,6 @@ class ChatBox extends Component {
       return;
     }
 
-    const gateway = gateways[selected_user.janus];
     const msg = {user: {role, display, username}, text: input_value};
     const message = {
       ack: false,
@@ -155,41 +148,19 @@ class ChatBox extends Component {
       text: JSON.stringify(msg),
     };
 
-    let mqtt_chat = true;
-
-    if (mqtt_chat) {
-      mqtt.send(JSON.stringify(message), false, `galaxy/users/${selected_user.id}`);
-      this.setState({input_value: ""});
-      const {messages} = this.state;
-      msg.time = getDateString();
-      msg.to = selected_user.display;
-      messages.push(msg);
-      this.setState({input_value: ""}, this.scrollToBottom);
-    }
-
-    if (!mqtt_chat) {
-      gateway
-        .data("chatroom", gateway.chatroom, message)
-        .then(() => {
-          const {messages} = this.state;
-          msg.time = getDateString();
-          msg.to = selected_user.display;
-          messages.push(msg);
-          this.setState({input_value: ""}, this.scrollToBottom);
-        })
-        .catch((error) => {
-          captureException(error, {source: "AdminRoot ChatBox"});
-          alert(error);
-        });
-    }
+    mqtt.send(JSON.stringify(message), false, `galaxy/users/${selected_user.id}`);
+    this.setState({input_value: ""});
+    const {messages} = this.state;
+    msg.time = getDateString();
+    msg.to = selected_user.display;
+    messages.push(msg);
+    this.setState({input_value: ""}, this.scrollToBottom);
   };
 
   sendPublicMessage = () => {
     const {
       user: {role, display, username},
-      selected_janus,
       selected_room,
-      gateways,
     } = this.props;
     const {input_value} = this.state;
     if (!selected_room) {
@@ -197,7 +168,6 @@ class ChatBox extends Component {
       return;
     }
 
-    const gateway = gateways[selected_janus];
     const msg = {user: {role, display, username}, text: input_value};
     const message = {
       ack: false,
@@ -207,60 +177,44 @@ class ChatBox extends Component {
       text: JSON.stringify(msg),
     };
 
-    let mqtt_chat = true;
-
-    if (mqtt_chat) {
-      mqtt.send(JSON.stringify(message), false, `galaxy/users/broadcast`);
-      this.setState({input_value: ""});
-      const {messages} = this.state;
-      msg.time = getDateString();
-      messages.push(msg);
-      this.setState({input_value: ""}, this.scrollToBottom);
-    }
-
-    if (!mqtt_chat) {
-      gateway
-        .data("chatroom", gateway.chatroom, message)
-        .then(() => {
-          // const {messages} = this.state;
-          // msg.time = getDateString();
-          // messages.push(msg);
-          this.setState({input_value: ""}, this.scrollToBottom);
-        })
-        .catch((error) => {
-          captureException(error, {source: "AdminRoot ChatBox"});
-          alert(error);
-        });
-    }
+    mqtt.send(JSON.stringify(message), false, `galaxy/room/${selected_room}/chat`);
+    this.setState({input_value: ""});
+    const {messages} = this.state;
+    msg.time = getDateString();
+    messages.push(msg);
+    this.setState({input_value: ""}, this.scrollToBottom);
   };
 
-  /* Temporary comment out. Code not used, never called. */
-  /* sendBroadcastMessage = () => {
-        const {user: {role, display, username}, selected_room, rooms, gateways} = this.props;
-        const {input_value, messages} = this.state;
+  sendBroadcastMessage = () => {
+    const {
+      user: {role, display, username},
+      selected_room,
+    } = this.props;
+    const {input_value} = this.state;
 
-        const room_data = rooms.find(x => x.room === selected_room);
-        if (!room_data) {
-            console.warn("[Admin] [ChatBox] sendBroadcastMessage. no room data in state", selected_room);
-            alert("No room data in state: " + selected_room);
-            return;
-        }
+    const msg = {user: {role, display, username}, text: input_value};
+    const message = {
+      ack: false,
+      textroom: "message",
+      transaction: Janus.randomString(12),
+      room: selected_room,
+      text: JSON.stringify(msg),
+    };
 
-        const gateway = gateways[room_data.janus];
-        const msg = {type: "chat-broadcast", room: selected_room, user: {role, display, username}, text: input_value};
-        gateway.sendProtocolMessage(msg).then(() => {
-          msg.time = getDateString();
-          msg.to = "all";
-          messages.push(msg);
-          this.setState({messages, input_value: "", msg_type: "private"}, this.scrollToBottom);
-        }).catch(error => {
-          captureException(error, {source: 'AdminRoot ChatBox'});
-          alert(error);
-        });
-    }; */
+    mqtt.send(JSON.stringify(message), false, `galaxy/users/broadcast`);
+    this.setState({input_value: ""});
+    const {messages} = this.state;
+    msg.time = getDateString();
+    messages.push(msg);
+    this.setState({input_value: ""}, this.scrollToBottom);
+  };
 
   sendMessage = () => {
     const {msg_type} = this.state;
+    if (msg_type === "all") {
+      this.setState({showConfirmBroadcast: true});
+      return;
+    }
     msg_type === "private" ? this.sendPrivateMessage() : this.sendPublicMessage();
   };
 
@@ -274,12 +228,13 @@ class ChatBox extends Component {
 
   render() {
     const {selected_user, selected_group, chatRoomsInitializedError} = this.props;
-    const {messages, msg_type, input_value} = this.state;
+    const {messages, msg_type, input_value, showConfirmBroadcast} = this.state;
     const to = selected_user && selected_user.display ? selected_user.display : "Select User:";
-    const group = selected_group ? selected_group : "All:";
+    const group = selected_group ? selected_group : "Select Group:";
 
     const send_options = [
-      {key: "all", text: group, value: "all"},
+      {key: "all", text: "Everyone", value: "all"},
+      {key: "public", text: group, value: "public"},
       {key: "private", text: to, value: "private"},
     ];
 
@@ -303,7 +258,6 @@ class ChatBox extends Component {
           {list_msgs}
           <div ref="end" />
         </Message>
-
         <Input
           fluid
           type="text"
@@ -331,6 +285,18 @@ class ChatBox extends Component {
             Send
           </Button>
         </Input>
+        <Confirm
+          open={showConfirmBroadcast}
+          header={
+            <Header>
+              <Icon name="warning circle" color="red" />
+              Caution
+            </Header>
+          }
+          content="Are you sure you want to send message to EVERYONE?!"
+          onCancel={() => this.onConfirmBroadcast(false)}
+          onConfirm={() => this.onConfirmBroadcast(true)}
+        />
       </Segment>
     );
   }
