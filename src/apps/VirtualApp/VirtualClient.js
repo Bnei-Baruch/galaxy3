@@ -1383,7 +1383,6 @@ class VirtualClient extends Component {
     this.makeDelay();
 
     if (videoroom) {
-      user.camera = !cammuted;
       if (!cammuted) {
         videoroom.createOffer({
           media: {removeVideo: true},
@@ -1416,6 +1415,8 @@ class VirtualClient extends Component {
         });
         this.startLocalMedia();
       }
+
+      user.camera = cammuted;
       this.setState({user});
 
       updateSentryUser(user);

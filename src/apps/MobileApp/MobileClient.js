@@ -1502,7 +1502,7 @@ class MobileClient extends Component {
       const user = Object.assign({}, this.state.user);
       if (user.role === "ghost") return;
       this.makeDelay();
-      user.camera = !cammuted;
+      user.camera = cammuted;
       cammuted ? videoroom.unmuteVideo() : videoroom.muteVideo();
       this.setState({user, cammuted: !cammuted});
 
