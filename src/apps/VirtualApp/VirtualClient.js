@@ -18,14 +18,7 @@ import "./VideoConteiner.scss";
 import "./CustomIcons.scss";
 import "eqcss";
 import VirtualChat from "./VirtualChat";
-import {
-  NO_VIDEO_OPTION_VALUE,
-  PROTOCOL_ROOM,
-  USERNAME_ALREADY_EXIST_ERROR_CODE,
-  VIDEO_360P_OPTION_VALUE,
-  vsettings_list,
-  sketchesByLang,
-} from "../../shared/consts";
+import {NO_VIDEO_OPTION_VALUE, VIDEO_360P_OPTION_VALUE, vsettings_list, sketchesByLang} from "../../shared/consts";
 import {GEO_IP_INFO, APP_STUN_SRV_STR, APP_JANUS_SRV_STR1} from "../../shared/env";
 import platform from "platform";
 import {TopMenu} from "./components/TopMenu";
@@ -289,6 +282,7 @@ class VirtualClient extends Component {
             console.log("[mqtt] init: ", data);
             mqtt.join("galaxy/users/broadcast");
             mqtt.join("galaxy/users/" + user.id);
+            this.chat.initChatEvents();
             mqtt.watch((message) => {
               this.handleCmdData(message);
             });
@@ -697,7 +691,7 @@ class VirtualClient extends Component {
     user.question = false;
     user.timestamp = Date.now();
     this.setState({user, muted: true});
-    this.chat.initChatEvents();
+
     updateSentryUser(user);
 
     const {id, timestamp, role, username} = user;
@@ -713,58 +707,11 @@ class VirtualClient extends Component {
         this.exitRoom(/* reconnect= */ false);
       },
     });
-
-    // this.chat.initChatRoom(
-    //   janus,
-    //   selected_room,
-    //   user,
-    //   this.initChatroomCallback(videoroom, selected_room, user).bind(this)
-    // );
   };
-
-  // initChatroomCallback = (videoroom, selected_room, user) => {
-  //   return (data) => {
-  //     const {textroom, error_code} = data;
-  //     if (textroom === "error") {
-  //       if (error_code !== USERNAME_ALREADY_EXIST_ERROR_CODE) {
-  //         console.error("Chatroom error: ", data, error_code);
-  //       } else {
-  //         console.log("Chatroom error: ", data, error_code);
-  //       }
-  //       this.exitRoom(
-  //         /* reconnect= */ false,
-  //         () => {
-  //           if (error_code === USERNAME_ALREADY_EXIST_ERROR_CODE) alert(this.props.t("oldClient.error") + data.error);
-  //           this.setState({wipSettings: false});
-  //         },
-  //         false
-  //       );
-  //     } else if (textroom === "success" && data.participants) {
-  //       Janus.log(":: Successfully joined to chat room: " + selected_room);
-  //       user.textroom_handle = this.chat.getHandle(); // we want this in backend for debugging of textroom based signaling
-  //       this.setState({user});
-  //       const {id, timestamp, role, username} = user;
-  //       const d = {id, timestamp, role, display: username};
-  //       const register = {request: "join", room: selected_room, ptype: "publisher", display: JSON.stringify(d)};
-  //       videoroom.send({
-  //         message: register,
-  //         success: () => {
-  //           console.log("Request join success");
-  //         },
-  //         error: (error) => {
-  //           console.error(error);
-  //           this.exitRoom(/* reconnect= */ false);
-  //         },
-  //       });
-  //     }
-  //   };
-  // };
 
   exitRoom = (reconnect, callback, error) => {
     this.setState({delay: true});
-    // if (this.state.user.role === userRolesEnum.user) {
-    //   wkliLeave(this.state.user);
-    // }
+
     clearInterval(this.state.upval);
     this.clearKeepAlive();
 
@@ -783,14 +730,9 @@ class VirtualClient extends Component {
     let {videoroom, remoteFeed, janus, room, shidur, virtualStreamingJanus} = this.state;
     if (remoteFeed) remoteFeed.detach();
     if (videoroom) videoroom.send({message: {request: "leave", room}});
-    // let pl = {textroom: "leave", transaction: Janus.randomString(12), room: PROTOCOL_ROOM};
-    // if (protocol) protocol.data({text: JSON.stringify(pl)});
-
-    // if (this.chat && !error) {
-    //   this.chat.exitChatRoom(room);
-    // }
 
     mqtt.exit("galaxy/room/" + room);
+    mqtt.exit("galaxy/room/" + room + "/chat");
 
     if (shidur && !reconnect) {
       virtualStreamingJanus.destroy({
@@ -823,7 +765,6 @@ class VirtualClient extends Component {
         upval: null,
         remoteFeed: null,
         videoroom: null,
-        protocol: null,
         janus: null,
         delay: reconnect,
         room: reconnect ? room : "",

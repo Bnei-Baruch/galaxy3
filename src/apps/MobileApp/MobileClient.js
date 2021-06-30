@@ -276,6 +276,7 @@ class MobileClient extends Component {
             console.log("[mqtt] init: ", data);
             mqtt.join("galaxy/users/broadcast");
             mqtt.join("galaxy/users/" + user.id);
+            this.chat.initChatEvents();
             mqtt.watch((message) => {
               this.handleCmdData(message);
             });
@@ -675,7 +676,7 @@ class MobileClient extends Component {
     user.timestamp = Date.now();
     this.setState({user, muted: true});
     updateSentryUser(user);
-    this.chat.initChatEvents();
+
     const {id, timestamp, role, username} = user;
     const d = {id, timestamp, role, display: username};
     const register = {
@@ -704,8 +705,6 @@ class MobileClient extends Component {
 
     if (remoteFeed) remoteFeed.detach();
     if (videoroom) videoroom.send({message: {request: "leave", room}});
-    // let pl = {textroom: "leave", transaction: Janus.randomString(12), room: PROTOCOL_ROOM};
-    // if (protocol) protocol.data({text: JSON.stringify(pl)});
 
     localStorage.setItem("question", false);
 
@@ -719,11 +718,8 @@ class MobileClient extends Component {
         console.error("[MobileClient] error exiting room", err);
       });
 
-    // if (this.chat && !error) {
-    //   this.chat.exitChatRoom(room);
-    // }
-
     mqtt.exit("galaxy/room/" + room);
+    mqtt.exit("galaxy/room/" + room + "/chat");
 
     if (this.state.shidur) {
       this.toggleShidur();
@@ -731,7 +727,6 @@ class MobileClient extends Component {
 
     setTimeout(() => {
       if (videoroom) videoroom.detach();
-      // if (protocol) protocol.detach();
       if (janus) janus.destroy();
       this.setState({
         cammuted: false,

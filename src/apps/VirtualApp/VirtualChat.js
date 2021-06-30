@@ -165,7 +165,7 @@ class VirtualChat extends Component {
       },
       ondataopen: () => {
         Janus.log("[VirtualChat] The DataChannel is available! ");
-        if (!this.state.room) this.joinChatRoom(chatroom, room, user);
+        if (!this.props.room) this.joinChatRoom(chatroom, room, user);
       },
       ondata: (data) => {
         Janus.debug("[VirtualChat] We got message from Data Channel", data);
@@ -179,7 +179,7 @@ class VirtualChat extends Component {
       },
       oncleanup: () => {
         Janus.log("[VirtualChat] ::: Got a cleanup notification :::");
-        if (this.state.room) this.setState({messages: [], chatroom: null, room: null});
+        if (this.props.room) this.setState({messages: [], chatroom: null, room: null});
       },
     });
   };
@@ -301,7 +301,7 @@ class VirtualChat extends Component {
       ack: false,
       textroom: "message",
       transaction: Janus.randomString(12),
-      room: this.state.room,
+      room: this.props.room,
       text: JSON.stringify(msg),
     };
     if (this.state.chatroom) {
@@ -330,7 +330,7 @@ class VirtualChat extends Component {
       ack: false,
       textroom: "message",
       transaction: Janus.randomString(12),
-      room: this.state.room,
+      room: this.props.room,
       ...pvt,
       text: JSON.stringify(msg),
     };
@@ -338,7 +338,7 @@ class VirtualChat extends Component {
     let mqtt_chat = true;
 
     if (mqtt_chat) {
-      mqtt.send(JSON.stringify(message), false, `galaxy/room/${this.state.room}/chat`);
+      mqtt.send(JSON.stringify(message), false, `galaxy/room/${this.props.room}/chat`);
       this.setState({input_value: ""});
       if (!room_chat) {
         support_msgs.push(msg);
