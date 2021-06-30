@@ -45,7 +45,7 @@ import VirtualStreamingJanus from "../../shared/VirtualStreamingJanus";
 import {getUser, kc} from "../../components/UserManager";
 import LoginPage from "../../components/LoginPage";
 import {Profile} from "../../components/Profile";
-import {sentryDebugAction, updateSentryUser} from "../../shared/sentry";
+import {updateSentryUser} from "../../shared/sentry";
 import GxyJanus from "../../shared/janus-utils";
 import audioModeSvg from "../../shared/audio-mode.svg";
 import fullModeSvg from "../../shared/full-mode.svg";
@@ -687,7 +687,7 @@ class VirtualClient extends Component {
   };
 
   joinRoom = (reconnect, videoroom, user) => {
-    let {janus, selected_room, tested, media} = this.state;
+    let {selected_room, tested, media} = this.state;
     const {
       video: {video_device},
     } = media;
@@ -697,69 +697,68 @@ class VirtualClient extends Component {
     user.question = false;
     user.timestamp = Date.now();
     this.setState({user, muted: true});
+    this.chat.initChatEvents();
     updateSentryUser(user);
 
-    // if(video_device && user.role === "user") {
-    //   if(this.state.upval) {
-    //     clearInterval(this.state.upval);
-    //   }
-    //   takeImage(user);
-    //   let upval = setInterval(() => {
-    //     takeImage(user);
-    //   }, 10*60000);
-    //   this.setState({upval});
-    // }
+    const {id, timestamp, role, username} = user;
+    const d = {id, timestamp, role, display: username};
+    const register = {request: "join", room: selected_room, ptype: "publisher", display: JSON.stringify(d)};
+    videoroom.send({
+      message: register,
+      success: () => {
+        console.log("Request join success");
+      },
+      error: (error) => {
+        console.error(error);
+        this.exitRoom(/* reconnect= */ false);
+      },
+    });
 
-    this.chat.initChatRoom(
-      janus,
-      selected_room,
-      user,
-      this.initChatroomCallback(videoroom, selected_room, user).bind(this)
-    );
+    // this.chat.initChatRoom(
+    //   janus,
+    //   selected_room,
+    //   user,
+    //   this.initChatroomCallback(videoroom, selected_room, user).bind(this)
+    // );
   };
 
-  checkAliveDebugAction = () => {
-    const {selected_room, user} = this.state;
-    this.chat.joinChatRoom(this.chat.state.chatroom, selected_room, user);
-  };
-
-  initChatroomCallback = (videoroom, selected_room, user) => {
-    return (data) => {
-      const {textroom, error_code} = data;
-      if (textroom === "error") {
-        if (error_code !== USERNAME_ALREADY_EXIST_ERROR_CODE) {
-          console.error("Chatroom error: ", data, error_code);
-        } else {
-          console.log("Chatroom error: ", data, error_code);
-        }
-        this.exitRoom(
-          /* reconnect= */ false,
-          () => {
-            if (error_code === USERNAME_ALREADY_EXIST_ERROR_CODE) alert(this.props.t("oldClient.error") + data.error);
-            this.setState({wipSettings: false});
-          },
-          false
-        );
-      } else if (textroom === "success" && data.participants) {
-        Janus.log(":: Successfully joined to chat room: " + selected_room);
-        user.textroom_handle = this.chat.getHandle(); // we want this in backend for debugging of textroom based signaling
-        this.setState({user});
-        const {id, timestamp, role, username} = user;
-        const d = {id, timestamp, role, display: username};
-        const register = {request: "join", room: selected_room, ptype: "publisher", display: JSON.stringify(d)};
-        videoroom.send({
-          message: register,
-          success: () => {
-            console.log("Request join success");
-          },
-          error: (error) => {
-            console.error(error);
-            this.exitRoom(/* reconnect= */ false);
-          },
-        });
-      }
-    };
-  };
+  // initChatroomCallback = (videoroom, selected_room, user) => {
+  //   return (data) => {
+  //     const {textroom, error_code} = data;
+  //     if (textroom === "error") {
+  //       if (error_code !== USERNAME_ALREADY_EXIST_ERROR_CODE) {
+  //         console.error("Chatroom error: ", data, error_code);
+  //       } else {
+  //         console.log("Chatroom error: ", data, error_code);
+  //       }
+  //       this.exitRoom(
+  //         /* reconnect= */ false,
+  //         () => {
+  //           if (error_code === USERNAME_ALREADY_EXIST_ERROR_CODE) alert(this.props.t("oldClient.error") + data.error);
+  //           this.setState({wipSettings: false});
+  //         },
+  //         false
+  //       );
+  //     } else if (textroom === "success" && data.participants) {
+  //       Janus.log(":: Successfully joined to chat room: " + selected_room);
+  //       user.textroom_handle = this.chat.getHandle(); // we want this in backend for debugging of textroom based signaling
+  //       this.setState({user});
+  //       const {id, timestamp, role, username} = user;
+  //       const d = {id, timestamp, role, display: username};
+  //       const register = {request: "join", room: selected_room, ptype: "publisher", display: JSON.stringify(d)};
+  //       videoroom.send({
+  //         message: register,
+  //         success: () => {
+  //           console.log("Request join success");
+  //         },
+  //         error: (error) => {
+  //           console.error(error);
+  //           this.exitRoom(/* reconnect= */ false);
+  //         },
+  //       });
+  //     }
+  //   };
+  // };
 
   exitRoom = (reconnect, callback, error) => {
     this.setState({delay: true});
@@ -781,15 +780,15 @@ class VirtualClient extends Component {
         console.error("Error exiting room", err);
       });
 
-    let {videoroom, remoteFeed, protocol, janus, room, shidur, virtualStreamingJanus} = this.state;
+    let {videoroom, remoteFeed, janus, room, shidur, virtualStreamingJanus} = this.state;
     if (remoteFeed) remoteFeed.detach();
     if (videoroom) videoroom.send({message: {request: "leave", room}});
-    let pl = {textroom: "leave", transaction: Janus.randomString(12), room: PROTOCOL_ROOM};
-    if (protocol) protocol.data({text: JSON.stringify(pl)});
+    // let pl = {textroom: "leave", transaction: Janus.randomString(12), room: PROTOCOL_ROOM};
+    // if (protocol) protocol.data({text: JSON.stringify(pl)});
 
-    if (this.chat && !error) {
-      this.chat.exitChatRoom(room);
-    }
+    // if (this.chat && !error) {
+    //   this.chat.exitChatRoom(room);
+    // }
 
     mqtt.exit("galaxy/room/" + room);
 
@@ -808,7 +807,6 @@ class VirtualClient extends Component {
     }
     setTimeout(() => {
       if (videoroom) videoroom.detach();
-      if (protocol) protocol.detach();
       if (janus) janus.destroy();
       if (!reconnect) {
         this.state.virtualStreamingJanus.muteAudioElement();
@@ -2012,8 +2010,6 @@ class VirtualClient extends Component {
             >
               {t("oldClient.sendQuestion")}
             </ButtonMD>
-
-            {!isDeb ? null : <ButtonMD onClick={sentryDebugAction}>Sentry</ButtonMD>}
           </ButtonGroup>
 
           <Support />
@@ -2593,8 +2589,6 @@ class VirtualClient extends Component {
                 {t("loginPage.userFee")}
               </Button>
               <Monitoring monitoringData={monitoringData} />
-              {!isDeb ? null : <Menu.Item onClick={sentryDebugAction}>Sentry</Menu.Item>}
-              {!isDeb ? null : <Menu.Item onClick={this.checkAliveDebugAction.bind(this)}>Check Alive</Menu.Item>}
             </Menu>
             {!new URL(window.location.href).searchParams.has("lost") ? null : (
               <Label

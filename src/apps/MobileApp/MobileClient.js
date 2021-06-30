@@ -16,13 +16,7 @@ import {
 import "./MobileClient.scss";
 import "./MobileConteiner.scss";
 import "eqcss";
-import {
-  NO_VIDEO_OPTION_VALUE,
-  PROTOCOL_ROOM,
-  USERNAME_ALREADY_EXIST_ERROR_CODE,
-  VIDEO_240P_OPTION_VALUE,
-  vsettings_list,
-} from "../../shared/consts";
+import {NO_VIDEO_OPTION_VALUE, VIDEO_240P_OPTION_VALUE, vsettings_list} from "../../shared/consts";
 import {APP_JANUS_SRV_STR1, APP_STUN_SRV_STR, GEO_IP_INFO} from "../../shared/env";
 import platform from "platform";
 import {isMobile} from "react-device-detect";
@@ -672,7 +666,7 @@ class MobileClient extends Component {
   };
 
   joinRoom = (reconnect, videoroom, user) => {
-    let {janus, selected_room, media} = this.state;
+    let {selected_room, media} = this.state;
     const {
       video: {video_device},
     } = media;
@@ -681,58 +675,37 @@ class MobileClient extends Component {
     user.timestamp = Date.now();
     this.setState({user, muted: true});
     updateSentryUser(user);
-
-    this.chat.initChatRoom(janus, selected_room, user, (data) => {
-      const {textroom, error_code, error} = data;
-      if (textroom === "error") {
-        if (error_code !== USERNAME_ALREADY_EXIST_ERROR_CODE) {
-          console.error("Chatroom error: ", data, error_code);
-        } else {
-          console.log("Chatroom error: ", data, error_code);
-        }
-        this.exitRoom(
-          false,
-          () => {
-            if (error_code === USERNAME_ALREADY_EXIST_ERROR_CODE) alert(this.props.t("oldClient.error") + data.error);
-          },
-          true
-        );
-      } else if (textroom === "success" && data.participants) {
-        Janus.log(":: Successfully joined to chat room: " + selected_room);
-        user.textroom_handle = this.chat.getHandle(); // we want this in backend for debugging of textroom based signaling
-        this.setState({user});
-        const {id, timestamp, role, username} = user;
-        const d = {id, timestamp, role, display: username};
-        const register = {
-          request: "join",
-          room: selected_room,
-          ptype: "publisher",
-          display: JSON.stringify(d),
-        };
-        videoroom.send({
-          message: register,
-          success: () => {
-            console.log("Request join success");
-          },
-          error: (error) => {
-            console.error(error);
-            this.exitRoom(false);
-          },
-        });
-      }
+    this.chat.initChatEvents();
+    const {id, timestamp, role, username} = user;
+    const d = {id, timestamp, role, display: username};
+    const register = {
+      request: "join",
+      room: selected_room,
+      ptype: "publisher",
+      display: JSON.stringify(d),
+    };
+    videoroom.send({
+      message: register,
+      success: () => {
+        console.log("Request join success");
+      },
+      error: (error) => {
+        console.error(error);
+        this.exitRoom(false);
+      },
     });
   };
 
   exitRoom = (reconnect, callback, error) => {
     this.setState({delay: true});
-    let {videoroom, remoteFeed, protocol, janus, room} = this.state;
+    let {videoroom, remoteFeed, janus, room} = this.state;
     clearInterval(this.state.upval);
     this.clearKeepAlive();
 
     if (remoteFeed) remoteFeed.detach();
     if (videoroom) videoroom.send({message: {request: "leave", room}});
-    let pl = {textroom: "leave", transaction: Janus.randomString(12), room: PROTOCOL_ROOM};
-    if (protocol) protocol.data({text: JSON.stringify(pl)});
+    // let pl = {textroom: "leave", transaction: Janus.randomString(12), room: PROTOCOL_ROOM};
+    // if (protocol) protocol.data({text: JSON.stringify(pl)});
 
     localStorage.setItem("question", false);
 
@@ -746,9 +719,9 @@ class MobileClient extends Component {
         console.error("[MobileClient] error exiting room", err);
       });
 
-    if (this.chat && !error) {
-      this.chat.exitChatRoom(room);
-    }
+    // if (this.chat && !error) {
+    //   this.chat.exitChatRoom(room);
+    // }
 
     mqtt.exit("galaxy/room/" + room);
 
@@ -758,7 +731,7 @@ class MobileClient extends Component {
 
     setTimeout(() => {
       if (videoroom) videoroom.detach();
-      if (protocol) protocol.detach();
+      // if (protocol) protocol.detach();
       if (janus) janus.destroy();
       this.setState({
         cammuted: false,
@@ -851,7 +824,6 @@ class MobileClient extends Component {
     }
 
     if (remoteFeed) remoteFeed.send({message: {request: "configure", restart: true}});
-    if (this.chat) this.chat.iceRestart();
     if (this.state.virtualStreamingJanus) this.state.virtualStreamingJanus.iceRestart();
   };
 

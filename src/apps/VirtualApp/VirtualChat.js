@@ -5,13 +5,10 @@ import {getDateString, notifyMe} from "../../shared/tools";
 import {SHIDUR_ID} from "../../shared/consts";
 import {captureMessage} from "../../shared/sentry";
 import {Typography} from "@material-ui/core";
-import {CheckAlive} from "../../shared/CheckAlive";
 import mqtt from "../../shared/mqtt";
 
 //const isUseNewDesign = new URL(window.location.href).searchParams.has('new_design');
 const isUseNewDesign = window.location.hostname === "arvut.kli.one" && window.location.pathname.search(/userm/) === -1;
-
-const checkAlive = new CheckAlive();
 
 class VirtualChat extends Component {
   state = {
@@ -37,6 +34,29 @@ class VirtualChat extends Component {
       this.refs.input.focus();
     }
   }
+
+  initChatEvents = () => {
+    // Public chat
+    mqtt.mq.on("MqttChatEvent", (data) => {
+      let json = JSON.parse(data);
+      this.onData(json);
+    });
+
+    // Private chat
+    mqtt.mq.on("MqttPrivateMessage", (data) => {
+      let json = JSON.parse(data);
+      json["whisper"] = true;
+      this.onData(json);
+    });
+
+    // Broadcast message
+    mqtt.mq.on("MqttBroadcastMessage", (data) => {
+      let json = JSON.parse(data);
+      let message = JSON.parse(json.text);
+      message.time = getDateString(json["date"]);
+      notifyMe("Arvut System", message.text, true);
+    });
+  };
 
   joinChatRoom = (textroom, roomid, user) => {
     let transaction = Janus.randomString(12);
@@ -146,27 +166,6 @@ class VirtualChat extends Component {
       ondataopen: () => {
         Janus.log("[VirtualChat] The DataChannel is available! ");
         if (!this.state.room) this.joinChatRoom(chatroom, room, user);
-
-        // Public chat
-        mqtt.mq.on("MqttChatEvent", (data) => {
-          let json = JSON.parse(data);
-          this.onData(json);
-        });
-
-        // Private chat
-        mqtt.mq.on("MqttPrivateMessage", (data) => {
-          let json = JSON.parse(data);
-          json["whisper"] = true;
-          this.onData(json);
-        });
-
-        // Broadcast message
-        mqtt.mq.on("MqttBroadcastMessage", (data) => {
-          let json = JSON.parse(data);
-          let message = JSON.parse(json.text);
-          message.time = getDateString(json["date"]);
-          notifyMe("Arvut System", message.text, true);
-        });
       },
       ondata: (data) => {
         Janus.debug("[VirtualChat] We got message from Data Channel", data);
@@ -174,10 +173,8 @@ class VirtualChat extends Component {
         let what = json["textroom"];
         if (what.match(/^(success|error)$/)) {
           cb(json);
-          //what === 'success' && checkAlive.start(this.state.chatroom, room, user);
         } else {
           this.onData(json);
-          //checkAlive.checkAlive(json)
         }
       },
       oncleanup: () => {
@@ -195,7 +192,6 @@ class VirtualChat extends Component {
 
   exitChatRoom = (room) => {
     const {chatroom} = this.state;
-    checkAlive.stop();
     if (chatroom) {
       chatroom.data({
         text: JSON.stringify({textroom: "leave", transaction: Janus.randomString(12), room}),
@@ -213,13 +209,6 @@ class VirtualChat extends Component {
   };
 
   onData = (json) => {
-    // var transaction = json['transaction'];
-    // if (transactions[transaction]) {
-    //     // Someone was waiting for this
-    //     transactions[transaction](json);
-    //     delete transactions[transaction];
-    //     return;
-    // }
     let what = json["textroom"];
     if (what === "message") {
       // Incoming message: public or private?
