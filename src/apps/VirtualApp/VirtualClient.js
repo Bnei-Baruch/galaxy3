@@ -1383,7 +1383,7 @@ class VirtualClient extends Component {
     this.makeDelay();
 
     if (videoroom) {
-      user.camera = cammuted;
+      user.camera = !cammuted;
       if (!cammuted) {
         videoroom.createOffer({
           media: {removeVideo: true},
@@ -1421,6 +1421,7 @@ class VirtualClient extends Component {
       updateSentryUser(user);
       updateGxyUser(user);
 
+      // FIXME: for now we remove device on camera mute and we got notified about this from Janus. And client notified about this twice. So we need to stop sending state here
       const msg = {type: "client-state", user};
       if (this.state.msg_protocol === "mqtt") {
         mqtt.send(JSON.stringify(msg), false, "galaxy/room/" + this.state.room);
