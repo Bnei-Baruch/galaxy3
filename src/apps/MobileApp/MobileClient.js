@@ -667,12 +667,8 @@ class MobileClient extends Component {
   };
 
   joinRoom = (reconnect, videoroom, user) => {
-    let {selected_room, media} = this.state;
-    const {
-      video: {video_device},
-    } = media;
+    let {selected_room} = this.state;
     user.question = false;
-    user.camera = !!video_device;
     user.timestamp = Date.now();
     this.setState({user, muted: true});
     updateSentryUser(user);
