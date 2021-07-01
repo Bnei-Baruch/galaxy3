@@ -681,11 +681,11 @@ class VirtualClient extends Component {
   };
 
   joinRoom = (reconnect, videoroom, user) => {
-    let {selected_room, tested, media} = this.state;
+    let {selected_room, tested, media, cammuted} = this.state;
     const {
       video: {video_device},
     } = media;
-    user.camera = !!video_device;
+    user.camera = !!video_device && cammuted === false;
     user.self_test = tested;
     user.sound_test = reconnect ? JSON.parse(localStorage.getItem("sound_test")) : false;
     user.question = false;
@@ -1143,25 +1143,19 @@ class VirtualClient extends Component {
         }
       });
     });
-    // Merge |newFeeds| with existing feeds.
-    const {feeds} = this.state;
-    const feedsIds = new Set(feeds.map((feed) => feed.id));
-    // Add only non yet existing feeds.
-    this.setState({feeds: sortAndFilterFeeds([...feeds, ...newFeeds.filter((feed) => !feedsIds.has(feed.id))])});
 
-    if (subscription.length > 0) {
+    const {feeds} = this.state;
+    const isExistFeed = feeds.find((f) => f.id === newFeeds[0].id);
+    if (subscription.length > 0 && (!isExistFeed || isExistFeed.video !== newFeeds[0].video)) {
+      this.setState({feeds});
       this.subscribeTo(subscription);
       if (feedsJustJoined) {
         // Send question event for new feed, by notifying all room.
         // FIXME: Can this be done by notifying only the joined feed?
         setTimeout(() => {
-          if (this.state.cammuted) {
+          if (this.state.question || this.state.cammuted) {
             const msg = {type: "client-state", user: this.state.user};
-            if (this.state.msg_protocol === "mqtt") {
-              mqtt.send(JSON.stringify(msg), false, "galaxy/room/" + this.state.room);
-            } else {
-              this.chat.sendCmdMessage(msg);
-            }
+            mqtt.send(JSON.stringify(msg), false, "galaxy/room/" + this.state.room);
           }
         }, 3000);
       }
@@ -1354,11 +1348,7 @@ class VirtualClient extends Component {
     updateGxyUser(user);
 
     const msg = {type: "client-state", user};
-    if (this.state.msg_protocol === "mqtt") {
-      mqtt.send(JSON.stringify(msg), true, "galaxy/room/" + this.state.room);
-    } else {
-      this.chat.sendCmdMessage(msg);
-    }
+    mqtt.send(JSON.stringify(msg), false, "galaxy/room/" + this.state.room);
   };
 
   handleAudioOut = (data) => {
@@ -1422,13 +1412,8 @@ class VirtualClient extends Component {
       updateSentryUser(user);
       updateGxyUser(user);
 
-      // FIXME: for now we remove device on camera mute and we got notified about this from Janus. And client notified about this twice. So we need to stop sending state here
       const msg = {type: "client-state", user};
-      if (this.state.msg_protocol === "mqtt") {
-        mqtt.send(JSON.stringify(msg), false, "galaxy/room/" + this.state.room);
-      } else {
-        this.chat.sendCmdMessage(msg);
-      }
+      mqtt.send(JSON.stringify(msg), false, "galaxy/room/" + this.state.room);
     } else {
       if (!cammuted) {
         this.stopLocalMedia();
