@@ -1146,13 +1146,16 @@ class MobileClient extends Component {
       });
     });
 
-    if (subscription.length > 0) {
+    const {feeds} = this.state;
+    const isExistFeed = feeds.find((f) => f.id === newFeeds[0].id);
+    if (subscription.length > 0 && (!isExistFeed || isExistFeed.video !== newFeeds[0].video)) {
+      this.setState({feeds});
       this.subscribeTo(subscription);
       if (feedsJustJoined) {
-        // Send question event for new feed, by notifying the whole room.
+        // Send question event for new feed, by notifying all room.
         // FIXME: Can this be done by notifying only the joined feed?
         setTimeout(() => {
-          if (this.state.question) {
+          if (this.state.question || this.state.cammuted) {
             const msg = {type: "client-state", user: this.state.user};
             mqtt.send(JSON.stringify(msg), false, "galaxy/room/" + this.state.room);
           }

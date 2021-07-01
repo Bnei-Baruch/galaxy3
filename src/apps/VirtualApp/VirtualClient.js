@@ -1143,19 +1143,17 @@ class VirtualClient extends Component {
         }
       });
     });
-    // Merge |newFeeds| with existing feeds.
-    const {feeds} = this.state;
-    const feedsIds = new Set(feeds.map((feed) => feed.id));
-    // Add only non yet existing feeds.
-    this.setState({feeds: sortAndFilterFeeds([...feeds, ...newFeeds.filter((feed) => !feedsIds.has(feed.id))])});
 
-    if (subscription.length > 0) {
+    const {feeds} = this.state;
+    const isExistFeed = feeds.find((f) => f.id === newFeeds[0].id);
+    if (subscription.length > 0 && (!isExistFeed || isExistFeed.video !== newFeeds[0].video)) {
+      this.setState({feeds});
       this.subscribeTo(subscription);
       if (feedsJustJoined) {
         // Send question event for new feed, by notifying all room.
         // FIXME: Can this be done by notifying only the joined feed?
         setTimeout(() => {
-          if (this.state.question) {
+          if (this.state.question || this.state.cammuted) {
             const msg = {type: "client-state", user: this.state.user};
             mqtt.send(JSON.stringify(msg), false, "galaxy/room/" + this.state.room);
           }
@@ -1414,13 +1412,8 @@ class VirtualClient extends Component {
       updateSentryUser(user);
       updateGxyUser(user);
 
-      // FIXME: for now we remove device on camera mute and we got notified about this from Janus. And client notified about this twice. So we need to stop sending state here
       const msg = {type: "client-state", user};
-      if (this.state.msg_protocol === "mqtt") {
-        mqtt.send(JSON.stringify(msg), false, "galaxy/room/" + this.state.room);
-      } else {
-        this.chat.sendCmdMessage(msg);
-      }
+      mqtt.send(JSON.stringify(msg), false, "galaxy/room/" + this.state.room);
     } else {
       if (!cammuted) {
         this.stopLocalMedia();
