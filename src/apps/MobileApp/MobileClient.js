@@ -671,7 +671,7 @@ class MobileClient extends Component {
     const {
       video: {video_device},
     } = media;
-    user.camera = !!video_device && !cammuted;
+    user.camera = !!video_device && cammuted === false;
     user.question = false;
     user.timestamp = Date.now();
     this.setState({user, muted: true});
@@ -1152,13 +1152,9 @@ class MobileClient extends Component {
         // Send question event for new feed, by notifying the whole room.
         // FIXME: Can this be done by notifying only the joined feed?
         setTimeout(() => {
-          if (this.state.cammuted) {
+          if (this.state.question) {
             const msg = {type: "client-state", user: this.state.user};
-            if (this.state.msg_protocol === "mqtt") {
-              mqtt.send(JSON.stringify(msg), false, "galaxy/room/" + this.state.room);
-            } else {
-              this.chat.sendCmdMessage(msg);
-            }
+            mqtt.send(JSON.stringify(msg), false, "galaxy/room/" + this.state.room);
           }
         }, 3000);
       }
