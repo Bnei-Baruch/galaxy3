@@ -667,11 +667,11 @@ class MobileClient extends Component {
   };
 
   joinRoom = (reconnect, videoroom, user) => {
-    let {selected_room, media} = this.state;
+    let {selected_room, media, cammuted} = this.state;
     const {
       video: {video_device},
     } = media;
-    user.camera = !!video_device;
+    user.camera = !!video_device && !cammuted;
     user.question = false;
     user.timestamp = Date.now();
     this.setState({user, muted: true});
