@@ -681,7 +681,11 @@ class VirtualClient extends Component {
   };
 
   joinRoom = (reconnect, videoroom, user) => {
-    let {selected_room, tested} = this.state;
+    let {selected_room, tested, media} = this.state;
+    const {
+      video: {video_device},
+    } = media;
+    user.camera = !!video_device;
     user.self_test = tested;
     user.sound_test = reconnect ? JSON.parse(localStorage.getItem("sound_test")) : false;
     user.question = false;
