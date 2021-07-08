@@ -887,13 +887,7 @@ class VirtualClient extends Component {
 
           Janus.debug("Got a list of available publishers/feeds:");
           Janus.log(feeds);
-          this.makeSubscription(
-            feeds,
-            /* feedsJustJoined= */ false,
-            /* subscribeToVideo= */ !this.state.muteOtherCams,
-            /* subscribeToAudio= */ true,
-            /* subscribeToData= */ true
-          );
+          this.makeSubscription(feeds);
         }
       } else if (event === "talking") {
         const feeds = Object.assign([], this.state.feeds);
@@ -936,15 +930,8 @@ class VirtualClient extends Component {
         } else if (msg["publishers"] !== undefined && msg["publishers"] !== null) {
           // User just joined the room.
           const feeds = sortAndFilterFeeds(msg["publishers"].filter((l) => (l.display = JSON.parse(l.display))));
-          Janus.debug("New list of available publishers/feeds:");
-          Janus.debug(feeds);
-          this.makeSubscription(
-            feeds,
-            /* feedsJustJoined= */ true,
-            /* subscribeToVideo= */ !this.state.muteOtherCams,
-            /* subscribeToAudio= */ true,
-            /* subscribeToData= */ true
-          );
+          Janus.debug("New list of available publishers/feeds:", this.state.feeds, feeds);
+          this.makeSubscription(feeds);
         } else if (msg["leaving"] !== undefined && msg["leaving"] !== null) {
           // One of the publishers has gone away?
           const leaving = msg["leaving"];
@@ -1070,26 +1057,24 @@ class VirtualClient extends Component {
         let {mids} = this.state;
         let feed = mids[mid].feed_id;
         Janus.log(" >> This track is coming from feed " + feed + ":", mid);
-        if (on) {
-          // If we're here, a new track was added
-          if (track.kind === "audio") {
-            // New audio track: create a stream out of it, and use a hidden <audio> element
-            let stream = new MediaStream();
-            stream.addTrack(track.clone());
-            Janus.log("Created remote audio stream:", stream);
-            let remoteaudio = this.refs["remoteAudio" + feed];
-            Janus.attachMediaStream(remoteaudio, stream);
-          } else if (track.kind === "video") {
-            const remotevideo = this.refs["remoteVideo" + feed];
-            if (!remotevideo.srcObject && !remotevideo.src) {
-              // New video track: create a stream out of it
-              const stream = new MediaStream();
-              stream.addTrack(track.clone());
-              Janus.log("Created remote video stream:", stream);
-              Janus.attachMediaStream(remotevideo, stream);
-            }
-          }
+        //if (on) {
+        // If we're here, a new track was added
+        if (track.kind === "audio") {
+          // New audio track: create a stream out of it, and use a hidden <audio> element
+          let stream = new MediaStream();
+          stream.addTrack(track.clone());
+          Janus.log("Created remote audio stream:", stream);
+          let remoteaudio = this.refs["remoteAudio" + feed];
+          Janus.attachMediaStream(remoteaudio, stream);
+        } else if (track.kind === "video" && !track.muted) {
+          const remotevideo = this.refs["remoteVideo" + feed];
+          // New video track: create a stream out of it
+          const stream = new MediaStream();
+          stream.addTrack(track.clone());
+          Janus.log("Created remote video stream:", stream);
+          Janus.attachMediaStream(remotevideo, stream);
         }
+        //}
       },
       ondataopen: (label) => {
         Janus.log("Feed - DataChannel is available! (" + label + ")");
@@ -1113,37 +1098,34 @@ class VirtualClient extends Component {
   // new entering user by notifying everyone.
   // Subscribes selectively to different stream types |subscribeToVideo|, |subscribeToAudio|, |subscribeToData|.
   // This is required to stop and then start only the videos to save bandwidth.
-  makeSubscription = (newFeeds, feedsJustJoined, subscribeToVideo, subscribeToAudio, subscribeToData) => {
-    console.log("makeSubscription", newFeeds, feedsJustJoined, subscribeToVideo, subscribeToAudio, subscribeToData);
+  makeSubscription = (newFeeds) => {
+    console.log("makeSubscription", newFeeds);
     const subscription = [];
-    //const {feeds: prevFeeds} = this.state;
-    const prevFeedsMap = new Map(this.state.feeds.map((f) => [f.id, f]));
+    const {feeds: prevFeeds, muteOtherCams} = this.state;
+    const prevFeedsMap = new Map(prevFeeds.map((f) => [f.id, f]));
 
     newFeeds.forEach((feed) => {
       const {id, streams} = feed;
       feed.video = !!streams.find((v) => v.type === "video" && v.codec === "h264");
       feed.audio = !!streams.find((a) => a.type === "audio" && a.codec === "opus");
       feed.data = !!streams.find((d) => d.type === "data");
-      //feed.cammute = !feed.video;
+
       const prevFeed = prevFeedsMap.get(feed.id);
-      const prevVideo =
-        !!prevFeed && !prevFeed.cammute && prevFeed.streams?.find((v) => v.type === "video" && v.codec === "h264");
-      const prevAudio = !!prevFeed && prevFeed?.streams?.find((a) => a.type === "audio" && a.codec === "opus");
+      feed.cammute = prevFeed?.cammute || feed.video;
+
+      const prevVideo = !!prevFeed && prevFeed.streams?.find((v) => v.type === "video" && v.codec === "h264");
+      const prevAudio = !!prevFeed && prevFeed.streams?.find((a) => a.type === "audio" && a.codec === "opus");
 
       streams.forEach((stream) => {
         const hasVideo =
-          subscribeToVideo &&
-          !feed.cammute &&
+          !muteOtherCams &&
           stream.type === "video" &&
           stream.codec === "h264" &&
           (!prevVideo || prevVideo.mid !== stream.mid);
         const hasAudio =
-          subscribeToAudio &&
-          stream.type === "audio" &&
-          stream.codec === "opus" &&
-          (!prevAudio || prevAudio.mid !== stream.mid);
+          stream.type === "audio" && stream.codec === "opus" && (!prevAudio || prevAudio.mid !== stream.mid);
 
-        if (hasVideo || hasAudio || (subscribeToData && stream.type === "data")) {
+        if (hasVideo || hasAudio || stream.type === "data") {
           prevFeedsMap.set(feed.id, feed);
           subscription.push({feed: id, mid: stream.mid});
         }
@@ -1151,20 +1133,30 @@ class VirtualClient extends Component {
     });
     const feeds = Array.from(prevFeedsMap, ([k, v]) => v);
     this.setState({feeds: sortAndFilterFeeds(feeds)});
-    //const isExistFeed = feeds.find((f) => f.id === newFeeds[0].id);
     if (subscription.length > 0) {
       this.subscribeTo(subscription);
-      if (feedsJustJoined) {
-        // Send question event for new feed, by notifying all room.
-        // FIXME: Can this be done by notifying only the joined feed?
-        setTimeout(() => {
-          if (this.state.question || this.state.cammuted) {
-            const msg = {type: "client-state", user: this.state.user};
-            mqtt.send(JSON.stringify(msg), false, "galaxy/room/" + this.state.room);
-          }
-        }, 3000);
-      }
+      // Send question event for new feed, by notifying all room.
+      // FIXME: Can this be done by notifying only the joined feed?
+      setTimeout(() => {
+        if (this.state.question || this.state.cammuted) {
+          const msg = {type: "client-state", user: this.state.user};
+          mqtt.send(JSON.stringify(msg), false, "galaxy/room/" + this.state.room);
+        }
+      }, 3000);
     }
+  };
+
+  makeSubscriptionAudioMode = () => {
+    const subscription = [];
+    const {feeds} = this.state;
+
+    feeds.forEach(({id, streams}) => {
+      streams
+        .filter((s) => s.type === "video" && s.codec === "h264")
+        .forEach((s) => subscription.push({feed: id, mid: s.mid}));
+    });
+
+    if (subscription.length > 0) this.subscribeTo(subscription);
   };
 
   subscribeTo = (subscription) => {
@@ -1473,13 +1465,7 @@ class VirtualClient extends Component {
       this.state.virtualStreamingJanus.setVideo(NO_VIDEO_OPTION_VALUE);
     } else {
       // Should unmute/show now all videos.
-      this.makeSubscription(
-        feeds,
-        /* feedsJustJoined= */ false,
-        /* subscribeToVideo= */ true,
-        /* subscribeToAudio= */ false,
-        /* subscribeToData= */ false
-      );
+      this.makeSubscriptionAudioMode();
       this.camMute(/* cammuted= */ true);
       this.setState({videos: VIDEO_360P_OPTION_VALUE, isKliOlamiShown: true});
       this.state.virtualStreamingJanus.setVideo(VIDEO_360P_OPTION_VALUE);
