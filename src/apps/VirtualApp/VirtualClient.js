@@ -1089,16 +1089,6 @@ class VirtualClient extends Component {
               Janus.attachMediaStream(remotevideo, stream);
             }
           }
-        } else {
-          if (track.kind === "video") {
-            Janus.log("Removed remote video");
-            let remotevideo = this.refs["remoteVideo" + feed];
-
-            if (remotevideo?.getTracks) {
-              remotevideo.getTracks().forEach((t) => t.stop());
-              Janus.detachMediaStream(remotevideo);
-            }
-          }
         }
       },
       ondataopen: (label) => {
@@ -1126,28 +1116,43 @@ class VirtualClient extends Component {
   makeSubscription = (newFeeds, feedsJustJoined, subscribeToVideo, subscribeToAudio, subscribeToData) => {
     console.log("makeSubscription", newFeeds, feedsJustJoined, subscribeToVideo, subscribeToAudio, subscribeToData);
     const subscription = [];
+    //const {feeds: prevFeeds} = this.state;
+    const prevFeedsMap = new Map(this.state.feeds.map((f) => [f.id, f]));
+
     newFeeds.forEach((feed) => {
       const {id, streams} = feed;
       feed.video = !!streams.find((v) => v.type === "video" && v.codec === "h264");
       feed.audio = !!streams.find((a) => a.type === "audio" && a.codec === "opus");
       feed.data = !!streams.find((d) => d.type === "data");
-      feed.cammute = !feed.video;
+      //feed.cammute = !feed.video;
+      const prevFeed = prevFeedsMap.get(feed.id);
+      const prevVideo =
+        !!prevFeed && !prevFeed.cammute && prevFeed.streams?.find((v) => v.type === "video" && v.codec === "h264");
+      const prevAudio = !!prevFeed && prevFeed?.streams?.find((a) => a.type === "audio" && a.codec === "opus");
 
       streams.forEach((stream) => {
-        if (
-          (subscribeToVideo && stream.type === "video" && stream.codec === "h264") ||
-          (subscribeToAudio && stream.type === "audio" && stream.codec === "opus") ||
-          (subscribeToData && stream.type === "data")
-        ) {
+        const hasVideo =
+          subscribeToVideo &&
+          !feed.cammute &&
+          stream.type === "video" &&
+          stream.codec === "h264" &&
+          (!prevVideo || prevVideo.mid !== stream.mid);
+        const hasAudio =
+          subscribeToAudio &&
+          stream.type === "audio" &&
+          stream.codec === "opus" &&
+          (!prevAudio || prevAudio.mid !== stream.mid);
+
+        if (hasVideo || hasAudio || (subscribeToData && stream.type === "data")) {
+          prevFeedsMap.set(feed.id, feed);
           subscription.push({feed: id, mid: stream.mid});
         }
       });
     });
-
-    const {feeds} = this.state;
-    const isExistFeed = feeds.find((f) => f.id === newFeeds[0].id);
-    if (subscription.length > 0 && (!isExistFeed || isExistFeed.video !== newFeeds[0].video)) {
-      this.setState({feeds});
+    const feeds = Array.from(prevFeedsMap, ([k, v]) => v);
+    this.setState({feeds: sortAndFilterFeeds(feeds)});
+    //const isExistFeed = feeds.find((f) => f.id === newFeeds[0].id);
+    if (subscription.length > 0) {
       this.subscribeTo(subscription);
       if (feedsJustJoined) {
         // Send question event for new feed, by notifying all room.
