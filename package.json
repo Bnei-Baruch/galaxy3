@@ -37,7 +37,7 @@
     "semantic-ui-css": "^2.4.0",
     "semantic-ui-react": "^2.0.1",
     "ua-parser-js": "^0.7.21",
-    "webrtc-adapter": "^7.7.0"
+    "webrtc-adapter": "8.0.0"
   },
   "husky": {
     "hooks": {

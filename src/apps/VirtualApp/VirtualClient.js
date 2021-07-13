@@ -1057,24 +1057,24 @@ class VirtualClient extends Component {
         let {mids} = this.state;
         let feed = mids[mid].feed_id;
         Janus.log(" >> This track is coming from feed " + feed + ":", mid);
-        //if (on) {
-        // If we're here, a new track was added
-        if (track.kind === "audio") {
-          // New audio track: create a stream out of it, and use a hidden <audio> element
-          let stream = new MediaStream();
-          stream.addTrack(track.clone());
-          Janus.log("Created remote audio stream:", stream);
-          let remoteaudio = this.refs["remoteAudio" + feed];
-          Janus.attachMediaStream(remoteaudio, stream);
-        } else if (track.kind === "video" && !track.muted) {
-          const remotevideo = this.refs["remoteVideo" + feed];
-          // New video track: create a stream out of it
-          const stream = new MediaStream();
-          stream.addTrack(track.clone());
-          Janus.log("Created remote video stream:", stream);
-          Janus.attachMediaStream(remotevideo, stream);
+        if (on) {
+          // If we're here, a new track was added
+          if (track.kind === "audio") {
+            // New audio track: create a stream out of it, and use a hidden <audio> element
+            let stream = new MediaStream();
+            stream.addTrack(track.clone());
+            Janus.log("Created remote audio stream:", stream);
+            let remoteaudio = this.refs["remoteAudio" + feed];
+            Janus.attachMediaStream(remoteaudio, stream);
+          } else if (track.kind === "video" && !track.muted) {
+            const remotevideo = this.refs["remoteVideo" + feed];
+            // New video track: create a stream out of it
+            const stream = new MediaStream();
+            stream.addTrack(track.clone());
+            Janus.log("Created remote video stream:", stream);
+            Janus.attachMediaStream(remotevideo, stream);
+          }
         }
-        //}
       },
       ondataopen: (label) => {
         Janus.log("Feed - DataChannel is available! (" + label + ")");
