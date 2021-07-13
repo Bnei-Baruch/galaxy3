@@ -1109,21 +1109,15 @@ class VirtualClient extends Component {
       feed.video = !!streams.find((v) => v.type === "video" && v.codec === "h264");
       feed.audio = !!streams.find((a) => a.type === "audio" && a.codec === "opus");
       feed.data = !!streams.find((d) => d.type === "data");
+      feed.cammute = !feed.video;
 
       const prevFeed = prevFeedsMap.get(feed.id);
-      feed.cammute = prevFeed?.cammute || feed.video;
-
       const prevVideo = !!prevFeed && prevFeed.streams?.find((v) => v.type === "video" && v.codec === "h264");
       const prevAudio = !!prevFeed && prevFeed.streams?.find((a) => a.type === "audio" && a.codec === "opus");
 
       streams.forEach((stream) => {
-        const hasVideo =
-          !muteOtherCams &&
-          stream.type === "video" &&
-          stream.codec === "h264" &&
-          (!prevVideo || prevVideo.mid !== stream.mid);
-        const hasAudio =
-          stream.type === "audio" && stream.codec === "opus" && (!prevAudio || prevAudio.mid !== stream.mid);
+        const hasVideo = !muteOtherCams && stream.type === "video" && stream.codec === "h264" && !prevVideo;
+        const hasAudio = stream.type === "audio" && stream.codec === "opus" && !prevAudio;
 
         if (hasVideo || hasAudio || stream.type === "data") {
           prevFeedsMap.set(feed.id, feed);
