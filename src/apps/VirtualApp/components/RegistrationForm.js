@@ -5,7 +5,7 @@ import makeStyles from "@material-ui/core/styles/makeStyles";
 import {Button, Modal, Typography, TextField, Grid, MenuItem, Divider, CircularProgress, Box} from "@material-ui/core";
 import Autocomplete from "@material-ui/lab/Autocomplete";
 import {green} from "@material-ui/core/colors";
-import {MuiThemeProvider, createMuiTheme} from "@material-ui/core/styles";
+import {MuiThemeProvider, createTheme} from "@material-ui/core/styles";
 import countries from "i18n-iso-countries";
 
 import {LANGUAGES} from "../../../shared/consts";
@@ -16,10 +16,10 @@ import api from "../../../shared/Api";
 import {SelectViewLanguage} from "./SelectViewLanguage";
 import RTL from "../../../components/RTL";
 
-const rtlTheme = createMuiTheme({
+const rtlTheme = createTheme({
   direction: "rtl",
 });
-const ltrTheme = createMuiTheme({
+const ltrTheme = createTheme({
   direction: "ltr",
 });
 

@@ -1,6 +1,6 @@
-import {createMuiTheme} from "@material-ui/core/styles";
+import {createTheme} from "@material-ui/core/styles";
 
-const dark = createMuiTheme({
+const dark = createTheme({
   palette: {
     type: "dark",
     overrides: {
