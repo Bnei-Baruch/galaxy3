@@ -1,1 +1,1 @@
-export default `4.0.5${process.env.NODE_ENV === "development" ? "-dev" : ""}`;
+export default `4.1.0${process.env.NODE_ENV === "development" ? "-dev" : ""}`;

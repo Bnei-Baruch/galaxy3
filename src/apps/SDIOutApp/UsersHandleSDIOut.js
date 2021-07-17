@@ -199,29 +199,29 @@ class UsersHandleSDIOut extends Component {
           let feed = msg["publishers"];
           console.log(`[SDIOut] [room ${roomid}] :: Publisher enter: `, feed);
           let {feeds} = this.state;
-          let subscription = [];
-          for (let f in feed) {
-            let id = feed[f]["id"];
-            let display = JSON.parse(feed[f]["display"]);
-            if (display.role !== "user") return;
-            let streams = feed[f]["streams"];
-            feed[f].display = display;
-            for (let i in streams) {
-              let stream = streams[i];
-              stream["id"] = id;
-              stream["display"] = display;
-              if (stream.type === "video" && feeds[f].video_codec === "h264") {
-                subscription.push({feed: id, mid: stream.mid});
-              }
-            }
-          }
           const isExistFeed = feeds.find((f) => f.id === feed[0].id);
           if (!isExistFeed) {
             feeds.push(feed[0]);
             this.setState({feeds});
-          }
-          if (subscription.length > 0) {
-            this.subscribeTo(gateway, roomid, subscription);
+            let subscription = [];
+            for (let f in feed) {
+              let id = feed[f]["id"];
+              let display = JSON.parse(feed[f]["display"]);
+              if (display.role !== "user") return;
+              let streams = feed[f]["streams"];
+              feed[f].display = display;
+              for (let i in streams) {
+                let stream = streams[i];
+                stream["id"] = id;
+                stream["display"] = display;
+                if (stream.type === "video" && feeds[f].video_codec === "h264") {
+                  subscription.push({feed: id, mid: stream.mid});
+                }
+              }
+            }
+            if (subscription.length > 0) {
+              this.subscribeTo(gateway, roomid, subscription);
+            }
           }
         } else if (msg["leaving"] !== undefined && msg["leaving"] !== null) {
           let leaving = msg["leaving"];
