@@ -1,9 +1,7 @@
 import React, {Component} from "react";
-import {Janus} from "../../lib/janus";
 import {Button, Input, Message} from "semantic-ui-react";
 import {getDateString, notifyMe} from "../../shared/tools";
 import {SHIDUR_ID} from "../../shared/consts";
-import {captureMessage} from "../../shared/sentry";
 import {Typography} from "@material-ui/core";
 import mqtt from "../../shared/mqtt";
 
@@ -16,6 +14,7 @@ class VirtualChat extends Component {
     room: null,
     input_value: "",
     messages: [],
+    privates: [],
     support_msgs: [],
     room_chat: true,
     from: null,
@@ -39,14 +38,26 @@ class VirtualChat extends Component {
     // Public chat
     mqtt.mq.on("MqttChatEvent", (data) => {
       let json = JSON.parse(data);
-      this.onData(json);
+      if(json?.type === "client-chat") {
+        this.onChatMessage(json);
+      }
+
+      if(json?.type === "chat") {
+        this.onData(json);
+      }
     });
 
     // Private chat
     mqtt.mq.on("MqttPrivateMessage", (data) => {
       let json = JSON.parse(data);
       json["whisper"] = true;
-      this.onData(json);
+      if(json?.type === "client-chat") {
+        this.onChatMessage(json);
+      }
+
+      if(json?.type === "chat") {
+        this.onData(json);
+      }
     });
 
     // Broadcast message
@@ -58,156 +69,49 @@ class VirtualChat extends Component {
     });
   };
 
-  joinChatRoom = (textroom, roomid, user) => {
-    let transaction = Janus.randomString(12);
-    let register = {
-      textroom: "join",
-      transaction: transaction,
-      room: roomid,
-      username: user.id,
-      display: user.display,
-    };
-    textroom.data({
-      text: JSON.stringify(register),
-      success: () => {
-        Janus.log("[VirtualChat] join success", roomid);
-        this.setState({room: roomid});
-      },
-      error: (err) => {
-        Janus.error("[VirtualChat] join error", roomid, err);
-        captureMessage("Chatroom error: join", {source: "Textroom", err, room: roomid}, "error");
-      },
-    });
-  };
-
-  iceRestart = () => {
-    if (this.state.chatroom) {
-      this.state.chatroom.send({
-        message: {request: "restart"},
-        error: (err) => {
-          Janus.error("[VirtualChat] ICE restart error", err);
-        },
-      });
-    }
-  };
-
-  initChatRoom = (janus, room, user, cb) => {
-    let chatroom = null;
-    janus.attach({
-      plugin: "janus.plugin.textroom",
-      opaqueId: user.id,
-      success: (pluginHandle) => {
-        chatroom = pluginHandle;
-        Janus.log("[VirtualChat] Plugin attached! (" + chatroom.getPlugin() + ", id=" + chatroom.getId() + ")");
-        this.setState({chatroom});
-        // Setup the DataChannel
-        chatroom.send({
-          message: {request: "setup"},
-          success: () => {
-            Janus.log("[VirtualChat] setup success");
-          },
-          error: (err) => {
-            Janus.error("[VirtualChat] setup error", err);
-          },
-        });
-      },
-      error: (err) => {
-        Janus.error("[VirtualChat] Error attaching plugin...", err);
-      },
-      iceState: (state) => {
-        Janus.log("[VirtualChat] ICE state", state);
-      },
-      mediaState: (medium, on) => {
-        const message = `Janus ${on ? "started" : "stopped"} receiving our ${medium}`;
-        Janus.log(`[VirtualChat] ${message}`);
-      },
-      webrtcState: (on) => {
-        const message = `Janus says our WebRTC PeerConnection is ${on ? "up" : "down"} now`;
-        Janus.log(`[VirtualChat] ${message}`);
-      },
-      slowLink: (uplink, lost, mid) => {
-        const slowLinkType = uplink ? "sending" : "receiving";
-        const message =
-          "Janus reports slow link problems " +
-          slowLinkType +
-          " packets on mid " +
-          mid +
-          " (" +
-          lost +
-          " lost packets)";
-        Janus.log(message);
-      },
-      onmessage: (msg, jsep) => {
-        Janus.debug("[VirtualChat] ::: Got a message :::", msg);
-        if (msg["error"] !== undefined && msg["error"] !== null) {
-          Janus.error("[VirtualChat] textroom error message", msg);
-        }
-        if (jsep !== undefined && jsep !== null) {
-          // Answer
-          chatroom.createAnswer({
-            jsep: jsep,
-            media: {audio: false, video: false, data: true}, // We only use datachannels
-            success: (jsep) => {
-              Janus.debug("[VirtualChat] Got SDP!", jsep);
-              chatroom.send({
-                jsep,
-                message: {request: "ack"},
-                error: (err) => {
-                  Janus.debug("[VirtualChat] ack error", err);
-                },
-              });
-            },
-            error: (err) => {
-              Janus.error("[VirtualChat] createAnswer error", err);
-            },
-          });
-        }
-      },
-      ondataopen: () => {
-        Janus.log("[VirtualChat] The DataChannel is available! ");
-        if (!this.props.room) this.joinChatRoom(chatroom, room, user);
-      },
-      ondata: (data) => {
-        Janus.debug("[VirtualChat] We got message from Data Channel", data);
-        let json = JSON.parse(data);
-        let what = json["textroom"];
-        if (what.match(/^(success|error)$/)) {
-          cb(json);
-        } else {
-          this.onData(json);
-        }
-      },
-      oncleanup: () => {
-        Janus.log("[VirtualChat] ::: Got a cleanup notification :::");
-        if (this.props.room) this.setState({messages: [], chatroom: null, room: null});
-      },
-    });
-  };
-
   onKeyPressed = (e) => {
     if (e.code === "Enter") {
       this.sendChatMessage();
     }
   };
 
-  exitChatRoom = (room) => {
-    const {chatroom} = this.state;
-    if (chatroom) {
-      chatroom.data({
-        text: JSON.stringify({textroom: "leave", transaction: Janus.randomString(12), room}),
-        success: () => {
-          Janus.log("[VirtualChat] :: Text room leave callback: ");
-          this.setState({messages: [], chatroom: null, room: null});
-          chatroom.detach();
-        },
-        error: (err) => {
-          Janus.error("[VirtualChat] leave error", err);
-          chatroom.detach();
-        },
-      });
+  onChatMessage = (message) => {
+    const dateString = getDateString();
+    message.time = dateString;
+
+    if (message.whisper) {
+
+      // Private message
+      console.log("[VirtualChat]:: It's private message: " + dateString + " : " + message);
+      let {privates} = this.state;
+      privates.push(message);
+      this.setState({privates});
+      if (this.props.visible) {
+        this.scrollToBottom();
+      } else {
+        notifyMe("Shidur", message.text, true);
+        isUseNewDesign ? this.props.setIsRoomChat(false) : this.setState({room_chat: false});
+        this.props.onNewMsg(true);
+      }
+    } else {
+
+      // Public message
+      let {messages} = this.state;
+      console.log("[VirtualChat]-:: It's public message: " + dateString + " : " + message);
+      messages.push(message);
+      this.setState({messages});
+      if (this.props.visible) {
+        this.scrollToBottom();
+      } else {
+        if (message.user.role.match(/^(admin|root)$/)) {
+          notifyMe("Shidur", message.text, true);
+        }
+        this.props.onNewMsg();
+      }
     }
   };
 
+  // Will be removed
   onData = (json) => {
     let what = json["textroom"];
     if (what === "message") {
@@ -223,11 +127,11 @@ class VirtualChat extends Component {
 
       if (whisper === true) {
         // Private message
-        Janus.log("[VirtualChat]:: It's private message: " + dateString + " : " + from + " : " + msg);
+        console.log("[VirtualChat]:: It's private message: " + dateString + " : " + from + " : " + msg);
         let {support_msgs} = this.state;
         if (message.type && message.type !== "chat") {
           if (this.props.msg_protocol === "mqtt") return;
-          Janus.log("[VirtualChat] :: It's remote command :: ", message);
+          console.log("[VirtualChat] :: It's remote command :: ", message);
           this.props.onCmdMsg(message);
         } else {
           message.time = dateString;
@@ -244,10 +148,10 @@ class VirtualChat extends Component {
       } else {
         // Public message
         let {messages} = this.state;
-        Janus.log("[VirtualChat]-:: It's public message: " + msg);
+        console.log("[VirtualChat]-:: It's public message: " + msg);
         if (message.type && message.type !== "chat") {
           if (this.props.msg_protocol === "mqtt") return;
-          Janus.log("[VirtualChat]:: It's remote command :: ", message);
+          console.log("[VirtualChat]:: It's remote command :: ", message);
           this.props.onCmdMsg(message);
         } else {
           message.time = dateString;
@@ -263,22 +167,6 @@ class VirtualChat extends Component {
           }
         }
       }
-    } else if (what === "join") {
-      // Somebody joined
-      let username = json["username"];
-      let display = json["display"];
-      Janus.log("[VirtualChat]-:: Somebody joined - username: " + username + " : display: " + display);
-    } else if (what === "leave") {
-      // Somebody left
-      let username = json["username"];
-      //var when = new Date();
-      Janus.log("[VirtualChat]-:: Somebody left - username: " + username + " : Time: " + getDateString());
-    } else if (what === "kicked") {
-      // Somebody was kicked
-      // var username = json['username'];
-    } else if (what === "destroyed") {
-      let room = json["room"];
-      Janus.log("[VirtualChat] room destroyed", room);
     }
   };
 
@@ -296,27 +184,28 @@ class VirtualChat extends Component {
     }
   };
 
-  sendCmdMessage = (msg) => {
-    let message = {
-      ack: false,
-      textroom: "message",
-      transaction: Janus.randomString(12),
-      room: this.props.room,
-      text: JSON.stringify(msg),
-    };
-    if (this.state.chatroom) {
-      this.state.chatroom.data({
-        text: JSON.stringify(message),
-        success: () => {
-          Janus.log("[VirtualChat] :: Cmd Message sent ::");
-        },
-        error: (err) => {
-          Janus.error("[VirtualChat] message error [cmd]", err);
-        },
-      });
+  newChatMessage = (user) => {
+    const {room_chat} = isUseNewDesign ? this.props : this.state;
+    let {id, role, display} = this.props.user;
+    let {input_value, privates} = this.state;
+
+    if (!role.match(/^(user|guest)$/) || input_value === "") {
+      return;
+    }
+
+    const msg = {user: {id, role, display}, type: "client-chat", text: input_value};
+    const topic = user ? `galaxy/users/${user.id}` : `galaxy/room/${this.props.room}/chat`;
+
+    mqtt.send(JSON.stringify(msg), false, topic);
+
+    this.setState({input_value: ""});
+    if (!room_chat) {
+      privates.push(msg);
+      this.setState({privates});
     }
   };
 
+  // Will be removed
   sendChatMessage = () => {
     const {room_chat} = isUseNewDesign ? this.props : this.state;
     let {id, role, display} = this.props.user;
@@ -329,42 +218,19 @@ class VirtualChat extends Component {
     let message = {
       ack: false,
       textroom: "message",
-      transaction: Janus.randomString(12),
+      transaction: 'transaction',
       room: this.props.room,
       ...pvt,
       text: JSON.stringify(msg),
     };
 
-    let mqtt_chat = true;
-
-    if (mqtt_chat) {
-      mqtt.send(JSON.stringify(message), false, `galaxy/room/${this.props.room}/chat`);
-      this.setState({input_value: ""});
-      if (!room_chat) {
-        support_msgs.push(msg);
-        this.setState({support_msgs});
-      }
-    }
-
-    if (!mqtt_chat) {
-      this.state.chatroom.data({
-        text: JSON.stringify(message),
-        success: () => {
-          Janus.log("[VirtualChat]:: Message sent ::");
-          this.setState({input_value: ""});
-          if (!room_chat) {
-            support_msgs.push(msg);
-            this.setState({support_msgs});
-          }
-        },
-        error: (err) => {
-          Janus.error("[VirtualChat] message error [chat]", err);
-        },
-      });
+    mqtt.send(JSON.stringify(message), false, `galaxy/room/${this.props.room}/chat`);
+    this.setState({input_value: ""});
+    if (!room_chat) {
+      support_msgs.push(msg);
+      this.setState({support_msgs});
     }
   };
-
-  getHandle = () => this.state.chatroom?.getId() ?? "chatroom null";
 
   scrollToBottom = () => {
     this.refs.end.scrollIntoView({behavior: "smooth"});

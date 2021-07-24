@@ -832,7 +832,6 @@ class VirtualClient extends Component {
     }
 
     if (remoteFeed) remoteFeed.send({message: {request: "configure", restart: true}});
-    if (this.chat) this.chat.iceRestart();
     if (this.state.virtualStreamingJanus) this.state.virtualStreamingJanus.iceRestart();
     iceRestartKliOlami();
   };

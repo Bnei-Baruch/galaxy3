@@ -1505,11 +1505,7 @@ class MobileClient extends Component {
       updateGxyUser(user);
 
       const msg = {type: "client-state", user};
-      if (this.state.msg_protocol === "mqtt") {
-        mqtt.send(JSON.stringify(msg), false, "galaxy/room/" + this.state.room);
-      } else {
-        this.chat.sendCmdMessage(msg);
-      }
+      mqtt.send(JSON.stringify(msg), false, "galaxy/room/" + this.state.room);
     }
   };
 
