@@ -98,7 +98,7 @@ class LoginPage extends Component {
               />
             </Menu.Item>
             <Menu.Item>
-              <SupportOld t={t} i18n={i18n} user={this.props.user} />
+              {/*<SupportOld t={t} i18n={i18n} user={this.props.user} />*/}
             </Menu.Item>
           </Menu.Menu>
         </Menu>
