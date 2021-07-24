@@ -40,9 +40,7 @@ class VirtualChat extends Component {
       let json = JSON.parse(data);
       if(json?.type === "client-chat") {
         this.onChatMessage(json);
-      }
-
-      if(json?.type === "chat") {
+      } else {
         this.onData(json);
       }
     });
@@ -53,9 +51,7 @@ class VirtualChat extends Component {
       json["whisper"] = true;
       if(json?.type === "client-chat") {
         this.onChatMessage(json);
-      }
-
-      if(json?.type === "chat") {
+      } else {
         this.onData(json);
       }
     });
@@ -82,7 +78,7 @@ class VirtualChat extends Component {
     if (message.whisper) {
 
       // Private message
-      console.log("[VirtualChat]:: It's private message: " + dateString + " : " + message);
+      console.log("[VirtualChat]:: It's private message: ", message);
       let {privates} = this.state;
       privates.push(message);
       this.setState({privates});
@@ -97,7 +93,7 @@ class VirtualChat extends Component {
 
       // Public message
       let {messages} = this.state;
-      console.log("[VirtualChat]-:: It's public message: " + dateString + " : " + message);
+      console.log("[VirtualChat]-:: It's public message: ", message);
       messages.push(message);
       this.setState({messages});
       if (this.props.visible) {
@@ -194,7 +190,7 @@ class VirtualChat extends Component {
     }
 
     const msg = {user: {id, role, display}, type: "client-chat", text: input_value};
-    const topic = user ? `galaxy/users/${user.id}` : `galaxy/room/${this.props.room}/chat`;
+    const topic = user?.id ? `galaxy/users/${user.id}` : `galaxy/room/${this.props.room}/chat`;
 
     mqtt.send(JSON.stringify(msg), false, topic);
 
