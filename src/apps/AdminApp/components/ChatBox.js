@@ -25,7 +25,7 @@ class ChatBox extends Component {
 
   componentDidMount() {
     this.props.onRef(this);
-    this.initMqttEvents();
+    this.initChatEvents();
     document.addEventListener("keydown", this.onKeyPressed);
   }
 
@@ -34,18 +34,26 @@ class ChatBox extends Component {
     this.props.onRef(undefined);
   }
 
-  initMqttEvents = () => {
+  initChatEvents = () => {
     // Public chat
     mqtt.mq.on("MqttChatEvent", (data) => {
       let json = JSON.parse(data);
-      this.onChatData(json);
+      if(json?.type === "client-chat") {
+        this.onChatMessage(json);
+      } else {
+        this.onChatData(json);
+      }
     });
 
     // Private chat
     mqtt.mq.on("MqttPrivateMessage", (data) => {
       let json = JSON.parse(data);
       json["whisper"] = true;
-      this.onChatData(json);
+      if(json?.type === "client-chat") {
+        this.onChatMessage(json);
+      } else {
+        this.onChatData(json);
+      }
     });
 
     // Broadcast message
@@ -64,6 +72,30 @@ class ChatBox extends Component {
 
   onKeyPressed = (e) => {
     if (e.code === "Enter") this.sendMessage();
+  };
+
+  onChatMessage = (message) => {
+    const dateString = getDateString();
+    message.time = dateString;
+
+    if (message.whisper) {
+
+      // Private message
+      console.log("[VirtualChat]:: It's private message: ", message);
+      let {privates} = this.state;
+      privates.push(message);
+      this.setState({privates});
+      this.scrollToBottom();
+    } else {
+
+      // Public message
+      let {messages} = this.state;
+      message.to = this.props.selected_group;
+      console.log("[VirtualChat]-:: It's public message: ", message);
+      messages.push(message);
+      this.setState({messages});
+      this.scrollToBottom();
+    }
   };
 
   onChatData = (json) => {
@@ -170,10 +202,7 @@ class ChatBox extends Component {
   };
 
   sendBroadcastMessage = () => {
-    const {
-      user: {role, display, username},
-      selected_room,
-    } = this.props;
+    const {user: {role, display, username}, selected_room,} = this.props;
     const {input_value} = this.state;
 
     const msg = {user: {role, display, username}, text: input_value};
@@ -202,6 +231,39 @@ class ChatBox extends Component {
     msg_type === "private" ? this.sendPrivateMessage() : this.sendPublicMessage();
   };
 
+  newChatMessage = () => {
+    const {user: {role, display, id}, selected_room, selected_user} = this.props;
+    let {input_value, msg_type} = this.state;
+
+    if (msg_type === "all") {
+      // TODO: Broadcast messages
+      this.setState({showConfirmBroadcast: true});
+      return;
+    }
+
+    if (!role.match(/^(user|guest)$/) || input_value === "") {
+      return;
+    }
+
+    if (!selected_room) {
+      alert("Enter room");
+      return;
+    }
+
+    const msg = {user: {id, role, display}, type: "client-chat", text: input_value};
+    const topic = msg_type === "private" ? `galaxy/users/${selected_user.id}` : `galaxy/room/${selected_room}/chat`;
+
+    mqtt.send(JSON.stringify(msg), false, topic);
+
+    this.setState({input_value: ""});
+
+    // TODO: Where we show private messages?
+    // if (user?.id) {
+    //   privates.push(msg);
+    //   this.setState({privates});
+    // }
+  };
+
   scrollToBottom = () => {
     this.refs.end.scrollIntoView({behavior: "smooth"});
   };
@@ -228,7 +290,7 @@ class ChatBox extends Component {
         <div key={i}>
           <p>
             <i style={{color: "grey"}}>{time}</i> -
-            <b style={{color: user.role === "admin" ? "red" : "blue"}}>{user.username}</b>
+            <b style={{color: user.role === "admin" ? "red" : "blue"}}>{user.display}</b>
             {to ? <b style={{color: "blue"}}>-> {to} :</b> : ""}
           </p>
           {text}
