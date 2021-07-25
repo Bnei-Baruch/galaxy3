@@ -9,10 +9,11 @@ import LoginPage from "../../components/LoginPage";
 import "./GalaxyStream.css";
 import api from "../../shared/Api";
 import GxyJanus from "../../shared/janus-utils";
-// import {updateSentryUser} from "../../shared/sentry";
 import mqtt from "../../shared/mqtt";
+import ConfigStore from "../../shared/ConfigStore";
 
 class GalaxyStream extends Component {
+
   state = {
     janus: null,
     videostream: null,
@@ -28,8 +29,8 @@ class GalaxyStream extends Component {
     talking: null,
     appInitError: null,
     jwObject: {
-      pc: new RTCPeerConnection(null)
-    }
+      pc: new RTCPeerConnection()
+    },
   };
 
   checkPermission = (user) => {
@@ -45,16 +46,11 @@ class GalaxyStream extends Component {
       jwObject.pc.onicecandidate = (e) => {
         this.jwSendCandidate(e.candidate);
       };
-      jwObject.pc.onaddstream = (e) => {
-        console.log(e)
+      jwObject.pc.ontrack = (e) => {
         let video = this.refs.remoteVideo;
-        if(video)
-          video.srcObject = e.stream;
-        // let stream = new MediaStream();
-        // stream.addTrack(track.clone());
-        // this.setState({video_stream: stream});
-        // Janus.log("Created remote video stream:", stream);
-        // let video = this.refs.remoteVideo;
+        let stream = new MediaStream();
+        stream.addTrack(e.track.clone());
+        video.srcObject = stream;
       };
 
     } else {
@@ -109,7 +105,7 @@ class GalaxyStream extends Component {
     this.setState({user});
     mqtt.init(user, (data) => {
       console.log("[mqtt] init: ", data);
-      mqtt.join("gxy/from-janus");
+      mqtt.join("gxy/from-janus/" + user.id);
       mqtt.watch();
       const msg = {janus : "create", transaction : Janus.randomString(12)};
       mqtt.send(JSON.stringify(msg), false, "gxydev/to-janus")
@@ -122,41 +118,59 @@ class GalaxyStream extends Component {
 
   onJanusEvent = (event) => {
     console.log(" :: New Janus Event: ", event);
-    const {session_id} = event;
+    const {videos} = this.state;
+    const {session_id, janus, data, jsep} = event;
 
-    if(event?.data?.id && !session_id && event.janus === "success") {
-      this.setState({session_id: event.data.id})
-      const msg = {janus: "attach", session_id: event.data.id, plugin: "janus.plugin.streaming", transaction: Janus.randomString(12)};
-      mqtt.send(JSON.stringify(msg), false, "gxydev/to-janus")
-    }
-
-    if(session_id && event.janus === "success") {
-      const handle_id = event.data.id;
-      this.setState({handle_id});
-      const {videos} = this.state;
-      const msg = {janus: "message", session_id, handle_id, transaction: Janus.randomString(12),
-        body: {
-          request: "watch", id: videos
-        }
+    if(janus === "success") {
+      if(!session_id) {
+        this.setState({session_id: data.id});
+        const msg = {
+          janus: "attach",
+          session_id: data.id,
+          plugin: "janus.plugin.streaming",
+          transaction: Janus.randomString(12)
+        };
+        mqtt.send(JSON.stringify(msg), false, "gxydev/to-janus");
+      } else {
+        const handle_id = data.id;
+        this.setState({handle_id});
+        const msg = {
+          janus: "message",
+          session_id, handle_id,
+          transaction: Janus.randomString(12),
+          body: {request: "watch", id: videos}
+        };
+        mqtt.send(JSON.stringify(msg), false, "gxydev/to-janus");
       }
-
-      mqtt.send(JSON.stringify(msg), false, "gxydev/to-janus")
     }
 
-    if(event.janus === "event" && event.jsep) {
-      this.wEventHanler(event.jsep)
-      // const {session_id, handle_id} = this.state;
-      // const msg = {janus: "message", session_id, handle_id, transaction: Janus.randomString(12),
-      //   body: {
-      //     request: "start", audio: false, video: true
-      //   }
-      // }
-      //
-      // mqtt.send(JSON.stringify(msg), false, "gxydev/to-janus")
-
-
+    if(janus === "event") {
+      if(jsep)
+        this.wEventHanler(jsep);
     }
 
+    if(janus === "webrtcup") {
+      this.sendKeepAlive();
+      this.keepAlive();
+    }
+  };
+
+  keepAlive = () => {
+    this.setState({keepalive: setInterval(this.sendKeepAlive, 60 * 1000)});
+  };
+
+  sendKeepAlive = () => {
+    const {session_id} = this.state;
+    const msg = {janus: "keepalive", session_id, transaction: Janus.randomString(12)};
+    mqtt.send(JSON.stringify(msg), false, "gxydev/to-janus")
+  };
+
+  clearKeepAlive = () => {
+    const {keepalive} = this.state;
+    if (keepalive) {
+      clearInterval(keepalive);
+    }
+    this.setState({keepalive: null});
   };
 
   initApp = (user) => {
