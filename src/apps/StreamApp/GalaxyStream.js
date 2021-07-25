@@ -29,7 +29,9 @@ class GalaxyStream extends Component {
     talking: null,
     appInitError: null,
     jwObject: {
-      pc: new RTCPeerConnection()
+      pc: new RTCPeerConnection({
+        iceServers: [{urls: "stun:stream.kli.one:3478"}]
+      })
     },
   };
 
@@ -46,7 +48,9 @@ class GalaxyStream extends Component {
       jwObject.pc.onicecandidate = (e) => {
         this.jwSendCandidate(e.candidate);
       };
+
       jwObject.pc.ontrack = (e) => {
+        console.log("Got track: ", e)
         let video = this.refs.remoteVideo;
         let stream = new MediaStream();
         stream.addTrack(e.track.clone());
@@ -97,18 +101,24 @@ class GalaxyStream extends Component {
     ), false, "gxydev/to-janus")
   };
 
-  componentWillUnmount() {
-    this.state.janus.destroy();
-  };
+  // componentWillUnmount() {
+  //   this.state.janus.destroy();
+  // };
 
   initMQTT = (user) => {
     this.setState({user});
     mqtt.init(user, (data) => {
       console.log("[mqtt] init: ", data);
       mqtt.join("gxy/from-janus/" + user.id);
+      mqtt.join("gxy/from-janus");
       mqtt.watch();
       const msg = {janus : "create", transaction : Janus.randomString(12)};
       mqtt.send(JSON.stringify(msg), false, "gxydev/to-janus")
+      mqtt.mq.on("MqttJanusMessage", (data) => {
+        let json = JSON.parse(data);
+        this.onJanusMessage(json);
+      });
+
       mqtt.mq.on("MqttJanusEvent", (data) => {
         let json = JSON.parse(data);
         this.onJanusEvent(json);
@@ -116,8 +126,8 @@ class GalaxyStream extends Component {
     });
   };
 
-  onJanusEvent = (event) => {
-    console.log(" :: New Janus Event: ", event);
+  onJanusMessage = (event) => {
+    console.log(" :: New Janus Message: ", event);
     const {videos} = this.state;
     const {session_id, janus, data, jsep} = event;
 
@@ -144,12 +154,17 @@ class GalaxyStream extends Component {
       }
     }
 
-    if(janus === "event") {
-      if(jsep)
-        this.wEventHanler(jsep);
+    if(janus === "event" && jsep) {
+      this.wEventHanler(jsep);
     }
+  };
 
-    if(janus === "webrtcup") {
+  onJanusEvent = (event) => {
+    console.log(" :: New Janus Event: ", event);
+    const {handle_id} = this.state;
+    const {janus, sender} = event;
+
+    if(janus === "webrtcup" && sender === handle_id) {
       this.sendKeepAlive();
       this.keepAlive();
     }
@@ -502,7 +517,17 @@ class GalaxyStream extends Component {
 
   setVideo = (videos) => {
     this.setState({videos});
-    this.state.videostream.send({message: {request: "switch", id: videos}});
+    //this.state.videostream.send({message: {request: "switch", id: videos}});
+    const {session_id, handle_id} = this.state;
+    mqtt.send(JSON.stringify(
+      {
+        janus: 'message',
+        session_id,
+        handle_id,
+        transaction: Janus.randomString(12),
+        body: {request: 'switch', id: videos}
+      }
+    ), false, "gxydev/to-janus")
     localStorage.setItem("gxy_video", videos);
   };
 
