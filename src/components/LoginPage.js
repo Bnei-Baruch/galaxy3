@@ -8,7 +8,6 @@ import {Terms} from "./Terms";
 import {Profile} from "./Profile";
 import internet from "./internet.png";
 import "./LoginPage.css";
-import {SupportOld} from "../apps/VirtualApp/components/Support/SupportOld";
 
 class LoginPage extends Component {
   state = {
@@ -98,7 +97,9 @@ class LoginPage extends Component {
               />
             </Menu.Item>
             <Menu.Item>
-              {/*<SupportOld t={t} i18n={i18n} user={this.props.user} />*/}
+              <Button basic fluid onClick={() => window.open("https://helpcenter.kli.one/", "_blank")}>
+                {t("loginPage.support")}
+              </Button>
             </Menu.Item>
           </Menu.Menu>
         </Menu>

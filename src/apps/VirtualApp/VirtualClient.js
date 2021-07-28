@@ -832,7 +832,6 @@ class VirtualClient extends Component {
     }
 
     if (remoteFeed) remoteFeed.send({message: {request: "configure", restart: true}});
-    if (this.chat) this.chat.iceRestart();
     if (this.state.virtualStreamingJanus) this.state.virtualStreamingJanus.iceRestart();
     iceRestartKliOlami();
   };
@@ -1787,16 +1786,11 @@ class VirtualClient extends Component {
 
     const chat = (
       <Box style={{display: displayChat, height: "100%"}}>
-        <VirtualChat
-          t={t}
-          ref={(chat) => {
-            this.chat = chat;
-          }}
+        <VirtualChat t={t}
+          ref={(chat) => {this.chat = chat;}}
           visible={rightAsideName === "chat"}
-          janus={janus}
           room={room}
           user={user}
-          msg_protocol={this.state.msg_protocol}
           onCmdMsg={this.handleCmdData}
           onNewMsg={this.onChatMessage}
           room_chat={isRoomChat}
@@ -2549,14 +2543,10 @@ class VirtualClient extends Component {
               </div>
               <VirtualChat
                 t={t}
-                ref={(chat) => {
-                  this.chat = chat;
-                }}
+                ref={(chat) => {this.chat = chat;}}
                 visible={chatVisible}
-                janus={janus}
                 room={room}
                 user={user}
-                msg_protocol={this.state.msg_protocol}
                 onCmdMsg={this.handleCmdData}
                 onNewMsg={this.onChatMessage}
               />

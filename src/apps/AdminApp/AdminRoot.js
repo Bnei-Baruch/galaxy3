@@ -44,16 +44,15 @@ class AdminRoot extends Component {
     command_status: true,
     premodStatus: false,
     showConfirmReloadAll: false,
-    tcp: "mqtt",
   };
 
   componentDidMount() {
     this.initApp(this.props.user);
-  }
+  };
 
   componentWillUnmount() {
     Object.values(this.state.gateways).forEach((x) => x.destroy());
-  }
+  };
 
   isAllowed = (level) => {
     const {user} = this.props;
@@ -85,8 +84,7 @@ class AdminRoot extends Component {
       .then((data) => {
         ConfigStore.setGlobalConfig(data);
         this.setState({
-          premodStatus: ConfigStore.dynamicConfig(ConfigStore.PRE_MODERATION_KEY) === "true",
-          tcp: ConfigStore.dynamicConfig("galaxy_protocol"),
+          premodStatus: ConfigStore.dynamicConfig(ConfigStore.PRE_MODERATION_KEY) === "true"
         });
         GxyJanus.setGlobalConfig(data);
       })
@@ -478,10 +476,9 @@ class AdminRoot extends Component {
   };
 
   sendCommandMessage = (command_type) => {
-    const {gateways, feed_user, current_janus, current_room, command_status} = this.state;
+    const {feed_user, current_room, command_status} = this.state;
     const cmd = {
       type: command_type,
-      rcmd: true,
       room: current_room,
       status: command_status,
       id: feed_user?.id,
@@ -715,25 +712,22 @@ class AdminRoot extends Component {
     this.sendRemoteCommand("client-reload-all");
   };
 
-  setProtocol = () => {
-    let {tcp} = this.state;
-    const value = tcp === "mqtt" ? "webrtc" : "mqtt";
-    api
-      .adminSetConfig("galaxy_protocol", value)
-      .then(() => {
-        this.setState({tcp: value});
-        const msg = {type: "reload-config", status: value, id: null, user: null, room: null};
-        mqtt.send(JSON.stringify(msg), false, "galaxy/users/broadcast");
-      })
-      .catch((err) => alert(err));
-  };
+  // setProtocol = () => {
+  //   let {tcp} = this.state;
+  //   const value = tcp === "mqtt" ? "webrtc" : "mqtt";
+  //   api
+  //     .adminSetConfig("galaxy_protocol", value)
+  //     .then(() => {
+  //       this.setState({tcp: value});
+  //       const msg = {type: "reload-config", status: value, id: null, user: null, room: null};
+  //       mqtt.send(JSON.stringify(msg), false, "galaxy/users/broadcast");
+  //     })
+  //     .catch((err) => alert(err));
+  // };
 
   render() {
     const {user} = this.props;
     const {
-      chatRoomsInitialized,
-      chatRoomsInitializedError,
-      current_janus,
       current_room,
       current_group,
       feed_id,
@@ -743,15 +737,12 @@ class AdminRoot extends Component {
       feeds,
       users,
       rooms_question,
-      gateways,
       gatewaysInitialized,
       rooms,
       users_count,
       appInitError,
       command_status,
-      premodStatus,
       showConfirmReloadAll,
-      tcp,
     } = this.state;
 
     if (appInitError) {
@@ -799,7 +790,7 @@ class AdminRoot extends Component {
     let rooms_grid = rooms.map((data, i) => {
       const {room, num_users, description, questions} = data;
       return (
-        <Table.Row active={current_room === room} key={i} onClick={() => this.joinRoom(data)}>
+        <Table.Row active={current_room === room} key={i + "r"} onClick={() => this.joinRoom(data)}>
           <Table.Cell width={5}>
             {questions ? q : ""}
             {description}
@@ -818,7 +809,7 @@ class AdminRoot extends Component {
       let feed_user = users.find((u) => feed.id === u.rfid);
       let qt = feed_user && !!feed_user.question;
       return (
-        <Table.Row active={feed.id === this.state.feed_id} key={i} onClick={() => this.getUserInfo(feed_user)}>
+        <Table.Row active={feed.id === this.state.feed_id} key={i + "u"} onClick={() => this.getUserInfo(feed_user)}>
           <Table.Cell width={10}>
             {qt ? q : ""}
             {feed.display.display}
@@ -836,7 +827,7 @@ class AdminRoot extends Component {
         let selected = id === feed_id;
         return (
           <div className="video" key={"v" + id} ref={"video" + id} id={"video" + id}>
-            <div className={classNames("video__overlay", {talk: talk}, {selected: selected})} />
+            <div className={classNames("video__overlay", {talk: talk}, {selected: selected})} key={"t" + id} />
             <video
               key={id}
               ref={"remoteVideo" + id}
