@@ -68,8 +68,7 @@ class ChatBox extends Component {
   };
 
   onChatMessage = (message) => {
-    const dateString = getDateString();
-    message.time = dateString;
+    message.time = getDateString();
 
     if (message.whisper) {
 
@@ -110,6 +109,11 @@ class ChatBox extends Component {
       return;
     }
 
+    if (msg_type === "private" && !selected_user) {
+      alert("Choose user");
+      return;
+    }
+
     const msg = {user: {id, role, display}, type: "client-chat", text: input_value};
     const topic = msg_type === "private" ? `galaxy/users/${selected_user.id}` : `galaxy/room/${selected_room}/chat`;
 
@@ -130,16 +134,19 @@ class ChatBox extends Component {
   };
 
   render() {
-    const {selected_user, selected_group} = this.props;
+    const {selected_user, selected_group, user} = this.props;
     const {messages, msg_type, input_value, show_confirm} = this.state;
     const to = selected_user && selected_user.display ? selected_user.display : "Select User:";
     const group = selected_group ? selected_group : "Select Group:";
 
     const send_options = [
-      {key: "all", text: "Everyone", value: "all"},
       {key: "public", text: group, value: "public"},
       {key: "private", text: to, value: "private"},
     ];
+
+    if(user.role === "root") {
+      send_options.push({key: "all", text: "Everyone", value: "all"})
+    }
 
     const list_msgs = messages.map((msg, i) => {
       const {user, time, text, to} = msg;
