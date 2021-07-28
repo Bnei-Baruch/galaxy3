@@ -26,11 +26,11 @@ class UsersHandleAudioOut extends Component {
     if (g === null && room) {
       this.exitVideoRoom(room, () => {});
     }
-  }
+  };
 
   componentWillUnmount() {
     this.exitVideoRoom(this.state.room, () => {});
-  }
+  };
 
   initVideoRoom = (roomid, inst) => {
     const gateway = this.props.gateways[inst];
@@ -372,6 +372,7 @@ class UsersHandleAudioOut extends Component {
 
     return <div>{program_feeds}</div>;
   }
+
 }
 
 export default UsersHandleAudioOut;

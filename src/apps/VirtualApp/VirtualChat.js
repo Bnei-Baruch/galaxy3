@@ -10,7 +10,6 @@ const isUseNewDesign = window.location.hostname === "arvut.kli.one" && window.lo
 
 class VirtualChat extends Component {
   state = {
-    chatroom: null,
     room: null,
     input_value: "",
     messages: [],
@@ -40,8 +39,6 @@ class VirtualChat extends Component {
       let json = JSON.parse(data);
       if(json?.type === "client-chat") {
         this.onChatMessage(json);
-      } else {
-        this.onData(json);
       }
     });
 
@@ -51,8 +48,6 @@ class VirtualChat extends Component {
       json["whisper"] = true;
       if(json?.type === "client-chat") {
         this.onChatMessage(json);
-      } else {
-        this.onData(json);
       }
     });
 
@@ -107,65 +102,6 @@ class VirtualChat extends Component {
     }
   };
 
-  // Will be removed
-  onData = (json) => {
-    let what = json["textroom"];
-    if (what === "message") {
-      // Incoming message: public or private?
-      let msg = json["text"];
-      msg = msg.replace(new RegExp("<", "g"), "&lt");
-      msg = msg.replace(new RegExp(">", "g"), "&gt");
-      let from = json["from"];
-      let dateString = getDateString(json["date"]);
-      let whisper = json["whisper"];
-
-      let message = JSON.parse(msg);
-
-      if (whisper === true) {
-        // Private message
-        console.log("[VirtualChat]:: It's private message: " + dateString + " : " + from + " : " + msg);
-        let {support_msgs} = this.state;
-        if (message.type && message.type !== "chat") {
-          if (this.props.msg_protocol === "mqtt") return;
-          console.log("[VirtualChat] :: It's remote command :: ", message);
-          this.props.onCmdMsg(message);
-        } else {
-          message.time = dateString;
-          support_msgs.push(message);
-          this.setState({support_msgs, from});
-          if (this.props.visible) {
-            this.scrollToBottom();
-          } else {
-            notifyMe("Shidur", message.text, true);
-            isUseNewDesign ? this.props.setIsRoomChat(false) : this.setState({room_chat: false});
-            this.props.onNewMsg(true);
-          }
-        }
-      } else {
-        // Public message
-        let {messages} = this.state;
-        console.log("[VirtualChat]-:: It's public message: " + msg);
-        if (message.type && message.type !== "chat") {
-          if (this.props.msg_protocol === "mqtt") return;
-          console.log("[VirtualChat]:: It's remote command :: ", message);
-          this.props.onCmdMsg(message);
-        } else {
-          message.time = dateString;
-          messages.push(message);
-          this.setState({messages});
-          if (this.props.visible) {
-            this.scrollToBottom();
-          } else {
-            if (message.user.role.match(/^(admin|root)$/)) {
-              notifyMe("Shidur", message.text, true);
-            }
-            this.props.onNewMsg();
-          }
-        }
-      }
-    }
-  };
-
   showSupportMessage = (message) => {
     let {support_msgs} = this.state;
     message.time = getDateString();
@@ -198,33 +134,6 @@ class VirtualChat extends Component {
     if (!room_chat) {
       privates.push(msg);
       this.setState({privates});
-    }
-  };
-
-  // Will be removed
-  sendChatMessage = () => {
-    const {room_chat} = isUseNewDesign ? this.props : this.state;
-    let {id, role, display} = this.props.user;
-    let {input_value, from, support_msgs} = this.state;
-    if (!role.match(/^(user|guest)$/) || input_value === "") {
-      return;
-    }
-    let msg = {user: {id, role, display}, type: "chat", text: input_value};
-    let pvt = room_chat ? "" : from ? {to: from} : {to: `${SHIDUR_ID}`};
-    let message = {
-      ack: false,
-      textroom: "message",
-      transaction: 'transaction',
-      room: this.props.room,
-      ...pvt,
-      text: JSON.stringify(msg),
-    };
-
-    mqtt.send(JSON.stringify(message), false, `galaxy/room/${this.props.room}/chat`);
-    this.setState({input_value: ""});
-    if (!room_chat) {
-      support_msgs.push(msg);
-      this.setState({support_msgs});
     }
   };
 

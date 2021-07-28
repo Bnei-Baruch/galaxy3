@@ -2077,11 +2077,8 @@ class MobileClient extends Component {
 
             <VirtualChat
               t={t}
-              ref={(chat) => {
-                this.chat = chat;
-              }}
+              ref={(chat) => {this.chat = chat;}}
               visible={chatVisible}
-              janus={janus}
               room={room}
               user={user}
               onCmdMsg={this.handleCmdData}
