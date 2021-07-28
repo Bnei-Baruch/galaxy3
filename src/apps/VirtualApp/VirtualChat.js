@@ -44,11 +44,11 @@ class VirtualChat extends Component {
 
     // Private chat
     mqtt.mq.on("MqttPrivateMessage", (data) => {
-      let json = JSON.parse(data);
-      json["whisper"] = true;
-      if(json?.type === "client-chat") {
-        this.onChatMessage(json);
+      let message = JSON.parse(data);
+      if(message?.type === "client-chat") {
+        notifyMe("Shidur", message.text, true);
       }
+      //TODO: Make private dialog exchange
     });
 
     // Broadcast message
@@ -65,43 +65,22 @@ class VirtualChat extends Component {
 
   onKeyPressed = (e) => {
     if (e.code === "Enter") {
-      this.sendChatMessage();
+      this.newChatMessage();
     }
   };
 
   onChatMessage = (message) => {
-    const dateString = getDateString();
-    message.time = dateString;
-
-    if (message.whisper) {
-
-      // Private message
-      console.log("[VirtualChat]:: It's private message: ", message);
-      let {privates} = this.state;
-      privates.push(message);
-      this.setState({privates});
-      if (this.props.visible) {
-        this.scrollToBottom();
-      } else {
-        notifyMe("Shidur", message.text, true);
-        isUseNewDesign ? this.props.setIsRoomChat(false) : this.setState({room_chat: false});
-        this.props.onNewMsg(true);
-      }
+    let {messages} = this.state;
+    message.time = getDateString();
+    messages.push(message);
+    this.setState({messages});
+    if (this.props.visible) {
+      this.scrollToBottom();
     } else {
-
-      // Public message
-      let {messages} = this.state;
-      console.log("[VirtualChat]-:: It's public message: ", message);
-      messages.push(message);
-      this.setState({messages});
-      if (this.props.visible) {
-        this.scrollToBottom();
-      } else {
-        if (message.user.role.match(/^(admin|root)$/)) {
-          notifyMe("Shidur", message.text, true);
-        }
-        this.props.onNewMsg();
+      if (message.user.role.match(/^(admin|root)$/)) {
+        notifyMe("Shidur", message.text, true);
       }
+      this.props.onNewMsg();
     }
   };
 

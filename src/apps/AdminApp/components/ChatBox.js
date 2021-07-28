@@ -117,11 +117,7 @@ class ChatBox extends Component {
     console.log(msg)
     this.setState({input_value: ""});
 
-    // TODO: Where we show private messages?
-    // if (user?.id) {
-    //   privates.push(msg);
-    //   this.setState({privates});
-    // }
+    // TODO: Make private dialog exchange
   };
 
   scrollToBottom = () => {
@@ -142,7 +138,7 @@ class ChatBox extends Component {
     const send_options = [
       {key: "all", text: "Everyone", value: "all"},
       {key: "public", text: group, value: "public"},
-      {key: "private", text: to, value: "private", disabled: true},
+      {key: "private", text: to, value: "private"},
     ];
 
     const list_msgs = messages.map((msg, i) => {
