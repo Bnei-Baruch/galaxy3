@@ -53,10 +53,13 @@ class VirtualChat extends Component {
 
     // Broadcast message
     mqtt.mq.on("MqttBroadcastMessage", (data) => {
-      let json = JSON.parse(data);
-      let message = JSON.parse(json.text);
-      message.time = getDateString(json["date"]);
-      notifyMe("Arvut System", message.text, true);
+      let message = JSON.parse(data);
+      if(message?.type === "client-chat") {
+        message.time = getDateString();
+        notifyMe("Arvut System", message.text, true);
+      } else {
+        this.props.onCmdMsg(message);
+      }
     });
   };
 

@@ -476,10 +476,9 @@ class AdminRoot extends Component {
   };
 
   sendCommandMessage = (command_type) => {
-    const {gateways, feed_user, current_janus, current_room, command_status} = this.state;
+    const {feed_user, current_room, command_status} = this.state;
     const cmd = {
       type: command_type,
-      rcmd: true,
       room: current_room,
       status: command_status,
       id: feed_user?.id,

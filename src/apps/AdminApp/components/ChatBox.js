@@ -44,10 +44,11 @@ class ChatBox extends Component {
 
     // Broadcast message
     mqtt.mq.on("MqttBroadcastMessage", (data) => {
-      let json = JSON.parse(data);
-      let message = JSON.parse(json.text);
-      message.time = getDateString(json["date"]);
-      notifyMe("Arvut System", message.text, true);
+      let message = JSON.parse(data);
+      if(message?.type === "client-chat") {
+        message.time = getDateString(message["date"]);
+        notifyMe("Arvut System", message.text, true);
+      }
     });
   };
 
@@ -55,7 +56,7 @@ class ChatBox extends Component {
     const {user: {role, display, username}} = this.props;
     const {input_value} = this.state;
 
-    const msg = {user: {role, display, username}, text: input_value};
+    const msg = {user: {role, display, username}, type: "client-chat", text: input_value};
 
     this.setState({show_confirm: false, input_value: ""});
     mqtt.send(JSON.stringify(msg), false, `galaxy/users/broadcast`);
