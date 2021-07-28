@@ -386,7 +386,7 @@ class VirtualChat extends Component {
             dir={isRTLString(this.state.input_value) ? "rtl" : "ltr"}
             style={{textAlign: isRTLString(this.state.input_value) ? "right" : "left"}}
           />
-          <Button size="mini" positive onClick={this.sendChatMessage}>
+          <Button size="mini" positive onClick={this.newChatMessage}>
             {t("virtualChat.send")}
           </Button>
         </Input>
