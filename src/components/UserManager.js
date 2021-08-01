@@ -1,6 +1,6 @@
 import Keycloak from "keycloak-js";
 import api from "../shared/Api";
-import {captureMessage, updateSentryUser} from "../shared/sentry";
+import {updateSentryUser} from "../shared/sentry";
 
 const userManagerConfig = {
   url: "https://accounts.kab.info/auth",
@@ -32,7 +32,6 @@ const renewToken = (retry) => {
         api.setAccessToken(kc.token);
       } else {
         console.warn("Token is still valid?..");
-        captureMessage("Refresh valid token", {source: "kc", refreshed}, "fatal");
         renewRetry(retry, refreshed);
       }
     })
@@ -43,7 +42,6 @@ const renewToken = (retry) => {
 
 const renewRetry = (retry, err) => {
   if (retry > 5) {
-    captureMessage("Error refresh token", {source: "kc", err}, "fatal");
     console.error("Refresh retry: failed");
     console.debug("-- Refresh Failed --");
     kc.clearToken();
