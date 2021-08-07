@@ -37,7 +37,7 @@ export const initSubtitle = (lang, onMessage, attempts = 0) => {
     if (attempts > 0) return;
     const {
       sessionId: id,
-      profile: {email},
+      tokenParsed: {email},
       idToken: token,
     } = kc;
     mqtt.setToken(token);
