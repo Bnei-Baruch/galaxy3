@@ -1849,7 +1849,7 @@ class VirtualClient extends Component {
             className="top-toolbar__item"
             disableElevation
           >
-            {t("loginPage.userFee")}
+            {t("oldClient.myProfile")}
           </ButtonMD>
           <ButtonGroup
             variant="outlined"
@@ -2493,7 +2493,7 @@ class VirtualClient extends Component {
                 style={{margin: "auto"}}
                 onClick={() => window.open(`${PAY_USER_FEE}` + i18n.language, "_blank")}
               >
-                {t("loginPage.userFee")}
+                {t("oldClient.myProfile")}
               </Button>
               <Monitoring monitoringData={monitoringData} />
             </Menu>
