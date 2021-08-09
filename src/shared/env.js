@@ -44,3 +44,5 @@ export const MQTT_URL = process.env.REACT_APP_MQTT_URL;
 
 export const GET_WORKSHOP_QUESTIONS = process.env.REACT_APP_GET_WORKSHOP_QUESTIONS;
 export const WEB_SOCKET_WORKSHOP_QUESTION = process.env.REACT_APP_WEB_SOCKET_WORKSHOP_QUESTION;
+
+export const PAY_USER_FEE = process.env.REACT_APP_PAY_USER_FEE;
