@@ -1,7 +1,6 @@
 import {Janus} from "../lib/janus";
 import {STUN_SRV_GXY, WKLI_ENTER, WKLI_LEAVE} from "./env";
 import api from "./Api";
-import {captureMessage} from "./sentry";
 
 export const initJanus = (cb, er, server, token = "", iceServers = [{urls: STUN_SRV_GXY}]) => {
   Janus.init({
@@ -305,7 +304,6 @@ export const updateGxyUser = (user) => {
     })
     .catch((err) => {
       console.error("[User] error updating user state", user.id, err);
-      captureMessage("Error updating user state", {source: "user", err}, "warning");
     });
 };
 

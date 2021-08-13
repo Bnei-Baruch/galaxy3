@@ -67,6 +67,15 @@ class MqttMsg {
 
     this.mq.on("error", (data) => console.error("[mqtt] Error: ", data));
     this.mq.on("disconnect", (data) => console.error("[mqtt] Error: ", data));
+    this.mq.on("packetreceive", (data) => {
+      if(data.reasonCode === 135) {
+        //It's fire on time in 10 minutes, if we got here
+        // something bad happened with our token. It's better to reload whole app.
+        console.error("[mqtt] Auth Error: ", data);
+        window.location.reload();
+      }
+    });
+
   };
 
   join = (topic, chat) => {

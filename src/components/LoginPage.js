@@ -8,6 +8,7 @@ import {Terms} from "./Terms";
 import {Profile} from "./Profile";
 import internet from "./internet.png";
 import "./LoginPage.css";
+import {PAY_USER_FEE} from "../shared/env";
 
 class LoginPage extends Component {
   state = {
@@ -155,7 +156,7 @@ class LoginPage extends Component {
         <Container text textAlign="center" style={{direction, marginTop: "20px", fontSize: "1.5em"}}>
           <Image src={internet} style={{margin: "auto", width: "60px"}}></Image>
           <p style={{marginTop: "15px"}}>{t("loginPage.intro")}</p>
-          <Button basic color="red" size="large" onClick={() => window.open("https://virtualhome.kli.one", "_blank")}>
+          <Button basic color="red" size="large" onClick={() => window.open(`${PAY_USER_FEE}` + i18n.language, "_blank")}>
             {t("loginPage.userFee")}
           </Button>
         </Container>
