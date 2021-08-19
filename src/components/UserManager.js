@@ -30,7 +30,7 @@ kc.onAuthLogout = () => {
 const renewToken = (retry) => {
   retry++;
   kc.updateToken(5)
-    .then((refreshed) => {
+    .then(refreshed => {
       if (refreshed) {
         api.setAccessToken(kc.token);
       }
@@ -47,14 +47,7 @@ const renewToken = (retry) => {
 };
 
 const setData = () => {
-  const {
-    realm_access: {roles},
-    sub,
-    given_name,
-    name,
-    email,
-    family_name,
-  } = kc.tokenParsed;
+  const {realm_access: {roles}, sub, given_name, name, email, family_name} = kc.tokenParsed;
   const user = {display: name, email, roles, id: sub, username: given_name, familyname: family_name};
   api.setAccessToken(kc.token);
   updateSentryUser(user);
@@ -63,11 +56,11 @@ const setData = () => {
 
 export const getUser = (callback) => {
   kc.init(initOptions)
-    .then((authenticated) => {
+    .then(authenticated => {
       const user = authenticated ? setData() : null;
       callback(user);
     })
-    .catch((err) => console.error(err));
+    .catch(err => console.error(err));
 };
 
 export default kc;
