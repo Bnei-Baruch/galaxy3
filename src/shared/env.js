@@ -7,7 +7,7 @@ export const BASE_URL =
         window.location.port ? `:${window.location.port}` : ""
       }/`;
 
-export const SENTRY_KEY = process.env.REACT_APP_SENTRY_KEY;
+export const SENTRY_DSN = process.env.REACT_APP_SENTRY_DSN;
 
 export const GEO_IP_INFO = process.env.REACT_APP_GEO_IP_INFO;
 export const STUN_SRV_GXY = process.env.REACT_APP_STUN_SRV_GXY;
