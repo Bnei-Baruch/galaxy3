@@ -1,5 +1,5 @@
 import mqtt from "mqtt";
-import {MQTT_URL} from "./env";
+import {MQTT_URL, MSG_URL} from "./env";
 import {isServiceID} from "./enums";
 import {randomString} from "./tools";
 import GxyJanus from "./janus-utils";
@@ -55,7 +55,8 @@ class MqttMsg {
       };
     }
 
-    this.mq = mqtt.connect(`wss://${MQTT_URL}`, options);
+    const url = !user.role.match(/^(user|admin|root|viewer)$/) && !service ? MQTT_URL : MSG_URL;
+    this.mq = mqtt.connect(`wss://${url}`, options);
 
     this.mq.on("connect", (data) => {
       if (data && !this.connected) {

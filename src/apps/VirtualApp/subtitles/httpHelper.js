@@ -3,6 +3,7 @@ import {WEB_SOCKET_WORKSHOP_QUESTION} from "../../../shared/env";
 import {MSGS_TYPES} from "./MessageManager";
 import mqtt from "../../../shared/mqtt";
 import kc from "../../../components/UserManager";
+import {getUserRole, userRolesEnum} from "../../../shared/enums";
 
 let currentMqttLang;
 export const initWQ = (onMessage) => {
@@ -51,9 +52,11 @@ export const initSubtitle = (lang, onMessage, attempts = 0) => {
     );
   }
 
-  currentMqttLang && mqtt.exit("subtitles/galaxy/" + currentMqttLang);
+  const role = getUserRole();
+  const topic = role !== userRolesEnum.user ? "msg/subtitles/galaxy/" : "subtitles/galaxy/";
+  currentMqttLang && mqtt.exit(topic + currentMqttLang);
   currentMqttLang = lang;
-  mqtt.join("subtitles/galaxy/" + lang);
+  mqtt.join(topic + lang);
 
   mqtt.mq.on("MqttSubtitlesEvent", (json) => {
     let msg = JSON.parse(json);
