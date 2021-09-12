@@ -46,7 +46,7 @@ class VirtualChat extends Component {
     mqtt.mq.on("MqttPrivateMessage", (data) => {
       let message = JSON.parse(data);
       if(message?.type === "client-chat") {
-        notifyMe("Shidur", message.text, true);
+        notifyMe("Arvut System", message.text, true);
       }
       //TODO: Make private dialog exchange
     });

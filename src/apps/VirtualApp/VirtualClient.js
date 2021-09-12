@@ -223,6 +223,19 @@ class VirtualClient extends Component {
 
   initApp = (user) => {
     initCrisp(user, this.props.i18n.language);
+
+    // Protocol init
+    const bridge = user.role !== "user" ? "msg/" : "";
+    mqtt.init(user, (data) => {
+      console.log("[mqtt] init: ", data);
+      mqtt.join(bridge + "galaxy/users/broadcast");
+      mqtt.join(bridge + "galaxy/users/" + user.id);
+      this.chat.initChatEvents();
+      mqtt.watch((message) => {
+        this.handleCmdData(message);
+      });
+    });
+
     //Clients not authorized to app may see shidur only
     if (user.role !== userRolesEnum.user) {
       const config = {
@@ -276,17 +289,6 @@ class VirtualClient extends Component {
             msg_protocol: ConfigStore.dynamicConfig("galaxy_protocol"),
           });
           GxyJanus.setGlobalConfig(data);
-
-          // Protocol init
-          mqtt.init(user, (data) => {
-            console.log("[mqtt] init: ", data);
-            mqtt.join("galaxy/users/broadcast");
-            mqtt.join("galaxy/users/" + user.id);
-            this.chat.initChatEvents();
-            mqtt.watch((message) => {
-              this.handleCmdData(message);
-            });
-          });
         })
         .then(() => api.fetchAvailableRooms({with_num_users: true}))
         .then((data) => {
