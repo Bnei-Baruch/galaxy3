@@ -11,11 +11,13 @@ class MqttMsg {
     this.connected = false;
     this.room = null;
     this.token = null;
+    this.reconnect_count = 0;
   }
 
   init = (user, callback) => {
     this.user = user;
 
+    const RC = 5
     const service = isServiceID(user.id);
     const svc_token = GxyJanus?.globalConfig?.dynamic_config?.mqtt_auth;
     const token = service ? svc_token : this.token;
@@ -62,21 +64,26 @@ class MqttMsg {
       if (data && !this.connected) {
         console.log("[mqtt] Connected to server: ", data);
         this.connected = true;
-        callback(data);
+        callback(false, false);
+      } else {
+        console.log("[mqtt] Connected: ", data);
+        if(this.reconnect_count > RC) {
+          callback(true, false);
+        }
+        this.reconnect_count = 0;
       }
     });
 
-    this.mq.on("error", (data) => console.error("[mqtt] Error: ", data));
-    this.mq.on("disconnect", (data) => console.error("[mqtt] Error: ", data));
-    this.mq.on("packetreceive", (data) => {
-      if(data.reasonCode === 135) {
-        //It's fire on time in 10 minutes, if we got here
-        // something bad happened with our token. It's better to reload whole app.
-        console.error("[mqtt] Auth Error: ", data);
-        window.location.reload();
+    this.mq.on("close", (data) => {
+      if(this.reconnect_count < RC + 2) {
+        this.reconnect_count++;
+      }
+      if(this.reconnect_count === RC) {
+        this.reconnect_count++;
+        console.warn("[mqtt] Notify: ", data)
+        callback(false, true);
       }
     });
-
   };
 
   join = (topic, chat) => {

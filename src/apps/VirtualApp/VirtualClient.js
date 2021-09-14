@@ -226,14 +226,20 @@ class VirtualClient extends Component {
 
     // Protocol init
     const bridge = user.role !== "user" ? "msg/" : "";
-    mqtt.init(user, (data) => {
-      console.log("[mqtt] init: ", data);
-      mqtt.join(bridge + "galaxy/users/broadcast");
-      mqtt.join(bridge + "galaxy/users/" + user.id);
-      this.chat.initChatEvents();
-      mqtt.watch((message) => {
-        this.handleCmdData(message);
-      });
+    mqtt.init(user, (reconnected, error) => {
+      if(error) {
+        console.log("MQTT disconnected");
+      } else if(reconnected) {
+        console.log("MQTT reconnected");
+      } else {
+        console.log("[mqtt] connected");
+        mqtt.join(bridge + "galaxy/users/broadcast");
+        mqtt.join(bridge + "galaxy/users/" + user.id);
+        this.chat.initChatEvents();
+        mqtt.watch((message) => {
+          this.handleCmdData(message);
+        });
+      }
     });
 
     //Clients not authorized to app may see shidur only
