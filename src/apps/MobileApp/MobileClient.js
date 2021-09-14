@@ -10,7 +10,7 @@ import {
   getMedia,
   getMediaStream,
   initJanus,
-  micLevel,
+  micLevel, notifyMe,
   updateGxyUser,
 } from "../../shared/tools";
 import "./MobileClient.scss";
@@ -120,6 +120,7 @@ class MobileClient extends Component {
     settingsActiveIndex: -1,
     premodStatus: false,
     msg_protocol: "mqtt",
+    mqttOn: false,
   };
 
   shidurInitialized() {
@@ -218,9 +219,17 @@ class MobileClient extends Component {
     mqtt.init(user, (reconnected, error) => {
       if(error) {
         console.log("MQTT disconnected");
+        this.setState({mqttOn: false});
+        notifyMe("Arvut System", "MQTT Offline", true);
+        if (this.state.question) {
+          this.handleQuestion();
+        }
       } else if(reconnected) {
+        notifyMe("Arvut System", "MQTT Online", true);
+        this.setState({mqttOn: true});
         console.log("MQTT reconnected");
       } else {
+        this.setState({mqttOn: true});
         console.log("[mqtt] connected");
         mqtt.join(bridge + "galaxy/users/broadcast");
         mqtt.join(bridge + "galaxy/users/" + user.id);
@@ -1605,6 +1614,7 @@ class MobileClient extends Component {
       page,
       videos,
       premodStatus,
+      mqttOn,
     } = this.state;
     const {video_device} = media.video;
     const {audio_device} = media.audio;
@@ -2033,7 +2043,7 @@ class MobileClient extends Component {
               <Image className="audio-mode" src={muteOtherCams ? audioModeSvg : fullModeSvg} />
               <span>{t(muteOtherCams ? "oldClient.fullMode" : "oldClient.audioMode")}</span>
             </Menu.Item>
-            <Menu.Item disabled={premodStatus || questionDisabled || cammuted} onClick={this.handleQuestion}>
+            <Menu.Item disabled={!mqttOn || premodStatus || questionDisabled || cammuted} onClick={this.handleQuestion}>
               <Icon name="question" style={{color: question ? "#21ba45" : null}} />
               <span>{t("oldClient.askQuestion")}</span>
             </Menu.Item>

@@ -9,7 +9,7 @@ import {
   getMedia,
   getMediaStream,
   initJanus,
-  micLevel,
+  micLevel, notifyMe,
   testMic,
   updateGxyUser,
 } from "../../shared/tools";
@@ -156,6 +156,7 @@ class VirtualClient extends Component {
     isKliOlamiShown: true,
     audios: {audios: Number(localStorage.getItem("vrt_lang")) || 2},
     msg_protocol: "mqtt",
+    mqttOn: false,
   };
 
   virtualStreamingInitialized() {
@@ -229,9 +230,17 @@ class VirtualClient extends Component {
     mqtt.init(user, (reconnected, error) => {
       if(error) {
         console.log("MQTT disconnected");
+        this.setState({mqttOn: false});
+        notifyMe("Arvut System", "MQTT Offline", true);
+        if (this.state.question) {
+          this.handleQuestion();
+        }
       } else if(reconnected) {
+        notifyMe("Arvut System", "MQTT Online", true);
+        this.setState({mqttOn: true});
         console.log("MQTT reconnected");
       } else {
+        this.setState({mqttOn: true});
         console.log("[mqtt] connected");
         mqtt.join(bridge + "galaxy/users/broadcast");
         mqtt.join(bridge + "galaxy/users/" + user.id);
@@ -1670,6 +1679,7 @@ class VirtualClient extends Component {
       premodStatus,
       media,
       isKliOlamiShown,
+      mqttOn,
     } = this.state;
 
     const {video_device} = media.video;
@@ -1734,7 +1744,7 @@ class VirtualClient extends Component {
             <AskQuestion
               t={t}
               isOn={!!question}
-              disabled={premodStatus || !audio_device || !localAudioTrack || delay || otherFeedHasQuestion}
+              disabled={!mqttOn || premodStatus || !audio_device || !localAudioTrack || delay || otherFeedHasQuestion}
               action={this.handleQuestion.bind(this)}
             />
             <Vote t={t} id={user?.id} disabled={!user || !user.id || room === ""} />
@@ -2116,6 +2126,7 @@ class VirtualClient extends Component {
       shidurForGuestReady,
       isKliOlamiShown,
       wipSettings,
+      mqttOn,
     } = this.state;
 
     const {video_device} = media.video;
@@ -2319,7 +2330,7 @@ class VirtualClient extends Component {
                 {chatMessagesCount > 0 ? chatCountLabel : ""}
               </Menu.Item>
               <Menu.Item
-                disabled={premodStatus || !audio_device || !localAudioTrack || delay || otherFeedHasQuestion}
+                disabled={!mqttOn || premodStatus || !audio_device || !localAudioTrack || delay || otherFeedHasQuestion}
                 onClick={this.handleQuestion}
               >
                 <Icon {...(question ? {color: "green"} : {})} name="question" />

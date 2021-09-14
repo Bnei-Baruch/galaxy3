@@ -17,7 +17,7 @@ class MqttMsg {
   init = (user, callback) => {
     this.user = user;
 
-    const RC = 5
+    const RC = 30
     const service = isServiceID(user.id);
     const svc_token = GxyJanus?.globalConfig?.dynamic_config?.mqtt_auth;
     const token = service ? svc_token : this.token;
