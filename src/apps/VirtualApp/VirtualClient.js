@@ -246,7 +246,9 @@ class VirtualClient extends Component {
         console.log("[mqtt] connected");
         mqtt.join(bridge + "galaxy/users/broadcast");
         mqtt.join(bridge + "galaxy/users/" + user.id);
-        this.chat.initChatEvents();
+        setTimeout(() => {
+          this.chat.initChatEvents();
+        }, 3000)
         mqtt.watch((message) => {
           this.handleCmdData(message);
         });
