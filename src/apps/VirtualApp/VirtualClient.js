@@ -38,7 +38,7 @@ import VirtualStreamingJanus from "../../shared/VirtualStreamingJanus";
 import {getUser, kc} from "../../components/UserManager";
 import LoginPage from "../../components/LoginPage";
 import {Profile} from "../../components/Profile";
-import {updateSentryUser} from "../../shared/sentry";
+import {captureMessage, updateSentryUser} from "../../shared/sentry";
 import GxyJanus from "../../shared/janus-utils";
 import audioModeSvg from "../../shared/audio-mode.svg";
 import fullModeSvg from "../../shared/full-mode.svg";
@@ -231,11 +231,13 @@ class VirtualClient extends Component {
       if(error) {
         console.log("MQTT disconnected");
         this.setState({mqttOn: false});
+        captureMessage("MQTT Offline", {source: "mqtt"});
         notifyMe("Arvut System", "MQTT Offline", true);
         if (this.state.question) {
           this.handleQuestion();
         }
       } else if(reconnected) {
+        captureMessage("MQTT Online", {source: "mqtt"});
         notifyMe("Arvut System", "MQTT Online", true);
         this.setState({mqttOn: true});
         console.log("MQTT reconnected");
