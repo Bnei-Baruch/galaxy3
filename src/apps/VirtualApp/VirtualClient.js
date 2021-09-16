@@ -5,7 +5,7 @@ import {isMobile} from "react-device-detect";
 import {Button, Icon, Image, Input, Label, Menu, Modal, Popup, Select} from "semantic-ui-react";
 import {
   checkNotification,
-  geoInfo,
+  geoInfo, getDateString,
   getMedia,
   getMediaStream,
   initJanus,
@@ -225,35 +225,7 @@ class VirtualClient extends Component {
   initApp = (user) => {
     initCrisp(user, this.props.i18n.language);
 
-    // Protocol init
-    const bridge = user.role !== "user" ? "msg/" : "";
-    mqtt.init(user, (reconnected, error) => {
-      if(error) {
-        console.log("MQTT disconnected");
-        this.setState({mqttOn: false});
-        captureMessage("MQTT Offline", {source: "mqtt"});
-        notifyMe("Arvut System", "MQTT Offline", true);
-        if (this.state.question) {
-          this.handleQuestion();
-        }
-      } else if(reconnected) {
-        captureMessage("MQTT Online", {source: "mqtt"});
-        notifyMe("Arvut System", "MQTT Online", true);
-        this.setState({mqttOn: true});
-        console.log("MQTT reconnected");
-      } else {
-        this.setState({mqttOn: true});
-        console.log("[mqtt] connected");
-        mqtt.join(bridge + "galaxy/users/broadcast");
-        mqtt.join(bridge + "galaxy/users/" + user.id);
-        setTimeout(() => {
-          this.chat.initChatEvents();
-        }, 3000)
-        mqtt.watch((message) => {
-          this.handleCmdData(message);
-        });
-      }
-    });
+    this.initMQTT(user);
 
     //Clients not authorized to app may see shidur only
     if (user.role !== userRolesEnum.user) {
@@ -335,6 +307,66 @@ class VirtualClient extends Component {
           this.setState({appInitError: err});
         });
     });
+  };
+
+  initMQTT = (user) => {
+    const bridge = user.role !== "user" ? "msg/" : "";
+
+    mqtt.init(user, (reconnected, error) => {
+
+      if(error) {
+        console.log("MQTT disconnected");
+        this.setState({mqttOn: false});
+        captureMessage("MQTT Offline", {source: "mqtt"});
+        //notifyMe("Arvut System", "MQTT Offline", true);
+        if (this.state.question) {
+          this.handleQuestion();
+        }
+      } else if(reconnected) {
+        captureMessage("MQTT Online", {source: "mqtt"});
+        //notifyMe("Arvut System", "MQTT Online", true);
+        this.setState({mqttOn: true});
+        console.log("MQTT reconnected");
+      } else {
+        this.setState({mqttOn: true});
+        console.log("[mqtt] connected");
+        mqtt.join(bridge + "galaxy/users/broadcast");
+        mqtt.join(bridge + "galaxy/users/" + user.id);
+
+        mqtt.watch((message) => {
+          this.handleCmdData(message);
+        });
+
+        // Public chat
+        mqtt.mq.on("MqttChatEvent", (data) => {
+          let json = JSON.parse(data);
+          if(json?.type === "client-chat") {
+            this.chat.onChatMessage(json);
+          }
+        });
+
+        // Private chat
+        mqtt.mq.on("MqttPrivateMessage", (data) => {
+          let message = JSON.parse(data);
+          if(message?.type === "client-chat") {
+            notifyMe("Arvut System", message.text, true);
+          }
+          //TODO: Make private dialog exchange
+        });
+
+        // Broadcast message
+        mqtt.mq.on("MqttBroadcastMessage", (data) => {
+          let message = JSON.parse(data);
+          if(message?.type === "client-chat") {
+            message.time = getDateString();
+            notifyMe("Arvut System", message.text, true);
+          } else {
+            this.handleCmdData(message);
+          }
+        });
+      }
+
+    })
   };
 
   initClient = (reconnect, retry = 0) => {
