@@ -9,7 +9,7 @@ import {MuiThemeProvider, createTheme} from "@material-ui/core/styles";
 import countries from "i18n-iso-countries";
 
 import {LANGUAGES} from "../../shared/consts";
-import {REGISTRATION_FORM_FIELDS, REGISTRATION_FORM_URL} from "../../shared/env";
+import {AUTH_API_BACKEND, REGISTRATION_FORM_FIELDS, REGISTRATION_FORM_URL} from "../../shared/env";
 
 import api from "../../shared/Api";
 import RTL from "../../components/RTL";
@@ -277,7 +277,7 @@ export const RegistrationForm = ({
   const updateKCStatus = async () => {
     const opt = api.defaultOptions();
     opt.method = "POST";
-    return await fetch("https://acc.kli.one/api/pending", opt);
+    return await fetch(`${AUTH_API_BACKEND}/pending`, opt);
   };
 
   const renderForm = () => (
