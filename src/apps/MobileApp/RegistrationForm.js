@@ -277,7 +277,7 @@ export const RegistrationForm = ({
   const updateKCStatus = async () => {
     const opt = api.defaultOptions();
     opt.method = "POST";
-    return await fetch("https://acc.kli.one/api/pending", opt);
+    return await fetch("https://acc.kab.sh/api/pending", opt);
   };
 
   const renderForm = () => (
