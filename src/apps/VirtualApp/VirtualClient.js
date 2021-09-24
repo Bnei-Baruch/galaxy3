@@ -1735,15 +1735,6 @@ class VirtualClient extends Component {
           </ButtonGroup>
 
           <ButtonMD
-            onClick={() => toggleDesignVersions()}
-            variant="contained"
-            color="primary"
-            className={classNames("bottom-toolbar__item")}
-            disableElevation
-          >
-            {t("oldClient.oldDesign")}
-          </ButtonMD>
-          <ButtonMD
             onClick={() => this.exitRoom(false)}
             variant="contained"
             color="secondary"
@@ -1931,6 +1922,7 @@ class VirtualClient extends Component {
             variant={rightAsideName === "donate" ? "contained" : "outlined"}
             className={"top-toolbar__item"}
             dir={isHe ? "rtl" : "ltr"}
+            target="_blank"
           >
             {t("oldClient.donate")}
           </ButtonMD>
