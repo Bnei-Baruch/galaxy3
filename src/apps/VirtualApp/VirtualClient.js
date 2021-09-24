@@ -1788,8 +1788,11 @@ class VirtualClient extends Component {
 
     const chat = (
       <Box style={{display: displayChat, height: "100%"}}>
-        <VirtualChat t={t}
-          ref={(chat) => {this.chat = chat;}}
+        <VirtualChat
+          t={t}
+          ref={(chat) => {
+            this.chat = chat;
+          }}
           visible={rightAsideName === "chat"}
           room={room}
           user={user}
@@ -1827,7 +1830,7 @@ class VirtualClient extends Component {
 
   renderTopBar = (isDeb) => {
     const {t, i18n} = this.props;
-
+    const isHe = i18n.language === "he";
     const {user, asideMsgCounter, leftAsideName, rightAsideName, isOpenTopMenu} = this.state;
 
     const notApproved = user && user.role !== userRolesEnum.user;
@@ -1922,6 +1925,15 @@ class VirtualClient extends Component {
           </ButtonGroup>
 
           <Support />
+          <ButtonMD
+            component={"a"}
+            href={`https://www.kab1.com/${isHe ? "" : i18n.language}`}
+            variant={rightAsideName === "donate" ? "contained" : "outlined"}
+            className={"top-toolbar__item"}
+            dir={isHe ? "rtl" : "ltr"}
+          >
+            {t("oldClient.donate")}
+          </ButtonMD>
           {/* ---------- */}
         </Toolbar>
       </AppBar>
@@ -2545,7 +2557,9 @@ class VirtualClient extends Component {
               </div>
               <VirtualChat
                 t={t}
-                ref={(chat) => {this.chat = chat;}}
+                ref={(chat) => {
+                  this.chat = chat;
+                }}
                 visible={chatVisible}
                 room={room}
                 user={user}
