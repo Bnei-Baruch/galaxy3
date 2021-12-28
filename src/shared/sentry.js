@@ -1,6 +1,5 @@
 import * as Sentry from "@sentry/react";
 import {Integrations} from "@sentry/tracing";
-
 import {SENTRY_DSN} from "./env";
 import version from "../Version";
 
