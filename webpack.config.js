@@ -3,6 +3,7 @@ const webpack = require('webpack');
 const dotenv = require('dotenv');
 const HtmlWebPackPlugin = require('html-webpack-plugin');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
+const CopyWebpackPlugin = require('copy-webpack-plugin')
 const env = dotenv.config().parsed;
 
 const envKeys = Object.keys(env).reduce((prev, next) => {
@@ -100,6 +101,7 @@ module.exports = {
       filename: 'static/css/[name].[contenthash:8].css',
       chunkFilename: 'static/css/[name].[contenthash:8].chunk.css',
     }),
+    new CopyWebpackPlugin({patterns: [{ from: 'public' }]}),
     new webpack.DefinePlugin(envKeys),
     new webpack.ProvidePlugin({
       Buffer: ['buffer', 'Buffer'],
