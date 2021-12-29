@@ -1,5 +1,7 @@
 // Quantity queries
 // 1. Last Simple Selector
+@use "sass:math";
+
 @function _last-simple-selector($selector) {
     $parsed: selector-parse($selector);
 
@@ -88,7 +90,7 @@
 .video {
     flex-grow: 0;
     flex-shrink: 1;
-    height: percentage(1/1);
+    height: percentage(math.div(1, 1));
     position: relative;
     // margin: 1px;
     background: rgba(34, 34, 34, 1);
@@ -96,7 +98,7 @@
     overflow:hidden;
     @for $i from 1 to 16 {
       @include exactly($i){
-        flex-basis: percentage(1/$i)
+        flex-basis: percentage(math.div(1, $i))
       }
     }
     &__overlay {
@@ -192,93 +194,93 @@ $vw : 16;
 $vh: 9;
 
 // 2 elements
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*2}/#{$vh*2}){:self{flex-wrap: wrap;.video{@include exactly(2){flex-basis: percentage(1/1); height: percentage(1/2);}}}}
+@element .videos__wrapper and (max-aspect-ratio: #{$vw*2}/#{$vh*2}){:self{flex-wrap: wrap;.video{@include exactly(2){flex-basis: percentage(math.div(1, 1)); height: percentage(1*0.5);}}}}
 
 // 3 elements
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*3}/#{$vh*2}){:self{flex-wrap: wrap;.video{@include exactly(3){flex-basis: percentage(1/2); height: percentage(1/2);}}}}
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*2}/#{$vh*3}){:self{flex-wrap: wrap;.video{@include exactly(3){flex-basis: percentage(1/1); height: percentage(1/3);}}}}
+@element .videos__wrapper and (max-aspect-ratio: #{$vw*3}/#{$vh*2}){:self{flex-wrap: wrap;.video{@include exactly(3){flex-basis: percentage(1*0.5); height: percentage(1*0.5);}}}}
+@element .videos__wrapper and (max-aspect-ratio: #{$vw*2}/#{$vh*3}){:self{flex-wrap: wrap;.video{@include exactly(3){flex-basis: percentage(math.div(1, 1)); height: percentage(math.div(1, 3));}}}}
 
 // 4 elements
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*4}/#{$vh*2}){:self{flex-wrap: wrap;.video{@include exactly(4){flex-basis: percentage(1/2); height: percentage(1/2);}}}}
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*2}/#{$vh*4}){:self{flex-wrap: wrap;.video{@include exactly(4){flex-basis: percentage(1/1); height: percentage(1/4);}}}}
+@element .videos__wrapper and (max-aspect-ratio: #{$vw*4}/#{$vh*2}){:self{flex-wrap: wrap;.video{@include exactly(4){flex-basis: percentage(1*0.5); height: percentage(1*0.5);}}}}
+@element .videos__wrapper and (max-aspect-ratio: #{$vw*2}/#{$vh*4}){:self{flex-wrap: wrap;.video{@include exactly(4){flex-basis: percentage(math.div(1, 1)); height: percentage(1*0.25);}}}}
 
 // 5 elements
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*5}/#{$vh*2}){:self{flex-wrap: wrap;.video{@include exactly(5){flex-basis: percentage(1/3); height: percentage(1/2);}}}}
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*3}/#{$vh*3}){:self{flex-wrap: wrap;.video{@include exactly(5){flex-basis: percentage(1/2); height: percentage(1/3);}}}}
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*2}/#{$vh*5}){:self{flex-wrap: wrap;.video{@include exactly(5){flex-basis: percentage(1/1); height: percentage(1/5);}}}}
+@element .videos__wrapper and (max-aspect-ratio: #{$vw*5}/#{$vh*2}){:self{flex-wrap: wrap;.video{@include exactly(5){flex-basis: percentage(math.div(1, 3)); height: percentage(1*0.5);}}}}
+@element .videos__wrapper and (max-aspect-ratio: #{$vw*3}/#{$vh*3}){:self{flex-wrap: wrap;.video{@include exactly(5){flex-basis: percentage(1*0.5); height: percentage(math.div(1, 3));}}}}
+@element .videos__wrapper and (max-aspect-ratio: #{$vw*2}/#{$vh*5}){:self{flex-wrap: wrap;.video{@include exactly(5){flex-basis: percentage(math.div(1, 1)); height: percentage(1*0.2);}}}}
 
 // 6 elements
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*6}/#{$vh*2}){:self{flex-wrap: wrap;.video{@include exactly(6){flex-basis: percentage(1/3); height: percentage(1/2);}}}}
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*3}/#{$vh*3}){:self{flex-wrap: wrap;.video{@include exactly(6){flex-basis: percentage(1/2); height: percentage(1/3);}}}}
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*2}/#{$vh*6}){:self{flex-wrap: wrap;.video{@include exactly(6){flex-basis: percentage(1/1); height: percentage(1/6);}}}}
+@element .videos__wrapper and (max-aspect-ratio: #{$vw*6}/#{$vh*2}){:self{flex-wrap: wrap;.video{@include exactly(6){flex-basis: percentage(math.div(1, 3)); height: percentage(1*0.5);}}}}
+@element .videos__wrapper and (max-aspect-ratio: #{$vw*3}/#{$vh*3}){:self{flex-wrap: wrap;.video{@include exactly(6){flex-basis: percentage(1*0.5); height: percentage(math.div(1, 3));}}}}
+@element .videos__wrapper and (max-aspect-ratio: #{$vw*2}/#{$vh*6}){:self{flex-wrap: wrap;.video{@include exactly(6){flex-basis: percentage(math.div(1, 1)); height: percentage(math.div(1, 6));}}}}
 
 // 7 elements
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*7}/#{$vh*2}){:self{flex-wrap: wrap;.video{@include exactly(7){flex-basis: percentage(1/4); height: percentage(1/2);}}}}
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*4}/#{$vh*3}){:self{flex-wrap: wrap;.video{@include exactly(7){flex-basis: percentage(1/3); height: percentage(1/3);}}}}
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*3}/#{$vh*4}){:self{flex-wrap: wrap;.video{@include exactly(7){flex-basis: percentage(1/2); height: percentage(1/4);}}}}
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*2}/#{$vh*7}){:self{flex-wrap: wrap;.video{@include exactly(7){flex-basis: percentage(1/1); height: percentage(1/7);}}}}
+@element .videos__wrapper and (max-aspect-ratio: #{$vw*7}/#{$vh*2}){:self{flex-wrap: wrap;.video{@include exactly(7){flex-basis: percentage(1*0.25); height: percentage(1*0.5);}}}}
+@element .videos__wrapper and (max-aspect-ratio: #{$vw*4}/#{$vh*3}){:self{flex-wrap: wrap;.video{@include exactly(7){flex-basis: percentage(math.div(1, 3)); height: percentage(math.div(1, 3));}}}}
+@element .videos__wrapper and (max-aspect-ratio: #{$vw*3}/#{$vh*4}){:self{flex-wrap: wrap;.video{@include exactly(7){flex-basis: percentage(1*0.5); height: percentage(1*0.25);}}}}
+@element .videos__wrapper and (max-aspect-ratio: #{$vw*2}/#{$vh*7}){:self{flex-wrap: wrap;.video{@include exactly(7){flex-basis: percentage(math.div(1, 1)); height: percentage(math.div(1, 7));}}}}
 
 // 8 elements
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*8}/#{$vh*2}){:self{flex-wrap: wrap;.video{@include exactly(8){flex-basis: percentage(1/4); height: percentage(1/2);}}}}
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*4}/#{$vh*3}){:self{flex-wrap: wrap;.video{@include exactly(8){flex-basis: percentage(1/3); height: percentage(1/3);}}}}
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*3}/#{$vh*4}){:self{flex-wrap: wrap;.video{@include exactly(8){flex-basis: percentage(1/2); height: percentage(1/4);}}}}
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*2}/#{$vh*8}){:self{flex-wrap: wrap;.video{@include exactly(8){flex-basis: percentage(1/1); height: percentage(1/8);}}}}
+@element .videos__wrapper and (max-aspect-ratio: #{$vw*8}/#{$vh*2}){:self{flex-wrap: wrap;.video{@include exactly(8){flex-basis: percentage(1*0.25); height: percentage(1*0.5);}}}}
+@element .videos__wrapper and (max-aspect-ratio: #{$vw*4}/#{$vh*3}){:self{flex-wrap: wrap;.video{@include exactly(8){flex-basis: percentage(math.div(1, 3)); height: percentage(math.div(1, 3));}}}}
+@element .videos__wrapper and (max-aspect-ratio: #{$vw*3}/#{$vh*4}){:self{flex-wrap: wrap;.video{@include exactly(8){flex-basis: percentage(1*0.5); height: percentage(1*0.25);}}}}
+@element .videos__wrapper and (max-aspect-ratio: #{$vw*2}/#{$vh*8}){:self{flex-wrap: wrap;.video{@include exactly(8){flex-basis: percentage(math.div(1, 1)); height: percentage(1*0.125);}}}}
 
 // 9 elements
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*9}/#{$vh*2}){:self{flex-wrap: wrap;.video{@include exactly(9){flex-basis: percentage(1/5); height: percentage(1/2);}}}}
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*5}/#{$vh*3}){:self{flex-wrap: wrap;.video{@include exactly(9){flex-basis: percentage(1/3); height: percentage(1/3);}}}}
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*3}/#{$vh*5}){:self{flex-wrap: wrap;.video{@include exactly(9){flex-basis: percentage(1/2); height: percentage(1/5);}}}}
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*2}/#{$vh*9}){:self{flex-wrap: wrap;.video{@include exactly(9){flex-basis: percentage(1/1); height: percentage(1/9);}}}}
+@element .videos__wrapper and (max-aspect-ratio: #{$vw*9}/#{$vh*2}){:self{flex-wrap: wrap;.video{@include exactly(9){flex-basis: percentage(1*0.2); height: percentage(1*0.5);}}}}
+@element .videos__wrapper and (max-aspect-ratio: #{$vw*5}/#{$vh*3}){:self{flex-wrap: wrap;.video{@include exactly(9){flex-basis: percentage(math.div(1, 3)); height: percentage(math.div(1, 3));}}}}
+@element .videos__wrapper and (max-aspect-ratio: #{$vw*3}/#{$vh*5}){:self{flex-wrap: wrap;.video{@include exactly(9){flex-basis: percentage(1*0.5); height: percentage(1*0.2);}}}}
+@element .videos__wrapper and (max-aspect-ratio: #{$vw*2}/#{$vh*9}){:self{flex-wrap: wrap;.video{@include exactly(9){flex-basis: percentage(math.div(1, 1)); height: percentage(math.div(1, 9));}}}}
 
 // 10 elements
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*10}/#{$vh*2}){:self{flex-wrap: wrap;.video{@include exactly(10){flex-basis: percentage(1/5); height: percentage(1/2);}}}}
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*5}/#{$vh*3}){:self{flex-wrap: wrap;.video{@include exactly(10){flex-basis: percentage(1/4); height: percentage(1/3);}}}}
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*3}/#{$vh*5}){:self{flex-wrap: wrap;.video{@include exactly(10){flex-basis: percentage(1/2); height: percentage(1/5);}}}}
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*2}/#{$vh*10}){:self{flex-wrap: wrap;.video{@include exactly(10){flex-basis: percentage(1/1); height: percentage(1/10);}}}}
+@element .videos__wrapper and (max-aspect-ratio: #{$vw*10}/#{$vh*2}){:self{flex-wrap: wrap;.video{@include exactly(10){flex-basis: percentage(1*0.2); height: percentage(1*0.5);}}}}
+@element .videos__wrapper and (max-aspect-ratio: #{$vw*5}/#{$vh*3}){:self{flex-wrap: wrap;.video{@include exactly(10){flex-basis: percentage(1*0.25); height: percentage(math.div(1, 3));}}}}
+@element .videos__wrapper and (max-aspect-ratio: #{$vw*3}/#{$vh*5}){:self{flex-wrap: wrap;.video{@include exactly(10){flex-basis: percentage(1*0.5); height: percentage(1*0.2);}}}}
+@element .videos__wrapper and (max-aspect-ratio: #{$vw*2}/#{$vh*10}){:self{flex-wrap: wrap;.video{@include exactly(10){flex-basis: percentage(math.div(1, 1)); height: percentage(1*0.1);}}}}
 
 // 11 elements
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*11}/#{$vh*2}){:self{flex-wrap: wrap;.video{@include exactly(11){flex-basis: percentage(1/6); height: percentage(1/2);}}}}
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*6}/#{$vh*3}){:self{flex-wrap: wrap;.video{@include exactly(11){flex-basis: percentage(1/4); height: percentage(1/3);}}}}
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*4}/#{$vh*4}){:self{flex-wrap: wrap;.video{@include exactly(11){flex-basis: percentage(1/3); height: percentage(1/4);}}}}
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*3}/#{$vh*6}){:self{flex-wrap: wrap;.video{@include exactly(11){flex-basis: percentage(1/2); height: percentage(1/6);}}}}
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*2}/#{$vh*11}){:self{flex-wrap: wrap;.video{@include exactly(11){flex-basis: percentage(1/1); height: percentage(1/11);}}}}
+@element .videos__wrapper and (max-aspect-ratio: #{$vw*11}/#{$vh*2}){:self{flex-wrap: wrap;.video{@include exactly(11){flex-basis: percentage(math.div(1, 6)); height: percentage(1*0.5);}}}}
+@element .videos__wrapper and (max-aspect-ratio: #{$vw*6}/#{$vh*3}){:self{flex-wrap: wrap;.video{@include exactly(11){flex-basis: percentage(1*0.25); height: percentage(math.div(1, 3));}}}}
+@element .videos__wrapper and (max-aspect-ratio: #{$vw*4}/#{$vh*4}){:self{flex-wrap: wrap;.video{@include exactly(11){flex-basis: percentage(math.div(1, 3)); height: percentage(1*0.25);}}}}
+@element .videos__wrapper and (max-aspect-ratio: #{$vw*3}/#{$vh*6}){:self{flex-wrap: wrap;.video{@include exactly(11){flex-basis: percentage(1*0.5); height: percentage(math.div(1, 6));}}}}
+@element .videos__wrapper and (max-aspect-ratio: #{$vw*2}/#{$vh*11}){:self{flex-wrap: wrap;.video{@include exactly(11){flex-basis: percentage(math.div(1, 1)); height: percentage(math.div(1, 11));}}}}
 
 // 12 elements
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*12}/#{$vh*2}){:self{flex-wrap: wrap;.video{@include exactly(12){flex-basis: percentage(1/6);height: percentage(1/2);}}}}
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*6}/#{$vh*3}){:self{flex-wrap: wrap;.video{@include exactly(12){flex-basis: percentage(1/4);height: percentage(1/3);}}}}
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*4}/#{$vh*4}){:self{flex-wrap: wrap;.video{@include exactly(12){flex-basis: percentage(1/3);height: percentage(1/4);}}}}
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*3}/#{$vh*6}){:self{flex-wrap: wrap;.video{@include exactly(12){flex-basis: percentage(1/2);height: percentage(1/6);}}}}
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*2}/#{$vh*12}){:self{flex-wrap: wrap;.video{@include exactly(12){flex-basis: percentage(1/1);height: percentage(1/12);}}}}
+@element .videos__wrapper and (max-aspect-ratio: #{$vw*12}/#{$vh*2}){:self{flex-wrap: wrap;.video{@include exactly(12){flex-basis: percentage(math.div(1, 6));height: percentage(1*0.5);}}}}
+@element .videos__wrapper and (max-aspect-ratio: #{$vw*6}/#{$vh*3}){:self{flex-wrap: wrap;.video{@include exactly(12){flex-basis: percentage(1*0.25);height: percentage(math.div(1, 3));}}}}
+@element .videos__wrapper and (max-aspect-ratio: #{$vw*4}/#{$vh*4}){:self{flex-wrap: wrap;.video{@include exactly(12){flex-basis: percentage(math.div(1, 3));height: percentage(1*0.25);}}}}
+@element .videos__wrapper and (max-aspect-ratio: #{$vw*3}/#{$vh*6}){:self{flex-wrap: wrap;.video{@include exactly(12){flex-basis: percentage(1*0.5);height: percentage(math.div(1, 6));}}}}
+@element .videos__wrapper and (max-aspect-ratio: #{$vw*2}/#{$vh*12}){:self{flex-wrap: wrap;.video{@include exactly(12){flex-basis: percentage(math.div(1, 1));height: percentage(math.div(1, 12));}}}}
 
 // 13 elements
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*13}/#{$vh*2}){:self{flex-wrap: wrap;.video{@include exactly(13){flex-basis: percentage(1/7);height: percentage(1/2);}}}}
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*7}/#{$vh*3}){:self{flex-wrap: wrap;.video{@include exactly(13){flex-basis: percentage(1/5);height: percentage(1/3);}}}}
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*5}/#{$vh*4}){:self{flex-wrap: wrap;.video{@include exactly(13){flex-basis: percentage(1/4);height: percentage(1/4);}}}}
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*4}/#{$vh*5}){:self{flex-wrap: wrap;.video{@include exactly(13){flex-basis: percentage(1/3);height: percentage(1/5);}}}}
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*3}/#{$vh*7}){:self{flex-wrap: wrap;.video{@include exactly(13){flex-basis: percentage(1/2);height: percentage(1/7);}}}}
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*2}/#{$vh*13}){:self{flex-wrap: wrap;.video{@include exactly(13){flex-basis: percentage(1/1);height: percentage(1/13);}}}}
+@element .videos__wrapper and (max-aspect-ratio: #{$vw*13}/#{$vh*2}){:self{flex-wrap: wrap;.video{@include exactly(13){flex-basis: percentage(math.div(1, 7));height: percentage(1*0.5);}}}}
+@element .videos__wrapper and (max-aspect-ratio: #{$vw*7}/#{$vh*3}){:self{flex-wrap: wrap;.video{@include exactly(13){flex-basis: percentage(1*0.2);height: percentage(math.div(1, 3));}}}}
+@element .videos__wrapper and (max-aspect-ratio: #{$vw*5}/#{$vh*4}){:self{flex-wrap: wrap;.video{@include exactly(13){flex-basis: percentage(1*0.25);height: percentage(1*0.25);}}}}
+@element .videos__wrapper and (max-aspect-ratio: #{$vw*4}/#{$vh*5}){:self{flex-wrap: wrap;.video{@include exactly(13){flex-basis: percentage(math.div(1, 3));height: percentage(1*0.2);}}}}
+@element .videos__wrapper and (max-aspect-ratio: #{$vw*3}/#{$vh*7}){:self{flex-wrap: wrap;.video{@include exactly(13){flex-basis: percentage(1*0.5);height: percentage(math.div(1, 7));}}}}
+@element .videos__wrapper and (max-aspect-ratio: #{$vw*2}/#{$vh*13}){:self{flex-wrap: wrap;.video{@include exactly(13){flex-basis: percentage(math.div(1, 1));height: percentage(math.div(1, 13));}}}}
 
 // 14 elements
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*14}/#{$vh*2}){:self{flex-wrap: wrap;.video{@include exactly(14){flex-basis: percentage(1/7);height: percentage(1/2);}}}}
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*7}/#{$vh*3}){:self{flex-wrap: wrap;.video{@include exactly(14){flex-basis: percentage(1/5);height: percentage(1/3);}}}}
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*5}/#{$vh*4}){:self{flex-wrap: wrap;.video{@include exactly(14){flex-basis: percentage(1/4);height: percentage(1/4);}}}}
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*4}/#{$vh*5}){:self{flex-wrap: wrap;.video{@include exactly(14){flex-basis: percentage(1/3);height: percentage(1/5);}}}}
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*3}/#{$vh*7}){:self{flex-wrap: wrap;.video{@include exactly(14){flex-basis: percentage(1/2);height: percentage(1/7);}}}}
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*2}/#{$vh*14}){:self{flex-wrap: wrap;.video{@include exactly(14){flex-basis: percentage(1/1);height: percentage(1/14);}}}}
+@element .videos__wrapper and (max-aspect-ratio: #{$vw*14}/#{$vh*2}){:self{flex-wrap: wrap;.video{@include exactly(14){flex-basis: percentage(math.div(1, 7));height: percentage(1*0.5);}}}}
+@element .videos__wrapper and (max-aspect-ratio: #{$vw*7}/#{$vh*3}){:self{flex-wrap: wrap;.video{@include exactly(14){flex-basis: percentage(1*0.2);height: percentage(math.div(1, 3));}}}}
+@element .videos__wrapper and (max-aspect-ratio: #{$vw*5}/#{$vh*4}){:self{flex-wrap: wrap;.video{@include exactly(14){flex-basis: percentage(1*0.25);height: percentage(1*0.25);}}}}
+@element .videos__wrapper and (max-aspect-ratio: #{$vw*4}/#{$vh*5}){:self{flex-wrap: wrap;.video{@include exactly(14){flex-basis: percentage(math.div(1, 3));height: percentage(1*0.2);}}}}
+@element .videos__wrapper and (max-aspect-ratio: #{$vw*3}/#{$vh*7}){:self{flex-wrap: wrap;.video{@include exactly(14){flex-basis: percentage(1*0.5);height: percentage(math.div(1, 7));}}}}
+@element .videos__wrapper and (max-aspect-ratio: #{$vw*2}/#{$vh*14}){:self{flex-wrap: wrap;.video{@include exactly(14){flex-basis: percentage(math.div(1, 1));height: percentage(math.div(1, 14));}}}}
 
 // 15 elements
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*15}/#{$vh*2}){:self{flex-wrap: wrap;.video{@include exactly(15){flex-basis: percentage(1/8);height: percentage(1/2);}}}}
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*8}/#{$vh*3}){:self{flex-wrap: wrap;.video{@include exactly(15){flex-basis: percentage(1/5);height: percentage(1/3);}}}}
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*5}/#{$vh*4}){:self{flex-wrap: wrap;.video{@include exactly(15){flex-basis: percentage(1/4);height: percentage(1/4);}}}}
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*4}/#{$vh*5}){:self{flex-wrap: wrap;.video{@include exactly(15){flex-basis: percentage(1/3);height: percentage(1/5);}}}}
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*3}/#{$vh*8}){:self{flex-wrap: wrap;.video{@include exactly(15){flex-basis: percentage(1/2);height: percentage(1/8);}}}}
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*2}/#{$vh*15}){:self{flex-wrap: wrap;.video{@include exactly(15){flex-basis: percentage(1/1);height: percentage(1/15);}}}}
+@element .videos__wrapper and (max-aspect-ratio: #{$vw*15}/#{$vh*2}){:self{flex-wrap: wrap;.video{@include exactly(15){flex-basis: percentage(1*0.125);height: percentage(1*0.5);}}}}
+@element .videos__wrapper and (max-aspect-ratio: #{$vw*8}/#{$vh*3}){:self{flex-wrap: wrap;.video{@include exactly(15){flex-basis: percentage(1*0.2);height: percentage(math.div(1, 3));}}}}
+@element .videos__wrapper and (max-aspect-ratio: #{$vw*5}/#{$vh*4}){:self{flex-wrap: wrap;.video{@include exactly(15){flex-basis: percentage(1*0.25);height: percentage(1*0.25);}}}}
+@element .videos__wrapper and (max-aspect-ratio: #{$vw*4}/#{$vh*5}){:self{flex-wrap: wrap;.video{@include exactly(15){flex-basis: percentage(math.div(1, 3));height: percentage(1*0.2);}}}}
+@element .videos__wrapper and (max-aspect-ratio: #{$vw*3}/#{$vh*8}){:self{flex-wrap: wrap;.video{@include exactly(15){flex-basis: percentage(1*0.5);height: percentage(1*0.125);}}}}
+@element .videos__wrapper and (max-aspect-ratio: #{$vw*2}/#{$vh*15}){:self{flex-wrap: wrap;.video{@include exactly(15){flex-basis: percentage(math.div(1, 1));height: percentage(math.div(1, 15));}}}}
     
 // 16 elements
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*16}/#{$vh*2}){:self{flex-wrap: wrap;.video{@include exactly(16){flex-basis: percentage(1/8);height: percentage(1/2);}}}}
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*8}/#{$vh*3}){:self{flex-wrap: wrap;.video{@include exactly(16){flex-basis: percentage(1/6);height: percentage(1/3);}}}}
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*6}/#{$vh*4}){:self{flex-wrap: wrap;.video{@include exactly(16){flex-basis: percentage(1/4);height: percentage(1/4);}}}}
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*4}/#{$vh*6}){:self{flex-wrap: wrap;.video{@include exactly(16){flex-basis: percentage(1/3);height: percentage(1/6);}}}}
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*3}/#{$vh*8}){:self{flex-wrap: wrap;.video{@include exactly(16){flex-basis: percentage(1/2);height: percentage(1/8);}}}}
-@element .videos__wrapper and (max-aspect-ratio: #{$vw*2}/#{$vh*16}){:self{flex-wrap: wrap;.video{@include exactly(16){flex-basis: percentage(1/1);height: percentage(1/16);}}}}
+@element .videos__wrapper and (max-aspect-ratio: #{$vw*16}/#{$vh*2}){:self{flex-wrap: wrap;.video{@include exactly(16){flex-basis: percentage(1*0.125);height: percentage(1*0.5);}}}}
+@element .videos__wrapper and (max-aspect-ratio: #{$vw*8}/#{$vh*3}){:self{flex-wrap: wrap;.video{@include exactly(16){flex-basis: percentage(math.div(1, 6));height: percentage(math.div(1, 3));}}}}
+@element .videos__wrapper and (max-aspect-ratio: #{$vw*6}/#{$vh*4}){:self{flex-wrap: wrap;.video{@include exactly(16){flex-basis: percentage(1*0.25);height: percentage(1*0.25);}}}}
+@element .videos__wrapper and (max-aspect-ratio: #{$vw*4}/#{$vh*6}){:self{flex-wrap: wrap;.video{@include exactly(16){flex-basis: percentage(math.div(1, 3));height: percentage(math.div(1, 6));}}}}
+@element .videos__wrapper and (max-aspect-ratio: #{$vw*3}/#{$vh*8}){:self{flex-wrap: wrap;.video{@include exactly(16){flex-basis: percentage(1*0.5);height: percentage(1*0.125);}}}}
+@element .videos__wrapper and (max-aspect-ratio: #{$vw*2}/#{$vh*16}){:self{flex-wrap: wrap;.video{@include exactly(16){flex-basis: percentage(math.div(1, 1));height: percentage(math.div(1, 16));}}}}
 

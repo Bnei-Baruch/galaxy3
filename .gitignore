@@ -10,7 +10,7 @@
 
 # production
 /build
-scripts/deploy.sh
+scripts*
 
 # misc
 .DS_Store
