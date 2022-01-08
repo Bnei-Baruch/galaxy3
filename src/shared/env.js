@@ -7,7 +7,7 @@ export const BASE_URL =
         window.location.port ? `:${window.location.port}` : ""
       }/`;
 
-export const SENTRY_KEY = process.env.REACT_APP_SENTRY_KEY;
+export const SENTRY_DSN = process.env.REACT_APP_SENTRY_DSN;
 
 export const GEO_IP_INFO = process.env.REACT_APP_GEO_IP_INFO;
 export const STUN_SRV_GXY = process.env.REACT_APP_STUN_SRV_GXY;
@@ -41,6 +41,7 @@ export const REGISTRATION_FORM_FIELDS = process.env.REACT_APP_REGISTRATION_FORM_
   : {};
 
 export const MQTT_URL = process.env.REACT_APP_MQTT_URL;
+export const MSG_URL = process.env.REACT_APP_MSG_URL;
 
 export const GET_WORKSHOP_QUESTIONS = process.env.REACT_APP_GET_WORKSHOP_QUESTIONS;
 export const WEB_SOCKET_WORKSHOP_QUESTION = process.env.REACT_APP_WEB_SOCKET_WORKSHOP_QUESTION;

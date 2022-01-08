@@ -1,7 +1,6 @@
 import React, {Component} from "react";
 import {Button, Input, Message} from "semantic-ui-react";
 import {getDateString, notifyMe} from "../../shared/tools";
-import {SHIDUR_ID} from "../../shared/consts";
 import {Typography} from "@material-ui/core";
 import mqtt from "../../shared/mqtt";
 
@@ -32,36 +31,6 @@ class VirtualChat extends Component {
       this.refs.input.focus();
     }
   }
-
-  initChatEvents = () => {
-    // Public chat
-    mqtt.mq.on("MqttChatEvent", (data) => {
-      let json = JSON.parse(data);
-      if(json?.type === "client-chat") {
-        this.onChatMessage(json);
-      }
-    });
-
-    // Private chat
-    mqtt.mq.on("MqttPrivateMessage", (data) => {
-      let message = JSON.parse(data);
-      if(message?.type === "client-chat") {
-        notifyMe("Shidur", message.text, true);
-      }
-      //TODO: Make private dialog exchange
-    });
-
-    // Broadcast message
-    mqtt.mq.on("MqttBroadcastMessage", (data) => {
-      let message = JSON.parse(data);
-      if(message?.type === "client-chat") {
-        message.time = getDateString();
-        notifyMe("Arvut System", message.text, true);
-      } else {
-        this.props.onCmdMsg(message);
-      }
-    });
-  };
 
   onKeyPressed = (e) => {
     if (e.code === "Enter") {

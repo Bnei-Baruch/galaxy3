@@ -1,7 +1,6 @@
 import * as Sentry from "@sentry/react";
 import {Integrations} from "@sentry/tracing";
-
-import {SENTRY_KEY} from "./env";
+import {SENTRY_DSN} from "./env";
 import version from "../Version";
 
 export const updateSentryUser = (user) => {
@@ -10,7 +9,7 @@ export const updateSentryUser = (user) => {
 
 export const initSentry = () => {
   Sentry.init({
-    dsn: `https://${SENTRY_KEY}@sentry.kli.one/2`,
+    dsn: `${SENTRY_DSN}`,
     integrations: [new Integrations.BrowserTracing()],
     release: version,
     environment: process.env.NODE_ENV,

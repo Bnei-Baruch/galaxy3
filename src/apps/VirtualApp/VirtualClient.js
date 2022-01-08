@@ -5,11 +5,11 @@ import {isMobile} from "react-device-detect";
 import {Button, Icon, Image, Input, Label, Menu, Modal, Popup, Select} from "semantic-ui-react";
 import {
   checkNotification,
-  geoInfo,
+  geoInfo, getDateString,
   getMedia,
   getMediaStream,
   initJanus,
-  micLevel,
+  micLevel, notifyMe,
   testMic,
   updateGxyUser,
 } from "../../shared/tools";
@@ -156,6 +156,7 @@ class VirtualClient extends Component {
     isKliOlamiShown: true,
     audios: {audios: Number(localStorage.getItem("vrt_lang")) || 2},
     msg_protocol: "mqtt",
+    mqttOn: false,
   };
 
   virtualStreamingInitialized() {
@@ -223,6 +224,9 @@ class VirtualClient extends Component {
 
   initApp = (user) => {
     initCrisp(user, this.props.i18n.language);
+
+    this.initMQTT(user);
+
     //Clients not authorized to app may see shidur only
     if (user.role !== userRolesEnum.user) {
       const config = {
@@ -276,17 +280,6 @@ class VirtualClient extends Component {
             msg_protocol: ConfigStore.dynamicConfig("galaxy_protocol"),
           });
           GxyJanus.setGlobalConfig(data);
-
-          // Protocol init
-          mqtt.init(user, (data) => {
-            console.log("[mqtt] init: ", data);
-            mqtt.join("galaxy/users/broadcast");
-            mqtt.join("galaxy/users/" + user.id);
-            this.chat.initChatEvents();
-            mqtt.watch((message) => {
-              this.handleCmdData(message);
-            });
-          });
         })
         .then(() => api.fetchAvailableRooms({with_num_users: true}))
         .then((data) => {
@@ -314,6 +307,64 @@ class VirtualClient extends Component {
           this.setState({appInitError: err});
         });
     });
+  };
+
+  initMQTT = (user) => {
+    const bridge = user.role !== "user" ? "msg/" : "";
+
+    mqtt.init(user, (reconnected, error) => {
+
+      if(error) {
+        console.log("MQTT disconnected");
+        this.setState({mqttOn: false});
+        //notifyMe("Arvut System", "MQTT Offline", true);
+        if (this.state.question) {
+          this.handleQuestion();
+        }
+      } else if(reconnected) {
+        //notifyMe("Arvut System", "MQTT Online", true);
+        this.setState({mqttOn: true});
+        console.log("MQTT reconnected");
+      } else {
+        this.setState({mqttOn: true});
+        console.log("[mqtt] connected");
+        mqtt.join(bridge + "galaxy/users/broadcast");
+        mqtt.join(bridge + "galaxy/users/" + user.id);
+
+        mqtt.watch((message) => {
+          this.handleCmdData(message);
+        });
+
+        // Public chat
+        mqtt.mq.on("MqttChatEvent", (data) => {
+          let json = JSON.parse(data);
+          if(json?.type === "client-chat") {
+            this.chat.onChatMessage(json);
+          }
+        });
+
+        // Private chat
+        mqtt.mq.on("MqttPrivateMessage", (data) => {
+          let message = JSON.parse(data);
+          if(message?.type === "client-chat") {
+            notifyMe("Arvut System", message.text, true);
+          }
+          //TODO: Make private dialog exchange
+        });
+
+        // Broadcast message
+        mqtt.mq.on("MqttBroadcastMessage", (data) => {
+          let message = JSON.parse(data);
+          if(message?.type === "client-chat") {
+            message.time = getDateString();
+            notifyMe("Arvut System", message.text, true);
+          } else {
+            this.handleCmdData(message);
+          }
+        });
+      }
+
+    })
   };
 
   initClient = (reconnect, retry = 0) => {
@@ -1662,6 +1713,7 @@ class VirtualClient extends Component {
       premodStatus,
       media,
       isKliOlamiShown,
+      mqttOn,
     } = this.state;
 
     const {video_device} = media.video;
@@ -1726,21 +1778,12 @@ class VirtualClient extends Component {
             <AskQuestion
               t={t}
               isOn={!!question}
-              disabled={premodStatus || !audio_device || !localAudioTrack || delay || otherFeedHasQuestion}
+              disabled={!mqttOn || premodStatus || !audio_device || !localAudioTrack || delay || otherFeedHasQuestion}
               action={this.handleQuestion.bind(this)}
             />
             <Vote t={t} id={user?.id} disabled={!user || !user.id || room === ""} />
           </ButtonGroup>
 
-          <ButtonMD
-            onClick={() => toggleDesignVersions()}
-            variant="contained"
-            color="primary"
-            className={classNames("bottom-toolbar__item")}
-            disableElevation
-          >
-            {t("oldClient.oldDesign")}
-          </ButtonMD>
           <ButtonMD
             onClick={() => this.exitRoom(false)}
             variant="contained"
@@ -1786,8 +1829,11 @@ class VirtualClient extends Component {
 
     const chat = (
       <Box style={{display: displayChat, height: "100%"}}>
-        <VirtualChat t={t}
-          ref={(chat) => {this.chat = chat;}}
+        <VirtualChat
+          t={t}
+          ref={(chat) => {
+            this.chat = chat;
+          }}
           visible={rightAsideName === "chat"}
           room={room}
           user={user}
@@ -1825,7 +1871,7 @@ class VirtualClient extends Component {
 
   renderTopBar = (isDeb) => {
     const {t, i18n} = this.props;
-
+    const isHe = i18n.language === "he";
     const {user, asideMsgCounter, leftAsideName, rightAsideName, isOpenTopMenu} = this.state;
 
     const notApproved = user && user.role !== userRolesEnum.user;
@@ -1920,6 +1966,16 @@ class VirtualClient extends Component {
           </ButtonGroup>
 
           <Support />
+          <ButtonMD
+            component={"a"}
+            href={`https://www.kab1.com/${isHe ? "" : i18n.language}`}
+            variant={rightAsideName === "donate" ? "contained" : "outlined"}
+            className={"top-toolbar__item"}
+            dir={isHe ? "rtl" : "ltr"}
+            target="_blank"
+          >
+            {t("oldClient.donate")}
+          </ButtonMD>
           {/* ---------- */}
         </Toolbar>
       </AppBar>
@@ -2108,6 +2164,7 @@ class VirtualClient extends Component {
       shidurForGuestReady,
       isKliOlamiShown,
       wipSettings,
+      mqttOn,
     } = this.state;
 
     const {video_device} = media.video;
@@ -2311,7 +2368,7 @@ class VirtualClient extends Component {
                 {chatMessagesCount > 0 ? chatCountLabel : ""}
               </Menu.Item>
               <Menu.Item
-                disabled={premodStatus || !audio_device || !localAudioTrack || delay || otherFeedHasQuestion}
+                disabled={!mqttOn || premodStatus || !audio_device || !localAudioTrack || delay || otherFeedHasQuestion}
                 onClick={this.handleQuestion}
               >
                 <Icon {...(question ? {color: "green"} : {})} name="question" />
@@ -2543,7 +2600,9 @@ class VirtualClient extends Component {
               </div>
               <VirtualChat
                 t={t}
-                ref={(chat) => {this.chat = chat;}}
+                ref={(chat) => {
+                  this.chat = chat;
+                }}
                 visible={chatVisible}
                 room={room}
                 user={user}

@@ -5,7 +5,7 @@ import {updateSentryUser} from "../shared/sentry";
 const userManagerConfig = {
   url: "https://accounts.kab.info/auth",
   realm: "main",
-  clientId: "galaxy"
+  clientId: "galaxy",
 };
 
 const initOptions = {
@@ -13,7 +13,7 @@ const initOptions = {
   checkLoginIframe: false,
   flow: "standard",
   pkceMethod: "S256",
-  enableLogging: true
+  enableLogging: true,
 };
 
 export const kc = new Keycloak(userManagerConfig);
@@ -36,7 +36,7 @@ const renewToken = (retry) => {
       }
     })
     .catch(() => {
-      if(retry > 10) {
+      if (retry > 10) {
         kc.clearToken();
       } else {
         setTimeout(() => {
@@ -47,12 +47,12 @@ const renewToken = (retry) => {
 };
 
 const setData = () => {
-  const {realm_access: {roles}, sub, given_name, name, email} = kc.tokenParsed;
-  const user = {display: name, email, roles, id: sub, username: given_name};
+  const {realm_access: {roles}, sub, given_name, name, email, family_name} = kc.tokenParsed;
+  const user = {display: name, email, roles, id: sub, username: given_name, familyname: family_name};
   api.setAccessToken(kc.token);
   updateSentryUser(user);
   return user;
-}
+};
 
 export const getUser = (callback) => {
   kc.init(initOptions)
@@ -60,7 +60,7 @@ export const getUser = (callback) => {
       const user = authenticated ? setData() : null;
       callback(user);
     })
-    .catch((err) => console.error(err));
+    .catch(err => console.error(err));
 };
 
 export default kc;

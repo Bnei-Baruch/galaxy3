@@ -6,11 +6,11 @@ import Dots from "react-carousel-dots";
 import {Accordion, Button, Icon, Image, Input, Label, Menu, Modal, Select} from "semantic-ui-react";
 import {
   checkNotification,
-  geoInfo,
+  geoInfo, getDateString,
   getMedia,
   getMediaStream,
   initJanus,
-  micLevel,
+  micLevel, notifyMe,
   updateGxyUser,
 } from "../../shared/tools";
 import "./MobileClient.scss";
@@ -44,7 +44,7 @@ import VirtualStreamingMobile from "./VirtualStreamingMobile";
 import VirtualStreamingJanus from "../../shared/VirtualStreamingJanus";
 import VirtualChat from "../VirtualApp/VirtualChat";
 import ConfigStore from "../../shared/ConfigStore";
-import {updateSentryUser} from "../../shared/sentry";
+import {captureMessage, updateSentryUser} from "../../shared/sentry";
 import {getUserRole, userRolesEnum} from "../../shared/enums";
 import {RegistrationModals} from "./RegistrationModals";
 import mqtt from "../../shared/mqtt";
@@ -120,6 +120,7 @@ class MobileClient extends Component {
     settingsActiveIndex: -1,
     premodStatus: false,
     msg_protocol: "mqtt",
+    mqttOn: false,
   };
 
   shidurInitialized() {
@@ -213,6 +214,8 @@ class MobileClient extends Component {
   }
 
   initApp = (user) => {
+    this.initMQTT(user);
+
     //Clients not authorized to app may see shidur only
     if (user.role !== userRolesEnum.user) {
       const config = {
@@ -270,17 +273,6 @@ class MobileClient extends Component {
             msg_protocol: ConfigStore.dynamicConfig("galaxy_protocol"),
           });
           GxyJanus.setGlobalConfig(data);
-
-          // Protocol init
-          mqtt.init(user, (data) => {
-            console.log("[mqtt] init: ", data);
-            mqtt.join("galaxy/users/broadcast");
-            mqtt.join("galaxy/users/" + user.id);
-            this.chat.initChatEvents();
-            mqtt.watch((message) => {
-              this.handleCmdData(message);
-            });
-          });
         })
         .then(() => api.fetchAvailableRooms({with_num_users: true}))
         .then((data) => {
@@ -308,6 +300,66 @@ class MobileClient extends Component {
           this.setState({appInitError: err});
         });
     });
+  };
+
+  initMQTT = (user) => {
+    const bridge = user.role !== "user" ? "msg/" : "";
+
+    mqtt.init(user, (reconnected, error) => {
+
+      if(error) {
+        console.log("MQTT disconnected");
+        this.setState({mqttOn: false});
+        captureMessage("MQTT Offline", {source: "mqtt"});
+        //notifyMe("Arvut System", "MQTT Offline", true);
+        if (this.state.question) {
+          this.handleQuestion();
+        }
+      } else if(reconnected) {
+        captureMessage("MQTT Online", {source: "mqtt"});
+        //notifyMe("Arvut System", "MQTT Online", true);
+        this.setState({mqttOn: true});
+        console.log("MQTT reconnected");
+      } else {
+        this.setState({mqttOn: true});
+        console.log("[mqtt] connected");
+        mqtt.join(bridge + "galaxy/users/broadcast");
+        mqtt.join(bridge + "galaxy/users/" + user.id);
+
+        mqtt.watch((message) => {
+          this.handleCmdData(message);
+        });
+
+        // Public chat
+        mqtt.mq.on("MqttChatEvent", (data) => {
+          let json = JSON.parse(data);
+          if(json?.type === "client-chat") {
+            this.chat.onChatMessage(json);
+          }
+        });
+
+        // Private chat
+        mqtt.mq.on("MqttPrivateMessage", (data) => {
+          let message = JSON.parse(data);
+          if(message?.type === "client-chat") {
+            notifyMe("Arvut System", message.text, true);
+          }
+          //TODO: Make private dialog exchange
+        });
+
+        // Broadcast message
+        mqtt.mq.on("MqttBroadcastMessage", (data) => {
+          let message = JSON.parse(data);
+          if(message?.type === "client-chat") {
+            message.time = getDateString();
+            notifyMe("Arvut System", message.text, true);
+          } else {
+            this.handleCmdData(message);
+          }
+        });
+      }
+
+    })
   };
 
   initClient = (reconnect, retry = 0) => {
@@ -1598,6 +1650,7 @@ class MobileClient extends Component {
       page,
       videos,
       premodStatus,
+      mqttOn,
     } = this.state;
     const {video_device} = media.video;
     const {audio_device} = media.audio;
@@ -2026,7 +2079,7 @@ class MobileClient extends Component {
               <Image className="audio-mode" src={muteOtherCams ? audioModeSvg : fullModeSvg} />
               <span>{t(muteOtherCams ? "oldClient.fullMode" : "oldClient.audioMode")}</span>
             </Menu.Item>
-            <Menu.Item disabled={premodStatus || questionDisabled || cammuted} onClick={this.handleQuestion}>
+            <Menu.Item disabled={!mqttOn || premodStatus || questionDisabled || cammuted} onClick={this.handleQuestion}>
               <Icon name="question" style={{color: question ? "#21ba45" : null}} />
               <span>{t("oldClient.askQuestion")}</span>
             </Menu.Item>
