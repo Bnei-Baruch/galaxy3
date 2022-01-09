@@ -13,7 +13,7 @@ class StatNotes extends Component {
       state["str" + i + "_count"] = 0;
     }
     this.setState({...state});
-    setInterval(this.getCounts, 10 * 1000);
+    // setInterval(this.getCounts, 10 * 1000);
   }
 
   getCounts = () => {
@@ -52,6 +52,7 @@ class StatNotes extends Component {
   };
 
   render() {
+    const {android_count,ios_count,web_count} = this.props;
     const {
       gxy1_count,
       gxy2_count,
@@ -82,77 +83,77 @@ class StatNotes extends Component {
     const i = <Icon name="heart" size="small" />;
 
     return (
-      <Label attached="top right" size="mini" className="gxy_count">
+      <Label attached="top right" size='small' >
         <Table compact="very">
           <Table.Header>
             <Table.Row>
               <Table.HeaderCell />
               <Table.HeaderCell />
               <Table.HeaderCell />
-              <Table.HeaderCell />
+              {/*<Table.HeaderCell />*/}
             </Table.Row>
           </Table.Header>
           <Table.Body>
             <Table.Row>
-              <Table.Cell>gxy1 :</Table.Cell>
-              <Table.Cell>{gxy1_count}</Table.Cell>
-              <Table.Cell>gxy5 :</Table.Cell>
-              <Table.Cell>{gxy5_count}</Table.Cell>
+              <Table.Cell>Web Clients :</Table.Cell>
+              <Table.Cell>{web_count}</Table.Cell>
+              {/*<Table.Cell>gxy5 :</Table.Cell>*/}
+              {/*<Table.Cell>{gxy5_count}</Table.Cell>*/}
               {/*<Table.Cell>gxy9 :</Table.Cell>*/}
               {/*<Table.Cell>{gxy9_count}</Table.Cell>*/}
-              <Table.Cell>|</Table.Cell>
-              <Table.Cell>str1 :</Table.Cell>
-              <Table.Cell>{str1_count}</Table.Cell>
-              <Table.Cell>str5 :</Table.Cell>
-              <Table.Cell>{str5_count}</Table.Cell>
+              {/*<Table.Cell>|</Table.Cell>*/}
+              {/*<Table.Cell>str1 :</Table.Cell>*/}
+              {/*<Table.Cell>{str1_count}</Table.Cell>*/}
+              {/*<Table.Cell>str5 :</Table.Cell>*/}
+              {/*<Table.Cell>{str5_count}</Table.Cell>*/}
               {/*<Table.Cell>str9 :</Table.Cell>*/}
               {/*<Table.Cell>{str9_count}</Table.Cell>*/}
             </Table.Row>
             <Table.Row>
-              <Table.Cell>gxy2 :</Table.Cell>
-              <Table.Cell>{gxy2_count}</Table.Cell>
-              <Table.Cell>gxy6 :</Table.Cell>
-              <Table.Cell>{gxy6_count}</Table.Cell>
+              <Table.Cell>iOS Clients :</Table.Cell>
+              <Table.Cell>{ios_count}</Table.Cell>
+              {/*<Table.Cell>gxy6 :</Table.Cell>*/}
+              {/*<Table.Cell>{gxy6_count}</Table.Cell>*/}
               {/*<Table.Cell>gxy10 :</Table.Cell>*/}
               {/*<Table.Cell>{gxy10_count}</Table.Cell>*/}
-              <Table.Cell>|</Table.Cell>
-              <Table.Cell>str2 :</Table.Cell>
-              <Table.Cell>{str2_count}</Table.Cell>
-              <Table.Cell>str6 :</Table.Cell>
-              <Table.Cell>{str6_count}</Table.Cell>
+              {/*<Table.Cell>|</Table.Cell>*/}
+              {/*<Table.Cell>str2 :</Table.Cell>*/}
+              {/*<Table.Cell>{str2_count}</Table.Cell>*/}
+              {/*<Table.Cell>str6 :</Table.Cell>*/}
+              {/*<Table.Cell>{str6_count}</Table.Cell>*/}
               {/*<Table.Cell>str10 :</Table.Cell>*/}
               {/*<Table.Cell>{str10_count}</Table.Cell>*/}
             </Table.Row>
             <Table.Row>
-              <Table.Cell>gxy3 :</Table.Cell>
-              <Table.Cell>{gxy3_count}</Table.Cell>
-              <Table.Cell>gxy7 :</Table.Cell>
-              <Table.Cell>{gxy7_count}</Table.Cell>
+              <Table.Cell>Android Clients :</Table.Cell>
+              <Table.Cell>{android_count}</Table.Cell>
+              {/*<Table.Cell>gxy7 :</Table.Cell>*/}
+              {/*<Table.Cell>{gxy7_count}</Table.Cell>*/}
               {/*<Table.Cell>gxy11 :</Table.Cell>*/}
               {/*<Table.Cell>{gxy11_count}</Table.Cell>*/}
-              <Table.Cell>|</Table.Cell>
-              <Table.Cell>str3 :</Table.Cell>
-              <Table.Cell>{str3_count}</Table.Cell>
-              <Table.Cell>str7 :</Table.Cell>
-              <Table.Cell>{str7_count}</Table.Cell>
+              {/*<Table.Cell>|</Table.Cell>*/}
+              {/*<Table.Cell>str3 :</Table.Cell>*/}
+              {/*<Table.Cell>{str3_count}</Table.Cell>*/}
+              {/*<Table.Cell>str7 :</Table.Cell>*/}
+              {/*<Table.Cell>{str7_count}</Table.Cell>*/}
               {/*<Table.Cell>str11 :</Table.Cell>*/}
               {/*<Table.Cell>{str11_count}</Table.Cell>*/}
             </Table.Row>
-            <Table.Row>
-              <Table.Cell>gxy4 :</Table.Cell>
-              <Table.Cell>{gxy4_count}</Table.Cell>
-              <Table.Cell>gxy8 :</Table.Cell>
-              <Table.Cell>{gxy8_count}</Table.Cell>
-              {/*<Table.Cell>sum :</Table.Cell>*/}
-              {/*<Table.Cell>{gxy_sum}</Table.Cell>*/}
-              <Table.Cell>|</Table.Cell>
-              <Table.Cell>str4 :</Table.Cell>
-              <Table.Cell>{str4_count}</Table.Cell>
-              <Table.Cell>str8 :</Table.Cell>
-              <Table.Cell>{str8_count}</Table.Cell>
-              {/*<Table.Cell>sum :</Table.Cell>*/}
-              {/*<Table.Cell>{str_sum}</Table.Cell>*/}
-            </Table.Row>
+            {/*<Table.Row>*/}
+            {/*  <Table.Cell>gxy4 :</Table.Cell>*/}
+            {/*  <Table.Cell>{gxy4_count}</Table.Cell>*/}
+            {/*  <Table.Cell>gxy8 :</Table.Cell>*/}
+            {/*  <Table.Cell>{gxy8_count}</Table.Cell>*/}
+            {/*  /!*<Table.Cell>sum :</Table.Cell>*!/*/}
+            {/*  /!*<Table.Cell>{gxy_sum}</Table.Cell>*!/*/}
+            {/*  <Table.Cell>|</Table.Cell>*/}
+            {/*  <Table.Cell>str4 :</Table.Cell>*/}
+            {/*  <Table.Cell>{str4_count}</Table.Cell>*/}
+            {/*  <Table.Cell>str8 :</Table.Cell>*/}
+            {/*  <Table.Cell>{str8_count}</Table.Cell>*/}
+            {/*  /!*<Table.Cell>sum :</Table.Cell>*!/*/}
+            {/*  /!*<Table.Cell>{str_sum}</Table.Cell>*!/*/}
+            {/*</Table.Row>*/}
           </Table.Body>
         </Table>
       </Label>
