@@ -14,6 +14,7 @@ class StatNotes extends Component {
     }
     this.setState({...state});
     // setInterval(this.getCounts, 10 * 1000);
+    setInterval(this.getStr1Count, 10 * 1000);
   }
 
   getCounts = () => {
@@ -83,7 +84,7 @@ class StatNotes extends Component {
     const i = <Icon name="heart" size="small" />;
 
     return (
-      <Label attached="top right" size='small' >
+      <Label attached="top right" size='small' className="gxy_count">
         <Table compact="very">
           <Table.Header>
             <Table.Row>
@@ -102,8 +103,8 @@ class StatNotes extends Component {
               {/*<Table.Cell>gxy9 :</Table.Cell>*/}
               {/*<Table.Cell>{gxy9_count}</Table.Cell>*/}
               {/*<Table.Cell>|</Table.Cell>*/}
-              {/*<Table.Cell>str1 :</Table.Cell>*/}
-              {/*<Table.Cell>{str1_count}</Table.Cell>*/}
+              <Table.Cell>str1 :</Table.Cell>
+              <Table.Cell>{str1_count}</Table.Cell>
               {/*<Table.Cell>str5 :</Table.Cell>*/}
               {/*<Table.Cell>{str5_count}</Table.Cell>*/}
               {/*<Table.Cell>str9 :</Table.Cell>*/}
