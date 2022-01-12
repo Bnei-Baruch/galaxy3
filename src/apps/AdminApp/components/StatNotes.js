@@ -1,5 +1,5 @@
 import React, {Component} from "react";
-import {Label, Table, Icon} from "semantic-ui-react";
+import {Label, Table} from "semantic-ui-react";
 import {ADMIN_SECRET, ADMIN_SRV_STR1, MONITOR_SRV} from "../../../shared/env";
 import {genUUID} from "../../../shared/tools";
 
@@ -14,7 +14,6 @@ class StatNotes extends Component {
     }
     this.setState({...state});
     setInterval(this.getCounts, 10 * 1000);
-    // setInterval(this.getStr1Count, 10 * 1000);
   }
 
   getCounts = () => {
@@ -78,95 +77,70 @@ class StatNotes extends Component {
       str9_count,
     } = this.state;
 
-    const i = <Icon name="heart" size="small" />;
-
     return (
       <Label attached="top right" size='small' className="gxy_count">
         <Table compact="very">
-          {/*<Table.Header>*/}
-          {/*  <Table.Row>*/}
-          {/*    <Table.HeaderCell />*/}
-          {/*    <Table.HeaderCell />*/}
-          {/*    <Table.HeaderCell />*/}
-          {/*    /!*<Table.HeaderCell />*!/*/}
-          {/*  </Table.Row>*/}
-          {/*</Table.Header>*/}
           <Table.Body>
             <Table.Row>
               <Table.Cell>Web Clients :</Table.Cell>
-              <Table.Cell>{web_count}</Table.Cell>
+              <Table.Cell warning>{web_count}</Table.Cell>
               <Table.Cell>|</Table.Cell>
               <Table.Cell>gxy1 :</Table.Cell>
-              <Table.Cell>{gxy1_count}</Table.Cell>
+              <Table.Cell positive>{gxy1_count}</Table.Cell>
               <Table.Cell>gxy4 :</Table.Cell>
-              <Table.Cell>{gxy4_count}</Table.Cell>
+              <Table.Cell positive>{gxy4_count}</Table.Cell>
               <Table.Cell>gxy7 :</Table.Cell>
-              <Table.Cell>{gxy7_count}</Table.Cell>
+              <Table.Cell positive>{gxy7_count}</Table.Cell>
               <Table.Cell>gxy10 :</Table.Cell>
-              <Table.Cell>{gxy10_count}</Table.Cell>
+              <Table.Cell positive>{gxy10_count}</Table.Cell>
               <Table.Cell>|</Table.Cell>
               <Table.Cell>str1 :</Table.Cell>
-              <Table.Cell>{str1_count}</Table.Cell>
+              <Table.Cell error>{str1_count}</Table.Cell>
               <Table.Cell>str4 :</Table.Cell>
-              <Table.Cell>{str4_count}</Table.Cell>
+              <Table.Cell error>{str4_count}</Table.Cell>
               <Table.Cell>str7 :</Table.Cell>
-              <Table.Cell>{str7_count}</Table.Cell>
+              <Table.Cell error>{str7_count}</Table.Cell>
             </Table.Row>
             <Table.Row>
               <Table.Cell>iOS Clients :</Table.Cell>
-              <Table.Cell>{ios_count}</Table.Cell>
+              <Table.Cell warning>{ios_count}</Table.Cell>
               <Table.Cell>|</Table.Cell>
               <Table.Cell>gxy2 :</Table.Cell>
-              <Table.Cell>{gxy2_count}</Table.Cell>
+              <Table.Cell positive>{gxy2_count}</Table.Cell>
               <Table.Cell>gxy5 :</Table.Cell>
-              <Table.Cell>{gxy5_count}</Table.Cell>
+              <Table.Cell positive>{gxy5_count}</Table.Cell>
               <Table.Cell>gxy8 :</Table.Cell>
-              <Table.Cell>{gxy8_count}</Table.Cell>
+              <Table.Cell positive>{gxy8_count}</Table.Cell>
               <Table.Cell>gxy11 :</Table.Cell>
-              <Table.Cell>{gxy11_count}</Table.Cell>
+              <Table.Cell positive>{gxy11_count}</Table.Cell>
               <Table.Cell>|</Table.Cell>
               <Table.Cell>str2 :</Table.Cell>
-              <Table.Cell>{str2_count}</Table.Cell>
+              <Table.Cell error>{str2_count}</Table.Cell>
               <Table.Cell>str5 :</Table.Cell>
-              <Table.Cell>{str5_count}</Table.Cell>
+              <Table.Cell error>{str5_count}</Table.Cell>
               <Table.Cell>str8 :</Table.Cell>
-              <Table.Cell>{str8_count}</Table.Cell>
+              <Table.Cell error>{str8_count}</Table.Cell>
             </Table.Row>
             <Table.Row>
               <Table.Cell>Android Clients :</Table.Cell>
-              <Table.Cell>{android_count}</Table.Cell>
+              <Table.Cell warning>{android_count}</Table.Cell>
               <Table.Cell>|</Table.Cell>
               <Table.Cell>gxy3 :</Table.Cell>
-              <Table.Cell>{gxy3_count}</Table.Cell>
+              <Table.Cell positive>{gxy3_count}</Table.Cell>
               <Table.Cell>gxy6 :</Table.Cell>
-              <Table.Cell>{gxy6_count}</Table.Cell>
+              <Table.Cell positive>{gxy6_count}</Table.Cell>
               <Table.Cell>gxy9 :</Table.Cell>
-              <Table.Cell>{gxy9_count}</Table.Cell>
+              <Table.Cell positive>{gxy9_count}</Table.Cell>
               <Table.Cell>gxy12 :</Table.Cell>
-              <Table.Cell>{gxy12_count}</Table.Cell>
+              <Table.Cell positive>{gxy12_count}</Table.Cell>
               <Table.Cell>|</Table.Cell>
               <Table.Cell>str3 :</Table.Cell>
-              <Table.Cell>{str3_count}</Table.Cell>
+              <Table.Cell error>{str3_count}</Table.Cell>
               <Table.Cell>str6 :</Table.Cell>
-              <Table.Cell>{str6_count}</Table.Cell>
+              <Table.Cell error>{str6_count}</Table.Cell>
               <Table.Cell>str9 :</Table.Cell>
-              <Table.Cell>{str9_count}</Table.Cell>
+              <Table.Cell error>{str9_count}</Table.Cell>
             </Table.Row>
-            {/*<Table.Row>*/}
-            {/*  <Table.Cell>gxy4 :</Table.Cell>*/}
-            {/*  <Table.Cell>{gxy4_count}</Table.Cell>*/}
-            {/*  <Table.Cell>gxy8 :</Table.Cell>*/}
-            {/*  <Table.Cell>{gxy8_count}</Table.Cell>*/}
-            {/*  <Table.Cell>sum :</Table.Cell>*/}
-            {/*  <Table.Cell>{gxy_sum}</Table.Cell>*/}
-            {/*  <Table.Cell>|</Table.Cell>*/}
-            {/*  <Table.Cell>str4 :</Table.Cell>*/}
-            {/*  <Table.Cell>{str4_count}</Table.Cell>*/}
-            {/*  <Table.Cell>str8 :</Table.Cell>*/}
-            {/*  <Table.Cell>{str8_count}</Table.Cell>*/}
-            {/*  <Table.Cell>sum :</Table.Cell>*/}
-            {/*  <Table.Cell>{str_sum}</Table.Cell>*/}
-            {/*</Table.Row>*/}
           </Table.Body>
         </Table>
       </Label>
