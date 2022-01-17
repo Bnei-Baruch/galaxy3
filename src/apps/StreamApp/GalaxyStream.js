@@ -7,8 +7,6 @@ import {audiog_options, gxycol, trllang, videos_options} from "../../shared/cons
 //import {GEO_IP_INFO} from "../../shared/env";
 import LoginPage from "../../components/LoginPage";
 import "./GalaxyStream.css";
-//import api from "../../shared/Api";
-//import GxyJanus from "../../shared/janus-utils";
 import mqtt from "../../shared/mqtt";
 import {randomString} from "../../shared/tools";
 
@@ -32,17 +30,16 @@ class GalaxyStream extends Component {
       session_id: null,
       handle_id: null,
       pc: new RTCPeerConnection({
-        iceServers: [{urls: "stun:stream.kli.one:3478"}]
+        iceServers: [{urls: "stun:gxydev.kli.one:3478"}]
       })
     },
   };
 
   checkPermission = (user) => {
-    const gxy_group = kc.hasRealmRole("gxy_group");
     const gxy_user = kc.hasRealmRole("gxy_user");
     if (gxy_user) {
       delete user.roles;
-      user.role = gxy_group ? "group" : gxy_user ? "user" : "public";
+      user.role = gxy_user ? "user" : "public";
       //this.initApp(user);
       this.initMQTT(user);
     } else {
@@ -59,9 +56,12 @@ class GalaxyStream extends Component {
     this.setState({user});
     mqtt.init(user, (data) => {
       console.log("[mqtt] init: ", data);
-      mqtt.join("gxy/from-janus/" + user.id);
-      mqtt.join("gxy/from-janus");
-      mqtt.watch();
+      mqtt.join("gxydev/from-janus/" + user.id, false);
+      mqtt.join("gxydev/from-janus", false);
+      mqtt.join("gxydev/status", false);
+      mqtt.watch(status => {
+        console.log(status)
+      });
 
       this.initJanus();
 
@@ -163,12 +163,12 @@ class GalaxyStream extends Component {
     const {janus, sender} = event;
 
     if(janus === "webrtcup" && sender === handle_id) {
-      this.sendKeepAlive();
       this.keepAlive();
     }
   };
 
   keepAlive = () => {
+    this.sendKeepAlive();
     this.setState({keepalive: setInterval(this.sendKeepAlive, 60 * 1000)});
   };
 
@@ -515,7 +515,6 @@ class GalaxyStream extends Component {
 
   setVideo = (videos) => {
     this.setState({videos});
-    //this.state.videostream.send({message: {request: "switch", id: videos}});
     const {session_id, handle_id} = this.state.VideoStream;
     mqtt.send(JSON.stringify(
       {
@@ -526,6 +525,22 @@ class GalaxyStream extends Component {
       }
     ), false, "gxydev/to-janus")
     localStorage.setItem("gxy_video", videos);
+  };
+
+  setAudio = (audios, options) => {
+    let text = options.filter((k) => k.value === audios)[0].text;
+    this.setState({audios});
+    const {session_id, handle_id} = this.state.AudioStream;
+    mqtt.send(JSON.stringify(
+      {
+        janus: 'message',
+        session_id, handle_id,
+        transaction: randomString(12),
+        body: {request: 'switch', id: audios}
+      }
+    ), false, "gxydev/to-janus")
+    localStorage.setItem("gxy_lang", audios);
+    localStorage.setItem("gxy_langtext", text);
   };
 
   setAudio = (audios, options) => {

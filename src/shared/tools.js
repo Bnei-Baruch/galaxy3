@@ -4,10 +4,10 @@ import api from "./Api";
 
 export const initJanus = (cb, er, server, token = "", iceServers = [{urls: STUN_SRV_GXY}]) => {
   Janus.init({
-    debug: process.env.NODE_ENV !== "production" ? ["log", "error"] : ["error"],
+    debug: process.env.NODE_ENV !== "production" ? ["log", "error"] : ["log", "error"],
     callback: () => {
       let janus = new Janus({
-        server,
+        server: "https://gxydev.kli.one/janusgxy",
         token,
         iceServers,
         success: () => {
