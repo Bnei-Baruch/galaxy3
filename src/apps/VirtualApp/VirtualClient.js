@@ -5,11 +5,13 @@ import {isMobile} from "react-device-detect";
 import {Button, Icon, Image, Input, Label, Menu, Modal, Popup, Select} from "semantic-ui-react";
 import {
   checkNotification,
-  geoInfo, getDateString,
+  geoInfo,
+  getDateString,
   getMedia,
   getMediaStream,
   initJanus,
-  micLevel, notifyMe,
+  micLevel,
+  notifyMe,
   testMic,
   updateGxyUser,
 } from "../../shared/tools";
@@ -313,8 +315,7 @@ class VirtualClient extends Component {
     const bridge = user.role !== "user" ? "msg/" : "";
 
     mqtt.init(user, (reconnected, error) => {
-
-      if(error) {
+      if (error) {
         console.log("MQTT disconnected");
         this.setState({mqttOn: false});
         captureMessage("MQTT Offline", {source: "mqtt"});
@@ -322,7 +323,7 @@ class VirtualClient extends Component {
         if (this.state.question) {
           this.handleQuestion();
         }
-      } else if(reconnected) {
+      } else if (reconnected) {
         captureMessage("MQTT Online", {source: "mqtt"});
         //notifyMe("Arvut System", "MQTT Online", true);
         this.setState({mqttOn: true});
@@ -340,7 +341,7 @@ class VirtualClient extends Component {
         // Public chat
         mqtt.mq.on("MqttChatEvent", (data) => {
           let json = JSON.parse(data);
-          if(json?.type === "client-chat") {
+          if (json?.type === "client-chat") {
             this.chat.onChatMessage(json);
           }
         });
@@ -348,7 +349,7 @@ class VirtualClient extends Component {
         // Private chat
         mqtt.mq.on("MqttPrivateMessage", (data) => {
           let message = JSON.parse(data);
-          if(message?.type === "client-chat") {
+          if (message?.type === "client-chat") {
             notifyMe("Arvut System", message.text, true);
           }
           //TODO: Make private dialog exchange
@@ -357,7 +358,7 @@ class VirtualClient extends Component {
         // Broadcast message
         mqtt.mq.on("MqttBroadcastMessage", (data) => {
           let message = JSON.parse(data);
-          if(message?.type === "client-chat") {
+          if (message?.type === "client-chat") {
             message.time = getDateString();
             notifyMe("Arvut System", message.text, true);
           } else {
@@ -365,8 +366,7 @@ class VirtualClient extends Component {
           }
         });
       }
-
-    })
+    });
   };
 
   initClient = (reconnect, retry = 0) => {
@@ -1971,12 +1971,12 @@ class VirtualClient extends Component {
           <ButtonMD
             component={"a"}
             href={`https://www.kab1.com/${isHe ? "" : i18n.language}`}
-            variant={rightAsideName === "donate" ? "contained" : "outlined"}
-            className={"top-toolbar__item"}
+            className={"top-toolbar__item donate"}
             dir={isHe ? "rtl" : "ltr"}
             target="_blank"
           >
             {t("oldClient.donate")}
+            <span>❤</span>
           </ButtonMD>
           {/* ---------- */}
         </Toolbar>
