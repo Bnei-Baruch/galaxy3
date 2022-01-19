@@ -80,6 +80,7 @@ export const resources = {
         oldDesign: "OLD VERSION",
         newDesign: "NEW VERSION",
         darkTheme: "Dark Theme",
+        moveToNewVersion: `Please note that this version of Arvut system will stop it’s operation on the February 28th 2022. \n Please move to the new version. If you have any troubles with it, contact the support team.`,
       },
       settings: {
         selectCamera: "Select camera",
@@ -297,6 +298,7 @@ export const resources = {
         oldDesign: "VIEJA VERSION",
         newDesign: "NUEVA VERSIÓN",
         darkTheme: "Tema oscuro",
+        moveToNewVersion: `Please note that this version of Arvut system will stop it’s operation on the February 28th 2022. \n Please move to the new version. If you have any troubles with it, contact the support team.`,
       },
       settings: {
         selectCamera: "Select camera",
@@ -513,6 +515,9 @@ export const resources = {
         oldDesign: "גרסא ישנה",
         newDesign: "גרסא חדשה",
         darkTheme: "עיצוב כהה",
+        moveToNewVersion: `שים לב! גרסה זו של מערכת Arvut תפסיק את פעילותה ב-28 בפברואר 2022.
+        \n
+        נא לעבור לגרסה החדשה. אם נתקלת בבעיה להשתמש בה, אנא צור קשר עם צוות התמיכה.`,
       },
       settings: {
         selectCamera: "בחר מצלמה",
@@ -721,6 +726,7 @@ export const resources = {
         oldDesign: "СТАРАЯ ВЕРСИЯ",
         newDesign: "НОВАЯ ВЕРСИЯ",
         darkTheme: "Тёмная тема",
+        moveToNewVersion: `Обратите внимание, что данная версия системы Арвут прекратит работу 28 февраля 2022 года. \n Пожалуйста, перейдите на новую версию.Если у вас возникли какие-либо проблемы с переходом на новую версию, обратитесь в службу поддержки`,
       },
       settings: {
         selectCamera: "Выбрать камеру",
