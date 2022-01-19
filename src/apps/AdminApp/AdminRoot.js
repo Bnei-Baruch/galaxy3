@@ -44,15 +44,18 @@ class AdminRoot extends Component {
     command_status: true,
     premodStatus: false,
     showConfirmReloadAll: false,
+    android_count: 0,
+    ios_count: 0,
+    web_count: 0,
   };
 
   componentDidMount() {
     this.initApp(this.props.user);
-  };
+  }
 
   componentWillUnmount() {
     Object.values(this.state.gateways).forEach((x) => x.destroy());
-  };
+  }
 
   isAllowed = (level) => {
     const {user} = this.props;
@@ -84,7 +87,7 @@ class AdminRoot extends Component {
       .then((data) => {
         ConfigStore.setGlobalConfig(data);
         this.setState({
-          premodStatus: ConfigStore.dynamicConfig(ConfigStore.PRE_MODERATION_KEY) === "true"
+          premodStatus: ConfigStore.dynamicConfig(ConfigStore.PRE_MODERATION_KEY) === "true",
         });
         GxyJanus.setGlobalConfig(data);
       })
@@ -120,8 +123,18 @@ class AdminRoot extends Component {
     api
       .fetchActiveRooms()
       .then((data) => {
-        const {current_room} = this.state;
+        let {current_room} = this.state;
+        let ios_count = 0,
+          android_count = 0,
+          web_count = 0;
         const users_count = data.map((r) => r.num_users).reduce((su, cur) => su + cur, 0);
+        for (let i = 0; i < data.length; i++) {
+          for (let j = 0; j < data[i]["users"].length; j++) {
+            if (data[i]["users"][j]["system"] === "iOS") ios_count++;
+            if (data[i]["users"][j]["system"] === "Android") android_count++;
+          }
+        }
+        web_count = users_count - (ios_count + android_count);
         const room = data.find((r) => r.room === current_room);
         const rooms_question = data.filter((r) => r.questions);
         let users = current_room && room ? room.users : [];
@@ -130,7 +143,7 @@ class AdminRoot extends Component {
           if (a.description < b.description) return -1;
           return 0;
         });
-        this.setState({rooms: data, users, users_count, rooms_question});
+        this.setState({rooms: data, users, users_count, rooms_question, web_count, ios_count, android_count});
       })
       .catch((err) => {
         console.error("[Admin] error fetching active rooms", err);
@@ -1005,7 +1018,13 @@ class AdminRoot extends Component {
                 {/*<Button color='blue' icon='sound' onClick={() => this.sendRemoteCommand("sound_test")} />*/}
                 {infoPopup}
                 {rootControlPanel}
-                <StatNotes data={rooms} root={this.isAllowed("root")} />
+                <StatNotes
+                  data={rooms}
+                  android_count={this.state.android_count}
+                  ios_count={this.state.ios_count}
+                  web_count={this.state.web_count}
+                  root={this.isAllowed("root")}
+                />
               </Segment>
             ) : null}
           </Grid.Column>

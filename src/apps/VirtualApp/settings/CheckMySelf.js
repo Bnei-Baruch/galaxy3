@@ -70,7 +70,7 @@ const CheckMySelf = ({audio}) => {
           onClick={run}
           color="primary"
           variant={!processType ? "contained" : "outlined"}
-          disabled={!!processType}
+          disabled={!audio.stream || !!processType}
           className={classes.runButton}
         >
           {!processType ? t("oldClient.selfAudioTest") : `${t("oldClient." + processType)} - ${Math.round(process)}`}

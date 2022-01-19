@@ -1,5 +1,5 @@
 import React, {Component} from "react";
-import {Button, Dropdown, Grid, Label, Message, Popup, Segment, Table, Divider} from "semantic-ui-react";
+import {Button, Dropdown, Grid, Label, Message, Popup, Segment, Table, Divider, Icon, List} from "semantic-ui-react";
 import "./ShidurToran.scss";
 import UsersPreview from "./UsersPreview";
 import api from "../../shared/Api";
@@ -8,15 +8,15 @@ import {captureException} from "../../shared/sentry";
 import mqtt from "../../shared/mqtt";
 
 const short_regions = {
-  "petach-tikva": "PT",
-  israel: "IL",
-  russia: "RU",
-  ukraine: "UK",
   europe: "EU",
   asia: "AS",
-  "north-america": "NA",
-  "latin-america": "LA",
   africa: "AF",
+  "latin-america": "LA",
+  russia: "RU",
+  ukraine: "UA",
+  "north-america": "NA",
+  israel: "IL",
+  "petach-tikva": "PT",
 };
 
 class ShidurToran extends Component {
@@ -185,6 +185,12 @@ class ShidurToran extends Component {
     this.props.setProps({presets});
 
     console.log(presets);
+  };
+
+  removeFromPreset = (p, i) => {
+    let {presets} = this.props;
+    presets[p].splice(i, 1);
+    this.props.setProps({presets});
   };
 
   previewQuestion = () => {
@@ -392,15 +398,26 @@ class ShidurToran extends Component {
     });
 
     let pst_buttons = Object.keys(presets).map((p) => {
-      let preset = presets[p].map((data) => {
-        const {room, description} = data;
-        return <p key={room}>{description}</p>;
+      const ps = p === "3" || p === "4" ? "top right" : "top left";
+      let preset = presets[p].map((data, i) => {
+        const {description} = data;
+        return (
+          <List.Item>
+            <Label horizontal size="big">
+              {description}
+              <Icon name="delete" onClick={() => this.removeFromPreset(p, i)} />
+            </Label>
+          </List.Item>
+        );
       });
       return (
         <Popup
+          flowing
+          hoverable
           on="hover"
+          position={ps}
           trigger={<Button color="teal" content={p} onClick={() => this.savePreset(p)} />}
-          content={preset}
+          content={<List divided>{preset}</List>}
         />
       );
     });
