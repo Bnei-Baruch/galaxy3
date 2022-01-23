@@ -188,7 +188,7 @@ class ShidurToran extends Component {
   };
 
   removeFromPreset = (p, i) => {
-    let {presets,} = this.props;
+    let {presets} = this.props;
     presets[p].splice(i, 1);
     this.props.setProps({presets});
   };
@@ -398,19 +398,24 @@ class ShidurToran extends Component {
     });
 
     let pst_buttons = Object.keys(presets).map((p) => {
-      const ps = p === "3" || p === "4" ? 'top right' : 'top left';
+      const ps = p === "3" || p === "4" ? "top right" : "top left";
       let preset = presets[p].map((data, i) => {
         const {description} = data;
         return (
           <List.Item>
-            <Label horizontal size='big'>{description}
-              <Icon name='delete' onClick={() => this.removeFromPreset(p, i)} />
+            <Label horizontal size="big">
+              {description}
+              <Icon name="delete" onClick={() => this.removeFromPreset(p, i)} />
             </Label>
           </List.Item>
         );
       });
       return (
-        <Popup flowing hoverable on="hover" position={ps}
+        <Popup
+          flowing
+          hoverable
+          on="hover"
+          position={ps}
           trigger={<Button color="teal" content={p} onClick={() => this.savePreset(p)} />}
           content={<List divided>{preset}</List>}
         />

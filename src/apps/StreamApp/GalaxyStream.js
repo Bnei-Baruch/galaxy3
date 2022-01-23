@@ -13,7 +13,6 @@ import mqtt from "../../shared/mqtt";
 import {randomString} from "../../shared/tools";
 
 class GalaxyStream extends Component {
-
   state = {
     janus: null,
     videostream: null,
@@ -32,8 +31,8 @@ class GalaxyStream extends Component {
       session_id: null,
       handle_id: null,
       pc: new RTCPeerConnection({
-        iceServers: [{urls: "stun:stream.kli.one:3478"}]
-      })
+        iceServers: [{urls: "stun:stream.kli.one:3478"}],
+      }),
     },
   };
 
@@ -79,24 +78,27 @@ class GalaxyStream extends Component {
 
   initJanus = () => {
     const msg = {janus: "create", transaction: randomString(12)};
-    mqtt.send(JSON.stringify(msg), false, "gxydev/to-janus")
+    mqtt.send(JSON.stringify(msg), false, "gxydev/to-janus");
 
     const {VideoStream} = this.state;
 
     VideoStream.pc.onicecandidate = (e) => {
       const {session_id, handle_id} = VideoStream;
-      mqtt.send(JSON.stringify(
-        {
-          janus: 'trickle',
-          session_id, handle_id,
+      mqtt.send(
+        JSON.stringify({
+          janus: "trickle",
+          session_id,
+          handle_id,
           transaction: randomString(12),
-          candidate: e.candidate
-        }
-      ), false, "gxydev/to-janus")
+          candidate: e.candidate,
+        }),
+        false,
+        "gxydev/to-janus"
+      );
     };
 
     VideoStream.pc.ontrack = (e) => {
-      console.log("Got track: ", e)
+      console.log("Got track: ", e);
       let video = this.refs.remoteVideo;
       let stream = new MediaStream();
       stream.addTrack(e.track.clone());
@@ -107,20 +109,26 @@ class GalaxyStream extends Component {
   sdpExchange = (jsep) => {
     const {VideoStream} = this.state;
     VideoStream.pc.setRemoteDescription(jsep);
-    VideoStream.pc.createAnswer().then((desc) => {
-      VideoStream.pc.setLocalDescription(desc);
-      const {session_id, handle_id} = VideoStream;
-      mqtt.send(JSON.stringify(
-        {
-          janus: 'message',
-          session_id, handle_id,
-          transaction: randomString(12),
-          body: {request: 'start'},
-          jsep: desc
-        }
-      ), false, "gxydev/to-janus")
-    }, error => console.log(error));
-  }
+    VideoStream.pc.createAnswer().then(
+      (desc) => {
+        VideoStream.pc.setLocalDescription(desc);
+        const {session_id, handle_id} = VideoStream;
+        mqtt.send(
+          JSON.stringify({
+            janus: "message",
+            session_id,
+            handle_id,
+            transaction: randomString(12),
+            body: {request: "start"},
+            jsep: desc,
+          }),
+          false,
+          "gxydev/to-janus"
+        );
+      },
+      (error) => console.log(error)
+    );
+  };
 
   onJanusMessage = (event) => {
     console.log(" :: New Janus Message: ", event);
@@ -128,14 +136,15 @@ class GalaxyStream extends Component {
     const {session_id, janus, data, jsep} = event;
 
     // Make session and attach plugin
-    if(janus === "success") {
-      if(!session_id) {
+    if (janus === "success") {
+      if (!session_id) {
         VideoStream.session_id = data.id;
         this.setState({VideoStream});
         const msg = {
-          janus: "attach", session_id: data.id,
+          janus: "attach",
+          session_id: data.id,
           plugin: "janus.plugin.streaming",
-          transaction: randomString(12)
+          transaction: randomString(12),
         };
         mqtt.send(JSON.stringify(msg), false, "gxydev/to-janus");
       } else {
@@ -143,16 +152,17 @@ class GalaxyStream extends Component {
         this.setState({VideoStream});
         const msg = {
           janus: "message",
-          session_id, handle_id: data.id,
+          session_id,
+          handle_id: data.id,
           transaction: randomString(12),
-          body: {request: "watch", id: videos}
+          body: {request: "watch", id: videos},
         };
         mqtt.send(JSON.stringify(msg), false, "gxydev/to-janus");
       }
     }
 
     // Handle Janus events
-    if(janus === "event" && jsep) {
+    if (janus === "event" && jsep) {
       this.sdpExchange(jsep);
     }
   };
@@ -162,7 +172,7 @@ class GalaxyStream extends Component {
     const {handle_id} = this.state.VideoStream;
     const {janus, sender} = event;
 
-    if(janus === "webrtcup" && sender === handle_id) {
+    if (janus === "webrtcup" && sender === handle_id) {
       this.sendKeepAlive();
       this.keepAlive();
     }
@@ -175,7 +185,7 @@ class GalaxyStream extends Component {
   sendKeepAlive = () => {
     const {session_id} = this.state.VideoStream;
     const msg = {janus: "keepalive", session_id, transaction: randomString(12)};
-    mqtt.send(JSON.stringify(msg), false, "gxydev/to-janus")
+    mqtt.send(JSON.stringify(msg), false, "gxydev/to-janus");
   };
 
   clearKeepAlive = () => {
@@ -517,14 +527,17 @@ class GalaxyStream extends Component {
     this.setState({videos});
     //this.state.videostream.send({message: {request: "switch", id: videos}});
     const {session_id, handle_id} = this.state.VideoStream;
-    mqtt.send(JSON.stringify(
-      {
-        janus: 'message',
-        session_id, handle_id,
+    mqtt.send(
+      JSON.stringify({
+        janus: "message",
+        session_id,
+        handle_id,
         transaction: randomString(12),
-        body: {request: 'switch', id: videos}
-      }
-    ), false, "gxydev/to-janus")
+        body: {request: "switch", id: videos},
+      }),
+      false,
+      "gxydev/to-janus"
+    );
     localStorage.setItem("gxy_video", videos);
   };
 

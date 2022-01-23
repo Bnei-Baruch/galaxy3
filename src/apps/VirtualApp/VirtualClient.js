@@ -1969,12 +1969,12 @@ class VirtualClient extends Component {
           <ButtonMD
             component={"a"}
             href={`https://www.kab1.com/${isHe ? "" : i18n.language}`}
-            variant={rightAsideName === "donate" ? "contained" : "outlined"}
-            className={"top-toolbar__item"}
+            className={"top-toolbar__item donate"}
             dir={isHe ? "rtl" : "ltr"}
             target="_blank"
           >
             {t("oldClient.donate")}
+            <span>❤</span>
           </ButtonMD>
           {/* ---------- */}
         </Toolbar>
