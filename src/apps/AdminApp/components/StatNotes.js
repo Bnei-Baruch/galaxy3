@@ -52,7 +52,7 @@ class StatNotes extends Component {
   };
 
   render() {
-    const {android_count,ios_count,web_count} = this.props;
+    const {android_count, ios_count, web_count} = this.props;
     const {
       gxy1_count,
       gxy2_count,
@@ -78,7 +78,7 @@ class StatNotes extends Component {
     } = this.state;
 
     return (
-      <Label attached="top right" size='small' className="gxy_count">
+      <Label attached="top right" size="small" className="gxy_count">
         <Table compact="very">
           <Table.Body>
             <Table.Row>

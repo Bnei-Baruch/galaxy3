@@ -216,10 +216,10 @@ class UsersHandleSDIOut extends Component {
             }
           }
 
-          if(isExistFeed) {
+          if (isExistFeed) {
             for (let i = 0; i < feeds.length; i++) {
               if (feeds[i].id === feed[0].id) {
-                feeds[i] = feed[0]
+                feeds[i] = feed[0];
                 break;
               }
             }
@@ -230,7 +230,6 @@ class UsersHandleSDIOut extends Component {
           if (subscription.length > 0) {
             this.subscribeTo(gateway, roomid, subscription);
           }
-
         } else if (msg["leaving"] !== undefined && msg["leaving"] !== null) {
           let leaving = msg["leaving"];
           console.log(`[SDIOut] [room ${roomid}] Publisher left`, leaving);

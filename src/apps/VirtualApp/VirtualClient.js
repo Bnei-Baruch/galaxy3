@@ -2,14 +2,16 @@ import React, {Component, Fragment} from "react";
 import {Janus} from "../../lib/janus";
 import classNames from "classnames";
 import {isMobile} from "react-device-detect";
-import {Button, Icon, Image, Input, Label, Menu, Modal, Popup, Select} from "semantic-ui-react";
+import {Button, Icon, Image, Input, Label, Menu, Message, Modal, Popup, Select} from "semantic-ui-react";
 import {
   checkNotification,
-  geoInfo, getDateString,
+  geoInfo,
+  getDateString,
   getMedia,
   getMediaStream,
   initJanus,
-  micLevel, notifyMe,
+  micLevel,
+  notifyMe,
   testMic,
   updateGxyUser,
 } from "../../shared/tools";
@@ -313,15 +315,14 @@ class VirtualClient extends Component {
     const bridge = user.role !== "user" ? "msg/" : "";
 
     mqtt.init(user, (reconnected, error) => {
-
-      if(error) {
+      if (error) {
         console.log("MQTT disconnected");
         this.setState({mqttOn: false});
         //notifyMe("Arvut System", "MQTT Offline", true);
         if (this.state.question) {
           this.handleQuestion();
         }
-      } else if(reconnected) {
+      } else if (reconnected) {
         //notifyMe("Arvut System", "MQTT Online", true);
         this.setState({mqttOn: true});
         console.log("MQTT reconnected");
@@ -338,7 +339,7 @@ class VirtualClient extends Component {
         // Public chat
         mqtt.mq.on("MqttChatEvent", (data) => {
           let json = JSON.parse(data);
-          if(json?.type === "client-chat") {
+          if (json?.type === "client-chat") {
             this.chat.onChatMessage(json);
           }
         });
@@ -346,7 +347,7 @@ class VirtualClient extends Component {
         // Private chat
         mqtt.mq.on("MqttPrivateMessage", (data) => {
           let message = JSON.parse(data);
-          if(message?.type === "client-chat") {
+          if (message?.type === "client-chat") {
             notifyMe("Arvut System", message.text, true);
           }
           //TODO: Make private dialog exchange
@@ -355,7 +356,7 @@ class VirtualClient extends Component {
         // Broadcast message
         mqtt.mq.on("MqttBroadcastMessage", (data) => {
           let message = JSON.parse(data);
-          if(message?.type === "client-chat") {
+          if (message?.type === "client-chat") {
             message.time = getDateString();
             notifyMe("Arvut System", message.text, true);
           } else {
@@ -363,8 +364,7 @@ class VirtualClient extends Component {
           }
         });
       }
-
-    })
+    });
   };
 
   initClient = (reconnect, retry = 0) => {
@@ -1600,7 +1600,7 @@ class VirtualClient extends Component {
               on="hover"
               trigger={<div className="title-name">{user ? user.username : ""}</div>}
             />
-            <Icon style={{marginLeft: "0.3rem"}} name="signal" size="small" color={this.connectionColor()} />
+            <Icon style={{marginLeft: "0.3rem"}} name="signal" size="small" color={this.connectionColor()}/>
           </div>
         </div>
         <svg
@@ -1653,7 +1653,7 @@ class VirtualClient extends Component {
             ""
           )}
           <div className="video__title">
-            {!talking ? <Icon name="microphone slash" size="small" color="red" /> : ""}
+            {!talking ? <Icon name="microphone slash" size="small" color="red"/> : ""}
             <Popup
               content={display}
               mouseEnterDelay={200}
@@ -1739,7 +1739,7 @@ class VirtualClient extends Component {
             className={classNames("bottom-toolbar__item")}
             disableElevation
           >
-            <Mute t={t} action={this.micMute.bind(this)} disabled={!localAudioTrack} isOn={muted} ref="canvas1" />
+            <Mute t={t} action={this.micMute.bind(this)} disabled={!localAudioTrack} isOn={muted} ref="canvas1"/>
             <MuteVideo
               t={t}
               action={this.camMute.bind(this)}
@@ -1751,8 +1751,8 @@ class VirtualClient extends Component {
           {/* ~~~~~~~~~~~ */}
 
           <ButtonGroup className={classNames("bottom-toolbar__item")} variant="contained" disableElevation>
-            <Fullscreen t={t} isOn={isFullScreen()} action={toggleFullScreen} />
-            <KliOlamiToggle isOn={isKliOlamiShown} action={this.toggleKliOlami} />
+            <Fullscreen t={t} isOn={isFullScreen()} action={toggleFullScreen}/>
+            <KliOlamiToggle isOn={isKliOlamiShown} action={this.toggleKliOlami}/>
             <CloseBroadcast
               t={t}
               isOn={shidur}
@@ -1766,7 +1766,7 @@ class VirtualClient extends Component {
               disabled={room === "" || !shidur || sourceLoading || !attachedSource}
               iconDisabled={sourceLoading}
             />
-            <AudioMode t={t} action={this.otherCamsMuteToggle.bind(this)} isOn={muteOtherCams} />
+            <AudioMode t={t} action={this.otherCamsMuteToggle.bind(this)} isOn={muteOtherCams}/>
           </ButtonGroup>
 
           <ButtonGroup
@@ -1781,7 +1781,7 @@ class VirtualClient extends Component {
               disabled={!mqttOn || premodStatus || !audio_device || !localAudioTrack || delay || otherFeedHasQuestion}
               action={this.handleQuestion.bind(this)}
             />
-            <Vote t={t} id={user?.id} disabled={!user || !user.id || room === ""} />
+            <Vote t={t} id={user?.id} disabled={!user || !user.id || room === ""}/>
           </ButtonGroup>
 
           <ButtonMD
@@ -1846,7 +1846,7 @@ class VirtualClient extends Component {
     );
 
     if (rightAsideName === "question") {
-      content = <SendQuestionContainer user={user} />;
+      content = <SendQuestionContainer user={user}/>;
     }
 
     return (
@@ -1965,16 +1965,16 @@ class VirtualClient extends Component {
             </ButtonMD>
           </ButtonGroup>
 
-          <Support />
+          <Support/>
           <ButtonMD
             component={"a"}
             href={`https://www.kab1.com/${isHe ? "" : i18n.language}`}
-            variant={rightAsideName === "donate" ? "contained" : "outlined"}
-            className={"top-toolbar__item"}
+            className={"top-toolbar__item donate"}
             dir={isHe ? "rtl" : "ltr"}
             target="_blank"
           >
             {t("oldClient.donate")}
+            <span>❤</span>
           </ButtonMD>
           {/* ---------- */}
         </Toolbar>
@@ -1991,7 +1991,7 @@ class VirtualClient extends Component {
 
     let content;
     if (leftAsideName === "material") {
-      content = <HomerLimud />;
+      content = <HomerLimud/>;
     } else if (leftAsideName === "drawing") {
       content = (
         <iframe
@@ -2014,10 +2014,10 @@ class VirtualClient extends Component {
           leftAsideName && false ? (
             <ButtonGroup>
               <IconButton onClick={() => this.handleAsideResize(false)}>
-                <ChevronLeft />
+                <ChevronLeft/>
               </IconButton>
               <IconButton onClick={() => this.handleAsideResize(true)} disabled={leftAsideSize > 7}>
-                <ChevronRight />
+                <ChevronRight/>
               </IconButton>
             </ButtonGroup>
           ) : null
@@ -2069,7 +2069,7 @@ class VirtualClient extends Component {
     return (
       <div className={classNames("vclient", {"vclient--chat-open": chatVisible})}>
         {this.renderTopBar(isDeb)}
-        <RegistrationModals user={user} language={i18n.language} updateUserRole={this.updateUserRole.bind(this)} />
+        <RegistrationModals user={user} language={i18n.language} updateUserRole={this.updateUserRole.bind(this)}/>
 
         <Grid container className="vclient__main">
           {this.renderLeftAside()}
@@ -2109,6 +2109,23 @@ class VirtualClient extends Component {
           {this.renderRightAside()}
         </Grid>
       </div>
+    );
+  };
+
+  renderOldVersionMessage = () => {
+    const {t, i18n} = this.props;
+
+    const isHe = i18n.language === "he";
+    return (
+      <Message dir={isHe ? "rtl" : "ltr"}>
+        <Button
+          primary
+          style={{float: isHe ? "left" : "right"}}
+          onClick={() => toggleDesignVersions()}
+          content={t("oldClient.newDesign")}
+        />
+        <div style={{display: "inline"}}>{t("oldClient.moveToNewVersion")}</div>
+      </Message>
     );
   };
 
@@ -2192,7 +2209,7 @@ class VirtualClient extends Component {
       source = (
         <Grid container justify="center" style={{height: "100%", fontSize: "100em"}}>
           <IconButton onClick={() => this.setState({shidurForGuestReady: true})}>
-            <PlayCircleOutline style={{fontSize: "20em", color: grey[200]}} />
+            <PlayCircleOutline style={{fontSize: "20em", color: grey[200]}}/>
           </IconButton>
         </Grid>
       );
@@ -2256,7 +2273,7 @@ class VirtualClient extends Component {
       </Label>
     );
 
-    let login = <LoginPage user={user} checkPermission={this.checkPermission} />;
+    let login = <LoginPage user={user} checkPermission={this.checkPermission}/>;
 
     const isDeb = new URL(window.location.href).searchParams.has("deb");
 
@@ -2363,7 +2380,7 @@ class VirtualClient extends Component {
                   })
                 }
               >
-                <Icon name="comments" />
+                <Icon name="comments"/>
                 {t(chatVisible ? "oldClient.closeChat" : "oldClient.openChat")}
                 {chatMessagesCount > 0 ? chatCountLabel : ""}
               </Menu.Item>
@@ -2371,11 +2388,11 @@ class VirtualClient extends Component {
                 disabled={!mqttOn || premodStatus || !audio_device || !localAudioTrack || delay || otherFeedHasQuestion}
                 onClick={this.handleQuestion}
               >
-                <Icon {...(question ? {color: "green"} : {})} name="question" />
+                <Icon {...(question ? {color: "green"} : {})} name="question"/>
                 {t("oldClient.askQuestion")}
               </Menu.Item>
               <Menu.Item onClick={this.toggleShidur} disabled={room === "" || sourceLoading}>
-                <Icon name="tv" />
+                <Icon name="tv"/>
                 {shidur ? t("oldClient.closeBroadcast") : t("oldClient.openBroadcast")}
               </Menu.Item>
               <Popup
@@ -2448,17 +2465,14 @@ class VirtualClient extends Component {
                 </Popup.Content>
               </Popup>
               <Modal
-                trigger={<Menu.Item icon="book" name={t("oldClient.homerLimud")} />}
+                trigger={<Menu.Item icon="book" name={t("oldClient.homerLimud")}/>}
                 disabled={!localAudioTrack}
                 on="click"
                 closeIcon
                 className="homet-limud"
               >
-                <HomerLimud />
+                <HomerLimud/>
               </Modal>
-              <Button primary style={{margin: "auto 0"}} onClick={() => toggleDesignVersions()}>
-                {t("oldClient.newDesign")}
-              </Button>
             </Menu>
             <Menu icon="labeled" secondary size="mini">
               {!room ? (
@@ -2467,23 +2481,23 @@ class VirtualClient extends Component {
                   disabled={!audio_device || selftest !== t("oldClient.selfAudioTest")}
                   onClick={this.selfTest}
                 >
-                  <Icon color={tested ? "green" : "red"} name="sound" />
+                  <Icon color={tested ? "green" : "red"} name="sound"/>
                   {selftest}
                 </Menu.Item>
               ) : (
                 ""
               )}
               <Menu.Item disabled={!localAudioTrack} onClick={this.micMute} className="mute-button">
-                <canvas className={muted ? "hidden" : "vumeter"} ref="canvas1" id="canvas1" width="15" height="35" />
-                <Icon color={muted ? "red" : null} name={!muted ? "microphone" : "microphone slash"} />
+                <canvas className={muted ? "hidden" : "vumeter"} ref="canvas1" id="canvas1" width="15" height="35"/>
+                <Icon color={muted ? "red" : null} name={!muted ? "microphone" : "microphone slash"}/>
                 {t(muted ? "oldClient.unMute" : "oldClient.mute")}
               </Menu.Item>
               <Menu.Item disabled={video_device === null || delay} onClick={() => this.camMute(cammuted)}>
-                <Icon color={cammuted ? "red" : null} name={!cammuted ? "eye" : "eye slash"} />
+                <Icon color={cammuted ? "red" : null} name={!cammuted ? "eye" : "eye slash"}/>
                 {t(cammuted ? "oldClient.startVideo" : "oldClient.stopVideo")}
               </Menu.Item>
               <Menu.Item onClick={this.otherCamsMuteToggle}>
-                <Image src={muteOtherCams ? audioModeSvg : fullModeSvg} style={{marginBottom: "0.5rem"}} />
+                <Image src={muteOtherCams ? audioModeSvg : fullModeSvg} style={{marginBottom: "0.5rem"}}/>
                 {t(muteOtherCams ? "oldClient.fullMode" : "oldClient.audioMode")}
               </Menu.Item>
               {/*<Menu.Item>*/}
@@ -2497,14 +2511,14 @@ class VirtualClient extends Component {
               {/*    }} />*/}
               {/*</Menu.Item>*/}
               <Popup
-                trigger={<Menu.Item icon="setting" name={t("oldClient.settings")} />}
+                trigger={<Menu.Item icon="setting" name={t("oldClient.settings")}/>}
                 on="click"
                 position="bottom right"
               >
                 <Popup.Content>
                   <Button size="huge" fluid>
-                    <Icon name="user circle" />
-                    <Profile title={user && user.display} kc={kc} />
+                    <Icon name="user circle"/>
+                    <Profile title={user && user.display} kc={kc}/>
                   </Button>
                   <Select
                     className="select_device"
@@ -2544,7 +2558,7 @@ class VirtualClient extends Component {
                   />
                 </Popup.Content>
               </Popup>
-              <SupportOld t={t} i18n={i18n} user={user} />
+              <SupportOld t={t} i18n={i18n} user={user}/>
               <Button
                 primary
                 style={{margin: "auto"}}
@@ -2552,7 +2566,7 @@ class VirtualClient extends Component {
               >
                 {t("oldClient.myProfile")}
               </Button>
-              <Monitoring monitoringData={monitoringData} />
+              <Monitoring monitoringData={monitoringData}/>
             </Menu>
             {!new URL(window.location.href).searchParams.has("lost") ? null : (
               <Label
@@ -2562,6 +2576,7 @@ class VirtualClient extends Component {
               />
             )}
           </div>
+          {this.renderOldVersionMessage()}
           <div
             className="vclient__main"
             onDoubleClick={() =>
@@ -2684,7 +2699,7 @@ export default class WrapperForThemes extends React.Component {
   render() {
     return (
       <ThemeSwitcher>
-        <WrappedClass />
+        <WrappedClass/>
       </ThemeSwitcher>
     );
   }

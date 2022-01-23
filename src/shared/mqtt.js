@@ -17,7 +17,7 @@ class MqttMsg {
   init = (user, callback) => {
     this.user = user;
 
-    const RC = 30
+    const RC = 30;
     const service = isServiceID(user.id);
     const svc_token = GxyJanus?.globalConfig?.dynamic_config?.mqtt_auth;
     const token = service ? svc_token : this.token;
@@ -107,7 +107,14 @@ class MqttMsg {
   send = (message, retain, topic) => {
     if (!this.mq) return;
     console.log("[mqtt] Send data on topic: ", topic, message);
-    let options = {qos: 1, retain, properties: {userProperties: this.user, responseTopic: "gxydev/from-janus/" + this.user.id}};
+    let options = {
+      qos: 1,
+      retain,
+      properties: {
+        userProperties: this.user,
+        responseTopic: "gxy/from-janus/" + this.user.id,
+      },
+    };
     this.mq.publish(topic, message, {...options}, (err) => {
       err && console.error("[mqtt] Error: ", err);
     });

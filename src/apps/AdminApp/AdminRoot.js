@@ -46,16 +46,16 @@ class AdminRoot extends Component {
     showConfirmReloadAll: false,
     android_count: 0,
     ios_count: 0,
-    web_count: 0
+    web_count: 0,
   };
 
   componentDidMount() {
     this.initApp(this.props.user);
-  };
+  }
 
   componentWillUnmount() {
     Object.values(this.state.gateways).forEach((x) => x.destroy());
-  };
+  }
 
   isAllowed = (level) => {
     const {user} = this.props;
@@ -87,7 +87,7 @@ class AdminRoot extends Component {
       .then((data) => {
         ConfigStore.setGlobalConfig(data);
         this.setState({
-          premodStatus: ConfigStore.dynamicConfig(ConfigStore.PRE_MODERATION_KEY) === "true"
+          premodStatus: ConfigStore.dynamicConfig(ConfigStore.PRE_MODERATION_KEY) === "true",
         });
         GxyJanus.setGlobalConfig(data);
       })
@@ -124,12 +124,14 @@ class AdminRoot extends Component {
       .fetchActiveRooms()
       .then((data) => {
         let {current_room} = this.state;
-        let ios_count = 0, android_count = 0, web_count = 0;
+        let ios_count = 0,
+          android_count = 0,
+          web_count = 0;
         const users_count = data.map((r) => r.num_users).reduce((su, cur) => su + cur, 0);
-        for(let i=0; i<data.length; i++) {
-          for(let j=0; j<data[i]["users"].length; j++) {
-            if(data[i]["users"][j]["system"] === "iOS") ios_count++
-            if(data[i]["users"][j]["system"] === "Android") android_count++
+        for (let i = 0; i < data.length; i++) {
+          for (let j = 0; j < data[i]["users"].length; j++) {
+            if (data[i]["users"][j]["system"] === "iOS") ios_count++;
+            if (data[i]["users"][j]["system"] === "Android") android_count++;
           }
         }
         web_count = users_count - (ios_count + android_count);
@@ -1016,11 +1018,13 @@ class AdminRoot extends Component {
                 {/*<Button color='blue' icon='sound' onClick={() => this.sendRemoteCommand("sound_test")} />*/}
                 {infoPopup}
                 {rootControlPanel}
-                <StatNotes data={rooms}
-                           android_count={this.state.android_count}
-                           ios_count={this.state.ios_count}
-                           web_count={this.state.web_count}
-                           root={this.isAllowed("root")} />
+                <StatNotes
+                  data={rooms}
+                  android_count={this.state.android_count}
+                  ios_count={this.state.ios_count}
+                  web_count={this.state.web_count}
+                  root={this.isAllowed("root")}
+                />
               </Segment>
             ) : null}
           </Grid.Column>
