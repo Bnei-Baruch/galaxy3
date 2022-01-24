@@ -89,6 +89,15 @@ export class JanusPlugin extends EventEmitter {
     })
   }
 
+  switch (id) {
+    const body = { request: 'switch', id }
+
+    return this.transaction('message', { body }, 'event').catch((err) => {
+      console.error('StreamingJanusPlugin, cannot start stream', err)
+      throw err
+    })
+  }
+
   success (janus, janusHandleId) {
     this.janus = janus
     this.janusHandleId = janusHandleId
