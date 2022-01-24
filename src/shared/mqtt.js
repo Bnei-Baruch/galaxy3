@@ -104,7 +104,7 @@ class MqttMsg {
     });
   };
 
-  send = (message, retain, topic) => {
+  send = (message, retain, topic, rxTopic) => {
     if (!this.mq) return;
     console.log("[mqtt] Send data on topic: ", topic, message);
     let options = {
@@ -112,7 +112,7 @@ class MqttMsg {
       retain,
       properties: {
         userProperties: this.user,
-        responseTopic: "gxy/from-janus/" + this.user.id,
+        responseTopic: rxTopic,
       },
     };
     this.mq.publish(topic, message, {...options}, (err) => {
@@ -129,10 +129,8 @@ class MqttMsg {
         this.mq.emit("MqttSubtitlesEvent", data);
       } else if (/galaxy\/room\/\d+\/chat/.test(topic)) {
         this.mq.emit("MqttChatEvent", data);
-      } else if (topic.split("/")[1] === "from-janus" && topic.split("/")[2]) {
-        this.mq.emit("MqttJanusMessage", data);
-      } else if (topic.split("/")[1] === "from-janus" && !topic.split("/")[2]) {
-        this.mq.emit("MqttJanusEvent", data);
+      } else if (topic.split("/")[0] === "janus") {
+        this.mq.emit("MqttJanusMessage", data, topic.split("/")[2]);
       } else if (/galaxy\/users\//.test(topic)) {
         if (topic.split("/")[2] === "broadcast") {
           this.mq.emit("MqttBroadcastMessage", data);

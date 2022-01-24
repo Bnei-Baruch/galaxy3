@@ -9,6 +9,7 @@ import LoginPage from "../../components/LoginPage";
 import "./GalaxyStream.css";
 import mqtt from "../../shared/mqtt";
 import {randomString} from "../../shared/tools";
+import {JanusMqtt} from "../../lib/janus-mqtt";
 
 class GalaxyStream extends Component {
 
@@ -56,24 +57,30 @@ class GalaxyStream extends Component {
     this.setState({user});
     mqtt.init(user, (data) => {
       console.log("[mqtt] init: ", data);
-      mqtt.join("gxydev/from-janus/" + user.id, false);
-      mqtt.join("gxydev/from-janus", false);
-      mqtt.join("gxydev/status", false);
-      mqtt.watch(status => {
-        console.log(status)
-      });
 
-      this.initJanus();
+      let Janus = new JanusMqtt(user, 'str1')
 
-      mqtt.mq.on("MqttJanusMessage", (data) => {
-        let json = JSON.parse(data);
-        this.onJanusMessage(json);
-      });
+      Janus.init()
+      console.log(JanusMqtt)
+      // mqtt.join("gxydev/from-janus/" + user.id, false);
+      // mqtt.join("gxydev/from-janus", false);
+      // mqtt.join("gxydev/status", false);
+      // mqtt.watch(status => {
+      //   console.log(status)
+      // });
+      //
+      // this.initJanus();
+      //
+      // mqtt.mq.on("MqttJanusMessage", (data) => {
+      //   let json = JSON.parse(data);
+      //   this.onJanusMessage(json);
+      // });
+      //
+      // mqtt.mq.on("MqttJanusEvent", (data) => {
+      //   let json = JSON.parse(data);
+      //   this.onJanusEvent(json);
+      // });
 
-      mqtt.mq.on("MqttJanusEvent", (data) => {
-        let json = JSON.parse(data);
-        this.onJanusEvent(json);
-      });
     });
   };
 
