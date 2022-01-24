@@ -10,6 +10,7 @@ import "./GalaxyStream.css";
 import mqtt from "../../shared/mqtt";
 import {randomString} from "../../shared/tools";
 import {JanusMqtt} from "../../lib/janus-mqtt";
+import {JanusPlugin} from "../../lib/janus-plugin";
 
 class GalaxyStream extends Component {
 
@@ -54,14 +55,24 @@ class GalaxyStream extends Component {
   // };
 
   initMQTT = (user) => {
-    this.setState({user});
     mqtt.init(user, (data) => {
       console.log("[mqtt] init: ", data);
 
       let Janus = new JanusMqtt(user, 'str1')
+      let Plugin = new JanusPlugin();
 
-      Janus.init()
+      Janus.init().then(data => {
+        console.log(data)
+        Janus.attach(Plugin).then(data => {
+          console.log(data)
+          Plugin.watch(1).then(stream => {
+            let video = this.refs.remoteVideo;
+            video.srcObject = stream;
+          })
+        })
+      })
       console.log(JanusMqtt)
+      this.setState({Janus, user});
       // mqtt.join("gxydev/from-janus/" + user.id, false);
       // mqtt.join("gxydev/from-janus", false);
       // mqtt.join("gxydev/status", false);
@@ -537,26 +548,17 @@ class GalaxyStream extends Component {
   setAudio = (audios, options) => {
     let text = options.filter((k) => k.value === audios)[0].text;
     this.setState({audios});
-    const {session_id, handle_id} = this.state.AudioStream;
-    mqtt.send(JSON.stringify(
-      {
-        janus: 'message',
-        session_id, handle_id,
-        transaction: randomString(12),
-        body: {request: 'switch', id: audios}
-      }
-    ), false, "gxydev/to-janus")
     localStorage.setItem("gxy_lang", audios);
     localStorage.setItem("gxy_langtext", text);
   };
 
-  setAudio = (audios, options) => {
-    let text = options.filter((k) => k.value === audios)[0].text;
-    this.setState({audios});
-    if (this.state.audiostream) this.state.audiostream.send({message: {request: "switch", id: audios}});
-    localStorage.setItem("gxy_lang", audios);
-    localStorage.setItem("gxy_langtext", text);
-  };
+  // setAudio = (audios, options) => {
+  //   let text = options.filter((k) => k.value === audios)[0].text;
+  //   this.setState({audios});
+  //   if (this.state.audiostream) this.state.audiostream.send({message: {request: "switch", id: audios}});
+  //   localStorage.setItem("gxy_lang", audios);
+  //   localStorage.setItem("gxy_langtext", text);
+  // };
 
   setVolume = (value) => {
     this.refs.remoteAudio.volume = value;
@@ -568,9 +570,17 @@ class GalaxyStream extends Component {
     if (audiostream) {
       muted ? audiostream.muteAudio() : audiostream.unmuteAudio();
     } else {
-      this.initAudioStream(janus);
+      const {Janus} = this.state;
+      let Plugin = new JanusPlugin();
+      Janus.attach(Plugin).then(data => {
+        console.log(data)
+        Plugin.watch(15).then(stream => {
+          let audio = this.refs.remoteAudio;
+          audio.srcObject = stream;
+        })
+      })
       let id = trllang[localStorage.getItem("gxy_langtext")] || 301;
-      this.initTranslationStream(id);
+      //this.initTranslationStream(id);
     }
   };
 
