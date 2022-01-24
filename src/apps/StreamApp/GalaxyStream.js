@@ -53,7 +53,6 @@ class GalaxyStream extends Component {
           videoStream.watch(1).then(stream => {
             let video = this.refs.remoteVideo;
             video.srcObject = stream;
-            console.log(JanusMqtt)
           })
         })
       })

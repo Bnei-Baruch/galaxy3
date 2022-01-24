@@ -51,7 +51,7 @@ export class JanusMqtt {
         reject,
         replyType: 'success'
       }
-      mqtt.send(JSON.stringify(msg), false, this.txTopic, this.rxTopic)
+      mqtt.send(JSON.stringify(msg), false, this.txTopic, this.rxTopic + "/" + this.user.id)
     })
 
   }
@@ -126,7 +126,7 @@ export class JanusMqtt {
       })
 
       this.transactions[request.transaction] = {resolve, reject, replyType, request}
-      mqtt.send(JSON.stringify(request), false, this.txTopic, this.rxTopic)
+      mqtt.send(JSON.stringify(request), false, this.txTopic, this.rxTopic + "/" + this.user.id)
     })
   }
 

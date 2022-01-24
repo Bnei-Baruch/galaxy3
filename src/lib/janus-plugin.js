@@ -1,17 +1,15 @@
 import {randomString} from "../shared/tools";
 import {EventEmitter} from "events";
-import mqtt from "../shared/mqtt";
 
 export class JanusPlugin extends EventEmitter {
   constructor (logger) {
     super()
     this.id = randomString(12)
-    /** @var Janus */
     this.janus = undefined
     this.janusHandleId = undefined
     this.pluginName = undefined
     this.pc = new RTCPeerConnection({
-      iceServers: [{urls: "stun:gxydev.kli.one:3478"}]
+      iceServers: [{urls: "stun:icesrv.kab.sh:3478"}]
     })
   }
 
@@ -38,18 +36,11 @@ export class JanusPlugin extends EventEmitter {
         const {session_id, json } = param
 
         this.pc.onicecandidate = (e) => {
-          mqtt.send(JSON.stringify(
-            {
-              janus: 'trickle',
-              session_id, handle_id: this.janusHandleId,
-              transaction: randomString(12),
-              candidate: e.candidate
-            }
-          ), false, "janus/str1/to-janus")
+          return this.transaction('trickle', { candidate: e.candidate })
         };
 
         this.pc.ontrack = (e) => {
-          console.log("Got track: ", e)
+          console.log("[streaming] Got track: ", e)
           let stream = new MediaStream();
           stream.addTrack(e.track.clone());
           resolve(stream);
@@ -67,7 +58,7 @@ export class JanusPlugin extends EventEmitter {
     this.pc.createAnswer().then((desc) => {
       this.pc.setLocalDescription(desc);
       this.start(desc)
-    }, error => console.log(error));
+    }, error => console.error(error));
   }
 
   start(jsep) {
@@ -78,10 +69,6 @@ export class JanusPlugin extends EventEmitter {
     }
 
     return this.transaction('message', message, 'event').then(({ data, json }) => {
-      console.log("[streaming] start: ", data, json)
-      // if (data.result && data.result.status) {
-      //   this.emit('statusChange', data.result.status)
-      // }
       return { data, json }
     }).catch((err) => {
       console.error('StreamingJanusPlugin, cannot start stream', err)
@@ -110,11 +97,11 @@ export class JanusPlugin extends EventEmitter {
   }
 
   onmessage (data, json) {
+    console.log('[streaming] onmessage: ', data, json)
     if (json?.jsep) {
       console.log('[streaming] sdp: ', data, json)
       this.sdpExchange(json.jsep)
     }
-    console.log('Unhandled message from janus in a plugin: ', data, json)
   }
 
   oncleanup () {
