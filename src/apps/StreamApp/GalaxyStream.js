@@ -7,7 +7,7 @@ import LoginPage from "../../components/LoginPage";
 import "./GalaxyStream.css";
 import mqtt from "../../shared/mqtt";
 import {JanusMqtt} from "../../lib/janus-mqtt";
-import {JanusPlugin} from "../../lib/janus-plugin";
+import {StreamingPlugin} from "../../lib/streaming-plugin";
 
 class GalaxyStream extends Component {
 
@@ -43,7 +43,7 @@ class GalaxyStream extends Component {
       console.log("[mqtt] init: ", data);
 
       let Janus = new JanusMqtt(user, 'str1')
-      let videoStream = new JanusPlugin();
+      let videoStream = new StreamingPlugin();
 
       Janus.init().then(data => {
         console.log(data)
@@ -89,7 +89,7 @@ class GalaxyStream extends Component {
     this.setState({muted: !muted});
     if (!audioStream) {
       const {Janus} = this.state;
-      let audioStream = new JanusPlugin();
+      let audioStream = new StreamingPlugin();
       Janus.attach(audioStream).then(data => {
         this.setState({audioStream});
         console.log(data)

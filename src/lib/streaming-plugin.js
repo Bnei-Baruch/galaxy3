@@ -1,20 +1,20 @@
 import {randomString} from "../shared/tools";
 import {EventEmitter} from "events";
 
-export class JanusPlugin extends EventEmitter {
+export class StreamingPlugin extends EventEmitter {
   constructor (logger) {
     super()
     this.id = randomString(12)
     this.janus = undefined
     this.janusHandleId = undefined
-    this.pluginName = undefined
+    this.pluginName = 'janus.plugin.streaming'
     this.pc = new RTCPeerConnection({
       iceServers: [{urls: "stun:icesrv.kab.sh:3478"}]
     })
   }
 
-  getAttachPayload () {
-    return { plugin: this.pluginName, opaque_id: this.id }
+  getPluginName () {
+    return this.pluginName
   }
 
   transaction (message, additionalFields, replyType) {

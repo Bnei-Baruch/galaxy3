@@ -1,6 +1,6 @@
 import {randomString} from "../shared/tools";
 import mqtt from "../shared/mqtt";
-import {JanusPlugin} from "./janus-plugin";
+import {StreamingPlugin} from "./streaming-plugin";
 
 export class JanusMqtt {
   constructor(user, srv, mit) {
@@ -57,11 +57,8 @@ export class JanusMqtt {
   }
 
   attach(plugin) {
-    if (!(plugin instanceof JanusPlugin)) {
-      return Promise.reject(new Error('plugin is not a JanusPlugin'))
-    }
-
-    return this.transaction('attach', {plugin: 'janus.plugin.streaming', opaque_id: this.user.id}, 'success')
+    const name = plugin.getPluginName()
+    return this.transaction('attach', {plugin: name, opaque_id: this.user.id}, 'success')
       .then((json) => {
       if (json.janus !== 'success') {
         console.error('[janus] Cannot add plugin', json)
@@ -77,7 +74,7 @@ export class JanusMqtt {
 
   destroyPlugin(plugin) {
     return new Promise((resolve, reject) => {
-      if (!(plugin instanceof JanusPlugin)) {
+      if (!(plugin instanceof StreamingPlugin)) {
         reject(new Error('plugin is not a JanusPlugin'))
         return
       }
