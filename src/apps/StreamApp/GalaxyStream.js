@@ -41,6 +41,7 @@ class GalaxyStream extends Component {
   initMQTT = (user) => {
     mqtt.init(user, (data) => {
       console.log("[mqtt] init: ", data);
+      mqtt.watch();
 
       let Janus = new JanusMqtt(user, 'str1')
       let videoStream = new StreamingPlugin();

@@ -22,9 +22,6 @@ export class JanusMqtt {
     mqtt.join(this.rxTopic + "/" + this.user.id, false);
     mqtt.join(this.rxTopic, false);
     mqtt.join(this.stTopic, false);
-    mqtt.watch(status => {
-      console.log(status)
-    });
 
     mqtt.mq.on("MqttJanusMessage", (data, tD) => this.onMessage(data, tD));
 
@@ -145,8 +142,10 @@ export class JanusMqtt {
   }
 
   getTransaction(json, ignoreReplyType = false) {
+    const type = json.janus
     const transactionId = json.transaction
-    if(transactionId && Object.prototype.hasOwnProperty.call(this.transactions, transactionId)) {
+    if(transactionId && Object.prototype.hasOwnProperty.call(this.transactions, transactionId) &&
+    (ignoreReplyType || this.transactions[transactionId].replyType === type)) {
       const ret = this.transactions[transactionId]
       delete this.transactions[transactionId]
       return ret
@@ -166,6 +165,18 @@ export class JanusMqtt {
     const {session_id, janus, data, jsep} = json;
 
     if(tD === "status") {
+      return
+    }
+
+    if (janus === 'keepalive') { // Do nothing
+      return
+    }
+
+    if (janus === 'ack') { // Just an ack, we can probably ignore
+      const transaction = this.getTransaction(json)
+      if (transaction && transaction.resolve) {
+        transaction.resolve(json)
+      }
       return
     }
 
@@ -200,18 +211,6 @@ export class JanusMqtt {
 
     if (janus === 'timeout' && json.session_id !== this.sessionId) {
       console.debug('[janus] GOT timeout from another websocket');
-      return
-    }
-
-    if (janus === 'keepalive') { // Do nothing
-      return
-    }
-
-    if (janus === 'ack') { // Just an ack, we can probably ignore
-      const transaction = this.getTransaction(json)
-      if (transaction && transaction.resolve) {
-        transaction.resolve(json)
-      }
       return
     }
 

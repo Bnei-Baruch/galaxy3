@@ -27,28 +27,37 @@ export class PublisherPlugin extends EventEmitter {
     return this.janus.transaction(message, payload, replyType)
   }
 
-  watch (id) {
-    const body = { request: 'watch', id }
-
+  join (body) {
+    //const body = { request: 'join', id }
     return new Promise((resolve, reject) => {
       this.transaction('message', { body }, 'event').then((param) => {
-        console.log("[streaming] watch: ", param)
-        const {session_id, json } = param
+        console.log("[publisher] join: ", param)
+        const {data, json } = param
 
-        this.pc.onicecandidate = (e) => {
-          return this.transaction('trickle', { candidate: e.candidate })
-        };
+        if(data?.publishers)
+          resolve(data.publishers);
 
-        this.pc.ontrack = (e) => {
-          console.log("[streaming] Got track: ", e)
-          let stream = new MediaStream();
-          stream.addTrack(e.track.clone());
-          resolve(stream);
-        };
+        //TODO: createOffer
+
+        // this.pc.onicecandidate = (e) => {
+        //   return this.transaction('trickle', { candidate: e.candidate })
+        // };
+        //
+        // this.pc.ontrack = (e) => {
+        //   console.log("[publisher] Got track: ", e)
+        //   let stream = new MediaStream();
+        //   stream.addTrack(e.track.clone());
+        //   resolve(stream);
+        // };
 
       }).catch((err) => {
-        console.error('StreamingJanusPlugin, cannot watch stream', err)
-        reject(err)
+        if (err && err.error_code === 426) { // JANUS_VIDEOROOM_ERROR_NO_SUCH_ROOM = 426
+          console.error('VideoRoomPublisherJanusPlugin, JANUS_VIDEOROOM_ERROR_NO_SUCH_ROOM', err)
+          reject(err)
+        } else {
+          console.error('VideoRoomPublisherJanusPlugin, unknown error connecting to room', err)
+          reject(err)
+        }
       })
     })
   }
@@ -97,9 +106,9 @@ export class PublisherPlugin extends EventEmitter {
   }
 
   onmessage (data, json) {
-    console.log('[streaming] onmessage: ', data, json)
+    console.log('[publisher] onmessage: ', data, json)
     if (json?.jsep) {
-      console.log('[streaming] sdp: ', data, json)
+      console.log('[publisher] sdp: ', data, json)
       this.sdpExchange(json.jsep)
     }
   }

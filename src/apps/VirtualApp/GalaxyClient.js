@@ -68,6 +68,9 @@ import Typography from "@material-ui/core/Typography";
 import {withTheme} from "@material-ui/core/styles";
 import ThemeSwitcher from "./components/ThemeSwitcher/ThemeSwitcher";
 import mqtt from "../../shared/mqtt";
+import {JanusMqtt} from "../../lib/janus-mqtt";
+import {StreamingPlugin} from "../../lib/streaming-plugin";
+import {PublisherPlugin} from "../../lib/publisher-plugin";
 
 const toggleDesignVersions = () => {
   window.location = isUseNewDesign ? "https://galaxy.kli.one/user/" : "https://arvut.kli.one/user/";
@@ -376,33 +379,48 @@ class GalaxyClient extends Component {
     }
 
     const config = GxyJanus.instanceConfig(user.janus);
-    initJanus(
-      (janus) => {
-        // Check if unified plan supported
-        if (Janus.unifiedPlan) {
-          user.session = janus.getSessionId();
-          this.setState({janus});
-          this.initVideoRoom(reconnect, user);
-        } else {
-          alert(t("oldClient.unifiedPlanNotSupported"));
-        }
-      },
-      (err) => {
-        this.exitRoom(/* reconnect= */ true, () => {
-          console.error("[User] error initializing janus", err);
-          this.reinitClient(retry);
-        });
-      },
-      config.url,
-      config.token,
-      config.iceServers
-    );
+    this.initJanus(user)
+    // initJanus(
+    //   (janus) => {
+    //     // Check if unified plan supported
+    //     if (Janus.unifiedPlan) {
+    //       user.session = janus.getSessionId();
+    //       this.setState({janus});
+    //       this.initVideoRoom(reconnect, user);
+    //     } else {
+    //       alert(t("oldClient.unifiedPlanNotSupported"));
+    //     }
+    //   },
+    //   (err) => {
+    //     this.exitRoom(/* reconnect= */ true, () => {
+    //       console.error("[User] error initializing janus", err);
+    //       this.reinitClient(retry);
+    //     });
+    //   },
+    //   config.url,
+    //   config.token,
+    //   config.iceServers
+    // );
 
     if (!reconnect) {
       const {ip, country} = user;
       this.state.virtualStreamingJanus.init(ip, country);
     }
   };
+
+  initJanus = (user) => {
+    let janus = new JanusMqtt(user, 'gxydev')
+    let videoroom = new PublisherPlugin();
+
+    janus.init().then(data => {
+      console.log(data)
+      janus.attach(videoroom).then(data => {
+        this.setState({janus, videoroom, user});
+        console.log('[client] Publisher Handle: ', data)
+        this.joinRoom(false, videoroom, user)
+      })
+    })
+  }
 
   reinitClient = (retry) => {
     retry++;
@@ -748,16 +766,23 @@ class GalaxyClient extends Component {
     const {id, timestamp, role, username} = user;
     const d = {id, timestamp, role, display: username};
     const register = {request: "join", room: selected_room, ptype: "publisher", display: JSON.stringify(d)};
-    videoroom.send({
-      message: register,
-      success: () => {
-        console.log("Request join success");
-      },
-      error: (error) => {
-        console.error(error);
-        this.exitRoom(/* reconnect= */ false);
-      },
-    });
+
+    videoroom.join(register).then(publishers => {
+      console.log('[client] Got publishers :', publishers)
+      // let video = this.refs.remoteVideo;
+      // video.srcObject = stream;
+    })
+
+    // videoroom.send({
+    //   message: register,
+    //   success: () => {
+    //     console.log("Request join success");
+    //   },
+    //   error: (error) => {
+    //     console.error(error);
+    //     this.exitRoom(/* reconnect= */ false);
+    //   },
+    // });
   };
 
   exitRoom = (reconnect, callback, error) => {

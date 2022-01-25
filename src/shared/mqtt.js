@@ -123,6 +123,7 @@ class MqttMsg {
   watch = (callback, stat) => {
     let message;
     this.mq.on("message", (topic, data, packet) => {
+      console.debug("---------------------------");
       console.debug("[mqtt] Got data on topic: ", topic);
       console.debug("[mqtt] : ", packet);
       if (/subtitles\/galaxy\//.test(topic)) {
