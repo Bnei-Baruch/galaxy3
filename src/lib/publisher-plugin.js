@@ -1,5 +1,6 @@
 import {randomString} from "../shared/tools";
 import {EventEmitter} from "events";
+import {Janus} from "./janus";
 
 export class PublisherPlugin extends EventEmitter {
   constructor (logger) {
@@ -23,7 +24,6 @@ export class PublisherPlugin extends EventEmitter {
     if (!this.janus) {
       return Promise.reject(new Error('JanusPlugin is not connected'))
     }
-
     return this.janus.transaction(message, payload, replyType)
   }
 
@@ -37,19 +37,6 @@ export class PublisherPlugin extends EventEmitter {
         if(data?.publishers)
           resolve(data.publishers);
 
-        //TODO: createOffer
-
-        // this.pc.onicecandidate = (e) => {
-        //   return this.transaction('trickle', { candidate: e.candidate })
-        // };
-        //
-        // this.pc.ontrack = (e) => {
-        //   console.log("[publisher] Got track: ", e)
-        //   let stream = new MediaStream();
-        //   stream.addTrack(e.track.clone());
-        //   resolve(stream);
-        // };
-
       }).catch((err) => {
         if (err && err.error_code === 426) { // JANUS_VIDEOROOM_ERROR_NO_SUCH_ROOM = 426
           console.error('VideoRoomPublisherJanusPlugin, JANUS_VIDEOROOM_ERROR_NO_SUCH_ROOM', err)
@@ -62,37 +49,43 @@ export class PublisherPlugin extends EventEmitter {
     })
   }
 
-  sdpExchange(jsep) {
-    this.pc.setRemoteDescription(jsep);
-    this.pc.createAnswer().then((desc) => {
-      this.pc.setLocalDescription(desc);
-      this.start(desc)
-    }, error => console.error(error));
-  }
+  offer(video, audio) {
+    this.pc.addTransceiver('audio')
+    this.pc.addTransceiver('video')
 
-  start(jsep) {
-    const body = { request: 'start' }
-    const message = { body }
-    if (jsep) {
-      message.jsep = jsep
-    }
+    this.pc.addTrack(video.getVideoTracks()[0], video);
+    this.pc.addTrack(audio.getAudioTracks()[0], audio);
 
-    return this.transaction('message', message, 'event').then(({ data, json }) => {
-      return { data, json }
-    }).catch((err) => {
-      console.error('StreamingJanusPlugin, cannot start stream', err)
-      throw err
+    //TODO: createOffer
+
+    this.pc.onicecandidate = (e) => {
+      return this.transaction('trickle', { candidate: e.candidate })
+    };
+
+    this.pc.ontrack = (e) => {
+      console.log("[publisher] Got track: ", e)
+      let stream = new MediaStream();
+      stream.addTrack(e.track.clone());
+      //resolve(stream);
+    };
+
+    let transceivers = this.pc.getTransceivers();
+    console.log("[publisher] transceivers: ", transceivers)
+    this.pc.createOffer().then((offer) => {
+      this.pc.setLocalDescription(offer).then(() => {
+        const jsep = { type: offer.type, sdp: offer.sdp }
+        const body = { request: 'configure', audio: true, video: true }
+        return this.transaction('message', { body, jsep }, 'event').then((param) => {
+          const { json } = param || {}
+          const jsep = json.jsep
+          console.log('[publisher] CONFIGURE', jsep)
+          this.pc.setRemoteDescription(new RTCSessionDescription(jsep)).then(() => {
+            console.log('[publisher] remoteDescription set')
+          })
+        })
+      })
     })
-  }
-
-  switch (id) {
-    const body = { request: 'switch', id }
-
-    return this.transaction('message', { body }, 'event').catch((err) => {
-      console.error('StreamingJanusPlugin, cannot start stream', err)
-      throw err
-    })
-  }
+  };
 
   success (janus, janusHandleId) {
     this.janus = janus
@@ -107,10 +100,6 @@ export class PublisherPlugin extends EventEmitter {
 
   onmessage (data, json) {
     console.log('[publisher] onmessage: ', data, json)
-    if (json?.jsep) {
-      console.log('[publisher] sdp: ', data, json)
-      this.sdpExchange(json.jsep)
-    }
   }
 
   oncleanup () {

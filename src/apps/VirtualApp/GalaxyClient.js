@@ -771,6 +771,8 @@ class GalaxyClient extends Component {
       console.log('[client] Got publishers :', publishers)
       // let video = this.refs.remoteVideo;
       // video.srcObject = stream;
+      const {audio, video} = this.state.media;
+      videoroom.offer(video.stream, audio.stream)
     })
 
     // videoroom.send({
