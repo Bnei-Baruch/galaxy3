@@ -34,8 +34,8 @@ export class PublisherPlugin extends EventEmitter {
         console.log("[publisher] join: ", param)
         const {data, json } = param
 
-        if(data?.publishers)
-          resolve(data.publishers);
+        if(data)
+          resolve(data);
 
       }).catch((err) => {
         if (err && err.error_code === 426) { // JANUS_VIDEOROOM_ERROR_NO_SUCH_ROOM = 426

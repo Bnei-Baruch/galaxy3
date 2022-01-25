@@ -91,8 +91,8 @@ const userFeeds = (feeds) => feeds.filter((feed) => feed.display.role === userRo
 
 //for test server
 // const isUseNewDesign = new URL(window.location.href).searchParams.has('new_design');
-//const isUseNewDesign = true;
-const isUseNewDesign = /arvut/.test(window.location.host);
+const isUseNewDesign = true;
+//const isUseNewDesign = /arvut/.test(window.location.host);
 
 class GalaxyClient extends Component {
   state = {
@@ -217,14 +217,15 @@ class GalaxyClient extends Component {
 
   checkPermission = (user) => {
     user.role = getUserRole();
+    this.initApp(user);
 
-    if (user.role !== null) {
-      this.initApp(user);
-    } else {
-      alert("Access denied!");
-      kc.logout();
-      updateSentryUser(null);
-    }
+    // if (user.role !== null) {
+    //   this.initApp(user);
+    // } else {
+    //   alert("Access denied!");
+    //   kc.logout();
+    //   updateSentryUser(null);
+    // }
   };
 
   initApp = (user) => {
@@ -233,29 +234,29 @@ class GalaxyClient extends Component {
     this.initMQTT(user);
 
     //Clients not authorized to app may see shidur only
-    if (user.role !== userRolesEnum.user) {
-      const config = {
-        gateways: {
-          streaming: {
-            str: {
-              name: "str",
-              url: APP_JANUS_SRV_STR1,
-              type: "streaming",
-              token: "",
-            },
-          },
-        },
-        ice_servers: {streaming: [APP_STUN_SRV_STR]},
-        dynamic_config: {galaxy_premod: "false"},
-        last_modified: new Date().toISOString(),
-      };
-      ConfigStore.setGlobalConfig(config);
-      GxyJanus.setGlobalConfig(config);
-      localStorage.setItem("room", "-1");
-      this.state.virtualStreamingJanus.init("", "IL");
-      this.setState({user, sourceLoading: true});
-      return;
-    }
+    // if (user.role !== userRolesEnum.user) {
+    //   const config = {
+    //     gateways: {
+    //       streaming: {
+    //         str: {
+    //           name: "str",
+    //           url: APP_JANUS_SRV_STR1,
+    //           type: "streaming",
+    //           token: "",
+    //         },
+    //       },
+    //     },
+    //     ice_servers: {streaming: [APP_STUN_SRV_STR]},
+    //     dynamic_config: {galaxy_premod: "false"},
+    //     last_modified: new Date().toISOString(),
+    //   };
+    //   ConfigStore.setGlobalConfig(config);
+    //   GxyJanus.setGlobalConfig(config);
+    //   localStorage.setItem("room", "-1");
+    //   this.state.virtualStreamingJanus.init("", "IL");
+    //   this.setState({user, sourceLoading: true});
+    //   return;
+    // }
 
     const {t} = this.props;
     localStorage.setItem("question", false);
@@ -751,9 +752,7 @@ class GalaxyClient extends Component {
 
   joinRoom = (reconnect, videoroom, user) => {
     let {selected_room, tested, media, cammuted} = this.state;
-    const {
-      video: {video_device},
-    } = media;
+    const {video: {video_device}} = media;
     user.camera = !!video_device && cammuted === false;
     user.self_test = tested;
     user.sound_test = reconnect ? JSON.parse(localStorage.getItem("sound_test")) : false;
@@ -767,12 +766,24 @@ class GalaxyClient extends Component {
     const d = {id, timestamp, role, display: username};
     const register = {request: "join", room: selected_room, ptype: "publisher", display: JSON.stringify(d)};
 
-    videoroom.join(register).then(publishers => {
-      console.log('[client] Got publishers :', publishers)
-      // let video = this.refs.remoteVideo;
-      // video.srcObject = stream;
+    videoroom.join(register).then(data => {
+      console.log('[client] Joined respond :', data)
       const {audio, video} = this.state.media;
       videoroom.offer(video.stream, audio.stream)
+
+      const {id, private_id, room} = data
+      user.rfid = data.id;
+      this.setState({user, myid: id, mypvtid: private_id, room, delay: false, wipSettings: false});
+      const feeds = sortAndFilterFeeds(data.publishers.filter((l) => (l.display = JSON.parse(l.display))));
+      console.log("[client] Pulbishers list: ", feeds);
+      // Feeds count with user role
+      let feeds_count = userFeeds(feeds).length;
+      if (feeds_count > 25) {
+        alert(t("oldClient.maxUsersInRoom"));
+        this.exitRoom(/* reconnect= */ false);
+      }
+      this.makeSubscription(feeds);
+
     })
 
     // videoroom.send({
