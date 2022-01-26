@@ -8,8 +8,10 @@ export class PublisherPlugin extends EventEmitter {
     this.janus = undefined
     this.janusHandleId = undefined
     this.pluginName = 'janus.plugin.videoroom'
+    this.roomId = null
     this.subTo = null
     this.unsubFrom = null
+    this.talkEvent = null
     this.pc = new RTCPeerConnection({
       iceServers: [{urls: "stun:icesrv.kab.sh:3478"}]
     })
@@ -23,13 +25,14 @@ export class PublisherPlugin extends EventEmitter {
     const payload = Object.assign({}, additionalFields, { handle_id: this.janusHandleId })
 
     if (!this.janus) {
-      return Promise.reject(new Error('JanusPlugin is not connected'))
+      return Promise.reject(new Error('[publisher] JanusPlugin is not connected'))
     }
     return this.janus.transaction(message, payload, replyType)
   }
 
-  join (body) {
-    //const body = { request: 'join', id }
+  join (roomId, user) {
+    this.roomId = roomId
+    const body = {request: "join", room: roomId, ptype: "publisher", display: JSON.stringify(user)};
     return new Promise((resolve, reject) => {
       this.transaction('message', { body }, 'event').then((param) => {
         console.log("[publisher] join: ", param)
@@ -39,13 +42,8 @@ export class PublisherPlugin extends EventEmitter {
           resolve(data);
 
       }).catch((err) => {
-        if (err && err.error_code === 426) { // JANUS_VIDEOROOM_ERROR_NO_SUCH_ROOM = 426
-          console.error('VideoRoomPublisherJanusPlugin, JANUS_VIDEOROOM_ERROR_NO_SUCH_ROOM', err)
-          reject(err)
-        } else {
-          console.error('VideoRoomPublisherJanusPlugin, unknown error connecting to room', err)
-          reject(err)
-        }
+        console.error('[publisher] error join room', err)
+        reject(err)
       })
     })
   }
@@ -63,9 +61,6 @@ export class PublisherPlugin extends EventEmitter {
 
     this.pc.ontrack = (e) => {
       console.log("[publisher] Got track: ", e)
-      let stream = new MediaStream();
-      stream.addTrack(e.track.clone());
-      //resolve(stream);
     };
 
     let transceivers = this.pc.getTransceivers();
@@ -77,7 +72,7 @@ export class PublisherPlugin extends EventEmitter {
         return this.transaction('message', { body, jsep }, 'event').then((param) => {
           const { json } = param || {}
           const jsep = json.jsep
-          console.log('[publisher] CONFIGURE', jsep)
+          console.log('[publisher] Configure respond: ', jsep)
           this.pc.setRemoteDescription(new RTCSessionDescription(jsep)).then(() => {
             console.log('[publisher] remoteDescription set')
           })
@@ -108,6 +103,16 @@ export class PublisherPlugin extends EventEmitter {
     if(data?.unpublished) {
       console.log('[publisher] Feed leave: ', data.unpublished)
       this.unsubFrom([data.unpublished], false)
+    }
+
+    if(data?.videoroom === "talking") {
+      console.log('[publisher] talking: ', data.id)
+      this.talkEvent(data.id, true)
+    }
+
+    if(data?.videoroom === "stopped-talking") {
+      console.log('[publisher] stopped talking: ', data.id)
+      this.talkEvent(data.id, false)
     }
   }
 

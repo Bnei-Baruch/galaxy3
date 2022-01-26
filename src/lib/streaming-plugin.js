@@ -21,7 +21,7 @@ export class StreamingPlugin extends EventEmitter {
     const payload = Object.assign({}, additionalFields, { handle_id: this.janusHandleId })
 
     if (!this.janus) {
-      return Promise.reject(new Error('JanusPlugin is not connected'))
+      return Promise.reject(new Error('[streaming] JanusPlugin is not connected'))
     }
 
     return this.janus.transaction(message, payload, replyType)
@@ -29,7 +29,6 @@ export class StreamingPlugin extends EventEmitter {
 
   watch (id) {
     const body = { request: 'watch', id }
-
     return new Promise((resolve, reject) => {
       this.transaction('message', { body }, 'event').then((param) => {
         console.log("[streaming] watch: ", param)
@@ -47,7 +46,7 @@ export class StreamingPlugin extends EventEmitter {
         };
 
       }).catch((err) => {
-        console.error('StreamingJanusPlugin, cannot watch stream', err)
+        console.error('[streaming] StreamingJanusPlugin, cannot watch stream', err)
         reject(err)
       })
     })
@@ -71,7 +70,7 @@ export class StreamingPlugin extends EventEmitter {
     return this.transaction('message', message, 'event').then(({ data, json }) => {
       return { data, json }
     }).catch((err) => {
-      console.error('StreamingJanusPlugin, cannot start stream', err)
+      console.error('[streaming] StreamingJanusPlugin, cannot start stream', err)
       throw err
     })
   }
@@ -80,7 +79,7 @@ export class StreamingPlugin extends EventEmitter {
     const body = { request: 'switch', id }
 
     return this.transaction('message', { body }, 'event').catch((err) => {
-      console.error('StreamingJanusPlugin, cannot start stream', err)
+      console.error('[streaming] StreamingJanusPlugin, cannot start stream', err)
       throw err
     })
   }

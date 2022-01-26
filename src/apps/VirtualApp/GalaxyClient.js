@@ -416,6 +416,7 @@ class GalaxyClient extends Component {
     let videoroom = new PublisherPlugin();
     videoroom.subTo = this.makeSubscription;
     videoroom.unsubFrom = this.unsubscribeFrom
+    videoroom.talkEvent = this.handleTalking
 
     let subscriber = new SubscriberPlugin();
     subscriber.onTrack = this.onRemoteTrack;
@@ -779,9 +780,8 @@ class GalaxyClient extends Component {
 
     const {id, timestamp, role, username} = user;
     const d = {id, timestamp, role, display: username};
-    const register = {request: "join", room: selected_room, ptype: "publisher", display: JSON.stringify(d)};
 
-    videoroom.join(register).then(data => {
+    videoroom.join(selected_room, d).then(data => {
       console.log('[client] Joined respond :', data)
       const {audio, video} = this.state.media;
       videoroom.offer(video.stream, audio.stream)
@@ -1286,6 +1286,16 @@ class GalaxyClient extends Component {
 
   };
 
+  handleTalking = (id, talking) => {
+    const feeds = Object.assign([], this.state.feeds);
+    for (let i = 0; i < feeds.length; i++) {
+      if (feeds[i] && feeds[i].id === id) {
+        feeds[i].talking = talking;
+      }
+    }
+    this.setState({feeds});
+  }
+
   onUpdateStreams = (streams) => {
     const mids = Object.assign([], this.state.mids);
     for (let i in streams) {
@@ -1304,26 +1314,26 @@ class GalaxyClient extends Component {
     console.log("Remote track (mid=" + mid + ") " + (on ? "added" : "removed") + ":", track);
   // Which publisher are we getting on this mid?
   let {mids} = this.state;
-let feed = mids[mid].feed_id;
-    console.log(" >> This track is coming from feed " + feed + ":", mid);
-if (on) {
-  // If we're here, a new track was added
-  if (track.kind === "audio") {
-    // New audio track: create a stream out of it, and use a hidden <audio> element
-    let stream = new MediaStream();
-    stream.addTrack(track.clone());
-    console.log("Created remote audio stream:", stream);
-    let remoteaudio = this.refs["remoteAudio" + feed];
-    Janus.attachMediaStream(remoteaudio, stream);
-  } else if (track.kind === "video") {
-    const remotevideo = this.refs["remoteVideo" + feed];
-    // New video track: create a stream out of it
-    const stream = new MediaStream();
-    stream.addTrack(track.clone());
-    console.log("Created remote video stream:", stream);
-    Janus.attachMediaStream(remotevideo, stream);
+  let feed = mids[mid].feed_id;
+      console.log(" >> This track is coming from feed " + feed + ":", mid);
+  if (on) {
+    // If we're here, a new track was added
+    if (track.kind === "audio") {
+      // New audio track: create a stream out of it, and use a hidden <audio> element
+      let stream = new MediaStream();
+      stream.addTrack(track.clone());
+      console.log("Created remote audio stream:", stream);
+      let remoteaudio = this.refs["remoteAudio" + feed];
+      Janus.attachMediaStream(remoteaudio, stream);
+    } else if (track.kind === "video") {
+      const remotevideo = this.refs["remoteVideo" + feed];
+      // New video track: create a stream out of it
+      const stream = new MediaStream();
+      stream.addTrack(track.clone());
+      console.log("Created remote video stream:", stream);
+      Janus.attachMediaStream(remotevideo, stream);
+    }
   }
-}
 }
 
   // Unsubscribe from feeds defined by |ids| (with all streams) and remove it when |onlyVideo| is false.
