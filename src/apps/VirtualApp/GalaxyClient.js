@@ -412,9 +412,14 @@ class GalaxyClient extends Component {
 
   initJanus = (user) => {
     let janus = new JanusMqtt(user, 'gxydev')
+
     let videoroom = new PublisherPlugin();
+    videoroom.subTo = this.makeSubscription;
+    videoroom.unsubFrom = this.unsubscribeFrom
+
     let subscriber = new SubscriberPlugin();
     subscriber.onTrack = this.onRemoteTrack;
+    subscriber.onUpdate = this.onUpdateStreams;
 
     janus.init().then(data => {
       console.log(data)
@@ -1275,17 +1280,22 @@ class GalaxyClient extends Component {
     this.state.subscriber.join(subscribe, this.state.room).then(data => {
       console.log('[client] Subscriber join: ', data)
 
-      const mids = Object.assign([], this.state.mids);
-      for (let i in data["streams"]) {
-        let mindex = data["streams"][i]["mid"];
-        //let feed_id = msg["streams"][i]["feed_id"];
-        mids[mindex] = data["streams"][i];
-      }
+      this.onUpdateStreams(data.streams);
 
-      this.setState({remoteFeed: true, creatingFeed: false, mids});
+      this.setState({remoteFeed: true, creatingFeed: false});
     });
 
   };
+
+  onUpdateStreams = (streams) => {
+    const mids = Object.assign([], this.state.mids);
+    for (let i in streams) {
+      let mindex = streams[i]["mid"];
+      //let feed_id = streams[i]["feed_id"];
+      mids[mindex] = streams[i];
+    }
+    this.setState({mids});
+  }
 
   onRemoteTrack = (track, mid, on) => {
     console.log(" ::: Got a remote track event ::: (remote feed)");
@@ -1322,7 +1332,7 @@ if (on) {
   unsubscribeFrom = (ids, onlyVideo) => {
     const {feeds} = this.state;
     const idsSet = new Set(ids);
-    const unsubscribe = {request: "unsubscribe", streams: []};
+    const streams = [];
     feeds
       .filter((feed) => idsSet.has(feed.id))
       .forEach((feed) => {
@@ -1332,17 +1342,17 @@ if (on) {
           feed.streams
             .filter((stream) => stream.type === "video")
             .map((stream) => ({feed: feed.id, mid: stream.mid}))
-            .forEach((stream) => unsubscribe.streams.push(stream));
+            .forEach((stream) => streams.push(stream));
         } else {
           // Unsubscribe the whole feed (all it's streams).
-          unsubscribe.streams.push({feed: feed.id});
+          streams.push({feed: feed.id});
           Janus.log("Feed " + JSON.stringify(feed) + " (" + feed.id + ") has left the room, detaching");
         }
       });
     // Send an unsubscribe request.
     const {remoteFeed} = this.state;
-    if (remoteFeed !== null && unsubscribe.streams.length > 0) {
-      this.state.subscriber.unsub(unsubscribe);
+    if (remoteFeed !== null && streams.length > 0) {
+      this.state.subscriber.unsub(streams);
     }
     if (!onlyVideo) {
       this.setState({feeds: feeds.filter((feed) => !idsSet.has(feed.id))});

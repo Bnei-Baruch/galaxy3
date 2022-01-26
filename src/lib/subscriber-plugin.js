@@ -10,6 +10,7 @@ export class SubscriberPlugin extends EventEmitter {
     this.pluginName = 'janus.plugin.videoroom'
     this.roomId = null
     this.onTrack = null
+    this.onUpdate = null
     this.pc = new RTCPeerConnection({
       iceServers: [{urls: "stun:icesrv.kab.sh:3478"}]
     })
@@ -132,6 +133,10 @@ export class SubscriberPlugin extends EventEmitter {
 
   onmessage (data, json) {
     console.log('[subscriber] onmessage: ', data, json)
+    if(data?.videoroom === "updated") {
+      console.log('[subscriber] Streams updated: ', data.streams)
+      this.onUpdate(data.streams)
+    }
   }
 
   oncleanup () {

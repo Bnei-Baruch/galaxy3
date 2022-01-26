@@ -8,6 +8,8 @@ export class PublisherPlugin extends EventEmitter {
     this.janus = undefined
     this.janusHandleId = undefined
     this.pluginName = 'janus.plugin.videoroom'
+    this.subTo = null
+    this.unsubFrom = null
     this.pc = new RTCPeerConnection({
       iceServers: [{urls: "stun:icesrv.kab.sh:3478"}]
     })
@@ -97,6 +99,16 @@ export class PublisherPlugin extends EventEmitter {
 
   onmessage (data, json) {
     console.log('[publisher] onmessage: ', data, json)
+    if(data?.publishers) {
+      const feeds = data.publishers.filter((l) => (l.display = JSON.parse(l.display)));
+      console.log('[publisher] New feed enter: ', feeds[0])
+      this.subTo(feeds)
+    }
+
+    if(data?.unpublished) {
+      console.log('[publisher] Feed leave: ', data.unpublished)
+      this.unsubFrom([data.unpublished], false)
+    }
   }
 
   oncleanup () {
