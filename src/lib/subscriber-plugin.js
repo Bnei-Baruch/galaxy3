@@ -74,6 +74,7 @@ export class SubscriberPlugin extends EventEmitter {
           resolve(data);
 
         this.pc.onicecandidate = (e) => {
+          console.log('[subscriber] onicecandidate set', e.candidate)
           return this.transaction('trickle', { candidate: e.candidate })
         };
 
@@ -86,8 +87,8 @@ export class SubscriberPlugin extends EventEmitter {
         };
 
         if(json?.jsep) {
-          this.pc.setRemoteDescription(json.jsep).then(() => {
-            console.log('[subscriber] remoteDescription set')
+          this.pc.setRemoteDescription(new RTCSessionDescription(json.jsep)).then(() => {
+            console.log('[subscriber] remoteDescription set', this.filterDirectCandidates)
             return this.pc.createAnswer()
           }).then(answer => {
             console.log('[subscriber] answerCreated')
@@ -97,33 +98,22 @@ export class SubscriberPlugin extends EventEmitter {
         }
 
       }).catch((err) => {
-        if (err && err.error_code === 426) { // JANUS_VIDEOROOM_ERROR_NO_SUCH_ROOM = 426
-          console.error('VideoRoomPublisherJanusPlugin, JANUS_VIDEOROOM_ERROR_NO_SUCH_ROOM', err)
-          reject(err)
-        } else {
-          console.error('VideoRoomPublisherJanusPlugin, unknown error connecting to room', err)
-          reject(err)
-        }
+        console.error('[subscriber] join: ', err)
+        reject(err)
       })
     })
   }
 
   answer (answer) {
     const body = { request: 'start', room: this.roomId }
-
     return new Promise((resolve, reject) => {
       const jsep = answer
       this.transaction('message', { body, jsep }, 'event').then((param) => {
         const { data, json } = param || {}
         console.log("[subscriber] answer: ", param)
-
-        if (!data || data.started !== 'ok') {
-          this.logger.error('VideoRoomListenerJanusPlugin set answer is not ok', data, json)
-          throw new Error('VideoRoomListenerJanusPlugin set answer is not ok')
-        }
         resolve()
       }).catch((err) => {
-        this.logger.error('VideoRoomListenerJanusPlugin, unknown error sending answer', err, answer)
+        console.error('[subscriber] answer', err, answer)
         reject(err)
       })
     })
