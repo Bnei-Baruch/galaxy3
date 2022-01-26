@@ -152,6 +152,38 @@ export class JanusMqtt {
     }
   }
 
+  onClose () {
+    if (!this.isConnected) {
+      return
+    }
+
+    this.isConnected = false
+    console.error('Lost connection to the gateway (is it down?)')
+  }
+
+  cleanup () {
+    this._cleanupPlugins()
+    this._cleanupTransactions()
+  }
+
+  _cleanupPlugins () {
+    Object.keys(this.pluginHandles).forEach((pluginId) => {
+      const plugin = this.pluginHandles[pluginId]
+      delete this.pluginHandles[pluginId]
+      plugin.detach()
+    })
+  }
+
+  _cleanupTransactions () {
+    Object.keys(this.transactions).forEach((transactionId) => {
+      const transaction = this.transactions[transactionId]
+      if (transaction.reject) {
+        transaction.reject()
+      }
+    })
+    this.transactions = {}
+  }
+
   onMessage(message, tD) {
     let json
     try {
@@ -230,24 +262,71 @@ export class JanusMqtt {
     }
 
     if (janus === 'hangup') { // A plugin asked the core to hangup a PeerConnection on one of our handles
+      const sender = json.sender
+      if (!sender) {
+        console.warn('Missing sender...')
+        return
+      }
+      const pluginHandle = this.pluginHandles[sender]
+      if (!pluginHandle) {
+        console.error('This handle is not attached to this session', sender)
+        return
+      }
+      pluginHandle.webrtcState(false, json.reason)
+      pluginHandle.hangup()
       return
     }
 
     if (janus === 'detached') { // A plugin asked the core to detach one of our handles
+      const sender = json.sender
+      if (!sender) {
+        console.warn('Missing sender...')
+        return
+      }
       return
     }
 
     if (janus === 'media') { // Media started/stopped flowing
+      const sender = json.sender
+      if (!sender) {
+        console.warn('Missing sender...')
+        return
+      }
+      const pluginHandle = this.pluginHandles[sender]
+      if (!pluginHandle) {
+        console.error('[janus] This handle is not attached to this session', sender)
+        return
+      }
+      pluginHandle.mediaState(json.type, json.receiving)
       return
     }
 
     if (janus === 'slowlink') { // Trouble uplink or downlink
       console.debug('[janus] Got a slowlink event on session ' + this.sessionId)
+      console.debug(json)
+      const sender = json.sender
+      if (!sender) {
+        console.warn('[janus] Missing sender...')
+        return
+      }
+      const pluginHandle = this.pluginHandles[sender]
+      if (!pluginHandle) {
+        console.error('[janus] This handle is not attached to this session', sender)
+        return
+      }
+      pluginHandle.slowLink(json.uplink, json.nacks)
       return
     }
 
     if (janus === 'error') { // Oops, something wrong happened
       console.error('[janus] Janus error response' + json)
+      const transaction = this.getTransaction(json, true)
+      if (transaction && transaction.reject) {
+        if (transaction.request) {
+          console.debug('[janus] rejecting transaction', transaction.request, json)
+        }
+        transaction.reject(json)
+      }
       return
     }
 

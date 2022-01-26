@@ -63,9 +63,9 @@ export class SubscriberPlugin extends EventEmitter {
     })
   };
 
-  join (body, roomId) {
+  join (subscription, roomId) {
     this.roomId = roomId
-    //const body = { request: 'join', id }
+    const body = {request: "join", room: roomId, ptype: "subscriber", streams: subscription};
     return new Promise((resolve, reject) => {
       this.transaction('message', { body }, 'event').then((param) => {
         console.log("[subscriber] join: ", param)
@@ -81,15 +81,11 @@ export class SubscriberPlugin extends EventEmitter {
 
         this.pc.ontrack = (e) => {
           console.log("[subscriber] Got track: ", e)
-          // let stream = new MediaStream();
-          // stream.addTrack(e.track.clone());
           this.onTrack(e.track, null, true)
-          //resolve(stream);
         };
 
         if(json?.jsep) {
           this.pc.setRemoteDescription(new RTCSessionDescription(json.jsep)).then(() => {
-            console.log('[subscriber] remoteDescription set', this.filterDirectCandidates)
             return this.pc.createAnswer()
           }).then(answer => {
             console.log('[subscriber] answerCreated')
@@ -150,7 +146,9 @@ export class SubscriberPlugin extends EventEmitter {
   }
 
   hangup () {
-    this.emit('hangup')
+    this.janus.destroyPlugin(this).catch((err) => {
+      console.error('[subscriber] error in hangup', err)
+    })
   }
 
   slowLink () {

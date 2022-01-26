@@ -1259,7 +1259,7 @@ class GalaxyClient extends Component {
   subscribeTo = (subscription) => {
     // New feeds are available, do we need create a new plugin handle first?
     if (this.state.remoteFeed) {
-      this.state.subscriber.sub({request: "subscribe", streams: subscription});
+      this.state.subscriber.sub(subscription);
       return;
     }
 
@@ -1276,8 +1276,7 @@ class GalaxyClient extends Component {
     this.setState({creatingFeed: true});
 
     // We wait for the plugin to send us an offer
-    const subscribe = {request: "join", room: this.state.room, ptype: "subscriber", streams: subscription};
-    this.state.subscriber.join(subscribe, this.state.room).then(data => {
+    this.state.subscriber.join(subscription, this.state.room).then(data => {
       console.log('[client] Subscriber join: ', data)
 
       this.onUpdateStreams(data.streams);
