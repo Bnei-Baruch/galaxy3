@@ -1,6 +1,5 @@
 import {randomString} from "../shared/tools";
 import {EventEmitter} from "events";
-import {Janus} from "./janus";
 
 export class PublisherPlugin extends EventEmitter {
   constructor (logger) {
@@ -55,8 +54,6 @@ export class PublisherPlugin extends EventEmitter {
 
     this.pc.addTrack(video.getVideoTracks()[0], video);
     this.pc.addTrack(audio.getAudioTracks()[0], audio);
-
-    //TODO: createOffer
 
     this.pc.onicecandidate = (e) => {
       return this.transaction('trickle', { candidate: e.candidate })

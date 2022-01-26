@@ -71,6 +71,7 @@ import mqtt from "../../shared/mqtt";
 import {JanusMqtt} from "../../lib/janus-mqtt";
 import {StreamingPlugin} from "../../lib/streaming-plugin";
 import {PublisherPlugin} from "../../lib/publisher-plugin";
+import {SubscriberPlugin} from "../../lib/subscriber-plugin";
 
 const toggleDesignVersions = () => {
   window.location = isUseNewDesign ? "https://galaxy.kli.one/user/" : "https://arvut.kli.one/user/";
@@ -412,14 +413,23 @@ class GalaxyClient extends Component {
   initJanus = (user) => {
     let janus = new JanusMqtt(user, 'gxydev')
     let videoroom = new PublisherPlugin();
+    let subscriber = new SubscriberPlugin();
+    subscriber.onTrack = this.onRemoteTrack;
 
     janus.init().then(data => {
       console.log(data)
+
       janus.attach(videoroom).then(data => {
         this.setState({janus, videoroom, user});
         console.log('[client] Publisher Handle: ', data)
         this.joinRoom(false, videoroom, user)
       })
+
+      janus.attach(subscriber).then(data => {
+        this.setState({subscriber});
+        console.log('[client] Subscriber Handle: ', data)
+      })
+
     })
   }
 
@@ -1244,9 +1254,7 @@ class GalaxyClient extends Component {
   subscribeTo = (subscription) => {
     // New feeds are available, do we need create a new plugin handle first?
     if (this.state.remoteFeed) {
-      this.state.remoteFeed.send({
-        message: {request: "subscribe", streams: subscription},
-      });
+      this.state.subscriber.sub({request: "subscribe", streams: subscription});
       return;
     }
 
@@ -1261,8 +1269,53 @@ class GalaxyClient extends Component {
 
     // We don't creating, so let's do it
     this.setState({creatingFeed: true});
-    this.newRemoteFeed(subscription);
+
+    // We wait for the plugin to send us an offer
+    const subscribe = {request: "join", room: this.state.room, ptype: "subscriber", streams: subscription};
+    this.state.subscriber.join(subscribe, this.state.room).then(data => {
+      console.log('[client] Subscriber join: ', data)
+
+      const mids = Object.assign([], this.state.mids);
+      for (let i in data["streams"]) {
+        let mindex = data["streams"][i]["mid"];
+        //let feed_id = msg["streams"][i]["feed_id"];
+        mids[mindex] = data["streams"][i];
+      }
+
+      this.setState({remoteFeed: true, creatingFeed: false, mids});
+    });
+
   };
+
+  onRemoteTrack = (track, mid, on) => {
+    console.log(" ::: Got a remote track event ::: (remote feed)");
+    if (!mid) {
+    mid = track.id.split("janus")[1];
+  }
+    console.log("Remote track (mid=" + mid + ") " + (on ? "added" : "removed") + ":", track);
+  // Which publisher are we getting on this mid?
+  let {mids} = this.state;
+let feed = mids[mid].feed_id;
+    console.log(" >> This track is coming from feed " + feed + ":", mid);
+if (on) {
+  // If we're here, a new track was added
+  if (track.kind === "audio") {
+    // New audio track: create a stream out of it, and use a hidden <audio> element
+    let stream = new MediaStream();
+    stream.addTrack(track.clone());
+    console.log("Created remote audio stream:", stream);
+    let remoteaudio = this.refs["remoteAudio" + feed];
+    Janus.attachMediaStream(remoteaudio, stream);
+  } else if (track.kind === "video") {
+    const remotevideo = this.refs["remoteVideo" + feed];
+    // New video track: create a stream out of it
+    const stream = new MediaStream();
+    stream.addTrack(track.clone());
+    console.log("Created remote video stream:", stream);
+    Janus.attachMediaStream(remotevideo, stream);
+  }
+}
+}
 
   // Unsubscribe from feeds defined by |ids| (with all streams) and remove it when |onlyVideo| is false.
   // If |onlyVideo| is true, will unsubscribe only from video stream of those specific feeds, keeping those feeds.
@@ -1289,7 +1342,7 @@ class GalaxyClient extends Component {
     // Send an unsubscribe request.
     const {remoteFeed} = this.state;
     if (remoteFeed !== null && unsubscribe.streams.length > 0) {
-      remoteFeed.send({message: unsubscribe});
+      this.state.subscriber.unsub(unsubscribe);
     }
     if (!onlyVideo) {
       this.setState({feeds: feeds.filter((feed) => !idsSet.has(feed.id))});
@@ -1717,7 +1770,7 @@ class GalaxyClient extends Component {
           width={width}
           height={height}
           autoPlay={true}
-          controls={false}
+          controls={true}
           muted={true}
           playsInline={true}
         />
@@ -1726,7 +1779,7 @@ class GalaxyClient extends Component {
           ref={"remoteAudio" + id}
           id={"remoteAudio" + id}
           autoPlay={true}
-          controls={false}
+          controls={true}
           playsInline={true}
         />
       </div>
