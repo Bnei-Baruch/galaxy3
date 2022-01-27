@@ -381,7 +381,8 @@ class GalaxyClient extends Component {
     }
 
     const config = GxyJanus.instanceConfig(user.janus);
-    this.initJanus(user)
+    console.log(config)
+    this.initJanus(user, config)
     // initJanus(
     //   (janus) => {
     //     // Check if unified plan supported
@@ -410,8 +411,8 @@ class GalaxyClient extends Component {
     }
   };
 
-  initJanus = (user) => {
-    let janus = new JanusMqtt(user, 'gxydev')
+  initJanus = (user, config) => {
+    let janus = new JanusMqtt(user, config.name)
 
     let videoroom = new PublisherPlugin();
     videoroom.subTo = this.makeSubscription;
@@ -422,7 +423,7 @@ class GalaxyClient extends Component {
     subscriber.onTrack = this.onRemoteTrack;
     subscriber.onUpdate = this.onUpdateStreams;
 
-    janus.init().then(data => {
+    janus.init(config.token).then(data => {
       console.log(data)
 
       janus.attach(videoroom).then(data => {

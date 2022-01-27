@@ -34,6 +34,11 @@ export class StreamingPlugin extends EventEmitter {
         console.log("[streaming] watch: ", param)
         const {session_id, json } = param
 
+        if (json?.jsep) {
+          console.log('[streaming] sdp: ', json)
+          this.sdpExchange(json.jsep)
+        }
+
         this.pc.onicecandidate = (e) => {
           return this.transaction('trickle', { candidate: e.candidate })
         };

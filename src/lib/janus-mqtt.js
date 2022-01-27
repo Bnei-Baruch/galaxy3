@@ -16,9 +16,11 @@ export class JanusMqtt {
     this.pluginHandles = {}
     this.sendCreate = true
     this.keepalive = null
+    this.token = null
   }
 
-  init() {
+  init(token) {
+    this.token = token
     mqtt.join(this.rxTopic + "/" + this.user.id, false);
     mqtt.join(this.rxTopic, false);
     mqtt.join(this.stTopic, false);
@@ -27,7 +29,7 @@ export class JanusMqtt {
 
     return new Promise((resolve, reject) => {
       const transaction = randomString(12);
-      const msg = { janus: 'create', transaction }
+      const msg = { janus: 'create', transaction, token }
 
       this.transactions[transaction] = {
         resolve: (json) => {
@@ -114,6 +116,7 @@ export class JanusMqtt {
       }
 
       const request = Object.assign({}, payload, {
+        token: this.token,
         janus: type,
         session_id: (payload && parseInt(payload.session_id, 10)) || this.sessionId,
         transaction: transactionId
