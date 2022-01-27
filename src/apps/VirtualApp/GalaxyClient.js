@@ -1790,7 +1790,7 @@ class GalaxyClient extends Component {
           width={width}
           height={height}
           autoPlay={true}
-          controls={true}
+          controls={false}
           muted={true}
           playsInline={true}
         />
@@ -1799,7 +1799,7 @@ class GalaxyClient extends Component {
           ref={"remoteAudio" + id}
           id={"remoteAudio" + id}
           autoPlay={true}
-          controls={true}
+          controls={false}
           playsInline={true}
         />
       </div>

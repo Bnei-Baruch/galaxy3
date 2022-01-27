@@ -7,8 +7,8 @@ import "./i18n/i18n";
 // import GalaxyApp from "./apps/GalaxyApp";
 // import MobileClient from "./apps/MobileApp/MobileClient";
 // import VirtualClient from "./apps/VirtualApp/VirtualClient";
-import GalaxyStream from "./apps/StreamApp/GalaxyStream";
-// import GalaxyClient from "./apps/VirtualApp/GalaxyClient";
+// import GalaxyStream from "./apps/StreamApp/GalaxyStream";
+import GalaxyClient from "./apps/VirtualApp/GalaxyClient";
 // import VirtualClient from "./apps/VirtualApp/VirtualClient";
 // import AdminApp from "./apps/AdminApp/AdminApp";
 // import ShidurApp from "./apps/ShidurApp/ShidurApp";
@@ -24,8 +24,8 @@ class App extends Component {
         {/*{<GalaxyApp />}*/}
         {/*<MobileClient />*/}
         {/*<VirtualClient />*/}
-        <GalaxyStream />
-        {/*<GalaxyClient />*/}
+        {/*<GalaxyStream />*/}
+        <GalaxyClient />
         {/*<VirtualClient />*/}
         {/*<AdminApp />*/}
         {/*<ShidurApp />*/}

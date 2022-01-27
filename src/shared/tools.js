@@ -7,7 +7,7 @@ export const initJanus = (cb, er, server, token = "", iceServers = [{urls: STUN_
     debug: process.env.NODE_ENV !== "production" ? ["log", "error"] : ["log", "error"],
     callback: () => {
       let janus = new Janus({
-        server: "https://gxydev.kli.one/janusgxy",
+        server,
         token,
         iceServers,
         success: () => {

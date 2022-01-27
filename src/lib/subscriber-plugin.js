@@ -34,7 +34,22 @@ export class SubscriberPlugin extends EventEmitter {
     return new Promise((resolve, reject) => {
       this.transaction('message', { body }, 'event').then((param) => {
         console.log("[subscriber] Subscribe to: ", param)
-        const {data, json } = param
+        const {data, json} = param
+
+        if(data?.videoroom === "updated") {
+          console.log('[subscriber] Streams updated: ', data.streams)
+          this.onUpdate(data.streams)
+        }
+
+        if(json?.jsep) {
+          this.pc.setRemoteDescription(new RTCSessionDescription(json.jsep)).then(() => {
+            return this.pc.createAnswer()
+          }).then(answer => {
+            console.log('[subscriber] answerCreated')
+            this.pc.setLocalDescription(answer)
+            this.answer(answer)
+          })
+        }
 
         if(data)
           resolve(data);
