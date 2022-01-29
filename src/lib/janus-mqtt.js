@@ -196,7 +196,7 @@ export class JanusMqtt {
       return
     }
 
-    console.debug("[janus] New Janus Message: ", json);
+    console.debug("[janus] :: New Janus Message :: ", json, tD);
     const {session_id, janus, data, jsep} = json;
 
     if(tD === "status") {

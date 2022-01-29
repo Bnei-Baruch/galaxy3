@@ -56,7 +56,20 @@ export class PublisherPlugin extends EventEmitter {
     this.pc.addTrack(audio.getAudioTracks()[0], audio);
 
     this.pc.onicecandidate = (e) => {
-      return this.transaction('trickle', { candidate: e.candidate })
+      let candidate = {completed: true}
+      if (!e.candidate || e.candidate.candidate.indexOf('endOfCandidates') > 0) {
+        console.debug("[publisher] End of candidates")
+      } else {
+        // JSON.stringify doesn't work on some WebRTC objects anymore
+        // See https://code.google.com/p/chromium/issues/detail?id=467366
+        candidate = {
+          "candidate": e.candidate.candidate,
+          "sdpMid": e.candidate.sdpMid,
+          "sdpMLineIndex": e.candidate.sdpMLineIndex
+        };
+      }
+
+      return this.transaction('trickle', { candidate })
     };
 
     this.pc.ontrack = (e) => {
@@ -92,8 +105,8 @@ export class PublisherPlugin extends EventEmitter {
     // Couldn't attach to the plugin
   }
 
-  onmessage (data, json) {
-    console.log('[publisher] onmessage: ', data, json)
+  onmessage (data, jsep) {
+    console.log('[publisher] onmessage: ', data, jsep)
     if(data?.publishers) {
       const feeds = data.publishers.filter((l) => (l.display = JSON.parse(l.display)));
       console.log('[publisher] New feed enter: ', feeds[0])
@@ -113,6 +126,10 @@ export class PublisherPlugin extends EventEmitter {
     if(data?.videoroom === "stopped-talking") {
       console.log('[publisher] stopped talking: ', data.id)
       this.talkEvent(data.id, false)
+    }
+
+    if(jsep) {
+      console.debug('[publisher] Got JSEP?: ', jsep)
     }
   }
 

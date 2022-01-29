@@ -91,7 +91,20 @@ export class SubscriberPlugin extends EventEmitter {
 
         this.pc.onicecandidate = (e) => {
           console.log('[subscriber] onicecandidate set', e.candidate)
-          return this.transaction('trickle', { candidate: e.candidate })
+          let candidate = {completed: true}
+          if (!e.candidate || e.candidate.candidate.indexOf('endOfCandidates') > 0) {
+            console.debug("[subscriber] End of candidates")
+          } else {
+            // JSON.stringify doesn't work on some WebRTC objects anymore
+            // See https://code.google.com/p/chromium/issues/detail?id=467366
+            candidate = {
+              "candidate": e.candidate.candidate,
+              "sdpMid": e.candidate.sdpMid,
+              "sdpMLineIndex": e.candidate.sdpMLineIndex
+            };
+          }
+
+          return this.transaction('trickle', { candidate })
         };
 
         this.pc.ontrack = (e) => {
@@ -100,6 +113,7 @@ export class SubscriberPlugin extends EventEmitter {
         };
 
         if(json?.jsep) {
+          console.debug('[subscriber] Got JSEP: ', json.jsep)
           this.pc.setRemoteDescription(new RTCSessionDescription(json.jsep)).then(() => {
             return this.pc.createAnswer()
           }).then(answer => {
@@ -147,6 +161,17 @@ export class SubscriberPlugin extends EventEmitter {
     if(data?.videoroom === "updated") {
       console.log('[subscriber] Streams updated: ', data.streams)
       this.onUpdate(data.streams)
+    }
+
+    if(json?.jsep) {
+      console.debug('[subscriber] Got JSEP: ', json.jsep)
+      this.pc.setRemoteDescription(new RTCSessionDescription(json.jsep)).then(() => {
+        return this.pc.createAnswer()
+      }).then(answer => {
+        console.log('[subscriber] answerCreated')
+        this.pc.setLocalDescription(answer)
+        this.answer(answer)
+      })
     }
   }
 
