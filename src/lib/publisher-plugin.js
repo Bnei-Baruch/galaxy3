@@ -134,29 +134,35 @@ export class PublisherPlugin extends EventEmitter {
   }
 
   oncleanup () {
+    console.log('[publisher] - oncleanup - ')
     // PeerConnection with the plugin closed, clean the UI
     // The plugin handle is still valid so we can create a new one
   }
 
   detached () {
+    console.log('[publisher] - detached - ')
     // Connection with the plugin closed, get rid of its features
     // The plugin handle is not valid anymore
   }
 
   hangup () {
-    this.emit('hangup')
+    console.log('[publisher] - hangup - ')
+    //this.emit('hangup')
   }
 
-  slowLink () {
-    this.emit('slowlink')
+  slowLink (uplink, lost) {
+    console.log('[publisher] slowLink: ', uplink, lost)
+    //this.emit('slowlink')
   }
 
   mediaState (medium, on) {
-    this.emit('mediaState', medium, on)
+    console.log('[publisher] mediaState: ', medium, on)
+    //this.emit('mediaState', medium, on)
   }
 
   webrtcState (isReady, cause) {
-    this.emit('webrtcState', isReady, cause)
+    console.log('[publisher] webrtcState: ', isReady, cause)
+    //this.emit('webrtcState', isReady, cause)
   }
 
   detach () {

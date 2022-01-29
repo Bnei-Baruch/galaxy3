@@ -71,6 +71,18 @@ export class JanusMqtt {
     })
   }
 
+  destroy () {
+    if (!this.isConnected) {
+      return Promise.resolve()
+    }
+
+    return this.transaction('destroy', {}, 'success', 5000).then(() => {
+      this.cleanup()
+    }).catch(() => {
+      this.cleanup()
+    })
+  }
+
   destroyPlugin(plugin) {
     return new Promise((resolve, reject) => {
       if (!(plugin instanceof StreamingPlugin)) {
@@ -185,6 +197,12 @@ export class JanusMqtt {
       }
     })
     this.transactions = {}
+    this.sessionId = null
+    this.isConnected = false
+
+    mqtt.exit(this.rxTopic + "/" + this.user.id);
+    mqtt.exit(this.rxTopic);
+    mqtt.exit(this.stTopic);
   }
 
   onMessage(message, tD) {
@@ -257,7 +275,7 @@ export class JanusMqtt {
       }
       const pluginHandle = this.pluginHandles[sender]
       if (!pluginHandle) {
-        console.error('[janus] This handle is not attached to this session', sender)
+        console.debug('[janus] This handle is not attached to this session', sender)
         return
       }
       pluginHandle.webrtcState(true)
@@ -297,7 +315,7 @@ export class JanusMqtt {
       }
       const pluginHandle = this.pluginHandles[sender]
       if (!pluginHandle) {
-        console.error('[janus] This handle is not attached to this session', sender)
+        console.debug('[janus] This handle is not attached to this session', sender)
         return
       }
       pluginHandle.mediaState(json.type, json.receiving)
@@ -314,7 +332,7 @@ export class JanusMqtt {
       }
       const pluginHandle = this.pluginHandles[sender]
       if (!pluginHandle) {
-        console.error('[janus] This handle is not attached to this session', sender)
+        console.debug('[janus] This handle is not attached to this session', sender)
         return
       }
       pluginHandle.slowLink(json.uplink, json.nacks)

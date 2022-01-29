@@ -176,31 +176,37 @@ export class SubscriberPlugin extends EventEmitter {
   }
 
   oncleanup () {
+    console.log('[subscriber] - oncleanup - ')
     // PeerConnection with the plugin closed, clean the UI
     // The plugin handle is still valid so we can create a new one
   }
 
   detached () {
+    console.log('[subscriber] - detached - ')
     // Connection with the plugin closed, get rid of its features
     // The plugin handle is not valid anymore
   }
 
   hangup () {
+    console.log('[subscriber] - hangup - ')
     this.janus.destroyPlugin(this).catch((err) => {
       console.error('[subscriber] error in hangup', err)
     })
   }
 
-  slowLink () {
-    this.emit('slowlink')
+  slowLink (uplink, lost) {
+    console.log('[subscriber] slowLink: ', uplink, lost)
+    //this.emit('slowlink')
   }
 
   mediaState (medium, on) {
-    this.emit('mediaState', medium, on)
+    console.log('[subscriber] mediaState: ', medium, on)
+    //this.emit('mediaState', medium, on)
   }
 
   webrtcState (isReady, cause) {
-    this.emit('webrtcState', isReady, cause)
+    console.log('[subscriber] webrtcState: ', isReady, cause)
+    //this.emit('webrtcState', isReady, cause)
   }
 
   detach () {

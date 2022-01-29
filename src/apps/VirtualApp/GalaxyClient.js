@@ -833,8 +833,8 @@ class GalaxyClient extends Component {
       });
 
     let {videoroom, remoteFeed, janus, room, shidur, virtualStreamingJanus} = this.state;
-    if (remoteFeed) remoteFeed.detach();
-    if (videoroom) videoroom.send({message: {request: "leave", room}});
+    // if (remoteFeed) remoteFeed.detach();
+    // if (videoroom) videoroom.send({message: {request: "leave", room}});
 
     mqtt.exit("galaxy/room/" + room);
     mqtt.exit("galaxy/room/" + room + "/chat");
@@ -870,7 +870,8 @@ class GalaxyClient extends Component {
         upval: null,
         remoteFeed: null,
         videoroom: null,
-        janus: null,
+        subscriber: null,
+        // janus: null,
         delay: reconnect,
         room: reconnect ? room : "",
         chatMessagesCount: 0,
