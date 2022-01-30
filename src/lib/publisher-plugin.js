@@ -48,6 +48,23 @@ export class PublisherPlugin extends EventEmitter {
     })
   }
 
+  leave () {
+    const body = {request: "leave", room: this.roomId};
+    return new Promise((resolve, reject) => {
+      this.transaction('message', { body }, 'event').then((param) => {
+        console.log("[publisher] leave: ", param)
+        const {data, json } = param
+
+        if(data)
+          resolve(data);
+
+      }).catch((err) => {
+        console.error('[publisher] error leave room', err)
+        reject(err)
+      })
+    })
+  }
+
   offer(video, audio) {
     this.pc.addTransceiver('audio')
     this.pc.addTransceiver('video')

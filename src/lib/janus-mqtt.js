@@ -1,6 +1,5 @@
 import {randomString} from "../shared/tools";
 import mqtt from "../shared/mqtt";
-import {StreamingPlugin} from "./streaming-plugin";
 
 export class JanusMqtt {
   constructor(user, srv, mit) {
@@ -17,6 +16,7 @@ export class JanusMqtt {
     this.sendCreate = true
     this.keepalive = null
     this.token = null
+    this.onMessage = this.onMessage.bind(this)
   }
 
   init(token) {
@@ -25,7 +25,7 @@ export class JanusMqtt {
     mqtt.join(this.rxTopic, false);
     mqtt.join(this.stTopic, false);
 
-    mqtt.mq.on("MqttJanusMessage", (data, tD) => this.onMessage(data, tD));
+    mqtt.mq.on("MqttJanusMessage", this.onMessage);
 
     return new Promise((resolve, reject) => {
       const transaction = randomString(12);
@@ -85,11 +85,6 @@ export class JanusMqtt {
 
   destroyPlugin(plugin) {
     return new Promise((resolve, reject) => {
-      if (!(plugin instanceof StreamingPlugin)) {
-        reject(new Error('[janus] plugin is not a JanusPlugin'))
-        return
-      }
-
       if (!this.pluginHandles[plugin.janusHandleId]) {
         reject(new Error('[janus] unknown plugin'))
         return
@@ -203,6 +198,8 @@ export class JanusMqtt {
     mqtt.exit(this.rxTopic + "/" + this.user.id);
     mqtt.exit(this.rxTopic);
     mqtt.exit(this.stTopic);
+
+    mqtt.mq.removeListener("MqttJanusMessage", this.onMessage);
   }
 
   onMessage(message, tD) {

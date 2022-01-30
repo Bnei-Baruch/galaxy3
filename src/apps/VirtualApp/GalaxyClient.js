@@ -775,7 +775,10 @@ class GalaxyClient extends Component {
     user.sound_test = reconnect ? JSON.parse(localStorage.getItem("sound_test")) : false;
     user.question = false;
     user.timestamp = Date.now();
-    this.setState({user, muted: true});
+
+    this.micMute()
+
+    this.setState({user});
 
     updateSentryUser(user);
 
@@ -832,53 +835,60 @@ class GalaxyClient extends Component {
         console.error("Error exiting room", err);
       });
 
-    let {videoroom, remoteFeed, janus, room, shidur, virtualStreamingJanus} = this.state;
+    let {videoroom, subscriber, janus, room, shidur, virtualStreamingJanus} = this.state;
     // if (remoteFeed) remoteFeed.detach();
     // if (videoroom) videoroom.send({message: {request: "leave", room}});
 
-    mqtt.exit("galaxy/room/" + room);
-    mqtt.exit("galaxy/room/" + room + "/chat");
+    videoroom.leave().then(data => {
+      console.log("[client] leave respond:", data);
 
-    if (shidur && !reconnect) {
-      virtualStreamingJanus.destroy({
-        success: () => {
-          console.log("Virtual streaming destroyed on exit room.");
-        },
-        error: (error) => {
-          console.log("Error destroying VirtualStreaming on exit room", error);
-        },
-      });
-    }
-    if (!reconnect && isFullScreen()) {
-      toggleFullScreen();
-    }
-    setTimeout(() => {
-      if (videoroom) videoroom.detach();
-      if (janus) janus.destroy();
-      if (!reconnect) {
-        this.state.virtualStreamingJanus.muteAudioElement();
-      } else {
-        this.state.virtualStreamingJanus.unmuteAudioElement();
+      janus.destroy()
+
+      mqtt.exit("galaxy/room/" + room);
+      mqtt.exit("galaxy/room/" + room + "/chat");
+
+      if (shidur && !reconnect) {
+        virtualStreamingJanus.destroy({
+          success: () => {
+            console.log("Virtual streaming destroyed on exit room.");
+          },
+          error: (error) => {
+            console.log("Error destroying VirtualStreaming on exit room", error);
+          },
+        });
       }
-      this.setState({
-        muted: false,
-        question: false,
-        feeds: [],
-        mids: [],
-        localAudioTrack: null,
-        localVideoTrack: null,
-        upval: null,
-        remoteFeed: null,
-        videoroom: null,
-        subscriber: null,
-        // janus: null,
-        delay: reconnect,
-        room: reconnect ? room : "",
-        chatMessagesCount: 0,
-        isSettings: false,
-      });
-      if (typeof callback === "function") callback();
-    }, 2000);
+      if (!reconnect && isFullScreen()) {
+        toggleFullScreen();
+      }
+      setTimeout(() => {
+        // if (videoroom) videoroom.detach();
+        // if (janus) janus.destroy();
+        if (!reconnect) {
+          this.state.virtualStreamingJanus.muteAudioElement();
+        } else {
+          this.state.virtualStreamingJanus.unmuteAudioElement();
+        }
+        this.setState({
+          muted: false,
+          question: false,
+          feeds: [],
+          mids: [],
+          localAudioTrack: null,
+          localVideoTrack: null,
+          upval: null,
+          remoteFeed: null,
+          videoroom: null,
+          subscriber: null,
+          janus: null,
+          delay: reconnect,
+          room: reconnect ? room : "",
+          chatMessagesCount: 0,
+          isSettings: false,
+        });
+        if (typeof callback === "function") callback();
+      }, 2000);
+    })
+
   };
 
   publishOwnFeed = (useVideo, useAudio) => {
@@ -1603,8 +1613,9 @@ class GalaxyClient extends Component {
   };
 
   micMute = () => {
-    const {videoroom, muted} = this.state;
-    muted ? videoroom.unmuteAudio() : videoroom.muteAudio();
+    const {media: {audio: {stream}}, muted} = this.state;
+    //muted ? videoroom.unmuteAudio() : videoroom.muteAudio();
+    stream.getAudioTracks()[0].enabled = muted;
     this.setState({muted: !muted});
   };
 
@@ -1851,7 +1862,7 @@ class GalaxyClient extends Component {
             className={classNames("bottom-toolbar__item")}
             disableElevation
           >
-            <Mute t={t} action={this.micMute.bind(this)} disabled={!localAudioTrack} isOn={muted} ref="canvas1"/>
+            <Mute t={t} action={this.micMute.bind(this)} isOn={muted} ref="canvas1"/>
             <MuteVideo
               t={t}
               action={this.camMute.bind(this)}
