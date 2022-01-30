@@ -135,6 +135,11 @@ export class PublisherPlugin extends EventEmitter {
       this.unsubFrom([data.unpublished], false)
     }
 
+    if(data?.leaving) {
+      console.log('[publisher] Feed leave: ', data.leaving)
+      this.unsubFrom([data.leaving], false)
+    }
+
     if(data?.videoroom === "talking") {
       console.log('[publisher] talking: ', data.id)
       this.talkEvent(data.id, true)
