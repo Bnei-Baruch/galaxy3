@@ -110,6 +110,34 @@ export class PublisherPlugin extends EventEmitter {
     })
   };
 
+  mute(video, stream) {
+    if(video) {
+      for(let t of this.pc.getSenders()) {
+        if(t?.track && t.track.kind === "video") {
+          this.pc.removeTrack(t);
+        }
+      }
+    } else {
+      this.pc.addTrack(stream.getVideoTracks()[0], stream);
+    }
+
+    this.pc.createOffer().then((offer) => {
+      this.pc.setLocalDescription(offer).then(() => {
+        const jsep = { type: offer.type, sdp: offer.sdp }
+        const body = { request: 'configure', jsep }
+        return this.transaction('message', { body, jsep }, 'event').then((param) => {
+          const { json } = param || {}
+          const jsep = json.jsep
+          console.log('[publisher] Video is - ' + (video ? 'Muted' : 'Unmuted'), jsep)
+          this.pc.setRemoteDescription(new RTCSessionDescription(jsep)).then(() => {
+            console.log('[publisher] remoteDescription set')
+          })
+        })
+      })
+    })
+
+  }
+
   success (janus, janusHandleId) {
     this.janus = janus
     this.janusHandleId = janusHandleId

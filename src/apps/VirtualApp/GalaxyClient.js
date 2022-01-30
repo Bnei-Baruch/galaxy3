@@ -510,7 +510,8 @@ class GalaxyClient extends Component {
   setVideoSize = (video_setting) => {
     let {media} = this.state;
     if (JSON.stringify(video_setting) === JSON.stringify(media.video.setting)) return;
-    getMediaStream(false, true, video_setting, null, media.video.video_device).then((data) => {
+    getMediaStream(false, true, video_setting, null, media.video.video_device)
+      .then((data) => {
       console.log(data);
       const [stream, error] = data;
       if (error) {
@@ -529,7 +530,8 @@ class GalaxyClient extends Component {
   setVideoDevice = (video_device, reconnect) => {
     let {media} = this.state;
     if (video_device === media.video.video_device && !reconnect) return;
-    return getMediaStream(false, true, media.video.setting, null, video_device).then((data) => {
+    return getMediaStream(false, true, media.video.setting, null, video_device)
+      .then((data) => {
       console.log(data);
       const [stream, error] = data;
       if (error) {
@@ -548,7 +550,8 @@ class GalaxyClient extends Component {
   setAudioDevice = (audio_device) => {
     let {media} = this.state;
     if (audio_device === media.audio.audio_device) return;
-    getMediaStream(true, false, media.video.setting, audio_device, null).then((data) => {
+    getMediaStream(true, false, media.video.setting, audio_device, null)
+      .then((data) => {
       console.log(data);
       const [stream, error] = data;
       if (error) {
@@ -1175,10 +1178,7 @@ class GalaxyClient extends Component {
 
   camMute = (cammuted) => {
     const {videoroom, media} = this.state;
-    const {
-      video: {setting, video_device},
-    } = media;
-    const {width, height, ideal} = setting;
+    const {video: {setting, stream},} = media;
 
     const user = Object.assign({}, this.state.user);
     if (user.role === userRolesEnum.ghost) return;
@@ -1186,32 +1186,11 @@ class GalaxyClient extends Component {
 
     if (videoroom) {
       if (!cammuted) {
-        videoroom.createOffer({
-          media: {removeVideo: true},
-          simulcast: false,
-          success: (jsep) => {
-            videoroom.send({message: {request: "configure"}, jsep: jsep});
-          },
-          error: (error) => {
-            console.error("WebRTC error:", error);
-          },
-        });
-        this.stopLocalMedia();
+        videoroom.mute(true)
+        this.stopLocalMedia(videoroom);
       } else {
-        videoroom.createOffer({
-          media: {
-            addVideo: true,
-            video: {width, height, frameRate: {ideal, min: 1}, deviceId: {exact: video_device}},
-          },
-          simulcast: false,
-          success: (jsep) => {
-            videoroom.send({message: {request: "configure"}, jsep: jsep});
-          },
-          error: (error) => {
-            console.error("WebRTC error:", error);
-          },
-        });
-        this.startLocalMedia();
+        this.startLocalMedia(videoroom);
+        videoroom.mute(false, stream)
       }
 
       user.camera = cammuted;
@@ -1232,10 +1211,7 @@ class GalaxyClient extends Component {
   };
 
   stopLocalMedia = () => {
-    const {
-      media: {video},
-      cammuted,
-    } = this.state;
+    const {media: {video}, cammuted} = this.state;
     if (cammuted) return;
     console.log("Stop local video stream");
     video?.stream?.getTracks().forEach((t) => t.stop());
@@ -1243,10 +1219,7 @@ class GalaxyClient extends Component {
   };
 
   startLocalMedia = () => {
-    const {
-      media: {video: {devices, video_device} = {}},
-      cammuted,
-    } = this.state;
+    const {media: {video: {devices, video_device} = {}}, cammuted,} = this.state;
     if (!cammuted) return;
     console.log("Bind local video stream");
     const deviceId = video_device || devices?.[0]?.deviceId;
