@@ -43,6 +43,10 @@ export class StreamingPlugin extends EventEmitter {
           return this.transaction('trickle', { candidate: e.candidate })
         };
 
+        this.pc.onconnectionstatechange = (e) => {
+          console.log("[streaming] ICE State: ", e.target.connectionState)
+        };
+
         this.pc.ontrack = (e) => {
           console.log("[streaming] Got track: ", e)
           let stream = new MediaStream();

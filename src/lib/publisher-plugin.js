@@ -66,9 +66,6 @@ export class PublisherPlugin extends EventEmitter {
   }
 
   offer(video, audio) {
-    this.pc.addTransceiver('audio')
-    this.pc.addTransceiver('video')
-
     this.pc.addTrack(video.getVideoTracks()[0], video);
     this.pc.addTrack(audio.getAudioTracks()[0], audio);
 
@@ -93,8 +90,10 @@ export class PublisherPlugin extends EventEmitter {
       console.log("[publisher] Got track: ", e)
     };
 
-    let transceivers = this.pc.getTransceivers();
-    console.log("[publisher] transceivers: ", transceivers)
+    this.pc.onconnectionstatechange = (e) => {
+      console.log("[publisher] ICE State: ", e.target.connectionState)
+    };
+
     this.pc.createOffer().then((offer) => {
       this.pc.setLocalDescription(offer).then(() => {
         const jsep = { type: offer.type, sdp: offer.sdp }

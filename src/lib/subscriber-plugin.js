@@ -107,6 +107,10 @@ export class SubscriberPlugin extends EventEmitter {
           return this.transaction('trickle', { candidate })
         };
 
+        this.pc.onconnectionstatechange = (e) => {
+          console.log("[subscriber] ICE State: ", e.target.connectionState)
+        }
+
         this.pc.ontrack = (e) => {
           console.log("[subscriber] Got track: ", e)
           this.onTrack(e.track, null, true)
