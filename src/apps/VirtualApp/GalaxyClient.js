@@ -215,15 +215,13 @@ class GalaxyClient extends Component {
 
   checkPermission = (user) => {
     user.role = getUserRole();
-    this.initApp(user);
-
-    // if (user.role !== null) {
-    //   this.initApp(user);
-    // } else {
-    //   alert("Access denied!");
-    //   kc.logout();
-    //   updateSentryUser(null);
-    // }
+    if (user.role !== null) {
+      this.initApp(user);
+    } else {
+      alert("Access denied!");
+      kc.logout();
+      updateSentryUser(null);
+    }
   };
 
   initApp = (user) => {
@@ -717,6 +715,10 @@ class GalaxyClient extends Component {
       updateSentryUser(user);
       updateGxyUser(user);
       this.keepAlive();
+
+      mqtt.join("galaxy/room/" + selected_room);
+      mqtt.join("galaxy/room/" + selected_room + "/chat", true);
+
       const feeds = sortAndFilterFeeds(data.publishers.filter((l) => (l.display = JSON.parse(l.display))));
       console.log("[client] Pulbishers list: ", feeds);
       // Feeds count with user role
