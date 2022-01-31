@@ -107,14 +107,8 @@ class MqttMsg {
   send = (message, retain, topic, rxTopic) => {
     if (!this.mq) return;
     console.log("[mqtt] Send data on topic: ", topic, message);
-    let options = {
-      qos: 1,
-      retain,
-      properties: {
-        userProperties: this.user,
-        responseTopic: rxTopic,
-      },
-    };
+    let properties = !!rxTopic ? {userProperties: this.user, responseTopic: rxTopic} : {userProperties: this.user};
+    let options = {qos: 1, retain, properties};
     this.mq.publish(topic, message, {...options}, (err) => {
       err && console.error("[mqtt] Error: ", err);
     });

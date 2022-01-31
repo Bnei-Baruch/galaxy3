@@ -36,8 +36,8 @@ export default class VirtualStreamingJanus {
     this.audioElement = new Audio();
     this.audioElement.autoplay = true;
     this.audioElement.controls = true;
-    this.audioElement.muted = true;
-    this.audioElement.playinline = true;
+    this.audioElement.muted = false;
+    //this.audioElement.playinline = true;
     this.audioElement.volume = 0.6; // Default volume.
     this.trlAudioElement = new Audio();
     this.trlAudioElement.autoplay = true;
@@ -423,9 +423,10 @@ export default class VirtualStreamingJanus {
       console.log(data)
       this.audioJanusStream.watch(this.audios).then(stream => {
         this.audioMediaStream = stream;
-        this.attachAudioStream_(this.audioElement, /* reattach= */ false);
-        console.log("ELEMEMEMEME", this.audioElement, this.audioMediaStream)
-        this.onInitialized_();
+        setTimeout(() => {
+          this.attachAudioStream_(this.audioElement, /* reattach= */ false);
+          this.onInitialized_();
+        },3000)
       })
     })
 
@@ -487,8 +488,10 @@ export default class VirtualStreamingJanus {
       console.log(data)
       this.trlAudioJanusStream.watch(streamId).then(stream => {
         this.trlAudioMediaStream = stream;
-        this.attachTrlAudioStream_(this.audioElement, /* reattach= */ false);
-        this.onInitialized_();
+        setTimeout(() => {
+          this.attachTrlAudioStream_(this.trlAudioElement, /* reattach= */ false);
+          this.onInitialized_();
+        },3000)
       })
     })
 
@@ -623,6 +626,7 @@ export default class VirtualStreamingJanus {
     if (this.isInitialized_()) {
       // Get remote volume of translator stream (FYI in case of Hebrew, this will be 0 - no translation).
       this.trlAudioJanusStream.getVolume(null, (volume) => {
+        //console.log(volume)
         if (volume === -1) {
           if (this.talking) {
             clearInterval(this.talking);
