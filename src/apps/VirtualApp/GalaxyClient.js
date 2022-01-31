@@ -709,7 +709,7 @@ class GalaxyClient extends Component {
     videoroom.join(selected_room, d).then(data => {
       console.log('[client] Joined respond :', data)
       const {audio, video} = this.state.media;
-      videoroom.offer(video.stream, audio.stream)
+      videoroom.publish(video.stream, audio.stream)
 
       const {id, private_id, room} = data
       user.rfid = data.id;
@@ -1177,8 +1177,7 @@ class GalaxyClient extends Component {
   };
 
   camMute = (cammuted) => {
-    const {videoroom, media} = this.state;
-    const {video: {setting, stream},} = media;
+    const {videoroom} = this.state;
 
     const user = Object.assign({}, this.state.user);
     if (user.role === userRolesEnum.ghost) return;
@@ -1190,7 +1189,11 @@ class GalaxyClient extends Component {
         this.stopLocalMedia(videoroom);
       } else {
         this.startLocalMedia(videoroom);
-        videoroom.mute(false, stream)
+        setTimeout(() => {
+          //FIXME: Make sure we got stream here
+          const {stream} = this.state.media.video
+          videoroom.mute(false, stream)
+        }, 5000)
       }
 
       user.camera = cammuted;
@@ -1211,11 +1214,12 @@ class GalaxyClient extends Component {
   };
 
   stopLocalMedia = () => {
-    const {media: {video}, cammuted} = this.state;
+    const {media, cammuted} = this.state;
     if (cammuted) return;
     console.log("Stop local video stream");
-    video?.stream?.getTracks().forEach((t) => t.stop());
-    this.setState({cammuted: true});
+    media.video?.stream?.getTracks().forEach((t) => t.stop());
+    media.video.stream = null;
+    this.setState({cammuted: true, media});
   };
 
   startLocalMedia = () => {
@@ -1232,9 +1236,10 @@ class GalaxyClient extends Component {
 
   micMute = () => {
     const {media: {audio: {stream}}, muted} = this.state;
-    //muted ? videoroom.unmuteAudio() : videoroom.muteAudio();
-    stream.getAudioTracks()[0].enabled = muted;
-    this.setState({muted: !muted});
+    if(stream) {
+      stream.getAudioTracks()[0].enabled = muted;
+      this.setState({muted: !muted});
+    }
   };
 
   otherCamsMuteToggle = () => {

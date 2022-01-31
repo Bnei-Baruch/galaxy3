@@ -65,9 +65,9 @@ export class PublisherPlugin extends EventEmitter {
     })
   }
 
-  offer(video, audio) {
-    this.pc.addTrack(video.getVideoTracks()[0], video);
-    this.pc.addTrack(audio.getAudioTracks()[0], audio);
+  publish(video, audio) {
+    if(video) this.pc.addTrack(video.getVideoTracks()[0], video);
+    if(audio) this.pc.addTrack(audio.getAudioTracks()[0], audio);
 
     this.pc.onicecandidate = (e) => {
       let candidate = {completed: true}
@@ -97,7 +97,7 @@ export class PublisherPlugin extends EventEmitter {
     this.pc.createOffer().then((offer) => {
       this.pc.setLocalDescription(offer).then(() => {
         const jsep = { type: offer.type, sdp: offer.sdp }
-        const body = { request: 'configure', audio: true, video: true }
+        const body = { request: 'configure', video: !!video, audio: !!audio }
         return this.transaction('message', { body, jsep }, 'event').then((param) => {
           const { json } = param || {}
           const jsep = json.jsep
