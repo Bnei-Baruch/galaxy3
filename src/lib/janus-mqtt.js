@@ -25,7 +25,7 @@ export class JanusMqtt {
     mqtt.join(this.rxTopic, false);
     mqtt.join(this.stTopic, false);
 
-    mqtt.mq.on("MqttJanusMessage", this.onMessage);
+    mqtt.mq.on(this.mit, this.onMessage);
 
     return new Promise((resolve, reject) => {
       const transaction = randomString(12);
@@ -199,10 +199,11 @@ export class JanusMqtt {
     mqtt.exit(this.rxTopic);
     mqtt.exit(this.stTopic);
 
-    mqtt.mq.removeListener("MqttJanusMessage", this.onMessage);
+    mqtt.mq.removeListener(this.mit, this.onMessage);
   }
 
-  onMessage(message, tD) {
+  onMessage(message, tD, src) {
+    //if(src !== this.srv) return
     let json
     try {
       json = JSON.parse(message)

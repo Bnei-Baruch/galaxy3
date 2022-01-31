@@ -215,15 +215,13 @@ class GalaxyClient extends Component {
 
   checkPermission = (user) => {
     user.role = getUserRole();
-    this.initApp(user);
-
-    // if (user.role !== null) {
-    //   this.initApp(user);
-    // } else {
-    //   alert("Access denied!");
-    //   kc.logout();
-    //   updateSentryUser(null);
-    // }
+    if (user.role !== null) {
+      this.initApp(user);
+    } else {
+      alert("Access denied!");
+      kc.logout();
+      updateSentryUser(null);
+    }
   };
 
   initApp = (user) => {
@@ -403,13 +401,12 @@ class GalaxyClient extends Component {
     // );
 
     if (!reconnect) {
-      const {ip, country} = user;
-      this.state.virtualStreamingJanus.init(ip, country);
+      this.state.virtualStreamingJanus.init(user);
     }
   };
 
   initJanus = (user, config) => {
-    let janus = new JanusMqtt(user, config.name)
+    let janus = new JanusMqtt(user, config.name, "MqttGalaxy")
 
     let videoroom = new PublisherPlugin();
     videoroom.subTo = this.makeSubscription;
@@ -421,7 +418,7 @@ class GalaxyClient extends Component {
     subscriber.onUpdate = this.onUpdateStreams;
 
     janus.init(config.token).then(data => {
-      console.log(data)
+      console.log("[client] Janus init", data)
 
       janus.attach(videoroom).then(data => {
         this.setState({janus, videoroom, user});
@@ -717,6 +714,10 @@ class GalaxyClient extends Component {
       updateSentryUser(user);
       updateGxyUser(user);
       this.keepAlive();
+
+      mqtt.join("galaxy/room/" + selected_room);
+      mqtt.join("galaxy/room/" + selected_room + "/chat", true);
+
       const feeds = sortAndFilterFeeds(data.publishers.filter((l) => (l.display = JSON.parse(l.display))));
       console.log("[client] Pulbishers list: ", feeds);
       // Feeds count with user role
@@ -1279,7 +1280,7 @@ class GalaxyClient extends Component {
       });
     } else {
       const {ip, country} = user;
-      virtualStreamingJanus.init(ip, country);
+      virtualStreamingJanus.init(user);
       stateUpdate.sourceLoading = true;
       this.setState(stateUpdate);
     }
@@ -1524,7 +1525,7 @@ class GalaxyClient extends Component {
             <AskQuestion
               t={t}
               isOn={!!question}
-              disabled={!mqttOn || premodStatus || !audio_device || !localAudioTrack || delay || otherFeedHasQuestion}
+              disabled={!mqttOn || premodStatus || !audio_device || delay || otherFeedHasQuestion}
               action={this.handleQuestion.bind(this)}
             />
             <Vote t={t} id={user?.id} disabled={!user || !user.id || room === ""}/>
@@ -1688,7 +1689,7 @@ class GalaxyClient extends Component {
           {/* ---------- */}
           <ButtonGroup
             variant="outlined"
-            disableElevation
+            disableElervation
             className={classNames("top-toolbar__item", "top-toolbar__toggle")}
           >
             <Badge color="secondary" badgeContent={asideMsgCounter.chat} showZero={false}>

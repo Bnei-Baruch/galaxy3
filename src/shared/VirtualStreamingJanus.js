@@ -1,6 +1,8 @@
 import {Janus} from "../lib/janus";
 import {gxycol, trllang, NO_VIDEO_OPTION_VALUE} from "./consts";
 import GxyJanus from "./janus-utils";
+import {JanusMqtt} from "../lib/janus-mqtt";
+import {StreamingPlugin} from "../lib/streaming-plugin";
 
 export default class VirtualStreamingJanus {
   constructor(onInitialized) {
@@ -33,7 +35,7 @@ export default class VirtualStreamingJanus {
     this.videoElement = null;
     this.audioElement = new Audio();
     this.audioElement.autoplay = true;
-    this.audioElement.controls = false;
+    this.audioElement.controls = true;
     this.audioElement.muted = true;
     this.audioElement.playinline = true;
     this.audioElement.volume = 0.6; // Default volume.
@@ -178,9 +180,9 @@ export default class VirtualStreamingJanus {
   attachVideoStream_(next, prev) {
     if (next) {
       if (prev && next !== prev) {
-        Janus.reattachMediaStream(next, prev);
+        this.reattachMediaStream(next, prev);
       } else if (this.videoMediaStream) {
-        Janus.attachMediaStream(next, this.videoMediaStream);
+        this.attachMediaStream(next, this.videoMediaStream);
       }
     }
   }
@@ -188,9 +190,9 @@ export default class VirtualStreamingJanus {
   attachAudioStream_(next, prev) {
     if (next) {
       if (prev && next !== prev) {
-        Janus.reattachMediaStream(next, prev);
+        this.reattachMediaStream(next, prev);
       } else if (this.audioMediaStream) {
-        Janus.attachMediaStream(next, this.audioMediaStream);
+        this.attachMediaStream(next, this.audioMediaStream);
       }
     }
   }
@@ -198,20 +200,43 @@ export default class VirtualStreamingJanus {
   attachTrlAudioStream_(next, prev) {
     if (next) {
       if (prev && next !== prev) {
-        Janus.reattachMediaStream(next, prev);
+        this.reattachMediaStream(next, prev);
       } else if (this.trlAudioMediaStream) {
-        Janus.attachMediaStream(next, this.trlAudioMediaStream);
+        this.attachMediaStream(next, this.trlAudioMediaStream);
       }
     }
   }
+
+  attachMediaStream(element, stream) {
+    try {
+      element.srcObject = stream;
+    } catch (e) {
+      try {
+        element.src = URL.createObjectURL(stream);
+      } catch (e) {
+        console.error("Error attaching stream to element");
+      }
+    }
+  }
+
+  reattachMediaStream(to, from) {
+    try {
+      to.srcObject = from.srcObject;
+    } catch (e) {
+      try {
+        to.src = from.src;
+      } catch (e) {
+        console.error("Error reattaching stream to element");
+      }
+    }
+  };
 
   onTalking(callback) {
     this.onTalkingCallback = callback;
   }
 
-  init(ip, country) {
-    localStorage.setItem("vrt_extip", ip);
-    this.destroyAndInitJanus_(country);
+  init(user) {
+    this.destroyAndInitJanus_(user);
   }
 
   destroy(callbacks) {
@@ -251,55 +276,73 @@ export default class VirtualStreamingJanus {
     }
   }
 
-  destroyAndInitJanus_(country) {
+  destroyAndInitJanus_(user) {
     console.log("Trying to destroy and init!");
     this.destroy({
       error: (error) => {
         console.log("JanusVirtualStreaming error destroying before init", error);
         // Still we are trying to init.
-        this.initJanus_(country);
+        this.initJanus_(user);
       },
       success: () => {
         console.log("JanusVirtualStreaming destroy success, now init.");
-        this.initJanus_(country);
+        this.initJanus_(user);
       },
     });
   }
 
-  initJanus_(country) {
-    // const gateway = country === "IL" ? 'str4' : 'str3';
-    const streamingGateways = GxyJanus.gatewayNames("streaming");
-    this.streamingGateway = streamingGateways[Math.floor(Math.random() * streamingGateways.length)];
-    const config = GxyJanus.instanceConfig(this.streamingGateway);
+  initJanus_(user) {
+    const str= 'str' + (Math.floor(Math.random() * 8) + 2)
+    this.janus = new JanusMqtt(user, str, "MqttStream")
 
-    Janus.init({
-      debug: process.env.NODE_ENV !== "production" ? ["error"] : ["error"],
-      callback: () => {
-        this.janus = new Janus({
-          server: config.url,
-          iceServers: config.iceServers,
-          success: () => {
-            Janus.log(" :: Connected to JANUS");
-            if (this.videos !== NO_VIDEO_OPTION_VALUE) {
-              this.initVideoStream(this.janus);
-            }
-            this.initAudioStream(this.janus);
-            let id = trllang[localStorage.getItem("vrt_langtext")] || 301;
-            this.initTranslationStream(id);
-          },
-          error: (err) => {
-            Janus.log(JSON.stringify(err));
-            setTimeout(() => {
-              this.initJanus_(country);
-            }, 5000);
-            console.error("RELOAD ON ERROR", err);
-          },
-          destroyed: () => {
-            Janus.log("Janus handle successfully destroyed.");
-          },
-        });
-      },
-    });
+    this.janus.init().then(data => {
+      console.log(data)
+      if (this.videos !== NO_VIDEO_OPTION_VALUE) {
+        this.initVideoStream(this.janus)
+      }
+      this.initAudioStream(this.janus);
+      let id = trllang[localStorage.getItem("vrt_langtext")] || 301;
+      this.initTranslationStream(id);
+    }).catch(err => {
+      setTimeout(() => {
+        this.initJanus_(user);
+      }, 5000);
+      console.error("RELOAD ON ERROR", err);
+    })
+
+    // const gateway = country === "IL" ? 'str4' : 'str3';
+    // const streamingGateways = GxyJanus.gatewayNames("streaming");
+    // this.streamingGateway = streamingGateways[Math.floor(Math.random() * streamingGateways.length)];
+    // const config = GxyJanus.instanceConfig(this.streamingGateway);
+    //
+    // Janus.init({
+    //   debug: process.env.NODE_ENV !== "production" ? ["error"] : ["error"],
+    //   callback: () => {
+    //     this.janus = new Janus({
+    //       server: config.url,
+    //       iceServers: config.iceServers,
+    //       success: () => {
+    //         Janus.log(" :: Connected to JANUS");
+    //         if (this.videos !== NO_VIDEO_OPTION_VALUE) {
+    //           this.initVideoStream(this.janus);
+    //         }
+    //         this.initAudioStream(this.janus);
+    //         let id = trllang[localStorage.getItem("vrt_langtext")] || 301;
+    //         this.initTranslationStream(id);
+    //       },
+    //       error: (err) => {
+    //         Janus.log(JSON.stringify(err));
+    //         setTimeout(() => {
+    //           this.initJanus_(country);
+    //         }, 5000);
+    //         console.error("RELOAD ON ERROR", err);
+    //       },
+    //       destroyed: () => {
+    //         Janus.log("Janus handle successfully destroyed.");
+    //       },
+    //     });
+    //   },
+    // });
   }
 
   iceRestart = () => {
@@ -312,162 +355,193 @@ export default class VirtualStreamingJanus {
   };
 
   initVideoStream = (janus) => {
-    janus.attach({
-      plugin: "janus.plugin.streaming",
-      opaqueId: "videostream-" + Janus.randomString(12),
-      success: (videoJanusStream) => {
-        this.videoJanusStream = videoJanusStream;
-        videoJanusStream.send({message: {request: "watch", id: this.videos}});
-      },
-      error: (error) => {
-        Janus.warn("Error attaching plugin: " + error);
-      },
-      iceState: (state) => {
-        Janus.warn("ICE state changed to " + state);
-      },
-      webrtcState: (on) => {
-        Janus.warn("Janus says our WebRTC PeerConnection is " + (on ? "up" : "down") + " now");
-      },
-      slowLink: (uplink, lost, mid) => {
-        Janus.warn(
-          "Janus reports problems " +
-            (uplink ? "sending" : "receiving") +
-            " packets on mid " +
-            mid +
-            " (" +
-            lost +
-            " lost packets)"
-        );
-      },
-      onmessage: (msg, jsep) => {
-        this.onStreamingMessage(this.videoJanusStream, msg, jsep, false);
-      },
-      onremotetrack: (track, mid, on) => {
-        Janus.warn(" ::: Got a remote video track event :::");
-        Janus.warn("Remote video track (mid=" + mid + ") " + (on ? "added" : "removed") + ":", track);
-        if (!on) {
-          return;
-        }
-        let stream = new MediaStream();
-        stream.addTrack(track.clone());
+    this.videoJanusStream = new StreamingPlugin();
+    janus.attach(this.videoJanusStream).then(data => {
+      console.log(data)
+      this.videoJanusStream.watch(this.videos).then(stream => {
         this.videoMediaStream = stream;
-        Janus.warn("Created remote video stream:", stream);
         this.attachVideoStream_(this.videoElement, /* reattach= */ false);
         this.onInitialized_();
-      },
-      oncleanup: () => {
-        Janus.warn("Got a cleanup notification - videostream.");
-        const callbacks = [...this.videoJanusStreamCleanup];
-        this.videoJanusStreamCleanup.length = 0;
-        callbacks.forEach((callback) => callback());
-      },
-    });
+      })
+    })
+
+    // janus.attach({
+    //   plugin: "janus.plugin.streaming",
+    //   opaqueId: "videostream-" + Janus.randomString(12),
+    //   success: (videoJanusStream) => {
+    //     this.videoJanusStream = videoJanusStream;
+    //     videoJanusStream.send({message: {request: "watch", id: this.videos}});
+    //   },
+    //   error: (error) => {
+    //     Janus.warn("Error attaching plugin: " + error);
+    //   },
+    //   iceState: (state) => {
+    //     Janus.warn("ICE state changed to " + state);
+    //   },
+    //   webrtcState: (on) => {
+    //     Janus.warn("Janus says our WebRTC PeerConnection is " + (on ? "up" : "down") + " now");
+    //   },
+    //   slowLink: (uplink, lost, mid) => {
+    //     Janus.warn(
+    //       "Janus reports problems " +
+    //         (uplink ? "sending" : "receiving") +
+    //         " packets on mid " +
+    //         mid +
+    //         " (" +
+    //         lost +
+    //         " lost packets)"
+    //     );
+    //   },
+    //   onmessage: (msg, jsep) => {
+    //     this.onStreamingMessage(this.videoJanusStream, msg, jsep, false);
+    //   },
+    //   onremotetrack: (track, mid, on) => {
+    //     Janus.warn(" ::: Got a remote video track event :::");
+    //     Janus.warn("Remote video track (mid=" + mid + ") " + (on ? "added" : "removed") + ":", track);
+    //     if (!on) {
+    //       return;
+    //     }
+    //     let stream = new MediaStream();
+    //     stream.addTrack(track.clone());
+    //     this.videoMediaStream = stream;
+    //     Janus.warn("Created remote video stream:", stream);
+    //     this.attachVideoStream_(this.videoElement, /* reattach= */ false);
+    //     this.onInitialized_();
+    //   },
+    //   oncleanup: () => {
+    //     Janus.warn("Got a cleanup notification - videostream.");
+    //     const callbacks = [...this.videoJanusStreamCleanup];
+    //     this.videoJanusStreamCleanup.length = 0;
+    //     callbacks.forEach((callback) => callback());
+    //   },
+    // });
   };
 
   initAudioStream = (janus) => {
-    janus.attach({
-      plugin: "janus.plugin.streaming",
-      opaqueId: "audiostream-" + Janus.randomString(12),
-      success: (audioJanusStream) => {
-        this.audioJanusStream = audioJanusStream;
-        audioJanusStream.send({message: {request: "watch", id: this.audios}});
-      },
-      error: (error) => {
-        Janus.log("Error attaching plugin: " + error);
-      },
-      iceState: (state) => {
-        Janus.log("ICE state changed to " + state);
-      },
-      webrtcState: (on) => {
-        Janus.log("Janus says our WebRTC PeerConnection is " + (on ? "up" : "down") + " now");
-      },
-      slowLink: (uplink, lost, mid) => {
-        Janus.log(
-          "Janus reports problems " +
-            (uplink ? "sending" : "receiving") +
-            " packets on mid " +
-            mid +
-            " (" +
-            lost +
-            " lost packets)"
-        );
-      },
-      onmessage: (msg, jsep) => {
-        this.onStreamingMessage(this.audioJanusStream, msg, jsep, false);
-      },
-      onremotetrack: (track, mid, on) => {
-        Janus.log(" ::: Got a remote audio track event :::");
-        Janus.log("Remote audio track (mid=" + mid + ") " + (on ? "added" : "removed") + ":", track);
-        if (!on) {
-          return;
-        }
-        let stream = new MediaStream();
-        stream.addTrack(track.clone());
+    this.audioJanusStream = new StreamingPlugin();
+    janus.attach(this.audioJanusStream).then(data => {
+      console.log(data)
+      this.audioJanusStream.watch(this.audios).then(stream => {
         this.audioMediaStream = stream;
-        Janus.log("Created remote audio stream:", stream);
         this.attachAudioStream_(this.audioElement, /* reattach= */ false);
+        console.log("ELEMEMEMEME", this.audioElement, this.audioMediaStream)
         this.onInitialized_();
-      },
-      oncleanup: () => {
-        Janus.log("Got a cleanup notification - audiostream.");
-        const callbacks = [...this.audioJanusStreamCleanup];
-        this.audioJanusStreamCleanup.length = 0;
-        callbacks.forEach((callback) => callback());
-      },
-    });
+      })
+    })
+
+    // janus.attach({
+    //   plugin: "janus.plugin.streaming",
+    //   opaqueId: "audiostream-" + Janus.randomString(12),
+    //   success: (audioJanusStream) => {
+    //     this.audioJanusStream = audioJanusStream;
+    //     audioJanusStream.send({message: {request: "watch", id: this.audios}});
+    //   },
+    //   error: (error) => {
+    //     Janus.log("Error attaching plugin: " + error);
+    //   },
+    //   iceState: (state) => {
+    //     Janus.log("ICE state changed to " + state);
+    //   },
+    //   webrtcState: (on) => {
+    //     Janus.log("Janus says our WebRTC PeerConnection is " + (on ? "up" : "down") + " now");
+    //   },
+    //   slowLink: (uplink, lost, mid) => {
+    //     Janus.log(
+    //       "Janus reports problems " +
+    //         (uplink ? "sending" : "receiving") +
+    //         " packets on mid " +
+    //         mid +
+    //         " (" +
+    //         lost +
+    //         " lost packets)"
+    //     );
+    //   },
+    //   onmessage: (msg, jsep) => {
+    //     this.onStreamingMessage(this.audioJanusStream, msg, jsep, false);
+    //   },
+    //   onremotetrack: (track, mid, on) => {
+    //     Janus.log(" ::: Got a remote audio track event :::");
+    //     Janus.log("Remote audio track (mid=" + mid + ") " + (on ? "added" : "removed") + ":", track);
+    //     if (!on) {
+    //       return;
+    //     }
+    //     let stream = new MediaStream();
+    //     stream.addTrack(track.clone());
+    //     this.audioMediaStream = stream;
+    //     Janus.log("Created remote audio stream:", stream);
+    //     this.attachAudioStream_(this.audioElement, /* reattach= */ false);
+    //     this.onInitialized_();
+    //   },
+    //   oncleanup: () => {
+    //     Janus.log("Got a cleanup notification - audiostream.");
+    //     const callbacks = [...this.audioJanusStreamCleanup];
+    //     this.audioJanusStreamCleanup.length = 0;
+    //     callbacks.forEach((callback) => callback());
+    //   },
+    // });
   };
 
   initTranslationStream = (streamId) => {
-    this.janus.attach({
-      plugin: "janus.plugin.streaming",
-      opaqueId: "trlstream-" + Janus.randomString(12),
-      success: (trlJanusStream) => {
-        this.trlAudioJanusStream = trlJanusStream;
-        trlJanusStream.send({message: {request: "watch", id: streamId}});
-      },
-      error: (error) => {
-        Janus.log("Error attaching plugin: " + error);
-      },
-      iceState: (state) => {
-        Janus.log("ICE state changed to " + state);
-      },
-      webrtcState: (on) => {
-        Janus.log("Janus says our WebRTC PeerConnection is " + (on ? "up" : "down") + " now");
-      },
-      slowLink: (uplink, lost, mid) => {
-        Janus.log(
-          "Janus reports problems " +
-            (uplink ? "sending" : "receiving") +
-            " packets on mid " +
-            mid +
-            " (" +
-            lost +
-            " lost packets)"
-        );
-      },
-      onmessage: (msg, jsep) => {
-        this.onStreamingMessage(this.trlAudioJanusStream, msg, jsep, false);
-      },
-      onremotetrack: (track, mid, on) => {
-        Janus.log(" ::: Got a remote audio translation track event :::");
-        Janus.log("Remote audio track (mid=" + mid + ") " + (on ? "added" : "removed") + ":", track);
-        if (!on) {
-          return;
-        }
-        let stream = new MediaStream();
-        stream.addTrack(track.clone());
+    this.trlAudioJanusStream = new StreamingPlugin();
+    this.janus.attach(this.trlAudioJanusStream).then(data => {
+      console.log(data)
+      this.trlAudioJanusStream.watch(streamId).then(stream => {
         this.trlAudioMediaStream = stream;
-        Janus.log("Created remote audio stream:", stream);
-        this.attachTrlAudioStream_(this.trlAudioElement, /* reattach= */ false);
+        this.attachTrlAudioStream_(this.audioElement, /* reattach= */ false);
         this.onInitialized_();
-      },
-      oncleanup: () => {
-        Janus.log("Got a cleanup notification - trlstream.");
-        const callbacks = [...this.trlAudioJanusStreamCleanup];
-        this.trlAudioJanusStreamCleanup.length = 0;
-        callbacks.forEach((callback) => callback());
-      },
-    });
+      })
+    })
+
+    // this.janus.attach({
+    //   plugin: "janus.plugin.streaming",
+    //   opaqueId: "trlstream-" + Janus.randomString(12),
+    //   success: (trlJanusStream) => {
+    //     this.trlAudioJanusStream = trlJanusStream;
+    //     trlJanusStream.send({message: {request: "watch", id: streamId}});
+    //   },
+    //   error: (error) => {
+    //     Janus.log("Error attaching plugin: " + error);
+    //   },
+    //   iceState: (state) => {
+    //     Janus.log("ICE state changed to " + state);
+    //   },
+    //   webrtcState: (on) => {
+    //     Janus.log("Janus says our WebRTC PeerConnection is " + (on ? "up" : "down") + " now");
+    //   },
+    //   slowLink: (uplink, lost, mid) => {
+    //     Janus.log(
+    //       "Janus reports problems " +
+    //         (uplink ? "sending" : "receiving") +
+    //         " packets on mid " +
+    //         mid +
+    //         " (" +
+    //         lost +
+    //         " lost packets)"
+    //     );
+    //   },
+    //   onmessage: (msg, jsep) => {
+    //     this.onStreamingMessage(this.trlAudioJanusStream, msg, jsep, false);
+    //   },
+    //   onremotetrack: (track, mid, on) => {
+    //     Janus.log(" ::: Got a remote audio translation track event :::");
+    //     Janus.log("Remote audio track (mid=" + mid + ") " + (on ? "added" : "removed") + ":", track);
+    //     if (!on) {
+    //       return;
+    //     }
+    //     let stream = new MediaStream();
+    //     stream.addTrack(track.clone());
+    //     this.trlAudioMediaStream = stream;
+    //     Janus.log("Created remote audio stream:", stream);
+    //     this.attachTrlAudioStream_(this.trlAudioElement, /* reattach= */ false);
+    //     this.onInitialized_();
+    //   },
+    //   oncleanup: () => {
+    //     Janus.log("Got a cleanup notification - trlstream.");
+    //     const callbacks = [...this.trlAudioJanusStreamCleanup];
+    //     this.trlAudioJanusStreamCleanup.length = 0;
+    //     callbacks.forEach((callback) => callback());
+    //   },
+    // });
   };
 
   onStreamingMessage = (handle, msg, jsep, initdata) => {
@@ -513,13 +587,14 @@ export default class VirtualStreamingJanus {
       this.prevMuted = this.audioElement.muted;
 
       console.log(" :: Switch STR Stream: ", gxycol[col]);
-      this.audioJanusStream.send({message: {request: "switch", id: gxycol[col]}});
+      this.audioJanusStream.switch(gxycol[col]);
       const id = trllang[localStorage.getItem("vrt_langtext")];
       console.log(":: Select TRL: ", localStorage.getItem("vrt_langtext"), id);
       if (!id) {
         console.log(" :: Not TRL Stream attach");
       } else {
-        this.trlAudioJanusStream.send({message: {request: "switch", id: id}});
+        //this.trlAudioJanusStream.send({message: {request: "switch", id: id}});
+        this.trlAudioJanusStream.switch(id);
         this.talking = setInterval(this.ducerMixaudio, 200);
         console.log(" :: Init TRL Stream: ", localStorage.getItem("vrt_langtext"), id);
       }
@@ -532,7 +607,8 @@ export default class VirtualStreamingJanus {
       this.audioElement.volume = this.mixvolume;
       const id = Number(localStorage.getItem("vrt_lang")) || 2;
       console.log(" :: Switch STR Stream: ", localStorage.getItem("vrt_lang"), id);
-      this.audioJanusStream.send({message: {request: "switch", id: id}});
+      //this.audioJanusStream.send({message: {request: "switch", id: id}});
+      this.audioJanusStream.switch(id);
       console.log(" :: Stop TRL Stream: ");
       this.trlAudioElement.muted = true;
       this.talking = null;
@@ -583,7 +659,7 @@ export default class VirtualStreamingJanus {
         this.detachVideo_();
       } else {
         if (this.videoJanusStream) {
-          this.videoJanusStream.send({message: {request: "switch", id: videos}});
+          this.videoJanusStream.switch(videos);
         } else {
           this.initVideoStream(this.janus);
         }
@@ -595,7 +671,7 @@ export default class VirtualStreamingJanus {
   setAudio = (audios, text) => {
     this.audios = audios;
     if (this.audioJanusStream) {
-      this.audioJanusStream.send({message: {request: "switch", id: audios}});
+      this.audioJanusStream.switch(audios);
     }
     localStorage.setItem("vrt_lang", audios);
     localStorage.setItem("vrt_langtext", text);
