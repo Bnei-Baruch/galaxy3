@@ -124,8 +124,10 @@ class MqttMsg {
         this.mq.emit("MqttSubtitlesEvent", data);
       } else if (/galaxy\/room\/\d+\/chat/.test(topic)) {
         this.mq.emit("MqttChatEvent", data);
-      } else if (topic.split("/")[0] === "janus") {
-        this.mq.emit("MqttJanusMessage", data, topic.split("/")[2]);
+      } else if (/janus\/gxy/.test(topic)) {
+        this.mq.emit("MqttGalaxy", data, topic.split("/")[2]);
+      } else if (/janus\/str/.test(topic)) {
+        this.mq.emit("MqttStream", data, topic.split("/")[2]);
       } else if (/galaxy\/users\//.test(topic)) {
         if (topic.split("/")[2] === "broadcast") {
           this.mq.emit("MqttBroadcastMessage", data);

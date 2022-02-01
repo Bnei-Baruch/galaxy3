@@ -95,18 +95,18 @@ export class PublisherPlugin extends EventEmitter {
     };
 
     this.pc.createOffer().then((offer) => {
-      this.pc.setLocalDescription(offer).then(() => {
+      this.pc.setLocalDescription(offer)
         const jsep = { type: offer.type, sdp: offer.sdp }
         const body = { request: 'configure', video: !!video, audio: !!audio }
         return this.transaction('message', { body, jsep }, 'event').then((param) => {
           const { json } = param || {}
           const jsep = json.jsep
           console.log('[publisher] Configure respond: ', jsep)
-          this.pc.setRemoteDescription(new RTCSessionDescription(jsep)).then(() => {
+          this.pc.setRemoteDescription(jsep).then(() => {
             console.log('[publisher] remoteDescription set')
           })
         })
-      })
+
     })
   };
 
@@ -114,26 +114,43 @@ export class PublisherPlugin extends EventEmitter {
     if(video) {
       for(let t of this.pc.getSenders()) {
         if(t?.track && t.track.kind === "video") {
-          this.pc.removeTrack(t);
+          t.muted = true
         }
       }
     } else {
-      this.pc.addTrack(stream.getVideoTracks()[0], stream);
+      let videoTransceiver = null;
+      let tr = this.pc.getTransceivers();
+      if(tr && tr.length > 0) {
+        for(let t of tr) {
+          if((t.sender && t.sender.track && t.sender.track.kind === "video") ||
+            (t.receiver && t.receiver.track && t.receiver.track.kind === "video")) {
+            videoTransceiver = t;
+            break;
+          }
+        }
+      }
+      if(videoTransceiver && videoTransceiver.sender) {
+        videoTransceiver.sender.replaceTrack(stream.getVideoTracks()[0]).then(data => {
+          console.log("REPLACE TRACK: ", data)
+        });
+      } else {
+        this.pc.addTrack(stream.getVideoTracks()[0], stream);
+      }
     }
 
     this.pc.createOffer().then((offer) => {
-      this.pc.setLocalDescription(offer).then(() => {
-        const jsep = { type: offer.type, sdp: offer.sdp }
-        const body = { request: 'configure', jsep }
+      const jsep = { type: offer.type, sdp: offer.sdp }
+      this.pc.setLocalDescription(offer)
+        const body = {request: 'configure'}
         return this.transaction('message', { body, jsep }, 'event').then((param) => {
           const { json } = param || {}
           const jsep = json.jsep
           console.log('[publisher] Video is - ' + (video ? 'Muted' : 'Unmuted'), jsep)
-          this.pc.setRemoteDescription(new RTCSessionDescription(jsep)).then(() => {
+          this.pc.setRemoteDescription(jsep).then(() => {
             console.log('[publisher] remoteDescription set')
           })
         })
-      })
+
     })
 
   }

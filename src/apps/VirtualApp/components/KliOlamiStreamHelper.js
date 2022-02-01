@@ -10,7 +10,7 @@ const initJanus = () => {
     if (janus) return resolve();
 
     Janus.init({
-      debug: process.env.NODE_ENV !== "production" ? ["log", "error"] : ["log", "error"],
+      debug: process.env.NODE_ENV !== "production" ? ["error"] : ["error"],
 
       callback: () => {
         const gateways = GxyJanus.gatewayNames("streaming");

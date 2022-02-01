@@ -249,7 +249,7 @@ class VirtualClient extends Component {
       ConfigStore.setGlobalConfig(config);
       GxyJanus.setGlobalConfig(config);
       localStorage.setItem("room", "-1");
-      this.state.virtualStreamingJanus.init("", "IL");
+      this.state.virtualStreamingJanus.init(user);
       this.setState({user, sourceLoading: true});
       return;
     }
@@ -399,8 +399,7 @@ class VirtualClient extends Component {
     );
 
     if (!reconnect) {
-      const {ip, country} = user;
-      this.state.virtualStreamingJanus.init(ip, country);
+      this.state.virtualStreamingJanus.init(user);
     }
   };
 
@@ -1532,8 +1531,7 @@ class VirtualClient extends Component {
         },
       });
     } else {
-      const {ip, country} = user;
-      virtualStreamingJanus.init(ip, country);
+      virtualStreamingJanus.init(user);
       stateUpdate.sourceLoading = true;
       this.setState(stateUpdate);
     }

@@ -93,6 +93,18 @@ export class StreamingPlugin extends EventEmitter {
     })
   }
 
+  getVolume(mid, result) {
+    let transceiver = this.pc.getTransceivers().find(t => t.receiver.track.kind === "audio");
+    transceiver.receiver.getStats().then(stats =>  {
+      stats.forEach(res => {
+        if(!res || res.kind !== "audio")
+          return;
+        result(res.audioLevel ? res.audioLevel : 0);
+      });
+    });
+    //return config.volume[stream].value;
+  }
+
   success (janus, janusHandleId) {
     this.janus = janus
     this.janusHandleId = janusHandleId

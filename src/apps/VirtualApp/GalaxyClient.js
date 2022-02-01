@@ -401,13 +401,12 @@ class GalaxyClient extends Component {
     // );
 
     if (!reconnect) {
-      const {ip, country} = user;
-      this.state.virtualStreamingJanus.init(ip, country);
+      this.state.virtualStreamingJanus.init(user);
     }
   };
 
   initJanus = (user, config) => {
-    let janus = new JanusMqtt(user, config.name)
+    let janus = new JanusMqtt(user, config.name, "MqttGalaxy")
 
     let videoroom = new PublisherPlugin();
     videoroom.subTo = this.makeSubscription;
@@ -419,7 +418,7 @@ class GalaxyClient extends Component {
     subscriber.onUpdate = this.onUpdateStreams;
 
     janus.init(config.token).then(data => {
-      console.log(data)
+      console.log("[client] Janus init", data)
 
       janus.attach(videoroom).then(data => {
         this.setState({janus, videoroom, user});
@@ -1187,15 +1186,9 @@ class GalaxyClient extends Component {
 
     if (videoroom) {
       if (!cammuted) {
-        videoroom.mute(true)
         this.stopLocalMedia(videoroom);
       } else {
         this.startLocalMedia(videoroom);
-        setTimeout(() => {
-          //FIXME: Make sure we got stream here
-          const {stream} = this.state.media.video
-          videoroom.mute(false, stream)
-        }, 5000)
       }
 
       user.camera = cammuted;
@@ -1215,22 +1208,25 @@ class GalaxyClient extends Component {
     }
   };
 
-  stopLocalMedia = () => {
+  stopLocalMedia = (videoroom) => {
     const {media, cammuted} = this.state;
     if (cammuted) return;
     console.log("Stop local video stream");
     media.video?.stream?.getTracks().forEach((t) => t.stop());
-    media.video.stream = null;
+    //media.video.stream = null;
     this.setState({cammuted: true, media});
+    if(videoroom) videoroom.mute(true)
   };
 
-  startLocalMedia = () => {
+  startLocalMedia = (videoroom) => {
     const {media: {video: {devices, video_device} = {}}, cammuted,} = this.state;
     if (!cammuted) return;
     console.log("Bind local video stream");
     const deviceId = video_device || devices?.[0]?.deviceId;
     if (deviceId) {
       this.setVideoDevice(deviceId, true).then(() => {
+        const {stream} = this.state.media.video
+        if(videoroom) videoroom.mute(false, stream)
         this.setState({cammuted: false});
       });
     }
@@ -1281,7 +1277,7 @@ class GalaxyClient extends Component {
       });
     } else {
       const {ip, country} = user;
-      virtualStreamingJanus.init(ip, country);
+      virtualStreamingJanus.init(user);
       stateUpdate.sourceLoading = true;
       this.setState(stateUpdate);
     }
@@ -1526,7 +1522,7 @@ class GalaxyClient extends Component {
             <AskQuestion
               t={t}
               isOn={!!question}
-              disabled={!mqttOn || premodStatus || !audio_device || !localAudioTrack || delay || otherFeedHasQuestion}
+              disabled={!mqttOn || premodStatus || !audio_device || delay || otherFeedHasQuestion}
               action={this.handleQuestion.bind(this)}
             />
             <Vote t={t} id={user?.id} disabled={!user || !user.id || room === ""}/>
@@ -1690,7 +1686,7 @@ class GalaxyClient extends Component {
           {/* ---------- */}
           <ButtonGroup
             variant="outlined"
-            disableElevation
+            disableElervation
             className={classNames("top-toolbar__item", "top-toolbar__toggle")}
           >
             <Badge color="secondary" badgeContent={asideMsgCounter.chat} showZero={false}>
