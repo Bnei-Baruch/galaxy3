@@ -1186,15 +1186,9 @@ class GalaxyClient extends Component {
 
     if (videoroom) {
       if (!cammuted) {
-        videoroom.mute(true)
         this.stopLocalMedia(videoroom);
       } else {
         this.startLocalMedia(videoroom);
-        setTimeout(() => {
-          //FIXME: Make sure we got stream here
-          const {stream} = this.state.media.video
-          videoroom.mute(false, stream)
-        }, 5000)
       }
 
       user.camera = cammuted;
@@ -1214,22 +1208,25 @@ class GalaxyClient extends Component {
     }
   };
 
-  stopLocalMedia = () => {
+  stopLocalMedia = (videoroom) => {
     const {media, cammuted} = this.state;
     if (cammuted) return;
     console.log("Stop local video stream");
     media.video?.stream?.getTracks().forEach((t) => t.stop());
-    media.video.stream = null;
+    //media.video.stream = null;
     this.setState({cammuted: true, media});
+    if(videoroom) videoroom.mute(true)
   };
 
-  startLocalMedia = () => {
+  startLocalMedia = (videoroom) => {
     const {media: {video: {devices, video_device} = {}}, cammuted,} = this.state;
     if (!cammuted) return;
     console.log("Bind local video stream");
     const deviceId = video_device || devices?.[0]?.deviceId;
     if (deviceId) {
       this.setVideoDevice(deviceId, true).then(() => {
+        const {stream} = this.state.media.video
+        if(videoroom) videoroom.mute(false, stream)
         this.setState({cammuted: false});
       });
     }
