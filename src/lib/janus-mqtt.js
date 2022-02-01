@@ -140,11 +140,11 @@ export class JanusMqtt {
     }
 
     if (isScheduled) {
-      setTimeout(() => { this.keepAlive() }, 60 * 1000)
+      setTimeout(() => { this.keepAlive() }, 20 * 1000)
     } else {
       console.debug('[janus] Sending Janus keepalive')
       this.transaction('keepalive').then(() => {
-        setTimeout(() => { this.keepAlive() }, 60 * 1000)
+        setTimeout(() => { this.keepAlive() }, 20 * 1000)
       }).catch((err) => {
         console.warn('[janus] Janus keepalive error', err)
       })
