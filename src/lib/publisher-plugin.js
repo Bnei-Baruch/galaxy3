@@ -130,8 +130,8 @@ export class PublisherPlugin extends EventEmitter {
         }
       }
       if(videoTransceiver && videoTransceiver.sender) {
-        videoTransceiver.sender.replaceTrack(stream.getVideoTracks()[0]).then(data => {
-          console.log("REPLACE TRACK: ", data)
+        videoTransceiver.sender.replaceTrack(stream.getVideoTracks()[0]).then(() => {
+          console.log('[publisher] video track replaced: ', videoTransceiver)
         });
       } else {
         this.pc.addTrack(stream.getVideoTracks()[0], stream);

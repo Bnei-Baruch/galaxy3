@@ -44,11 +44,9 @@ import audioModeSvg from "../../shared/audio-mode.svg";
 import fullModeSvg from "../../shared/full-mode.svg";
 import ConfigStore from "../../shared/ConfigStore";
 import {toggleFullScreen, isFullScreen} from "./FullScreenHelper";
-
 import {AppBar, Badge, Box, Button as ButtonMD, ButtonGroup, Grid, IconButton} from "@material-ui/core";
 import {ChevronLeft, ChevronRight, PlayCircleOutline /*, OpenInNewOutlined*/} from "@material-ui/icons"; //button of congress
 import {grey} from "@material-ui/core/colors";
-
 import {AskQuestion, AudioMode, CloseBroadcast, Layout, Mute, MuteVideo, Vote, Fullscreen} from "./buttons";
 import Settings from "./settings/Settings";
 import SettingsJoined from "./settings/SettingsJoined";
@@ -62,7 +60,6 @@ import {iceRestart as iceRestartKliOlami} from "./components/KliOlamiStreamHelpe
 import KliOlamiToggle from "./buttons/KliOlamiToggle";
 import Toolbar from "@material-ui/core/Toolbar";
 import Typography from "@material-ui/core/Typography";
-
 import {withTheme} from "@material-ui/core/styles";
 import ThemeSwitcher from "./components/ThemeSwitcher/ThemeSwitcher";
 import mqtt from "../../shared/mqtt";
@@ -1804,7 +1801,7 @@ class GalaxyClient extends Component {
     }
 
     const kliOlami = !sourceLoading && isKliOlamiShown && (
-      <KliOlamiStream
+      <KliOlamiStream VirtualStreamingJanus={this.state.virtualStreamingJanus}
         close={() => this.toggleKliOlami(false)}
         toggleAttach={(val = !kliOlamiAttached) => this.setState({kliOlamiAttached: val})}
         attached={kliOlamiAttached}

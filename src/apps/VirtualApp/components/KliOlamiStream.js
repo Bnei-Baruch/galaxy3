@@ -1,11 +1,9 @@
 import React, {Component} from "react";
-import {Janus} from "../../../lib/janus";
 import NewWindow from "@hinaser/react-new-window";
 import {isFullScreen, toggleFullScreen} from "../FullScreenHelper";
 import {Fullscreen} from "../buttons";
 import {Close, OpenInNew} from "@material-ui/icons";
 import IconButton from "@material-ui/core/IconButton";
-import {initStream, detach} from "./KliOlamiStreamHelper";
 
 class KliOlamiStream extends Component {
   constructor(props) {
@@ -19,12 +17,12 @@ class KliOlamiStream extends Component {
   }
 
   componentDidMount() {
-    if (!this.state.stream) initStream((stream) => this.setState({stream}));
+    if(!this.state.stream) this.props.VirtualStreamingJanus.initQuadStream(stream => this.setState({stream}))
   }
 
   componentWillUnmount() {
     if (this.videoWrapper) {
-      detach(this.videoWrapper);
+      this.props.VirtualStreamingJanus.detachQuadStream()
       this.videoWrapper.ownerDocument.defaultView.removeEventListener("resize", this.handleFullScreenChange);
     }
     this.props.toggleAttach(true);
@@ -40,7 +38,7 @@ class KliOlamiStream extends Component {
 
   videoRef(ref) {
     if (ref) {
-      Janus.attachMediaStream(ref, this.state.stream);
+      ref.srcObject = this.state.stream;
     }
   }
 
