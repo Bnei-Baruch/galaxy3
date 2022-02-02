@@ -316,9 +316,7 @@ class VirtualMqttClient extends Component {
         console.log("MQTT disconnected");
         this.setState({mqttOn: false});
         //notifyMe("Arvut System", "MQTT Offline", true);
-        if (this.state.question) {
-          this.handleQuestion();
-        }
+        window.location.reload()
       } else if (reconnected) {
         //notifyMe("Arvut System", "MQTT Online", true);
         this.setState({mqttOn: true});

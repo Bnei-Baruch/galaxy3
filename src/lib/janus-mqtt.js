@@ -203,8 +203,7 @@ export class JanusMqtt {
     mqtt.mq.removeListener(this.mit, this.onMessage);
   }
 
-  onMessage(message, tD, src) {
-    //if(src !== this.srv) return
+  onMessage(message, tD) {
     let json
     try {
       json = JSON.parse(message)
@@ -216,7 +215,9 @@ export class JanusMqtt {
     console.debug("[janus] :: New Janus Message :: ", json, tD);
     const {session_id, janus, data, jsep} = json;
 
-    if(tD === "status") {
+    if(tD === "status" && !json.online) {
+      alert("Janus Server - " + this.srv + " - Offline")
+      window.location.reload()
       return
     }
 
