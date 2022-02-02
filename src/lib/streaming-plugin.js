@@ -151,6 +151,7 @@ export class StreamingPlugin extends EventEmitter {
   }
 
   detach () {
+    this.pc.close()
     this.removeAllListeners()
     this.janus = null
   }

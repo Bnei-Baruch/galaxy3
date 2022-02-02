@@ -232,6 +232,7 @@ export class SubscriberPlugin extends EventEmitter {
   }
 
   detach () {
+    this.pc.close()
     this.removeAllListeners()
     this.janus = null
   }

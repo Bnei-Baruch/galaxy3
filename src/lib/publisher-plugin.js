@@ -237,6 +237,7 @@ export class PublisherPlugin extends EventEmitter {
   }
 
   detach () {
+    this.pc.close()
     this.removeAllListeners()
     this.janus = null
   }

@@ -76,7 +76,8 @@ export class JanusMqtt {
       return Promise.resolve()
     }
 
-    return this.transaction('destroy', {}, 'success', 5000).then(() => {
+    return this.transaction('destroy', {}, 'success', 5000).then(data => {
+      console.debug('[janus] Janus destroyed: ', data)
       this.cleanup()
     }).catch(() => {
       this.cleanup()

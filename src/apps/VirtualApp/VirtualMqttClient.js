@@ -373,36 +373,15 @@ class VirtualMqttClient extends Component {
     }
 
     const config = GxyJanus.instanceConfig(user.janus);
-    console.log(config)
-    this.initJanus(user, config)
-    // initJanus(
-    //   (janus) => {
-    //     // Check if unified plan supported
-    //     if (Janus.unifiedPlan) {
-    //       user.session = janus.getSessionId();
-    //       this.setState({janus});
-    //       this.initVideoRoom(reconnect, user);
-    //     } else {
-    //       alert(t("oldClient.unifiedPlanNotSupported"));
-    //     }
-    //   },
-    //   (err) => {
-    //     this.exitRoom(/* reconnect= */ true, () => {
-    //       console.error("[User] error initializing janus", err);
-    //       this.reinitClient(retry);
-    //     });
-    //   },
-    //   config.url,
-    //   config.token,
-    //   config.iceServers
-    // );
-
+    console.log("[client] Got config: ", config)
+    this.initJanus(user, config, retry)
     if (!reconnect) {
+
       this.state.virtualStreamingJanus.init(user);
     }
   };
 
-  initJanus = (user, config) => {
+  initJanus = (user, config, retry) => {
     let janus = new JanusMqtt(user, config.name, "MqttGalaxy")
 
     let videoroom = new PublisherPlugin();
@@ -428,19 +407,25 @@ class VirtualMqttClient extends Component {
         console.log('[client] Subscriber Handle: ', data)
       })
 
+    }).catch(err => {
+      console.error("[client] Janus init", err);
+      this.exitRoom(/* reconnect= */ true, () => {
+        console.error("[User] error initializing janus", err);
+        this.reinitClient(retry);
+      });
     })
   }
 
   reinitClient = (retry) => {
     retry++;
-    console.error("[User] reinitializing try: ", retry);
+    console.error("[client] reinitializing try: ", retry);
     if (retry < 10) {
       setTimeout(() => {
         this.initClient(/* reconnect= */ true, retry);
       }, 5000);
     } else {
       this.exitRoom(/* reconnect= */ false, () => {
-        console.error("[User] reinitializing failed after: " + retry + " retries");
+        console.error("[client] reinitializing failed after: " + retry + " retries");
         alert(this.props.t("oldClient.networkSettingsChanged"));
       });
     }
@@ -724,7 +709,9 @@ class VirtualMqttClient extends Component {
         this.exitRoom(/* reconnect= */ false);
       }
       this.makeSubscription(feeds);
-
+    }).catch(err => {
+      console.error('[client] Join error :', err);
+      this.exitRoom(/* reconnect= */ false);
     })
   };
 
@@ -746,122 +733,58 @@ class VirtualMqttClient extends Component {
         console.error("Error exiting room", err);
       });
 
-    let {videoroom, subscriber, janus, room, shidur, virtualStreamingJanus} = this.state;
-    // if (remoteFeed) remoteFeed.detach();
-    // if (videoroom) videoroom.send({message: {request: "leave", room}});
+    let {videoroom, janus, room, shidur, virtualStreamingJanus} = this.state;
 
     videoroom.leave().then(data => {
       console.log("[client] leave respond:", data);
+    });
 
-      janus.destroy()
+    mqtt.exit("galaxy/room/" + room);
+    mqtt.exit("galaxy/room/" + room + "/chat");
 
-      mqtt.exit("galaxy/room/" + room);
-      mqtt.exit("galaxy/room/" + room + "/chat");
+    if (shidur && !reconnect) {
+      virtualStreamingJanus.destroy({
+        success: () => {
+          console.log("Virtual streaming destroyed on exit room.");
+        },
+        error: (error) => {
+          console.log("Error destroying VirtualStreaming on exit room", error);
+        },
+      });
+    }
 
-      if (shidur && !reconnect) {
-        virtualStreamingJanus.destroy({
-          success: () => {
-            console.log("Virtual streaming destroyed on exit room.");
-          },
-          error: (error) => {
-            console.log("Error destroying VirtualStreaming on exit room", error);
-          },
-        });
+    if (!reconnect && isFullScreen()) {
+      toggleFullScreen();
+    }
+
+    setTimeout(() => {
+      if(janus) janus.destroy()
+      if (!reconnect) {
+        this.state.virtualStreamingJanus.muteAudioElement();
+      } else {
+        this.state.virtualStreamingJanus.unmuteAudioElement();
       }
-      if (!reconnect && isFullScreen()) {
-        toggleFullScreen();
-      }
-      setTimeout(() => {
-        // if (videoroom) videoroom.detach();
-        // if (janus) janus.destroy();
-        if (!reconnect) {
-          this.state.virtualStreamingJanus.muteAudioElement();
-        } else {
-          this.state.virtualStreamingJanus.unmuteAudioElement();
-        }
-        this.setState({
-          muted: false,
-          question: false,
-          feeds: [],
-          mids: [],
-          localAudioTrack: null,
-          localVideoTrack: null,
-          upval: null,
-          remoteFeed: null,
-          videoroom: null,
-          subscriber: null,
-          janus: null,
-          delay: reconnect,
-          room: reconnect ? room : "",
-          chatMessagesCount: 0,
-          isSettings: false,
-        });
-        if (typeof callback === "function") callback();
-      }, 2000);
-    })
+      this.setState({
+        muted: false,
+        question: false,
+        feeds: [],
+        mids: [],
+        localAudioTrack: null,
+        localVideoTrack: null,
+        upval: null,
+        remoteFeed: null,
+        videoroom: null,
+        subscriber: null,
+        janus: null,
+        delay: reconnect,
+        room: reconnect ? room : "",
+        chatMessagesCount: 0,
+        isSettings: false,
+      });
+      if (typeof callback === "function") callback();
+    }, 1000);
 
   };
-
-  // publishOwnFeed = (useVideo, useAudio) => {
-  //   const {videoroom, media} = this.state;
-  //   const {
-  //     audio: {audio_device},
-  //     video: {setting, video_device},
-  //   } = media;
-  //   const offer = {audioRecv: false, videoRecv: false, audioSend: useAudio, videoSend: useVideo, data: false};
-  //
-  //   if (useVideo) {
-  //     const {width, height, ideal} = setting;
-  //     offer.video = {width, height, frameRate: {ideal, min: 1}, deviceId: {exact: video_device}};
-  //   }
-  //
-  //   if (useAudio) {
-  //     offer.audio = {noiseSuppression: true, deviceId: {exact: audio_device}};
-  //   }
-  //
-  //   videoroom.createOffer({
-  //     media: offer,
-  //     simulcast: false,
-  //     success: (jsep) => {
-  //       Janus.debug("Got publisher SDP!");
-  //       Janus.debug(jsep);
-  //       const publish = {request: "configure", audio: useAudio, video: useVideo, data: false};
-  //       videoroom.send({message: publish, jsep: jsep});
-  //       if (!useVideo) {
-  //         media.video?.stream?.getTracks().forEach((t) => t.stop());
-  //         this.setState({cammuted: true});
-  //       }
-  //     },
-  //     error: (error) => {
-  //       Janus.error("WebRTC error:", error);
-  //     },
-  //   });
-  // };
-  //
-  // iceRestart = () => {
-  //   const {videoroom, remoteFeed} = this.state;
-  //
-  //   if (videoroom) {
-  //     videoroom.createOffer({
-  //       media: {audioRecv: false, videoRecv: false, audioSend: true, videoSend: true},
-  //       iceRestart: true,
-  //       simulcast: false,
-  //       success: (jsep) => {
-  //         Janus.debug("Got publisher SDP!");
-  //         Janus.debug(jsep);
-  //         const publish = {request: "configure", restart: true};
-  //         videoroom.send({message: publish, jsep: jsep});
-  //       },
-  //       error: (err) => {
-  //         Janus.error("WebRTC error:", err);
-  //       },
-  //     });
-  //   }
-  //
-  //   if (remoteFeed) remoteFeed.send({message: {request: "configure", restart: true}});
-  //   if (this.state.virtualStreamingJanus) this.state.virtualStreamingJanus.iceRestart();
-  //   iceRestartKliOlami();
-  // };
 
   makeSubscription = (newFeeds) => {
     console.log("makeSubscription", newFeeds);
