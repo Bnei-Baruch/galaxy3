@@ -34,7 +34,7 @@ import {
 } from "../../shared/MonitoringData";
 import api from "../../shared/Api";
 import VirtualStreaming from "./VirtualStreaming";
-import VirtualStreamingJanus from "../../shared/VirtualStreamingJanus";
+import JanusStream from "../../shared/streaming-utils";
 import {getUser, kc} from "../../components/UserManager";
 import LoginPage from "../../components/LoginPage";
 import {Profile} from "../../components/Profile";
@@ -55,8 +55,8 @@ import {SupportOld, Support, initCrisp} from "./components/Support";
 import SendQuestionContainer from "./components/SendQuestions/container";
 import {RegistrationModals} from "./components/RegistrationModals";
 import {getUserRole, userRolesEnum} from "../../shared/enums";
-import KliOlamiStream from "./components/KliOlamiStream";
-import {iceRestart as iceRestartKliOlami} from "./components/KliOlamiStreamHelper";
+import QuadStream from "./components/QuadStream";
+//import {iceRestart as iceRestartKliOlami} from "./components/KliOlamiStreamHelper";
 import KliOlamiToggle from "./buttons/KliOlamiToggle";
 import Toolbar from "@material-ui/core/Toolbar";
 import Typography from "@material-ui/core/Typography";
@@ -141,7 +141,7 @@ class GalaxyClient extends Component {
     currentLayout: localStorage.getItem("currentLayout") || "split",
     attachedSource: true,
     sourceLoading: true,
-    virtualStreamingJanus: new VirtualStreamingJanus(() => this.virtualStreamingInitialized()),
+    virtualStreamingJanus: new JanusStream(() => this.virtualStreamingInitialized()),
     appInitError: null,
     upval: null,
     net_status: 1,
@@ -1280,7 +1280,7 @@ class GalaxyClient extends Component {
     }
   };
 
-  toggleKliOlami = (isKliOlamiShown = !this.state.isKliOlamiShown) => this.setState({isKliOlamiShown});
+  toggleQuad = (isKliOlamiShown = !this.state.isKliOlamiShown) => this.setState({isKliOlamiShown});
 
   updateLayout = (currentLayout) => {
     this.setState({currentLayout}, () => {
@@ -1493,7 +1493,7 @@ class GalaxyClient extends Component {
 
           <ButtonGroup className={classNames("bottom-toolbar__item")} variant="contained" disableElevation>
             <Fullscreen t={t} isOn={isFullScreen()} action={toggleFullScreen}/>
-            <KliOlamiToggle isOn={isKliOlamiShown} action={this.toggleKliOlami}/>
+            <KliOlamiToggle isOn={isKliOlamiShown} action={this.toggleQuad}/>
             <CloseBroadcast
               t={t}
               isOn={shidur}
@@ -1801,8 +1801,8 @@ class GalaxyClient extends Component {
     }
 
     const kliOlami = !sourceLoading && isKliOlamiShown && (
-      <KliOlamiStream VirtualStreamingJanus={this.state.virtualStreamingJanus}
-        close={() => this.toggleKliOlami(false)}
+      <QuadStream JanusStream={this.state.virtualStreamingJanus}
+        close={() => this.toggleQuad(false)}
         toggleAttach={(val = !kliOlamiAttached) => this.setState({kliOlamiAttached: val})}
         attached={kliOlamiAttached}
       />

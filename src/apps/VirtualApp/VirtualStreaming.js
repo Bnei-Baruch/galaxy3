@@ -2,7 +2,6 @@ import React, {Component, Fragment} from "react";
 import {Label, Dropdown, Header, Icon, Grid, Image} from "semantic-ui-react";
 import NewWindow from "@hinaser/react-new-window";
 import {videos_options2, audiog_options2, NO_VIDEO_OPTION_VALUE} from "../../shared/consts";
-// import '../StreamApp/GalaxyStream.css';
 import "./BroadcastStream.scss";
 import Volume from "./components/Volume";
 import {withTranslation} from "react-i18next";
