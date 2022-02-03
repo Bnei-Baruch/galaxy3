@@ -215,6 +215,11 @@ export class JanusMqtt {
     console.debug("[janus] :: New Janus Message :: ", json, tD);
     const {session_id, janus, data, jsep} = json;
 
+    if(tD === "status" && json.online) {
+      console.debug("Janus Server - " + this.srv + " - Online")
+      return
+    }
+
     if(tD === "status" && !json.online) {
       alert("Janus Server - " + this.srv + " - Offline")
       window.location.reload()
