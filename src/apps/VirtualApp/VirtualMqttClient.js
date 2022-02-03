@@ -63,6 +63,7 @@ import Typography from "@material-ui/core/Typography";
 import {withTheme} from "@material-ui/core/styles";
 import ThemeSwitcher from "./components/ThemeSwitcher/ThemeSwitcher";
 import mqtt from "../../shared/mqtt";
+import devices from "../../lib/devices";
 import {JanusMqtt} from "../../lib/janus-mqtt";
 import {PublisherPlugin} from "../../lib/publisher-plugin";
 import {SubscriberPlugin} from "../../lib/subscriber-plugin";
@@ -204,6 +205,7 @@ class VirtualMqttClient extends Component {
     if (isMobile) {
       window.location = "/userm";
     }
+    devices.init().then(data => console.log("[client] init devices: ", data))
   }
 
   componentWillUnmount() {

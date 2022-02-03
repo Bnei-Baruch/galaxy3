@@ -30,9 +30,9 @@ const CheckMySelf = ({audio}) => {
 
   useEffect(() => {
     if (audio.stream && canvasRef.current) {
-      onMicrophoneGranted(audio.stream, canvasRef.current, (audioContext) => {
-        audio.context = audioContext;
-      }, false)
+      // onMicrophoneGranted(audio.stream, canvasRef.current, (audioContext) => {
+      //   audio.context = audioContext;
+      // }, false)
       // micLevel(
       //   audio.stream,
       //   canvasRef.current,

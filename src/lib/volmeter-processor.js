@@ -15,7 +15,7 @@ registerProcessor('volume_meter', class extends AudioWorkletProcessor {
   constructor () {
     super();
     this._volume = 0;
-    this._updateIntervalInMS = 50;
+    this._updateIntervalInMS = 100;
     this._nextUpdateFrame = this._updateIntervalInMS;
     this._currentTime = 0;
     this.port.onmessage = event => {
@@ -63,7 +63,7 @@ registerProcessor('volume_meter', class extends AudioWorkletProcessor {
       if (this._nextUpdateFrame < 0) {
         this._nextUpdateFrame += this.intervalInFrames;
 
-        if (!this._currentTime || 0.030 < currentTime - this._currentTime) {
+        if (!this._currentTime || 0.005 < currentTime - this._currentTime) {
           // eslint-disable-next-line no-undef
           this._currentTime = currentTime;
           // console.log(`currentTime: ${currentTime}`);

@@ -94,12 +94,18 @@ export const getDateString = (jsonDate) => {
   return dateString;
 };
 
-export const onMicrophoneGranted = async(stream, c, cb, d = "old") => {
+export const onMicrophoneGranted = async(stream, c, cb, d = "vertical") => {
 
   let cc = c.getContext("2d");
   let gradient
 
-  if(d === "old") {
+  if(d === "vertical") {
+    // gradient = cc.createLinearGradient(0, 0, 0, 55);
+    // gradient.addColorStop(1, "green");
+    // gradient.addColorStop(0.35, "#80ff00");
+    // gradient.addColorStop(0.1, "orange");
+    // gradient.addColorStop(0, "red");
+
     gradient = cc.createLinearGradient(0, 0, 0, 55);
     gradient.addColorStop(1, "green");
     gradient.addColorStop(0.35, "#80ff00");
@@ -114,7 +120,9 @@ export const onMicrophoneGranted = async(stream, c, cb, d = "old") => {
   }
 
     let audioContext = new AudioContext()
-  console.log(audioContext)
+
+    console.log("[client] mic level: ", audioContext)
+
     cb(audioContext)
     await audioContext.audioWorklet.addModule('volmeter-processor.js')
     let microphone = audioContext.createMediaStreamSource(stream)
@@ -126,7 +134,7 @@ export const onMicrophoneGranted = async(stream, c, cb, d = "old") => {
       let _rms = 0
       let _dB = 0
 
-      console.log('latest readings:', event.data)
+      //console.log('latest readings:', event.data)
 
       if (event.data.volume) {
 
@@ -134,10 +142,14 @@ export const onMicrophoneGranted = async(stream, c, cb, d = "old") => {
         _rms = event.data.rms
         _dB = event.data.dB
 
-        if(d === "old") {
-          cc.clearRect(0, 0, 15, 35);
+        if(d === "vertical") {
+          // cc.clearRect(0, 0, 15, 35);
+          // cc.fillStyle = gradient;
+          // cc.fillRect(0, c.height - _rms * 100, 15, 35);
+
+          cc.clearRect(0, 0, c.width, c.height);
           cc.fillStyle = gradient;
-          cc.fillRect(0, c.height - _rms * 100, 15, 35);
+          cc.fillRect(0, c.height - _volume * 300, c.width, c.height);
         } else {
           cc.clearRect(0, 0, c.width, c.height);
           cc.fillStyle = gradient;
