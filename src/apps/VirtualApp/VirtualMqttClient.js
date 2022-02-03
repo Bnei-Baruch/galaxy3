@@ -1136,14 +1136,15 @@ class VirtualMqttClient extends Component {
     const {media, cammuted} = this.state;
     if (cammuted) return;
     console.log("Stop local video stream");
-    media.video?.stream?.getTracks().forEach((t) => t.stop());
-    //media.video.stream = null;
+    media.video?.stream?.getTracks().forEach((t) => {
+      if(t.kind === "video") t.stop()
+    });
     this.setState({cammuted: true, media});
     if(videoroom) videoroom.mute(true)
   };
 
   startLocalMedia = (videoroom) => {
-    const {media: {video: {devices, video_device} = {}}, cammuted,} = this.state;
+    const {media: {video: {devices, video_device} = {}}, cammuted} = this.state;
     if (!cammuted) return;
     console.log("Bind local video stream");
     const deviceId = video_device || devices?.[0]?.deviceId;
