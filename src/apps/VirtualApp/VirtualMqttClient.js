@@ -9,7 +9,7 @@ import {
   getMedia,
   getMediaStream,
   micLevel,
-  notifyMe,
+  notifyMe, onMicrophoneGranted,
   testMic,
   updateGxyUser,
 } from "../../shared/tools";
@@ -451,15 +451,21 @@ class VirtualMqttClient extends Component {
       }
 
       if (audio.stream) {
-        micLevel(
-          audio.stream,
-          this.refs.canvas1,
-          (audioContext) => {
-            audio.context = audioContext;
-            this.setState({media});
-          },
-          isUseNewDesign ? "vertical" : "old"
-        );
+
+        // onMicrophoneGranted(audio.stream, this.refs.canvas1, (audioContext) => {
+        //   audio.context = audioContext;
+        //   this.setState({media});
+        // }, isUseNewDesign ? "vertical" : "old")
+
+        // micLevel(
+        //   audio.stream,
+        //   this.refs.canvas1,
+        //   (audioContext) => {
+        //     audio.context = audioContext;
+        //     this.setState({media});
+        //   },
+        //   isUseNewDesign ? "vertical" : "old"
+        // );
       }
 
       // we dup this info on user so it goes into the backend.
@@ -540,15 +546,15 @@ class VirtualMqttClient extends Component {
         if (media.audio.context) {
           media.audio.context.close();
         }
-        micLevel(
-          stream,
-          this.refs.canvas1,
-          (audioContext) => {
-            media.audio.context = audioContext;
-            this.setState({media});
-          },
-          isUseNewDesign ? "vertical" : "old"
-        );
+        // micLevel(
+        //   stream,
+        //   this.refs.canvas1,
+        //   (audioContext) => {
+        //     media.audio.context = audioContext;
+        //     this.setState({media});
+        //   },
+        //   isUseNewDesign ? "vertical" : "old"
+        // );
       }
     });
   };
@@ -1151,9 +1157,10 @@ class VirtualMqttClient extends Component {
   };
 
   micMute = () => {
-    const {media: {audio: {stream}}, muted} = this.state;
+    const {media: {audio: {stream, context}}, muted} = this.state;
     if(stream) {
       stream.getAudioTracks()[0].enabled = muted;
+      muted ? context.resume() : context.suspend()
       this.setState({muted: !muted});
     }
   };

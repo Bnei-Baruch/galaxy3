@@ -94,6 +94,68 @@ export const getDateString = (jsonDate) => {
   return dateString;
 };
 
+export const onMicrophoneGranted = async(stream, c, cb, d = "old") => {
+
+  let cc = c.getContext("2d");
+  let gradient
+
+  if(d === "old") {
+    gradient = cc.createLinearGradient(0, 0, 0, 55);
+    gradient.addColorStop(1, "green");
+    gradient.addColorStop(0.35, "#80ff00");
+    gradient.addColorStop(0.1, "orange");
+    gradient.addColorStop(0, "red");
+  } else {
+    gradient = cc.createLinearGradient(0, 0, c.width, 0);
+    gradient.addColorStop(0, "green");
+    gradient.addColorStop(0.3, "#80ff00");
+    gradient.addColorStop(0.5, "orange");
+    gradient.addColorStop(1, "red");
+  }
+
+    let audioContext = new AudioContext()
+  console.log(audioContext)
+    cb(audioContext)
+    await audioContext.audioWorklet.addModule('volmeter-processor.js')
+    let microphone = audioContext.createMediaStreamSource(stream)
+    const node = new AudioWorkletNode(audioContext, 'volume_meter')
+
+    node.port.onmessage = event => {
+
+      let _volume = 0
+      let _rms = 0
+      let _dB = 0
+
+      console.log('latest readings:', event.data)
+
+      if (event.data.volume) {
+
+        _volume = event.data.volume
+        _rms = event.data.rms
+        _dB = event.data.dB
+
+        if(d === "old") {
+          cc.clearRect(0, 0, 15, 35);
+          cc.fillStyle = gradient;
+          cc.fillRect(0, c.height - _rms * 100, 15, 35);
+        } else {
+          cc.clearRect(0, 0, c.width, c.height);
+          cc.fillStyle = gradient;
+          cc.fillRect(0, 0, _volume * 500, c.height);
+        }
+
+      }
+    }
+
+    microphone.connect(node)
+
+  // if (_listening) {
+  //   audioContext.suspend()
+  // } else {
+  //   audioContext.resume()
+  // }
+}
+
 export const micLevel = (stream, canvas, cb, renderType = "old") => {
   window.AudioContext = window.AudioContext || window.webkitAudioContext;
   //let audioContext = null;

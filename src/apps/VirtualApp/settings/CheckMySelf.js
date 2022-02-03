@@ -3,7 +3,7 @@ import {useTranslation} from "react-i18next";
 import makeStyles from "@material-ui/core/styles/makeStyles";
 import {Button, Grid, Box} from "@material-ui/core";
 
-import {micLevel, recordAudio, sleep} from "../../../shared/tools";
+import {micLevel, onMicrophoneGranted, recordAudio, sleep} from "../../../shared/tools";
 
 const INTERVAL_STEP_MLS = 1000;
 const CANVAS_WIDTH = 150;
@@ -30,14 +30,17 @@ const CheckMySelf = ({audio}) => {
 
   useEffect(() => {
     if (audio.stream && canvasRef.current) {
-      micLevel(
-        audio.stream,
-        canvasRef.current,
-        (audioContext) => {
-          audio.context = audioContext;
-        },
-        false
-      );
+      onMicrophoneGranted(audio.stream, canvasRef.current, (audioContext) => {
+        audio.context = audioContext;
+      }, false)
+      // micLevel(
+      //   audio.stream,
+      //   canvasRef.current,
+      //   (audioContext) => {
+      //     audio.context = audioContext;
+      //   },
+      //   false
+      // );
     }
   }, [audio.stream, canvasRef]); // eslint-disable-line  react-hooks/exhaustive-deps
 
