@@ -87,6 +87,7 @@ class LocalDevices {
 
   initMicLevel = async() => {
     if(!this.audio_stream) return null
+    const event = new Event('build');
 
     this.audio_context = new AudioContext()
     console.log("[devices] mic level: ", this.audio_context)
@@ -105,6 +106,7 @@ class LocalDevices {
         _volume = event.data.volume
         _rms = event.data.rms
         _dB = event.data.dB
+
         if(typeof this.micLevel === "function")
           this.micLevel(_volume)
       }

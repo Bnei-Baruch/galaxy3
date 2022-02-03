@@ -8,8 +8,7 @@ import {
   getDateString,
   getMedia,
   getMediaStream,
-  micLevel,
-  notifyMe, onMicrophoneGranted,
+  notifyMe,
   testMic,
   updateGxyUser,
 } from "../../shared/tools";
@@ -56,7 +55,6 @@ import SendQuestionContainer from "./components/SendQuestions/container";
 import {RegistrationModals} from "./components/RegistrationModals";
 import {getUserRole, userRolesEnum} from "../../shared/enums";
 import QuadStream from "./components/QuadStream";
-//import {iceRestart as iceRestartKliOlami} from "./components/KliOlamiStreamHelper";
 import KliOlamiToggle from "./buttons/KliOlamiToggle";
 import Toolbar from "@material-ui/core/Toolbar";
 import Typography from "@material-ui/core/Typography";
@@ -455,23 +453,6 @@ class VirtualMqttClient extends Component {
         if (myvideo) myvideo.srcObject = media.video.stream;
       }
 
-      if (audio.stream) {
-        // onMicrophoneGranted(audio.stream, this.refs.canvas1, (audioContext) => {
-        //   audio.context = audioContext;
-        //   this.setState({media});
-        // }, isUseNewDesign ? "vertical" : "old")
-
-        // micLevel(
-        //   audio.stream,
-        //   this.refs.canvas1,
-        //   (audivoContext) => {
-        //     audio.context = audioContext;
-        //     this.setState({media});
-        //   },
-        //   isUseNewDesign ? "vertical" : "old"
-        // );
-      }
-
       // we dup this info on user so it goes into the backend.
       // from there it propagates into other components (e.g. shidur preview)
       const user = {
@@ -673,22 +654,6 @@ class VirtualMqttClient extends Component {
     }
   };
 
-  micVolume = () => {
-    const c = this.refs.canvas1
-    let cc = c.getContext("2d");
-    let gradient = cc.createLinearGradient(0, 0, 0, 55);
-    gradient.addColorStop(1, "green");
-    gradient.addColorStop(0.35, "#80ff00");
-    gradient.addColorStop(0.1, "orange");
-    gradient.addColorStop(0, "red");
-    devices.micLevel = (volume) => {
-      //console.log("[client] volume: ", volume)
-      cc.clearRect(0, 0, c.width, c.height);
-      cc.fillStyle = gradient;
-      cc.fillRect(0, c.height - volume * 300, c.width, c.height);
-    }
-  }
-
   joinRoom = (reconnect, videoroom, user) => {
     let {selected_room, tested, media, cammuted, janus} = this.state;
     const {video: {video_device}} = media;
@@ -701,7 +666,6 @@ class VirtualMqttClient extends Component {
     user.handle = videoroom.janusHandleId;
 
     this.micMute()
-    this.micVolume()
 
     this.setState({user});
 
@@ -1181,11 +1145,28 @@ class VirtualMqttClient extends Component {
   micMute = () => {
     const {media: {audio: {stream, context}}, muted} = this.state;
     if(stream) {
+      if(muted) this.micVolume()
       stream.getAudioTracks()[0].enabled = muted;
       muted ? devices.audio_context.resume() : devices.audio_context.suspend()
       this.setState({muted: !muted});
     }
   };
+
+  micVolume = () => {
+    const c = this.refs.canvas1
+    let cc = c.getContext("2d");
+    let gradient = cc.createLinearGradient(0, 0, 0, 55);
+    gradient.addColorStop(1, "green");
+    gradient.addColorStop(0.35, "#80ff00");
+    gradient.addColorStop(0.1, "orange");
+    gradient.addColorStop(0, "red");
+    devices.micLevel = (volume) => {
+      //console.log("[client] volume: ", volume)
+      cc.clearRect(0, 0, c.width, c.height);
+      cc.fillStyle = gradient;
+      cc.fillRect(0, c.height - volume * 300, c.width, c.height);
+    }
+  }
 
   otherCamsMuteToggle = () => {
     const {feeds, muteOtherCams} = this.state;
