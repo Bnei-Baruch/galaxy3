@@ -66,8 +66,35 @@ export class PublisherPlugin extends EventEmitter {
   }
 
   publish(video, audio) {
+
     if(video) this.pc.addTrack(video.getVideoTracks()[0], video);
     if(audio) this.pc.addTrack(audio.getAudioTracks()[0], audio);
+
+    let videoTransceiver = null;
+    let audioTransceiver = null;
+    let tr = this.pc.getTransceivers();
+    if(tr && tr.length > 0) {
+      for (let t of tr) {
+        if (t.sender && t.sender.track && t.sender.track.kind === "video") {
+          videoTransceiver = t;
+          if (videoTransceiver.setDirection) {
+            videoTransceiver.setDirection("sendonly");
+          } else {
+            videoTransceiver.direction = "sendonly";
+          }
+          break;
+        }
+        if(t.sender && t.sender.track && t.sender.track.kind === "audio") {
+          audioTransceiver = t;
+          if (audioTransceiver.setDirection) {
+            audioTransceiver.setDirection("sendonly");
+          } else {
+            audioTransceiver.direction = "sendonly";
+          }
+          break;
+        }
+      }
+    }
 
     this.pc.onicecandidate = (e) => {
       let candidate = {completed: true}
@@ -111,41 +138,35 @@ export class PublisherPlugin extends EventEmitter {
   };
 
   mute(video, stream) {
-    if(video) {
-      for(let t of this.pc.getSenders()) {
-        if(t?.track && t.track.kind === "video") {
-          t.muted = true
+
+    let videoTransceiver = null;
+    let tr = this.pc.getTransceivers();
+    if(tr && tr.length > 0) {
+      for(let t of tr) {
+        if(t?.sender?.track?.kind === "video") {
+          videoTransceiver = t;
+          break;
         }
-      }
-    } else {
-      let videoTransceiver = null;
-      let tr = this.pc.getTransceivers();
-      if(tr && tr.length > 0) {
-        for(let t of tr) {
-          if((t.sender && t.sender.track && t.sender.track.kind === "video") ||
-            (t.receiver && t.receiver.track && t.receiver.track.kind === "video")) {
-            videoTransceiver = t;
-            break;
-          }
-        }
-      }
-      if(videoTransceiver && videoTransceiver.sender) {
-        videoTransceiver.sender.replaceTrack(stream.getVideoTracks()[0]).then(() => {
-          console.log('[publisher] video track replaced: ', videoTransceiver)
-        });
-      } else {
-        this.pc.addTrack(stream.getVideoTracks()[0], stream);
       }
     }
 
+    let d = video ? "inactive" : "sendonly"
+
+    if (videoTransceiver?.setDirection) {
+      videoTransceiver.setDirection(d);
+    } else {
+      videoTransceiver.direction = d;
+    }
+
+    if(!video) videoTransceiver.sender.replaceTrack(stream.getVideoTracks()[0])
+
     this.pc.createOffer().then((offer) => {
-      const jsep = { type: offer.type, sdp: offer.sdp }
-      this.pc.setLocalDescription(offer)
+      this.pc.setLocalDescription(offer).catch(error => console.error("[publisher] setLocalDescription: ", error))
         const body = {request: 'configure'}
-        return this.transaction('message', { body, jsep }, 'event').then((param) => {
+        return this.transaction('message', { body, jsep: offer }, 'event').then((param) => {
           const { json } = param || {}
           const jsep = json.jsep
-          console.log('[publisher] Video is - ' + (video ? 'Muted' : 'Unmuted'), jsep)
+          console.log('[publisher] Video is - ' + (video ? 'Muted' : 'Unmuted'), param)
           this.pc.setRemoteDescription(jsep).then(() => {
             console.log('[publisher] remoteDescription set')
           })
