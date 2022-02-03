@@ -30,7 +30,7 @@ class LocalDevices {
     let storage_setting = JSON.parse(localStorage.getItem("video_setting"));
     this.video_device = !!storage_video ? storage_video : null;
     this.audio_device = !!storage_audio ? storage_audio : null;
-    this.video_setting = !!storage_setting ? storage_setting : video.setting;
+    this.video_setting = !!storage_setting ? storage_setting : this.video_setting;
     [this.video_stream, this.video_error] = await this.getMediaStream(true, true, this.video_setting, this.audio_device, this.video_device);
 
     // Saved devices failed try with default
