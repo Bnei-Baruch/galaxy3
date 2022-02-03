@@ -34,6 +34,29 @@ export class StreamingPlugin extends EventEmitter {
         console.log("[streaming] watch: ", param)
         const {session_id, json } = param
 
+        let audioTransceiver = null, videoTransceiver = null;
+        let transceivers = this.pc.getTransceivers();
+        if(transceivers && transceivers.length > 0) {
+          for(let t of transceivers) {
+            if(t?.receiver?.track?.kind === "audio") {
+              if (audioTransceiver.setDirection) {
+                audioTransceiver.setDirection("recvonly");
+              } else {
+                audioTransceiver.direction = "recvonly";
+              }
+              continue;
+            }
+            if(t?.receiver?.track?.kind === "video") {
+              if (videoTransceiver.setDirection) {
+                videoTransceiver.setDirection("sendonly");
+              } else {
+                videoTransceiver.direction = "sendonly";
+              }
+              continue;
+            }
+          }
+        }
+
         if (json?.jsep) {
           console.log('[streaming] sdp: ', json)
           this.sdpExchange(json.jsep)
