@@ -4,6 +4,7 @@ import makeStyles from "@material-ui/core/styles/makeStyles";
 import {Button, Grid, Box} from "@material-ui/core";
 
 import {micLevel, onMicrophoneGranted, recordAudio, sleep} from "../../../shared/tools";
+import devices from "../../../lib/devices";
 
 const INTERVAL_STEP_MLS = 1000;
 const CANVAS_WIDTH = 150;
@@ -30,6 +31,21 @@ const CheckMySelf = ({audio}) => {
 
   useEffect(() => {
     if (audio.stream && canvasRef.current) {
+      const c = canvasRef.current
+      let cc = c.getContext("2d");
+      const w = c.width;
+      const h = c.height;
+      let gradient = cc.createLinearGradient(0, 0, w, 0);
+      gradient.addColorStop(0, "green");
+      gradient.addColorStop(0.3, "#80ff00");
+      gradient.addColorStop(0.5, "orange");
+      gradient.addColorStop(1, "red");
+      devices.micLevel = (volume) => {
+        //console.log("[settings] volume: ", volume)
+        cc.clearRect(0, 0, c.width, c.height);
+        cc.fillStyle = gradient;
+        cc.fillRect(0, 0, volume * 500, c.height);
+      }
       // onMicrophoneGranted(audio.stream, canvasRef.current, (audioContext) => {
       //   audio.context = audioContext;
       // }, false)

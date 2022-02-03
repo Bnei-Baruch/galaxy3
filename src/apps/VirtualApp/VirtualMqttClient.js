@@ -205,7 +205,10 @@ class VirtualMqttClient extends Component {
     if (isMobile) {
       window.location = "/userm";
     }
-    devices.init().then(data => console.log("[client] init devices: ", data))
+    devices.init().then(data => {
+      console.log("[client] init devices: ", data)
+      data.initMicLevel()
+    })
   }
 
   componentWillUnmount() {
@@ -453,7 +456,6 @@ class VirtualMqttClient extends Component {
       }
 
       if (audio.stream) {
-
         // onMicrophoneGranted(audio.stream, this.refs.canvas1, (audioContext) => {
         //   audio.context = audioContext;
         //   this.setState({media});
@@ -462,7 +464,7 @@ class VirtualMqttClient extends Component {
         // micLevel(
         //   audio.stream,
         //   this.refs.canvas1,
-        //   (audioContext) => {
+        //   (audivoContext) => {
         //     audio.context = audioContext;
         //     this.setState({media});
         //   },
@@ -671,6 +673,22 @@ class VirtualMqttClient extends Component {
     }
   };
 
+  micVolume = () => {
+    const c = this.refs.canvas1
+    let cc = c.getContext("2d");
+    let gradient = cc.createLinearGradient(0, 0, 0, 55);
+    gradient.addColorStop(1, "green");
+    gradient.addColorStop(0.35, "#80ff00");
+    gradient.addColorStop(0.1, "orange");
+    gradient.addColorStop(0, "red");
+    devices.micLevel = (volume) => {
+      //console.log("[client] volume: ", volume)
+      cc.clearRect(0, 0, c.width, c.height);
+      cc.fillStyle = gradient;
+      cc.fillRect(0, c.height - volume * 300, c.width, c.height);
+    }
+  }
+
   joinRoom = (reconnect, videoroom, user) => {
     let {selected_room, tested, media, cammuted, janus} = this.state;
     const {video: {video_device}} = media;
@@ -683,6 +701,7 @@ class VirtualMqttClient extends Component {
     user.handle = videoroom.janusHandleId;
 
     this.micMute()
+    this.micVolume()
 
     this.setState({user});
 
@@ -1163,7 +1182,7 @@ class VirtualMqttClient extends Component {
     const {media: {audio: {stream, context}}, muted} = this.state;
     if(stream) {
       stream.getAudioTracks()[0].enabled = muted;
-      muted ? context.resume() : context.suspend()
+      muted ? devices.audio_context.resume() : devices.audio_context.suspend()
       this.setState({muted: !muted});
     }
   };

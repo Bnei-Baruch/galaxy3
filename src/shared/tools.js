@@ -223,7 +223,7 @@ const renderHorizontalCanvas = (c, node, analyser) => {
   };
 };
 
-const renderVerticalCanvas = (canvas, javascriptNode, analyser) => {
+const renderVerticalCanvas = (canvas, volume) => {
   const w = canvas.width;
   const h = canvas.height;
   let canvasContext = canvas.getContext("2d");
