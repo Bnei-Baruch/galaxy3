@@ -2,19 +2,20 @@ import workerUrl from 'worker-plugin/loader!./volmeter-processor';
 
 class LocalDevices {
   constructor() {
-    this.audio = null;
-    this.audio_device = null
-    this.audio_devices = []
-    this.audio_error = null
-    this.audio_stream = null
-    this.audio_context = null
-
-    this.video = null
-    this.video_device = null
-    this.video_devices = []
-    this.video_error = null
-    this.video_stream = null
-    this.video_setting = {width: 320, height: 180, ideal: 15}
+    this.audio = {
+        context: null,
+        device: null,
+        devices: [],
+        error: null,
+        stream: null,
+    }
+    this.video = {
+        setting: {width: 320, height: 180, ideal: 15},
+        device: null,
+        devices: [],
+        error: null,
+        stream: null,
+    }
 
     this.micLevel = null
   }
@@ -26,49 +27,70 @@ class LocalDevices {
 
     // Check saved devices in local storage
     let storage_video = localStorage.getItem("video_device");
-    let storage_audio = localStorage.getItem("audio_device");
+    let storage_audio = localStorage.getItem("audio.device");
     let storage_setting = JSON.parse(localStorage.getItem("video_setting"));
-    this.video_device = !!storage_video ? storage_video : null;
-    this.audio_device = !!storage_audio ? storage_audio : null;
-    this.video_setting = !!storage_setting ? storage_setting : this.video_setting;
-    [this.video_stream, this.video_error] = await this.getMediaStream(true, true, this.video_setting, this.audio_device, this.video_device);
+    this.video.device = !!storage_video ? storage_video : null;
+    this.audio.device = !!storage_audio ? storage_audio : null;
+    this.video.setting = !!storage_setting ? storage_setting : this.video.setting;
+    [this.video.stream, this.video.error] = await this.getMediaStream(
+      true,
+      true,
+      this.video.setting,
+      this.audio.device,
+      this.video.device
+    );
 
     // Saved devices failed try with default
-    if (this.video_error === "OverconstrainedError") {
-      [this.video_stream, this.video_error] = await this.getMediaStream(true, true);
+    if (this.video.error === "OverconstrainedError") {
+      [this.video.stream, this.video.error] = await this.getMediaStream(
+        true,
+        true
+      );
     }
 
-    if (this.video_error) {
+    if (this.video.error) {
       // Get only audio
-      [this.audio_stream, this.audio_error] = await this.getMediaStream(true, false, this.video_setting, this.audio_device, null);
+      [this.audio.stream, this.audio.error] = await this.getMediaStream(
+        true,
+        false,
+        this.video.setting,
+        this.audio.device,
+        null
+      );
       devices = await navigator.mediaDevices.enumerateDevices();
-      this.audio_devices = devices.filter((a) => !!a.deviceId && a.kind === "audioinput");
+      this.audio.devices = devices.filter((a) => !!a.deviceId && a.kind === "audioinput");
 
       // Get only video
-      [this.video_stream, this.video_error] = await this.getMediaStream(false, true, this.video_setting, null, this.video_device);
+      [this.video.stream, this.video.error] = await this.getMediaStream(
+        false,
+        true,
+        this.video.setting,
+        null,
+        this.video.device
+      );
       devices = await navigator.mediaDevices.enumerateDevices();
-      this.video_devices = devices.filter((v) => !!v.deviceId && v.kind === "videoinput");
+      this.video.devices = devices.filter((v) => !!v.deviceId && v.kind === "videoinput");
     } else {
       devices = await navigator.mediaDevices.enumerateDevices();
-      this.audio_devices = devices.filter((a) => !!a.deviceId && a.kind === "audioinput");
-      this.video_devices = devices.filter((v) => !!v.deviceId && v.kind === "videoinput");
-      this.audio_stream = this.video_stream;
+      this.audio.devices = devices.filter((a) => !!a.deviceId && a.kind === "audioinput");
+      this.video.devices = devices.filter((v) => !!v.deviceId && v.kind === "videoinput");
+      this.audio.stream = this.video.stream;
     }
 
-    if (this.audio_stream) {
-      this.audio_device = this.audio_stream.getAudioTracks()[0].getSettings().deviceId;
+    if (this.audio.stream) {
+      this.audio.device = this.audio.stream.getAudioTracks()[0].getSettings().deviceId;
     } else {
-      this.audio_device = "";
+      this.audio.device = "";
     }
 
-    if (this.video_stream) {
-      this.video_device = this.video_stream.getVideoTracks()[0].getSettings().deviceId;
+    if (this.video.stream) {
+      this.video.device = this.video.stream.getVideoTracks()[0].getSettings().deviceId;
     } else {
-      this.video_device = "";
+      this.video.device = "";
     }
 
     console.debug("[devices] init: ", this)
-    return this;
+    return {video: this.video, audio: this.audio};
   };
 
   getMediaStream = (audio, video, setting = {width: 320, height: 180, ideal: 15}, audioid, videoid) => {
@@ -86,21 +108,21 @@ class LocalDevices {
   };
 
   initMicLevel = async() => {
-    if(!this.audio_stream) return null
-    const event = new Event('build');
+    console.log(" --- initMicLevel ---")
+    if(!this.audio.stream) return null
 
-    this.audio_context = new AudioContext()
-    console.log("[devices] mic level: ", this.audio_context)
-    await this.audio_context.audioWorklet.addModule(workerUrl)
-    let microphone = this.audio_context.createMediaStreamSource(this.audio_stream)
-    const node = new AudioWorkletNode(this.audio_context, 'volume_meter')
+    this.audio.context = new AudioContext()
+    console.log("[devices] mic level: ", this.audio.context)
+    await this.audio.context.audioWorklet.addModule(workerUrl)
+    let microphone = this.audio.context.createMediaStreamSource(this.audio.stream)
+    const node = new AudioWorkletNode(this.audio.context, 'volume_meter')
 
     node.port.onmessage = event => {
       let _volume = 0
       let _rms = 0
       let _dB = 0
 
-      //console.log('[devices] latest readings:', event.data)
+      console.log('[devices] latest readings:', event.data)
 
       if (event.data.volume) {
         _volume = event.data.volume
@@ -113,8 +135,68 @@ class LocalDevices {
     }
 
     microphone.connect(node)
-    return this.audio_context
-  }
+    return this.audio.context
+  };
+
+  setVideoSize = (setting) => {
+    if (JSON.stringify(setting) === JSON.stringify(this.video.setting)) return;
+
+    return this.getMediaStream(false, true, setting, null, this.video.device)
+      .then((data) => {
+        console.log(data);
+        const [stream, error] = data;
+        if (error) {
+          this.video.error = error
+          console.error(error);
+        } else {
+          localStorage.setItem("video_setting", JSON.stringify(setting));
+          this.video.stream = stream;
+          this.video.setting = setting;
+        }
+        return {video: this.video, audio: this.audio};
+      });
+  };
+
+  setVideoDevice = (device, reconnect) => {
+    if (device === this.video.device && !reconnect) return;
+    return this.getMediaStream(false, true, this.video.setting, null, device)
+      .then((data) => {
+        console.log(data);
+        const [stream, error] = data;
+        if (error) {
+          this.video.error = error
+          console.error(error);
+        } else {
+          localStorage.setItem("video_device", device);
+          this.video.stream = stream;
+          this.video.device = device;
+        }
+        return {video: this.video, audio: this.audio};
+      });
+  };
+
+  setAudioDevice = (device) => {
+    if (device === this.audio.device) return;
+    return this.getMediaStream(true, false, this.video.setting, device, null)
+      .then((data) => {
+        console.log(data);
+        const [stream, error] = data;
+        if (error) {
+          this.audio.error = error
+          console.error(error);
+        } else {
+          console.log(" --- setAudioDevice ---")
+          localStorage.setItem("audio_device", device);
+          this.audio.stream = stream;
+          this.audio.device = device;
+          if (this.audio.context) {
+            this.audio.context.close();
+            this.initMicLevel()
+          }
+        }
+        return {video: this.video, audio: this.audio};
+      });
+  };
 
 
 }
