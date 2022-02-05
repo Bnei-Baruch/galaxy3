@@ -21,7 +21,7 @@ const sortAndFilterFeeds = (feeds) =>
     .filter((feed) => !feed.display.role.match(/^(ghost|guest)$/))
     .sort((a, b) => a.display.timestamp - b.display.timestamp);
 
-class AdminRoot extends Component {
+class AdminRootMqtt extends Component {
   state = {
     audio: null,
     chatRoomsInitialized: false,
@@ -895,4 +895,4 @@ class AdminRoot extends Component {
   }
 }
 
-export default AdminRoot;
+export default AdminRootMqtt;
