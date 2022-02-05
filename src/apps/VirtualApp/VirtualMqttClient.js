@@ -783,6 +783,7 @@ class VirtualMqttClient extends Component {
 
     newFeeds.forEach((feed) => {
       const {id, streams} = feed;
+      feed.display = JSON.parse(feed.display)
       feed.video = !!streams.find((v) => v.type === "video" && v.codec === "h264");
       feed.audio = !!streams.find((a) => a.type === "audio" && a.codec === "opus");
       feed.data = !!streams.find((d) => d.type === "data");
