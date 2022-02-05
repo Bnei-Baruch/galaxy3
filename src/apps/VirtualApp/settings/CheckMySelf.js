@@ -33,14 +33,16 @@ const CheckMySelf = ({audio}) => {
     if (audio.stream && canvasRef.current) {
       micVolume()
       return () => {
-        devices.audio_context.suspend()
+        if(devices.audio_context)
+          devices.audio_context.suspend()
         devices.micLevel = null;
       };
     }
   }, [audio.stream, canvasRef]); // eslint-disable-line  react-hooks/exhaustive-deps
 
   const micVolume = () => {
-    devices.audio_context.resume()
+    if(devices.audio_context)
+      devices.audio_context.resume()
     const c = canvasRef.current
     let cc = c.getContext("2d");
     const w = c.width;

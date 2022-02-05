@@ -68,6 +68,7 @@ import Typography from "@material-ui/core/Typography";
 import {withTheme} from "@material-ui/core/styles";
 import ThemeSwitcher from "./components/ThemeSwitcher/ThemeSwitcher";
 import mqtt from "../../shared/mqtt";
+import devices from "../../lib/devices";
 
 const toggleDesignVersions = () => {
   window.location = isUseNewDesign ? "https://galaxy.kli.one/user/" : "https://arvut.kli.one/user/";
@@ -420,7 +421,7 @@ class VirtualHttpClient extends Component {
 
   initDevices = () => {
     const {t} = this.props;
-    getMedia(this.state.media).then((media) => {
+    devices.init(this.state.media).then((media) => {
       console.log("Got media: ", media);
       const {audio, video} = media;
 
@@ -437,18 +438,6 @@ class VirtualHttpClient extends Component {
       if (video.stream) {
         let myvideo = this.refs.localVideo;
         if (myvideo) myvideo.srcObject = media.video.stream;
-      }
-
-      if (audio.stream) {
-        micLevel(
-          audio.stream,
-          this.refs.canvas1,
-          (audioContext) => {
-            audio.context = audioContext;
-            this.setState({media});
-          },
-          isUseNewDesign ? "vertical" : "old"
-        );
       }
 
       // we dup this info on user so it goes into the backend.
@@ -476,7 +465,7 @@ class VirtualHttpClient extends Component {
   setVideoSize = (video_setting) => {
     let {media} = this.state;
     if (JSON.stringify(video_setting) === JSON.stringify(media.video.setting)) return;
-    getMediaStream(false, true, video_setting, null, media.video.video_device).then((data) => {
+    devices.getMediaStream(false, true, video_setting, null, media.video.video_device).then((data) => {
       console.log(data);
       const [stream, error] = data;
       if (error) {
@@ -495,7 +484,7 @@ class VirtualHttpClient extends Component {
   setVideoDevice = (video_device, reconnect) => {
     let {media} = this.state;
     if (video_device === media.video.video_device && !reconnect) return;
-    return getMediaStream(false, true, media.video.setting, null, video_device).then((data) => {
+    return devices.getMediaStream(false, true, media.video.setting, null, video_device).then((data) => {
       console.log(data);
       const [stream, error] = data;
       if (error) {
@@ -514,7 +503,7 @@ class VirtualHttpClient extends Component {
   setAudioDevice = (audio_device) => {
     let {media} = this.state;
     if (audio_device === media.audio.audio_device) return;
-    getMediaStream(true, false, media.video.setting, audio_device, null).then((data) => {
+    devices.getMediaStream(true, false, media.video.setting, audio_device, null).then((data) => {
       console.log(data);
       const [stream, error] = data;
       if (error) {
@@ -526,15 +515,6 @@ class VirtualHttpClient extends Component {
         if (media.audio.context) {
           media.audio.context.close();
         }
-        micLevel(
-          stream,
-          this.refs.canvas1,
-          (audioContext) => {
-            media.audio.context = audioContext;
-            this.setState({media});
-          },
-          isUseNewDesign ? "vertical" : "old"
-        );
       }
     });
   };
@@ -1491,9 +1471,27 @@ class VirtualHttpClient extends Component {
 
   micMute = () => {
     const {videoroom, muted} = this.state;
+    if(muted) this.micVolume()
     muted ? videoroom.unmuteAudio() : videoroom.muteAudio();
+    muted ? devices.audio_context.resume() : devices.audio_context.suspend()
     this.setState({muted: !muted});
   };
+
+  micVolume = () => {
+    const c = this.refs.canvas1
+    let cc = c.getContext("2d");
+    let gradient = cc.createLinearGradient(0, 0, 0, 55);
+    gradient.addColorStop(1, "green");
+    gradient.addColorStop(0.35, "#80ff00");
+    gradient.addColorStop(0.1, "orange");
+    gradient.addColorStop(0, "red");
+    devices.micLevel = (volume) => {
+      //console.log("[client] volume: ", volume)
+      cc.clearRect(0, 0, c.width, c.height);
+      cc.fillStyle = gradient;
+      cc.fillRect(0, c.height - volume * 300, c.width, c.height);
+    }
+  }
 
   otherCamsMuteToggle = () => {
     const {feeds, muteOtherCams} = this.state;

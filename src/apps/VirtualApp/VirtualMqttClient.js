@@ -203,10 +203,6 @@ class VirtualMqttClient extends Component {
     if (isMobile) {
       window.location = "/userm";
     }
-    devices.init().then(data => {
-      console.log("[client] init devices: ", data)
-      data.initMicLevel()
-    })
   }
 
   componentWillUnmount() {
@@ -434,7 +430,7 @@ class VirtualMqttClient extends Component {
 
   initDevices = () => {
     const {t} = this.props;
-    getMedia(this.state.media).then((media) => {
+    devices.init(this.state.media).then((media) => {
       console.log("Got media: ", media);
       const {audio, video} = media;
 
@@ -478,7 +474,7 @@ class VirtualMqttClient extends Component {
   setVideoSize = (video_setting) => {
     let {media} = this.state;
     if (JSON.stringify(video_setting) === JSON.stringify(media.video.setting)) return;
-    getMediaStream(false, true, video_setting, null, media.video.video_device)
+    devices.getMediaStream(false, true, video_setting, null, media.video.video_device)
       .then((data) => {
       console.log(data);
       const [stream, error] = data;
@@ -498,7 +494,7 @@ class VirtualMqttClient extends Component {
   setVideoDevice = (video_device, reconnect) => {
     let {media} = this.state;
     if (video_device === media.video.video_device && !reconnect) return;
-    return getMediaStream(false, true, media.video.setting, null, video_device)
+    return devices.getMediaStream(false, true, media.video.setting, null, video_device)
       .then((data) => {
       console.log(data);
       const [stream, error] = data;
@@ -518,7 +514,7 @@ class VirtualMqttClient extends Component {
   setAudioDevice = (audio_device) => {
     let {media} = this.state;
     if (audio_device === media.audio.audio_device) return;
-    getMediaStream(true, false, media.video.setting, audio_device, null)
+    devices.getMediaStream(true, false, media.video.setting, audio_device, null)
       .then((data) => {
       console.log(data);
       const [stream, error] = data;
@@ -531,15 +527,6 @@ class VirtualMqttClient extends Component {
         if (media.audio.context) {
           media.audio.context.close();
         }
-        // micLevel(
-        //   stream,
-        //   this.refs.canvas1,
-        //   (audioContext) => {
-        //     media.audio.context = audioContext;
-        //     this.setState({media});
-        //   },
-        //   isUseNewDesign ? "vertical" : "old"
-        // );
       }
     });
   };
@@ -689,15 +676,14 @@ class VirtualMqttClient extends Component {
       mqtt.join("galaxy/room/" + selected_room);
       mqtt.join("galaxy/room/" + selected_room + "/chat", true);
 
-      const feeds = sortAndFilterFeeds(data.publishers.filter((l) => (l.display = JSON.parse(l.display))));
-      console.log("[client] Pulbishers list: ", feeds);
+      console.log("[client] Pulbishers list: ", data.publishers);
       // Feeds count with user role
-      let feeds_count = userFeeds(feeds).length;
+      let feeds_count = userFeeds(data.publishers).length;
       if (feeds_count > 25) {
         alert(t("oldClient.maxUsersInRoom"));
         this.exitRoom(/* reconnect= */ false);
       }
-      this.makeSubscription(feeds);
+      this.makeSubscription(data.publishers);
     }).catch(err => {
       console.error('[client] Join error :', err);
       this.exitRoom(/* reconnect= */ false);
