@@ -16,6 +16,11 @@ import {JanusMqtt} from "../../lib/janus-mqtt";
 import {PublisherPlugin} from "../../lib/publisher-plugin";
 import {SubscriberPlugin} from "../../lib/subscriber-plugin";
 
+const sortAndFilterFeeds = (feeds) =>
+  feeds
+    .filter((feed) => !feed.display.role.match(/^(ghost|guest)$/))
+    .sort((a, b) => a.display.timestamp - b.display.timestamp);
+
 class AdminRoot extends Component {
   state = {
     audio: null,
@@ -123,28 +128,28 @@ class AdminRoot extends Component {
     subscriber.onUpdate = this.onUpdateStreams;
 
     janus.init(token).then(data => {
-      console.log("[client] Janus init", data)
+      console.log("[admin] Janus init", data)
 
       janus.attach(videoroom).then(data => {
         this.setState({janus, videoroom, user, current_room: room});
-        console.log('[client] Publisher Handle: ', data)
+        console.log('[admin] Publisher Handle: ', data)
 
         videoroom.join(room, user).then(data => {
-          console.log('[client] Joined respond :', data)
+          console.log('[admin] Joined respond :', data)
           this.makeSubscription(data.publishers, room)
         }).catch(err => {
-          console.error('[client] Join error :', err);
+          console.error('[admin] Join error :', err);
         })
 
       })
 
       janus.attach(subscriber).then(data => {
         this.setState({subscriber});
-        console.log('[client] Subscriber Handle: ', data)
+        console.log('[admin] Subscriber Handle: ', data)
       })
 
     }).catch(err => {
-      console.error("[client] Janus init", err);
+      console.error("[admin] Janus init", err);
       this.exitRoom(/* reconnect= */ true, () => {
         console.error("[User] error initializing janus", err);
         this.reinitClient(retry);
@@ -160,10 +165,10 @@ class AdminRoot extends Component {
       return
     }
 
-    this.setState({remoteFeed: false})
+    this.setState({remoteFeed: false, feeds: []})
 
     videoroom.leave().then(r => {
-      console.log("[client] leave respond:", r);
+      console.log("[admin] leave respond:", r);
 
       mqtt.exit("galaxy/room/" + current_room);
       mqtt.exit("galaxy/room/" + current_room + "/chat");
@@ -196,11 +201,11 @@ class AdminRoot extends Component {
   }
 
   onRemoteTrack = (track, mid, on) => {
-    console.log(" ::: Got a remote track event ::: (remote feed)");
+    console.log("[admin]  ::: Got a remote track event ::: (remote feed)");
     if (!mid) {
       mid = track.id.split("janus")[1];
     }
-    console.log("Remote track (mid=" + mid + ") " + (on ? "added" : "removed") + ":", track);
+    console.log("[admin] Remote track (mid=" + mid + ") " + (on ? "added" : "removed") + ":", track);
     // Which publisher are we getting on this mid?
     let {mids} = this.state;
     let feed = mids[mid].feed_id;
@@ -211,7 +216,7 @@ class AdminRoot extends Component {
         // New audio track: create a stream out of it, and use a hidden <audio> element
         let stream = new MediaStream();
         stream.addTrack(track.clone());
-        console.log("Created remote audio stream:", stream);
+        console.log("[admin] Created remote audio stream:", stream);
         let remoteaudio = this.refs["remoteAudio" + feed];
         remoteaudio.srcObject = stream;
       } else if (track.kind === "video") {
@@ -219,44 +224,50 @@ class AdminRoot extends Component {
         // New video track: create a stream out of it
         const stream = new MediaStream();
         stream.addTrack(track.clone());
-        console.log("Created remote video stream:", stream);
+        console.log("[admin] Created remote video stream:", stream);
         remotevideo.srcObject = stream;
       }
     }
   }
 
-  makeSubscription = (list, room) => {
-    let feeds = list
-      .sort((a, b) => JSON.parse(a.display).timestamp - JSON.parse(b.display).timestamp)
-      .filter((feeder) => JSON.parse(feeder.display).role.match(/^(user|guest|ghost)$/));
-
-    mqtt.join("galaxy/room/" + room);
-    mqtt.join("galaxy/room/" + room + "/chat", true);
-
-    console.log("[Admin] available feeds", feeds);
+  makeSubscription = (newFeeds) => {
+    console.log("[admin] makeSubscription", newFeeds);
     const subscription = [];
-    for (let f in feeds) {
-      let id = feeds[f]["id"];
-      let display = JSON.parse(feeds[f]["display"]);
-      let talk = feeds[f]["talking"];
-      let streams = feeds[f]["streams"];
-      feeds[f].display = display;
-      feeds[f].talk = talk;
-      feeds[f].janus = this.state.janus.srv;
-      for (let i in streams) {
-        let stream = streams[i];
-        stream["id"] = id;
-        stream["display"] = display;
-        if (stream.type === "video" && stream.codec === "h264") {
-          subscription.push({feed: id, mid: stream.mid});
+    const {feeds: pf} = this.state;
+    const pfMap = new Map(pf.map((f) => [f.id, f]));
+
+    newFeeds.forEach(f => {
+      const {id, streams} = f;
+      f.display = JSON.parse(f.display)
+      f.video = !!streams.find(v => v.type === "video" && v.codec === "h264");
+      f.audio = !!streams.find(a => a.type === "audio" && a.codec === "opus");
+      f.data = !!streams.find(d => d.type === "data");
+      f.cammute = !f.video;
+
+      const pf = pfMap.get(f.id);
+      const pv = !!pf && pf.streams?.find((v) => v.type === "video" && v.codec === "h264");
+      const pa = !!pf && pf.streams?.find((a) => a.type === "audio" && a.codec === "opus");
+
+      streams.forEach(s => {
+        const hasVideo = s.type === "video" && s.codec === "h264" && !pv;
+        const hasAudio = s.type === "audio" && s.codec === "opus" && !pa;
+
+        if (hasVideo) {
+          pfMap.set(f.id, f);
+          subscription.push({feed: id, mid: s.mid});
         }
-        if (this.withAudio() && stream.type === "audio" && stream.codec === "opus") {
-          subscription.push({feed: id, mid: stream.mid});
+
+        if (this.withAudio() && hasAudio) {
+          pfMap.set(f.id, f);
+          subscription.push({feed: id, mid: s.mid});
         }
-      }
-    }
-    this.setState({feeds});
-    if (subscription.length > 0) this.subscribeTo(subscription,  this.state.janus.srv);
+
+      });
+    });
+    const feeds = Array.from(pfMap, ([k, v]) => v);
+    this.setState({feeds: sortAndFilterFeeds(feeds)});
+    if (subscription.length > 0)
+      this.subscribeTo(subscription);
   }
 
   subscribeTo = (subscription) => {
@@ -280,7 +291,7 @@ class AdminRoot extends Component {
 
     // We wait for the plugin to send us an offer
     this.state.subscriber.join(subscription, this.state.current_room).then(data => {
-      console.log('[client] Subscriber join: ', data)
+      console.log('[admin] Subscriber join: ', data)
 
       this.onUpdateStreams(data.streams);
 
@@ -325,259 +336,10 @@ class AdminRoot extends Component {
       });
   };
 
-  // onVideoroomMessage = (gateway, msg, jsep) => {
-  //   const event = msg["videoroom"];
-  //   if (event !== undefined && event !== null) {
-  //     if (event === "joined") {
-  //       // Publisher/manager created, negotiate WebRTC and attach to existing feeds, if any
-  //       let myid = msg["id"];
-  //       let mypvtid = msg["private_id"];
-  //       this.setState({myid, mypvtid});
-  //       console.log("[Admin] Successfully joined room " + msg["room"] + " with ID " + myid + " on " + gateway.name);
-  //       //this.publishOwnFeed(gateway);
-  //       // Any new feed to attach to?
-  //       if (msg["publishers"] !== undefined && msg["publishers"] !== null) {
-  //         let list = msg["publishers"];
-  //         console.log("[Admin] Got Publishers (joined)", list);
-  //
-  //         // Filter service feeds and sort by timestamp
-  //         let feeds = list
-  //           .sort((a, b) => JSON.parse(a.display).timestamp - JSON.parse(b.display).timestamp)
-  //           .filter((feeder) => JSON.parse(feeder.display).role.match(/^(user|guest|ghost)$/));
-  //
-  //         mqtt.join("galaxy/room/" + msg["room"]);
-  //         mqtt.join("galaxy/room/" + msg["room"] + "/chat", true);
-  //
-  //         console.log("[Admin] available feeds", feeds);
-  //         const subscription = [];
-  //         for (let f in feeds) {
-  //           let id = feeds[f]["id"];
-  //           let display = JSON.parse(feeds[f]["display"]);
-  //           let talk = feeds[f]["talking"];
-  //           let streams = feeds[f]["streams"];
-  //           feeds[f].display = display;
-  //           feeds[f].talk = talk;
-  //           feeds[f].janus = gateway.name;
-  //           for (let i in streams) {
-  //             let stream = streams[i];
-  //             stream["id"] = id;
-  //             stream["display"] = display;
-  //             if (stream.type === "video" && stream.codec === "h264") {
-  //               subscription.push({feed: id, mid: stream.mid});
-  //             }
-  //             if (this.withAudio() && stream.type === "audio" && stream.codec === "opus") {
-  //               subscription.push({feed: id, mid: stream.mid});
-  //             }
-  //           }
-  //         }
-  //         this.setState({feeds});
-  //         if (subscription.length > 0) this.subscribeTo(subscription, gateway.name);
-  //       }
-  //     } else if (event === "talking") {
-  //       let {feeds} = this.state;
-  //       let id = msg["id"];
-  //       //console.debug("[Admin] User start talking", id);
-  //       for (let i = 0; i < feeds.length; i++) {
-  //         if (feeds[i] && feeds[i].id === id) {
-  //           feeds[i].talk = true;
-  //         }
-  //       }
-  //       this.setState({feeds});
-  //     } else if (event === "stopped-talking") {
-  //       let {feeds} = this.state;
-  //       let id = msg["id"];
-  //       //console.debug("[Admin] User stop talking", id);
-  //       for (let i = 0; i < feeds.length; i++) {
-  //         if (feeds[i] && feeds[i].id === id) {
-  //           feeds[i].talk = false;
-  //         }
-  //       }
-  //       this.setState({feeds});
-  //     } else if (event === "destroyed") {
-  //       console.warn("[Admin] The room has been destroyed!");
-  //     } else if (event === "event") {
-  //       // Any info on our streams or a new feed to attach to?
-  //       let {user, myid} = this.state;
-  //       if (msg["streams"] !== undefined && msg["streams"] !== null) {
-  //         let streams = msg["streams"];
-  //         for (let i in streams) {
-  //           let stream = streams[i];
-  //           stream["id"] = myid;
-  //           stream["display"] = user;
-  //         }
-  //       } else if (msg["publishers"] !== undefined && msg["publishers"] !== null) {
-  //         let new_feed = msg["publishers"];
-  //         console.log("[Admin] Got Publishers (event)", new_feed);
-  //
-  //         let {feeds} = this.state;
-  //         let subscription = [];
-  //         for (let f in new_feed) {
-  //           let id = new_feed[f]["id"];
-  //           let display = JSON.parse(new_feed[f]["display"]);
-  //           if (!display.role.match(/^(user|guest|ghost)$/)) return;
-  //           let streams = new_feed[f]["streams"];
-  //           new_feed[f].display = display;
-  //           new_feed[f].janus = gateway.name;
-  //           for (let i in streams) {
-  //             let stream = streams[i];
-  //             stream["id"] = id;
-  //             stream["display"] = display;
-  //             if (stream.type === "video" && stream.codec === "h264") {
-  //               subscription.push({feed: id, mid: stream.mid});
-  //             }
-  //             if (this.withAudio() && stream.type === "audio" && stream.codec === "opus") {
-  //               subscription.push({feed: id, mid: stream.mid});
-  //             }
-  //           }
-  //         }
-  //         const isExistFeed = feeds.find((f) => f.id === new_feed[0].id);
-  //         if (!isExistFeed) {
-  //           feeds.push(new_feed[0]);
-  //           this.setState({feeds});
-  //         }
-  //         if (subscription.length > 0) this.subscribeTo(subscription, gateway.name);
-  //       } else if (msg["leaving"] !== undefined && msg["leaving"] !== null) {
-  //         // One of the publishers has gone away?
-  //         const leaving = msg["leaving"];
-  //         console.log("[Admin] leaving", leaving);
-  //         this.unsubscribeFrom(leaving, gateway.name);
-  //       } else if (msg["unpublished"] !== undefined && msg["unpublished"] !== null) {
-  //         let unpublished = msg["unpublished"];
-  //         console.log("[Admin] unpublished", unpublished);
-  //         if (unpublished === "ok") {
-  //           console.log("[Admin] videoroom.hangup()", gateway.name);
-  //           gateway.videoroom.hangup(); // That's us
-  //         } else {
-  //           this.unsubscribeFrom(unpublished, gateway.name);
-  //         }
-  //       } else if (msg["error"] !== undefined && msg["error"] !== null) {
-  //         if (msg["error_code"] === 426) {
-  //           console.error("[Admin] no such room", gateway.name, msg);
-  //         } else {
-  //           console.error("[Admin] videoroom error message", msg);
-  //         }
-  //       }
-  //     }
-  //   }
-  //
-  //   if (jsep !== undefined && jsep !== null) {
-  //     gateway.debug("[videoroom] Handling SDP as well...", jsep);
-  //     gateway.videoroom.handleRemoteJsep({
-  //       jsep,
-  //       error: (err) => {
-  //         gateway.error("videoroom handleRemoteJsep error:", err);
-  //       },
-  //     });
-  //   }
-  // };
-  //
-  // newRemoteFeed = (gateway, subscription) => {
-  //   console.log("[Admin] newRemoteFeed", gateway.name);
-  //   gateway
-  //     .newRemoteFeed({
-  //       onmessage: (msg, jsep) => {
-  //         let event = msg["videoroom"];
-  //         if (msg["error"] !== undefined && msg["error"] !== null) {
-  //           gateway.error("[remoteFeed] error message:", msg["error"]);
-  //         } else if (event !== undefined && event !== null) {
-  //           if (event === "attached") {
-  //             gateway.log("[remoteFeed] Successfully attached to feed in room " + msg["room"]);
-  //           } else if (event === "event") {
-  //             // Check if we got an event on a simulcast-related event from this publisher
-  //           } else {
-  //             // What has just happened?
-  //           }
-  //         }
-  //         if (msg["streams"]) {
-  //           // Update map of subscriptions by mid
-  //           let {mids} = this.state;
-  //           for (let i in msg["streams"]) {
-  //             let mindex = msg["streams"][i]["mid"];
-  //             mids[mindex] = msg["streams"][i];
-  //             if (msg["streams"][i]["feed_display"]) {
-  //               mids[mindex].feed_user = JSON.parse(msg["streams"][i]["feed_display"]);
-  //             }
-  //           }
-  //           this.setState({mids});
-  //         }
-  //         if (jsep !== undefined && jsep !== null) {
-  //           gateway.debug("[remoteFeed] Handling SDP as well...", jsep);
-  //           gateway.remoteFeed.createAnswer({
-  //             jsep: jsep,
-  //             media: {audioSend: false, videoSend: false, data: false}, // We want recvonly audio/video
-  //             success: (jsep) => {
-  //               gateway.debug("[remoteFeed] Got SDP", jsep);
-  //               gateway.remoteFeed.send({
-  //                 jsep,
-  //                 message: {request: "start", room: this.state.current_room, data: false},
-  //                 error: (err) => {
-  //                   gateway.error("[remoteFeed] start error", err);
-  //                 },
-  //               });
-  //             },
-  //             error: (err) => {
-  //               gateway.error("[remoteFeed] createAnswer error", err);
-  //             },
-  //           });
-  //         }
-  //       },
-  //       onremotetrack: (track, mid, on) => {
-  //         // Which publisher are we getting on this mid?
-  //         let {mids} = this.state;
-  //         let feed = mids[mid].feed_id;
-  //         console.log("[Admin] This track is coming from feed " + feed + ":", mid);
-  //         // If we're here, a new track was added
-  //         if (track.kind === "audio" && on && this.withAudio()) {
-  //           // New audio track: create a stream out of it, and use a hidden <audio> element
-  //           let stream = new MediaStream();
-  //           stream.addTrack(track.clone());
-  //           console.log("[Admin] Created remote audio stream:", stream);
-  //           let remoteaudio = this.refs["remoteAudio" + feed];
-  //           Janus.attachMediaStream(remoteaudio, stream);
-  //         } else if (track.kind === "video" && on) {
-  //           // New video track: create a stream out of it
-  //           let stream = new MediaStream();
-  //           stream.addTrack(track.clone());
-  //           console.log("[Admin] Created remote video stream:", stream);
-  //           let remotevideo = this.refs["remoteVideo" + feed];
-  //           Janus.attachMediaStream(remotevideo, stream);
-  //         } else if (track.kind === "data") {
-  //           console.debug("[Admin] It's data channel");
-  //         } else {
-  //           console.debug("[Admin] Track already attached: ", track);
-  //         }
-  //       },
-  //       ondataerror: (error) => {
-  //         console.error(error);
-  //       },
-  //     })
-  //     .then(() => {
-  //       const subscribe = {
-  //         request: "join",
-  //         room: this.state.current_room,
-  //         ptype: "subscriber",
-  //         streams: subscription,
-  //       };
-  //       console.log("[Admin] newRemoteFeed join", subscribe);
-  //       gateway.remoteFeed.send({
-  //         message: subscribe,
-  //         success: () => {
-  //           gateway.log("[remoteFeed] join as subscriber success", subscribe);
-  //         },
-  //         error: (err) => {
-  //           gateway.error("[remoteFeed] error join as subscriber", subscribe, err);
-  //         },
-  //       });
-  //     })
-  //     .catch((err) => {
-  //       console.error("[Admin] gateway.newRemoteFeed error", err);
-  //     });
-  // };
-
-  unsubscribeFrom = (id, inst) => {
-    console.log("[Admin] unsubscribeFrom", inst, id);
-    const {feeds, feed_user, gateways} = this.state;
-    const gateway = gateways[inst];
+  unsubscribeFrom = (id) => {
+    id = id[0]
+    console.log("[Admin] unsubscribeFrom", id);
+    const {feeds, feed_user} = this.state;
     for (let i = 0; i < feeds.length; i++) {
       if (feeds[i].id === id) {
         console.log("[Admin] unsubscribeFrom feed", feeds[i]);
@@ -585,7 +347,6 @@ class AdminRoot extends Component {
         // Remove from feeds list
         feeds.splice(i, 1);
 
-        console.log("[Admin] unsubscribeFrom unsubscribe", unsubscribe);
         const streams = [{feed: id}]
 
         const {remoteFeed} = this.state;
@@ -731,10 +492,6 @@ class AdminRoot extends Component {
     }
   };
 
-  onChatRoomsInitialized = (error) => {
-    this.setState({chatRoomsInitialized: true, chatRoomsInitializedError: error});
-  };
-
   onConfirmReloadAllCancel = (e, data) => {
     this.setState({showConfirmReloadAll: false});
   };
@@ -743,19 +500,6 @@ class AdminRoot extends Component {
     this.setState({showConfirmReloadAll: false});
     this.sendRemoteCommand("client-reload-all");
   };
-
-  // setProtocol = () => {
-  //   let {tcp} = this.state;
-  //   const value = tcp === "mqtt" ? "webrtc" : "mqtt";
-  //   api
-  //     .adminSetConfig("galaxy_protocol", value)
-  //     .then(() => {
-  //       this.setState({tcp: value});
-  //       const msg = {type: "reload-config", status: value, id: null, user: null, room: null};
-  //       mqtt.send(JSON.stringify(msg), false, "galaxy/users/broadcast");
-  //     })
-  //     .catch((err) => alert(err));
-  // };
 
   render() {
     const {user} = this.props;
@@ -855,7 +599,7 @@ class AdminRoot extends Component {
     let videos = feeds.map((feed) => {
       if (feed) {
         let id = feed.id;
-        let talk = feed.talk;
+        let talk = feed.talking;
         let selected = id === feed_id;
         return (
           <div className="video" key={"v" + id} ref={"video" + id} id={"video" + id}>
