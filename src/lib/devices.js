@@ -17,6 +17,7 @@ class LocalDevices {
         stream: null,
     }
 
+    this.audio_stream = null
     this.micLevel = null
   }
 
@@ -78,6 +79,7 @@ class LocalDevices {
     }
 
     if (this.audio.stream) {
+      this.audio_stream = this.audio.stream.clone()
       this.audio.device = this.audio.stream.getAudioTracks()[0].getSettings().deviceId;
     } else {
       this.audio.device = "";
@@ -109,12 +111,12 @@ class LocalDevices {
 
   initMicLevel = async() => {
     console.log(" --- initMicLevel ---")
-    if(!this.audio.stream) return null
+    if(!this.audio_stream) return null
 
     this.audio.context = new AudioContext()
     console.log("[devices] mic level: ", this.audio.context)
     await this.audio.context.audioWorklet.addModule(workerUrl)
-    let microphone = this.audio.context.createMediaStreamSource(this.audio.stream)
+    let microphone = this.audio.context.createMediaStreamSource(this.audio_stream)
     const node = new AudioWorkletNode(this.audio.context, 'volume_meter')
 
     node.port.onmessage = event => {
@@ -189,6 +191,7 @@ class LocalDevices {
           localStorage.setItem("audio_device", device);
           this.audio.stream = stream;
           this.audio.device = device;
+          this.audio_stream = stream.clone()
           if (this.audio.context) {
             this.audio.context.close();
             this.initMicLevel()
