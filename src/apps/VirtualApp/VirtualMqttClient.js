@@ -2,16 +2,7 @@ import React, {Component, Fragment} from "react";
 import classNames from "classnames";
 import {isMobile} from "react-device-detect";
 import {Button, Icon, Image, Input, Label, Menu, Message, Modal, Popup, Select} from "semantic-ui-react";
-import {
-  checkNotification,
-  geoInfo,
-  getDateString,
-  getMedia,
-  getMediaStream,
-  notifyMe,
-  testMic,
-  updateGxyUser,
-} from "../../shared/tools";
+import {checkNotification, geoInfo, getDateString, notifyMe, testMic, updateGxyUser,} from "../../shared/tools";
 import "./VirtualClient.scss";
 import "./VideoConteiner.scss";
 import "./CustomIcons.scss";
@@ -24,13 +15,7 @@ import {TopMenu} from "./components/TopMenu";
 import {withTranslation} from "react-i18next";
 import {languagesOptions, setLanguage} from "../../i18n/i18n";
 import {Monitoring} from "../../components/Monitoring";
-import {
-  LINK_STATE_GOOD,
-  LINK_STATE_INIT,
-  LINK_STATE_MEDIUM,
-  LINK_STATE_WEAK,
-  MonitoringData,
-} from "../../shared/MonitoringData";
+import {LINK_STATE_GOOD, LINK_STATE_INIT, LINK_STATE_MEDIUM, LINK_STATE_WEAK, MonitoringData,} from "../../shared/MonitoringData";
 import api from "../../shared/Api";
 import VirtualStreaming from "./VirtualStreaming";
 import JanusStream from "../../shared/streaming-utils";
@@ -203,11 +188,6 @@ class VirtualMqttClient extends Component {
     if (isMobile) {
       window.location = "/userm";
     }
-    // devices.init().then(data => {
-    //   console.log("[client] init devices: ", data)
-    //   this.setState({media: data})
-    //   devices.initMicLevel()
-    // })
   }
 
   componentWillUnmount() {
@@ -449,27 +429,13 @@ class VirtualMqttClient extends Component {
         alert(t("oldClient.videoNotDetected"));
         this.setState({cammuted: true});
       }
+
       if (video.stream) {
         let myvideo = this.refs.localVideo;
         if (myvideo) myvideo.srcObject = video.stream;
       }
-      const user = {
-        ...this.state.user,
-        extra: {
-          ...(this.state.user.extra || {}),
-          media: {
-            audio: {
-              audio_device: audio.device,
-            },
-            video: {
-              setting: video.setting,
-              video_device: video.device,
-            },
-          },
-        },
-      };
 
-      this.setState({media: data, user})
+      this.setState({media: data})
     })
   };
 
@@ -481,52 +447,16 @@ class VirtualMqttClient extends Component {
         this.setState({media});
       }
     })
-
-    // let {media} = this.state;
-    // if (JSON.stringify(setting) === JSON.stringify(media.video.setting)) return;
-    // devices.getMediaStream(false, true, setting, null, media.video.device)
-    //   .then((data) => {
-    //   console.log(data);
-    //   const [stream, error] = data;
-    //   if (error) {
-    //     console.error(error);
-    //   } else {
-    //     localStorage.setItem("video_setting", JSON.stringify(setting));
-    //     media.video.stream = stream;
-    //     media.video.setting = setting;
-    //     let myvideo = this.refs.localVideo;
-    //     myvideo.srcObject = stream;
-    //     this.setState({media});
-    //   }
-    // });
   };
 
   setVideoDevice = (device, reconnect) => {
-    devices.setVideoDevice(device, reconnect).then(media => {
+    return devices.setVideoDevice(device, reconnect).then(media => {
       if(media.video.device) {
         let myvideo = this.refs.localVideo;
         myvideo.srcObject = media.video.stream;
         this.setState({media});
       }
     })
-
-    // let {media} = this.state;
-    // if (device === media.video.device && !reconnect) return;
-    // return getMediaStream(false, true, media.video.setting, null, device)
-    //   .then((data) => {
-    //   console.log(data);
-    //   const [stream, error] = data;
-    //   if (error) {
-    //     console.error(error);
-    //   } else {
-    //     localStorage.setItem("video_device", device);
-    //     media.video.stream = stream;
-    //     media.video.video.device = device;
-    //     let myvideo = this.refs.localVideo;
-    //     myvideo.srcObject = stream;
-    //     this.setState({media});
-    //   }
-    // });
   };
 
   setAudioDevice = (device) => {
@@ -535,25 +465,6 @@ class VirtualMqttClient extends Component {
         this.setState({media});
       }
     })
-
-
-    // let {media} = this.state;
-    // if (device === media.audio.device) return;
-    // getMediaStream(true, false, media.video.setting, device, null)
-    //   .then((data) => {
-    //   console.log(data);
-    //   const [stream, error] = data;
-    //   if (error) {
-    //     console.error(error);
-    //   } else {
-    //     localStorage.setItem("audio_device", device);
-    //     media.audio.stream = stream;
-    //     media.audio.audio.device = device;
-    //     if (media.audio.context) {
-    //       media.audio.context.close();
-    //     }
-    //   }
-    // });
   };
 
   selfTest = () => {
@@ -701,15 +612,14 @@ class VirtualMqttClient extends Component {
       mqtt.join("galaxy/room/" + selected_room);
       mqtt.join("galaxy/room/" + selected_room + "/chat", true);
 
-      const feeds = sortAndFilterFeeds(data.publishers.filter((l) => (l.display = JSON.parse(l.display))));
-      console.log("[client] Pulbishers list: ", feeds);
+      console.log("[client] Pulbishers list: ", data.publishers);
       // Feeds count with user role
-      let feeds_count = userFeeds(feeds).length;
+      let feeds_count = userFeeds(data.publishers).length;
       if (feeds_count > 25) {
         alert(t("oldClient.maxUsersInRoom"));
         this.exitRoom(/* reconnect= */ false);
       }
-      this.makeSubscription(feeds);
+      this.makeSubscription(data.publishers);
     }).catch(err => {
       console.error('[client] Join error :', err);
       this.exitRoom(/* reconnect= */ false);
@@ -844,25 +754,20 @@ class VirtualMqttClient extends Component {
   };
 
   subscribeTo = (subscription) => {
-    // New feeds are available, do we need create a new plugin handle first?
     if (this.state.remoteFeed) {
       this.state.subscriber.sub(subscription);
       return;
     }
 
-    // We don't have a handle yet, but we may be creating one already
     if (this.state.creatingFeed) {
-      // Still working on the handle
       setTimeout(() => {
         this.subscribeTo(subscription);
       }, 500);
       return;
     }
 
-    // We don't creating, so let's do it
     this.setState({creatingFeed: true});
 
-    // We wait for the plugin to send us an offer
     this.state.subscriber.join(subscription, this.state.room).then(data => {
       console.log('[client] Subscriber join: ', data)
 
@@ -894,22 +799,21 @@ class VirtualMqttClient extends Component {
   }
 
   onRemoteTrack = (track, mid, on) => {
-    console.log(" ::: Got a remote track event ::: (remote feed)");
     if (!mid) {
     mid = track.id.split("janus")[1];
   }
-    console.log("Remote track (mid=" + mid + ") " + (on ? "added" : "removed") + ":", track);
+    console.debug("[client] Remote track (mid=" + mid + ") " + (on ? "added" : "removed") + ":", track);
   // Which publisher are we getting on this mid?
   let {mids} = this.state;
   let feed = mids[mid].feed_id;
-      console.log(" >> This track is coming from feed " + feed + ":", mid);
+      console.log("[client] >> This track is coming from feed " + feed + ":", mid);
   if (on) {
     // If we're here, a new track was added
     if (track.kind === "audio") {
       // New audio track: create a stream out of it, and use a hidden <audio> element
       let stream = new MediaStream();
       stream.addTrack(track.clone());
-      console.log("Created remote audio stream:", stream);
+      console.debug("[client] Created remote audio stream:", stream);
       let remoteaudio = this.refs["remoteAudio" + feed];
       remoteaudio.srcObject = stream;
     } else if (track.kind === "video") {
@@ -917,7 +821,7 @@ class VirtualMqttClient extends Component {
       // New video track: create a stream out of it
       const stream = new MediaStream();
       stream.addTrack(track.clone());
-      console.log("Created remote video stream:", stream);
+      console.debug("[client] Created remote video stream:", stream);
       remotevideo.srcObject = stream;
     }
   }
@@ -1024,12 +928,12 @@ class VirtualMqttClient extends Component {
         .updateUser(user.id, user)
         .then((data) => {
           if (ConfigStore.isNewer(data.config_last_modified)) {
-            console.info("[User] there is a newer config. Reloading ", data.config_last_modified);
+            console.info("[client] there is a newer config. Reloading ", data.config_last_modified);
             this.reloadConfig();
           }
         })
         .catch((err) => {
-          console.error("[User] error sending keepalive", user.id, err);
+          console.error("[client] error sending keepalive", user.id, err);
         });
     }
   };
@@ -1057,7 +961,7 @@ class VirtualMqttClient extends Component {
         }
       })
       .catch((err) => {
-        console.error("[User] error reloading config", err);
+        console.error("[client] error reloading config", err);
       });
   };
 
@@ -1133,7 +1037,7 @@ class VirtualMqttClient extends Component {
   stopLocalMedia = (videoroom) => {
     const {media, cammuted} = this.state;
     if (cammuted) return;
-    console.log("Stop local video stream");
+    console.log("[client] Stop local video stream");
     media.video?.stream?.getTracks().forEach((t) => {
       if(t.kind === "video") t.stop()
     });
@@ -1144,7 +1048,7 @@ class VirtualMqttClient extends Component {
   startLocalMedia = (videoroom) => {
     const {media: {video: {devices, device} = {}}, cammuted} = this.state;
     if (!cammuted) return;
-    console.log("Bind local video stream");
+    console.log("[client] Bind local video stream");
     const deviceId = device || devices?.[0]?.deviceId;
     if (deviceId) {
       this.setVideoDevice(deviceId, true).then(() => {
@@ -1174,7 +1078,7 @@ class VirtualMqttClient extends Component {
     gradient.addColorStop(0.1, "orange");
     gradient.addColorStop(0, "red");
     devices.micLevel = (volume) => {
-      console.log("[client] volume: ", volume)
+      //console.log("[client] volume: ", volume)
       cc.clearRect(0, 0, c.width, c.height);
       cc.fillStyle = gradient;
       cc.fillRect(0, c.height - volume * 300, c.width, c.height);

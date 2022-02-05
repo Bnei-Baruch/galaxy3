@@ -124,7 +124,7 @@ class LocalDevices {
       let _rms = 0
       let _dB = 0
 
-      console.log('[devices] latest readings:', event.data)
+      //console.log('[devices] latest readings:', event.data)
 
       if (event.data.volume) {
         _volume = event.data.volume
