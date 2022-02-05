@@ -3,7 +3,7 @@ import {Container, Message, Tab, Image} from "semantic-ui-react";
 import {kc} from "../../components/UserManager";
 import RoomManager from "./components/RoomManager";
 import LoginPage from "../../components/LoginPage";
-import AdminRoot from "./AdminRoot";
+import AdminRootMqtt from "./AdminRootMqtt";
 import MonitorApp from "./components/MonitorApp";
 import logo from "./KL_Tree_128.png";
 import mqtt from "../../shared/mqtt";
@@ -77,7 +77,7 @@ class AdminApp extends Component {
     let home = <Suspense fallback={loading}>{user ? welcome : login}</Suspense>;
     let admin = (
       <Suspense fallback={loading}>
-        <AdminRoot user={user} />
+        <AdminRootMqtt user={user} />
       </Suspense>
     );
     let monitor = (

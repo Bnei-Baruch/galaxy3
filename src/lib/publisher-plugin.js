@@ -190,9 +190,8 @@ export class PublisherPlugin extends EventEmitter {
   onmessage (data, jsep) {
     console.log('[publisher] onmessage: ', data, jsep)
     if(data?.publishers) {
-      const feeds = data.publishers.filter((l) => (l.display = JSON.parse(l.display)));
-      console.log('[publisher] New feed enter: ', feeds[0])
-      this.subTo(feeds)
+      console.log('[publisher] New feed enter: ', data.publishers[0])
+      this.subTo(data.publishers)
     }
 
     if(data?.unpublished) {
