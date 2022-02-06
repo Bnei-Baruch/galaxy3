@@ -210,30 +210,30 @@ class VirtualMqttClient extends Component {
 
     this.initMQTT(user);
 
-    //Clients not authorized to app may see shidur only
-    // if (user.role !== userRolesEnum.user) {
-    //   const config = {
-    //     gateways: {
-    //       streaming: {
-    //         str: {
-    //           name: "str",
-    //           url: APP_JANUS_SRV_STR1,
-    //           type: "streaming",
-    //           token: "",
-    //         },
-    //       },
-    //     },
-    //     ice_servers: {streaming: [APP_STUN_SRV_STR]},
-    //     dynamic_config: {galaxy_premod: "false"},
-    //     last_modified: new Date().toISOString(),
-    //   };
-    //   ConfigStore.setGlobalConfig(config);
-    //   GxyJanus.setGlobalConfig(config);
-    //   localStorage.setItem("room", "-1");
-    //   this.state.virtualStreamingJanus.init("", "IL");
-    //   this.setState({user, sourceLoading: true});
-    //   return;
-    // }
+    // Clients not authorized to app may see shidur only
+    if (user.role !== userRolesEnum.user) {
+      const config = {
+        gateways: {
+          streaming: {
+            str: {
+              name: "str",
+              url: APP_JANUS_SRV_STR1,
+              type: "streaming",
+              token: "",
+            },
+          },
+        },
+        ice_servers: {streaming: [APP_STUN_SRV_STR]},
+        dynamic_config: {galaxy_premod: "false"},
+        last_modified: new Date().toISOString(),
+      };
+      ConfigStore.setGlobalConfig(config);
+      GxyJanus.setGlobalConfig(config);
+      localStorage.setItem("room", "-1");
+      this.state.virtualStreamingJanus.init("", "IL");
+      this.setState({user, sourceLoading: true});
+      return;
+    }
 
     const {t} = this.props;
     localStorage.setItem("question", false);
@@ -418,7 +418,6 @@ class VirtualMqttClient extends Component {
 
     devices.init().then(data => {
       console.log("[client] init devices: ", data);
-      devices.initMicLevel()
       const {audio, video} = data;
       if (audio.error && video.error) {
         alert(t("oldClient.noInputDevices"));

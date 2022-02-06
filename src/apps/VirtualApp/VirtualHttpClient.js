@@ -404,7 +404,6 @@ class VirtualHttpClient extends Component {
 
     devices.init().then(data => {
       console.log("[client] init devices: ", data);
-      devices.initMicLevel()
       const {audio, video} = data;
       if (audio.error && video.error) {
         alert(t("oldClient.noInputDevices"));

@@ -80,6 +80,7 @@ class LocalDevices {
 
     if (this.audio.stream) {
       this.audio_stream = this.audio.stream.clone()
+      await this.initMicLevel()
       this.audio.device = this.audio.stream.getAudioTracks()[0].getSettings().deviceId;
     } else {
       this.audio.device = "";
@@ -110,8 +111,7 @@ class LocalDevices {
   };
 
   initMicLevel = async() => {
-    console.log(" --- initMicLevel ---")
-    if(!this.audio_stream) return null
+    if(!this.audio_stream) return
 
     this.audio.context = new AudioContext()
     console.log("[devices] mic level: ", this.audio.context)
@@ -137,7 +137,6 @@ class LocalDevices {
     }
 
     microphone.connect(node)
-    return this.audio.context
   };
 
   setVideoSize = (setting) => {
