@@ -211,7 +211,7 @@ export class SubscriberPlugin extends EventEmitter {
 
   hangup () {
     console.log('[subscriber] - hangup - ')
-    this.janus.destroyPlugin(this).catch((err) => {
+    this.janus.detach(this).catch((err) => {
       console.error('[subscriber] error in hangup', err)
     })
   }

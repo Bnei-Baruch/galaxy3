@@ -198,7 +198,7 @@ export class PublisherPlugin extends EventEmitter {
       console.log('[publisher] Feed leave: ', data.unpublished)
       if (data?.unpublished === "ok") {
         // That's us
-        this.janus.destroyPlugin(this)
+        this.janus.detach(this)
         return;
       }
       this.unsubFrom([data.unpublished], false)

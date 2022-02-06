@@ -236,7 +236,7 @@ export default class JanusStream {
 
   detachQuadStream = () => {
     if(this.janus) {
-      this.janus.destroyPlugin(this.videoQuadStream)
+      this.janus.detach(this.videoQuadStream)
       this.videoQuadStream = null
     }
   }
@@ -352,7 +352,7 @@ export default class JanusStream {
     if (this.janus) {
       if (videos === NO_VIDEO_OPTION_VALUE) {
         if (this.videoJanusStream !== null) {
-          this.janus.destroyPlugin(this.videoJanusStream)
+          this.janus.detach(this.videoJanusStream)
           this.videoJanusStream = null
         }
       } else {

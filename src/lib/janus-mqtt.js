@@ -84,7 +84,7 @@ export class JanusMqtt {
     })
   }
 
-  destroyPlugin(plugin) {
+  detach(plugin) {
     return new Promise((resolve, reject) => {
       if (!this.pluginHandles[plugin.janusHandleId]) {
         reject(new Error('[janus] unknown plugin'))
