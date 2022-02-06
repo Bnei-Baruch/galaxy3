@@ -295,7 +295,7 @@ const Settings = (props) => {
           {<MyMedia cammuted={cammuted} video={video} />}
         </Grid>
         <Grid item xs={6}>
-          {<CheckMySelf audio={audio} />}
+          {<CheckMySelf />}
         </Grid>
 
         <Grid item xs={12}>
@@ -358,16 +358,4 @@ const Settings = (props) => {
   );
 };
 
-export default memo(Settings, (props, next) => {
-  return (
-    props.videoLength === next.videoLength &&
-    props.audioDevice === next.audioDevice &&
-    props.videoDevice === next.videoDevice &&
-    props.cammuted === next.cammuted &&
-    props.videoSettings === next.videoSettings &&
-    props.isAudioMode === next.isAudioMode &&
-    props.selectedRoom === next.selectedRoom &&
-    props.rooms === next.rooms &&
-    props.wip === next.wip
-  );
-});
+export default Settings

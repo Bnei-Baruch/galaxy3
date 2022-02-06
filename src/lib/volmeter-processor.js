@@ -66,7 +66,6 @@ registerProcessor('volume_meter', class extends AudioWorkletProcessor {
         if (!this._currentTime || 0.005 < currentTime - this._currentTime) {
           // eslint-disable-next-line no-undef
           this._currentTime = currentTime;
-          // console.log(`currentTime: ${currentTime}`);
           this.port.postMessage({
 
             samples: samples,

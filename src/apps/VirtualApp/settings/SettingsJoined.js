@@ -233,7 +233,7 @@ const SettingsJoined = (props) => {
               </Tooltip>
             </Grid>
             <Grid item xs={12}>
-              <CheckMySelf audio={audio} />
+              <CheckMySelf />
             </Grid>
           </Grid>
         </Grid>
@@ -288,12 +288,4 @@ const SettingsJoined = (props) => {
   );
 };
 
-export default memo(SettingsJoined, (prevProps, nextProps) => {
-  const {videoLength, isOpen, audios, userDisplay} = prevProps;
-  return (
-    videoLength === nextProps.videoLength &&
-    userDisplay === nextProps.userDisplay &&
-    isOpen === nextProps.isOpen &&
-    audios === nextProps.audios
-  );
-});
+export default SettingsJoined

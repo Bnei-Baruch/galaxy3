@@ -2,16 +2,7 @@ import React, {Component, Fragment} from "react";
 import classNames from "classnames";
 import {isMobile} from "react-device-detect";
 import {Button, Icon, Image, Input, Label, Menu, Message, Modal, Popup, Select} from "semantic-ui-react";
-import {
-  checkNotification,
-  geoInfo,
-  getDateString,
-  getMedia,
-  getMediaStream,
-  notifyMe,
-  testMic,
-  updateGxyUser,
-} from "../../shared/tools";
+import {checkNotification, geoInfo, getDateString, notifyMe, testMic, updateGxyUser,} from "../../shared/tools";
 import "./VirtualClient.scss";
 import "./VideoConteiner.scss";
 import "./CustomIcons.scss";
@@ -24,13 +15,7 @@ import {TopMenu} from "./components/TopMenu";
 import {withTranslation} from "react-i18next";
 import {languagesOptions, setLanguage} from "../../i18n/i18n";
 import {Monitoring} from "../../components/Monitoring";
-import {
-  LINK_STATE_GOOD,
-  LINK_STATE_INIT,
-  LINK_STATE_MEDIUM,
-  LINK_STATE_WEAK,
-  MonitoringData,
-} from "../../shared/MonitoringData";
+import {LINK_STATE_GOOD, LINK_STATE_INIT, LINK_STATE_MEDIUM, LINK_STATE_WEAK, MonitoringData,} from "../../shared/MonitoringData";
 import api from "../../shared/Api";
 import VirtualStreaming from "./VirtualStreaming";
 import JanusStream from "../../shared/streaming-utils";
@@ -96,14 +81,14 @@ class VirtualMqttClient extends Component {
     media: {
       audio: {
         context: null,
-        audio_device: null,
+        device: null,
         devices: [],
         error: null,
         stream: null,
       },
       video: {
         setting: {width: 320, height: 180, ideal: 15},
-        video_device: null,
+        device: null,
         devices: [],
         error: null,
         stream: null,
@@ -430,10 +415,11 @@ class VirtualMqttClient extends Component {
 
   initDevices = () => {
     const {t} = this.props;
-    devices.init(this.state.media).then((media) => {
-      console.log("Got media: ", media);
-      const {audio, video} = media;
 
+    devices.init().then(data => {
+      console.log("[client] init devices: ", data);
+      devices.initMicLevel()
+      const {audio, video} = data;
       if (audio.error && video.error) {
         alert(t("oldClient.noInputDevices"));
         this.setState({cammuted: true});
@@ -446,89 +432,39 @@ class VirtualMqttClient extends Component {
 
       if (video.stream) {
         let myvideo = this.refs.localVideo;
-        if (myvideo) myvideo.srcObject = media.video.stream;
+        if (myvideo) myvideo.srcObject = video.stream;
       }
 
-      // we dup this info on user so it goes into the backend.
-      // from there it propagates into other components (e.g. shidur preview)
-      const user = {
-        ...this.state.user,
-        extra: {
-          ...(this.state.user.extra || {}),
-          media: {
-            audio: {
-              audio_device: audio.audio_device,
-            },
-            video: {
-              setting: video.setting,
-              video_device: video.video_device,
-            },
-          },
-        },
-      };
-
-      this.setState({media, user});
-    });
+      this.setState({media: data})
+    })
   };
 
-  setVideoSize = (video_setting) => {
-    let {media} = this.state;
-    if (JSON.stringify(video_setting) === JSON.stringify(media.video.setting)) return;
-    devices.getMediaStream(false, true, video_setting, null, media.video.video_device)
-      .then((data) => {
-      console.log(data);
-      const [stream, error] = data;
-      if (error) {
-        console.error(error);
-      } else {
-        localStorage.setItem("video_setting", JSON.stringify(video_setting));
-        media.video.stream = stream;
-        media.video.setting = video_setting;
+  setVideoSize = (setting) => {
+    devices.setVideoSize(setting).then(media => {
+      if(media.video.stream) {
         let myvideo = this.refs.localVideo;
-        myvideo.srcObject = stream;
+        myvideo.srcObject = media.video.stream;
         this.setState({media});
       }
-    });
+    })
   };
 
-  setVideoDevice = (video_device, reconnect) => {
-    let {media} = this.state;
-    if (video_device === media.video.video_device && !reconnect) return;
-    return devices.getMediaStream(false, true, media.video.setting, null, video_device)
-      .then((data) => {
-      console.log(data);
-      const [stream, error] = data;
-      if (error) {
-        console.error(error);
-      } else {
-        localStorage.setItem("video_device", video_device);
-        media.video.stream = stream;
-        media.video.video_device = video_device;
+  setVideoDevice = (device, reconnect) => {
+    return devices.setVideoDevice(device, reconnect).then(media => {
+      if(media.video.device) {
         let myvideo = this.refs.localVideo;
-        myvideo.srcObject = stream;
+        myvideo.srcObject = media.video.stream;
         this.setState({media});
       }
-    });
+    })
   };
 
-  setAudioDevice = (audio_device) => {
-    let {media} = this.state;
-    if (audio_device === media.audio.audio_device) return;
-    devices.getMediaStream(true, false, media.video.setting, audio_device, null)
-      .then((data) => {
-      console.log(data);
-      const [stream, error] = data;
-      if (error) {
-        console.error(error);
-      } else {
-        localStorage.setItem("audio_device", audio_device);
-        media.audio.stream = stream;
-        media.audio.audio_device = audio_device;
-        if (media.audio.context) {
-          media.audio.context.close();
-        }
+  setAudioDevice = (device) => {
+    devices.setAudioDevice(device).then(media => {
+      if(media.audio.device) {
+        this.setState({media});
       }
-    });
+    })
   };
 
   selfTest = () => {
@@ -643,8 +579,8 @@ class VirtualMqttClient extends Component {
 
   joinRoom = (reconnect, videoroom, user) => {
     let {selected_room, tested, media, cammuted, janus} = this.state;
-    const {video: {video_device}} = media;
-    user.camera = !!video_device && cammuted === false;
+    const {video: {device}} = media;
+    user.camera = !!device && cammuted === false;
     user.self_test = tested;
     user.sound_test = reconnect ? JSON.parse(localStorage.getItem("sound_test")) : false;
     user.question = false;
@@ -818,25 +754,20 @@ class VirtualMqttClient extends Component {
   };
 
   subscribeTo = (subscription) => {
-    // New feeds are available, do we need create a new plugin handle first?
     if (this.state.remoteFeed) {
       this.state.subscriber.sub(subscription);
       return;
     }
 
-    // We don't have a handle yet, but we may be creating one already
     if (this.state.creatingFeed) {
-      // Still working on the handle
       setTimeout(() => {
         this.subscribeTo(subscription);
       }, 500);
       return;
     }
 
-    // We don't creating, so let's do it
     this.setState({creatingFeed: true});
 
-    // We wait for the plugin to send us an offer
     this.state.subscriber.join(subscription, this.state.room).then(data => {
       console.log('[client] Subscriber join: ', data)
 
@@ -868,22 +799,21 @@ class VirtualMqttClient extends Component {
   }
 
   onRemoteTrack = (track, mid, on) => {
-    console.log(" ::: Got a remote track event ::: (remote feed)");
     if (!mid) {
     mid = track.id.split("janus")[1];
   }
-    console.log("Remote track (mid=" + mid + ") " + (on ? "added" : "removed") + ":", track);
+    console.debug("[client] Remote track (mid=" + mid + ") " + (on ? "added" : "removed") + ":", track);
   // Which publisher are we getting on this mid?
   let {mids} = this.state;
   let feed = mids[mid].feed_id;
-      console.log(" >> This track is coming from feed " + feed + ":", mid);
+      console.log("[client] >> This track is coming from feed " + feed + ":", mid);
   if (on) {
     // If we're here, a new track was added
     if (track.kind === "audio") {
       // New audio track: create a stream out of it, and use a hidden <audio> element
       let stream = new MediaStream();
       stream.addTrack(track.clone());
-      console.log("Created remote audio stream:", stream);
+      console.debug("[client] Created remote audio stream:", stream);
       let remoteaudio = this.refs["remoteAudio" + feed];
       remoteaudio.srcObject = stream;
     } else if (track.kind === "video") {
@@ -891,7 +821,7 @@ class VirtualMqttClient extends Component {
       // New video track: create a stream out of it
       const stream = new MediaStream();
       stream.addTrack(track.clone());
-      console.log("Created remote video stream:", stream);
+      console.debug("[client] Created remote video stream:", stream);
       remotevideo.srcObject = stream;
     }
   }
@@ -998,12 +928,12 @@ class VirtualMqttClient extends Component {
         .updateUser(user.id, user)
         .then((data) => {
           if (ConfigStore.isNewer(data.config_last_modified)) {
-            console.info("[User] there is a newer config. Reloading ", data.config_last_modified);
+            console.info("[client] there is a newer config. Reloading ", data.config_last_modified);
             this.reloadConfig();
           }
         })
         .catch((err) => {
-          console.error("[User] error sending keepalive", user.id, err);
+          console.error("[client] error sending keepalive", user.id, err);
         });
     }
   };
@@ -1031,7 +961,7 @@ class VirtualMqttClient extends Component {
         }
       })
       .catch((err) => {
-        console.error("[User] error reloading config", err);
+        console.error("[client] error reloading config", err);
       });
   };
 
@@ -1107,7 +1037,7 @@ class VirtualMqttClient extends Component {
   stopLocalMedia = (videoroom) => {
     const {media, cammuted} = this.state;
     if (cammuted) return;
-    console.log("Stop local video stream");
+    console.log("[client] Stop local video stream");
     media.video?.stream?.getTracks().forEach((t) => {
       if(t.kind === "video") t.stop()
     });
@@ -1116,10 +1046,10 @@ class VirtualMqttClient extends Component {
   };
 
   startLocalMedia = (videoroom) => {
-    const {media: {video: {devices, video_device} = {}}, cammuted} = this.state;
+    const {media: {video: {devices, device} = {}}, cammuted} = this.state;
     if (!cammuted) return;
-    console.log("Bind local video stream");
-    const deviceId = video_device || devices?.[0]?.deviceId;
+    console.log("[client] Bind local video stream");
+    const deviceId = device || devices?.[0]?.deviceId;
     if (deviceId) {
       this.setVideoDevice(deviceId, true).then(() => {
         const {stream} = this.state.media.video
@@ -1134,7 +1064,7 @@ class VirtualMqttClient extends Component {
     if(stream) {
       if(muted) this.micVolume()
       stream.getAudioTracks()[0].enabled = muted;
-      muted ? devices.audio_context.resume() : devices.audio_context.suspend()
+      muted ? devices.audio.context.resume() : devices.audio.context.suspend()
       this.setState({muted: !muted});
     }
   };
@@ -1402,7 +1332,7 @@ class VirtualMqttClient extends Component {
             <MuteVideo
               t={t}
               action={this.camMute.bind(this)}
-              disabled={video_device === null || delay}
+              disabled={media.video.device === null || delay}
               isOn={cammuted}
             />
           </ButtonGroup>
@@ -1437,7 +1367,7 @@ class VirtualMqttClient extends Component {
             <AskQuestion
               t={t}
               isOn={!!question}
-              disabled={!mqttOn || premodStatus || !audio_device || delay || otherFeedHasQuestion}
+              disabled={!mqttOn || premodStatus || !media.audio.device || delay || otherFeedHasQuestion}
               action={this.handleQuestion.bind(this)}
             />
             <Vote t={t} id={user?.id} disabled={!user || !user.id || room === ""}/>
@@ -2044,7 +1974,7 @@ class VirtualMqttClient extends Component {
                 {chatMessagesCount > 0 ? chatCountLabel : ""}
               </Menu.Item>
               <Menu.Item
-                disabled={!mqttOn || premodStatus || !audio_device || !localAudioTrack || delay || otherFeedHasQuestion}
+                disabled={!mqttOn || premodStatus || !media.audio.device || !localAudioTrack || delay || otherFeedHasQuestion}
                 onClick={this.handleQuestion}
               >
                 <Icon {...(question ? {color: "green"} : {})} name="question"/>
@@ -2137,7 +2067,7 @@ class VirtualMqttClient extends Component {
               {!room ? (
                 <Menu.Item
                   position="right"
-                  disabled={!audio_device || selftest !== t("oldClient.selfAudioTest")}
+                  disabled={!media.audio.device || selftest !== t("oldClient.selfAudioTest")}
                   onClick={this.selfTest}
                 >
                   <Icon color={tested ? "green" : "red"} name="sound"/>
@@ -2151,7 +2081,7 @@ class VirtualMqttClient extends Component {
                 <Icon color={muted ? "red" : null} name={!muted ? "microphone" : "microphone slash"}/>
                 {t(muted ? "oldClient.unMute" : "oldClient.mute")}
               </Menu.Item>
-              <Menu.Item disabled={video_device === null || delay} onClick={() => this.camMute(cammuted)}>
+              <Menu.Item disabled={media.video.device === null || delay} onClick={() => this.camMute(cammuted)}>
                 <Icon color={cammuted ? "red" : null} name={!cammuted ? "eye" : "eye slash"}/>
                 {t(cammuted ? "oldClient.startVideo" : "oldClient.stopVideo")}
               </Menu.Item>
@@ -2182,25 +2112,25 @@ class VirtualMqttClient extends Component {
                   <Select
                     className="select_device"
                     disabled={!!room}
-                    error={!media.audio.audio_device}
+                    error={!media.audio.device}
                     placeholder={t("oldClient.selectDevice")}
-                    value={media.audio.audio_device}
+                    value={media.audio.device}
                     options={adevices_list}
                     onChange={(e, {value}) => this.setAudioDevice(value)}
                   />
                   <Select
                     className="select_device"
                     disabled={!!room}
-                    error={!media.video.video_device}
+                    error={!media.video.device}
                     placeholder={t("oldClient.selectDevice")}
-                    value={media.video.video_device}
+                    value={media.video.device}
                     options={vdevices_list}
                     onChange={(e, {value}) => this.setVideoDevice(value)}
                   />
                   <Select
                     className="select_device"
                     disabled={!!room}
-                    error={!media.video.video_device}
+                    error={!media.video.device}
                     placeholder={t("oldClient.videoSettings")}
                     value={media.video.setting}
                     options={vsettings_list}
@@ -2336,8 +2266,8 @@ class VirtualMqttClient extends Component {
             audio={media.audio}
             video={media.video}
             cammuted={cammuted}
-            videoDevice={media.video?.video_device}
-            audioDevice={media.audio?.audio_device}
+            videoDevice={media.video?.device}
+            audioDevice={media.audio?.device}
             videoLength={media.video?.devices.length}
             videoSettings={JSON.stringify(media.video.setting)}
             wip={wipSettings}

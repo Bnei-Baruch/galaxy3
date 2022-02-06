@@ -21,7 +21,7 @@ const useStyles = makeStyles(() => ({
 
 let recorder;
 
-const CheckMySelf = ({audio}) => {
+const CheckMySelf = () => {
   const classes = useStyles();
   const canvasRef = useRef();
 
@@ -30,19 +30,16 @@ const CheckMySelf = ({audio}) => {
   const [processType, setProcesstype] = useState();
 
   useEffect(() => {
-    if (audio.stream && canvasRef.current) {
-      micVolume()
-      return () => {
-        if(devices.audio_context)
-          devices.audio_context.suspend()
-        devices.micLevel = null;
-      };
+    console.log("useEffect", devices.audio.context)
+    micVolume(devices.audio.context)
+    return () => {
+      if(devices.audio.context)
+        devices.audio.context.suspend()
+      devices.micLevel = null;
     }
-  }, [audio.stream, canvasRef]); // eslint-disable-line  react-hooks/exhaustive-deps
+  }, []); // eslint-disable-line  react-hooks/exhaustive-deps
 
-  const micVolume = () => {
-    if(devices.audio_context)
-      devices.audio_context.resume()
+  const micVolume = (context) => {
     const c = canvasRef.current
     let cc = c.getContext("2d");
     const w = c.width;
@@ -58,6 +55,8 @@ const CheckMySelf = ({audio}) => {
       cc.fillStyle = gradient;
       cc.fillRect(0, 0, volume * 500, c.height);
     }
+    if(devices.audio.context)
+      devices.audio.context.resume()
   }
 
   const runInterval = async (processVal = 0, increase = 1) => {
@@ -70,7 +69,7 @@ const CheckMySelf = ({audio}) => {
 
   const run = async () => {
     setProcess(0);
-    recorder = await recordAudio(audio.stream);
+    recorder = await recordAudio(devices.audio.stream);
     recorder.start();
     setProcesstype("recording");
     await runInterval(0);
@@ -89,7 +88,7 @@ const CheckMySelf = ({audio}) => {
           onClick={run}
           color="primary"
           variant={!processType ? "contained" : "outlined"}
-          disabled={!audio.stream || !!processType}
+          disabled={!devices.audio.stream || !!processType}
           className={classes.runButton}
         >
           {!processType ? t("oldClient.selfAudioTest") : `${t("oldClient." + processType)} - ${Math.round(process)}`}
