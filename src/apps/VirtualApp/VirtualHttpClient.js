@@ -68,6 +68,7 @@ import Typography from "@material-ui/core/Typography";
 import {withTheme} from "@material-ui/core/styles";
 import ThemeSwitcher from "./components/ThemeSwitcher/ThemeSwitcher";
 import mqtt from "../../shared/mqtt";
+import devices from "../../lib/devices";
 
 const toggleDesignVersions = () => {
   window.location = isUseNewDesign ? "https://galaxy.kli.one/user/" : "https://arvut.kli.one/user/";
@@ -99,14 +100,14 @@ class VirtualHttpClient extends Component {
     media: {
       audio: {
         context: null,
-        audio_device: null,
+        device: null,
         devices: [],
         error: null,
         stream: null,
       },
       video: {
         setting: {width: 320, height: 180, ideal: 15},
-        video_device: null,
+        device: null,
         devices: [],
         error: null,
         stream: null,
@@ -420,10 +421,11 @@ class VirtualHttpClient extends Component {
 
   initDevices = () => {
     const {t} = this.props;
-    getMedia(this.state.media).then((media) => {
-      console.log("Got media: ", media);
-      const {audio, video} = media;
 
+    devices.init().then(data => {
+      console.log("[client] init devices: ", data);
+      devices.initMicLevel()
+      const {audio, video} = data;
       if (audio.error && video.error) {
         alert(t("oldClient.noInputDevices"));
         this.setState({cammuted: true});
@@ -436,107 +438,39 @@ class VirtualHttpClient extends Component {
 
       if (video.stream) {
         let myvideo = this.refs.localVideo;
-        if (myvideo) myvideo.srcObject = media.video.stream;
+        if (myvideo) myvideo.srcObject = video.stream;
       }
 
-      if (audio.stream) {
-        micLevel(
-          audio.stream,
-          this.refs.canvas1,
-          (audioContext) => {
-            audio.context = audioContext;
-            this.setState({media});
-          },
-          isUseNewDesign ? "vertical" : "old"
-        );
-      }
-
-      // we dup this info on user so it goes into the backend.
-      // from there it propagates into other components (e.g. shidur preview)
-      const user = {
-        ...this.state.user,
-        extra: {
-          ...(this.state.user.extra || {}),
-          media: {
-            audio: {
-              audio_device: audio.audio_device,
-            },
-            video: {
-              setting: video.setting,
-              video_device: video.video_device,
-            },
-          },
-        },
-      };
-
-      this.setState({media, user});
-    });
+      this.setState({media: data})
+    })
   };
 
-  setVideoSize = (video_setting) => {
-    let {media} = this.state;
-    if (JSON.stringify(video_setting) === JSON.stringify(media.video.setting)) return;
-    getMediaStream(false, true, video_setting, null, media.video.video_device).then((data) => {
-      console.log(data);
-      const [stream, error] = data;
-      if (error) {
-        console.error(error);
-      } else {
-        localStorage.setItem("video_setting", JSON.stringify(video_setting));
-        media.video.stream = stream;
-        media.video.setting = video_setting;
+  setVideoSize = (setting) => {
+    devices.setVideoSize(setting).then(media => {
+      if(media.video.stream) {
         let myvideo = this.refs.localVideo;
-        myvideo.srcObject = stream;
+        myvideo.srcObject = media.video.stream;
         this.setState({media});
       }
-    });
+    })
   };
 
-  setVideoDevice = (video_device, reconnect) => {
-    let {media} = this.state;
-    if (video_device === media.video.video_device && !reconnect) return;
-    return getMediaStream(false, true, media.video.setting, null, video_device).then((data) => {
-      console.log(data);
-      const [stream, error] = data;
-      if (error) {
-        console.error(error);
-      } else {
-        localStorage.setItem("video_device", video_device);
-        media.video.stream = stream;
-        media.video.video_device = video_device;
+  setVideoDevice = (device, reconnect) => {
+    return devices.setVideoDevice(device, reconnect).then(media => {
+      if(media.video.device) {
         let myvideo = this.refs.localVideo;
-        myvideo.srcObject = stream;
+        myvideo.srcObject = media.video.stream;
         this.setState({media});
       }
-    });
+    })
   };
 
-  setAudioDevice = (audio_device) => {
-    let {media} = this.state;
-    if (audio_device === media.audio.audio_device) return;
-    getMediaStream(true, false, media.video.setting, audio_device, null).then((data) => {
-      console.log(data);
-      const [stream, error] = data;
-      if (error) {
-        console.error(error);
-      } else {
-        localStorage.setItem("audio_device", audio_device);
-        media.audio.stream = stream;
-        media.audio.audio_device = audio_device;
-        if (media.audio.context) {
-          media.audio.context.close();
-        }
-        micLevel(
-          stream,
-          this.refs.canvas1,
-          (audioContext) => {
-            media.audio.context = audioContext;
-            this.setState({media});
-          },
-          isUseNewDesign ? "vertical" : "old"
-        );
+  setAudioDevice = (device) => {
+    devices.setAudioDevice(device).then(media => {
+      if(media.audio.device) {
+        this.setState({media});
       }
-    });
+    })
   };
 
   selfTest = () => {
@@ -732,10 +666,8 @@ class VirtualHttpClient extends Component {
 
   joinRoom = (reconnect, videoroom, user) => {
     let {selected_room, tested, media, cammuted} = this.state;
-    const {
-      video: {video_device},
-    } = media;
-    user.camera = !!video_device && cammuted === false;
+    const {video: {device}} = media;
+    user.camera = !!device && cammuted === false;
     user.self_test = tested;
     user.sound_test = reconnect ? JSON.parse(localStorage.getItem("sound_test")) : false;
     user.question = false;
@@ -826,20 +758,16 @@ class VirtualHttpClient extends Component {
   };
 
   publishOwnFeed = (useVideo, useAudio) => {
-    const {videoroom, media} = this.state;
-    const {
-      audio: {audio_device},
-      video: {setting, video_device},
-    } = media;
+    const {videoroom, media: {video, audio}} = this.state;
     const offer = {audioRecv: false, videoRecv: false, audioSend: useAudio, videoSend: useVideo, data: false};
 
     if (useVideo) {
-      const {width, height, ideal} = setting;
-      offer.video = {width, height, frameRate: {ideal, min: 1}, deviceId: {exact: video_device}};
+      const {width, height, ideal} = video.setting;
+      offer.video = {width, height, frameRate: {ideal, min: 1}, deviceId: {exact: video.device}};
     }
 
     if (useAudio) {
-      offer.audio = {noiseSuppression: true, deviceId: {exact: audio_device}};
+      offer.audio = {noiseSuppression: true, deviceId: {exact: audio.device}};
     }
 
     videoroom.createOffer({
@@ -912,14 +840,8 @@ class VirtualHttpClient extends Component {
           mqtt.join("galaxy/room/" + msg["room"] + "/chat", true);
         }, 3000);
 
-        const {
-          media: {
-            audio: {audio_device},
-            video: {video_device},
-          },
-          cammuted,
-        } = this.state;
-        this.publishOwnFeed(!!video_device && !cammuted, !!audio_device);
+        const {media: {audio, video}, cammuted,} = this.state;
+        this.publishOwnFeed(!!video.device && !cammuted, !!audio.device);
 
         // Any new feed to attach to?
         if (msg["publishers"] !== undefined && msg["publishers"] !== null) {
@@ -1403,9 +1325,7 @@ class VirtualHttpClient extends Component {
 
   camMute = (cammuted) => {
     const {videoroom, media} = this.state;
-    const {
-      video: {setting, video_device},
-    } = media;
+    const {video: {setting, device},} = media;
     const {width, height, ideal} = setting;
 
     const user = Object.assign({}, this.state.user);
@@ -1431,7 +1351,7 @@ class VirtualHttpClient extends Component {
         videoroom.createOffer({
           media: {
             addVideo: true,
-            video: {width, height, frameRate: {ideal, min: 1}, deviceId: {exact: video_device}},
+            video: {width, height, frameRate: {ideal, min: 1}, deviceId: {exact: device}},
           },
           simulcast: false,
           success: (jsep) => {
@@ -1464,10 +1384,7 @@ class VirtualHttpClient extends Component {
   };
 
   stopLocalMedia = () => {
-    const {
-      media: {video},
-      cammuted,
-    } = this.state;
+    const {media: {video}, cammuted,} = this.state;
     if (cammuted) return;
     console.log("Stop local video stream");
     video?.stream?.getTracks().forEach((t) => t.stop());
@@ -1475,13 +1392,10 @@ class VirtualHttpClient extends Component {
   };
 
   startLocalMedia = () => {
-    const {
-      media: {video: {devices, video_device} = {}},
-      cammuted,
-    } = this.state;
+    const {media: {video: {devices, device} = {}}, cammuted,} = this.state;
     if (!cammuted) return;
     console.log("Bind local video stream");
-    const deviceId = video_device || devices?.[0]?.deviceId;
+    const deviceId = device || devices?.[0]?.deviceId;
     if (deviceId) {
       this.setVideoDevice(deviceId, true).then(() => {
         this.setState({cammuted: false});
@@ -1491,9 +1405,27 @@ class VirtualHttpClient extends Component {
 
   micMute = () => {
     const {videoroom, muted} = this.state;
+    if(muted) this.micVolume()
     muted ? videoroom.unmuteAudio() : videoroom.muteAudio();
+    muted ? devices.audio.context.resume() : devices.audio.context.suspend()
     this.setState({muted: !muted});
   };
+
+  micVolume = () => {
+    const c = this.refs.canvas1
+    let cc = c.getContext("2d");
+    let gradient = cc.createLinearGradient(0, 0, 0, 55);
+    gradient.addColorStop(1, "green");
+    gradient.addColorStop(0.35, "#80ff00");
+    gradient.addColorStop(0.1, "orange");
+    gradient.addColorStop(0, "red");
+    devices.micLevel = (volume) => {
+      //console.log("[client] volume: ", volume)
+      cc.clearRect(0, 0, c.width, c.height);
+      cc.fillStyle = gradient;
+      cc.fillRect(0, c.height - volume * 300, c.width, c.height);
+    }
+  }
 
   otherCamsMuteToggle = () => {
     const {feeds, muteOtherCams} = this.state;
@@ -1714,8 +1646,7 @@ class VirtualHttpClient extends Component {
       mqttOn,
     } = this.state;
 
-    const {video_device} = media.video;
-    const {audio_device} = media.audio;
+    const {video, audio} = media;
 
     return (
       <AppBar
@@ -1741,7 +1672,7 @@ class VirtualHttpClient extends Component {
             <MuteVideo
               t={t}
               action={this.camMute.bind(this)}
-              disabled={video_device === null || delay}
+              disabled={video.device === null || delay}
               isOn={cammuted}
             />
           </ButtonGroup>
@@ -1776,7 +1707,7 @@ class VirtualHttpClient extends Component {
             <AskQuestion
               t={t}
               isOn={!!question}
-              disabled={!mqttOn || premodStatus || !audio_device || !localAudioTrack || delay || otherFeedHasQuestion}
+              disabled={!mqttOn || premodStatus || !audio.device || !localAudioTrack || delay || otherFeedHasQuestion}
               action={this.handleQuestion.bind(this)}
             />
             <Vote t={t} id={user?.id} disabled={!user || !user.id || room === ""}/>
@@ -2182,8 +2113,7 @@ class VirtualHttpClient extends Component {
       mqttOn,
     } = this.state;
 
-    const {video_device} = media.video;
-    const {audio_device} = media.audio;
+    const {video, audio} = media;
 
     if (appInitError) {
       return (
@@ -2383,7 +2313,7 @@ class VirtualHttpClient extends Component {
                 {chatMessagesCount > 0 ? chatCountLabel : ""}
               </Menu.Item>
               <Menu.Item
-                disabled={!mqttOn || premodStatus || !audio_device || !localAudioTrack || delay || otherFeedHasQuestion}
+                disabled={!mqttOn || premodStatus || !audio.device || !localAudioTrack || delay || otherFeedHasQuestion}
                 onClick={this.handleQuestion}
               >
                 <Icon {...(question ? {color: "green"} : {})} name="question"/>
@@ -2476,7 +2406,7 @@ class VirtualHttpClient extends Component {
               {!room ? (
                 <Menu.Item
                   position="right"
-                  disabled={!audio_device || selftest !== t("oldClient.selfAudioTest")}
+                  disabled={!audio.device || selftest !== t("oldClient.selfAudioTest")}
                   onClick={this.selfTest}
                 >
                   <Icon color={tested ? "green" : "red"} name="sound"/>
@@ -2490,7 +2420,7 @@ class VirtualHttpClient extends Component {
                 <Icon color={muted ? "red" : null} name={!muted ? "microphone" : "microphone slash"}/>
                 {t(muted ? "oldClient.unMute" : "oldClient.mute")}
               </Menu.Item>
-              <Menu.Item disabled={video_device === null || delay} onClick={() => this.camMute(cammuted)}>
+              <Menu.Item disabled={video.device === null || delay} onClick={() => this.camMute(cammuted)}>
                 <Icon color={cammuted ? "red" : null} name={!cammuted ? "eye" : "eye slash"}/>
                 {t(cammuted ? "oldClient.startVideo" : "oldClient.stopVideo")}
               </Menu.Item>
@@ -2521,25 +2451,25 @@ class VirtualHttpClient extends Component {
                   <Select
                     className="select_device"
                     disabled={!!room}
-                    error={!media.audio.audio_device}
+                    error={!media.audio.device}
                     placeholder={t("oldClient.selectDevice")}
-                    value={media.audio.audio_device}
+                    value={media.audio.device}
                     options={adevices_list}
                     onChange={(e, {value}) => this.setAudioDevice(value)}
                   />
                   <Select
                     className="select_device"
                     disabled={!!room}
-                    error={!media.video.video_device}
+                    error={!media.video.device}
                     placeholder={t("oldClient.selectDevice")}
-                    value={media.video.video_device}
+                    value={media.video.device}
                     options={vdevices_list}
                     onChange={(e, {value}) => this.setVideoDevice(value)}
                   />
                   <Select
                     className="select_device"
                     disabled={!!room}
-                    error={!media.video.video_device}
+                    error={!media.video.device}
                     placeholder={t("oldClient.videoSettings")}
                     value={media.video.setting}
                     options={vsettings_list}
@@ -2675,8 +2605,8 @@ class VirtualHttpClient extends Component {
             audio={media.audio}
             video={media.video}
             cammuted={cammuted}
-            videoDevice={media.video?.video_device}
-            audioDevice={media.audio?.audio_device}
+            videoDevice={media.video?.device}
+            audioDevice={media.audio?.device}
             videoLength={media.video?.devices.length}
             videoSettings={JSON.stringify(media.video.setting)}
             wip={wipSettings}
