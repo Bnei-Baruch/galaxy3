@@ -3,18 +3,7 @@ import {Janus} from "../../lib/janus";
 import classNames from "classnames";
 import {isMobile} from "react-device-detect";
 import {Button, Icon, Image, Input, Label, Menu, Message, Modal, Popup, Select} from "semantic-ui-react";
-import {
-  checkNotification,
-  geoInfo,
-  getDateString,
-  getMedia,
-  getMediaStream,
-  initJanus,
-  micLevel,
-  notifyMe,
-  testMic,
-  updateGxyUser,
-} from "../../shared/tools";
+import {checkNotification, geoInfo, getDateString, initJanus, notifyMe, testMic, updateGxyUser} from "../../shared/tools";
 import "./VirtualClient.scss";
 import "./VideoConteiner.scss";
 import "./CustomIcons.scss";
@@ -27,13 +16,7 @@ import {TopMenu} from "./components/TopMenu";
 import {withTranslation} from "react-i18next";
 import {languagesOptions, setLanguage} from "../../i18n/i18n";
 import {Monitoring} from "../../components/Monitoring";
-import {
-  LINK_STATE_GOOD,
-  LINK_STATE_INIT,
-  LINK_STATE_MEDIUM,
-  LINK_STATE_WEAK,
-  MonitoringData,
-} from "../../shared/MonitoringData";
+import {LINK_STATE_GOOD, LINK_STATE_INIT, LINK_STATE_MEDIUM, LINK_STATE_WEAK, MonitoringData,} from "../../shared/MonitoringData";
 import api from "../../shared/Api";
 import VirtualStreaming from "./VirtualStreaming";
 import VirtualStreamingJanus from "../../shared/VirtualStreamingJanus";
@@ -46,11 +29,9 @@ import audioModeSvg from "../../shared/audio-mode.svg";
 import fullModeSvg from "../../shared/full-mode.svg";
 import ConfigStore from "../../shared/ConfigStore";
 import {toggleFullScreen, isFullScreen} from "./FullScreenHelper";
-
 import {AppBar, Badge, Box, Button as ButtonMD, ButtonGroup, Grid, IconButton} from "@material-ui/core";
 import {ChevronLeft, ChevronRight, PlayCircleOutline /*, OpenInNewOutlined*/} from "@material-ui/icons"; //button of congress
 import {grey} from "@material-ui/core/colors";
-
 import {AskQuestion, AudioMode, CloseBroadcast, Layout, Mute, MuteVideo, Vote, Fullscreen} from "./buttons";
 import Settings from "./settings/Settings";
 import SettingsJoined from "./settings/SettingsJoined";
@@ -64,7 +45,6 @@ import {iceRestart as iceRestartKliOlami} from "./components/KliOlamiStreamHelpe
 import KliOlamiToggle from "./buttons/KliOlamiToggle";
 import Toolbar from "@material-ui/core/Toolbar";
 import Typography from "@material-ui/core/Typography";
-
 import {withTheme} from "@material-ui/core/styles";
 import ThemeSwitcher from "./components/ThemeSwitcher/ThemeSwitcher";
 import mqtt from "../../shared/mqtt";
