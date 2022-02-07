@@ -1,6 +1,7 @@
 import {gxycol, trllang, NO_VIDEO_OPTION_VALUE} from "./consts";
 import {JanusMqtt} from "../lib/janus-mqtt";
 import {StreamingPlugin} from "../lib/streaming-plugin";
+import log from "loglevel";
 
 export default class JanusStream {
   constructor(onInitialized) {
@@ -168,15 +169,15 @@ export default class JanusStream {
   }
 
   destroyAndInitJanus_(user) {
-    console.log("Trying to destroy and init!");
+    log.debug("Trying to destroy and init!");
     this.destroy({
       error: (error) => {
-        console.log("JanusVirtualStreaming error destroying before init", error);
+        log.debug("JanusVirtualStreaming error destroying before init", error);
         // Still we are trying to init.
         this.initJanus_(user);
       },
       success: () => {
-        console.log("JanusVirtualStreaming destroy success, now init.");
+        log.debug("JanusVirtualStreaming destroy success, now init.");
         this.initJanus_(user);
       },
     });
@@ -187,7 +188,7 @@ export default class JanusStream {
     this.janus = new JanusMqtt(user, str, "MqttStream")
 
     this.janus.init().then(data => {
-      console.log(data)
+      log.debug(data)
       if (this.videos !== NO_VIDEO_OPTION_VALUE) {
         this.initVideoStream(this.janus)
       }
@@ -214,7 +215,7 @@ export default class JanusStream {
   initVideoStream = (janus) => {
     this.videoJanusStream = new StreamingPlugin();
     janus.attach(this.videoJanusStream).then(data => {
-      console.log(data)
+      log.debug(data)
       this.videoJanusStream.watch(this.videos).then(stream => {
         this.videoMediaStream = stream;
         this.attachVideoStream_(this.videoElement, /* reattach= */ false);
@@ -227,7 +228,7 @@ export default class JanusStream {
     if(!this.janus) return
     this.videoQuadStream = new StreamingPlugin();
     this.janus.attach(this.videoQuadStream).then(data => {
-      console.log(data)
+      log.debug(data)
       this.videoQuadStream.watch(102).then(stream => {
         callback(stream)
       })
@@ -244,7 +245,7 @@ export default class JanusStream {
   initAudioStream = (janus) => {
     this.audioJanusStream = new StreamingPlugin();
     janus.attach(this.audioJanusStream).then(data => {
-      console.log(data)
+      log.debug(data)
       this.audioJanusStream.watch(this.audios).then(stream => {
         this.audioMediaStream = stream;
         setTimeout(() => {
@@ -258,7 +259,7 @@ export default class JanusStream {
   initTranslationStream = (streamId) => {
     this.trlAudioJanusStream = new StreamingPlugin();
     this.janus.attach(this.trlAudioJanusStream).then(data => {
-      console.log(data)
+      log.debug(data)
       this.trlAudioJanusStream.watch(streamId).then(stream => {
         this.trlAudioMediaStream = stream;
         setTimeout(() => {
@@ -270,7 +271,7 @@ export default class JanusStream {
   };
 
   streamGalaxy = (talk, col, name) => {
-    console.log("streamGalaxy", talk, col, name);
+    log.debug("streamGalaxy", talk, col, name);
     if (!this.isInitialized_()) {
       return;
     }
@@ -283,30 +284,30 @@ export default class JanusStream {
       this.prevAudioVolume = this.audioElement.volume;
       this.prevMuted = this.audioElement.muted;
 
-      console.log(" :: Switch STR Stream: ", gxycol[col]);
+      log.debug(" :: Switch STR Stream: ", gxycol[col]);
       this.audioJanusStream.switch(gxycol[col]);
       const id = trllang[localStorage.getItem("vrt_langtext")];
-      console.log(":: Select TRL: ", localStorage.getItem("vrt_langtext"), id);
+      log.debug(":: Select TRL: ", localStorage.getItem("vrt_langtext"), id);
       if (!id) {
-        console.log(" :: Not TRL Stream attach");
+        log.debug(" :: Not TRL Stream attach");
       } else {
         //this.trlAudioJanusStream.send({message: {request: "switch", id: id}});
         this.trlAudioJanusStream.switch(id);
         this.talking = setInterval(this.ducerMixaudio, 200);
-        console.log(" :: Init TRL Stream: ", localStorage.getItem("vrt_langtext"), id);
+        log.debug(" :: Init TRL Stream: ", localStorage.getItem("vrt_langtext"), id);
       }
-      console.debug("You now talking");
+      log.debug("You now talking");
     } else if (this.talking) {
-      console.debug("Stop talking");
+      log.debug("Stop talking");
       if (this.talking) {
         clearInterval(this.talking);
       }
       this.audioElement.volume = this.mixvolume;
       const id = Number(localStorage.getItem("vrt_lang")) || 2;
-      console.log(" :: Switch STR Stream: ", localStorage.getItem("vrt_lang"), id);
+      log.debug(" :: Switch STR Stream: ", localStorage.getItem("vrt_lang"), id);
       //this.audioJanusStream.send({message: {request: "switch", id: id}});
       this.audioJanusStream.switch(id);
-      console.log(" :: Stop TRL Stream: ");
+      log.debug(" :: Stop TRL Stream: ");
       this.trlAudioElement.muted = true;
       this.talking = null;
       this.mixvolume = null;
@@ -320,7 +321,7 @@ export default class JanusStream {
     if (this.isInitialized_()) {
       // Get remote volume of translator stream (FYI in case of Hebrew, this will be 0 - no translation).
       this.trlAudioJanusStream.getVolume(null, (volume) => {
-        //console.log(volume)
+        //log.debug(volume)
         if (volume === -1) {
           if (this.talking) {
             clearInterval(this.talking);

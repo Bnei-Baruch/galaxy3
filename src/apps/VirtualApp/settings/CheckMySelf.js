@@ -2,7 +2,7 @@ import React, {useEffect, useRef, useState} from "react";
 import {useTranslation} from "react-i18next";
 import makeStyles from "@material-ui/core/styles/makeStyles";
 import {Button, Grid, Box} from "@material-ui/core";
-
+import log from "loglevel";
 import {recordAudio, sleep} from "../../../shared/tools";
 import devices from "../../../lib/devices";
 
@@ -30,7 +30,6 @@ const CheckMySelf = () => {
   const [processType, setProcesstype] = useState();
 
   useEffect(() => {
-    console.log("useEffect", devices.audio.context)
     micVolume(devices.audio.context)
     return () => {
       if(devices.audio.context)
@@ -50,7 +49,7 @@ const CheckMySelf = () => {
     gradient.addColorStop(0.5, "orange");
     gradient.addColorStop(1, "red");
     devices.micLevel = (volume) => {
-      //console.log("[settings] volume: ", volume)
+      log.trace("[settings] volume: ", volume)
       cc.clearRect(0, 0, c.width, c.height);
       cc.fillStyle = gradient;
       cc.fillRect(0, 0, volume * 500, c.height);

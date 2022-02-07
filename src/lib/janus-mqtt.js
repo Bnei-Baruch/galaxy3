@@ -1,5 +1,7 @@
 import {randomString} from "../shared/tools";
 import mqtt from "../shared/mqtt";
+import log from "loglevel";
+import chalk from "chalk";
 
 export class JanusMqtt {
   constructor(user, srv, mit) {
@@ -34,7 +36,7 @@ export class JanusMqtt {
       this.transactions[transaction] = {
         resolve: (json) => {
           if (json.janus !== 'success') {
-            console.error('[janus] Cannot connect to Janus', json)
+            log.error('[janus] Cannot connect to Janus', json)
             reject(json)
             return
           }
@@ -43,7 +45,7 @@ export class JanusMqtt {
           this.isConnected = true
           this.keepAlive(true)
 
-          console.debug('[janus] Janus connected, sessionId: ', this.sessionId)
+          log.debug('[janus] Janus connected, sessionId: ', this.sessionId)
 
           resolve(this)
         },
@@ -60,7 +62,7 @@ export class JanusMqtt {
     return this.transaction('attach', {plugin: name, opaque_id: this.user.id}, 'success')
       .then((json) => {
       if (json.janus !== 'success') {
-        console.error('[janus] Cannot add plugin', json)
+        log.error('[janus] Cannot add plugin', json)
         plugin.error(json)
         throw new Error(json)
       }
@@ -77,7 +79,7 @@ export class JanusMqtt {
     }
 
     return this.transaction('destroy', {}, 'success', 5000).then(data => {
-      console.debug('[janus] Janus destroyed: ', data)
+      log.debug('[janus] Janus destroyed: ', data)
       this.cleanup()
     }).catch(() => {
       this.cleanup()
@@ -143,11 +145,11 @@ export class JanusMqtt {
     if (isScheduled) {
       setTimeout(() => { this.keepAlive() }, 20 * 1000)
     } else {
-      console.debug('[janus] Sending Janus keepalive')
+      log.debug('[janus] Sending Janus keepalive')
       this.transaction('keepalive').then(() => {
         setTimeout(() => { this.keepAlive() }, 20 * 1000)
       }).catch((err) => {
-        console.warn('[janus] Janus keepalive error', err)
+        log.warn('[janus] Janus keepalive error', err)
       })
     }
   }
@@ -169,7 +171,7 @@ export class JanusMqtt {
     }
 
     this.isConnected = false
-    console.error('Lost connection to the gateway (is it down?)')
+    log.error('Lost connection to the gateway (is it down?)')
   }
 
   cleanup () {
@@ -208,20 +210,20 @@ export class JanusMqtt {
     try {
       json = JSON.parse(message)
     } catch (err) {
-      console.error('[janus] cannot parse message', message.data)
+      log.error('[janus] cannot parse message', message.data)
       return
     }
 
-    console.debug("[janus] :: New Janus Message :: ", json, tD);
+    log.debug("[janus] On message: ", json, tD);
     const {session_id, janus, data, jsep} = json;
 
     if(tD === "status" && json.online) {
-      console.debug("Janus Server - " + this.srv + " - Online")
+      log.debug("[janus] Janus Server - " + this.srv + " - Online")
       return
     }
 
     if(tD === "status" && !json.online) {
-      alert("Janus Server - " + this.srv + " - Offline")
+      alert("[janus] Janus Server - " + this.srv + " - Offline")
       window.location.reload()
       return
     }
@@ -253,13 +255,13 @@ export class JanusMqtt {
       const sender = json.sender
       if (!sender) {
         transaction.resolve(json)
-        console.error('[janus] Missing sender for plugindata', json)
+        log.error('[janus] Missing sender for plugindata', json)
         return
       }
 
       const pluginHandle = this.pluginHandles[sender]
       if (!pluginHandle) {
-        console.debug('[janus] This handle is not attached to this session', json)
+        log.debug(chalk.grey('[janus] This handle is not attached to this session', json))
         return
       }
 
@@ -268,19 +270,19 @@ export class JanusMqtt {
     }
 
     if (janus === 'timeout' && json.session_id !== this.sessionId) {
-      console.debug('[janus] Timeout from another session');
+      log.debug('[janus] Timeout from another session');
       return
     }
 
     if (janus === 'webrtcup') { // The PeerConnection with the gateway is up! Notify this
       const sender = json.sender
       if (!sender) {
-        console.warn('[janus] Missing sender...')
+        log.warn('[janus] Missing sender...')
         return
       }
       const pluginHandle = this.pluginHandles[sender]
       if (!pluginHandle) {
-        console.debug('[janus] This handle is not attached to this session', sender)
+        log.debug(chalk.grey('[janus] This handle is not attached to this session', sender))
         return
       }
       pluginHandle.webrtcState(true)
@@ -290,12 +292,12 @@ export class JanusMqtt {
     if (janus === 'hangup') { // A plugin asked the core to hangup a PeerConnection on one of our handles
       const sender = json.sender
       if (!sender) {
-        console.warn('[janus] Missing sender...')
+        log.warn('[janus] Missing sender...')
         return
       }
       const pluginHandle = this.pluginHandles[sender]
       if (!pluginHandle) {
-        console.debug('[janus] This handle is not attached to this session', sender)
+        log.debug(chalk.grey('[janus] This handle is not attached to this session', sender))
         return
       }
       pluginHandle.webrtcState(false, json.reason)
@@ -306,7 +308,7 @@ export class JanusMqtt {
     if (janus === 'detached') { // A plugin asked the core to detach one of our handles
       const sender = json.sender
       if (!sender) {
-        console.warn('[janus] Missing sender...')
+        log.warn('[janus] Missing sender...')
         return
       }
       return
@@ -315,12 +317,12 @@ export class JanusMqtt {
     if (janus === 'media') { // Media started/stopped flowing
       const sender = json.sender
       if (!sender) {
-        console.warn('[janus] Missing sender...')
+        log.warn('[janus] Missing sender...')
         return
       }
       const pluginHandle = this.pluginHandles[sender]
       if (!pluginHandle) {
-        console.debug('[janus] This handle is not attached to this session', sender)
+        log.debug(chalk.grey('[janus] This handle is not attached to this session', sender))
         return
       }
       pluginHandle.mediaState(json.type, json.receiving)
@@ -328,16 +330,16 @@ export class JanusMqtt {
     }
 
     if (janus === 'slowlink') { // Trouble uplink or downlink
-      console.debug('[janus] Got a slowlink event on session ' + this.sessionId)
-      console.debug(json)
+      log.debug('[janus] Got a slowlink event on session ' + this.sessionId)
+      log.debug(json)
       const sender = json.sender
       if (!sender) {
-        console.warn('[janus] Missing sender...')
+        log.warn('[janus] Missing sender...')
         return
       }
       const pluginHandle = this.pluginHandles[sender]
       if (!pluginHandle) {
-        console.debug('[janus] This handle is not attached to this session', sender)
+        log.debug(chalk.grey('[janus] This handle is not attached to this session', sender))
         return
       }
       pluginHandle.slowLink(json.uplink, json.nacks)
@@ -345,11 +347,11 @@ export class JanusMqtt {
     }
 
     if (janus === 'error') { // Oops, something wrong happened
-      console.error('[janus] Janus error response' + json)
+      log.error('[janus] Janus error response' + json)
       const transaction = this.getTransaction(json, true)
       if (transaction && transaction.reject) {
         if (transaction.request) {
-          console.debug('[janus] rejecting transaction', transaction.request, json)
+          log.debug('[janus] rejecting transaction', transaction.request, json)
         }
         transaction.reject(json)
       }
@@ -357,21 +359,21 @@ export class JanusMqtt {
     }
 
     if (janus === 'event') {
-      console.debug("[janus] Got event", json)
+      log.debug("[janus] Got event", json)
       const sender = json.sender
       if (!sender) {
-        console.warn('[janus] Missing sender...')
+        log.warn('[janus] Missing sender...')
         return
       }
       const pluginData = json.plugindata
       if (pluginData === undefined || pluginData === null) {
-        console.error('[janus] Missing plugindata...')
+        log.error('[janus] Missing plugindata...')
         return
       }
 
       const pluginHandle = this.pluginHandles[sender]
       if (!pluginHandle) {
-        console.debug('[janus] This handle is not attached to this session', sender)
+        log.debug(chalk.grey('[janus] This handle is not attached to this session', sender))
         return
       }
 
@@ -390,6 +392,6 @@ export class JanusMqtt {
       return
     }
 
-    console.warn('[janus] Unknown message/event ' + janus + ' on session ' + this.sessionId)
+    log.warn('[janus] Unknown message/event ' + janus + ' on session ' + this.sessionId)
   }
 }

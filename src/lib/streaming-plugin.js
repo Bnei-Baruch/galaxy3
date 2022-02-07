@@ -1,5 +1,6 @@
 import {randomString} from "../shared/tools";
 import {EventEmitter} from "events";
+import log from "loglevel";
 
 export class StreamingPlugin extends EventEmitter {
   constructor (logger) {
@@ -31,7 +32,7 @@ export class StreamingPlugin extends EventEmitter {
     const body = { request: 'watch', id }
     return new Promise((resolve, reject) => {
       this.transaction('message', { body }, 'event').then((param) => {
-        console.log("[streaming] watch: ", param)
+        log.info("[streaming] watch: ", param)
         const {session_id, json } = param
 
         let audioTransceiver = null, videoTransceiver = null;
@@ -58,7 +59,7 @@ export class StreamingPlugin extends EventEmitter {
         }
 
         if (json?.jsep) {
-          console.log('[streaming] sdp: ', json)
+          log.info('[streaming] sdp: ', json)
           this.sdpExchange(json.jsep)
         }
 
@@ -67,18 +68,18 @@ export class StreamingPlugin extends EventEmitter {
         };
 
         this.pc.onconnectionstatechange = (e) => {
-          console.log("[streaming] ICE State: ", e.target.connectionState)
+          log.info("[streaming] ICE State: ", e.target.connectionState)
         };
 
         this.pc.ontrack = (e) => {
-          console.log("[streaming] Got track: ", e)
+          log.info("[streaming] Got track: ", e)
           let stream = new MediaStream();
           stream.addTrack(e.track.clone());
           resolve(stream);
         };
 
       }).catch((err) => {
-        console.error('[streaming] StreamingJanusPlugin, cannot watch stream', err)
+        log.error('[streaming] StreamingJanusPlugin, cannot watch stream', err)
         reject(err)
       })
     })
@@ -89,7 +90,7 @@ export class StreamingPlugin extends EventEmitter {
     this.pc.createAnswer().then((desc) => {
       this.pc.setLocalDescription(desc);
       this.start(desc)
-    }, error => console.error(error));
+    }, error => log.error(error));
   }
 
   start(jsep) {
@@ -102,7 +103,7 @@ export class StreamingPlugin extends EventEmitter {
     return this.transaction('message', message, 'event').then(({ data, json }) => {
       return { data, json }
     }).catch((err) => {
-      console.error('[streaming] StreamingJanusPlugin, cannot start stream', err)
+      log.error('[streaming] StreamingJanusPlugin, cannot start stream', err)
       throw err
     })
   }
@@ -111,7 +112,7 @@ export class StreamingPlugin extends EventEmitter {
     const body = { request: 'switch', id }
 
     return this.transaction('message', { body }, 'event').catch((err) => {
-      console.error('[streaming] StreamingJanusPlugin, cannot start stream', err)
+      log.error('[streaming] StreamingJanusPlugin, cannot start stream', err)
       throw err
     })
   }
@@ -140,9 +141,9 @@ export class StreamingPlugin extends EventEmitter {
   }
 
   onmessage (data, json) {
-    console.log('[streaming] onmessage: ', data, json)
+    log.info('[streaming] onmessage: ', data, json)
     if (json?.jsep) {
-      console.log('[streaming] sdp: ', data, json)
+      log.info('[streaming] sdp: ', data, json)
       this.sdpExchange(json.jsep)
     }
   }

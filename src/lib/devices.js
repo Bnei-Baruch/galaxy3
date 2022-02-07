@@ -1,4 +1,5 @@
 import workerUrl from 'worker-plugin/loader!./volmeter-processor';
+import log from "loglevel";
 
 class LocalDevices {
   constructor() {
@@ -92,7 +93,7 @@ class LocalDevices {
       this.video.device = "";
     }
 
-    console.debug("[devices] init: ", this)
+    log.debug("[devices] init: ", this)
     return {video: this.video, audio: this.audio};
   };
 
@@ -114,7 +115,7 @@ class LocalDevices {
     if(!this.audio_stream) return
 
     this.audio.context = new AudioContext()
-    console.log("[devices] mic level: ", this.audio.context)
+    log.info("[devices] mic level: ", this.audio.context)
     await this.audio.context.audioWorklet.addModule(workerUrl)
     let microphone = this.audio.context.createMediaStreamSource(this.audio_stream)
     const node = new AudioWorkletNode(this.audio.context, 'volume_meter')
@@ -124,7 +125,7 @@ class LocalDevices {
       let _rms = 0
       let _dB = 0
 
-      //console.log('[devices] latest readings:', event.data)
+      //log.info('[devices] latest readings:', event.data)
 
       if (event.data.volume) {
         _volume = event.data.volume
@@ -144,11 +145,11 @@ class LocalDevices {
 
     return this.getMediaStream(false, true, setting, null, this.video.device)
       .then((data) => {
-        console.log(data);
+        log.info(data);
         const [stream, error] = data;
         if (error) {
           this.video.error = error
-          console.error(error);
+          log.error(error);
         } else {
           localStorage.setItem("video_setting", JSON.stringify(setting));
           this.video.stream = stream;
@@ -162,11 +163,11 @@ class LocalDevices {
     if (device === this.video.device && !reconnect) return;
     return this.getMediaStream(false, true, this.video.setting, null, device)
       .then((data) => {
-        console.log(data);
+        log.info(data);
         const [stream, error] = data;
         if (error) {
           this.video.error = error
-          console.error(error);
+          log.error(error);
         } else {
           localStorage.setItem("video_device", device);
           this.video.stream = stream;
@@ -180,13 +181,13 @@ class LocalDevices {
     if (device === this.audio.device) return;
     return this.getMediaStream(true, false, this.video.setting, device, null)
       .then((data) => {
-        console.log(data);
+        log.info(data);
         const [stream, error] = data;
         if (error) {
           this.audio.error = error
-          console.error(error);
+          log.error(error);
         } else {
-          console.log(" --- setAudioDevice ---")
+          log.info(" --- setAudioDevice ---")
           localStorage.setItem("audio_device", device);
           this.audio.stream = stream;
           this.audio.device = device;

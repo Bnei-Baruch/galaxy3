@@ -1,5 +1,6 @@
 import {randomString} from "../shared/tools";
 import {EventEmitter} from "events";
+import log from "loglevel";
 
 export class SubscriberPlugin extends EventEmitter {
   constructor (logger) {
@@ -33,11 +34,11 @@ export class SubscriberPlugin extends EventEmitter {
     const body = {request: "subscribe", streams: subscription}
     return new Promise((resolve, reject) => {
       this.transaction('message', { body }, 'event').then((param) => {
-        console.log("[subscriber] Subscribe to: ", param)
+        log.info("[subscriber] Subscribe to: ", param)
         const {data, json} = param
 
         if(data?.videoroom === "updated") {
-          console.log('[subscriber] Streams updated: ', data.streams)
+          log.info('[subscriber] Streams updated: ', data.streams)
           this.onUpdate(data.streams)
         }
 
@@ -45,7 +46,7 @@ export class SubscriberPlugin extends EventEmitter {
           this.pc.setRemoteDescription(new RTCSessionDescription(json.jsep)).then(() => {
             return this.pc.createAnswer()
           }).then(answer => {
-            console.log('[subscriber] answerCreated')
+            log.info('[subscriber] answerCreated')
             this.pc.setLocalDescription(answer)
             this.answer(answer)
           })
@@ -55,7 +56,7 @@ export class SubscriberPlugin extends EventEmitter {
           resolve(data);
 
       }).catch((err) => {
-        console.error('[subscriber] Subscribe to: ', err)
+        log.error('[subscriber] Subscribe to: ', err)
         reject(err)
       })
     })
@@ -65,14 +66,14 @@ export class SubscriberPlugin extends EventEmitter {
     const body = {request: "unsubscribe", streams};
     return new Promise((resolve, reject) => {
       this.transaction('message', { body }, 'event').then((param) => {
-        console.log("[subscriber] Unsubscribe from: ", param)
+        log.info("[subscriber] Unsubscribe from: ", param)
         const {data, json } = param
 
         if(data)
           resolve(data);
 
       }).catch((err) => {
-        console.error('[subscriber] Unsubscribe from: ', err)
+        log.error('[subscriber] Unsubscribe from: ', err)
         reject(err)
       })
     })
@@ -83,17 +84,17 @@ export class SubscriberPlugin extends EventEmitter {
     const body = {request: "join", room: roomId, ptype: "subscriber", streams: subscription};
     return new Promise((resolve, reject) => {
       this.transaction('message', { body }, 'event').then((param) => {
-        console.log("[subscriber] join: ", param)
+        log.info("[subscriber] join: ", param)
         const {data, json } = param
 
         if(data)
           resolve(data);
 
         this.pc.onicecandidate = (e) => {
-          console.log('[subscriber] onicecandidate set', e.candidate)
+          log.info('[subscriber] onicecandidate set', e.candidate)
           let candidate = {completed: true}
           if (!e.candidate || e.candidate.candidate.indexOf('endOfCandidates') > 0) {
-            console.debug("[subscriber] End of candidates")
+            log.debug("[subscriber] End of candidates")
           } else {
             // JSON.stringify doesn't work on some WebRTC objects anymore
             // See https://code.google.com/p/chromium/issues/detail?id=467366
@@ -108,45 +109,45 @@ export class SubscriberPlugin extends EventEmitter {
         };
 
         this.pc.onconnectionstatechange = (e) => {
-          console.log("[subscriber] ICE State: ", e.target.connectionState)
+          log.info("[subscriber] ICE State: ", e.target.connectionState)
         }
 
         this.pc.ontrack = (e) => {
-          console.log("[subscriber] Got track: ", e)
+          log.info("[subscriber] Got track: ", e)
           let remoteStream = e.streams[0];
           this.onTrack(e.track, null, true)
 
           e.track.onmute = (ev) => {
-            console.debug("[subscriber] onmute event: ", ev)
+            log.debug("[subscriber] onmute event: ", ev)
             remoteStream.removeTrack(ev.target);
           }
 
           e.track.onunmute = (ev) => {
-            console.debug("[subscriber] onunmute event: ", ev)
+            log.debug("[subscriber] onunmute event: ", ev)
             remoteStream.addTrack(ev.target)
             this.onTrack(ev.target, null, true)
           }
 
           e.track.onended = (ev) => {
-            console.debug("[subscriber] onended event: ", ev)
+            log.debug("[subscriber] onended event: ", ev)
             remoteStream.removeTrack(ev.target);
           }
 
         };
 
         if(json?.jsep) {
-          console.debug('[subscriber] Got JSEP: ', json.jsep)
+          log.debug('[subscriber] Got JSEP: ', json.jsep)
           this.pc.setRemoteDescription(new RTCSessionDescription(json.jsep)).then(() => {
             return this.pc.createAnswer()
           }).then(answer => {
-            console.log('[subscriber] answerCreated')
+            log.info('[subscriber] answerCreated')
             this.pc.setLocalDescription(answer)
             this.answer(answer)
           })
         }
 
       }).catch((err) => {
-        console.error('[subscriber] join: ', err)
+        log.error('[subscriber] join: ', err)
         reject(err)
       })
     })
@@ -158,10 +159,10 @@ export class SubscriberPlugin extends EventEmitter {
       const jsep = answer
       this.transaction('message', { body, jsep }, 'event').then((param) => {
         const { data, json } = param || {}
-        console.log("[subscriber] answer: ", param)
+        log.info("[subscriber] answer: ", param)
         resolve()
       }).catch((err) => {
-        console.error('[subscriber] answer', err, answer)
+        log.error('[subscriber] answer', err, answer)
         reject(err)
       })
     })
@@ -179,18 +180,18 @@ export class SubscriberPlugin extends EventEmitter {
   }
 
   onmessage (data, json) {
-    console.log('[subscriber] onmessage: ', data, json)
+    log.info('[subscriber] onmessage: ', data, json)
     if(data?.videoroom === "updated") {
-      console.log('[subscriber] Streams updated: ', data.streams)
+      log.info('[subscriber] Streams updated: ', data.streams)
       this.onUpdate(data.streams)
     }
 
     if(json?.jsep) {
-      console.debug('[subscriber] Got JSEP: ', json.jsep)
+      log.debug('[subscriber] Got JSEP: ', json.jsep)
       this.pc.setRemoteDescription(new RTCSessionDescription(json.jsep)).then(() => {
         return this.pc.createAnswer()
       }).then(answer => {
-        console.log('[subscriber] answerCreated')
+        log.info('[subscriber] answerCreated')
         this.pc.setLocalDescription(answer)
         this.answer(answer)
       })
@@ -198,36 +199,36 @@ export class SubscriberPlugin extends EventEmitter {
   }
 
   oncleanup () {
-    console.log('[subscriber] - oncleanup - ')
+    log.info('[subscriber] - oncleanup - ')
     // PeerConnection with the plugin closed, clean the UI
     // The plugin handle is still valid so we can create a new one
   }
 
   detached () {
-    console.log('[subscriber] - detached - ')
+    log.info('[subscriber] - detached - ')
     // Connection with the plugin closed, get rid of its features
     // The plugin handle is not valid anymore
   }
 
   hangup () {
-    console.log('[subscriber] - hangup - ')
+    log.info('[subscriber] - hangup - ')
     this.janus.detach(this).catch((err) => {
-      console.error('[subscriber] error in hangup', err)
+      log.error('[subscriber] error in hangup', err)
     })
   }
 
   slowLink (uplink, lost) {
-    console.log('[subscriber] slowLink: ', uplink, lost)
+    log.info('[subscriber] slowLink: ', uplink, lost)
     //this.emit('slowlink')
   }
 
   mediaState (medium, on) {
-    console.log('[subscriber] mediaState: ', medium, on)
+    log.info('[subscriber] mediaState: ', medium, on)
     //this.emit('mediaState', medium, on)
   }
 
   webrtcState (isReady, cause) {
-    console.log('[subscriber] webrtcState: ', isReady, cause)
+    log.info('[subscriber] webrtcState: ', isReady, cause)
     //this.emit('webrtcState', isReady, cause)
   }
 

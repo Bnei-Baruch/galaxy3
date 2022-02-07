@@ -15,6 +15,7 @@ import mqtt from "../../shared/mqtt";
 import {JanusMqtt} from "../../lib/janus-mqtt";
 import {PublisherPlugin} from "../../lib/publisher-plugin";
 import {SubscriberPlugin} from "../../lib/subscriber-plugin";
+import log from "loglevel";
 
 const sortAndFilterFeeds = (feeds) =>
   feeds
@@ -101,7 +102,7 @@ class AdminRootMqtt extends Component {
       .then(() => this.setState({gatewaysInitialized: true}))
       .then(this.pollRooms)
       .catch((error) => {
-        console.error("[Admin] error initializing app", error);
+        log.error("[admin] error initializing app", error);
         this.setState({appInitError: error});
       });
   };
@@ -112,7 +113,7 @@ class AdminRootMqtt extends Component {
 
     if (current_room === room) return;
 
-    console.log("[Admin] joinRoom", room, inst);
+    log.info("[admin] joinRoom", room, inst);
     this.setState({users: data.users});
     const token = ConfigStore.globalConfig.gateways.rooms[inst].token
 
@@ -128,30 +129,30 @@ class AdminRootMqtt extends Component {
     subscriber.onUpdate = this.onUpdateStreams;
 
     janus.init(token).then(data => {
-      console.log("[admin] Janus init", data)
+      log.info("[admin] Janus init", data)
 
       janus.attach(videoroom).then(data => {
         this.setState({janus, videoroom, user, current_room: room});
-        console.log('[admin] Publisher Handle: ', data)
+        log.info('[admin] Publisher Handle: ', data)
 
         videoroom.join(room, user).then(data => {
-          console.log('[admin] Joined respond :', data)
+          log.info('[admin] Joined respond :', data)
           this.makeSubscription(data.publishers, room)
         }).catch(err => {
-          console.error('[admin] Join error :', err);
+          log.error('[admin] Join error :', err);
         })
 
       })
 
       janus.attach(subscriber).then(data => {
         this.setState({subscriber});
-        console.log('[admin] Subscriber Handle: ', data)
+        log.info('[admin] Subscriber Handle: ', data)
       })
 
     }).catch(err => {
-      console.error("[admin] Janus init", err);
+      log.error("[admin] Janus init", err);
       this.exitRoom(/* reconnect= */ true, () => {
-        console.error("[User] error initializing janus", err);
+        log.error("[User] error initializing janus", err);
         this.reinitClient(retry);
       });
     })
@@ -168,7 +169,7 @@ class AdminRootMqtt extends Component {
     this.setState({remoteFeed: false, feeds: []})
 
     videoroom.leave().then(r => {
-      console.log("[admin] leave respond:", r);
+      log.info("[admin] leave respond:", r);
 
       mqtt.exit("galaxy/room/" + current_room);
       mqtt.exit("galaxy/room/" + current_room + "/chat");
@@ -201,22 +202,22 @@ class AdminRootMqtt extends Component {
   }
 
   onRemoteTrack = (track, mid, on) => {
-    console.log("[admin]  ::: Got a remote track event ::: (remote feed)");
+    log.info("[admin]  ::: Got a remote track event ::: (remote feed)");
     if (!mid) {
       mid = track.id.split("janus")[1];
     }
-    console.log("[admin] Remote track (mid=" + mid + ") " + (on ? "added" : "removed") + ":", track);
+    log.info("[admin] Remote track (mid=" + mid + ") " + (on ? "added" : "removed") + ":", track);
     // Which publisher are we getting on this mid?
     let {mids} = this.state;
     let feed = mids[mid].feed_id;
-    console.log(" >> This track is coming from feed " + feed + ":", mid);
+    log.info(" >> This track is coming from feed " + feed + ":", mid);
     if (on) {
       // If we're here, a new track was added
       if (track.kind === "audio") {
         // New audio track: create a stream out of it, and use a hidden <audio> element
         let stream = new MediaStream();
         stream.addTrack(track.clone());
-        console.log("[admin] Created remote audio stream:", stream);
+        log.info("[admin] Created remote audio stream:", stream);
         let remoteaudio = this.refs["remoteAudio" + feed];
         remoteaudio.srcObject = stream;
       } else if (track.kind === "video") {
@@ -224,14 +225,14 @@ class AdminRootMqtt extends Component {
         // New video track: create a stream out of it
         const stream = new MediaStream();
         stream.addTrack(track.clone());
-        console.log("[admin] Created remote video stream:", stream);
+        log.info("[admin] Created remote video stream:", stream);
         remotevideo.srcObject = stream;
       }
     }
   }
 
   makeSubscription = (newFeeds) => {
-    console.log("[admin] makeSubscription", newFeeds);
+    log.info("[admin] makeSubscription", newFeeds);
     const subscription = [];
     const {feeds: pf} = this.state;
     const pfMap = new Map(pf.map((f) => [f.id, f]));
@@ -291,7 +292,7 @@ class AdminRootMqtt extends Component {
 
     // We wait for the plugin to send us an offer
     this.state.subscriber.join(subscription, this.state.current_room).then(data => {
-      console.log('[admin] Subscriber join: ', data)
+      log.info('[admin] Subscriber join: ', data)
 
       this.onUpdateStreams(data.streams);
 
@@ -332,17 +333,17 @@ class AdminRootMqtt extends Component {
         this.setState({rooms: data, users, users_count, rooms_question, web_count, ios_count, android_count});
       })
       .catch((err) => {
-        console.error("[Admin] error fetching active rooms", err);
+        log.error("[Admin] error fetching active rooms", err);
       });
   };
 
   unsubscribeFrom = (id) => {
     id = id[0]
-    console.log("[Admin] unsubscribeFrom", id);
+    log.info("[admin] unsubscribeFrom", id);
     const {feeds, feed_user} = this.state;
     for (let i = 0; i < feeds.length; i++) {
       if (feeds[i].id === id) {
-        console.log("[Admin] unsubscribeFrom feed", feeds[i]);
+        log.info("[admin] unsubscribeFrom feed", feeds[i]);
 
         // Remove from feeds list
         feeds.splice(i, 1);
@@ -436,9 +437,9 @@ class AdminRootMqtt extends Component {
     // if(command_type === "audio-out") {
     //     gdm.send(msg, toAck, (msg) => gateway.sendProtocolMessage(msg).catch(alert)).
     //     then(() => {
-    //         console.log(`MIC delivered to ${toAck}.`);
+    //         log.info(`MIC delivered to ${toAck}.`);
     //     }).catch((error) => {
-    //         console.error(`MIC not delivered to ${toAck} due to ` , error);
+    //         log.error(`MIC not delivered to ${toAck} due to ` , error);
     //     });
     // } else {
     //     const gateway = gateways[current_janus];
@@ -454,7 +455,7 @@ class AdminRootMqtt extends Component {
   getUserInfo = (selected_user) => {
     const {feed_user} = this.state;
     if (feed_user) mqtt.exit("galaxy/users/" + feed_user.id);
-    console.log("[Admin] getUserInfo", selected_user);
+    log.info("[admin] getUserInfo", selected_user);
     if (selected_user) {
       mqtt.join("galaxy/users/" + selected_user.id);
       const feed_info = selected_user.system ? platform.parse(selected_user.system) : null;
@@ -470,7 +471,7 @@ class AdminRootMqtt extends Component {
         api
           .fetchHandleInfo(janus, session, handle)
           .then((data) => {
-            console.debug("[Admin] Publisher info", data);
+            log.debug("[Admin] Publisher info", data);
             const m0 = data.info.webrtc.media[0];
             const m1 = data.info.webrtc.media[1];
             let video = null;

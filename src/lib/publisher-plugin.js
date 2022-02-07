@@ -1,5 +1,6 @@
 import {randomString} from "../shared/tools";
 import {EventEmitter} from "events";
+import log from "loglevel";
 
 export class PublisherPlugin extends EventEmitter {
   constructor (logger) {
@@ -35,14 +36,14 @@ export class PublisherPlugin extends EventEmitter {
     const body = {request: "join", room: roomId, ptype: "publisher", display: JSON.stringify(user)};
     return new Promise((resolve, reject) => {
       this.transaction('message', { body }, 'event').then((param) => {
-        console.log("[publisher] join: ", param)
+        log.info("[publisher] join: ", param)
         const {data, json } = param
 
         if(data)
           resolve(data);
 
       }).catch((err) => {
-        console.error('[publisher] error join room', err)
+        log.error('[publisher] error join room', err)
         reject(err)
       })
     })
@@ -52,14 +53,14 @@ export class PublisherPlugin extends EventEmitter {
     const body = {request: "leave", room: this.roomId};
     return new Promise((resolve, reject) => {
       this.transaction('message', { body }, 'event').then((param) => {
-        console.log("[publisher] leave: ", param)
+        log.info("[publisher] leave: ", param)
         const {data, json } = param
 
         if(data)
           resolve(data);
 
       }).catch((err) => {
-        console.error('[publisher] error leave room', err)
+        log.error('[publisher] error leave room', err)
         reject(err)
       })
     })
@@ -99,7 +100,7 @@ export class PublisherPlugin extends EventEmitter {
     this.pc.onicecandidate = (e) => {
       let candidate = {completed: true}
       if (!e.candidate || e.candidate.candidate.indexOf('endOfCandidates') > 0) {
-        console.debug("[publisher] End of candidates")
+        log.debug("[publisher] End of candidates")
       } else {
         // JSON.stringify doesn't work on some WebRTC objects anymore
         // See https://code.google.com/p/chromium/issues/detail?id=467366
@@ -114,11 +115,11 @@ export class PublisherPlugin extends EventEmitter {
     };
 
     this.pc.ontrack = (e) => {
-      console.log("[publisher] Got track: ", e)
+      log.info("[publisher] Got track: ", e)
     };
 
     this.pc.onconnectionstatechange = (e) => {
-      console.log("[publisher] ICE State: ", e.target.connectionState)
+      log.info("[publisher] ICE State: ", e.target.connectionState)
     };
 
     this.pc.createOffer().then((offer) => {
@@ -128,9 +129,9 @@ export class PublisherPlugin extends EventEmitter {
         return this.transaction('message', { body, jsep }, 'event').then((param) => {
           const { json } = param || {}
           const jsep = json.jsep
-          console.log('[publisher] Configure respond: ', jsep)
+          log.info('[publisher] Configure respond: ', jsep)
           this.pc.setRemoteDescription(jsep).then(() => {
-            console.log('[publisher] remoteDescription set')
+            log.info('[publisher] remoteDescription set')
           })
         })
 
@@ -161,14 +162,14 @@ export class PublisherPlugin extends EventEmitter {
     if(!video) videoTransceiver.sender.replaceTrack(stream.getVideoTracks()[0])
 
     this.pc.createOffer().then((offer) => {
-      this.pc.setLocalDescription(offer).catch(error => console.error("[publisher] setLocalDescription: ", error))
+      this.pc.setLocalDescription(offer).catch(error => log.error("[publisher] setLocalDescription: ", error))
         const body = {request: 'configure'}
         return this.transaction('message', { body, jsep: offer }, 'event').then((param) => {
           const { json } = param || {}
           const jsep = json.jsep
-          console.log('[publisher] Video is - ' + (video ? 'Muted' : 'Unmuted'), param)
+          log.info('[publisher] Video is - ' + (video ? 'Muted' : 'Unmuted'), param)
           this.pc.setRemoteDescription(jsep).then(() => {
-            console.log('[publisher] remoteDescription set')
+            log.info('[publisher] remoteDescription set')
           })
         })
 
@@ -188,14 +189,14 @@ export class PublisherPlugin extends EventEmitter {
   }
 
   onmessage (data, jsep) {
-    console.log('[publisher] onmessage: ', data, jsep)
+    log.info('[publisher] onmessage: ', data, jsep)
     if(data?.publishers) {
-      console.log('[publisher] New feed enter: ', data.publishers[0])
+      log.info('[publisher] New feed enter: ', data.publishers[0])
       this.subTo(data.publishers)
     }
 
     if(data?.unpublished) {
-      console.log('[publisher] Feed leave: ', data.unpublished)
+      log.info('[publisher] Feed leave: ', data.unpublished)
       if (data?.unpublished === "ok") {
         // That's us
         this.janus.detach(this)
@@ -205,54 +206,54 @@ export class PublisherPlugin extends EventEmitter {
     }
 
     if(data?.leaving) {
-      console.log('[publisher] Feed leave: ', data.leaving)
+      log.info('[publisher] Feed leave: ', data.leaving)
       this.unsubFrom([data.leaving], false)
     }
 
     if(data?.videoroom === "talking") {
-      console.log('[publisher] talking: ', data.id)
+      log.info('[publisher] talking: ', data.id)
       this.talkEvent(data.id, true)
     }
 
     if(data?.videoroom === "stopped-talking") {
-      console.log('[publisher] stopped talking: ', data.id)
+      log.info('[publisher] stopped talking: ', data.id)
       this.talkEvent(data.id, false)
     }
 
     if(jsep) {
-      console.debug('[publisher] Got JSEP?: ', jsep)
+      log.debug('[publisher] Got JSEP?: ', jsep)
     }
   }
 
   oncleanup () {
-    console.log('[publisher] - oncleanup - ')
+    log.info('[publisher] - oncleanup - ')
     // PeerConnection with the plugin closed, clean the UI
     // The plugin handle is still valid so we can create a new one
   }
 
   detached () {
-    console.log('[publisher] - detached - ')
+    log.info('[publisher] - detached - ')
     // Connection with the plugin closed, get rid of its features
     // The plugin handle is not valid anymore
   }
 
   hangup () {
-    console.log('[publisher] - hangup - ')
+    log.info('[publisher] - hangup - ')
     //this.emit('hangup')
   }
 
   slowLink (uplink, lost) {
-    console.log('[publisher] slowLink: ', uplink, lost)
+    log.info('[publisher] slowLink: ', uplink, lost)
     //this.emit('slowlink')
   }
 
   mediaState (medium, on) {
-    console.log('[publisher] mediaState: ', medium, on)
+    log.info('[publisher] mediaState: ', medium, on)
     //this.emit('mediaState', medium, on)
   }
 
   webrtcState (isReady, cause) {
-    console.log('[publisher] webrtcState: ', isReady, cause)
+    log.info('[publisher] webrtcState: ', isReady, cause)
     //this.emit('webrtcState', isReady, cause)
   }
 

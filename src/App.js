@@ -8,8 +8,8 @@ import "./i18n/i18n";
 // import MobileClient from "./apps/MobileApp/MobileClient";
 // import GalaxyStream from "./apps/StreamApp/GalaxyStream";
 // import VirtualMqttClient from "./apps/VirtualApp/VirtualMqttClient";
-import VirtualHttpClient from "./apps/VirtualApp/VirtualHttpClient";
-// import AdminApp from "./apps/AdminApp/AdminApp";
+// import VirtualHttpClient from "./apps/VirtualApp/VirtualHttpClient";
+import AdminApp from "./apps/AdminApp/AdminApp";
 // import ShidurApp from "./apps/ShidurApp/ShidurApp";
 // import SndmanApp from "./apps/SndmanApp/SndmanApp";
 // import AudioOutApp from "./apps/AudioOutApp/AudioOutApp";
@@ -24,8 +24,8 @@ class App extends Component {
         {/*<MobileClient />*/}
         {/*<GalaxyStream />*/}
         {/*<VirtualMqttClient />*/}
-        <VirtualHttpClient />
-        {/*<AdminApp />*/}
+        {/*<VirtualHttpClient />*/}
+        <AdminApp />
         {/*<ShidurApp />*/}
         {/*<SndmanApp />*/}
         {/*<AudioOutApp />*/}
