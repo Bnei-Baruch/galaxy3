@@ -27,7 +27,9 @@ export class JanusMqtt {
     mqtt.join(this.rxTopic, false);
     mqtt.join(this.stTopic, false);
 
-    mqtt.mq.on(this.mit, this.onMessage);
+    // We can't make more than 1 session on the same janus server
+    // fs it's problem for us, then logic here must be changed
+    mqtt.mq.on(this.srv, this.onMessage);
 
     return new Promise((resolve, reject) => {
       const transaction = randomString(12);
@@ -202,7 +204,7 @@ export class JanusMqtt {
     mqtt.exit(this.rxTopic);
     mqtt.exit(this.stTopic);
 
-    mqtt.mq.removeListener(this.mit, this.onMessage);
+    mqtt.mq.removeListener(this.srv, this.onMessage);
   }
 
   onMessage(message, tD) {

@@ -364,7 +364,7 @@ class VirtualMqttClient extends Component {
   };
 
   initJanus = (user, config, retry) => {
-    let janus = new JanusMqtt(user, config.name, "MqttGalaxy")
+    let janus = new JanusMqtt(user, config.name)
 
     let videoroom = new PublisherPlugin();
     videoroom.subTo = this.makeSubscription;

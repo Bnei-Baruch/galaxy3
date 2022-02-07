@@ -117,7 +117,7 @@ class AdminRootMqtt extends Component {
     this.setState({users: data.users});
     const token = ConfigStore.globalConfig.gateways.rooms[inst].token
 
-    let janus = new JanusMqtt(user, inst, "MqttGalaxy")
+    let janus = new JanusMqtt(user, inst)
 
     let videoroom = new PublisherPlugin();
     videoroom.subTo = this.makeSubscription;

@@ -116,38 +116,31 @@ class MqttMsg {
     });
   };
 
-  watch = (callback, stat) => {
-    let message;
+  watch = (callback) => {
     this.mq.on("message", (topic, data, packet) => {
       log.debug(chalk.green("[mqtt] trigger topic : ") + topic + " : packet:", packet);
-      if (/subtitles\/galaxy\//.test(topic)) {
-        this.mq.emit("MqttSubtitlesEvent", data);
-      } else if (/galaxy\/room\/\d+\/chat/.test(topic)) {
-        this.mq.emit("MqttChatEvent", data);
-      } else if (/janus\/gxy/.test(topic)) {
-        this.mq.emit("MqttGalaxy", data, topic.split("/")[2]);
-      } else if (/janus\/str/.test(topic)) {
-        this.mq.emit("MqttStream", data, topic.split("/")[2]);
-      } else if (/galaxy\/users\//.test(topic)) {
-        if (topic.split("/")[2] === "broadcast") {
-          this.mq.emit("MqttBroadcastMessage", data);
-        } else {
-          this.mq.emit("MqttPrivateMessage", data);
-        }
-      } else {
-        if (stat) {
-          message = data.toString();
-        } else {
-          try {
-            message = JSON.parse(data.toString());
-          } catch (e) {
-            log.error(e);
-            log.error("[mqtt] Not valid JSON, ", data.toString());
-            return;
-          }
-        }
-        //log.info("[mqtt] Got data on topic: ", topic, message);
-        callback(message, topic);
+      const [root, service, id, target] = topic.split("/")
+      switch(root) {
+        case "subtitles":
+          this.mq.emit("MqttSubtitlesEvent", data);
+          break;
+        case "galaxy":
+          // FIXME: we need send cmd messages to separate topic
+          if(service === "room" && target === "chat")
+            this.mq.emit("MqttChatEvent", data);
+          else if (service === "room" && target !== "chat")
+            callback(JSON.parse(data.toString()), topic);
+          else if (service === "users" && id === "broadcast")
+            this.mq.emit("MqttBroadcastMessage", data);
+          else
+            this.mq.emit("MqttPrivateMessage", data);
+          break;
+        case "janus":
+          this.mq.emit(service, data, id);
+          break;
+        default:
+          if(typeof callback === "function")
+            callback(JSON.parse(data.toString()), topic);
       }
     });
   };
