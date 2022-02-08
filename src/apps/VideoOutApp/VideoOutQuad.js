@@ -1,8 +1,8 @@
 import React, {Component} from "react";
 import {Segment} from "semantic-ui-react";
-import UsersHandleSDIOut from "./UsersHandleSDIOut";
+import VideoHandleHttp from "./VideoHandleHttp";
 
-class UsersQuadSDIOut extends Component {
+class VideoOutQuad extends Component {
   state = {
     col: null,
   };
@@ -55,7 +55,7 @@ class UsersQuadSDIOut extends Component {
         >
           {qst_mark}
           <div className={fullscr ? "fullscrvideo_title" : "video_title"}>{name}</div>
-          <UsersHandleSDIOut key={"q" + i} g={g} index={i} {...this.props} />
+          <VideoHandleHttp key={"q" + i} g={g} index={i} {...this.props} />
         </div>
       );
     });
@@ -68,4 +68,4 @@ class UsersQuadSDIOut extends Component {
   }
 }
 
-export default UsersQuadSDIOut;
+export default VideoOutQuad;

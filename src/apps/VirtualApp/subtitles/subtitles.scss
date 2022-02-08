@@ -254,7 +254,7 @@
   @include wq-overlay-full-height();
 }
 
-// Also check VideoConteiner.scss for layout--double & --equal
+// Also check VideoHandle.scss for layout--double & --equal
 @media screen and (orientation: portrait) {
   .layout--split,
   .layout--double,

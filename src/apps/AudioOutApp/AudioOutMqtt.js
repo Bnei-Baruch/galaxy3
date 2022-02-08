@@ -2,7 +2,7 @@ import React, {Component} from "react";
 import {Segment} from "semantic-ui-react";
 import log from "loglevel";
 import "./AudioOutApp.css";
-import JanusHandleMqtt from "./JanusHandleMqtt";
+import AudioHandleMqtt from "./AudioHandleMqtt";
 import api from "../../shared/Api";
 import {API_BACKEND_PASSWORD, API_BACKEND_USERNAME} from "../../shared/env";
 import GxyJanus from "../../shared/janus-utils";
@@ -104,7 +104,7 @@ class AudioOutMqtt extends Component {
         <div className="usersvideo_grid">
           <div className="video_full">
             <div className="title">{name}</div>
-            <JanusHandleMqtt g={group} user={user} audio={audio} />
+            <AudioHandleMqtt g={group} user={user} audio={audio} />
           </div>
         </div>
       </Segment>

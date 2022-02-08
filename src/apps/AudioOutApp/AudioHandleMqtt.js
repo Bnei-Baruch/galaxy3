@@ -1,12 +1,12 @@
 import React, {Component} from "react";
-import "./JanusHandle.scss";
+import "./AudioHandle.scss";
 import log from "loglevel";
 import {JanusMqtt} from "../../lib/janus-mqtt";
 import {PublisherPlugin} from "../../lib/publisher-plugin";
 import {SubscriberPlugin} from "../../lib/subscriber-plugin";
 import ConfigStore from "../../shared/ConfigStore";
 
-class JanusHandleMqtt extends Component {
+class AudioHandleMqtt extends Component {
   state = {
     feeds: [],
     mids: [],
@@ -268,4 +268,4 @@ class JanusHandleMqtt extends Component {
 
 }
 
-export default JanusHandleMqtt;
+export default AudioHandleMqtt;

@@ -1,7 +1,7 @@
 import React, {Component} from "react";
 import {Segment} from "semantic-ui-react";
 import "./AudioOutApp.css";
-import JanusHandleHttp from "./JanusHandleHttp";
+import AudioHandleHttp from "./AudioHandleHttp";
 import api from "../../shared/Api";
 import {API_BACKEND_PASSWORD, API_BACKEND_USERNAME} from "../../shared/env";
 import GxyJanus from "../../shared/janus-utils";
@@ -116,7 +116,7 @@ class AudioOutHttp extends Component {
         <div className="usersvideo_grid">
           <div className="video_full">
             <div className="title">{name}</div>
-            <JanusHandleHttp g={group} gateways={gateways} audio={audio} setProps={this.setProps} />
+            <AudioHandleHttp g={group} gateways={gateways} audio={audio} setProps={this.setProps} />
           </div>
         </div>
       </Segment>

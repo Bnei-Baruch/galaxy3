@@ -1,17 +1,17 @@
 import React, {Component, Fragment} from "react";
 import {Grid, Segment} from "semantic-ui-react";
-import "./SDIOutApp.css";
-import "./UsersQuadSDIOut.scss";
+import "./VideoOutApp.css";
+import "./VideoOutQuad.scss";
 import {SDIOUT_ID} from "../../shared/consts";
 import api from "../../shared/Api";
 import {API_BACKEND_PASSWORD, API_BACKEND_USERNAME} from "../../shared/env";
 import GxyJanus from "../../shared/janus-utils";
-import UsersHandleSDIOut from "./UsersHandleSDIOut";
-import UsersQuadSDIOut from "./UsersQuadSDIOut";
+import VideoHandleHttp from "./VideoHandleHttp";
+import VideoOutQuad from "./VideoOutQuad";
 import {captureException} from "../../shared/sentry";
 import mqtt from "../../shared/mqtt";
 
-class SDIOutApp extends Component {
+class VideoOutHttp extends Component {
   state = {
     qg: null,
     group: null,
@@ -149,7 +149,7 @@ class SDIOutApp extends Component {
       <Grid columns={2} className="sdi_container">
         <Grid.Row>
           <Grid.Column>
-            <UsersQuadSDIOut
+            <VideoOutQuad
               index={0}
               {...qids.q1}
               qst={qg}
@@ -161,7 +161,7 @@ class SDIOutApp extends Component {
             />
           </Grid.Column>
           <Grid.Column>
-            <UsersQuadSDIOut
+            <VideoOutQuad
               index={4}
               {...qids.q2}
               qst={qg}
@@ -175,7 +175,7 @@ class SDIOutApp extends Component {
         </Grid.Row>
         <Grid.Row>
           <Grid.Column>
-            <UsersQuadSDIOut
+            <VideoOutQuad
               index={8}
               {...qids.q3}
               qst={qg}
@@ -187,7 +187,7 @@ class SDIOutApp extends Component {
             />
           </Grid.Column>
           <Grid.Column>
-            <UsersQuadSDIOut
+            <VideoOutQuad
               index={12}
               {...qids.q4}
               qst={qg}
@@ -210,7 +210,7 @@ class SDIOutApp extends Component {
                     <Fragment>
                       {/*{group && group.questions ? <div className="qst_fullscreentitle">?</div> : ""}*/}
                       <div className="fullscrvideo_title">{name}</div>
-                      <UsersHandleSDIOut key={"q5"} g={qg} group={group} index={13} gateways={gateways} />
+                      <VideoHandleHttp key={"q5"} g={qg} group={group} index={13} gateways={gateways} />
                     </Fragment>
                   ) : (
                     ""
@@ -226,4 +226,4 @@ class SDIOutApp extends Component {
   }
 }
 
-export default SDIOutApp;
+export default VideoOutHttp;

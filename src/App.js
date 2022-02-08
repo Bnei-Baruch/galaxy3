@@ -13,7 +13,7 @@ import "./i18n/i18n";
 // import ShidurApp from "./apps/ShidurApp/ShidurApp";
 // import SndmanApp from "./apps/SndmanApp/SndmanApp";
 import AudioOutMqtt from "./apps/AudioOutApp/AudioOutMqtt";
-// import SDIOutApp from "./apps/SDIOutApp/SDIOutApp";
+// import VideoOutHttp from "./apps/VideoOutHttp/VideoOutHttp";
 // import WebOutApp from "./apps/WebOutApp/WebOutApp";
 
 class App extends Component {
@@ -29,7 +29,7 @@ class App extends Component {
         {/*<ShidurApp />*/}
         {/*<SndmanApp />*/}
         <AudioOutMqtt />
-        {/*<SDIOutApp />*/}
+        {/*<VideoOutHttp />*/}
         {/*<WebOutApp />*/}
       </I18nextProvider>
     );

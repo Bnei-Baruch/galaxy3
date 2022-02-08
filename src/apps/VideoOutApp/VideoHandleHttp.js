@@ -1,36 +1,56 @@
 import React, {Component} from "react";
-import "./JanusHandle.scss";
+import "./VideoHandle.scss";
 import {Janus} from "../../lib/janus";
+import classNames from "classnames";
 
-class JanusHandleHttp extends Component {
+class VideoHandleHttp extends Component {
   state = {
     feeds: [],
+    inst: null,
     mids: [],
     name: "",
-    room: null,
+    room: "",
     myid: null,
+    mystream: null,
+    num_videos: 0,
   };
 
-  componentDidUpdate(prevProps) {
+  componentDidMount() {
     let {g} = this.props;
+    let num_videos = g?.users?.filter((u) => u.camera).length;
+    if (num_videos > 25) num_videos = 25;
+    this.setState({num_videos});
+  }
+
+  componentDidUpdate(prevProps) {
+    let {g, index, group} = this.props;
     let {room} = this.state;
-    if (g && JSON.stringify(g) !== JSON.stringify(prevProps.g) && g.room !== room) {
-      if (room) {
-        this.exitVideoRoom(room, () => {
-          this.initVideoRoom(g.room, g.janus);
-        });
-      } else {
+    if (g && index === 13 && g.room !== room && group) {
+      this.setState({room: g.room}, () => {
         this.initVideoRoom(g.room, g.janus);
-      }
+      });
     }
-    if (g === null && room) {
-      this.exitVideoRoom(room, () => {});
+    if (g && g.room !== room && index !== 13) {
+      this.setState({room: g.room}, () => {
+        if (room) {
+          this.exitVideoRoom(room, () => {
+            this.initVideoRoom(g.room, g.janus);
+          });
+        } else {
+          this.initVideoRoom(g.room, g.janus);
+        }
+      });
     }
-  };
+    if (g && g.users && JSON.stringify(g) !== JSON.stringify(prevProps.g)) {
+      let num_videos = g.users.filter((u) => u.camera && u.role === "user").length;
+      if (num_videos > 25) num_videos = 25;
+      this.setState({num_videos});
+    }
+  }
 
   componentWillUnmount() {
     this.exitVideoRoom(this.state.room, () => {});
-  };
+  }
 
   initVideoRoom = (roomid, inst) => {
     const gateway = this.props.gateways[inst];
@@ -39,7 +59,7 @@ class JanusHandleHttp extends Component {
       opaqueId: "preview_shidur",
       success: (videoroom) => {
         gateway.log(`[room ${roomid}] attach success`, videoroom.getId());
-        this.setState({room: roomid, videoroom, remoteFeed: null});
+        this.setState({inst, videoroom, remoteFeed: null});
         let {user} = this.props;
         let register = {request: "join", room: roomid, ptype: "publisher", display: JSON.stringify(user)};
         videoroom.send({message: register});
@@ -81,35 +101,47 @@ class JanusHandleHttp extends Component {
       this.state.videoroom.send({
         message: leave_room,
         success: () => {
-          this.setState({feeds: [], mids: [], room: null});
           this.state.videoroom.detach();
           if (this.state.remoteFeed) this.state.remoteFeed.detach();
           callback();
         },
         error: () => {
-          this.setState({feeds: [], mids: [], room: null});
+          this.setState({mids: [], feeds: [], videoroom: null, remoteFeed: null});
           callback();
         },
       });
+    } else {
+      this.setState({mids: [], feeds: [], videoroom: null, remoteFeed: null, room: ""});
+    }
+  };
+
+  reinitVideoRoom = () => {
+    const {g, reinit_inst} = this.props;
+    const {inst, room} = this.state;
+    if (g.janus === reinit_inst) {
+      this.setState({mids: [], feeds: [], videoroom: null, remoteFeed: null});
+      setTimeout(() => {
+        this.initVideoRoom(room, inst);
+      }, 5000);
     }
   };
 
   onMessage = (gateway, roomid, msg, jsep) => {
-    gateway.debug(`[room ${roomid}] ::: Got a message (publisher) :::`, msg);
+    //gateway.debug(`[room ${roomid}] ::: Got a message (publisher) :::`, msg);
     let event = msg["videoroom"];
     if (event !== undefined && event !== null) {
       if (event === "joined") {
         let myid = msg["id"];
         let mypvtid = msg["private_id"];
         this.setState({myid, mypvtid});
-        console.debug(`[AudioOut] [room ${roomid}] Successfully joined room`, myid);
+        console.debug(`[SDIOut] [room ${roomid}] Successfully joined room`, myid);
         if (msg["publishers"] !== undefined && msg["publishers"] !== null) {
           let list = msg["publishers"];
           //FIXME: Tmp fix for black screen in room caoused by feed with video_codec = none
           let feeds = list
             .sort((a, b) => JSON.parse(a.display).timestamp - JSON.parse(b.display).timestamp)
             .filter((feeder) => JSON.parse(feeder.display).role === "user");
-          console.log(`[AudioOut] [room ${roomid}] :: Got publishers list: `, feeds);
+          console.log(`[SDIOut] [room ${roomid}] :: Got publishers list: `, feeds);
           let subscription = [];
           for (let f in feeds) {
             let id = feeds[f]["id"];
@@ -122,7 +154,7 @@ class JanusHandleHttp extends Component {
               let stream = streams[i];
               stream["id"] = id;
               stream["display"] = display;
-              if (stream.type === "audio" && stream.codec === "opus") {
+              if (stream.type === "video" && feeds[f].video_codec === "h264") {
                 subscription.push({feed: id, mid: stream.mid});
               }
             }
@@ -135,7 +167,7 @@ class JanusHandleHttp extends Component {
       } else if (event === "talking") {
         let {feeds} = this.state;
         let id = msg["id"];
-        console.log(`[AudioOut] [room ${roomid}] started talking`, id);
+        //console.debug(`[SDIOut] [room ${roomid}] started talking`, id);
         for (let i = 0; i < feeds.length; i++) {
           if (feeds[i] && feeds[i].id === id) {
             feeds[i].talk = true;
@@ -145,7 +177,7 @@ class JanusHandleHttp extends Component {
       } else if (event === "stopped-talking") {
         let {feeds} = this.state;
         let id = msg["id"];
-        console.log(`[AudioOut] [room ${roomid}] stopped talking`, id);
+        //console.debug(`[SDIOut] [room ${roomid}] stopped talking`, id);
         for (let i = 0; i < feeds.length; i++) {
           if (feeds[i] && feeds[i].id === id) {
             feeds[i].talk = false;
@@ -153,7 +185,7 @@ class JanusHandleHttp extends Component {
           }
         }
       } else if (event === "destroyed") {
-        console.warn(`[AudioOut] [room ${roomid}] room destroyed!`);
+        console.warn(`[SDIOut] [room ${roomid}] room destroyed!`);
       } else if (event === "event") {
         let {user, myid} = this.state;
         if (msg["streams"] !== undefined && msg["streams"] !== null) {
@@ -165,39 +197,45 @@ class JanusHandleHttp extends Component {
           }
         } else if (msg["publishers"] !== undefined && msg["publishers"] !== null) {
           let feed = msg["publishers"];
+          console.log(`[SDIOut] [room ${roomid}] :: Publisher enter: `, feed);
           let {feeds} = this.state;
-          gateway.log(`[AudioOut] [room ${roomid}] :: Got publishers list: `, feeds);
+          const isExistFeed = feeds.find((f) => f.id === feed[0].id);
           let subscription = [];
-          for (let f in feed) {
-            let id = feed[f]["id"];
-            let display = JSON.parse(feed[f]["display"]);
-            if (display.role !== "user") return;
-            let streams = feed[f]["streams"];
-            feed[f].display = display;
-            for (let i in streams) {
-              let stream = streams[i];
-              stream["id"] = id;
-              stream["display"] = display;
-              if (stream.type === "audio" && stream.codec === "opus") {
-                subscription.push({feed: id, mid: stream.mid});
-              }
+
+          let id = feed[0]["id"];
+          let display = JSON.parse(feed[0]["display"]);
+          if (display.role !== "user") return;
+          let streams = feed[0]["streams"];
+          feed[0].display = display;
+          for (let i in streams) {
+            let stream = streams[i];
+            stream["id"] = id;
+            stream["display"] = display;
+            if (stream.type === "video" && feeds[0].video_codec === "h264") {
+              subscription.push({feed: id, mid: stream.mid});
             }
           }
-          const isExistFeed = feeds.find((f) => f.id === feed[0].id);
-          if (!isExistFeed) {
+
+          if (isExistFeed) {
+            for (let i = 0; i < feeds.length; i++) {
+              if (feeds[i].id === feed[0].id) {
+                feeds[i] = feed[0];
+                break;
+              }
+            }
+          } else {
             feeds.push(feed[0]);
-            this.setState({feeds});
           }
+          this.setState({feeds});
           if (subscription.length > 0) {
             this.subscribeTo(gateway, roomid, subscription);
           }
         } else if (msg["leaving"] !== undefined && msg["leaving"] !== null) {
           let leaving = msg["leaving"];
-          console.log(`[AudioOut] [room ${roomid}] Publisher left`, leaving);
+          console.log(`[SDIOut] [room ${roomid}] Publisher left`, leaving);
           this.unsubscribeFrom(leaving);
         } else if (msg["unpublished"] !== undefined && msg["unpublished"] !== null) {
           let unpublished = msg["unpublished"];
-          console.log(`[AudioOut] [room ${roomid}] Publisher left`, unpublished);
           if (unpublished === "ok") {
             this.state.videoroom.hangup();
             return;
@@ -205,15 +243,15 @@ class JanusHandleHttp extends Component {
           this.unsubscribeFrom(unpublished);
         } else if (msg["error"] !== undefined && msg["error"] !== null) {
           if (msg["error_code"] === 426) {
-            console.error(`[AudioOut] [room ${roomid}] no such room`);
+            console.error(`[SDIOut] [room ${roomid}] no such room`);
           } else {
-            console.error(`[AudioOut] [room ${roomid}] no such room`, msg["error"]);
+            console.error(`[SDIOut] [room ${roomid}] no such room`, msg["error"]);
           }
         }
       }
     }
     if (jsep !== undefined && jsep !== null) {
-      gateway.debug(`[room ${roomid}] Handling SDP as well...`, jsep);
+      //gateway.debug(`[room ${roomid}] Handling SDP as well...`, jsep);
       this.state.videoroom.handleRemoteJsep({jsep});
     }
   };
@@ -241,21 +279,21 @@ class JanusHandleHttp extends Component {
       slowLink: (uplink, nacks) => {
         gateway.warn(
           `[room ${roomid}] [remoteFeed] Janus reports problems ` +
-          (uplink ? "sending" : "receiving") +
-          " packets on this PeerConnection (remote feed, " +
-          nacks +
-          " NACKs/s " +
-          (uplink ? "received" : "sent") +
-          ")"
+            (uplink ? "sending" : "receiving") +
+            " packets on this PeerConnection (remote feed, " +
+            nacks +
+            " NACKs/s " +
+            (uplink ? "received" : "sent") +
+            ")"
         );
       },
       onmessage: (msg, jsep) => {
         let event = msg["videoroom"];
         if (msg["error"] !== undefined && msg["error"] !== null) {
-          console.error(`[AudioOut] [room ${roomid}] [remoteFeed] error`, msg["error"]);
+          console.error(`[SDIOut] [room ${roomid}] [remoteFeed] error`, msg["error"]);
         } else if (event !== undefined && event !== null) {
           if (event === "attached") {
-            console.debug(`[AudioOut] [room ${roomid}] [remoteFeed] successfully attached to feed in room`);
+            console.debug(`[SDIOut] [room ${roomid}] [remoteFeed] successfully attached to feed in room`);
           } else if (event === "event") {
             // Check if we got an event on a simulcast-related event from this publisher
           } else {
@@ -290,13 +328,11 @@ class JanusHandleHttp extends Component {
       onremotetrack: (track, mid, on) => {
         let {mids} = this.state;
         let feed = mids[mid].feed_id;
-        if (track.kind === "audio" && on) {
-          // New audio track: create a stream out of it, and use a hidden <audio> element
+        if (track.kind === "video" && on) {
           let stream = new MediaStream();
           stream.addTrack(track.clone());
-          console.log(`[AudioOut] [room ${roomid}] [remoteFeed] Created remote audio stream`, stream);
-          let remoteaudio = this.refs["pa" + feed];
-          if (remoteaudio) Janus.attachMediaStream(remoteaudio, stream);
+          let remotevideo = this.refs["pv" + feed];
+          if (remotevideo) Janus.attachMediaStream(remotevideo, stream);
         }
       },
       ondataopen: (data) => {
@@ -331,7 +367,7 @@ class JanusHandleHttp extends Component {
     let {remoteFeed} = this.state;
     for (let i = 0; i < feeds.length; i++) {
       if (feeds[i].id === id) {
-        console.log("[AudioOut] Feed " + feeds[i] + " (" + id + ") has left the room, detaching");
+        console.log("[SDIOut] Feed " + feeds[i] + " (" + id + ") has left the room, detaching");
         feeds.splice(i, 1);
         let unsubscribe = {request: "unsubscribe", streams: [{feed: id}]};
         if (remoteFeed !== null) remoteFeed.send({message: unsubscribe});
@@ -342,26 +378,39 @@ class JanusHandleHttp extends Component {
   };
 
   render() {
-    const {feeds} = this.state;
-    const {audio} = this.props;
+    const {feeds, num_videos} = this.state;
+    const {g} = this.props;
+    const width = "400";
+    const height = "300";
+    const autoPlay = true;
+    const controls = false;
+    const muted = true;
+    //const q = (<b style={{color: 'red', fontSize: '20px', fontFamily: 'Verdana', fontWeight: 'bold'}}>?</b>);
 
     let program_feeds = feeds.map((feed) => {
-      //let name = users[feed.display.id] && users[feed.display.id].display ? users[feed.display.id].display : "";
-      let name = "";
+      let camera = g && g.users && !!g.users.find((u) => feed.id === u.rfid && u.camera);
       if (feed) {
         let id = feed.id;
         let talk = feed.talk;
         return (
-          <div key={"t" + id} className="title">
-            {name}
-            <audio
-              className={talk ? "talk" : ""}
-              key={"a" + id}
-              ref={"pa" + id}
-              id={"pa" + id}
-              autoPlay={true}
-              controls={true}
-              muted={!audio}
+          <div className={camera ? "video" : "hidden"} key={"prov" + id} ref={"provideo" + id} id={"provideo" + id}>
+            <div className={classNames("video__overlay", {talk: talk})}>
+              {/*{question ? <div className="question">*/}
+              {/*    <svg viewBox="0 0 50 50">*/}
+              {/*        <text x="25" y="25" textAnchor="middle" alignmentBaseline="central" dominantBaseline="central">&#xF128;</text>*/}
+              {/*    </svg>*/}
+              {/*    {st ? <Icon name="checkmark" size="small" color="green"/> : ''}*/}
+              {/*</div>:''}*/}
+            </div>
+            <video
+              key={id}
+              ref={"pv" + id}
+              id={"pv" + id}
+              width={width}
+              height={height}
+              autoPlay={autoPlay}
+              controls={controls}
+              muted={muted}
               playsInline={true}
             />
           </div>
@@ -370,9 +419,16 @@ class JanusHandleHttp extends Component {
       return true;
     });
 
-    return <div>{program_feeds}</div>;
+    return (
+      <div className={`vclient__main-wrapper no-of-videos-${num_videos} layout--equal broadcast--off`}>
+        <div className="videos-panel">
+          <div className="videos">
+            <div className="videos__wrapper">{program_feeds}</div>
+          </div>
+        </div>
+      </div>
+    );
   }
-
 }
 
-export default JanusHandleHttp;
+export default VideoHandleHttp;
