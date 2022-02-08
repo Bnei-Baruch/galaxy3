@@ -130,7 +130,7 @@ class MqttMsg {
           // FIXME: we need send cmd messages to separate topic
           if(service === "room" && target === "chat")
             this.mq.emit("MqttChatEvent", data);
-          else if (service === "room" && target !== "chat")
+          else if (service === "room" && target !== "chat" || service === "service")
             callback(JSON.parse(data.toString()), topic);
           else if (service === "users" && id === "broadcast")
             this.mq.emit("MqttBroadcastMessage", data);

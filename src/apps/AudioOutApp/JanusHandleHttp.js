@@ -1,8 +1,8 @@
 import React, {Component} from "react";
-import "./UsersHandleAudioOut.scss";
+import "./JanusHandle.scss";
 import {Janus} from "../../lib/janus";
 
-class UsersHandleAudioOut extends Component {
+class JanusHandleHttp extends Component {
   state = {
     feeds: [],
     mids: [],
@@ -241,12 +241,12 @@ class UsersHandleAudioOut extends Component {
       slowLink: (uplink, nacks) => {
         gateway.warn(
           `[room ${roomid}] [remoteFeed] Janus reports problems ` +
-            (uplink ? "sending" : "receiving") +
-            " packets on this PeerConnection (remote feed, " +
-            nacks +
-            " NACKs/s " +
-            (uplink ? "received" : "sent") +
-            ")"
+          (uplink ? "sending" : "receiving") +
+          " packets on this PeerConnection (remote feed, " +
+          nacks +
+          " NACKs/s " +
+          (uplink ? "received" : "sent") +
+          ")"
         );
       },
       onmessage: (msg, jsep) => {
@@ -375,4 +375,4 @@ class UsersHandleAudioOut extends Component {
 
 }
 
-export default UsersHandleAudioOut;
+export default JanusHandleHttp;

@@ -3,13 +3,13 @@ import ReactDOM from "react-dom";
 import "./index.css";
 import App from "./App";
 import log from "loglevel";
-import {initSentry} from "./shared/sentry";
+// import {initSentry} from "./shared/sentry";
+//
+// if(process.env.NODE_ENV === "production") {
+//   initSentry();
+// }
 
-if(process.env.NODE_ENV === "production") {
-  initSentry();
-}
-
-log.setLevel('silent')
+log.setLevel('debug')
 const loglevel = new URLSearchParams(window.location.search).get('loglevel');
 if(loglevel) {
   log.setLevel(loglevel)
