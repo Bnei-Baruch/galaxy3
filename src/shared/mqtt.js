@@ -119,7 +119,9 @@ class MqttMsg {
   watch = (callback) => {
     this.mq.on("message", (topic, data, packet) => {
       log.debug(chalk.green("[mqtt] trigger topic : ") + topic + " : packet:", packet);
-      const [root, service, id, target] = topic.split("/")
+      const t = topic.split("/")
+      if(t[0] === "msg") t.shift()
+      const [root, service, id, target] = t
       switch(root) {
         case "subtitles":
           this.mq.emit("MqttSubtitlesEvent", data);

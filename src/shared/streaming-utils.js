@@ -131,8 +131,8 @@ export default class JanusStream {
     this.onTalkingCallback = callback;
   }
 
-  init(user) {
-    this.destroyAndInitJanus_(user);
+  init(user, srv) {
+    this.destroyAndInitJanus_(user, srv);
   }
 
   destroy(callbacks) {
@@ -168,23 +168,23 @@ export default class JanusStream {
     }
   }
 
-  destroyAndInitJanus_(user) {
+  destroyAndInitJanus_(user, srv) {
     log.debug("[shidur] Trying to destroy and init!");
     this.destroy({
       error: (error) => {
         log.debug("[shidur] JanusVirtualStreaming error destroying before init", error);
         // Still we are trying to init.
-        this.initJanus_(user);
+        this.initJanus_(user, srv);
       },
       success: () => {
         log.debug("[shidur] JanusVirtualStreaming destroy success, now init.");
-        this.initJanus_(user);
+        this.initJanus_(user, srv);
       },
     });
   }
 
-  initJanus_(user) {
-    const str = 'str' + (Math.floor(Math.random() * 8) + 2)
+  initJanus_(user, srv) {
+    const str = srv ? srv : 'str' + (Math.floor(Math.random() * 8) + 2)
     this.janus = new JanusMqtt(user, str)
 
     this.janus.init().then(data => {
