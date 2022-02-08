@@ -12,8 +12,8 @@ import "./i18n/i18n";
 // import AdminApp from "./apps/AdminApp/AdminApp";
 // import ShidurApp from "./apps/ShidurApp/ShidurApp";
 // import SndmanApp from "./apps/SndmanApp/SndmanApp";
-import AudioOutMqtt from "./apps/AudioOutApp/AudioOutMqtt";
-// import VideoOutHttp from "./apps/VideoOutHttp/VideoOutHttp";
+// import AudioOutMqtt from "./apps/AudioOutApp/AudioOutMqtt";
+import VideoOutMqtt from "./apps/VideoOutApp/VideoOutMqtt";
 // import WebOutApp from "./apps/WebOutApp/WebOutApp";
 
 class App extends Component {
@@ -28,8 +28,8 @@ class App extends Component {
         {/*<AdminApp />*/}
         {/*<ShidurApp />*/}
         {/*<SndmanApp />*/}
-        <AudioOutMqtt />
-        {/*<VideoOutHttp />*/}
+        {/*<AudioOutMqtt />*/}
+        <VideoOutMqtt />
         {/*<WebOutApp />*/}
       </I18nextProvider>
     );

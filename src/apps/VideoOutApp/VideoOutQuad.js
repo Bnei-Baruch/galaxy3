@@ -1,6 +1,6 @@
 import React, {Component} from "react";
 import {Segment} from "semantic-ui-react";
-import VideoHandleHttp from "./VideoHandleHttp";
+import VideoHandleMqtt from "./VideoHandleMqtt";
 
 class VideoOutQuad extends Component {
   state = {
@@ -55,7 +55,7 @@ class VideoOutQuad extends Component {
         >
           {qst_mark}
           <div className={fullscr ? "fullscrvideo_title" : "video_title"}>{name}</div>
-          <VideoHandleHttp key={"q" + i} g={g} index={i} {...this.props} />
+          <VideoHandleMqtt key={"q" + i} g={g} index={i} {...this.props} />
         </div>
       );
     });
