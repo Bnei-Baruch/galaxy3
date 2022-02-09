@@ -8,7 +8,7 @@ import "./VideoConteiner.scss";
 import "./CustomIcons.scss";
 import "eqcss";
 import VirtualChat from "./VirtualChat";
-import {NO_VIDEO_OPTION_VALUE, VIDEO_360P_OPTION_VALUE, vsettings_list, sketchesByLang} from "../../shared/consts";
+import {NO_VIDEO_OPTION_VALUE, sketchesByLang, VIDEO_360P_OPTION_VALUE, vsettings_list} from "../../shared/consts";
 import {GEO_IP_INFO, PAY_USER_FEE} from "../../shared/env";
 import platform from "platform";
 import {TopMenu} from "./components/TopMenu";
@@ -27,15 +27,15 @@ import GxyJanus from "../../shared/janus-utils";
 import audioModeSvg from "../../shared/audio-mode.svg";
 import fullModeSvg from "../../shared/full-mode.svg";
 import ConfigStore from "../../shared/ConfigStore";
-import {toggleFullScreen, isFullScreen} from "./FullScreenHelper";
+import {isFullScreen, toggleFullScreen} from "./FullScreenHelper";
 import {AppBar, Badge, Box, Button as ButtonMD, ButtonGroup, Grid, IconButton} from "@material-ui/core";
-import {ChevronLeft, ChevronRight, PlayCircleOutline /*, OpenInNewOutlined*/} from "@material-ui/icons";
+import {ChevronLeft, ChevronRight, PlayCircleOutline} from "@material-ui/icons";
 import {grey} from "@material-ui/core/colors";
-import {AskQuestion, AudioMode, CloseBroadcast, Layout, Mute, MuteVideo, Vote, Fullscreen} from "./buttons";
+import {AskQuestion, AudioMode, CloseBroadcast, Fullscreen, Layout, Mute, MuteVideo, Vote} from "./buttons";
 import Settings from "./settings/Settings";
 import SettingsJoined from "./settings/SettingsJoined";
 import HomerLimud from "./components/HomerLimud";
-import {SupportOld, Support, initCrisp} from "./components/Support";
+import {initCrisp, Support, SupportOld} from "./components/Support";
 import SendQuestionContainer from "./components/SendQuestions/container";
 import {RegistrationModals} from "./components/RegistrationModals";
 import {getUserRole, userRolesEnum} from "../../shared/enums";
@@ -785,33 +785,25 @@ class VirtualMqttClient extends Component {
   }
 
   onRemoteTrack = (track, mid, on) => {
-    if (!mid) {
-    mid = track.id.split("janus")[1];
-  }
-    log.debug("[client] Remote track (mid=" + mid + ") " + (on ? "added" : "removed") + ":", track);
-  // Which publisher are we getting on this mid?
-  let {mids} = this.state;
-  let feed = mids[mid].feed_id;
-      log.info("[client] >> This track is coming from feed " + feed + ":", mid);
-  if (on) {
-    // If we're here, a new track was added
-    if (track.kind === "audio") {
-      // New audio track: create a stream out of it, and use a hidden <audio> element
-      let stream = new MediaStream();
-      stream.addTrack(track.clone());
-      log.debug("[client] Created remote audio stream:", stream);
-      let remoteaudio = this.refs["remoteAudio" + feed];
-      remoteaudio.srcObject = stream;
-    } else if (track.kind === "video") {
-      const remotevideo = this.refs["remoteVideo" + feed];
-      // New video track: create a stream out of it
-      const stream = new MediaStream();
-      stream.addTrack(track.clone());
-      log.debug("[client] Created remote video stream:", stream);
-      remotevideo.srcObject = stream;
+    if (!mid) mid = track.id.split("janus")[1];
+    let feed = this.state.mids[mid].feed_id;
+    log.info("[client] >> This track is coming from feed " + feed + ":", mid);
+    if (on) {
+      if (track.kind === "audio") {
+        let stream = new MediaStream();
+        stream.addTrack(track.clone());
+        log.debug("[client] Created remote audio stream:", stream);
+        let remoteaudio = this.refs["remoteAudio" + feed];
+        if(remoteaudio) remoteaudio.srcObject = stream;
+      } else if (track.kind === "video") {
+        const stream = new MediaStream();
+        stream.addTrack(track.clone());
+        log.debug("[client] Created remote video stream:", stream);
+        const remotevideo = this.refs["remoteVideo" + feed];
+        if(remotevideo) remotevideo.srcObject = stream;
+      }
     }
   }
-}
 
   // Unsubscribe from feeds defined by |ids| (with all streams) and remove it when |onlyVideo| is false.
   // If |onlyVideo| is true, will unsubscribe only from video stream of those specific feeds, keeping those feeds.

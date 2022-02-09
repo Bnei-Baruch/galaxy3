@@ -114,23 +114,18 @@ export class SubscriberPlugin extends EventEmitter {
 
         this.pc.ontrack = (e) => {
           log.info("[subscriber] Got track: ", e)
-          let remoteStream = e.streams[0];
-          this.onTrack(e.track, null, true)
+          this.onTrack(e.track, e.transceiver.mid, true)
 
           e.track.onmute = (ev) => {
             log.debug("[subscriber] onmute event: ", ev)
-            remoteStream.removeTrack(ev.target);
           }
 
           e.track.onunmute = (ev) => {
             log.debug("[subscriber] onunmute event: ", ev)
-            remoteStream.addTrack(ev.target)
-            this.onTrack(ev.target, null, true)
           }
 
           e.track.onended = (ev) => {
             log.debug("[subscriber] onended event: ", ev)
-            remoteStream.removeTrack(ev.target);
           }
 
         };
