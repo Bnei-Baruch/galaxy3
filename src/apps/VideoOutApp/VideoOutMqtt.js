@@ -6,10 +6,11 @@ import {SDIOUT_ID} from "../../shared/consts";
 import api from "../../shared/Api";
 import {API_BACKEND_PASSWORD, API_BACKEND_USERNAME} from "../../shared/env";
 import GxyJanus from "../../shared/janus-utils";
-import VideoHandleHttp from "./VideoHandleHttp";
+import VideoHandleMqtt from "./VideoHandleMqtt";
 import VideoOutQuad from "./VideoOutQuad";
 import {captureException} from "../../shared/sentry";
 import mqtt from "../../shared/mqtt";
+import ConfigStore from "../../shared/ConfigStore";
 
 class VideoOutMqtt extends Component {
   state = {
@@ -26,6 +27,7 @@ class VideoOutMqtt extends Component {
       email: "sdiout@galaxy.kli.one",
     },
     qids: [],
+    qlist: [],
     qcol: 0,
     gateways: {},
     appInitError: null,
@@ -39,7 +41,13 @@ class VideoOutMqtt extends Component {
       api
         .fetchProgram()
         .then((qids) => {
-          this.setState({qids});
+          let qlist = [
+            ...qids.q1.vquad,
+            ...qids.q2.vquad,
+            ...qids.q3.vquad,
+            ...qids.q4.vquad,
+          ];
+          this.setState({qids, qlist});
           if (this.state.qg) {
             const {col, i} = this.state;
             this.setState({qg: this.state.qids["q" + col].vquad[i]});
@@ -74,7 +82,10 @@ class VideoOutMqtt extends Component {
 
     api
       .fetchConfig()
-      .then((data) => GxyJanus.setGlobalConfig(data))
+      .then((data) => {
+        ConfigStore.setGlobalConfig(data);
+        GxyJanus.setGlobalConfig(data);
+      })
       .then(() => this.initGateways(user))
       .catch((err) => {
         console.error("[SDIOut] error initializing app", err);
@@ -86,18 +97,16 @@ class VideoOutMqtt extends Component {
   initGateways = (user) => {
     mqtt.init(user, (data) => {
       console.log("[SDIOut] mqtt init: ", data);
-      setTimeout(() => {
-        mqtt.watch((data) => {
-          this.onMqttData(data);
-        });
-        mqtt.join("galaxy/service/shidur");
-        mqtt.join("galaxy/users/broadcast");
-        mqtt.send(JSON.stringify({type: "event", [user.role]: true}), true, "galaxy/service/" + user.role);
-      }, 3000);
+      mqtt.watch((data) => {
+        this.onMqttData(data);
+      });
+      mqtt.join("galaxy/service/shidur");
+      mqtt.join("galaxy/users/broadcast");
+      mqtt.send(JSON.stringify({type: "event", [user.role]: true}), true, "galaxy/service/" + user.role);
     });
     const gateways = GxyJanus.makeGateways("rooms");
     this.setState({gateways});
-    Object.values(gateways).map((gateway) => gateway.init());
+    //Object.values(gateways).map((gateway) => gateway.init());
   };
 
   onMqttData = (data) => {
@@ -141,7 +150,7 @@ class VideoOutMqtt extends Component {
   };
 
   render() {
-    let {vote, group, qids, qg, gateways, roomsStatistics} = this.state;
+    let {vote, group, qids, qg, gateways, roomsStatistics, user, qlist} = this.state;
     // let qst = g && g.questions;
     let name = group && group.description;
 
@@ -151,9 +160,10 @@ class VideoOutMqtt extends Component {
           <Grid.Column>
             <VideoOutQuad
               index={0}
+              qlist={qlist}
               {...qids.q1}
               qst={qg}
-              gateways={gateways}
+              user={user}
               roomsStatistics={roomsStatistics}
               ref={(col) => {this.col1 = col;}}
             />
@@ -161,9 +171,10 @@ class VideoOutMqtt extends Component {
           <Grid.Column>
             <VideoOutQuad
               index={4}
+              qlist={qlist}
               {...qids.q2}
               qst={qg}
-              gateways={gateways}
+              user={user}
               roomsStatistics={roomsStatistics}
               ref={(col) => {this.col2 = col;}}
             />
@@ -173,9 +184,10 @@ class VideoOutMqtt extends Component {
           <Grid.Column>
             <VideoOutQuad
               index={8}
+              qlist={qlist}
               {...qids.q3}
               qst={qg}
-              gateways={gateways}
+              user={user}
               roomsStatistics={roomsStatistics}
               ref={(col) => {this.col3 = col;}}
             />
@@ -183,9 +195,10 @@ class VideoOutMqtt extends Component {
           <Grid.Column>
             <VideoOutQuad
               index={12}
+              qlist={qlist}
               {...qids.q4}
               qst={qg}
-              gateways={gateways}
+              user={user}
               roomsStatistics={roomsStatistics}
               ref={(col) => {this.col4 = col;}}
             />
@@ -202,7 +215,7 @@ class VideoOutMqtt extends Component {
                     <Fragment>
                       {/*{group && group.questions ? <div className="qst_fullscreentitle">?</div> : ""}*/}
                       <div className="fullscrvideo_title">{name}</div>
-                      <VideoHandleHttp key={"q5"} g={qg} group={group} index={13} gateways={gateways} />
+                      <VideoHandleMqtt key={"q5"} g={qg} group={group} index={13} col={5} user={user} gateways={gateways} />
                     </Fragment>
                   ) : (
                     ""

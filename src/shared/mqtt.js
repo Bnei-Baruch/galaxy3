@@ -10,6 +10,7 @@ class MqttMsg {
   constructor() {
     this.user = null;
     this.mq = null;
+    this.mit = null;
     this.connected = false;
     this.room = null;
     this.token = null;
@@ -138,7 +139,8 @@ class MqttMsg {
             this.mq.emit("MqttPrivateMessage", data);
           break;
         case "janus":
-          this.mq.emit(service, data, id);
+          const mit = this.mit || service
+          this.mq.emit(mit, data, id);
           break;
         default:
           if(typeof callback === "function")
@@ -149,6 +151,10 @@ class MqttMsg {
 
   setToken = (token) => {
     this.token = token;
+  };
+
+  setMit = (mit) => {
+    this.mit = mit;
   };
 }
 

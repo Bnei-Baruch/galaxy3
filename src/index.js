@@ -9,7 +9,7 @@ import log from "loglevel";
 //   initSentry();
 // }
 
-log.setLevel('debug')
+log.setLevel('info')
 const loglevel = new URLSearchParams(window.location.search).get('loglevel');
 if(loglevel) {
   log.setLevel(loglevel)

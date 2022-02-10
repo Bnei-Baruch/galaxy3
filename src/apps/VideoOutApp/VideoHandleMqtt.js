@@ -6,6 +6,7 @@ import ConfigStore from "../../shared/ConfigStore";
 import {JanusMqtt} from "../../lib/janus-mqtt";
 import {PublisherPlugin} from "../../lib/publisher-plugin";
 import {SubscriberPlugin} from "../../lib/subscriber-plugin";
+import mqtt from "../../shared/mqtt";
 
 class VideoHandleMqtt extends Component {
   state = {
@@ -58,40 +59,36 @@ class VideoHandleMqtt extends Component {
 
   initVideoRoom = (room, inst) => {
     log.info("[VideoHandle] Init room: ", room, inst, ConfigStore.globalConfig)
-    const {user} = this.props;
+    const {user, index, col} = this.props;
+    console.log(index, col)
     let {janus} = this.state;
     const token = ConfigStore.globalConfig.gateways.rooms[inst].token
 
     log.info("[VideoHandle] token", user, token)
 
-    if(janus) {
-      this.initVideoHandles(janus);
-    } else {
-      janus = new JanusMqtt(user, inst)
-      janus.init(token).then(data => {
-        log.info("[VideoHandle] Janus init", data)
-        this.initVideoHandles(janus)
+    const mit = inst + "_" + (index+col)
+    console.log(mit)
+    mqtt.setMit(mit)
+    janus = new JanusMqtt(user, inst, mit)
+    janus.init(token).then(data => {
+      log.info("[VideoHandle] Janus init", data)
+      this.initVideoHandles(janus, room, user)
 
-      }).catch(err => {
-        log.error("[VideoHandle] Janus init", err);
-        this.exitRoom(/* reconnect= */ true, () => {
-          log.error("[VideoHandle] error initializing janus", err);
-          this.reinitClient(retry);
-        });
-      })
-    }
+    }).catch(err => {
+      log.error("[VideoHandle] Janus init", err);
+      this.exitRoom(/* reconnect= */ true, () => {
+        log.error("[VideoHandle] error initializing janus", err);
+        this.reinitClient(retry);
+      });
+    })
 
   }
 
-  initVideoHandles = (janus) => {
+  initVideoHandles = (janus, room, user) => {
     let videoroom = new PublisherPlugin();
     videoroom.subTo = this.onJoinFeed;
     videoroom.unsubFrom = this.unsubscribeFrom
     videoroom.talkEvent = this.handleTalking
-
-    let subscriber = new SubscriberPlugin();
-    subscriber.onTrack = this.onRemoteTrack;
-    subscriber.onUpdate = this.onUpdateStreams;
 
     janus.attach(videoroom).then(data => {
       log.info('[VideoHandle] Publisher Handle: ', data)
@@ -103,11 +100,6 @@ class VideoHandleMqtt extends Component {
       }).catch(err => {
         log.error('[VideoHandle] Join error :', err);
       })
-    })
-
-    janus.attach(subscriber).then(data => {
-      this.setState({subscriber});
-      log.info('[VideoHandle] Subscriber Handle: ', data)
     })
   }
 
@@ -174,7 +166,7 @@ class VideoHandleMqtt extends Component {
     const {videoroom, janus} = this.state;
     this.setState({feeds: [], mids: [], room: null, remoteFeed: false,});
 
-    videoroom.leave().then(r => {
+    videoroom?.leave().then(r => {
       log.info("[VideoHandle] leave respond:", r);
 
       janus.destroy().then(() => {
@@ -184,7 +176,7 @@ class VideoHandleMqtt extends Component {
   };
 
   subscribeTo = (room, subscription) => {
-    const {creatingFeed, remoteFeed, subscriber} = this.state
+    let {creatingFeed, remoteFeed, subscriber, janus} = this.state
 
     if (remoteFeed) {
       subscriber.sub(subscription);
@@ -198,11 +190,19 @@ class VideoHandleMqtt extends Component {
       return;
     }
 
-    subscriber.join(subscription, room).then(data => {
-      log.info('[VideoHandle] Subscriber join: ', data)
-      this.onUpdateStreams(data.streams);
-      this.setState({remoteFeed: true, creatingFeed: false});
-    });
+    subscriber = new SubscriberPlugin();
+    subscriber.onTrack = this.onRemoteTrack;
+    subscriber.onUpdate = this.onUpdateStreams;
+
+    janus.attach(subscriber).then(data => {
+      this.setState({subscriber});
+      log.info('[VideoHandle] Subscriber Handle: ', data)
+      subscriber.join(subscription, room).then(data => {
+        log.info('[VideoHandle] Subscriber join: ', data)
+        this.onUpdateStreams(data.streams);
+        this.setState({remoteFeed: true, creatingFeed: false});
+      });
+    })
   };
 
   unsubscribeFrom = (id) => {
@@ -273,7 +273,7 @@ class VideoHandleMqtt extends Component {
       let camera = g && g.users && !!g.users.find((u) => feed.id === u.rfid && u.camera);
       if (feed) {
         let id = feed.id;
-        let talk = feed.talk;
+        let talk = feed.talking;
         return (
           <div className={camera ? "video" : "hidden"} key={"prov" + id} ref={"provideo" + id} id={"provideo" + id}>
             <div className={classNames("video__overlay", {talk: talk})}>

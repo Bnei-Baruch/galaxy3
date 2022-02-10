@@ -22,7 +22,7 @@ class VideoOutQuad extends Component {
   };
 
   render() {
-    const {full_feed, fullscr} = this.state;
+    const {full_feed, fullscr, col} = this.state;
     const {vquad = [null, null, null, null], roomsStatistics = {}, qst} = this.props;
 
     let program = vquad.map((g, i) => {
@@ -55,7 +55,7 @@ class VideoOutQuad extends Component {
         >
           {qst_mark}
           <div className={fullscr ? "fullscrvideo_title" : "video_title"}>{name}</div>
-          <VideoHandleMqtt key={"q" + i} g={g} index={i} {...this.props} />
+          <VideoHandleMqtt key={"q" + i} g={g} index={i} col={col} {...this.props} />
         </div>
       );
     });
