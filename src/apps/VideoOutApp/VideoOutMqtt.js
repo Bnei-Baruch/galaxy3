@@ -22,7 +22,7 @@ class VideoOutMqtt extends Component {
       handle: 0,
       role: "sdiout",
       display: "sdiout",
-      id: SDIOUT_ID,
+      id: "SDIOUT_ID",
       name: "sdiout",
       email: "sdiout@galaxy.kli.one",
     },
@@ -97,15 +97,15 @@ class VideoOutMqtt extends Component {
   initGateways = (user) => {
     mqtt.init(user, (data) => {
       console.log("[SDIOut] mqtt init: ", data);
-      mqtt.watch((data) => {
-        this.onMqttData(data);
-      });
       mqtt.join("galaxy/service/shidur");
       mqtt.join("galaxy/users/broadcast");
       mqtt.send(JSON.stringify({type: "event", [user.role]: true}), true, "galaxy/service/" + user.role);
+      mqtt.watch((data) => {
+        this.onMqttData(data);
+      });
+      const gateways = GxyJanus.makeGateways("rooms");
+      this.setState({gateways});
     });
-    const gateways = GxyJanus.makeGateways("rooms");
-    this.setState({gateways});
     //Object.values(gateways).map((gateway) => gateway.init());
   };
 
@@ -151,6 +151,9 @@ class VideoOutMqtt extends Component {
 
   render() {
     let {vote, group, qids, qg, gateways, roomsStatistics, user, qlist} = this.state;
+
+    if(!gateways) return
+
     // let qst = g && g.questions;
     let name = group && group.description;
 

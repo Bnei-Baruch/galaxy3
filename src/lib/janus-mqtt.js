@@ -29,8 +29,8 @@ export class JanusMqtt {
 
     // We can't make more than 1 session on the same janus server
     // fs it's problem for us, then logic here must be changed
-    const mit = this.mit || this.srv
-    mqtt.mq.on(mit, this.onMessage);
+    mqtt.mq.on(this.srv, this.onMessage);
+    mqtt.mq.on(this.user.mit, this.onMessage);
 
     return new Promise((resolve, reject) => {
       const transaction = randomString(12);
@@ -50,12 +50,14 @@ export class JanusMqtt {
 
           log.debug('[janus] Janus connected, sessionId: ', this.sessionId)
 
+          mqtt.mq.on(this.sessionId, this.onMessage);
+
           resolve(this)
         },
         reject,
         replyType: 'success'
       }
-      mqtt.send(JSON.stringify(msg), false, this.txTopic, this.rxTopic + "/" + this.user.id)
+      mqtt.send(JSON.stringify(msg), false, this.txTopic, this.rxTopic + "/" + this.user.id, this.user)
     })
 
   }
@@ -136,7 +138,7 @@ export class JanusMqtt {
       })
 
       this.transactions[request.transaction] = {resolve, reject, replyType, request}
-      mqtt.send(JSON.stringify(request), false, this.txTopic, this.rxTopic + "/" + this.user.id)
+      mqtt.send(JSON.stringify(request), false, this.txTopic, this.rxTopic + "/" + this.user.id, this.user)
     })
   }
 
@@ -205,8 +207,9 @@ export class JanusMqtt {
     mqtt.exit(this.rxTopic);
     mqtt.exit(this.stTopic);
 
-    const mit = this.mit || this.srv
-    mqtt.mq.removeListener(mit, this.onMessage);
+    mqtt.mq.removeListener(this.srv, this.onMessage);
+    mqtt.mq.removeListener(this.user.mit, this.onMessage);
+    mqtt.mq.removeListener(this.sessionId, this.onMessage);
   }
 
   onMessage(message, tD) {

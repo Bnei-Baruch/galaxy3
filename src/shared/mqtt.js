@@ -107,10 +107,10 @@ class MqttMsg {
     });
   };
 
-  send = (message, retain, topic, rxTopic) => {
+  send = (message, retain, topic, rxTopic, user) => {
     if (!this.mq) return;
     log.info("[mqtt] Send data on topic: ", topic, message);
-    let properties = !!rxTopic ? {userProperties: this.user, responseTopic: rxTopic} : {userProperties: this.user};
+    let properties = !!rxTopic ? {userProperties: user || this.user, responseTopic: rxTopic} : {userProperties: user || this.user};
     let options = {qos: 1, retain, properties};
     this.mq.publish(topic, message, {...options}, (err) => {
       err && log.error("[mqtt] Error: ", err);
@@ -139,7 +139,9 @@ class MqttMsg {
             this.mq.emit("MqttPrivateMessage", data);
           break;
         case "janus":
-          const mit = this.mit || service
+          const json = JSON.parse(data)
+          const mit = json?.session_id || packet?.properties?.userProperties?.mit || service
+          console.log(mit)
           this.mq.emit(mit, data, id);
           break;
         default:
@@ -153,9 +155,6 @@ class MqttMsg {
     this.token = token;
   };
 
-  setMit = (mit) => {
-    this.mit = mit;
-  };
 }
 
 const defaultMqtt = new MqttMsg();

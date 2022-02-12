@@ -55,7 +55,7 @@ class VideoOutQuad extends Component {
         >
           {qst_mark}
           <div className={fullscr ? "fullscrvideo_title" : "video_title"}>{name}</div>
-          <VideoHandleMqtt key={"q" + i} g={g} index={i} col={col} {...this.props} />
+          <VideoHandleMqtt key={"q" + i} g={g} q={i} col={col} {...this.props} />
         </div>
       );
     });

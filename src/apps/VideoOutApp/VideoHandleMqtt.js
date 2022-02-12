@@ -6,7 +6,6 @@ import ConfigStore from "../../shared/ConfigStore";
 import {JanusMqtt} from "../../lib/janus-mqtt";
 import {PublisherPlugin} from "../../lib/publisher-plugin";
 import {SubscriberPlugin} from "../../lib/subscriber-plugin";
-import mqtt from "../../shared/mqtt";
 
 class VideoHandleMqtt extends Component {
   state = {
@@ -58,26 +57,29 @@ class VideoHandleMqtt extends Component {
   }
 
   initVideoRoom = (room, inst) => {
-    log.info("[VideoHandle] Init room: ", room, inst, ConfigStore.globalConfig)
-    const {user, index, col} = this.props;
-    console.log(index, col)
+    const {user, q, col} = this.props;
     let {janus} = this.state;
+    const mit = "col" + col + "_q" + (q+1) + "_" + inst
+
     const token = ConfigStore.globalConfig.gateways.rooms[inst].token
+    log.info("["+mit+"] Init room: ", room, inst, ConfigStore.globalConfig)
 
-    log.info("[VideoHandle] token", user, token)
+    log.info("["+mit+"] token", user, token)
+    log.info("["+mit+"] mit", mit)
 
-    const mit = inst + "_" + (index+col)
-    console.log(mit)
-    mqtt.setMit(mit)
-    janus = new JanusMqtt(user, inst, mit)
+    user.mit = mit
+    janus = new JanusMqtt(user, inst, mit, user);
+
+    this.setState({janus, mit});
+
     janus.init(token).then(data => {
-      log.info("[VideoHandle] Janus init", data)
+      log.info("["+mit+"] Janus init", data)
       this.initVideoHandles(janus, room, user)
 
     }).catch(err => {
-      log.error("[VideoHandle] Janus init", err);
+      log.error("["+mit+"] Janus init", err);
       this.exitRoom(/* reconnect= */ true, () => {
-        log.error("[VideoHandle] error initializing janus", err);
+        log.error("["+mit+"] error initializing janus", err);
         this.reinitClient(retry);
       });
     })
@@ -85,29 +87,31 @@ class VideoHandleMqtt extends Component {
   }
 
   initVideoHandles = (janus, room, user) => {
+    const {mit} = this.state;
     let videoroom = new PublisherPlugin();
     videoroom.subTo = this.onJoinFeed;
     videoroom.unsubFrom = this.unsubscribeFrom
     videoroom.talkEvent = this.handleTalking
 
     janus.attach(videoroom).then(data => {
-      log.info('[VideoHandle] Publisher Handle: ', data)
+      log.info("["+mit+"] Publisher Handle: ", data)
 
       videoroom.join(room, user).then(data => {
-        log.info('[VideoHandle] Joined respond :', data)
-        this.setState({janus, videoroom, user, room, remoteFeed: null});
+        log.info("["+mit+"] Joined respond :", data)
+        this.setState({videoroom, user, room, remoteFeed: null});
         this.onJoinMe(data.publishers, room)
       }).catch(err => {
-        log.error('[VideoHandle] Join error :', err);
+        log.error("["+mit+"] Join error :", err);
       })
     })
   }
 
   onJoinMe = (list, room) => {
+    const {mit} = this.state;
     let feeds = list
       .sort((a, b) => JSON.parse(a.display).timestamp - JSON.parse(b.display).timestamp)
       .filter((feeder) => JSON.parse(feeder.display).role === "user");
-    log.info(`[VideoHandle] Got publishers list: `, feeds);
+    log.info("["+mit+"] Got publishers list: ", feeds);
     let subscription = [];
     for (let f in feeds) {
       let id = feeds[f]["id"];
@@ -132,8 +136,8 @@ class VideoHandleMqtt extends Component {
   }
 
   onJoinFeed = (feed) => {
-    let {feeds, room} = this.state;
-    log.info(`[VideoHandle] Feed enter: `, feeds);
+    let {feeds, room, mit} = this.state;
+    log.info("["+mit+"] Feed enter: ", feeds);
     let subscription = [];
     for (let f in feed) {
       let id = feed[f]["id"];
@@ -163,11 +167,11 @@ class VideoHandleMqtt extends Component {
 
 
   exitVideoRoom = (roomid, callback) => {
-    const {videoroom, janus} = this.state;
+    const {videoroom, janus, mit} = this.state;
     this.setState({feeds: [], mids: [], room: null, remoteFeed: false,});
 
     videoroom?.leave().then(r => {
-      log.info("[VideoHandle] leave respond:", r);
+      log.info("["+mit+"] leave respond:", r);
 
       janus.destroy().then(() => {
         if(typeof callback === "function") callback();
@@ -176,7 +180,7 @@ class VideoHandleMqtt extends Component {
   };
 
   subscribeTo = (room, subscription) => {
-    let {creatingFeed, remoteFeed, subscriber, janus} = this.state
+    let {creatingFeed, remoteFeed, subscriber, janus, mit} = this.state
 
     if (remoteFeed) {
       subscriber.sub(subscription);
@@ -196,9 +200,9 @@ class VideoHandleMqtt extends Component {
 
     janus.attach(subscriber).then(data => {
       this.setState({subscriber});
-      log.info('[VideoHandle] Subscriber Handle: ', data)
+      log.info("["+mit+"] Subscriber Handle: ", data)
       subscriber.join(subscription, room).then(data => {
-        log.info('[VideoHandle] Subscriber join: ', data)
+        log.info("["+mit+"] Subscriber join: ", data)
         this.onUpdateStreams(data.streams);
         this.setState({remoteFeed: true, creatingFeed: false});
       });
@@ -207,11 +211,11 @@ class VideoHandleMqtt extends Component {
 
   unsubscribeFrom = (id) => {
     id = id[0]
-    log.info("[VideoHandle] unsubscribeFrom", id);
-    const {feeds, subscriber} = this.state;
+    const {feeds, subscriber, mit} = this.state;
+    log.info("["+mit+"] unsubscribeFrom", id);
     for (let i = 0; i < feeds.length; i++) {
       if (feeds[i].id === id) {
-        log.info("[VideoHandle] unsubscribeFrom feed", feeds[i]);
+        log.info("["+mit+"] unsubscribeFrom feed", feeds[i]);
 
         feeds.splice(i, 1);
 
@@ -267,7 +271,7 @@ class VideoHandleMqtt extends Component {
     const autoPlay = true;
     const controls = false;
     const muted = true;
-    //const q = (<b style={{color: 'red', fontSize: '20px', fontFamily: 'Verdana', fontWeight: 'bold'}}>?</b>);
+    //const q = (<b style={{color: "red", fontSize: "20px", fontFamily: "Verdana", fontWeight: "bold"}}>?</b>);
 
     let program_feeds = feeds.map((feed) => {
       let camera = g && g.users && !!g.users.find((u) => feed.id === u.rfid && u.camera);
