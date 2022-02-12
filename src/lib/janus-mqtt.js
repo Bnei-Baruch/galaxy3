@@ -27,9 +27,11 @@ export class JanusMqtt {
     mqtt.join(this.rxTopic, false);
     mqtt.join(this.stTopic, false);
 
-    // We can't make more than 1 session on the same janus server
-    // fs it's problem for us, then logic here must be changed
     mqtt.mq.on(this.srv, this.onMessage);
+
+    // If we need more than 1 session on the same janus server
+    // we need to set mit property in user object, otherwise - this.srv emit trigger
+    // in wrong places and unexpected result occur.
     if(this.user.mit) mqtt.mq.on(this.user.mit, this.onMessage);
 
     return new Promise((resolve, reject) => {
@@ -50,6 +52,9 @@ export class JanusMqtt {
 
           log.debug('[janus] Janus connected, sessionId: ', this.sessionId)
 
+          // this.user.mit - actually trigger once and after that we use
+          // session id as emit. In case we not using multiple session on same server
+          // still good as we will not see message from other sessions
           mqtt.mq.on(this.sessionId, this.onMessage);
 
           resolve(this)
