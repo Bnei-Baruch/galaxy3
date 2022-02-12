@@ -42,15 +42,7 @@ class VideoOutQuad extends Component {
 
       return (
         <div
-          className={
-            fullscr && full_feed === i
-              ? "video_full"
-              : fullscr && full_feed !== i
-              ? "hidden"
-              : qst_group
-              ? "usersvideo_qst"
-              : "usersvideo_box"
-          }
+          className={fullscr && full_feed === i ? "video_full" : fullscr && full_feed !== i ? "hidden" : qst_group ? "usersvideo_qst" : "usersvideo_box"}
           key={"pr" + i}
         >
           {qst_mark}
