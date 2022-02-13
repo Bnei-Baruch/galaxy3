@@ -31,7 +31,7 @@ class VideoHandleMqtt extends Component {
 
   componentDidUpdate(prevProps) {
     let {g, index, group} = this.props;
-    let {room} = this.state;
+    const {room} = this.state;
     if (g && index === 13 && g.room !== room && group) {
       this.setState({room: g.room}, () => {
         this.initVideoRoom(g.room, g.janus);
@@ -171,18 +171,25 @@ class VideoHandleMqtt extends Component {
     }
   }
 
-
+  exitJanus = (janus, callback) => {
+    janus.destroy().then(() => {
+      this.setState({feeds: [], mids: [], room: null, remoteFeed: false, videoroom: null, subscriber: null, janus: null});
+      if(typeof callback === "function") callback();
+    }).catch(e => {
+      log.error("["+mit+"] destroy error:", e);
+      this.setState({feeds: [], mids: [], room: null, remoteFeed: false, videoroom: null, subscriber: null, janus: null});
+      if(typeof callback === "function") callback();
+    })
+  }
 
   exitVideoRoom = (roomid, callback) => {
     const {videoroom, janus, mit} = this.state;
-
     videoroom?.leave().then(r => {
       log.info("["+mit+"] leave respond:", r);
-
-      janus.destroy().then(() => {
-        this.setState({feeds: [], mids: [], room: null, remoteFeed: false, videoroom: null, subscriber: null, janus: null});
-        if(typeof callback === "function") callback();
-      })
+      this.exitJanus(janus, callback)
+    }).catch(e => {
+      log.error("["+mit+"] leave error:", e);
+      this.exitJanus(janus, callback)
     });
   };
 

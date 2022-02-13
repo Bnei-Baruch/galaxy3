@@ -3,12 +3,12 @@ import {Grid, Segment} from "semantic-ui-react";
 import "./VideoOutApp.css";
 import "./VideoOutQuad.scss";
 import {SDIOUT_ID} from "../../shared/consts";
+import log from "loglevel";
 import api from "../../shared/Api";
 import {API_BACKEND_PASSWORD, API_BACKEND_USERNAME} from "../../shared/env";
 import GxyJanus from "../../shared/janus-utils";
 import VideoHandleMqtt from "./VideoHandleMqtt";
 import VideoOutQuad from "./VideoOutQuad";
-import {captureException} from "../../shared/sentry";
 import mqtt from "../../shared/mqtt";
 import ConfigStore from "../../shared/ConfigStore";
 
@@ -54,8 +54,7 @@ class VideoOutMqtt extends Component {
           }
         })
         .catch((err) => {
-          console.error("[SDIOut] error fetching quad state", err);
-          captureException(err, {source: "SDIOut"});
+          log.error("[SDIOut] error fetching quad state", err);
         });
 
       api
@@ -64,15 +63,10 @@ class VideoOutMqtt extends Component {
           this.setState({roomsStatistics});
         })
         .catch((err) => {
-          console.error("[SDIOut] error fetching rooms statistics", err);
-          captureException(err, {source: "SDIOut"});
+          log.error("[SDIOut] error fetching rooms statistics", err);
         });
     }, 1000);
     this.initApp();
-  }
-
-  componentWillUnmount() {
-    Object.values(this.state.gateways).forEach((x) => x.destroy());
   }
 
   initApp = () => {
@@ -88,15 +82,14 @@ class VideoOutMqtt extends Component {
       })
       .then(() => this.initGateways(user))
       .catch((err) => {
-        console.error("[SDIOut] error initializing app", err);
+        log.error("[SDIOut] error initializing app", err);
         this.setState({appInitError: err});
-        captureException(err, {source: "SDIOut"});
       });
   };
 
   initGateways = (user) => {
     mqtt.init(user, (data) => {
-      console.log("[SDIOut] mqtt init: ", data);
+      log.log("[SDIOut] mqtt init: ", data);
       mqtt.join("galaxy/service/shidur");
       mqtt.join("galaxy/users/broadcast");
       mqtt.send(JSON.stringify({type: "event", [user.role]: true}), true, "galaxy/service/" + user.role);
@@ -144,7 +137,7 @@ class VideoOutMqtt extends Component {
         GxyJanus.setGlobalConfig(data);
       })
       .catch((err) => {
-        console.error("[User] error reloading config", err);
+        log.error("[User] error reloading config", err);
       });
   };
 
@@ -226,7 +219,7 @@ class VideoOutMqtt extends Component {
               </div>
             </Segment>
           </Grid.Column>
-          <Grid.Column></Grid.Column>
+          <Grid.Column />
         </Grid.Row>
       </Grid>
     );
