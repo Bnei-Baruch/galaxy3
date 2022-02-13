@@ -118,6 +118,12 @@ class AdminRootMqtt extends Component {
     const token = ConfigStore.globalConfig.gateways.rooms[inst].token
 
     let janus = new JanusMqtt(user, inst)
+    janus.onStatus = (srv, status) => {
+      if(!status) {
+        alert("Janus Server - " + srv + " - Offline")
+        window.location.reload()
+      }
+    }
 
     let videoroom = new PublisherPlugin();
     videoroom.subTo = this.makeSubscription;

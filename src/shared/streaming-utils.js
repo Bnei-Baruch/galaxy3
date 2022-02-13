@@ -187,6 +187,14 @@ export default class JanusStream {
     const str = srv ? srv : 'str' + (Math.floor(Math.random() * 8) + 2)
     this.janus = new JanusMqtt(user, str)
 
+    this.janus.onStatus = (srv, status) => {
+      if(!status) {
+        setTimeout(() => {
+          this.initJanus_(user);
+        }, 5000);
+      }
+    }
+
     this.janus.init().then(data => {
       log.debug("[shidur] init: ", data)
       if (this.videos !== NO_VIDEO_OPTION_VALUE) {
@@ -199,7 +207,7 @@ export default class JanusStream {
       setTimeout(() => {
         this.initJanus_(user);
       }, 5000);
-      console.error("RELOAD ON ERROR", err);
+      log.error("RELOAD ON ERROR", err);
     })
   }
 

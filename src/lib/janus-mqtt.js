@@ -12,6 +12,7 @@ export class JanusMqtt {
     this.txTopic = 'janus/' + srv + '/to-janus'
     this.stTopic = 'janus/' + srv + '/status'
     this.isConnected = false
+    this.onStatus = null
     this.sessionId = undefined
     this.transactions = {}
     this.pluginHandles = {}
@@ -231,12 +232,16 @@ export class JanusMqtt {
 
     if(tD === "status" && json.online) {
       log.debug("[janus] Janus Server - " + this.srv + " - Online")
+      if(typeof this.onStatus === "function")
+        this.onStatus(this.srv, json.online)
       return
     }
 
     if(tD === "status" && !json.online) {
-      alert("[janus] Janus Server - " + this.srv + " - Offline")
-      window.location.reload()
+      this.isConnected = false
+      log.debug("[janus] Janus Server - " + this.srv + " - Offline")
+      if(typeof this.onStatus === "function")
+        this.onStatus(this.srv, json.online)
       return
     }
 

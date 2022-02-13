@@ -14,9 +14,12 @@ class VideoHandleMqtt extends Component {
     mids: [],
     name: "",
     room: "",
-    myid: null,
-    mystream: null,
     num_videos: 0,
+    remoteFeed: null,
+    janus: null,
+    videoroom: null,
+    subscriber: null
+
   };
 
   componentDidMount() {
@@ -53,7 +56,7 @@ class VideoHandleMqtt extends Component {
   }
 
   componentWillUnmount() {
-    this.exitVideoRoom(this.state.room, () => {});
+    this.exitVideoRoom(this.state.room);
   }
 
   initVideoRoom = (room, inst) => {
@@ -70,6 +73,14 @@ class VideoHandleMqtt extends Component {
     user.mit = mit
     janus = new JanusMqtt(user, inst, mit, user);
 
+    janus.onStatus = (srv, status) => {
+      if(!status) {
+        setTimeout(() => {
+          this.initVideoRoom(room, inst);
+        }, 5000)
+      }
+    }
+
     this.setState({janus, mit});
 
     janus.init(token).then(data => {
@@ -78,10 +89,6 @@ class VideoHandleMqtt extends Component {
 
     }).catch(err => {
       log.error("["+mit+"] Janus init", err);
-      this.exitRoom(/* reconnect= */ true, () => {
-        log.error("["+mit+"] error initializing janus", err);
-        this.reinitClient(retry);
-      });
     })
 
   }
@@ -168,12 +175,12 @@ class VideoHandleMqtt extends Component {
 
   exitVideoRoom = (roomid, callback) => {
     const {videoroom, janus, mit} = this.state;
-    this.setState({feeds: [], mids: [], room: null, remoteFeed: false,});
 
     videoroom?.leave().then(r => {
       log.info("["+mit+"] leave respond:", r);
 
       janus.destroy().then(() => {
+        this.setState({feeds: [], mids: [], room: null, remoteFeed: false, videoroom: null, subscriber: null, janus: null});
         if(typeof callback === "function") callback();
       })
     });

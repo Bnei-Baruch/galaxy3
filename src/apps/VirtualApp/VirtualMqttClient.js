@@ -352,6 +352,12 @@ class VirtualMqttClient extends Component {
 
   initJanus = (user, config, retry) => {
     let janus = new JanusMqtt(user, config.name)
+    janus.onStatus = (srv, status) => {
+      if(!status) {
+        alert("Janus Server - " + srv + " - Offline")
+        window.location.reload()
+      }
+    }
 
     let videoroom = new PublisherPlugin();
     videoroom.subTo = this.makeSubscription;
@@ -383,6 +389,7 @@ class VirtualMqttClient extends Component {
         this.reinitClient(retry);
       });
     })
+
   }
 
   reinitClient = (retry) => {
