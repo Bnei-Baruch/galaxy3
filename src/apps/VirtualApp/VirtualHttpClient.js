@@ -758,7 +758,7 @@ class VirtualHttpClient extends Component {
         const publish = {request: "configure", audio: useAudio, video: useVideo, data: false};
         videoroom.send({message: publish, jsep: jsep});
         if (!useVideo) {
-          media.video?.stream?.getTracks().forEach((t) => t.stop());
+          devices.video?.stream?.getTracks().forEach((t) => t.stop());
           this.setState({cammuted: true});
         }
       },
