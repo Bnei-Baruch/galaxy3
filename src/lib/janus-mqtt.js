@@ -12,6 +12,7 @@ export class JanusMqtt {
     this.txTopic = 'janus/' + srv + '/to-janus'
     this.stTopic = 'janus/' + srv + '/status'
     this.isConnected = false
+    this.onStatus = null
     this.sessionId = undefined
     this.transactions = {}
     this.pluginHandles = {}
@@ -27,7 +28,12 @@ export class JanusMqtt {
     mqtt.join(this.rxTopic, false);
     mqtt.join(this.stTopic, false);
 
-    mqtt.mq.on(this.mit, this.onMessage);
+    mqtt.mq.on(this.srv, this.onMessage);
+
+    // If we need more than 1 session on the same janus server
+    // we need to set mit property in user object, otherwise - this.srv emit trigger
+    // in wrong places and unexpected result occur.
+    if(this.user.mit) mqtt.mq.on(this.user.mit, this.onMessage);
 
     return new Promise((resolve, reject) => {
       const transaction = randomString(12);
@@ -47,12 +53,17 @@ export class JanusMqtt {
 
           log.debug('[janus] Janus connected, sessionId: ', this.sessionId)
 
+          // this.user.mit - actually trigger once and after that we use
+          // session id as emit. In case we not using multiple session on same server
+          // still good as we will not see message from other sessions
+          mqtt.mq.on(this.sessionId, this.onMessage);
+
           resolve(this)
         },
         reject,
         replyType: 'success'
       }
-      mqtt.send(JSON.stringify(msg), false, this.txTopic, this.rxTopic + "/" + this.user.id)
+      mqtt.send(JSON.stringify(msg), false, this.txTopic, this.rxTopic + "/" + this.user.id, this.user)
     })
 
   }
@@ -133,7 +144,7 @@ export class JanusMqtt {
       })
 
       this.transactions[request.transaction] = {resolve, reject, replyType, request}
-      mqtt.send(JSON.stringify(request), false, this.txTopic, this.rxTopic + "/" + this.user.id)
+      mqtt.send(JSON.stringify(request), false, this.txTopic, this.rxTopic + "/" + this.user.id, this.user)
     })
   }
 
@@ -202,7 +213,9 @@ export class JanusMqtt {
     mqtt.exit(this.rxTopic);
     mqtt.exit(this.stTopic);
 
-    mqtt.mq.removeListener(this.mit, this.onMessage);
+    mqtt.mq.removeListener(this.srv, this.onMessage);
+    if(this.user.mit) mqtt.mq.removeListener(this.user.mit, this.onMessage);
+    mqtt.mq.removeListener(this.sessionId, this.onMessage);
   }
 
   onMessage(message, tD) {
@@ -219,12 +232,16 @@ export class JanusMqtt {
 
     if(tD === "status" && json.online) {
       log.debug("[janus] Janus Server - " + this.srv + " - Online")
+      if(typeof this.onStatus === "function")
+        this.onStatus(this.srv, json.online)
       return
     }
 
     if(tD === "status" && !json.online) {
-      alert("[janus] Janus Server - " + this.srv + " - Offline")
-      window.location.reload()
+      this.isConnected = false
+      log.debug("[janus] Janus Server - " + this.srv + " - Offline")
+      if(typeof this.onStatus === "function")
+        this.onStatus(this.srv, json.online)
       return
     }
 

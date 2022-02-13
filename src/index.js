@@ -9,7 +9,10 @@ if(process.env.NODE_ENV === "production") {
   initSentry();
 }
 
-log.setLevel(1)
-
+log.setLevel('info')
+const loglevel = new URLSearchParams(window.location.search).get('loglevel');
+if(loglevel) {
+  log.setLevel(loglevel)
+}
 
 ReactDOM.render(<App />, document.getElementById("root"));

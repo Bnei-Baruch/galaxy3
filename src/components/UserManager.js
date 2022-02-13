@@ -2,6 +2,8 @@ import Keycloak from "keycloak-js";
 import api from "../shared/Api";
 import {updateSentryUser} from "../shared/sentry";
 
+const logging = new URLSearchParams(window.location.search).has('loglevel');
+
 const userManagerConfig = {
   url: "https://accounts.kab.info/auth",
   realm: "main",
@@ -13,7 +15,7 @@ const initOptions = {
   checkLoginIframe: false,
   flow: "standard",
   pkceMethod: "S256",
-  enableLogging: true,
+  enableLogging: logging,
 };
 
 export const kc = new Keycloak(userManagerConfig);

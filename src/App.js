@@ -12,8 +12,8 @@ import VirtualHttpClient from "./apps/VirtualApp/VirtualHttpClient";
 // import AdminApp from "./apps/AdminApp/AdminApp";
 // import ShidurApp from "./apps/ShidurApp/ShidurApp";
 // import SndmanApp from "./apps/SndmanApp/SndmanApp";
-// import AudioOutApp from "./apps/AudioOutApp/AudioOutApp";
-// import SDIOutApp from "./apps/SDIOutApp/SDIOutApp";
+// import AudioOutMqtt from "./apps/AudioOutApp/AudioOutMqtt";
+// import VideoOutMqtt from "./apps/VideoOutApp/VideoOutMqtt";
 // import WebOutApp from "./apps/WebOutApp/WebOutApp";
 
 class App extends Component {
@@ -28,8 +28,8 @@ class App extends Component {
         {/*<AdminApp />*/}
         {/*<ShidurApp />*/}
         {/*<SndmanApp />*/}
-        {/*<AudioOutApp />*/}
-        {/*<SDIOutApp />*/}
+        {/*<AudioOutMqtt />*/}
+        {/*<VideoOutMqtt />*/}
         {/*<WebOutApp />*/}
       </I18nextProvider>
     );

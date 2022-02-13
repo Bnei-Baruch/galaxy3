@@ -10,6 +10,7 @@ class MqttMsg {
   constructor() {
     this.user = null;
     this.mq = null;
+    this.mit = null;
     this.connected = false;
     this.room = null;
     this.token = null;
@@ -106,48 +107,45 @@ class MqttMsg {
     });
   };
 
-  send = (message, retain, topic, rxTopic) => {
+  send = (message, retain, topic, rxTopic, user) => {
     if (!this.mq) return;
     log.info("[mqtt] Send data on topic: ", topic, message);
-    let properties = !!rxTopic ? {userProperties: this.user, responseTopic: rxTopic} : {userProperties: this.user};
+    let properties = !!rxTopic ? {userProperties: user || this.user, responseTopic: rxTopic} : {userProperties: user || this.user};
     let options = {qos: 1, retain, properties};
     this.mq.publish(topic, message, {...options}, (err) => {
       err && log.error("[mqtt] Error: ", err);
     });
   };
 
-  watch = (callback, stat) => {
-    let message;
+  watch = (callback) => {
     this.mq.on("message", (topic, data, packet) => {
       log.debug(chalk.green("[mqtt] trigger topic : ") + topic + " : packet:", packet);
-      if (/subtitles\/galaxy\//.test(topic)) {
-        this.mq.emit("MqttSubtitlesEvent", data);
-      } else if (/galaxy\/room\/\d+\/chat/.test(topic)) {
-        this.mq.emit("MqttChatEvent", data);
-      } else if (/janus\/gxy/.test(topic)) {
-        this.mq.emit("MqttGalaxy", data, topic.split("/")[2]);
-      } else if (/janus\/str/.test(topic)) {
-        this.mq.emit("MqttStream", data, topic.split("/")[2]);
-      } else if (/galaxy\/users\//.test(topic)) {
-        if (topic.split("/")[2] === "broadcast") {
-          this.mq.emit("MqttBroadcastMessage", data);
-        } else {
-          this.mq.emit("MqttPrivateMessage", data);
-        }
-      } else {
-        if (stat) {
-          message = data.toString();
-        } else {
-          try {
-            message = JSON.parse(data.toString());
-          } catch (e) {
-            log.error(e);
-            log.error("[mqtt] Not valid JSON, ", data.toString());
-            return;
-          }
-        }
-        //log.info("[mqtt] Got data on topic: ", topic, message);
-        callback(message, topic);
+      const t = topic.split("/")
+      if(t[0] === "msg") t.shift()
+      const [root, service, id, target] = t
+      switch(root) {
+        case "subtitles":
+          this.mq.emit("MqttSubtitlesEvent", data);
+          break;
+        case "galaxy":
+          // FIXME: we need send cmd messages to separate topic
+          if(service === "room" && target === "chat")
+            this.mq.emit("MqttChatEvent", data);
+          else if (service === "room" && target !== "chat" || service === "service")
+            callback(JSON.parse(data.toString()), topic);
+          else if (service === "users" && id === "broadcast")
+            this.mq.emit("MqttBroadcastMessage", data);
+          else
+            this.mq.emit("MqttPrivateMessage", data);
+          break;
+        case "janus":
+          const json = JSON.parse(data)
+          const mit = json?.session_id || packet?.properties?.userProperties?.mit || service
+          this.mq.emit(mit, data, id);
+          break;
+        default:
+          if(typeof callback === "function")
+            callback(JSON.parse(data.toString()), topic);
       }
     });
   };
@@ -155,6 +153,7 @@ class MqttMsg {
   setToken = (token) => {
     this.token = token;
   };
+
 }
 
 const defaultMqtt = new MqttMsg();

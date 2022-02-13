@@ -1,8 +1,8 @@
 import React, {Component} from "react";
 import {Segment} from "semantic-ui-react";
-import UsersHandleSDIOut from "./UsersHandleSDIOut";
+import VideoHandleMqtt from "./VideoHandleMqtt";
 
-class UsersQuadSDIOut extends Component {
+class VideoOutQuad extends Component {
   state = {
     col: null,
   };
@@ -22,7 +22,7 @@ class UsersQuadSDIOut extends Component {
   };
 
   render() {
-    const {full_feed, fullscr} = this.state;
+    const {full_feed, fullscr, col} = this.state;
     const {vquad = [null, null, null, null], roomsStatistics = {}, qst} = this.props;
 
     let program = vquad.map((g, i) => {
@@ -42,20 +42,12 @@ class UsersQuadSDIOut extends Component {
 
       return (
         <div
-          className={
-            fullscr && full_feed === i
-              ? "video_full"
-              : fullscr && full_feed !== i
-              ? "hidden"
-              : qst_group
-              ? "usersvideo_qst"
-              : "usersvideo_box"
-          }
+          className={fullscr && full_feed === i ? "video_full" : fullscr && full_feed !== i ? "hidden" : qst_group ? "usersvideo_qst" : "usersvideo_box"}
           key={"pr" + i}
         >
           {qst_mark}
           <div className={fullscr ? "fullscrvideo_title" : "video_title"}>{name}</div>
-          <UsersHandleSDIOut key={"q" + i} g={g} index={i} {...this.props} />
+          <VideoHandleMqtt key={"q" + i} g={g} q={i} col={col} {...this.props} />
         </div>
       );
     });
@@ -68,4 +60,4 @@ class UsersQuadSDIOut extends Component {
   }
 }
 
-export default UsersQuadSDIOut;
+export default VideoOutQuad;

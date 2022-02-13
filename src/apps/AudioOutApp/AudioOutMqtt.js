@@ -1,15 +1,16 @@
 import React, {Component} from "react";
 import {Segment} from "semantic-ui-react";
+import log from "loglevel";
 import "./AudioOutApp.css";
-import "./UsersAudioOut.css";
-import UsersHandleAudioOut from "./UsersHandleAudioOut";
+import AudioHandleMqtt from "./AudioHandleMqtt";
 import api from "../../shared/Api";
 import {API_BACKEND_PASSWORD, API_BACKEND_USERNAME} from "../../shared/env";
 import GxyJanus from "../../shared/janus-utils";
 import {AUDOUT_ID} from "../../shared/consts";
 import mqtt from "../../shared/mqtt";
+import ConfigStore from "../../shared/ConfigStore";
 
-class AudioOutApp extends Component {
+class AudioOutMqtt extends Component {
   state = {
     audio: false,
     group: null,
@@ -22,10 +23,7 @@ class AudioOutApp extends Component {
       id: AUDOUT_ID,
       name: "audout",
       email: "audout@galaxy.kli.one",
-    },
-    gateways: {},
-    gatewaysInitialized: false,
-    appInitError: null,
+    }
   };
 
   componentDidMount() {
@@ -43,37 +41,30 @@ class AudioOutApp extends Component {
 
     api
       .fetchConfig()
-      .then((data) => GxyJanus.setGlobalConfig(data))
-      .then(() => {
-        this.initMqtt(user);
-        this.initGateways(user);
+      .then((data) => {
+        ConfigStore.setGlobalConfig(data);
+        GxyJanus.setGlobalConfig(data);
       })
+      .then(() => this.initMqtt(user))
       .catch((err) => {
-        console.error("[AudioOut] error initializing app", err);
+        log.error("[audout] error initializing app", err);
       });
   };
 
   initMqtt = (user) => {
     mqtt.init(user, (data) => {
-      console.log("[Shidur] mqtt init: ", data);
-      setTimeout(() => {
-        mqtt.watch((data) => {
-          this.onMqttData(data);
-        });
-        mqtt.join("galaxy/service/shidur");
-        mqtt.join("galaxy/users/broadcast");
-        mqtt.send(JSON.stringify({type: "event", [user.role]: true}), true, "galaxy/service/" + user.role);
-      }, 3000);
+      log.info("[audout] mqtt init: ", data);
+      mqtt.watch((data) => {
+        this.onMqttData(data);
+      });
+      mqtt.join("galaxy/service/shidur");
+      mqtt.join("galaxy/users/broadcast");
+      mqtt.send(JSON.stringify({type: "event", [user.role]: true}), true, "galaxy/service/" + user.role);
     });
   };
 
-  initGateways = (user) => {
-    const gateways = GxyJanus.makeGateways("rooms");
-    this.setState({gateways});
-    Object.values(gateways).map((gateway) => gateway.init());
-  };
-
   onMqttData = (data) => {
+    log.info("[audout] Cmd message: ", data)
     const {room, group, status, qst} = data;
 
     if (data.type === "sdi-fullscr_group" && status && qst) {
@@ -99,16 +90,12 @@ class AudioOutApp extends Component {
         GxyJanus.setGlobalConfig(data);
       })
       .catch((err) => {
-        console.error("[User] error reloading config", err);
+        log.error("[audout] error reloading config", err);
       });
   };
 
-  setProps = (props) => {
-    this.setState({...props});
-  };
-
   render() {
-    const {gateways, group, audio} = this.state;
+    const {user, group, audio} = this.state;
 
     const name = group && group.description;
 
@@ -117,7 +104,7 @@ class AudioOutApp extends Component {
         <div className="usersvideo_grid">
           <div className="video_full">
             <div className="title">{name}</div>
-            <UsersHandleAudioOut g={group} gateways={gateways} audio={audio} setProps={this.setProps} />
+            <AudioHandleMqtt g={group} user={user} audio={audio} />
           </div>
         </div>
       </Segment>
@@ -125,4 +112,4 @@ class AudioOutApp extends Component {
   }
 }
 
-export default AudioOutApp;
+export default AudioOutMqtt;

@@ -1,17 +1,18 @@
 import React, {Component, Fragment} from "react";
 import {Grid, Segment} from "semantic-ui-react";
-import "./SDIOutApp.css";
-import "./UsersQuadSDIOut.scss";
+import "./VideoOutApp.css";
+import "./VideoOutQuad.scss";
 import {SDIOUT_ID} from "../../shared/consts";
+import log from "loglevel";
 import api from "../../shared/Api";
 import {API_BACKEND_PASSWORD, API_BACKEND_USERNAME} from "../../shared/env";
 import GxyJanus from "../../shared/janus-utils";
-import UsersHandleSDIOut from "./UsersHandleSDIOut";
-import UsersQuadSDIOut from "./UsersQuadSDIOut";
-import {captureException} from "../../shared/sentry";
+import VideoHandleMqtt from "./VideoHandleMqtt";
+import VideoOutQuad from "./VideoOutQuad";
 import mqtt from "../../shared/mqtt";
+import ConfigStore from "../../shared/ConfigStore";
 
-class SDIOutApp extends Component {
+class VideoOutMqtt extends Component {
   state = {
     qg: null,
     group: null,
@@ -21,11 +22,12 @@ class SDIOutApp extends Component {
       handle: 0,
       role: "sdiout",
       display: "sdiout",
-      id: SDIOUT_ID,
+      id: "SDIOUT_ID",
       name: "sdiout",
       email: "sdiout@galaxy.kli.one",
     },
     qids: [],
+    qlist: [],
     qcol: 0,
     gateways: {},
     appInitError: null,
@@ -39,15 +41,20 @@ class SDIOutApp extends Component {
       api
         .fetchProgram()
         .then((qids) => {
-          this.setState({qids});
+          let qlist = [
+            ...qids.q1.vquad,
+            ...qids.q2.vquad,
+            ...qids.q3.vquad,
+            ...qids.q4.vquad,
+          ];
+          this.setState({qids, qlist});
           if (this.state.qg) {
             const {col, i} = this.state;
             this.setState({qg: this.state.qids["q" + col].vquad[i]});
           }
         })
         .catch((err) => {
-          console.error("[SDIOut] error fetching quad state", err);
-          captureException(err, {source: "SDIOut"});
+          log.error("[SDIOut] error fetching quad state", err);
         });
 
       api
@@ -56,15 +63,10 @@ class SDIOutApp extends Component {
           this.setState({roomsStatistics});
         })
         .catch((err) => {
-          console.error("[SDIOut] error fetching rooms statistics", err);
-          captureException(err, {source: "SDIOut"});
+          log.error("[SDIOut] error fetching rooms statistics", err);
         });
     }, 1000);
     this.initApp();
-  }
-
-  componentWillUnmount() {
-    Object.values(this.state.gateways).forEach((x) => x.destroy());
   }
 
   initApp = () => {
@@ -74,30 +76,29 @@ class SDIOutApp extends Component {
 
     api
       .fetchConfig()
-      .then((data) => GxyJanus.setGlobalConfig(data))
+      .then((data) => {
+        ConfigStore.setGlobalConfig(data);
+        GxyJanus.setGlobalConfig(data);
+      })
       .then(() => this.initGateways(user))
       .catch((err) => {
-        console.error("[SDIOut] error initializing app", err);
+        log.error("[SDIOut] error initializing app", err);
         this.setState({appInitError: err});
-        captureException(err, {source: "SDIOut"});
       });
   };
 
   initGateways = (user) => {
     mqtt.init(user, (data) => {
-      console.log("[SDIOut] mqtt init: ", data);
-      setTimeout(() => {
-        mqtt.watch((data) => {
-          this.onMqttData(data);
-        });
-        mqtt.join("galaxy/service/shidur");
-        mqtt.join("galaxy/users/broadcast");
-        mqtt.send(JSON.stringify({type: "event", [user.role]: true}), true, "galaxy/service/" + user.role);
-      }, 3000);
+      log.log("[SDIOut] mqtt init: ", data);
+      mqtt.join("galaxy/service/shidur");
+      mqtt.join("galaxy/users/broadcast");
+      mqtt.send(JSON.stringify({type: "event", [user.role]: true}), true, "galaxy/service/" + user.role);
+      mqtt.watch((data) => {
+        this.onMqttData(data);
+      });
+      const gateways = GxyJanus.makeGateways("rooms");
+      this.setState({gateways});
     });
-    const gateways = GxyJanus.makeGateways("rooms");
-    this.setState({gateways});
-    Object.values(gateways).map((gateway) => gateway.init());
   };
 
   onMqttData = (data) => {
@@ -136,12 +137,15 @@ class SDIOutApp extends Component {
         GxyJanus.setGlobalConfig(data);
       })
       .catch((err) => {
-        console.error("[User] error reloading config", err);
+        log.error("[User] error reloading config", err);
       });
   };
 
   render() {
-    let {vote, group, qids, qg, gateways, roomsStatistics} = this.state;
+    let {vote, group, qids, qg, gateways, roomsStatistics, user, qlist} = this.state;
+
+    if(!gateways) return
+
     // let qst = g && g.questions;
     let name = group && group.description;
 
@@ -149,53 +153,49 @@ class SDIOutApp extends Component {
       <Grid columns={2} className="sdi_container">
         <Grid.Row>
           <Grid.Column>
-            <UsersQuadSDIOut
+            <VideoOutQuad
               index={0}
+              qlist={qlist}
               {...qids.q1}
               qst={qg}
-              gateways={gateways}
+              user={user}
               roomsStatistics={roomsStatistics}
-              ref={(col) => {
-                this.col1 = col;
-              }}
+              ref={(col) => {this.col1 = col;}}
             />
           </Grid.Column>
           <Grid.Column>
-            <UsersQuadSDIOut
+            <VideoOutQuad
               index={4}
+              qlist={qlist}
               {...qids.q2}
               qst={qg}
-              gateways={gateways}
+              user={user}
               roomsStatistics={roomsStatistics}
-              ref={(col) => {
-                this.col2 = col;
-              }}
+              ref={(col) => {this.col2 = col;}}
             />
           </Grid.Column>
         </Grid.Row>
         <Grid.Row>
           <Grid.Column>
-            <UsersQuadSDIOut
+            <VideoOutQuad
               index={8}
+              qlist={qlist}
               {...qids.q3}
               qst={qg}
-              gateways={gateways}
+              user={user}
               roomsStatistics={roomsStatistics}
-              ref={(col) => {
-                this.col3 = col;
-              }}
+              ref={(col) => {this.col3 = col;}}
             />
           </Grid.Column>
           <Grid.Column>
-            <UsersQuadSDIOut
+            <VideoOutQuad
               index={12}
+              qlist={qlist}
               {...qids.q4}
               qst={qg}
-              gateways={gateways}
+              user={user}
               roomsStatistics={roomsStatistics}
-              ref={(col) => {
-                this.col4 = col;
-              }}
+              ref={(col) => {this.col4 = col;}}
             />
           </Grid.Column>
         </Grid.Row>
@@ -210,7 +210,7 @@ class SDIOutApp extends Component {
                     <Fragment>
                       {/*{group && group.questions ? <div className="qst_fullscreentitle">?</div> : ""}*/}
                       <div className="fullscrvideo_title">{name}</div>
-                      <UsersHandleSDIOut key={"q5"} g={qg} group={group} index={13} gateways={gateways} />
+                      <VideoHandleMqtt key={"q5"} g={qg} group={group} index={13} col={5} q={5} user={user} />
                     </Fragment>
                   ) : (
                     ""
@@ -219,11 +219,11 @@ class SDIOutApp extends Component {
               </div>
             </Segment>
           </Grid.Column>
-          <Grid.Column></Grid.Column>
+          <Grid.Column />
         </Grid.Row>
       </Grid>
     );
   }
 }
 
-export default SDIOutApp;
+export default VideoOutMqtt;

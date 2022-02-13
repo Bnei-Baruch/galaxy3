@@ -1,9 +1,9 @@
 import React, {Component} from "react";
-import "./VideoConteiner.scss";
+import "./VideoHandle.scss";
 import {Janus} from "../../lib/janus";
 import classNames from "classnames";
 
-class UsersHandleSDIOut extends Component {
+class VideoHandleHttp extends Component {
   state = {
     feeds: [],
     inst: null,
@@ -431,4 +431,4 @@ class UsersHandleSDIOut extends Component {
   }
 }
 
-export default UsersHandleSDIOut;
+export default VideoHandleHttp;
