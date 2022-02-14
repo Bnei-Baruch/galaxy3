@@ -1315,6 +1315,7 @@ class VirtualHttpClient extends Component {
         Janus.debug("Got publisher SDP!");
         Janus.debug(jsep);
         videoroom.send({message: {request: "configure"}, jsep: jsep});
+        videoroom.muteAudio();
       },
       error: (error) => {
         Janus.error("WebRTC error:", error);

@@ -456,7 +456,11 @@ class VirtualMqttClient extends Component {
     devices.setAudioDevice(device, cam_mute).then(media => {
       if(media.audio.device) {
         this.setState({media});
-        if (this.state.videoroom) this.state.videoroom.audio(media.audio.stream)
+        const {videoroom} = this.state;
+        if (videoroom) {
+          media.audio.stream.getAudioTracks()[0].enabled = false;
+          videoroom.audio(media.audio.stream)
+        }
       }
     })
   };
@@ -1758,9 +1762,6 @@ class VirtualMqttClient extends Component {
       wipSettings,
       mqttOn,
     } = this.state;
-
-    const {video_device} = media.video;
-    const {audio_device} = media.audio;
 
     if (appInitError) {
       return (
