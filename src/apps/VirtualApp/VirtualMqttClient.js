@@ -1290,9 +1290,6 @@ class VirtualMqttClient extends Component {
       mqttOn,
     } = this.state;
 
-    const {video_device} = media.video;
-    const {audio_device} = media.audio;
-
     return (
       <AppBar
         // position="sticky"

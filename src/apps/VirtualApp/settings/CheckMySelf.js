@@ -38,7 +38,7 @@ const CheckMySelf = () => {
     }
   }, []); // eslint-disable-line  react-hooks/exhaustive-deps
 
-  const micVolume = (context) => {
+  const micVolume = () => {
     const c = canvasRef.current
     let cc = c.getContext("2d");
     const w = c.width;
@@ -49,7 +49,6 @@ const CheckMySelf = () => {
     gradient.addColorStop(0.5, "orange");
     gradient.addColorStop(1, "red");
     devices.micLevel = (volume) => {
-      log.trace("[settings] volume: ", volume)
       cc.clearRect(0, 0, c.width, c.height);
       cc.fillStyle = gradient;
       cc.fillRect(0, 0, volume * 500, c.height);

@@ -64,10 +64,10 @@ const SettingsJoined = (props) => {
 
   const {audio, video, audios = 2, isOpen = false, closeModal, userDisplay, audioModeChange, isAudioMode} = props;
 
-  const audio_device = audio?.audio_device || audio?.devices[0]?.deviceId;
+  const audio_device = audio?.device || audio?.devices[0]?.deviceId;
   const audioLabel = audio?.devices.find((d) => d.deviceId === audio_device)?.label;
 
-  const video_device = video?.video_device || video?.devices[0]?.deviceId;
+  const video_device = video?.device || video?.devices[0]?.deviceId;
   const videoLabel = video?.devices.find((d) => d.deviceId === video_device)?.label;
 
   const settingsLabel = vsettings_list.find((d) => JSON.stringify(video?.setting) === JSON.stringify(d.value))?.text;
