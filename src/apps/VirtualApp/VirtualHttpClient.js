@@ -448,6 +448,7 @@ class VirtualHttpClient extends Component {
     devices.setAudioDevice(device, cam_mute).then(media => {
       if(media.audio.device) {
         this.setState({media});
+        if(this.state.videoroom) this.replaceAudio(media.audio.device);
       }
     })
   };
@@ -1301,6 +1302,25 @@ class VirtualHttpClient extends Component {
       }
     }
   };
+
+  replaceAudio = (device) => {
+    const {videoroom} = this.state;
+    videoroom.createOffer({
+      media: {
+        replaceAudio: true,
+        audio: {noiseSuppression: true, deviceId: {exact: device}},
+      },
+      simulcast: false,
+      success: (jsep) => {
+        Janus.debug("Got publisher SDP!");
+        Janus.debug(jsep);
+        videoroom.send({message: {request: "configure"}, jsep: jsep});
+      },
+      error: (error) => {
+        Janus.error("WebRTC error:", error);
+      },
+    });
+  }
 
   camMute = (cammuted) => {
     const {videoroom, media} = this.state;
@@ -2571,6 +2591,8 @@ class VirtualHttpClient extends Component {
             videoLength={media.video?.devices.length}
             audioModeChange={this.otherCamsMuteToggle}
             isAudioMode={muteOtherCams}
+            audioDevice={media.audio?.device}
+            setAudioDevice={this.setAudioDevice.bind(this)}
             audios={audios.audios}
           />
         )}

@@ -456,6 +456,7 @@ class VirtualMqttClient extends Component {
     devices.setAudioDevice(device, cam_mute).then(media => {
       if(media.audio.device) {
         this.setState({media});
+        if (this.state.videoroom) this.state.videoroom.audio(media.audio.stream)
       }
     })
   };
@@ -1023,8 +1024,8 @@ class VirtualMqttClient extends Component {
     const {media, cammuted} = this.state;
     if (cammuted) return;
     log.info("[client] Stop local video stream");
-    media?.video?.stream?.getTracks().forEach((t) => t.stop());
-    devices?.audio_stream?.getTracks().forEach((t) => t.stop());
+    media?.video?.stream?.getTracks().forEach(t => t.stop());
+    devices?.audio_stream?.getTracks().forEach(t => t.stop());
     const deviceId = media?.audio?.device || media?.audio?.devices?.[0]?.deviceId;
     if (deviceId) {
       this.setAudioDevice(deviceId, !!videoroom);
@@ -2233,6 +2234,8 @@ class VirtualMqttClient extends Component {
             videoLength={media.video?.devices.length}
             audioModeChange={this.otherCamsMuteToggle}
             isAudioMode={muteOtherCams}
+            audioDevice={media.audio?.device}
+            setAudioDevice={this.setAudioDevice.bind(this)}
             audios={audios.audios}
           />
         )}

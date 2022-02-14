@@ -71,11 +71,7 @@ const Settings = (props) => {
   const [roomInput, setRoomInput] = useState();
 
   const {t} = useTranslation();
-  const {
-    palette: {
-      background: {paper},
-    },
-  } = useTheme();
+  const {palette: {background: {paper}}} = useTheme();
   const {isDark, toggleTheme} = useContext(ThemeContext);
 
   const {

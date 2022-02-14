@@ -13,7 +13,7 @@ import {
   Checkbox,
   Box,
   Button,
-  ListItem,
+  ListItem, MenuItem,
 } from "@material-ui/core";
 import {AccountCircle, ArrowBackIos, Close, Computer, Mic, Videocam} from "@material-ui/icons";
 import {makeStyles, useTheme} from "@material-ui/core/styles";
@@ -25,6 +25,15 @@ import {SelectViewLanguage} from "../components/SelectViewLanguage";
 import green from "@material-ui/core/colors/green";
 import {ThemeContext} from "../components/ThemeSwitcher/ThemeSwitcher";
 import {SUBTITLE_LANG, WQ_LANG} from "../subtitles/SubtitlesContainer";
+
+const mapDevice = ({label, deviceId}) => ({text: label, value: deviceId});
+const mapOption = ({text, value}) => {
+  return (
+    <MenuItem key={value} value={value} button>
+      {text}
+    </MenuItem>
+  );
+};
 
 const useStyles = makeStyles(() => ({
   content: {
@@ -52,17 +61,14 @@ const useStyles = makeStyles(() => ({
 const SettingsJoined = (props) => {
   const classes = useStyles();
   const {t} = useTranslation();
-  const {
-    palette: {
-      background: {paper},
-    },
-  } = useTheme();
+  const {palette: {background: {paper}}} = useTheme();
+
   const {isDark, toggleTheme} = useContext(ThemeContext);
 
   const [subtitleWQ, setSubtitleWQ] = useState(localStorage.getItem(WQ_LANG));
   const [subtitleMQTT, setSubtitleMQTT] = useState(localStorage.getItem(SUBTITLE_LANG));
 
-  const {audio, video, audios = 2, isOpen = false, closeModal, userDisplay, audioModeChange, isAudioMode} = props;
+  const {audio, video, audios = 2, isOpen = false, closeModal, userDisplay, audioModeChange, isAudioMode, setAudioDevice, audioDevice = audio.devices[0]?.deviceId} = props;
 
   const audio_device = audio?.device || audio?.devices[0]?.deviceId;
   const audioLabel = audio?.devices.find((d) => d.deviceId === audio_device)?.label;
@@ -71,6 +77,8 @@ const SettingsJoined = (props) => {
   const videoLabel = video?.devices.find((d) => d.deviceId === video_device)?.label;
 
   const settingsLabel = vsettings_list.find((d) => JSON.stringify(video?.setting) === JSON.stringify(d.value))?.text;
+
+  const handleAudioChange = (e) => setAudioDevice(e.target.value);
 
   useEffect(() => {
     const op = audiog_options2.find((op) => op.value === audios);
@@ -224,12 +232,15 @@ const SettingsJoined = (props) => {
             <Grid item xs={12}>
               <Tooltip title={audioLabel} arrow>
                 <TextField
-                  label={t("settings.micSource")}
-                  fullWidth={true}
                   variant="outlined"
-                  disabled={true}
-                  value={audioLabel}
-                />
+                  fullWidth={true}
+                  onChange={handleAudioChange}
+                  value={audioDevice}
+                  label={t("settings.selectMic")}
+                  select
+                >
+                  {audio.devices.map(mapDevice).map(mapOption)}
+                </TextField>
               </Tooltip>
             </Grid>
             <Grid item xs={12}>

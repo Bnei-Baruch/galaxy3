@@ -160,21 +160,46 @@ export class PublisherPlugin extends EventEmitter {
     }
 
     if(!video) videoTransceiver.sender.replaceTrack(stream.getVideoTracks()[0])
+    this.configure()
 
+  }
+
+  audio(stream) {
+    let audioTransceiver = null;
+    let tr = this.pc.getTransceivers();
+    if(tr && tr.length > 0) {
+      for(let t of tr) {
+        if(t?.sender?.track?.kind === "audio") {
+          audioTransceiver = t;
+          break;
+        }
+      }
+    }
+
+    if (audioTransceiver?.setDirection) {
+      audioTransceiver.setDirection("sendonly");
+    } else {
+      audioTransceiver.direction = "sendonly";
+    }
+
+    audioTransceiver.sender.replaceTrack(stream.getAudioTracks()[0])
+    this.configure()
+  }
+
+  configure() {
     this.pc.createOffer().then((offer) => {
       this.pc.setLocalDescription(offer).catch(error => log.error("[publisher] setLocalDescription: ", error))
-        const body = {request: 'configure'}
-        return this.transaction('message', { body, jsep: offer }, 'event').then((param) => {
-          const { json } = param || {}
-          const jsep = json.jsep
-          log.info('[publisher] Video is - ' + (video ? 'Muted' : 'Unmuted'), param)
-          this.pc.setRemoteDescription(jsep).then(() => {
-            log.info('[publisher] remoteDescription set')
-          })
+      const body = {request: 'configure'}
+      return this.transaction('message', { body, jsep: offer }, 'event').then((param) => {
+        const { json } = param || {}
+        const jsep = json.jsep
+        //log.info('[publisher] Video is - ' + (video ? 'Muted' : 'Unmuted'), param)
+        this.pc.setRemoteDescription(jsep).then(() => {
+          log.info('[publisher] remoteDescription set')
         })
+      })
 
     })
-
   }
 
   success (janus, janusHandleId) {
