@@ -452,8 +452,8 @@ class VirtualMqttClient extends Component {
     })
   };
 
-  setAudioDevice = (device) => {
-    devices.setAudioDevice(device).then(media => {
+  setAudioDevice = (device, cam_mute) => {
+    devices.setAudioDevice(device, cam_mute).then(media => {
       if(media.audio.device) {
         this.setState({media});
       }
@@ -1023,9 +1023,12 @@ class VirtualMqttClient extends Component {
     const {media, cammuted} = this.state;
     if (cammuted) return;
     log.info("[client] Stop local video stream");
-    media.video?.stream?.getTracks().forEach((t) => {
-      if(t.kind === "video") t.stop()
-    });
+    media?.video?.stream?.getTracks().forEach((t) => t.stop());
+    devices?.audio_stream?.getTracks().forEach((t) => t.stop());
+    const deviceId = media?.audio?.device || media?.audio?.devices?.[0]?.deviceId;
+    if (deviceId) {
+      this.setAudioDevice(deviceId, !!videoroom);
+    }
     this.setState({cammuted: true, media});
     if(videoroom) videoroom.mute(true)
   };

@@ -147,6 +147,8 @@ class LocalDevices {
       .then((data) => {
         log.debug("[devices] setVideoSize: ", data);
         const [stream, error] = data;
+        this.audio_stream = stream.clone()
+        this.initMicLevel()
         if (error) {
           this.video.error = error
           log.error("[devices] setVideoSize: ", error);
@@ -159,8 +161,7 @@ class LocalDevices {
       });
   };
 
-  setVideoDevice = (device, reconnect) => {
-    if (device === this.video.device && !reconnect) return;
+  setVideoDevice = (device) => {
     return this.getMediaStream(false, true, this.video.setting, null, device)
       .then((data) => {
         log.debug("[devices] setVideoDevice: ", data);
@@ -177,8 +178,7 @@ class LocalDevices {
       });
   };
 
-  setAudioDevice = (device) => {
-    if (device === this.audio.device) return;
+  setAudioDevice = (device, cam_mute) => {
     return this.getMediaStream(true, false, this.video.setting, device, null)
       .then((data) => {
         log.debug("[devices] setAudioDevice: ", data);
@@ -194,6 +194,9 @@ class LocalDevices {
           if (this.audio.context) {
             this.audio.context.close();
             this.initMicLevel()
+            if(cam_mute) {
+              this.audio.context.suspend()
+            }
           }
         }
         return {video: this.video, audio: this.audio};

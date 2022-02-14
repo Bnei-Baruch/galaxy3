@@ -444,8 +444,8 @@ class VirtualHttpClient extends Component {
     })
   };
 
-  setAudioDevice = (device) => {
-    devices.setAudioDevice(device).then(media => {
+  setAudioDevice = (device, cam_mute) => {
+    devices.setAudioDevice(device, cam_mute).then(media => {
       if(media.audio.device) {
         this.setState({media});
       }
@@ -1363,10 +1363,15 @@ class VirtualHttpClient extends Component {
   };
 
   stopLocalMedia = () => {
-    const {media: {video}, cammuted,} = this.state;
+    const {media: {video, audio}, cammuted, videoroom} = this.state;
     if (cammuted) return;
     console.log("Stop local video stream");
     video?.stream?.getTracks().forEach((t) => t.stop());
+    devices?.audio_stream?.getTracks().forEach((t) => t.stop());
+    const deviceId = audio.device || audio.devices?.[0]?.deviceId;
+    if (deviceId) {
+      this.setAudioDevice(deviceId, !!videoroom);
+    }
     this.setState({cammuted: true});
   };
 
