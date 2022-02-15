@@ -190,7 +190,7 @@ export class PublisherPlugin extends EventEmitter {
     }
 
     if(!video) videoTransceiver.sender.replaceTrack(stream.getVideoTracks()[0])
-    this.configure()
+    if(stream) this.configure()
 
   }
 
