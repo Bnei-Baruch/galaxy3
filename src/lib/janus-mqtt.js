@@ -49,7 +49,7 @@ export class JanusMqtt {
 
           this.sessionId = json.data.id
           this.isConnected = true
-          this.keepAlive(true)
+          this.keepAlive(false)
 
           log.debug('[janus] Janus connected, sessionId: ', this.sessionId)
 

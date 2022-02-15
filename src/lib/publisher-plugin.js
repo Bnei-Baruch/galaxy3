@@ -128,21 +128,20 @@ export class PublisherPlugin extends EventEmitter {
         let count = 0;
         let chk = setInterval(() => {
           count++;
-          log.debug("ICE counter: ", count, mqtt.mq.connected);
+          log.debug("[publisher] ICE counter: ", count, mqtt.mq.reconnecting);
           if (count < 60 && this.iceState.match(/^(connected|completed)$/)) {
             clearInterval(chk);
           }
-          if (mqtt.mq.connected) {
-            log.debug(" :: ICE Restart :: ", mqtt.mq.connected);
+          if (mqtt.mq.connected && this.iceState === "disconnected") {
+            log.debug("[publisher]  :: ICE Restart :: ");
             this.pc.restartIce();
             clearInterval(chk);
           }
           if (count >= 60) {
             clearInterval(chk);
-            log.error(" :: ICE Filed: Reconnecting... ");
+            log.error("[publisher]  :: ICE Filed: Reconnecting... ");
           }
         }, 1000);
-        //this.pc.restartIce();
       }
     };
 

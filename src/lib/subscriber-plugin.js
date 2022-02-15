@@ -1,6 +1,7 @@
 import {randomString} from "../shared/tools";
 import {EventEmitter} from "events";
 import log from "loglevel";
+import mqtt from "../shared/mqtt";
 
 export class SubscriberPlugin extends EventEmitter {
   constructor (logger) {
@@ -12,6 +13,7 @@ export class SubscriberPlugin extends EventEmitter {
     this.roomId = null
     this.onTrack = null
     this.onUpdate = null
+    this.iceState = null
     this.pc = new RTCPeerConnection({
       iceServers: [{urls: "stun:icesrv.kab.sh:3478"}]
     })
@@ -110,6 +112,34 @@ export class SubscriberPlugin extends EventEmitter {
 
         this.pc.onconnectionstatechange = (e) => {
           log.info("[subscriber] ICE State: ", e.target.connectionState)
+          this.iceState = e.target.connectionState
+          if(this.iceState === "disconnected") {
+            let count = 0;
+            let chk = setInterval(() => {
+              count++;
+              log.debug("[subscriber] ICE counter: ", count, mqtt.mq.reconnecting);
+              if (count < 60 && this.iceState.match(/^(connected|completed)$/)) {
+                clearInterval(chk);
+              }
+              if (mqtt.mq.connected && this.iceState === "disconnected") {
+                log.debug("[subscriber]  :: ICE Restart :: ");
+                this.pc.restartIce();
+                //this.watch(this.streamId, true)
+                clearInterval(chk);
+              }
+              if (count >= 60) {
+                clearInterval(chk);
+                log.error("[subscriber]  :: ICE Filed: Reconnecting... ");
+              }
+            }, 1000);
+          }
+        }
+
+        this.pc.onnegotiationneeded = (e) => {
+          log.warn("[subscriber] Negotiation Needed: ", e)
+          if(this.iceState === "disconnected") {
+            this.iceRestart()
+          }
         }
 
         this.pc.ontrack = (e) => {
@@ -144,6 +174,21 @@ export class SubscriberPlugin extends EventEmitter {
       }).catch((err) => {
         log.error('[subscriber] join: ', err)
         reject(err)
+      })
+    })
+  }
+
+  iceRestart() {
+    const body = {request: 'configure', restart: true}
+    return this.transaction('message', { body }, 'event').then((param) => {
+      log.info('[subscriber] iceRestart: ', param)
+      const { json } = param || {}
+      this.pc.setRemoteDescription(new RTCSessionDescription(json.jsep)).then(() => {
+        return this.pc.createAnswer()
+      }).then(answer => {
+        log.info('[subscriber] iceRestart answerCreated', answer)
+        this.pc.setLocalDescription(answer)
+        this.answer(answer)
       })
     })
   }

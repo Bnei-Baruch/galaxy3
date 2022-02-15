@@ -11,13 +11,15 @@ class MqttMsg {
     this.user = null;
     this.mq = null;
     this.mit = null;
-    //this.connected = false;
+    this.isConnected = false;
     this.room = null;
     this.token = null;
     this.reconnect_count = 0;
   }
 
   init = (user, callback) => {
+    if(this.connected) return
+
     this.user = user;
 
     const RC = 30;
@@ -33,7 +35,7 @@ class MqttMsg {
     };
 
     let options = {
-      keepalive: 3,
+      keepalive: 1,
       connectTimeout: 10 * 1000,
       clientId: id,
       protocolId: "MQTT",
@@ -65,13 +67,13 @@ class MqttMsg {
     this.mq.setMaxListeners(50)
 
     this.mq.on("connect", (data) => {
-      if (data && this.mq.connected) {
+      if (data && !this.isConnected) {
         log.info('[mqtt] Connected to server: ', data);
-        //this.connected = true;
+        this.isConnected = true;
         callback(false, false);
       } else {
         log.info("[mqtt] Connected: ", data);
-        //this.connected = true;
+        this.isConnected = true;
         if(this.reconnect_count > RC) {
           callback(true, false);
         }
@@ -80,6 +82,8 @@ class MqttMsg {
     });
 
     this.mq.on("close", (data) => {
+      log.debug("[mqtt] Closed: ", this.mq.connected)
+      //this.connected = false
       if(this.reconnect_count < RC + 2) {
         this.reconnect_count++;
       }
@@ -88,6 +92,10 @@ class MqttMsg {
         log.warn("[mqtt] Notify: ", data)
         callback(false, true);
       }
+    });
+
+    this.mq.on("disconnect", (data) => {
+      log.warn("[mqtt] Diconnected: ", data)
     });
   };
 
