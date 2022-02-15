@@ -124,7 +124,6 @@ export class SubscriberPlugin extends EventEmitter {
               if (mqtt.mq.connected && this.iceState === "disconnected") {
                 log.debug("[subscriber]  :: ICE Restart :: ");
                 this.pc.restartIce();
-                //this.watch(this.streamId, true)
                 clearInterval(chk);
               }
               if (count >= 60) {
@@ -136,7 +135,7 @@ export class SubscriberPlugin extends EventEmitter {
         }
 
         this.pc.onnegotiationneeded = (e) => {
-          log.warn("[subscriber] Negotiation Needed: ", e)
+          log.debug("[subscriber] Negotiation needed: ", e)
           if(this.iceState === "disconnected") {
             this.iceRestart()
           }
@@ -257,18 +256,19 @@ export class SubscriberPlugin extends EventEmitter {
     })
   }
 
-  slowLink (uplink, lost) {
-    log.info('[subscriber] slowLink: ', uplink, lost)
+  slowLink (uplink, lost, mid) {
+    const direction = uplink ? "sending" : "receiving";
+    log.info("[subscriber] slowLink on " + direction + " packets on mid " + mid + " (" + lost + " lost packets)");
     //this.emit('slowlink')
   }
 
-  mediaState (medium, on) {
-    log.info('[subscriber] mediaState: ', medium, on)
+  mediaState (media, on) {
+    log.info('[subscriber] mediaState: Janus ' + (on ? "start" : "stop") + " receiving our " + media)
     //this.emit('mediaState', medium, on)
   }
 
-  webrtcState (isReady, cause) {
-    log.info('[subscriber] webrtcState: ', isReady, cause)
+  webrtcState (isReady) {
+    log.info('[subscriber] webrtcState: RTCPeerConnection is: ' + (isReady ? "up" : "down"))
     //this.emit('webrtcState', isReady, cause)
   }
 

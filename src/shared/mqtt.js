@@ -18,10 +18,7 @@ class MqttMsg {
   }
 
   init = (user, callback) => {
-    if(this.connected) return
-
     this.user = user;
-
     const RC = 30;
     const service = isServiceID(user.id);
     const svc_token = GxyJanus?.globalConfig?.dynamic_config?.mqtt_auth;
@@ -83,7 +80,6 @@ class MqttMsg {
 
     this.mq.on("close", (data) => {
       log.debug("[mqtt] Closed: ", this.mq.connected)
-      //this.connected = false
       if(this.reconnect_count < RC + 2) {
         this.reconnect_count++;
       }
@@ -119,7 +115,7 @@ class MqttMsg {
 
   send = (message, retain, topic, rxTopic, user) => {
     if (!this.mq) return;
-    log.info("[mqtt] Send data on topic: ", topic, message);
+    log.debug("[mqtt] Send data on topic: ", topic, message);
     let properties = !!rxTopic ? {userProperties: user || this.user, responseTopic: rxTopic} : {userProperties: user || this.user};
     let options = {qos: 1, retain, properties};
     this.mq.publish(topic, message, {...options}, (err) => {

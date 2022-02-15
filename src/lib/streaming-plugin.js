@@ -67,7 +67,6 @@ export class StreamingPlugin extends EventEmitter {
         if(restart) return
 
         this.pc.onicecandidate = (e) => {
-          //this.candidates.push(e.candidate);
           return this.transaction('trickle', { candidate: e.candidate })
         };
 
@@ -84,7 +83,6 @@ export class StreamingPlugin extends EventEmitter {
               }
               if (mqtt.mq.connected && this.iceState === "disconnected") {
                 log.debug("[streaming]  :: ICE Restart :: ");
-                //this.pc.restartIce();
                 this.watch(this.streamId, true)
                 clearInterval(chk);
               }
@@ -95,14 +93,6 @@ export class StreamingPlugin extends EventEmitter {
             }, 1000);
           }
         };
-
-        this.pc.onnegotiationneeded = (e) => {
-          log.warn("[streaming] Negotiation Needed: ", e)
-          if(this.iceState === "disconnected") {
-            //this.pc.restartIce();
-            //this.watch(this.streamId, true)
-          }
-        }
 
         this.pc.ontrack = (e) => {
           log.info("[streaming] Got track: ", e)
@@ -159,7 +149,6 @@ export class StreamingPlugin extends EventEmitter {
         result(res.audioLevel ? res.audioLevel : 0);
       });
     });
-    //return config.volume[stream].value;
   }
 
   success (janus, janusHandleId) {
@@ -192,19 +181,23 @@ export class StreamingPlugin extends EventEmitter {
   }
 
   hangup () {
-    this.emit('hangup')
+    //this.emit('hangup')
   }
 
-  slowLink () {
-    this.emit('slowlink')
+  slowLink (uplink, lost, mid) {
+    const direction = uplink ? "sending" : "receiving";
+    log.info("[streaming] slowLink on " + direction + " packets on mid " + mid + " (" + lost + " lost packets)");
+    //this.emit('slowlink')
   }
 
-  mediaState (medium, on) {
-    this.emit('mediaState', medium, on)
+  mediaState (media, on) {
+    log.info('[streaming] mediaState: Janus ' + (on ? "start" : "stop") + " receiving our " + media)
+    //this.emit('mediaState', medium, on)
   }
 
-  webrtcState (isReady, cause) {
-    this.emit('webrtcState', isReady, cause)
+  webrtcState (isReady) {
+    log.info('[streaming] webrtcState: RTCPeerConnection is: ' + (isReady ? "up" : "down"))
+    //this.emit('webrtcState', isReady, cause)
   }
 
   detach () {

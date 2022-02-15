@@ -211,15 +211,6 @@ export default class JanusStream {
     })
   }
 
-  // iceRestart = () => {
-  //   let id = trllang[localStorage.getItem("vrt_langtext")] || 301;
-  //   if (this.videoJanusStream)
-  //     this.videoJanusStream.send({message: {request: "watch", id: this.videos, restart: true}});
-  //   if (this.audioJanusStream)
-  //     this.audioJanusStream.send({message: {request: "watch", id: this.audios, restart: true}});
-  //   if (this.trlAudioJanusStream) this.trlAudioJanusStream.send({message: {request: "watch", id, restart: true}});
-  // };
-
   initVideoStream = (janus) => {
     this.videoJanusStream = new StreamingPlugin();
     janus.attach(this.videoJanusStream).then(data => {

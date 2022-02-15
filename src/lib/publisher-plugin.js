@@ -122,7 +122,7 @@ export class PublisherPlugin extends EventEmitter {
     };
 
     this.pc.onconnectionstatechange = (e) => {
-      log.warn("[publisher] ICE State: ", e.target.connectionState)
+      log.info("[publisher] ICE State: ", e.target.connectionState)
       this.iceState = e.target.connectionState
       if(this.iceState === "disconnected") {
         let count = 0;
@@ -146,7 +146,7 @@ export class PublisherPlugin extends EventEmitter {
     };
 
     this.pc.onnegotiationneeded = (e) => {
-      log.warn("[publisher] Negotiation Needed: ", e)
+      log.debug("[publisher] Negotiation Needed: ", e)
       if(this.iceState === "disconnected") {
         this.iceRestart()
       }
@@ -331,18 +331,19 @@ export class PublisherPlugin extends EventEmitter {
     //this.emit('hangup')
   }
 
-  slowLink (uplink, lost) {
-    log.info('[publisher] slowLink: ', uplink, lost)
+  slowLink (uplink, lost, mid) {
+    const direction = uplink ? "sending" : "receiving";
+    log.info("[publisher] slowLink on " + direction + " packets on mid " + mid + " (" + lost + " lost packets)");
     //this.emit('slowlink')
   }
 
-  mediaState (medium, on) {
-    log.info('[publisher] mediaState: ', medium, on)
+  mediaState (media, on) {
+    log.info('[publisher] mediaState: Janus ' + (on ? "start" : "stop") + " receiving our " + media)
     //this.emit('mediaState', medium, on)
   }
 
-  webrtcState (isReady, cause) {
-    log.info('[publisher] webrtcState: ', isReady, cause)
+  webrtcState (isReady) {
+    log.info('[publisher] webrtcState: RTCPeerConnection is: ' + (isReady ? "up" : "down"))
     //this.emit('webrtcState', isReady, cause)
   }
 
