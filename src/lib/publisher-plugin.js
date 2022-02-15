@@ -1,6 +1,8 @@
 import {randomString} from "../shared/tools";
 import {EventEmitter} from "events";
 import log from "loglevel";
+import platform from "platform";
+import mqtt from "../shared/mqtt";
 
 export class PublisherPlugin extends EventEmitter {
   constructor (logger) {
@@ -13,6 +15,7 @@ export class PublisherPlugin extends EventEmitter {
     this.subTo = null
     this.unsubFrom = null
     this.talkEvent = null
+    this.iceState = null
     this.pc = new RTCPeerConnection({
       iceServers: [{urls: "stun:icesrv.kab.sh:3478"}]
     })
@@ -119,8 +122,36 @@ export class PublisherPlugin extends EventEmitter {
     };
 
     this.pc.onconnectionstatechange = (e) => {
-      log.info("[publisher] ICE State: ", e.target.connectionState)
+      log.warn("[publisher] ICE State: ", e.target.connectionState)
+      this.iceState = e.target.connectionState
+      if(this.iceState === "disconnected") {
+        let count = 0;
+        let chk = setInterval(() => {
+          count++;
+          log.debug("ICE counter: ", count, mqtt.mq.connected);
+          if (count < 60 && this.iceState.match(/^(connected|completed)$/)) {
+            clearInterval(chk);
+          }
+          if (mqtt.mq.connected) {
+            log.debug(" :: ICE Restart :: ", mqtt.mq.connected);
+            this.pc.restartIce();
+            clearInterval(chk);
+          }
+          if (count >= 60) {
+            clearInterval(chk);
+            log.error(" :: ICE Filed: Reconnecting... ");
+          }
+        }, 1000);
+        //this.pc.restartIce();
+      }
     };
+
+    this.pc.onnegotiationneeded = (e) => {
+      log.warn("[publisher] Negotiation Needed: ", e)
+      if(this.iceState === "disconnected") {
+        this.iceRestart()
+      }
+    }
 
     this.pc.createOffer().then((offer) => {
       this.pc.setLocalDescription(offer)
@@ -184,6 +215,40 @@ export class PublisherPlugin extends EventEmitter {
 
     audioTransceiver.sender.replaceTrack(stream.getAudioTracks()[0])
     this.configure()
+  }
+
+  ice() {
+    let count = 0;
+    let chk = setInterval(() => {
+      count++;
+      log.debug("ICE counter: ", count);
+      if (count < 60 && this.iceState.match(/^(connected|completed)$/)) {
+        clearInterval(chk);
+      }
+      if (mqtt.mq.isConnected) {
+        log.debug(" :: ICE Restart :: ");
+      }
+      if (count >= 60) {
+        clearInterval(chk);
+        log.error(" :: ICE Filed: Reconnecting... ");
+      }
+    }, 1000);
+  };
+
+  iceRestart() {
+    this.pc.createOffer().then((offer) => {
+      this.pc.setLocalDescription(offer).catch(error => log.error("[publisher] setLocalDescription: ", error))
+      const body = {request: 'configure', restart: true}
+      return this.transaction('message', { body, jsep: offer }, 'event').then((param) => {
+        const { json } = param || {}
+        const jsep = json.jsep
+        log.info('[publisher] iceRestart: ', param)
+        this.pc.setRemoteDescription(jsep).then(() => {
+          log.info('[publisher] iceRestart remoteDescription set')
+        })
+      })
+
+    })
   }
 
   configure() {

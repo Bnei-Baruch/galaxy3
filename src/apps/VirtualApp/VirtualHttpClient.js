@@ -72,6 +72,7 @@ const userFeeds = (feeds) => feeds.filter((feed) => feed.display.role === userRo
 const isUseNewDesign = true;
 //const isUseNewDesign = /arvut/.test(window.location.host);
 
+
 class VirtualHttpClient extends Component {
   state = {
     chatMessagesCount: 0,
@@ -493,9 +494,7 @@ class VirtualHttpClient extends Component {
   };
 
   iceState = () => {
-    let {
-      user: {system},
-    } = this.state;
+    let {user: {system}} = this.state;
     let browser = platform.parse(system);
     let count = 0;
     let chk = setInterval(() => {
@@ -506,12 +505,12 @@ class VirtualHttpClient extends Component {
         clearInterval(chk);
       }
       if (browser.name.match(/^(Safari|Firefox)$/) && count === 10) {
-        // console.log(" :: ICE Restart :: ");
-        // this.iceRestart();
+        console.log(" :: ICE Restart :: ");
+        this.iceRestart();
       }
-      if (browser.name === "Chrome" && count === 30) {
-        // console.log(" :: ICE Restart :: ");
-        // this.iceRestart();
+      if (browser.name === "Chrome" && count === 10) {
+        console.log(" :: ICE Restart :: ");
+        this.iceRestart();
       }
       if (count >= 60) {
         clearInterval(chk);

@@ -11,7 +11,7 @@ class MqttMsg {
     this.user = null;
     this.mq = null;
     this.mit = null;
-    this.connected = false;
+    //this.connected = false;
     this.room = null;
     this.token = null;
     this.reconnect_count = 0;
@@ -33,7 +33,7 @@ class MqttMsg {
     };
 
     let options = {
-      keepalive: 10,
+      keepalive: 3,
       connectTimeout: 10 * 1000,
       clientId: id,
       protocolId: "MQTT",
@@ -65,12 +65,13 @@ class MqttMsg {
     this.mq.setMaxListeners(50)
 
     this.mq.on("connect", (data) => {
-      if (data && !this.connected) {
+      if (data && this.mq.connected) {
         log.info('[mqtt] Connected to server: ', data);
-        this.connected = true;
+        //this.connected = true;
         callback(false, false);
       } else {
         log.info("[mqtt] Connected: ", data);
+        //this.connected = true;
         if(this.reconnect_count > RC) {
           callback(true, false);
         }
