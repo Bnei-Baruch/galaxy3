@@ -100,64 +100,7 @@ export class PublisherPlugin extends EventEmitter {
       }
     }
 
-    this.pc.onicecandidate = (e) => {
-      let candidate = {completed: true}
-      if (!e.candidate || e.candidate.candidate.indexOf('endOfCandidates') > 0) {
-        log.debug("[publisher] End of candidates")
-      } else {
-        // JSON.stringify doesn't work on some WebRTC objects anymore
-        // See https://code.google.com/p/chromium/issues/detail?id=467366
-        candidate = {
-          "candidate": e.candidate.candidate,
-          "sdpMid": e.candidate.sdpMid,
-          "sdpMLineIndex": e.candidate.sdpMLineIndex
-        };
-      }
-
-      return this.transaction('trickle', { candidate })
-    };
-
-    this.pc.ontrack = (e) => {
-      log.info("[publisher] Got track: ", e)
-    };
-
-    this.pc.onconnectionstatechange = (e) => {
-      log.info("[publisher] ICE State: ", e.target.connectionState)
-      this.iceState = e.target.connectionState
-
-      if(this.iceState === "disconnected") {
-        let count = 0;
-        let chk = setInterval(() => {
-          count++;
-          log.debug("[publisher] ICE counter: ", count, mqtt.mq.reconnecting);
-          if (count < 60 && this.iceState.match(/^(connected|completed)$/)) {
-            clearInterval(chk);
-          }
-          if (mqtt.mq.connected) {
-            log.debug("[publisher] - Trigger ICE Restart - ");
-            this.pc.restartIce();
-            clearInterval(chk);
-          }
-          if (count >= 60) {
-            clearInterval(chk);
-            log.error("[publisher]  :: ICE Filed: Reconnecting... ");
-          }
-        }, 1000);
-      }
-
-      // ICE restart does not help here, peer connection will be down
-      if(this.iceState === "failed") {
-        //TODO: handle failed ice state
-      }
-
-    };
-
-    this.pc.onnegotiationneeded = (e) => {
-      log.debug("[publisher] Negotiation Needed: ", e)
-      if(this.iceState === "disconnected") {
-        this.iceRestart()
-      }
-    }
+    this.initPcEvents()
 
     this.pc.createOffer().then((offer) => {
       this.pc.setLocalDescription(offer)
@@ -223,44 +166,10 @@ export class PublisherPlugin extends EventEmitter {
     this.configure()
   }
 
-  ice() {
-    let count = 0;
-    let chk = setInterval(() => {
-      count++;
-      log.debug("ICE counter: ", count);
-      if (count < 60 && this.iceState.match(/^(connected|completed)$/)) {
-        clearInterval(chk);
-      }
-      if (mqtt.mq.isConnected) {
-        log.debug(" :: ICE Restart :: ");
-      }
-      if (count >= 60) {
-        clearInterval(chk);
-        log.error(" :: ICE Filed: Reconnecting... ");
-      }
-    }, 1000);
-  };
-
-  iceRestart() {
+  configure(restart) {
     this.pc.createOffer().then((offer) => {
       this.pc.setLocalDescription(offer).catch(error => log.error("[publisher] setLocalDescription: ", error))
-      const body = {request: 'configure', restart: true}
-      return this.transaction('message', { body, jsep: offer }, 'event').then((param) => {
-        const { json } = param || {}
-        const jsep = json.jsep
-        log.info('[publisher] iceRestart: ', param)
-        this.pc.setRemoteDescription(jsep).then(() => {
-          log.info('[publisher] iceRestart remoteDescription set')
-        })
-      })
-
-    })
-  }
-
-  configure() {
-    this.pc.createOffer().then((offer) => {
-      this.pc.setLocalDescription(offer).catch(error => log.error("[publisher] setLocalDescription: ", error))
-      const body = {request: 'configure'}
+      const body = {request: 'configure', restart}
       return this.transaction('message', { body, jsep: offer }, 'event').then((param) => {
         const { json } = param || {}
         const jsep = json.jsep
@@ -271,6 +180,61 @@ export class PublisherPlugin extends EventEmitter {
       })
 
     })
+  }
+
+  initPcEvents() {
+    this.pc.onicecandidate = (e) => {
+      let candidate = {completed: true}
+      if (!e.candidate || e.candidate.candidate.indexOf('endOfCandidates') > 0) {
+        log.debug("[publisher] End of candidates")
+      } else {
+        // JSON.stringify doesn't work on some WebRTC objects anymore
+        // See https://code.google.com/p/chromium/issues/detail?id=467366
+        candidate = {
+          "candidate": e.candidate.candidate,
+          "sdpMid": e.candidate.sdpMid,
+          "sdpMLineIndex": e.candidate.sdpMLineIndex
+        };
+      }
+
+      return this.transaction('trickle', { candidate })
+    };
+
+    this.pc.ontrack = (e) => {
+      log.info("[publisher] Got track: ", e)
+    };
+
+    this.pc.onconnectionstatechange = (e) => {
+      log.info("[publisher] ICE State: ", e.target.connectionState)
+      this.iceState = e.target.connectionState
+
+      if(this.iceState === "disconnected") {
+        let count = 0;
+        let chk = setInterval(() => {
+          count++;
+          log.debug("[publisher] ICE counter: ", count, mqtt.mq.reconnecting);
+          if (count < 60 && this.iceState.match(/^(connected|completed)$/)) {
+            clearInterval(chk);
+          }
+          if (mqtt.mq.connected) {
+            log.debug("[publisher] - Trigger ICE Restart - ");
+            this.pc.restartIce();
+            this.configure(true)
+            clearInterval(chk);
+          }
+          if (count >= 60) {
+            clearInterval(chk);
+            log.error("[publisher]  :: ICE Filed: Reconnecting... ");
+          }
+        }, 1000);
+      }
+
+      // ICE restart does not help here, peer connection will be down
+      if(this.iceState === "failed") {
+        //TODO: handle failed ice state
+      }
+
+    };
   }
 
   success (janus, janusHandleId) {

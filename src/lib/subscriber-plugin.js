@@ -92,71 +92,7 @@ export class SubscriberPlugin extends EventEmitter {
         if(data)
           resolve(data);
 
-        this.pc.onicecandidate = (e) => {
-          log.info('[subscriber] onicecandidate set', e.candidate)
-          let candidate = {completed: true}
-          if (!e.candidate || e.candidate.candidate.indexOf('endOfCandidates') > 0) {
-            log.debug("[subscriber] End of candidates")
-          } else {
-            // JSON.stringify doesn't work on some WebRTC objects anymore
-            // See https://code.google.com/p/chromium/issues/detail?id=467366
-            candidate = {
-              "candidate": e.candidate.candidate,
-              "sdpMid": e.candidate.sdpMid,
-              "sdpMLineIndex": e.candidate.sdpMLineIndex
-            };
-          }
-
-          return this.transaction('trickle', { candidate })
-        };
-
-        this.pc.onconnectionstatechange = (e) => {
-          log.info("[subscriber] ICE State: ", e.target.connectionState)
-          this.iceState = e.target.connectionState
-          if(this.iceState === "disconnected") {
-            let count = 0;
-            let chk = setInterval(() => {
-              count++;
-              log.debug("[subscriber] ICE counter: ", count, mqtt.mq.reconnecting);
-              if (count < 60 && this.iceState.match(/^(connected|completed)$/)) {
-                clearInterval(chk);
-              }
-              if (mqtt.mq.connected) {
-                log.debug("[subscriber] - Trigger ICE Restart - ");
-                this.iceRestart()
-                clearInterval(chk);
-              }
-              if (count >= 60) {
-                clearInterval(chk);
-                log.error("[subscriber]  :: ICE Filed: Reconnecting... ");
-              }
-            }, 1000);
-          }
-
-          // ICE restart does not help here, peer connection will be down
-          if(this.iceState === "failed") {
-            //TODO: handle failed ice state
-          }
-
-        }
-
-        this.pc.ontrack = (e) => {
-          log.info("[subscriber] Got track: ", e)
-          this.onTrack(e.track, e.transceiver.mid, true)
-
-          e.track.onmute = (ev) => {
-            log.debug("[subscriber] onmute event: ", ev)
-          }
-
-          e.track.onunmute = (ev) => {
-            log.debug("[subscriber] onunmute event: ", ev)
-          }
-
-          e.track.onended = (ev) => {
-            log.debug("[subscriber] onended event: ", ev)
-          }
-
-        };
+        this.initPcEvents()
 
         if(json?.jsep) {
           log.debug('[subscriber] Got JSEP: ', json.jsep)
@@ -204,6 +140,74 @@ export class SubscriberPlugin extends EventEmitter {
         reject(err)
       })
     })
+  }
+
+  initPcEvents() {
+    this.pc.onicecandidate = (e) => {
+      log.info('[subscriber] onicecandidate set', e.candidate)
+      let candidate = {completed: true}
+      if (!e.candidate || e.candidate.candidate.indexOf('endOfCandidates') > 0) {
+        log.debug("[subscriber] End of candidates")
+      } else {
+        // JSON.stringify doesn't work on some WebRTC objects anymore
+        // See https://code.google.com/p/chromium/issues/detail?id=467366
+        candidate = {
+          "candidate": e.candidate.candidate,
+          "sdpMid": e.candidate.sdpMid,
+          "sdpMLineIndex": e.candidate.sdpMLineIndex
+        };
+      }
+
+      return this.transaction('trickle', { candidate })
+    };
+
+    this.pc.onconnectionstatechange = (e) => {
+      log.info("[subscriber] ICE State: ", e.target.connectionState)
+      this.iceState = e.target.connectionState
+      if(this.iceState === "disconnected") {
+        let count = 0;
+        let chk = setInterval(() => {
+          count++;
+          log.debug("[subscriber] ICE counter: ", count, mqtt.mq.reconnecting);
+          if (count < 60 && this.iceState.match(/^(connected|completed)$/)) {
+            clearInterval(chk);
+          }
+          if (mqtt.mq.connected) {
+            log.debug("[subscriber] - Trigger ICE Restart - ");
+            this.iceRestart()
+            clearInterval(chk);
+          }
+          if (count >= 60) {
+            clearInterval(chk);
+            log.error("[subscriber]  :: ICE Filed: Reconnecting... ");
+          }
+        }, 1000);
+      }
+
+      // ICE restart does not help here, peer connection will be down
+      if(this.iceState === "failed") {
+        //TODO: handle failed ice state
+      }
+
+    }
+
+    this.pc.ontrack = (e) => {
+      log.info("[subscriber] Got track: ", e)
+      this.onTrack(e.track, e.transceiver.mid, true)
+
+      e.track.onmute = (ev) => {
+        log.debug("[subscriber] onmute event: ", ev)
+      }
+
+      e.track.onunmute = (ev) => {
+        log.debug("[subscriber] onunmute event: ", ev)
+      }
+
+      e.track.onended = (ev) => {
+        log.debug("[subscriber] onended event: ", ev)
+      }
+
+    };
   }
 
   success (janus, janusHandleId) {
