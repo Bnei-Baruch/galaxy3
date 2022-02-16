@@ -124,6 +124,7 @@ export class PublisherPlugin extends EventEmitter {
     this.pc.onconnectionstatechange = (e) => {
       log.info("[publisher] ICE State: ", e.target.connectionState)
       this.iceState = e.target.connectionState
+
       if(this.iceState === "disconnected") {
         let count = 0;
         let chk = setInterval(() => {
@@ -132,8 +133,8 @@ export class PublisherPlugin extends EventEmitter {
           if (count < 60 && this.iceState.match(/^(connected|completed)$/)) {
             clearInterval(chk);
           }
-          if (mqtt.mq.connected && this.iceState === "disconnected") {
-            log.debug("[publisher]  :: ICE Restart :: ");
+          if (mqtt.mq.connected) {
+            log.debug("[publisher] - Trigger ICE Restart - ");
             this.pc.restartIce();
             clearInterval(chk);
           }
@@ -143,6 +144,12 @@ export class PublisherPlugin extends EventEmitter {
           }
         }, 1000);
       }
+
+      // ICE restart does not help here, peer connection will be down
+      if(this.iceState === "failed") {
+        //TODO: handle failed ice state
+      }
+
     };
 
     this.pc.onnegotiationneeded = (e) => {

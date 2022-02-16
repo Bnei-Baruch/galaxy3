@@ -81,8 +81,8 @@ export class StreamingPlugin extends EventEmitter {
               if (count < 60 && this.iceState.match(/^(connected|completed)$/)) {
                 clearInterval(chk);
               }
-              if (mqtt.mq.connected && this.iceState === "disconnected") {
-                log.debug("[streaming]  :: ICE Restart :: ");
+              if (mqtt.mq.connected) {
+                log.debug("[streaming] - Trigger ICE Restart - ");
                 this.watch(this.streamId, true)
                 clearInterval(chk);
               }
@@ -92,6 +92,12 @@ export class StreamingPlugin extends EventEmitter {
               }
             }, 1000);
           }
+
+          // ICE restart does not help here, peer connection will be down
+          if(this.iceState === "failed") {
+            //TODO: handle failed ice state
+          }
+
         };
 
         this.pc.ontrack = (e) => {

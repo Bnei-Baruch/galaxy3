@@ -17,7 +17,7 @@ export class JanusMqtt {
     this.transactions = {}
     this.pluginHandles = {}
     this.sendCreate = true
-    this.keepalive = null
+    this.keeptry = 0
     this.token = null
     this.onMessage = this.onMessage.bind(this)
   }
@@ -127,12 +127,12 @@ export class JanusMqtt {
     return new Promise((resolve, reject) => {
       if (timeoutMs) {
         setTimeout(() => {
-          reject(new Error('[janus] Transaction timed out after ' + timeoutMs + ' ms'))
+          reject('[janus] Transaction timed out after ' + timeoutMs + ' ms')
         }, timeoutMs)
       }
 
       if (!this.isConnected) {
-        reject(new Error('[janus] Janus is not connected'))
+        reject('[janus] Janus is not connected')
         return
       }
 
@@ -154,13 +154,21 @@ export class JanusMqtt {
     }
 
     if (isScheduled) {
-      setTimeout(() => { this.keepAlive() }, 20 * 1000)
+      setTimeout(() => this.keepAlive(), 20 * 1000)
     } else {
       log.debug('[janus] Sending Janus keepalive')
-      this.transaction('keepalive').then(() => {
-        setTimeout(() => { this.keepAlive() }, 20 * 1000)
-      }).catch((err) => {
-        log.warn('[janus] Janus keepalive error', err)
+      this.transaction('keepalive', null, null, 20 * 1000).then(() => {
+        this.keeptry = 0
+        setTimeout(() => this.keepAlive(), 20 * 1000)
+      }).catch(err => {
+        log.debug(err, this.keeptry)
+        if(this.keeptry === 3) {
+          log.error('[janus] Janus is not reached after: ' + this.keeptry + " tries")
+          this.isConnected = false
+          return
+        }
+        setTimeout(() => this.keepAlive(), 20 * 1000)
+        this.keeptry++
       })
     }
   }

@@ -121,9 +121,9 @@ export class SubscriberPlugin extends EventEmitter {
               if (count < 60 && this.iceState.match(/^(connected|completed)$/)) {
                 clearInterval(chk);
               }
-              if (mqtt.mq.connected && this.iceState === "disconnected") {
-                log.debug("[subscriber]  :: ICE Restart :: ");
-                this.pc.restartIce();
+              if (mqtt.mq.connected) {
+                log.debug("[subscriber] - Trigger ICE Restart - ");
+                this.iceRestart()
                 clearInterval(chk);
               }
               if (count >= 60) {
@@ -132,13 +132,12 @@ export class SubscriberPlugin extends EventEmitter {
               }
             }, 1000);
           }
-        }
 
-        this.pc.onnegotiationneeded = (e) => {
-          log.debug("[subscriber] Negotiation needed: ", e)
-          if(this.iceState === "disconnected") {
-            this.iceRestart()
+          // ICE restart does not help here, peer connection will be down
+          if(this.iceState === "failed") {
+            //TODO: handle failed ice state
           }
+
         }
 
         this.pc.ontrack = (e) => {
