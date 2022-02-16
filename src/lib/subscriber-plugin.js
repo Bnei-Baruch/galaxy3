@@ -112,7 +112,7 @@ export class SubscriberPlugin extends EventEmitter {
     })
   }
 
-  iceRestart() {
+  configure() {
     const body = {request: 'configure', restart: true}
     return this.transaction('message', { body }, 'event').then((param) => {
       log.info('[subscriber] iceRestart: ', param)
@@ -165,23 +165,7 @@ export class SubscriberPlugin extends EventEmitter {
       log.info("[subscriber] ICE State: ", e.target.connectionState)
       this.iceState = e.target.connectionState
       if(this.iceState === "disconnected") {
-        let count = 0;
-        let chk = setInterval(() => {
-          count++;
-          log.debug("[subscriber] ICE counter: ", count, mqtt.mq.reconnecting);
-          if (count < 60 && this.iceState.match(/^(connected|completed)$/)) {
-            clearInterval(chk);
-          }
-          if (mqtt.mq.connected) {
-            log.debug("[subscriber] - Trigger ICE Restart - ");
-            this.iceRestart()
-            clearInterval(chk);
-          }
-          if (count >= 60) {
-            clearInterval(chk);
-            log.error("[subscriber]  :: ICE Filed: Reconnecting... ");
-          }
-        }, 1000);
+        this.iceRestart()
       }
 
       // ICE restart does not help here, peer connection will be down
@@ -208,6 +192,27 @@ export class SubscriberPlugin extends EventEmitter {
       }
 
     };
+  }
+
+  iceRestart() {
+    setTimeout(() => {
+      let count = 0;
+      let chk = setInterval(() => {
+        count++;
+        if (count < 10 && this.iceState !== "disconnected") {
+          clearInterval(chk);
+        } else if (mqtt.mq.connected) {
+          log.debug("[subscriber] - Trigger ICE Restart - ");
+          this.configure()
+          clearInterval(chk);
+        } else if (count >= 10) {
+          clearInterval(chk);
+          log.error("[subscriber] - ICE Restart failed - ");
+        } else {
+          log.debug("[subscriber] ICE Restart try: " + count)
+        }
+      }, 1000);
+    },1000)
   }
 
   success (janus, janusHandleId) {

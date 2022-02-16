@@ -209,24 +209,7 @@ export class PublisherPlugin extends EventEmitter {
       this.iceState = e.target.connectionState
 
       if(this.iceState === "disconnected") {
-        let count = 0;
-        let chk = setInterval(() => {
-          count++;
-          log.debug("[publisher] ICE counter: ", count, mqtt.mq.reconnecting);
-          if (count < 60 && this.iceState.match(/^(connected|completed)$/)) {
-            clearInterval(chk);
-          }
-          if (mqtt.mq.connected) {
-            log.debug("[publisher] - Trigger ICE Restart - ");
-            this.pc.restartIce();
-            this.configure(true)
-            clearInterval(chk);
-          }
-          if (count >= 60) {
-            clearInterval(chk);
-            log.error("[publisher]  :: ICE Filed: Reconnecting... ");
-          }
-        }, 1000);
+        this.iceRestart()
       }
 
       // ICE restart does not help here, peer connection will be down
@@ -235,6 +218,28 @@ export class PublisherPlugin extends EventEmitter {
       }
 
     };
+  }
+
+  iceRestart() {
+    setTimeout(() => {
+      let count = 0;
+      let chk = setInterval(() => {
+        count++;
+        if (count < 10 && this.iceState !== "disconnected") {
+          clearInterval(chk);
+        } else if (mqtt.mq.connected) {
+          log.debug("[publisher] - Trigger ICE Restart - ");
+          this.pc.restartIce();
+          this.configure(true)
+          clearInterval(chk);
+        } else if (count >= 10) {
+          clearInterval(chk);
+          log.error("[publisher] - ICE Restart failed - ");
+        } else {
+          log.debug("[publisher] ICE Restart try: " + count)
+        }
+      }, 1000);
+    },1000)
   }
 
   success (janus, janusHandleId) {

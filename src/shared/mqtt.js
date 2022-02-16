@@ -6,6 +6,9 @@ import GxyJanus from "./janus-utils";
 import log from "loglevel";
 import chalk from 'chalk';
 
+const mqttTimeout = 30 // Seconds
+const mqttKeepalive = 1 // Seconds
+
 class MqttMsg {
   constructor() {
     this.user = null;
@@ -19,7 +22,7 @@ class MqttMsg {
 
   init = (user, callback) => {
     this.user = user;
-    const RC = 30;
+    const RC = mqttTimeout;
     const service = isServiceID(user.id);
     const svc_token = GxyJanus?.globalConfig?.dynamic_config?.mqtt_auth;
     const token = service ? svc_token : this.token;
@@ -32,8 +35,7 @@ class MqttMsg {
     };
 
     let options = {
-      keepalive: 1,
-      connectTimeout: 10 * 1000,
+      keepalive: mqttKeepalive,
       clientId: id,
       protocolId: "MQTT",
       protocolVersion: 5,
@@ -67,32 +69,29 @@ class MqttMsg {
       if (data && !this.isConnected) {
         log.info('[mqtt] Connected to server: ', data);
         this.isConnected = true;
-        callback(false, false);
+        if(typeof callback === "function") callback(false, false);
       } else {
         log.info("[mqtt] Connected: ", data);
         this.isConnected = true;
         if(this.reconnect_count > RC) {
-          callback(true, false);
+          if(typeof callback === "function") callback(true, false);
         }
         this.reconnect_count = 0;
       }
     });
 
-    this.mq.on("close", (data) => {
-      log.debug("[mqtt] Closed: ", this.mq.connected)
+    this.mq.on("close", () => {
       if(this.reconnect_count < RC + 2) {
         this.reconnect_count++;
+        log.debug("[mqtt] reconnecting counter: " + this.reconnect_count)
       }
       if(this.reconnect_count === RC) {
         this.reconnect_count++;
-        log.warn("[mqtt] Notify: ", data)
-        callback(false, true);
+        log.warn("[mqtt] - disconnected - after: " + this.reconnect_count + " seconds")
+        if(typeof callback === "function") callback(false, true);
       }
     });
 
-    this.mq.on("disconnect", (data) => {
-      log.warn("[mqtt] Diconnected: ", data)
-    });
   };
 
   join = (topic, chat) => {

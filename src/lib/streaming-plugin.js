@@ -127,23 +127,7 @@ export class StreamingPlugin extends EventEmitter {
       log.info("[streaming] ICE State: ", e.target.connectionState)
       this.iceState = e.target.connectionState
       if(this.iceState === "disconnected") {
-        let count = 0;
-        let chk = setInterval(() => {
-          count++;
-          log.debug("[streaming] ICE counter: ", count, mqtt.mq.reconnecting);
-          if (count < 60 && this.iceState.match(/^(connected|completed)$/)) {
-            clearInterval(chk);
-          }
-          if (mqtt.mq.connected) {
-            log.debug("[streaming] - Trigger ICE Restart - ");
-            this.watch(this.streamId, true)
-            clearInterval(chk);
-          }
-          if (count >= 60) {
-            clearInterval(chk);
-            log.error("[streaming]  :: ICE Filed: Reconnecting... ");
-          }
-        }, 1000);
+        this.iceRestart()
       }
 
       // ICE restart does not help here, peer connection will be down
@@ -159,6 +143,27 @@ export class StreamingPlugin extends EventEmitter {
       stream.addTrack(e.track.clone());
       resolve(stream);
     };
+  }
+
+  iceRestart() {
+    setTimeout(() => {
+      let count = 0;
+      let chk = setInterval(() => {
+        count++;
+        if (count < 10 && this.iceState !== "disconnected") {
+          clearInterval(chk);
+        } else if (mqtt.mq.connected) {
+          log.debug("[streaming] - Trigger ICE Restart - ");
+          this.watch(this.streamId, true)
+          clearInterval(chk);
+        } else if (count >= 10) {
+          clearInterval(chk);
+          log.error("[streaming] - ICE Restart failed - ");
+        } else {
+          log.debug("[streaming] ICE Restart try: " + count)
+        }
+      }, 1000);
+    },1000)
   }
 
   success (janus, janusHandleId) {
