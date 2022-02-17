@@ -415,7 +415,12 @@ class VirtualMqttClient extends Component {
   initDevices = () => {
     const {t} = this.props;
 
-    devices.init().then(data => {
+    devices.init(media => {
+      setTimeout(() => {
+        console.log(media.audio.device)
+        this.setAudioDevice(media.audio.device)
+      }, 1000)
+    }).then(data => {
       log.info("[client] init devices: ", data);
       const {audio, video} = data;
       if (audio.error && video.error) {

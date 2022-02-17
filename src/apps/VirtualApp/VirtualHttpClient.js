@@ -49,6 +49,7 @@ import {withTheme} from "@material-ui/core/styles";
 import ThemeSwitcher from "./components/ThemeSwitcher/ThemeSwitcher";
 import mqtt from "../../shared/mqtt";
 import devices from "../../lib/devices";
+import log from "loglevel";
 
 const toggleDesignVersions = () => {
   window.location = isUseNewDesign ? "https://galaxy.kli.one/user/" : "https://arvut.kli.one/user/";
@@ -403,8 +404,13 @@ class VirtualHttpClient extends Component {
   initDevices = () => {
     const {t} = this.props;
 
-    devices.init().then(data => {
-      console.log("[client] init devices: ", data);
+    devices.init(media => {
+      setTimeout(() => {
+        console.log(media.audio.device)
+        this.setAudioDevice(media.audio.device)
+      }, 1000)
+    }).then(data => {
+      log.info("[client] init devices: ", data);
       const {audio, video} = data;
       if (audio.error && video.error) {
         alert(t("oldClient.noInputDevices"));

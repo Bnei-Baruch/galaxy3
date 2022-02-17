@@ -22,14 +22,14 @@ class LocalDevices {
     this.micLevel = null
   }
 
-  init = async () => {
-    let devices = [];
+  init = async (onChange) => {
+    let devices = [], ts = 0;
 
     //TODO: Translate exceptions - https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getUserMedia#Exceptions
 
     // Check saved devices in local storage
     let storage_video = localStorage.getItem("video_device");
-    let storage_audio = localStorage.getItem("audio.device");
+    let storage_audio = localStorage.getItem("audio_device");
     let storage_setting = JSON.parse(localStorage.getItem("video_setting"));
     this.video.device = !!storage_video ? storage_video : null;
     this.audio.device = !!storage_audio ? storage_audio : null;
@@ -91,6 +91,19 @@ class LocalDevices {
       this.video.device = this.video.stream.getVideoTracks()[0].getSettings().deviceId;
     } else {
       this.video.device = "";
+    }
+
+    navigator.mediaDevices.ondevicechange = async(e) => {
+      if(e.timeStamp - ts < 1000) return
+      ts = e.timeStamp
+      log.debug("[devices] ondevicechange trigger: ", e);
+      devices = await navigator.mediaDevices.enumerateDevices();
+      this.audio.devices = devices.filter((a) => !!a.deviceId && a.kind === "audioinput");
+      this.video.devices = devices.filter((v) => !!v.deviceId && v.kind === "videoinput");
+      let storage_audio = localStorage.getItem("audio_device");
+      let isExist = this.audio.devices.find(d => d.deviceId === storage_audio)
+      this.audio.device = isExist ? storage_audio : this.audio.devices[0].deviceId;
+      if(typeof onChange === "function") onChange({video: this.video, audio: this.audio})
     }
 
     log.debug("[devices] init: ", this)
