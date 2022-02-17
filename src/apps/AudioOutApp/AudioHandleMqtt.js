@@ -41,6 +41,14 @@ class AudioHandleMqtt extends Component {
 
     let janus = new JanusMqtt(user, inst)
 
+    janus.onStatus = (srv, status) => {
+      if(status !== "online") {
+        setTimeout(() => {
+          this.initVideoRoom(room, inst);
+        }, 5000)
+      }
+    }
+
     let videoroom = new PublisherPlugin();
     videoroom.subTo = this.onJoinFeed;
     videoroom.unsubFrom = this.unsubscribeFrom

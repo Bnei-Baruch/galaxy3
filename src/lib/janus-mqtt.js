@@ -165,6 +165,7 @@ export class JanusMqtt {
         if(this.keeptry === 3) {
           log.error('[janus] Janus is not reached after: ' + this.keeptry + " tries")
           this.isConnected = false
+          this.onStatus(this.srv, "error")
           return
         }
         setTimeout(() => this.keepAlive(), 20 * 1000)
@@ -241,7 +242,7 @@ export class JanusMqtt {
     if(tD === "status" && json.online) {
       log.debug("[janus] Janus Server - " + this.srv + " - Online")
       if(typeof this.onStatus === "function")
-        this.onStatus(this.srv, json.online)
+        this.onStatus(this.srv, "online")
       return
     }
 
@@ -249,7 +250,7 @@ export class JanusMqtt {
       this.isConnected = false
       log.debug("[janus] Janus Server - " + this.srv + " - Offline")
       if(typeof this.onStatus === "function")
-        this.onStatus(this.srv, json.online)
+        this.onStatus(this.srv, "offline")
       return
     }
 

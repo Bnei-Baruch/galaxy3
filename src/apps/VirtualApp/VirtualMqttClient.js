@@ -352,9 +352,16 @@ class VirtualMqttClient extends Component {
   initJanus = (user, config, retry) => {
     let janus = new JanusMqtt(user, config.name)
     janus.onStatus = (srv, status) => {
-      if(!status) {
+      if(status === "offline") {
         alert("Janus Server - " + srv + " - Offline")
         window.location.reload()
+      }
+
+      if(status === "error") {
+        log.error("[client] Janus error, reconnecting...")
+        this.exitRoom(/* reconnect= */ true, () => {
+          this.reinitClient(retry);
+        });
       }
     }
 
@@ -384,7 +391,6 @@ class VirtualMqttClient extends Component {
     }).catch(err => {
       log.error("[client] Janus init", err);
       this.exitRoom(/* reconnect= */ true, () => {
-        log.error("[[client]] error initializing janus", err);
         this.reinitClient(retry);
       });
     })

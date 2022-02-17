@@ -188,7 +188,7 @@ export default class JanusStream {
     this.janus = new JanusMqtt(user, str)
 
     this.janus.onStatus = (srv, status) => {
-      if(!status) {
+      if(status !== "online") {
         setTimeout(() => {
           this.initJanus_(user);
         }, 5000);

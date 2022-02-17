@@ -119,8 +119,8 @@ class AdminRootMqtt extends Component {
 
     let janus = new JanusMqtt(user, inst)
     janus.onStatus = (srv, status) => {
-      if(!status) {
-        alert("Janus Server - " + srv + " - Offline")
+      if(status !== "onine") {
+        alert("Janus Server - " + srv + " - " + status)
         window.location.reload()
       }
     }

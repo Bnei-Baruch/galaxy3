@@ -77,7 +77,7 @@ class VideoHandleMqtt extends Component {
     janus = new JanusMqtt(user, inst, mit, user);
 
     janus.onStatus = (srv, status) => {
-      if(!status) {
+      if(status !== "online") {
         setTimeout(() => {
           this.initVideoRoom(room, inst);
         }, 5000)
