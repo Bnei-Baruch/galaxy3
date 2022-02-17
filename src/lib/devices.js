@@ -96,13 +96,21 @@ class LocalDevices {
     navigator.mediaDevices.ondevicechange = async(e) => {
       if(e.timeStamp - ts < 1000) return
       ts = e.timeStamp
-      log.debug("[devices] ondevicechange trigger: ", e);
       devices = await navigator.mediaDevices.enumerateDevices();
+      log.debug("[devices] devices list refreshed: ", devices);
       this.audio.devices = devices.filter((a) => !!a.deviceId && a.kind === "audioinput");
       this.video.devices = devices.filter((v) => !!v.deviceId && v.kind === "videoinput");
+      // Refresh audio devices list
       let storage_audio = localStorage.getItem("audio_device");
-      let isExist = this.audio.devices.find(d => d.deviceId === storage_audio)
-      this.audio.device = isExist ? storage_audio : this.audio.devices[0].deviceId;
+      let isSavedAudio = this.audio.devices.find(d => d.deviceId === storage_audio)
+      let default_audio = this.audio.devices.length > 0 ? this.audio.devices[0].deviceId : null;
+      this.audio.device = isSavedAudio ? storage_audio : default_audio;
+      // Refresh video devices list
+      let storage_video = localStorage.getItem("video_device");
+      let isSavedVideo = this.video.devices.find(d => d.deviceId === storage_video)
+      let default_video = this.video.devices.length > 0 ? this.video.devices[0].deviceId : null;
+      this.video.device = isSavedVideo ? storage_video : default_video;
+
       if(typeof onChange === "function") onChange({video: this.video, audio: this.audio})
     }
 
