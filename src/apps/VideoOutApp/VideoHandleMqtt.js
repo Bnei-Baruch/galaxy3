@@ -3,7 +3,6 @@ import "./VideoHandle.scss";
 import classNames from "classnames";
 import log from "loglevel";
 import ConfigStore from "../../shared/ConfigStore";
-import {JanusMqtt} from "../../lib/janus-mqtt";
 import {PublisherPlugin} from "../../lib/publisher-plugin";
 import {SubscriberPlugin} from "../../lib/subscriber-plugin";
 import chalk from "chalk";
@@ -59,41 +58,20 @@ class VideoHandleMqtt extends Component {
   }
 
   componentWillUnmount() {
-    this.exitVideoRoom(this.state.room);
+    this.exitVideoRoom(this.state.room, () => {});
   }
 
   initVideoRoom = (room, inst) => {
-    const {user, q, col} = this.props;
-    let {janus} = this.state;
+    const {gateways, user, q, col} = this.props;
+    let janus = gateways[inst];
     const mit = "col" + col + "_q" + (q+1) + "_" + inst
 
-    const token = ConfigStore.globalConfig.gateways.rooms[inst].token
     log.info("["+mit+"] Init room: ", room, inst, ConfigStore.globalConfig)
-
-    log.info("["+mit+"] token", user, token)
     log.info("["+mit+"] mit", mit)
 
-    user.mit = mit
-    janus = new JanusMqtt(user, inst, mit, user);
+    this.setState({mit, janus});
 
-    janus.onStatus = (srv, status) => {
-      if(status !== "online") {
-        setTimeout(() => {
-          this.initVideoRoom(room, inst);
-        }, 5000)
-      }
-    }
-
-    this.setState({janus, mit});
-
-    janus.init(token).then(data => {
-      log.info("["+mit+"] Janus init", data)
-      this.initVideoHandles(janus, room, user)
-
-    }).catch(err => {
-      log.error("["+mit+"] Janus init", err);
-    })
-
+    this.initVideoHandles(janus, room, user)
   }
 
   initVideoHandles = (janus, room, user) => {
@@ -179,38 +157,27 @@ class VideoHandleMqtt extends Component {
     if(typeof callback === "function") callback();
   }
 
-  exitJanus = (janus, callback) => {
-    if(janus) {
-      janus.destroy().then(() => {
-        this.cleanState(callback)
-      }).catch(e => {
-        log.error("["+mit+"] destroy error:", e);
-        this.cleanState(callback)
-      })
-    } else {
-      this.cleanState(callback)
-    }
-
-  }
-
   exitVideoRoom = (roomid, callback) => {
-    const {videoroom, janus, mit} = this.state;
+    const {janus, videoroom, mit} = this.state;
     if(videoroom) {
       videoroom.leave().then(r => {
         log.info("["+mit+"] leave respond:", r);
-        this.exitJanus(janus, callback)
+        janus.detach(videoroom).then(() => {
+          log.info("["+mit+"] plugin detached:");
+          this.cleanState(callback)
+        })
       }).catch(e => {
         log.error("["+mit+"] leave error:", e);
-        this.exitJanus(janus, callback)
+        this.cleanState(callback)
       });
     } else {
-      this.exitJanus(janus, callback)
+      this.cleanState(callback)
     }
 
   };
 
   subscribeTo = (room, subscription) => {
-    let {creatingFeed, remoteFeed, subscriber, janus, mit} = this.state
+    let {janus, creatingFeed, remoteFeed, subscriber, mit} = this.state
 
     if (remoteFeed) {
       subscriber.sub(subscription);

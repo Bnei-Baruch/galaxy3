@@ -150,6 +150,7 @@ class MqttMsg {
         case "janus":
           const json = JSON.parse(data)
           const mit = json?.session_id || packet?.properties?.userProperties?.mit || service
+          //console.log(this.mq.listeners(mit).length);
           this.mq.emit(mit, data, id);
           break;
         default:
