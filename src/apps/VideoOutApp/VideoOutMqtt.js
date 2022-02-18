@@ -38,6 +38,7 @@ class VideoOutMqtt extends Component {
   };
 
   componentDidMount() {
+    this.initApp();
     setInterval(() => {
       api.fetchProgram().then((qids) => {
         //TODO: make dynamic gateways - attach currently in use and detach not used
@@ -64,7 +65,10 @@ class VideoOutMqtt extends Component {
           log.error("[SDIOut] error fetching rooms statistics", err);
         });
     }, 1000);
-    this.initApp();
+  }
+
+  componentWillUnmount() {
+    Object.values(this.state.gateways).forEach((x) => x.destroy());
   }
 
   initApp = () => {
@@ -94,34 +98,31 @@ class VideoOutMqtt extends Component {
       mqtt.watch((data) => {
         this.onMqttData(data);
       });
-      const {gateways} = this.state;
-      Object.keys(ConfigStore.globalConfig.gateways.rooms).map(gxy => {
-        const token = ConfigStore.globalConfig.gateways.rooms[gxy].token
-        gateways[gxy] = new JanusMqtt(user, gxy, gxy, user);
-        gateways[gxy].onStatus = (srv, status) => {
-          if(status !== "online") {
-            setTimeout(() => {
-              const token = ConfigStore.globalConfig.gateways.rooms[srv].token
-              gateways[srv] = new JanusMqtt(user, srv, srv, user);
-              gateways[srv].init(token).then(data => {
-                log.info("["+srv+"] Janus init", data)
-              }).catch(err => {
-                log.error("["+srv+"] Janus init", err);
-              })
-            }, 5000)
-          }
-        }
-
-        gateways[gxy].init(token).then(data => {
-          log.info("["+gxy+"] Janus init", data)
-        }).catch(err => {
-          log.error("["+gxy+"] Janus init", err);
-        })
+      Object.keys(ConfigStore.globalConfig.gateways.rooms).forEach(gxy => {
+        this.initJanus(user, gxy)
       })
-
-      this.setState({gateways});
     });
   };
+
+  initJanus = (user, gxy) => {
+    log.info("["+gxy+"] Janus init")
+    const {gateways} = this.state;
+    const token = ConfigStore.globalConfig.gateways.rooms[gxy].token
+    gateways[gxy] = new JanusMqtt(user, gxy, gxy);
+    gateways[gxy].init(token).then(data => {
+      log.info("["+gxy+"] Janus init success", data)
+    }).catch(err => {
+      log.error("["+gxy+"] Janus init", err);
+    })
+    gateways[gxy].onStatus = (srv, status) => {
+      if (status !== "online") {
+        log.error("["+srv+"] Janus: ", status);
+        setTimeout(() => {
+          this.initJanus(user, srv);
+        }, 10000)
+      }
+    }
+  }
 
   onMqttData = (data) => {
     const {room, col, feed, group, i, status, qst} = data;
