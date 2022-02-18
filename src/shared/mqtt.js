@@ -126,8 +126,9 @@ class MqttMsg {
 
   watch = (callback) => {
     this.mq.on("message", (topic, data, packet) => {
+      log.trace("[mqtt] <-- receive packet: ", packet)
       let cd = packet?.properties?.correlationData ? " | transaction: " + packet?.properties?.correlationData?.toString() : ""
-      log.debug(chalk.gray("[mqtt] <-- receive message" + cd + " | topic : " + topic + " | packet:", packet));
+      log.debug(chalk.gray("[mqtt] <-- receive message" + cd + " | topic : " + topic));
       const t = topic.split("/")
       if(t[0] === "msg") t.shift()
       const [root, service, id, target] = t

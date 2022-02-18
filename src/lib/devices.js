@@ -168,8 +168,6 @@ class LocalDevices {
       .then((data) => {
         log.debug("[devices] setVideoSize: ", data);
         const [stream, error] = data;
-        this.audio_stream = stream.clone()
-        this.initMicLevel()
         if (error) {
           this.video.error = error
           log.error("[devices] setVideoSize: ", error);
