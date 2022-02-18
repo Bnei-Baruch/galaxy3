@@ -110,9 +110,7 @@ export class PublisherPlugin extends EventEmitter {
           const { json } = param || {}
           const jsep = json.jsep
           log.info('[publisher] Configure respond: ', jsep)
-          this.pc.setRemoteDescription(jsep).then(() => {
-            log.info('[publisher] remoteDescription set')
-          })
+          this.pc.setRemoteDescription(jsep)
         })
 
     })
@@ -174,9 +172,7 @@ export class PublisherPlugin extends EventEmitter {
         const { json } = param || {}
         const jsep = json.jsep
         //log.info('[publisher] Video is - ' + (video ? 'Muted' : 'Unmuted'), param)
-        this.pc.setRemoteDescription(jsep).then(() => {
-          log.info('[publisher] remoteDescription set')
-        })
+        this.pc.setRemoteDescription(jsep)
       })
 
     })
@@ -253,8 +249,8 @@ export class PublisherPlugin extends EventEmitter {
     // Couldn't attach to the plugin
   }
 
-  onmessage (data, jsep) {
-    log.info('[publisher] onmessage: ', data, jsep)
+  onmessage (data) {
+    log.info('[publisher] onmessage: ', data)
     if(data?.publishers) {
       log.info('[publisher] New feed enter: ', data.publishers[0])
       this.subTo(data.publishers)
@@ -283,10 +279,6 @@ export class PublisherPlugin extends EventEmitter {
     if(data?.videoroom === "stopped-talking") {
       log.info('[publisher] stopped talking: ', data.id)
       this.talkEvent(data.id, false)
-    }
-
-    if(jsep) {
-      log.debug('[publisher] Got JSEP?: ', jsep)
     }
   }
 

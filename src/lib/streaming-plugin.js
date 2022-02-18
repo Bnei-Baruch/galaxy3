@@ -177,12 +177,8 @@ export class StreamingPlugin extends EventEmitter {
     // Couldn't attach to the plugin
   }
 
-  onmessage (data, json) {
-    log.info('[streaming] onmessage: ', data, json)
-    if (json?.jsep) {
-      log.info('[streaming] sdp: ', data, json)
-      this.sdpExchange(json.jsep)
-    }
+  onmessage (data) {
+    log.info('[streaming] onmessage: ', data)
   }
 
   oncleanup () {

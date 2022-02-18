@@ -50,7 +50,7 @@ export class SubscriberPlugin extends EventEmitter {
           }).then(answer => {
             log.info('[subscriber] answerCreated')
             this.pc.setLocalDescription(answer)
-            this.answer(answer)
+            this.start(answer)
           })
         }
 
@@ -95,13 +95,13 @@ export class SubscriberPlugin extends EventEmitter {
         this.initPcEvents()
 
         if(json?.jsep) {
-          log.debug('[subscriber] Got JSEP: ', json.jsep)
+          log.debug('[subscriber] Got jsep: ', json.jsep)
           this.pc.setRemoteDescription(new RTCSessionDescription(json.jsep)).then(() => {
             return this.pc.createAnswer()
           }).then(answer => {
-            log.info('[subscriber] answerCreated')
+            log.debug('[subscriber] Answer created', answer)
             this.pc.setLocalDescription(answer)
-            this.answer(answer)
+            this.start(answer)
           })
         }
 
@@ -122,21 +122,21 @@ export class SubscriberPlugin extends EventEmitter {
       }).then(answer => {
         log.info('[subscriber] iceRestart answerCreated', answer)
         this.pc.setLocalDescription(answer)
-        this.answer(answer)
+        this.start(answer)
       })
     })
   }
 
-  answer (answer) {
+  start (answer) {
     const body = { request: 'start', room: this.roomId }
     return new Promise((resolve, reject) => {
       const jsep = answer
       this.transaction('message', { body, jsep }, 'event').then((param) => {
         const { data, json } = param || {}
-        log.info("[subscriber] answer: ", param)
+        log.info("[subscriber] start: ", param)
         resolve()
       }).catch((err) => {
-        log.error('[subscriber] answer', err, answer)
+        log.error('[subscriber] start', err, answer)
         reject(err)
       })
     })
@@ -226,22 +226,11 @@ export class SubscriberPlugin extends EventEmitter {
     // Couldn't attach to the plugin
   }
 
-  onmessage (data, json) {
-    log.info('[subscriber] onmessage: ', data, json)
+  onmessage (data) {
+    log.info('[subscriber] onmessage: ', data)
     if(data?.videoroom === "updated") {
       log.info('[subscriber] Streams updated: ', data.streams)
       this.onUpdate(data.streams)
-    }
-
-    if(json?.jsep) {
-      log.debug('[subscriber] Got JSEP: ', json.jsep)
-      this.pc.setRemoteDescription(new RTCSessionDescription(json.jsep)).then(() => {
-        return this.pc.createAnswer()
-      }).then(answer => {
-        log.info('[subscriber] answerCreated')
-        this.pc.setLocalDescription(answer)
-        this.answer(answer)
-      })
     }
   }
 

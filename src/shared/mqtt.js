@@ -114,8 +114,10 @@ class MqttMsg {
 
   send = (message, retain, topic, rxTopic, user) => {
     if (!this.mq) return;
-    log.debug("[mqtt] Send data on topic: ", topic, message);
-    let properties = !!rxTopic ? {userProperties: user || this.user, responseTopic: rxTopic} : {userProperties: user || this.user};
+    let correlationData = JSON.parse(message)?.transaction
+    let cd = correlationData ? " | transaction: " + correlationData : ""
+    log.debug(chalk.gray("[mqtt] --> send message" + cd + " | topic: " + topic + " | data: ", message));
+    let properties = !!rxTopic ? {userProperties: user || this.user, responseTopic: rxTopic, correlationData} : {userProperties: user || this.user};
     let options = {qos: 1, retain, properties};
     this.mq.publish(topic, message, {...options}, (err) => {
       err && log.error("[mqtt] Error: ", err);
@@ -124,7 +126,8 @@ class MqttMsg {
 
   watch = (callback) => {
     this.mq.on("message", (topic, data, packet) => {
-      log.debug(chalk.green("[mqtt] trigger topic : ") + topic + " : packet:", packet);
+      let cd = packet?.properties?.correlationData ? " | transaction: " + packet?.properties?.correlationData?.toString() : ""
+      log.debug(chalk.gray("[mqtt] <-- receive message" + cd + " | topic : " + topic + " | packet:", packet));
       const t = topic.split("/")
       if(t[0] === "msg") t.shift()
       const [root, service, id, target] = t
