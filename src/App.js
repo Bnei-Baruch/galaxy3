@@ -10,7 +10,7 @@ import "./i18n/i18n";
 // import VirtualMqttClient from "./apps/VirtualApp/VirtualMqttClient";
 // import VirtualHttpClient from "./apps/VirtualApp/VirtualHttpClient";
 // import AdminApp from "./apps/AdminApp/AdminApp";
-// import ShidurApp from "./apps/ShidurApp/ShidurApp";
+// import ShidurAppHttp from "./apps/ShidurAppHttp/ShidurAppHttp";
 // import SndmanApp from "./apps/SndmanApp/SndmanApp";
 // import AudioOutMqtt from "./apps/AudioOutApp/AudioOutMqtt";
 import VideoOutMqtt from "./apps/VideoOutApp/VideoOutMqtt";
@@ -26,7 +26,7 @@ class App extends Component {
         {/*<VirtualMqttClient />*/}
         {/*<VirtualHttpClient />*/}
         {/*<AdminApp />*/}
-        {/*<ShidurApp />*/}
+        {/*<ShidurAppHttp />*/}
         {/*<SndmanApp />*/}
         {/*<AudioOutMqtt />*/}
         <VideoOutMqtt />

@@ -1,7 +1,7 @@
 import React, {Component} from "react";
 import {Button, Dropdown, Grid, Label, Message, Popup, Segment, Table, Divider, Icon, List} from "semantic-ui-react";
-import "./ShidurToran.scss";
-import UsersPreview from "./UsersPreview";
+import "./ToranTools.scss";
+import PreviewPanelHttp from "./PreviewPanelHttp";
 import api from "../../shared/Api";
 import {RESET_VOTE} from "../../shared/env";
 import {captureException} from "../../shared/sentry";
@@ -19,7 +19,7 @@ const short_regions = {
   "petach-tikva": "PT",
 };
 
-class ShidurToran extends Component {
+class ToranTools extends Component {
   state = {
     galaxy_mode: "lesson",
     delay: false,
@@ -431,7 +431,7 @@ class ShidurToran extends Component {
                 <div className="shidur_overlay">
                   <span>{ng.description}</span>
                 </div>
-                <UsersPreview pg={ng} {...this.props} next closePopup={this.closePopup} />
+                <PreviewPanelHttp pg={ng} {...this.props} next closePopup={this.closePopup} />
               </Segment>
             ) : (
               ""
@@ -506,7 +506,7 @@ class ShidurToran extends Component {
                 <div className="shidur_overlay">
                   <span>{group ? group.description : ""}</span>
                 </div>
-                <UsersPreview pg={this.state.pg} {...this.props} closePopup={this.closePopup} />
+                <PreviewPanelHttp pg={this.state.pg} {...this.props} closePopup={this.closePopup} />
               </Segment>
             ) : (
               ""
@@ -606,4 +606,4 @@ class ShidurToran extends Component {
   }
 }
 
-export default ShidurToran;
+export default ToranTools;
