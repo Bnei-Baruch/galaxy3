@@ -1,7 +1,6 @@
 import {randomString} from "../shared/tools";
 import {EventEmitter} from "events";
 import log from "loglevel";
-import platform from "platform";
 import mqtt from "../shared/mqtt";
 
 export class PublisherPlugin extends EventEmitter {
@@ -250,7 +249,7 @@ export class PublisherPlugin extends EventEmitter {
   }
 
   onmessage (data) {
-    log.info('[publisher] onmessage: ', data)
+    log.debug('[publisher] onmessage: ', data)
     if(data?.publishers) {
       log.info('[publisher] New feed enter: ', data.publishers[0])
       this.subTo(data.publishers)
@@ -272,12 +271,12 @@ export class PublisherPlugin extends EventEmitter {
     }
 
     if(data?.videoroom === "talking") {
-      log.info('[publisher] talking: ', data.id)
+      log.debug('[publisher] talking: ', data.id)
       this.talkEvent(data.id, true)
     }
 
     if(data?.videoroom === "stopped-talking") {
-      log.info('[publisher] stopped talking: ', data.id)
+      log.debug('[publisher] stopped talking: ', data.id)
       this.talkEvent(data.id, false)
     }
   }

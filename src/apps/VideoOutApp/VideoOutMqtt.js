@@ -23,7 +23,7 @@ class VideoOutMqtt extends Component {
       handle: 0,
       role: "sdiout",
       display: "sdiout",
-      id: "SDIOUT_ID",
+      id: SDIOUT_ID,
       name: "sdiout",
       email: "sdiout@galaxy.kli.one",
     },
@@ -82,13 +82,10 @@ class VideoOutMqtt extends Component {
 
     api.setBasicAuth(API_BACKEND_USERNAME, API_BACKEND_PASSWORD);
 
-    api
-      .fetchConfig()
-      .then((data) => {
+    api.fetchConfig().then((data) => {
         ConfigStore.setGlobalConfig(data);
         GxyJanus.setGlobalConfig(data);
-      })
-      .then(() => this.initGateways(user))
+      }).then(() => this.initGateways(user))
       .catch((err) => {
         log.error("[SDIOut] error initializing app", err);
         this.setState({appInitError: err});
@@ -160,9 +157,7 @@ class VideoOutMqtt extends Component {
   };
 
   reloadConfig = () => {
-    api
-      .fetchConfig()
-      .then((data) => {
+    api.fetchConfig().then((data) => {
         GxyJanus.setGlobalConfig(data);
       })
       .catch((err) => {
