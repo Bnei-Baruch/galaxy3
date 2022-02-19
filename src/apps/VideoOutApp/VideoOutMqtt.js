@@ -39,36 +39,42 @@ class VideoOutMqtt extends Component {
 
   componentDidMount() {
     this.initApp();
+    setTimeout(() => {
+      this.getVideoOut()
+    },1000)
+  }
+
+  componentWillUnmount() {
+    Object.values(this.state.gateways).forEach((x) => x.destroy());
+  }
+
+  getVideoOut = () => {
     setInterval(() => {
       api.fetchProgram().then((qids) => {
         //TODO: make dynamic gateways - attach currently in use and detach not used
-          // let qlist = [
-          //   ...qids.q1.vquad,
-          //   ...qids.q2.vquad,
-          //   ...qids.q3.vquad,
-          //   ...qids.q4.vquad,
-          // ];
-          this.setState({qids});
-          if (this.state.qg) {
-            const {col, i} = this.state;
-            this.setState({qg: this.state.qids["q" + col].vquad[i]});
-          }
-        })
+        // let qlist = [
+        //   ...qids.q1.vquad,
+        //   ...qids.q2.vquad,
+        //   ...qids.q3.vquad,
+        //   ...qids.q4.vquad,
+        // ];
+        this.setState({qids});
+        if (this.state.qg) {
+          const {col, i} = this.state;
+          this.setState({qg: this.state.qids["q" + col].vquad[i]});
+        }
+      })
         .catch((err) => {
           log.error("[SDIOut] error fetching quad state", err);
         });
 
       api.fetchRoomsStatistics().then((roomsStatistics) => {
-          this.setState({roomsStatistics});
-        })
+        this.setState({roomsStatistics});
+      })
         .catch((err) => {
           log.error("[SDIOut] error fetching rooms statistics", err);
         });
     }, 1000);
-  }
-
-  componentWillUnmount() {
-    Object.values(this.state.gateways).forEach((x) => x.destroy());
   }
 
   initApp = () => {

@@ -226,11 +226,22 @@ export class SubscriberPlugin extends EventEmitter {
     // Couldn't attach to the plugin
   }
 
-  onmessage (data) {
-    log.info('[subscriber] onmessage: ', data)
+  onmessage (data, json) {
+    log.info('[subscriber] onmessage: ', data, json)
     if(data?.videoroom === "updated") {
       log.info('[subscriber] Streams updated: ', data.streams)
       this.onUpdate(data.streams)
+    }
+
+    if(json?.jsep) {
+      log.debug('[subscriber] Handle jsep: ', json.jsep)
+      this.pc.setRemoteDescription(new RTCSessionDescription(json.jsep)).then(() => {
+        return this.pc.createAnswer()
+      }).then(answer => {
+        log.info('[subscriber] answerCreated: ', answer)
+        this.pc.setLocalDescription(answer)
+        this.start(answer)
+      })
     }
   }
 
