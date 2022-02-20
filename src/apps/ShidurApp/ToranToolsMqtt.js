@@ -1,7 +1,7 @@
 import React, {Component} from "react";
 import {Button, Dropdown, Grid, Label, Message, Popup, Segment, Table, Divider, Icon, List} from "semantic-ui-react";
 import "./ToranTools.scss";
-import PreviewPanelHttp from "./PreviewPanelHttp";
+import PreviewPanelMqtt from "./PreviewPanelMqtt";
 import api from "../../shared/Api";
 import {RESET_VOTE} from "../../shared/env";
 import {captureException} from "../../shared/sentry";
@@ -19,7 +19,7 @@ const short_regions = {
   "petach-tikva": "PT",
 };
 
-class ToranTools extends Component {
+class ToranToolsMqtt extends Component {
   state = {
     galaxy_mode: "lesson",
     delay: false,
@@ -506,7 +506,7 @@ class ToranTools extends Component {
                 <div className="shidur_overlay">
                   <span>{group ? group.description : ""}</span>
                 </div>
-                <PreviewPanelHttp pg={this.state.pg} {...this.props} closePopup={this.closePopup} />
+                <PreviewPanelMqtt pg={this.state.pg} {...this.props} closePopup={this.closePopup} />
               </Segment>
             ) : (
               ""
@@ -606,4 +606,4 @@ class ToranTools extends Component {
   }
 }
 
-export default ToranTools;
+export default ToranToolsMqtt;

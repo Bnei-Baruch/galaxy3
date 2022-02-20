@@ -4,8 +4,8 @@ import api from "../../shared/Api";
 import {kc} from "../../components/UserManager";
 import GxyJanus from "../../shared/janus-utils";
 import LoginPage from "../../components/LoginPage";
-import ToranTools from "./ToranTools";
-import QuadPanel from "./QuadPanel";
+import ToranToolsMqtt from "./ToranToolsMqtt";
+import QuadPanelMqtt from "./QuadPanelMqtt";
 import "./ShidurApp.css";
 import {LOST_CONNECTION, STORAN_ID} from "../../shared/consts";
 import {GuaranteeDeliveryManager} from "../../shared/GuaranteeDelivery";
@@ -317,7 +317,7 @@ class ShidurAppMqtt extends Component {
           <Grid columns={4}>
             <Grid.Row>
               <Grid.Column>
-                <QuadPanel
+                <QuadPanelMqtt
                   index={0}
                   {...this.state}
                   ref={(col1) => {
@@ -327,7 +327,7 @@ class ShidurAppMqtt extends Component {
                 />
               </Grid.Column>
               <Grid.Column>
-                <QuadPanel
+                <QuadPanelMqtt
                   index={4}
                   {...this.state}
                   ref={(col2) => {
@@ -337,7 +337,7 @@ class ShidurAppMqtt extends Component {
                 />
               </Grid.Column>
               <Grid.Column>
-                <QuadPanel
+                <QuadPanelMqtt
                   index={8}
                   {...this.state}
                   ref={(col3) => {
@@ -347,7 +347,7 @@ class ShidurAppMqtt extends Component {
                 />
               </Grid.Column>
               <Grid.Column>
-                <QuadPanel
+                <QuadPanelMqtt
                   index={12}
                   {...this.state}
                   ref={(col4) => {
@@ -357,7 +357,7 @@ class ShidurAppMqtt extends Component {
                 />
               </Grid.Column>
             </Grid.Row>
-            <ToranTools {...this.state} setProps={this.setProps} nextInQueue={this.nextInQueue} />
+            <ToranToolsMqtt {...this.state} setProps={this.setProps} nextInQueue={this.nextInQueue} />
           </Grid>
         </Grid.Column>
       </Grid>
