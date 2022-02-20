@@ -1,10 +1,10 @@
 import React, {Component} from "react";
 import {Button, Dropdown, Grid, Label, Message, Popup, Segment, Table, Divider, Icon, List} from "semantic-ui-react";
 import "./ToranTools.scss";
+import log from "loglevel";
 import PreviewPanelMqtt from "./PreviewPanelMqtt";
 import api from "../../shared/Api";
 import {RESET_VOTE} from "../../shared/env";
-import {captureException} from "../../shared/sentry";
 import mqtt from "../../shared/mqtt";
 
 const short_regions = {
@@ -45,7 +45,7 @@ class ToranToolsMqtt extends Component {
 
   selectGroup = (group, i) => {
     if (this.state.delay) return;
-    console.log(group, i);
+    log.info(group, i);
     this.setState({pg: group, open: true});
     group.queue = i;
     this.props.setProps({group});
@@ -101,7 +101,7 @@ class ToranToolsMqtt extends Component {
     if (this.state.delay) return;
     data = {...data, extra: {...(data.extra || {}), disabled: true}};
     delete data.users;
-    console.log(data);
+    log.info(data);
     let {disabled_rooms} = this.props;
     let group = disabled_rooms.find((r) => r.room === data.room);
     if (group) return;
@@ -117,7 +117,7 @@ class ToranToolsMqtt extends Component {
     if (group) return;
     data = {...data, extra: {...(data.extra || {}), timestamp: Date.now()}};
     delete data.users;
-    console.log(data);
+    log.info(data);
     api.updateRoom(data.room, data);
     // groups.push(data);
     // this.props.setProps({groups});
@@ -184,7 +184,7 @@ class ToranToolsMqtt extends Component {
     presets[p].push(group);
     this.props.setProps({presets});
 
-    console.log(presets);
+    log.info(presets);
   };
 
   removeFromPreset = (p, i) => {
@@ -226,13 +226,12 @@ class ToranToolsMqtt extends Component {
       body: JSON.stringify(request),
     })
       .then()
-      .catch((ex) => console.log(`Reset Vote`, ex));
+      .catch((ex) => log.info(`Reset Vote`, ex));
   };
 
   resetRoomsStatistics = () => {
     api.adminResetRoomsStatistics().catch((err) => {
-      console.error("[Shidur] [Toran] error resetting rooms statistics", err);
-      captureException(err, {source: "Shidur"});
+      log.error("[Shidur] [Toran] error resetting rooms statistics", err);
       alert("Error resetting rooms statistics");
     });
   };
@@ -431,7 +430,7 @@ class ToranToolsMqtt extends Component {
                 <div className="shidur_overlay">
                   <span>{ng.description}</span>
                 </div>
-                <PreviewPanelHttp pg={ng} {...this.props} next closePopup={this.closePopup} />
+                <PreviewPanelMqtt pg={ng} {...this.props} next closePopup={this.closePopup} />
               </Segment>
             ) : (
               ""

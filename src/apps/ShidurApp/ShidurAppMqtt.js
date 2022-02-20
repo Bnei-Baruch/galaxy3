@@ -2,16 +2,18 @@ import React, {Component, Fragment} from "react";
 import {Grid, Confirm} from "semantic-ui-react";
 import api from "../../shared/Api";
 import {kc} from "../../components/UserManager";
+import log from "loglevel";
 import GxyJanus from "../../shared/janus-utils";
 import LoginPage from "../../components/LoginPage";
 import ToranToolsMqtt from "./ToranToolsMqtt";
 import QuadPanelMqtt from "./QuadPanelMqtt";
 import "./ShidurApp.css";
-import {LOST_CONNECTION, STORAN_ID} from "../../shared/consts";
-import {GuaranteeDeliveryManager} from "../../shared/GuaranteeDelivery";
-import {captureException, updateSentryUser} from "../../shared/sentry";
+import {LOST_CONNECTION} from "../../shared/consts";
 import {getDateString} from "../../shared/tools";
 import mqtt from "../../shared/mqtt";
+import ConfigStore from "../../shared/ConfigStore";
+import {JanusMqtt} from "../../lib/janus-mqtt";
+import {captureException} from "../../shared/sentry";
 
 class ShidurAppMqtt extends Component {
   state = {
@@ -21,6 +23,7 @@ class ShidurAppMqtt extends Component {
     full_feed: {},
     full_group: {},
     full_col: null,
+    gateways: {},
     group: "",
     groups: [],
     groups_queue: 0,
@@ -33,7 +36,6 @@ class ShidurAppMqtt extends Component {
     disabled_rooms: [],
     pre_groups: [],
     user: null,
-    gateways: {},
     gatewaysInitialized: false,
     appInitError: null,
     presets: {1: [], 2: [], 3: [], 4: []},
@@ -42,7 +44,6 @@ class ShidurAppMqtt extends Component {
     sdiout: false,
     audout: false,
     users_count: 0,
-    gdm: new GuaranteeDeliveryManager(STORAN_ID),
     alert: false,
     timer: 10,
     lost_servers: [],
@@ -62,11 +63,11 @@ class ShidurAppMqtt extends Component {
     let {groups} = this.state;
     if (groups.length > prevState.groups.length) {
       let res = groups.filter((o) => !prevState.groups.some((v) => v.room === o.room))[0];
-      console.debug("[Shidur] :: Group enter in queue: ", res);
+      log.debug("[Shidur] :: Group enter in queue: ", res);
       this.actionLog(res, "enter");
     } else if (groups.length < prevState.groups.length) {
       let res = prevState.groups.filter((o) => !groups.some((v) => v.room === o.room))[0];
-      console.debug("[Shidur] :: Group exit from queue: ", res);
+      log.debug("[Shidur] :: Group exit from queue: ", res);
       this.actionLog(res, "leave");
     }
   }
@@ -82,54 +83,87 @@ class ShidurAppMqtt extends Component {
     } else {
       alert("Access denied!");
       kc.logout();
-      updateSentryUser(null);
     }
   };
 
   initApp = (user) => {
     this.setState({user});
-    updateSentryUser(user);
-    api
-      .fetchConfig()
-      .then((data) => GxyJanus.setGlobalConfig(data))
-      .then(() => this.initGateways(user))
+    api.fetchConfig().then(data => {
+      ConfigStore.setGlobalConfig(data);
+      GxyJanus.setGlobalConfig(data);
+    }).then(() => this.initGateways(user))
       .then(this.pollRooms)
       .catch((err) => {
-        console.error("[Shidur] error initializing app", err);
+        log.error("[Shidur] error initializing app", err);
         this.setState({appInitError: err});
-        captureException(err, {source: "ShidurAppHttp"});
       });
   };
 
   initGateways = (user) => {
     this.setState({tcp: GxyJanus.globalConfig.dynamic_config.galaxy_protocol});
     mqtt.init(user, (data) => {
-      console.log("[Shidur] mqtt init: ", data);
+      log.info("[Shidur] mqtt init: ", data);
       mqtt.watch((data) => {
         this.onMqttData(data);
       });
       mqtt.join("galaxy/service/#");
       mqtt.join("galaxy/users/broadcast");
       mqtt.send(JSON.stringify({type: "event", [user.role]: true}), true, "galaxy/service/" + user.role);
+
+      // const gatewayToInitPromise = (gateway) =>
+      //   this.initJanus(user, gateway.name).catch((error) => {
+      //     captureException(error, {source: "ShidurAppHttp", gateway: gateway.name});
+      //     throw error;
+      //   });
+      //
+      // return Promise.all(Object.values(ConfigStore.globalConfig.gateways.rooms).map(gatewayToInitPromise)).then(() => {
+      //   console.log("[Shidur] gateways initialization complete");
+      //   this.setState({gatewaysInitialized: true});
+      // });
+
+      Object.keys(ConfigStore.globalConfig.gateways.rooms).forEach(gxy => {
+        this.initJanus(user, gxy)
+      })
     });
 
-    const gateways = GxyJanus.makeGateways("rooms");
-    this.setState({gateways});
+    this.setState({gatewaysInitialized: true});
 
-    const gatewayToInitPromise = (gateway) =>
-      this.initGateway(user, gateway).catch((error) => {
-        captureException(error, {source: "ShidurAppHttp", gateway: gateway.name});
-        throw error;
-      });
+    // const gateways = GxyJanus.makeGateways("rooms");
+    // this.setState({gateways});
+    //
+    // const gatewayToInitPromise = (gateway) =>
+    //   this.initGateway(user, gateway).catch((error) => {
+    //     throw error;
+    //   });
+    //
+    // return Promise.all(Object.values(gateways).map(gatewayToInitPromise)).then(() => {
+    //   log.info("[Shidur] gateways initialization complete");
+    //   this.setState({gatewaysInitialized: true});
+    // });
+  };
 
-    return Promise.all(Object.values(gateways).map(gatewayToInitPromise)).then(() => {
-      console.log("[Shidur] gateways initialization complete");
-      this.setState({gatewaysInitialized: true});
-    });
+  initJanus = (user, gxy) => {
+    log.info("["+gxy+"] Janus init")
+    const {gateways} = this.state;
+    const token = ConfigStore.globalConfig.gateways.rooms[gxy].token
+    gateways[gxy] = new JanusMqtt(user, gxy, gxy);
+    gateways[gxy].init(token).then(data => {
+      log.info("["+gxy+"] Janus init success", data)
+      gateways[gxy].onStatus = (srv, status) => {
+        if (status !== "online") {
+          log.error("["+srv+"] Janus: ", status);
+          setTimeout(() => {
+            this.initJanus(user, srv);
+          }, 10000)
+        }
+      }
+    }).catch(err => {
+      log.error("["+gxy+"] Janus init", err);
+    })
   };
 
   initGateway = (user, gateway) => {
-    console.log("[Shidur] initializing gateway", gateway.name);
+    log.info("[Shidur] initializing gateway", gateway.name);
 
     gateway.addEventListener("net-lost", (err) => {
       if (err.detail === LOST_CONNECTION) this.reinitTimer(gateway);
@@ -163,7 +197,7 @@ class ShidurAppMqtt extends Component {
   };
 
   pollRooms = () => {
-    this.fetchRooms();
+    //this.fetchRooms();
     setInterval(this.fetchRooms, 2 * 1000);
   };
 
@@ -218,8 +252,7 @@ class ShidurAppMqtt extends Component {
         this.setState({quads, questions, users_count, rooms, groups, disabled_rooms, pre_groups, region_groups});
       })
       .catch((err) => {
-        console.error("[Shidur] error fetching active rooms", err);
-        captureException(err, {source: "Shidur"});
+        log.error("[Shidur] error fetching active rooms", err);
       });
 
     api
@@ -228,8 +261,7 @@ class ShidurAppMqtt extends Component {
         this.setState({roomsStatistics});
       })
       .catch((err) => {
-        console.error("[Shidur] error fetching rooms statistics", err);
-        captureException(err, {source: "Shidur"});
+        log.error("[Shidur] error fetching rooms statistics", err);
       });
   };
 
@@ -239,7 +271,7 @@ class ShidurAppMqtt extends Component {
       this.setState({...data});
       if (data.sdiout || data.audout) {
         setTimeout(() => {
-          console.log("[Shidur] :: Check Full Screen state :: ");
+          log.info("[Shidur] :: Check Full Screen state :: ");
           this.checkFullScreen();
         }, 3000);
       }
@@ -256,7 +288,7 @@ class ShidurAppMqtt extends Component {
         this.setState({tcp: GxyJanus.globalConfig.dynamic_config.galaxy_protocol});
       })
       .catch((err) => {
-        console.error("[User] error reloading config", err);
+        log.error("[User] error reloading config", err);
       });
   };
 
@@ -265,7 +297,7 @@ class ShidurAppMqtt extends Component {
     groups_queue++;
     if (groups_queue >= groups.length) {
       // End round here!
-      console.log("[Shidur] -- ROUND END --");
+      log.info("[Shidur] -- ROUND END --");
       groups_queue = 0;
       round++;
       this.setState({groups_queue, round});

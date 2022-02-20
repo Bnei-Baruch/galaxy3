@@ -1,9 +1,11 @@
 import React, {Component} from "react";
 import "./JanusHandle.scss";
-import {Janus} from "../../lib/janus";
-//import {Icon} from "semantic-ui-react";
 import classNames from "classnames";
+import log from "loglevel";
 import {Button} from "semantic-ui-react";
+import ConfigStore from "../../shared/ConfigStore";
+import {PublisherPlugin} from "../../lib/publisher-plugin";
+import {SubscriberPlugin} from "../../lib/subscriber-plugin";
 
 class JanusHandleMqtt extends Component {
   state = {
@@ -34,324 +36,203 @@ class JanusHandleMqtt extends Component {
     this.exitVideoRoom(this.state.room, () => {});
   }
 
-  initVideoRoom = (roomid, inst) => {
-    const gateway = this.props.gateways[inst];
-    gateway.gateway.attach({
-      plugin: "janus.plugin.videoroom",
-      opaqueId: "preview_shidur",
-      success: (videoroom) => {
-        gateway.log(`[room ${roomid}] attach success`, videoroom.getId());
-        this.setState({inst, room: roomid, videoroom, remoteFeed: null});
-        let {user} = this.props;
-        let register = {request: "join", room: roomid, ptype: "publisher", display: JSON.stringify(user)};
-        videoroom.send({message: register});
-      },
-      error: (err) => {
-        gateway.error(`[room ${roomid}] attach error`, err);
-      },
-      consentDialog: (on) => {
-        gateway.debug(`[room ${roomid}] consent dialog should be ${on ? "on" : "off"} now`);
-      },
-      mediaState: (medium, on) => {
-        gateway.log(`[room ${roomid}] Janus ${on ? "started" : "stopped"} receiving our ${medium}`);
-      },
-      webrtcState: (on) => {
-        gateway.log(`[room ${roomid}] Janus says our WebRTC PeerConnection is ${on ? "up" : "down"} now`);
-      },
-      slowLink: (uplink, lost, mid) => {
-        gateway.warn(
-          `[room ${roomid}] Janus reports problems ${
-            uplink ? "sending" : "receiving"
-          } packets on mid ${mid} (${lost} lost packets)`
-        );
-      },
-      onmessage: (msg, jsep) => {
-        this.onMessage(gateway, roomid, msg, jsep);
-      },
-      onlocalstream: (mystream) => {
-        gateway.log(`[room ${roomid}] ::: Got a local stream :::`, mystream);
-      },
-      oncleanup: () => {
-        gateway.log(`[room ${roomid}] ::: Got a cleanup notification: we are unpublished now :::`);
-      },
-    });
-  };
+  initVideoRoom = (room, inst) => {
+    const {gateways, user, q, col} = this.props;
+    let janus = gateways[inst];
+    const mit = "col" + col + "_q" + (q+1) + "_" + inst
 
-  exitVideoRoom = (roomid, callback) => {
-    if (this.state.videoroom) {
-      let leave_room = {request: "leave", room: roomid};
-      this.state.videoroom.send({
-        message: leave_room,
-        success: () => {
-          this.state.videoroom.detach();
-          if (this.state.remoteFeed) this.state.remoteFeed.detach();
-          callback();
-        },
-        error: () => {
-          this.setState({mids: [], feeds: [], videoroom: null, remoteFeed: null});
-          callback();
-        },
-      });
-    } else {
-      this.setState({mids: [], feeds: [], videoroom: null, remoteFeed: null, room: ""});
-    }
-  };
+    log.info("["+mit+"] Init room: ", room, inst, ConfigStore.globalConfig)
+    log.info("["+mit+"] mit", mit)
 
-  reinitVideoRoom = () => {
-    const {g, reinit_inst} = this.props;
-    const {inst, room} = this.state;
-    if (g.janus === reinit_inst) {
-      console.log(" :: Got rinit trigger on: ", inst);
-      this.setState({mids: [], feeds: [], videoroom: null, remoteFeed: null});
-      setTimeout(() => {
-        this.initVideoRoom(room, inst);
-      }, 5000);
-    }
-  };
+    this.setState({mit, janus});
 
-  publishOwnFeed = () => {
-    this.state.videoroom.createOffer({
-      media: {audio: false, video: false, data: false},
-      simulcast: false,
-      success: (jsep) => {
-        console.debug("Got publisher SDP!");
-        console.debug(jsep);
-        let publish = {request: "configure", audio: false, video: false, data: false};
-        this.state.videoroom.send({message: publish, jsep: jsep});
-      },
-      error: (error) => {
-        console.error("WebRTC error:", error);
-      },
-    });
-  };
+    this.initVideoHandles(janus, room, user)
+  }
 
-  onMessage = (gateway, roomid, msg, jsep) => {
-    gateway.debug(`[room ${roomid}] ::: Got a message (publisher) :::`, msg);
-    let event = msg["videoroom"];
-    if (event !== undefined && event !== null) {
-      if (event === "joined") {
-        let myid = msg["id"];
-        let mypvtid = msg["private_id"];
-        this.setState({myid, mypvtid});
-        console.debug(`[Shidur] [room ${roomid}] Successfully joined room`, myid);
-        //this.publishOwnFeed();
-        if (msg["publishers"] !== undefined && msg["publishers"] !== null) {
-          let list = msg["publishers"];
-          //FIXME: Tmp fix for black screen in room caoused by feed with video_codec = none
-          let feeds = list
-            .sort((a, b) => JSON.parse(a.display).timestamp - JSON.parse(b.display).timestamp)
-            .filter((feeder) => JSON.parse(feeder.display).role === "user");
-          console.log(`[Shidur] [room ${roomid}] :: Got publishers list: `, feeds);
-          let subscription = [];
-          for (let f in feeds) {
-            let id = feeds[f]["id"];
-            let display = JSON.parse(feeds[f]["display"]);
-            //let talk = feeds[f]["talking"];
-            let streams = feeds[f]["streams"];
-            feeds[f].display = display;
-            for (let i in streams) {
-              let stream = streams[i];
-              stream["id"] = id;
-              stream["display"] = display;
-              // Janus bug: if try subscribe to only video and data
-              // the data pass only one way so we subscribe here to all
-              // streams in feed
-              if (stream.type === "video" && stream.codec === "h264") {
-                subscription.push({feed: id, mid: stream.mid});
-              }
-            }
-          }
-          this.setState({feeds});
-          if (subscription.length > 0) {
-            console.log(subscription);
-            this.subscribeTo(gateway, roomid, subscription);
-          }
-        }
-      } else if (event === "destroyed") {
-        console.warn(`[Shidur] [room ${roomid}] room destroyed!`);
-      } else if (event === "event") {
-        let {user, myid} = this.state;
-        if (msg["streams"] !== undefined && msg["streams"] !== null) {
-          let streams = msg["streams"];
-          for (let i in streams) {
-            let stream = streams[i];
-            stream["id"] = myid;
-            stream["display"] = user;
-          }
-        } else if (msg["publishers"] !== undefined && msg["publishers"] !== null) {
-          let feed = msg["publishers"];
-          let {feeds} = this.state;
-          gateway.log(`[Shidur] [room ${roomid}] :: Got publishers list: `, feeds);
-          let subscription = [];
-          for (let f in feed) {
-            let id = feed[f]["id"];
-            let display = JSON.parse(feed[f]["display"]);
-            if (display.role !== "user") return;
-            let streams = feed[f]["streams"];
-            feed[f].display = display;
-            for (let i in streams) {
-              let stream = streams[i];
-              stream["id"] = id;
-              stream["display"] = display;
-              // Janus bug: if try subscribe to only video and data
-              // the data pass only one way so we subscribe here to all
-              // streams in feed
-              if (stream.type === "video" && stream.codec === "h264") {
-                subscription.push({feed: id, mid: stream.mid});
-              }
-            }
-          }
-          const isExistFeed = feeds.find((f) => f.id === feed[0].id);
-          if (!isExistFeed) {
-            feeds.push(feed[0]);
-            this.setState({feeds});
-          }
-          if (subscription.length > 0) {
-            this.subscribeTo(gateway, roomid, subscription);
-          }
-        } else if (msg["leaving"] !== undefined && msg["leaving"] !== null) {
-          let leaving = msg["leaving"];
-          console.log(`[Shidur] [room ${roomid}] Publisher left`, leaving);
-          this.unsubscribeFrom(leaving);
-        } else if (msg["unpublished"] !== undefined && msg["unpublished"] !== null) {
-          let unpublished = msg["unpublished"];
-          console.log(`[Shidur] [room ${roomid}] Publisher left`, unpublished);
-          if (unpublished === "ok") {
-            this.state.videoroom.hangup();
-            return;
-          }
-          this.unsubscribeFrom(unpublished);
-        } else if (msg["error"] !== undefined && msg["error"] !== null) {
-          if (msg["error_code"] === 426) {
-            console.error(`[Shidur] [room ${roomid}] no such room`);
-          } else {
-            console.error(`[Shidur] [room ${roomid}] no such room`, msg["error"]);
-          }
+  initVideoHandles = (janus, room, user, mit) => {
+    let videoroom = new PublisherPlugin();
+    videoroom.subTo = this.onJoinFeed;
+    videoroom.unsubFrom = this.unsubscribeFrom
+    videoroom.talkEvent = this.handleTalking
+
+    janus.attach(videoroom).then(data => {
+      log.info("["+mit+"] Publisher Handle: ", data)
+
+      videoroom.join(room, user).then(data => {
+        log.info("["+mit+"] Joined respond :", data)
+        this.setState({videoroom, user, room, remoteFeed: null});
+        this.onJoinMe(data.publishers, room)
+      }).catch(err => {
+        log.error("["+mit+"] Join error :", err);
+      })
+    })
+  }
+
+  onJoinMe = (list, room) => {
+    const {mit} = this.state;
+    let feeds = list
+      .sort((a, b) => JSON.parse(a.display).timestamp - JSON.parse(b.display).timestamp)
+      .filter((feeder) => JSON.parse(feeder.display).role === "user");
+    log.info("["+mit+"] Got publishers list: ", feeds);
+    let subscription = [];
+    for (let f in feeds) {
+      let id = feeds[f]["id"];
+      let display = JSON.parse(feeds[f]["display"]);
+      let talking = feeds[f]["talking"];
+      let streams = feeds[f]["streams"];
+      feeds[f].display = display;
+      feeds[f].talking = talking;
+      for (let i in streams) {
+        let stream = streams[i];
+        stream["id"] = id;
+        stream["display"] = display;
+        if (stream.type === "video" && stream.codec === "h264") {
+          subscription.push({feed: id, mid: stream.mid});
         }
       }
     }
-    if (jsep !== undefined && jsep !== null) {
-      gateway.debug(`[room ${roomid}] Handling SDP as well...`, jsep);
-      this.state.videoroom.handleRemoteJsep({jsep});
+    this.setState({feeds});
+    if (subscription.length > 0) {
+      this.subscribeTo(room, subscription);
     }
+  }
+
+  onJoinFeed = (feed) => {
+    let {feeds, room, mit} = this.state;
+    log.info("["+mit+"] Feed enter: ", feeds);
+    let subscription = [];
+    for (let f in feed) {
+      let id = feed[f]["id"];
+      let display = JSON.parse(feed[f]["display"]);
+      if (display.role !== "user") return;
+      let streams = feed[f]["streams"];
+      feed[f].display = display;
+      for (let i in streams) {
+        let stream = streams[i];
+        stream["id"] = id;
+        stream["display"] = display;
+        if (stream.type === "video" && stream.codec === "h264") {
+          subscription.push({feed: id, mid: stream.mid});
+        }
+      }
+    }
+    const isExistFeed = feeds.find((f) => f.id === feed[0].id);
+    if (!isExistFeed) {
+      feeds.push(feed[0]);
+      this.setState({feeds});
+    }
+    if (subscription.length > 0) {
+      this.subscribeTo(room, subscription);
+    }
+  }
+
+  cleanState = (callback) => {
+    this.setState({feeds: [], mids: [], remoteFeed: false, videoroom: null, subscriber: null, janus: null});
+    if(typeof callback === "function") callback();
+  }
+
+  exitVideoRoom = (roomid, callback) => {
+    const {janus, videoroom, mit} = this.state;
+    if(videoroom) {
+      videoroom.leave().then(r => {
+        log.info("["+mit+"] leave respond:", r);
+        janus.detach(videoroom).then(() => {
+          log.info("["+mit+"] plugin detached:");
+          this.cleanState(callback)
+        })
+      }).catch(e => {
+        log.error("["+mit+"] leave error:", e);
+        this.cleanState(callback)
+      });
+    } else {
+      this.cleanState(callback)
+    }
+
   };
 
-  newRemoteFeed = (gateway, roomid, subscription) => {
-    gateway.gateway.attach({
-      plugin: "janus.plugin.videoroom",
-      opaqueId: "remotefeed_user",
-      success: (pluginHandle) => {
-        gateway.log(`[room ${roomid}] [remoteFeed] attach success`, pluginHandle.getId());
-        let remoteFeed = pluginHandle;
-        this.setState({remoteFeed, creatingFeed: false});
-        let subscribe = {request: "join", room: this.state.room, ptype: "subscriber", streams: subscription};
-        remoteFeed.send({message: subscribe});
-      },
-      error: (err) => {
-        gateway.error(`[room ${roomid}] [remoteFeed] attach error`, err);
-      },
-      iceState: (state) => {
-        gateway.log(`[room ${roomid}] [remoteFeed] ICE state changed to`, state);
-      },
-      webrtcState: (on) => {
-        gateway.log(`[room ${roomid}] [remoteFeed] Janus says this WebRTC PeerConnection is ${on ? "up" : "down"} now`);
-      },
-      slowLink: (uplink, nacks) => {
-        gateway.warn(
-          `[room ${roomid}] [remoteFeed] Janus reports problems ` +
-            (uplink ? "sending" : "receiving") +
-            " packets on this PeerConnection (remote feed, " +
-            nacks +
-            " NACKs/s " +
-            (uplink ? "received" : "sent") +
-            ")"
-        );
-      },
-      onmessage: (msg, jsep) => {
-        let event = msg["videoroom"];
-        if (msg["error"] !== undefined && msg["error"] !== null) {
-          console.error(`[Shidur] [room ${roomid}] [remoteFeed] error`, msg["error"]);
-        } else if (event !== undefined && event !== null) {
-          if (event === "attached") {
-            console.debug(`[Shidur] [room ${roomid}] [remoteFeed] successfully attached to feed in room`);
-          } else if (event === "event") {
-            // Check if we got an event on a simulcast-related event from this publisher
-          } else {
-            // What has just happened?
-          }
-        }
+  subscribeTo = (room, subscription) => {
+    let {janus, creatingFeed, remoteFeed, subscriber, mit} = this.state
 
-        if (msg["streams"]) {
-          let {mids} = this.state;
-          for (let i in msg["streams"]) {
-            let mindex = msg["streams"][i]["mid"];
-            mids[mindex] = msg["streams"][i];
-          }
-          this.setState({mids});
-        }
-
-        if (jsep) {
-          gateway.log(`[room ${roomid}] [remoteFeed] Handling SDP as well...`, jsep);
-          // Answer and attach
-          this.state.remoteFeed.createAnswer({
-            jsep: jsep,
-            media: {audioSend: false, videoSend: false, data: false},
-            success: (jsep) => {
-              gateway.debug(`[room ${roomid}] [remoteFeed] Got SDP!`, jsep);
-              let body = {request: "start", room: this.state.room, data: false};
-              this.state.remoteFeed.send({message: body, jsep: jsep});
-            },
-            error: (err) => {
-              gateway.error(`[room ${roomid}][remoteFeed]  WebRTC error`, err);
-            },
-          });
-        }
-      },
-      onremotetrack: (track, mid, on) => {
-        let {mids} = this.state;
-        let feed = mids[mid].feed_id;
-        if (track.kind === "video" && on) {
-          let stream = new MediaStream();
-          stream.addTrack(track.clone());
-          let remotevideo = this.refs["pv" + feed];
-          Janus.attachMediaStream(remotevideo, stream);
-        }
-      },
-      oncleanup: () => {
-        gateway.debug(`[room ${roomid}] [remoteFeed] ::: Got a cleanup notification :::`);
-      },
-    });
-  };
-
-  subscribeTo = (gateway, roomid, subscription) => {
-    if (this.state.remoteFeed) {
-      this.state.remoteFeed.send({message: {request: "subscribe", streams: subscription}});
+    if (remoteFeed) {
+      subscriber.sub(subscription);
       return;
     }
-    if (this.state.creatingFeed) {
+
+    if (creatingFeed) {
       setTimeout(() => {
-        this.subscribeTo(gateway, roomid, subscription);
+        this.subscribeTo(subscription);
       }, 500);
-    } else {
-      this.setState({creatingFeed: true});
-      this.newRemoteFeed(gateway, roomid, subscription);
+      return;
     }
+
+    subscriber = new SubscriberPlugin();
+    subscriber.onTrack = this.onRemoteTrack;
+    subscriber.onUpdate = this.onUpdateStreams;
+
+    janus.attach(subscriber).then(data => {
+      this.setState({subscriber});
+      log.info("["+mit+"] Subscriber Handle: ", data)
+      subscriber.join(subscription, room).then(data => {
+        log.info("["+mit+"] Subscriber join: ", data)
+        this.onUpdateStreams(data.streams);
+        this.setState({remoteFeed: true, creatingFeed: false});
+      });
+    })
   };
 
   unsubscribeFrom = (id) => {
-    let {feeds} = this.state;
-    let {remoteFeed} = this.state;
+    id = id[0]
+    const {feeds, subscriber, mit} = this.state;
+    log.info("["+mit+"] unsubscribeFrom", id);
     for (let i = 0; i < feeds.length; i++) {
       if (feeds[i].id === id) {
-        console.log("[Shidur] Feed " + feeds[i] + " (" + id + ") has left the room, detaching");
+        log.info("["+mit+"] unsubscribeFrom feed", feeds[i]);
+
         feeds.splice(i, 1);
-        let unsubscribe = {request: "unsubscribe", streams: [{feed: id}]};
-        if (remoteFeed !== null) remoteFeed.send({message: unsubscribe});
+
+        const streams = [{feed: id}]
+
+        const {remoteFeed} = this.state;
+        if (remoteFeed !== null && streams.length > 0) {
+          subscriber.unsub(streams);
+        }
+
         this.setState({feeds});
         break;
       }
     }
   };
+
+  handleTalking = (id, talking) => {
+    const feeds = Object.assign([], this.state.feeds);
+    for (let i = 0; i < feeds.length; i++) {
+      if (feeds[i] && feeds[i].id === id) {
+        feeds[i].talking = talking;
+      }
+    }
+    this.setState({feeds});
+  }
+
+  onUpdateStreams = (streams) => {
+    const mids = Object.assign([], this.state.mids);
+    for (let i in streams) {
+      let mindex = streams[i]["mid"];
+      //let feed_id = streams[i]["feed_id"];
+      mids[mindex] = streams[i];
+    }
+    this.setState({mids});
+  }
+
+  onRemoteTrack = (track, mid, on) => {
+    let {mids} = this.state;
+    let feed = mids[mid].feed_id;
+    if (track.kind === "video" && on) {
+      let stream = new MediaStream();
+      stream.addTrack(track.clone());
+      let remotevideo = this.refs["pv" + feed];
+      if (remotevideo) remotevideo.srcObject = stream;
+    }
+  }
 
   render() {
     const {feeds} = this.state;

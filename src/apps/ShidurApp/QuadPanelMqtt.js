@@ -1,9 +1,9 @@
 import React, {Component} from "react";
 import {Segment, Icon, Button} from "semantic-ui-react";
 import "./QuadPanel.scss";
+import log from "loglevel";
 import JanusHandleMqtt from "./JanusHandleMqtt";
 import api from "../../shared/Api";
-import {captureException} from "../../shared/sentry";
 import mqtt from "../../shared/mqtt";
 
 class QuadPanelMqtt extends Component {
@@ -101,7 +101,7 @@ class QuadPanelMqtt extends Component {
       // Next in queue
       if (groups_queue >= groups.length) {
         // End round here!
-        console.log("[Shidur] -- ROUND END --");
+        log.info("[Shidur] -- ROUND END --");
         groups_queue = 0;
         round++;
       }
@@ -113,8 +113,7 @@ class QuadPanelMqtt extends Component {
 
     this.setState({vquad});
     api.updateQuad(col, {vquad}).catch((err) => {
-      console.error("[Shidur] error updating quad state", col, err);
-      captureException(err, {source: "Shidur"});
+      log.error("[Shidur] error updating quad state", col, err);
     });
   };
 
@@ -127,13 +126,13 @@ class QuadPanelMqtt extends Component {
     for (let i = 0; i < 4; i++) {
       // Don't switch if nobody in queue
       if (i === groups.length) {
-        console.log("[Shidur] Queue is END");
+        log.info("[Shidur] Queue is END");
         break;
       }
 
       if (groups_queue >= groups.length) {
         // End round here!
-        console.log("[Shidur] -- ROUND END --");
+        log.info("[Shidur] -- ROUND END --");
         groups_queue = 0;
         round++;
         this.props.setProps({groups_queue, round});
@@ -152,8 +151,7 @@ class QuadPanelMqtt extends Component {
     }
 
     api.updateQuad(col, {vquad}).catch((err) => {
-      console.error("[Shidur] error updating quad state", col, err);
-      captureException(err, {source: "Shidur"});
+      log.error("[Shidur] error updating quad state", col, err);
     });
   };
 
@@ -169,8 +167,7 @@ class QuadPanelMqtt extends Component {
     this.setState({vquad});
 
     api.updateQuad(col, {vquad}).catch((err) => {
-      console.error("[Shidur] error updating quad state", col, err);
-      captureException(err, {source: "Shidur"});
+      log.error("[Shidur] error updating quad state", col, err);
     });
   };
 
@@ -183,7 +180,7 @@ class QuadPanelMqtt extends Component {
   checkFullScreen = () => {
     let {fullscr, index, vquad, question} = this.state;
     if (fullscr) {
-      console.log("[Shidur] :: Group: " + index + " , sending sdi-action...");
+      log.info("[Shidur] :: Group: " + index + " , sending sdi-action...");
       this.sdiAction("fullscr_group", true, index, vquad[index], question);
     }
   };
@@ -242,7 +239,7 @@ class QuadPanelMqtt extends Component {
 
   toFullGroup = (i, group, is_qst) => {
     let {room, janus} = group;
-    console.log("[Shidur]:: Make Full Screen Group: ", group);
+    log.info("[Shidur]:: Make Full Screen Group: ", group);
     this.setState({fullscr: true, index: i, question: is_qst});
     this.sdiAction("fullscr_group", true, i, group, is_qst);
     if (is_qst) this.micMute(true, room, janus, i);
@@ -250,7 +247,7 @@ class QuadPanelMqtt extends Component {
 
   toFourGroup = (i, group, cb, is_qst) => {
     let {room, janus} = group;
-    console.log("[Shidur]:: Back to four: ");
+    log.info("[Shidur]:: Back to four: ");
     this.sdiAction("fullscr_group", false, i, group, is_qst);
     if (is_qst) this.micMute(false, room, janus, i);
     this.setState({fullscr: false, index: null, question: false}, () => {

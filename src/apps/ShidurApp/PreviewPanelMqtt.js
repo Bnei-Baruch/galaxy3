@@ -1,19 +1,18 @@
 import React, {Component} from "react";
 import "./JanusHandle.scss";
-import {Janus} from "../../lib/janus";
 import classNames from "classnames";
 import {Button} from "semantic-ui-react";
 import api from "../../shared/Api";
+import {SubscriberPlugin} from "../../lib/subscriber-plugin";
+import log from "loglevel";
 
 class PreviewPanelMqtt extends Component {
   state = {
     feeds: [],
-    feedStreams: {},
+    subscriber: null,
     mids: [],
     name: "",
     room: "",
-    myid: null,
-    mystream: null,
   };
 
   componentDidMount() {
@@ -24,16 +23,16 @@ class PreviewPanelMqtt extends Component {
     let {pg} = this.props;
     let {room} = this.state;
     if (pg && JSON.stringify(pg) !== JSON.stringify(prevProps.pg) && pg.room !== room) {
-      if (this.state.remoteFeed) this.state.remoteFeed.detach();
-      this.setState({remoteFeed: null, mids: [], feeds: [], feedStreams: {}}, () => {
+      if (this.state.subscriber) this.state.subscriber.detach();
+      this.setState({remoteFeed: null, mids: [], feeds: [], subscriber: null}, () => {
         this.attachPreview(this.props.pg);
       });
     }
   }
 
-  componentWillUnmount() {
-    if (this.state.remoteFeed) this.state.remoteFeed.detach();
-  }
+  // componentWillUnmount() {
+  //   if (this.state.subscriber) this.state.subscriber.detach();
+  // }
 
   attachPreview = (g) => {
     api.adminListParticipants({request: "listparticipants", room: g.room}, g.janus).then((data) => {
@@ -71,115 +70,56 @@ class PreviewPanelMqtt extends Component {
     });
   };
 
-  newRemoteFeed = (subscription, inst) => {
-    const gateway = this.props.gateways[inst];
-    gateway.gateway.attach({
-      plugin: "janus.plugin.videoroom",
-      opaqueId: "remotefeed_user",
-      success: (pluginHandle) => {
-        gateway.log("[Preview] [remoteFeed] attach success", pluginHandle.getId());
-        let remoteFeed = pluginHandle;
-        this.setState({remoteFeed, creatingFeed: false});
-        let subscribe = {request: "join", room: this.state.room, ptype: "subscriber", streams: subscription};
-        remoteFeed.send({message: subscribe});
-      },
-      error: (err) => {
-        gateway.error("[Preview] [remoteFeed] attach error", err);
-      },
-      iceState: (state) => {
-        gateway.log("[Preview] [remoteFeed] ICE state changed to", state);
-      },
-      webrtcState: (on) => {
-        gateway.log(`[Preview] [remoteFeed] Janus says this WebRTC PeerConnection is ${on ? "up" : "down"} now`);
-      },
-      slowLink: (uplink, nacks) => {
-        gateway.warn(
-          "[Preview] [remoteFeed] Janus reports problems " +
-            (uplink ? "sending" : "receiving") +
-            " packets on this PeerConnection (remote feed, " +
-            nacks +
-            " NACKs/s " +
-            (uplink ? "received" : "sent") +
-            ")"
-        );
-      },
-      onmessage: (msg, jsep) => {
-        let event = msg["videoroom"];
-        if (msg["error"] !== undefined && msg["error"] !== null) {
-          console.error("[Shidur] [Preview] [remoteFeed] error", msg["error"]);
-        } else if (event !== undefined && event !== null) {
-          if (event === "attached") {
-            console.debug("[Shidur] [Preview] [remoteFeed] successfully attached to feed in room");
-          } else if (event === "event") {
-            // Check if we got an event on a simulcast-related event from this publisher
-          } else {
-            // What has just happened?
-          }
-        }
-        if (msg["streams"]) {
-          let {mids} = this.state;
-          for (let i in msg["streams"]) {
-            let mindex = msg["streams"][i]["mid"];
-            mids[mindex] = msg["streams"][i];
-          }
-          this.setState({mids});
-        }
-        if (jsep !== undefined && jsep !== null) {
-          gateway.debug("[Preview] [remoteFeed] Handling SDP as well...", jsep);
-          // Answer and attach
-          this.state.remoteFeed.createAnswer({
-            jsep: jsep,
-            media: {audioSend: false, videoSend: false},
-            success: (jsep) => {
-              gateway.debug("[Preview] [remoteFeed] Got SDP!", jsep);
-              let body = {request: "start", room: this.state.room};
-              this.state.remoteFeed.send({message: body, jsep: jsep});
-            },
-            error: (err) => {
-              gateway.error("[Preview][remoteFeed]  WebRTC error", err);
-            },
-          });
-        }
-      },
-      onremotetrack: (track, mid, on) => {
-        if (!mid) {
-          mid = track.id.split("janus")[1];
-        }
-        let {mids} = this.state;
-        if (track.kind === "video" && on) {
-          let feed = mids[mid].feed_id;
-          let stream = new MediaStream();
-          stream.addTrack(track.clone());
-          let remotevideo = this.refs["pv" + feed];
-          Janus.attachMediaStream(remotevideo, stream);
-        }
-      },
-      ondataopen: (data) => {
-        gateway.debug("[Preview] [remoteFeed] The DataChannel is available!");
-      },
-      ondata: (data, label) => {
-        console.log("Got Room data from the DataChannel! (" + label + ")" + data);
-      },
-      oncleanup: () => {
-        gateway.debug("[Preview] [remoteFeed] ::: Got a cleanup notification :::");
-      },
-    });
-  };
-
   subscribeTo = (subscription, inst) => {
-    if (this.state.remoteFeed) {
-      this.state.remoteFeed.send({message: {request: "subscribe", streams: subscription}});
+    const {gateways} = this.props;
+    let janus = gateways[inst];
+    let {creatingFeed, remoteFeed, subscriber, room} = this.state
+
+    if (remoteFeed) {
+      subscriber.sub(subscription);
       return;
     }
-    if (this.state.creatingFeed) {
+
+    if (creatingFeed) {
       setTimeout(() => {
-        this.subscribeTo(subscription, inst);
+        this.subscribeTo(subscription);
       }, 500);
-    } else {
-      this.setState({creatingFeed: true});
-      this.newRemoteFeed(subscription, inst);
+      return;
     }
+
+    subscriber = new SubscriberPlugin();
+    subscriber.onTrack = this.onRemoteTrack;
+    subscriber.onUpdate = this.onUpdateStreams;
+
+    janus.attach(subscriber).then(data => {
+      this.setState({subscriber});
+      log.info("["+inst+"] Subscriber Handle: ", data)
+      subscriber.join(subscription, room).then(data => {
+        log.info("["+inst+"] Subscriber join: ", data)
+        this.onUpdateStreams(data.streams);
+        this.setState({remoteFeed: true, creatingFeed: false});
+      });
+    })
   };
+
+  onUpdateStreams = (streams) => {
+    const mids = Object.assign([], this.state.mids);
+    for (let i in streams) {
+      let mindex = streams[i]["mid"];
+      //let feed_id = streams[i]["feed_id"];
+      mids[mindex] = streams[i];
+    }
+    this.setState({mids});
+  }
+
+  onRemoteTrack = (track, mid, on) => {
+    if (track.kind === "video" && on) {
+      let stream = new MediaStream();
+      stream.addTrack(track.clone());
+      let remotevideo = this.refs["pv" + mid];
+      if (remotevideo) remotevideo.srcObject = stream;
+    }
+  }
 
   render() {
     const {mids} = this.state;
@@ -190,17 +130,14 @@ class PreviewPanelMqtt extends Component {
     const muted = true;
 
     let program_feeds = mids.map((mid) => {
-      if (mid && mid.feed_id) {
+      if (mid?.mid) {
         let id = mid.feed_id;
-        let talk = mid.talk;
         return (
           <div className="video" key={"prov" + id} ref={"provideo" + id} id={"provideo" + id}>
-            <div className={classNames("video__overlay", {talk: talk})}></div>
             <video
-              className={talk ? "talk" : ""}
-              key={id}
-              ref={"pv" + id}
-              id={"pv" + id}
+              key={"key" + mid.mid}
+              ref={"pv" + mid.mid}
+              id={"pv" + mid.mid}
               width={width}
               height={height}
               autoPlay={autoPlay}
