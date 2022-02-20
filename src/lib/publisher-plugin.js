@@ -69,49 +69,51 @@ export class PublisherPlugin extends EventEmitter {
   }
 
   publish(video, audio) {
+    return new Promise((resolve, reject) => {
+      if (video) this.pc.addTrack(video.getVideoTracks()[0], video);
+      if (audio) this.pc.addTrack(audio.getAudioTracks()[0], audio);
 
-    if(video) this.pc.addTrack(video.getVideoTracks()[0], video);
-    if(audio) this.pc.addTrack(audio.getAudioTracks()[0], audio);
+      let videoTransceiver = null;
+      let audioTransceiver = null;
 
-    let videoTransceiver = null;
-    let audioTransceiver = null;
-    let tr = this.pc.getTransceivers();
-    if(tr && tr.length > 0) {
-      for (let t of tr) {
-        if (t.sender && t.sender.track && t.sender.track.kind === "video") {
-          videoTransceiver = t;
-          if (videoTransceiver.setDirection) {
-            videoTransceiver.setDirection("sendonly");
-          } else {
-            videoTransceiver.direction = "sendonly";
+      let tr = this.pc.getTransceivers();
+      if (tr && tr.length > 0) {
+        for (let t of tr) {
+          if (t.sender && t.sender.track && t.sender.track.kind === "video") {
+            videoTransceiver = t;
+            if (videoTransceiver.setDirection) {
+              videoTransceiver.setDirection("sendonly");
+            } else {
+              videoTransceiver.direction = "sendonly";
+            }
+            break;
           }
-          break;
-        }
-        if(t.sender && t.sender.track && t.sender.track.kind === "audio") {
-          audioTransceiver = t;
-          if (audioTransceiver.setDirection) {
-            audioTransceiver.setDirection("sendonly");
-          } else {
-            audioTransceiver.direction = "sendonly";
+          if (t.sender && t.sender.track && t.sender.track.kind === "audio") {
+            audioTransceiver = t;
+            if (audioTransceiver.setDirection) {
+              audioTransceiver.setDirection("sendonly");
+            } else {
+              audioTransceiver.direction = "sendonly";
+            }
+            break;
           }
-          break;
         }
       }
-    }
 
-    this.initPcEvents()
+      this.initPcEvents()
 
-    this.pc.createOffer().then((offer) => {
-      this.pc.setLocalDescription(offer)
-        const jsep = { type: offer.type, sdp: offer.sdp }
-        const body = { request: 'configure', video: !!video, audio: !!audio }
-        return this.transaction('message', { body, jsep }, 'event').then((param) => {
-          const { json } = param || {}
+      this.pc.createOffer().then((offer) => {
+        this.pc.setLocalDescription(offer)
+        const jsep = {type: offer.type, sdp: offer.sdp}
+        const body = {request: 'configure', video: !!video, audio: !!audio}
+        return this.transaction('message', {body, jsep}, 'event').then((param) => {
+          const {data, json} = param || {}
           const jsep = json.jsep
-          log.info('[publisher] Configure respond: ', jsep)
+          log.info('[publisher] Configure respond: ', param)
+          resolve(data)
           this.pc.setRemoteDescription(jsep)
-        })
-
+        }).catch(error => reject(error))
+      })
     })
   };
 
@@ -167,13 +169,12 @@ export class PublisherPlugin extends EventEmitter {
     this.pc.createOffer().then((offer) => {
       this.pc.setLocalDescription(offer).catch(error => log.error("[publisher] setLocalDescription: ", error))
       const body = {request: 'configure', restart}
-      return this.transaction('message', { body, jsep: offer }, 'event').then((param) => {
-        const { json } = param || {}
+      return this.transaction('message', {body, jsep: offer}, 'event').then((param) => {
+        const {data, json} = param || {}
         const jsep = json.jsep
-        //log.info('[publisher] Video is - ' + (video ? 'Muted' : 'Unmuted'), param)
+        log.info('[publisher] Configure respond: ', param)
         this.pc.setRemoteDescription(jsep)
       })
-
     })
   }
 

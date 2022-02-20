@@ -1,6 +1,5 @@
 import React, {Component} from "react";
 import "./JanusHandle.scss";
-import classNames from "classnames";
 import {Button} from "semantic-ui-react";
 import api from "../../shared/Api";
 import {SubscriberPlugin} from "../../lib/subscriber-plugin";
@@ -40,6 +39,7 @@ class PreviewPanelMqtt extends Component {
       if (list.length === 0) {
         console.error("- No feeds to show -");
       }
+      log.info("[preview] feeds: ", list)
       this.setState({room: g.room}, () => {
         let subscription = [];
         //FIXME: If user not found in DB we can not know which mid is video from this request
@@ -52,10 +52,10 @@ class PreviewPanelMqtt extends Component {
           // User not in DB - skip
           if (!user) continue;
           // Check which mid is video
-          if (user && user.extra && user.extra.streams) {
-            // User does not have video - skip
+          if (user?.extra?.streams) {
             let mids = user.extra.streams;
-            if (mids.length === 1 && mids[0].type === "audio") continue;
+            if (mids.length === 1 && mids[0].type === "audio")
+              continue; // User does not have video - skip
             mid = mids[0].type === "audio" ? "1" : "0";
           }
           let subst = {feed, mid};
@@ -131,12 +131,12 @@ class PreviewPanelMqtt extends Component {
 
     let program_feeds = mids.map((mid) => {
       if (mid?.mid) {
-        let id = mid.feed_id;
+        let id = mid.mid;
         return (
           <div className="video" key={"prov" + id} ref={"provideo" + id} id={"provideo" + id}>
             <video
-              key={"key" + mid.mid}
-              ref={"pv" + mid.mid}
+              key={"key" + id}
+              ref={"pv" + id}
               id={"pv" + mid.mid}
               width={width}
               height={height}
