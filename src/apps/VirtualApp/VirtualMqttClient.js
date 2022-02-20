@@ -223,6 +223,7 @@ class VirtualMqttClient extends Component {
     checkNotification();
     let system = navigator.userAgent;
     user.system = system;
+    user.extra = {};
     let browser = platform.parse(system);
     if (!/Safari|Firefox|Chrome/.test(browser.name)) {
       alert(t("oldClient.browserNotSupported"));
@@ -535,36 +536,44 @@ class VirtualMqttClient extends Component {
 
     this.micMute()
 
-    this.setState({user});
-
-    updateSentryUser(user);
-
     const {id, timestamp, role, username} = user;
     const d = {id, timestamp, role, display: username};
 
     videoroom.join(selected_room, d).then(data => {
       log.info('[client] Joined respond :', data)
-      const {audio, video} = this.state.media;
-      videoroom.publish(video.stream, audio.stream)
 
-      const {id, private_id, room} = data
-      user.rfid = data.id;
-      this.setState({user, myid: id, mypvtid: private_id, room, delay: false, wipSettings: false});
-      updateSentryUser(user);
-      updateGxyUser(user);
-      this.keepAlive();
-
-      mqtt.join("galaxy/room/" + selected_room);
-      mqtt.join("galaxy/room/" + selected_room + "/chat", true);
-
-      log.info("[client] Pulbishers list: ", data.publishers);
       // Feeds count with user role
       let feeds_count = userFeeds(data.publishers).length;
       if (feeds_count > 25) {
         alert(t("oldClient.maxUsersInRoom"));
         this.exitRoom(/* reconnect= */ false);
+        return
       }
-      this.makeSubscription(data.publishers);
+
+      const {id, private_id, room} = data
+      user.rfid = data.id;
+
+      const {audio, video} = this.state.media;
+      videoroom.publish(video.stream, audio.stream).then(json => {
+        user.extra.streams = json.streams
+
+        this.setState({user, myid: id, mypvtid: private_id, room, delay: false, wipSettings: false});
+        updateSentryUser(user);
+        updateGxyUser(user);
+        this.keepAlive();
+
+        mqtt.join("galaxy/room/" + selected_room);
+        mqtt.join("galaxy/room/" + selected_room + "/chat", true);
+
+        log.info("[client] Pulbishers list: ", data.publishers);
+
+        this.makeSubscription(data.publishers);
+      }).catch(err => {
+        log.error('[client] Publish error :', err);
+        this.exitRoom(/* reconnect= */ false);
+      })
+
+
     }).catch(err => {
       log.error('[client] Join error :', err);
       this.exitRoom(/* reconnect= */ false);
@@ -884,9 +893,7 @@ class VirtualMqttClient extends Component {
   };
 
   reloadConfig = () => {
-    api
-      .fetchConfig()
-      .then((data) => {
+    api.fetchConfig().then((data) => {
         ConfigStore.setGlobalConfig(data);
         const {premodStatus, question} = this.state;
         const newPremodStatus = ConfigStore.dynamicConfig(ConfigStore.PRE_MODERATION_KEY) === "true";
@@ -896,8 +903,7 @@ class VirtualMqttClient extends Component {
             this.handleQuestion();
           }
         }
-      })
-      .catch((err) => {
+      }).catch((err) => {
         log.error("[client] error reloading config", err);
       });
   };

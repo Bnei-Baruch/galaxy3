@@ -1,12 +1,12 @@
 import React, {Component} from "react";
 import {Segment, Icon, Button} from "semantic-ui-react";
-import "./UsersQuad.scss";
-import UsersHandle from "./UsersHandle";
+import "./QuadPanel.scss";
+import JanusHandleHttp from "./JanusHandleHttp";
 import api from "../../shared/Api";
 import {captureException} from "../../shared/sentry";
 import mqtt from "../../shared/mqtt";
 
-class UsersQuad extends Component {
+class QuadPanelHttp extends Component {
   state = {
     question: false,
     col: null,
@@ -296,7 +296,7 @@ class UsersQuad extends Component {
           <div className="click-panel" onClick={() => this.switchQuestion(i, g, true)}>
             <div className="video_title">{name}</div>
             {qst}
-            <UsersHandle
+            <JanusHandleHttp
               key={"q" + i}
               g={g}
               index={i}
@@ -356,4 +356,4 @@ class UsersQuad extends Component {
   }
 }
 
-export default UsersQuad;
+export default QuadPanelHttp;

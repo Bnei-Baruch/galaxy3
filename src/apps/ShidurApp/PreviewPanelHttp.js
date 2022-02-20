@@ -1,11 +1,11 @@
 import React, {Component} from "react";
-import "./UsersHandle.scss";
+import "./JanusHandle.scss";
 import {Janus} from "../../lib/janus";
 import classNames from "classnames";
 import {Button} from "semantic-ui-react";
 import api from "../../shared/Api";
 
-class UsersPreview extends Component {
+class PreviewPanelHttp extends Component {
   state = {
     feeds: [],
     feedStreams: {},
@@ -261,4 +261,4 @@ class UsersPreview extends Component {
   }
 }
 
-export default UsersPreview;
+export default PreviewPanelHttp;

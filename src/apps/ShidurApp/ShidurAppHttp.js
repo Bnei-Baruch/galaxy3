@@ -4,8 +4,8 @@ import api from "../../shared/Api";
 import {kc} from "../../components/UserManager";
 import GxyJanus from "../../shared/janus-utils";
 import LoginPage from "../../components/LoginPage";
-import ShidurToran from "./ShidurToran";
-import UsersQuad from "./UsersQuad";
+import ToranToolsHttp from "./ToranToolsHttp";
+import QuadPanelHttp from "./QuadPanelHttp";
 import "./ShidurApp.css";
 import {LOST_CONNECTION, STORAN_ID} from "../../shared/consts";
 import {GuaranteeDeliveryManager} from "../../shared/GuaranteeDelivery";
@@ -13,7 +13,7 @@ import {captureException, updateSentryUser} from "../../shared/sentry";
 import {getDateString} from "../../shared/tools";
 import mqtt from "../../shared/mqtt";
 
-class ShidurApp extends Component {
+class ShidurAppHttp extends Component {
   state = {
     ce: null,
     delay: false,
@@ -97,7 +97,7 @@ class ShidurApp extends Component {
       .catch((err) => {
         console.error("[Shidur] error initializing app", err);
         this.setState({appInitError: err});
-        captureException(err, {source: "ShidurApp"});
+        captureException(err, {source: "ShidurAppHttp"});
       });
   };
 
@@ -118,7 +118,7 @@ class ShidurApp extends Component {
 
     const gatewayToInitPromise = (gateway) =>
       this.initGateway(user, gateway).catch((error) => {
-        captureException(error, {source: "ShidurApp", gateway: gateway.name});
+        captureException(error, {source: "ShidurAppHttp", gateway: gateway.name});
         throw error;
       });
 
@@ -317,7 +317,7 @@ class ShidurApp extends Component {
           <Grid columns={4}>
             <Grid.Row>
               <Grid.Column>
-                <UsersQuad
+                <QuadPanelHttp
                   index={0}
                   {...this.state}
                   ref={(col1) => {
@@ -327,7 +327,7 @@ class ShidurApp extends Component {
                 />
               </Grid.Column>
               <Grid.Column>
-                <UsersQuad
+                <QuadPanelHttp
                   index={4}
                   {...this.state}
                   ref={(col2) => {
@@ -337,7 +337,7 @@ class ShidurApp extends Component {
                 />
               </Grid.Column>
               <Grid.Column>
-                <UsersQuad
+                <QuadPanelHttp
                   index={8}
                   {...this.state}
                   ref={(col3) => {
@@ -347,7 +347,7 @@ class ShidurApp extends Component {
                 />
               </Grid.Column>
               <Grid.Column>
-                <UsersQuad
+                <QuadPanelHttp
                   index={12}
                   {...this.state}
                   ref={(col4) => {
@@ -357,7 +357,7 @@ class ShidurApp extends Component {
                 />
               </Grid.Column>
             </Grid.Row>
-            <ShidurToran {...this.state} setProps={this.setProps} nextInQueue={this.nextInQueue} />
+            <ToranToolsHttp {...this.state} setProps={this.setProps} nextInQueue={this.nextInQueue} />
           </Grid>
         </Grid.Column>
       </Grid>
@@ -379,4 +379,4 @@ class ShidurApp extends Component {
   }
 }
 
-export default ShidurApp;
+export default ShidurAppHttp;

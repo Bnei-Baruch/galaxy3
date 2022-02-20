@@ -258,10 +258,10 @@ export class SubscriberPlugin extends EventEmitter {
   }
 
   hangup () {
-    log.info('[subscriber] - hangup - ')
-    this.janus.detach(this).catch((err) => {
-      log.error('[subscriber] error in hangup', err)
-    })
+    log.info('[subscriber] - hangup - ', this.janus)
+    // this.janus.detach(this).catch((err) => {
+    //   log.error('[subscriber] error in hangup', err)
+    // })
   }
 
   slowLink (uplink, lost, mid) {

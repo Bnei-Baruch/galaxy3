@@ -1,11 +1,11 @@
 import React, {Component} from "react";
-import "./UsersHandle.scss";
+import "./JanusHandle.scss";
 import {Janus} from "../../lib/janus";
 //import {Icon} from "semantic-ui-react";
 import classNames from "classnames";
 import {Button} from "semantic-ui-react";
 
-class UsersHandle extends Component {
+class JanusHandleHttp extends Component {
   state = {
     feeds: [],
     inst: null,
@@ -446,4 +446,4 @@ class UsersHandle extends Component {
   }
 }
 
-export default UsersHandle;
+export default JanusHandleHttp;
