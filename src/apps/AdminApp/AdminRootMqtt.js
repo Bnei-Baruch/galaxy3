@@ -158,7 +158,7 @@ class AdminRootMqtt extends Component {
     }).catch(err => {
       log.error("[admin] Janus init", err);
       this.exitRoom(/* reconnect= */ true, () => {
-        log.error("[User] error initializing janus", err);
+        log.error("[admin] error initializing janus", err);
         this.reinitClient(retry);
       });
     })
@@ -208,15 +208,13 @@ class AdminRootMqtt extends Component {
   }
 
   onRemoteTrack = (track, mid, on) => {
-    log.info("[admin]  ::: Got a remote track event ::: (remote feed)");
+    log.debug("[admin]  ::: Got a remote track event ::: (remote feed)");
     if (!mid) {
       mid = track.id.split("janus")[1];
     }
-    log.info("[admin] Remote track (mid=" + mid + ") " + (on ? "added" : "removed") + ":", track);
-    // Which publisher are we getting on this mid?
     let {mids} = this.state;
     let feed = mids[mid].feed_id;
-    log.info(" >> This track is coming from feed " + feed + ":", mid);
+    log.info("[admin] >> This track is coming from feed " + feed + ":", mid);
     if (on) {
       // If we're here, a new track was added
       if (track.kind === "audio") {
@@ -339,7 +337,7 @@ class AdminRootMqtt extends Component {
         this.setState({rooms: data, users, users_count, rooms_question, web_count, ios_count, android_count});
       })
       .catch((err) => {
-        log.error("[Admin] error fetching active rooms", err);
+        log.error("[admin] error fetching active rooms", err);
       });
   };
 
@@ -477,7 +475,7 @@ class AdminRootMqtt extends Component {
         api
           .fetchHandleInfo(janus, session, handle)
           .then((data) => {
-            log.debug("[Admin] Publisher info", data);
+            log.debug("[admin] Publisher info", data);
             const m0 = data.info.webrtc.media[0];
             const m1 = data.info.webrtc.media[1];
             let video = null;
