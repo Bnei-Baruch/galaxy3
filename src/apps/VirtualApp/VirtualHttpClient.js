@@ -70,8 +70,8 @@ const userFeeds = (feeds) => feeds.filter((feed) => feed.display.role === userRo
 
 //for test server
 // const isUseNewDesign = new URL(window.location.href).searchParams.has('new_design');
-const isUseNewDesign = true;
-//const isUseNewDesign = /arvut/.test(window.location.host);
+//const isUseNewDesign = true;
+const isUseNewDesign = /arvut/.test(window.location.host);
 
 
 class VirtualHttpClient extends Component {
@@ -449,8 +449,8 @@ class VirtualHttpClient extends Component {
     })
   };
 
-  setVideoDevice = (device, reconnect) => {
-    return devices.setVideoDevice(device, reconnect).then(media => {
+  setVideoDevice = (device) => {
+    return devices.setVideoDevice(device).then(media => {
       if(media.video.device) {
         let myvideo = this.refs.localVideo;
         myvideo.srcObject = media.video.stream;
@@ -463,7 +463,6 @@ class VirtualHttpClient extends Component {
     devices.setAudioDevice(device, cam_mute).then(media => {
       if(media.audio.device) {
         this.setState({media});
-        if(this.state.videoroom) this.replaceAudio(media.audio.device);
       }
     })
   };
@@ -1316,26 +1315,6 @@ class VirtualHttpClient extends Component {
     }
   };
 
-  replaceAudio = (device) => {
-    const {videoroom} = this.state;
-    videoroom.createOffer({
-      media: {
-        replaceAudio: true,
-        audio: {noiseSuppression: true, deviceId: {exact: device}},
-      },
-      simulcast: false,
-      success: (jsep) => {
-        Janus.debug("Got publisher SDP!");
-        Janus.debug(jsep);
-        videoroom.send({message: {request: "configure"}, jsep: jsep});
-        videoroom.muteAudio();
-      },
-      error: (error) => {
-        Janus.error("WebRTC error:", error);
-      },
-    });
-  }
-
   camMute = (cammuted) => {
     const {videoroom, media} = this.state;
     const {video: {setting, device},} = media;
@@ -1415,7 +1394,7 @@ class VirtualHttpClient extends Component {
     console.log("Bind local video stream");
     const deviceId = device || devices?.[0]?.deviceId;
     if (deviceId) {
-      this.setVideoDevice(deviceId, true).then(() => {
+      this.setVideoDevice(deviceId).then(() => {
         this.setState({cammuted: false});
       });
     }

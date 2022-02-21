@@ -461,8 +461,8 @@ class VirtualMqttClient extends Component {
     })
   };
 
-  setVideoDevice = (device, reconnect) => {
-    return devices.setVideoDevice(device, reconnect).then(media => {
+  setVideoDevice = (device) => {
+    return devices.setVideoDevice(device).then(media => {
       if(media.video.device) {
         let myvideo = this.refs.localVideo;
         myvideo.srcObject = media.video.stream;
@@ -997,7 +997,7 @@ class VirtualMqttClient extends Component {
     log.info("[client] Bind local video stream");
     const deviceId = device || devices?.[0]?.deviceId;
     if (deviceId) {
-      this.setVideoDevice(deviceId, true).then(() => {
+      this.setVideoDevice(deviceId).then(() => {
         const {stream} = this.state.media.video
         if(videoroom) videoroom.mute(false, stream)
         this.setState({cammuted: false});
@@ -1006,7 +1006,7 @@ class VirtualMqttClient extends Component {
   };
 
   micMute = () => {
-    const {media: {audio: {stream, context}}, muted} = this.state;
+    const {media: {audio: {stream}}, muted} = this.state;
     if(stream) {
       if(muted) this.micVolume()
       stream.getAudioTracks()[0].enabled = muted;
