@@ -2,6 +2,7 @@ import {gxycol, trllang, NO_VIDEO_OPTION_VALUE} from "./consts";
 import {JanusMqtt} from "../lib/janus-mqtt";
 import {StreamingPlugin} from "../lib/streaming-plugin";
 import log from "loglevel";
+import GxyJanus from "./janus-utils";
 
 export default class JanusStream {
   constructor(onInitialized) {
@@ -184,9 +185,12 @@ export default class JanusStream {
   }
 
   initJanus_(user, srv) {
-    const str = srv ? srv : 'str' + (Math.floor(Math.random() * 8) + 2)
-    this.janus = new JanusMqtt(user, str)
+    const streamingGateways = GxyJanus.gatewayNames("streaming");
+    this.streamingGateway = streamingGateways[Math.floor(Math.random() * streamingGateways.length)];
+    const config = GxyJanus.instanceConfig(this.streamingGateway);
+    const str = srv || config.name
 
+    this.janus = new JanusMqtt(user, str)
     this.janus.onStatus = (srv, status) => {
       if(status !== "online") {
         setTimeout(() => {

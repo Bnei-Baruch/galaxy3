@@ -345,7 +345,6 @@ class VirtualMqttClient extends Component {
     log.info("[client] Got config: ", config)
     this.initJanus(user, config, retry)
     if (!reconnect) {
-
       this.state.virtualStreamingJanus.init(user);
     }
   };
