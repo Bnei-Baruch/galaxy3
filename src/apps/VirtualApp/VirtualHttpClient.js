@@ -508,7 +508,7 @@ class VirtualHttpClient extends Component {
 
   iceState = () => {
     let {user: {system}} = this.state;
-    let browser = platform.parse(system);
+    //let browser = platform.parse(system);
     let count = 0;
     let chk = setInterval(() => {
       count++;
@@ -517,14 +517,14 @@ class VirtualHttpClient extends Component {
       if (count < 60 && ice.match(/^(connected|completed)$/)) {
         clearInterval(chk);
       }
-      if (browser.name.match(/^(Safari|Firefox)$/) && count === 10) {
-        console.log(" :: ICE Restart :: ");
-        this.iceRestart();
-      }
-      if (browser.name === "Chrome" && count === 10) {
-        console.log(" :: ICE Restart :: ");
-        this.iceRestart();
-      }
+      // if (browser.name.match(/^(Safari|Firefox)$/) && count === 10) {
+      //   console.log(" :: ICE Restart :: ");
+      //   this.iceRestart();
+      // }
+      // if (browser.name === "Chrome" && count === 10) {
+      //   console.log(" :: ICE Restart :: ");
+      //   this.iceRestart();
+      // }
       if (count >= 60) {
         clearInterval(chk);
         console.log(" :: ICE Filed: Reconnecting... ");

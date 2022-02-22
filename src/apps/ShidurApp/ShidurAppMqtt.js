@@ -8,12 +8,10 @@ import LoginPage from "../../components/LoginPage";
 import ToranToolsMqtt from "./ToranToolsMqtt";
 import QuadPanelMqtt from "./QuadPanelMqtt";
 import "./ShidurApp.css";
-import {LOST_CONNECTION} from "../../shared/consts";
 import {getDateString} from "../../shared/tools";
 import mqtt from "../../shared/mqtt";
 import ConfigStore from "../../shared/ConfigStore";
 import {JanusMqtt} from "../../lib/janus-mqtt";
-import {captureException} from "../../shared/sentry";
 
 class ShidurAppMqtt extends Component {
   state = {
@@ -110,36 +108,12 @@ class ShidurAppMqtt extends Component {
       mqtt.join("galaxy/users/broadcast");
       mqtt.send(JSON.stringify({type: "event", [user.role]: true}), true, "galaxy/service/" + user.role);
 
-      // const gatewayToInitPromise = (gateway) =>
-      //   this.initJanus(user, gateway.name).catch((error) => {
-      //     captureException(error, {source: "ShidurAppHttp", gateway: gateway.name});
-      //     throw error;
-      //   });
-      //
-      // return Promise.all(Object.values(ConfigStore.globalConfig.gateways.rooms).map(gatewayToInitPromise)).then(() => {
-      //   console.log("[Shidur] gateways initialization complete");
-      //   this.setState({gatewaysInitialized: true});
-      // });
-
       Object.keys(ConfigStore.globalConfig.gateways.rooms).forEach(gxy => {
         this.initJanus(user, gxy)
       })
     });
 
     this.setState({gatewaysInitialized: true});
-
-    // const gateways = GxyJanus.makeGateways("rooms");
-    // this.setState({gateways});
-    //
-    // const gatewayToInitPromise = (gateway) =>
-    //   this.initGateway(user, gateway).catch((error) => {
-    //     throw error;
-    //   });
-    //
-    // return Promise.all(Object.values(gateways).map(gatewayToInitPromise)).then(() => {
-    //   log.info("[Shidur] gateways initialization complete");
-    //   this.setState({gatewaysInitialized: true});
-    // });
   };
 
   initJanus = (user, gxy) => {
@@ -160,16 +134,6 @@ class ShidurAppMqtt extends Component {
     }).catch(err => {
       log.error("["+gxy+"] Janus init", err);
     })
-  };
-
-  initGateway = (user, gateway) => {
-    log.info("[Shidur] initializing gateway", gateway.name);
-
-    gateway.addEventListener("net-lost", (err) => {
-      if (err.detail === LOST_CONNECTION) this.reinitTimer(gateway);
-    });
-
-    return gateway.init();
   };
 
   reinitTimer = (gateway) => {
