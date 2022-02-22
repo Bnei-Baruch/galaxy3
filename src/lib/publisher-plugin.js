@@ -2,9 +2,10 @@ import {randomString} from "../shared/tools";
 import {EventEmitter} from "events";
 import log from "loglevel";
 import mqtt from "../shared/mqtt";
+import {STUN_SRV_GXY} from "../shared/env";
 
 export class PublisherPlugin extends EventEmitter {
-  constructor (logger) {
+  constructor (list = [{urls: STUN_SRV_GXY}]) {
     super()
     this.id = randomString(12)
     this.janus = undefined
@@ -16,7 +17,7 @@ export class PublisherPlugin extends EventEmitter {
     this.talkEvent = null
     this.iceState = null
     this.pc = new RTCPeerConnection({
-      iceServers: [{urls: "stun:icesrv.kab.sh:3478"}]
+      iceServers: list
     })
   }
 

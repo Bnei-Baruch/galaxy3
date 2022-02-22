@@ -365,12 +365,12 @@ class VirtualMqttClient extends Component {
       }
     }
 
-    let videoroom = new PublisherPlugin();
+    let videoroom = new PublisherPlugin(config.iceServers);
     videoroom.subTo = this.makeSubscription;
     videoroom.unsubFrom = this.unsubscribeFrom
     videoroom.talkEvent = this.handleTalking
 
-    let subscriber = new SubscriberPlugin();
+    let subscriber = new SubscriberPlugin(config.iceServers);
     subscriber.onTrack = this.onRemoteTrack;
     subscriber.onUpdate = this.onUpdateStreams;
 

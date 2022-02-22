@@ -31,7 +31,7 @@ export default class JanusStream {
     this.audios = Number(localStorage.getItem("vrt_lang")) || 2;
     this.mixvolume = null;
     this.talking = null;
-    this.streamingGateway = "";
+    this.config = null;
 
     this.videoElement = null;
     this.audioElement = new Audio();
@@ -185,10 +185,10 @@ export default class JanusStream {
   }
 
   initJanus_(user, srv) {
-    const streamingGateways = GxyJanus.gatewayNames("streaming");
-    this.streamingGateway = streamingGateways[Math.floor(Math.random() * streamingGateways.length)];
-    const config = GxyJanus.instanceConfig(this.streamingGateway);
-    const str = srv || config.name
+    const gw_list = GxyJanus.gatewayNames("streaming");
+    let inst = gw_list[Math.floor(Math.random() * gw_list.length)];
+    this.config = GxyJanus.instanceConfig(inst);
+    const str = srv || this.config.name
 
     this.janus = new JanusMqtt(user, str)
     this.janus.onStatus = (srv, status) => {
