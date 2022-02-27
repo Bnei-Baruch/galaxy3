@@ -327,7 +327,7 @@ class VirtualMqttClient extends Component {
         if (user.role !== userRolesEnum.user) {
           localStorage.setItem("room", "-1");
           this.setState({user, sourceLoading: true});
-          this.state.virtualStreamingJanus.init(user, "str1");
+          this.state.virtualStreamingJanus.init(user, "str11");
         }
       }
     });
@@ -345,7 +345,8 @@ class VirtualMqttClient extends Component {
     log.info("[client] Got config: ", config)
     this.initJanus(user, config, retry)
     if (!reconnect) {
-      this.state.virtualStreamingJanus.init(user);
+      const srv = user.country === "Russia" ? "str11" : null;
+      this.state.virtualStreamingJanus.init(user, srv);
     }
   };
 

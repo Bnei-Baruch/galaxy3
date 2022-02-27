@@ -270,12 +270,13 @@ export default class VirtualStreamingJanus {
     const streamingGateways = GxyJanus.gatewayNames("streaming");
     this.streamingGateway = streamingGateways[Math.floor(Math.random() * streamingGateways.length)];
     const config = GxyJanus.instanceConfig(this.streamingGateway);
+    const server = country === "Russia" ? 'https://str11.kab.sh/janusgxy' : config.url
 
     Janus.init({
       debug: process.env.NODE_ENV !== "production" ? ["error"] : ["error"],
       callback: () => {
         this.janus = new Janus({
-          server: config.url,
+          server,
           iceServers: config.iceServers,
           success: () => {
             Janus.log(" :: Connected to JANUS");

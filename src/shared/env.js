@@ -17,6 +17,7 @@ export const WKLI_ENTER = process.env.REACT_APP_WKLI_ENTER;
 export const WKLI_LEAVE = process.env.REACT_APP_WKLI_LEAVE;
 export const RESET_VOTE = process.env.REACT_APP_RESET_VOTE;
 
+export const QST_BACKEND = process.env.REACT_APP_QST_BACKEND;
 export const API_BACKEND = process.env.REACT_APP_API_BACKEND;
 export const API_BACKEND_USERNAME = process.env.REACT_APP_API_BACKEND_USERNAME;
 export const API_BACKEND_PASSWORD = process.env.REACT_APP_API_BACKEND_PASSWORD;
@@ -32,7 +33,7 @@ export const ADMIN_SRV_STR1 = process.env.REACT_APP_ADMIN_SRV_STR1;
 export const STUDY_MATERIALS = process.env.REACT_APP_STUDY_MATERIALS;
 export const JANUS_ADMIN_GXY = process.env.REACT_APP_JANUS_ADMIN_GXY;
 
-export const APP_JANUS_SRV_STR1 = process.env.REACT_APP_JANUS_SRV_STR1;
+export const APP_JANUS_SRV_STR = process.env.REACT_APP_JANUS_SRV_STR;
 export const APP_STUN_SRV_STR = process.env.REACT_APP_STUN_SRV_STR;
 
 export const REGISTRATION_FORM_URL = process.env.REACT_APP_REGISTRATION_FORM_URL;

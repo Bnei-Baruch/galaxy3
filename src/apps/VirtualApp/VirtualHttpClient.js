@@ -10,7 +10,7 @@ import "./CustomIcons.scss";
 import "eqcss";
 import VirtualChat from "./VirtualChat";
 import {NO_VIDEO_OPTION_VALUE, VIDEO_360P_OPTION_VALUE, vsettings_list, sketchesByLang} from "../../shared/consts";
-import {GEO_IP_INFO, APP_STUN_SRV_STR, APP_JANUS_SRV_STR1, PAY_USER_FEE} from "../../shared/env";
+import {GEO_IP_INFO, APP_STUN_SRV_STR, APP_JANUS_SRV_STR, PAY_USER_FEE} from "../../shared/env";
 import platform from "platform";
 import {TopMenu} from "./components/TopMenu";
 import {withTranslation} from "react-i18next";
@@ -219,7 +219,7 @@ class VirtualHttpClient extends Component {
           streaming: {
             str: {
               name: "str",
-              url: APP_JANUS_SRV_STR1,
+              url: APP_JANUS_SRV_STR,
               type: "streaming",
               token: "",
             },
@@ -382,7 +382,7 @@ class VirtualHttpClient extends Component {
     );
 
     if (!reconnect) {
-      this.state.virtualStreamingJanus.init(user);
+      this.state.virtualStreamingJanus.init(user.ip, user.country);
     }
   };
 
