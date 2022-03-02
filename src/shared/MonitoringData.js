@@ -1,7 +1,7 @@
 // Monitoring library to track connection stats.
 import pako from "pako";
 import {MONITORING_BACKEND} from "./env";
-
+import log from "loglevel";
 import {dataValues} from "./MonitoringUtils";
 import Version from "../Version";
 
@@ -44,8 +44,8 @@ export const Stats = class {
     if (timestamp > this.maxAddedTimestamp) {
       this.maxAddedTimestamp = timestamp;
     } else {
-      console.error(
-        `Expecting to add only new values, old timestamp: ${timestamp} found, max ${this.maxAddedTimestamp}.`
+      log.error(
+        `[monitoring] Expecting to add only new values, old timestamp: ${timestamp} found, max ${this.maxAddedTimestamp}.`
       );
     }
     this.length++;
@@ -56,12 +56,12 @@ export const Stats = class {
     const dSquaredIncrement = (value - newMean) * (value - this.mean);
     let newDSquared = (this.dSquared * (this.length - 1) + dSquaredIncrement) / this.length;
     if (isNaN(newDSquared)) {
-      console.log("add newDSquared", newDSquared, this.dSquared, this.length, dSquaredIncrement);
+      log.debug("[monitoring] add newDSquared", newDSquared, this.dSquared, this.length, dSquaredIncrement);
     }
     if (newDSquared < 0) {
       // Correcting float inaccuracy.
       if (newDSquared < -0.00001) {
-        console.warn(`Add: newDSquared negative: ${newDSquared}. Setting to 0. ${value}, ${timestamp} ${this}`);
+        log.warn(`[monitoring] Add: newDSquared negative: ${newDSquared}. Setting to 0. ${value}, ${timestamp} ${this}`);
       }
       newDSquared = 0;
     }
@@ -78,8 +78,8 @@ export const Stats = class {
     if (timestamp > this.maxRemovedTimestamp) {
       this.maxRemovedTimestamp = timestamp;
     } else {
-      console.warn(
-        `Expecting to remove only new values, old timestamp: ${timestamp} found, max ${this.maxRemovedTimestamp}.`
+      log.warn(
+        `[monitoring] Expecting to remove only new values, old timestamp: ${timestamp} found, max ${this.maxRemovedTimestamp}.`
       );
     }
     if (this.length <= 1) {
@@ -88,7 +88,7 @@ export const Stats = class {
       } else {
         this.numEmptyRemoves++;
       }
-      console.warn(`Empty stats (${value}, ${timestamp}, ${this}).`);
+      log.warn(`[monitoring] Empty stats (${value}, ${timestamp}, ${this}).`);
       this.mean = 0;
       this.dSquared = 0;
       this.length = 0;
@@ -103,12 +103,12 @@ export const Stats = class {
     const dSquaredIncrement = (newMean - value) * (value - this.mean);
     let newDSquared = (this.dSquared * (this.length + 1) + dSquaredIncrement) / this.length;
     if (isNaN(newDSquared)) {
-      console.log("remove newDSquared", newDSquared, this.dSquared, this.length, dSquaredIncrement);
+      log.debug("[monitoring] remove newDSquared", newDSquared, this.dSquared, this.length, dSquaredIncrement);
     }
     if (newDSquared < 0) {
       // Correcting float inaccuracy.
       if (newDSquared < -0.00001) {
-        console.warn(`Remove: newDSquared negative: ${newDSquared}. Setting to 0. ${value}, ${timestamp} ${this}`);
+        log.warn(`[monitoring] Remove: newDSquared negative: ${newDSquared}. Setting to 0. ${value}, ${timestamp} ${this}`);
       }
       newDSquared = 0;
     }
@@ -383,7 +383,7 @@ export const MonitoringData = class {
       (lastTimestamp - this.lastUpdateTimestamp > this.spec.store_interval /* Fetch after STORE_INTERVAL */ &&
         lastTimestamp - this.lastFetchTimestamp > backoff) /* Fetch after errors backoff */
     ) {
-      this.update(/*logToConsole=*/ false);
+      this.update();
     }
   }
 
@@ -426,7 +426,7 @@ export const MonitoringData = class {
       return copy;
     }
     if (!metrics.some((m) => m === prefix)) {
-      console.log(`Expected leaf ${data} to fully match prefix ${prefix} to one of the metrics ${metrics}`);
+      log.debug(`[monitoring] Expected leaf ${data} to fully match prefix ${prefix} to one of the metrics ${metrics}`);
     }
     return data;
   }
@@ -457,7 +457,7 @@ export const MonitoringData = class {
       return undefined;
     }
     if (metric !== prefix) {
-      // console.log(`Expected leaf ${data} to fully match prefix ${prefix} to ${metric}`);
+      // log.debug(`[monitoring] Expected leaf ${data} to fully match prefix ${prefix} to ${metric}`);
       return undefined;
     }
     return data;
@@ -527,17 +527,17 @@ export const MonitoringData = class {
       };
       const values = dataValues(input, lastTimestamp);
       // Keep commented out logs for debugging.
-      // console.log(input, values);
-      // console.log('last', this.scoreData.length, input.data.map(arr => arr[0] === undefined ? 'undefined' : arr[0]).join(' | '));
-      // console.log('score', values.score.value, values.score.formula);
-      // console.log('audio score 1min', values.audio.jitter.oneMin && values.audio.jitter.oneMin.mean.value, values.audio.packetsLost.oneMin && values.audio.packetsLost.oneMin.mean.value, values.audio.roundTripTime.oneMin && values.audio.roundTripTime.oneMin.mean.value);
-      // console.log('audio score 3min', values.audio.jitter.threeMin && values.audio.jitter.threeMin.mean.value, values.audio.packetsLost.threeMin && values.audio.packetsLost.threeMin.mean.value, values.audio.roundTripTime.threeMin && values.audio.roundTripTime.threeMin.mean.value);
-      // console.log('video score 1min', values.video.jitter.oneMin && values.video.jitter.oneMin.mean.value, values.video.packetsLost.oneMin && values.video.packetsLost.oneMin.mean.value, values.video.roundTripTime.oneMin && values.video.roundTripTime.oneMin.mean.value);
-      // console.log('video score 3min', values.video.jitter.threeMin && values.video.jitter.threeMin.mean.value, values.video.packetsLost.threeMin && values.video.packetsLost.threeMin.mean.value, values.video.roundTripTime.threeMin && values.video.roundTripTime.threeMin.mean.value);
+      // log.debug(input, values);
+      // log.debug('last', this.scoreData.length, input.data.map(arr => arr[0] === undefined ? 'undefined' : arr[0]).join(' | '));
+      // log.debug('score', values.score.value, values.score.formula);
+      // log.debug('audio score 1min', values.audio.jitter.oneMin && values.audio.jitter.oneMin.mean.value, values.audio.packetsLost.oneMin && values.audio.packetsLost.oneMin.mean.value, values.audio.roundTripTime.oneMin && values.audio.roundTripTime.oneMin.mean.value);
+      // log.debug('audio score 3min', values.audio.jitter.threeMin && values.audio.jitter.threeMin.mean.value, values.audio.packetsLost.threeMin && values.audio.packetsLost.threeMin.mean.value, values.audio.roundTripTime.threeMin && values.audio.roundTripTime.threeMin.mean.value);
+      // log.debug('video score 1min', values.video.jitter.oneMin && values.video.jitter.oneMin.mean.value, values.video.packetsLost.oneMin && values.video.packetsLost.oneMin.mean.value, values.video.roundTripTime.oneMin && values.video.roundTripTime.oneMin.mean.value);
+      // log.debug('video score 3min', values.video.jitter.threeMin && values.video.jitter.threeMin.mean.value, values.video.packetsLost.threeMin && values.video.packetsLost.threeMin.mean.value, values.video.roundTripTime.threeMin && values.video.roundTripTime.threeMin.mean.value);
       if (this.onStatus) {
         const firstTimestamp = this.scoreData[0][0].timestamp;
         const formula = `Score ${values.score.view} = ${values.score.formula}`;
-        // console.log('Connection', formula, values.score.value);
+        // log.debug('[monitoring] Connection', formula, values.score.value);
         if (lastTimestamp - firstTimestamp >= MEDIUM_BUCKET) {
           if (values.score.value < 10) {
             this.onStatus(LINK_STATE_GOOD, formula);
@@ -553,7 +553,7 @@ export const MonitoringData = class {
     }
   }
 
-  update(logToConsole) {
+  update() {
     const lastTimestamp = this.lastTimestamp();
     this.lastFetchTimestamp = lastTimestamp;
 
@@ -569,10 +569,8 @@ export const MonitoringData = class {
       user: this.user,
       data: sentData,
     };
-    if (logToConsole) {
-      console.log("Spec", this.spec);
-      console.log("Update", data);
-    }
+    log.debug("[monitoring] Spec", this.spec);
+    log.debug("[monitoring] Update", data);
     // Update backend.
     fetch(`${MONITORING_BACKEND}/update`, {
       method: "POST",
@@ -587,7 +585,7 @@ export const MonitoringData = class {
           this.fetchErrors = 0;
           return response.json();
         } else {
-          throw new Error(`Fetch error: ${response.status}`);
+          throw new Error(`[monitoring] Fetch error: ${response.status}`);
         }
       })
       .then((data) => {
@@ -595,12 +593,10 @@ export const MonitoringData = class {
           this.updateSpec(data.spec);
         }
         this.lastUpdateTimestamp = lastTimestamp;
-        if (logToConsole) {
-          console.log("Update success.");
-        }
+        log.debug("[monitoring] Update success.");
       })
       .catch((error) => {
-        console.error("Update monitoring error:", error);
+        log.error("[monitoring] Update monitoring error:", error);
         this.fetchErrors++;
       });
   }
