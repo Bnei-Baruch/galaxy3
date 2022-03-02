@@ -130,37 +130,35 @@ class VirtualHttpClient extends Component {
   }
 
   componentDidUpdate(prevProps, prevState) {
-    if (this.state.shidur && !prevState.shidur && !this.state.sourceLoading && this.room) {
-      this.state.virtualStreamingJanus.unmuteAudioElement();
+    const {shidurForGuestReady, shidur, sourceLoading, room, virtualStreamingJanus,
+      videoroom, localVideoTrack, localAudioTrack, user, monitoringData} = this.state;
+
+    if (shidur && !prevState.shidur && !sourceLoading && room) {
+      virtualStreamingJanus.unmuteAudioElement();
     }
-    if (!this.state.sourceLoading && prevState.sourceLoading && this.state.shidur && this.room) {
-      this.state.virtualStreamingJanus.unmuteAudioElement();
+
+    if (!sourceLoading && prevState.sourceLoading && shidur && room) {
+      virtualStreamingJanus.unmuteAudioElement();
     }
-    if (this.state.room && !prevState.room && this.state.shidur && !this.sourceLoading) {
-      this.state.virtualStreamingJanus.unmuteAudioElement();
+
+    if (room && !prevState.room && shidur && !sourceLoading) {
+      virtualStreamingJanus.unmuteAudioElement();
     }
+
     if (
-      (!this.state.sourceLoading && this.state.shidurForGuestReady && !prevState.shidurForGuestReady) ||
-      (this.state.shidurForGuestReady && !this.state.sourceLoading && prevState.sourceLoading)
+      (!sourceLoading && shidurForGuestReady && !prevState.shidurForGuestReady) ||
+      (shidurForGuestReady && !sourceLoading && prevState.sourceLoading)
     ) {
-      this.state.virtualStreamingJanus.setVideo(this.state.videos);
-      this.state.virtualStreamingJanus.audioElement.play();
-      this.state.virtualStreamingJanus.unmuteAudioElement();
+      virtualStreamingJanus.setVideo(this.state.videos);
+      virtualStreamingJanus.audioElement.play();
+      virtualStreamingJanus.unmuteAudioElement();
     }
-    if (
-      this.state.videoroom !== prevState.videoroom ||
-      this.state.localVideoTrack !== prevState.localVideoTrack ||
-      this.state.localAudioTrack !== prevState.localAudioTrack ||
-      JSON.stringify(this.state.user) !== JSON.stringify(prevState.user)
+
+    if (videoroom !== prevState.videoroom || localVideoTrack !== prevState.localVideoTrack ||
+      localAudioTrack !== prevState.localAudioTrack || JSON.stringify(user) !== JSON.stringify(prevState.user)
     ) {
-      this.state.monitoringData.setConnection(
-        this.state.videoroom,
-        this.state.localAudioTrack,
-        this.state.localVideoTrack,
-        this.state.user,
-        this.state.virtualStreamingJanus
-      );
-      this.state.monitoringData.setOnStatus((connectionStatus) => {
+      monitoringData.setConnection(videoroom, localAudioTrack, localVideoTrack, user, virtualStreamingJanus);
+      monitoringData.setOnStatus((connectionStatus) => {
         this.setState({connectionStatus});
       });
     }
@@ -170,10 +168,6 @@ class VirtualHttpClient extends Component {
     if (isMobile) {
       window.location = "/userm";
     }
-  }
-
-  componentWillUnmount() {
-    //this.state.virtualStreamingJanus.destroy();
   }
 
   checkPermission = (user) => {
