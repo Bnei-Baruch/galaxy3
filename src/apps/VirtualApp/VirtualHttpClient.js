@@ -2,31 +2,26 @@ import React, {Component, Fragment} from "react";
 import {Janus} from "../../lib/janus";
 import classNames from "classnames";
 import {isMobile} from "react-device-detect";
-import {Button, Icon, Image, Input, Label, Menu, Message, Modal, Popup, Select} from "semantic-ui-react";
+import {Icon, Popup} from "semantic-ui-react";
 import {checkNotification, geoInfo, getDateString, initJanus, notifyMe, sendUserState, testMic, updateGxyUser} from "../../shared/tools";
 import "./VirtualClient.scss";
 import "./VideoConteiner.scss";
 import "./CustomIcons.scss";
 import "eqcss";
 import VirtualChat from "./VirtualChat";
-import {NO_VIDEO_OPTION_VALUE, VIDEO_360P_OPTION_VALUE, vsettings_list, sketchesByLang} from "../../shared/consts";
+import {NO_VIDEO_OPTION_VALUE, VIDEO_360P_OPTION_VALUE, sketchesByLang} from "../../shared/consts";
 import {GEO_IP_INFO, APP_STUN_SRV_STR, APP_JANUS_SRV_STR, PAY_USER_FEE} from "../../shared/env";
 import platform from "platform";
 import {TopMenu} from "./components/TopMenu";
 import {withTranslation} from "react-i18next";
-import {languagesOptions, setLanguage} from "../../i18n/i18n";
-import {Monitoring} from "../../components/Monitoring";
 import {LINK_STATE_GOOD, LINK_STATE_INIT, LINK_STATE_MEDIUM, LINK_STATE_WEAK, MonitoringData,} from "../../shared/MonitoringData";
 import api from "../../shared/Api";
 import VirtualStreaming from "./VirtualStreaming";
 import VirtualStreamingJanus from "../../shared/VirtualStreamingJanus";
 import {getUser, kc} from "../../components/UserManager";
 import LoginPage from "../../components/LoginPage";
-import {Profile} from "../../components/Profile";
 import {updateSentryUser} from "../../shared/sentry";
 import GxyJanus from "../../shared/janus-utils";
-import audioModeSvg from "../../shared/audio-mode.svg";
-import fullModeSvg from "../../shared/full-mode.svg";
 import ConfigStore from "../../shared/ConfigStore";
 import {toggleFullScreen, isFullScreen} from "./FullScreenHelper";
 import {AppBar, Badge, Box, Button as ButtonMD, ButtonGroup, Grid, IconButton} from "@material-ui/core";
@@ -36,12 +31,11 @@ import {AskQuestion, AudioMode, CloseBroadcast, Layout, Mute, MuteVideo, Vote, F
 import Settings from "./settings/Settings";
 import SettingsJoined from "./settings/SettingsJoined";
 import HomerLimud from "./components/HomerLimud";
-import {SupportOld, Support, initCrisp} from "./components/Support";
+import {Support, initCrisp} from "./components/Support";
 import SendQuestionContainer from "./components/SendQuestions/container";
 import {RegistrationModals} from "./components/RegistrationModals";
 import {getUserRole, userRolesEnum} from "../../shared/enums";
 import KliOlamiStream from "./components/KliOlamiStream";
-import {iceRestart as iceRestartKliOlami} from "./components/KliOlamiStreamHelper";
 import KliOlamiToggle from "./buttons/KliOlamiToggle";
 import Toolbar from "@material-ui/core/Toolbar";
 import Typography from "@material-ui/core/Typography";
@@ -50,16 +44,7 @@ import ThemeSwitcher from "./components/ThemeSwitcher/ThemeSwitcher";
 import mqtt from "../../shared/mqtt";
 import devices from "../../lib/devices";
 import log from "loglevel";
-
-const toggleDesignVersions = () => {
-  window.location = isUseNewDesign ? "https://galaxy.kli.one/user/" : "https://arvut.kli.one/user/";
-  /*
-  //for test server
-  const params = new URLSearchParams(window.location.search);
-  params.has(name) ? params.delete(name) : params.set(name, value);
-  window.location = window.location.pathname + '?' + params.toString();
-  **/
-};
+//import {iceRestart as iceRestartKliOlami} from "./components/KliOlamiStreamHelper";
 
 const sortAndFilterFeeds = (feeds) =>
   feeds
@@ -68,11 +53,7 @@ const sortAndFilterFeeds = (feeds) =>
 
 const userFeeds = (feeds) => feeds.filter((feed) => feed.display.role === userRolesEnum.user);
 
-//for test server
-// const isUseNewDesign = new URL(window.location.href).searchParams.has('new_design');
 const isUseNewDesign = true;
-//const isUseNewDesign = /arvut/.test(window.location.host);
-
 
 class VirtualHttpClient extends Component {
   state = {
@@ -179,7 +160,7 @@ class VirtualHttpClient extends Component {
         this.state.user,
         this.state.virtualStreamingJanus
       );
-      this.state.monitoringData.setOnStatus((connectionStatus, connectionStatusMessage) => {
+      this.state.monitoringData.setOnStatus((connectionStatus) => {
         this.setState({connectionStatus});
       });
     }
@@ -781,30 +762,30 @@ class VirtualHttpClient extends Component {
     });
   };
 
-  iceRestart = () => {
-    const {videoroom, remoteFeed} = this.state;
-
-    if (videoroom) {
-      videoroom.createOffer({
-        media: {audioRecv: false, videoRecv: false, audioSend: true, videoSend: true},
-        iceRestart: true,
-        simulcast: false,
-        success: (jsep) => {
-          Janus.debug("Got publisher SDP!");
-          Janus.debug(jsep);
-          const publish = {request: "configure", restart: true};
-          videoroom.send({message: publish, jsep: jsep});
-        },
-        error: (err) => {
-          Janus.error("WebRTC error:", err);
-        },
-      });
-    }
-
-    if (remoteFeed) remoteFeed.send({message: {request: "configure", restart: true}});
-    if (this.state.virtualStreamingJanus) this.state.virtualStreamingJanus.iceRestart();
-    iceRestartKliOlami();
-  };
+  // iceRestart = () => {
+  //   const {videoroom, remoteFeed} = this.state;
+  //
+  //   if (videoroom) {
+  //     videoroom.createOffer({
+  //       media: {audioRecv: false, videoRecv: false, audioSend: true, videoSend: true},
+  //       iceRestart: true,
+  //       simulcast: false,
+  //       success: (jsep) => {
+  //         Janus.debug("Got publisher SDP!");
+  //         Janus.debug(jsep);
+  //         const publish = {request: "configure", restart: true};
+  //         videoroom.send({message: publish, jsep: jsep});
+  //       },
+  //       error: (err) => {
+  //         Janus.error("WebRTC error:", err);
+  //       },
+  //     });
+  //   }
+  //
+  //   if (remoteFeed) remoteFeed.send({message: {request: "configure", restart: true}});
+  //   if (this.state.virtualStreamingJanus) this.state.virtualStreamingJanus.iceRestart();
+  //   iceRestartKliOlami();
+  // };
 
   onMessage = (videoroom, msg, jsep) => {
     const {t} = this.props;
@@ -1624,7 +1605,6 @@ class VirtualHttpClient extends Component {
       cammuted,
       delay,
       localAudioTrack,
-      localVideoTrack,
       muteOtherCams,
       muted,
       question,
@@ -1739,7 +1719,7 @@ class VirtualHttpClient extends Component {
 
   renderRightAside = () => {
     const {t, theme} = this.props;
-    const {janus, user, room, rightAsideName, isRoomChat} = this.state;
+    const {user, room, rightAsideName, isRoomChat} = this.state;
 
     let content;
     let displayChat = "none";
@@ -1790,7 +1770,7 @@ class VirtualHttpClient extends Component {
     this.setState({leftAsideSize: size, rightAsideName: rightName, leftAsideName: leftName});
   };
 
-  renderTopBar = (isDeb) => {
+  renderTopBar = () => {
     const {t, i18n} = this.props;
     const isHe = i18n.language === "he";
     const {user, asideMsgCounter, leftAsideName, rightAsideName, isOpenTopMenu} = this.state;
@@ -2033,32 +2013,11 @@ class VirtualHttpClient extends Component {
     );
   };
 
-  renderOldVersionMessage = () => {
-    const {t, i18n} = this.props;
-
-    const isHe = i18n.language === "he";
-    return (
-      <Message dir={isHe ? "rtl" : "ltr"}>
-        <Button
-          primary
-          style={{float: isHe ? "left" : "right"}}
-          onClick={() => toggleDesignVersions()}
-          content={t("oldClient.newDesign")}
-        />
-        <div style={{display: "inline"}}>{t("oldClient.moveToNewVersion")}</div>
-      </Message>
-    );
-  };
-
   updateUserRole = () => {
     getUser(this.checkPermission);
   };
 
   setIsRoomChat = (isRoomChat) => this.setState({isRoomChat});
-
-  selectRoomAndJoin = (room) => {
-    this.selectRoom(room);
-  };
 
   setAudio(audios, text) {
     this.setState({audios: {audios, text}});
@@ -2070,42 +2029,24 @@ class VirtualHttpClient extends Component {
       appInitError,
       attachedSource,
       cammuted,
-      chatMessagesCount,
-      chatVisible,
       currentLayout,
-      delay,
       feeds,
-      janus,
-      localAudioTrack,
-      localVideoTrack,
       media,
-      monitoringData,
       muteOtherCams,
-      muted,
       myid,
-      net_status,
       numberOfVirtualUsers,
-      question,
       room,
       rooms,
       selected_room,
-      selftest,
       shidur,
-      sourceLoading,
-      tested,
       user,
       virtualStreamingJanus,
       videos,
-      premodStatus,
       isSettings,
       audios,
       shidurForGuestReady,
-      isKliOlamiShown,
       wipSettings,
-      mqttOn,
     } = this.state;
-
-    const {video, audio} = media;
 
     if (appInitError) {
       return (
@@ -2116,7 +2057,6 @@ class VirtualHttpClient extends Component {
       );
     }
 
-    const {t, i18n} = this.props;
     const notApproved = user && user.role !== userRolesEnum.user;
     const width = "134";
     const height = "100";
@@ -2187,369 +2127,11 @@ class VirtualHttpClient extends Component {
       }
     }
 
-    const chatCountLabel = (
-      <Label key="Carbon" floating size="mini" color="red">
-        {chatMessagesCount}
-      </Label>
-    );
-
     let login = <LoginPage user={user} checkPermission={this.checkPermission}/>;
 
     const isDeb = new URL(window.location.href).searchParams.has("deb");
 
-    let content;
-    if (!isUseNewDesign) {
-      let layoutIcon;
-      switch (layout) {
-        case "double":
-          layoutIcon = "layout-double";
-          break;
-        case "split":
-          layoutIcon = "layout-split";
-          break;
-        default:
-          layoutIcon = "layout-equal";
-          break;
-      }
-      content = (
-        <div className={classNames("vclient", {"vclient--chat-open": chatVisible})}>
-          <div className={`vclient__toolbar ${!isUseNewDesign ? "old" : ""}`}>
-            <Input>
-              <Select
-                className="room-selection"
-                search
-                disabled={!!room}
-                error={!selected_room}
-                placeholder={t("oldClient.selectRoom")}
-                value={selected_room}
-                options={rooms_list}
-                noResultsMessage={t("oldClient.noResultsFound")}
-                //onClick={this.getRoomList}
-                onChange={(e, {value}) => this.selectRoom(value)}
-              />
-              {room ? (
-                <Button
-                  attached="right"
-                  negative
-                  icon="sign-out"
-                  disabled={delay}
-                  onClick={() => this.exitRoom(/* reconnect= */ false)}
-                />
-              ) : (
-                ""
-              )}
-              {!room ? (
-                <Button
-                  attached="right"
-                  primary
-                  icon="sign-in"
-                  loading={delay}
-                  disabled={delay || !selected_room}
-                  onClick={() => this.initClient(/* reconnect= */ false)}
-                />
-              ) : (
-                ""
-              )}
-            </Input>
-            {!isDeb ? null : (
-              <Input>
-                <Select
-                  placeholder="number of virtual users"
-                  options={[
-                    {value: "1", text: "1"},
-                    {value: "2", text: "2"},
-                    {value: "3", text: "3"},
-                    {value: "4", text: "4"},
-                    {value: "5", text: "5"},
-                    {value: "6", text: "6"},
-                    {value: "7", text: "7"},
-                    {value: "8", text: "8"},
-                    {value: "9", text: "9"},
-                    {value: "10", text: "10"},
-                    {value: "11", text: "11"},
-                    {value: "12", text: "12"},
-                    {value: "13", text: "13"},
-                    {value: "14", text: "14"},
-                    {value: "15", text: "15"},
-                    {value: "16", text: "16"},
-                    {value: "17", text: "17"},
-                    {value: "18", text: "18"},
-                    {value: "19", text: "19"},
-                    {value: "20", text: "20"},
-                    {value: "21", text: "21"},
-                    {value: "22", text: "22"},
-                    {value: "23", text: "23"},
-                    {value: "24", text: "24"},
-                    {value: "25", text: "25"},
-                  ]}
-                  value={numberOfVirtualUsers}
-                  onChange={(e, {value}) => {
-                    this.setState({numberOfVirtualUsers: value});
-                    localStorage.setItem("number_of_virtual_users", value);
-                  }}
-                ></Select>
-              </Input>
-            )}
-            <Menu icon="labeled" secondary size="mini">
-              <Menu.Item
-                disabled={!localAudioTrack}
-                onClick={() =>
-                  this.setState({
-                    chatVisible: !chatVisible,
-                    chatMessagesCount: 0,
-                  })
-                }
-              >
-                <Icon name="comments"/>
-                {t(chatVisible ? "oldClient.closeChat" : "oldClient.openChat")}
-                {chatMessagesCount > 0 ? chatCountLabel : ""}
-              </Menu.Item>
-              <Menu.Item
-                disabled={!mqttOn || premodStatus || !audio.device || !localAudioTrack || delay || otherFeedHasQuestion}
-                onClick={this.handleQuestion}
-              >
-                <Icon {...(question ? {color: "green"} : {})} name="question"/>
-                {t("oldClient.askQuestion")}
-              </Menu.Item>
-              <Menu.Item onClick={this.toggleShidur} disabled={room === "" || sourceLoading}>
-                <Icon name="tv"/>
-                {shidur ? t("oldClient.closeBroadcast") : t("oldClient.openBroadcast")}
-              </Menu.Item>
-              <Popup
-                trigger={
-                  <Menu.Item
-                    disabled={room === "" || !shidur || sourceLoading || !attachedSource}
-                    icon={{className: `icon--custom ${layoutIcon}`}}
-                    name={t("oldClient.layout")}
-                  />
-                }
-                disabled={room === "" || !shidur || !attachedSource}
-                on="click"
-                position="bottom center"
-              >
-                <Popup.Content>
-                  <Button.Group>
-                    <Button
-                      onClick={() => this.updateLayout("double")}
-                      active={layout === "double"}
-                      disabled={sourceLoading}
-                      icon={{className: "icon--custom layout-double"}}
-                    />{" "}
-                    {/* Double first */}
-                    <Button
-                      onClick={() => this.updateLayout("split")}
-                      active={layout === "split"}
-                      disabled={sourceLoading}
-                      icon={{className: "icon--custom layout-split"}}
-                    />{" "}
-                    {/* Split */}
-                    <Button
-                      onClick={() => this.updateLayout("equal")}
-                      active={layout === "equal"}
-                      disabled={sourceLoading}
-                      icon={{className: "icon--custom layout-equal"}}
-                    />{" "}
-                    {/* Equal */}
-                  </Button.Group>
-                </Popup.Content>
-              </Popup>
-              <Popup
-                trigger={
-                  <Menu.Item
-                    disabled={!user || !user.id || room === ""}
-                    icon="hand paper outline"
-                    name={t("oldClient.vote")}
-                  />
-                }
-                disabled={!user || !user.id || room === ""}
-                on="click"
-                position="bottom center"
-              >
-                <Popup.Content>
-                  <Button.Group>
-                    <iframe
-                      title={`${t("oldClient.vote")} 1`}
-                      src={`https://vote.kli.one/button.html?answerId=1&userId=${user && user.id}`}
-                      width="40px"
-                      height="36px"
-                      frameBorder="0"
-                    ></iframe>
-                    <iframe
-                      title={`${t("oldClient.vote")} 1`}
-                      src={`https://vote.kli.one/button.html?answerId=2&userId=${user && user.id}`}
-                      width="40px"
-                      height="36px"
-                      frameBorder="0"
-                    ></iframe>
-                  </Button.Group>
-                </Popup.Content>
-              </Popup>
-              <Modal
-                trigger={<Menu.Item icon="book" name={t("oldClient.homerLimud")}/>}
-                disabled={!localAudioTrack}
-                on="click"
-                closeIcon
-                className="homet-limud"
-              >
-                <HomerLimud/>
-              </Modal>
-            </Menu>
-            <Menu icon="labeled" secondary size="mini">
-              {!room ? (
-                <Menu.Item
-                  position="right"
-                  disabled={!audio.device || selftest !== t("oldClient.selfAudioTest")}
-                  onClick={this.selfTest}
-                >
-                  <Icon color={tested ? "green" : "red"} name="sound"/>
-                  {selftest}
-                </Menu.Item>
-              ) : (
-                ""
-              )}
-              <Menu.Item disabled={!localAudioTrack} onClick={this.micMute} className="mute-button">
-                <canvas className={muted ? "hidden" : "vumeter"} ref="canvas1" id="canvas1" width="15" height="35"/>
-                <Icon color={muted ? "red" : null} name={!muted ? "microphone" : "microphone slash"}/>
-                {t(muted ? "oldClient.unMute" : "oldClient.mute")}
-              </Menu.Item>
-              <Menu.Item disabled={video.device === null || delay} onClick={() => this.camMute(cammuted)}>
-                <Icon color={cammuted ? "red" : null} name={!cammuted ? "eye" : "eye slash"}/>
-                {t(cammuted ? "oldClient.startVideo" : "oldClient.stopVideo")}
-              </Menu.Item>
-              <Menu.Item onClick={this.otherCamsMuteToggle}>
-                <Image src={muteOtherCams ? audioModeSvg : fullModeSvg} style={{marginBottom: "0.5rem"}}/>
-                {t(muteOtherCams ? "oldClient.fullMode" : "oldClient.audioMode")}
-              </Menu.Item>
-              {/*<Menu.Item>*/}
-              {/*  <Select*/}
-              {/*    compact*/}
-              {/*    value={i18n.language}*/}
-              {/*    options={languagesOptions}*/}
-              {/*    onChange={(e, { value }) => {*/}
-              {/*      setLanguage(value);*/}
-              {/*      this.setState({ selftest: t('oldClient.selfAudioTest') });*/}
-              {/*    }} />*/}
-              {/*</Menu.Item>*/}
-              <Popup
-                trigger={<Menu.Item icon="setting" name={t("oldClient.settings")}/>}
-                on="click"
-                position="bottom right"
-              >
-                <Popup.Content>
-                  <Button size="huge" fluid>
-                    <Icon name="user circle"/>
-                    <Profile title={user && user.display} kc={kc}/>
-                  </Button>
-                  <Select
-                    className="select_device"
-                    disabled={!!room}
-                    error={!media.audio.device}
-                    placeholder={t("oldClient.selectDevice")}
-                    value={media.audio.device}
-                    options={adevices_list}
-                    onChange={(e, {value}) => this.setAudioDevice(value)}
-                  />
-                  <Select
-                    className="select_device"
-                    disabled={!!room}
-                    error={!media.video.device}
-                    placeholder={t("oldClient.selectDevice")}
-                    value={media.video.device}
-                    options={vdevices_list}
-                    onChange={(e, {value}) => this.setVideoDevice(value)}
-                  />
-                  <Select
-                    className="select_device"
-                    disabled={!!room}
-                    error={!media.video.device}
-                    placeholder={t("oldClient.videoSettings")}
-                    value={media.video.setting}
-                    options={vsettings_list}
-                    onChange={(e, {value}) => this.setVideoSize(value)}
-                  />
-                  <Select
-                    className="select_device"
-                    value={i18n.language}
-                    options={languagesOptions}
-                    onChange={(e, {value}) => {
-                      setLanguage(value);
-                      this.setState({selftest: t("oldClient.selfAudioTest")});
-                    }}
-                  />
-                </Popup.Content>
-              </Popup>
-              <SupportOld t={t} i18n={i18n} user={user}/>
-              <Button
-                primary
-                style={{margin: "auto"}}
-                onClick={() => window.open(`${PAY_USER_FEE}` + i18n.language, "_blank")}
-              >
-                {t("oldClient.myProfile")}
-              </Button>
-              <Monitoring monitoringData={monitoringData}/>
-            </Menu>
-            {!new URL(window.location.href).searchParams.has("lost") ? null : (
-              <Label
-                color={net_status === 2 ? "yellow" : net_status === 3 ? "red" : "green"}
-                icon="wifi"
-                corner="right"
-              />
-            )}
-          </div>
-          {this.renderOldVersionMessage()}
-          <div
-            className="vclient__main"
-            onDoubleClick={() =>
-              this.setState({
-                chatVisible: !chatVisible,
-              })
-            }
-          >
-            <div
-              className={`
-          vclient__main-wrapper
-          no-of-videos-${noOfVideos}
-          layout--${layout}
-          ${!isKliOlamiShown ? "" : "with-kli-olami"}
-          broadcast--${room !== "" && shidur ? "on" : "off"}
-          ${!attachedSource ? " broadcast--popup" : "broadcast--inline"}
-         `}
-            >
-              {/* ${layout === 'equal' ? ' broadcast--equal' : ''} */}
-              {/* ${layout === 'double' ? ' broadcast--double' : ''} */}
-              {/* ${layout === 'split' ? ' broadcast--split' : ''} */}
-
-              <div className="broadcast-panel">
-                {/* <div className="videos"> */}
-                <div className="broadcast__wrapper">{layout === "split" && source}</div>
-                {/* </div> */}
-              </div>
-
-              <div className="videos-panel">
-                {/* <div className="videos"> */}
-                <div className="videos__wrapper">
-                  {(layout === "equal" || layout === "double") && source}
-                  {remoteVideos}
-                </div>
-                {/* </div> */}
-              </div>
-              <VirtualChat
-                t={t}
-                ref={(chat) => {
-                  this.chat = chat;
-                }}
-                visible={chatVisible}
-                room={room}
-                user={user}
-                onCmdMsg={this.handleCmdData}
-                onNewMsg={this.onChatMessage}
-              />
-            </div>
-          </div>
-        </div>
-      );
-    } else
-      content = this.renderNewVersionContent(
+    let content = this.renderNewVersionContent(
         layout,
         isDeb,
         source,
