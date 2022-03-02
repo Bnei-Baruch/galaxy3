@@ -2,7 +2,7 @@ import React, {Component, Fragment} from "react";
 import classNames from "classnames";
 import {isMobile} from "react-device-detect";
 import {Button, Icon, Image, Input, Label, Menu, Message, Modal, Popup, Select} from "semantic-ui-react";
-import {checkNotification, geoInfo, getDateString, notifyMe, testMic, updateGxyUser} from "../../shared/tools";
+import {checkNotification, geoInfo, getDateString, notifyMe, sendUserState, testMic, updateGxyUser} from "../../shared/tools";
 import "./VirtualClient.scss";
 import "./VideoConteiner.scss";
 import "./CustomIcons.scss";
@@ -687,8 +687,7 @@ class VirtualMqttClient extends Component {
       // FIXME: Can this be done by notifying only the joined feed?
       setTimeout(() => {
         if (this.state.question || this.state.cammuted) {
-          const msg = {type: "client-state", user: this.state.user};
-          mqtt.send(JSON.stringify(msg), false, "galaxy/room/" + this.state.room);
+          sendUserState(this.state.user);
         }
       }, 3000);
     }
@@ -931,9 +930,7 @@ class VirtualMqttClient extends Component {
 
     updateSentryUser(user);
     updateGxyUser(user);
-
-    const msg = {type: "client-state", user};
-    mqtt.send(JSON.stringify(msg), false, "galaxy/room/" + this.state.room);
+    sendUserState(user);
   };
 
   handleAudioOut = (data) => {
@@ -965,9 +962,7 @@ class VirtualMqttClient extends Component {
 
       updateSentryUser(user);
       updateGxyUser(user);
-
-      const msg = {type: "client-state", user};
-      mqtt.send(JSON.stringify(msg), false, "galaxy/room/" + this.state.room);
+      sendUserState(user);
     } else {
       if (!cammuted) {
         this.stopLocalMedia();

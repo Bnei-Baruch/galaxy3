@@ -1,6 +1,7 @@
 import {Janus} from "../lib/janus";
 import {STUN_SRV_GXY, WKLI_ENTER, WKLI_LEAVE} from "./env";
 import api from "./Api";
+import mqtt from "./mqtt";
 
 export const initJanus = (cb, er, server, token = "", iceServers = [{urls: STUN_SRV_GXY}]) => {
   Janus.init({
@@ -222,3 +223,9 @@ export const isRTLString = (text) => {
   }
   return rtl > ltr;
 };
+
+export const sendUserState = (user) => {
+  const {camera, question, rfid, room} = user;
+  const msg = {type: "client-state", user: {camera, question, rfid, room}};
+  mqtt.send(JSON.stringify(msg), false, "galaxy/room/" + room);
+}

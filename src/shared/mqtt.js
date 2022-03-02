@@ -5,6 +5,7 @@ import {randomString} from "./tools";
 import GxyJanus from "./janus-utils";
 import log from "loglevel";
 import chalk from 'chalk';
+import {captureMessage} from "./sentry";
 
 const mqttTimeout = 30 // Seconds
 const mqttKeepalive = 1 // Seconds
@@ -140,9 +141,17 @@ class MqttMsg {
           // FIXME: we need send cmd messages to separate topic
           if(service === "room" && target === "chat")
             this.mq.emit("MqttChatEvent", data);
-          else if (service === "room" && target !== "chat" || service === "service" && id !== "user")
-            //log.info(data.toString())
-            callback(JSON.parse(data.toString()), topic);
+          else if (service === "room" && target !== "chat" || service === "service" && id !== "user") {
+            try {
+              let msg = JSON.parse(data.toString());
+              callback(msg, topic);
+            } catch (e) {
+              log.error(e);
+              log.error("[mqtt] Not valid JSON, ", data.toString());
+              captureMessage(data.toString(), {source: "mqtt"});
+              return;
+            }
+          }
           else if (service === "users" && id === "broadcast")
             this.mq.emit("MqttBroadcastMessage", data);
           else

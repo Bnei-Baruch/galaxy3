@@ -1,2 +1,2 @@
-export default `4.4.7${process.env.NODE_ENV === "development" ? "-dev" : ""}`;
-// export default `5.0.0${process.env.NODE_ENV === "development" ? "-dev" : "-debug"}`;
+export default `4.4.8${process.env.NODE_ENV === "development" ? "-dev" : ""}`;
+// export default `5.0.0${process.env.NODE_ENV === "development" ? "-dev" : "beta3"}`;

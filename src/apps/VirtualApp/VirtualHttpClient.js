@@ -3,7 +3,7 @@ import {Janus} from "../../lib/janus";
 import classNames from "classnames";
 import {isMobile} from "react-device-detect";
 import {Button, Icon, Image, Input, Label, Menu, Message, Modal, Popup, Select} from "semantic-ui-react";
-import {checkNotification, geoInfo, getDateString, initJanus, notifyMe, testMic, updateGxyUser} from "../../shared/tools";
+import {checkNotification, geoInfo, getDateString, initJanus, notifyMe, sendUserState, testMic, updateGxyUser} from "../../shared/tools";
 import "./VirtualClient.scss";
 import "./VideoConteiner.scss";
 import "./CustomIcons.scss";
@@ -30,7 +30,7 @@ import fullModeSvg from "../../shared/full-mode.svg";
 import ConfigStore from "../../shared/ConfigStore";
 import {toggleFullScreen, isFullScreen} from "./FullScreenHelper";
 import {AppBar, Badge, Box, Button as ButtonMD, ButtonGroup, Grid, IconButton} from "@material-ui/core";
-import {ChevronLeft, ChevronRight, PlayCircleOutline /*, OpenInNewOutlined*/} from "@material-ui/icons"; //button of congress
+import {ChevronLeft, ChevronRight, PlayCircleOutline} from "@material-ui/icons";
 import {grey} from "@material-ui/core/colors";
 import {AskQuestion, AudioMode, CloseBroadcast, Layout, Mute, MuteVideo, Vote, Fullscreen} from "./buttons";
 import Settings from "./settings/Settings";
@@ -1096,8 +1096,7 @@ class VirtualHttpClient extends Component {
       // FIXME: Can this be done by notifying only the joined feed?
       setTimeout(() => {
         if (this.state.question || this.state.cammuted) {
-          const msg = {type: "client-state", user: this.state.user};
-          mqtt.send(JSON.stringify(msg), false, "galaxy/room/" + this.state.room);
+          sendUserState(this.state.user)
         }
       }, 3000);
     }
@@ -1300,9 +1299,7 @@ class VirtualHttpClient extends Component {
 
     updateSentryUser(user);
     updateGxyUser(user);
-
-    const msg = {type: "client-state", user};
-    mqtt.send(JSON.stringify(msg), false, "galaxy/room/" + this.state.room);
+    sendUserState(user);
   };
 
   handleAudioOut = (data) => {
@@ -1363,9 +1360,7 @@ class VirtualHttpClient extends Component {
 
       updateSentryUser(user);
       updateGxyUser(user);
-
-      const msg = {type: "client-state", user};
-      mqtt.send(JSON.stringify(msg), false, "galaxy/room/" + this.state.room);
+      sendUserState(user);
     } else {
       if (!cammuted) {
         this.stopLocalMedia();
