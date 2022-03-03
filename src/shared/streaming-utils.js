@@ -216,7 +216,7 @@ export default class JanusStream {
   }
 
   initVideoStream = (janus) => {
-    this.videoJanusStream = new StreamingPlugin();
+    this.videoJanusStream = new StreamingPlugin(this.config.iceServers);
     janus.attach(this.videoJanusStream).then(data => {
       log.debug("[shidur] attach video", data)
       this.videoJanusStream.watch(this.videos).then(stream => {
@@ -229,7 +229,7 @@ export default class JanusStream {
 
   initQuadStream = (callback) => {
     if(!this.janus) return
-    this.videoQuadStream = new StreamingPlugin();
+    this.videoQuadStream = new StreamingPlugin(this.config.iceServers);
     this.janus.attach(this.videoQuadStream).then(data => {
       log.debug("[shidur] attach quad", data)
       this.videoQuadStream.watch(102).then(stream => {
@@ -246,7 +246,7 @@ export default class JanusStream {
   }
 
   initAudioStream = (janus) => {
-    this.audioJanusStream = new StreamingPlugin();
+    this.audioJanusStream = new StreamingPlugin(this.config.iceServers);
     janus.attach(this.audioJanusStream).then(data => {
       log.debug("[shidur] attach audio", data)
       this.audioJanusStream.watch(this.audios).then(stream => {
@@ -260,7 +260,7 @@ export default class JanusStream {
   };
 
   initTranslationStream = (streamId) => {
-    this.trlAudioJanusStream = new StreamingPlugin();
+    this.trlAudioJanusStream = new StreamingPlugin(this.config.iceServers);
     this.janus.attach(this.trlAudioJanusStream).then(data => {
       log.debug("[shidur] attach translation", data)
       this.trlAudioJanusStream.watch(streamId).then(stream => {

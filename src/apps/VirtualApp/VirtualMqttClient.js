@@ -214,6 +214,7 @@ class VirtualMqttClient extends Component {
       api
         .fetchConfig()
         .then((data) => {
+          log.debug("[client] got config: ", data)
           ConfigStore.setGlobalConfig(data);
           this.setState({
             premodStatus: ConfigStore.dynamicConfig(ConfigStore.PRE_MODERATION_KEY) === "true",
@@ -302,7 +303,7 @@ class VirtualMqttClient extends Component {
         if (user.role !== userRolesEnum.user) {
           localStorage.setItem("room", "-1");
           this.setState({user, sourceLoading: true});
-          this.state.virtualStreamingJanus.init(user, "str11");
+          this.state.virtualStreamingJanus.init(user, "str1");
         }
       }
     });
@@ -320,8 +321,7 @@ class VirtualMqttClient extends Component {
     log.info("[client] Got config: ", config)
     this.initJanus(user, config, retry)
     if (!reconnect) {
-      const srv = user.country === "Russia" ? "str11" : null;
-      this.state.virtualStreamingJanus.init(user, srv);
+      this.state.virtualStreamingJanus.init(user);
     }
   };
 

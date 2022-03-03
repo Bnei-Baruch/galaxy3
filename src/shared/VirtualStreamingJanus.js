@@ -270,13 +270,12 @@ export default class VirtualStreamingJanus {
     const streamingGateways = GxyJanus.gatewayNames("streaming");
     this.streamingGateway = streamingGateways[Math.floor(Math.random() * streamingGateways.length)];
     const config = GxyJanus.instanceConfig(this.streamingGateway);
-    const server = country === "Russia" ? 'https://str11.kab.sh/janusgxy' : config.url
 
     Janus.init({
       debug: process.env.NODE_ENV !== "production" ? ["error"] : ["error"],
       callback: () => {
         this.janus = new Janus({
-          server,
+          server: config.url,
           iceServers: config.iceServers,
           success: () => {
             Janus.log(" :: Connected to JANUS");
@@ -302,14 +301,14 @@ export default class VirtualStreamingJanus {
     });
   }
 
-  iceRestart = () => {
-    let id = trllang[localStorage.getItem("vrt_langtext")] || 301;
-    if (this.videoJanusStream)
-      this.videoJanusStream.send({message: {request: "watch", id: this.videos, restart: true}});
-    if (this.audioJanusStream)
-      this.audioJanusStream.send({message: {request: "watch", id: this.audios, restart: true}});
-    if (this.trlAudioJanusStream) this.trlAudioJanusStream.send({message: {request: "watch", id, restart: true}});
-  };
+  // iceRestart = () => {
+  //   let id = trllang[localStorage.getItem("vrt_langtext")] || 301;
+  //   if (this.videoJanusStream)
+  //     this.videoJanusStream.send({message: {request: "watch", id: this.videos, restart: true}});
+  //   if (this.audioJanusStream)
+  //     this.audioJanusStream.send({message: {request: "watch", id: this.audios, restart: true}});
+  //   if (this.trlAudioJanusStream) this.trlAudioJanusStream.send({message: {request: "watch", id, restart: true}});
+  // };
 
   initVideoStream = (janus) => {
     janus.attach({
