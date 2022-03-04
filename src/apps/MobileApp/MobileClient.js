@@ -4,20 +4,12 @@ import {Janus} from "../../lib/janus";
 import classNames from "classnames";
 import Dots from "react-carousel-dots";
 import {Accordion, Button, Icon, Image, Input, Label, Menu, Modal, Select} from "semantic-ui-react";
-import {
-  checkNotification,
-  geoInfo, getDateString,
-  getMedia,
-  getMediaStream,
-  initJanus,
-  micLevel, notifyMe,
-  updateGxyUser,
-} from "../../shared/tools";
+import {checkNotification, geoInfo, getDateString, initJanus, notifyMe, sendUserState, updateGxyUser} from "../../shared/tools";
 import "./MobileClient.scss";
 import "./MobileConteiner.scss";
 import "eqcss";
 import {NO_VIDEO_OPTION_VALUE, VIDEO_240P_OPTION_VALUE, vsettings_list} from "../../shared/consts";
-import {APP_JANUS_SRV_STR1, APP_STUN_SRV_STR, GEO_IP_INFO} from "../../shared/env";
+import {APP_JANUS_SRV_STR, APP_STUN_SRV_STR, GEO_IP_INFO} from "../../shared/env";
 import platform from "platform";
 import {isMobile} from "react-device-detect";
 import {withTranslation} from "react-i18next";
@@ -48,6 +40,8 @@ import {captureMessage, updateSentryUser} from "../../shared/sentry";
 import {getUserRole, userRolesEnum} from "../../shared/enums";
 import {RegistrationModals} from "./RegistrationModals";
 import mqtt from "../../shared/mqtt";
+import devices from "../../lib/devices";
+import log from "loglevel";
 
 const sortAndFilterFeeds = (feeds) =>
   feeds
@@ -64,14 +58,14 @@ class MobileClient extends Component {
     media: {
       audio: {
         context: null,
-        audio_device: null,
+        device: null,
         devices: [],
         error: null,
         stream: null,
       },
       video: {
         setting: {width: 320, height: 180, ideal: 15},
-        video_device: null,
+        device: null,
         devices: [],
         error: null,
         stream: null,
@@ -223,7 +217,7 @@ class MobileClient extends Component {
           streaming: {
             str: {
               name: "str",
-              url: APP_JANUS_SRV_STR1,
+              url: APP_JANUS_SRV_STR,
               type: "streaming",
               token: "",
             },
@@ -415,109 +409,69 @@ class MobileClient extends Component {
   };
 
   initDevices = () => {
-    getMedia(this.state.media).then((media) => {
-      const {audio, video} = media;
+    const {t} = this.props;
 
+    devices.init(media => {
+      setTimeout(() => {
+        if(media.audio.device) {
+          this.setAudioDevice(media.audio.device)
+        } else {
+          log.warn("[client] No left audio devices")
+          //FIXME: remove it from pc?
+        }
+        if(!media.video.device) {
+          log.warn("[client] No left video devices")
+          //FIXME: remove it from pc?
+        }
+      }, 1000)
+    }).then(data => {
+      log.info("[client] init devices: ", data);
+      const {audio, video} = data;
       if (audio.error && video.error) {
-        alert("No input devices detected");
+        alert(t("oldClient.noInputDevices"));
         this.setState({cammuted: true});
       } else if (audio.error) {
-        alert(audio.error);
+        alert("audio device not detected");
       } else if (video.error) {
-        alert(video.error);
+        alert(t("oldClient.videoNotDetected"));
         this.setState({cammuted: true});
       }
 
       if (video.stream) {
         let myvideo = this.refs.localVideo;
-        if (myvideo) myvideo.srcObject = media.video.stream;
+        if (myvideo) myvideo.srcObject = video.stream;
       }
 
-      if (audio.stream) {
-        micLevel(audio.stream, this.refs.canvas1, (audioContext) => {
-          audio.context = audioContext;
-          this.setState({media});
-        });
-      }
-
-      // we dup this info on user so it goes into the backend.
-      // from there it propagates into other components (e.g. shidur preview)
-      const user = {
-        ...this.state.user,
-        extra: {
-          ...(this.state.user.extra || {}),
-          media: {
-            audio: {
-              audio_device: audio.audio_device,
-            },
-            video: {
-              setting: video.setting,
-              video_device: video.video_device,
-            },
-          },
-        },
-      };
-
-      this.setState({media, user});
-    });
+      this.setState({media: data})
+    })
   };
 
-  setVideoSize = (video_setting) => {
-    let {media} = this.state;
-    if (JSON.stringify(video_setting) === JSON.stringify(media.video.setting)) return;
-    getMediaStream(false, true, video_setting, null, media.video.video_device).then((data) => {
-      const [stream, error] = data;
-      if (error) {
-        console.error(error);
-      } else {
-        localStorage.setItem("video_setting", JSON.stringify(video_setting));
-        media.video.stream = stream;
-        media.video.setting = video_setting;
+  setVideoSize = (setting) => {
+    devices.setVideoSize(setting).then(media => {
+      if(media.video.stream) {
         let myvideo = this.refs.localVideo;
-        myvideo.srcObject = stream;
+        myvideo.srcObject = media.video.stream;
         this.setState({media});
       }
-    });
+    })
   };
 
-  setVideoDevice = (video_device) => {
-    let {media} = this.state;
-    if (video_device === media.video.video_device) return;
-    getMediaStream(false, true, media.video.setting, null, video_device).then((data) => {
-      const [stream, error] = data;
-      if (error) {
-        console.error(error);
-      } else {
-        localStorage.setItem("video_device", video_device);
-        media.video.stream = stream;
-        media.video.video_device = video_device;
+  setVideoDevice = (device) => {
+    return devices.setVideoDevice(device).then(media => {
+      if(media.video.device) {
         let myvideo = this.refs.localVideo;
-        myvideo.srcObject = stream;
+        myvideo.srcObject = media.video.stream;
         this.setState({media});
       }
-    });
+    })
   };
 
-  setAudioDevice = (audio_device) => {
-    let {media} = this.state;
-    if (audio_device === media.audio.audio_device) return;
-    getMediaStream(true, false, media.video.setting, audio_device, null).then((data) => {
-      const [stream, error] = data;
-      if (error) {
-        console.error(error);
-      } else {
-        localStorage.setItem("audio_device", audio_device);
-        media.audio.stream = stream;
-        media.audio.audio_device = audio_device;
-        if (media.audio.context) {
-          media.audio.context.close();
-        }
-        micLevel(stream, this.refs.canvas1, (audioContext) => {
-          media.audio.context = audioContext;
-          this.setState({media});
-        });
+  setAudioDevice = (device, cam_mute) => {
+    devices.setAudioDevice(device, cam_mute).then(media => {
+      if(media.audio.device) {
+        this.setState({media});
       }
-    });
+    })
   };
 
   selectRoom = (selected_room) => {
@@ -720,10 +674,8 @@ class MobileClient extends Component {
 
   joinRoom = (reconnect, videoroom, user) => {
     let {selected_room, media, cammuted} = this.state;
-    const {
-      video: {video_device},
-    } = media;
-    user.camera = !!video_device && cammuted === false;
+    const {video: {device}} = media;
+    user.camera = !!device && cammuted === false;
     user.question = false;
     user.timestamp = Date.now();
     this.setState({user, muted: true});
@@ -803,10 +755,7 @@ class MobileClient extends Component {
   publishOwnFeed = (useVideo, useAudio) => {
     console.log("publishOwnFeed");
     const {videoroom, media} = this.state;
-    const {
-      audio: {audio_device},
-      video: {setting, video_device},
-    } = media;
+    const {audio, video} = media;
     const offer = {
       audioRecv: false,
       videoRecv: false,
@@ -816,17 +765,17 @@ class MobileClient extends Component {
     };
 
     if (useVideo) {
-      const {width, height, ideal} = setting;
+      const {width, height, ideal} = video.setting;
       offer.video = {
         width,
         height,
         frameRate: {ideal, min: 1},
-        deviceId: {exact: video_device},
+        deviceId: {exact: video.device},
       };
     }
 
     if (useAudio) {
-      offer.audio = {deviceId: {exact: audio_device}};
+      offer.audio = {deviceId: {exact: audio.device}};
     }
 
     videoroom.createOffer({
@@ -850,29 +799,29 @@ class MobileClient extends Component {
     });
   };
 
-  iceRestart = () => {
-    const {videoroom, remoteFeed} = this.state;
-
-    if (videoroom) {
-      videoroom.createOffer({
-        media: {audioRecv: false, videoRecv: false, audioSend: true, videoSend: true},
-        iceRestart: true,
-        simulcast: false,
-        success: (jsep) => {
-          Janus.debug("Got publisher SDP!");
-          Janus.debug(jsep);
-          const publish = {request: "configure", restart: true};
-          videoroom.send({message: publish, jsep: jsep});
-        },
-        error: (error) => {
-          Janus.error("WebRTC error:", error);
-        },
-      });
-    }
-
-    if (remoteFeed) remoteFeed.send({message: {request: "configure", restart: true}});
-    if (this.state.virtualStreamingJanus) this.state.virtualStreamingJanus.iceRestart();
-  };
+  // iceRestart = () => {
+  //   const {videoroom, remoteFeed} = this.state;
+  //
+  //   if (videoroom) {
+  //     videoroom.createOffer({
+  //       media: {audioRecv: false, videoRecv: false, audioSend: true, videoSend: true},
+  //       iceRestart: true,
+  //       simulcast: false,
+  //       success: (jsep) => {
+  //         Janus.debug("Got publisher SDP!");
+  //         Janus.debug(jsep);
+  //         const publish = {request: "configure", restart: true};
+  //         videoroom.send({message: publish, jsep: jsep});
+  //       },
+  //       error: (error) => {
+  //         Janus.error("WebRTC error:", error);
+  //       },
+  //     });
+  //   }
+  //
+  //   if (remoteFeed) remoteFeed.send({message: {request: "configure", restart: true}});
+  //   if (this.state.virtualStreamingJanus) this.state.virtualStreamingJanus.iceRestart();
+  // };
 
   onMessage = (videoroom, msg, jsep) => {
     Janus.log(" ::: Got a message (publisher) :::");
@@ -900,13 +849,8 @@ class MobileClient extends Component {
           mqtt.join("galaxy/room/" + msg["room"] + "/chat", true);
         }, 3000);
 
-        const {
-          media: {
-            audio: {audio_device},
-            video: {video_device},
-          },
-        } = this.state;
-        this.publishOwnFeed(!!video_device, !!audio_device);
+        const {media: {audio, video}} = this.state;
+        this.publishOwnFeed(!!video.device, !!audio.device);
 
         // Any new feed to attach to?
         if (msg["publishers"] !== undefined && msg["publishers"] !== null) {
@@ -1208,8 +1152,7 @@ class MobileClient extends Component {
         // FIXME: Can this be done by notifying only the joined feed?
         setTimeout(() => {
           if (this.state.question || this.state.cammuted) {
-            const msg = {type: "client-state", user: this.state.user};
-            mqtt.send(JSON.stringify(msg), false, "galaxy/room/" + this.state.room);
+            sendUserState(this.state.user)
           }
         }, 3000);
       }
@@ -1500,9 +1443,7 @@ class MobileClient extends Component {
 
     updateSentryUser(user);
     updateGxyUser(user);
-
-    const msg = {type: "client-state", user};
-    mqtt.send(JSON.stringify(msg), false, "galaxy/room/" + this.state.room);
+    sendUserState(user)
   };
 
   handleAudioOut = (data) => {
@@ -1555,17 +1496,33 @@ class MobileClient extends Component {
 
       updateSentryUser(user);
       updateGxyUser(user);
-
-      const msg = {type: "client-state", user};
-      mqtt.send(JSON.stringify(msg), false, "galaxy/room/" + this.state.room);
+      sendUserState(user)
     }
   };
 
   micMute = () => {
-    let {videoroom, muted} = this.state;
+    const {videoroom, muted} = this.state;
+    if(muted) this.micVolume()
     muted ? videoroom.unmuteAudio() : videoroom.muteAudio();
+    muted ? devices.audio.context.resume() : devices.audio.context.suspend()
     this.setState({muted: !muted});
   };
+
+  micVolume = () => {
+    const c = this.refs.canvas1
+    let cc = c.getContext("2d");
+    let gradient = cc.createLinearGradient(0, 0, 0, 55);
+    gradient.addColorStop(1, "green");
+    gradient.addColorStop(0.35, "#80ff00");
+    gradient.addColorStop(0.1, "orange");
+    gradient.addColorStop(0, "red");
+    devices.micLevel = (volume) => {
+      //console.log("[client] volume: ", volume)
+      cc.clearRect(0, 0, c.width, c.height);
+      cc.fillStyle = gradient;
+      cc.fillRect(0, c.height - volume * 300, c.width, c.height);
+    }
+  }
 
   toggleShidur = () => {
     const {virtualStreamingJanus, shidur, user} = this.state;
@@ -1622,7 +1579,6 @@ class MobileClient extends Component {
     const {t, i18n} = this.props;
     const {
       appInitError,
-      audio,
       cammuted,
       chatMessagesCount,
       chatVisible,
@@ -1652,8 +1608,7 @@ class MobileClient extends Component {
       premodStatus,
       mqttOn,
     } = this.state;
-    const {video_device} = media.video;
-    const {audio_device} = media.audio;
+    const {video, audio} = media;
 
     if (appInitError) {
       return (
@@ -1755,9 +1710,9 @@ class MobileClient extends Component {
     });
 
     const otherFeedHasQuestion = this.state.feeds.some(({question, id}) => question && id !== myid);
-    const questionDisabled = !audio_device || !localAudioTrack || delay || otherFeedHasQuestion;
+    const questionDisabled = !audio.device || !localAudioTrack || delay || otherFeedHasQuestion;
     const login = <LoginPage user={user} checkPermission={this.checkPermission} />;
-    const openVideoDisabled = video_device === null || !localAudioTrack || delay;
+    const openVideoDisabled = video.device === null || !localAudioTrack || delay;
     const chatCountLabel = (
       <Label key="Carbon" floating size="mini" color="red">
         {chatMessagesCount}
@@ -1843,7 +1798,7 @@ class MobileClient extends Component {
                     key={`video-${i}`}
                     disabled={!!room}
                     name={device.label}
-                    className={video_device === device.deviceId ? "selected" : null}
+                    className={video.device === device.deviceId ? "selected" : null}
                     onClick={() => this.setVideoDevice(device.deviceId)}
                   />
                 ))}
@@ -1863,7 +1818,7 @@ class MobileClient extends Component {
                     key={`audio-${i}`}
                     disabled={!!room}
                     name={device.label}
-                    className={audio_device === device.deviceId ? "selected" : null}
+                    className={audio.device === device.deviceId ? "selected" : null}
                     onClick={() => this.setAudioDevice(device.deviceId)}
                   />
                 ))}
