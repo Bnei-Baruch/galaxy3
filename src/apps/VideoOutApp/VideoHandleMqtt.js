@@ -5,7 +5,6 @@ import log from "loglevel";
 import ConfigStore from "../../shared/ConfigStore";
 import {PublisherPlugin} from "../../lib/publisher-plugin";
 import {SubscriberPlugin} from "../../lib/subscriber-plugin";
-import chalk from "chalk";
 
 class VideoHandleMqtt extends Component {
   state = {
@@ -33,13 +32,11 @@ class VideoHandleMqtt extends Component {
     let {g, index, group} = this.props;
     const {room} = this.state;
     if (g && index === 13 && g.room !== room && group) {
-      log.info(chalk.magenta("[VideoHandleMqtt] First IF : ", g, index, g.room, room, group));
       this.setState({room: g.room}, () => {
         this.initVideoRoom(g.room, g.janus);
       });
     }
     if (g && g.room !== room && index !== 13) {
-      log.info(chalk.magenta("[VideoHandleMqtt] Second IF : ", g, index, g.room, room));
       this.setState({room: g.room}, () => {
         if (room) {
           this.exitVideoRoom(room, () => {

@@ -14,7 +14,6 @@
     "@sentry/cli": "^1.71.0",
     "@sentry/react": "^6.16.1",
     "@sentry/tracing": "^6.16.1",
-    "chalk": "^5.0.0",
     "classnames": "^2.3.1",
     "debounce": "^1.2.1",
     "eqcss": "1.9.2",

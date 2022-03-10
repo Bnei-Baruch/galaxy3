@@ -1,7 +1,6 @@
 import {randomString} from "../shared/tools";
 import mqtt from "../shared/mqtt";
 import log from "loglevel";
-import chalk from "chalk";
 
 export class JanusMqtt {
   constructor(user, srv, mit) {
@@ -287,7 +286,7 @@ export class JanusMqtt {
 
       const pluginHandle = this.pluginHandles[sender]
       if (!pluginHandle) {
-        log.debug(chalk.grey('[janus] This handle is not attached to this session', json))
+        log.debug('%c[janus] This handle is not attached to this session' + json, "color: darkgrey")
         return
       }
 
@@ -308,7 +307,7 @@ export class JanusMqtt {
       }
       const pluginHandle = this.pluginHandles[sender]
       if (!pluginHandle) {
-        log.debug(chalk.grey('[janus] This handle is not attached to this session', sender))
+        log.debug('%c[janus] This handle is not attached to this session' + sender, "color: darkgrey")
         return
       }
       pluginHandle.webrtcState(true)
@@ -323,7 +322,7 @@ export class JanusMqtt {
       }
       const pluginHandle = this.pluginHandles[sender]
       if (!pluginHandle) {
-        log.debug(chalk.grey('[janus] This handle is not attached to this session', sender))
+        log.debug('%c[janus] This handle is not attached to this session' + sender, "color: darkgrey")
         return
       }
       pluginHandle.webrtcState(false, json.reason)
@@ -348,7 +347,7 @@ export class JanusMqtt {
       }
       const pluginHandle = this.pluginHandles[sender]
       if (!pluginHandle) {
-        log.debug(chalk.grey('[janus] This handle is not attached to this session', sender))
+        log.debug('%c[janus] This handle is not attached to this session' + sender, "color: darkgrey")
         return
       }
       pluginHandle.mediaState(json.type, json.receiving)
@@ -365,7 +364,7 @@ export class JanusMqtt {
       }
       const pluginHandle = this.pluginHandles[sender]
       if (!pluginHandle) {
-        log.debug(chalk.grey('[janus] This handle is not attached to this session', sender))
+        log.debug('%c[janus] This handle is not attached to this session' + sender, "color: darkgrey")
         return
       }
       pluginHandle.slowLink(json.uplink, json.nacks)
@@ -399,7 +398,7 @@ export class JanusMqtt {
 
       const pluginHandle = this.pluginHandles[sender]
       if (!pluginHandle) {
-        log.debug(chalk.grey('[janus] This handle is not attached to this session', sender))
+        log.debug('%c[janus] This handle is not attached to this session' + sender, "color: darkgrey")
         return
       }
 

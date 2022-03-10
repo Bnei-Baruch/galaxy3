@@ -4,7 +4,6 @@ import {isServiceID} from "./enums";
 import {randomString} from "./tools";
 import GxyJanus from "./janus-utils";
 import log from "loglevel";
-import chalk from 'chalk';
 import {captureMessage} from "./sentry";
 
 const mqttTimeout = 30 // Seconds
@@ -117,7 +116,7 @@ class MqttMsg {
     if (!this.mq) return;
     let correlationData = JSON.parse(message)?.transaction
     let cd = correlationData ? " | transaction: " + correlationData : ""
-    log.debug(chalk.gray("[mqtt] --> send message" + cd + " | topic: " + topic + " | data: ", message));
+    log.debug("%c[mqtt] --> send message" + cd + " | topic: " + topic + " | data: " + message, "color: darkgrey");
     let properties = !!rxTopic ? {userProperties: user || this.user, responseTopic: rxTopic, correlationData} : {userProperties: user || this.user};
     let options = {qos: 1, retain, properties};
     this.mq.publish(topic, message, {...options}, (err) => {
@@ -129,7 +128,7 @@ class MqttMsg {
     this.mq.on("message", (topic, data, packet) => {
       log.trace("[mqtt] <-- receive packet: ", packet)
       let cd = packet?.properties?.correlationData ? " | transaction: " + packet?.properties?.correlationData?.toString() : ""
-      log.debug(chalk.gray("[mqtt] <-- receive message" + cd + " | topic : " + topic));
+      log.debug("%c[mqtt] <-- receive message" + cd + " | topic : " + topic, "color: darkgrey");
       const t = topic.split("/")
       if(t[0] === "msg") t.shift()
       const [root, service, id, target] = t
