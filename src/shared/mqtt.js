@@ -7,7 +7,7 @@ import log from "loglevel";
 import {captureMessage} from "./sentry";
 
 const mqttTimeout = 30 // Seconds
-const mqttKeepalive = 1 // Seconds
+const mqttKeepalive = 3 // Seconds
 
 class MqttMsg {
   constructor() {
