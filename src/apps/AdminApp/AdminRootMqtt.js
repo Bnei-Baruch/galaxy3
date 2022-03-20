@@ -835,7 +835,7 @@ class AdminRootMqtt extends Component {
               selection
               options={group_options}
               onClick={this.sortGroups}
-              onChange={(e, {value}) => this.joinRoom(value)}
+              onChange={(e, {value}) => this.exitRoom(value)}
             />
             <Segment textAlign="center" className="group_list">
               <Table selectable compact="very" basic structured className="admin_table" unstackable>
