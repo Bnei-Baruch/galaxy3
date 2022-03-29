@@ -12,7 +12,6 @@ export default class AudioStreamVolume {
       this.media = this.context.createMediaStreamSource(stream);
       this.node = new AudioWorkletNode(this.context, 'volume_meter');
       this.node.port.onmessage = event => {
-        console.log('event', event);
         if (event && event.data && event.data.volume !== undefined) {
           if (this.volume !== event.data.volume) {
             this.volume = event.data.volume;
@@ -26,7 +25,7 @@ export default class AudioStreamVolume {
       console.error('Failed initializeind audio stream volume!', e);
     });
   }
-  
+
   suspend() {
     if (this.media && this.node) {
       this.media.disconnect(this.node);
