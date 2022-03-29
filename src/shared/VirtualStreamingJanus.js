@@ -1,6 +1,8 @@
 import {Janus} from "../lib/janus";
 import {gxycol, trllang, NO_VIDEO_OPTION_VALUE} from "./consts";
 import GxyJanus from "./janus-utils";
+import platform from "platform";
+import AudioStreamVolume from "./AudioStreamVolume";
 
 export default class VirtualStreamingJanus {
   constructor(onInitialized) {
@@ -21,6 +23,7 @@ export default class VirtualStreamingJanus {
     // Streaing plugin for trlAudio
     this.trlAudioJanusStream = null;
     this.trlAudioMediaStream = null;
+    this.trlAudioContext = null;
     // Array of callbacks for cleanup.
     this.trlAudioJanusStreamCleanup = [];
 
@@ -134,11 +137,21 @@ export default class VirtualStreamingJanus {
         success: () => {
           this.trlAudioJanusStream = null;
           this.trlAudioMediaStream = null;
+          if (this.trlAudioContext) {
+            this.trlAudioContext.close().finally(() => {
+              this.trlAudioContext = null;
+            });
+          }
           callbacks.success();
         },
         error: (error) => {
           this.trlAudioJanusStream = null;
           this.trlAudioMediaStream = null;
+          if (this.trlAudioContext) {
+            this.trlAudioContext.close().finally(() => {
+              this.trlAudioContext = null;
+            });
+          }
           callbacks.error(error);
         },
       });
@@ -456,6 +469,20 @@ export default class VirtualStreamingJanus {
         let stream = new MediaStream();
         stream.addTrack(track.clone());
         this.trlAudioMediaStream = stream;
+
+        // Connect audio stream to analyser node (to extract volume).
+        if (this.trlAudioContext) {
+          this.trlAudioContext.close().finally(() => {
+            this.trlAudioContext = null;
+            this.trlAudioContext = new AudioStreamVolume(this.trlAudioMediaStream);
+          });
+        } else {
+          const browser = platform.parse(navigator.userAgent);
+          if (/Safari|Firefox/.test(browser.name)) {
+            this.trlAudioContext = new AudioStreamVolume(this.trlAudioMediaStream);
+          }
+        }
+
         Janus.log("Created remote audio stream:", stream);
         this.attachTrlAudioStream_(this.trlAudioElement, /* reattach= */ false);
         this.onInitialized_();
@@ -507,17 +534,22 @@ export default class VirtualStreamingJanus {
       this.talking = true;
       this.trlAudioElement.volume = this.mixvolume;
       this.trlAudioElement.muted = false;
+      if (this.trlAudioContext) {
+        this.trlAudioContext.resume();
+      }
 
       this.prevAudioVolume = this.audioElement.volume;
       this.prevMuted = this.audioElement.muted;
 
       console.log(" :: Switch STR Stream: ", gxycol[col]);
       this.audioJanusStream.send({message: {request: "switch", id: gxycol[col]}});
-      const id = trllang[localStorage.getItem("vrt_langtext")];
+      let id = trllang[localStorage.getItem("vrt_langtext")];
       console.log(":: Select TRL: ", localStorage.getItem("vrt_langtext"), id);
       if (!id) {
         console.log(" :: Not TRL Stream attach");
       } else {
+        // To test "ON" locally use standard streams, for example override:
+        // id = 3; // Russian origin
         this.trlAudioJanusStream.send({message: {request: "switch", id: id}});
         this.talking = setInterval(this.ducerMixaudio, 200);
         console.log(" :: Init TRL Stream: ", localStorage.getItem("vrt_langtext"), id);
@@ -536,6 +568,9 @@ export default class VirtualStreamingJanus {
       this.trlAudioElement.muted = true;
       this.talking = null;
       this.mixvolume = null;
+      if (this.trlAudioContext) {
+        this.trlAudioContext.suspend();
+      }
     }
     if (this.onTalkingCallback) {
       this.onTalkingCallback(this.talking);
@@ -544,8 +579,20 @@ export default class VirtualStreamingJanus {
 
   ducerMixaudio = () => {
     if (this.isInitialized_()) {
+      const getVolume = (callback) => {
+        const browser = platform.parse(navigator.userAgent);
+        if (/Safari|Firefox/.test(browser.name)) {
+          // Use Web Audio API to get volume.
+          callback((this.trlAudioContext && this.trlAudioContext.volume) || 0);
+        } else {
+          // Use WebRTC Stats to get remote volume.
+          this.trlAudioJanusStream.getVolume(null, callback);
+        }
+      };
       // Get remote volume of translator stream (FYI in case of Hebrew, this will be 0 - no translation).
-      this.trlAudioJanusStream.getVolume(null, (volume) => {
+      // For FireFox and Safari use Web Audio API as WebRTC Stat don't implement remote volume yet.
+      // If this works well, switch Chrome to Web Audio API too.
+      getVolume((volume) => {
         if (volume === -1) {
           if (this.talking) {
             clearInterval(this.talking);
@@ -557,8 +604,8 @@ export default class VirtualStreamingJanus {
           this.mixvolume = this.audioElement.muted ? 0 : this.audioElement.volume;
           this.trlAudioElement.volume = this.mixvolume;
         }
-        if (volume > 0.05) {
-          // If translator is talking (remote volume > 0.05) we want to reduce Rav to 5%.
+        if (volume > 0.02) {
+          // If translator is talking (remote volume > 0.02) we want to reduce Rav to 5%.
           this.audioElement.volume = this.mixvolume * 0.05;
         } else if (this.audioElement.volume + 0.01 <= this.mixvolume) {
           // If translator is not talking or no translation (Hebrew) we want to slowly raise

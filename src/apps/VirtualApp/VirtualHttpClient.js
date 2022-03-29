@@ -1764,7 +1764,7 @@ class VirtualHttpClient extends Component {
     this.setState({leftAsideSize: size, rightAsideName: rightName, leftAsideName: leftName});
   };
 
-  renderTopBar = () => {
+  renderTopBar = (isDeb) => {
     const {t, i18n} = this.props;
     const isHe = i18n.language === "he";
     const {user, asideMsgCounter, leftAsideName, rightAsideName, isOpenTopMenu} = this.state;
@@ -1833,6 +1833,10 @@ class VirtualHttpClient extends Component {
           <Typography variant="h6" align="center" className={classNames("top-toolbar__item", "top-toolbar__title")}>
             {user?.group}
           </Typography>
+
+          {/* Debug buttons to locally emulate as if "ON" is turned on. */}
+          {isDeb ? <ButtonMD onClick={() => this.state.virtualStreamingJanus.streamGalaxy(true, 4, "")}>ON</ButtonMD> : null}
+          {isDeb ? <ButtonMD onClick={() => this.state.virtualStreamingJanus.streamGalaxy(false, 4, "")}>OFF</ButtonMD> : null}
 
           {/* ---------- */}
           <ButtonGroup
