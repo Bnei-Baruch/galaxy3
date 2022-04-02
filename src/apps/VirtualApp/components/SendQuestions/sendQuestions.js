@@ -77,6 +77,7 @@ const SendQuestion = ({questions, send, user = {}}) => {
         variant="outlined"
         onChange={handleGalaxyRoomChange}
         margin="dense"
+        disabled
       />
       <TextField
         fullWidth
