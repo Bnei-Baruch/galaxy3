@@ -46,7 +46,7 @@ class JanusHandleMqtt extends Component {
 
     this.setState({mit, janus});
 
-    this.initVideoHandles(janus, room, user)
+    this.initVideoHandles(janus, room, user, mit)
   }
 
   initVideoHandles = (janus, room, user, mit) => {

@@ -87,6 +87,9 @@ class PreviewPanelMqtt extends Component {
       return;
     }
 
+    if(subscriber)
+      subscriber.detach()
+
     subscriber = new SubscriberPlugin();
     subscriber.onTrack = this.onRemoteTrack;
     subscriber.onUpdate = this.onUpdateStreams;

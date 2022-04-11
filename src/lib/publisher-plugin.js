@@ -296,8 +296,8 @@ export class PublisherPlugin extends EventEmitter {
   }
 
   hangup () {
-    log.info('[publisher] - hangup - ')
-    //this.emit('hangup')
+    log.info('[publisher] - hangup - ', this.janus)
+    this.detach()
   }
 
   slowLink (uplink, lost, mid) {
@@ -317,8 +317,26 @@ export class PublisherPlugin extends EventEmitter {
   }
 
   detach () {
+    this.pc.onicecandidate = null;
+    this.pc.ontrack = null;
+    this.pc.oniceconnectionstatechange = null;
+    this.pc.getSenders().forEach((sender) => {
+      this.pc.removeTrack(sender);
+      sender.setStreams();
+      sender.track?.stop();
+    });
+    this.pc.getReceivers().forEach((receiver) => {
+      receiver.track?.stop();
+    });
+    this.pc.getTransceivers().forEach((transceiver) => {
+      this.pc.removeTrack(transceiver.sender)
+      transceiver.sender.setStreams();
+      transceiver.sender.track?.stop();
+      transceiver.stop();
+    });
     this.pc.close()
     this.removeAllListeners()
+    this.pc = null
     this.janus = null
   }
 }
