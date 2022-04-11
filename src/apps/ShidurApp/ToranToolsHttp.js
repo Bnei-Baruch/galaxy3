@@ -234,6 +234,13 @@ class ToranToolsHttp extends Component {
     this.refs.end.scrollIntoView({behavior: "smooth"});
   };
 
+  filterRegion = (r) => {
+    const {region_filter} = this.props;
+    region_filter[r] = !region_filter[r]
+    console.log(region_filter)
+    this.props.setProps({region_filter});
+  };
+
   render() {
     const {
       group,
@@ -252,6 +259,7 @@ class ToranToolsHttp extends Component {
       preusers_count,
       region,
       region_groups,
+      region_filter,
       pnum,
       region_list,
     } = this.props;
@@ -526,6 +534,18 @@ class ToranToolsHttp extends Component {
             <Button.Group size="small" basic widths='9'>
               {Object.keys(short_regions).map((r) => {
                 return (<Button content={region_list[r]?.length} />);
+              })}
+            </Button.Group>
+            <Button.Group size="mini" widths='9'>
+              {Object.keys(region_filter).map((r) => {
+                return (
+                  <Button
+                    active={region_filter[r]}
+                    color={region_filter[r] ? "red" : "teal"}
+                    icon='arrow up'
+                    onClick={() => this.filterRegion(r)}
+                  />
+                );
               })}
             </Button.Group>
             <Divider />

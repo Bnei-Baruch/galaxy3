@@ -7,7 +7,7 @@ import LoginPage from "../../components/LoginPage";
 import ToranToolsHttp from "./ToranToolsHttp";
 import QuadPanelHttp from "./QuadPanelHttp";
 import "./ShidurApp.css";
-import {LOST_CONNECTION, STORAN_ID, short_regions} from "../../shared/consts";
+import {LOST_CONNECTION, STORAN_ID, short_regions, region_filter} from "../../shared/consts";
 import {GuaranteeDeliveryManager} from "../../shared/GuaranteeDelivery";
 import {captureException, updateSentryUser} from "../../shared/sentry";
 import {getDateString} from "../../shared/tools";
@@ -38,6 +38,7 @@ class ShidurAppHttp extends Component {
     appInitError: null,
     presets: {1: [], 2: [], 3: [], 4: []},
     region_groups: [],
+    region_filter: region_filter,
     region_list: [],
     region: null,
     sdiout: false,
@@ -169,12 +170,12 @@ class ShidurAppHttp extends Component {
   };
 
   fetchRooms = () => {
-    let {disabled_rooms, groups, shidur_mode, preview_mode, preusers_count, region, region_groups} = this.state;
+    let {disabled_rooms, groups, shidur_mode, preview_mode, preusers_count, region, region_groups, region_list} = this.state;
     api
       .fetchActiveRooms()
       .then((data) => {
         const users_count = data.map((r) => r.num_users).reduce((su, cur) => su + cur, 0);
-
+        const isRegoinFilter = Object.values(region_filter).find(v => v)
         let rooms = data;
 
         if (shidur_mode === "nashim") {
@@ -202,6 +203,15 @@ class ShidurAppHttp extends Component {
         }
 
         this.groupsByRegion(groups);
+
+        if(isRegoinFilter) {
+          groups = []
+          Object.keys(region_filter).map(g => {
+            if(!region_filter[g]) {
+              groups = [...groups, ...region_list[g]]
+            }
+          })
+        }
 
         if (region) {
           region_groups = groups.filter((r) => r.region === region);

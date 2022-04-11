@@ -388,3 +388,15 @@ export const short_regions = {
   israel: "IL",
   "petach-tikva": "PT",
 };
+
+export const region_filter = {
+  europe: false,
+  asia: false,
+  africa: false,
+  "latin-america": false,
+  russia: false,
+  ukraine: false,
+  "north-america": false,
+  israel: false,
+  "petach-tikva": false,
+}
