@@ -6,18 +6,7 @@ import PreviewPanelMqtt from "./PreviewPanelMqtt";
 import api from "../../shared/Api";
 import {RESET_VOTE} from "../../shared/env";
 import mqtt from "../../shared/mqtt";
-
-const short_regions = {
-  europe: "EU",
-  asia: "AS",
-  africa: "AF",
-  "latin-america": "LA",
-  russia: "RU",
-  ukraine: "UA",
-  "north-america": "NA",
-  israel: "IL",
-  "petach-tikva": "PT",
-};
+import {short_regions} from "../../shared/consts";
 
 class ToranToolsMqtt extends Component {
   state = {
