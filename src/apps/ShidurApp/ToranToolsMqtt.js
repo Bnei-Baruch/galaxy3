@@ -252,7 +252,7 @@ class ToranToolsMqtt extends Component {
       region,
       region_groups,
       pnum,
-      tcp,
+      region_list,
     } = this.props;
     const {open, delay, vote, galaxy_mode} = this.state;
     const q = <b style={{color: "red", fontSize: "20px", fontFamily: "Verdana", fontWeight: "bold"}}>?</b>;
@@ -332,7 +332,7 @@ class ToranToolsMqtt extends Component {
       );
     });
 
-    let region_list = region_groups.map((data, i) => {
+    let groups_region_list = region_groups.map((data, i) => {
       const {room, num_users, description, questions} = data;
       const next = data.description === next_group;
       const active = group && group.room === room;
@@ -476,7 +476,7 @@ class ToranToolsMqtt extends Component {
           </Button.Group>
           <Segment textAlign="center" className="group_list" raised disabled={delay}>
             <Table selectable compact="very" basic structured className="admin_table" unstackable>
-              <Table.Body>{region ? region_list : groups_list}</Table.Body>
+              <Table.Body>{region ? groups_region_list : groups_list}</Table.Body>
             </Table>
           </Segment>
           <Segment textAlign="center">
@@ -511,7 +511,7 @@ class ToranToolsMqtt extends Component {
             </Button.Group>
           </Segment>
           <Segment attached className="settings_conteiner">
-            <Button.Group size="mini">
+            <Button.Group size="mini" widths='9'>
               {Object.keys(short_regions).map((r) => {
                 return (
                   <Button
@@ -522,13 +522,11 @@ class ToranToolsMqtt extends Component {
                 );
               })}
             </Button.Group>
-            <Divider />
-            {/*<Dropdown icon='plug' className='button icon' inline item text={tcp === "mqtt" ? 'MQTT' : 'WebRTC'} disabled >*/}
-            {/*  <Dropdown.Menu>*/}
-            {/*    <Dropdown.Item onClick={() => this.props.setProps({tcp: "mqtt"})}>MQTT</Dropdown.Item>*/}
-            {/*    <Dropdown.Item onClick={() => this.props.setProps({tcp: "webrtc"})}>WebRTC</Dropdown.Item>*/}
-            {/*  </Dropdown.Menu>*/}
-            {/*</Dropdown>*/}
+            <Button.Group size="small" basic widths='9'>
+              {Object.keys(short_regions).map((r) => {
+                return (<Button content={region_list[r]?.length} />);
+              })}
+            </Button.Group>
             <Divider />
           </Segment>
           <Button.Group attached="bottom" size="mini">
