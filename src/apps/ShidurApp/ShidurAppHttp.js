@@ -7,7 +7,7 @@ import LoginPage from "../../components/LoginPage";
 import ToranToolsHttp from "./ToranToolsHttp";
 import QuadPanelHttp from "./QuadPanelHttp";
 import "./ShidurApp.css";
-import {LOST_CONNECTION, STORAN_ID} from "../../shared/consts";
+import {LOST_CONNECTION, STORAN_ID, short_regions} from "../../shared/consts";
 import {GuaranteeDeliveryManager} from "../../shared/GuaranteeDelivery";
 import {captureException, updateSentryUser} from "../../shared/sentry";
 import {getDateString} from "../../shared/tools";
@@ -38,6 +38,7 @@ class ShidurAppHttp extends Component {
     appInitError: null,
     presets: {1: [], 2: [], 3: [], 4: []},
     region_groups: [],
+    region_list: [],
     region: null,
     sdiout: false,
     audout: false,
@@ -200,6 +201,8 @@ class ShidurAppHttp extends Component {
           groups = rooms.filter((r) => !r.extra?.disabled);
         }
 
+        this.groupsByRegion(groups);
+
         if (region) {
           region_groups = groups.filter((r) => r.region === region);
         }
@@ -231,6 +234,12 @@ class ShidurAppHttp extends Component {
         console.error("[Shidur] error fetching rooms statistics", err);
         captureException(err, {source: "Shidur"});
       });
+  };
+
+  groupsByRegion = (groups) => {
+    const list = {}
+    Object.keys(short_regions).map(k => list[k] = groups.filter((r) => r.region === k));
+    this.setState({region_list: list});
   };
 
   onMqttData = (data) => {

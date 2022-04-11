@@ -12,6 +12,7 @@ import {getDateString} from "../../shared/tools";
 import mqtt from "../../shared/mqtt";
 import ConfigStore from "../../shared/ConfigStore";
 import {JanusMqtt} from "../../lib/janus-mqtt";
+import {short_regions} from "../../shared/consts";
 
 class ShidurAppMqtt extends Component {
   state = {
@@ -38,6 +39,7 @@ class ShidurAppMqtt extends Component {
     appInitError: null,
     presets: {1: [], 2: [], 3: [], 4: []},
     region_groups: [],
+    region_list: [],
     region: null,
     sdiout: false,
     audout: false,
@@ -196,6 +198,8 @@ class ShidurAppMqtt extends Component {
           groups = rooms.filter((r) => !r.extra?.disabled);
         }
 
+        this.groupsByRegion(groups);
+
         if (region) {
           region_groups = groups.filter((r) => r.region === region);
         }
@@ -225,6 +229,12 @@ class ShidurAppMqtt extends Component {
       .catch((err) => {
         log.error("[Shidur] error fetching rooms statistics", err);
       });
+  };
+
+  groupsByRegion = (groups) => {
+    const list = {}
+    Object.keys(short_regions).map(k => list[k] = groups.filter((r) => r.region === k));
+    this.setState({region_list: list});
   };
 
   onMqttData = (data) => {
