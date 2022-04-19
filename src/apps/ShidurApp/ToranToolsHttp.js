@@ -586,7 +586,7 @@ class ToranToolsHttp extends Component {
             <Button
               disabled={galaxy_mode === "vip"}
               color="grey"
-              content="Disabled"
+              content="VIP"
               onClick={() => this.galaxyMode("vip")}
             />
             <Button
