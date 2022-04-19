@@ -187,10 +187,27 @@ class ShidurAppMqtt extends Component {
 
         let pre_groups = [];
         if (preview_mode) {
-          // Extra exist and disabled
+
           if (preusers_count !== "Off") {
-            pre_groups = rooms.filter((r) => !r.extra && r.users.filter((r) => r.camera).length < preusers_count);
-            groups = rooms.filter((r) => r.users.filter((r) => r.camera).length >= preusers_count && !r.extra?.disabled);
+            pre_groups = rooms.filter((r) => !r.extra?.disabled && r.users.filter((r) => r.camera).length < preusers_count);
+            let new_groups = rooms.filter((r) => r.users.filter((r) => r.camera).length >= preusers_count && !r.extra?.disabled);
+
+            for (let i=0; i<groups.length; i++) {
+              let exist_group = new_groups.find(g => g.room === groups[i].room);
+              if(exist_group) {
+                groups[i] = exist_group;
+              } else {
+                groups.splice(i, 1);
+              }
+            }
+
+            for (let i=0; i<new_groups.length; i++) {
+              let exist_group = groups.find(g => g.room === new_groups[i].room);
+              if(!exist_group) {
+                groups.push(new_groups[i]);
+              }
+            }
+
           } else {
             pre_groups = rooms;
             groups = rooms.filter((r) => !r.extra?.disabled);
