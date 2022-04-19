@@ -58,7 +58,7 @@ class ToranToolsHttp extends Component {
   handlePreviewRoom = (e, data) => {
     e.preventDefault();
     if (e.type === "contextmenu") {
-      this.allowRoom(data);
+      this.vipRoom(data);
     }
   };
 
@@ -95,21 +95,17 @@ class ToranToolsHttp extends Component {
     let group = disabled_rooms.find((r) => r.room === data.room);
     if (group) return;
     api.updateRoom(data.room, data);
-    // disabled_rooms.push(data);
-    // this.props.setProps({disabled_rooms});
     this.setDelay();
   };
 
-  allowRoom = (data) => {
+  vipRoom = (data) => {
     let {groups} = this.props;
     let group = groups.find((r) => r.room === data.room);
     if (group) return;
-    data = {...data, extra: {...(data.extra || {}), timestamp: Date.now()}};
+    data = {...data, extra: {...(data.extra || {}), vip: true}};
     delete data.users;
     console.log(data);
     api.updateRoom(data.room, data);
-    // groups.push(data);
-    // this.props.setProps({groups});
   };
 
   restoreRoom = (e, data, i) => {
@@ -120,14 +116,6 @@ class ToranToolsHttp extends Component {
       delete data.users;
       api.updateRoom(data.room, data);
       this.setDelay();
-      // let {disabled_rooms} = this.props;
-      // for(let i = 0; i < disabled_rooms.length; i++){
-      //   if(disabled_rooms[i].room === data.room) {
-      //     disabled_rooms.splice(i, 1);
-      //     this.props.setProps({disabled_rooms});
-      //     this.setDelay();
-      //   }
-      // }
     }
   };
 
@@ -246,6 +234,7 @@ class ToranToolsHttp extends Component {
       group,
       pre_groups,
       disabled_rooms,
+      vip_rooms,
       groups,
       groups_queue,
       questions,
@@ -379,6 +368,21 @@ class ToranToolsHttp extends Component {
         <Table.Row
           key={room}
           error
+          onClick={() => this.selectGroup(data, i)}
+          onContextMenu={(e) => this.restoreRoom(e, data, i)}
+        >
+          <Table.Cell width={5}>{description}</Table.Cell>
+          <Table.Cell width={1}>{num_users}</Table.Cell>
+          <Table.Cell width={1}>{questions ? q : ""}</Table.Cell>
+        </Table.Row>
+      );
+    });
+
+    let vip_list = vip_rooms.map((data, i) => {
+      const {room, num_users, description, questions} = data;
+      return (
+        <Table.Row
+          key={room}
           onClick={() => this.selectGroup(data, i)}
           onContextMenu={(e) => this.restoreRoom(e, data, i)}
         >
@@ -580,6 +584,12 @@ class ToranToolsHttp extends Component {
               onClick={() => this.galaxyMode("lesson")}
             />
             <Button
+              disabled={galaxy_mode === "vip"}
+              color="grey"
+              content="Disabled"
+              onClick={() => this.galaxyMode("vip")}
+            />
+            <Button
               disabled={galaxy_mode === "shidur"}
               color="grey"
               content="Disabled"
@@ -588,7 +598,7 @@ class ToranToolsHttp extends Component {
           </Button.Group>
           <Segment attached textAlign="center" className="disabled_groups">
             <Table selectable compact="very" basic structured className="admin_table" unstackable>
-              <Table.Body>{galaxy_mode === "lesson" ? rooms_list : disabled_list}</Table.Body>
+              <Table.Body>{galaxy_mode === "lesson" ? rooms_list : galaxy_mode === "vip" ? vip_list : disabled_list}</Table.Body>
             </Table>
           </Segment>
           <Button.Group attached="bottom" size="mini">

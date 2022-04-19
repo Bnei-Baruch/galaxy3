@@ -33,6 +33,7 @@ class ShidurAppMqtt extends Component {
     quads: [],
     rooms: [],
     disabled_rooms: [],
+    vip_rooms: [],
     pre_groups: [],
     user: null,
     gatewaysInitialized: false,
@@ -169,7 +170,7 @@ class ShidurAppMqtt extends Component {
   };
 
   fetchRooms = () => {
-    let {disabled_rooms, groups, shidur_mode, preview_mode, preusers_count, region, region_list, region_groups, region_filter} = this.state;
+    let {vip_rooms, disabled_rooms, groups, shidur_mode, preview_mode, preusers_count, region, region_list, region_groups, region_filter} = this.state;
     api
       .fetchActiveRooms()
       .then((data) => {
@@ -233,6 +234,7 @@ class ShidurAppMqtt extends Component {
 
         // Extra exist and disabled
         disabled_rooms = rooms.filter((r) => r.extra?.disabled);
+        vip_rooms = rooms.filter((r) => r.extra?.vip);
 
         let quads = [
           ...this.col1.state.vquad,
@@ -242,7 +244,7 @@ class ShidurAppMqtt extends Component {
         ];
         let list = groups.filter((r) => !quads.find((q) => q && r.room === q.room));
         let questions = list.filter((room) => room.questions);
-        this.setState({quads, questions, users_count, rooms, groups, disabled_rooms, pre_groups, region_groups});
+        this.setState({quads, questions, users_count, rooms, groups, vip_rooms, disabled_rooms, pre_groups, region_groups});
       })
       .catch((err) => {
         log.error("[Shidur] error fetching active rooms", err);
