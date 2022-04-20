@@ -1,5 +1,5 @@
 import React, {Component} from "react";
-import {Button, Dropdown, Grid, Label, Message, Popup, Segment, Table, Divider, Icon, List} from "semantic-ui-react";
+import {Button, Dropdown, Grid, Label, Message, Popup, Segment, Table, Divider, Icon, List, Menu} from "semantic-ui-react";
 import "./ToranTools.scss";
 import log from "loglevel";
 import PreviewPanelMqtt from "./PreviewPanelMqtt";
@@ -7,6 +7,7 @@ import api from "../../shared/Api";
 import {RESET_VOTE} from "../../shared/env";
 import mqtt from "../../shared/mqtt";
 import {short_regions} from "../../shared/consts";
+import {createContext} from "../../shared/tools";
 
 class ToranToolsMqtt extends Component {
   state = {
@@ -18,6 +19,8 @@ class ToranToolsMqtt extends Component {
     sorted_feeds: [],
     pg: null,
     vote: false,
+    menu_open: false,
+    menu_group: null,
   };
 
   componentDidUpdate(prevProps) {
@@ -55,11 +58,11 @@ class ToranToolsMqtt extends Component {
     }
   };
 
-  handlePreviewRoom = (e, data) => {
+  selectMenuGroup = (e, data) => {
     e.preventDefault();
-    if (e.type === "contextmenu") {
-      this.vipRoom(data);
-    }
+    this.contextRef = React.createRef();
+    this.contextRef.current = createContext(e)
+    this.setState({menu_open: true, menu_group: data})
   };
 
   shidurMode = (shidur_mode) => {
@@ -86,26 +89,28 @@ class ToranToolsMqtt extends Component {
     return admin_rooms.find((r) => r.gateway_uid === room).id;
   };
 
-  disableRoom = (data) => {
+  disableRoom = () => {
     if (this.state.delay) return;
-    data = {...data, extra: {...(data.extra || {}), disabled: true}};
-    delete data.users;
-    log.info(data);
+    let {menu_group} = this.state;
+    menu_group = {...menu_group, extra: {...(menu_group.extra || {}), disabled: true}};
+    delete menu_group.users;
+    log.info(menu_group);
     let {disabled_rooms} = this.props;
-    let group = disabled_rooms.find((r) => r.room === data.room);
+    let group = disabled_rooms.find((r) => r.room === menu_group.room);
     if (group) return;
-    api.updateRoom(data.room, data);
+    api.updateRoom(menu_group.room, menu_group);
     this.setDelay();
   };
 
-  vipRoom = (data) => {
-    let {groups} = this.props;
-    let group = groups.find((r) => r.room === data.room);
+  vipRoom = () => {
+    let {vip_rooms} = this.props;
+    let {menu_group} = this.state;
+    let group = vip_rooms.find((r) => r.room === menu_group.room);
     if (group) return;
-    data = {...data, extra: {...(data.extra || {}), vip: true}};
-    delete data.users;
-    log.info(data);
-    api.updateRoom(data.room, data);
+    menu_group = {...menu_group, extra: {...(menu_group.extra || {}), vip: true}};
+    delete menu_group.users;
+    log.info(menu_group);
+    api.updateRoom(menu_group.room, menu_group);
   };
 
   restoreRoom = (e, data, i) => {
@@ -228,6 +233,16 @@ class ToranToolsMqtt extends Component {
     this.props.setProps({region_filter});
   };
 
+  selectMenu = (c) => {
+    if(c === "Disable") {
+      this.disableRoom()
+    }
+    if(c === "Vip") {
+      this.vipRoom()
+    }
+    this.setState({menu_open: false})
+  };
+
   render() {
     const {
       group,
@@ -251,7 +266,7 @@ class ToranToolsMqtt extends Component {
       pnum,
       region_list,
     } = this.props;
-    const {open, delay, vote, galaxy_mode} = this.state;
+    const {open, delay, vote, galaxy_mode, menu_open} = this.state;
     const q = <b style={{color: "red", fontSize: "20px", fontFamily: "Verdana", fontWeight: "bold"}}>?</b>;
     const next_group = groups[groups_queue] ? groups[groups_queue].description : groups[0] ? groups[0].description : "";
     const ng = groups[groups_queue] || null;
@@ -287,7 +302,7 @@ class ToranToolsMqtt extends Component {
           className={active ? "active" : "no"}
           key={room}
           onClick={() => this.selectGroup(data, i)}
-          onContextMenu={(e) => this.handlePreviewRoom(e, data)}
+          onContextMenu={(e) => this.selectMenuGroup(e, data)}
         >
           <Table.Cell width={5}>{description}</Table.Cell>
           <Table.Cell width={1}>{p}</Table.Cell>
@@ -316,7 +331,7 @@ class ToranToolsMqtt extends Component {
           className={active ? "active" : next ? "warning" : "no"}
           key={room}
           onClick={() => this.selectGroup(data, i)}
-          onContextMenu={(e) => this.handleDisableRoom(e, data)}
+          onContextMenu={(e) => this.selectMenuGroup(e, data)}
         >
           <Table.Cell width={1}>
             <Label circular content={pnum[room]} />
@@ -437,6 +452,21 @@ class ToranToolsMqtt extends Component {
               ""
             )}
           </Segment>
+          <Popup
+            context={this.contextRef}
+            onClose={() => this.setState({menu_open: false})}
+            open={menu_open}
+          >
+            <Menu text size='massive' compact
+              items={[
+                { key: 'disable', content: 'Disable', icon: 'window close' },
+                { key: 'vip', content: 'Vip', icon: 'star' },
+              ]}
+              onItemClick={(e, data) => this.selectMenu(data.content)}
+              secondary
+              vertical
+            />
+          </Popup>
           <Message attached className="info-panel" color="grey">
             {action_log}
             <div ref="end" />
