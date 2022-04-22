@@ -336,7 +336,7 @@ class ToranToolsHttp extends Component {
           onContextMenu={(e) => this.selectMenuGroup(e, data)}
         >
           <Table.Cell width={1}>{pn}</Table.Cell>
-          <Table.Cell width={5}>{description}{vip}</Table.Cell>
+          <Table.Cell width={5}>{description}&nbsp;&nbsp;{vip}</Table.Cell>
           <Table.Cell width={1}>{p}</Table.Cell>
           <Table.Cell width={1}>{num_users}</Table.Cell>
           <Table.Cell width={1}>{questions ? q : ""}</Table.Cell>
@@ -368,7 +368,7 @@ class ToranToolsHttp extends Component {
           onContextMenu={(e) => this.handleDisableRoom(e, data)}
         >
           <Table.Cell width={1}>{pn}</Table.Cell>
-          <Table.Cell width={5}>{description}{vip}</Table.Cell>
+          <Table.Cell width={5}>{description}&nbsp;&nbsp;{vip}</Table.Cell>
           <Table.Cell width={1}>{p}</Table.Cell>
           <Table.Cell width={1}>{num_users}</Table.Cell>
           <Table.Cell width={1}>{questions ? q : ""}</Table.Cell>
