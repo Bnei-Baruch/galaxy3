@@ -1,5 +1,6 @@
 import React, {Component} from "react";
-import {Button, Dropdown, Grid, Label, Message, Popup, Segment, Table, Divider, Icon, List, Menu} from "semantic-ui-react";import "./ToranTools.scss";
+import {Button, Dropdown, Grid, Label, Message, Popup, Segment, Table, Divider, Icon, List, Menu} from "semantic-ui-react";
+import "./ToranTools.scss";
 import PreviewPanelHttp from "./PreviewPanelHttp";
 import api from "../../shared/Api";
 import {RESET_VOTE} from "../../shared/env";
@@ -314,30 +315,28 @@ class ToranToolsHttp extends Component {
     });
 
     let groups_list = groups.map((data, i) => {
-      const {room, num_users, description, questions} = data;
+      const {room, num_users, description, questions, extra} = data;
       const next = data.description === next_group;
       const active = group && group.room === room;
+      const pn = (<Label circular content={pnum[room]} />);
+      const vip = extra?.vip ? (<Label size='mini' color='green' circular content="vip" />) : null;
       //const pr = presets.find(pst => pst.room === room);
       const pr = false;
       const p = pr ? (
-        <Label size="mini" color="teal">
-          4
-        </Label>
+        <Label size="mini" color="teal">4</Label>
       ) : (
         ""
       );
       return (
         <Table.Row
           positive={group && group.description === description}
-          className={active ? "active" : next ? "warning" : "no"}
+          className={active ? "active" : next ? "warning" : extra?.vip ? "vip" : "no"}
           key={room}
           onClick={() => this.selectGroup(data, i)}
           onContextMenu={(e) => this.selectMenuGroup(e, data)}
         >
-          <Table.Cell width={1}>
-            <Label circular content={pnum[room]} />
-          </Table.Cell>
-          <Table.Cell width={5}>{description}</Table.Cell>
+          <Table.Cell width={1}>{pn}</Table.Cell>
+          <Table.Cell width={5}>{description}{vip}</Table.Cell>
           <Table.Cell width={1}>{p}</Table.Cell>
           <Table.Cell width={1}>{num_users}</Table.Cell>
           <Table.Cell width={1}>{questions ? q : ""}</Table.Cell>
@@ -346,9 +345,11 @@ class ToranToolsHttp extends Component {
     });
 
     let groups_region_list = region_groups.map((data, i) => {
-      const {room, num_users, description, questions} = data;
+      const {room, num_users, description, questions, extra} = data;
       const next = data.description === next_group;
       const active = group && group.room === room;
+      const pn = (<Label circular content={pnum[room]} />);
+      const vip = extra?.vip ? (<Label size='mini' color='green' circular content="vip" />) : null;
       //const pr = presets.find(pst => pst.room === room);
       const pr = false;
       const p = pr ? (
@@ -361,15 +362,13 @@ class ToranToolsHttp extends Component {
       return (
         <Table.Row
           positive={group && group.description === description}
-          className={active ? "active" : next ? "warning" : "no"}
+          className={active ? "active" : next ? "warning" : extra?.vip ? "vip" : "no"}
           key={room}
           onClick={() => this.selectGroup(data, i)}
           onContextMenu={(e) => this.handleDisableRoom(e, data)}
         >
-          <Table.Cell width={1}>
-            <Label circular content={pnum[room]} />
-          </Table.Cell>
-          <Table.Cell width={5}>{description}</Table.Cell>
+          <Table.Cell width={1}>{pn}</Table.Cell>
+          <Table.Cell width={5}>{description}{vip}</Table.Cell>
           <Table.Cell width={1}>{p}</Table.Cell>
           <Table.Cell width={1}>{num_users}</Table.Cell>
           <Table.Cell width={1}>{questions ? q : ""}</Table.Cell>
@@ -397,6 +396,7 @@ class ToranToolsHttp extends Component {
       const {room, num_users, description, questions} = data;
       return (
         <Table.Row
+          className="vip"
           key={room}
           onClick={() => this.selectGroup(data, i)}
           onContextMenu={(e) => this.restoreRoom(e, data, i)}
