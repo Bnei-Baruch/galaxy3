@@ -143,6 +143,8 @@ class AdminRootMqtt extends Component {
 
         videoroom.join(room, user).then(data => {
           log.info('[admin] Joined respond :', data)
+          mqtt.join("galaxy/room/" + room);
+          mqtt.join("galaxy/room/" + room + "/chat", true);
           this.makeSubscription(data.publishers, room)
         }).catch(err => {
           log.error('[admin] Join error :', err);
