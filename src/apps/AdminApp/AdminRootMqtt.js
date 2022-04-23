@@ -109,12 +109,12 @@ class AdminRootMqtt extends Component {
 
   joinRoom = (data) => {
     const {user, current_room} = this.state;
-    const {room, janus: inst} = data;
+    const {users, description, room, janus: inst} = data;
 
     if (current_room === room) return;
 
     log.info("[admin] joinRoom", room, inst);
-    this.setState({users: data.users});
+    this.setState({users, current_group: description});
     const token = ConfigStore.globalConfig.gateways.rooms[inst].token
 
     let janus = new JanusMqtt(user, inst)
@@ -510,23 +510,7 @@ class AdminRootMqtt extends Component {
 
   render() {
     const {user} = this.props;
-    const {
-      current_room,
-      current_group,
-      feed_id,
-      feed_info,
-      feed_rtcp,
-      feed_user,
-      feeds,
-      users,
-      rooms_question,
-      gatewaysInitialized,
-      rooms,
-      users_count,
-      appInitError,
-      command_status,
-      showConfirmReloadAll,
-    } = this.state;
+    const {current_room, current_group, feed_id, feed_info, feed_rtcp, feed_user, feeds, users, rooms_question, gatewaysInitialized, rooms, users_count, appInitError, command_status, showConfirmReloadAll,} = this.state;
 
     if (appInitError) {
       return (
