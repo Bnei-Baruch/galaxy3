@@ -432,6 +432,7 @@ class ToranToolsHttp extends Component {
 
     let vip_list = vip_rooms.map((data, i) => {
       const {room, num_users, description, questions} = data;
+      const pn = (<Label circular content={pnum[room]} />);
       return (
         <Table.Row
           className="vip"
@@ -439,6 +440,7 @@ class ToranToolsHttp extends Component {
           onClick={() => this.selectGroup(data, i)}
           onContextMenu={(e) => this.restoreRoom(e, data, i)}
         >
+          <Table.Cell width={1}>{pn}</Table.Cell>
           <Table.Cell width={5}>{description}</Table.Cell>
           <Table.Cell width={1}>{num_users}</Table.Cell>
           <Table.Cell width={1}>{questions ? q : ""}</Table.Cell>
