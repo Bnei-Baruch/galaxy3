@@ -362,7 +362,7 @@ class ToranToolsMqtt extends Component {
           className={active ? "active" : next ? "warning" : extra?.vip ? "vip" : "no"}
           key={room}
           onClick={() => this.selectGroup(data, i)}
-          onContextMenu={(e) => this.handleDisableRoom(e, data)}
+          onContextMenu={(e) => this.selectMenuGroup(e, data)}
         >
           <Table.Cell width={1}>{pn}</Table.Cell>
           <Table.Cell width={5}>{description}&nbsp;&nbsp;{vip}</Table.Cell>
