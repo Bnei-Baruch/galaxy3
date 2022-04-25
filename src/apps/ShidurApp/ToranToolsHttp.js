@@ -22,6 +22,7 @@ class ToranToolsHttp extends Component {
     vote: false,
     menu_open: false,
     menu_group: null,
+    qst_filter: false,
   };
 
   componentDidUpdate(prevProps) {
@@ -72,7 +73,13 @@ class ToranToolsHttp extends Component {
 
   setRegion = (value) => {
     let {region} = this.props;
+    this.setState({qst_filter: false});
     this.props.setProps({region: region === value ? null : value});
+  };
+
+  qstFilter = () => {
+    this.setState({qst_filter: !this.state.qst_filter});
+    this.props.setProps({region: null});
   };
 
   galaxyMode = (galaxy_mode) => {
@@ -92,14 +99,15 @@ class ToranToolsHttp extends Component {
 
   disableRoom = () => {
     if (this.state.delay) return;
-    let {menu_group} = this.state;
-    menu_group = {...menu_group, extra: {...(menu_group.extra || {}), disabled: true}};
-    delete menu_group.users;
-    log.info(menu_group);
+    let {menu_group, pg} = this.state;
+    let group = menu_group || pg;
+    group = {...group, extra: {...(group.extra || {}), disabled: true}};
+    delete group.users;
+    log.info(group);
     let {disabled_rooms} = this.props;
-    let group = disabled_rooms.find((r) => r.room === menu_group.room);
-    if (group) return;
-    api.updateRoom(menu_group.room, menu_group);
+    let exist = disabled_rooms.find((r) => r.room === group.room);
+    if (exist) return;
+    api.updateRoom(group.room, group);
     this.setDelay();
   };
 
@@ -268,7 +276,7 @@ class ToranToolsHttp extends Component {
       pnum,
       region_list,
     } = this.props;
-    const {open, delay, vote, galaxy_mode, menu_open} = this.state;
+    const {open, delay, vote, galaxy_mode, menu_open, qst_filter} = this.state;
     const q = <b style={{color: "red", fontSize: "20px", fontFamily: "Verdana", fontWeight: "bold"}}>?</b>;
     const next_group = groups[groups_queue] ? groups[groups_queue].description : groups[0] ? groups[0].description : "";
     const ng = groups[groups_queue] || null;
@@ -307,6 +315,36 @@ class ToranToolsHttp extends Component {
           onContextMenu={(e) => this.selectMenuGroup(e, data)}
         >
           <Table.Cell width={5}>{description}</Table.Cell>
+          <Table.Cell width={1}>{p}</Table.Cell>
+          <Table.Cell width={1}>{num_users}</Table.Cell>
+          <Table.Cell width={1}>{questions ? q : ""}</Table.Cell>
+        </Table.Row>
+      );
+    });
+
+    let question_list = questions.map((data, i) => {
+      const {room, num_users, description, questions, extra} = data;
+      const next = data.description === next_group;
+      const active = group && group.room === room;
+      const pn = (<Label circular content={pnum[room]} />);
+      const vip = extra?.vip ? (<Label size='mini' color='green' circular content="vip" />) : null;
+      //const pr = presets.find(pst => pst.room === room);
+      const pr = false;
+      const p = pr ? (
+        <Label size="mini" color="teal">4</Label>
+      ) : (
+        ""
+      );
+      return (
+        <Table.Row
+          positive={group && group.description === description}
+          className={active ? "active" : next ? "warning" : extra?.vip ? "vip" : "no"}
+          key={room}
+          onClick={() => this.selectGroup(data, i)}
+          onContextMenu={(e) => this.selectMenuGroup(e, data)}
+        >
+          <Table.Cell width={1}>{pn}</Table.Cell>
+          <Table.Cell width={5}>{description}&nbsp;&nbsp;{vip}</Table.Cell>
           <Table.Cell width={1}>{p}</Table.Cell>
           <Table.Cell width={1}>{num_users}</Table.Cell>
           <Table.Cell width={1}>{questions ? q : ""}</Table.Cell>
@@ -365,7 +403,7 @@ class ToranToolsHttp extends Component {
           className={active ? "active" : next ? "warning" : extra?.vip ? "vip" : "no"}
           key={room}
           onClick={() => this.selectGroup(data, i)}
-          onContextMenu={(e) => this.handleDisableRoom(e, data)}
+          onContextMenu={(e) => this.selectMenuGroup(e, data)}
         >
           <Table.Cell width={1}>{pn}</Table.Cell>
           <Table.Cell width={5}>{description}&nbsp;&nbsp;{vip}</Table.Cell>
@@ -519,7 +557,7 @@ class ToranToolsHttp extends Component {
           </Button.Group>
           <Segment textAlign="center" className="group_list" raised disabled={delay}>
             <Table selectable compact="very" basic structured className="admin_table" unstackable>
-              <Table.Body>{region ? groups_region_list : groups_list}</Table.Body>
+              <Table.Body>{qst_filter ? question_list : region ? groups_region_list : groups_list}</Table.Body>
             </Table>
           </Segment>
           <Segment textAlign="center">
@@ -554,6 +592,13 @@ class ToranToolsHttp extends Component {
             </Button.Group>
           </Segment>
           <Segment attached className="settings_conteiner">
+            <Button.Group size="mini" widths='9'>
+              <Button
+                color={qst_filter ? "" : "grey"}
+                content="Questions"
+                onClick={this.qstFilter}
+              />
+            </Button.Group>
             <Button.Group size="mini" widths='9'>
               {Object.keys(short_regions).map((r) => {
                 return (
