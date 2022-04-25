@@ -53,13 +53,6 @@ class ToranToolsHttp extends Component {
     if (!next) this.props.setProps({group: null});
   };
 
-  handleDisableRoom = (e, data) => {
-    e.preventDefault();
-    if (e.type === "contextmenu") {
-      this.disableRoom(data);
-    }
-  };
-
   selectMenuGroup = (e, data) => {
     e.preventDefault();
     this.contextRef = React.createRef();
@@ -97,10 +90,10 @@ class ToranToolsHttp extends Component {
     return admin_rooms.find((r) => r.gateway_uid === room).id;
   };
 
-  disableRoom = () => {
+  disableRoom = (ng) => {
     if (this.state.delay) return;
     let {menu_group, pg} = this.state;
-    let group = menu_group || pg;
+    let group = ng || menu_group || pg;
     group = {...group, extra: {...(group.extra || {}), disabled: true}};
     delete group.users;
     log.info(group);
@@ -276,7 +269,7 @@ class ToranToolsHttp extends Component {
       pnum,
       region_list,
     } = this.props;
-    const {open, delay, vote, galaxy_mode, menu_open, qst_filter} = this.state;
+    const {open, delay, vote, galaxy_mode, menu_open, qst_filter, pg} = this.state;
     const q = <b style={{color: "red", fontSize: "20px", fontFamily: "Verdana", fontWeight: "bold"}}>?</b>;
     const next_group = groups[groups_queue] ? groups[groups_queue].description : groups[0] ? groups[0].description : "";
     const ng = groups[groups_queue] || null;
@@ -292,33 +285,6 @@ class ToranToolsHttp extends Component {
             </i>
           </p>
         </div>
-      );
-    });
-
-    let rooms_list = pre_groups.map((data, i) => {
-      const {room, num_users, description, questions} = data;
-      const active = group && group.room === room;
-      const pr = false;
-      const p = pr ? (
-        <Label size="mini" color="teal">
-          4
-        </Label>
-      ) : (
-        ""
-      );
-      return (
-        <Table.Row
-          positive={group && group.description === description}
-          className={active ? "active" : "no"}
-          key={room}
-          onClick={() => this.selectGroup(data, i)}
-          onContextMenu={(e) => this.selectMenuGroup(e, data)}
-        >
-          <Table.Cell width={5}>{description}</Table.Cell>
-          <Table.Cell width={1}>{p}</Table.Cell>
-          <Table.Cell width={1}>{num_users}</Table.Cell>
-          <Table.Cell width={1}>{questions ? q : ""}</Table.Cell>
-        </Table.Row>
       );
     });
 
@@ -345,6 +311,34 @@ class ToranToolsHttp extends Component {
         >
           <Table.Cell width={1}>{pn}</Table.Cell>
           <Table.Cell width={5}>{description}&nbsp;&nbsp;{vip}</Table.Cell>
+          <Table.Cell width={1}>{p}</Table.Cell>
+          <Table.Cell width={1}>{num_users}</Table.Cell>
+          <Table.Cell width={1}>{questions ? q : ""}</Table.Cell>
+        </Table.Row>
+      );
+    });
+
+
+    let rooms_list = pre_groups.map((data, i) => {
+      const {room, num_users, description, questions} = data;
+      const active = group && group.room === room;
+      const pr = false;
+      const p = pr ? (
+        <Label size="mini" color="teal">
+          4
+        </Label>
+      ) : (
+        ""
+      );
+      return (
+        <Table.Row
+          positive={group && group.description === description}
+          className={active ? "active" : "no"}
+          key={room}
+          onClick={() => this.selectGroup(data, i)}
+          onContextMenu={(e) => this.selectMenuGroup(e, data)}
+        >
+          <Table.Cell width={5}>{description}</Table.Cell>
           <Table.Cell width={1}>{p}</Table.Cell>
           <Table.Cell width={1}>{num_users}</Table.Cell>
           <Table.Cell width={1}>{questions ? q : ""}</Table.Cell>
@@ -487,7 +481,7 @@ class ToranToolsHttp extends Component {
                 <div className="shidur_overlay">
                   <span>{ng.description}</span>
                 </div>
-                <PreviewPanelHttp pg={ng} {...this.props} next closePopup={this.closePopup} />
+                <PreviewPanelHttp pg={ng} {...this.props} next closePopup={() => this.closePopup({disable: true}, ng)} />
               </Segment>
             ) : (
               ""
@@ -577,7 +571,7 @@ class ToranToolsHttp extends Component {
                 <div className="shidur_overlay">
                   <span>{group ? group.description : ""}</span>
                 </div>
-                <PreviewPanelHttp pg={this.state.pg} {...this.props} closePopup={this.closePopup} />
+                <PreviewPanelHttp pg={pg} {...this.props} closePopup={() => this.closePopup({disable: true}, false)} />
               </Segment>
             ) : (
               ""
