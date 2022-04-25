@@ -91,14 +91,15 @@ class ToranToolsMqtt extends Component {
 
   disableRoom = () => {
     if (this.state.delay) return;
-    let {menu_group} = this.state;
-    menu_group = {...menu_group, extra: {...(menu_group.extra || {}), disabled: true}};
-    delete menu_group.users;
-    log.info(menu_group);
+    let {menu_group, pg} = this.state;
+    let group = menu_group || pg;
+    group = {...group, extra: {...(group.extra || {}), disabled: true}};
+    delete group.users;
+    log.info(group);
     let {disabled_rooms} = this.props;
-    let group = disabled_rooms.find((r) => r.room === menu_group.room);
-    if (group) return;
-    api.updateRoom(menu_group.room, menu_group);
+    let exist = disabled_rooms.find((r) => r.room === group.room);
+    if (exist) return;
+    api.updateRoom(group.room, group);
     this.setDelay();
   };
 
