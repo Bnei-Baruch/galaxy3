@@ -44,12 +44,11 @@ class ToranToolsMqtt extends Component {
     this.props.setProps({group});
   };
 
-  closePopup = ({disable = false} = {}, next) => {
-    const g = next || this.props.group;
-    if (disable) {
-      this.disableRoom(g);
+  closePopup = (disable = false, group) => {
+    if (disable && group) {
+      this.disableRoom(group);
     }
-    if (!next) this.props.setProps({group: null});
+    this.props.setProps({group: null});
   };
 
   selectMenuGroup = (e, data) => {
@@ -477,7 +476,7 @@ class ToranToolsMqtt extends Component {
                 <div className="shidur_overlay">
                   <span>{ng.description}</span>
                 </div>
-                <PreviewPanelMqtt pg={ng} {...this.props} next closePopup={() => this.closePopup({disable: true}, ng)} />
+                <PreviewPanelMqtt pg={ng} {...this.props} next closePopup={this.closePopup} />
               </Segment>
             ) : (
               ""
@@ -567,7 +566,7 @@ class ToranToolsMqtt extends Component {
                 <div className="shidur_overlay">
                   <span>{group ? group.description : ""}</span>
                 </div>
-                <PreviewPanelMqtt pg={pg} {...this.props} closePopup={() => this.closePopup({disable: true}, false)} />
+                <PreviewPanelMqtt pg={pg} {...this.props} closePopup={this.closePopup} />
               </Segment>
             ) : (
               ""

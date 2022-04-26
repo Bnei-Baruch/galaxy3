@@ -166,7 +166,7 @@ class PreviewPanelMqtt extends Component {
                   size="mini"
                   color="red"
                   icon="close"
-                  onClick={() => this.props.closePopup({disable: true}, this.props.pg)}
+                  onClick={() => this.props.closePopup(true, this.props.pg)}
                 />
                 <Button
                   className="hide_button"
@@ -183,14 +183,14 @@ class PreviewPanelMqtt extends Component {
                   size="mini"
                   color="red"
                   icon="close"
-                  onClick={() => this.props.closePopup({disable: true}, false)}
+                  onClick={() => this.props.closePopup(true, this.props.pg)}
                 />
                 <Button
                   className="hide_button"
                   size="mini"
                   color="orange"
                   icon="window minimize"
-                  onClick={() => this.props.closePopup()}
+                  onClick={() => this.props.closePopup(false, this.props.pg)}
                 />
               </div>
             )}

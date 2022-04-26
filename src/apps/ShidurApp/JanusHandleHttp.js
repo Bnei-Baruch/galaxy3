@@ -402,41 +402,6 @@ class JanusHandleHttp extends Component {
         <div className="videos-panel">
           <div className="videos">
             <div className="videos__wrapper">
-              {this.props.next ? (
-                <div>
-                  <Button
-                    className="close_button"
-                    size="mini"
-                    color="red"
-                    icon="close"
-                    onClick={() => this.props.closePopup({disable: true}, this.props.g)}
-                  />
-                  <Button
-                    className="hide_button"
-                    size="mini"
-                    color="grey"
-                    icon="share"
-                    onClick={this.props.nextInQueue}
-                  />
-                </div>
-              ) : this.props.preview ? (
-                <div>
-                  <Button
-                    className="close_button"
-                    size="mini"
-                    color="red"
-                    icon="close"
-                    onClick={() => this.props.closePopup({disable: true}, false)}
-                  />
-                  <Button
-                    className="hide_button"
-                    size="mini"
-                    color="orange"
-                    icon="window minimize"
-                    onClick={() => this.props.closePopup()}
-                  />
-                </div>
-              ) : null}
               {program_feeds}
             </div>
           </div>

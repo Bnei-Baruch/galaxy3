@@ -45,12 +45,11 @@ class ToranToolsHttp extends Component {
     this.props.setProps({group});
   };
 
-  closePopup = ({disable = false} = {}, next) => {
-    const g = next || this.props.group;
-    if (disable) {
-      this.disableRoom(g);
+  closePopup = (disable = false, group) => {
+    if (disable && group) {
+      this.disableRoom(group);
     }
-    if (!next) this.props.setProps({group: null});
+    this.props.setProps({group: null});
   };
 
   selectMenuGroup = (e, data) => {
@@ -248,8 +247,7 @@ class ToranToolsHttp extends Component {
 
   render() {
     const {
-      group,
-      pre_groups,
+      group,pre_groups,
       disabled_rooms,
       vip_rooms,
       groups,
@@ -481,7 +479,7 @@ class ToranToolsHttp extends Component {
                 <div className="shidur_overlay">
                   <span>{ng.description}</span>
                 </div>
-                <PreviewPanelHttp pg={ng} {...this.props} next closePopup={() => this.closePopup({disable: true}, ng)} />
+                <PreviewPanelHttp pg={ng} {...this.props} next closePopup={() => this.closePopup(true, ng)} />
               </Segment>
             ) : (
               ""
@@ -571,7 +569,7 @@ class ToranToolsHttp extends Component {
                 <div className="shidur_overlay">
                   <span>{group ? group.description : ""}</span>
                 </div>
-                <PreviewPanelHttp pg={pg} {...this.props} closePopup={() => this.closePopup({disable: true}, false)} />
+                <PreviewPanelHttp pg={pg} {...this.props} closePopup={this.closePopup} />
               </Segment>
             ) : (
               ""
