@@ -102,14 +102,10 @@ class ToranToolsMqtt extends Component {
     this.setDelay();
   };
 
-  vipRoom = () => {
-    let {vip_rooms} = this.props;
+  vipRoom = (vip) => {
     let {menu_group} = this.state;
-    let group = vip_rooms.find((r) => r.room === menu_group.room);
-    if (group) return;
-    menu_group = {...menu_group, extra: {...(menu_group.extra || {}), vip: true}};
+    menu_group = {...menu_group, extra: {...(menu_group.extra || {}), [vip]: true}};
     delete menu_group.users;
-    log.info(menu_group);
     api.updateRoom(menu_group.room, menu_group);
   };
 
@@ -237,8 +233,26 @@ class ToranToolsMqtt extends Component {
     if(c === "Disable") {
       this.disableRoom()
     }
-    if(c === "Vip") {
-      this.vipRoom()
+    if(c === "Vip1") {
+      let {vip1_rooms} = this.props;
+      let {menu_group} = this.state;
+      let group = vip1_rooms.find((r) => r.room === menu_group.room);
+      if (group) return;
+      this.vipRoom("vip")
+    }
+    if(c === "Vip2") {
+      let {vip2_rooms} = this.props;
+      let {menu_group} = this.state;
+      let group = vip2_rooms.find((r) => r.room === menu_group.room);
+      if (group) return;
+      this.vipRoom("vip2")
+    }
+    if(c === "Vip3") {
+      let {vip3_rooms} = this.props;
+      let {menu_group} = this.state;
+      let group = vip3_rooms.find((r) => r.room === menu_group.room);
+      if (group) return;
+      this.vipRoom("vip3")
     }
     this.setState({menu_open: false})
   };
@@ -248,7 +262,9 @@ class ToranToolsMqtt extends Component {
       group,
       pre_groups,
       disabled_rooms,
-      vip_rooms,
+      vip1_rooms,
+      vip2_rooms,
+      vip3_rooms,
       groups,
       groups_queue,
       questions,
@@ -290,7 +306,7 @@ class ToranToolsMqtt extends Component {
       const next = data.description === next_group;
       const active = group && group.room === room;
       const pn = (<Label circular content={pnum[room]} />);
-      const vip = extra?.vip ? (<Label size='mini' color='green' circular content="vip" />) : null;
+      const vip = extra?.vip || extra?.vip1 || extra?.vip3 ? (<Label size='mini' color='green' circular content="vip" />) : null;
       //const pr = presets.find(pst => pst.room === room);
       const pr = false;
       const p = pr ? (
@@ -301,7 +317,7 @@ class ToranToolsMqtt extends Component {
       return (
         <Table.Row
           positive={group && group.description === description}
-          className={active ? "active" : next ? "warning" : extra?.vip ? "vip" : "no"}
+          className={active ? "active" : next ? "warning" : extra?.vip || extra?.vip1 || extra?.vip3 ? "vip" : "no"}
           key={room}
           onClick={() => this.selectGroup(data, i)}
           onContextMenu={(e) => this.selectMenuGroup(e, data)}
@@ -317,18 +333,20 @@ class ToranToolsMqtt extends Component {
 
 
     let rooms_list = pre_groups.map((data, i) => {
-      const {room, num_users, description, questions, extra} = data;
+      const {room, num_users, description, questions} = data;
       const active = group && group.room === room;
       const pr = false;
       const p = pr ? (
-        <Label size="mini" color="teal">4</Label>
+        <Label size="mini" color="teal">
+          4
+        </Label>
       ) : (
         ""
       );
       return (
         <Table.Row
           positive={group && group.description === description}
-          className={active ? "active" : extra?.vip ? "vip" : "no"}
+          className={active ? "active" : "no"}
           key={room}
           onClick={() => this.selectGroup(data, i)}
           onContextMenu={(e) => this.selectMenuGroup(e, data)}
@@ -346,7 +364,7 @@ class ToranToolsMqtt extends Component {
       const next = data.description === next_group;
       const active = group && group.room === room;
       const pn = (<Label circular content={pnum[room]} />);
-      const vip = extra?.vip ? (<Label size='mini' color='green' circular content="vip" />) : null;
+      const vip = extra?.vip || extra?.vip1 || extra?.vip3 ? (<Label size='mini' color='green' circular content="vip" />) : null;
       //const pr = presets.find(pst => pst.room === room);
       const pr = false;
       const p = pr ? (
@@ -357,7 +375,7 @@ class ToranToolsMqtt extends Component {
       return (
         <Table.Row
           positive={group && group.description === description}
-          className={active ? "active" : next ? "warning" : extra?.vip ? "vip" : "no"}
+          className={active ? "active" : next ? "warning" : extra?.vip || extra?.vip1 || extra?.vip3 ? "vip" : "no"}
           key={room}
           onClick={() => this.selectGroup(data, i)}
           onContextMenu={(e) => this.selectMenuGroup(e, data)}
@@ -376,7 +394,7 @@ class ToranToolsMqtt extends Component {
       const next = data.description === next_group;
       const active = group && group.room === room;
       const pn = (<Label circular content={pnum[room]} />);
-      const vip = extra?.vip ? (<Label size='mini' color='green' circular content="vip" />) : null;
+      const vip = extra?.vip || extra?.vip1 || extra?.vip3 ? (<Label size='mini' color='green' circular content="vip" />) : null;
       //const pr = presets.find(pst => pst.room === room);
       const pr = false;
       const p = pr ? (
@@ -389,7 +407,7 @@ class ToranToolsMqtt extends Component {
       return (
         <Table.Row
           positive={group && group.description === description}
-          className={active ? "active" : next ? "warning" : extra?.vip ? "vip" : "no"}
+          className={active ? "active" : next ? "warning" : extra?.vip || extra?.vip1 || extra?.vip3 ? "vip" : "no"}
           key={room}
           onClick={() => this.selectGroup(data, i)}
           onContextMenu={(e) => this.selectMenuGroup(e, data)}
@@ -419,7 +437,43 @@ class ToranToolsMqtt extends Component {
       );
     });
 
-    let vip_list = vip_rooms.map((data, i) => {
+    let vip1_list = vip1_rooms.map((data, i) => {
+      const {room, num_users, description, questions} = data;
+      const pn = (<Label circular content={pnum[room]} />);
+      return (
+        <Table.Row
+          className="vip"
+          key={room}
+          onClick={() => this.selectGroup(data, i)}
+          onContextMenu={(e) => this.restoreRoom(e, data, i)}
+        >
+          <Table.Cell width={1}>{pn}</Table.Cell>
+          <Table.Cell width={5}>{description}</Table.Cell>
+          <Table.Cell width={1}>{num_users}</Table.Cell>
+          <Table.Cell width={1}>{questions ? q : ""}</Table.Cell>
+        </Table.Row>
+      );
+    });
+
+    let vip2_list = vip2_rooms.map((data, i) => {
+      const {room, num_users, description, questions} = data;
+      const pn = (<Label circular content={pnum[room]} />);
+      return (
+        <Table.Row
+          className="vip"
+          key={room}
+          onClick={() => this.selectGroup(data, i)}
+          onContextMenu={(e) => this.restoreRoom(e, data, i)}
+        >
+          <Table.Cell width={1}>{pn}</Table.Cell>
+          <Table.Cell width={5}>{description}</Table.Cell>
+          <Table.Cell width={1}>{num_users}</Table.Cell>
+          <Table.Cell width={1}>{questions ? q : ""}</Table.Cell>
+        </Table.Row>
+      );
+    });
+
+    let vip3_list = vip3_rooms.map((data, i) => {
       const {room, num_users, description, questions} = data;
       const pn = (<Label circular content={pnum[room]} />);
       return (
@@ -490,7 +544,9 @@ class ToranToolsMqtt extends Component {
             <Menu text size='massive' compact
               items={[
                 { key: 'disable', content: 'Disable', icon: 'window close' },
-                { key: 'vip', content: 'Vip', icon: 'star' },
+                { key: 'vip1', content: 'Vip1', icon: 'star' },
+                { key: 'vip2', content: 'Vip2', icon: 'star' },
+                { key: 'vip3', content: 'Vip3', icon: 'star' },
               ]}
               onItemClick={(e, data) => this.selectMenu(data.content)}
               secondary
@@ -650,10 +706,22 @@ class ToranToolsMqtt extends Component {
               onClick={() => this.galaxyMode("lesson")}
             />
             <Button
-              disabled={galaxy_mode === "vip"}
+              disabled={galaxy_mode === "vip1"}
               color="grey"
-              content="VIP"
-              onClick={() => this.galaxyMode("vip")}
+              content="VIP1"
+              onClick={() => this.galaxyMode("vip1")}
+            />
+            <Button
+              disabled={galaxy_mode === "vip2"}
+              color="grey"
+              content="VIP2"
+              onClick={() => this.galaxyMode("vip2")}
+            />
+            <Button
+              disabled={galaxy_mode === "vip3"}
+              color="grey"
+              content="VIP3"
+              onClick={() => this.galaxyMode("vip3")}
             />
             <Button
               disabled={galaxy_mode === "shidur"}
@@ -664,7 +732,9 @@ class ToranToolsMqtt extends Component {
           </Button.Group>
           <Segment attached textAlign="center" className="disabled_groups">
             <Table selectable compact="very" basic structured className="admin_table" unstackable>
-              <Table.Body>{galaxy_mode === "lesson" ? rooms_list : galaxy_mode === "vip" ? vip_list : disabled_list}</Table.Body>
+              <Table.Body>
+                {galaxy_mode === "lesson" ? rooms_list : galaxy_mode === "vip1" ? vip1_list : galaxy_mode === "vip2" ? vip2_list : galaxy_mode === "vip3" ? vip3_list : disabled_list}
+              </Table.Body>
             </Table>
           </Segment>
           <Button.Group attached="bottom" size="mini">
