@@ -47,7 +47,6 @@ class ShidurAppHttp extends Component {
     sdiout: false,
     audout: false,
     users_count: 0,
-    gdm: new GuaranteeDeliveryManager(STORAN_ID),
     alert: false,
     timer: 10,
     lost_servers: [],
