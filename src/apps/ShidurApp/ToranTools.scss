@@ -88,6 +88,11 @@
   color: #fff !important;
 }
 
+.ui.table td.vip, .ui.table tr.vip {
+  background: #f6fff9 !important;
+  color: #127b3d !important;
+}
+
 .ui.selectable.table tr.warning:hover, .ui.table tr td.selectable.warning:hover, .ui.selectable.table tr:hover td.warning {
   background: #adccd6 !important;
   color: #1d2b52 !important;

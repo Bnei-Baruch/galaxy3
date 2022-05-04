@@ -295,7 +295,7 @@ class QuadPanelMqtt extends Component {
             {qst}
             <JanusHandleMqtt
               key={"q" + i}
-              g={g}
+              g={g} col={col} q={i}
               index={i}
               ref={(cmd) => {
                 this["cmd" + col + i] = cmd;

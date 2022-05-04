@@ -229,3 +229,22 @@ export const sendUserState = (user) => {
   const msg = {type: "client-state", user: {camera, question, rfid, room}};
   mqtt.send(JSON.stringify(msg), false, "galaxy/room/" + room);
 }
+
+export const createContext = (e) => {
+  const left = e.clientX
+  const top = e.clientY
+  const right = left + 1
+  const bottom = top + 1
+
+  return {
+    getBoundingClientRect: () => ({
+      left,
+      top,
+      right,
+      bottom,
+
+      height: 0,
+      width: 0,
+    }),
+  }
+}

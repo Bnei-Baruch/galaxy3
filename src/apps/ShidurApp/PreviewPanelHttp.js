@@ -36,6 +36,7 @@ class PreviewPanelHttp extends Component {
   }
 
   attachPreview = (g) => {
+    if(!g) return
     api.adminListParticipants({request: "listparticipants", room: g.room}, g.janus).then((data) => {
       let list = data.response.participants.filter((p) => p.publisher && JSON.parse(p.display).role === "user");
       if (list.length === 0) {
@@ -225,7 +226,7 @@ class PreviewPanelHttp extends Component {
                   size="mini"
                   color="red"
                   icon="close"
-                  onClick={() => this.props.closePopup({disable: true}, this.props.pg)}
+                  onClick={() => this.props.closePopup(true, this.props.pg)}
                 />
                 <Button
                   className="hide_button"
@@ -242,14 +243,14 @@ class PreviewPanelHttp extends Component {
                   size="mini"
                   color="red"
                   icon="close"
-                  onClick={() => this.props.closePopup({disable: true}, false)}
+                  onClick={() => this.props.closePopup(true, this.props.pg)}
                 />
                 <Button
                   className="hide_button"
                   size="mini"
                   color="orange"
                   icon="window minimize"
-                  onClick={() => this.props.closePopup()}
+                  onClick={() => this.props.closePopup(false, this.props.pg)}
                 />
               </div>
             )}

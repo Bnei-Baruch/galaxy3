@@ -260,9 +260,7 @@ export class SubscriberPlugin extends EventEmitter {
 
   hangup () {
     log.info('[subscriber] - hangup - ', this.janus)
-    // this.janus.detach(this).catch((err) => {
-    //   log.error('[subscriber] error in hangup', err)
-    // })
+    this.detach()
   }
 
   slowLink (uplink, lost, mid) {
@@ -282,8 +280,28 @@ export class SubscriberPlugin extends EventEmitter {
   }
 
   detach () {
-    this.pc.close()
-    this.removeAllListeners()
-    this.janus = null
+    if(this.pc) {
+      this.pc.onicecandidate = null;
+      this.pc.ontrack = null;
+      this.pc.oniceconnectionstatechange = null;
+      this.pc.getSenders().forEach((sender) => {
+        this.pc.removeTrack(sender);
+        sender.setStreams();
+        sender.track?.stop();
+      });
+      this.pc.getReceivers().forEach((receiver) => {
+        receiver.track?.stop();
+      });
+      this.pc.getTransceivers().forEach((transceiver) => {
+        this.pc.removeTrack(transceiver.sender)
+        transceiver.sender.setStreams();
+        transceiver.sender.track?.stop();
+        transceiver.stop();
+      });
+      this.pc.close()
+      this.removeAllListeners()
+      this.pc = null
+      this.janus = null
+    }
   }
 }

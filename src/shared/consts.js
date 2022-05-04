@@ -376,3 +376,27 @@ export const mqtt_sys = {
   "$SYS/broker/publish/messages/dropped": {name: "mdrop", value: 0},
   "$SYS/broker/clients/maximum": {name: "clmax", value: 0},
 };
+
+export const short_regions = {
+  europe: "EU",
+  asia: "AS",
+  africa: "AF",
+  "latin-america": "LA",
+  russia: "RU",
+  ukraine: "UA",
+  "north-america": "NA",
+  israel: "IL",
+  "petach-tikva": "PT",
+};
+
+export const region_filter = {
+  europe: false,
+  asia: false,
+  africa: false,
+  "latin-america": false,
+  russia: false,
+  ukraine: false,
+  "north-america": false,
+  israel: false,
+  "petach-tikva": false,
+}
