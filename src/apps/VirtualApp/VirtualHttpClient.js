@@ -270,7 +270,6 @@ class VirtualHttpClient extends Component {
   };
 
   initMQTT = (user) => {
-    const bridge = user.role !== "user" ? "msg/" : "";
 
     mqtt.init(user, (reconnected, error) => {
       if (error) {
@@ -287,8 +286,8 @@ class VirtualHttpClient extends Component {
       } else {
         this.setState({mqttOn: true});
         console.log("[mqtt] connected");
-        mqtt.join(bridge + "galaxy/users/broadcast");
-        mqtt.join(bridge + "galaxy/users/" + user.id);
+        mqtt.join("galaxy/users/broadcast");
+        mqtt.join("galaxy/users/" + user.id);
 
         mqtt.watch((message) => {
           this.handleCmdData(message);
