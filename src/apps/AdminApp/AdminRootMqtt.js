@@ -188,9 +188,7 @@ class AdminRootMqtt extends Component {
   switchRoom = (data, current_room) => {
     mqtt.exit("galaxy/room/" + current_room);
     mqtt.exit("galaxy/room/" + current_room + "/chat");
-    this.state.janus.destroy().then(() => {
-      this.joinRoom(data)
-    })
+    this.state.janus.destroy().then(() => this.joinRoom(data))
   };
 
   handleTalking = (id, talking) => {

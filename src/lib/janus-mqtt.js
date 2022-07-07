@@ -88,12 +88,15 @@ export class JanusMqtt {
       return Promise.resolve()
     }
 
-    return this.transaction('destroy', {}, 'success', 5000).then(data => {
-      log.debug('[janus] Janus destroyed: ', data)
-      this.cleanup()
-    }).catch(() => {
-      this.cleanup()
+    return this._cleanupPlugins().then(() => {
+      return this.transaction('destroy', {}, 'success', 5000).then(data => {
+        log.debug('[janus] Janus destroyed: ', data)
+        this._cleanupTransactions()
+      }).catch(() => {
+        this._cleanupTransactions()
+      })
     })
+
   }
 
   detach(plugin) {
@@ -103,7 +106,7 @@ export class JanusMqtt {
         return
       }
 
-      this.transaction('detach', { plugin: plugin.pluginName, handle_id: plugin.janusHandleId }, 'success', 5000).then(() => {
+      this.transaction('detach', { plugin: plugin.pluginName, handle_id: plugin.janusHandleId }, 'success', 1000).then(() => {
         delete this.pluginHandles[plugin.janusHandleId]
         plugin.detach()
 
@@ -193,17 +196,31 @@ export class JanusMqtt {
     log.error('Lost connection to the gateway (is it down?)')
   }
 
-  cleanup () {
-    this._cleanupPlugins()
-    this._cleanupTransactions()
-  }
-
   _cleanupPlugins () {
+    const arr = []
     Object.keys(this.pluginHandles).forEach((pluginId) => {
       const plugin = this.pluginHandles[pluginId]
-      delete this.pluginHandles[pluginId]
-      plugin.detach()
+      //delete this.pluginHandles[pluginId]
+      arr.push(new Promise((resolve, reject) => {
+        if (!this.pluginHandles[plugin.janusHandleId]) {
+          reject(new Error('[janus] unknown plugin'))
+          return
+        }
+
+        this.transaction('hangup', { plugin: plugin.pluginName, handle_id: plugin.janusHandleId }, 'success', 1000).then(() => {
+          delete this.pluginHandles[plugin.janusHandleId]
+          plugin.detach()
+
+          resolve()
+        }).catch((err) => {
+          delete this.pluginHandles[plugin.janusHandleId]
+          plugin.detach()
+
+          reject(err)
+        })
+      }))
     })
+    return Promise.all(arr)
   }
 
   _cleanupTransactions () {
