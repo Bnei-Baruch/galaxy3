@@ -101,7 +101,9 @@ export class SubscriberPlugin extends EventEmitter {
             return this.pc.createAnswer()
           }).then(answer => {
             log.debug('[subscriber] Answer created', answer)
-            this.pc.setLocalDescription(answer)
+            this.pc.setLocalDescription(answer).then(data => {
+              log.debug('[subscriber] setLocalDescription', data)
+            }).catch(error => log.error(error, answer))
             this.start(answer)
           })
         }
@@ -285,17 +287,17 @@ export class SubscriberPlugin extends EventEmitter {
       this.pc.ontrack = null;
       this.pc.oniceconnectionstatechange = null;
       this.pc.getSenders().forEach((sender) => {
+        sender.track?.stop();
         this.pc.removeTrack(sender);
         sender.setStreams();
-        sender.track?.stop();
       });
       this.pc.getReceivers().forEach((receiver) => {
         receiver.track?.stop();
       });
       this.pc.getTransceivers().forEach((transceiver) => {
-        this.pc.removeTrack(transceiver.sender)
-        transceiver.sender.setStreams();
+        this.pc.removeTrack(transceiver.sender);
         transceiver.sender.track?.stop();
+        transceiver.sender.setStreams();
         transceiver.stop();
       });
       this.pc.close()

@@ -167,7 +167,7 @@ class AdminRootMqtt extends Component {
   }
 
   exitRoom = (data) => {
-    const {current_room, videoroom, janus} = this.state;
+    const {current_room, videoroom} = this.state;
 
     if(!videoroom) {
       this.joinRoom(data)
@@ -178,15 +178,19 @@ class AdminRootMqtt extends Component {
 
     videoroom.leave().then(r => {
       log.info("[admin] leave respond:", r);
-
-      mqtt.exit("galaxy/room/" + current_room);
-      mqtt.exit("galaxy/room/" + current_room + "/chat");
-
-      janus.destroy().then(() => {
-        this.joinRoom(data)
-      })
+      this.switchRoom(data, current_room);
+    }).catch(() => {
+      this.switchRoom(data, current_room);
     });
 
+  };
+
+  switchRoom = (data, current_room) => {
+    mqtt.exit("galaxy/room/" + current_room);
+    mqtt.exit("galaxy/room/" + current_room + "/chat");
+    this.state.janus.destroy().then(() => {
+      this.joinRoom(data)
+    })
   };
 
   handleTalking = (id, talking) => {
@@ -221,16 +225,14 @@ class AdminRootMqtt extends Component {
       // If we're here, a new track was added
       if (track.kind === "audio") {
         // New audio track: create a stream out of it, and use a hidden <audio> element
-        let stream = new MediaStream();
-        stream.addTrack(track.clone());
+        let stream = new MediaStream([track]);
         log.info("[admin] Created remote audio stream:", stream);
         let remoteaudio = this.refs["remoteAudio" + feed];
         remoteaudio.srcObject = stream;
       } else if (track.kind === "video") {
         const remotevideo = this.refs["remoteVideo" + feed];
         // New video track: create a stream out of it
-        const stream = new MediaStream();
-        stream.addTrack(track.clone());
+        const stream = new MediaStream([track]);
         log.info("[admin] Created remote video stream:", stream);
         remotevideo.srcObject = stream;
       }

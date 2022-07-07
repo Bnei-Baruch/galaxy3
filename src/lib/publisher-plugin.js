@@ -21,7 +21,7 @@ export class PublisherPlugin extends EventEmitter {
     })
   }
 
-  getPluginName () {
+  getPluginName() {
     return this.pluginName
   }
 
@@ -34,7 +34,7 @@ export class PublisherPlugin extends EventEmitter {
     return this.janus.transaction(message, payload, replyType)
   }
 
-  join (roomId, user) {
+  join(roomId, user) {
     this.roomId = roomId
     const body = {request: "join", room: roomId, ptype: "publisher", display: JSON.stringify(user)};
     return new Promise((resolve, reject) => {
@@ -52,7 +52,7 @@ export class PublisherPlugin extends EventEmitter {
     })
   }
 
-  leave () {
+  leave() {
     const body = {request: "leave", room: this.roomId};
     return new Promise((resolve, reject) => {
       this.transaction('message', { body }, 'event').then((param) => {
@@ -63,7 +63,7 @@ export class PublisherPlugin extends EventEmitter {
           resolve(data);
 
       }).catch((err) => {
-        log.error('[publisher] error leave room', err)
+        log.debug('[publisher] error leave room', err)
         reject(err)
       })
     })
@@ -239,7 +239,7 @@ export class PublisherPlugin extends EventEmitter {
     },1000)
   }
 
-  success (janus, janusHandleId) {
+  success(janus, janusHandleId) {
     this.janus = janus
     this.janusHandleId = janusHandleId
 
@@ -250,7 +250,7 @@ export class PublisherPlugin extends EventEmitter {
     // Couldn't attach to the plugin
   }
 
-  onmessage (data) {
+  onmessage(data) {
     log.debug('[publisher] onmessage: ', data)
     if(data?.publishers) {
       log.info('[publisher] New feed enter: ', data.publishers[0])
@@ -283,56 +283,56 @@ export class PublisherPlugin extends EventEmitter {
     }
   }
 
-  oncleanup () {
+  oncleanup() {
     log.info('[publisher] - oncleanup - ')
     // PeerConnection with the plugin closed, clean the UI
     // The plugin handle is still valid so we can create a new one
   }
 
-  detached () {
+  detached() {
     log.info('[publisher] - detached - ')
     // Connection with the plugin closed, get rid of its features
     // The plugin handle is not valid anymore
   }
 
-  hangup () {
+  hangup() {
     log.info('[publisher] - hangup - ', this.janus)
     this.detach()
   }
 
-  slowLink (uplink, lost, mid) {
+  slowLink(uplink, lost, mid) {
     const direction = uplink ? "sending" : "receiving";
     log.info("[publisher] slowLink on " + direction + " packets on mid " + mid + " (" + lost + " lost packets)");
     //this.emit('slowlink')
   }
 
-  mediaState (media, on) {
+  mediaState(media, on) {
     log.info('[publisher] mediaState: Janus ' + (on ? "start" : "stop") + " receiving our " + media)
     //this.emit('mediaState', medium, on)
   }
 
-  webrtcState (isReady) {
+  webrtcState(isReady) {
     log.info('[publisher] webrtcState: RTCPeerConnection is: ' + (isReady ? "up" : "down"))
     //this.emit('webrtcState', isReady, cause)
   }
 
-  detach () {
+  detach() {
     if(this.pc) {
       this.pc.onicecandidate = null;
       this.pc.ontrack = null;
       this.pc.oniceconnectionstatechange = null;
       this.pc.getSenders().forEach((sender) => {
+        sender.track?.stop();
         this.pc.removeTrack(sender);
         sender.setStreams();
-        sender.track?.stop();
       });
       this.pc.getReceivers().forEach((receiver) => {
         receiver.track?.stop();
       });
       this.pc.getTransceivers().forEach((transceiver) => {
-        this.pc.removeTrack(transceiver.sender)
-        transceiver.sender.setStreams();
+        this.pc.removeTrack(transceiver.sender);
         transceiver.sender.track?.stop();
+        transceiver.sender.setStreams();
         transceiver.stop();
       });
       this.pc.close()
