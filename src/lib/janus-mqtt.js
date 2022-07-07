@@ -89,7 +89,7 @@ export class JanusMqtt {
     }
 
     return this._cleanupPlugins().then(() => {
-      return this.transaction('destroy', {}, 'success', 5000).then(data => {
+      return this.transaction('destroy', {}, 'success', 1000).then(data => {
         log.debug('[janus] Janus destroyed: ', data)
         this._cleanupTransactions()
       }).catch(() => {
@@ -220,7 +220,7 @@ export class JanusMqtt {
         })
       }))
     })
-    return Promise.all(arr)
+    return Promise.allSettled(arr)
   }
 
   _cleanupTransactions () {
