@@ -13,6 +13,7 @@ import mqtt from "../../shared/mqtt";
 import ConfigStore from "../../shared/ConfigStore";
 import {JanusMqtt} from "../../lib/janus-mqtt";
 import {short_regions, region_filter} from "../../shared/consts";
+import {isServiceID} from "../../shared/enums";
 
 class ShidurAppMqtt extends Component {
   state = {
@@ -112,7 +113,8 @@ class ShidurAppMqtt extends Component {
       });
       mqtt.join("galaxy/service/#");
       mqtt.join("galaxy/users/broadcast");
-      mqtt.send(JSON.stringify({type: "event", [user.role]: true}), true, "galaxy/service/" + user.role);
+      if(isServiceID(user.id))
+        mqtt.send(JSON.stringify({type: "event", [user.role]: true}), true, "galaxy/service/" + user.role);
 
       Object.keys(ConfigStore.globalConfig.gateways.rooms).forEach(gxy => {
         this.initJanus(user, gxy)

@@ -88,12 +88,16 @@ export class JanusMqtt {
       return Promise.resolve()
     }
 
-    return this._cleanupPlugins().then(() => {
-      return this.transaction('destroy', {}, 'success', 1000).then(data => {
-        log.debug('[janus] Janus destroyed: ', data)
-        this._cleanupTransactions()
-      }).catch(() => {
-        this._cleanupTransactions()
+    return new Promise((resolve, reject) => {
+      this._cleanupPlugins().then(() => {
+        return this.transaction('destroy', {}, 'success', 5000).then(data => {
+          log.debug('[janus] Janus destroyed: ', data)
+          this._cleanupTransactions()
+          resolve()
+        }).catch(() => {
+          this._cleanupTransactions()
+          resolve()
+        })
       })
     })
 
@@ -106,7 +110,7 @@ export class JanusMqtt {
         return
       }
 
-      this.transaction('detach', { plugin: plugin.pluginName, handle_id: plugin.janusHandleId }, 'success', 1000).then(() => {
+      this.transaction('hangup', { plugin: plugin.pluginName, handle_id: plugin.janusHandleId }, 'success', 5000).then(() => {
         delete this.pluginHandles[plugin.janusHandleId]
         plugin.detach()
 
@@ -196,7 +200,7 @@ export class JanusMqtt {
     log.error('Lost connection to the gateway (is it down?)')
   }
 
-  _cleanupPlugins () {
+  _cleanupPlugins() {
     const arr = []
     Object.keys(this.pluginHandles).forEach((pluginId) => {
       const plugin = this.pluginHandles[pluginId]

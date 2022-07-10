@@ -107,24 +107,28 @@ class AdminRootMqtt extends Component {
       });
   };
 
-  joinRoom = (data) => {
-    const {user, current_room} = this.state;
-    const {users, description, room, janus: inst} = data;
+  initJanus = (user, gxy) => {
+    log.info("["+gxy+"] Janus init")
+    const {gateways} = this.state;
+    const token = ConfigStore.globalConfig.gateways.rooms[gxy].token
+    gateways[gxy] = new JanusMqtt(user, gxy, gxy);
 
-    if (current_room === room) return;
+    return new Promise((resolve, reject) => {
+      gateways[gxy].init(token).then(data => {
+        log.info("["+gxy+"] Janus init success", data)
+        resolve(data)
+        gateways[gxy].onStatus = (srv, status) => {
+          if (status !== "online") {
+            log.error("["+srv+"] Janus: ", status);
+          }
+        }
+      }).catch(err => {
+        log.error("["+gxy+"] Janus init", err);
+      })
+    })
+  };
 
-    log.info("[admin] joinRoom", room, inst);
-    this.setState({users, current_group: description});
-    const token = ConfigStore.globalConfig.gateways.rooms[inst].token
-
-    let janus = new JanusMqtt(user, inst)
-    janus.onStatus = (srv, status) => {
-      if(status !== "online") {
-        alert("Janus Server - " + srv + " - " + status)
-        window.location.reload()
-      }
-    }
-
+  initPlugins = (gateways, inst, user, room) => {
     let videoroom = new PublisherPlugin();
     videoroom.subTo = this.makeSubscription;
     videoroom.unsubFrom = this.unsubscribeFrom
@@ -134,42 +138,52 @@ class AdminRootMqtt extends Component {
     subscriber.onTrack = this.onRemoteTrack;
     subscriber.onUpdate = this.onUpdateStreams;
 
-    janus.init(token).then(data => {
-      log.info("[admin] Janus init", data)
+    gateways[inst].attach(videoroom).then(data => {
+      this.setState({gateways, janus: gateways[inst], videoroom, user, current_room: room, inst});
+      log.info('[admin] Publisher Handle: ', data)
 
-      janus.attach(videoroom).then(data => {
-        this.setState({janus, videoroom, user, current_room: room});
-        log.info('[admin] Publisher Handle: ', data)
-
-        videoroom.join(room, user).then(data => {
-          log.info('[admin] Joined respond :', data)
-          mqtt.join("galaxy/room/" + room);
-          mqtt.join("galaxy/room/" + room + "/chat", true);
-          this.makeSubscription(data.publishers, room)
-        }).catch(err => {
-          log.error('[admin] Join error :', err);
-        })
-
+      videoroom.join(room, user).then(data => {
+        log.info('[admin] Joined respond :', data)
+        mqtt.join("galaxy/room/" + room);
+        mqtt.join("galaxy/room/" + room + "/chat", true);
+        this.makeSubscription(data.publishers, room)
+      }).catch(err => {
+        log.error('[admin] Join error :', err);
       })
 
-      janus.attach(subscriber).then(data => {
-        this.setState({subscriber});
-        log.info('[admin] Subscriber Handle: ', data)
-      })
+    })
 
-    }).catch(err => {
-      log.error("[admin] Janus init", err);
-      this.exitRoom(/* reconnect= */ true, () => {
-        log.error("[admin] error initializing janus", err);
-        this.reinitClient(retry);
-      });
+    gateways[inst].attach(subscriber).then(data => {
+      this.setState({subscriber});
+      log.info('[admin] Subscriber Handle: ', data)
     })
   }
 
-  exitRoom = (data) => {
-    const {current_room, videoroom} = this.state;
+  joinRoom = (data) => {
+    const {user, current_room, gateways} = this.state;
+    const {users, description, room, janus: inst} = data;
 
-    if(!videoroom) {
+    if (current_room === room) return;
+
+    log.info("[admin] joinRoom", room, inst);
+    this.setState({users, current_group: description});
+
+    if(!gateways[inst]?.srv) {
+      this.initJanus(user, inst).then((janus) => {
+        gateways[inst] = janus
+        this.setState({gateways});
+        this.initPlugins(gateways, inst, user, room)
+      })
+    } else {
+      this.initPlugins(gateways, inst, user, room)
+    }
+
+  }
+
+  exitRoom = (data) => {
+    const {current_room, videoroom, janus} = this.state;
+
+    if(!janus) {
       this.joinRoom(data)
       return
     }
@@ -188,7 +202,14 @@ class AdminRootMqtt extends Component {
   switchRoom = (data, current_room) => {
     mqtt.exit("galaxy/room/" + current_room);
     mqtt.exit("galaxy/room/" + current_room + "/chat");
-    this.state.janus.destroy().then(() => this.joinRoom(data))
+    const {janus, videoroom, subscriber, inst} = this.state;
+
+    if(subscriber) janus.detach(subscriber)
+    janus.detach(videoroom).then(() => {
+      log.info("["+inst+"] plugin detached:");
+      this.setState({feeds: [], mids: [], remoteFeed: false, videoroom: null, subscriber: null, janus: null});
+      this.joinRoom(data)
+    })
   };
 
   handleTalking = (id, talking) => {

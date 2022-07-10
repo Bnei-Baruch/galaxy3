@@ -126,26 +126,28 @@ class JanusHandleMqtt extends Component {
     }
   }
 
-  cleanState = (callback) => {
-    this.setState({feeds: [], mids: [], remoteFeed: false, videoroom: null, subscriber: null, janus: null});
-    if(typeof callback === "function") callback();
+  exitPlugins = (callback) => {
+    const {subscriber, videoroom, janus, mit} = this.state;
+    if(subscriber) janus.detach(subscriber)
+    janus.detach(videoroom).then(() => {
+      log.info("["+mit+"] plugin detached:");
+      this.setState({feeds: [], mids: [], remoteFeed: false, videoroom: null, subscriber: null, janus: null});
+      if(typeof callback === "function") callback();
+    })
   }
 
   exitVideoRoom = (roomid, callback) => {
-    const {janus, videoroom, mit} = this.state;
+    const {videoroom, mit} = this.state;
     if(videoroom) {
       videoroom.leave().then(r => {
         log.info("["+mit+"] leave respond:", r);
-        janus.detach(videoroom).then(() => {
-          log.info("["+mit+"] plugin detached:");
-          this.cleanState(callback)
-        })
+        this.exitPlugins(callback)
       }).catch(e => {
         log.error("["+mit+"] leave error:", e);
-        this.cleanState(callback)
+        this.exitPlugins(callback)
       });
     } else {
-      this.cleanState(callback)
+      this.exitPlugins(callback)
     }
 
   };

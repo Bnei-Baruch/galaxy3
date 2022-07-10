@@ -61,9 +61,7 @@ class MqttMsg {
       };
     }
 
-    //const url = !user.role.match(/^(user|admin|root)$/) && !service ? MQTT_URL : MSG_URL;
-    const url = MSG_URL;
-    this.mq = mqtt.connect(`wss://${url}`, options);
+    this.mq = mqtt.connect(`wss://${MSG_URL}`, options);
     this.mq.setMaxListeners(50)
 
     this.mq.on("connect", (data) => {
