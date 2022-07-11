@@ -3,7 +3,7 @@ import "./VideoConteiner.scss";
 import {Janus} from "../../lib/janus";
 import classNames from "classnames";
 
-class UsersHandle extends Component {
+class UsersHandleHttp extends Component {
   state = {
     feeds: [],
     inst: null,
@@ -423,4 +423,4 @@ class UsersHandle extends Component {
   }
 }
 
-export default UsersHandle;
+export default UsersHandleHttp;

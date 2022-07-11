@@ -94,7 +94,7 @@ class VideoOutMqtt extends Component {
 
   initGateways = (user) => {
     mqtt.init(user, (data) => {
-      log.log("[SDIOut] mqtt init: ", data);
+      log.info("[SDIOut] mqtt init: ", data);
       mqtt.join("galaxy/service/shidur");
       mqtt.join("galaxy/users/broadcast");
       mqtt.send(JSON.stringify({type: "event", [user.role]: true}), true, "galaxy/service/" + user.role);

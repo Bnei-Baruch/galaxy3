@@ -1,4 +1,4 @@
-import React, {Component, Fragment} from "react";
+import React, {Component} from "react";
 import {Grid} from "semantic-ui-react";
 import "./WebOutApp.css";
 import "./UsersQuad.scss";
@@ -6,7 +6,10 @@ import api from "../../shared/Api";
 import {API_BACKEND_PASSWORD, API_BACKEND_USERNAME} from "../../shared/env";
 import GxyJanus from "../../shared/janus-utils";
 import UsersQuad from "./UsersQuad";
-import {captureException} from "../../shared/sentry";
+import mqtt from "../../shared/mqtt";
+import log from "loglevel";
+import ConfigStore from "../../shared/ConfigStore";
+import {JanusMqtt} from "../../lib/janus-mqtt";
 
 class WebOutApp extends Component {
   state = {
@@ -27,6 +30,7 @@ class WebOutApp extends Component {
       display: "webout",
       id: "webout",
       name: "webout",
+      email: "webout@galaxy.kli.one",
     },
     qcol: 0,
     gateways: {},
@@ -40,6 +44,9 @@ class WebOutApp extends Component {
 
   componentDidMount() {
     this.initApp();
+    setTimeout(() => {
+      this.fetchRooms()
+    },1000)
   }
 
   componentWillUnmount() {
@@ -70,31 +77,55 @@ class WebOutApp extends Component {
         this.setState({rooms, groups, disabled_rooms, region_groups});
       })
       .catch((err) => {
-        console.error("[Shidur] error fetching active rooms", err);
+        log.error("[WebOut] error fetching active rooms", err);
       });
   };
 
   initApp = () => {
     const {user} = this.state;
+
     api.setBasicAuth(API_BACKEND_USERNAME, API_BACKEND_PASSWORD);
 
-    api
-      .fetchConfig()
-      .then((data) => GxyJanus.setGlobalConfig(data))
-      .then(() => this.initGateways(user))
+    api.fetchConfig().then(data => {
+      ConfigStore.setGlobalConfig(data);
+      GxyJanus.setGlobalConfig(data);
+    }).then(() => this.initGateways(user))
       .then(this.pollRooms)
       .catch((err) => {
-        console.error("[SDIOut] error initializing app", err);
+        log.error("[WebOut] error initializing app", err);
         this.setState({appInitError: err});
-        captureException(err, {source: "SDIOut"});
       });
   };
 
   initGateways = (user) => {
-    const gateways = GxyJanus.makeGateways("rooms");
-    this.setState({gateways});
-    Object.values(gateways).map((gateway) => gateway.init());
+    mqtt.init(user, (data) => {
+      log.info("[WebOut] mqtt init: ", data);
+      mqtt.watch(() => {});
+      Object.keys(ConfigStore.globalConfig.gateways.rooms).forEach(gxy => {
+        this.initJanus(user, gxy)
+      })
+    });
   };
+
+  initJanus = (user, gxy) => {
+    log.info("["+gxy+"] Janus init")
+    const {gateways} = this.state;
+    const token = ConfigStore.globalConfig.gateways.rooms[gxy].token
+    gateways[gxy] = new JanusMqtt(user, gxy, gxy);
+    gateways[gxy].init(token).then(data => {
+      log.info("["+gxy+"] Janus init success", data)
+    }).catch(err => {
+      log.error("["+gxy+"] Janus init", err);
+    })
+    gateways[gxy].onStatus = (srv, status) => {
+      if (status !== "online") {
+        log.error("["+srv+"] Janus: ", status);
+        setTimeout(() => {
+          this.initJanus(user, srv);
+        }, 10000)
+      }
+    }
+  }
 
   setProps = (props) => {
     this.setState({...props});

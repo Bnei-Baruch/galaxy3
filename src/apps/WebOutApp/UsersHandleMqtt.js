@@ -1,24 +1,22 @@
 import React, {Component} from "react";
-import "./VideoHandle.scss";
+import "./VideoConteiner.scss";
+import {Janus} from "../../lib/janus";
 import classNames from "classnames";
 import log from "loglevel";
 import ConfigStore from "../../shared/ConfigStore";
 import {PublisherPlugin} from "../../lib/publisher-plugin";
 import {SubscriberPlugin} from "../../lib/subscriber-plugin";
 
-class VideoHandleMqtt extends Component {
+class UsersHandle extends Component {
   state = {
     feeds: [],
     inst: null,
     mids: [],
     name: "",
     room: "",
+    myid: null,
+    mystream: null,
     num_videos: 0,
-    remoteFeed: null,
-    janus: null,
-    videoroom: null,
-    subscriber: null
-
   };
 
   componentDidMount() {
@@ -30,7 +28,7 @@ class VideoHandleMqtt extends Component {
 
   componentDidUpdate(prevProps) {
     let {g, index, group} = this.props;
-    const {room} = this.state;
+    let {room} = this.state;
     if (g && index === 13 && g.room !== room && group) {
       this.setState({room: g.room}, () => {
         this.initVideoRoom(g.room, g.janus);
@@ -265,13 +263,13 @@ class VideoHandleMqtt extends Component {
     const autoPlay = true;
     const controls = false;
     const muted = true;
-    //const q = (<b style={{color: "red", fontSize: "20px", fontFamily: "Verdana", fontWeight: "bold"}}>?</b>);
+    //const q = (<b style={{color: 'red', fontSize: '20px', fontFamily: 'Verdana', fontWeight: 'bold'}}>?</b>);
 
     let program_feeds = feeds.map((feed) => {
       let camera = g && g.users && !!g.users.find((u) => feed.id === u.rfid && u.camera);
       if (feed) {
         let id = feed.id;
-        let talk = feed.talking;
+        let talk = feed.talk;
         return (
           <div className={camera ? "video" : "hidden"} key={"prov" + id} ref={"provideo" + id} id={"provideo" + id}>
             <div className={classNames("video__overlay", {talk: talk})}>
@@ -311,4 +309,4 @@ class VideoHandleMqtt extends Component {
   }
 }
 
-export default VideoHandleMqtt;
+export default UsersHandle;

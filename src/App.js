@@ -7,15 +7,16 @@ import "./i18n/i18n";
 // import GalaxyApp from "./apps/GalaxyApp";
 // import MobileClient from "./apps/MobileApp/MobileClient";
 // import GalaxyStream from "./apps/StreamApp/GalaxyStream";
-import VirtualMqttClient from "./apps/VirtualApp/VirtualMqttClient";
+// import VirtualMqttClient from "./apps/VirtualApp/VirtualMqttClient";
 // import VirtualHttpClient from "./apps/VirtualApp/VirtualHttpClient";
 // import AdminApp from "./apps/AdminApp/AdminApp";
 // import ShidurAppMqtt from "./apps/ShidurApp/ShidurAppMqtt";
 // import ShidurAppHttp from "./apps/ShidurApp/ShidurAppHttp";
 // import SndmanApp from "./apps/SndmanApp/SndmanApp";
 // import AudioOutMqtt from "./apps/AudioOutApp/AudioOutMqtt";
-import VideoOutMqtt from "./apps/VideoOutApp/VideoOutMqtt";
-// import WebOutApp from "./apps/WebOutApp/WebOutApp";
+// import VideoOutMqtt from "./apps/VideoOutApp/VideoOutMqtt";
+// import WebOutHttp from "./apps/WebOutHttp/WebOutHttp";
+import WebOutMqtt from "./apps/WebOutApp/WebOutMqtt";
 
 class App extends Component {
   render() {
@@ -24,7 +25,7 @@ class App extends Component {
         {/*{<GalaxyApp />}*/}
         {/*<MobileClient />*/}
         {/*<GalaxyStream />*/}
-        <VirtualMqttClient />
+        {/*<VirtualMqttClient />*/}
         {/*<VirtualHttpClient />*/}
         {/*<AdminApp />*/}
         {/*<ShidurAppMqtt />*/}
@@ -32,7 +33,8 @@ class App extends Component {
         {/*<SndmanApp />*/}
         {/*<AudioOutMqtt />*/}
         {/*<VideoOutMqtt />*/}
-        {/*<WebOutApp />*/}
+        {/*<WebOutHttp />*/}
+        <WebOutMqtt />
       </I18nextProvider>
     );
   }

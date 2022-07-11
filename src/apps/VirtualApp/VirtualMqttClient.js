@@ -734,14 +734,12 @@ class VirtualMqttClient extends Component {
     log.info("[client] >> This track is coming from feed " + feed + ":", mid);
     if (on) {
       if (track.kind === "audio") {
-        let stream = new MediaStream();
-        stream.addTrack(track.clone());
+        let stream = new MediaStream([track]);
         log.debug("[client] Created remote audio stream:", stream);
         let remoteaudio = this.refs["remoteAudio" + feed];
         if(remoteaudio) remoteaudio.srcObject = stream;
       } else if (track.kind === "video") {
-        const stream = new MediaStream();
-        stream.addTrack(track.clone());
+        let stream = new MediaStream([track]);
         log.debug("[client] Created remote video stream:", stream);
         const remotevideo = this.refs["remoteVideo" + feed];
         if(remotevideo) remotevideo.srcObject = stream;

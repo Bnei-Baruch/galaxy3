@@ -233,8 +233,7 @@ class AudioHandleMqtt extends Component {
     log.info(" >> This track is coming from feed " + feed + ":", mid);
 
     if (track.kind === "audio" && on) {
-      let stream = new MediaStream();
-      stream.addTrack(track.clone());
+      let stream = new MediaStream([track]);
       log.info(`[audio] Created remote audio stream`, stream);
       let remoteaudio = this.refs["pa" + feed];
       if (remoteaudio) remoteaudio.srcObject = stream;

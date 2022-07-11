@@ -1,6 +1,6 @@
 import React, {Component} from "react";
 import {Segment} from "semantic-ui-react";
-import UsersHandle from "./UsersHandle";
+import UsersHandleMqtt from "./UsersHandleMqtt";
 
 class UsersQuad extends Component {
   state = {
@@ -114,7 +114,7 @@ class UsersQuad extends Component {
         >
           {qst_mark}
           <div className={fullscr ? "fullscrvideo_title" : "video_title"}>{name}</div>
-          <UsersHandle key={"q" + i} g={g} index={i} {...this.props} />
+          <UsersHandleMqtt key={"q" + i} g={g} index={i} {...this.props} />
         </div>
       );
     });
