@@ -157,6 +157,18 @@ class AdminRootMqtt extends Component {
       this.setState({subscriber});
       log.info('[admin] Subscriber Handle: ', data)
     })
+  };
+
+  cleanSession = (inst) => {
+    const {gateways} = this.state;
+    Object.keys(gateways).forEach(key => {
+      const session = gateways[key];
+      const sessionEmpty = Object.keys(session.pluginHandles).length === 0;
+      if(sessionEmpty && key !== inst) {
+        session.destroy();
+        delete gateways[key]
+      }
+    })
   }
 
   joinRoom = (data) => {
@@ -172,13 +184,14 @@ class AdminRootMqtt extends Component {
       this.initJanus(user, inst).then((janus) => {
         gateways[inst] = janus
         this.setState({gateways});
-        this.initPlugins(gateways, inst, user, room)
+        this.initPlugins(gateways, inst, user, room);
       })
     } else {
-      this.initPlugins(gateways, inst, user, room)
+      this.initPlugins(gateways, inst, user, room);
+      this.cleanSession(inst);
     }
 
-  }
+  };
 
   exitRoom = (data) => {
     const {current_room, videoroom, janus} = this.state;
