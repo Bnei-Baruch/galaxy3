@@ -172,10 +172,8 @@ class AdminRootMqtt extends Component {
   }
 
   joinRoom = (data) => {
-    const {user, current_room, gateways} = this.state;
+    const {user, gateways} = this.state;
     const {users, description, room, janus: inst} = data;
-
-    if (current_room === room) return;
 
     log.info("%c[admin] -- join room: " + room + " (" + description + ")" + " | on srv : " + inst + " -- ", "color: blue");
     this.setState({users, current_group: description});
@@ -197,6 +195,9 @@ class AdminRootMqtt extends Component {
 
   exitRoom = (data) => {
     const {current_room, videoroom, janus} = this.state;
+    const {room} = data;
+
+    if (current_room === room) return;
 
     if(!janus) {
       this.joinRoom(data)
