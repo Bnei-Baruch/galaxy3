@@ -1,6 +1,5 @@
 import React, {Component} from "react";
 import "./VideoConteiner.scss";
-import {Janus} from "../../lib/janus";
 import classNames from "classnames";
 import log from "loglevel";
 import ConfigStore from "../../shared/ConfigStore";
