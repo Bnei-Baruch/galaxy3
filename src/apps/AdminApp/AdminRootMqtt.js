@@ -112,18 +112,18 @@ class AdminRootMqtt extends Component {
     const {gateways} = this.state;
     const token = ConfigStore.globalConfig.gateways.rooms[gxy].token
     gateways[gxy] = new JanusMqtt(user, gxy, gxy);
-
+    gateways[gxy].onStatus = (srv, status) => {
+      if (status !== "online") {
+        log.error("["+srv+"] Janus: ", status);
+      }
+    }
     return new Promise((resolve, reject) => {
-      gateways[gxy].init(token).then(data => {
-        log.info("["+gxy+"] Janus init success", data)
-        resolve(data)
-        gateways[gxy].onStatus = (srv, status) => {
-          if (status !== "online") {
-            log.error("["+srv+"] Janus: ", status);
-          }
-        }
+      gateways[gxy].init(token).then(janus => {
+        log.info("["+gxy+"] Janus init success", janus)
+        resolve(janus);
       }).catch(err => {
         log.error("["+gxy+"] Janus init", err);
+        reject(err)
       })
     })
   };
@@ -177,14 +177,16 @@ class AdminRootMqtt extends Component {
 
     if (current_room === room) return;
 
-    log.info("[admin] joinRoom", room, inst);
+    log.info("%c[admin] -- join room: " + room + " (" + description + ")" + " | on srv : " + inst + " -- ", "color: blue");
     this.setState({users, current_group: description});
 
-    if(!gateways[inst]?.srv) {
-      this.initJanus(user, inst).then((janus) => {
-        gateways[inst] = janus
-        this.setState({gateways});
+    if(!gateways[inst]?.isConnected) {
+      this.initJanus(user, inst).then(() => {
         this.initPlugins(gateways, inst, user, room);
+      }).catch(() => {
+        setTimeout(() => {
+          this.initPlugins(gateways, inst, user, room);
+        }, 5000)
       })
     } else {
       this.initPlugins(gateways, inst, user, room);
