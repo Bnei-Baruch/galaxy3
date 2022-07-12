@@ -115,6 +115,15 @@ class AdminRootMqtt extends Component {
     gateways[gxy].onStatus = (srv, status) => {
       if (status !== "online") {
         log.error("["+srv+"] Janus: ", status);
+        //When janus crashed or restarted We need at least clean up events emitters!
+        gateways[srv].destroy().then(() => {
+          delete gateways[srv]
+          setTimeout(() => {
+            const {users, current_group, current_room} = this.state;
+            this.setState({remoteFeed: false, feeds: []})
+            this.joinRoom({users, description: current_group, room: current_room, janus: srv});
+          }, 15000)
+        })
       }
     }
     return new Promise((resolve, reject) => {
@@ -183,8 +192,8 @@ class AdminRootMqtt extends Component {
         this.initPlugins(gateways, inst, user, room);
       }).catch(() => {
         setTimeout(() => {
-          this.initPlugins(gateways, inst, user, room);
-        }, 5000)
+          this.joinRoom(data);
+        }, 10000)
       })
     } else {
       this.initPlugins(gateways, inst, user, room);
