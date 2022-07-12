@@ -68,10 +68,16 @@ class VideoHandleMqtt extends Component {
 
     this.setState({mit, janus});
 
-    this.initVideoHandles(janus, room, user)
+    this.initVideoHandles(janus, room, user, mit)
   }
 
   initVideoHandles = (janus, room, user, mit) => {
+    if(!janus.isConnected) {
+      setTimeout(() => {
+        this.initVideoHandles(janus, room, user, mit)
+      }, 1000)
+      return
+    }
     let videoroom = new PublisherPlugin();
     videoroom.subTo = this.onJoinFeed;
     videoroom.unsubFrom = this.unsubscribeFrom
