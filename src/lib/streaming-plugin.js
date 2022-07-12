@@ -151,7 +151,7 @@ export class StreamingPlugin extends EventEmitter {
       let count = 0;
       let chk = setInterval(() => {
         count++;
-        if (count < 10 && this.iceState !== "disconnected") {
+        if (count < 10 && this.iceState !== "disconnected" || !this.janus.isConnected) {
           clearInterval(chk);
         } else if (mqtt.mq.connected) {
           log.debug("[streaming] - Trigger ICE Restart - ");
