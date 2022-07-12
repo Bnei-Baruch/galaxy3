@@ -213,7 +213,7 @@ class AdminRootMqtt extends Component {
       return
     }
 
-    this.setState({remoteFeed: false, feeds: []})
+    this.setState({remoteFeed: false, feeds: [], current_room: room})
 
     videoroom.leave().then(r => {
       log.info("[admin] leave respond:", r);
