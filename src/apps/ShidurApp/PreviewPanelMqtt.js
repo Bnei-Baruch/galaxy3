@@ -20,18 +20,20 @@ class PreviewPanelMqtt extends Component {
 
   componentDidUpdate(prevProps) {
     let {pg} = this.props;
-    let {room} = this.state;
+    let {room, subscriber} = this.state;
     if (pg && JSON.stringify(pg) !== JSON.stringify(prevProps.pg) && pg.room !== room) {
-      if (this.state.subscriber) this.state.subscriber.detach();
+      if (subscriber) subscriber.hangup();
       this.setState({remoteFeed: null, mids: [], feeds: [], subscriber: null}, () => {
         this.attachPreview(this.props.pg);
       });
     }
   }
 
-  // componentWillUnmount() {
-  //   if (this.state.subscriber) this.state.subscriber.detach();
-  // }
+  componentWillUnmount() {
+    const {janus, subscriber} = this.state;
+    if (janus && subscriber)
+      janus.detach(subscriber);
+  }
 
   attachPreview = (g) => {
     if(!g) return
@@ -66,6 +68,13 @@ class PreviewPanelMqtt extends Component {
         }
         if (subscription.length > 0) {
           this.subscribeTo(subscription, g.janus);
+          const {gateways} = this.props;
+          let janus = gateways[g.janus];
+
+          if(janus?.isConnected !== true) {
+            //FIXME: Does we need make separate sessions eor prevwiew? (session may be cleaned up during init)
+            this.props.initJanus(g.janus, false)
+          }
         }
       });
     });
@@ -74,6 +83,14 @@ class PreviewPanelMqtt extends Component {
   subscribeTo = (subscription, inst) => {
     const {gateways} = this.props;
     let janus = gateways[inst];
+
+    if(janus?.isConnected !== true) {
+      setTimeout(() => {
+        this.subscribeTo(subscription, inst)
+      }, 1000)
+      return
+    }
+
     let {creatingFeed, remoteFeed, subscriber, room} = this.state
 
     if (remoteFeed) {
@@ -101,7 +118,7 @@ class PreviewPanelMqtt extends Component {
       subscriber.join(subscription, room).then(data => {
         log.info("["+inst+"] Subscriber join: ", data)
         this.onUpdateStreams(data.streams);
-        this.setState({remoteFeed: true, creatingFeed: false});
+        this.setState({janus, remoteFeed: true, creatingFeed: false});
       });
     })
   };

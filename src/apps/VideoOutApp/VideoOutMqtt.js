@@ -52,21 +52,7 @@ class VideoOutMqtt extends Component {
   getVideoOut = () => {
     setInterval(() => {
       api.fetchProgram().then((qids) => {
-        const {gateways, gxy_list} = this.state;
-        let quads_list = [...qids.q1.vquad, ...qids.q2.vquad, ...qids.q3.vquad, ...qids.q4.vquad];
-        let Janus_list = quads_list.map(k => k.janus)
-        let uniq_list = [...new Set(Janus_list)]
-        let added_list = uniq_list.filter(x => !gxy_list.includes(x));
-        if(added_list.length > 0) {
-          log.info("[SDIOut] -- NEW SERVERS -- ", added_list)
-          uniq_list.map(gxy => {
-            if(!gateways[gxy]?.isConnected) {
-              this.initJanus(gxy)
-            }
-          })
-        }
-        this.cleanSession(uniq_list)
-        this.setState({qids, gxy_list: uniq_list});
+        this.initServers(qids);
         if (this.state.qg) {
           const {col, i} = this.state;
           this.setState({qg: this.state.qids["q" + col].vquad[i]});
@@ -93,14 +79,14 @@ class VideoOutMqtt extends Component {
     api.fetchConfig().then((data) => {
         ConfigStore.setGlobalConfig(data);
         GxyJanus.setGlobalConfig(data);
-      }).then(() => this.initGateways(user))
+      }).then(() => this.initMQTT(user))
       .catch((err) => {
         log.error("[SDIOut] error initializing app", err);
         this.setState({appInitError: err});
       });
   };
 
-  initGateways = (user) => {
+  initMQTT = (user) => {
     mqtt.init(user, (data) => {
       log.info("[SDIOut] mqtt init: ", data);
       mqtt.join("galaxy/service/shidur");
@@ -114,6 +100,24 @@ class VideoOutMqtt extends Component {
       // })
     });
   };
+
+  initServers = (qids) => {
+    const {gateways, gxy_list} = this.state;
+    let quads_list = [...qids.q1.vquad, ...qids.q2.vquad, ...qids.q3.vquad, ...qids.q4.vquad];
+    let Janus_list = quads_list.map(k => k.janus);
+    let uniq_list = [...new Set(Janus_list)];
+    let added_list = uniq_list.filter(x => !gxy_list.includes(x));
+    this.setState({qids, gxy_list: uniq_list});
+    if(added_list.length > 0) {
+      log.info("[SDIOut] -- NEW SERVERS -- ", added_list);
+      uniq_list.map(gxy => {
+        if(!gateways[gxy]?.isConnected) {
+          this.initJanus(gxy)
+        }
+      })
+    }
+    this.cleanSession(uniq_list);
+  }
 
   initJanus = (gxy) => {
     log.info("["+gxy+"] Janus init")
@@ -185,7 +189,7 @@ class VideoOutMqtt extends Component {
         delete gateways[key]
       }
     })
-  }
+  };
 
   render() {
     let {vote, group, qids, qg, gateways, roomsStatistics, user} = this.state;

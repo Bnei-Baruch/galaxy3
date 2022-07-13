@@ -58,6 +58,7 @@ class ShidurAppMqtt extends Component {
     preusers_count: 6,
     pnum: {},
     tcp: "mqtt",
+    gxy_list: []
   };
 
   componentWillUnmount() {
@@ -96,7 +97,7 @@ class ShidurAppMqtt extends Component {
     api.fetchConfig().then(data => {
       ConfigStore.setGlobalConfig(data);
       GxyJanus.setGlobalConfig(data);
-    }).then(() => this.initGateways(user))
+    }).then(() => this.initMQTT(user))
       .then(this.pollRooms)
       .catch((err) => {
         log.error("[Shidur] error initializing app", err);
@@ -104,7 +105,7 @@ class ShidurAppMqtt extends Component {
       });
   };
 
-  initGateways = (user) => {
+  initMQTT = (user) => {
     this.setState({tcp: GxyJanus.globalConfig.dynamic_config.galaxy_protocol});
     mqtt.init(user, (data) => {
       log.info("[Shidur] mqtt init: ", data);
@@ -116,17 +117,35 @@ class ShidurAppMqtt extends Component {
       if(isServiceID(user.id))
         mqtt.send(JSON.stringify({type: "event", [user.role]: true}), true, "galaxy/service/" + user.role);
 
-      Object.keys(ConfigStore.globalConfig.gateways.rooms).forEach(gxy => {
-        this.initJanus(user, gxy)
-      })
+      // Object.keys(ConfigStore.globalConfig.gateways.rooms).forEach(gxy => {
+      //   this.initJanus(user, gxy)
+      // })
     });
 
     this.setState({gatewaysInitialized: true});
   };
 
-  initJanus = (user, gxy) => {
+  initServers = (quads_list) => {
+    const {gateways, gxy_list} = this.state;
+    //let quads_list = [...qids.q1.vquad, ...qids.q2.vquad, ...qids.q3.vquad, ...qids.q4.vquad];
+    let Janus_list = quads_list.map(k => k.janus);
+    let uniq_list = [...new Set(Janus_list)];
+    let added_list = uniq_list.filter(x => !gxy_list.includes(x));
+    this.setState({gxy_list: uniq_list});
+    if(added_list.length > 0) {
+      log.info("[SDIOut] -- NEW SERVERS -- ", added_list);
+      uniq_list.map(gxy => {
+        if(!gateways[gxy]?.isConnected) {
+          this.initJanus(gxy, uniq_list);
+        }
+      })
+    }
+    if(uniq_list) this.cleanSession(uniq_list);
+  }
+
+  initJanus = (gxy) => {
     log.info("["+gxy+"] Janus init")
-    const {gateways} = this.state;
+    const {user, gateways} = this.state;
     const token = ConfigStore.globalConfig.gateways.rooms[gxy].token
     gateways[gxy] = new JanusMqtt(user, gxy, gxy);
     gateways[gxy].init(token).then(data => {
@@ -135,7 +154,7 @@ class ShidurAppMqtt extends Component {
         if (status !== "online") {
           log.error("["+srv+"] Janus: ", status);
           setTimeout(() => {
-            this.initJanus(user, srv);
+            this.initJanus(srv);
           }, 10000)
         }
       }
@@ -143,6 +162,20 @@ class ShidurAppMqtt extends Component {
       log.error("["+gxy+"] Janus init", err);
     })
   };
+
+  cleanSession = (uniq_list) => {
+    const {gateways} = this.state;
+    Object.keys(gateways).forEach(key => {
+      const session = gateways[key];
+      const sessionEmpty = Object.keys(session.pluginHandles).length === 0;
+      const gxyOnProgram = uniq_list.find(g => g === key);
+      if(sessionEmpty && !gxyOnProgram) {
+        log.info("[SDIOut] -- CLEAN SERVER -- ", key)
+        session.destroy();
+        delete gateways[key]
+      }
+    })
+  }
 
   reinitTimer = (gateway) => {
     const {lost_servers} = this.state;
@@ -248,6 +281,8 @@ class ShidurAppMqtt extends Component {
           ...this.col3.state.vquad,
           ...this.col4.state.vquad,
         ];
+        let quads_list = quads.filter(k => k)
+        if(quads_list.length > 0) this.initServers(quads_list);
         let list = groups.filter((r) => !quads.find((q) => q && r.room === q.room));
         let questions = list.filter((room) => room.questions);
         this.setState({quads, questions, users_count, rooms, groups, vip1_rooms, vip2_rooms, vip3_rooms, disabled_rooms, pre_groups, region_groups});
@@ -396,7 +431,7 @@ class ShidurAppMqtt extends Component {
                 />
               </Grid.Column>
             </Grid.Row>
-            <ToranToolsMqtt {...this.state} setProps={this.setProps} nextInQueue={this.nextInQueue} />
+            <ToranToolsMqtt {...this.state} setProps={this.setProps} nextInQueue={this.nextInQueue} initJanus={this.initJanus} />
           </Grid>
         </Grid.Column>
       </Grid>

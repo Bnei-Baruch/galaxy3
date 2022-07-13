@@ -44,12 +44,19 @@ class JanusHandleMqtt extends Component {
     log.info("["+mit+"] Init room: ", room, inst, ConfigStore.globalConfig)
     log.info("["+mit+"] mit", mit)
 
-    this.setState({mit, janus});
-
-    this.initVideoHandles(janus, room, user, mit)
+    this.initVideoHandles(room, user, inst)
   }
 
-  initVideoHandles = (janus, room, user, mit) => {
+  initVideoHandles = (room, user, mit) => {
+    const {gateways} = this.props;
+    const janus = gateways[mit]
+    if(janus?.isConnected !== true) {
+      setTimeout(() => {
+        this.initVideoHandles(room, user, mit)
+      }, 1000)
+      return
+    }
+    this.setState({mit, janus});
     let videoroom = new PublisherPlugin();
     videoroom.subTo = this.onJoinFeed;
     videoroom.unsubFrom = this.unsubscribeFrom

@@ -260,9 +260,11 @@ export class SubscriberPlugin extends EventEmitter {
     // The plugin handle is not valid anymore
   }
 
-  hangup () {
-    log.info('[subscriber] - hangup - ', this.janus)
-    this.detach()
+  hangup() {
+    log.info('[subscriber] - hangup - ', this)
+    if(this.janus) {
+      this.janus.detach(this)
+    }
   }
 
   slowLink (uplink, lost, mid) {
@@ -281,7 +283,7 @@ export class SubscriberPlugin extends EventEmitter {
     //this.emit('webrtcState', isReady, cause)
   }
 
-  detach () {
+  detach() {
     if(this.pc) {
       this.pc.onicecandidate = null;
       this.pc.ontrack = null;
