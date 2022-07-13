@@ -431,7 +431,7 @@ class ShidurAppMqtt extends Component {
                 />
               </Grid.Column>
             </Grid.Row>
-            <ToranToolsMqtt {...this.state} setProps={this.setProps} nextInQueue={this.nextInQueue} initJanus={this.initJanus} />
+            <ToranToolsMqtt {...this.state} setProps={this.setProps} nextInQueue={this.nextInQueue} />
           </Grid>
         </Grid.Column>
       </Grid>

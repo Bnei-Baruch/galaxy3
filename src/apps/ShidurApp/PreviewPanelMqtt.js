@@ -30,9 +30,8 @@ class PreviewPanelMqtt extends Component {
   }
 
   componentWillUnmount() {
-    const {janus, subscriber} = this.state;
-    if (janus && subscriber)
-      janus.detach(subscriber);
+    const {subscriber} = this.state;
+    if (subscriber) subscriber.hangup();
   }
 
   attachPreview = (g) => {
@@ -72,8 +71,7 @@ class PreviewPanelMqtt extends Component {
           let janus = gateways[g.janus];
 
           if(janus?.isConnected !== true) {
-            //FIXME: Does we need make separate sessions eor prevwiew? (session may be cleaned up during init)
-            this.props.initJanus(g.janus, false)
+            this.props.initJanus(g.janus)
           }
         }
       });

@@ -8,9 +8,12 @@ import {RESET_VOTE} from "../../shared/env";
 import mqtt from "../../shared/mqtt";
 import {short_regions} from "../../shared/consts";
 import {createContext} from "../../shared/tools";
+import ConfigStore from "../../shared/ConfigStore";
+import {JanusMqtt} from "../../lib/janus-mqtt";
 
 class ToranToolsMqtt extends Component {
   state = {
+    gateways: {},
     galaxy_mode: "lesson",
     delay: false,
     index: 0,
@@ -34,6 +37,41 @@ class ToranToolsMqtt extends Component {
         this.scrollToBottom();
       }, 1000);
     }
+  }
+
+  initJanus = (gxy) => {
+    log.info("["+gxy+"] Janus init")
+    const {gateways} = this.state;
+    const {user} = this.props;
+    const token = ConfigStore.globalConfig.gateways.rooms[gxy].token
+    gateways[gxy] = new JanusMqtt(user, gxy, gxy);
+    gateways[gxy].init(token).then(data => {
+      log.info("["+gxy+"] Janus init success", data)
+      gateways[gxy].onStatus = (srv, status) => {
+        if (status !== "online") {
+          log.error("["+srv+"] Janus: ", status);
+          setTimeout(() => {
+            this.initJanus(srv);
+          }, 10000)
+        }
+      }
+    }).catch(err => {
+      log.error("["+gxy+"] Janus init", err);
+    })
+  };
+
+  cleanSession = (uniq_list) => {
+    const {gateways} = this.state;
+    Object.keys(gateways).forEach(key => {
+      const session = gateways[key];
+      const sessionEmpty = Object.keys(session.pluginHandles).length === 0;
+      const gxyOnProgram = uniq_list.find(g => g === key);
+      if(sessionEmpty && !gxyOnProgram) {
+        log.info("[SDIOut] -- CLEAN SERVER -- ", key)
+        session.destroy();
+        delete gateways[key]
+      }
+    })
   }
 
   selectGroup = (group, i) => {
@@ -283,7 +321,7 @@ class ToranToolsMqtt extends Component {
       region_list,
       roomsStatistics,
     } = this.props;
-    const {open, delay, vote, galaxy_mode, menu_open, qst_filter, pg} = this.state;
+    const {open, delay, vote, galaxy_mode, menu_open, qst_filter, pg, gateways} = this.state;
     const q = <b style={{color: "red", fontColor: "green", fontSize: "20px", fontFamily: "Verdana", fontWeight: "bold"}}>?</b>;
     const qf = <b style={{color: "red", fontColor: "yellow", fontSize: "20px", fontFamily: "Verdana", fontWeight: "bold"}}>?</b>;
     const next_group = groups[groups_queue] ? groups[groups_queue].description : groups[0] ? groups[0].description : "";
@@ -540,7 +578,7 @@ class ToranToolsMqtt extends Component {
                 <div className="shidur_overlay">
                   <span>{ng.description}</span>
                 </div>
-                <PreviewPanelMqtt pg={ng} {...this.props} next closePopup={this.closePopup} />
+                <PreviewPanelMqtt pg={ng} gateways={gateways} next closePopup={this.closePopup} initJanus={this.initJanus} />
               </Segment>
             ) : (
               ""
@@ -632,7 +670,7 @@ class ToranToolsMqtt extends Component {
                 <div className="shidur_overlay">
                   <span>{group ? group.description : ""}</span>
                 </div>
-                <PreviewPanelMqtt pg={pg} {...this.props} closePopup={this.closePopup} />
+                <PreviewPanelMqtt pg={pg} gateways={gateways} closePopup={this.closePopup} initJanus={this.initJanus} />
               </Segment>
             ) : (
               ""
