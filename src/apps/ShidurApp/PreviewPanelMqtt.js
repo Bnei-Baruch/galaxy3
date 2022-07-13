@@ -67,11 +67,11 @@ class PreviewPanelMqtt extends Component {
         }
         if (subscription.length > 0) {
           this.subscribeTo(subscription, g.janus);
-          const {gateways} = this.props;
+          const {gateways, p} = this.props;
           let janus = gateways[g.janus];
 
           if(janus?.isConnected !== true) {
-            this.props.initJanus(g.janus)
+            this.props.initJanus(g.janus, p)
           }
         }
       });

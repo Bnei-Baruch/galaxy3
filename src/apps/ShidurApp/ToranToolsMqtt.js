@@ -25,6 +25,7 @@ class ToranToolsMqtt extends Component {
     menu_open: false,
     menu_group: null,
     qst_filter: false,
+    gxy_list: []
   };
 
   componentDidUpdate(prevProps) {
@@ -39,14 +40,16 @@ class ToranToolsMqtt extends Component {
     }
   }
 
-  initJanus = (gxy) => {
+  initJanus = (gxy, p) => {
     log.info("["+gxy+"] Janus init")
-    const {gateways} = this.state;
+    const {gateways, gxy_list} = this.state;
     const {user} = this.props;
     const token = ConfigStore.globalConfig.gateways.rooms[gxy].token
     gateways[gxy] = new JanusMqtt(user, gxy, gxy);
     gateways[gxy].init(token).then(data => {
-      log.info("["+gxy+"] Janus init success", data)
+      log.info("["+gxy+"] Janus init success", data);
+      gxy_list[p] = gxy;
+      this.cleanSession();
       gateways[gxy].onStatus = (srv, status) => {
         if (status !== "online") {
           log.error("["+srv+"] Janus: ", status);
@@ -60,14 +63,14 @@ class ToranToolsMqtt extends Component {
     })
   };
 
-  cleanSession = (uniq_list) => {
-    const {gateways} = this.state;
+  cleanSession = () => {
+    const {gateways, gxy_list} = this.state;
     Object.keys(gateways).forEach(key => {
       const session = gateways[key];
       const sessionEmpty = Object.keys(session.pluginHandles).length === 0;
-      const gxyOnProgram = uniq_list.find(g => g === key);
+      const gxyOnProgram = gxy_list.find(g => g === key);
       if(sessionEmpty && !gxyOnProgram) {
-        log.info("[SDIOut] -- CLEAN SERVER -- ", key)
+        log.info("[Preview] -- CLEAN SERVER -- ", key)
         session.destroy();
         delete gateways[key]
       }
@@ -578,7 +581,7 @@ class ToranToolsMqtt extends Component {
                 <div className="shidur_overlay">
                   <span>{ng.description}</span>
                 </div>
-                <PreviewPanelMqtt pg={ng} gateways={gateways} next closePopup={this.closePopup} initJanus={this.initJanus} />
+                <PreviewPanelMqtt pg={ng} p={0} gateways={gateways} next closePopup={this.closePopup} initJanus={this.initJanus} />
               </Segment>
             ) : (
               ""
@@ -670,7 +673,7 @@ class ToranToolsMqtt extends Component {
                 <div className="shidur_overlay">
                   <span>{group ? group.description : ""}</span>
                 </div>
-                <PreviewPanelMqtt pg={pg} gateways={gateways} closePopup={this.closePopup} initJanus={this.initJanus} />
+                <PreviewPanelMqtt pg={pg} p={1} gateways={gateways} closePopup={this.closePopup} initJanus={this.initJanus} />
               </Segment>
             ) : (
               ""

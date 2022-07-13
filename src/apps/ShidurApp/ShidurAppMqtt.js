@@ -394,9 +394,7 @@ class ShidurAppMqtt extends Component {
                 <QuadPanelMqtt
                   index={0}
                   {...this.state}
-                  ref={(col1) => {
-                    this.col1 = col1;
-                  }}
+                  ref={(col1) => {this.col1 = col1;}}
                   setProps={this.setProps}
                 />
               </Grid.Column>
@@ -404,9 +402,7 @@ class ShidurAppMqtt extends Component {
                 <QuadPanelMqtt
                   index={4}
                   {...this.state}
-                  ref={(col2) => {
-                    this.col2 = col2;
-                  }}
+                  ref={(col2) => {this.col2 = col2;}}
                   setProps={this.setProps}
                 />
               </Grid.Column>
@@ -414,9 +410,7 @@ class ShidurAppMqtt extends Component {
                 <QuadPanelMqtt
                   index={8}
                   {...this.state}
-                  ref={(col3) => {
-                    this.col3 = col3;
-                  }}
+                  ref={(col3) => {this.col3 = col3;}}
                   setProps={this.setProps}
                 />
               </Grid.Column>
@@ -424,9 +418,7 @@ class ShidurAppMqtt extends Component {
                 <QuadPanelMqtt
                   index={12}
                   {...this.state}
-                  ref={(col4) => {
-                    this.col4 = col4;
-                  }}
+                  ref={(col4) => {this.col4 = col4;}}
                   setProps={this.setProps}
                 />
               </Grid.Column>
