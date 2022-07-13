@@ -37,8 +37,7 @@ class JanusHandleMqtt extends Component {
   }
 
   initVideoRoom = (room, inst) => {
-    const {gateways, user, q, col} = this.props;
-    let janus = gateways[inst];
+    const {user, q, col} = this.props;
     const mit = "col" + col + "_q" + (q+1) + "_" + inst
 
     log.info("["+mit+"] Init room: ", room, inst, ConfigStore.globalConfig)

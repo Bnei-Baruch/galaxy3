@@ -116,10 +116,6 @@ class ShidurAppMqtt extends Component {
       mqtt.join("galaxy/users/broadcast");
       if(isServiceID(user.id))
         mqtt.send(JSON.stringify({type: "event", [user.role]: true}), true, "galaxy/service/" + user.role);
-
-      // Object.keys(ConfigStore.globalConfig.gateways.rooms).forEach(gxy => {
-      //   this.initJanus(user, gxy)
-      // })
     });
 
     this.setState({gatewaysInitialized: true});
@@ -133,7 +129,7 @@ class ShidurAppMqtt extends Component {
     let added_list = uniq_list.filter(x => !gxy_list.includes(x));
     this.setState({gxy_list: uniq_list});
     if(added_list.length > 0) {
-      log.info("[SDIOut] -- NEW SERVERS -- ", added_list);
+      log.info("[Shidur] -- NEW SERVERS -- ", added_list);
       uniq_list.map(gxy => {
         if(!gateways[gxy]?.isConnected) {
           this.initJanus(gxy, uniq_list);
@@ -170,7 +166,7 @@ class ShidurAppMqtt extends Component {
       const sessionEmpty = Object.keys(session.pluginHandles).length === 0;
       const gxyOnProgram = uniq_list.find(g => g === key);
       if(sessionEmpty && !gxyOnProgram) {
-        log.info("[SDIOut] -- CLEAN SERVER -- ", key)
+        log.info("[Shidur] -- CLEAN SERVER -- ", key)
         session.destroy();
         delete gateways[key]
       }

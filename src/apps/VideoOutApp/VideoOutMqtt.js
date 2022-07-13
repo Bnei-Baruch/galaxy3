@@ -95,9 +95,6 @@ class VideoOutMqtt extends Component {
       mqtt.watch((data) => {
         this.onMqttData(data);
       });
-      // Object.keys(ConfigStore.globalConfig.gateways.rooms).forEach(gxy => {
-      //   this.initJanus(user, gxy)
-      // })
     });
   };
 
