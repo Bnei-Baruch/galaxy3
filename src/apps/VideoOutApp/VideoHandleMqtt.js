@@ -59,39 +59,41 @@ class VideoHandleMqtt extends Component {
   }
 
   initVideoRoom = (room, inst) => {
-    const {gateways, user, q, col} = this.props;
-    let janus = gateways[inst];
+    const {user, q, col} = this.props;
     const mit = "col" + col + "_q" + (q+1) + "_" + inst
 
     log.info("["+mit+"] Init room: ", room, inst, ConfigStore.globalConfig)
     log.info("["+mit+"] mit", mit)
 
-    this.setState({mit, janus});
+    this.setState({mit});
 
-    this.initVideoHandles(janus, room, user, mit)
+    this.initVideoHandles(room, user, inst)
   }
 
-  initVideoHandles = (janus, room, user, mit) => {
-    if(!janus.isConnected) {
+  initVideoHandles = (room, user, inst) => {
+    const {gateways} = this.props;
+    const janus = gateways[inst];
+    if(janus?.isConnected !== true) {
       setTimeout(() => {
-        this.initVideoHandles(janus, room, user, mit)
+        this.initVideoHandles(room, user, inst)
       }, 1000)
       return
     }
+    this.setState({janus});
     let videoroom = new PublisherPlugin();
     videoroom.subTo = this.onJoinFeed;
     videoroom.unsubFrom = this.unsubscribeFrom
     videoroom.talkEvent = this.handleTalking
 
     janus.attach(videoroom).then(data => {
-      log.info("["+mit+"] Publisher Handle: ", data)
+      log.info("["+inst+"] Publisher Handle: ", data)
 
       videoroom.join(room, user).then(data => {
-        log.info("["+mit+"] Joined respond :", data)
+        log.info("["+inst+"] Joined respond :", data)
         this.setState({videoroom, user, room, remoteFeed: null});
         this.onJoinMe(data.publishers, room)
       }).catch(err => {
-        log.error("["+mit+"] Join error :", err);
+        log.error("["+inst+"] Join error :", err);
       })
     })
   }
@@ -156,12 +158,17 @@ class VideoHandleMqtt extends Component {
 
   exitPlugins = (callback) => {
     const {subscriber, videoroom, janus, mit} = this.state;
-    if(subscriber) janus.detach(subscriber)
-    janus.detach(videoroom).then(() => {
-      log.info("["+mit+"] plugin detached:");
+    if(janus) {
+      if(subscriber) janus?.detach(subscriber)
+      janus?.detach(videoroom).then(() => {
+        log.info("["+mit+"] plugin detached:");
+        this.setState({feeds: [], mids: [], remoteFeed: false, videoroom: null, subscriber: null, janus: null});
+        if(typeof callback === "function") callback();
+      })
+    } else {
       this.setState({feeds: [], mids: [], remoteFeed: false, videoroom: null, subscriber: null, janus: null});
       if(typeof callback === "function") callback();
-    })
+    }
   }
 
   exitVideoRoom = (roomid, callback) => {
@@ -177,7 +184,6 @@ class VideoHandleMqtt extends Component {
     } else {
       this.exitPlugins(callback)
     }
-
   };
 
   subscribeTo = (room, subscription) => {

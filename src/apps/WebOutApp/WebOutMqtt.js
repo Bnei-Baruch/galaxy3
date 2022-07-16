@@ -40,6 +40,7 @@ class WebOutApp extends Component {
     roomsStatistics: {},
     reinit_inst: null,
     pnum: {},
+    gxy_list: []
   };
 
   componentDidMount() {

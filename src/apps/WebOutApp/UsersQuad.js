@@ -1,5 +1,6 @@
 import React, {Component} from "react";
 import {Segment} from "semantic-ui-react";
+import log from "loglevel";
 import UsersHandleMqtt from "./UsersHandleMqtt";
 
 class UsersQuad extends Component {
@@ -47,13 +48,13 @@ class UsersQuad extends Component {
     for (let i = 0; i < 4; i++) {
       // Don't switch if nobody in queue
       if (i === groups.length) {
-        console.log("[Shidur] Queue is END");
+        log.info("[WebOut] Queue is END");
         break;
       }
 
       if (groups_queue >= groups.length) {
         // End round here!
-        console.log("[Shidur] -- ROUND END --");
+        log.info("[WebOut] -- ROUND END --");
         groups_queue = 0;
         round++;
         this.props.setProps({groups_queue, round});
