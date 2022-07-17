@@ -321,19 +321,13 @@ export class PublisherPlugin extends EventEmitter {
       this.pc.onicecandidate = null;
       this.pc.ontrack = null;
       this.pc.oniceconnectionstatechange = null;
-      this.pc.getSenders().forEach((sender) => {
-        sender.track?.stop();
-        this.pc.removeTrack(sender);
-        sender.setStreams();
-      });
-      this.pc.getReceivers().forEach((receiver) => {
-        receiver.track?.stop();
-      });
       this.pc.getTransceivers().forEach((transceiver) => {
-        this.pc.removeTrack(transceiver.sender);
-        transceiver.sender.track?.stop();
-        transceiver.sender.setStreams();
-        transceiver.stop();
+        if(transceiver) {
+          if(transceiver.sender && transceiver.sender.track)
+            transceiver.sender.track.stop();
+          this.pc.removeTrack(transceiver.sender);
+          transceiver.stop();
+        }
       });
       this.pc.close()
       this.removeAllListeners()
