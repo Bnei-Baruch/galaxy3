@@ -7,6 +7,7 @@ import AdminRootMqtt from "./AdminRootMqtt";
 import MonitorApp from "./components/MonitorApp";
 import logo from "./KL_Tree_128.png";
 import mqtt from "../../shared/mqtt";
+import log from "loglevel";
 
 class AdminApp extends Component {
   state = {
@@ -50,7 +51,7 @@ class AdminApp extends Component {
 
   initMQTT = (user) => {
     mqtt.init(user, (data) => {
-      console.log("[Admin] mqtt init: ", data);
+      log.info("[Admin] mqtt init: ", data);
       mqtt.join("galaxy/users/broadcast");
       mqtt.join("galaxy/users/" + user.id);
       mqtt.watch(() => {});
