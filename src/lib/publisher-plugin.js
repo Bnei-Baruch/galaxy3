@@ -333,7 +333,7 @@ export class PublisherPlugin extends EventEmitter {
         this.pc.removeTrack(transceiver.sender);
         transceiver.sender.track?.stop();
         transceiver.sender.setStreams();
-        transceiver.stop();
+        transceiver?.stop();
       });
       this.pc.close()
       this.removeAllListeners()
