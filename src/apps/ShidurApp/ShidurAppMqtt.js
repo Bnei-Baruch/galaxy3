@@ -114,7 +114,7 @@ class ShidurAppMqtt extends Component {
       });
       mqtt.join("galaxy/service/#");
       mqtt.join("galaxy/users/broadcast");
-      if(isServiceID(user.id))
+      if(isServiceID(user))
         mqtt.send(JSON.stringify({type: "event", [user.role]: true}), true, "galaxy/service/" + user.role);
     });
 
