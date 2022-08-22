@@ -846,6 +846,7 @@ class VirtualHttpClient extends Component {
         setTimeout(() => {
           mqtt.join("galaxy/room/" + msg["room"]);
           mqtt.join("galaxy/room/" + msg["room"] + "/chat", true);
+          if(this.state.isGroup) this.setBitrate(600000)
         }, 3000);
 
         const {
@@ -902,6 +903,7 @@ class VirtualHttpClient extends Component {
             extra: {
               ...(this.state.user.extra || {}),
               streams: msg.streams,
+              isGroup: this.state.isGroup,
             },
           };
           this.setState({user});

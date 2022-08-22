@@ -532,7 +532,7 @@ class VirtualMqttClient extends Component {
   };
 
   joinRoom = (reconnect, videoroom, user) => {
-    let {selected_room, tested, media, cammuted, janus} = this.state;
+    let {selected_room, tested, media, cammuted, janus, isGroup} = this.state;
     const {
       video: {device},
     } = media;
@@ -570,6 +570,7 @@ class VirtualMqttClient extends Component {
           .publish(video.stream, audio.stream)
           .then((json) => {
             user.extra.streams = json.streams;
+            user.extra.isGroup = this.state.isGroup;
 
             this.setState({user, myid: id, mypvtid: private_id, room, delay: false, wipSettings: false});
             updateSentryUser(user);
@@ -578,6 +579,7 @@ class VirtualMqttClient extends Component {
 
             mqtt.join("galaxy/room/" + selected_room);
             mqtt.join("galaxy/room/" + selected_room + "/chat", true);
+            if(isGroup) videoroom.setBitrate(600000);
 
             log.info("[client] Pulbishers list: ", data.publishers);
 
