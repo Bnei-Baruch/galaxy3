@@ -657,6 +657,11 @@ class VirtualHttpClient extends Component {
     });
   };
 
+  setBitrate = (bitrate) => {
+    this.setState({bitrate});
+    this.state.videoroom.send({"message": { "request": "configure", "bitrate": bitrate }});
+  };
+
   exitRoom = (reconnect, callback, error) => {
     this.setState({delay: true});
 
