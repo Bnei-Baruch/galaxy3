@@ -1,6 +1,6 @@
 import React from "react";
-import {Public} from "@material-ui/icons";
-import {Tooltip, IconButton} from "@material-ui/core";
+import {Public} from "@mui/icons-material";
+import {Tooltip, IconButton} from "@mui/material";
 import {useTranslation} from "react-i18next";
 
 const KliOlamiToggle = (props) => {
@@ -16,6 +16,7 @@ const KliOlamiToggle = (props) => {
           aria-label={isOn ? t("oldClient.closeKliOlami") : t("oldClient.openKliOlami")}
           disabled={disabled}
           onClick={() => handleAction()}
+          size="large"
         >
           {isOn ? <Public /> : <Public color="secondary" />}
         </IconButton>

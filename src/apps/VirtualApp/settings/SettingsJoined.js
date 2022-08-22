@@ -1,28 +1,30 @@
-import React, {memo, useContext, useEffect, useState} from "react";
+import React, {useContext, useEffect, useState} from "react";
 import {useTranslation} from "react-i18next";
 
 import {
-  Modal,
-  Grid,
-  Divider,
-  Typography,
-  IconButton,
-  TextField,
-  Tooltip,
-  FormControlLabel,
-  Checkbox,
   Box,
   Button,
-  ListItem, MenuItem,
-} from "@material-ui/core";
-import {AccountCircle, ArrowBackIos, Close, Computer, Mic, Videocam} from "@material-ui/icons";
-import {makeStyles, useTheme} from "@material-ui/core/styles";
+  Checkbox,
+  Divider,
+  FormControlLabel,
+  Grid,
+  IconButton,
+  ListItem,
+  ListItemButton,
+  MenuItem,
+  Modal,
+  TextField,
+  Tooltip,
+  Typography,
+} from "@mui/material";
+import {AccountCircle, ArrowBackIos, Close, Computer, Mic, Videocam} from "@mui/icons-material";
+import {makeStyles} from "tss-react/mui";
+import {useTheme} from "@mui/material/styles";
 
 import {audiog_options2, subtitle_options, vsettings_list} from "../../../shared/consts";
 import MyMedia from "./MyMedia";
 import CheckMySelf from "./CheckMySelf";
 import {SelectViewLanguage} from "../components/SelectViewLanguage";
-import green from "@material-ui/core/colors/green";
 import {ThemeContext} from "../components/ThemeSwitcher/ThemeSwitcher";
 import {SUBTITLE_LANG, WQ_LANG} from "../subtitles/SubtitlesContainer";
 
@@ -35,7 +37,7 @@ const mapOption = ({text, value}) => {
   );
 };
 
-const useStyles = makeStyles(() => ({
+const useStyles = makeStyles()(() => ({
   content: {
     outline: "none",
   },
@@ -52,23 +54,36 @@ const useStyles = makeStyles(() => ({
     maxWidth: 900,
     margin: "0 auto",
   },
-  backBtn: {
-    background: green[500],
-  },
+  submitRoot: {height: "100%"},
   icon: {fontSize: "2em", marginRight: "0.5rem"},
 }));
 
 const SettingsJoined = (props) => {
-  const classes = useStyles();
+  const {classes} = useStyles();
   const {t} = useTranslation();
-  const {palette: {background: {paper}}} = useTheme();
+  const {
+    palette: {
+      background: {paper},
+    },
+  } = useTheme();
 
   const {isDark, toggleTheme} = useContext(ThemeContext);
 
   const [subtitleWQ, setSubtitleWQ] = useState(localStorage.getItem(WQ_LANG));
   const [subtitleMQTT, setSubtitleMQTT] = useState(localStorage.getItem(SUBTITLE_LANG));
 
-  const {audio, video, audios = 2, isOpen = false, closeModal, userDisplay, audioModeChange, isAudioMode, setAudioDevice, audioDevice = audio.devices[0]?.deviceId} = props;
+  const {
+    audio,
+    video,
+    audios = 2,
+    isOpen = false,
+    closeModal,
+    userDisplay,
+    audioModeChange,
+    isAudioMode,
+    setAudioDevice,
+    audioDevice = audio.devices[0]?.deviceId,
+  } = props;
 
   const audio_device = audio?.device || audio?.devices[0]?.deviceId;
   const audioLabel = audio?.devices.find((d) => d.deviceId === audio_device)?.label;
@@ -97,7 +112,7 @@ const SettingsJoined = (props) => {
         </Typography>
       </Grid>
       <Grid item xs={1}>
-        <IconButton onClick={closeModal} color="textPrimary">
+        <IconButton onClick={closeModal} color="primary" size="large">
           <Close />
         </IconButton>
       </Grid>
@@ -120,7 +135,7 @@ const SettingsJoined = (props) => {
             variant="outlined"
             value={userDisplay}
             disabled
-            color="textPrimary"
+            color="primary"
           />
         </Grid>
         <Grid item={true} xs={4}>
@@ -152,9 +167,9 @@ const SettingsJoined = (props) => {
             select
           >
             {subtitle_options.map(({key, text}) => (
-              <ListItem key={key} value={key} button>
+              <ListItemButton key={key} value={key}>
                 <Typography>{text}</Typography>
-              </ListItem>
+              </ListItemButton>
             ))}
           </TextField>
         </Grid>
@@ -171,9 +186,9 @@ const SettingsJoined = (props) => {
             select
           >
             {subtitle_options.map(({key, text}) => (
-              <ListItem key={key} value={key} button>
+              <ListItemButton key={key} value={key}>
                 <Typography>{text}</Typography>
-              </ListItem>
+              </ListItemButton>
             ))}
           </TextField>
         </Grid>
@@ -200,7 +215,7 @@ const SettingsJoined = (props) => {
                   disabled={true}
                   variant="outlined"
                   value={videoLabel}
-                  color="textPrimary"
+                  color="primary"
                 />
               </Tooltip>
             </Grid>
@@ -212,7 +227,7 @@ const SettingsJoined = (props) => {
                   variant="outlined"
                   disabled={true}
                   value={settingsLabel}
-                  color="textPrimary"
+                  color="primary"
                 />
               </Tooltip>
             </Grid>
@@ -256,11 +271,11 @@ const SettingsJoined = (props) => {
     return (
       <Grid container spacing={4} className={classes.content}>
         {renderHeader()}
-        <Divider variant="fullWidth" style={{width: "100%"}} />
+        <Divider variant="fullWidth" sx={{width: "100%", marginTop: "2em"}} />
         {renderUserSettings()}
-        <Divider variant="fullWidth" style={{width: "100%"}} />
+        <Divider variant="fullWidth" sx={{width: "100%", marginTop: "2em"}} />
         {renderSubtitleSettings()}
-        <Divider variant="fullWidth" style={{width: "100%"}} />
+        <Divider variant="fullWidth" sx={{width: "100%", marginTop: "2em"}} />
         {renderMediaSettings()}
 
         <Grid item xs={3}>
@@ -276,7 +291,13 @@ const SettingsJoined = (props) => {
           />
         </Grid>
         <Grid item xs={12}>
-          <Button variant="contained" color="primary" size="large" onClick={closeModal} className={classes.backBtn}>
+          <Button
+            variant="contained"
+            color="success"
+            size="large"
+            onClick={closeModal}
+            classes={{root: classes.submitRoot}}
+          >
             <ArrowBackIos />
             {t("settings.backToTen")}
           </Button>
@@ -286,17 +307,10 @@ const SettingsJoined = (props) => {
   };
 
   return (
-    <Modal
-      open={isOpen}
-      disableBackdropClick={true}
-      BackdropProps={{
-        style: {backgroundColor: paper},
-      }}
-      className={classes.modal}
-    >
+    <Modal open={isOpen} componentsProps={{backdrop: {style: {backgroundColor: paper}}}} className={classes.modal}>
       <Box className={classes.paper}>{renderContent()}</Box>
     </Modal>
   );
 };
 
-export default SettingsJoined
+export default SettingsJoined;

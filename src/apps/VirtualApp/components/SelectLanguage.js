@@ -1,8 +1,8 @@
 import React, {useState} from "react";
 import {useTranslation} from "react-i18next";
 
-import {ListItemIcon, ListItemText, Divider, Typography, TextField, ListItem} from "@material-ui/core";
-import {CenterFocusWeak, Group} from "@material-ui/icons";
+import {ListItemIcon, ListItemText, Divider, Typography, TextField, ListItem, ListItemButton} from "@mui/material";
+import {CenterFocusWeak, Group} from "@mui/icons-material";
 
 import {audiog_options2} from "../../../shared/consts";
 
@@ -31,9 +31,9 @@ export const SelectLanguage = ({setAudio}) => {
   const renderDivider = (key) => <Divider key={`divider_${key}`} />;
 
   const renderOption = (op) => (
-    <ListItem key={op.key} value={op} button>
+    <ListItemButton key={op.key} value={op}>
       <Typography>{t(op.text)}</Typography>
-    </ListItem>
+    </ListItemButton>
   );
 
   const handleSelectLang = (value, eng_text) => {
