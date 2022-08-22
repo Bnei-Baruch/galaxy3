@@ -2,8 +2,8 @@ import React, {Component} from "react";
 import NewWindow from "@hinaser/react-new-window";
 import {isFullScreen, toggleFullScreen} from "../FullScreenHelper";
 import {Fullscreen} from "../buttons";
-import {Close, OpenInNew} from "@material-ui/icons";
-import IconButton from "@material-ui/core/IconButton";
+import {Close, OpenInNew} from "@mui/icons-material";
+import IconButton from "@mui/material/IconButton";
 
 class QuadStream extends Component {
   constructor(props) {
@@ -17,12 +17,12 @@ class QuadStream extends Component {
   }
 
   componentDidMount() {
-    if(!this.state.stream) this.props.JanusStream.initQuadStream(stream => this.setState({stream}))
+    if (!this.state.stream) this.props.JanusStream.initQuadStream((stream) => this.setState({stream}));
   }
 
   componentWillUnmount() {
     if (this.videoWrapper) {
-      this.props.JanusStream.detachQuadStream()
+      this.props.JanusStream.detachQuadStream();
       this.videoWrapper.ownerDocument.defaultView.removeEventListener("resize", this.handleFullScreenChange);
     }
     this.props.toggleAttach(true);
@@ -80,7 +80,7 @@ class QuadStream extends Component {
           <div className={"activities"}>
             <div className="controls">
               <div className="controls__top">
-                <IconButton onClick={close}>
+                <IconButton onClick={close} size="large">
                   <Close style={{color: "white", fontWeight: "bold"}} />
                 </IconButton>
               </div>
@@ -88,7 +88,7 @@ class QuadStream extends Component {
                 <div className="controls__spacer"></div>
                 <Fullscreen isOn={fullScreen} action={this.handleFullScreen.bind(this)} color={"white"} />
                 {!attached ? null : (
-                  <IconButton onClick={() => toggleAttach()}>
+                  <IconButton onClick={() => toggleAttach()} size="large">
                     <OpenInNew style={{color: "white", fontWeight: "bold"}} />
                   </IconButton>
                 )}

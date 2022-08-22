@@ -1,5 +1,5 @@
 import React, {useRef} from "react";
-import {ButtonGroup, Tooltip, IconButton, Popover, SvgIcon} from "@material-ui/core";
+import {ButtonGroup, Tooltip, IconButton, Popover, SvgIcon} from "@mui/material";
 
 function EqualIcon() {
   return (
@@ -49,7 +49,7 @@ const Layout = (props) => {
 
   const getButtonByName = (name) => {
     return (
-      <IconButton onClick={() => handleMenuItemClick(name)}>
+      <IconButton onClick={() => handleMenuItemClick(name)} size="large">
         {name === "double" && <DoubleIcon />}
         {name === "split" && <SplitIcon />}
         {name === "equal" && <EqualIcon />}
@@ -61,7 +61,13 @@ const Layout = (props) => {
     <div>
       <Tooltip title={t("oldClient.layout")} disableTouchListener={true}>
         <span>
-          <IconButton aria-label={t("oldClient.layout")} disabled={disabled} onClick={handleToggle} ref={anchorRef}>
+          <IconButton
+            aria-label={t("oldClient.layout")}
+            disabled={disabled}
+            onClick={handleToggle}
+            ref={anchorRef}
+            size="large"
+          >
             {active === "double" && <DoubleIcon />}
             {active === "split" && <SplitIcon />}
             {active === "equal" && <EqualIcon />}
@@ -82,7 +88,7 @@ const Layout = (props) => {
         }}
       >
         <ButtonGroup>
-          <ButtonGroup variant="contained" color="default">
+          <ButtonGroup variant="contained" color="secondary">
             {getButtonByName("double")}
             {getButtonByName("split")}
             {getButtonByName("equal")}

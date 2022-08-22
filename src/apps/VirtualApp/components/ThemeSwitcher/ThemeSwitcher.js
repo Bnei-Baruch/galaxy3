@@ -1,5 +1,5 @@
 import React, {useState} from "react";
-import {ThemeProvider} from "@material-ui/core/styles";
+import {ThemeProvider, StyledEngineProvider} from "@mui/material/styles";
 
 import dark from "./dark";
 import light from "./light";
@@ -17,7 +17,9 @@ const ThemeSwitcher = ({children}) => {
 
   return (
     <ThemeContext.Provider value={{isDark: name === "dark", toggleTheme}}>
-      <ThemeProvider theme={name === "dark" ? dark : light}>{children}</ThemeProvider>
+      <StyledEngineProvider injectFirst>
+        <ThemeProvider theme={name === "dark" ? dark : light}>{children}</ThemeProvider>
+      </StyledEngineProvider>
     </ThemeContext.Provider>
   );
 };

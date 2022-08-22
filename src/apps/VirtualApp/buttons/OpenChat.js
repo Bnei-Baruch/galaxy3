@@ -1,10 +1,10 @@
 import React from "react";
-import {makeStyles} from "@material-ui/core/styles";
-import {ForumRounded} from "@material-ui/icons";
-import ButtonBase from "@material-ui/core/ButtonBase";
-import Badge from "@material-ui/core/Badge";
+import {makeStyles} from "tss-react/mui";
+import {ForumRounded} from "@mui/icons-material";
+import ButtonBase from "@mui/material/ButtonBase";
+import Badge from "@mui/material/Badge";
 
-const useStyles = makeStyles({
+const useStyles = makeStyles()({
   label: {
     width: "100%",
     display: "block",
@@ -28,7 +28,7 @@ const useStyles = makeStyles({
 const OpenChat = (props) => {
   const {action, isOn, disabled, t, counter} = props;
 
-  const classes = useStyles();
+  const {classes} = useStyles();
 
   const handleAction = () => action(isOn);
   const renderButton = () => (

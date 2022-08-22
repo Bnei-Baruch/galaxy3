@@ -1,11 +1,11 @@
 import React, {useEffect, useState} from "react";
 import {Message} from "semantic-ui-react";
 import {useTranslation} from "react-i18next";
-import {Box, Button, Typography, TextField} from "@material-ui/core";
-import {makeStyles} from "@material-ui/core/styles";
-import {grey, blue, green} from "@material-ui/core/colors";
+import {Box, Button, Typography, TextField} from "@mui/material";
+import {makeStyles} from "tss-react/mui";
+import {grey, blue, green} from "@mui/material/colors";
 
-const useStyles = makeStyles({
+const useStyles = makeStyles()({
   disabled: {
     opacity: 0.8,
     background: `${green[500]} !important`,
@@ -21,7 +21,7 @@ const SendQuestion = ({questions, send, user = {}}) => {
   const [galaxyRoom, setGalaxyRoom] = useState();
   const [content, setContent] = useState();
   const {t} = useTranslation();
-  const classes = useStyles();
+  const {classes} = useStyles();
 
   useEffect(() => {
     !name && setName(user.name);

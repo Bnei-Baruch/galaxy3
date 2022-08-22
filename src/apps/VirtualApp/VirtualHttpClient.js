@@ -3,7 +3,15 @@ import {Janus} from "../../lib/janus";
 import classNames from "classnames";
 import {isMobile} from "react-device-detect";
 import {Icon, Popup} from "semantic-ui-react";
-import {checkNotification, geoInfo, getDateString, initJanus, notifyMe, sendUserState, testMic, updateGxyUser} from "../../shared/tools";
+import {
+  checkNotification,
+  geoInfo,
+  getDateString,
+  notifyMe,
+  sendUserState,
+  testMic,
+  updateGxyUser,
+} from "../../shared/tools";
 import "./VirtualClient.scss";
 import "./VideoConteiner.scss";
 import "./CustomIcons.scss";
@@ -14,7 +22,13 @@ import {GEO_IP_INFO, APP_STUN_SRV_STR, APP_JANUS_SRV_STR, PAY_USER_FEE} from "..
 import platform from "platform";
 import {TopMenu} from "./components/TopMenu";
 import {withTranslation} from "react-i18next";
-import {LINK_STATE_GOOD, LINK_STATE_INIT, LINK_STATE_MEDIUM, LINK_STATE_WEAK, MonitoringData,} from "../../shared/MonitoringData";
+import {
+  LINK_STATE_GOOD,
+  LINK_STATE_INIT,
+  LINK_STATE_MEDIUM,
+  LINK_STATE_WEAK,
+  MonitoringData,
+} from "../../shared/MonitoringData";
 import api from "../../shared/Api";
 import VirtualStreaming from "./VirtualStreaming";
 import VirtualStreamingJanus from "../../shared/VirtualStreamingJanus";
@@ -24,9 +38,9 @@ import {updateSentryUser} from "../../shared/sentry";
 import GxyJanus from "../../shared/janus-utils";
 import ConfigStore from "../../shared/ConfigStore";
 import {toggleFullScreen, isFullScreen} from "./FullScreenHelper";
-import {AppBar, Badge, Box, Button as ButtonMD, ButtonGroup, Grid, IconButton} from "@material-ui/core";
-import {ChevronLeft, ChevronRight, PlayCircleOutline} from "@material-ui/icons";
-import {grey} from "@material-ui/core/colors";
+import {AppBar, Badge, Box, Button as ButtonMD, ButtonGroup, Grid, IconButton} from "@mui/material";
+import {ChevronLeft, ChevronRight, PlayCircleOutline} from "@mui/icons-material";
+import {grey} from "@mui/material/colors";
 import {AskQuestion, AudioMode, CloseBroadcast, Layout, Mute, MuteVideo, Vote, Fullscreen} from "./buttons";
 import Settings from "./settings/Settings";
 import SettingsJoined from "./settings/SettingsJoined";
@@ -37,9 +51,9 @@ import {RegistrationModals} from "./components/RegistrationModals";
 import {getUserRole, userRolesEnum} from "../../shared/enums";
 import KliOlamiStream from "./components/KliOlamiStream";
 import KliOlamiToggle from "./buttons/KliOlamiToggle";
-import Toolbar from "@material-ui/core/Toolbar";
-import Typography from "@material-ui/core/Typography";
-import {withTheme} from "@material-ui/core/styles";
+import Toolbar from "@mui/material/Toolbar";
+import Typography from "@mui/material/Typography";
+import withTheme from "@mui/styles/withTheme";
 import ThemeSwitcher from "./components/ThemeSwitcher/ThemeSwitcher";
 import mqtt from "../../shared/mqtt";
 import devices from "../../lib/devices";
@@ -130,8 +144,18 @@ class VirtualHttpClient extends Component {
   }
 
   componentDidUpdate(prevProps, prevState) {
-    const {shidurForGuestReady, shidur, sourceLoading, room, virtualStreamingJanus,
-      videoroom, localVideoTrack, localAudioTrack, user, monitoringData} = this.state;
+    const {
+      shidurForGuestReady,
+      shidur,
+      sourceLoading,
+      room,
+      virtualStreamingJanus,
+      videoroom,
+      localVideoTrack,
+      localAudioTrack,
+      user,
+      monitoringData,
+    } = this.state;
 
     if (shidur && !prevState.shidur && !sourceLoading && room) {
       virtualStreamingJanus.unmuteAudioElement();
@@ -154,8 +178,11 @@ class VirtualHttpClient extends Component {
       virtualStreamingJanus.unmuteAudioElement();
     }
 
-    if (videoroom !== prevState.videoroom || localVideoTrack !== prevState.localVideoTrack ||
-      localAudioTrack !== prevState.localAudioTrack || JSON.stringify(user) !== JSON.stringify(prevState.user)
+    if (
+      videoroom !== prevState.videoroom ||
+      localVideoTrack !== prevState.localVideoTrack ||
+      localAudioTrack !== prevState.localAudioTrack ||
+      JSON.stringify(user) !== JSON.stringify(prevState.user)
     ) {
       monitoringData.setConnection(videoroom, localAudioTrack, localVideoTrack, user, virtualStreamingJanus);
       monitoringData.setOnStatus((connectionStatus) => {
@@ -270,7 +297,6 @@ class VirtualHttpClient extends Component {
   };
 
   initMQTT = (user) => {
-
     mqtt.init(user, (reconnected, error) => {
       if (error) {
         console.log("MQTT disconnected");
@@ -378,67 +404,69 @@ class VirtualHttpClient extends Component {
   initDevices = () => {
     const {t} = this.props;
 
-    devices.init(media => {
-      setTimeout(() => {
-        if(media.audio.device) {
-          this.setAudioDevice(media.audio.device)
-        } else {
-          log.warn("[client] No left audio devices")
-          //FIXME: remove it from pc?
+    devices
+      .init((media) => {
+        setTimeout(() => {
+          if (media.audio.device) {
+            this.setAudioDevice(media.audio.device);
+          } else {
+            log.warn("[client] No left audio devices");
+            //FIXME: remove it from pc?
+          }
+          if (!media.video.device) {
+            log.warn("[client] No left video devices");
+            //FIXME: remove it from pc?
+          }
+        }, 1000);
+      })
+      .then((data) => {
+        log.info("[client] init devices: ", data);
+        const {audio, video} = data;
+        if (audio.error && video.error) {
+          alert(t("oldClient.noInputDevices"));
+          this.setState({cammuted: true});
+        } else if (audio.error) {
+          alert("audio device not detected");
+        } else if (video.error) {
+          alert(t("oldClient.videoNotDetected"));
+          this.setState({cammuted: true});
         }
-        if(!media.video.device) {
-          log.warn("[client] No left video devices")
-          //FIXME: remove it from pc?
+
+        if (video.stream) {
+          let myvideo = this.refs.localVideo;
+          if (myvideo) myvideo.srcObject = video.stream;
         }
-      }, 1000)
-    }).then(data => {
-      log.info("[client] init devices: ", data);
-      const {audio, video} = data;
-      if (audio.error && video.error) {
-        alert(t("oldClient.noInputDevices"));
-        this.setState({cammuted: true});
-      } else if (audio.error) {
-        alert("audio device not detected");
-      } else if (video.error) {
-        alert(t("oldClient.videoNotDetected"));
-        this.setState({cammuted: true});
-      }
 
-      if (video.stream) {
-        let myvideo = this.refs.localVideo;
-        if (myvideo) myvideo.srcObject = video.stream;
-      }
-
-      this.setState({media: data})
-    })
+        this.setState({media: data});
+      });
   };
 
   setVideoSize = (setting) => {
-    devices.setVideoSize(setting).then(media => {
-      if(media.video.stream) {
+    devices.setVideoSize(setting).then((media) => {
+      if (media.video.stream) {
         let myvideo = this.refs.localVideo;
         myvideo.srcObject = media.video.stream;
         this.setState({media});
       }
-    })
+    });
   };
 
   setVideoDevice = (device) => {
-    return devices.setVideoDevice(device).then(media => {
-      if(media.video.device) {
+    return devices.setVideoDevice(device).then((media) => {
+      if (media.video.device) {
         let myvideo = this.refs.localVideo;
         myvideo.srcObject = media.video.stream;
         this.setState({media});
       }
-    })
+    });
   };
 
   setAudioDevice = (device, cam_mute) => {
-    devices.setAudioDevice(device, cam_mute).then(media => {
-      if(media.audio.device) {
+    devices.setAudioDevice(device, cam_mute).then((media) => {
+      if (media.audio.device) {
         this.setState({media});
       }
-    })
+    });
   };
 
   selfTest = () => {
@@ -481,7 +509,9 @@ class VirtualHttpClient extends Component {
   };
 
   iceState = () => {
-    let {user: {system}} = this.state;
+    let {
+      user: {system},
+    } = this.state;
     //let browser = platform.parse(system);
     let count = 0;
     let chk = setInterval(() => {
@@ -632,7 +662,9 @@ class VirtualHttpClient extends Component {
 
   joinRoom = (reconnect, videoroom, user) => {
     let {selected_room, tested, media, cammuted} = this.state;
-    const {video: {device}} = media;
+    const {
+      video: {device},
+    } = media;
     user.camera = !!device && cammuted === false;
     user.self_test = tested;
     user.sound_test = reconnect ? JSON.parse(localStorage.getItem("sound_test")) : false;
@@ -724,7 +756,10 @@ class VirtualHttpClient extends Component {
   };
 
   publishOwnFeed = (useVideo, useAudio) => {
-    const {videoroom, media: {video, audio}} = this.state;
+    const {
+      videoroom,
+      media: {video, audio},
+    } = this.state;
     const offer = {audioRecv: false, videoRecv: false, audioSend: useAudio, videoSend: useVideo, data: false};
 
     if (useVideo) {
@@ -806,7 +841,10 @@ class VirtualHttpClient extends Component {
           mqtt.join("galaxy/room/" + msg["room"] + "/chat", true);
         }, 3000);
 
-        const {media: {audio, video}, cammuted,} = this.state;
+        const {
+          media: {audio, video},
+          cammuted,
+        } = this.state;
         this.publishOwnFeed(!!video.device && !cammuted, !!audio.device);
 
         // Any new feed to attach to?
@@ -1070,7 +1108,7 @@ class VirtualHttpClient extends Component {
       // FIXME: Can this be done by notifying only the joined feed?
       setTimeout(() => {
         if (this.state.question || this.state.cammuted) {
-          sendUserState(this.state.user)
+          sendUserState(this.state.user);
         }
       }, 3000);
     }
@@ -1288,7 +1326,9 @@ class VirtualHttpClient extends Component {
 
   camMute = (cammuted) => {
     const {videoroom, media} = this.state;
-    const {video: {setting, device},} = media;
+    const {
+      video: {setting, device},
+    } = media;
     const {width, height, ideal} = setting;
 
     const user = Object.assign({}, this.state.user);
@@ -1345,7 +1385,11 @@ class VirtualHttpClient extends Component {
   };
 
   stopLocalMedia = () => {
-    const {media: {video, audio}, cammuted, videoroom} = this.state;
+    const {
+      media: {video, audio},
+      cammuted,
+      videoroom,
+    } = this.state;
     if (cammuted) return;
     console.log("Stop local video stream");
     video?.stream?.getTracks().forEach((t) => t.stop());
@@ -1358,7 +1402,10 @@ class VirtualHttpClient extends Component {
   };
 
   startLocalMedia = () => {
-    const {media: {video: {devices, device} = {}}, cammuted,} = this.state;
+    const {
+      media: {video: {devices, device} = {}},
+      cammuted,
+    } = this.state;
     if (!cammuted) return;
     console.log("Bind local video stream");
     const deviceId = device || devices?.[0]?.deviceId;
@@ -1371,14 +1418,14 @@ class VirtualHttpClient extends Component {
 
   micMute = () => {
     const {videoroom, muted} = this.state;
-    if(muted) this.micVolume()
+    if (muted) this.micVolume();
     muted ? videoroom.unmuteAudio() : videoroom.muteAudio();
-    muted ? devices.audio.context.resume() : devices.audio.context.suspend()
+    muted ? devices.audio.context.resume() : devices.audio.context.suspend();
     this.setState({muted: !muted});
   };
 
   micVolume = () => {
-    const c = this.refs.canvas1
+    const c = this.refs.canvas1;
     let cc = c.getContext("2d");
     let gradient = cc.createLinearGradient(0, 0, 0, 55);
     gradient.addColorStop(1, "green");
@@ -1390,8 +1437,8 @@ class VirtualHttpClient extends Component {
       cc.clearRect(0, 0, c.width, c.height);
       cc.fillStyle = gradient;
       cc.fillRect(0, c.height - volume * 300, c.width, c.height);
-    }
-  }
+    };
+  };
 
   otherCamsMuteToggle = () => {
     const {feeds, muteOtherCams} = this.state;
@@ -1496,7 +1543,7 @@ class VirtualHttpClient extends Component {
               on="hover"
               trigger={<div className="title-name">{user ? user.username : ""}</div>}
             />
-            <Icon style={{marginLeft: "0.3rem"}} name="signal" size="small" color={this.connectionColor()}/>
+            <Icon style={{marginLeft: "0.3rem"}} name="signal" size="small" color={this.connectionColor()} />
           </div>
         </div>
         <svg
@@ -1549,7 +1596,7 @@ class VirtualHttpClient extends Component {
             ""
           )}
           <div className="video__title">
-            {!talking ? <Icon name="microphone slash" size="small" color="red"/> : ""}
+            {!talking ? <Icon name="microphone slash" size="small" color="red" /> : ""}
             <Popup
               content={display}
               mouseEnterDelay={200}
@@ -1614,26 +1661,10 @@ class VirtualHttpClient extends Component {
     const {video, audio} = media;
 
     return (
-      <AppBar
-        // position="sticky"
-        position="static"
-        color="default"
-
-        // style={{
-        // top: 'auto',
-        // bottom: 0,
-        // fontSize: '0.7rem',
-        // backgroundColor: 'black'
-        // }}
-      >
+      <AppBar position="static" color="default">
         <Toolbar className="bottom-toolbar" variant="dense">
-          <ButtonGroup
-            variant="contained"
-            // style={{ color: grey[50], marginLeft: '2em' }}
-            className={classNames("bottom-toolbar__item")}
-            disableElevation
-          >
-            <Mute t={t} action={this.micMute.bind(this)} disabled={!localAudioTrack} isOn={muted} ref="canvas1"/>
+          <ButtonGroup variant="contained" className={classNames("bottom-toolbar__item")} disableElevation>
+            <Mute t={t} action={this.micMute.bind(this)} disabled={!localAudioTrack} isOn={muted} ref="canvas1" />
             <MuteVideo
               t={t}
               action={this.camMute.bind(this)}
@@ -1645,8 +1676,8 @@ class VirtualHttpClient extends Component {
           {/* ~~~~~~~~~~~ */}
 
           <ButtonGroup className={classNames("bottom-toolbar__item")} variant="contained" disableElevation>
-            <Fullscreen t={t} isOn={isFullScreen()} action={toggleFullScreen}/>
-            <KliOlamiToggle isOn={isKliOlamiShown} action={this.toggleKliOlami}/>
+            <Fullscreen t={t} isOn={isFullScreen()} action={toggleFullScreen} />
+            <KliOlamiToggle isOn={isKliOlamiShown} action={this.toggleKliOlami} />
             <CloseBroadcast
               t={t}
               isOn={shidur}
@@ -1660,7 +1691,7 @@ class VirtualHttpClient extends Component {
               disabled={room === "" || !shidur || sourceLoading || !attachedSource}
               iconDisabled={sourceLoading}
             />
-            <AudioMode t={t} action={this.otherCamsMuteToggle.bind(this)} isOn={muteOtherCams}/>
+            <AudioMode t={t} action={this.otherCamsMuteToggle.bind(this)} isOn={muteOtherCams} />
           </ButtonGroup>
 
           <ButtonGroup
@@ -1675,13 +1706,13 @@ class VirtualHttpClient extends Component {
               disabled={!mqttOn || premodStatus || !audio.device || !localAudioTrack || delay || otherFeedHasQuestion}
               action={this.handleQuestion.bind(this)}
             />
-            <Vote t={t} id={user?.id} disabled={!user || !user.id || room === ""}/>
+            <Vote t={t} id={user?.id} disabled={!user || !user.id || room === ""} />
           </ButtonGroup>
 
           <ButtonMD
             onClick={() => this.exitRoom(false)}
             variant="contained"
-            color="secondary"
+            color="error"
             className={classNames("bottom-toolbar__item")}
             disableElevation
           >
@@ -1740,7 +1771,7 @@ class VirtualHttpClient extends Component {
     );
 
     if (rightAsideName === "question") {
-      content = <SendQuestionContainer user={user}/>;
+      content = <SendQuestionContainer user={user} />;
     }
 
     return (
@@ -1783,22 +1814,24 @@ class VirtualHttpClient extends Component {
             i18n={i18n}
           />
           <ButtonMD
-            color="primary"
+            color="info"
             variant="contained"
             onClick={() => window.open(`${PAY_USER_FEE}` + i18n.language, "_blank")}
             className="top-toolbar__item"
             disableElevation
+            size="small"
           >
             {t("oldClient.myProfile")}
           </ButtonMD>
           <ButtonGroup
             variant="outlined"
+            color="primary"
+            size="small"
             disableElevation
             className={classNames("top-toolbar__item", "top-toolbar__toggle")}
           >
-            <Badge color="secondary" badgeContent={asideMsgCounter.drawing} showZero={false}>
+            <Badge color="error" badgeContent={asideMsgCounter.drawing} showZero={false} overlap="circular">
               <ButtonMD
-                color="default"
                 variant={leftAsideName === "drawing" ? "contained" : "outlined"}
                 onClick={() => this.toggleLeftAside("drawing")}
                 disableElevation
@@ -1834,16 +1867,22 @@ class VirtualHttpClient extends Component {
           </Typography>
 
           {/* Debug buttons to locally emulate as if "ON" is turned on. */}
-          {isDeb ? <ButtonMD onClick={() => this.state.virtualStreamingJanus.streamGalaxy(true, 4, "")}>ON</ButtonMD> : null}
-          {isDeb ? <ButtonMD onClick={() => this.state.virtualStreamingJanus.streamGalaxy(false, 4, "")}>OFF</ButtonMD> : null}
+          {isDeb ? (
+            <ButtonMD onClick={() => this.state.virtualStreamingJanus.streamGalaxy(true, 4, "")}>ON</ButtonMD>
+          ) : null}
+          {isDeb ? (
+            <ButtonMD onClick={() => this.state.virtualStreamingJanus.streamGalaxy(false, 4, "")}>OFF</ButtonMD>
+          ) : null}
 
           {/* ---------- */}
           <ButtonGroup
             variant="outlined"
+            color="primary"
+            size="small"
             disableElevation
             className={classNames("top-toolbar__item", "top-toolbar__toggle")}
           >
-            <Badge color="secondary" badgeContent={asideMsgCounter.chat} showZero={false}>
+            <Badge badgeContent={asideMsgCounter.chat} showZero={false} color="error" overlap="circular">
               <ButtonMD
                 variant={rightAsideName === "chat" ? "contained" : "outlined"}
                 onClick={() => {
@@ -1863,13 +1902,16 @@ class VirtualHttpClient extends Component {
             </ButtonMD>
           </ButtonGroup>
 
-          <Support/>
+          <Support />
           <ButtonMD
             component={"a"}
             href={`https://www.kab1.com/${isHe ? "" : i18n.language}`}
             className={"top-toolbar__item donate"}
             dir={isHe ? "rtl" : "ltr"}
             target="_blank"
+            color="primary"
+            variant="outlined"
+            size="small"
           >
             {t("oldClient.donate")}
             <span>❤</span>
@@ -1889,7 +1931,7 @@ class VirtualHttpClient extends Component {
 
     let content;
     if (leftAsideName === "material") {
-      content = <HomerLimud/>;
+      content = <HomerLimud />;
     } else if (leftAsideName === "drawing") {
       content = (
         <iframe
@@ -1911,11 +1953,11 @@ class VirtualHttpClient extends Component {
           //buttons for resize tab (if want open study materials on browser tab)
           leftAsideName && false ? (
             <ButtonGroup>
-              <IconButton onClick={() => this.handleAsideResize(false)}>
-                <ChevronLeft/>
+              <IconButton onClick={() => this.handleAsideResize(false)} size="large">
+                <ChevronLeft />
               </IconButton>
-              <IconButton onClick={() => this.handleAsideResize(true)} disabled={leftAsideSize > 7}>
-                <ChevronRight/>
+              <IconButton onClick={() => this.handleAsideResize(true)} disabled={leftAsideSize > 7} size="large">
+                <ChevronRight />
               </IconButton>
             </ButtonGroup>
           ) : null
@@ -1967,7 +2009,7 @@ class VirtualHttpClient extends Component {
     return (
       <div className={classNames("vclient", {"vclient--chat-open": chatVisible})}>
         {this.renderTopBar(isDeb)}
-        <RegistrationModals user={user} language={i18n.language} updateUserRole={this.updateUserRole.bind(this)}/>
+        <RegistrationModals user={user} language={i18n.language} updateUserRole={this.updateUserRole.bind(this)} />
 
         <Grid container className="vclient__main">
           {this.renderLeftAside()}
@@ -2064,9 +2106,9 @@ class VirtualHttpClient extends Component {
     //in chrome must be any event for audio autorun https://developers.google.com/web/updates/2017/09/autoplay-policy-changes
     if (!shidurForGuestReady && notApproved) {
       source = (
-        <Grid container justify="center" style={{height: "100%", fontSize: "100em"}}>
-          <IconButton onClick={() => this.setState({shidurForGuestReady: true})}>
-            <PlayCircleOutline style={{fontSize: "20em", color: grey[200]}}/>
+        <Grid container justifyContent="center" style={{height: "100%", fontSize: "100em"}}>
+          <IconButton onClick={() => this.setState({shidurForGuestReady: true})} size="large">
+            <PlayCircleOutline style={{fontSize: "20em", color: grey[200]}} />
           </IconButton>
         </Grid>
       );
@@ -2124,21 +2166,21 @@ class VirtualHttpClient extends Component {
       }
     }
 
-    let login = <LoginPage user={user} checkPermission={this.checkPermission}/>;
+    let login = <LoginPage user={user} checkPermission={this.checkPermission} />;
 
     const isDeb = new URL(window.location.href).searchParams.has("deb");
 
     let content = this.renderNewVersionContent(
-        layout,
-        isDeb,
-        source,
-        rooms_list,
-        otherFeedHasQuestion,
-        adevices_list,
-        vdevices_list,
-        noOfVideos,
-        remoteVideos
-      );
+      layout,
+      isDeb,
+      source,
+      rooms_list,
+      otherFeedHasQuestion,
+      adevices_list,
+      vdevices_list,
+      noOfVideos,
+      remoteVideos
+    );
 
     return (
       <Fragment>
@@ -2200,7 +2242,7 @@ export default class WrapperForThemes extends React.Component {
   render() {
     return (
       <ThemeSwitcher>
-        <WrappedClass/>
+        <WrappedClass />
       </ThemeSwitcher>
     );
   }

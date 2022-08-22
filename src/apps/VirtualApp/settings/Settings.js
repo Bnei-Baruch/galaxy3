@@ -1,28 +1,28 @@
-import React, {memo, useContext, useEffect, useState} from "react";
+import React, {useContext, useEffect} from "react";
 import {useTranslation} from "react-i18next";
 
 import {
+  Box,
   Button,
   Checkbox,
-  FormControlLabel,
-  Modal,
-  Grid,
-  Typography,
-  TextField,
-  MenuItem,
   Divider,
-  Box,
-} from "@material-ui/core";
-import Autocomplete from "@material-ui/lab/Autocomplete";
-import {makeStyles, useTheme} from "@material-ui/core/styles";
-import green from "@material-ui/core/colors/green";
-
+  FormControlLabel,
+  Grid,
+  MenuItem,
+  Modal,
+  TextField,
+  Typography,
+} from "@mui/material";
+import Autocomplete from "@mui/material/Autocomplete";
+import {makeStyles} from "tss-react/mui";
+import {useTheme} from "@mui/material/styles";
 import MyMedia from "./MyMedia";
+
 import CheckMySelf from "./CheckMySelf";
 import {vsettings_list} from "../../../shared/consts";
 import LogoutDropdown from "./LogoutDropdown";
 import {SelectViewLanguage} from "../components/SelectViewLanguage";
-import {AccountCircle, Mic, Videocam} from "@material-ui/icons";
+import {AccountCircle, Mic, Videocam} from "@mui/icons-material";
 import {ThemeContext} from "../components/ThemeSwitcher/ThemeSwitcher";
 import {Support} from "../components/Support";
 
@@ -36,7 +36,7 @@ const mapOption = ({text, value}) => {
   );
 };
 
-const useStyles = makeStyles(() => ({
+const useStyles = makeStyles()(() => ({
   content: {
     outline: "none",
   },
@@ -54,7 +54,6 @@ const useStyles = makeStyles(() => ({
     margin: "0 auto",
   },
   submitRoot: {
-    background: green[500],
     height: "100%",
   },
   submitDisabled: {
@@ -66,12 +65,14 @@ const useStyles = makeStyles(() => ({
 const roomDescriptionById = new Map();
 
 const Settings = (props) => {
-  const classes = useStyles();
-
-  const [roomInput, setRoomInput] = useState();
+  const {classes} = useStyles();
 
   const {t} = useTranslation();
-  const {palette: {background: {paper}}} = useTheme();
+  const {
+    palette: {
+      background: {paper},
+    },
+  } = useTheme();
   const {isDark, toggleTheme} = useContext(ThemeContext);
 
   const {
@@ -139,7 +140,6 @@ const Settings = (props) => {
       label={t("settings.selectSize")}
       onChange={handleSettingsChange}
       value={videoSettings}
-      color="primary"
     >
       {settingsList.map(mapOption)}
     </TextField>
@@ -169,12 +169,10 @@ const Settings = (props) => {
       <Autocomplete
         variant="outlined"
         value={roomDescriptionById.size !== 0 ? roomDescriptionById.get(selectedRoom) : {}}
-        inputValue={roomInput}
-        onInputChange={(e, v) => setRoomInput(v)}
         options={rooms}
         getOptionLabel={(option) => option.description}
-        renderOption={({description, num_users}) => (
-          <Grid container>
+        renderOption={(props, {description, num_users}) => (
+          <Grid container {...props}>
             <Grid item xs={11}>
               {description}
             </Grid>
@@ -259,9 +257,9 @@ const Settings = (props) => {
     return (
       <Grid container spacing={4} className={classes.content}>
         {renderHeader()}
-        <Divider variant="fullWidth" style={{width: "100%"}} />
+        <Divider variant="fullWidth" sx={{width: "100%", marginTop: "2em"}} />
         {renderUserSettings()}
-        <Divider variant="fullWidth" style={{width: "100%"}} />
+        <Divider variant="fullWidth" sx={{width: "100%", marginTop: "2em"}} />
 
         <Grid item xs={6}>
           <Videocam className={classes.icon} color="action" />
@@ -297,19 +295,19 @@ const Settings = (props) => {
         <Grid item xs={12}>
           <FormControlLabel
             label={<Typography color="textPrimary">{t("oldClient.stopVideo")}</Typography>}
-            control={<Checkbox checked={cammuted} onChange={toggleCamera} name="turnOffCamera" color="secondary" />}
+            control={<Checkbox checked={cammuted} onChange={toggleCamera} name="turnOffCamera" color="primary" />}
           />
 
           <FormControlLabel
             label={<Typography color="textPrimary">{t("oldClient.audioMode")}</Typography>}
             color="textPrimary"
             control={
-              <Checkbox checked={!!isAudioMode} onChange={handleAudioModeChange} name="isAudioMode" color="secondary" />
+              <Checkbox checked={!!isAudioMode} onChange={handleAudioModeChange} name="isAudioMode" color="primary" />
             }
           />
           <FormControlLabel
             label={<Typography color="textPrimary">{t("oldClient.darkTheme")}</Typography>}
-            control={<Checkbox checked={isDark} onChange={toggleTheme} name="isAudioMode" color="secondary" />}
+            control={<Checkbox checked={isDark} onChange={toggleTheme} name="isAudioMode" color="primary" />}
           />
         </Grid>
 
@@ -319,18 +317,13 @@ const Settings = (props) => {
         <Grid item xs={4}>
           <Button
             variant="contained"
-            color="primary"
+            color="success"
             classes={{
               root: classes.submitRoot,
               disabled: classes.submitDisabled,
             }}
             size="large"
-            disabled={
-              !selectedRoom ||
-              wip ||
-              !roomInput ||
-              (roomDescriptionById.size !== 0 && roomInput !== roomDescriptionById.get(selectedRoom).description)
-            }
+            disabled={!selectedRoom || wip}
             onClick={handleInitClient}
           >
             {t("oldClient.joinRoom")}
@@ -341,17 +334,10 @@ const Settings = (props) => {
   };
 
   return (
-    <Modal
-      open={true}
-      disableBackdropClick={true}
-      BackdropProps={{
-        style: {backgroundColor: paper},
-      }}
-      className={classes.modal}
-    >
+    <Modal open={true} componentsProps={{backdrop: {style: {backgroundColor: paper}}}} className={classes.modal}>
       <Box className={classes.paper}>{renderContent()}</Box>
     </Modal>
   );
 };
 
-export default Settings
+export default Settings;

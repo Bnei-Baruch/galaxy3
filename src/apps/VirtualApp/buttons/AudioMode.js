@@ -1,6 +1,6 @@
 import React from "react";
-import {Hearing} from "@material-ui/icons";
-import {Tooltip, IconButton} from "@material-ui/core";
+import {Hearing} from "@mui/icons-material";
+import {Tooltip, IconButton} from "@mui/material";
 
 const AudioMode = (props) => {
   const {action, isOn, disabled, t} = props;
@@ -13,6 +13,7 @@ const AudioMode = (props) => {
           aria-label={t(isOn ? "oldClient.fullMode" : "oldClient.audioMode")}
           disabled={disabled}
           onClick={() => handleAction()}
+          size="large"
         >
           {isOn ? <Hearing color="secondary" /> : <Hearing />}
         </IconButton>

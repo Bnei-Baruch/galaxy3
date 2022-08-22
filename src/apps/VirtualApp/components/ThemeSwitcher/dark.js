@@ -1,31 +1,48 @@
-import {createTheme} from "@material-ui/core/styles";
-import {grey, red} from "@material-ui/core/colors";
+import {adaptV4Theme, createTheme} from "@mui/material/styles";
+import {blue, grey, purple, red} from "@mui/material/colors";
 
-const dark = createTheme({
-  palette: {
-    type: "dark",
-    overrides: {
-      MuiButton: {
-        border: {
-          color: "white",
-        },
+const dark = createTheme(
+  adaptV4Theme({
+    palette: {
+      mode: "dark",
+      primary: {
+        main: grey[300],
       },
-    },
-  },
-  overrides: {
-    MuiButton: {
-      root: {
-        "&.donate": {
-          backgroundColor: grey[50],
-          color: grey[900],
-          "& .MuiButton-label > span": {
-            color: red[500],
-            margin: "0 5px",
+      secondary: {
+        main: red[500],
+      },
+      info: {
+        main: purple[800],
+      },
+      overrides: {
+        MuiButton: {
+          border: {
+            color: "white",
+          },
+          root: {
+            "&.donate > span": {
+              color: red[500],
+              margin: "0 .5em",
+            },
           },
         },
       },
     },
-  },
-});
+    overrides: {
+      MuiButton: {
+        root: {
+          "&.donate": {
+            backgroundColor: grey[50],
+            color: grey[900],
+            "& .MuiButton-label > span": {
+              color: red[500],
+              margin: "0 5px",
+            },
+          },
+        },
+      },
+    },
+  })
+);
 
 export default dark;

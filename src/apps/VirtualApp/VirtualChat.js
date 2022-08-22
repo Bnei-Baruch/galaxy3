@@ -1,7 +1,7 @@
 import React, {Component} from "react";
 import {Button, Input, Message} from "semantic-ui-react";
 import {getDateString, notifyMe} from "../../shared/tools";
-import {Typography} from "@material-ui/core";
+import {Typography} from "@mui/material";
 import mqtt from "../../shared/mqtt";
 
 //const isUseNewDesign = new URL(window.location.href).searchParams.has('new_design');

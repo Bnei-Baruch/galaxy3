@@ -1,9 +1,11 @@
 // the RTL component in separate rtl.jsx file
 import React from "react";
-import {create} from "jss";
-import rtl from "jss-rtl";
-import {StylesProvider, jssPreset} from "@material-ui/core/styles";
+import createCache from "@emotion/cache";
+import {CacheProvider} from "@emotion/react";
 
-const jss = create({plugins: [...jssPreset().plugins, rtl()]});
+export const muiCache = createCache({
+  key: "mui",
+  prepend: true,
+});
 
-export default (props) => <StylesProvider jss={jss}>{props.children}</StylesProvider>;
+export default (props) => <CacheProvider value={muiCache}>{props.children}</CacheProvider>;

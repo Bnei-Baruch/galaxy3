@@ -3,8 +3,8 @@ import {Janus} from "../../../lib/janus";
 import NewWindow from "@hinaser/react-new-window";
 import {isFullScreen, toggleFullScreen} from "../FullScreenHelper";
 import {Fullscreen} from "../buttons";
-import {Close, OpenInNew} from "@material-ui/icons";
-import IconButton from "@material-ui/core/IconButton";
+import {Close, OpenInNew} from "@mui/icons-material";
+import IconButton from "@mui/material/IconButton";
 import {initStream, detach} from "./KliOlamiStreamHelper";
 
 class KliOlamiStream extends Component {
@@ -82,7 +82,7 @@ class KliOlamiStream extends Component {
           <div className={"activities"}>
             <div className="controls">
               <div className="controls__top">
-                <IconButton onClick={close}>
+                <IconButton onClick={close} size="large">
                   <Close style={{color: "white", fontWeight: "bold"}} />
                 </IconButton>
               </div>
@@ -90,7 +90,7 @@ class KliOlamiStream extends Component {
                 <div className="controls__spacer"></div>
                 <Fullscreen isOn={fullScreen} action={this.handleFullScreen.bind(this)} color={"white"} />
                 {!attached ? null : (
-                  <IconButton onClick={() => toggleAttach()}>
+                  <IconButton onClick={() => toggleAttach()} size="large">
                     <OpenInNew style={{color: "white", fontWeight: "bold"}} />
                   </IconButton>
                 )}

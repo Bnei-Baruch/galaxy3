@@ -2,7 +2,7 @@ import React, {useEffect, useRef} from "react";
 import classNames from "classnames";
 import {Icon} from "semantic-ui-react";
 import {renderUserName, renderNoCam, renderQuestion} from "./helper";
-import Box from "@material-ui/core/Box";
+import Box from "@mui/material/Box";
 
 const MyMedia = (props) => {
   const {user, question, muted, cammuted, connectionIcon, video = {}} = props;

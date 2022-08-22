@@ -1,6 +1,6 @@
 import React, {useEffect, useState} from "react";
-import Box from "@material-ui/core/Box";
-import {List, ListItem, MenuItem, TextField} from "@material-ui/core";
+import Box from "@mui/material/Box";
+import {List, ListItem, MenuItem, TextField} from "@mui/material";
 import {getLanguage} from "../../../i18n/i18n";
 
 const mapOption = (key) => {
