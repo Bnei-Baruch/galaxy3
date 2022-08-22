@@ -138,6 +138,7 @@ class VirtualHttpClient extends Component {
     audios: {audios: Number(localStorage.getItem("vrt_lang")) || 2},
     msg_protocol: "mqtt",
     mqttOn: false,
+    isGroup: false,
   };
 
   virtualStreamingInitialized() {
@@ -2091,6 +2092,7 @@ class VirtualHttpClient extends Component {
       audios,
       shidurForGuestReady,
       wipSettings,
+      isGroup,
     } = this.state;
 
     if (appInitError) {
@@ -2219,10 +2221,12 @@ class VirtualHttpClient extends Component {
             selectedRoom={selected_room}
             initClient={this.initClient.bind(this)}
             isAudioMode={muteOtherCams}
+            isGroup={isGroup}
             setAudioDevice={this.setAudioDevice.bind(this)}
             setVideoDevice={this.setVideoDevice.bind(this)}
             settingsChange={this.setVideoSize}
             audioModeChange={this.otherCamsMuteToggle}
+            handleGroupChange={() => this.setState({isGroup: !isGroup})}
             audio={media.audio}
             video={media.video}
             cammuted={cammuted}
