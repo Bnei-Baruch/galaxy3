@@ -7,6 +7,7 @@ import {
   checkNotification,
   geoInfo,
   getDateString,
+  initJanus,
   notifyMe,
   sendUserState,
   testMic,
@@ -17,8 +18,8 @@ import "./VideoConteiner.scss";
 import "./CustomIcons.scss";
 import "eqcss";
 import VirtualChat from "./VirtualChat";
-import {NO_VIDEO_OPTION_VALUE, VIDEO_360P_OPTION_VALUE, sketchesByLang} from "../../shared/consts";
-import {GEO_IP_INFO, APP_STUN_SRV_STR, APP_JANUS_SRV_STR, PAY_USER_FEE} from "../../shared/env";
+import {NO_VIDEO_OPTION_VALUE, sketchesByLang, VIDEO_360P_OPTION_VALUE} from "../../shared/consts";
+import {APP_JANUS_SRV_STR, APP_STUN_SRV_STR, GEO_IP_INFO, PAY_USER_FEE} from "../../shared/env";
 import platform from "platform";
 import {TopMenu} from "./components/TopMenu";
 import {withTranslation} from "react-i18next";
@@ -37,15 +38,15 @@ import LoginPage from "../../components/LoginPage";
 import {updateSentryUser} from "../../shared/sentry";
 import GxyJanus from "../../shared/janus-utils";
 import ConfigStore from "../../shared/ConfigStore";
-import {toggleFullScreen, isFullScreen} from "./FullScreenHelper";
+import {isFullScreen, toggleFullScreen} from "./FullScreenHelper";
 import {AppBar, Badge, Box, Button as ButtonMD, ButtonGroup, Grid, IconButton} from "@mui/material";
 import {ChevronLeft, ChevronRight, PlayCircleOutline} from "@mui/icons-material";
 import {grey} from "@mui/material/colors";
-import {AskQuestion, AudioMode, CloseBroadcast, Layout, Mute, MuteVideo, Vote, Fullscreen} from "./buttons";
+import {AskQuestion, AudioMode, CloseBroadcast, Fullscreen, Layout, Mute, MuteVideo, Vote} from "./buttons";
 import Settings from "./settings/Settings";
 import SettingsJoined from "./settings/SettingsJoined";
 import HomerLimud from "./components/HomerLimud";
-import {Support, initCrisp} from "./components/Support";
+import {initCrisp, Support} from "./components/Support";
 import SendQuestionContainer from "./components/SendQuestions/container";
 import {RegistrationModals} from "./components/RegistrationModals";
 import {getUserRole, userRolesEnum} from "../../shared/enums";
