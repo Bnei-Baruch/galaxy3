@@ -5,7 +5,7 @@ import {useTranslation} from "react-i18next";
 import {grey} from "@mui/material/colors";
 
 const Fullscreen = (props) => {
-  const {action, isOn, disabled, color = grey["50"]} = props;
+  const {action, isOn, disabled, color = "default"} = props;
   const {t} = useTranslation();
 
   const handleAction = () => action();
