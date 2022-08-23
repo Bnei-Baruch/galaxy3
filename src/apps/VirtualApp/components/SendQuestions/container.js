@@ -21,7 +21,7 @@ const SendQuestionContainer = ({user = {}}) => {
       id,
       name,
       galaxyRoom: group,
-      gender: !group.match(/^W\s/) ? "male" : "female",
+      gender: !group?.match(/^W\s/) ? "male" : "female",
     };
   };
 
