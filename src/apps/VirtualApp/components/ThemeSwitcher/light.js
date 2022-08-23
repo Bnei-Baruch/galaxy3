@@ -1,5 +1,6 @@
 import {adaptV4Theme, createTheme} from "@mui/material/styles";
-import {grey, purple, red} from "@mui/material/colors";
+import {green, grey, red} from "@mui/material/colors";
+import indigo from "@mui/material/colors/indigo";
 
 const light = createTheme(
   adaptV4Theme({
@@ -11,7 +12,10 @@ const light = createTheme(
         main: red[600],
       },
       info: {
-        main: purple[800],
+        main: indigo[500],
+      },
+      success: {
+        main: green[400],
       },
     },
     paper: {
@@ -20,9 +24,13 @@ const light = createTheme(
     overrides: {
       MuiButton: {
         root: {
-          "&.donate > span": {
-            color: red[500],
-            margin: "0 .5em",
+          "&.donate": {
+            background: grey[900],
+            color: grey[100],
+            "& > span": {
+              color: red[500],
+              margin: "0 .5em",
+            },
           },
         },
       },
