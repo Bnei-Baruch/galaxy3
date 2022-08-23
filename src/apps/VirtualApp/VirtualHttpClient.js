@@ -59,6 +59,7 @@ import ThemeSwitcher from "./components/ThemeSwitcher/ThemeSwitcher";
 import mqtt from "../../shared/mqtt";
 import devices from "../../lib/devices";
 import log from "loglevel";
+import Donations from "./buttons/Donations";
 //import {iceRestart as iceRestartKliOlami} from "./components/KliOlamiStreamHelper";
 
 const sortAndFilterFeeds = (feeds) =>
@@ -1807,11 +1808,9 @@ class VirtualHttpClient extends Component {
 
   renderTopBar = (isDeb) => {
     const {t, i18n} = this.props;
-    const isHe = i18n.language === "he";
     const {user, asideMsgCounter, leftAsideName, rightAsideName, isOpenTopMenu} = this.state;
 
     const notApproved = user && user.role !== userRolesEnum.user;
-
     return (
       <AppBar color="default" position="static">
         <Toolbar className="top-toolbar">
@@ -1914,19 +1913,7 @@ class VirtualHttpClient extends Component {
           </ButtonGroup>
 
           <Support />
-          <ButtonMD
-            component={"a"}
-            href={`https://www.kab1.com/${isHe ? "" : i18n.language}`}
-            className={"top-toolbar__item donate"}
-            dir={isHe ? "rtl" : "ltr"}
-            target="_blank"
-            color="primary"
-            variant="outlined"
-            size="small"
-          >
-            {t("oldClient.donate")}
-            <span>❤</span>
-          </ButtonMD>
+          <Donations />
           {/* ---------- */}
         </Toolbar>
       </AppBar>

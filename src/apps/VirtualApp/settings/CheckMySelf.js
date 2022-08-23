@@ -82,7 +82,7 @@ const CheckMySelf = () => {
       <Grid item>
         <Button
           onClick={run}
-          color="primary"
+          color="info"
           variant={!processType ? "contained" : "outlined"}
           disabled={!devices.audio.stream || !!processType}
           className={classes.runButton}
