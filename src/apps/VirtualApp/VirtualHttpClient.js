@@ -69,8 +69,6 @@ const sortAndFilterFeeds = (feeds) =>
 
 const userFeeds = (feeds) => feeds.filter((feed) => feed.display.role === userRolesEnum.user);
 
-const isUseNewDesign = true;
-
 class VirtualHttpClient extends Component {
   state = {
     chatMessagesCount: 0,
@@ -2172,7 +2170,7 @@ class VirtualHttpClient extends Component {
 
     return (
       <Fragment>
-        {user && !isMobile && isUseNewDesign && Boolean(room) && (
+        {user && !isMobile && Boolean(room) && (
           <SettingsJoined
             userDisplay={user.display}
             isOpen={isSettings}
@@ -2193,7 +2191,7 @@ class VirtualHttpClient extends Component {
             audios={audios.audios}
           />
         )}
-        {user && !isMobile && !notApproved && isUseNewDesign && !Boolean(room) && (
+        {user && !isMobile && !notApproved && !Boolean(room) && (
           <Settings
             userDisplay={user.display}
             rooms={rooms}

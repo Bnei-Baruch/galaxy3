@@ -4,9 +4,6 @@ import {getDateString, notifyMe} from "../../shared/tools";
 import {Typography} from "@mui/material";
 import mqtt from "../../shared/mqtt";
 
-//const isUseNewDesign = new URL(window.location.href).searchParams.has('new_design');
-const isUseNewDesign = window.location.hostname === "arvut.kli.one" && window.location.pathname.search(/userm/) === -1;
-
 class VirtualChat extends Component {
   state = {
     room: null,
@@ -53,22 +50,8 @@ class VirtualChat extends Component {
     }
   };
 
-  showSupportMessage = (message) => {
-    let {support_msgs} = this.state;
-    message.time = getDateString();
-    support_msgs.push(message);
-    this.setState({support_msgs, from: "Admin"});
-    if (this.props.visible) {
-      this.scrollToBottom();
-    } else {
-      notifyMe("Shidur", message.text, true);
-      isUseNewDesign ? this.props.setIsRoomChat(false) : this.setState({room_chat: false});
-      this.props.onNewMsg(true);
-    }
-  };
-
   newChatMessage = (user) => {
-    const {room_chat} = isUseNewDesign ? this.props : this.state;
+    const {room_chat} = this.props;
     let {id, role, display} = this.props.user;
     let {input_value, privates} = this.state;
 
@@ -92,13 +75,9 @@ class VirtualChat extends Component {
     this.refs.end.scrollIntoView({behavior: "smooth"});
   };
 
-  tooggleChat = (room_chat) => {
-    isUseNewDesign ? this.props.setIsRoomChat(room_chat) : this.setState({room_chat});
-  };
-
   render() {
     const {t} = this.props;
-    const {room_chat} = isUseNewDesign ? this.props : this.state;
+    const {room_chat} = this.props;
     const {messages, support_msgs} = this.state;
 
     const urlRegex = /(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#/%?=~_|!:,.;()]*[-A-Z0-9+&@#/%=~_|()])/gi;
@@ -154,7 +133,7 @@ class VirtualChat extends Component {
       if (text) {
         return (
           <Typography
-            color={isUseNewDesign ? "textPrimary" : "inherit"}
+            color="textPrimary"
             paragraph
             key={i}
             style={{
@@ -164,11 +143,7 @@ class VirtualChat extends Component {
           >
             <Typography display="block">
               <i style={{color: "grey"}}>{time}</i> -
-              <Typography
-                display="inline"
-                color={user.role.match(/^(admin|root)$/) ? "secondary" : "textSecondary"}
-                style={isUseNewDesign ? {} : {color: user.role.match(/^(admin|root)$/) ? "red" : "blue"}}
-              >
+              <Typography display="inline" color={user.role.match(/^(admin|root)$/) ? "secondary" : "textSecondary"}>
                 {user.display}
               </Typography>
               :
@@ -186,7 +161,7 @@ class VirtualChat extends Component {
         return (
           <Typography
             paragraph
-            color={isUseNewDesign ? "textPrimary" : "inherit"}
+            color="textPrimary"
             key={i}
             style={{
               direction: isRTLString(text) ? "rtl" : "ltr",
@@ -195,11 +170,7 @@ class VirtualChat extends Component {
           >
             <Typography display="block">
               <i style={{color: "grey"}}>{time}</i> -
-              <Typography
-                display="inline"
-                color={user.role.match(/^(admin|root)$/) ? "secondary" : "textSecondary"}
-                style={isUseNewDesign ? {} : {color: user.role.match(/^(admin|root)$/) ? "red" : "blue"}}
-              >
+              <Typography display="inline" color={user.role.match(/^(admin|root)$/) ? "secondary" : "textSecondary"}>
                 {user.role === "admin" ? user.username : user.display}
               </Typography>
               :
@@ -213,16 +184,6 @@ class VirtualChat extends Component {
 
     return (
       <div className="chat-panel">
-        {isUseNewDesign ? null : (
-          <Button.Group attached="top">
-            <Button disabled={room_chat} color="blue" onClick={() => this.tooggleChat(true)}>
-              {t("virtualChat.roomChat")}
-            </Button>
-            <Button disabled={!room_chat} color="blue" onClick={() => this.tooggleChat(false)}>
-              {t("virtualChat.supportChat")}
-            </Button>
-          </Button.Group>
-        )}
         <Message attached className="messages_list">
           <div className="messages-wrapper">
             <Message size="mini" color="grey">
