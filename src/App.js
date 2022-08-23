@@ -33,6 +33,7 @@ class App extends Component {
         {/*<SndmanApp />*/}
         {/*<AudioOutMqtt />*/}
         {/*<VideoOutMqtt />*/}
+        {/*<WebOutHttp />*/}
         {/*<WebOutMqtt />*/}
         {/*<WebOutHttp />*/}
       </I18nextProvider>

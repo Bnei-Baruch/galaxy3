@@ -1,9 +1,9 @@
 import React, {useEffect, useState} from "react";
 import {useTranslation} from "react-i18next";
 
-import {Button, DialogActions, DialogContent, DialogContentText, Dialog, Grid, Typography} from "@material-ui/core";
-import {blue, grey} from "@material-ui/core/colors";
-import makeStyles from "@material-ui/core/styles/makeStyles";
+import {Button, DialogActions, DialogContent, DialogContentText, Dialog, Grid, Typography} from "@mui/material";
+import {blue, grey} from "@mui/material/colors";
+import {makeStyles} from "tss-react/mui";
 
 import {RegistrationForm} from "./RegistrationForm";
 import {userRolesEnum} from "../../../shared/enums";
@@ -14,7 +14,7 @@ const modalStateEnum = {
   completed: 4,
 };
 
-const useStyles = makeStyles(() => ({
+const useStyles = makeStyles()(() => ({
   linkContainer: {backgroundColor: grey[200], textAlign: "center"},
   link: {
     color: blue[500],
@@ -24,7 +24,7 @@ const useStyles = makeStyles(() => ({
 }));
 
 export const RegistrationModals = ({user, language, updateUserRole}) => {
-  const classes = useStyles();
+  const {classes} = useStyles();
   const [modalState, setModalState] = useState(modalStateEnum.close);
   const {t} = useTranslation();
   const {role, id} = user;
@@ -53,7 +53,7 @@ export const RegistrationModals = ({user, language, updateUserRole}) => {
           <DialogContentText>{t("registration.completed")}</DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Grid container justify="center">
+          <Grid container justifyContent="center">
             <Button onClick={handleClose}>{t("galaxyApp.close")}</Button>
           </Grid>
         </DialogActions>

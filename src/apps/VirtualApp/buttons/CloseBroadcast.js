@@ -1,6 +1,6 @@
 import React from "react";
-import {DesktopAccessDisabled, DesktopWindows} from "@material-ui/icons";
-import {Tooltip, IconButton} from "@material-ui/core";
+import {DesktopAccessDisabled, DesktopWindows} from "@mui/icons-material";
+import {Tooltip, IconButton} from "@mui/material";
 
 const CloseBroadcast = (props) => {
   const {action, isOn, disabled, t} = props;
@@ -13,6 +13,7 @@ const CloseBroadcast = (props) => {
           aria-label={isOn ? t("oldClient.closeBroadcast") : t("oldClient.openBroadcast")}
           disabled={disabled}
           onClick={() => handleAction()}
+          size="large"
         >
           {isOn ? <DesktopWindows /> : <DesktopAccessDisabled color="secondary" />}
         </IconButton>

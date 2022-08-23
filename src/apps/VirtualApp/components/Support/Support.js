@@ -1,5 +1,5 @@
 import React, {useEffect} from "react";
-import {Button} from "@material-ui/core";
+import {Button} from "@mui/material";
 import {configCrisp, openCrisp, resetCrisp} from "./helper";
 import {useTranslation} from "react-i18next";
 
@@ -19,7 +19,7 @@ export const Support = () => {
   const handleOpenCrisp = () => openCrisp();
 
   return (
-    <Button color="default" variant="outlined" onClick={handleOpenCrisp}>
+    <Button variant="outlined" onClick={handleOpenCrisp} color="primary" size="small" disableElevation>
       {t("oldClient.support")}
     </Button>
   );

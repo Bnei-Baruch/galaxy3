@@ -1,23 +1,15 @@
 import React, {useRef, useState} from "react";
 import {useTranslation} from "react-i18next";
 
-import {
-  Button,
-  ListItem,
-  ListItemText,
-  ListItemSecondaryAction,
-  Popper,
-  List,
-  ClickAwayListener,
-} from "@material-ui/core";
-import {AccountBox, ArrowDropDown, ArrowDropUp, ExitToApp} from "@material-ui/icons";
-import {grey} from "@material-ui/core/colors";
-import {makeStyles} from "@material-ui/core/styles";
+import {Button, ListItem, ListItemText, ListItemSecondaryAction, Popper, List, ClickAwayListener} from "@mui/material";
+import {AccountBox, ArrowDropDown, ArrowDropUp, ExitToApp} from "@mui/icons-material";
+import {grey} from "@mui/material/colors";
+import {makeStyles} from "tss-react/mui";
 
 import {kc} from "../../../components/UserManager";
 import {updateSentryUser} from "../../../shared/sentry";
 
-const useStyles = makeStyles({
+const useStyles = makeStyles()({
   root: {
     textTransform: "none",
   },
@@ -36,7 +28,7 @@ const LogoutDropdown = ({display}) => {
   const {t} = useTranslation();
   const [open, setOpen] = useState(false);
   const anchorRef = useRef();
-  const classes = useStyles();
+  const {classes} = useStyles();
 
   const handleClose = () => setOpen(false);
 
@@ -50,7 +42,7 @@ const LogoutDropdown = ({display}) => {
         onClick={handleOpen}
         className={classes.root}
         endIcon={open ? <ArrowDropUp /> : <ArrowDropDown />}
-        tex
+        size="small"
       >
         <span className={classes.label}>{display}</span>
       </Button>

@@ -1,6 +1,6 @@
 import React from "react";
-import {Tooltip, IconButton} from "@material-ui/core";
-import {LiveHelp} from "@material-ui/icons";
+import {Tooltip, IconButton} from "@mui/material";
+import {LiveHelp} from "@mui/icons-material";
 
 const AskQuestion = (props) => {
   const {action, isOn, disabled, t} = props;
@@ -13,6 +13,7 @@ const AskQuestion = (props) => {
           aria-label={t(isOn ? "oldClient.cancelQuestion" : "oldClient.askQuestion")}
           disabled={disabled}
           onClick={() => handleAction()}
+          size="large"
         >
           {isOn ? <LiveHelp color="secondary" /> : <LiveHelp />}
         </IconButton>

@@ -1,6 +1,6 @@
 import React from "react";
-import {Mic, MicOff} from "@material-ui/icons";
-import {Tooltip, IconButton, Box} from "@material-ui/core";
+import {Mic, MicOff} from "@mui/icons-material";
+import {Tooltip, IconButton, Box} from "@mui/material";
 
 const Mute = React.forwardRef((props, ref) => {
   const {action, isOn, disabled, t} = props;
@@ -25,6 +25,7 @@ const Mute = React.forwardRef((props, ref) => {
             aria-label={t(isOn ? "oldClient.unMute" : "oldClient.mute")}
             disabled={disabled}
             onClick={() => handleAction()}
+            size="large"
           >
             {isOn ? <MicOff color="secondary" /> : <Mic />}
           </IconButton>

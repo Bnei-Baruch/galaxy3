@@ -266,6 +266,7 @@ class ToranToolsHttp extends Component {
       vip1_rooms,
       vip2_rooms,
       vip3_rooms,
+      group_user,
       groups,
       groups_queue,
       questions,
@@ -502,6 +503,24 @@ class ToranToolsHttp extends Component {
       );
     });
 
+    let groups_user_list = group_user.map((data, i) => {
+      const {room, num_users, description, questions} = data;
+      const qs = !roomsStatistics[room] || roomsStatistics[room]["on_air"] === 0;
+      const pn = (<Label circular content={pnum[room]} />);
+      return (
+        <Table.Row
+          className="vip"
+          key={room}
+          onClick={() => this.selectGroup(data, i)}
+        >
+          <Table.Cell width={1}>{pn}</Table.Cell>
+          <Table.Cell width={5}>{description}</Table.Cell>
+          <Table.Cell width={1}>{num_users}</Table.Cell>
+          <Table.Cell width={1}>{questions && qs ? qf : questions ? q : ""}</Table.Cell>
+        </Table.Row>
+      );
+    });
+
     let group_options = this.state.sorted_feeds.map((feed, i) => {
       const display = feed.description;
       return {key: i, value: feed, text: display};
@@ -558,6 +577,7 @@ class ToranToolsHttp extends Component {
                     { key: 'vip1', content: 'Vip1', icon: 'star' },
                     { key: 'vip2', content: 'Vip2', icon: 'star' },
                     { key: 'vip3', content: 'Vip3', icon: 'star' },
+                    { key: 'groups', content: 'Groups', icon: 'star' },
                   ]}
                   onItemClick={(e, data) => this.selectMenu(data.content)}
                   secondary
@@ -735,6 +755,12 @@ class ToranToolsHttp extends Component {
               onClick={() => this.galaxyMode("vip3")}
             />
             <Button
+              disabled={galaxy_mode === "groups"}
+              color="grey"
+              content="Groups"
+              onClick={() => this.galaxyMode("groups")}
+            />
+            <Button
               disabled={galaxy_mode === "shidur"}
               color="grey"
               content="Disabled"
@@ -744,7 +770,7 @@ class ToranToolsHttp extends Component {
           <Segment attached textAlign="center" className="disabled_groups">
             <Table selectable compact="very" basic structured className="admin_table" unstackable>
               <Table.Body>
-                {galaxy_mode === "lesson" ? rooms_list : galaxy_mode === "vip1" ? vip1_list : galaxy_mode === "vip2" ? vip2_list : galaxy_mode === "vip3" ? vip3_list : disabled_list}
+                {galaxy_mode === "lesson" ? rooms_list : galaxy_mode === "vip1" ? vip1_list : galaxy_mode === "vip2" ? vip2_list : galaxy_mode === "vip3" ? vip3_list : galaxy_mode === "groups" ? groups_user_list : disabled_list}
               </Table.Body>
             </Table>
           </Segment>

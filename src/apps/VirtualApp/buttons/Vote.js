@@ -1,6 +1,6 @@
 import React, {useRef} from "react";
-import {ThumbsUpDown} from "@material-ui/icons";
-import {Tooltip, IconButton, Popover} from "@material-ui/core";
+import {ThumbsUpDown} from "@mui/icons-material";
+import {Tooltip, IconButton, Popover} from "@mui/material";
 
 const Vote = (props) => {
   const {disabled, t, id} = props;
@@ -18,7 +18,7 @@ const Vote = (props) => {
     <div>
       <Tooltip title={t("oldClient.vote")} disableTouchListener={true}>
         <span>
-          <IconButton aria-label={t("oldClient.vote")} disabled={disabled} onClick={handleClick} ref={ref}>
+          <IconButton aria-label={t("oldClient.vote")} disabled={disabled} onClick={handleClick} ref={ref} size="large">
             <ThumbsUpDown />
           </IconButton>
         </span>

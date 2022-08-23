@@ -1,8 +1,8 @@
 import React from "react";
-import {Divider, MenuItem, Typography} from "@material-ui/core";
+import {Divider, MenuItem, Typography} from "@mui/material";
 import {videos_options2} from "../../../shared/consts";
 import {useTranslation} from "react-i18next";
-import TextField from "@material-ui/core/TextField";
+import TextField from "@mui/material/TextField";
 
 export const SelectBroadcastVideo = ({setVideo, videos}) => {
   const {t} = useTranslation();

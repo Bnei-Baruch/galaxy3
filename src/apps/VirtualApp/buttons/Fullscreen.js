@@ -1,11 +1,11 @@
 import React from "react";
-import {Fullscreen as FullscreenIcon, FullscreenExit} from "@material-ui/icons";
-import {Tooltip, IconButton} from "@material-ui/core";
+import {Fullscreen as FullscreenIcon, FullscreenExit} from "@mui/icons-material";
+import {Tooltip, IconButton} from "@mui/material";
 import {useTranslation} from "react-i18next";
-import {grey} from "@material-ui/core/colors";
+import {grey} from "@mui/material/colors";
 
 const Fullscreen = (props) => {
-  const {action, isOn, disabled, color = grey["800"]} = props;
+  const {action, isOn, disabled, color = grey["50"]} = props;
   const {t} = useTranslation();
 
   const handleAction = () => action();
@@ -18,6 +18,7 @@ const Fullscreen = (props) => {
           aria-label={t(!isOn ? "oldClient.openFullScreen" : "oldClient.closeFullScreen")}
           disabled={disabled}
           onClick={handleAction}
+          size="large"
         >
           {isOn ? <FullscreenExit /> : <FullscreenIcon />}
         </IconButton>

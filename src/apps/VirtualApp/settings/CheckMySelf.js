@@ -1,15 +1,15 @@
 import React, {useEffect, useRef, useState} from "react";
 import {useTranslation} from "react-i18next";
-import makeStyles from "@material-ui/core/styles/makeStyles";
-import {Button, Grid, Box} from "@material-ui/core";
-import log from "loglevel";
+import {makeStyles} from "tss-react/mui";
+import {Box, Button, Grid} from "@mui/material";
 import {recordAudio, sleep} from "../../../shared/tools";
 import devices from "../../../lib/devices";
+import {grey} from "@mui/material/colors";
 
 const INTERVAL_STEP_MLS = 1000;
 const CANVAS_WIDTH = 150;
 const CANVAS_HEIGHT = 30;
-const useStyles = makeStyles(() => ({
+const useStyles = makeStyles()(() => ({
   canvas: {
     width: `${CANVAS_WIDTH}px`,
     height: `${CANVAS_HEIGHT + 2}px`,
@@ -22,7 +22,7 @@ const useStyles = makeStyles(() => ({
 let recorder;
 
 const CheckMySelf = () => {
-  const classes = useStyles();
+  const {classes} = useStyles();
   const canvasRef = useRef();
 
   const {t} = useTranslation();
@@ -30,16 +30,15 @@ const CheckMySelf = () => {
   const [processType, setProcesstype] = useState();
 
   useEffect(() => {
-    micVolume(devices.audio.context)
+    micVolume(devices.audio.context);
     return () => {
-      if(devices.audio.context)
-        devices.audio.context.suspend()
+      if (devices.audio.context) devices.audio.context.suspend();
       devices.micLevel = null;
-    }
+    };
   }, []); // eslint-disable-line  react-hooks/exhaustive-deps
 
   const micVolume = () => {
-    const c = canvasRef.current
+    const c = canvasRef.current;
     let cc = c.getContext("2d");
     const w = c.width;
     const h = c.height;
@@ -52,10 +51,9 @@ const CheckMySelf = () => {
       cc.clearRect(0, 0, c.width, c.height);
       cc.fillStyle = gradient;
       cc.fillRect(0, 0, volume * 500, c.height);
-    }
-    if(devices.audio.context)
-      devices.audio.context.resume()
-  }
+    };
+    if (devices.audio.context) devices.audio.context.resume();
+  };
 
   const runInterval = async (processVal = 0, increase = 1) => {
     for (let i = 0; i <= 10; i++) {
@@ -84,7 +82,7 @@ const CheckMySelf = () => {
       <Grid item>
         <Button
           onClick={run}
-          color="primary"
+          color="info"
           variant={!processType ? "contained" : "outlined"}
           disabled={!devices.audio.stream || !!processType}
           className={classes.runButton}
@@ -93,7 +91,7 @@ const CheckMySelf = () => {
         </Button>
       </Grid>
       <Grid item>
-        <Box className={classes.canvas}>
+        <Box className={classes.canvas} sx={{borderColor: grey[500]}}>
           <canvas ref={canvasRef} width={CANVAS_WIDTH} height={CANVAS_HEIGHT} />
         </Box>
       </Grid>

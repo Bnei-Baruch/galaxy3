@@ -1,6 +1,6 @@
 import React from "react";
 import {getLanguage, languagesOptions, setLanguage} from "../../../i18n/i18n";
-import {ListItem, TextField, Typography} from "@material-ui/core";
+import {ListItemButton, TextField, Typography} from "@mui/material";
 import {useTranslation} from "react-i18next";
 
 export const SelectViewLanguage = ({size = "medium", hasLabel = true, fullWidth = true}) => {
@@ -8,9 +8,9 @@ export const SelectViewLanguage = ({size = "medium", hasLabel = true, fullWidth 
   const lang = getLanguage();
 
   const renderItem = ({key, text, value}) => (
-    <ListItem key={key} value={value} button>
+    <ListItemButton key={key} value={value}>
       <Typography>{text}</Typography>
-    </ListItem>
+    </ListItemButton>
   );
 
   return (

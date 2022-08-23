@@ -1,9 +1,9 @@
 import React, {useEffect, useState} from "react";
 import {useTranslation} from "react-i18next";
 
-import {Button, DialogActions, DialogContent, DialogContentText, Dialog, Grid, Typography} from "@material-ui/core";
-import {green} from "@material-ui/core/colors";
-import makeStyles from "@material-ui/core/styles/makeStyles";
+import {Button, DialogActions, DialogContent, DialogContentText, Dialog, Grid, Typography} from "@mui/material";
+import {green} from "@mui/material/colors";
+import {makeStyles} from "tss-react/mui";
 
 import {RegistrationForm} from "./RegistrationForm";
 import {userRolesEnum} from "../../shared/enums";
@@ -14,7 +14,7 @@ const modalStateEnum = {
   completed: 4,
 };
 
-const useStyles = makeStyles(() => ({
+const useStyles = makeStyles()(() => ({
   button: {
     background: green[700],
     color: "white",
@@ -23,7 +23,7 @@ const useStyles = makeStyles(() => ({
 }));
 
 export const RegistrationModals = ({user, language, updateUserRole}) => {
-  const classes = useStyles();
+  const {classes} = useStyles();
   const [modalState, setModalState] = useState(modalStateEnum.close);
   const {t} = useTranslation();
   const {role, id} = user;
@@ -54,7 +54,7 @@ export const RegistrationModals = ({user, language, updateUserRole}) => {
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Grid container justify="center">
+          <Grid container justifyContent="center">
             <Button onClick={handleClose} style={{textAlign: "center", fontSize: "2rem"}}>
               {t("galaxyApp.close")}
             </Button>
@@ -80,7 +80,7 @@ export const RegistrationModals = ({user, language, updateUserRole}) => {
       <Typography dir={direction} style={{textAlign: "center", fontSize: "2.5rem"}}>
         {t("registration.youRegisteredAsGuest")}
       </Typography>
-      <Grid container justify="center">
+      <Grid container justifyContent="center">
         <Button
           className={classes.button}
           style={{fontSize: "2rem"}}

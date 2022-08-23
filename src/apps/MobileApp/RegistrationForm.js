@@ -1,11 +1,22 @@
 import React, {useEffect, useState} from "react";
 import {useTranslation} from "react-i18next";
 
-import makeStyles from "@material-ui/core/styles/makeStyles";
-import {Button, Modal, Typography, TextField, Grid, MenuItem, Divider, CircularProgress, Box} from "@material-ui/core";
-import Autocomplete from "@material-ui/lab/Autocomplete";
-import {green} from "@material-ui/core/colors";
-import {MuiThemeProvider, createTheme} from "@material-ui/core/styles";
+import {
+  adaptV4Theme,
+  Box,
+  Button,
+  CircularProgress,
+  Divider,
+  Grid,
+  MenuItem,
+  Modal,
+  TextField,
+  Typography,
+} from "@mui/material";
+import Autocomplete from "@mui/material/Autocomplete";
+import {green} from "@mui/material/colors";
+import {createTheme, StyledEngineProvider, ThemeProvider} from "@mui/material/styles";
+import {makeStyles} from "tss-react/mui";
 import countries from "i18n-iso-countries";
 
 import {LANGUAGES} from "../../shared/consts";
@@ -14,14 +25,18 @@ import {AUTH_API_BACKEND, REGISTRATION_FORM_FIELDS, REGISTRATION_FORM_URL} from 
 import api from "../../shared/Api";
 import RTL from "../../components/RTL";
 
-const rtlTheme = createTheme({
-  direction: "rtl",
-});
-const ltrTheme = createTheme({
-  direction: "ltr",
-});
+const rtlTheme = createTheme(
+  adaptV4Theme({
+    direction: "rtl",
+  })
+);
+const ltrTheme = createTheme(
+  adaptV4Theme({
+    direction: "ltr",
+  })
+);
 
-const useStyles = makeStyles(() => ({
+const useStyles = makeStyles()(() => ({
   container: {
     backgroundColor: "white",
     padding: "2em",
@@ -63,7 +78,7 @@ export const RegistrationForm = ({
   isOpen,
   language,
 }) => {
-  const classes = useStyles();
+  const {classes} = useStyles();
   const [city, setCity] = useState();
   const [countryIds, setCountryIds] = useState([]);
   const [country, setCountry] = useState();
@@ -366,7 +381,7 @@ export const RegistrationForm = ({
             }}
           />
         </Grid>
-        <Grid container justify="center">
+        <Grid container justifyContent="center">
           <Button variant="contained" onClick={submit} className={classes.button} disabled={isProgress}>
             {t("registration.submit")}
             {isProgress ? <CircularProgress /> : null}
@@ -378,32 +393,34 @@ export const RegistrationForm = ({
 
   return (
     <RTL>
-      <MuiThemeProvider theme={isRtl ? rtlTheme : ltrTheme}>
-        <Modal open={isOpen} onClose={onClose} disableBackdropClick>
-          <Box className={classes.container} maxWidth="md" dir={isRtl ? "rtl" : "ltr"}>
-            <Grid container spacing={5}>
-              <Grid item xs={12}>
-                {renderForm()}
+      <StyledEngineProvider injectFirst>
+        <ThemeProvider theme={isRtl ? rtlTheme : ltrTheme}>
+          <Modal open={isOpen} onClose={onClose}>
+            <Box className={classes.container} maxWidth="md" dir={isRtl ? "rtl" : "ltr"}>
+              <Grid container spacing={5}>
+                <Grid item xs={12}>
+                  {renderForm()}
+                </Grid>
+                <Grid item xs={12}>
+                  <Divider variant="middle" />
+                </Grid>
+                <Grid item xs={12}>
+                  <Box style={{marginTop: "2em"}}>
+                    <Typography paragraph style={{fontSize: "1.2em"}}>
+                      {t("registration.asGuestYouCan")}
+                    </Typography>
+                    <Grid container justifyContent="center">
+                      <Button variant="contained" onClick={onClose} className={classes.button}>
+                        {t("galaxyApp.continueAsGuest")}
+                      </Button>
+                    </Grid>
+                  </Box>
+                </Grid>
               </Grid>
-              <Grid item xs={12}>
-                <Divider variant="middle" />
-              </Grid>
-              <Grid item xs={12}>
-                <Box style={{marginTop: "2em"}}>
-                  <Typography paragraph style={{fontSize: "1.2em"}}>
-                    {t("registration.asGuestYouCan")}
-                  </Typography>
-                  <Grid container justify="center">
-                    <Button variant="contained" onClick={onClose} className={classes.button}>
-                      {t("galaxyApp.continueAsGuest")}
-                    </Button>
-                  </Grid>
-                </Box>
-              </Grid>
-            </Grid>
-          </Box>
-        </Modal>
-      </MuiThemeProvider>
+            </Box>
+          </Modal>
+        </ThemeProvider>
+      </StyledEngineProvider>
     </RTL>
   );
 };

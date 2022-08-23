@@ -1,6 +1,6 @@
 import React, {useState} from "react";
-import {Videocam, VideocamOff} from "@material-ui/icons";
-import {Tooltip, IconButton} from "@material-ui/core";
+import {Videocam, VideocamOff} from "@mui/icons-material";
+import {Tooltip, IconButton} from "@mui/material";
 
 const MuteVideo = (props) => {
   const {action, isOn, disabled, t} = props;
@@ -15,6 +15,7 @@ const MuteVideo = (props) => {
           aria-label={t(isOn ? "oldClient.startVideo" : "oldClient.stopVideo")}
           disabled={disabled}
           onClick={() => handleAction()}
+          size="large"
         >
           {isOn ? <VideocamOff color="secondary" /> : <Videocam />}
         </IconButton>

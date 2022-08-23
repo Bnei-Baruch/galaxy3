@@ -1,12 +1,14 @@
 import React, {useEffect, useState} from "react";
-import {Accordion, Box, AccordionSummary, Typography, AccordionDetails} from "@material-ui/core";
+import {Accordion, Box, AccordionSummary, Typography, AccordionDetails} from "@mui/material";
 import {STUDY_MATERIALS} from "../../../shared/env";
-// import {List, ListItem, MenuItem, TextField} from '@material-ui/core';
-// import {getLanguage} from '../../../i18n/i18n';
-import {makeStyles} from "@material-ui/core/styles";
-// import {green, grey} from "@material-ui/core/colors";
 
-const useStyles = makeStyles({
+// import {List, ListItem, MenuItem, TextField} from '@mui/material';
+// import {getLanguage} from '../../../i18n/i18n';
+import {makeStyles} from "tss-react/mui";
+
+// import {green, grey} from "@mui/material/colors";
+
+const useStyles = makeStyles()({
   title: {
     fontWeight: "bold",
   },
@@ -30,7 +32,7 @@ const HomerLimud = () => {
   const [messages, setMessages] = useState([]);
   const [expanded, setExpanded] = useState();
 
-  const classes = useStyles();
+  const {classes} = useStyles();
 
   useEffect(() => {
     initMessages();
