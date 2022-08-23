@@ -1207,7 +1207,7 @@ class VirtualHttpClient extends Component {
 
   handleCmdData = (data) => {
     const {user, cammuted} = this.state;
-    const {type, id} = data;
+    const {type, id, bitrate} = data;
 
     if (type === "client-reconnect" && user.id === id) {
       this.exitRoom(/* reconnect= */ true, () => {
@@ -1231,6 +1231,8 @@ class VirtualHttpClient extends Component {
       localStorage.setItem("sound_test", true);
       this.setState({user});
       updateSentryUser(user);
+    } else if (type === "client-bitrate" && user.id === id) {
+      this.setBitrate(bitrate);
     } else if (type === "audio-out") {
       this.handleAudioOut(data);
     } else if (type === "reload-config") {
