@@ -51,11 +51,13 @@
             width: fit-content;
             text-align: justify;
             margin: 0 auto;
+            min-height: 3em;
 
             &.show-question {
               display: block;
               animation: fade-in ease .3s;
             }
+
           }
 
           .lang-question,
