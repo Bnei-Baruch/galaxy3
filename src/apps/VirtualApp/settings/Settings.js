@@ -326,7 +326,7 @@ const Settings = (props) => {
             disabled={!selectedRoom || wip}
             onClick={handleInitClient}
           >
-            {t("oldClient.joinRoom")}
+            <Typography color="white">{t("oldClient.joinRoom")}</Typography>
           </Button>
         </Grid>
       </Grid>
