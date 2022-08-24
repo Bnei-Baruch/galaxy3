@@ -4660,10 +4660,10 @@ keyboard-key@^1.1.0:
   resolved "https://registry.yarnpkg.com/keyboard-key/-/keyboard-key-1.1.0.tgz#6f2e8e37fa11475bb1f1d65d5174f1b35653f5b7"
   integrity sha512-qkBzPTi3rlAKvX7k0/ub44sqOfXeLc/jcnGGmj5c7BJpU8eDrEVPyhCvNYAaoubbsLm9uGWwQJO1ytQK1a9/dQ==
 
-keycloak-js@18.0.0:
-  version "18.0.0"
-  resolved "https://registry.yarnpkg.com/keycloak-js/-/keycloak-js-18.0.0.tgz#0825d3e2818aacf9e13cdd41f7eeae6c6114db38"
-  integrity sha512-kaD6nrzgYX3NhgwQfVEZiAzaZXua3PSBIBWGWf8fgqPgUdiO8uvYaKV1Ebf43IAB5M8kvubW+2J+eBS+UnWsuw==
+keycloak-js@19.0.1:
+  version "19.0.1"
+  resolved "https://registry.yarnpkg.com/keycloak-js/-/keycloak-js-19.0.1.tgz#9df871f6b1aff338139fd870bbe6e8db39592ee5"
+  integrity sha512-/GNJcgCb4OsMW+pI2EEQU8PWd4tkXCABqLHkVHbfU+r7XaU9E+zFkD960TItIEarCR0JP6iD8fhKchgxkV+W8w==
   dependencies:
     base64-js "^1.5.1"
     js-sha256 "^0.9.0"
