@@ -1,5 +1,5 @@
 import React, {Component, Fragment} from "react";
-import {Button, Confirm, Dropdown, Grid, Header, Icon, List, Popup, Segment, Table} from "semantic-ui-react";
+import {Button, Confirm, Dropdown, Grid, Header, Icon, List, Popup, Segment, Select, Table} from "semantic-ui-react";
 import "./AdminRoot.css";
 import "./AdminRootVideo.scss";
 import classNames from "classnames";
@@ -25,6 +25,7 @@ const sortAndFilterFeeds = (feeds) =>
 class AdminRootMqtt extends Component {
   state = {
     audio: null,
+    bitrate: 64000,
     chatRoomsInitialized: false,
     chatRoomsInitializedError: null,
     current_room: "",
@@ -417,8 +418,8 @@ class AdminRootMqtt extends Component {
     }
   };
 
-  sendCommandMessage = (command_type) => {
-    const {feed_user, current_room, command_status} = this.state;
+  sendRemoteCommand = (command_type, value) => {
+    const {feed_user, current_room, command_status, bitrate} = this.state;
     const cmd = {
       type: command_type,
       room: current_room,
@@ -426,6 +427,12 @@ class AdminRootMqtt extends Component {
       id: feed_user?.id,
       user: feed_user,
     };
+
+    if(command_type === "client-bitrate" && (value === bitrate || !feed_user?.id))
+      return
+
+    if(command_type === "client-bitrate")
+      cmd.bitrate = value;
 
     let topic = command_type.match(/^(reload-config|client-reload-all)$/)
       ? "galaxy/users/broadcast"
@@ -435,73 +442,6 @@ class AdminRootMqtt extends Component {
     if (command_type === "audio-out") {
       this.setState({command_status: !command_status});
     }
-  };
-
-  sendRemoteCommand = (command_type) => {
-    this.sendCommandMessage(command_type);
-
-    // const {gateways, feed_user, current_janus, current_room, command_status, gdm} = this.state;
-    //
-    // if (command_type === "premoder-mode") {
-    //     const value = !this.state.premodStatus;
-    //     api.adminSetConfig(ConfigStore.PRE_MODERATION_KEY, value)
-    //         .then(() => {
-    //             ConfigStore.setDynamicConfig(ConfigStore.PRE_MODERATION_KEY, JSON.stringify(value));
-    //             this.setState({premodStatus: value});
-    //
-    //             const msg = {type: "reload-config", status: value, id: null, user: null, room: null};
-    //             Object.values(gateways).forEach(gateway =>
-    //                 gateway.sendProtocolMessage(msg)
-    //                     .catch(alert));
-    //         })
-    //         .catch(err => {
-    // 					alert(err);
-    // 				});
-    //     return;
-    // }
-    // if (command_type === "client-reload-all") {
-    //     const msg = {
-    //         type: "client-reload-all",
-    //         status: true,
-    //         id: null,
-    //         user: null,
-    //         room: null,
-    //     };
-    //     Object.values(gateways).forEach(gateway =>
-    //         gateway.sendProtocolMessage(msg)
-    //             .catch(alert));
-    //     return;
-    // }
-    //
-    // if (!feed_user) {
-    //     alert("Choose user");
-    //     return;
-    // }
-    //
-    // if (command_type === "sound_test") {
-    //     feed_user.sound_test = true;
-    // }
-    //
-    // const gateway = gateways[current_janus];
-    // const msg = {type: command_type, room: current_room, status: command_status, id: feed_user.id, user: feed_user};
-    // const toAck = [feed_user.id];
-    //
-    // if(command_type === "audio-out") {
-    //     gdm.send(msg, toAck, (msg) => gateway.sendProtocolMessage(msg).catch(alert)).
-    //     then(() => {
-    //         log.info(`MIC delivered to ${toAck}.`);
-    //     }).catch((error) => {
-    //         log.error(`MIC not delivered to ${toAck} due to ` , error);
-    //     });
-    // } else {
-    //     const gateway = gateways[current_janus];
-    //     gateway.sendProtocolMessage({type: command_type, room: current_room, status: command_status, id: feed_user.id, user: feed_user})
-    //         .catch(alert);
-    // }
-    //
-    // if (command_type === "audio-out") {
-    //     this.setState({command_status: !command_status})
-    // }
   };
 
   getUserInfo = (selected_user) => {
@@ -556,7 +496,7 @@ class AdminRootMqtt extends Component {
 
   render() {
     const {user} = this.props;
-    const {current_room, current_group, feed_id, feed_info, feed_rtcp, feed_user, feeds, users, rooms_question, gatewaysInitialized, rooms, users_count, appInitError, command_status, showConfirmReloadAll,} = this.state;
+    const {bitrate, current_room, current_group, feed_id, feed_info, feed_rtcp, feed_user, feeds, users, rooms_question, gatewaysInitialized, rooms, users_count, appInitError, command_status, showConfirmReloadAll,} = this.state;
 
     if (appInitError) {
       return (
@@ -586,6 +526,15 @@ class AdminRootMqtt extends Component {
       const display = feed.description;
       return {key: i, value: feed, text: display};
     });
+
+    const bitrate_options = [
+      {key: 1, text: "64 KBit", value: 64000},
+      {key: 2, text: "128 KBit", value: 128000},
+      {key: 3, text: "256 KBit", value: 256000},
+      {key: 4, text: "512 KBit", value: 512000},
+      {key: 5, text: "1024 KBit", value: 102400},
+      {key: 6, text: "2048 KBit", value: 204800},
+    ];
 
     let rooms_question_grid = rooms_question.map((data, i) => {
       const {room, num_users, description, questions} = data;
@@ -719,6 +668,29 @@ class AdminRootMqtt extends Component {
     if (this.isAllowed("root")) {
       rootControlPanel.push(
         ...[
+          <Popup
+            trigger={<Button color="purple" icon="upload" />}
+            position="bottom left"
+            content={
+              <List as="ul">
+                <List.Item as="li">
+                  Set user bitrate:
+                  <br />  <br />
+                  <Select
+                    options={bitrate_options}
+                    value={bitrate}
+                    onChange={(e, {value}) => this.setState({bitrate: value})}
+                  />
+                </List.Item>
+                <List.Item as="li">
+                  <br />
+                  <Button color="green" content="Set" fluid onClick={() => this.sendRemoteCommand("client-bitrate", bitrate)} />
+                </List.Item>
+              </List>
+            }
+            on="click"
+            hideOnScroll
+          />,
           <Popup
             trigger={
               <Button color="yellow" icon="question" onClick={() => this.sendRemoteCommand("client-question")} />

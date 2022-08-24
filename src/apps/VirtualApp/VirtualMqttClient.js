@@ -136,6 +136,7 @@ class VirtualMqttClient extends Component {
     audios: {audios: Number(localStorage.getItem("vrt_lang")) || 2},
     msg_protocol: "mqtt",
     mqttOn: false,
+    isGroup: false,
   };
 
   virtualStreamingInitialized() {
@@ -529,7 +530,7 @@ class VirtualMqttClient extends Component {
   };
 
   joinRoom = (reconnect, videoroom, user) => {
-    let {selected_room, tested, media, cammuted, janus} = this.state;
+    let {selected_room, tested, media, cammuted, janus, isGroup} = this.state;
     const {
       video: {device},
     } = media;
@@ -567,6 +568,7 @@ class VirtualMqttClient extends Component {
           .publish(video.stream, audio.stream)
           .then((json) => {
             user.extra.streams = json.streams;
+            user.extra.isGroup = this.state.isGroup;
 
             this.setState({user, myid: id, mypvtid: private_id, room, delay: false, wipSettings: false});
             updateSentryUser(user);
@@ -575,6 +577,7 @@ class VirtualMqttClient extends Component {
 
             mqtt.join("galaxy/room/" + selected_room);
             mqtt.join("galaxy/room/" + selected_room + "/chat", true);
+            if(isGroup) videoroom.setBitrate(600000);
 
             log.info("[client] Pulbishers list: ", data.publishers);
 
@@ -827,7 +830,7 @@ class VirtualMqttClient extends Component {
 
   handleCmdData = (data) => {
     const {user, cammuted} = this.state;
-    const {type, id} = data;
+    const {type, id, bitrate} = data;
 
     if (type === "client-reconnect" && user.id === id) {
       this.exitRoom(/* reconnect= */ true, () => {
@@ -851,6 +854,8 @@ class VirtualMqttClient extends Component {
       localStorage.setItem("sound_test", true);
       this.setState({user});
       updateSentryUser(user);
+    } else if (type === "client-bitrate" && user.id === id) {
+      this.videoroom.setBitrate(bitrate);
     } else if (type === "audio-out") {
       this.handleAudioOut(data);
     } else if (type === "reload-config") {
@@ -1669,6 +1674,7 @@ class VirtualMqttClient extends Component {
       audios,
       shidurForGuestReady,
       wipSettings,
+      isGroup,
     } = this.state;
 
     if (appInitError) {
@@ -1797,10 +1803,12 @@ class VirtualMqttClient extends Component {
             selectedRoom={selected_room}
             initClient={this.initClient.bind(this)}
             isAudioMode={muteOtherCams}
+            isGroup={isGroup}
             setAudioDevice={this.setAudioDevice.bind(this)}
             setVideoDevice={this.setVideoDevice.bind(this)}
             settingsChange={this.setVideoSize}
             audioModeChange={this.otherCamsMuteToggle}
+            handleGroupChange={() => this.setState({isGroup: !isGroup})}
             audio={media.audio}
             video={media.video}
             cammuted={cammuted}

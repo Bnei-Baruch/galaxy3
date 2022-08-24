@@ -144,6 +144,23 @@ export class PublisherPlugin extends EventEmitter {
 
   }
 
+  setBitrate(bitrate) {
+    const body = {request: "configure", bitrate};
+    return new Promise((resolve, reject) => {
+      this.transaction('message', { body }, 'event').then((param) => {
+        log.info("[publisher] set bitrate: ", param)
+        const {data, json } = param
+
+        if(data)
+          resolve(data);
+
+      }).catch((err) => {
+        log.debug('[publisher] error set bitrate', err)
+        reject(err)
+      })
+    })
+  }
+
   audio(stream) {
     let audioTransceiver = null;
     let tr = this.pc.getTransceivers();
