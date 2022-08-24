@@ -18,7 +18,8 @@ export const vsettings_list = [
   {key: 0, text: "320 x 180, 15 fps", value: {width: 320, height: 180, ideal: 15}, mobileText: "low"},
   {key: 1, text: "320 x 180, 30 fps", value: {width: 320, height: 180, ideal: 30}, mobileText: "medium"},
   {key: 2, text: "640 x 360, 15 fps", value: {width: 640, height: 360, ideal: 15}, mobileText: "high"},
-  /*{ key: 3, text: '640 x 360, 30 fps', value: {width: 640, height: 360, ideal: 30}, mobileText: 'high'},*/
+  {key: 3, text: '640 x 360, 30 fps', value: {width: 640, height: 360, ideal: 30}, mobileText: 'mhigh'},
+  {key: 3, text: '1280 x 720, 30 fps', value: {width: 1280, height: 720, ideal: 30}, mobileText: 'shigh'},
 ];
 
 export const NO_VIDEO_OPTION_VALUE = -1;

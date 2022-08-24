@@ -80,6 +80,7 @@ const Settings = (props) => {
     video,
     rooms,
     isAudioMode,
+    isGroup,
     initClient,
     selectedRoom,
     selectRoom,
@@ -87,6 +88,7 @@ const Settings = (props) => {
     setVideoDevice,
     settingsChange,
     audioModeChange,
+    handleGroupChange,
     videoLength,
     videoSettings,
     audioDevice = audio.devices[0]?.deviceId,
@@ -194,6 +196,8 @@ const Settings = (props) => {
   const handleAudioChange = (e) => setAudioDevice(e.target.value);
 
   const handleAudioModeChange = () => audioModeChange();
+
+  const handleGroup = () => handleGroupChange();
 
   const handleRoomChange = (e, op) => {
     if (!op?.room) return;
@@ -308,6 +312,10 @@ const Settings = (props) => {
           <FormControlLabel
             label={<Typography color="textPrimary">{t("oldClient.darkTheme")}</Typography>}
             control={<Checkbox checked={isDark} onChange={toggleTheme} name="isAudioMode" color="primary" />}
+          />
+          <FormControlLabel
+            label={<Typography color="textPrimary">Group</Typography>}
+            control={<Checkbox checked={isGroup} onChange={handleGroup} name="isGroup" color="primary" />}
           />
         </Grid>
 

@@ -137,6 +137,7 @@ class VirtualHttpClient extends Component {
     audios: {audios: Number(localStorage.getItem("vrt_lang")) || 2},
     msg_protocol: "mqtt",
     mqttOn: false,
+    isGroup: false,
   };
 
   virtualStreamingInitialized() {
@@ -689,6 +690,11 @@ class VirtualHttpClient extends Component {
     });
   };
 
+  setBitrate = (bitrate) => {
+    this.setState({bitrate});
+    this.state.videoroom.send({"message": { "request": "configure", "bitrate": bitrate }});
+  };
+
   exitRoom = (reconnect, callback, error) => {
     this.setState({delay: true});
 
@@ -839,6 +845,7 @@ class VirtualHttpClient extends Component {
         setTimeout(() => {
           mqtt.join("galaxy/room/" + msg["room"]);
           mqtt.join("galaxy/room/" + msg["room"] + "/chat", true);
+          if(this.state.isGroup) this.setBitrate(600000)
         }, 3000);
 
         const {
@@ -895,6 +902,7 @@ class VirtualHttpClient extends Component {
             extra: {
               ...(this.state.user.extra || {}),
               streams: msg.streams,
+              isGroup: this.state.isGroup,
             },
           };
           this.setState({user});
@@ -1198,7 +1206,7 @@ class VirtualHttpClient extends Component {
 
   handleCmdData = (data) => {
     const {user, cammuted} = this.state;
-    const {type, id} = data;
+    const {type, id, bitrate} = data;
 
     if (type === "client-reconnect" && user.id === id) {
       this.exitRoom(/* reconnect= */ true, () => {
@@ -1222,6 +1230,8 @@ class VirtualHttpClient extends Component {
       localStorage.setItem("sound_test", true);
       this.setState({user});
       updateSentryUser(user);
+    } else if (type === "client-bitrate" && user.id === id) {
+      this.setBitrate(bitrate);
     } else if (type === "audio-out") {
       this.handleAudioOut(data);
     } else if (type === "reload-config") {
@@ -2071,6 +2081,7 @@ class VirtualHttpClient extends Component {
       audios,
       shidurForGuestReady,
       wipSettings,
+      isGroup,
     } = this.state;
 
     if (appInitError) {
@@ -2199,10 +2210,12 @@ class VirtualHttpClient extends Component {
             selectedRoom={selected_room}
             initClient={this.initClient.bind(this)}
             isAudioMode={muteOtherCams}
+            isGroup={isGroup}
             setAudioDevice={this.setAudioDevice.bind(this)}
             setVideoDevice={this.setVideoDevice.bind(this)}
             settingsChange={this.setVideoSize}
             audioModeChange={this.otherCamsMuteToggle}
+            handleGroupChange={() => this.setState({isGroup: !isGroup})}
             audio={media.audio}
             video={media.video}
             cammuted={cammuted}
