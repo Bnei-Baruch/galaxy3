@@ -9,7 +9,6 @@ import {
   FormControlLabel,
   Grid,
   IconButton,
-  ListItem,
   ListItemButton,
   MenuItem,
   Modal,
@@ -298,8 +297,8 @@ const SettingsJoined = (props) => {
             onClick={closeModal}
             classes={{root: classes.submitRoot}}
           >
-            <ArrowBackIos />
-            {t("settings.backToTen")}
+            <ArrowBackIos sx={{color: "white"}} />
+            <Typography color="white">{t("settings.backToTen")}</Typography>
           </Button>
         </Grid>
       </Grid>

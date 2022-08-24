@@ -28,7 +28,6 @@
 
     .question-container {
       display: flex;
-      flex-basis: 30%;
       max-height: 40%;
       background-color: #fffdff;
       padding: 8px;
@@ -49,11 +48,16 @@
           .in-process {
             display: none;
             animation: fade-out ease .3s;
+            width: fit-content;
+            text-align: justify;
+            margin: 0 auto;
+            min-height: 3em;
 
             &.show-question {
               display: block;
               animation: fade-in ease .3s;
             }
+
           }
 
           .lang-question,
@@ -149,8 +153,6 @@
             }
 
             &.wq-settings {
-              margin-bottom: 44px;
-
               .layout--equal & {
                 margin-top: 4px;
               }
@@ -271,21 +273,18 @@
 .slide {
   & h3 {
     margin: 0 0 0 1em;
-    line-height: 1em;
     font-size: 1.4em;
     text-align: center;
   }
 
   & h4 {
     margin: 0 0 0 1em;
-    line-height: 1em;
     font-size: 1.0em;
     text-align: center;
   }
 
   & h5 {
     margin: 0 0 0 1em;
-    line-height: 1em;
     font-size: 0.8em;
     text-align: center;
   }
