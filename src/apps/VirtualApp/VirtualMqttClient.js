@@ -855,6 +855,9 @@ class VirtualMqttClient extends Component {
       this.setState({user});
       updateSentryUser(user);
     } else if (type === "client-bitrate" && user.id === id) {
+      const isGroup = bitrate !== 64000;
+      user.extra.isGroup = isGroup;
+      this.setState({isGroup, user});
       this.videoroom.setBitrate(bitrate);
     } else if (type === "audio-out") {
       this.handleAudioOut(data);
