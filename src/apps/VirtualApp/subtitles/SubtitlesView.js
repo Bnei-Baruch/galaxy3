@@ -16,11 +16,14 @@ const FONT_SIZE_MAX = 35;
 const FONT_SIZE_MIN = 14;
 const WQ_FONT_SIZE = "wq-font-size";
 
+const tagARegEx = /<a[^>]*>([^<]+)<\/a>/;
+
 export const SubtitlesView = ({available, last, getWQByLang, wqLang}) => {
   const {
     t,
     i18n: {language},
   } = useTranslation();
+
   const [fontSize, setFontSize] = useState(localStorage.getItem(WQ_FONT_SIZE) || (FONT_SIZE_MAX + FONT_SIZE_MIN) / 2);
   const [fontPop, setFontPop] = useState(false);
   const [settings, setSettings] = useState(false);
@@ -58,6 +61,7 @@ export const SubtitlesView = ({available, last, getWQByLang, wqLang}) => {
 
   const renderMsg = () => {
     const {message, language: lang} = last || {};
+
     return (
       <div className="wq__question" style={{fontSize: `${fontSize}px`}}>
         <div
@@ -142,17 +146,23 @@ export const SubtitlesView = ({available, last, getWQByLang, wqLang}) => {
     );
   };
 
+  const isLink = tagARegEx.test(last?.message);
+
   return (
     <div className="wq-overlay overlay-visible">
-      <div className="wq-container">
-        <div className={classNames("question-container", {"overlay-visible": showQuestion})}>
-          {renderMsg()}
-          {renderSettings()}
+      {isLink ? (
+        <div className="subtitle_link" dangerouslySetInnerHTML={{__html: last?.message}} />
+      ) : (
+        <div className="wq-container">
+          <div className={classNames("question-container", {"overlay-visible": showQuestion})}>
+            {renderMsg()}
+            {renderSettings()}
+          </div>
+          <div className={classNames("show-wq", {"overlay-visible": !showQuestion})}>
+            <Button compact icon="eye" title={t("workshop.showQuestion")} onClick={() => setShowQuestion(true)} />
+          </div>
         </div>
-        <div className={classNames("show-wq", {"overlay-visible": !showQuestion})}>
-          <Button compact icon="eye" title={t("workshop.showQuestion")} onClick={() => setShowQuestion(true)} />
-        </div>
-      </div>
+      )}
     </div>
   );
 };
