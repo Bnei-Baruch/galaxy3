@@ -428,10 +428,7 @@ class AdminRootMqtt extends Component {
       user: feed_user,
     };
 
-    if(command_type === "client-bitrate" && (value === bitrate || !feed_user?.id))
-      return
-
-    if(command_type === "client-bitrate")
+    if(command_type === "client-bitrate" && feed_user)
       cmd.bitrate = value;
 
     let topic = command_type.match(/^(reload-config|client-reload-all)$/)
@@ -519,6 +516,7 @@ class AdminRootMqtt extends Component {
 
     //const f = (<Icon name='volume up' />);
     const q = <Icon color="red" name="help" />;
+    const g = <Icon color="blue" name="users" />;
     //const v = (<Icon name='checkmark' />);
     //const x = (<Icon name='close' />);
 
@@ -570,10 +568,11 @@ class AdminRootMqtt extends Component {
       //let st = users[feed.display.id].sound_test;
       let feed_user = users.find((u) => feed.id === u.rfid);
       let qt = feed_user && !!feed_user.question;
+      let gr = feed_user && feed_user?.extra?.isGroup;
       return (
         <Table.Row active={feed.id === this.state.feed_id} key={i + "u"} onClick={() => this.getUserInfo(feed_user)}>
           <Table.Cell width={10}>
-            {qt ? q : ""}
+            {gr ? g : ""}{qt ? q : ""}
             {feed.display.display}
           </Table.Cell>
           {/*<Table.Cell positive={st} width={1}>{st ? v : ""}</Table.Cell>*/}
