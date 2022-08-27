@@ -549,9 +549,11 @@ class AdminRootMqtt extends Component {
 
     let rooms_grid = rooms.map((data, i) => {
       const {room, num_users, description, questions} = data;
+      let gr = data.users.find(u => u.extra?.isGroup);
       return (
         <Table.Row active={current_room === room} key={i + "r"} onClick={() => this.exitRoom(data)}>
           <Table.Cell width={5}>
+            {gr ? g : ""}
             {questions ? q : ""}
             {description}
           </Table.Cell>
