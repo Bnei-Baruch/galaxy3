@@ -293,7 +293,14 @@ class AdminRootMqtt extends Component {
     newFeeds.forEach(f => {
       const {id, streams} = f;
       f.display = JSON.parse(f.display)
-      f.video = !!streams.find(v => v.type === "video" && v.codec === "h264");
+      const vst = streams.find((v) => v.type === "video" && v.h264_profile);
+      if(vst) {
+        f.video = vst.h264_profile === "42e01f";
+        if(!f.video)
+          log.warn("[admin] h264 profile is NOT baseline: ", vst);
+      } else {
+        f.video = !!streams.find((v) => v.type === "video" && v.codec === "h264");
+      }
       f.audio = !!streams.find(a => a.type === "audio" && a.codec === "opus");
       f.data = !!streams.find(d => d.type === "data");
       f.cammute = !f.video;
