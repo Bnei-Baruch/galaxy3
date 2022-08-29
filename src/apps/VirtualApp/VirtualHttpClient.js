@@ -905,6 +905,10 @@ class VirtualHttpClient extends Component {
               isGroup: this.state.isGroup,
             },
           };
+          const vst = msg.streams.find((v) => v.type === "video" && v.h264_profile);
+          if(vst?.h264_profile !== "42e01f") {
+            captureMessage("h264_profile", vst);
+          }
           this.setState({user});
           if (this.state.muteOtherCams) {
             this.setState({videos: NO_VIDEO_OPTION_VALUE});
@@ -1092,8 +1096,6 @@ class VirtualHttpClient extends Component {
       const vst = streams.find((v) => v.type === "video" && v.h264_profile);
       if(vst) {
         feed.video = vst.h264_profile === "42e01f";
-        if(!feed.video)
-          captureMessage("h264_profile", vst);
       } else {
         feed.video = !!streams.find((v) => v.type === "video" && v.codec === "h264");
       }
