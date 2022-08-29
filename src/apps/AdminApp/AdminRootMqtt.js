@@ -426,7 +426,7 @@ class AdminRootMqtt extends Component {
   };
 
   sendRemoteCommand = (command_type, value) => {
-    const {feed_user, current_room, command_status, bitrate} = this.state;
+    const {feed_user, current_room, command_status} = this.state;
     const cmd = {
       type: command_type,
       room: current_room,
@@ -435,7 +435,7 @@ class AdminRootMqtt extends Component {
       user: feed_user,
     };
 
-    if(command_type === "client-bitrate" && feed_user)
+    if(feed_user && command_type === "client-bitrate")
       cmd.bitrate = value;
 
     let topic = command_type.match(/^(reload-config|client-reload-all)$/)

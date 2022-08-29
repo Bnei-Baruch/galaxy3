@@ -35,7 +35,7 @@ import VirtualStreaming from "./VirtualStreaming";
 import VirtualStreamingJanus from "../../shared/VirtualStreamingJanus";
 import {getUser, kc} from "../../components/UserManager";
 import LoginPage from "../../components/LoginPage";
-import {updateSentryUser} from "../../shared/sentry";
+import {captureMessage, updateSentryUser} from "../../shared/sentry";
 import GxyJanus from "../../shared/janus-utils";
 import ConfigStore from "../../shared/ConfigStore";
 import {isFullScreen, toggleFullScreen} from "./FullScreenHelper";
@@ -1089,7 +1089,14 @@ class VirtualHttpClient extends Component {
 
     newFeeds.forEach((feed) => {
       const {id, streams} = feed;
-      feed.video = !!streams.find((v) => v.type === "video" && v.codec === "h264");
+      const vst = streams.find((v) => v.type === "video" && v.h264_profile);
+      if(vst) {
+        feed.video = vst.h264_profile === "42e01f";
+        if(!feed.video)
+          captureMessage("h264_profile", vst);
+      } else {
+        feed.video = !!streams.find((v) => v.type === "video" && v.codec === "h264");
+      }
       feed.audio = !!streams.find((a) => a.type === "audio" && a.codec === "opus");
       feed.data = !!streams.find((d) => d.type === "data");
       feed.cammute = !feed.video;
@@ -1231,6 +1238,9 @@ class VirtualHttpClient extends Component {
       this.setState({user});
       updateSentryUser(user);
     } else if (type === "client-bitrate" && user.id === id) {
+      const isGroup = bitrate !== 64000;
+      user.extra.isGroup = isGroup;
+      this.setState({isGroup, user});
       this.setBitrate(bitrate);
     } else if (type === "audio-out") {
       this.handleAudioOut(data);
