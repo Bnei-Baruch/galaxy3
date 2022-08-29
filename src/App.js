@@ -7,8 +7,8 @@ import "./i18n/i18n";
 // import GalaxyApp from "./apps/GalaxyApp";
 // import MobileClient from "./apps/MobileApp/MobileClient";
 // import GalaxyStream from "./apps/StreamApp/GalaxyStream";
-import VirtualMqttClient from "./apps/VirtualApp/VirtualMqttClient";
-// import VirtualHttpClient from "./apps/VirtualApp/VirtualHttpClient";
+// import VirtualMqttClient from "./apps/VirtualApp/VirtualMqttClient";
+import VirtualHttpClient from "./apps/VirtualApp/VirtualHttpClient";
 // import AdminApp from "./apps/AdminApp/AdminApp";
 // import ShidurAppMqtt from "./apps/ShidurApp/ShidurAppMqtt";
 // import ShidurAppHttp from "./apps/ShidurApp/ShidurAppHttp";
@@ -26,8 +26,8 @@ class App extends Component {
         {/*{<GalaxyApp />}*/}
         {/*<MobileClient />*/}
         {/*<GalaxyStream />*/}
-        <VirtualMqttClient />
-        {/*<VirtualHttpClient />*/}
+        {/*<VirtualMqttClient />*/}
+        <VirtualHttpClient />
         {/*<AdminApp />*/}
         {/*<ShidurAppMqtt />*/}
         {/*<ShidurAppHttp />*/}
