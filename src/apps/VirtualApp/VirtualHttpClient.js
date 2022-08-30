@@ -906,7 +906,7 @@ class VirtualHttpClient extends Component {
             },
           };
           const vst = msg.streams.find((v) => v.type === "video" && v.h264_profile);
-          if(vst?.h264_profile !== "42e01f") {
+          if(vst && vst?.h264_profile !== "42e01f") {
             captureMessage("h264_profile", vst);
           }
           this.setState({user});

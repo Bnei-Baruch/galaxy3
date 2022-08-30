@@ -571,7 +571,7 @@ class VirtualMqttClient extends Component {
             user.extra.isGroup = this.state.isGroup;
 
             const vst = json.streams.find((v) => v.type === "video" && v.h264_profile);
-            if(vst?.h264_profile !== "42e01f") {
+            if(vst && vst?.h264_profile !== "42e01f") {
               captureMessage("h264_profile", vst);
             }
 
