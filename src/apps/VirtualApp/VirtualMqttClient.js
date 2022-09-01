@@ -693,8 +693,11 @@ class VirtualMqttClient extends Component {
       const prevAudio = !!prevFeed && prevFeed.streams?.find((a) => a.type === "audio" && a.codec === "opus");
 
       streams.forEach((stream) => {
-        const hasVideo = !muteOtherCams && stream.type === "video" && stream.codec === "h264" && !prevVideo;
+        let hasVideo = !muteOtherCams && stream.type === "video" && stream.codec === "h264" && !prevVideo;
         const hasAudio = stream.type === "audio" && stream.codec === "opus" && !prevAudio;
+        if(stream?.h264_profile && stream?.h264_profile !== "42e01f") {
+          hasVideo = false;
+        }
 
         if (hasVideo || hasAudio || stream.type === "data") {
           prevFeedsMap.set(feed.id, feed);

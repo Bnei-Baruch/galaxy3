@@ -303,8 +303,11 @@ class AdminRootMqtt extends Component {
       const pa = !!pf && pf.streams?.find((a) => a.type === "audio" && a.codec === "opus");
 
       streams.forEach(s => {
-        const hasVideo = s.type === "video" && s.codec === "h264" && !pv;
+        let hasVideo = s.type === "video" && s.codec === "h264" && !pv;
         const hasAudio = s.type === "audio" && s.codec === "opus" && !pa;
+        if(s?.h264_profile && s?.h264_profile !== "42e01f") {
+          hasVideo = false;
+        }
 
         if (hasVideo) {
           pfMap.set(f.id, f);
