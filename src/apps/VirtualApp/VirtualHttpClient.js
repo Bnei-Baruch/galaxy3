@@ -905,6 +905,10 @@ class VirtualHttpClient extends Component {
               isGroup: this.state.isGroup,
             },
           };
+          const vst = msg.streams.find((v) => v.type === "video" && v.h264_profile);
+          if(vst && vst?.h264_profile !== "42e01f") {
+            captureMessage("h264_profile", vst);
+          }
           this.setState({user});
           if (this.state.muteOtherCams) {
             this.setState({videos: NO_VIDEO_OPTION_VALUE});
@@ -1092,8 +1096,6 @@ class VirtualHttpClient extends Component {
       const vst = streams.find((v) => v.type === "video" && v.h264_profile);
       if(vst) {
         feed.video = vst.h264_profile === "42e01f";
-        if(!feed.video)
-          captureMessage("h264_profile", vst);
       } else {
         feed.video = !!streams.find((v) => v.type === "video" && v.codec === "h264");
       }
@@ -1106,8 +1108,11 @@ class VirtualHttpClient extends Component {
       const prevAudio = !!prevFeed && prevFeed.streams?.find((a) => a.type === "audio" && a.codec === "opus");
 
       streams.forEach((stream) => {
-        const hasVideo = !muteOtherCams && stream.type === "video" && stream.codec === "h264" && !prevVideo;
+        let hasVideo = !muteOtherCams && stream.type === "video" && stream.codec === "h264" && !prevVideo;
         const hasAudio = stream.type === "audio" && stream.codec === "opus" && !prevAudio;
+        if(stream?.h264_profile && stream?.h264_profile !== "42e01f") {
+          hasVideo = false;
+        }
 
         if (hasVideo || hasAudio || stream.type === "data") {
           prevFeedsMap.set(feed.id, feed);

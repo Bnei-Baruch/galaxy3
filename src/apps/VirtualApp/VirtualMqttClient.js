@@ -570,6 +570,11 @@ class VirtualMqttClient extends Component {
             user.extra.streams = json.streams;
             user.extra.isGroup = this.state.isGroup;
 
+            const vst = json.streams.find((v) => v.type === "video" && v.h264_profile);
+            if(vst && vst?.h264_profile !== "42e01f") {
+              captureMessage("h264_profile", vst);
+            }
+
             this.setState({user, myid: id, mypvtid: private_id, room, delay: false, wipSettings: false});
             updateSentryUser(user);
             updateGxyUser(user);
@@ -676,8 +681,6 @@ class VirtualMqttClient extends Component {
       const vst = streams.find((v) => v.type === "video" && v.h264_profile);
       if(vst) {
         feed.video = vst.h264_profile === "42e01f";
-        if(!feed.video)
-          captureMessage("h264_profile", vst);
       } else {
         feed.video = !!streams.find((v) => v.type === "video" && v.codec === "h264");
       }
@@ -690,8 +693,11 @@ class VirtualMqttClient extends Component {
       const prevAudio = !!prevFeed && prevFeed.streams?.find((a) => a.type === "audio" && a.codec === "opus");
 
       streams.forEach((stream) => {
-        const hasVideo = !muteOtherCams && stream.type === "video" && stream.codec === "h264" && !prevVideo;
+        let hasVideo = !muteOtherCams && stream.type === "video" && stream.codec === "h264" && !prevVideo;
         const hasAudio = stream.type === "audio" && stream.codec === "opus" && !prevAudio;
+        if(stream?.h264_profile && stream?.h264_profile !== "42e01f") {
+          hasVideo = false;
+        }
 
         if (hasVideo || hasAudio || stream.type === "data") {
           prevFeedsMap.set(feed.id, feed);
