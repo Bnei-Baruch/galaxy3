@@ -60,6 +60,7 @@ import {JanusMqtt} from "../../lib/janus-mqtt";
 import {PublisherPlugin} from "../../lib/publisher-plugin";
 import {SubscriberPlugin} from "../../lib/subscriber-plugin";
 import log from "loglevel";
+import Donations from "./buttons/Donations";
 
 const sortAndFilterFeeds = (feeds) =>
   feeds
@@ -664,6 +665,8 @@ class VirtualMqttClient extends Component {
         room: reconnect ? room : "",
         chatMessagesCount: 0,
         isSettings: false,
+      }, () => {
+        this.initDevices();
       });
       if (typeof callback === "function") callback();
     }, 1000);
@@ -1412,7 +1415,6 @@ class VirtualMqttClient extends Component {
 
   renderTopBar = () => {
     const {t, i18n} = this.props;
-    const isHe = i18n.language === "he";
     const {user, asideMsgCounter, leftAsideName, rightAsideName, isOpenTopMenu} = this.state;
 
     const notApproved = user && user.role !== userRolesEnum.user;
@@ -1495,6 +1497,7 @@ class VirtualMqttClient extends Component {
                   this.toggleRightAside("chat");
                   this.setState({isRoomChat: true});
                 }}
+                disableElevation
               >
                 {t("oldClient.chat")}
               </ButtonMD>
@@ -1508,19 +1511,8 @@ class VirtualMqttClient extends Component {
           </ButtonGroup>
 
           <Support />
-          <ButtonMD
-            component={"a"}
-            href={`https://www.kab1.com/${isHe ? "" : i18n.language}`}
-            className={"top-toolbar__item donate"}
-            dir={isHe ? "rtl" : "ltr"}
-            target="_blank"
-            color="primary"
-            variant="outlined"
-            size="small"
-          >
-            {t("oldClient.donate")}
-            <span>❤</span>
-          </ButtonMD>
+          <Donations />
+          {/* ---------- */}
         </Toolbar>
       </AppBar>
     );

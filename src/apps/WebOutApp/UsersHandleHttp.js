@@ -153,8 +153,13 @@ class UsersHandleHttp extends Component {
               let stream = streams[i];
               stream["id"] = id;
               stream["display"] = display;
-              if (stream.type === "video" && feeds[f].video_codec === "h264") {
-                subscription.push({feed: id, mid: stream.mid});
+              if (stream.type === "video" && stream.codec === "h264") {
+                if(stream?.h264_profile) {
+                  if(stream?.h264_profile === "42e01f")
+                    subscription.push({feed: id, mid: stream.mid});
+                } else {
+                  subscription.push({feed: id, mid: stream.mid});
+                }
               }
             }
           }
@@ -213,8 +218,13 @@ class UsersHandleHttp extends Component {
                 let stream = streams[i];
                 stream["id"] = id;
                 stream["display"] = display;
-                if (stream.type === "video" && feeds[f].video_codec === "h264") {
-                  subscription.push({feed: id, mid: stream.mid});
+                if (stream.type === "video" && stream.codec === "h264") {
+                  if(stream?.h264_profile) {
+                    if(stream?.h264_profile === "42e01f")
+                      subscription.push({feed: id, mid: stream.mid});
+                  } else {
+                    subscription.push({feed: id, mid: stream.mid});
+                  }
                 }
               }
             }
