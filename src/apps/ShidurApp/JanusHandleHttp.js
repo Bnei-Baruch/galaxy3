@@ -157,7 +157,12 @@ class JanusHandleHttp extends Component {
               // the data pass only one way so we subscribe here to all
               // streams in feed
               if (stream.type === "video" && stream.codec === "h264") {
-                subscription.push({feed: id, mid: stream.mid});
+                if(stream?.h264_profile) {
+                  if(stream?.h264_profile === "42e01f")
+                    subscription.push({feed: id, mid: stream.mid});
+                } else {
+                  subscription.push({feed: id, mid: stream.mid});
+                }
               }
             }
           }
@@ -197,7 +202,12 @@ class JanusHandleHttp extends Component {
               // the data pass only one way so we subscribe here to all
               // streams in feed
               if (stream.type === "video" && stream.codec === "h264") {
-                subscription.push({feed: id, mid: stream.mid});
+                if(stream?.h264_profile) {
+                  if(stream?.h264_profile === "42e01f")
+                    subscription.push({feed: id, mid: stream.mid});
+                } else {
+                  subscription.push({feed: id, mid: stream.mid});
+                }
               }
             }
           }

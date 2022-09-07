@@ -12,11 +12,8 @@ import VirtualMqttClient from "./apps/VirtualApp/VirtualMqttClient";
 // import AdminApp from "./apps/AdminApp/AdminApp";
 // import ShidurAppMqtt from "./apps/ShidurApp/ShidurAppMqtt";
 // import ShidurAppHttp from "./apps/ShidurApp/ShidurAppHttp";
-// import SndmanApp from "./apps/SndmanApp/SndmanApp";
 // import AudioOutMqtt from "./apps/AudioOutApp/AudioOutMqtt";
-//import VideoOutMqtt from "./apps/VideoOutApp/VideoOutMqtt";
 // import VideoOutMqtt from "./apps/VideoOutApp/VideoOutMqtt";
-// import WebOutHttp from "./apps/WebOutHttp/WebOutHttp";
 // import WebOutMqtt from "./apps/WebOutApp/WebOutMqtt";
 
 class App extends Component {
@@ -31,10 +28,8 @@ class App extends Component {
         {/*<AdminApp />*/}
         {/*<ShidurAppMqtt />*/}
         {/*<ShidurAppHttp />*/}
-        {/*<SndmanApp />*/}
         {/*<AudioOutMqtt />*/}
         {/*<VideoOutMqtt />*/}
-        {/*<WebOutHttp />*/}
         {/*<WebOutMqtt />*/}
       </I18nextProvider>
     );

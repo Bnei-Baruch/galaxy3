@@ -57,6 +57,8 @@ class PreviewPanelMqtt extends Component {
             let mids = user.extra.streams;
             if (mids.length === 1 && mids[0].type === "audio")
               continue; // User does not have video - skip
+            if (mids.length === 1 && mids[0].type === "video" && mids[0]?.h264_profile && mids[0]?.h264_profile !== "42e01f")
+              continue;
             mid = mids[0].type === "audio" ? "1" : "0";
           }
           let subst = {feed, mid};

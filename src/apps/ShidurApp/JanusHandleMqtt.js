@@ -87,7 +87,12 @@ class JanusHandleMqtt extends Component {
         stream["id"] = id;
         stream["display"] = display;
         if (stream.type === "video" && stream.codec === "h264") {
-          subscription.push({feed: id, mid: stream.mid});
+          if(stream?.h264_profile) {
+            if(stream?.h264_profile === "42e01f")
+              subscription.push({feed: id, mid: stream.mid});
+          } else {
+            subscription.push({feed: id, mid: stream.mid});
+          }
         }
       }
     }
@@ -112,7 +117,12 @@ class JanusHandleMqtt extends Component {
         stream["id"] = id;
         stream["display"] = display;
         if (stream.type === "video" && stream.codec === "h264") {
-          subscription.push({feed: id, mid: stream.mid});
+          if(stream?.h264_profile) {
+            if(stream?.h264_profile === "42e01f")
+              subscription.push({feed: id, mid: stream.mid});
+          } else {
+            subscription.push({feed: id, mid: stream.mid});
+          }
         }
       }
     }
