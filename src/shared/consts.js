@@ -146,13 +146,13 @@ export const audiog_options = [
 export const gxycol = [0, 201, 203, 202, 204];
 
 export const trllang = {
-  Hebrew: 301,
-  Russian: 302,
-  English: 303,
-  Spanish: 304,
-  French: 305,
-  Italian: 306,
-  German: 307,
+  Hebrew: 401,
+  Russian: 402,
+  English: 403,
+  Spanish: 404,
+  French: 405,
+  Italian: 406,
+  German: 407,
   Turkish: 308,
   Portuguese: 309,
   Bulgarian: 310,
