@@ -146,7 +146,7 @@ class MqttMsg {
             } catch (e) {
               log.error(e);
               log.error("[mqtt] Not valid JSON, ", data.toString());
-              captureMessage(data.toString(), {source: "mqtt"});
+              captureMessage("MQTT: Fail to parse JSON", data, "error");
               return;
             }
           }
@@ -158,7 +158,6 @@ class MqttMsg {
         case "janus":
           const json = JSON.parse(data)
           const mit = json?.session_id || packet?.properties?.userProperties?.mit || service
-          //console.log(this.mq.listeners(mit).length);
           this.mq.emit(mit, data, id);
           break;
         default:
