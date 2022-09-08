@@ -120,8 +120,7 @@ class VirtualMqttClient extends Component {
     numberOfVirtualUsers: localStorage.getItem("number_of_virtual_users") || "1",
     currentLayout: localStorage.getItem("currentLayout") || "split",
     attachedSource: true,
-    sourceLoading: true,
-    virtualStreamingJanus: new JanusStream(() => this.virtualStreamingInitialized()),
+    sourceLoading: false,
     appInitError: null,
     upval: null,
     net_status: 1,
@@ -150,7 +149,6 @@ class VirtualMqttClient extends Component {
       shidur,
       sourceLoading,
       room,
-      virtualStreamingJanus,
       videoroom,
       localVideoTrack,
       localAudioTrack,
@@ -159,24 +157,24 @@ class VirtualMqttClient extends Component {
     } = this.state;
 
     if (shidur && !prevState.shidur && !sourceLoading && room) {
-      virtualStreamingJanus.unmuteAudioElement();
+      JanusStream.unmuteAudioElement();
     }
 
     if (!sourceLoading && prevState.sourceLoading && shidur && room) {
-      virtualStreamingJanus.unmuteAudioElement();
+      JanusStream.unmuteAudioElement();
     }
 
     if (room && !prevState.room && shidur && !sourceLoading) {
-      virtualStreamingJanus.unmuteAudioElement();
+      JanusStream.unmuteAudioElement();
     }
 
     if (
       (!sourceLoading && shidurForGuestReady && !prevState.shidurForGuestReady) ||
       (shidurForGuestReady && !sourceLoading && prevState.sourceLoading)
     ) {
-      virtualStreamingJanus.setVideo(this.state.videos);
-      virtualStreamingJanus.audioElement.play();
-      virtualStreamingJanus.unmuteAudioElement();
+      JanusStream.setVideo(this.state.videos);
+      JanusStream.audioElement.play();
+      JanusStream.unmuteAudioElement();
     }
 
     if (
@@ -185,7 +183,7 @@ class VirtualMqttClient extends Component {
       localAudioTrack !== prevState.localAudioTrack ||
       JSON.stringify(user) !== JSON.stringify(prevState.user)
     ) {
-      monitoringData.setConnection(videoroom, localAudioTrack, localVideoTrack, user, virtualStreamingJanus);
+      monitoringData.setConnection(videoroom, localAudioTrack, localVideoTrack, user, JanusStream);
       monitoringData.setOnStatus((connectionStatus) => {
         this.setState({connectionStatus});
       });
@@ -329,7 +327,7 @@ class VirtualMqttClient extends Component {
         if (user.role !== userRolesEnum.user) {
           localStorage.setItem("room", "-1");
           this.setState({user, sourceLoading: true});
-          this.state.virtualStreamingJanus.init(user, "str1");
+          JanusStream.initStreaming(user, "str1");
         }
       }
     });
@@ -346,8 +344,9 @@ class VirtualMqttClient extends Component {
     const config = GxyJanus.instanceConfig(user.janus);
     log.info("[client] Got config: ", config);
     this.initJanus(user, config, retry);
+    console.log(JanusStream)
     if (!reconnect) {
-      this.state.virtualStreamingJanus.init(user);
+      JanusStream.initStreaming(user);
     }
   };
 
@@ -616,7 +615,7 @@ class VirtualMqttClient extends Component {
         log.error("[client] Error exiting room", err);
       });
 
-    let {videoroom, janus, room, shidur, virtualStreamingJanus} = this.state;
+    let {videoroom, janus, room, shidur} = this.state;
 
     videoroom.leave().then((data) => {
       log.info("[client] leave respond:", data);
@@ -626,14 +625,7 @@ class VirtualMqttClient extends Component {
     mqtt.exit("galaxy/room/" + room + "/chat");
 
     if (shidur && !reconnect) {
-      virtualStreamingJanus.destroy({
-        success: () => {
-          log.info("[client] Virtual streaming destroyed on exit room.");
-        },
-        error: (error) => {
-          log.info("[client] Error destroying VirtualStreaming on exit room", error);
-        },
-      });
+      JanusStream.destroy();
     }
 
     if (!reconnect && isFullScreen()) {
@@ -643,9 +635,9 @@ class VirtualMqttClient extends Component {
     setTimeout(() => {
       if (janus) janus.destroy();
       if (!reconnect) {
-        this.state.virtualStreamingJanus.muteAudioElement();
+        JanusStream.muteAudioElement();
       } else {
-        this.state.virtualStreamingJanus.unmuteAudioElement();
+        JanusStream.unmuteAudioElement();
       }
       this.setState({
         muted: false,
@@ -966,7 +958,7 @@ class VirtualMqttClient extends Component {
   };
 
   handleAudioOut = (data) => {
-    this.state.virtualStreamingJanus.streamGalaxy(data.status, 4, "");
+    JanusStream.streamGalaxy(data.status, 4, "");
     if (data.status) {
       // remove question mark when sndman unmute our room
       if (this.state.question) {
@@ -1076,34 +1068,25 @@ class VirtualMqttClient extends Component {
       );
       this.camMute(/* cammuted= */ false);
       this.setState({videos: NO_VIDEO_OPTION_VALUE, isKliOlamiShown: false});
-      this.state.virtualStreamingJanus.setVideo(NO_VIDEO_OPTION_VALUE);
+      JanusStream.setVideo(NO_VIDEO_OPTION_VALUE);
     } else {
       // Should unmute/show now all videos.
       this.makeSubscriptionAudioMode();
       this.camMute(/* cammuted= */ true);
       this.setState({videos: VIDEO_360P_OPTION_VALUE, isKliOlamiShown: true});
-      this.state.virtualStreamingJanus.setVideo(VIDEO_360P_OPTION_VALUE);
+      JanusStream.setVideo(VIDEO_360P_OPTION_VALUE);
     }
     this.setState({muteOtherCams: !muteOtherCams});
   };
 
   toggleShidur = () => {
-    const {virtualStreamingJanus, shidur, user} = this.state;
+    const {shidur, user} = this.state;
     const stateUpdate = {shidur: !shidur};
     if (shidur) {
-      virtualStreamingJanus.destroy({
-        success: () => {
-          log.info("[client] Virtual streming destroyed.");
-          this.setState(stateUpdate);
-        },
-        error: (error) => {
-          log.info("[client] Error destroying VirtualStreaming", error);
-          this.setState(stateUpdate);
-        },
-      });
+      JanusStream.toggle('shidur');
+      this.setState(stateUpdate);
     } else {
-      const {ip, country} = user;
-      virtualStreamingJanus.init(user);
+      JanusStream.initStreaming(user);
       stateUpdate.sourceLoading = true;
       this.setState(stateUpdate);
     }
@@ -1595,7 +1578,7 @@ class VirtualMqttClient extends Component {
 
     const kliOlami = !sourceLoading && isKliOlamiShown && (
       <QuadStream
-        JanusStream={this.state.virtualStreamingJanus}
+        JanusStream={JanusStream}
         close={() => this.toggleQuad(false)}
         toggleAttach={(val = !kliOlamiAttached) => this.setState({kliOlamiAttached: val})}
         attached={kliOlamiAttached}
@@ -1655,7 +1638,7 @@ class VirtualMqttClient extends Component {
 
   setAudio(audios, text) {
     this.setState({audios: {audios, text}});
-    this.state.virtualStreamingJanus.setAudio(audios, text);
+    JanusStream.setAudio(audios, text);
   }
 
   render() {
@@ -1674,7 +1657,7 @@ class VirtualMqttClient extends Component {
       selected_room,
       shidur,
       user,
-      virtualStreamingJanus,
+      JanusStream,
       videos,
       isSettings,
       audios,
@@ -1711,7 +1694,7 @@ class VirtualMqttClient extends Component {
     } else if ((room !== "" && shidur) || notApproved) {
       source = (
         <VirtualStreaming
-          virtualStreamingJanus={virtualStreamingJanus}
+          JanusStream={JanusStream}
           attached={attachedSource}
           closeShidur={this.toggleShidur}
           setVideo={(v) => this.setState({videos: v})}
@@ -1789,7 +1772,7 @@ class VirtualMqttClient extends Component {
             closeModal={() => this.setState({isSettings: false, isOpenTopMenu: false})}
             setAudio={this.setAudio.bind(this)}
             setVideo={(v) => {
-              virtualStreamingJanus.setVideo(v);
+              JanusStream.setVideo(v);
               this.setState({videos: v});
             }}
             videos={videos}

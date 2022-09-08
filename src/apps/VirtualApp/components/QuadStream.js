@@ -22,7 +22,7 @@ class QuadStream extends Component {
 
   componentWillUnmount() {
     if (this.videoWrapper) {
-      this.props.JanusStream.detachQuadStream();
+      this.props.JanusStream.toggle("quad");
       this.videoWrapper.ownerDocument.defaultView.removeEventListener("resize", this.handleFullScreenChange);
     }
     this.props.toggleAttach(true);

@@ -4,6 +4,7 @@ import NewWindow from "@hinaser/react-new-window";
 import {videos_options2, audiog_options2, NO_VIDEO_OPTION_VALUE} from "../../shared/consts";
 import "./BroadcastStream.scss";
 import Volume from "./components/Volume";
+import JanusStream from "../../shared/streaming-utils";
 import {withTranslation} from "react-i18next";
 import {isFullScreen, toggleFullScreen} from "./FullScreenHelper";
 import audioOnly from "../../shared/audio_only.svg";
@@ -23,7 +24,7 @@ class VirtualStreaming extends Component {
   };
 
   videoRef(ref) {
-    this.props.virtualStreamingJanus.attachVideoStream(ref);
+    JanusStream.attachVideoStream(ref);
   }
 
   setVideoWrapperRef(ref) {
@@ -39,7 +40,7 @@ class VirtualStreaming extends Component {
   }
 
   componentDidMount() {
-    this.props.virtualStreamingJanus.onTalking((talking) => this.setState({talking}));
+    JanusStream.onTalking((talking) => this.setState({talking}));
     //this.setState({ cssFixInterval: setInterval(() => this.cssFix(), 500) });
   }
 
@@ -78,7 +79,7 @@ class VirtualStreaming extends Component {
   };
 
   setVideo(videos) {
-    this.props.virtualStreamingJanus.setVideo(videos);
+    JanusStream.setVideo(videos);
     this.props.setVideo(videos);
   }
 
@@ -204,7 +205,7 @@ class VirtualStreaming extends Component {
                     })}
                   </Dropdown.Menu>
                 </Dropdown>
-                <Volume media={virtualStreamingJanus.audioElement} />
+                <Volume media={JanusStream.audioElement} />
                 <div className="controls__spacer"></div>
                 <button onClick={this.toggleFullScreen}>
                   <Icon name={isFullScreen(this.videoWrapper) ? "compress" : "expand"} />
