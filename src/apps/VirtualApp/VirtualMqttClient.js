@@ -418,8 +418,7 @@ class VirtualMqttClient extends Component {
   initDevices = () => {
     const {t} = this.props;
 
-    devices
-      .init((media) => {
+    devices.init((media) => {
         setTimeout(() => {
           if (media.audio.device) {
             this.setAudioDevice(media.audio.device);
@@ -432,8 +431,7 @@ class VirtualMqttClient extends Component {
             //FIXME: remove it from pc?
           }
         }, 1000);
-      })
-      .then((data) => {
+      }).then((data) => {
         log.info("[client] init devices: ", data);
         const {audio, video} = data;
         if (audio.error && video.error) {
@@ -451,8 +449,8 @@ class VirtualMqttClient extends Component {
           if (myvideo) myvideo.srcObject = video.stream;
         }
 
-        const localVideoTrack = video.stream.getVideoTracks()[0];
-        const localAudioTrack = audio.stream.getAudioTracks()[0];
+        const localVideoTrack = video?.stream ? video.stream?.getVideoTracks()[0] : null;
+        const localAudioTrack = audio?.stream ? audio.stream?.getAudioTracks()[0] : null;
 
         this.setState({media: data, localVideoTrack, localAudioTrack});
       });
