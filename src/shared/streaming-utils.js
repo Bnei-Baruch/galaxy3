@@ -185,11 +185,13 @@ export default class JanusStream {
   }
 
   initJanus_(user, srv) {
-    const gw_list = GxyJanus.gatewayNames("streaming");
-    let inst = gw_list[Math.floor(Math.random() * gw_list.length)];
-    this.config = GxyJanus.instanceConfig(inst);
-    const str = srv || this.config.name
-
+    let str = srv;
+    if(!srv) {
+      const gw_list = GxyJanus.gatewayNames("streaming");
+      let inst = gw_list[Math.floor(Math.random() * gw_list.length)];
+      this.config = GxyJanus.instanceConfig(inst);
+      str = this.config.name
+    }
     this.janus = new JanusMqtt(user, str)
     this.janus.onStatus = (srv, status) => {
       if(status !== "online") {
