@@ -146,7 +146,7 @@ class MqttMsg {
             } catch (e) {
               log.error(e);
               log.error("[mqtt] Not valid JSON, ", data.toString());
-              captureMessage("MQTT: Fail to parse JSON", data, "error");
+              captureMessage("MQTT: Fail to parse JSON", data.toString(), "error");
               return;
             }
           }
