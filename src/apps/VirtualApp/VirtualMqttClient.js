@@ -8,7 +8,6 @@ import {
   getDateString,
   notifyMe,
   sendUserState,
-  testMic,
   updateGxyUser,
 } from "../../shared/tools";
 import "./VirtualClient.scss";
@@ -152,26 +151,26 @@ class VirtualMqttClient extends Component {
       monitoringData,
     } = this.state;
 
-    if (shidur && !prevState.shidur && !sourceLoading && room) {
-      JanusStream.unmuteAudioElement();
-    }
-
-    if (!sourceLoading && prevState.sourceLoading && shidur && room) {
-      JanusStream.unmuteAudioElement();
-    }
-
-    if (room && !prevState.room && shidur && !sourceLoading) {
-      JanusStream.unmuteAudioElement();
-    }
-
-    if (
-      (!sourceLoading && shidurForGuestReady && !prevState.shidurForGuestReady) ||
-      (shidurForGuestReady && !sourceLoading && prevState.sourceLoading)
-    ) {
-      JanusStream.setVideo(this.state.videos);
-      JanusStream.audioElement.play();
-      JanusStream.unmuteAudioElement();
-    }
+    // if (shidur && !prevState.shidur && !sourceLoading && room) {
+    //   JanusStream.unmuteAudioElement();
+    // }
+    //
+    // if (!sourceLoading && prevState.sourceLoading && shidur && room) {
+    //   JanusStream.unmuteAudioElement();
+    // }
+    //
+    // if (room && !prevState.room && shidur && !sourceLoading) {
+    //   JanusStream.unmuteAudioElement();
+    // }
+    //
+    // if (
+    //   (!sourceLoading && shidurForGuestReady && !prevState.shidurForGuestReady) ||
+    //   (shidurForGuestReady && !sourceLoading && prevState.sourceLoading)
+    // ) {
+    //   JanusStream.setVideo(this.state.videos);
+    //   JanusStream.audioElement.play();
+    //   JanusStream.unmuteAudioElement();
+    // }
 
     if (
       videoroom !== prevState.videoroom ||
@@ -602,17 +601,19 @@ class VirtualMqttClient extends Component {
       JanusStream.destroy();
     }
 
+    console.log(JanusStream)
+
     if (!reconnect && isFullScreen()) {
       toggleFullScreen();
     }
 
     setTimeout(() => {
       if (janus) janus.destroy();
-      if (!reconnect) {
-        JanusStream.muteAudioElement();
-      } else {
-        JanusStream.unmuteAudioElement();
-      }
+      // if (!reconnect) {
+      //   JanusStream.muteAudioElement();
+      // } else {
+      //   JanusStream.unmuteAudioElement();
+      // }
       this.setState({
         muted: false,
         question: false,
@@ -630,8 +631,6 @@ class VirtualMqttClient extends Component {
         chatMessagesCount: 0,
         isSettings: false,
         sourceLoading: true
-      }, () => {
-        this.initDevices();
       });
       if (typeof callback === "function") callback();
     }, 1000);
@@ -986,10 +985,7 @@ class VirtualMqttClient extends Component {
   };
 
   startLocalMedia = (videoroom) => {
-    const {
-      media: {video: {devices, device} = {}},
-      cammuted,
-    } = this.state;
+    const {media: {video: {devices, device} = {}}, cammuted,} = this.state;
     if (!cammuted) return;
     log.info("[client] Bind local video stream");
     const deviceId = device || devices?.[0]?.deviceId;

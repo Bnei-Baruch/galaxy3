@@ -198,7 +198,8 @@ class JanusStream {
   }
 
   destroy() {
-      this.janus.destroy()
+      this.clean();
+      this.janus.destroy();
       this.janus = null;
   }
 

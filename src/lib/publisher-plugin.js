@@ -340,8 +340,6 @@ export class PublisherPlugin extends EventEmitter {
       this.pc.oniceconnectionstatechange = null;
       this.pc.getTransceivers().forEach((transceiver) => {
         if(transceiver) {
-          if(transceiver.sender && transceiver.sender.track)
-            transceiver.sender.track.stop();
           this.pc.removeTrack(transceiver.sender);
           transceiver.stop();
         }

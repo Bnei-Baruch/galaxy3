@@ -84,7 +84,7 @@ class VirtualStreaming extends Component {
   }
 
   render() {
-    const {attached, closeShidur, virtualStreamingJanus, t, videos, layout, audios, setAudio} = this.props;
+    const {attached, closeShidur, t, videos, layout, audios, setAudio} = this.props;
     const {room, talking} = this.state;
 
     if (!room) {
