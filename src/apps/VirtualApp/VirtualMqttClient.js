@@ -139,10 +139,6 @@ class VirtualMqttClient extends Component {
     isGroup: false,
   };
 
-  virtualStreamingInitialized() {
-    this.setState({sourceLoading: false});
-  }
-
   componentDidUpdate(prevProps, prevState) {
     const {
       shidurForGuestReady,
@@ -254,7 +250,6 @@ class VirtualMqttClient extends Component {
           this.setState({rooms});
           this.initDevices();
           JanusStream.setUser(user);
-          this.setState({sourceLoading: false});
           const {selected_room} = this.state;
           if (selected_room !== "") {
             const room = rooms.find((r) => r.room === selected_room);
@@ -490,29 +485,6 @@ class VirtualMqttClient extends Component {
     });
   };
 
-  selfTest = () => {
-    const {t} = this.props;
-    this.setState({selftest: t("oldClient.recording") + 9});
-    testMic(this.state.media.audio.stream);
-    let rect = 9;
-    let rec = setInterval(() => {
-      rect--;
-      this.setState({selftest: t("oldClient.recording") + rect});
-      if (rect <= 0) {
-        clearInterval(rec);
-        let playt = 11;
-        let play = setInterval(() => {
-          playt--;
-          this.setState({selftest: t("oldClient.playing") + playt});
-          if (playt <= 0) {
-            clearInterval(play);
-            this.setState({selftest: t("oldClient.selfAudioTest"), tested: true});
-          }
-        }, 1000);
-      }
-    }, 1000);
-  };
-
   selectRoom = (selected_room) => {
     const {rooms} = this.state;
     const user = Object.assign({}, this.state.user);
@@ -575,7 +547,7 @@ class VirtualMqttClient extends Component {
               captureMessage("h264_profile", vst);
             }
 
-            this.setState({user, myid: id, mypvtid: private_id, room, delay: false, wipSettings: false});
+            this.setState({user, myid: id, mypvtid: private_id, room, delay: false, wipSettings: false, sourceLoading: false});
             updateSentryUser(user);
             updateGxyUser(user);
             this.keepAlive();
@@ -657,6 +629,7 @@ class VirtualMqttClient extends Component {
         room: reconnect ? room : "",
         chatMessagesCount: 0,
         isSettings: false,
+        sourceLoading: true
       }, () => {
         this.initDevices();
       });
@@ -1089,7 +1062,7 @@ class VirtualMqttClient extends Component {
       this.setState(stateUpdate);
     } else {
       JanusStream.initStreaming(user);
-      stateUpdate.sourceLoading = true;
+      //stateUpdate.sourceLoading = true;
       this.setState(stateUpdate);
     }
   };
