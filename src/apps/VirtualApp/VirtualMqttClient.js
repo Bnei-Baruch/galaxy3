@@ -120,7 +120,7 @@ class VirtualMqttClient extends Component {
     numberOfVirtualUsers: localStorage.getItem("number_of_virtual_users") || "1",
     currentLayout: localStorage.getItem("currentLayout") || "split",
     attachedSource: true,
-    sourceLoading: false,
+    sourceLoading: true,
     appInitError: null,
     upval: null,
     net_status: 1,
@@ -253,6 +253,8 @@ class VirtualMqttClient extends Component {
           const {rooms} = data;
           this.setState({rooms});
           this.initDevices();
+          JanusStream.setUser(user);
+          this.setState({sourceLoading: false});
           const {selected_room} = this.state;
           if (selected_room !== "") {
             const room = rooms.find((r) => r.room === selected_room);
@@ -327,7 +329,7 @@ class VirtualMqttClient extends Component {
         if (user.role !== userRolesEnum.user) {
           localStorage.setItem("room", "-1");
           this.setState({user, sourceLoading: true});
-          JanusStream.initStreaming(user, "str1");
+          JanusStream.initStreaming( "str1");
         }
       }
     });
@@ -346,7 +348,7 @@ class VirtualMqttClient extends Component {
     this.initJanus(user, config, retry);
     console.log(JanusStream)
     if (!reconnect) {
-      JanusStream.initStreaming(user);
+      JanusStream.initStreaming();
     }
   };
 
@@ -1092,7 +1094,10 @@ class VirtualMqttClient extends Component {
     }
   };
 
-  toggleQuad = (isKliOlamiShown = !this.state.isKliOlamiShown) => this.setState({isKliOlamiShown});
+  toggleQuad = (isKliOlamiShown = !this.state.isKliOlamiShown) => {
+    // JanusStream.toggle('quad');
+    this.setState({isKliOlamiShown});
+  }
 
   updateLayout = (currentLayout) => {
     this.setState({currentLayout}, () => {
@@ -1576,9 +1581,8 @@ class VirtualMqttClient extends Component {
       noOfVideos += layout === "equal" || layout === "double" ? 1 : 0;
     }
 
-    const kliOlami = !sourceLoading && isKliOlamiShown && (
+    const kliOlami = !!room && isKliOlamiShown && (
       <QuadStream
-        JanusStream={JanusStream}
         close={() => this.toggleQuad(false)}
         toggleAttach={(val = !kliOlamiAttached) => this.setState({kliOlamiAttached: val})}
         attached={kliOlamiAttached}
@@ -1657,7 +1661,6 @@ class VirtualMqttClient extends Component {
       selected_room,
       shidur,
       user,
-      JanusStream,
       videos,
       isSettings,
       audios,
@@ -1694,7 +1697,6 @@ class VirtualMqttClient extends Component {
     } else if ((room !== "" && shidur) || notApproved) {
       source = (
         <VirtualStreaming
-          JanusStream={JanusStream}
           attached={attachedSource}
           closeShidur={this.toggleShidur}
           setVideo={(v) => this.setState({videos: v})}

@@ -4,6 +4,7 @@ import {isFullScreen, toggleFullScreen} from "../FullScreenHelper";
 import {Fullscreen} from "../buttons";
 import {Close, OpenInNew} from "@mui/icons-material";
 import IconButton from "@mui/material/IconButton";
+import JanusStream from "../../../shared/streaming-utils";
 
 class QuadStream extends Component {
   constructor(props) {
@@ -17,12 +18,12 @@ class QuadStream extends Component {
   }
 
   componentDidMount() {
-    if (!this.state.stream) this.props.JanusStream.initQuadStream((stream) => this.setState({stream}));
+    if (!this.state.stream) JanusStream.initQuadStream((stream) => this.setState({stream}));
   }
 
   componentWillUnmount() {
     if (this.videoWrapper) {
-      this.props.JanusStream.toggle("quad");
+      JanusStream.toggle("quad");
       this.videoWrapper.ownerDocument.defaultView.removeEventListener("resize", this.handleFullScreenChange);
     }
     this.props.toggleAttach(true);

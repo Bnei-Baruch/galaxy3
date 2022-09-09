@@ -7,6 +7,7 @@ import GxyJanus from "./janus-utils";
 class JanusStream {
   constructor() {
     this.janus = null;
+    this.user = null;
 
     this.videoQuadStream = null;
     // Streaming plugin for video.
@@ -49,9 +50,13 @@ class JanusStream {
     this.onTalkingCallback = null;
   }
 
-  initStreaming = (user, srv) => {
+  setUser = (user) => {
+    this.user = user;
+  };
+
+  initStreaming = (srv) => {
     this.clean();
-    this.initJanus(user, srv, () => {
+    this.initJanus(srv, () => {
       if (!this.videoJanusStream || this.videos !== NO_VIDEO_OPTION_VALUE) {
         this.initVideoStream()
       }
@@ -65,19 +70,27 @@ class JanusStream {
     })
   };
 
-  initJanus = (user, srv, cb) => {
+  initJanus = (srv, cb) => {
+    if(this.janus) {
+      if (typeof cb === "function") cb();
+      return
+    }
+
     let str = srv;
+
     if(!srv) {
       const gw_list = GxyJanus.gatewayNames("streaming");
       let inst = gw_list[Math.floor(Math.random() * gw_list.length)];
       this.config = GxyJanus.instanceConfig(inst);
       str = this.config.name
     }
-    let janus = new JanusMqtt(user, str)
+
+    let janus = new JanusMqtt(this.user, str)
+
     janus.onStatus = (srv, status) => {
       if(status !== "online") {
         setTimeout(() => {
-          this.initJanus(user);
+          this.initJanus();
         }, 5000);
       }
     }
@@ -85,7 +98,7 @@ class JanusStream {
     janus.init().then(data => {
       log.debug("[shidur] init: ", data);
       this.janus = janus;
-      if (typeof cb === "function") cb(user, srv);
+      if (typeof cb === "function") cb();
     })
   }
 
@@ -127,12 +140,13 @@ class JanusStream {
   };
 
   initQuadStream = (callback) => {
-    if(!this.janus) return
-    this.videoQuadStream = new StreamingPlugin(this.config.iceServers);
-    this.janus.attach(this.videoQuadStream).then(data => {
-      log.debug("[shidur] attach quad", data)
-      this.videoQuadStream.watch(102).then(stream => {
-        callback(stream)
+    this.initJanus(null,() => {
+      this.videoQuadStream = new StreamingPlugin(this.config.iceServers);
+      this.janus.attach(this.videoQuadStream).then(data => {
+        log.debug("[shidur] attach quad", data)
+        this.videoQuadStream.watch(102).then(stream => {
+          callback(stream)
+        })
       })
     })
   };
