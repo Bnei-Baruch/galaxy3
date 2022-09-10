@@ -2,31 +2,18 @@ import React, {Component, Fragment} from "react";
 import classNames from "classnames";
 import {isMobile} from "react-device-detect";
 import {Icon, Popup} from "semantic-ui-react";
-import {
-  checkNotification,
-  geoInfo,
-  getDateString,
-  notifyMe,
-  sendUserState,
-  updateGxyUser,
-} from "../../shared/tools";
+import {checkNotification, geoInfo, getDateString, notifyMe, sendUserState, updateGxyUser,} from "../../shared/tools";
 import "./VirtualClient.scss";
 import "./VideoConteiner.scss";
 import "./CustomIcons.scss";
 import "eqcss";
 import VirtualChat from "./VirtualChat";
-import {NO_VIDEO_OPTION_VALUE, sketchesByLang, VIDEO_360P_OPTION_VALUE} from "../../shared/consts";
+import {media_object, NO_VIDEO_OPTION_VALUE, sketchesByLang, VIDEO_360P_OPTION_VALUE} from "../../shared/consts";
 import {GEO_IP_INFO, PAY_USER_FEE} from "../../shared/env";
 import platform from "platform";
 import {TopMenu} from "./components/TopMenu";
 import {withTranslation} from "react-i18next";
-import {
-  LINK_STATE_GOOD,
-  LINK_STATE_INIT,
-  LINK_STATE_MEDIUM,
-  LINK_STATE_WEAK,
-  MonitoringData,
-} from "../../shared/MonitoringData";
+import {LINK_STATE_GOOD, LINK_STATE_INIT, LINK_STATE_MEDIUM, LINK_STATE_WEAK, MonitoringData,} from "../../shared/MonitoringData";
 import api from "../../shared/Api";
 import VirtualStreaming from "./VirtualStreaming";
 import JanusStream from "../../shared/streaming-utils";
@@ -73,22 +60,7 @@ class VirtualMqttClient extends Component {
     chatMessagesCount: 0,
     creatingFeed: false,
     delay: true,
-    media: {
-      audio: {
-        context: null,
-        device: null,
-        devices: [],
-        error: null,
-        stream: null,
-      },
-      video: {
-        setting: {width: 320, height: 180, ideal: 15},
-        device: null,
-        devices: [],
-        error: null,
-        stream: null,
-      },
-    },
+    media: media_object,
     audio: null,
     video: null,
     janus: null,
@@ -139,39 +111,7 @@ class VirtualMqttClient extends Component {
   };
 
   componentDidUpdate(prevProps, prevState) {
-    const {
-      shidurForGuestReady,
-      shidur,
-      sourceLoading,
-      room,
-      videoroom,
-      localVideoTrack,
-      localAudioTrack,
-      user,
-      monitoringData,
-    } = this.state;
-
-    // if (shidur && !prevState.shidur && !sourceLoading && room) {
-    //   JanusStream.unmuteAudioElement();
-    // }
-    //
-    // if (!sourceLoading && prevState.sourceLoading && shidur && room) {
-    //   JanusStream.unmuteAudioElement();
-    // }
-    //
-    // if (room && !prevState.room && shidur && !sourceLoading) {
-    //   JanusStream.unmuteAudioElement();
-    // }
-    //
-    // if (
-    //   (!sourceLoading && shidurForGuestReady && !prevState.shidurForGuestReady) ||
-    //   (shidurForGuestReady && !sourceLoading && prevState.sourceLoading)
-    // ) {
-    //   JanusStream.setVideo(this.state.videos);
-    //   JanusStream.audioElement.play();
-    //   JanusStream.unmuteAudioElement();
-    // }
-
+    const {videoroom, localVideoTrack, localAudioTrack, user, monitoringData} = this.state;
     if (
       videoroom !== prevState.videoroom ||
       localVideoTrack !== prevState.localVideoTrack ||
@@ -501,9 +441,7 @@ class VirtualMqttClient extends Component {
 
   joinRoom = (reconnect, videoroom, user) => {
     let {selected_room, tested, media, cammuted, janus, isGroup} = this.state;
-    const {
-      video: {device},
-    } = media;
+    const {video: {device}} = media;
     user.camera = !!device && cammuted === false;
     user.self_test = tested;
     user.sound_test = reconnect ? JSON.parse(localStorage.getItem("sound_test")) : false;
@@ -608,11 +546,6 @@ class VirtualMqttClient extends Component {
 
     setTimeout(() => {
       if (janus) janus.destroy();
-      // if (!reconnect) {
-      //   JanusStream.muteAudioElement();
-      // } else {
-      //   JanusStream.unmuteAudioElement();
-      // }
       this.setState({
         muted: false,
         question: false,
@@ -998,12 +931,7 @@ class VirtualMqttClient extends Component {
   };
 
   micMute = () => {
-    const {
-      media: {
-        audio: {stream},
-      },
-      muted,
-    } = this.state;
+    const {media: {audio: {stream}},muted} = this.state;
     if (stream) {
       if (muted) this.micVolume();
       stream.getAudioTracks()[0].enabled = muted;
@@ -1154,13 +1082,7 @@ class VirtualMqttClient extends Component {
   };
 
   renderMedia = (feed, width, height) => {
-    const {
-      id,
-      talking,
-      question,
-      cammute,
-      display: {display},
-    } = feed;
+    const {id, talking, question, cammute, display: {display}} = feed;
     const {muteOtherCams} = this.state;
     const mute = cammute || muteOtherCams;
 
@@ -1223,22 +1145,7 @@ class VirtualMqttClient extends Component {
 
   renderBottomBar = (layout, otherFeedHasQuestion) => {
     const {t} = this.props;
-    const {
-      attachedSource,
-      cammuted,
-      delay,
-      muteOtherCams,
-      muted,
-      question,
-      room,
-      shidur,
-      sourceLoading,
-      user,
-      premodStatus,
-      media,
-      isKliOlamiShown,
-      mqttOn,
-    } = this.state;
+    const {attachedSource, cammuted, delay, muteOtherCams, muted, question, room, shidur, sourceLoading, user, premodStatus, media, isKliOlamiShown, mqttOn,} = this.state;
 
     return (
       <AppBar position="static" color="default">
@@ -1474,10 +1381,7 @@ class VirtualMqttClient extends Component {
 
   renderLeftAside = () => {
     const {leftAsideName, leftAsideSize} = this.state;
-    const {
-      i18n: {language},
-      theme,
-    } = this.props;
+    const {i18n: {language}, theme,} = this.props;
 
     let content;
     if (leftAsideName === "material") {
@@ -1517,31 +1421,9 @@ class VirtualMqttClient extends Component {
     );
   };
 
-  renderNewVersionContent = (
-    layout,
-    isDeb,
-    source,
-    rooms_list,
-    otherFeedHasQuestion,
-    adevices_list,
-    vdevices_list,
-    noOfVideos,
-    remoteVideos
-  ) => {
+  renderNewVersionContent = (layout, isDeb, source, rooms_list, otherFeedHasQuestion, adevices_list, vdevices_list, noOfVideos, remoteVideos) => {
     const {i18n} = this.props;
-    const {
-      attachedSource,
-      chatVisible,
-      room,
-      shidur,
-      user,
-      rightAsideName,
-      leftAsideSize,
-      leftAsideName,
-      sourceLoading,
-      isKliOlamiShown,
-      kliOlamiAttached,
-    } = this.state;
+    const {attachedSource, chatVisible, room, shidur, user, rightAsideName, leftAsideSize, leftAsideName, sourceLoading, isKliOlamiShown, kliOlamiAttached,} = this.state;
 
     const notApproved = user && user.role !== userRolesEnum.user;
 
@@ -1614,28 +1496,7 @@ class VirtualMqttClient extends Component {
   }
 
   render() {
-    const {
-      appInitError,
-      attachedSource,
-      cammuted,
-      currentLayout,
-      feeds,
-      media,
-      muteOtherCams,
-      myid,
-      numberOfVirtualUsers,
-      room,
-      rooms,
-      selected_room,
-      shidur,
-      user,
-      videos,
-      isSettings,
-      audios,
-      shidurForGuestReady,
-      wipSettings,
-      isGroup,
-    } = this.state;
+    const {appInitError, attachedSource, cammuted, currentLayout, feeds, media, muteOtherCams, myid, numberOfVirtualUsers, room, rooms, selected_room, shidur, user, videos, isSettings, audios, shidurForGuestReady, wipSettings, isGroup,} = this.state;
 
     if (appInitError) {
       return (
@@ -1719,17 +1580,7 @@ class VirtualMqttClient extends Component {
 
     const isDeb = new URL(window.location.href).searchParams.has("deb");
 
-    let content = this.renderNewVersionContent(
-      layout,
-      isDeb,
-      source,
-      rooms_list,
-      otherFeedHasQuestion,
-      adevices_list,
-      vdevices_list,
-      noOfVideos,
-      remoteVideos
-    );
+    let content = this.renderNewVersionContent(layout, isDeb, source, rooms_list, otherFeedHasQuestion, adevices_list, vdevices_list, noOfVideos, remoteVideos);
 
     return (
       <Fragment>

@@ -401,3 +401,20 @@ export const region_filter = {
   israel: false,
   "petach-tikva": false,
 }
+
+export const media_object = {
+  audio: {
+    context: null,
+    device: null,
+    devices: [],
+    error: null,
+    stream: null,
+  },
+  video: {
+    setting: {width: 320, height: 180, ideal: 15},
+    device: null,
+    devices: [],
+    error: null,
+    stream: null,
+  },
+}
