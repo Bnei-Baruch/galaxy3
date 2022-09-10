@@ -203,6 +203,7 @@ class VirtualMqttClient extends Component {
   };
 
   initApp = (user) => {
+    JanusStream.setUser(user);
     initCrisp(user, this.props.i18n.language);
 
     this.initMQTT(user);
@@ -248,7 +249,6 @@ class VirtualMqttClient extends Component {
           const {rooms} = data;
           this.setState({rooms});
           this.initDevices();
-          JanusStream.setUser(user);
           const {selected_room} = this.state;
           if (selected_room !== "") {
             const room = rooms.find((r) => r.room === selected_room);
@@ -322,7 +322,7 @@ class VirtualMqttClient extends Component {
         // Clients not authorized to app may see shidur only
         if (user.role !== userRolesEnum.user) {
           localStorage.setItem("room", "-1");
-          this.setState({user, sourceLoading: true});
+          this.setState({user});
           JanusStream.initStreaming( "str1");
         }
       }
@@ -340,7 +340,6 @@ class VirtualMqttClient extends Component {
     const config = GxyJanus.instanceConfig(user.janus);
     log.info("[client] Got config: ", config);
     this.initJanus(user, config, retry);
-    console.log(JanusStream)
     if (!reconnect) {
       JanusStream.initStreaming();
     }
