@@ -128,7 +128,8 @@ export class StreamingPlugin extends EventEmitter {
       log.info("[streaming] ICE State: ", e.target.connectionState)
       this.iceState = e.target.connectionState
       if(this.iceState === "disconnected") {
-        this.iceRestart()
+        //FIXME: We still get janus crash here
+        //this.iceRestart()
       }
 
       // ICE restart does not help here, peer connection will be down
