@@ -144,10 +144,16 @@ class MqttMsg {
               let msg = JSON.parse(data.toString());
               callback(msg, topic);
             } catch (e) {
-              log.error(e);
-              log.error("[mqtt] Not valid JSON, ", data.toString());
-              captureMessage("MQTT: Fail to parse JSON", data.toString(), "error");
-              return;
+              let str = data.toString().replace(/[^a-z0-9 -\{\}\,\:\[\]]/gi, '');
+              try {
+                let msg = JSON.parse(str);
+                callback(msg, topic);
+              } catch (e) {
+                log.error(e);
+                log.error("[mqtt] Not valid JSON, ", data.toString());
+                captureMessage("MQTT: Fail to parse JSON", data.toString(), "error");
+                return;
+              }
             }
           }
           else if (service === "users" && id === "broadcast")
