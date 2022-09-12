@@ -1579,7 +1579,7 @@ class VirtualMqttClient extends Component {
       }
     }
 
-    let login = <LoginPage user={user} checkPermission={this.checkPermission} />;
+    let login = <LoginPage user={user} checkPermission={this.checkPermission} loading={true} />;
 
     const isDeb = new URL(window.location.href).searchParams.has("deb");
 

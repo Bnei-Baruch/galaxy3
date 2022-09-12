@@ -152,7 +152,7 @@ class LoginPage extends Component {
 
     return (
       <Fragment>
-        {loading ? login : main}
+        {loading ? login : this.props.loading ? login : main}
         <Container text textAlign="center" style={{direction, marginTop: "20px", fontSize: "1.5em"}}>
           <Image src={internet} style={{margin: "auto", width: "60px"}}></Image>
           <p style={{marginTop: "15px"}}>{t("loginPage.intro")}</p>
