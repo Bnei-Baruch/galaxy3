@@ -13,20 +13,14 @@ class JanusStream {
     // Streaming plugin for video.
     this.videoJanusStream = null;
     this.videoMediaStream = null;
-    // Array of callbacks for cleanup.
-    this.videoJanusStreamCleanup = [];
 
     // Streaming plugin for audio.
     this.audioJanusStream = null;
     this.audioMediaStream = null;
-    // Array of callbacks for cleanup.
-    this.audioJanusStreamCleanup = [];
 
     // Streaing plugin for trlAudio
     this.trlAudioJanusStream = null;
     this.trlAudioMediaStream = null;
-    // Array of callbacks for cleanup.
-    this.trlAudioJanusStreamCleanup = [];
 
     this.videos = Number(localStorage.getItem("vrt_video")) || 1;
     this.audios = Number(localStorage.getItem("vrt_lang")) || 2;
@@ -119,9 +113,7 @@ class JanusStream {
       log.debug("[shidur] attach audio", data)
       this.audioJanusStream.watch(this.audios).then(stream => {
         this.audioMediaStream = stream;
-        setTimeout(() => {
-          this.attachAudioStream_(this.audioElement, /* reattach= */ false);
-        },3000)
+        this.attachAudioStream_(this.audioElement, /* reattach= */ false);
       })
     })
   };
@@ -132,9 +124,7 @@ class JanusStream {
       log.debug("[shidur] attach translation", data)
       this.trlAudioJanusStream.watch(streamId).then(stream => {
         this.trlAudioMediaStream = stream;
-        setTimeout(() => {
-          this.attachTrlAudioStream_(this.trlAudioElement, /* reattach= */ false);
-        },3000)
+        this.attachTrlAudioStream_(this.trlAudioElement, /* reattach= */ false);
       })
     })
   };
@@ -224,7 +214,6 @@ class JanusStream {
       if (!id) {
         log.debug("[shidur] no id in local storage");
       } else {
-        //this.trlAudioJanusStream.send({message: {request: "switch", id: id}});
         this.trlAudioJanusStream.switch(id);
         this.talking = setInterval(this.ducerMixaudio, 200);
         log.debug("[shidur] Switch trl stream: ", localStorage.getItem("vrt_langtext"), id);
@@ -238,7 +227,6 @@ class JanusStream {
       this.audioElement.volume = this.mixvolume;
       const id = Number(localStorage.getItem("vrt_lang")) || 2;
       log.debug("[shidur] get stream back id: ", localStorage.getItem("vrt_lang"), id);
-      //this.audioJanusStream.send({message: {request: "switch", id: id}});
       this.audioJanusStream.switch(id);
       log.debug("[shidur] Switch audio stream back");
       this.trlAudioElement.muted = true;
@@ -307,14 +295,6 @@ class JanusStream {
     }
     localStorage.setItem("vrt_lang", audios);
     localStorage.setItem("vrt_langtext", text);
-  };
-
-  unmuteAudioElement = () => {
-    this.audioElement.muted = false;
-  };
-
-  muteAudioElement = () => {
-    this.audioElement.muted = true;
   };
 
   attachVideoStream(videoElement) {
