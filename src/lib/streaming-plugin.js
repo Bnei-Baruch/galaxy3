@@ -141,8 +141,7 @@ export class StreamingPlugin extends EventEmitter {
 
     this.pc.ontrack = (e) => {
       log.info("[streaming] Got track: ", e)
-      let stream = new MediaStream();
-      stream.addTrack(e.track.clone());
+      let stream = new MediaStream([e.track]);
       resolve(stream);
     };
   }

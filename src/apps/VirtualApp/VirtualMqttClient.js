@@ -507,29 +507,34 @@ class VirtualMqttClient extends Component {
       });
   };
 
-  exitRoom = (reconnect, callback, error) => {
+  exitRoom = (reconnect, callback) => {
     this.setState({delay: true});
+
+    this.state.videoroom.leave().then((data) => {
+      log.info("[client] leave respond:", data);
+      this.cleanApp(reconnect, callback);
+    }).catch(e => {
+      this.cleanApp(reconnect, callback);
+    });
+
+  };
+
+  cleanApp = (reconnect, callback) => {
+    let {janus, room, shidur} = this.state;
 
     clearInterval(this.state.upval);
     this.clearKeepAlive();
 
     localStorage.setItem("question", false);
 
-    api
-      .fetchAvailableRooms({with_num_users: true})
-      .then((data) => {
+    const params = {with_num_users: true};
+    api.fetchAvailableRooms(params).then(data => {
         const {rooms} = data;
         this.setState({rooms});
       })
       .catch((err) => {
         log.error("[client] Error exiting room", err);
       });
-
-    let {videoroom, janus, room, shidur} = this.state;
-
-    videoroom.leave().then((data) => {
-      log.info("[client] leave respond:", data);
-    });
 
     mqtt.exit("galaxy/room/" + room);
     mqtt.exit("galaxy/room/" + room + "/chat");
@@ -538,35 +543,33 @@ class VirtualMqttClient extends Component {
       JanusStream.destroy();
     }
 
-    console.log(JanusStream)
-
     if (!reconnect && isFullScreen()) {
       toggleFullScreen();
     }
 
-    setTimeout(() => {
-      if (janus) janus.destroy();
-      this.setState({
-        muted: false,
-        question: false,
-        feeds: [],
-        mids: [],
-        localAudioTrack: null,
-        localVideoTrack: null,
-        upval: null,
-        remoteFeed: null,
-        videoroom: null,
-        subscriber: null,
-        janus: null,
-        delay: reconnect,
-        room: reconnect ? room : "",
-        chatMessagesCount: 0,
-        isSettings: false,
-        sourceLoading: true
-      });
-      if (typeof callback === "function") callback();
-    }, 1000);
-  };
+    if (janus) janus.destroy();
+
+    this.setState({
+      muted: false,
+      question: false,
+      feeds: [],
+      mids: [],
+      localAudioTrack: null,
+      localVideoTrack: null,
+      upval: null,
+      remoteFeed: null,
+      videoroom: null,
+      subscriber: null,
+      janus: null,
+      delay: reconnect,
+      room: reconnect ? room : "",
+      chatMessagesCount: 0,
+      isSettings: false,
+      sourceLoading: true
+    });
+
+    if (typeof callback === "function") callback();
+  }
 
   makeSubscription = (newFeeds) => {
     log.info("[client] makeSubscription", newFeeds);
@@ -1576,7 +1579,7 @@ class VirtualMqttClient extends Component {
       }
     }
 
-    let login = <LoginPage user={user} checkPermission={this.checkPermission} />;
+    let login = <LoginPage user={user} checkPermission={this.checkPermission} loading={true} />;
 
     const isDeb = new URL(window.location.href).searchParams.has("deb");
 
