@@ -71,7 +71,6 @@ class VirtualMqttClient extends Component {
     videoroom: null,
     remoteFeed: null,
     myid: null,
-    mypvtid: null,
     mystream: null,
     localVideoTrack: null,
     localAudioTrack: null,
@@ -83,8 +82,6 @@ class VirtualMqttClient extends Component {
     user: null,
     chatVisible: false,
     question: false,
-    selftest: this.props.t("oldClient.selfAudioTest"),
-    tested: false,
     support: false,
     monitoringData: new MonitoringData(),
     connectionStatus: "",
@@ -93,8 +90,6 @@ class VirtualMqttClient extends Component {
     attachedSource: true,
     sourceLoading: true,
     appInitError: null,
-    upval: null,
-    net_status: 1,
     keepalive: null,
     muteOtherCams: false,
     videos: Number(localStorage.getItem("vrt_video")) || 1,
@@ -105,7 +100,6 @@ class VirtualMqttClient extends Component {
     kliOlamiAttached: true,
     isKliOlamiShown: true,
     audios: {audios: Number(localStorage.getItem("vrt_lang")) || 2},
-    msg_protocol: "mqtt",
     mqttOn: false,
     isGroup: false,
   };
@@ -179,36 +173,34 @@ class VirtualMqttClient extends Component {
       api.fetchConfig().then((data) => {
           log.debug("[client] got config: ", data);
           ConfigStore.setGlobalConfig(data);
-          this.setState({
-            premodStatus: ConfigStore.dynamicConfig(ConfigStore.PRE_MODERATION_KEY) === "true",
-            msg_protocol: ConfigStore.dynamicConfig("galaxy_protocol"),
-          });
+          const premodStatus = ConfigStore.dynamicConfig(ConfigStore.PRE_MODERATION_KEY) === "true";
+          this.setState({premodStatus});
           GxyJanus.setGlobalConfig(data);
         }).then(() => {
-          api.fetchAvailableRooms({with_num_users: true});
-        }).then((data) => {
-          const {rooms} = data;
-          this.setState({rooms});
-          this.initDevices();
-          const {selected_room} = this.state;
-          if (selected_room !== "") {
-            const room = rooms.find((r) => r.room === selected_room);
-            if (room) {
-              user.room = selected_room;
-              user.janus = room.janus;
-              user.group = room.description;
-              this.setState({delay: false, user});
-              updateSentryUser(user);
+          api.fetchAvailableRooms({with_num_users: true}).then(data => {
+            const {rooms} = data;
+            this.setState({rooms});
+            this.initDevices();
+            const {selected_room} = this.state;
+            if (selected_room !== "") {
+              const room = rooms.find((r) => r.room === selected_room);
+              if (room) {
+                user.room = selected_room;
+                user.janus = room.janus;
+                user.group = room.description;
+                this.setState({delay: false, user});
+                updateSentryUser(user);
+              } else {
+                this.setState({selected_room: "", delay: false});
+              }
             } else {
-              this.setState({selected_room: "", delay: false});
+              this.setState({delay: false});
             }
-          } else {
-            this.setState({delay: false});
-          }
-        }).catch((err) => {
-          log.error("[client] error initializing app", err);
-          this.setState({appInitError: err});
-        });
+          }).catch((err) => {
+            log.error("[client] error initializing app", err);
+            this.setState({appInitError: err});
+          });
+        })
     });
   };
 
@@ -439,12 +431,10 @@ class VirtualMqttClient extends Component {
   };
 
   joinRoom = (reconnect, videoroom, user) => {
-    let {selected_room, tested, media, cammuted, janus, isGroup} = this.state;
+    let {selected_room, media, cammuted, janus, isGroup} = this.state;
     const {video: {device}} = media;
 
     user.camera = !!device && cammuted === false;
-    user.self_test = tested;
-    user.sound_test = reconnect ? JSON.parse(localStorage.getItem("sound_test")) : false;
     user.question = false;
     user.timestamp = Date.now();
     user.session = janus.sessionId;
@@ -466,7 +456,7 @@ class VirtualMqttClient extends Component {
           return;
         }
 
-        const {id, private_id, room} = data;
+        const {id, room} = data;
         user.rfid = data.id;
 
         const {audio, video} = this.state.media;
@@ -479,7 +469,7 @@ class VirtualMqttClient extends Component {
               captureMessage("h264_profile", vst);
             }
 
-            this.setState({user, myid: id, mypvtid: private_id, room, delay: false, wipSettings: false, sourceLoading: false});
+            this.setState({user, myid: id, room, delay: false, wipSettings: false, sourceLoading: false});
             updateSentryUser(user);
             updateGxyUser(user);
             this.keepAlive();
@@ -520,7 +510,6 @@ class VirtualMqttClient extends Component {
   resetClient = (reconnect, callback) => {
     let {janus, room, shidur} = this.state;
 
-    clearInterval(this.state.upval);
     this.clearKeepAlive();
 
     localStorage.setItem("question", false);
@@ -553,7 +542,6 @@ class VirtualMqttClient extends Component {
       mids: [],
       localAudioTrack: null,
       localVideoTrack: null,
-      upval: null,
       remoteFeed: null,
       videoroom: null,
       subscriber: null,
@@ -819,9 +807,7 @@ class VirtualMqttClient extends Component {
   };
 
   reloadConfig = () => {
-    api
-      .fetchConfig()
-      .then((data) => {
+    api.fetchConfig().then((data) => {
         ConfigStore.setGlobalConfig(data);
         const {premodStatus, question} = this.state;
         const newPremodStatus = ConfigStore.dynamicConfig(ConfigStore.PRE_MODERATION_KEY) === "true";
@@ -831,8 +817,7 @@ class VirtualMqttClient extends Component {
             this.handleQuestion();
           }
         }
-      })
-      .catch((err) => {
+      }).catch((err) => {
         log.error("[client] error reloading config", err);
       });
   };
