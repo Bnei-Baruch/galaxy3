@@ -158,9 +158,11 @@ class VirtualMqttClient extends Component {
     localStorage.setItem("sound_test", false);
     localStorage.setItem("uuid", user.id);
     checkNotification();
+
     let system = navigator.userAgent;
     user.system = system;
     user.extra = {};
+
     let browser = platform.parse(system);
     if (!/Safari|Firefox|Chrome/.test(browser.name)) {
       alert(t("oldClient.browserNotSupported"));
@@ -170,12 +172,11 @@ class VirtualMqttClient extends Component {
     geoInfo(`${GEO_IP_INFO}`, (data) => {
       user.ip = data && data.ip ? data.ip : "127.0.0.1";
       user.country = data && data.country ? data.country : "XX";
+
       this.setState({user});
       updateSentryUser(user);
 
-      api
-        .fetchConfig()
-        .then((data) => {
+      api.fetchConfig().then((data) => {
           log.debug("[client] got config: ", data);
           ConfigStore.setGlobalConfig(data);
           this.setState({
@@ -183,9 +184,9 @@ class VirtualMqttClient extends Component {
             msg_protocol: ConfigStore.dynamicConfig("galaxy_protocol"),
           });
           GxyJanus.setGlobalConfig(data);
-        })
-        .then(() => api.fetchAvailableRooms({with_num_users: true}))
-        .then((data) => {
+        }).then(() => {
+          api.fetchAvailableRooms({with_num_users: true});
+        }).then((data) => {
           const {rooms} = data;
           this.setState({rooms});
           this.initDevices();
@@ -204,8 +205,7 @@ class VirtualMqttClient extends Component {
           } else {
             this.setState({delay: false});
           }
-        })
-        .catch((err) => {
+        }).catch((err) => {
           log.error("[client] error initializing app", err);
           this.setState({appInitError: err});
         });
@@ -224,6 +224,7 @@ class VirtualMqttClient extends Component {
         log.info("[client] MQTT reconnected");
       } else {
         this.setState({mqttOn: true});
+
         mqtt.join("galaxy/users/broadcast");
         mqtt.join("galaxy/users/" + user.id);
 
@@ -285,6 +286,21 @@ class VirtualMqttClient extends Component {
     }
   };
 
+  reinitClient = (retry) => {
+    retry++;
+    log.error("[client] reinitializing try: ", retry);
+    if (retry < 10) {
+      setTimeout(() => {
+        this.initClient(true, retry);
+      }, 5000);
+    } else {
+      this.exitRoom(false, () => {
+        log.error("[client] reinitializing failed after: " + retry + " retries");
+        alert(this.props.t("oldClient.networkSettingsChanged"));
+      });
+    }
+  };
+
   initJanus = (user, config, retry) => {
     let janus = new JanusMqtt(user, config.name);
     janus.onStatus = (srv, status) => {
@@ -295,7 +311,7 @@ class VirtualMqttClient extends Component {
 
       if (status === "error") {
         log.error("[client] Janus error, reconnecting...");
-        this.exitRoom(/* reconnect= */ true, () => {
+        this.exitRoom(true, () => {
           this.reinitClient(retry);
         });
       }
@@ -310,9 +326,7 @@ class VirtualMqttClient extends Component {
     subscriber.onTrack = this.onRemoteTrack;
     subscriber.onUpdate = this.onUpdateStreams;
 
-    janus
-      .init(config.token)
-      .then((data) => {
+    janus.init(config.token).then((data) => {
         log.info("[client] Janus init", data);
 
         janus.attach(videoroom).then((data) => {
@@ -328,25 +342,10 @@ class VirtualMqttClient extends Component {
       })
       .catch((err) => {
         log.error("[client] Janus init", err);
-        this.exitRoom(/* reconnect= */ true, () => {
+        this.exitRoom(true, () => {
           this.reinitClient(retry);
         });
       });
-  };
-
-  reinitClient = (retry) => {
-    retry++;
-    log.error("[client] reinitializing try: ", retry);
-    if (retry < 10) {
-      setTimeout(() => {
-        this.initClient(/* reconnect= */ true, retry);
-      }, 5000);
-    } else {
-      this.exitRoom(/* reconnect= */ false, () => {
-        log.error("[client] reinitializing failed after: " + retry + " retries");
-        alert(this.props.t("oldClient.networkSettingsChanged"));
-      });
-    }
   };
 
   initDevices = () => {
@@ -442,6 +441,7 @@ class VirtualMqttClient extends Component {
   joinRoom = (reconnect, videoroom, user) => {
     let {selected_room, tested, media, cammuted, janus, isGroup} = this.state;
     const {video: {device}} = media;
+
     user.camera = !!device && cammuted === false;
     user.self_test = tested;
     user.sound_test = reconnect ? JSON.parse(localStorage.getItem("sound_test")) : false;
@@ -455,16 +455,14 @@ class VirtualMqttClient extends Component {
     const {id, timestamp, role, username} = user;
     const d = {id, timestamp, role, display: username};
 
-    videoroom
-      .join(selected_room, d)
-      .then((data) => {
+    videoroom.join(selected_room, d).then((data) => {
         log.info("[client] Joined respond :", data);
 
         // Feeds count with user role
         let feeds_count = userFeeds(data.publishers).length;
         if (feeds_count > 25) {
           alert(t("oldClient.maxUsersInRoom"));
-          this.exitRoom(/* reconnect= */ false);
+          this.exitRoom(false);
           return;
         }
 
@@ -472,9 +470,7 @@ class VirtualMqttClient extends Component {
         user.rfid = data.id;
 
         const {audio, video} = this.state.media;
-        videoroom
-          .publish(video.stream, audio.stream)
-          .then((json) => {
+        videoroom.publish(video.stream, audio.stream).then((json) => {
             user.extra.streams = json.streams;
             user.extra.isGroup = this.state.isGroup;
 
@@ -495,31 +491,33 @@ class VirtualMqttClient extends Component {
             log.info("[client] Pulbishers list: ", data.publishers);
 
             this.makeSubscription(data.publishers);
-          })
-          .catch((err) => {
+          }).catch((err) => {
             log.error("[client] Publish error :", err);
-            this.exitRoom(/* reconnect= */ false);
+            this.exitRoom(false);
           });
-      })
-      .catch((err) => {
+      }).catch((err) => {
         log.error("[client] Join error :", err);
-        this.exitRoom(/* reconnect= */ false);
+        this.exitRoom(false);
       });
   };
 
   exitRoom = (reconnect, callback) => {
     this.setState({delay: true});
+    const {videoroom} = this.state;
 
-    this.state.videoroom.leave().then((data) => {
-      log.info("[client] leave respond:", data);
-      this.cleanApp(reconnect, callback);
-    }).catch(e => {
-      this.cleanApp(reconnect, callback);
-    });
-
+    if(videoroom) {
+      videoroom.leave().then((data) => {
+        log.info("[client] leave respond:", data);
+        this.resetClient(reconnect, callback);
+      }).catch(e => {
+        this.resetClient(reconnect, callback);
+      });
+    } else {
+      this.resetClient(reconnect, callback);
+    }
   };
 
-  cleanApp = (reconnect, callback) => {
+  resetClient = (reconnect, callback) => {
     let {janus, room, shidur} = this.state;
 
     clearInterval(this.state.upval);
@@ -531,23 +529,22 @@ class VirtualMqttClient extends Component {
     api.fetchAvailableRooms(params).then(data => {
         const {rooms} = data;
         this.setState({rooms});
-      })
-      .catch((err) => {
+      }).catch((err) => {
         log.error("[client] Error exiting room", err);
       });
 
     mqtt.exit("galaxy/room/" + room);
     mqtt.exit("galaxy/room/" + room + "/chat");
 
-    if (shidur && !reconnect) {
+    if(shidur && !reconnect) {
       JanusStream.destroy();
     }
 
-    if (!reconnect && isFullScreen()) {
+    if(!reconnect && isFullScreen()) {
       toggleFullScreen();
     }
 
-    if (janus) janus.destroy();
+    if(janus) janus.destroy();
 
     this.setState({
       muted: false,
@@ -568,7 +565,7 @@ class VirtualMqttClient extends Component {
       sourceLoading: true
     });
 
-    if (typeof callback === "function") callback();
+    if(typeof callback === "function") callback();
   }
 
   makeSubscription = (newFeeds) => {
@@ -748,13 +745,13 @@ class VirtualMqttClient extends Component {
     const {type, id, bitrate} = data;
 
     if (type === "client-reconnect" && user.id === id) {
-      this.exitRoom(/* reconnect= */ true, () => {
-        this.initClient(/* reconnect= */ true);
+      this.exitRoom(true, () => {
+        this.initClient(true);
       });
     } else if (type === "client-reload" && user.id === id) {
       window.location.reload();
     } else if (type === "client-disconnect" && user.id === id) {
-      this.exitRoom(/* reconnect= */ false);
+      this.exitRoom(false);
     } else if (type === "client-kicked" && user.id === id) {
       kc.logout();
       updateSentryUser(null);
