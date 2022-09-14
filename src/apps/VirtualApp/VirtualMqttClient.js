@@ -1,6 +1,5 @@
 import React, {Component, Fragment} from "react";
 import classNames from "classnames";
-import {isMobile} from "react-device-detect";
 import {Icon, Popup} from "semantic-ui-react";
 import {checkNotification, geoInfo, getDateString, notifyMe, sendUserState, updateGxyUser,} from "../../shared/tools";
 import "./VirtualClient.scss";
@@ -54,6 +53,7 @@ const sortAndFilterFeeds = (feeds) =>
     .sort((a, b) => a.display.timestamp - b.display.timestamp);
 
 const userFeeds = (feeds) => feeds.filter((feed) => feed.display.role === userRolesEnum.user);
+const monitoringData =  new MonitoringData();
 
 class VirtualMqttClient extends Component {
   state = {
@@ -83,7 +83,7 @@ class VirtualMqttClient extends Component {
     chatVisible: false,
     question: false,
     support: false,
-    monitoringData: new MonitoringData(),
+    //monitoringData: new MonitoringData(),
     connectionStatus: "",
     numberOfVirtualUsers: localStorage.getItem("number_of_virtual_users") || "1",
     currentLayout: localStorage.getItem("currentLayout") || "split",
@@ -105,23 +105,12 @@ class VirtualMqttClient extends Component {
   };
 
   componentDidUpdate(prevProps, prevState) {
-    const {videoroom, localVideoTrack, localAudioTrack, user, monitoringData} = this.state;
-    if (
-      videoroom !== prevState.videoroom ||
-      localVideoTrack !== prevState.localVideoTrack ||
-      localAudioTrack !== prevState.localAudioTrack ||
-      JSON.stringify(user) !== JSON.stringify(prevState.user)
-    ) {
+    const {videoroom, localVideoTrack, localAudioTrack, user} = this.state;
+    if (videoroom !== prevState.videoroom || localVideoTrack !== prevState.localVideoTrack || localAudioTrack !== prevState.localAudioTrack || JSON.stringify(user) !== JSON.stringify(prevState.user)) {
       monitoringData.setConnection(videoroom, localAudioTrack, localVideoTrack, user, JanusStream);
       monitoringData.setOnStatus((connectionStatus) => {
         this.setState({connectionStatus});
       });
-    }
-  }
-
-  componentDidMount() {
-    if (isMobile) {
-      window.location = "/userm";
     }
   }
 
@@ -1569,7 +1558,7 @@ class VirtualMqttClient extends Component {
 
     return (
       <Fragment>
-        {user && !isMobile && Boolean(room) && (
+        {user && Boolean(room) && (
           <SettingsJoined
             userDisplay={user.display}
             isOpen={isSettings}
@@ -1590,7 +1579,7 @@ class VirtualMqttClient extends Component {
             audios={audios.audios}
           />
         )}
-        {user && !isMobile && !notApproved && !Boolean(room) && (
+        {user && !notApproved && !Boolean(room) && (
           <Settings
             userDisplay={user.display}
             rooms={rooms}
@@ -1617,7 +1606,7 @@ class VirtualMqttClient extends Component {
             stopLocalMedia={this.stopLocalMedia.bind(this)}
           />
         )}
-        {user && !isMobile ? content : !isMobile ? login : ""}
+        {user ? content : login}
       </Fragment>
     );
   }
