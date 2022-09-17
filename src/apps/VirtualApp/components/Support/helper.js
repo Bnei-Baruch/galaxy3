@@ -25,7 +25,8 @@ export const initCrisp = (user, locale) => {
     window.$crisp.push(["on", "message:received", openCrisp]);
   };
 
-  window.$crisp = [];
+  window.$crisp = [["safe", true]];
+
   if (user) {
     window.$crisp.push(["set", "user:email", [user.email]]);
     window.$crisp.push(["set", "user:nickname", [user.display]]);
@@ -34,8 +35,8 @@ export const initCrisp = (user, locale) => {
   }
   window.CRISP_WEBSITE_ID = "a88f7eac-d881-450b-b589-ab82160fb08a";
   (() => {
-    var d = document;
-    var s = d.createElement("script");
+    let d = document;
+    let s = d.createElement("script");
     s.id = "crisp";
 
     s.src = "https://client.crisp.chat/l.js";
