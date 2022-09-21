@@ -311,9 +311,8 @@ class VirtualMqttClient extends Component {
         log.info("[client] Janus init", data);
 
         janus.attach(videoroom).then((data) => {
-          this.setState({janus, videoroom, user});
           log.info("[client] Publisher Handle: ", data);
-          this.joinRoom(false, videoroom, user);
+          this.joinRoom(false, janus, videoroom, user);
         });
 
         janus.attach(subscriber).then((data) => {
@@ -419,8 +418,8 @@ class VirtualMqttClient extends Component {
     updateSentryUser(user);
   };
 
-  joinRoom = (reconnect, videoroom, user) => {
-    let {selected_room, media, cammuted, janus, isGroup} = this.state;
+  joinRoom = (reconnect, janus, videoroom, user) => {
+    let {selected_room, media, cammuted, isGroup} = this.state;
     const {video: {device}} = media;
 
     user.camera = !!device && cammuted === false;
@@ -428,6 +427,8 @@ class VirtualMqttClient extends Component {
     user.timestamp = Date.now();
     user.session = janus.sessionId;
     user.handle = videoroom.janusHandleId;
+
+    this.setState({janus, videoroom, user, room: selected_room});
 
     this.micMute();
 
@@ -458,7 +459,7 @@ class VirtualMqttClient extends Component {
               captureMessage("h264_profile", vst);
             }
 
-            this.setState({user, myid: id, room, delay: false, wipSettings: false, sourceLoading: false});
+            this.setState({user, myid: id, delay: false, wipSettings: false, sourceLoading: false});
             updateSentryUser(user);
             updateGxyUser(user);
             this.keepAlive();
