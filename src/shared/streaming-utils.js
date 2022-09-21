@@ -3,6 +3,7 @@ import {JanusMqtt} from "../lib/janus-mqtt";
 import {StreamingPlugin} from "../lib/streaming-plugin";
 import log from "loglevel";
 import GxyJanus from "./janus-utils";
+import {captureMessage} from "./sentry";
 
 class JanusStream {
   constructor() {
@@ -41,7 +42,7 @@ class JanusStream {
     this.trlAudioElement.muted = true;
     this.trlAudioElement.playinline = true;
 
-    this.onTalkingCallback = null;
+    this.showOn = null;
   }
 
   setUser = (user) => {
@@ -196,6 +197,11 @@ class JanusStream {
   streamGalaxy = (talk, col, name) => {
     log.debug("[shidur] got talk event: ", talk, col, name);
     if (!this.trlAudioJanusStream) {
+      log.debug("[shidur] look like we got talk event before stream init finished");
+      captureMessage("ON", talk, "info");
+      setTimeout(() => {
+        this.streamGalaxy(talk, col, name)
+      }, 1000)
       return;
     }
     if (talk) {
@@ -233,8 +239,8 @@ class JanusStream {
       this.talking = null;
       this.mixvolume = null;
     }
-    if (this.onTalkingCallback) {
-      this.onTalkingCallback(this.talking);
+    if (this.showOn) {
+      this.showOn(this.talking);
     }
   };
 
@@ -359,7 +365,7 @@ class JanusStream {
   };
 
   onTalking(callback) {
-    this.onTalkingCallback = callback;
+    this.showOn = callback;
   }
 }
 
