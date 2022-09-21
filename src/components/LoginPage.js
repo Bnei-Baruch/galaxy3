@@ -23,7 +23,7 @@ class LoginPage extends Component {
   appLogin = () => {
     getUser((user) => {
       if (user) {
-        this.setState({loading: false});
+        this.setState({loading: !!this.props.loading});
         this.props.checkPermission(user);
       } else {
         this.setState({disabled: false, loading: false});

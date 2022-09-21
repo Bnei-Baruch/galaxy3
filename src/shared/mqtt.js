@@ -144,10 +144,16 @@ class MqttMsg {
               let msg = JSON.parse(data.toString());
               callback(msg, topic);
             } catch (e) {
-              log.error(e);
-              log.error("[mqtt] Not valid JSON, ", data.toString());
-              captureMessage(data.toString(), {source: "mqtt"});
-              return;
+              let str = data.toString().replace(/[^a-z0-9 -\{\}\,\:\[\]]/gi, '');
+              try {
+                let msg = JSON.parse(str);
+                callback(msg, topic);
+              } catch (e) {
+                log.error(e);
+                log.error("[mqtt] Not valid JSON, ", data.toString());
+                captureMessage("MQTT: Fail to parse JSON", data.toString(), "error");
+                return;
+              }
             }
           }
           else if (service === "users" && id === "broadcast")
@@ -158,7 +164,6 @@ class MqttMsg {
         case "janus":
           const json = JSON.parse(data)
           const mit = json?.session_id || packet?.properties?.userProperties?.mit || service
-          //console.log(this.mq.listeners(mit).length);
           this.mq.emit(mit, data, id);
           break;
         default:

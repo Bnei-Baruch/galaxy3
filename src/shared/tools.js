@@ -117,11 +117,11 @@ export const updateGxyUser = (user) => {
     .updateUser(user.id, user)
     .then((data) => {
       if (data.result === "success") {
-        console.log("[User] success updating user state", user.id);
+        //console.log("[User] success updating user state", user.id);
       }
     })
     .catch((err) => {
-      console.error("[User] error updating user state", user.id, err);
+      //console.error("[User] error updating user state", user.id, err);
     });
 };
 
