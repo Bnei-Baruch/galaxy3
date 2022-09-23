@@ -5,13 +5,9 @@ import i18n from "i18next";
 
 import "./i18n/i18n";
 // import GalaxyApp from "./apps/GalaxyApp";
-// import MobileClient from "./apps/MobileApp/MobileClient";
-// import GalaxyStream from "./apps/StreamApp/GalaxyStream";
-// import VirtualMqttClient from "./apps/VirtualApp/VirtualMqttClient";
-import VirtualHttpClient from "./apps/VirtualApp/VirtualHttpClient";
+import VirtualMqttClient from "./apps/VirtualApp/VirtualMqttClient";
 // import AdminApp from "./apps/AdminApp/AdminApp";
 // import ShidurAppMqtt from "./apps/ShidurApp/ShidurAppMqtt";
-// import ShidurAppHttp from "./apps/ShidurApp/ShidurAppHttp";
 // import AudioOutMqtt from "./apps/AudioOutApp/AudioOutMqtt";
 // import VideoOutMqtt from "./apps/VideoOutApp/VideoOutMqtt";
 // import WebOutMqtt from "./apps/WebOutApp/WebOutMqtt";
@@ -21,13 +17,9 @@ class App extends Component {
     return (
       <I18nextProvider i18n={i18n}>
         {/*{<GalaxyApp />}*/}
-        {/*<MobileClient />*/}
-        {/*<GalaxyStream />*/}
-        {/*<VirtualMqttClient />*/}
-        <VirtualHttpClient />
+        <VirtualMqttClient />
         {/*<AdminApp />*/}
         {/*<ShidurAppMqtt />*/}
-        {/*<ShidurAppHttp />*/}
         {/*<AudioOutMqtt />*/}
         {/*<VideoOutMqtt />*/}
         {/*<WebOutMqtt />*/}

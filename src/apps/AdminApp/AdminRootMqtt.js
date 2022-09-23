@@ -293,7 +293,14 @@ class AdminRootMqtt extends Component {
     newFeeds.forEach(f => {
       const {id, streams} = f;
       f.display = JSON.parse(f.display)
-      f.video = !!streams.find(v => v.type === "video" && v.codec === "h264");
+      const vst = streams.find((v) => v.type === "video" && v.h264_profile);
+      if(vst) {
+        f.video = vst.h264_profile === "42e01f";
+        if(!f.video)
+          log.warn("[admin] h264 profile is NOT baseline: ", vst);
+      } else {
+        f.video = !!streams.find((v) => v.type === "video" && v.codec === "h264");
+      }
       f.audio = !!streams.find(a => a.type === "audio" && a.codec === "opus");
       f.data = !!streams.find(d => d.type === "data");
       f.cammute = !f.video;
@@ -519,6 +526,7 @@ class AdminRootMqtt extends Component {
 
     //const f = (<Icon name='volume up' />);
     const q = <Icon color="red" name="help" />;
+    const g = <Icon color="blue" name="users" />;
     //const v = (<Icon name='checkmark' />);
     //const x = (<Icon name='close' />);
 
@@ -551,9 +559,11 @@ class AdminRootMqtt extends Component {
 
     let rooms_grid = rooms.map((data, i) => {
       const {room, num_users, description, questions} = data;
+      let gr = data.users.find(u => u.extra?.isGroup);
       return (
         <Table.Row active={current_room === room} key={i + "r"} onClick={() => this.exitRoom(data)}>
           <Table.Cell width={5}>
+            {gr ? g : ""}
             {questions ? q : ""}
             {description}
           </Table.Cell>
@@ -570,10 +580,11 @@ class AdminRootMqtt extends Component {
       //let st = users[feed.display.id].sound_test;
       let feed_user = users.find((u) => feed.id === u.rfid);
       let qt = feed_user && !!feed_user.question;
+      let gr = feed_user && feed_user?.extra?.isGroup;
       return (
         <Table.Row active={feed.id === this.state.feed_id} key={i + "u"} onClick={() => this.getUserInfo(feed_user)}>
           <Table.Cell width={10}>
-            {qt ? q : ""}
+            {gr ? g : ""}{qt ? q : ""}
             {feed.display.display}
           </Table.Cell>
           {/*<Table.Cell positive={st} width={1}>{st ? v : ""}</Table.Cell>*/}

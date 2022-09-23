@@ -1,5 +1,5 @@
 import React from "react";
-import ReactDOM from "react-dom";
+import {createRoot} from 'react-dom/client';
 import "./index.css";
 import App from "./App";
 import log from "loglevel";
@@ -15,4 +15,5 @@ if(loglevel) {
   log.setLevel(loglevel)
 }
 
-ReactDOM.render(<App />, document.getElementById("root"));
+const root = createRoot(document.getElementById('root'));
+root.render(<App />);

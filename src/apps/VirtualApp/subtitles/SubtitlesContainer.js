@@ -37,11 +37,14 @@ export const SubtitlesContainer = ({playerLang, layout}) => {
     subtitleLang && initSubtitle(subtitleLang, onMsgHandler);
   }, [subtitleLang]);
 
-  useEffect(async () => {
-    if (wqLang) {
-      const l = messageManager.getWQByLang(wqLang);
-      setLast(l);
+  useEffect( () => {
+    async function fetchData() {
+      if (wqLang) {
+        const l = messageManager.getWQByLang(wqLang);
+        setLast(l);
+      }
     }
+    fetchData()
   }, [wqLang]);
 
   if (!last && wqAvailable.length === 0) return null;
