@@ -52,7 +52,7 @@ class JanusStream {
   initStreaming = (srv) => {
     this.clean();
     this.initJanus(srv, () => {
-      if (!this.videoJanusStream || this.videos !== NO_VIDEO_OPTION_VALUE) {
+      if (!this.videoJanusStream) {
         this.initVideoStream()
       }
       if(!this.audioJanusStream) {
@@ -98,6 +98,7 @@ class JanusStream {
   }
 
   initVideoStream = () => {
+    if(this.videos === NO_VIDEO_OPTION_VALUE) return;
     this.videoJanusStream = new StreamingPlugin(this.config?.iceServers);
     this.janus.attach(this.videoJanusStream).then(data => {
       log.debug("[shidur] attach video", data)
@@ -190,7 +191,7 @@ class JanusStream {
 
   destroy() {
       this.clean();
-      this.janus.destroy();
+      if(this.janus) this.janus.destroy();
       this.janus = null;
   }
 
@@ -287,7 +288,7 @@ class JanusStream {
         if (this.videoJanusStream) {
           this.videoJanusStream.switch(videos);
         } else {
-          this.initVideoStream(this.janus);
+          this.initVideoStream();
         }
       }
     }
