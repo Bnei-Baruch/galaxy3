@@ -331,7 +331,7 @@ const Settings = (props) => {
               disabled: classes.submitDisabled,
             }}
             size="large"
-            disabled={!selectedRoom || wip}
+            disabled={!!!selectedRoom || wip}
             onClick={handleInitClient}
           >
             <Typography color="white">{t("oldClient.joinRoom")}</Typography>

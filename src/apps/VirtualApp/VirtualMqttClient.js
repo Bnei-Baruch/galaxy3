@@ -428,7 +428,7 @@ class VirtualMqttClient extends Component {
     user.session = janus.sessionId;
     user.handle = videoroom.janusHandleId;
 
-    this.setState({janus, videoroom, user, room: selected_room});
+    this.setState({janus, videoroom, user, room: selected_room, wipSettings: false});
 
     this.micMute();
 
@@ -459,7 +459,7 @@ class VirtualMqttClient extends Component {
               captureMessage("h264_profile", vst);
             }
 
-            this.setState({user, myid: id, delay: false, wipSettings: false, sourceLoading: false});
+            this.setState({user, myid: id, delay: false, sourceLoading: false});
             updateSentryUser(user);
             updateGxyUser(user);
             this.keepAlive();
