@@ -288,7 +288,7 @@ const Settings = (props) => {
             color="success"
             classes={{root: classes.submitRoot, disabled: classes.submitDisabled}}
             size="large"
-            disabled={delay || !selectedRoom}
+            disabled={roomDescriptionById.size === 0 || delay || !selectedRoom}
             onClick={handleInitClient}
           >
             <Typography color="white">{t("oldClient.joinRoom")}</Typography>
