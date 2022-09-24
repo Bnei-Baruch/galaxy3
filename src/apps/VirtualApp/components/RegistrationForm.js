@@ -1,18 +1,7 @@
 import React, {useEffect, useState} from "react";
 import {useTranslation} from "react-i18next";
 
-import {
-  adaptV4Theme,
-  Box,
-  Button,
-  CircularProgress,
-  Divider,
-  Grid,
-  MenuItem,
-  Modal,
-  TextField,
-  Typography,
-} from "@mui/material";
+import {Box, Button, CircularProgress, Divider, Grid, MenuItem, Modal, TextField, Typography,} from "@mui/material";
 import Autocomplete from "@mui/material/Autocomplete";
 import {green} from "@mui/material/colors";
 import {createTheme, StyledEngineProvider, ThemeProvider} from "@mui/material/styles";
@@ -27,16 +16,8 @@ import api from "../../../shared/Api";
 import {SelectViewLanguage} from "./SelectViewLanguage";
 import RTL from "../../../components/RTL";
 
-const rtlTheme = createTheme(
-  adaptV4Theme({
-    direction: "rtl",
-  })
-);
-const ltrTheme = createTheme(
-  adaptV4Theme({
-    direction: "ltr",
-  })
-);
+const rtlTheme = createTheme({direction: "rtl"});
+const ltrTheme = createTheme({direction: "ltr"});
 
 const useStyles = makeStyles()(() => ({
   container: {

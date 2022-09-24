@@ -1,9 +1,9 @@
-import {adaptV4Theme, createTheme} from "@mui/material/styles";
+import {createTheme} from "@mui/material/styles";
 import {green, grey, red} from "@mui/material/colors";
 import indigo from "@mui/material/colors/indigo";
 
 const dark = createTheme(
-  adaptV4Theme({
+ {
     palette: {
       mode: "dark",
       primary: {
@@ -36,7 +36,7 @@ const dark = createTheme(
         },
       },
     },
-  })
+  }
 );
 
 export default dark;
