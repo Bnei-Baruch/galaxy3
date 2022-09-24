@@ -83,7 +83,6 @@ class VirtualMqttClient extends Component {
     chatVisible: false,
     question: false,
     support: false,
-    //monitoringData: new MonitoringData(),
     connectionStatus: "",
     numberOfVirtualUsers: localStorage.getItem("number_of_virtual_users") || "1",
     currentLayout: localStorage.getItem("currentLayout") || "split",
@@ -428,7 +427,7 @@ class VirtualMqttClient extends Component {
     user.session = janus.sessionId;
     user.handle = videoroom.janusHandleId;
 
-    this.setState({janus, videoroom, user, room: selected_room, wipSettings: false});
+    this.setState({janus, videoroom, user, room: selected_room});
 
     this.micMute();
 
@@ -1471,7 +1470,7 @@ class VirtualMqttClient extends Component {
   }
 
   render() {
-    const {appInitError, attachedSource, cammuted, currentLayout, feeds, media, muteOtherCams, myid, numberOfVirtualUsers, room, rooms, selected_room, shidur, user, videos, isSettings, audios, shidurForGuestReady, wipSettings, isGroup,} = this.state;
+    const {delay, appInitError, attachedSource, cammuted, currentLayout, feeds, media, muteOtherCams, myid, numberOfVirtualUsers, room, rooms, selected_room, shidur, user, videos, isSettings, audios, shidurForGuestReady, isGroup,} = this.state;
 
     if (appInitError) {
       return (
@@ -1601,8 +1600,7 @@ class VirtualMqttClient extends Component {
             audioDevice={media.audio?.device}
             videoLength={media.video?.devices.length}
             videoSettings={JSON.stringify(media.video.setting)}
-            wip={wipSettings}
-            setWip={(wip) => this.setState({wipSettings: wip})}
+            delay={delay}
             startLocalMedia={this.startLocalMedia.bind(this)}
             stopLocalMedia={this.stopLocalMedia.bind(this)}
           />

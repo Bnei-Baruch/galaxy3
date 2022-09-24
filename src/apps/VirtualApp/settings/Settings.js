@@ -1,18 +1,7 @@
 import React, {useContext, useEffect} from "react";
 import {useTranslation} from "react-i18next";
 
-import {
-  Box,
-  Button,
-  Checkbox,
-  Divider,
-  FormControlLabel,
-  Grid,
-  MenuItem,
-  Modal,
-  TextField,
-  Typography,
-} from "@mui/material";
+import {Box, Button, Checkbox, Divider, FormControlLabel, Grid, MenuItem, Modal, TextField, Typography} from "@mui/material";
 import Autocomplete from "@mui/material/Autocomplete";
 import {makeStyles} from "tss-react/mui";
 import {useTheme} from "@mui/material/styles";
@@ -68,38 +57,10 @@ const Settings = (props) => {
   const {classes} = useStyles();
 
   const {t} = useTranslation();
-  const {
-    palette: {
-      background: {paper},
-    },
-  } = useTheme();
+  const {palette: {background: {paper}}} = useTheme();
   const {isDark, toggleTheme} = useContext(ThemeContext);
 
-  const {
-    audio,
-    video,
-    rooms,
-    isAudioMode,
-    isGroup,
-    initClient,
-    selectedRoom,
-    selectRoom,
-    setAudioDevice,
-    setVideoDevice,
-    settingsChange,
-    audioModeChange,
-    handleGroupChange,
-    videoLength,
-    videoSettings,
-    audioDevice = audio.devices[0]?.deviceId,
-    videoDevice = video?.devices[0]?.deviceId,
-    userDisplay,
-    wip,
-    setWip,
-    startLocalMedia,
-    stopLocalMedia,
-    cammuted,
-  } = props;
+  const {audio, video, rooms, isAudioMode, isGroup, initClient, selectedRoom, selectRoom, setAudioDevice, setVideoDevice, settingsChange, audioModeChange, handleGroupChange, videoLength, videoSettings, audioDevice = audio.devices[0]?.deviceId, videoDevice = video?.devices[0]?.deviceId, userDisplay, delay, startLocalMedia, stopLocalMedia, cammuted,} = props;
 
   useEffect(() => {
     for (const r of rooms) {
@@ -165,12 +126,12 @@ const Settings = (props) => {
   };
 
   const renderRooms = () => {
-    if (!rooms || rooms.length === 0) return null;
+    if (roomDescriptionById.size === 0) return null;
 
     return (
       <Autocomplete
         variant="outlined"
-        value={roomDescriptionById.size !== 0 ? roomDescriptionById.get(selectedRoom) : {}}
+        value={roomDescriptionById.get(selectedRoom)}
         options={rooms}
         getOptionLabel={(option) => option.description}
         renderOption={(props, {description, num_users}) => (
@@ -208,7 +169,6 @@ const Settings = (props) => {
 
   const handleInitClient = () => {
     initClient(false);
-    setWip(true);
   };
 
   const renderHeader = () => (
@@ -326,12 +286,9 @@ const Settings = (props) => {
           <Button
             variant="contained"
             color="success"
-            classes={{
-              root: classes.submitRoot,
-              disabled: classes.submitDisabled,
-            }}
+            classes={{root: classes.submitRoot, disabled: classes.submitDisabled}}
             size="large"
-            disabled={!!!selectedRoom || wip}
+            disabled={delay || !selectedRoom}
             onClick={handleInitClient}
           >
             <Typography color="white">{t("oldClient.joinRoom")}</Typography>
