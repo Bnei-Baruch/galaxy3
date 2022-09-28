@@ -100,6 +100,9 @@ class JanusStream {
   initVideoStream = () => {
     if(this.videos === NO_VIDEO_OPTION_VALUE) return;
     this.videoJanusStream = new StreamingPlugin(this.config?.iceServers);
+    this.videoJanusStream.onStatus = () => {
+      if(this.janus) this.initVideoStream();
+    }
     this.janus.attach(this.videoJanusStream).then(data => {
       log.debug("[shidur] attach video", data)
       this.videoJanusStream.watch(this.videos).then(stream => {
@@ -111,6 +114,9 @@ class JanusStream {
 
   initAudioStream = () => {
     this.audioJanusStream = new StreamingPlugin(this.config?.iceServers);
+    this.audioJanusStream.onStatus = () => {
+      if(this.janus) this.initAudioStream();
+    }
     this.janus.attach(this.audioJanusStream).then(data => {
       log.debug("[shidur] attach audio", data)
       this.audioJanusStream.watch(this.audios).then(stream => {
@@ -122,6 +128,9 @@ class JanusStream {
 
   initTranslationStream = (streamId) => {
     this.trlAudioJanusStream = new StreamingPlugin(this.config?.iceServers);
+    this.trlAudioJanusStream.onStatus = () => {
+      if(this.janus) this.initTranslationStream(streamId);
+    }
     this.janus.attach(this.trlAudioJanusStream).then(data => {
       log.debug("[shidur] attach translation", data)
       this.trlAudioJanusStream.watch(streamId).then(stream => {
@@ -134,6 +143,9 @@ class JanusStream {
   initQuadStream = (callback) => {
     this.initJanus(null,() => {
       this.videoQuadStream = new StreamingPlugin(this.config?.iceServers);
+      this.videoQuadStream.onStatus = () => {
+        if(this.janus) this.initQuadStream(callback);
+      }
       this.janus.attach(this.videoQuadStream).then(data => {
         log.debug("[shidur] attach quad", data)
         this.videoQuadStream.watch(102).then(stream => {
