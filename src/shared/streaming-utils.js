@@ -85,9 +85,11 @@ class JanusStream {
     janus.onStatus = (srv, status) => {
       if(status !== "online") {
         log.warn("[shidur] janus status: ", status)
+        if(this.janus) this.janus.destroy();
+        this.janus = null;
         setTimeout(() => {
-          this.initStreaming(srv);
-        }, 1000);
+          this.initJanus();
+        }, 7000);
       }
     }
 
