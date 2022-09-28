@@ -252,8 +252,7 @@ class VirtualMqttClient extends Component {
 
   initClient = (reconnect, retry = 0) => {
     this.setState({delay: true});
-    const user = Object.assign({}, this.state.user);
-    const {t} = this.props;
+    const {user} = this.state;
     if (this.state.janus) {
       this.state.janus.destroy();
     }
@@ -402,8 +401,7 @@ class VirtualMqttClient extends Component {
   };
 
   selectRoom = (selected_room) => {
-    const {rooms} = this.state;
-    const user = Object.assign({}, this.state.user);
+    const {rooms, user} = this.state;
     const room = rooms.find((r) => r.room === selected_room);
     const name = room.description;
     if (this.state.room === selected_room) {
@@ -633,7 +631,7 @@ class VirtualMqttClient extends Component {
   };
 
   handleTalking = (id, talking) => {
-    const feeds = Object.assign([], this.state.feeds);
+    const {feeds} = this.state;
     for (let i = 0; i < feeds.length; i++) {
       if (feeds[i] && feeds[i].id === id) {
         feeds[i].talking = talking;
@@ -643,7 +641,8 @@ class VirtualMqttClient extends Component {
   };
 
   onUpdateStreams = (streams) => {
-    const mids = Object.assign([], this.state.mids);
+    const {mids} = this.state;
+    log.debug("[client] Updated streams :", streams);
     for (let i in streams) {
       let mindex = streams[i]["mid"];
       //let feed_id = streams[i]["feed_id"];
@@ -655,7 +654,7 @@ class VirtualMqttClient extends Component {
   onRemoteTrack = (track, mid, on) => {
     if (!mid) mid = track.id.split("janus")[1];
     let feed = this.state.mids[mid].feed_id;
-    log.info("[client] >> This track is coming from feed " + feed + ":", mid);
+    log.info("[client] >> This track is coming from feed " + feed + ":", mid, track);
     if (on) {
       if (track.kind === "audio") {
         let stream = new MediaStream([track]);
@@ -704,7 +703,7 @@ class VirtualMqttClient extends Component {
   };
 
   userState = (user) => {
-    const feeds = Object.assign([], this.state.feeds);
+    const {feeds} = this.state;
     const {camera, question, rfid} = user;
 
     for (let i = 0; i < feeds.length; i++) {
@@ -819,8 +818,7 @@ class VirtualMqttClient extends Component {
   };
 
   handleQuestion = () => {
-    const {question} = this.state;
-    const user = Object.assign({}, this.state.user);
+    const {question, user} = this.state;
     if (user.role === userRolesEnum.ghost) return;
     this.makeDelay();
     this.questionState(user, question);
@@ -848,9 +846,8 @@ class VirtualMqttClient extends Component {
   };
 
   camMute = (cammuted) => {
-    const {videoroom} = this.state;
+    const {videoroom, user} = this.state;
 
-    const user = Object.assign({}, this.state.user);
     if (user.role === userRolesEnum.ghost) return;
     this.makeDelay();
 
