@@ -18,16 +18,10 @@ class AudioHandleMqtt extends Component {
   componentDidUpdate(prevProps) {
     let {g} = this.props;
     let {room} = this.state;
-    if (g && JSON.stringify(g) !== JSON.stringify(prevProps.g) && g.room !== room) {
-      if (room) {
-        this.exitVideoRoom(room, () => {
-          this.initVideoRoom(g.room, g.janus);
-        });
-      } else {
-        this.initVideoRoom(g.room, g.janus);
-      }
+    if (g !== null && g.room !== room) {
+      this.initVideoRoom(g.room, g.janus);
     }
-    if (g === null && room) {
+    if (g === null) {
       this.exitVideoRoom(room);
     }
   };
@@ -143,8 +137,6 @@ class AudioHandleMqtt extends Component {
       this.subscribeTo(room, subscription);
     }
   }
-
-
 
   exitVideoRoom = (roomid, callback) => {
     const {videoroom, janus} = this.state;
