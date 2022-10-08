@@ -18,10 +18,10 @@ class AudioHandleMqtt extends Component {
   componentDidUpdate(prevProps) {
     let {g} = this.props;
     let {room} = this.state;
-    if (g !== null && g.room !== room) {
+    if (g && JSON.stringify(g) !== JSON.stringify(prevProps.g) && g.room !== room) {
       this.initVideoRoom(g.room, g.janus);
     }
-    if (g === null) {
+    if (g === null && room) {
       this.exitVideoRoom(room);
     }
   };
@@ -59,7 +59,7 @@ class AudioHandleMqtt extends Component {
         log.info('[audio] Publisher Handle: ', data)
 
         videoroom.join(room, user).then(data => {
-          log.info('[audio] Joined respond :', data)
+          log.info('[audio] Joined respond :', data);
           this.setState({janus, videoroom, user, room, remoteFeed: null});
           this.onJoinMe(data.publishers, room)
         }).catch(err => {
@@ -69,7 +69,7 @@ class AudioHandleMqtt extends Component {
 
       janus.attach(subscriber).then(data => {
         this.setState({subscriber});
-        log.info('[audio] Subscriber Handle: ', data)
+        log.info('[audio] Subscriber Handle: ', data);
       })
 
     }).catch(err => {
@@ -140,7 +140,7 @@ class AudioHandleMqtt extends Component {
 
   exitVideoRoom = (roomid, callback) => {
     const {videoroom, janus} = this.state;
-    this.setState({feeds: [], mids: [], room: null, remoteFeed: false,});
+    this.setState({feeds: [], mids: [], room: null, remoteFeed: false, creatingFeed: false});
 
     videoroom.leave().then(r => {
       log.info("[audio] leave respond:", r);
@@ -166,6 +166,7 @@ class AudioHandleMqtt extends Component {
       return;
     }
 
+    this.setState({creatingFeed: true});
     subscriber.join(subscription, room).then(data => {
       log.info('[audio] Subscriber join: ', data)
       this.onUpdateStreams(data.streams);
