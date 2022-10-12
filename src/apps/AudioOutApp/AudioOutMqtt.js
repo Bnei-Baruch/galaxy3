@@ -14,6 +14,7 @@ class AudioOutMqtt extends Component {
   state = {
     audio: false,
     group: null,
+    janus: null,
     room: null,
     user: {
       session: 0,
@@ -64,11 +65,18 @@ class AudioOutMqtt extends Component {
   };
 
   onMqttData = (data) => {
-    log.info("[audout] Cmd message: ", data)
+    log.info("[audout] Cmd message: ", data);
+    const {janus} = this.state;
     const {room, group, status, qst} = data;
 
     if (data.type === "sdi-fullscr_group" && status && qst) {
-      this.setState({group, room});
+      if(janus === group.janus) {
+        setTimeout(() => {
+          this.setState({group, room});
+        }, 1000)
+      } else {
+        this.setState({group, room, janus: group.janus});
+      }
     } else if (data.type === "sdi-fullscr_group" && !status && qst) {
       this.setState({group: null, room: null});
     } else if (data.type === "sdi-restart_audout") {
