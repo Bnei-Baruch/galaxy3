@@ -91,6 +91,10 @@ export const audiog_options2 = [
   {key: "et", value: 58, flag: "et", icon: "crosshairs", eng_text: "Amharic", text: "አማርኛ"},
   {key: "in", value: 59, flag: "in", icon: "crosshairs", eng_text: "Hindi", text: "हिन्दी"},
   {key: "ir", value: 60, flag: "ir", icon: "crosshairs", eng_text: "Persian", text: "فارسی"},
+  {key: "in", value: 59, flag: "in", icon: "crosshairs", eng_text: "Hindi", text: "हिन्दी"},
+  {key: "ir", value: 60, flag: "ir", icon: "crosshairs", eng_text: "Persian", text: "فارسی"},
+  {key: "ar", value: 62, flag: "sa", icon: "crosshairs", eng_text: "Arabic", text: "العربية"},
+  {key: "id", value: 63, flag: "id", icon: "crosshairs", eng_text: "Indonesian", text: "Bahasa Indonesia"},
   {divider: true},
   {
     header: true,
@@ -138,6 +142,8 @@ export const audiog_options = [
   {key: "et", value: 58, flag: "et", text: "Amharic"},
   {key: "in", value: 59, flag: "in", text: "Hindi"},
   {key: "ir", value: 60, flag: "ir", text: "Persian"},
+  {key: 'ar', value: 62, flag: "sa", text: 'Arabic'},
+  {key: 'id', value: 63, flag: "id", text: 'Indonesian'},
   {key: 99, value: 99, text: "Special", disabled: true, icon: "tags", selected: true},
   {key: "heru", value: 10, text: "Heb-Rus"},
   {key: "heen", value: 17, text: "Heb-Eng"},
@@ -173,6 +179,8 @@ export const trllang = {
   Amharic: 325,
   Hindi: 326,
   Persian: 327,
+  Arabic: 328,
+  Indonesian: 329,
   "Heb-Eng": 303,
   "Heb-Rus": 302,
 };
