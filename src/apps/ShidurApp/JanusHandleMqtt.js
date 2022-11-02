@@ -159,7 +159,6 @@ class JanusHandleMqtt extends Component {
     } else {
       this.exitPlugins(callback)
     }
-
   };
 
   subscribeTo = (room, subscription) => {

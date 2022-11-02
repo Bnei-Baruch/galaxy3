@@ -13,6 +13,7 @@ export class StreamingPlugin extends EventEmitter {
     this.iceState = null
     this.streamId = null
     this.candidates = []
+    this.onStatus = null
     this.pluginName = 'janus.plugin.streaming'
     this.pc = new RTCPeerConnection({
       iceServers: list
@@ -135,7 +136,7 @@ export class StreamingPlugin extends EventEmitter {
 
       // ICE restart does not help here, peer connection will be down
       if(this.iceState === "failed") {
-        //TODO: handle failed ice state
+        this.onStatus(this.iceState)
       }
 
     };
