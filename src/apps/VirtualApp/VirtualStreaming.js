@@ -195,8 +195,6 @@ class VirtualStreaming extends Component {
                           key={i}
                           text={option.text}
                           selected={option.value === audios}
-                          // icon={option.icon}
-                          flag={option.flag}
                           description={option.description}
                           action={option.action}
                           onClick={() => setAudio(option.value, option.eng_text)}
