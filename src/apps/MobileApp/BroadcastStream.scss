@@ -63,11 +63,14 @@
   animation: in 200ms;
   animation-fill-mode: forwards;
   animation-delay: 1s;
-  
+
   &__bottom {
     animation: bottomin 300ms;
     animation-fill-mode: forwards;
     animation-delay: 1s;
+    .controls__dropdown{
+      max-height: 27VH;
+    }
   }
   &__top {
     animation: topin 300ms;
@@ -147,7 +150,7 @@
     //   min-width: 2rem;
     // }
   }
-  
+
 
   &__spacer {
     flex: 1 1 auto;
@@ -184,7 +187,7 @@
   //   &:focus {
   //     outline: none;
   //   }
-  // }  
+  // }
 }
 
 .video-selection {
