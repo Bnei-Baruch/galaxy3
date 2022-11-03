@@ -1,4 +1,4 @@
-import React, {useContext, useEffect} from "react";
+import React, {useContext, useEffect, useState} from "react";
 import {useTranslation} from "react-i18next";
 
 import {Box, Button, Checkbox, Divider, FormControlLabel, Grid, MenuItem, Modal, TextField, Typography} from "@mui/material";
@@ -14,6 +14,7 @@ import {SelectViewLanguage} from "../components/SelectViewLanguage";
 import {AccountCircle, Mic, Videocam} from "@mui/icons-material";
 import {ThemeContext} from "../components/ThemeSwitcher/ThemeSwitcher";
 import {Support} from "../components/Support";
+import JanusStream from "../../../shared/streaming-utils";
 
 const settingsList = vsettings_list.map(({key, text, value}) => ({key, text, value: JSON.stringify(value)}));
 const mapDevice = ({label, deviceId}) => ({text: label, value: deviceId});
@@ -61,7 +62,7 @@ const Settings = (props) => {
   const {palette: {background: {paper}}} = useTheme();
   const {isDark, toggleTheme} = useContext(ThemeContext);
 
-  const {audio, video, rooms, isAudioMode, isGroup, initClient, selectedRoom, selectRoom, setAudioDevice, setVideoDevice, settingsChange, audioModeChange, handleGroupChange, videoLength, videoSettings, audioDevice = audio.devices[0]?.deviceId, videoDevice = video?.devices[0]?.deviceId, userDisplay, delay, startLocalMedia, stopLocalMedia, cammuted,} = props;
+  const {audio, video, rooms, isAudioMode, isGroup, initClient, selectedRoom, selectRoom, setAudioDevice, setVideoDevice, settingsChange, audioModeChange, handleGroupChange, videoLength, videoSettings, audioDevice = audio.devices[0]?.deviceId, videoDevice = video?.devices[0]?.deviceId, userDisplay, delay, startLocalMedia, stopLocalMedia, cammuted, toggleUsersDisplays, hideDisplays,} = props;
 
   useEffect(() => {
     for (const r of rooms) {
@@ -166,6 +167,8 @@ const Settings = (props) => {
   const handleAudioModeChange = () => audioModeChange();
 
   const handleGroup = () => handleGroupChange();
+
+  const handleUsersDisplays = () => toggleUsersDisplays()
 
   const handleRoomChange = (e, op) => {
     if (!op?.room) return;
