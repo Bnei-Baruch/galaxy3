@@ -288,12 +288,12 @@ const Settings = (props) => {
             control={<Checkbox checked={isGroup} onChange={handleGroup} name="isGroup" color="primary" />}
           />
           <FormControlLabel
-            label={<Typography color="textPrimary">{t("oldClient.hideDisplay")}</Typography>}
+            label={<Typography color="textPrimary">{t("oldClient.hideDisplays")}</Typography>}
             control={<Checkbox checked={hideDisplays} onChange={handleUsersDisplays} name="hideDisplays"
                                color="primary"/>}
           />
           <FormControlLabel
-            label={<Typography color="textPrimary">{t("oldClient.muteShidur")}</Typography>}
+            label={<Typography color="textPrimary">{t("oldClient.shidurMuted")}</Typography>}
             control={<Checkbox checked={shidurMuted} onChange={handleMute} name="shidurMuted" color="primary"/>}
           />
         </Grid>

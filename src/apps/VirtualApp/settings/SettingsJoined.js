@@ -291,7 +291,7 @@ const SettingsJoined = (props) => {
             control={<Checkbox checked={isDark} onChange={toggleTheme} name="isAudioMode" color="secondary" />}
           />
           <FormControlLabel
-            label={<Typography color="textPrimary">{t("oldClient.hideDisplay")}</Typography>}
+            label={<Typography color="textPrimary">{t("oldClient.hideDisplays")}</Typography>}
             control={<Checkbox checked={hideDisplays} onChange={handleUsersDisplays} name="hideDisplays" color="primary"/>}
           />
         </Grid>

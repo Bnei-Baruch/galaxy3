@@ -101,6 +101,7 @@ class VirtualMqttClient extends Component {
     audios: {audios: Number(localStorage.getItem("vrt_lang")) || 2},
     mqttOn: false,
     isGroup: false,
+    hideDisplays: localStorage.getItem("hideDisplays") || false,
   };
 
   componentDidUpdate(prevProps, prevState) {
@@ -966,7 +967,11 @@ class VirtualMqttClient extends Component {
     this.setState({isKliOlamiShown});
   }
 
-  toggleUsersDisplays = () => this.setState({hideDisplays: !this.state.hideDisplays});
+  toggleUsersDisplays = () => {
+    const hideDisplays = !this.state.hideDisplays
+    localStorage.setItem("hideDisplays", hideDisplays);
+    this.setState({hideDisplays});
+  }
 
   updateLayout = (currentLayout) => {
     this.setState({currentLayout}, () => {
@@ -1021,7 +1026,7 @@ class VirtualMqttClient extends Component {
           <div className="video__title">
             {muted ? <Icon name="microphone slash" size="small" color="red" /> : ""}
             {
-              !hideDisplays && (
+              (!hideDisplays || cammuted) && (
                 <Popup
                   content={user ? user.username : ""}
                   mouseEnterDelay={200}
@@ -1080,7 +1085,7 @@ class VirtualMqttClient extends Component {
           <div className="video__title">
             {!talking ? <Icon name="microphone slash" size="small" color="red"/> : ""}
             {
-              !hideDisplays && (
+              (!hideDisplays || mute) && (
                 <Popup
                   content={display}
                   mouseEnterDelay={200}
