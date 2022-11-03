@@ -30,7 +30,7 @@ const Volume = ({media}) => {
   });
 
   useEffect(() => {
-    setVolumeState((media && media.volume) || 0);
+    setVolumeState((media && !media.muted && media.volume) || 0);
     setMutedState(!media || media.muted);
   }, [media]);
 
