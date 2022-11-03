@@ -55,6 +55,7 @@ const roomDescriptionById = new Map();
 
 const Settings = (props) => {
   const {classes} = useStyles();
+  const [shidurMuted, setShidurMuted] = useState(JanusStream.audioElement.muted)
 
   const {t} = useTranslation();
   const {palette: {background: {paper}}} = useTheme();
@@ -67,6 +68,12 @@ const Settings = (props) => {
       roomDescriptionById.set(r.room, r);
     }
   }, [rooms]);
+
+  const handleMute = () => {
+    JanusStream.audioElement.muted = !shidurMuted
+    JanusStream.trlAudioElement.muted = !shidurMuted
+    setShidurMuted(!shidurMuted)
+  }
 
   const renderCameras = () => {
     if (!videoLength) return null;
@@ -276,6 +283,15 @@ const Settings = (props) => {
           <FormControlLabel
             label={<Typography color="textPrimary">Group</Typography>}
             control={<Checkbox checked={isGroup} onChange={handleGroup} name="isGroup" color="primary" />}
+          />
+          <FormControlLabel
+            label={<Typography color="textPrimary">{t("oldClient.hideDisplay")}</Typography>}
+            control={<Checkbox checked={hideDisplays} onChange={handleUsersDisplays} name="hideDisplays"
+                               color="primary"/>}
+          />
+          <FormControlLabel
+            label={<Typography color="textPrimary">{t("oldClient.muteShidur")}</Typography>}
+            control={<Checkbox checked={shidurMuted} onChange={handleMute} name="shidurMuted" color="primary"/>}
           />
         </Grid>
 
