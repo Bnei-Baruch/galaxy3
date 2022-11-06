@@ -1,18 +1,18 @@
-import React, {Component} from "react";
+import React, {Component, Fragment} from "react";
 import {Grid} from "semantic-ui-react";
 import "./VideoOutApp.css";
 import "./VideoOutQuad.scss";
-import {SDIOUT_ID} from "../../shared/consts";
+import {QSTOUT_ID} from "../../shared/consts";
 import log from "loglevel";
 import api from "../../shared/Api";
 import {API_BACKEND_PASSWORD, API_BACKEND_USERNAME} from "../../shared/env";
 import GxyJanus from "../../shared/janus-utils";
-import VideoOutQuad from "./VideoOutQuad";
+import VideoHandleMqtt from "./VideoHandleMqtt";
 import mqtt from "../../shared/mqtt";
 import ConfigStore from "../../shared/ConfigStore";
 import {JanusMqtt} from "../../lib/janus-mqtt";
 
-class VideoOutMqtt extends Component {
+class QstOutMqtt extends Component {
   state = {
     qg: null,
     group: null,
@@ -20,11 +20,11 @@ class VideoOutMqtt extends Component {
     user: {
       session: 0,
       handle: 0,
-      role: "sdiout",
-      display: "sdiout",
-      id: SDIOUT_ID,
-      name: "sdiout",
-      email: "sdiout@galaxy.kli.one",
+      role: "qstout",
+      display: "qstout",
+      id: QSTOUT_ID,
+      name: "qstout",
+      email: "qstout@galaxy.kli.one",
     },
     qids: [],
     qlist: [],
@@ -165,58 +165,42 @@ class VideoOutMqtt extends Component {
   };
 
   render() {
-    let {qids, qg, gateways, roomsStatistics, user} = this.state;
+    let {vote, group, qids, qg, gateways, roomsStatistics, user} = this.state;
 
     if(!gateways) return
+
+    // let qst = g && g.questions;
+    let name = group && group.description;
 
     return (
       <Grid columns={2} className="sdi_container">
         <Grid.Row>
           <Grid.Column>
-            <VideoOutQuad
-              index={0}
-              {...qids.q1}
-              qst={qg}
-              user={user}
-              gateways={gateways}
-              roomsStatistics={roomsStatistics}
-              ref={(col) => {this.col1 = col;}}
-            />
+            <div className="preview_sdi">
+              <div className="usersvideo_grid">
+                <div className="video_full">
+                  {vote ? (
+                    <iframe title="Vote" src="https://vote.kli.one" width="100%" height="100%" frameBorder="0" />
+                  ) : qg ? (
+                    <Fragment>
+                      {/*{group && group.questions ? <div className="qst_fullscreentitle">?</div> : ""}*/}
+                      <div className="fullscrvideo_title">{name}</div>
+                      <VideoHandleMqtt key={"q5"} g={qg} group={group} index={13} col={5} q={5} user={user} gateways={gateways} />
+                    </Fragment>
+                  ) : (
+                    ""
+                  )}
+                </div>
+              </div>
+            </div>
           </Grid.Column>
           <Grid.Column>
-            <VideoOutQuad
-              index={4}
-              {...qids.q2}
-              qst={qg}
-              user={user}
-              gateways={gateways}
-              roomsStatistics={roomsStatistics}
-              ref={(col) => {this.col2 = col;}}
-            />
           </Grid.Column>
         </Grid.Row>
         <Grid.Row>
           <Grid.Column>
-            <VideoOutQuad
-              index={8}
-              {...qids.q3}
-              qst={qg}
-              user={user}
-              gateways={gateways}
-              roomsStatistics={roomsStatistics}
-              ref={(col) => {this.col3 = col;}}
-            />
           </Grid.Column>
           <Grid.Column>
-            <VideoOutQuad
-              index={12}
-              {...qids.q4}
-              qst={qg}
-              user={user}
-              gateways={gateways}
-              roomsStatistics={roomsStatistics}
-              ref={(col) => {this.col4 = col;}}
-            />
           </Grid.Column>
         </Grid.Row>
       </Grid>
@@ -224,4 +208,4 @@ class VideoOutMqtt extends Component {
   }
 }
 
-export default VideoOutMqtt;
+export default QstOutMqtt;
