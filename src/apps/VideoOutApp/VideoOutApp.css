@@ -3,12 +3,12 @@ body {
 }
 
 .sdi_container {
-    width: 1400px;
+    width: 3500px;
 }
 
 .preview_sdi {
-    width: 670px!important;
-    height: 390px!important;
+    width: 1600px!important;
+    height: 900px!important;
     background-color: black!important;
     border: 1px solid black!important;
 }

@@ -23,7 +23,7 @@ class VideoOutMqtt extends Component {
       handle: 0,
       role: "sdiout",
       display: "sdiout",
-      id: SDIOUT_ID,
+      id: "SDIOUT_ID",
       name: "sdiout",
       email: "sdiout@galaxy.kli.one",
     },

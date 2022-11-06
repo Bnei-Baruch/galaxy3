@@ -1,9 +1,9 @@
 .usersvideo_grid {
     display: grid;
-    grid-template-columns: 320px 320px;
+    grid-template-columns: 800px 800px;
     position:relative;
-    width: 640px;
-    height: 360px;
+    width: 1600px;
+    height: 900px;
 }
 
 .usersvideo_box {
@@ -11,8 +11,8 @@
     color: #fff;
     font-size: 100%;
     position:relative;
-    height: 180px;
-    width: 320px;
+    height: 450px;
+    width: 800px;
 }
 
 .usersvideo_qst {
@@ -20,8 +20,8 @@
     color: #fff;
     font-size: 100%;
     position:relative;
-    height: 180px;
-    width: 320px;
+    height: 450px;
+    width: 800px;
     border:3px solid rgba(255, 0, 0, 1);
 }
 
@@ -40,8 +40,8 @@
     color: #fff;
     font-size: 150%;
     position:relative;
-    height: 360px;
-    width: 640px;
+    height: 900px;
+    width: 1600px;
 }
 
 .video_title {
@@ -49,15 +49,15 @@
     // line-height: 1.3285em;
     position: absolute;
     // right: 65px;
-    line-height: 40px;;
+    line-height: 100px;;
     right:2px;
     top:2px;
     color: #FFF;
     text-align: center;
-    font-size: 30px;
+    font-size: 75px;
     background-color: #2185d0;
     // width: auto;
-    padding: 0px 10px;
+    padding: 0px 25px;
     // float: right !important;
     z-index: 2;
 }
@@ -75,8 +75,8 @@
     margin: 0 2px;
     color: #FFF;
 
-    font-size: 45px;
-    line-height: 60px;
+    font-size: 112.5px;
+    line-height: 150px;
     background-color: #2185d0;
     text-align:left;
     // width: auto;
@@ -85,7 +85,7 @@
     z-index: 2;
     + .vclient__main-wrapper {
         // background:red;
-        height: calc(100% - 60px);
+        height: calc(100% - 150px);
         //margin-top:60px;
     }
 }
@@ -146,19 +146,19 @@
     position: absolute;
     color: black;
     text-align: center;
-    line-height: 40px;
+    line-height: 100px;
     font-weight: bold;
-    font-size: 40px;
+    font-size: 100px;
     background-color: white;
-    width: 40px;
-    height: 40px;
+    width: 100px;
+    height: 100px;
     // padding: 0px 5px;
     // float: right!important;
     right: 2px;
     top: 2px;
     z-index: 2;
     + .video_title {
-        right: 42px;
+        right: 101px;
     }
     &__first_time {
         color: red;
@@ -171,14 +171,14 @@
     // font-family: Icons;
     font-weight: bold;
     // -webkit-transform:scale(1.5,1);
-    line-height: 60px;
+    line-height: 150px;
     position: absolute;
     color: black;
     text-align: center;
-    font-size: 60px;
+    font-size: 150px;
     background-color: white;
     /*background:rgba(34, 34, 34, .9);*/
-    width: 60px;
+    width: 150px;
     // padding: 0px 5px;
     // float: left !important;
     right: 2px;
