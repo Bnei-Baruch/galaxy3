@@ -1,7 +1,7 @@
 import React, {Component, Fragment} from "react";
 import {Grid} from "semantic-ui-react";
-import "./VideoOutApp.css";
-import "./VideoOutQuad.scss";
+import "./QstOutApp.css";
+import "./QstOutQuad.scss";
 import {QSTOUT_ID} from "../../shared/consts";
 import log from "loglevel";
 import api from "../../shared/Api";
@@ -22,7 +22,7 @@ class QstOutMqtt extends Component {
       handle: 0,
       role: "qstout",
       display: "qstout",
-      id: QSTOUT_ID,
+      id: "QSTOUT_ID",
       name: "qstout",
       email: "qstout@galaxy.kli.one",
     },
