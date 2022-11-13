@@ -580,7 +580,7 @@ class ToranToolsMqtt extends Component {
     });
 
     let pst_buttons = Object.keys(presets).map((p) => {
-      const ps = p === "3" || p === "4" ? "top right" : "top left";
+      const ps = p === "5" || p === "6" || p === "7" || p === "8" ? "top right" : "top left";
       let preset = presets[p].map((data, i) => {
         const {description} = data;
         return (

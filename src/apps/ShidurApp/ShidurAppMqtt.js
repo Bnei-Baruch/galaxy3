@@ -44,7 +44,7 @@ class ShidurAppMqtt extends Component {
     user: null,
     gatewaysInitialized: false,
     appInitError: null,
-    presets: {1: [], 2: [], 3: [], 4: []},
+    presets: {1: [], 2: [], 3: [], 4: [], 5: [], 6: [], 7: [], 8: []},
     region_groups: [],
     region_filter: region_filter,
     region_list: [],

@@ -157,14 +157,14 @@ class QuadPanelHttp extends Component {
     });
   };
 
-  setPreset = () => {
+  setPreset = (p) => {
     let {presets} = this.props;
     let {vquad, col} = this.state;
 
-    if (presets[col].length === 0) return;
+    if (presets[p].length === 0) return;
 
-    for (let i = 0; i < presets[col].length; i++) {
-      vquad[i] = presets[col][i];
+    for (let i = 0; i < presets[p].length; i++) {
+      vquad[i] = presets[p][i];
     }
     this.setState({vquad});
 
@@ -278,6 +278,9 @@ class QuadPanelHttp extends Component {
     const {index, fullscr, col, vquad, question} = this.state;
     const {groups, group, rooms, next_button, presets, delay, roomsStatistics} = this.props;
 
+    const p1 = col === 2 ? 3 : col === 3 ? 5 : col === 4 ? 7 : col
+    const p2 = col + col
+
     let program = vquad.map((g, i) => {
       if (groups.length === 0) return false;
       let qst = "";
@@ -337,8 +340,8 @@ class QuadPanelHttp extends Component {
           <div className="video_grid">{program}</div>
         </Segment>
         <Button.Group attached="bottom" size="mini">
-          <Button className="preset_button" disabled={presets.length === 0} color="teal" onClick={this.setPreset}>
-            {col}
+          <Button className="preset_button" disabled={presets.length === 0} color="teal" onClick={() => this.setPreset(p1)}>
+            {p1}
           </Button>
           <Button
             className="fours_button"
@@ -349,6 +352,9 @@ class QuadPanelHttp extends Component {
             <Icon name="share" />
             <Icon name="th large" />
             <Icon name="share" />
+          </Button>
+          <Button className="preset_button" disabled={presets.length === 0} color="teal" onClick={() => this.setPreset(p2)}>
+            {p2}
           </Button>
         </Button.Group>
       </Segment>
