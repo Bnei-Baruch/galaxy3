@@ -101,6 +101,7 @@ class VirtualMqttClient extends Component {
     audios: {audios: Number(localStorage.getItem("vrt_lang")) || 2},
     mqttOn: false,
     isGroup: false,
+    hideDisplays: localStorage.getItem("hideDisplays") || false,
   };
 
   componentDidUpdate(prevProps, prevState) {
@@ -966,6 +967,12 @@ class VirtualMqttClient extends Component {
     this.setState({isKliOlamiShown});
   }
 
+  toggleUsersDisplays = () => {
+    const hideDisplays = !this.state.hideDisplays
+    localStorage.setItem("hideDisplays", hideDisplays);
+    this.setState({hideDisplays});
+  }
+
   updateLayout = (currentLayout) => {
     this.setState({currentLayout}, () => {
       localStorage.setItem("currentLayout", currentLayout);
@@ -1000,7 +1007,7 @@ class VirtualMqttClient extends Component {
   };
 
   renderLocalMedia = (width, height, index) => {
-    const {user, cammuted, question, muted} = this.state;
+    const {user, cammuted, question, muted,hideDisplays} = this.state;
 
     return (
       <div className="video" key={index}>
@@ -1018,13 +1025,17 @@ class VirtualMqttClient extends Component {
           )}
           <div className="video__title">
             {muted ? <Icon name="microphone slash" size="small" color="red" /> : ""}
-            <Popup
-              content={user ? user.username : ""}
-              mouseEnterDelay={200}
-              mouseLeaveDelay={500}
-              on="hover"
-              trigger={<div className="title-name">{user ? user.username : ""}</div>}
-            />
+            {
+              (!hideDisplays || cammuted) && (
+                <Popup
+                  content={user ? user.username : ""}
+                  mouseEnterDelay={200}
+                  mouseLeaveDelay={500}
+                  on="hover"
+                  trigger={<div className="title-name">{user ? user.username : ""}</div>}
+                />
+              )
+            }
             <Icon style={{marginLeft: "0.3rem"}} name="signal" size="small" color={this.connectionColor()} />
           </div>
         </div>
@@ -1054,7 +1065,7 @@ class VirtualMqttClient extends Component {
 
   renderMedia = (feed, width, height) => {
     const {id, talking, question, cammute, display: {display}} = feed;
-    const {muteOtherCams} = this.state;
+    const {muteOtherCams, hideDisplays} = this.state;
     const mute = cammute || muteOtherCams;
 
     return (
@@ -1072,14 +1083,18 @@ class VirtualMqttClient extends Component {
             ""
           )}
           <div className="video__title">
-            {!talking ? <Icon name="microphone slash" size="small" color="red" /> : ""}
-            <Popup
-              content={display}
-              mouseEnterDelay={200}
-              mouseLeaveDelay={500}
-              on="hover"
-              trigger={<span className="title-name">{display}</span>}
-            />
+            {!talking ? <Icon name="microphone slash" size="small" color="red"/> : ""}
+            {
+              (!hideDisplays || mute) && (
+                <Popup
+                  content={display}
+                  mouseEnterDelay={200}
+                  mouseLeaveDelay={500}
+                  on="hover"
+                  trigger={<span className="title-name">{display}</span>}
+                />
+              )
+            }
           </div>
         </div>
         <svg
@@ -1467,7 +1482,7 @@ class VirtualMqttClient extends Component {
   }
 
   render() {
-    const {delay, appInitError, attachedSource, cammuted, currentLayout, feeds, media, muteOtherCams, myid, numberOfVirtualUsers, room, rooms, selected_room, shidur, user, videos, isSettings, audios, shidurForGuestReady, isGroup,} = this.state;
+    const {delay, appInitError, attachedSource, cammuted, currentLayout, feeds, media, muteOtherCams, myid, numberOfVirtualUsers, room, rooms, selected_room, shidur, user, videos, isSettings, audios, shidurForGuestReady, isGroup, hideDisplays,} = this.state;
 
     if (appInitError) {
       return (
@@ -1574,6 +1589,8 @@ class VirtualMqttClient extends Component {
             audioDevice={media.audio?.device}
             setAudioDevice={this.setAudioDevice.bind(this)}
             audios={audios.audios}
+            hideDisplays={hideDisplays}
+            toggleUsersDisplays={this.toggleUsersDisplays.bind(this)}
           />
         )}
         {user && !notApproved && !Boolean(room) && (
@@ -1600,6 +1617,8 @@ class VirtualMqttClient extends Component {
             delay={delay}
             startLocalMedia={this.startLocalMedia.bind(this)}
             stopLocalMedia={this.stopLocalMedia.bind(this)}
+            hideDisplays={hideDisplays}
+            toggleUsersDisplays={this.toggleUsersDisplays.bind(this)}
           />
         )}
         {user ? content : login}

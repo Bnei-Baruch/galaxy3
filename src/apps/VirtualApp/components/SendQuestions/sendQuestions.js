@@ -1,9 +1,10 @@
 import React, {useEffect, useState} from "react";
 import {Message} from "semantic-ui-react";
 import {useTranslation} from "react-i18next";
-import {Box, Button, Typography, TextField} from "@mui/material";
+import {Box, Button, TextField, Typography} from "@mui/material";
 import {makeStyles} from "tss-react/mui";
-import {grey, blue, green} from "@mui/material/colors";
+import {blue, green, grey} from "@mui/material/colors";
+import {isRTLString} from "../../../../shared/tools";
 
 const useStyles = makeStyles()({
   disabled: {
@@ -69,6 +70,7 @@ const SendQuestion = ({questions, send, user = {}}) => {
         variant="outlined"
         onChange={handleNameChange}
         margin="dense"
+        dir={isRTLString(name) ? "rtl" : "ltr"}
       />
       <TextField
         fullWidth
@@ -87,6 +89,7 @@ const SendQuestion = ({questions, send, user = {}}) => {
         variant="outlined"
         onChange={handleContentChange}
         margin="dense"
+        dir={isRTLString(content) ? "rtl" : "ltr"}
       />
       <Button
         onClick={handleSubmit}

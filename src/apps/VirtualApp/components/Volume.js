@@ -8,7 +8,7 @@ const Volume = ({media}) => {
   const [volumeHover, setVolumeHover] = useState(false);
   const [wasMouseDown, setWasMouseDown] = useState(false);
   const [volumeState, setVolumeState] = useState(0);
-  const [mutedState, setMutedState] = useState(0);
+  const [mutedState, setMutedState] = useState(media.muted);
   const [documentElem, setDocument] = useState(null);
 
   // Handle volume change on bar
@@ -30,7 +30,7 @@ const Volume = ({media}) => {
   });
 
   useEffect(() => {
-    setVolumeState((media && media.volume) || 0);
+    setVolumeState((media && !media.muted && media.volume) || 0);
     setMutedState(!media || media.muted);
   }, [media]);
 

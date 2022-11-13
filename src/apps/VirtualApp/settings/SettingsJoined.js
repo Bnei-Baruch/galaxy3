@@ -82,6 +82,8 @@ const SettingsJoined = (props) => {
     isAudioMode,
     setAudioDevice,
     audioDevice = audio.devices[0]?.deviceId,
+    hideDisplays,
+    toggleUsersDisplays,
   } = props;
 
   const audio_device = audio?.device || audio?.devices[0]?.deviceId;
@@ -102,6 +104,8 @@ const SettingsJoined = (props) => {
   }, [audios]);
 
   const handleAudioModeChange = () => audioModeChange();
+
+  const handleUsersDisplays = () => toggleUsersDisplays()
 
   const renderHeader = () => (
     <>
@@ -277,16 +281,18 @@ const SettingsJoined = (props) => {
         <Divider variant="fullWidth" sx={{width: "100%", marginTop: "2em"}} />
         {renderMediaSettings()}
 
-        <Grid item xs={3}>
+        <Grid item xs={12}>
           <FormControlLabel
             label={<Typography color="textPrimary">{t("oldClient.audioMode")}</Typography>}
             control={<Checkbox checked={!!isAudioMode} onChange={handleAudioModeChange} name="isAudioMode" />}
           />
-        </Grid>
-        <Grid item xs={9}>
           <FormControlLabel
             label={<Typography color="textPrimary">{t("oldClient.darkTheme")}</Typography>}
             control={<Checkbox checked={isDark} onChange={toggleTheme} name="isAudioMode" color="secondary" />}
+          />
+          <FormControlLabel
+            label={<Typography color="textPrimary">{t("oldClient.hideDisplays")}</Typography>}
+            control={<Checkbox checked={hideDisplays} onChange={handleUsersDisplays} name="hideDisplays" color="primary"/>}
           />
         </Grid>
         <Grid item xs={12}>

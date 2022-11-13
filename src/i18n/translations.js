@@ -81,6 +81,8 @@ export const resources = {
         newDesign: "NEW VERSION",
         darkTheme: "Dark Theme",
         moveToNewVersion: `Please note that this version of Arvut system will stop it’s operation on the February 28th 2022. \n Please move to the new version. If you have any troubles with it, contact the support team.`,
+        hideDisplays: "Hide users names",
+        shidurMuted: "Mute broadcast",
       },
       settings: {
         selectCamera: "Select camera",
@@ -299,6 +301,8 @@ export const resources = {
         newDesign: "NUEVA VERSIÓN",
         darkTheme: "Tema oscuro",
         moveToNewVersion: `Please note that this version of Arvut system will stop it’s operation on the February 28th 2022. \n Please move to the new version. If you have any troubles with it, contact the support team.`,
+        hideDisplays: "Ocultar nombres de usuarios",
+        shidurMuted: "Silenciar el audio de la transmisión",
       },
       settings: {
         selectCamera: "Select camera",
@@ -518,6 +522,8 @@ export const resources = {
         moveToNewVersion: `שים לב! גרסה זו של מערכת Arvut תפסיק את פעילותה ב-28 בפברואר 2022.
         \n
         נא לעבור לגרסה החדשה. אם נתקלת בבעיה להשתמש בה, אנא צור קשר עם צוות התמיכה.`,
+        hideDisplays: "הסתר את שמות המשתמשים",
+        shidurMuted: "השתק שידור",
       },
       settings: {
         selectCamera: "בחר מצלמה",
@@ -727,6 +733,8 @@ export const resources = {
         newDesign: "НОВАЯ ВЕРСИЯ",
         darkTheme: "Тёмная тема",
         moveToNewVersion: `Обратите внимание, что данная версия системы Арвут прекратит работу 28 февраля 2022 года. \n Пожалуйста, перейдите на новую версию.Если у вас возникли какие-либо проблемы с переходом на новую версию, обратитесь в службу поддержки`,
+        hideDisplays: "Скрыть имена пользователей",
+        shidurMuted: "Отключить звук трансляции",
       },
       settings: {
         selectCamera: "Выбрать камеру",
