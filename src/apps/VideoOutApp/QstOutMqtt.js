@@ -22,7 +22,7 @@ class QstOutMqtt extends Component {
       handle: 0,
       role: "qstout",
       display: "qstout",
-      id: "QSTOUT_ID",
+      id: QSTOUT_ID,
       name: "qstout",
       email: "qstout@galaxy.kli.one",
     },
