@@ -158,7 +158,7 @@ export const trllang = {
   French: 405,
   Italian: 406,
   German: 407,
-  Turkish: 308,
+  Turkish: 408,
   Portuguese: 309,
   Bulgarian: 310,
   Georgian: 311,
