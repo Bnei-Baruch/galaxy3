@@ -229,13 +229,16 @@ class JanusStream {
       this.prevAudioVolume = this.audioElement.volume;
       this.prevMuted = this.audioElement.muted;
 
+      // Switch to -1 stream
       log.debug("[shidur] Switch audio stream: ", gxycol[col]);
       this.audioJanusStream.switch(gxycol[col]);
+
       const id = trllang[localStorage.getItem("vrt_langtext")];
-      log.debug("[shidur] get id from local storage:  ", localStorage.getItem("vrt_langtext"), id);
-      if (!id) {
-        log.debug("[shidur] no id in local storage");
+      // Don't bring translation on toggle trl stream
+      if (this.audios === 64 || !id) {
+        log.debug("[shidur] no id in local storage or client use togle stream");
       } else {
+        log.debug("[shidur] get id from local storage:  ", localStorage.getItem("vrt_langtext"), id);
         this.trlAudioJanusStream.switch(id);
         this.talking = setInterval(this.ducerMixaudio, 200);
         log.debug("[shidur] Switch trl stream: ", localStorage.getItem("vrt_langtext"), id);
@@ -247,10 +250,13 @@ class JanusStream {
         clearInterval(this.talking);
       }
       this.audioElement.volume = this.mixvolume;
-      const id = Number(localStorage.getItem("vrt_lang")) || 2;
-      log.debug("[shidur] get stream back id: ", localStorage.getItem("vrt_lang"), id);
-      this.audioJanusStream.switch(id);
-      log.debug("[shidur] Switch audio stream back");
+      // Bring back source if was choosen before
+      if(this.audios !== 64) {
+        const id = Number(localStorage.getItem("vrt_lang")) || 2;
+        log.debug("[shidur] get stream back id: ", localStorage.getItem("vrt_lang"), id);
+        this.audioJanusStream.switch(id);
+        log.debug("[shidur] Switch audio stream back");
+      }
       this.trlAudioElement.muted = true;
       this.talking = null;
       this.mixvolume = null;
