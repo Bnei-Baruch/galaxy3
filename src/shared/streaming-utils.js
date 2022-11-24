@@ -315,8 +315,11 @@ class JanusStream {
     if (this.audioJanusStream) {
       this.audioJanusStream.switch(audios);
     }
-    localStorage.setItem("vrt_lang", audios);
-    localStorage.setItem("vrt_langtext", text);
+    // Source we not put to local storage
+    if(audios !== 64) {
+      localStorage.setItem("vrt_lang", audios);
+      localStorage.setItem("vrt_langtext", text);
+    }
   };
 
   attachVideoStream(videoElement) {
