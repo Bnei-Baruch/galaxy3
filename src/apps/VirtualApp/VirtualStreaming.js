@@ -1,5 +1,5 @@
 import React, {Component, Fragment} from "react";
-import {Label, Dropdown, Header, Icon, Grid, Image} from "semantic-ui-react";
+import {Label, Dropdown, Header, Icon, Grid, Image, Radio} from "semantic-ui-react";
 import NewWindow from "@hinaser/react-new-window";
 import {videos_options2, audiog_options2, NO_VIDEO_OPTION_VALUE} from "../../shared/consts";
 import "./BroadcastStream.scss";
@@ -81,6 +81,14 @@ class VirtualStreaming extends Component {
   setVideo(videos) {
     JanusStream.setVideo(videos);
     this.props.setVideo(videos);
+  };
+
+  toogleTranslation = () => {
+    if(this.props.audios === 64) {
+      this.props.setAudio(Number(localStorage.getItem("vrt_lang")));
+    } else {
+      this.props.setAudio(64);
+    }
   }
 
   render() {
@@ -204,6 +212,7 @@ class VirtualStreaming extends Component {
                   </Dropdown.Menu>
                 </Dropdown>
                 <Volume media={JanusStream.audioElement} />
+                <Radio label='Translation On' toggle checked={this.props.audios !== 64} onChange={this.toogleTranslation} />
                 <div className="controls__spacer"></div>
                 <button onClick={this.toggleFullScreen}>
                   <Icon name={isFullScreen(this.videoWrapper) ? "compress" : "expand"} />
