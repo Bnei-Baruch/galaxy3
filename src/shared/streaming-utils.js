@@ -1,4 +1,4 @@
-import {gxycol, trllang, NO_VIDEO_OPTION_VALUE} from "./consts";
+import {gxycol, trllang, NO_VIDEO_OPTION_VALUE, NOTRL_STREAM_ID} from "./consts";
 import {JanusMqtt} from "../lib/janus-mqtt";
 import {StreamingPlugin} from "../lib/streaming-plugin";
 import log from "loglevel";
@@ -235,7 +235,7 @@ class JanusStream {
 
       const id = trllang[localStorage.getItem("vrt_langtext")];
       // Don't bring translation on toggle trl stream
-      if (this.audios === 64 || !id) {
+      if (this.audios === NOTRL_STREAM_ID || !id) {
         log.debug("[shidur] no id in local storage or client use togle stream");
       } else {
         log.debug("[shidur] get id from local storage:  ", localStorage.getItem("vrt_langtext"), id);
@@ -251,7 +251,7 @@ class JanusStream {
       }
       this.audioElement.volume = this.mixvolume;
       // Bring back source if was choosen before
-      if(this.audios !== 64) {
+      if(this.audios !== NOTRL_STREAM_ID) {
         const id = Number(localStorage.getItem("vrt_lang")) || 2;
         log.debug("[shidur] get stream back id: ", localStorage.getItem("vrt_lang"), id);
         this.audioJanusStream.switch(id);
@@ -322,7 +322,7 @@ class JanusStream {
       this.audioJanusStream.switch(audios);
     }
     // Source we not put to local storage
-    if(audios !== 64) {
+    if(audios !== NOTRL_STREAM_ID) {
       localStorage.setItem("vrt_lang", audios);
       localStorage.setItem("vrt_langtext", text);
     }

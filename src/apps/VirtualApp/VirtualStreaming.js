@@ -1,7 +1,7 @@
 import React, {Component, Fragment} from "react";
 import {Dropdown, Grid, Header, Icon, Image, Label, Radio} from "semantic-ui-react";
 import NewWindow from "@hinaser/react-new-window";
-import {audiog_options2, NO_VIDEO_OPTION_VALUE, videos_options2} from "../../shared/consts";
+import {audiog_options2, NO_VIDEO_OPTION_VALUE, NOTRL_STREAM_ID, videos_options2} from "../../shared/consts";
 import "./BroadcastStream.scss";
 import Volume from "./components/Volume";
 import JanusStream from "../../shared/streaming-utils";
@@ -84,11 +84,11 @@ class VirtualStreaming extends Component {
   }
 
   toogleTranslation = () => {
-    if (this.props.audios === 64) {
+    if (this.props.audios === NOTRL_STREAM_ID) {
       let prev_lang = Number(localStorage.getItem("vrt_lang")) || 2;
       this.props.setAudio(prev_lang);
     } else {
-      this.props.setAudio(64);
+      this.props.setAudio(NOTRL_STREAM_ID);
     }
   };
 
@@ -216,9 +216,9 @@ class VirtualStreaming extends Component {
                 <Radio
                   toggle
                   className="controls__toggle"
-                  checked={this.props.audios !== 64}
+                  checked={this.props.audios !== NOTRL_STREAM_ID}
                   onChange={this.toogleTranslation}
-                  label={this.props.audios !== 64 ? "Translation On" : "Translation Off"}
+                  label={this.props.audios !== NOTRL_STREAM_ID ? "Translation On" : "Translation Off"}
                 />
                 <div className="controls__spacer"></div>
                 <button onClick={this.toggleFullScreen}>
