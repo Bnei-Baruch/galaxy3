@@ -213,7 +213,7 @@ class VirtualStreaming extends Component {
                   </Dropdown.Menu>
                 </Dropdown>
                 <Volume media={JanusStream.audioElement} />
-                <Radio label='Translation On' toggle checked={this.props.audios !== 64} onChange={this.toogleTranslation} />
+                <Radio label={this.props.audios !== 64 ? 'Translation On' : 'Translation Off'} toggle checked={this.props.audios !== 64} onChange={this.toogleTranslation} />
                 <div className="controls__spacer"></div>
                 <button onClick={this.toggleFullScreen}>
                   <Icon name={isFullScreen(this.videoWrapper) ? "compress" : "expand"} />
