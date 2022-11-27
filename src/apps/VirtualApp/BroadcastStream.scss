@@ -225,6 +225,14 @@
       position: relative;
     }
 
+  &__toggle {
+    align-self: center;
+
+    &.ui.toggle.checkbox input~label {
+      color: white !important;
+    }
+  }
+
     // &__seekbar {
     //   flex: 1 0 100%;
     //   height: 20px;
