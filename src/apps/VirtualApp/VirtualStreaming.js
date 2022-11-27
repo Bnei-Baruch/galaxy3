@@ -85,7 +85,8 @@ class VirtualStreaming extends Component {
 
   toogleTranslation = () => {
     if(this.props.audios === 64) {
-      this.props.setAudio(Number(localStorage.getItem("vrt_lang")));
+      let prev_lang = Number(localStorage.getItem("vrt_lang")) || 2;
+      this.props.setAudio(prev_lang);
     } else {
       this.props.setAudio(64);
     }
