@@ -117,7 +117,7 @@ class VirtualStreaming extends Component {
             <div className="controls">
               <div className="controls__top">
                 <button>
-                  <Icon name="close" onClick={closeShidur}/>
+                  <Icon name="close" onClick={closeShidur} />
                 </button>
               </div>
               <div className="controls__bottom">
@@ -140,13 +140,13 @@ class VirtualStreaming extends Component {
                 >
                   <Dropdown.Menu className="controls__dropdown">
                     {videos_options2.map((option, i) => {
-                      if (option.divider === true) return <Dropdown.Divider key={i}/>;
+                      if (option.divider === true) return <Dropdown.Divider key={i} />;
                       if (option.header === true)
                         return (
                           <Dropdown.Header className="ui blue" icon={option.icon}>
                             {t(option.text)}
                             {option.description ? (
-                              <Header as="div" size="tiny" color="grey" content={t(option.description)}/>
+                              <Header as="div" size="tiny" color="grey" content={t(option.description)} />
                             ) : (
                               ""
                             )}
@@ -175,7 +175,7 @@ class VirtualStreaming extends Component {
                   selectOnBlur={false}
                   trigger={
                     <button>
-                      {audio_option.icon ? <Icon name={audio_option.icon}/> : ""}
+                      {audio_option.icon ? <Icon name={audio_option.icon} /> : ""}
                       {audio_option.text ? `${audio_option.text}` : ""}
                     </button>
                   }
@@ -183,16 +183,16 @@ class VirtualStreaming extends Component {
                 >
                   <Dropdown.Menu className="controls__dropdown">
                     {audiog_options2.map((option, i) => {
-                      if (option.divider === true) return <Dropdown.Divider key={i}/>;
+                      if (option.divider === true) return <Dropdown.Divider key={i} />;
                       if (option.header === true)
                         return (
                           <Dropdown.Header className="ui blue" key={i}>
-                            <Icon name={option.icon}/>
+                            <Icon name={option.icon} />
                             <div>
                               {t(option.text)}
-                              <br/>
+                              <br />
                               {option.description ? (
-                                <Header as="span" size="tiny" color="grey" content={t(option.description)}/>
+                                <Header as="span" size="tiny" color="grey" content={t(option.description)} />
                               ) : (
                                 ""
                               )}
@@ -218,15 +218,15 @@ class VirtualStreaming extends Component {
                   className="controls__toggle"
                   checked={this.props.audios !== 64}
                   onChange={this.toogleTranslation}
-                  label={this.props.audios !== 64 ? "Translation On" : "Translation Off"}
+                  label={t(`oldClient.${this.props.audios !== 64 ? "translationOn" : "translationOff"}`)}
                 />
                 <div className="controls__spacer"></div>
                 <button onClick={this.toggleFullScreen}>
-                  <Icon name={isFullScreen(this.videoWrapper) ? "compress" : "expand"}/>
+                  <Icon name={isFullScreen(this.videoWrapper) ? "compress" : "expand"} />
                 </button>
                 {!attached ? null : (
                   <button onClick={this.toggleNewWindow}>
-                    <Icon name="external square"/>
+                    <Icon name="external square" />
                   </button>
                 )}
               </div>
@@ -238,7 +238,7 @@ class VirtualStreaming extends Component {
           </div>
           {talking && (
             <Label className="talk" size="massive" color="red">
-              <Icon name="microphone"/>
+              <Icon name="microphone" />
               On
             </Label>
           )}
@@ -248,7 +248,7 @@ class VirtualStreaming extends Component {
             <Grid verticalAlign="middle" columns={1} centered>
               <Grid.Row>
                 <Grid.Column>
-                  <Image className="noVideoPlayerIcon" src={audioOnly}/>
+                  <Image className="noVideoPlayerIcon" src={audioOnly} />
                 </Grid.Column>
               </Grid.Row>
             </Grid>
