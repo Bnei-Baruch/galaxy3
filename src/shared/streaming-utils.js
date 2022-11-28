@@ -1,4 +1,4 @@
-import {gxycol, trllang, NO_VIDEO_OPTION_VALUE} from "./consts";
+import {gxycol, trllang, NO_VIDEO_OPTION_VALUE, NOTRL_STREAM_ID} from "./consts";
 import {JanusMqtt} from "../lib/janus-mqtt";
 import {StreamingPlugin} from "../lib/streaming-plugin";
 import log from "loglevel";
@@ -53,109 +53,109 @@ class JanusStream {
     this.clean();
     this.initJanus(srv, () => {
       if (!this.videoJanusStream) {
-        this.initVideoStream()
+        this.initVideoStream();
       }
-      if(!this.audioJanusStream) {
+      if (!this.audioJanusStream) {
         this.initAudioStream();
       }
-      if(!this.trlAudioJanusStream) {
+      if (!this.trlAudioJanusStream) {
         let id = trllang[localStorage.getItem("vrt_langtext")] || 301;
         this.initTranslationStream(id);
       }
-    })
+    });
   };
 
   initJanus = (srv, cb) => {
-    if(this.janus) {
+    if (this.janus) {
       if (typeof cb === "function") cb();
-      return
+      return;
     }
 
     let str = srv;
 
-    if(!srv) {
+    if (!srv) {
       const gw_list = GxyJanus.gatewayNames("streaming");
       let inst = gw_list[Math.floor(Math.random() * gw_list.length)];
       this.config = GxyJanus.instanceConfig(inst);
-      str = this.config.name
+      str = this.config.name;
     }
 
-    let janus = new JanusMqtt(this.user, str)
+    let janus = new JanusMqtt(this.user, str);
 
     janus.onStatus = (srv, status) => {
-      if(status !== "online") {
-        log.warn("[shidur] janus status: ", status)
-        if(this.janus) this.janus.destroy();
+      if (status !== "online") {
+        log.warn("[shidur] janus status: ", status);
+        if (this.janus) this.janus.destroy();
         this.janus = null;
         setTimeout(() => {
           this.initJanus();
         }, 7000);
       }
-    }
+    };
 
-    janus.init().then(data => {
+    janus.init().then((data) => {
       log.debug("[shidur] init: ", data);
       this.janus = janus;
       if (typeof cb === "function") cb();
-    })
-  }
+    });
+  };
 
   initVideoStream = () => {
-    if(this.videos === NO_VIDEO_OPTION_VALUE) return;
+    if (this.videos === NO_VIDEO_OPTION_VALUE) return;
     this.videoJanusStream = new StreamingPlugin(this.config?.iceServers);
     this.videoJanusStream.onStatus = () => {
-      if(this.janus) this.initVideoStream();
-    }
-    this.janus.attach(this.videoJanusStream).then(data => {
-      log.debug("[shidur] attach video", data)
-      this.videoJanusStream.watch(this.videos).then(stream => {
+      if (this.janus) this.initVideoStream();
+    };
+    this.janus.attach(this.videoJanusStream).then((data) => {
+      log.debug("[shidur] attach video", data);
+      this.videoJanusStream.watch(this.videos).then((stream) => {
         this.videoMediaStream = stream;
         this.attachVideoStream_(this.videoElement, /* reattach= */ false);
-      })
-    })
+      });
+    });
   };
 
   initAudioStream = () => {
     this.audioJanusStream = new StreamingPlugin(this.config?.iceServers);
     this.audioJanusStream.onStatus = () => {
-      if(this.janus) this.initAudioStream();
-    }
-    this.janus.attach(this.audioJanusStream).then(data => {
-      log.debug("[shidur] attach audio", data)
-      this.audioJanusStream.watch(this.audios).then(stream => {
+      if (this.janus) this.initAudioStream();
+    };
+    this.janus.attach(this.audioJanusStream).then((data) => {
+      log.debug("[shidur] attach audio", data);
+      this.audioJanusStream.watch(this.audios).then((stream) => {
         this.audioMediaStream = stream;
         this.attachAudioStream_(this.audioElement, /* reattach= */ false);
-      })
-    })
+      });
+    });
   };
 
   initTranslationStream = (streamId) => {
     this.trlAudioJanusStream = new StreamingPlugin(this.config?.iceServers);
     this.trlAudioJanusStream.onStatus = () => {
-      if(this.janus) this.initTranslationStream(streamId);
-    }
-    this.janus.attach(this.trlAudioJanusStream).then(data => {
-      log.debug("[shidur] attach translation", data)
-      this.trlAudioJanusStream.watch(streamId).then(stream => {
+      if (this.janus) this.initTranslationStream(streamId);
+    };
+    this.janus.attach(this.trlAudioJanusStream).then((data) => {
+      log.debug("[shidur] attach translation", data);
+      this.trlAudioJanusStream.watch(streamId).then((stream) => {
         this.trlAudioMediaStream = stream;
         this.attachTrlAudioStream_(this.trlAudioElement, /* reattach= */ false);
-      })
-    })
+      });
+    });
   };
 
   initQuadStream = (callback) => {
-    this.initJanus(null,() => {
+    this.initJanus(null, () => {
       this.videoQuadStream = new StreamingPlugin(this.config?.iceServers);
       this.videoQuadStream.onStatus = () => {
-        if(this.janus) this.initQuadStream(callback);
-      }
-      this.janus.attach(this.videoQuadStream).then(data => {
-        log.debug("[shidur] attach quad", data)
-        this.videoQuadStream.watch(102).then(stream => {
-          callback(stream)
-        })
-      })
-    })
+        if (this.janus) this.initQuadStream(callback);
+      };
+      this.janus.attach(this.videoQuadStream).then((data) => {
+        log.debug("[shidur] attach quad", data);
+        this.videoQuadStream.watch(102).then((stream) => {
+          callback(stream);
+        });
+      });
+    });
   };
 
   clean() {
@@ -183,11 +183,11 @@ class JanusStream {
       this.trlAudioJanusStream = null;
       this.trlAudioMediaStream = null;
     }
-  };
+  }
 
   toggle(plugin) {
-    if(plugin === "shidur") {
-      if(this.janus) {
+    if (plugin === "shidur") {
+      if (this.janus) {
         this.janus.detach(this.videoJanusStream);
         this.videoJanusStream = null;
         this.janus.detach(this.audioJanusStream);
@@ -196,18 +196,18 @@ class JanusStream {
         this.trlAudioJanusStream = null;
       }
     }
-    if(plugin === "quad") {
-      if(this.janus) {
-        this.janus.detach(this.videoQuadStream)
-        this.videoQuadStream = null
+    if (plugin === "quad") {
+      if (this.janus) {
+        this.janus.detach(this.videoQuadStream);
+        this.videoQuadStream = null;
       }
     }
   }
 
   destroy() {
-      this.clean();
-      if(this.janus) this.janus.destroy();
-      this.janus = null;
+    this.clean();
+    if (this.janus) this.janus.destroy();
+    this.janus = null;
   }
 
   streamGalaxy = (talk, col, name) => {
@@ -216,8 +216,8 @@ class JanusStream {
       log.debug("[shidur] look like we got talk event before stream init finished");
       captureMessage("ON", talk, "info");
       setTimeout(() => {
-        this.streamGalaxy(talk, col, name)
-      }, 1000)
+        this.streamGalaxy(talk, col, name);
+      }, 1000);
       return;
     }
     if (talk) {
@@ -235,7 +235,7 @@ class JanusStream {
 
       const id = trllang[localStorage.getItem("vrt_langtext")];
       // Don't bring translation on toggle trl stream
-      if (this.audios === 64 || !id) {
+      if (this.audios === NOTRL_STREAM_ID || !id) {
         log.debug("[shidur] no id in local storage or client use togle stream");
       } else {
         log.debug("[shidur] get id from local storage:  ", localStorage.getItem("vrt_langtext"), id);
@@ -251,7 +251,7 @@ class JanusStream {
       }
       this.audioElement.volume = this.mixvolume;
       // Bring back source if was choosen before
-      if(this.audios !== 64) {
+      if (this.audios !== NOTRL_STREAM_ID) {
         const id = Number(localStorage.getItem("vrt_lang")) || 2;
         log.debug("[shidur] get stream back id: ", localStorage.getItem("vrt_lang"), id);
         this.audioJanusStream.switch(id);
@@ -270,7 +270,7 @@ class JanusStream {
     if (this.trlAudioJanusStream) {
       // Get remote volume of translator stream (FYI in case of Hebrew, this will be 0 - no translation).
       this.trlAudioJanusStream.getVolume(null, (volume) => {
-        log.trace("[shidur] ducer volume level: ", volume)
+        log.trace("[shidur] ducer volume level: ", volume);
         if (volume === -1) {
           if (this.talking) {
             clearInterval(this.talking);
@@ -302,8 +302,8 @@ class JanusStream {
     if (this.janus) {
       if (videos === NO_VIDEO_OPTION_VALUE) {
         if (this.videoJanusStream !== null) {
-          this.janus.detach(this.videoJanusStream)
-          this.videoJanusStream = null
+          this.janus.detach(this.videoJanusStream);
+          this.videoJanusStream = null;
         }
       } else {
         if (this.videoJanusStream) {
@@ -322,7 +322,7 @@ class JanusStream {
       this.audioJanusStream.switch(audios);
     }
     // Source we not put to local storage
-    if(audios !== 64) {
+    if (audios !== NOTRL_STREAM_ID) {
       localStorage.setItem("vrt_lang", audios);
       localStorage.setItem("vrt_langtext", text);
     }
@@ -387,13 +387,12 @@ class JanusStream {
         console.error("Error reattaching stream to element");
       }
     }
-  };
+  }
 
   onTalking(callback) {
     this.showOn = callback;
   }
 }
-
 
 const defaultJanusStream = new JanusStream();
 
