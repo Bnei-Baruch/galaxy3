@@ -57,7 +57,7 @@ export const audiog_options2 = [
     description: "oldClient.streamForWorkshopDescription",
     icon: "group",
   },
-  {key: 1, value: 64, icon: "group", eng_text: "Source", text: "Source"},
+  {key: 1, value: 64, icon: "group", eng_text: "Original", text: "Original"},
   {key: 2, value: 2, icon: "group", eng_text: "Hebrew", text: "עברית", langKey: "he"},
   {key: 3, value: 3, icon: "group", eng_text: "Russian", text: "Русский", langKey: "ru"},
   {key: 4, value: 4, icon: "group", eng_text: "English", text: "English", langKey: "en"},
