@@ -1,4 +1,4 @@
-import {gxycol, trllang, NO_VIDEO_OPTION_VALUE, NOTRL_STREAM_ID} from "./consts";
+import {gxycol, trllang, NO_VIDEO_OPTION_VALUE, NOTRL_STREAM_ID, audiog_options2} from "./consts";
 import {JanusMqtt} from "../lib/janus-mqtt";
 import {StreamingPlugin} from "../lib/streaming-plugin";
 import log from "loglevel";
@@ -318,8 +318,16 @@ class JanusStream {
 
   setAudio = (audios, text) => {
     this.audios = audios;
-    if (this.audioJanusStream) {
-      this.audioJanusStream.switch(audios);
+    if(this.talking) {
+      const audio_option = audiog_options2.find((option) => option.value === audios);
+      const id = trllang[audio_option.eng_text];
+      if(id && id !== 64) {
+        this.trlAudioJanusStream.switch(id);
+      }
+    } else {
+      if (this.audioJanusStream) {
+        this.audioJanusStream.switch(audios);
+      }
     }
     // Source we not put to local storage
     if (audios !== NOTRL_STREAM_ID) {
