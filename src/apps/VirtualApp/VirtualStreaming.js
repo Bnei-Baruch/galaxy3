@@ -85,10 +85,19 @@ class VirtualStreaming extends Component {
 
   toogleTranslation = () => {
     if (this.props.audios === NOTRL_STREAM_ID) {
-      let prev_lang = Number(localStorage.getItem("vrt_lang")) || 2;
-      this.props.setAudio(prev_lang);
-    } else {
-      this.props.setAudio(NOTRL_STREAM_ID);
+      let prev_lang = Number(localStorage.getItem("trl_lang")) || 2;
+      const audio_option = audiog_options2.find((option) => option.value === prev_lang);
+      this.props.setAudio(prev_lang, audio_option.eng_text);
+    }
+    if (this.props.audios !== NOTRL_STREAM_ID) {
+      let prev_lang = Number(localStorage.getItem("trl_lang"))
+      let curr_lang = Number(localStorage.getItem("vrt_lang")) || 2;
+      if(!prev_lang) {
+        const audio_option = audiog_options2.find((option) => option.value === curr_lang);
+        localStorage.setItem("trl_lang", curr_lang);
+        localStorage.setItem("vrt_langtext", audio_option.eng_text);
+      }
+      this.props.setAudio(NOTRL_STREAM_ID, "Original");
     }
   };
 

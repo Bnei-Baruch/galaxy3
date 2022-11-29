@@ -154,6 +154,7 @@ export const audiog_options = [
 export const gxycol = [0, 201, 203, 202, 204];
 
 export const trllang = {
+  Original: 201,
   Hebrew: 401,
   Russian: 402,
   English: 403,

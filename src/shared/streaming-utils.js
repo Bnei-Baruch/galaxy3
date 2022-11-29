@@ -235,7 +235,7 @@ class JanusStream {
 
       const id = trllang[localStorage.getItem("vrt_langtext")];
       // Don't bring translation on toggle trl stream
-      if (this.audios === NOTRL_STREAM_ID || !id) {
+      if (!id) {
         log.debug("[shidur] no id in local storage or client use togle stream");
       } else {
         log.debug("[shidur] get id from local storage:  ", localStorage.getItem("vrt_langtext"), id);
@@ -251,12 +251,10 @@ class JanusStream {
       }
       this.audioElement.volume = this.mixvolume;
       // Bring back source if was choosen before
-      if (this.audios !== NOTRL_STREAM_ID) {
-        const id = Number(localStorage.getItem("vrt_lang")) || 2;
-        log.debug("[shidur] get stream back id: ", localStorage.getItem("vrt_lang"), id);
-        this.audioJanusStream.switch(id);
-        log.debug("[shidur] Switch audio stream back");
-      }
+      const id = Number(localStorage.getItem("vrt_lang")) || 2;
+      log.debug("[shidur] get stream back id: ", localStorage.getItem("vrt_lang"), id);
+      this.audioJanusStream.switch(id);
+      log.debug("[shidur] Switch audio stream back");
       this.trlAudioElement.muted = true;
       this.talking = null;
       this.mixvolume = null;
@@ -321,7 +319,7 @@ class JanusStream {
     if(this.talking) {
       const audio_option = audiog_options2.find((option) => option.value === audios);
       const id = trllang[audio_option.eng_text];
-      if(id && id !== 64) {
+      if(id) {
         this.trlAudioJanusStream.switch(id);
       }
     } else {
@@ -329,11 +327,10 @@ class JanusStream {
         this.audioJanusStream.switch(audios);
       }
     }
-    // Source we not put to local storage
-    if (audios !== NOTRL_STREAM_ID) {
-      localStorage.setItem("vrt_lang", audios);
-      localStorage.setItem("vrt_langtext", text);
-    }
+    localStorage.setItem("vrt_lang", audios);
+    if(audios !== NOTRL_STREAM_ID)
+      localStorage.setItem("trl_lang", audios);
+    localStorage.setItem("vrt_langtext", text);
   };
 
   attachVideoStream(videoElement) {
