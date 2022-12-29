@@ -214,7 +214,7 @@ class JanusStream {
     log.debug("[shidur] got talk event: ", talk, col, name);
     if (!this.trlAudioJanusStream) {
       log.debug("[shidur] look like we got talk event before stream init finished");
-      captureMessage("ON", talk, "info");
+      //captureMessage("ON", talk, "info");
       setTimeout(() => {
         this.streamGalaxy(talk, col, name);
       }, 1000);

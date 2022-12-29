@@ -7,7 +7,7 @@ import log from "loglevel";
 import {captureMessage} from "./sentry";
 
 const mqttTimeout = 30 // Seconds
-const mqttKeepalive = 3 // Seconds
+const mqttKeepalive = 10 // Seconds
 
 class MqttMsg {
   constructor() {
@@ -44,7 +44,7 @@ class MqttMsg {
       password: token,
       transformWsUrl: transformUrl,
       properties: {
-        sessionExpiryInterval: 5,
+        sessionExpiryInterval: mqttTimeout,
         maximumPacketSize: 256000,
         requestResponseInformation: true,
         requestProblemInformation: true,

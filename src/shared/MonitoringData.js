@@ -253,7 +253,7 @@ export const MonitoringData = class {
     if (!this.pluginHandle || !this.localAudioTrack || !this.user) {
       return; // User not connected.
     }
-    const pc = (this.pluginHandle && this.pluginHandle.webrtcStuff && this.pluginHandle.webrtcStuff.pc) || (this.pluginHandle && this.pluginHandle.pc) || fnull;
+    const pc = (this.pluginHandle && this.pluginHandle.webrtcStuff && this.pluginHandle.webrtcStuff.pc) || (this.pluginHandle && this.pluginHandle.pc) || null;
     const defaultTimestamp = new Date().getTime();
     if (
       pc &&
