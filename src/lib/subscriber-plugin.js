@@ -147,7 +147,7 @@ export class SubscriberPlugin extends EventEmitter {
 
   initPcEvents() {
     this.pc.onicecandidate = (e) => {
-      log.info('[subscriber] onicecandidate set', e.candidate)
+      log.debug('[subscriber] onicecandidate set', e.candidate)
       let candidate = {completed: true}
       if (!e.candidate || e.candidate.candidate.indexOf('endOfCandidates') > 0) {
         log.debug("[subscriber] End of candidates")

@@ -55,29 +55,24 @@ class AudioOutMqtt extends Component {
   initMqtt = (user) => {
     mqtt.init(user, (data) => {
       log.info("[audout] mqtt init: ", data);
-      mqtt.watch((data) => {
-        this.onMqttData(data);
-      });
       mqtt.join("galaxy/service/shidur");
       mqtt.join("galaxy/users/broadcast");
       mqtt.send(JSON.stringify({type: "event", [user.role]: true}), true, "galaxy/service/" + user.role);
+      mqtt.watch((data) => {
+        this.onMqttData(data);
+      });
     });
   };
 
   onMqttData = (data) => {
     log.info("[audout] Cmd message: ", data);
-    const {janus} = this.state;
     const {room, group, status, qst} = data;
-
     if (data.type === "sdi-fullscr_group" && status && qst) {
-      if(janus === group.janus) {
-        setTimeout(() => {
-          this.setState({group, room});
-        }, 1000)
-      } else {
-        this.setState({group, room, janus: group.janus});
-      }
+      if(this.state.group) return
+      this.out.initVideoRoom(group.room, group.janus);
+      this.setState({group, room, janus: group.janus});
     } else if (data.type === "sdi-fullscr_group" && !status && qst) {
+      this.out.exitVideoRoom(this.state.room);
       this.setState({group: null, room: null});
     } else if (data.type === "sdi-restart_audout") {
       window.location.reload();
@@ -112,7 +107,7 @@ class AudioOutMqtt extends Component {
         <div className="usersvideo_grid">
           <div className="video_full">
             <div className="title">{name}</div>
-            <AudioHandleMqtt g={group} user={user} audio={audio} />
+            <AudioHandleMqtt g={group} user={user} ref={(out) => {this.out = out}} />
           </div>
         </div>
       </Segment>

@@ -15,17 +15,6 @@ class AudioHandleMqtt extends Component {
     myid: null,
   };
 
-  componentDidUpdate(prevProps) {
-    let {g} = this.props;
-    let {room} = this.state;
-    if (g && JSON.stringify(g) !== JSON.stringify(prevProps.g) && g.room !== room) {
-      this.initVideoRoom(g.room, g.janus);
-    }
-    if (g === null && room) {
-      this.exitVideoRoom(room);
-    }
-  };
-
   initVideoRoom = (room, inst) => {
     log.info("[audio] Init room: ", room, inst, ConfigStore.globalConfig)
     const {user} = this.props;
@@ -142,13 +131,18 @@ class AudioHandleMqtt extends Component {
     const {videoroom, janus} = this.state;
     this.setState({feeds: [], mids: [], room: null, remoteFeed: false, creatingFeed: false});
 
-    videoroom.leave().then(r => {
-      log.info("[audio] leave respond:", r);
-
-      janus.destroy().then(() => {
-        if(typeof callback === "function") callback();
-      })
-    });
+    if(videoroom) {
+      videoroom?.leave().then(r => {
+        log.info("[audio] leave respond:", r);
+        janus.destroy().then(() => {
+          if(typeof callback === "function") callback();
+        })
+      }).catch(() => {
+        janus.destroy().then(() => {
+          if(typeof callback === "function") callback();
+        })
+      });
+    }
   };
 
   subscribeTo = (room, subscription) => {
@@ -236,7 +230,6 @@ class AudioHandleMqtt extends Component {
 
   render() {
     const {feeds} = this.state;
-    const {audio} = this.props;
 
     let program_feeds = feeds.map((feed) => {
       //let name = users[feed.display.id] && users[feed.display.id].display ? users[feed.display.id].display : "";
@@ -254,7 +247,6 @@ class AudioHandleMqtt extends Component {
               id={"pa" + id}
               autoPlay={true}
               controls={true}
-              muted={!audio}
               playsInline={true}
             />
           </div>
