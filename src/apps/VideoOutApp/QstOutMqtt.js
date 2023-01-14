@@ -20,11 +20,11 @@ class QstOutMqtt extends Component {
     user: {
       session: 0,
       handle: 0,
-      role: "qstout",
-      display: "qstout",
-      id: QSTOUT_ID,
-      name: "qstout",
-      email: "qstout@galaxy.kli.one",
+      role: "live",
+      display: "live",
+      id: "live_out",
+      name: "live_out",
+      email: "live_out@janus.kli.one",
     },
     qids: [],
     qlist: [],
@@ -38,80 +38,35 @@ class QstOutMqtt extends Component {
 
   componentDidMount() {
     this.initApp();
-    setTimeout(() => {
-      this.getVideoOut()
-    },1000)
+    // setTimeout(() => {
+    //   this.getVideoOut()
+    // },1000)
   }
 
   componentWillUnmount() {
     Object.values(this.state.gateways).forEach((x) => x.destroy());
   }
 
-  getVideoOut = () => {
-    setInterval(() => {
-      api.fetchProgram().then((qids) => {
-        //TODO: make dynamic gateways - attach currently in use and detach not used
-        // let qlist = [
-        //   ...qids.q1.vquad,
-        //   ...qids.q2.vquad,
-        //   ...qids.q3.vquad,
-        //   ...qids.q4.vquad,
-        // ];
-        this.setState({qids});
-        if (this.state.qg) {
-          const {col, i} = this.state;
-          this.setState({qg: this.state.qids["q" + col].vquad[i]});
-        }
-      })
-        .catch((err) => {
-          log.error("[SDIOut] error fetching quad state", err);
-        });
-
-      api.fetchRoomsStatistics().then((roomsStatistics) => {
-        this.setState({roomsStatistics});
-      })
-        .catch((err) => {
-          log.error("[SDIOut] error fetching rooms statistics", err);
-        });
-    }, 1000);
-  }
-
   initApp = () => {
     const {user} = this.state;
 
-    api.setBasicAuth(API_BACKEND_USERNAME, API_BACKEND_PASSWORD);
-
-    api.fetchConfig().then((data) => {
-        ConfigStore.setGlobalConfig(data);
-        GxyJanus.setGlobalConfig(data);
-      }).then(() => this.initGateways(user))
-      .catch((err) => {
-        log.error("[SDIOut] error initializing app", err);
-        this.setState({appInitError: err});
-      });
-  };
-
-  initGateways = (user) => {
     mqtt.init(user, (data) => {
-      log.info("[SDIOut] mqtt init: ", data);
-      mqtt.join("galaxy/service/shidur");
-      mqtt.join("galaxy/users/broadcast");
-      mqtt.send(JSON.stringify({type: "event", [user.role]: true}), true, "galaxy/service/" + user.role);
+      log.info("[audout] mqtt init: ", data);
+      mqtt.join("live/service/shidur");
+      mqtt.join("live/users/broadcast");
+      mqtt.send(JSON.stringify({type: "event", [user.role]: true}), true, "live/service/" + user.role);
       mqtt.watch((data) => {
         this.onMqttData(data);
       });
-      Object.keys(ConfigStore.globalConfig.gateways.rooms).forEach(gxy => {
-        this.initJanus(user, gxy)
-      })
+      this.initJanus(user, "live")
     });
   };
 
   initJanus = (user, gxy) => {
     log.info("["+gxy+"] Janus init")
     const {gateways} = this.state;
-    const token = ConfigStore.globalConfig.gateways.rooms[gxy].token
     gateways[gxy] = new JanusMqtt(user, gxy, gxy);
-    gateways[gxy].init(token).then(data => {
+    gateways[gxy].init("token").then(data => {
       log.info("["+gxy+"] Janus init success", data)
     }).catch(err => {
       log.error("["+gxy+"] Janus init", err);
@@ -179,17 +134,7 @@ class QstOutMqtt extends Component {
             <div className="preview_sdi">
               <div className="usersvideo_grid">
                 <div className="video_full">
-                  {vote ? (
-                    <iframe title="Vote" src="https://vote.kli.one" width="100%" height="100%" frameBorder="0" />
-                  ) : qg ? (
-                    <Fragment>
-                      {/*{group && group.questions ? <div className="qst_fullscreentitle">?</div> : ""}*/}
-                      <div className="fullscrvideo_title">{name}</div>
-                      <VideoHandleMqtt key={"q5"} g={qg} group={group} index={13} col={5} q={5} user={user} gateways={gateways} />
-                    </Fragment>
-                  ) : (
-                    ""
-                  )}
+                  <VideoHandleMqtt key={"q5"} g={qg} group={group} index={13} col={5} q={5} user={user} gateways={gateways} />
                 </div>
               </div>
             </div>

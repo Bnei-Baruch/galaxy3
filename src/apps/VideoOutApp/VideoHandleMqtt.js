@@ -22,37 +22,36 @@ class VideoHandleMqtt extends Component {
   };
 
   componentDidMount() {
-    let {g} = this.props;
-    let num_videos = g?.users?.filter((u) => u.camera).length;
-    if (num_videos > 25) num_videos = 25;
-    this.setState({num_videos});
+    setTimeout(() => {
+      this.initVideoRoom(1234, "live");
+    },5000)
   }
 
-  componentDidUpdate(prevProps) {
-    let {g, index, group} = this.props;
-    const {room} = this.state;
-    if (g && index === 13 && g.room !== room && group) {
-      this.setState({room: g.room}, () => {
-        this.initVideoRoom(g.room, g.janus);
-      });
-    }
-    if (g && g.room !== room && index !== 13) {
-      this.setState({room: g.room}, () => {
-        if (room) {
-          this.exitVideoRoom(room, () => {
-            this.initVideoRoom(g.room, g.janus);
-          });
-        } else {
-          this.initVideoRoom(g.room, g.janus);
-        }
-      });
-    }
-    if (g && g.users && JSON.stringify(g) !== JSON.stringify(prevProps.g)) {
-      let num_videos = g.users.filter((u) => u.camera && u.role === "user").length;
-      if (num_videos > 25) num_videos = 25;
-      this.setState({num_videos});
-    }
-  }
+  // componentDidUpdate(prevProps) {
+  //   let {g, index, group} = this.props;
+  //   const {room} = this.state;
+  //   if (g && index === 13 && g.room !== room && group) {
+  //     this.setState({room: g.room}, () => {
+  //       this.initVideoRoom(g.room, g.janus);
+  //     });
+  //   }
+  //   if (g && g.room !== room && index !== 13) {
+  //     this.setState({room: g.room}, () => {
+  //       if (room) {
+  //         this.exitVideoRoom(room, () => {
+  //           this.initVideoRoom(g.room, g.janus);
+  //         });
+  //       } else {
+  //         this.initVideoRoom(g.room, g.janus);
+  //       }
+  //     });
+  //   }
+  //   if (g && g.users && JSON.stringify(g) !== JSON.stringify(prevProps.g)) {
+  //     let num_videos = g.users.filter((u) => u.camera && u.role === "user").length;
+  //     if (num_videos > 25) num_videos = 25;
+  //     this.setState({num_videos});
+  //   }
+  // }
 
   componentWillUnmount() {
     this.exitVideoRoom(this.state.room, () => {});
@@ -92,14 +91,12 @@ class VideoHandleMqtt extends Component {
 
   onJoinMe = (list, room) => {
     const {mit} = this.state;
-    let feeds = list
-      .sort((a, b) => JSON.parse(a.display).timestamp - JSON.parse(b.display).timestamp)
-      .filter((feeder) => JSON.parse(feeder.display).role === "user");
+    let feeds = list;
     log.info("["+mit+"] Got publishers list: ", feeds);
     let subscription = [];
     for (let f in feeds) {
       let id = feeds[f]["id"];
-      let display = JSON.parse(feeds[f]["display"]);
+      let display = feeds[f]["display"];
       let talking = feeds[f]["talking"];
       let streams = feeds[f]["streams"];
       feeds[f].display = display;
@@ -109,12 +106,7 @@ class VideoHandleMqtt extends Component {
         stream["id"] = id;
         stream["display"] = display;
         if (stream.type === "video" && stream.codec === "h264") {
-          if(stream?.h264_profile) {
-            if(stream?.h264_profile === "42e01f")
-              subscription.push({feed: id, mid: stream.mid});
-          } else {
-            subscription.push({feed: id, mid: stream.mid});
-          }
+          subscription.push({feed: id, mid: stream.mid});
         }
       }
     }
@@ -130,8 +122,7 @@ class VideoHandleMqtt extends Component {
     let subscription = [];
     for (let f in feed) {
       let id = feed[f]["id"];
-      let display = JSON.parse(feed[f]["display"]);
-      if (display.role !== "user") return;
+      let display = feed[f]["display"];
       let streams = feed[f]["streams"];
       feed[f].display = display;
       for (let i in streams) {
@@ -139,12 +130,7 @@ class VideoHandleMqtt extends Component {
         stream["id"] = id;
         stream["display"] = display;
         if (stream.type === "video" && stream.codec === "h264") {
-          if(stream?.h264_profile) {
-            if(stream?.h264_profile === "42e01f")
-              subscription.push({feed: id, mid: stream.mid});
-          } else {
-            subscription.push({feed: id, mid: stream.mid});
-          }
+          subscription.push({feed: id, mid: stream.mid});
         }
       }
     }
@@ -278,13 +264,13 @@ class VideoHandleMqtt extends Component {
     //const q = (<b style={{color: "red", fontSize: "20px", fontFamily: "Verdana", fontWeight: "bold"}}>?</b>);
 
     let program_feeds = feeds.map((feed) => {
-      let camera = g && g.users && !!g.users.find((u) => feed.id === u.rfid && u.camera);
+      //let camera = g && g.users && !!g.users.find((u) => feed.id === u.rfid && u.camera);
       if (feed) {
         let id = feed.id;
         let talk = feed.talking;
         return (
-          <div className={camera ? "video" : "hidden"} key={"prov" + id} ref={"provideo" + id} id={"provideo" + id}>
-            <div className={classNames("video__overlay", {talk: talk})}>
+          <div className={"video"} key={"prov" + id} ref={"provideo" + id} id={"provideo" + id}>
+            <div className={classNames("video__overlay", {talk: false})}>
               {/*{question ? <div className="question">*/}
               {/*    <svg viewBox="0 0 50 50">*/}
               {/*        <text x="25" y="25" textAnchor="middle" alignmentBaseline="central" dominantBaseline="central">&#xF128;</text>*/}

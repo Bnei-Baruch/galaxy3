@@ -1,5 +1,5 @@
 import mqtt from "mqtt";
-import {MQTT_URL, MSG_URL} from "./env";
+import {MQTT_PWD, MQTT_URL, MSG_URL} from "./env";
 import {isServiceID, userRolesEnum} from "./enums";
 import {randomString} from "./tools";
 import GxyJanus from "./janus-utils";
@@ -30,7 +30,7 @@ class MqttMsg {
 
     const transformUrl = (url, options, client) => {
       client.options.clientId = service ? user.id : user.id + "-" + randomString(3);
-      client.options.password = service ? svc_token : this.token;
+      client.options.password = MQTT_PWD;
       return url;
     };
 
@@ -61,7 +61,7 @@ class MqttMsg {
       };
     }
 
-    const url = user.role !== userRolesEnum.user && !service ? MQTT_URL : MSG_URL;
+    const url = MSG_URL;
     this.mq = mqtt.connect(`wss://${url}`, options);
     this.mq.setMaxListeners(50)
 

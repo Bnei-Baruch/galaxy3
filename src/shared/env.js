@@ -48,3 +48,4 @@ export const GET_WORKSHOP_QUESTIONS = process.env.REACT_APP_GET_WORKSHOP_QUESTIO
 export const WEB_SOCKET_WORKSHOP_QUESTION = process.env.REACT_APP_WEB_SOCKET_WORKSHOP_QUESTION;
 
 export const PAY_USER_FEE = process.env.REACT_APP_PAY_USER_FEE;
+export const MQTT_PWD = process.env.REACT_APP_MQTT_PWD;
