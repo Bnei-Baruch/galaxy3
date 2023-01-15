@@ -108,6 +108,9 @@ class VideoHandleMqtt extends Component {
         if (stream.type === "video" && stream.codec === "h264") {
           subscription.push({feed: id, mid: stream.mid});
         }
+        if (stream.type === "audio") {
+          subscription.push({feed: id, mid: stream.mid});
+        }
       }
     }
     this.setState({feeds});
@@ -130,6 +133,9 @@ class VideoHandleMqtt extends Component {
         stream["id"] = id;
         stream["display"] = display;
         if (stream.type === "video" && stream.codec === "h264") {
+          subscription.push({feed: id, mid: stream.mid});
+        }
+        if (stream.type === "audio") {
           subscription.push({feed: id, mid: stream.mid});
         }
       }
@@ -251,6 +257,11 @@ class VideoHandleMqtt extends Component {
       let remotevideo = this.refs["pv" + feed];
       if (remotevideo) remotevideo.srcObject = stream;
     }
+    if (track.kind === "audio" && on) {
+      let stream = new MediaStream([track]);
+      let remoteaudio = this.refs["pa" + feed];
+      if (remoteaudio) remoteaudio.srcObject = stream;
+    }
   }
 
   render() {
@@ -279,7 +290,7 @@ class VideoHandleMqtt extends Component {
               {/*</div>:''}*/}
             </div>
             <video
-              key={id}
+              key={"pv" + id}
               ref={"pv" + id}
               id={"pv" + id}
               width={width}
@@ -287,6 +298,15 @@ class VideoHandleMqtt extends Component {
               autoPlay={autoPlay}
               controls={controls}
               muted={muted}
+              playsInline={true}
+            />
+            <audio
+              key={"pa" + id}
+              ref={"pa" + id}
+              id={"pa" + id}
+              autoPlay={autoPlay}
+              controls={controls}
+              muted={false}
               playsInline={true}
             />
           </div>
