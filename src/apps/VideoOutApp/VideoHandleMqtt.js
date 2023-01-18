@@ -96,7 +96,7 @@ class VideoHandleMqtt extends Component {
     let subscription = [];
     for (let f in feeds) {
       let id = feeds[f]["id"];
-      let display = feeds[f]["display"];
+      let display = JSON.parse(feeds[f]["display"]);
       let talking = feeds[f]["talking"];
       let streams = feeds[f]["streams"];
       feeds[f].display = display;
@@ -105,11 +105,13 @@ class VideoHandleMqtt extends Component {
         let stream = streams[i];
         stream["id"] = id;
         stream["display"] = display;
-        if (stream.type === "video" && stream.codec === "h264") {
-          subscription.push({feed: id, mid: stream.mid});
-        }
-        if (stream.type === "audio") {
-          subscription.push({feed: id, mid: stream.mid});
+        if(display.role === "encoder") {
+          if (stream.type === "video" && stream.codec === "h264") {
+            subscription.push({feed: id, mid: stream.mid});
+          }
+          if (stream.type === "audio") {
+            subscription.push({feed: id, mid: stream.mid});
+          }
         }
       }
     }
@@ -121,22 +123,24 @@ class VideoHandleMqtt extends Component {
 
   onJoinFeed = (feed) => {
     let {feeds, room, mit} = this.state;
-    log.info("["+mit+"] Feed enter: ", feeds);
+    log.info("["+mit+"] Feed enter: ", feed);
     let subscription = [];
     for (let f in feed) {
       let id = feed[f]["id"];
-      let display = feed[f]["display"];
+      let display = JSON.parse(feed[f]["display"]);
       let streams = feed[f]["streams"];
       feed[f].display = display;
       for (let i in streams) {
         let stream = streams[i];
         stream["id"] = id;
         stream["display"] = display;
-        if (stream.type === "video" && stream.codec === "h264") {
-          subscription.push({feed: id, mid: stream.mid});
-        }
-        if (stream.type === "audio") {
-          subscription.push({feed: id, mid: stream.mid});
+        if(display.role === "encoder") {
+          if (stream.type === "video" && stream.codec === "h264") {
+            subscription.push({feed: id, mid: stream.mid});
+          }
+          if (stream.type === "audio") {
+            subscription.push({feed: id, mid: stream.mid});
+          }
         }
       }
     }
