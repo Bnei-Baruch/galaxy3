@@ -821,35 +821,35 @@ class ToranToolsHttp extends Component {
           </Button.Group>
           <Button.Group attached="top" size="mini">
             <Button
-              selcted={galaxy_mode === "vip1"}
+              selected={galaxy_mode === "vip1"}
               color="grey"
               content="VIP1"
               onClick={() => this.galaxyMode("vip1")}
               onDoubleClick={() => this.clearVip(vip1_rooms)}
             />
             <Button
-              selcted={galaxy_mode === "vip2"}
+              selected={galaxy_mode === "vip2"}
               color="grey"
               content="VIP2"
               onClick={() => this.galaxyMode("vip2")}
               onDoubleClick={() => this.clearVip(vip2_rooms)}
             />
             <Button
-              selcted={galaxy_mode === "vip3"}
+              selected={galaxy_mode === "vip3"}
               color="grey"
               content="VIP3"
               onClick={() => this.galaxyMode("vip3")}
               onDoubleClick={() => this.clearVip(vip3_rooms)}
             />
             <Button
-              selcted={galaxy_mode === "vip4"}
+              selected={galaxy_mode === "vip4"}
               color="grey"
               content="VIP4"
               onClick={() => this.galaxyMode("vip4")}
               onDoubleClick={() => this.clearVip(vip4_rooms)}
             />
             <Button
-              selcted={galaxy_mode === "vip5"}
+              selected={galaxy_mode === "vip5"}
               color="grey"
               content="VIP5"
               onClick={() => this.galaxyMode("vip5")}
