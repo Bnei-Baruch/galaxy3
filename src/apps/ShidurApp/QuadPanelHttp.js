@@ -158,13 +158,15 @@ class QuadPanelHttp extends Component {
   };
 
   setPreset = (p) => {
-    let {presets} = this.props;
+    let {presets, pnum} = this.props;
     let {vquad, col} = this.state;
 
     if (presets[p].length === 0) return;
 
     for (let i = 0; i < presets[p].length; i++) {
       vquad[i] = presets[p][i];
+      pnum[vquad[i].room] ? pnum[vquad[i].room]++ : (pnum[vquad[i].room] = 1);
+      this.props.setProps({pnum});
     }
     this.setState({vquad});
 
