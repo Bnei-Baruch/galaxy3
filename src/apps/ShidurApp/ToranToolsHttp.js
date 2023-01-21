@@ -121,6 +121,16 @@ class ToranToolsHttp extends Component {
     }
   };
 
+  clearVip = (vip_rooms) => {
+    if(!confirm("Going to clear selected VIP groups! Are you sure?")) return
+    console.log(vip_rooms)
+    for (let i = 0; i < vip_rooms.length; i++) {
+      vip_rooms[i].extra = null;
+      delete vip_rooms[i].users;
+      api.updateRoom(vip_rooms[i].room, vip_rooms[i]);
+    }
+  }
+
   sortGroups = () => {
     let sorted_feeds = this.props.groups.slice();
     sorted_feeds.sort((a, b) => {
@@ -811,34 +821,39 @@ class ToranToolsHttp extends Component {
           </Button.Group>
           <Button.Group attached="top" size="mini">
             <Button
-              disabled={galaxy_mode === "vip1"}
+              selcted={galaxy_mode === "vip1"}
               color="grey"
               content="VIP1"
               onClick={() => this.galaxyMode("vip1")}
+              onDoubleClick={() => this.clearVip(vip1_rooms)}
             />
             <Button
-              disabled={galaxy_mode === "vip2"}
+              selcted={galaxy_mode === "vip2"}
               color="grey"
               content="VIP2"
               onClick={() => this.galaxyMode("vip2")}
+              onDoubleClick={() => this.clearVip(vip2_rooms)}
             />
             <Button
-              disabled={galaxy_mode === "vip3"}
+              selcted={galaxy_mode === "vip3"}
               color="grey"
               content="VIP3"
               onClick={() => this.galaxyMode("vip3")}
+              onDoubleClick={() => this.clearVip(vip3_rooms)}
             />
             <Button
-              disabled={galaxy_mode === "vip4"}
+              selcted={galaxy_mode === "vip4"}
               color="grey"
               content="VIP4"
               onClick={() => this.galaxyMode("vip4")}
+              onDoubleClick={() => this.clearVip(vip4_rooms)}
             />
             <Button
-              disabled={galaxy_mode === "vip5"}
+              selcted={galaxy_mode === "vip5"}
               color="grey"
               content="VIP5"
               onClick={() => this.galaxyMode("vip5")}
+              onDoubleClick={() => this.clearVip(vip5_rooms)}
             />
           </Button.Group>
           <Segment attached textAlign="center" className="disabled_groups">
