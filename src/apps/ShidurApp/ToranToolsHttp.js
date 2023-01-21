@@ -141,6 +141,7 @@ class ToranToolsHttp extends Component {
     if (presets[p].length === 0) {
       delete group.users;
       presets[p][0] = group;
+      mqtt.send(JSON.stringify({type: "state", presets}), true, "galaxy/service/presets");
       this.props.setProps({presets});
       return;
     }
@@ -150,6 +151,7 @@ class ToranToolsHttp extends Component {
       //remove from presets
       if (presets[p][i].room === group.room) {
         presets[p].splice(i, 1);
+        mqtt.send(JSON.stringify({type: "state", presets}), true, "galaxy/service/presets");
         this.props.setProps({presets});
         return;
       }
@@ -161,6 +163,7 @@ class ToranToolsHttp extends Component {
     //Add to presets
     delete group.users;
     presets[p].push(group);
+    mqtt.send(JSON.stringify({type: "state", presets}), true, "galaxy/service/presets");
     this.props.setProps({presets});
 
     console.log(presets);
@@ -169,6 +172,7 @@ class ToranToolsHttp extends Component {
   removeFromPreset = (p, i) => {
     let {presets} = this.props;
     presets[p].splice(i, 1);
+    mqtt.send(JSON.stringify({type: "state", presets}), true, "galaxy/service/presets");
     this.props.setProps({presets});
   };
 

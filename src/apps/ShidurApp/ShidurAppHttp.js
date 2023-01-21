@@ -289,6 +289,9 @@ class ShidurAppHttp extends Component {
       }
     } else if (data.type === "reload-config") {
       this.reloadConfig();
+    } else if (data.type === "state") {
+      console.log(data)
+      this.setState({...data})
     }
   };
 
