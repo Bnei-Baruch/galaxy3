@@ -1,7 +1,7 @@
 import React, {Component, Fragment} from "react";
 import classNames from "classnames";
 import {Icon, Popup} from "semantic-ui-react";
-import {checkNotification, geoInfo, getDateString, notifyMe, sendUserState, updateGxyUser,} from "../../shared/tools";
+import {checkNotification, geoInfo, getDateString, notifyMe, sendUserState, updateGxyUser} from "../../shared/tools";
 import "./VirtualClient.scss";
 import "./VideoConteiner.scss";
 import "./CustomIcons.scss";
@@ -12,7 +12,13 @@ import {GEO_IP_INFO, PAY_USER_FEE} from "../../shared/env";
 import platform from "platform";
 import {TopMenu} from "./components/TopMenu";
 import {withTranslation} from "react-i18next";
-import {LINK_STATE_GOOD, LINK_STATE_INIT, LINK_STATE_MEDIUM, LINK_STATE_WEAK, MonitoringData,} from "../../shared/MonitoringData";
+import {
+  LINK_STATE_GOOD,
+  LINK_STATE_INIT,
+  LINK_STATE_MEDIUM,
+  LINK_STATE_WEAK,
+  MonitoringData,
+} from "../../shared/MonitoringData";
 import api from "../../shared/Api";
 import VirtualStreaming from "./VirtualStreaming";
 import JanusStream from "../../shared/streaming-utils";
@@ -53,7 +59,7 @@ const sortAndFilterFeeds = (feeds) =>
     .sort((a, b) => a.display.timestamp - b.display.timestamp);
 
 const userFeeds = (feeds) => feeds.filter((feed) => feed.display.role === userRolesEnum.user);
-const monitoringData =  new MonitoringData();
+const monitoringData = new MonitoringData();
 
 class VirtualMqttClient extends Component {
   state = {
@@ -101,12 +107,17 @@ class VirtualMqttClient extends Component {
     audios: {audios: Number(localStorage.getItem("vrt_lang")) || 2},
     mqttOn: false,
     isGroup: false,
-    hideDisplays: localStorage.getItem("hideDisplays") || false,
+    hideDisplays: localStorage.getItem("hideDisplays").toLowerCase() === "true",
   };
 
   componentDidUpdate(prevProps, prevState) {
     const {videoroom, localVideoTrack, localAudioTrack, user} = this.state;
-    if (videoroom !== prevState.videoroom || localVideoTrack !== prevState.localVideoTrack || localAudioTrack !== prevState.localAudioTrack || JSON.stringify(user) !== JSON.stringify(prevState.user)) {
+    if (
+      videoroom !== prevState.videoroom ||
+      localVideoTrack !== prevState.localVideoTrack ||
+      localAudioTrack !== prevState.localAudioTrack ||
+      JSON.stringify(user) !== JSON.stringify(prevState.user)
+    ) {
       monitoringData.setConnection(videoroom, localAudioTrack, localVideoTrack, user, JanusStream);
       monitoringData.setOnStatus((connectionStatus) => {
         this.setState({connectionStatus});
@@ -159,37 +170,43 @@ class VirtualMqttClient extends Component {
       this.setState({user});
       updateSentryUser(user);
 
-      api.fetchConfig().then((data) => {
+      api
+        .fetchConfig()
+        .then((data) => {
           log.debug("[client] got config: ", data);
           ConfigStore.setGlobalConfig(data);
           const premodStatus = ConfigStore.dynamicConfig(ConfigStore.PRE_MODERATION_KEY) === "true";
           this.setState({premodStatus});
           GxyJanus.setGlobalConfig(data);
-        }).then(() => {
-          api.fetchAvailableRooms({with_num_users: true}).then(data => {
-            const {rooms} = data;
-            this.setState({rooms});
-            this.initDevices();
-            const {selected_room} = this.state;
-            if (selected_room !== "") {
-              const room = rooms.find((r) => r.room === selected_room);
-              if (room) {
-                user.room = selected_room;
-                user.janus = room.janus;
-                user.group = room.description;
-                this.setState({delay: false, user});
-                updateSentryUser(user);
-              } else {
-                this.setState({selected_room: "", delay: false});
-              }
-            } else {
-              this.setState({delay: false});
-            }
-          }).catch((err) => {
-            log.error("[client] error initializing app", err);
-            this.setState({appInitError: err});
-          });
         })
+        .then(() => {
+          api
+            .fetchAvailableRooms({with_num_users: true})
+            .then((data) => {
+              const {rooms} = data;
+              this.setState({rooms});
+              this.initDevices();
+              const {selected_room} = this.state;
+              if (selected_room !== "") {
+                const room = rooms.find((r) => r.room === selected_room);
+                if (room) {
+                  user.room = selected_room;
+                  user.janus = room.janus;
+                  user.group = room.description;
+                  this.setState({delay: false, user});
+                  updateSentryUser(user);
+                } else {
+                  this.setState({selected_room: "", delay: false});
+                }
+              } else {
+                this.setState({delay: false});
+              }
+            })
+            .catch((err) => {
+              log.error("[client] error initializing app", err);
+              this.setState({appInitError: err});
+            });
+        });
     });
   };
 
@@ -245,7 +262,7 @@ class VirtualMqttClient extends Component {
         if (user.role !== userRolesEnum.user) {
           localStorage.setItem("room", "-1");
           this.setState({user});
-          JanusStream.initStreaming( "str1");
+          JanusStream.initStreaming("str1");
         }
       }
     });
@@ -306,7 +323,9 @@ class VirtualMqttClient extends Component {
     subscriber.onTrack = this.onRemoteTrack;
     subscriber.onUpdate = this.onUpdateStreams;
 
-    janus.init(config.token).then((data) => {
+    janus
+      .init(config.token)
+      .then((data) => {
         log.info("[client] Janus init", data);
 
         janus.attach(videoroom).then((data) => {
@@ -330,7 +349,8 @@ class VirtualMqttClient extends Component {
   initDevices = () => {
     const {t} = this.props;
 
-    devices.init((media) => {
+    devices
+      .init((media) => {
         setTimeout(() => {
           if (media.audio.device) {
             this.setAudioDevice(media.audio.device);
@@ -343,7 +363,8 @@ class VirtualMqttClient extends Component {
             //FIXME: remove it from pc?
           }
         }, 1000);
-      }).then((data) => {
+      })
+      .then((data) => {
         log.info("[client] init devices: ", data);
         const {audio, video} = data;
         if (audio.error && video.error) {
@@ -418,7 +439,9 @@ class VirtualMqttClient extends Component {
 
   joinRoom = (reconnect, janus, videoroom, user) => {
     let {selected_room, media, cammuted, isGroup} = this.state;
-    const {video: {device}} = media;
+    const {
+      video: {device},
+    } = media;
 
     user.camera = !!device && cammuted === false;
     user.question = false;
@@ -433,7 +456,9 @@ class VirtualMqttClient extends Component {
     const {id, timestamp, role, username} = user;
     const d = {id, timestamp, role, display: username};
 
-    videoroom.join(selected_room, d).then((data) => {
+    videoroom
+      .join(selected_room, d)
+      .then((data) => {
         log.info("[client] Joined respond :", data);
 
         // Feeds count with user role
@@ -448,12 +473,14 @@ class VirtualMqttClient extends Component {
         user.rfid = data.id;
 
         const {audio, video} = this.state.media;
-        videoroom.publish(video.stream, audio.stream).then((json) => {
+        videoroom
+          .publish(video.stream, audio.stream)
+          .then((json) => {
             user.extra.streams = json.streams;
             user.extra.isGroup = this.state.isGroup;
 
             const vst = json.streams.find((v) => v.type === "video" && v.h264_profile);
-            if(vst && vst?.h264_profile !== "42e01f") {
+            if (vst && vst?.h264_profile !== "42e01f") {
               captureMessage("h264_profile", vst);
             }
 
@@ -464,16 +491,18 @@ class VirtualMqttClient extends Component {
 
             mqtt.join("galaxy/room/" + selected_room);
             mqtt.join("galaxy/room/" + selected_room + "/chat", true);
-            if(isGroup) videoroom.setBitrate(600000);
+            if (isGroup) videoroom.setBitrate(600000);
 
             log.info("[client] Pulbishers list: ", data.publishers);
 
             this.makeSubscription(data.publishers);
-          }).catch((err) => {
+          })
+          .catch((err) => {
             log.error("[client] Publish error :", err);
             this.exitRoom(false);
           });
-      }).catch((err) => {
+      })
+      .catch((err) => {
         log.error("[client] Join error :", err);
         this.exitRoom(false);
       });
@@ -483,13 +512,16 @@ class VirtualMqttClient extends Component {
     this.setState({delay: true});
     const {videoroom} = this.state;
 
-    if(videoroom) {
-      videoroom.leave().then((data) => {
-        log.info("[client] leave respond:", data);
-        this.resetClient(reconnect, callback);
-      }).catch(e => {
-        this.resetClient(reconnect, callback);
-      });
+    if (videoroom) {
+      videoroom
+        .leave()
+        .then((data) => {
+          log.info("[client] leave respond:", data);
+          this.resetClient(reconnect, callback);
+        })
+        .catch((e) => {
+          this.resetClient(reconnect, callback);
+        });
     } else {
       this.resetClient(reconnect, callback);
     }
@@ -503,25 +535,28 @@ class VirtualMqttClient extends Component {
     localStorage.setItem("question", false);
 
     const params = {with_num_users: true};
-    api.fetchAvailableRooms(params).then(data => {
+    api
+      .fetchAvailableRooms(params)
+      .then((data) => {
         const {rooms} = data;
         this.setState({rooms});
-      }).catch((err) => {
+      })
+      .catch((err) => {
         log.error("[client] Error exiting room", err);
       });
 
     mqtt.exit("galaxy/room/" + room);
     mqtt.exit("galaxy/room/" + room + "/chat");
 
-    if(shidur && !reconnect) {
+    if (shidur && !reconnect) {
       JanusStream.destroy();
     }
 
-    if(!reconnect && isFullScreen()) {
+    if (!reconnect && isFullScreen()) {
       toggleFullScreen();
     }
 
-    if(janus) janus.destroy();
+    if (janus) janus.destroy();
 
     this.setState({
       muted: false,
@@ -538,11 +573,11 @@ class VirtualMqttClient extends Component {
       room: reconnect ? room : "",
       chatMessagesCount: 0,
       isSettings: false,
-      sourceLoading: true
+      sourceLoading: true,
     });
 
-    if(typeof callback === "function") callback();
-  }
+    if (typeof callback === "function") callback();
+  };
 
   makeSubscription = (newFeeds) => {
     log.info("[client] makeSubscription", newFeeds);
@@ -554,7 +589,7 @@ class VirtualMqttClient extends Component {
       const {id, streams} = feed;
       feed.display = JSON.parse(feed.display);
       const vst = streams.find((v) => v.type === "video" && v.h264_profile);
-      if(vst) {
+      if (vst) {
         feed.video = vst.h264_profile === "42e01f";
       } else {
         feed.video = !!streams.find((v) => v.type === "video" && v.codec === "h264");
@@ -570,7 +605,7 @@ class VirtualMqttClient extends Component {
       streams.forEach((stream) => {
         let hasVideo = !muteOtherCams && stream.type === "video" && stream.codec === "h264" && !prevVideo;
         const hasAudio = stream.type === "audio" && stream.codec === "opus" && !prevAudio;
-        if(stream?.h264_profile && stream?.h264_profile !== "42e01f") {
+        if (stream?.h264_profile && stream?.h264_profile !== "42e01f") {
           hasVideo = false;
         }
 
@@ -796,7 +831,9 @@ class VirtualMqttClient extends Component {
   };
 
   reloadConfig = () => {
-    api.fetchConfig().then((data) => {
+    api
+      .fetchConfig()
+      .then((data) => {
         ConfigStore.setGlobalConfig(data);
         const {premodStatus, question} = this.state;
         const newPremodStatus = ConfigStore.dynamicConfig(ConfigStore.PRE_MODERATION_KEY) === "true";
@@ -806,7 +843,8 @@ class VirtualMqttClient extends Component {
             this.handleQuestion();
           }
         }
-      }).catch((err) => {
+      })
+      .catch((err) => {
         log.error("[client] error reloading config", err);
       });
   };
@@ -889,7 +927,10 @@ class VirtualMqttClient extends Component {
   };
 
   startLocalMedia = (videoroom) => {
-    const {media: {video: {devices, device} = {}}, cammuted,} = this.state;
+    const {
+      media: {video: {devices, device} = {}},
+      cammuted,
+    } = this.state;
     if (!cammuted) return;
     log.info("[client] Bind local video stream");
     const deviceId = device || devices?.[0]?.deviceId;
@@ -903,7 +944,12 @@ class VirtualMqttClient extends Component {
   };
 
   micMute = () => {
-    const {media: {audio: {stream}},muted} = this.state;
+    const {
+      media: {
+        audio: {stream},
+      },
+      muted,
+    } = this.state;
     if (stream) {
       if (muted) this.micVolume();
       stream.getAudioTracks()[0].enabled = muted;
@@ -953,7 +999,7 @@ class VirtualMqttClient extends Component {
     const {shidur, user} = this.state;
     const stateUpdate = {shidur: !shidur};
     if (shidur) {
-      JanusStream.toggle('shidur');
+      JanusStream.toggle("shidur");
       this.setState(stateUpdate);
     } else {
       JanusStream.initStreaming(user);
@@ -965,13 +1011,13 @@ class VirtualMqttClient extends Component {
   toggleQuad = (isKliOlamiShown = !this.state.isKliOlamiShown) => {
     // JanusStream.toggle('quad');
     this.setState({isKliOlamiShown});
-  }
+  };
 
   toggleUsersDisplays = () => {
-    const hideDisplays = !this.state.hideDisplays
+    const hideDisplays = !this.state.hideDisplays;
     localStorage.setItem("hideDisplays", hideDisplays);
     this.setState({hideDisplays});
-  }
+  };
 
   updateLayout = (currentLayout) => {
     this.setState({currentLayout}, () => {
@@ -1007,7 +1053,7 @@ class VirtualMqttClient extends Component {
   };
 
   renderLocalMedia = (width, height, index) => {
-    const {user, cammuted, question, muted,hideDisplays} = this.state;
+    const {user, cammuted, question, muted, hideDisplays} = this.state;
 
     return (
       <div className="video" key={index}>
@@ -1025,17 +1071,15 @@ class VirtualMqttClient extends Component {
           )}
           <div className="video__title">
             {muted ? <Icon name="microphone slash" size="small" color="red" /> : ""}
-            {
-              (!hideDisplays || cammuted) && (
-                <Popup
-                  content={user ? user.username : ""}
-                  mouseEnterDelay={200}
-                  mouseLeaveDelay={500}
-                  on="hover"
-                  trigger={<div className="title-name">{user ? user.username : ""}</div>}
-                />
-              )
-            }
+            {(!hideDisplays || cammuted) && (
+              <Popup
+                content={user ? user.username : ""}
+                mouseEnterDelay={200}
+                mouseLeaveDelay={500}
+                on="hover"
+                trigger={<div className="title-name">{user ? user.username : ""}</div>}
+              />
+            )}
             <Icon style={{marginLeft: "0.3rem"}} name="signal" size="small" color={this.connectionColor()} />
           </div>
         </div>
@@ -1064,7 +1108,13 @@ class VirtualMqttClient extends Component {
   };
 
   renderMedia = (feed, width, height) => {
-    const {id, talking, question, cammute, display: {display}} = feed;
+    const {
+      id,
+      talking,
+      question,
+      cammute,
+      display: {display},
+    } = feed;
     const {muteOtherCams, hideDisplays} = this.state;
     const mute = cammute || muteOtherCams;
 
@@ -1083,18 +1133,16 @@ class VirtualMqttClient extends Component {
             ""
           )}
           <div className="video__title">
-            {!talking ? <Icon name="microphone slash" size="small" color="red"/> : ""}
-            {
-              (!hideDisplays || mute) && (
-                <Popup
-                  content={display}
-                  mouseEnterDelay={200}
-                  mouseLeaveDelay={500}
-                  on="hover"
-                  trigger={<span className="title-name">{display}</span>}
-                />
-              )
-            }
+            {!talking ? <Icon name="microphone slash" size="small" color="red" /> : ""}
+            {(!hideDisplays || mute) && (
+              <Popup
+                content={display}
+                mouseEnterDelay={200}
+                mouseLeaveDelay={500}
+                on="hover"
+                trigger={<span className="title-name">{display}</span>}
+              />
+            )}
           </div>
         </div>
         <svg
@@ -1131,7 +1179,22 @@ class VirtualMqttClient extends Component {
 
   renderBottomBar = (layout, otherFeedHasQuestion) => {
     const {t} = this.props;
-    const {attachedSource, cammuted, delay, muteOtherCams, muted, question, room, shidur, sourceLoading, user, premodStatus, media, isKliOlamiShown, mqttOn,} = this.state;
+    const {
+      attachedSource,
+      cammuted,
+      delay,
+      muteOtherCams,
+      muted,
+      question,
+      room,
+      shidur,
+      sourceLoading,
+      user,
+      premodStatus,
+      media,
+      isKliOlamiShown,
+      mqttOn,
+    } = this.state;
 
     return (
       <AppBar position="static" color="default">
@@ -1367,7 +1430,10 @@ class VirtualMqttClient extends Component {
 
   renderLeftAside = () => {
     const {leftAsideName, leftAsideSize} = this.state;
-    const {i18n: {language}, theme,} = this.props;
+    const {
+      i18n: {language},
+      theme,
+    } = this.props;
 
     let content;
     if (leftAsideName === "material") {
@@ -1407,9 +1473,31 @@ class VirtualMqttClient extends Component {
     );
   };
 
-  renderNewVersionContent = (layout, isDeb, source, rooms_list, otherFeedHasQuestion, adevices_list, vdevices_list, noOfVideos, remoteVideos) => {
+  renderNewVersionContent = (
+    layout,
+    isDeb,
+    source,
+    rooms_list,
+    otherFeedHasQuestion,
+    adevices_list,
+    vdevices_list,
+    noOfVideos,
+    remoteVideos
+  ) => {
     const {i18n} = this.props;
-    const {attachedSource, chatVisible, room, shidur, user, rightAsideName, leftAsideSize, leftAsideName, sourceLoading, isKliOlamiShown, kliOlamiAttached,} = this.state;
+    const {
+      attachedSource,
+      chatVisible,
+      room,
+      shidur,
+      user,
+      rightAsideName,
+      leftAsideSize,
+      leftAsideName,
+      sourceLoading,
+      isKliOlamiShown,
+      kliOlamiAttached,
+    } = this.state;
 
     const notApproved = user && user.role !== userRolesEnum.user;
 
@@ -1482,7 +1570,29 @@ class VirtualMqttClient extends Component {
   }
 
   render() {
-    const {delay, appInitError, attachedSource, cammuted, currentLayout, feeds, media, muteOtherCams, myid, numberOfVirtualUsers, room, rooms, selected_room, shidur, user, videos, isSettings, audios, shidurForGuestReady, isGroup, hideDisplays,} = this.state;
+    const {
+      delay,
+      appInitError,
+      attachedSource,
+      cammuted,
+      currentLayout,
+      feeds,
+      media,
+      muteOtherCams,
+      myid,
+      numberOfVirtualUsers,
+      room,
+      rooms,
+      selected_room,
+      shidur,
+      user,
+      videos,
+      isSettings,
+      audios,
+      shidurForGuestReady,
+      isGroup,
+      hideDisplays,
+    } = this.state;
 
     if (appInitError) {
       return (
@@ -1566,7 +1676,17 @@ class VirtualMqttClient extends Component {
 
     const isDeb = new URL(window.location.href).searchParams.has("deb");
 
-    let content = this.renderNewVersionContent(layout, isDeb, source, rooms_list, otherFeedHasQuestion, adevices_list, vdevices_list, noOfVideos, remoteVideos);
+    let content = this.renderNewVersionContent(
+      layout,
+      isDeb,
+      source,
+      rooms_list,
+      otherFeedHasQuestion,
+      adevices_list,
+      vdevices_list,
+      noOfVideos,
+      remoteVideos
+    );
 
     return (
       <Fragment>
