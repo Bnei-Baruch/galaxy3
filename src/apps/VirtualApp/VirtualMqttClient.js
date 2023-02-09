@@ -101,7 +101,7 @@ class VirtualMqttClient extends Component {
     audios: {audios: Number(localStorage.getItem("vrt_lang")) || 2},
     mqttOn: false,
     isGroup: false,
-    hideDisplays: localStorage.getItem("hideDisplays") || false,
+    hideDisplays: localStorage.getItem("hideDisplays")?.toLowerCase() === "true" || false,
   };
 
   componentDidUpdate(prevProps, prevState) {
