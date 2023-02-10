@@ -8,6 +8,7 @@ import ConfigStore from "../../shared/ConfigStore";
 
 class AudioHandleMqtt extends Component {
   state = {
+    janus: null,
     feeds: [],
     mids: [],
     name: "",
@@ -23,6 +24,8 @@ class AudioHandleMqtt extends Component {
     log.info("[audio] token", user, token)
 
     let janus = new JanusMqtt(user, inst)
+
+    this.setState({janus});
 
     janus.onStatus = (srv, status) => {
       if(status !== "online") {
@@ -142,6 +145,8 @@ class AudioHandleMqtt extends Component {
           if(typeof callback === "function") callback();
         })
       });
+    } else {
+      if(janus) janus.destroy()
     }
   };
 
