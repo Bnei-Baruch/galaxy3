@@ -1,7 +1,7 @@
 import * as Sentry from "@sentry/react";
 import {Integrations} from "@sentry/tracing";
 import {SENTRY_DSN} from "./env";
-import version from "../Version";
+import version from "../apps/VirtualApp/Version";
 
 export const updateSentryUser = (user) => {
   Sentry.setUser(user);

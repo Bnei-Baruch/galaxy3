@@ -11,6 +11,7 @@ import VideoOutQuad from "./VideoOutQuad";
 import mqtt from "../../shared/mqtt";
 import ConfigStore from "../../shared/ConfigStore";
 import {JanusMqtt} from "../../lib/janus-mqtt";
+import version from './Version.js';
 
 class VideoOutMqtt extends Component {
   state = {
@@ -37,6 +38,7 @@ class VideoOutMqtt extends Component {
   };
 
   componentDidMount() {
+    log.info(" :: Version :: ", version);
     this.initApp();
     setTimeout(() => {
       this.getVideoOut()

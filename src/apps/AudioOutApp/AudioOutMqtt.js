@@ -9,6 +9,7 @@ import GxyJanus from "../../shared/janus-utils";
 import {AUDOUT_ID} from "../../shared/consts";
 import mqtt from "../../shared/mqtt";
 import ConfigStore from "../../shared/ConfigStore";
+import version from './Version.js';
 
 class AudioOutMqtt extends Component {
   state = {
@@ -28,6 +29,7 @@ class AudioOutMqtt extends Component {
   };
 
   componentDidMount() {
+    log.info(" :: Version :: ", version);
     this.initApp();
   }
 

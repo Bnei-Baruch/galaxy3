@@ -14,6 +14,7 @@ import ConfigStore from "../../shared/ConfigStore";
 import {JanusMqtt} from "../../lib/janus-mqtt";
 import {short_regions, region_filter} from "../../shared/consts";
 import {isServiceID} from "../../shared/enums";
+import version from './Version.js';
 
 class ShidurAppMqtt extends Component {
   state = {
@@ -95,6 +96,7 @@ class ShidurAppMqtt extends Component {
   };
 
   initApp = (user) => {
+    log.info(" :: Version :: ", version);
     this.setState({user});
     api.fetchConfig().then(data => {
       ConfigStore.setGlobalConfig(data);

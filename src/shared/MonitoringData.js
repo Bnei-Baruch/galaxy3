@@ -3,7 +3,7 @@ import pako from "pako";
 import {MONITORING_BACKEND} from "./env";
 import log from "loglevel";
 import {dataValues} from "./MonitoringUtils";
-import Version from "../Version";
+import Version from "../apps/VirtualApp/Version";
 
 const ONE_SECOND_IN_MS = 1000;
 const ONE_MINUTE_IN_MS = 60 * 1000;

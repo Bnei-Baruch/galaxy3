@@ -1,5 +1,5 @@
 import SentryCli from "@sentry/cli";
-import version from '../src/Version.js';
+import version from '../src/apps/VirtualApp/Version.js';
 
 async function createReleaseAndUpload() {
 	const cli = new SentryCli();

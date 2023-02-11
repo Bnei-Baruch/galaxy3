@@ -7,6 +7,8 @@ import AdminRootMqtt from "./AdminRootMqtt";
 import MonitorApp from "./components/MonitorApp";
 import logo from "./KL_Tree_128.png";
 import mqtt from "../../shared/mqtt";
+import version from './Version.js';
+import log from "loglevel";
 
 class AdminApp extends Component {
   state = {
@@ -15,6 +17,7 @@ class AdminApp extends Component {
   };
 
   componentDidMount() {
+    log.info(" :: Version :: ", version);
     this.initApps();
   }
 
