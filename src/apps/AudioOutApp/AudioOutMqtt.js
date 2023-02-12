@@ -33,10 +33,6 @@ class AudioOutMqtt extends Component {
     this.initApp();
   }
 
-  componentWillUnmount() {
-    Object.values(this.state.gateways).forEach((x) => x.destroy());
-  }
-
   initApp = () => {
     const {user} = this.state;
 
