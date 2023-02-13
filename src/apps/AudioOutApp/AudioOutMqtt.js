@@ -67,7 +67,9 @@ class AudioOutMqtt extends Component {
     const {room, group, status, qst} = data;
     if (data.type === "sdi-fullscr_group" && status && qst) {
       if(this.state.group) return
-      this.out.initVideoRoom(group.room, group.janus);
+      this.out.exitJanus(group.janus, () => {
+        this.out.initVideoRoom(group.room, group.janus);
+      });
       this.setState({group, room, janus: group.janus});
     } else if (data.type === "sdi-fullscr_group" && !status && qst) {
       this.out.exitVideoRoom(this.state.room);
