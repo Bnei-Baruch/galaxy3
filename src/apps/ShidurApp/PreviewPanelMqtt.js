@@ -20,9 +20,17 @@ class PreviewPanelMqtt extends Component {
 
   componentDidUpdate(prevProps) {
     let {pg} = this.props;
-    let {room} = this.state;
+    let {room, feeds} = this.state;
     if (pg && JSON.stringify(pg) !== JSON.stringify(prevProps.pg) && pg.room !== room) {
       if (this.state.subscriber) this.state.subscriber.detach();
+      feeds.forEach(f => {
+        let e = this.refs["pv" + f.id];
+        if (e) {
+          e.src = "";
+          e.srcObject = null;
+          e.remove();
+        }
+      })
       this.setState({remoteFeed: null, mids: [], feeds: [], subscriber: null}, () => {
         this.attachPreview(this.props.pg);
       });
