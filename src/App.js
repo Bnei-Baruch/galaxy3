@@ -10,8 +10,8 @@ import "./i18n/i18n";
 // import ShidurAppMqtt from "./apps/ShidurApp/ShidurAppMqtt";
 // import ShidurAppHttp from "./apps/ShidurApp/ShidurAppHttp";
 // import AudioOutMqtt from "./apps/AudioOutApp/AudioOutMqtt";
-import VideoOutMqtt from "./apps/VideoOutApp/VideoOutMqtt";
-// import QstOutMqtt from "./apps/VideoOutApp/QstOutMqtt";
+// import VideoOutMqtt from "./apps/VideoOutApp/VideoOutMqtt";
+import QstOutMqtt from "./apps/VideoOutApp/QstOutMqtt";
 // import WebOutMqtt from "./apps/WebOutApp/WebOutMqtt";
 
 class App extends Component {
@@ -24,8 +24,8 @@ class App extends Component {
         {/*<ShidurAppMqtt />*/}
         {/*<ShidurAppHttp />*/}
         {/*<AudioOutMqtt />*/}
-        <VideoOutMqtt />
-        {/*<QstOutMqtt />*/}
+        {/*<VideoOutMqtt />*/}
+        <QstOutMqtt />
         {/*<WebOutMqtt />*/}
       </I18nextProvider>
     );
