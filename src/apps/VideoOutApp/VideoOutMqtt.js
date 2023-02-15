@@ -223,28 +223,6 @@ class VideoOutMqtt extends Component {
             />
           </Grid.Column>
         </Grid.Row>
-        <Grid.Row>
-          <Grid.Column>
-            <Segment className="preview_sdi">
-              <div className="usersvideo_grid">
-                <div className="video_full">
-                  {vote ? (
-                    <iframe title="Vote" src="https://vote.kli.one" width="100%" height="100%" frameBorder="0" />
-                  ) : qg ? (
-                    <Fragment>
-                      {/*{group && group.questions ? <div className="qst_fullscreentitle">?</div> : ""}*/}
-                      <div className="fullscrvideo_title">{name}</div>
-                      <VideoHandleMqtt key={"q5"} g={qg} group={group} index={13} col={5} q={5} user={user} gateways={gateways} />
-                    </Fragment>
-                  ) : (
-                    ""
-                  )}
-                </div>
-              </div>
-            </Segment>
-          </Grid.Column>
-          <Grid.Column />
-        </Grid.Row>
       </Grid>
     );
   }
