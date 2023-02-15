@@ -7,7 +7,6 @@ import log from "loglevel";
 import api from "../../shared/Api";
 import {API_BACKEND_PASSWORD, API_BACKEND_USERNAME} from "../../shared/env";
 import GxyJanus from "../../shared/janus-utils";
-import VideoHandleMqtt from "./VideoHandleMqtt";
 import VideoOutQuad from "./VideoOutQuad";
 import mqtt from "../../shared/mqtt";
 import ConfigStore from "../../shared/ConfigStore";
@@ -23,7 +22,7 @@ class VideoOutMqtt extends Component {
       handle: 0,
       role: "sdiout",
       display: "sdiout",
-      id: "SDIOUT_ID",
+      id: SDIOUT_ID,
       name: "sdiout",
       email: "sdiout@galaxy.kli.one",
     },
