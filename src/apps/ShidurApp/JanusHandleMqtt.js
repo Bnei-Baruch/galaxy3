@@ -143,9 +143,17 @@ class JanusHandleMqtt extends Component {
   }
 
   exitPlugins = (callback) => {
-    const {subscriber, videoroom, janus, mit} = this.state;
+    const {subscriber, videoroom, janus, mit, feeds} = this.state;
     if(subscriber) janus.detach(subscriber)
     janus.detach(videoroom).then(() => {
+      feeds.forEach(f => {
+        let e = this.refs["pv" + f.id];
+        if (e) {
+          e.src = "";
+          e.srcObject = null;
+          e.remove();
+        }
+      })
       log.info("["+mit+"] plugin detached:");
       this.setState({feeds: [], mids: [], remoteFeed: false, videoroom: null, subscriber: null, janus: null});
       if(typeof callback === "function") callback();
@@ -165,7 +173,6 @@ class JanusHandleMqtt extends Component {
     } else {
       this.exitPlugins(callback)
     }
-
   };
 
   subscribeTo = (room, subscription) => {

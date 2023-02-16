@@ -83,7 +83,6 @@ class VirtualMqttClient extends Component {
     chatVisible: false,
     question: false,
     support: false,
-    //monitoringData: new MonitoringData(),
     connectionStatus: "",
     numberOfVirtualUsers: localStorage.getItem("number_of_virtual_users") || "1",
     currentLayout: localStorage.getItem("currentLayout") || "split",
@@ -102,6 +101,7 @@ class VirtualMqttClient extends Component {
     audios: {audios: Number(localStorage.getItem("vrt_lang")) || 2},
     mqttOn: false,
     isGroup: false,
+    hideDisplays: localStorage.getItem("hideDisplays")?.toLowerCase() === "true" || false,
   };
 
   componentDidUpdate(prevProps, prevState) {
@@ -253,8 +253,7 @@ class VirtualMqttClient extends Component {
 
   initClient = (reconnect, retry = 0) => {
     this.setState({delay: true});
-    const user = Object.assign({}, this.state.user);
-    const {t} = this.props;
+    const {user} = this.state;
     if (this.state.janus) {
       this.state.janus.destroy();
     }
@@ -403,8 +402,7 @@ class VirtualMqttClient extends Component {
   };
 
   selectRoom = (selected_room) => {
-    const {rooms} = this.state;
-    const user = Object.assign({}, this.state.user);
+    const {rooms, user} = this.state;
     const room = rooms.find((r) => r.room === selected_room);
     const name = room.description;
     if (this.state.room === selected_room) {
@@ -459,7 +457,7 @@ class VirtualMqttClient extends Component {
               captureMessage("h264_profile", vst);
             }
 
-            this.setState({user, myid: id, delay: false, wipSettings: false, sourceLoading: false});
+            this.setState({user, myid: id, delay: false, sourceLoading: false});
             updateSentryUser(user);
             updateGxyUser(user);
             this.keepAlive();
@@ -634,7 +632,7 @@ class VirtualMqttClient extends Component {
   };
 
   handleTalking = (id, talking) => {
-    const feeds = Object.assign([], this.state.feeds);
+    const {feeds} = this.state;
     for (let i = 0; i < feeds.length; i++) {
       if (feeds[i] && feeds[i].id === id) {
         feeds[i].talking = talking;
@@ -644,7 +642,8 @@ class VirtualMqttClient extends Component {
   };
 
   onUpdateStreams = (streams) => {
-    const mids = Object.assign([], this.state.mids);
+    const {mids} = this.state;
+    log.debug("[client] Updated streams :", streams);
     for (let i in streams) {
       let mindex = streams[i]["mid"];
       //let feed_id = streams[i]["feed_id"];
@@ -656,7 +655,7 @@ class VirtualMqttClient extends Component {
   onRemoteTrack = (track, mid, on) => {
     if (!mid) mid = track.id.split("janus")[1];
     let feed = this.state.mids[mid].feed_id;
-    log.info("[client] >> This track is coming from feed " + feed + ":", mid);
+    log.info("[client] >> This track is coming from feed " + feed + ":", mid, track);
     if (on) {
       if (track.kind === "audio") {
         let stream = new MediaStream([track]);
@@ -705,7 +704,7 @@ class VirtualMqttClient extends Component {
   };
 
   userState = (user) => {
-    const feeds = Object.assign([], this.state.feeds);
+    const {feeds} = this.state;
     const {camera, question, rfid} = user;
 
     for (let i = 0; i < feeds.length; i++) {
@@ -820,8 +819,7 @@ class VirtualMqttClient extends Component {
   };
 
   handleQuestion = () => {
-    const {question} = this.state;
-    const user = Object.assign({}, this.state.user);
+    const {question, user} = this.state;
     if (user.role === userRolesEnum.ghost) return;
     this.makeDelay();
     this.questionState(user, question);
@@ -849,9 +847,8 @@ class VirtualMqttClient extends Component {
   };
 
   camMute = (cammuted) => {
-    const {videoroom} = this.state;
+    const {videoroom, user} = this.state;
 
-    const user = Object.assign({}, this.state.user);
     if (user.role === userRolesEnum.ghost) return;
     this.makeDelay();
 
@@ -970,6 +967,12 @@ class VirtualMqttClient extends Component {
     this.setState({isKliOlamiShown});
   }
 
+  toggleUsersDisplays = () => {
+    const hideDisplays = !this.state.hideDisplays
+    localStorage.setItem("hideDisplays", hideDisplays);
+    this.setState({hideDisplays});
+  }
+
   updateLayout = (currentLayout) => {
     this.setState({currentLayout}, () => {
       localStorage.setItem("currentLayout", currentLayout);
@@ -1004,7 +1007,7 @@ class VirtualMqttClient extends Component {
   };
 
   renderLocalMedia = (width, height, index) => {
-    const {user, cammuted, question, muted} = this.state;
+    const {user, cammuted, question, muted,hideDisplays} = this.state;
 
     return (
       <div className="video" key={index}>
@@ -1022,13 +1025,17 @@ class VirtualMqttClient extends Component {
           )}
           <div className="video__title">
             {muted ? <Icon name="microphone slash" size="small" color="red" /> : ""}
-            <Popup
-              content={user ? user.username : ""}
-              mouseEnterDelay={200}
-              mouseLeaveDelay={500}
-              on="hover"
-              trigger={<div className="title-name">{user ? user.username : ""}</div>}
-            />
+            {
+              (!hideDisplays || cammuted) && (
+                <Popup
+                  content={user ? user.username : ""}
+                  mouseEnterDelay={200}
+                  mouseLeaveDelay={500}
+                  on="hover"
+                  trigger={<div className="title-name">{user ? user.username : ""}</div>}
+                />
+              )
+            }
             <Icon style={{marginLeft: "0.3rem"}} name="signal" size="small" color={this.connectionColor()} />
           </div>
         </div>
@@ -1058,7 +1065,7 @@ class VirtualMqttClient extends Component {
 
   renderMedia = (feed, width, height) => {
     const {id, talking, question, cammute, display: {display}} = feed;
-    const {muteOtherCams} = this.state;
+    const {muteOtherCams, hideDisplays} = this.state;
     const mute = cammute || muteOtherCams;
 
     return (
@@ -1076,14 +1083,18 @@ class VirtualMqttClient extends Component {
             ""
           )}
           <div className="video__title">
-            {!talking ? <Icon name="microphone slash" size="small" color="red" /> : ""}
-            <Popup
-              content={display}
-              mouseEnterDelay={200}
-              mouseLeaveDelay={500}
-              on="hover"
-              trigger={<span className="title-name">{display}</span>}
-            />
+            {!talking ? <Icon name="microphone slash" size="small" color="red"/> : ""}
+            {
+              (!hideDisplays || mute) && (
+                <Popup
+                  content={display}
+                  mouseEnterDelay={200}
+                  mouseLeaveDelay={500}
+                  on="hover"
+                  trigger={<span className="title-name">{display}</span>}
+                />
+              )
+            }
           </div>
         </div>
         <svg
@@ -1471,7 +1482,7 @@ class VirtualMqttClient extends Component {
   }
 
   render() {
-    const {appInitError, attachedSource, cammuted, currentLayout, feeds, media, muteOtherCams, myid, numberOfVirtualUsers, room, rooms, selected_room, shidur, user, videos, isSettings, audios, shidurForGuestReady, wipSettings, isGroup,} = this.state;
+    const {delay, appInitError, attachedSource, cammuted, currentLayout, feeds, media, muteOtherCams, myid, numberOfVirtualUsers, room, rooms, selected_room, shidur, user, videos, isSettings, audios, shidurForGuestReady, isGroup, hideDisplays,} = this.state;
 
     if (appInitError) {
       return (
@@ -1578,6 +1589,8 @@ class VirtualMqttClient extends Component {
             audioDevice={media.audio?.device}
             setAudioDevice={this.setAudioDevice.bind(this)}
             audios={audios.audios}
+            hideDisplays={hideDisplays}
+            toggleUsersDisplays={this.toggleUsersDisplays.bind(this)}
           />
         )}
         {user && !notApproved && !Boolean(room) && (
@@ -1601,10 +1614,11 @@ class VirtualMqttClient extends Component {
             audioDevice={media.audio?.device}
             videoLength={media.video?.devices.length}
             videoSettings={JSON.stringify(media.video.setting)}
-            wip={wipSettings}
-            setWip={(wip) => this.setState({wipSettings: wip})}
+            delay={delay}
             startLocalMedia={this.startLocalMedia.bind(this)}
             stopLocalMedia={this.stopLocalMedia.bind(this)}
+            hideDisplays={hideDisplays}
+            toggleUsersDisplays={this.toggleUsersDisplays.bind(this)}
           />
         )}
         {user ? content : login}

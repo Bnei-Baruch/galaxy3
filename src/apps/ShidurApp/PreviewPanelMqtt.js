@@ -20,19 +20,26 @@ class PreviewPanelMqtt extends Component {
 
   componentDidUpdate(prevProps) {
     let {pg} = this.props;
-    let {room, subscriber} = this.state;
+    let {room, subscriber, feeds} = this.state;
     if (pg && JSON.stringify(pg) !== JSON.stringify(prevProps.pg) && pg.room !== room) {
-      if (subscriber) subscriber.hangup();
+      if (this.state.subscriber) this.state.subscriber.detach();
+      feeds.forEach(f => {
+        let e = this.refs["pv" + f.id];
+        if (e) {
+          e.src = "";
+          e.srcObject = null;
+          e.remove();
+        }
+      })
       this.setState({remoteFeed: null, mids: [], feeds: [], subscriber: null}, () => {
         this.attachPreview(this.props.pg);
       });
     }
   }
 
-  componentWillUnmount() {
-    const {subscriber} = this.state;
-    if (subscriber) subscriber.hangup();
-  }
+  // componentWillUnmount() {
+  //   if (this.state.subscriber) this.state.subscriber.detach();
+  // }
 
   attachPreview = (g) => {
     if(!g) return
@@ -135,8 +142,7 @@ class PreviewPanelMqtt extends Component {
 
   onRemoteTrack = (track, mid, on) => {
     if (track.kind === "video" && on) {
-      let stream = new MediaStream();
-      stream.addTrack(track.clone());
+      let stream = new MediaStream([track]);
       let remotevideo = this.refs["pv" + mid];
       if (remotevideo) remotevideo.srcObject = stream;
     }

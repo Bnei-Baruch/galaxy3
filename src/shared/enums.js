@@ -1,5 +1,5 @@
 import {kc} from "../components/UserManager";
-import {AUDOUT_ID, SDIOUT_ID, SHIDUR_ID, SNDMAN_ID, STORAN_ID} from "./consts";
+import {AUDOUT_ID, QSTOUT_ID, SDIOUT_ID, SHIDUR_ID, SNDMAN_ID, STORAN_ID} from "./consts";
 
 export const userRolesEnum = {
   none: null,
@@ -27,6 +27,6 @@ export const getUserRole = () => {
   }
 };
 
-export const isServiceID = (user) => {
-  return [SNDMAN_ID, SDIOUT_ID, STORAN_ID, AUDOUT_ID, "webout", "SDIOUT_ID"].includes(user.id) && user.role !== "user";
+export const isServiceID = (id) => {
+  return [SNDMAN_ID, SDIOUT_ID, QSTOUT_ID, STORAN_ID, AUDOUT_ID, "webout", "qstout", "sdiout"].includes(id);
 };

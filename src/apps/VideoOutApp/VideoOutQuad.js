@@ -53,9 +53,9 @@ class VideoOutQuad extends Component {
     });
 
     return (
-      <Segment className="preview_sdi">
+      <div className="preview_sdi">
         <div className="usersvideo_grid">{program}</div>
-      </Segment>
+      </div>
     );
   }
 }

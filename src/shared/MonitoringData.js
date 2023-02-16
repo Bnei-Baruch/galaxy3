@@ -3,7 +3,7 @@ import pako from "pako";
 import {MONITORING_BACKEND} from "./env";
 import log from "loglevel";
 import {dataValues} from "./MonitoringUtils";
-import Version from "../Version";
+import Version from "../apps/VirtualApp/Version";
 
 const ONE_SECOND_IN_MS = 1000;
 const ONE_MINUTE_IN_MS = 60 * 1000;
@@ -253,7 +253,7 @@ export const MonitoringData = class {
     if (!this.pluginHandle || !this.localAudioTrack || !this.user) {
       return; // User not connected.
     }
-    const pc = (this.pluginHandle && this.pluginHandle.webrtcStuff && this.pluginHandle.webrtcStuff.pc) || null;
+    const pc = (this.pluginHandle && this.pluginHandle.webrtcStuff && this.pluginHandle.webrtcStuff.pc) || (this.pluginHandle && this.pluginHandle.pc) || null;
     const defaultTimestamp = new Date().getTime();
     if (
       pc &&
@@ -564,7 +564,7 @@ export const MonitoringData = class {
     // Update user network. We just need the latest and don't want to monitor this.
     this.user.network = (navigator && navigator.connection && navigator.connection.type) || "";
     // Update last streaming server from virtualStreamingJanus.
-    this.user.streamingGateway = this.virtualStreamingJanus.streamingGateway;
+    this.user.streamingGateway = this.virtualStreamingJanus.config && this.virtualStreamingJanus.config.name || '';
     const data = {
       user: this.user,
       data: sentData,

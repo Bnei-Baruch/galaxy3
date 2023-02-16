@@ -1,4 +1,4 @@
-import React, {useContext, useEffect} from "react";
+import React, {useContext, useEffect, useState} from "react";
 import {useTranslation} from "react-i18next";
 
 import {
@@ -11,7 +11,7 @@ import {
   MenuItem,
   Modal,
   TextField,
-  Typography,
+  Typography
 } from "@mui/material";
 import Autocomplete from "@mui/material/Autocomplete";
 import {makeStyles} from "tss-react/mui";
@@ -25,6 +25,7 @@ import {SelectViewLanguage} from "../components/SelectViewLanguage";
 import {AccountCircle, Mic, Videocam} from "@mui/icons-material";
 import {ThemeContext} from "../components/ThemeSwitcher/ThemeSwitcher";
 import {Support} from "../components/Support";
+import JanusStream from "../../../shared/streaming-utils";
 
 const settingsList = vsettings_list.map(({key, text, value}) => ({key, text, value: JSON.stringify(value)}));
 const mapDevice = ({label, deviceId}) => ({text: label, value: deviceId});
@@ -66,13 +67,10 @@ const roomDescriptionById = new Map();
 
 const Settings = (props) => {
   const {classes} = useStyles();
+  const [shidurMuted, setShidurMuted] = useState(JanusStream.audioElement.muted)
 
   const {t} = useTranslation();
-  const {
-    palette: {
-      background: {paper},
-    },
-  } = useTheme();
+  const {palette: {background: {paper}}} = useTheme();
   const {isDark, toggleTheme} = useContext(ThemeContext);
 
   const {
@@ -94,11 +92,12 @@ const Settings = (props) => {
     audioDevice = audio.devices[0]?.deviceId,
     videoDevice = video?.devices[0]?.deviceId,
     userDisplay,
-    wip,
-    setWip,
+    delay,
     startLocalMedia,
     stopLocalMedia,
     cammuted,
+    toggleUsersDisplays,
+    hideDisplays,
   } = props;
 
   useEffect(() => {
@@ -106,6 +105,13 @@ const Settings = (props) => {
       roomDescriptionById.set(r.room, r);
     }
   }, [rooms]);
+
+  const handleMute = () => {
+    JanusStream.audioElement.muted = !shidurMuted
+    JanusStream.audioElement.volume = !shidurMuted ? 0 : 0.6
+    JanusStream.trlAudioElement.muted = !shidurMuted
+    setShidurMuted(!shidurMuted)
+  }
 
   const renderCameras = () => {
     if (!videoLength) return null;
@@ -165,12 +171,12 @@ const Settings = (props) => {
   };
 
   const renderRooms = () => {
-    if (!rooms || rooms.length === 0) return null;
+    if (roomDescriptionById.size === 0) return null;
 
     return (
       <Autocomplete
         variant="outlined"
-        value={roomDescriptionById.size !== 0 ? roomDescriptionById.get(selectedRoom) : {}}
+        value={roomDescriptionById.get(selectedRoom)}
         options={rooms}
         getOptionLabel={(option) => option.description}
         renderOption={(props, {description, num_users}) => (
@@ -184,7 +190,7 @@ const Settings = (props) => {
           </Grid>
         )}
         onChange={handleRoomChange}
-        renderInput={(params) => <TextField {...params} variant="outlined" label={t("oldClient.selectRoom")} />}
+        renderInput={(params) => <TextField {...params} variant="outlined" label={t("oldClient.selectRoom")}/>}
       />
     );
   };
@@ -199,6 +205,8 @@ const Settings = (props) => {
 
   const handleGroup = () => handleGroupChange();
 
+  const handleUsersDisplays = () => toggleUsersDisplays()
+
   const handleRoomChange = (e, op) => {
     if (!op?.room) return;
 
@@ -208,7 +216,6 @@ const Settings = (props) => {
 
   const handleInitClient = () => {
     initClient(false);
-    setWip(true);
   };
 
   const renderHeader = () => (
@@ -222,10 +229,10 @@ const Settings = (props) => {
       <Grid item xs={4}>
         <Grid container justify="flex-end" spacing={2}>
           <Grid item>
-            <LogoutDropdown display={userDisplay} />
+            <LogoutDropdown display={userDisplay}/>
           </Grid>
           <Grid item>
-            <Support />
+            <Support/>
           </Grid>
         </Grid>
       </Grid>
@@ -236,7 +243,7 @@ const Settings = (props) => {
     return (
       <>
         <Grid item xs={4}>
-          <AccountCircle className={classes.icon} color="action" />
+          <AccountCircle className={classes.icon} color="action"/>
           <Typography variant="h6" display="inline" style={{verticalAlign: "top"}} color="textPrimary">
             {t("settings.userSettings")}
           </Typography>
@@ -251,7 +258,7 @@ const Settings = (props) => {
           />
         </Grid>
         <Grid item={true} xs={4}>
-          <SelectViewLanguage />
+          <SelectViewLanguage/>
         </Grid>
       </>
     );
@@ -261,18 +268,18 @@ const Settings = (props) => {
     return (
       <Grid container spacing={4} className={classes.content}>
         {renderHeader()}
-        <Divider variant="fullWidth" sx={{width: "100%", marginTop: "2em"}} />
+        <Divider variant="fullWidth" sx={{width: "100%", marginTop: "2em"}}/>
         {renderUserSettings()}
-        <Divider variant="fullWidth" sx={{width: "100%", marginTop: "2em"}} />
+        <Divider variant="fullWidth" sx={{width: "100%", marginTop: "2em"}}/>
 
         <Grid item xs={6}>
-          <Videocam className={classes.icon} color="action" />
+          <Videocam className={classes.icon} color="action"/>
           <Typography variant="h6" display="inline" style={{verticalAlign: "top"}} color="textPrimary">
             {t("settings.cameraSettings")}
           </Typography>
         </Grid>
         <Grid item xs={4}>
-          <Mic className={classes.icon} color="action" />
+          <Mic className={classes.icon} color="action"/>
           <Typography variant="h6" display="inline" style={{verticalAlign: "top"}} color="textPrimary">
             {t("settings.microphoneSettings")}
           </Typography>
@@ -290,32 +297,41 @@ const Settings = (props) => {
         </Grid>
 
         <Grid item xs={6}>
-          {<MyMedia cammuted={cammuted} video={video} />}
+          {<MyMedia cammuted={cammuted} video={video}/>}
         </Grid>
         <Grid item xs={6}>
-          {<CheckMySelf />}
+          {<CheckMySelf/>}
         </Grid>
 
         <Grid item xs={12}>
           <FormControlLabel
             label={<Typography color="textPrimary">{t("oldClient.stopVideo")}</Typography>}
-            control={<Checkbox checked={cammuted} onChange={toggleCamera} name="turnOffCamera" color="primary" />}
+            control={<Checkbox checked={cammuted} onChange={toggleCamera} name="turnOffCamera" color="primary"/>}
           />
 
           <FormControlLabel
             label={<Typography color="textPrimary">{t("oldClient.audioMode")}</Typography>}
             color="textPrimary"
             control={
-              <Checkbox checked={!!isAudioMode} onChange={handleAudioModeChange} name="isAudioMode" color="primary" />
+              <Checkbox checked={!!isAudioMode} onChange={handleAudioModeChange} name="isAudioMode" color="primary"/>
             }
           />
           <FormControlLabel
             label={<Typography color="textPrimary">{t("oldClient.darkTheme")}</Typography>}
-            control={<Checkbox checked={isDark} onChange={toggleTheme} name="isAudioMode" color="primary" />}
+            control={<Checkbox checked={isDark} onChange={toggleTheme} name="isAudioMode" color="primary"/>}
           />
           <FormControlLabel
             label={<Typography color="textPrimary">Group</Typography>}
-            control={<Checkbox checked={isGroup} onChange={handleGroup} name="isGroup" color="primary" />}
+            control={<Checkbox checked={isGroup} onChange={handleGroup} name="isGroup" color="primary"/>}
+          />
+          <FormControlLabel
+            label={<Typography color="textPrimary">{t("oldClient.hideDisplays")}</Typography>}
+            control={<Checkbox checked={hideDisplays} onChange={handleUsersDisplays} name="hideDisplays"
+                               color="primary"/>}
+          />
+          <FormControlLabel
+            label={<Typography color="textPrimary">{t("oldClient.shidurMuted")}</Typography>}
+            control={<Checkbox checked={shidurMuted} onChange={handleMute} name="shidurMuted" color="primary"/>}
           />
         </Grid>
 
@@ -326,12 +342,9 @@ const Settings = (props) => {
           <Button
             variant="contained"
             color="success"
-            classes={{
-              root: classes.submitRoot,
-              disabled: classes.submitDisabled,
-            }}
+            classes={{root: classes.submitRoot, disabled: classes.submitDisabled}}
             size="large"
-            disabled={!selectedRoom || wip}
+            disabled={roomDescriptionById.size === 0 || delay || !selectedRoom}
             onClick={handleInitClient}
           >
             <Typography color="white">{t("oldClient.joinRoom")}</Typography>

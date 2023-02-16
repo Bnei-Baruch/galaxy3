@@ -22,7 +22,7 @@
     position:relative;
     height: 540px;
     width: 960px;
-    border:5px solid rgba(255, 0, 0, 1);
+    border:3px solid rgba(255, 0, 0, 1);
 }
 
 .click-panel {
@@ -80,7 +80,7 @@
     background-color: #2185d0;
     text-align:left;
     // width: auto;
-    padding: 0px 30px;
+    padding: 0px 80px;
     // float: right !important;
     z-index: 2;
     + .vclient__main-wrapper {

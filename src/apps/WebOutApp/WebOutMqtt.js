@@ -10,6 +10,7 @@ import mqtt from "../../shared/mqtt";
 import log from "loglevel";
 import ConfigStore from "../../shared/ConfigStore";
 import {JanusMqtt} from "../../lib/janus-mqtt";
+import version from './Version.js';
 
 class WebOutApp extends Component {
   state = {
@@ -44,6 +45,7 @@ class WebOutApp extends Component {
   };
 
   componentDidMount() {
+    log.info(" :: Version :: ", version);
     this.initApp();
     setTimeout(() => {
       this.fetchRooms()

@@ -13,6 +13,7 @@ export class StreamingPlugin extends EventEmitter {
     this.iceState = null
     this.streamId = null
     this.candidates = []
+    this.onStatus = null
     this.pluginName = 'janus.plugin.streaming'
     this.pc = new RTCPeerConnection({
       iceServers: list
@@ -61,7 +62,7 @@ export class StreamingPlugin extends EventEmitter {
         }
 
         if (json?.jsep) {
-          log.info('[streaming] sdp: ', json)
+          log.info('[streaming] sdp: ', json);
           this.sdpExchange(json.jsep)
         }
 
@@ -79,9 +80,10 @@ export class StreamingPlugin extends EventEmitter {
   sdpExchange(jsep) {
     this.pc.setRemoteDescription(jsep)
     this.pc.createAnswer().then((desc) => {
+      desc.sdp = desc.sdp.replace(/a=fmtp:111 minptime=10;useinbandfec=1\r\n/g, 'a=fmtp:111 minptime=10;useinbandfec=1;stereo=1;sprop-stereo=1\r\n');
       this.pc.setLocalDescription(desc);
       this.start(desc)
-    }, error => log.error(error));
+    }, error => log.error('[streaming] SDP Exchange', error));
   }
 
   start(jsep) {
@@ -134,7 +136,7 @@ export class StreamingPlugin extends EventEmitter {
 
       // ICE restart does not help here, peer connection will be down
       if(this.iceState === "failed") {
-        //TODO: handle failed ice state
+        this.onStatus(this.iceState)
       }
 
     };
