@@ -50,7 +50,18 @@ import Donations from "./buttons/Donations";
 const sortAndFilterFeeds = (feeds) =>
   feeds
     .filter((feed) => !feed.display.role.match(/^(ghost|guest)$/))
-    .sort((a, b) => a.display.timestamp - b.display.timestamp);
+    .sort((a, b) => {
+      // Groups should go first before non-groups.
+      // When both are groups or both non-groups use timestamp
+      // to order.
+      if (!!a.display.is_group && !b.display.is_group) {
+        return -1;
+      }
+      if (!a.display.is_group && !!b.display.is_group) {
+        return 1;
+      }
+      return a.display.timestamp - b.display.timestamp;
+    });
 
 const userFeeds = (feeds) => feeds.filter((feed) => feed.display.role === userRolesEnum.user);
 const monitoringData =  new MonitoringData();
@@ -431,7 +442,7 @@ class VirtualMqttClient extends Component {
     this.micMute();
 
     const {id, timestamp, role, username} = user;
-    const d = {id, timestamp, role, display: username};
+    const d = {id, timestamp, role, display: username, is_group: isGroup};
 
     videoroom.join(selected_room, d).then((data) => {
         log.info("[client] Joined respond :", data);
@@ -1007,7 +1018,7 @@ class VirtualMqttClient extends Component {
   };
 
   renderLocalMedia = (width, height, index) => {
-    const {user, cammuted, question, muted,hideDisplays} = this.state;
+    const {user, cammuted, question, muted, hideDisplays} = this.state;
 
     return (
       <div className="video" key={index}>
@@ -1064,12 +1075,12 @@ class VirtualMqttClient extends Component {
   };
 
   renderMedia = (feed, width, height) => {
-    const {id, talking, question, cammute, display: {display}} = feed;
+    const {id, talking, question, cammute, display: {display, is_group: isGroup}} = feed;
     const {muteOtherCams, hideDisplays} = this.state;
     const mute = cammute || muteOtherCams;
 
     return (
-      <div className="video" key={"v" + id} ref={"video" + id} id={"video" + id}>
+      <div className={classNames("video", {"is-double-size": isGroup})} key={"v" + id} ref={"video" + id} id={"video" + id}>
         <div className={classNames("video__overlay", {"talk-frame": talking})}>
           {question ? (
             <div className="question">
@@ -1537,14 +1548,19 @@ class VirtualMqttClient extends Component {
 
     let otherFeedHasQuestion = false;
     let localPushed = false;
-    let remoteVideos = userFeeds(feeds).reduce((result, feed) => {
+    let groupsNum = 0;
+    let remoteVideos = sortAndFilterFeeds(feeds).reduce((result, feed) => {
       const {question, id} = feed;
       otherFeedHasQuestion = otherFeedHasQuestion || (question && id !== myid);
-      if (!localPushed && feed.display.timestamp >= user.timestamp) {
+      if (!localPushed && ((!feed.display.is_group && isGroup) ||
+          (feed.display.is_group === isGroup && feed.display.timestamp >= user.timestamp))) {
         localPushed = true;
         for (let i = 0; i < parseInt(numberOfVirtualUsers, 10); i++) {
           result.push(this.renderLocalMedia(width, height, i));
         }
+      }
+      if (feed.display.is_group) {
+        groupsNum += 1;
       }
       result.push(this.renderMedia(feed, width, height));
       return result;
@@ -1555,7 +1571,7 @@ class VirtualMqttClient extends Component {
       }
     }
 
-    let noOfVideos = remoteVideos.length;
+    let noOfVideos = remoteVideos.length + 3*groupsNum;
     if (room !== "") {
       if (shidur && attachedSource && ["double", "equal"].includes(layout)) {
         noOfVideos += 1; // + Source
