@@ -1,5 +1,18 @@
 import React, {Component, Fragment} from "react";
-import {Button, Confirm, Dropdown, Grid, Header, Icon, List, Popup, Segment, Select, Table} from "semantic-ui-react";
+import {
+  Button,
+  Confirm,
+  Dropdown,
+  Grid,
+  Header,
+  Icon,
+  List,
+  Menu,
+  Popup,
+  Segment,
+  Select,
+  Table
+} from "semantic-ui-react";
 import "./AdminRoot.css";
 import "./AdminRootVideo.scss";
 import classNames from "classnames";
@@ -16,6 +29,7 @@ import {JanusMqtt} from "../../lib/janus-mqtt";
 import {PublisherPlugin} from "../../lib/publisher-plugin";
 import {SubscriberPlugin} from "../../lib/subscriber-plugin";
 import log from "loglevel";
+import {createContext} from "../../shared/tools";
 
 const sortAndFilterFeeds = (feeds) =>
   feeds
@@ -56,6 +70,8 @@ class AdminRootMqtt extends Component {
     android_count: 0,
     ios_count: 0,
     web_count: 0,
+    menu_open: false,
+    menu_group: null,
   };
 
   componentDidMount() {
@@ -501,9 +517,31 @@ class AdminRootMqtt extends Component {
     this.sendRemoteCommand("client-reload-all");
   };
 
+  showMenu = (e, data) => {
+    console.log("preventDefault", data)
+    e.preventDefault();
+    this.contextRef = React.createRef();
+    this.contextRef.current = createContext(e)
+    this.setState({menu_open: true, menu_group: data})
+  };
+
+  selectMenu = (c) => {
+    if(c === "group") {
+      this.setExtra(c)
+    }
+    this.setState({menu_open: false})
+  };
+
+  setExtra = (extra) => {
+    let {menu_group} = this.state;
+    menu_group = {...menu_group, extra: {...(menu_group.extra || {}), [extra]: true}};
+    delete menu_group.users;
+    api.updateRoom(menu_group.room, menu_group);
+  };
+
   render() {
     const {user} = this.props;
-    const {bitrate, current_room, current_group, feed_id, feed_info, feed_rtcp, feed_user, feeds, users, rooms_question, gatewaysInitialized, rooms, users_count, appInitError, command_status, showConfirmReloadAll,} = this.state;
+    const {menu_open, bitrate, current_room, current_group, feed_id, feed_info, feed_rtcp, feed_user, feeds, users, rooms_question, gatewaysInitialized, rooms, users_count, appInitError, command_status, showConfirmReloadAll,} = this.state;
 
     if (appInitError) {
       return (
@@ -558,10 +596,12 @@ class AdminRootMqtt extends Component {
     });
 
     let rooms_grid = rooms.map((data, i) => {
-      const {room, num_users, description, questions} = data;
-      let gr = data.users.find(u => u.extra?.isGroup);
+      const {room, num_users, description, questions, extra} = data;
+      let gr = extra?.group;
       return (
-        <Table.Row active={current_room === room} key={i + "r"} onClick={() => this.exitRoom(data)}>
+        <Table.Row active={current_room === room} key={room}
+                   onClick={() => this.exitRoom(data)}
+                   onContextMenu={(e) => this.showMenu(e, data)} >
           <Table.Cell width={5}>
             {gr ? g : ""}
             {questions ? q : ""}
@@ -865,6 +905,27 @@ class AdminRootMqtt extends Component {
             </Segment>
           </Grid.Column>
         </Grid.Row>
+
+        <Popup
+          context={this.contextRef}
+          onClose={() => this.setState({menu_open: false})}
+          open={menu_open}
+        >
+          <Menu text size='massive' compact
+                items={[
+                  { key: 'disable', content: 'disable', icon: 'window close' },
+                  { key: 'vip1', content: 'vip1', icon: 'star' },
+                  { key: 'vip2', content: 'vip2', icon: 'star' },
+                  { key: 'vip3', content: 'vip3', icon: 'star' },
+                  { key: 'vip4', content: 'vip4', icon: 'star' },
+                  { key: 'vip5', content: 'vip5', icon: 'star' },
+                  { key: 'groups', content: 'group', icon: 'star' },
+                ]}
+                onItemClick={(e, data) => this.selectMenu(data.content)}
+                secondary
+                vertical
+          />
+        </Popup>
 
         {this.isAllowed("admin") ? (
           <Grid.Row>
