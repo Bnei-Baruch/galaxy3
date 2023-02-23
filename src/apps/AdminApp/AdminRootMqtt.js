@@ -565,7 +565,7 @@ class AdminRootMqtt extends Component {
     //const f = (<Icon name='volume up' />);
     const q = <Icon color="red" name="help" />;
     const g = <Icon color="blue" name="users" />;
-    //const v = (<Icon name='checkmark' />);
+    const v = (<Icon name='checkmark' />);
     //const x = (<Icon name='close' />);
 
     let group_options = rooms.map((feed, i) => {
@@ -597,13 +597,14 @@ class AdminRootMqtt extends Component {
 
     let rooms_grid = rooms.map((data, i) => {
       const {room, num_users, description, questions, extra} = data;
+      let ugr = data.users.find(u => u.extra?.isGroup);
       let gr = extra?.group;
       return (
         <Table.Row active={current_room === room} key={room}
                    onClick={() => this.exitRoom(data)}
                    onContextMenu={(e) => this.showMenu(e, data)} >
           <Table.Cell width={5}>
-            {gr ? g : ""}
+            {ugr ? g : ""}{gr ? v : ""}
             {questions ? q : ""}
             {description}
           </Table.Cell>
