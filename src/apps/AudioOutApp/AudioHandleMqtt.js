@@ -19,22 +19,23 @@ class AudioHandleMqtt extends Component {
 
   initJanus = (inst, callback) => {
     const {user} = this.props;
-    let {janus} = this.state;
     const token = ConfigStore.globalConfig.gateways.rooms[inst].token
 
     log.info("[audio] token", token)
-    janus = new JanusMqtt(user, inst)
+    let janus = new JanusMqtt(user, inst)
 
     janus.init(token).then(data => {
       log.info("[audio] Janus init", data);
-      callback();
+      this.setState({janus: data}, () => {
+        callback();
+      })
     }).catch(err => {
       log.error("[audio] Janus init", err);
     })
 
     janus.onStatus = (srv, status) => {
-      if(status === "online") {
-        this.setState({janus})
+      if(status !== "online") {
+        log.error("Janus offline")
       }
     }
   };
@@ -42,7 +43,7 @@ class AudioHandleMqtt extends Component {
   initVideoRoom = (room, inst) => {
     log.info("[audio] Init room: ", room, inst, ConfigStore.globalConfig)
     const {user} = this.props;
-    let {janus} = this.state;
+    const {janus} = this.state;
 
     let videoroom = new PublisherPlugin();
     videoroom.subTo = this.onJoinFeed;
@@ -58,7 +59,7 @@ class AudioHandleMqtt extends Component {
 
       videoroom.join(room, user).then(data => {
         log.info('[audio] Joined respond :', data);
-        this.setState({janus, videoroom, room, remoteFeed: null});
+        this.setState({videoroom, room, remoteFeed: null});
         this.onJoinMe(data.publishers, room)
       }).catch(err => {
         log.error('[audio] Join error :', err);
