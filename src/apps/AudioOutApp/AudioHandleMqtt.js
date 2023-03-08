@@ -21,11 +21,11 @@ class AudioHandleMqtt extends Component {
     const {user} = this.props;
     const token = ConfigStore.globalConfig.gateways.rooms[inst].token
 
-    log.info("[audio] token", token)
+    log.info("[audio] Init  Janus");
     let janus = new JanusMqtt(user, inst)
 
     janus.init(token).then(data => {
-      log.info("[audio] Janus init", data);
+      log.info("[audio] init respond ", data);
       this.setState({janus: data}, () => {
         callback();
       })
@@ -153,6 +153,7 @@ class AudioHandleMqtt extends Component {
       return
     }
 
+    log.info("[audio] Exit Janus");
     if(inst === janus.srv) {
       callback();
     } else {
