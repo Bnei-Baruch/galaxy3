@@ -1017,7 +1017,7 @@ class VirtualMqttClient extends Component {
     }
   };
 
-  renderLocalMedia = (width, height, index) => {
+  renderLocalMedia = (width, height, index, isGroup) => {
     const {user, cammuted, question, muted, hideDisplays} = this.state;
 
     return (
@@ -1036,6 +1036,7 @@ class VirtualMqttClient extends Component {
           )}
           <div className="video__title">
             {muted ? <Icon name="microphone slash" size="small" color="red" /> : ""}
+            {isGroup ? <Icon name="group" size="small" style={{margin: "0 .7em 0 .7em"}} /> : ""}
             {
               (!hideDisplays || cammuted) && (
                 <Popup
@@ -1055,9 +1056,8 @@ class VirtualMqttClient extends Component {
           viewBox="0 0 32 18"
           preserveAspectRatio="xMidYMid meet"
         >
-          <text x="16" y="9" textAnchor="middle" alignmentBaseline="central" dominantBaseline="central">
-            &#xf2bd;
-          </text>
+          {isGroup && <text x="16" y="9" textAnchor="middle" alignmentBaseline="central" dominantBaseline="central">&#xf0c0;</text>}
+          {!isGroup && <text x="16" y="9" textAnchor="middle" alignmentBaseline="central" dominantBaseline="central">&#xf2bd;</text>}
         </svg>
         <video
           className={classNames("mirror", {hidden: cammuted})}
@@ -1074,13 +1074,13 @@ class VirtualMqttClient extends Component {
     );
   };
 
-  renderMedia = (feed, width, height) => {
+  renderMedia = (feed, width, height, layout) => {
     const {id, talking, question, cammute, display: {display, is_group: isGroup}} = feed;
     const {muteOtherCams, hideDisplays} = this.state;
     const mute = cammute || muteOtherCams;
 
     return (
-      <div className={classNames("video", {"is-double-size": isGroup})} key={"v" + id} ref={"video" + id} id={"video" + id}>
+      <div className={classNames("video", {"is-double-size": isGroup && layout !== "equal"})} key={"v" + id} ref={"video" + id} id={"video" + id}>
         <div className={classNames("video__overlay", {"talk-frame": talking})}>
           {question ? (
             <div className="question">
@@ -1095,6 +1095,7 @@ class VirtualMqttClient extends Component {
           )}
           <div className="video__title">
             {!talking ? <Icon name="microphone slash" size="small" color="red"/> : ""}
+            {isGroup ? <Icon name="group" size="small" style={{margin: "0 .7em 0 .7em"}} /> : ""}
             {
               (!hideDisplays || mute) && (
                 <Popup
@@ -1113,9 +1114,8 @@ class VirtualMqttClient extends Component {
           viewBox="0 0 32 18"
           preserveAspectRatio="xMidYMid meet"
         >
-          <text x="16" y="9" textAnchor="middle" alignmentBaseline="central" dominantBaseline="central">
-            &#xf2bd;
-          </text>
+          {isGroup && <text x="16" y="9" textAnchor="middle" alignmentBaseline="central" dominantBaseline="central">&#xf0c0;</text>}
+          {!isGroup && <text x="16" y="9" textAnchor="middle" alignmentBaseline="central" dominantBaseline="central">&#xf2bd;</text>}
         </svg>
         <video
           key={"v" + id}
@@ -1142,7 +1142,7 @@ class VirtualMqttClient extends Component {
 
   renderBottomBar = (layout, otherFeedHasQuestion) => {
     const {t} = this.props;
-    const {attachedSource, cammuted, delay, muteOtherCams, muted, question, room, shidur, sourceLoading, user, premodStatus, media, isKliOlamiShown, mqttOn,} = this.state;
+    const {cammuted, delay, muteOtherCams, muted, question, room, shidur, sourceLoading, user, premodStatus, media, isKliOlamiShown, mqttOn,} = this.state;
 
     return (
       <AppBar position="static" color="default">
@@ -1170,7 +1170,7 @@ class VirtualMqttClient extends Component {
               t={t}
               active={layout}
               action={this.updateLayout.bind(this)}
-              disabled={room === "" || !shidur || sourceLoading || !attachedSource}
+              disabled={room === "" || sourceLoading}
               iconDisabled={sourceLoading}
             />
             <AudioMode t={t} action={this.otherCamsMuteToggle.bind(this)} isOn={muteOtherCams} />
@@ -1420,19 +1420,16 @@ class VirtualMqttClient extends Component {
 
   renderNewVersionContent = (layout, isDeb, source, rooms_list, otherFeedHasQuestion, adevices_list, vdevices_list, noOfVideos, remoteVideos) => {
     const {i18n} = this.props;
-    const {attachedSource, chatVisible, room, shidur, user, rightAsideName, leftAsideSize, leftAsideName, sourceLoading, isKliOlamiShown, kliOlamiAttached,} = this.state;
+    const {attachedSource, chatVisible, room, shidur, user, rightAsideName, leftAsideSize, leftAsideName, sourceLoading, isKliOlamiShown, kliOlamiAttached} = this.state;
 
     const notApproved = user && user.role !== userRolesEnum.user;
-
-    if (!sourceLoading && isKliOlamiShown) {
-      noOfVideos += layout === "equal" || layout === "double" ? 1 : 0;
-    }
 
     const kliOlami = !!room && isKliOlamiShown && (
       <QuadStream
         close={() => this.toggleQuad(false)}
         toggleAttach={(val = !kliOlamiAttached) => this.setState({kliOlamiAttached: val})}
         attached={kliOlamiAttached}
+        isDoubleSize={"double" === layout}
       />
     );
     return (
@@ -1452,9 +1449,10 @@ class VirtualMqttClient extends Component {
             vclient__main-wrapper
             no-of-videos-${noOfVideos}
             layout--${layout}
-          ${!isKliOlamiShown ? "" : "with-kli-olami"}
-            broadcast--${room !== "" && shidur ? "on" : "off"}
-            ${!attachedSource ? " broadcast--popup" : "broadcast--inline"}
+            broadcast--${(room !== "" && shidur) ? "on" : "off"}
+            broadcast--${!attachedSource ? "popup" : "inline"}
+            kli-olami--${isKliOlamiShown ? "on" : "off"}
+            kli-olami--${!kliOlamiAttached ? "popup" : "inline"}
            `}
             >
               <div className="broadcast-panel">
@@ -1493,7 +1491,7 @@ class VirtualMqttClient extends Component {
   }
 
   render() {
-    const {delay, appInitError, attachedSource, cammuted, currentLayout, feeds, media, muteOtherCams, myid, numberOfVirtualUsers, room, rooms, selected_room, shidur, user, videos, isSettings, audios, shidurForGuestReady, isGroup, hideDisplays,} = this.state;
+    const {delay, appInitError, attachedSource, cammuted, currentLayout, feeds, media, muteOtherCams, myid, numberOfVirtualUsers, room, rooms, selected_room, shidur, user, videos, isSettings, audios, shidurForGuestReady, isGroup, hideDisplays, isKliOlamiShown, kliOlamiAttached} = this.state;
 
     if (appInitError) {
       return (
@@ -1507,7 +1505,7 @@ class VirtualMqttClient extends Component {
     const notApproved = user && user.role !== userRolesEnum.user;
     const width = "134";
     const height = "100";
-    const layout = room === "" || !shidur || !attachedSource ? "equal" : currentLayout;
+    const layout = room === "" || currentLayout;
 
     let source;
 
@@ -1535,6 +1533,7 @@ class VirtualMqttClient extends Component {
           videos={videos}
           setAudio={this.setAudio.bind(this)}
           audios={audios.audios}
+          isDoubleSize={"double" === layout}
         />
       );
     }
@@ -1556,25 +1555,35 @@ class VirtualMqttClient extends Component {
           (feed.display.is_group === isGroup && feed.display.timestamp >= user.timestamp))) {
         localPushed = true;
         for (let i = 0; i < parseInt(numberOfVirtualUsers, 10); i++) {
-          result.push(this.renderLocalMedia(width, height, i));
+          result.push(this.renderLocalMedia(width, height, i, isGroup));
         }
       }
       if (feed.display.is_group) {
         groupsNum += 1;
       }
-      result.push(this.renderMedia(feed, width, height));
+      result.push(this.renderMedia(feed, width, height, layout));
       return result;
     }, []);
     if (!localPushed) {
       for (let i = 0; i < parseInt(numberOfVirtualUsers, 10); i++) {
-        remoteVideos.push(this.renderLocalMedia(width, height, i));
+        remoteVideos.push(this.renderLocalMedia(width, height, i, isGroup));
       }
     }
 
-    let noOfVideos = remoteVideos.length + 3*groupsNum;
-    if (room !== "") {
-      if (shidur && attachedSource && ["double", "equal"].includes(layout)) {
-        noOfVideos += 1; // + Source
+    const groupMultiplier = "equal" === layout ? 0 : 3;
+    let noOfVideos = remoteVideos.length + groupMultiplier * groupsNum;
+    if (room !== "" && shidur && attachedSource) {
+      if ("double" === layout) {
+        noOfVideos += 4;
+      } else if ("equal" === layout) {
+        noOfVideos += 1;
+      }
+    }
+    if (isKliOlamiShown && kliOlamiAttached) {
+      if ("double" === layout) {
+        noOfVideos += 4;
+      } else if ("equal" === layout) {
+        noOfVideos += 1;
       }
     }
 
