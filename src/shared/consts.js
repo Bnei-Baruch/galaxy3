@@ -96,7 +96,7 @@ export const audiog_options2 = [
   {key: "ir", value: 60, icon: "crosshairs", eng_text: "Persian", text: "فارسی"},
   {key: "ar", value: 62, icon: "crosshairs", eng_text: "Arabic", text: "اَلْعَرَبِيَّةُ"},
   {key: "in", value: 63, icon: "crosshairs", eng_text: "Indonesian", text: "Bahasa Indonesia"},
-  {key: "hy", value: 64, icon: "crosshairs", eng_text: "Armenian", text: "Հայերէն"},
+  {key: "hy", value: 65, icon: "crosshairs", eng_text: "Armenian", text: "Հայերէն"},
   {divider: true},
   {
     header: true,
@@ -147,7 +147,7 @@ export const audiog_options = [
   {key: "ir", value: 60, text: "Persian"},
   {key: "ar", value: 62, text: "Arabic"},
   {key: "in", value: 63, text: "Indonesian"},
-  {key: "hy", value: 64, text: "Armenian"},
+  {key: "hy", value: 65, text: "Armenian"},
   {key: 99, value: 99, text: "Special", disabled: true, icon: "tags", selected: true},
   {key: "heru", value: 10, text: "Heb-Rus"},
   {key: "heen", value: 17, text: "Heb-Eng"},

@@ -46,6 +46,7 @@ import {PublisherPlugin} from "../../lib/publisher-plugin";
 import {SubscriberPlugin} from "../../lib/subscriber-plugin";
 import log from "loglevel";
 import Donations from "./buttons/Donations";
+import version from './Version.js';
 
 const sortAndFilterFeeds = (feeds) =>
   feeds
@@ -126,6 +127,7 @@ class VirtualMqttClient extends Component {
   }
 
   checkPermission = (user) => {
+    log.info(" :: Version :: ", version);
     user.role = getUserRole();
     if (user.role !== null) {
       this.initApp(user);
