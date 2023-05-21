@@ -120,6 +120,19 @@ class ToranToolsMqtt extends Component {
     }
   };
 
+  clearGroup = (e, data, i) => {
+    if (this.state.delay) return;
+    e.preventDefault();
+    if (e.type === "contextmenu") {
+      if(data.extra?.group) {
+        delete data.extra?.group;
+        delete data.users;
+        api.updateRoom(data.room, data);
+      }
+      this.setDelay();
+    }
+  };
+
   clearVip = (vip_rooms) => {
     if(!confirm("Going to clear selected VIP groups! Are you sure?")) return
     console.log(vip_rooms)
@@ -579,6 +592,7 @@ class ToranToolsMqtt extends Component {
           className="vip"
           key={room}
           onClick={() => this.selectGroup(data, i)}
+          onContextMenu={(e) => this.clearGroup(e, data, i)}
         >
           <Table.Cell width={1}>{pn}</Table.Cell>
           <Table.Cell width={5}>{description}</Table.Cell>

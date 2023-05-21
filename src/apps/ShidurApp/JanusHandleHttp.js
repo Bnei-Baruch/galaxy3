@@ -78,6 +78,15 @@ class JanusHandleHttp extends Component {
   };
 
   exitVideoRoom = (roomid, callback) => {
+    const {feeds} = this.state;
+    feeds.forEach(f => {
+      let e = this.refs["pv" + f.id];
+      if (e) {
+        e.src = "";
+        e.srcObject = null;
+        e.remove();
+      }
+    })
     if (this.state.videoroom) {
       let leave_room = {request: "leave", room: roomid};
       this.state.videoroom.send({

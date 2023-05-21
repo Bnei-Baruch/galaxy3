@@ -243,7 +243,7 @@ class ShidurAppHttp extends Component {
         vip3_rooms = rooms.filter((r) => r.extra?.vip3);
         vip4_rooms = rooms.filter((r) => r.extra?.vip4);
         vip5_rooms = rooms.filter((r) => r.extra?.vip5);
-        group_user = rooms.filter((r) => r.users.find(u => u.extra?.isGroup));
+        group_user = rooms.filter((r) => r.extra?.group);
 
         let quads = [
           ...this.col1.state.vquad,

@@ -33,10 +33,6 @@ class AudioOutMqtt extends Component {
     this.initApp();
   }
 
-  componentWillUnmount() {
-    Object.values(this.state.gateways).forEach((x) => x.destroy());
-  }
-
   initApp = () => {
     const {user} = this.state;
 
@@ -68,14 +64,13 @@ class AudioOutMqtt extends Component {
 
   onMqttData = (data) => {
     log.info("[audout] Cmd message: ", data);
-    const {room, group, status, qst} = data;
+    const {group, status, qst} = data;
     if (data.type === "sdi-fullscr_group" && status && qst) {
-      if(this.state.group) return
-      this.out.initVideoRoom(group.room, group.janus);
-      this.setState({group, room, janus: group.janus});
+      this.out.exitJanus(group.janus, () => {
+        this.out.initVideoRoom(group.room, group.janus);
+      });
     } else if (data.type === "sdi-fullscr_group" && !status && qst) {
       this.out.exitVideoRoom(this.state.room);
-      this.setState({group: null, room: null});
     } else if (data.type === "sdi-restart_audout") {
       window.location.reload();
     } else if (data.type === "audio-out") {
@@ -100,8 +95,7 @@ class AudioOutMqtt extends Component {
   };
 
   render() {
-    const {user, group, audio} = this.state;
-
+    const {user, group} = this.state;
     const name = group && group.description;
 
     return (
@@ -109,7 +103,7 @@ class AudioOutMqtt extends Component {
         <div className="usersvideo_grid">
           <div className="video_full">
             <div className="title">{name}</div>
-            <AudioHandleMqtt g={group} user={user} ref={(out) => {this.out = out}} />
+            <AudioHandleMqtt user={user} ref={(out) => {this.out = out}} />
           </div>
         </div>
       </Segment>

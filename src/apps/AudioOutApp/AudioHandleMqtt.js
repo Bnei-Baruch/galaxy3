@@ -16,24 +16,34 @@ class AudioHandleMqtt extends Component {
     myid: null,
   };
 
-  initVideoRoom = (room, inst) => {
-    log.info("[audio] Init room: ", room, inst, ConfigStore.globalConfig)
+
+  initJanus = (inst, callback) => {
     const {user} = this.props;
     const token = ConfigStore.globalConfig.gateways.rooms[inst].token
 
-    log.info("[audio] token", user, token)
-
+    log.info("[audio] Init  Janus");
     let janus = new JanusMqtt(user, inst)
 
-    this.setState({janus});
+    janus.init(token).then(data => {
+      log.info("[audio] init respond ", data);
+      this.setState({janus: data}, () => {
+        callback();
+      })
+    }).catch(err => {
+      log.error("[audio] Janus init", err);
+    })
 
     janus.onStatus = (srv, status) => {
       if(status !== "online") {
-        setTimeout(() => {
-          this.initVideoRoom(room, inst);
-        }, 5000)
+        log.error("Janus offline")
       }
     }
+  };
+
+  initVideoRoom = (room, inst) => {
+    log.info("[audio] Init room: ", room, inst, ConfigStore.globalConfig)
+    const {user} = this.props;
+    const {janus} = this.state;
 
     let videoroom = new PublisherPlugin();
     videoroom.subTo = this.onJoinFeed;
@@ -44,32 +54,21 @@ class AudioHandleMqtt extends Component {
     subscriber.onTrack = this.onRemoteTrack;
     subscriber.onUpdate = this.onUpdateStreams;
 
-    janus.init(token).then(data => {
-      log.info("[audio] Janus init", data)
+    janus.attach(videoroom).then(data => {
+      log.info('[audio] Publisher Handle: ', data)
 
-      janus.attach(videoroom).then(data => {
-        log.info('[audio] Publisher Handle: ', data)
-
-        videoroom.join(room, user).then(data => {
-          log.info('[audio] Joined respond :', data);
-          this.setState({janus, videoroom, user, room, remoteFeed: null});
-          this.onJoinMe(data.publishers, room)
-        }).catch(err => {
-          log.error('[audio] Join error :', err);
-        })
+      videoroom.join(room, user).then(data => {
+        log.info('[audio] Joined respond :', data);
+        this.setState({videoroom, room, remoteFeed: null});
+        this.onJoinMe(data.publishers, room)
+      }).catch(err => {
+        log.error('[audio] Join error :', err);
       })
+    })
 
-      janus.attach(subscriber).then(data => {
-        this.setState({subscriber});
-        log.info('[audio] Subscriber Handle: ', data);
-      })
-
-    }).catch(err => {
-      log.error("[audio] Janus init", err);
-      this.exitRoom(/* reconnect= */ true, () => {
-        log.error("[audio] error initializing janus", err);
-        this.reinitClient(retry);
-      });
+    janus.attach(subscriber).then(data => {
+      this.setState({subscriber});
+      log.info('[audio] Subscriber Handle: ', data);
     })
   }
 
@@ -130,23 +129,37 @@ class AudioHandleMqtt extends Component {
     }
   }
 
-  exitVideoRoom = (roomid, callback) => {
-    const {videoroom, janus} = this.state;
+  exitVideoRoom = () => {
+    const {videoroom, subscriber, janus} = this.state;
     this.setState({feeds: [], mids: [], room: null, remoteFeed: false, creatingFeed: false});
-
+    janus?.detach(subscriber)
     if(videoroom) {
       videoroom?.leave().then(r => {
         log.info("[audio] leave respond:", r);
-        janus.destroy().then(() => {
-          if(typeof callback === "function") callback();
-        })
+        janus.detach(videoroom)
       }).catch(() => {
-        janus.destroy().then(() => {
-          if(typeof callback === "function") callback();
-        })
+        janus.detach(videoroom)
       });
     } else {
-      if(janus) janus.destroy()
+      janus?.detach(videoroom)
+    }
+  };
+
+  exitJanus = (inst, callback) => {
+    let {janus} = this.state;
+
+    if(!janus) {
+      this.initJanus(inst, callback)
+      return
+    }
+
+    log.info("[audio] Exit Janus");
+    if(inst === janus.srv) {
+      callback();
+    } else {
+      janus.destroy().then(() => {
+        this.initJanus(inst, callback)
+      })
     }
   };
 
