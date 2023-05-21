@@ -220,6 +220,7 @@
   position: relative;
   display: none;
 
+
   .layout--split & {
     display: block;
     flex: 1 0 50%;
@@ -230,6 +231,10 @@
 
     // width: 300px;
   }
+}
+
+.no-broadcast-panel .broadcast-panel {
+  display: none;
 }
 
 .chat-panel {

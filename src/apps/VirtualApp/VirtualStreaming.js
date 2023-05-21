@@ -1,4 +1,5 @@
 import React, {Component, Fragment} from "react";
+import classNames from "classnames";
 import {Dropdown, Grid, Header, Icon, Image, Label, Radio} from "semantic-ui-react";
 import NewWindow from "@hinaser/react-new-window";
 import {audiog_options2, NO_VIDEO_OPTION_VALUE, NOTRL_STREAM_ID, videos_options2} from "../../shared/consts";
@@ -47,7 +48,7 @@ class VirtualStreaming extends Component {
   cssFix() {
     const d = document.getElementsByClassName("controls__dropdown");
     if (d) {
-      const o = document.getElementById("video0");
+      const o = document.getElementById("video1");
       if (o) {
         Array.from(d).forEach((x) => {
           x.style.maxHeight = `${o.offsetHeight - 50}px`;
@@ -102,7 +103,7 @@ class VirtualStreaming extends Component {
   };
 
   render() {
-    const {attached, closeShidur, t, videos, layout, audios, setAudio} = this.props;
+    const {attached, closeShidur, t, videos, layout, audios, setAudio, isDoubleSize} = this.props;
     const {room, talking} = this.state;
 
     if (!room) {
@@ -115,10 +116,10 @@ class VirtualStreaming extends Component {
     const playerLang = audio_option.langKey || audio_option.key;
     const inLine = (
       <div
-        className="video video--broadcast"
-        key="v0"
+        className={classNames("video video--broadcast", {"is-double-size": isDoubleSize})}
+        key="v1"
         ref={(ref) => this.setVideoWrapperRef(ref)}
-        id="video0"
+        id="video1"
         style={{height: !attached ? "100%" : null, width: !attached ? "100%" : null}}
       >
         <div className="video__overlay">
