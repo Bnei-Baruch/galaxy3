@@ -266,7 +266,7 @@ class VirtualMqttClient extends Component {
 
   initClient = (reconnect, retry = 0) => {
     this.setState({delay: true});
-    const {user} = this.state;
+    const {user,shidur} = this.state;
     if (this.state.janus) {
       this.state.janus.destroy();
     }
@@ -274,7 +274,7 @@ class VirtualMqttClient extends Component {
     const config = GxyJanus.instanceConfig(user.janus);
     log.info("[client] Got config: ", config);
     this.initJanus(user, config, retry);
-    if (!reconnect) {
+    if (!reconnect && shidur) {
       JanusStream.initStreaming();
     }
   };
