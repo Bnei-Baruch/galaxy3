@@ -266,7 +266,7 @@ class VirtualMqttClient extends Component {
 
   initClient = (reconnect, retry = 0) => {
     this.setState({delay: true});
-    const {user,shidur} = this.state;
+    const {user, shidur} = this.state;
     if (this.state.janus) {
       this.state.janus.destroy();
     }
