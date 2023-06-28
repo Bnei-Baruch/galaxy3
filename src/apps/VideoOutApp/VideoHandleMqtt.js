@@ -92,9 +92,7 @@ class VideoHandleMqtt extends Component {
 
   onJoinMe = (list, room) => {
     const {mit} = this.state;
-    let feeds = list
-      .sort((a, b) => JSON.parse(a.display).timestamp - JSON.parse(b.display).timestamp)
-      .filter((feeder) => JSON.parse(feeder.display).role === "user");
+    let feeds = list.filter((feeder) => JSON.parse(feeder.display).role === "user");
     log.info("["+mit+"] Got publishers list: ", feeds);
     let subscription = [];
     for (let f in feeds) {
@@ -276,14 +274,37 @@ class VideoHandleMqtt extends Component {
     const controls = false;
     const muted = true;
     //const q = (<b style={{color: "red", fontSize: "20px", fontFamily: "Verdana", fontWeight: "bold"}}>?</b>);
+    
+    let finalFeeds = feeds.slice();
+    let final_num_videos = num_videos;
+    
+    // Add num of videos due to double size group videos.
+    finalFeeds.map(feed => {
+      if (feed.display.is_group) {
+        final_num_videos += 3;
+      }
+    });
 
-    let program_feeds = feeds.map((feed) => {
+    finalFeeds.sort((a, b) => {
+      // Groups should go first before non-groups.
+      // When both are groups or both non-groups use timestamp
+      // to order.
+      if (!!a.display.is_group && !b.display.is_group) {
+        return -1;
+      }
+      if (!a.display.is_group && !!b.display.is_group) {
+        return 1;
+      }
+      return a.display.timestamp - b.display.timestamp;
+    });
+
+    let program_feeds = finalFeeds.map((feed, idx) => {
       let camera = g && g.users && !!g.users.find((u) => feed.id === u.rfid && u.camera);
       if (feed) {
         let id = feed.id;
         let talk = feed.talking;
         return (
-          <div className={camera ? "video" : "hidden"} key={"prov" + id} ref={"provideo" + id} id={"provideo" + id}>
+          <div className={camera ? (feed.display.is_group ? "video is-double-size" : "video") : "hidden"} key={"prov" + id} ref={"provideo" + id} id={"provideo" + id}>
             <div className={classNames("video__overlay", {talk: talk})}>
               {/*{question ? <div className="question">*/}
               {/*    <svg viewBox="0 0 50 50">*/}
@@ -310,7 +331,7 @@ class VideoHandleMqtt extends Component {
     });
 
     return (
-      <div className={`vclient__main-wrapper no-of-videos-${num_videos} layout--equal broadcast--off`}>
+      <div className={`vclient__main-wrapper no-of-videos-${final_num_videos} layout--equal broadcast--off`}>
         <div className="videos-panel">
           <div className="videos">
             <div className="videos__wrapper">{program_feeds}</div>
