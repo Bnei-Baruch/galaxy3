@@ -14,6 +14,7 @@ import ConfigStore from "../../shared/ConfigStore";
 import {JanusMqtt} from "../../lib/janus-mqtt";
 import {short_regions, region_filter} from "../../shared/consts";
 import {isServiceID} from "../../shared/enums";
+import version from './Version.js';
 
 class ShidurAppMqtt extends Component {
   state = {
@@ -37,12 +38,14 @@ class ShidurAppMqtt extends Component {
     vip1_rooms: [],
     vip2_rooms: [],
     vip3_rooms: [],
+    vip4_rooms: [],
+    vip5_rooms: [],
     group_user: [],
     pre_groups: [],
     user: null,
     gatewaysInitialized: false,
     appInitError: null,
-    presets: {1: [], 2: [], 3: [], 4: []},
+    presets: {1: [], 2: [], 3: [], 4: [], 5: [], 6: [], 7: [], 8: []},
     region_groups: [],
     region_filter: region_filter,
     region_list: [],
@@ -93,6 +96,7 @@ class ShidurAppMqtt extends Component {
   };
 
   initApp = (user) => {
+    log.info(" :: Version :: ", version);
     this.setState({user});
     api.fetchConfig().then(data => {
       ConfigStore.setGlobalConfig(data);
@@ -175,7 +179,7 @@ class ShidurAppMqtt extends Component {
   };
 
   fetchRooms = () => {
-    let {group_user, vip1_rooms, vip2_rooms, vip3_rooms, disabled_rooms, groups, shidur_mode, preview_mode, preusers_count, region, region_list, region_groups, region_filter} = this.state;
+    let {group_user, vip1_rooms, vip2_rooms, vip3_rooms, vip4_rooms, vip5_rooms, disabled_rooms, groups, shidur_mode, preview_mode, preusers_count, region, region_list, region_groups, region_filter} = this.state;
     api
       .fetchActiveRooms()
       .then((data) => {
@@ -242,7 +246,9 @@ class ShidurAppMqtt extends Component {
         vip1_rooms = rooms.filter((r) => r.extra?.vip);
         vip2_rooms = rooms.filter((r) => r.extra?.vip2);
         vip3_rooms = rooms.filter((r) => r.extra?.vip3);
-        group_user = rooms.filter((r) => r.users.find(u => u.extra?.isGroup));
+        vip4_rooms = rooms.filter((r) => r.extra?.vip4);
+        vip5_rooms = rooms.filter((r) => r.extra?.vip5);
+        group_user = rooms.filter((r) => r.extra?.group);
 
         let quads = [
           ...this.col1.state.vquad,
@@ -252,7 +258,7 @@ class ShidurAppMqtt extends Component {
         ];
         let list = groups.filter((r) => !quads.find((q) => q && r.room === q.room));
         let questions = list.filter((room) => room.questions);
-        this.setState({group_user, quads, questions, users_count, rooms, groups, vip1_rooms, vip2_rooms, vip3_rooms, disabled_rooms, pre_groups, region_groups});
+        this.setState({group_user, quads, questions, users_count, rooms, groups, vip1_rooms, vip2_rooms, vip3_rooms, vip4_rooms, vip5_rooms, disabled_rooms, pre_groups, region_groups});
       })
       .catch((err) => {
         log.error("[Shidur] error fetching active rooms", err);
@@ -286,6 +292,9 @@ class ShidurAppMqtt extends Component {
       }
     } else if (data.type === "reload-config") {
       this.reloadConfig();
+    } else if (data.type === "state") {
+      console.log(data)
+      this.setState({...data})
     }
   };
 

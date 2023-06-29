@@ -1,13 +1,13 @@
 @mixin portrait {
-    @media only screen and (orientation: portrait) {
-        @content;
-    }
+  @media only screen and (orientation: portrait) {
+    @content;
+  }
 }
 
 @mixin landscape {
-    @media only screen and (orientation: landscape) {
-        @content;
-    }
+  @media only screen and (orientation: landscape) {
+    @content;
+  }
 }
 
 .mediaplayer {
@@ -15,48 +15,55 @@
   width: 100%;
   height: 100%;
 }
-.broadcast__wrapper{
-	position: absolute;
-	// width: 100%;
+
+.broadcast__wrapper {
+  position: absolute;
+  // width: 100%;
   // height:100%;
   top: 2px;
   right: 2px;
   left: 2px;
   bottom: 2px;
-  display:grid;
+  display: grid;
 
 }
 
 @keyframes in {
-    to {
-        opacity: 0;
-    }
-}
-@keyframes out {
   to {
-      opacity: 1;
+    opacity: 0;
   }
 }
+
+@keyframes out {
+  to {
+    opacity: 1;
+  }
+}
+
 @keyframes bottomin {
   to {
     bottom: -48px;
   }
 }
+
 @keyframes bottomout {
   to {
     bottom: 0;
   }
 }
+
 @keyframes topin {
   to {
     top: -48px;
   }
 }
+
 @keyframes topout {
   to {
     top: 0;
   }
 }
+
 // controls animation
 .controls {
   // opacity:1;
@@ -68,38 +75,47 @@
     animation: bottomin 300ms;
     animation-fill-mode: forwards;
     animation-delay: 1s;
-    .controls__dropdown{
+
+    .controls__dropdown {
       max-height: 27VH;
     }
   }
+
   &__top {
     animation: topin 300ms;
     animation-fill-mode: forwards;
     animation-delay: 1s;
   }
-  &:hover{
+
+  &:hover {
     // opacity: 1!important;
     animation: out 0s;
+
     .controls__bottom {
       animation: bottomout 0s;
     }
+
     .controls__top {
       animation: topout 0s;
     }
+
     // animation: in 500ms;
     // animation-direction: reverse;
     // animation-fill-mode: forwards;
   }
 }
+
 .controls {
   position: absolute;
   width: 100%;
   height: 100%;
   color: #ffffff;
   overflow: hidden;
+
   * {
     color: inherit;
   }
+
   &__top,
   &__bottom {
     display: flex;
@@ -108,30 +124,34 @@
     flex-wrap: wrap;
     position: absolute;
   }
+
   &__top {
     right: 0;
-    top:0;
+    top: 0;
+
     button {
       background: rgba(34, 34, 34, .85);
     }
   }
+
   &__bottom {
     background: rgba(34, 34, 34, .85);
     width: 100%;
     bottom: 0;
+
     button {
       background: none;
     }
   }
 
-    // background: linear-gradient(to top, rgb(34, 34, 34), rgba(34, 34, 34, .85));
-    // transition: opacity .25s, top .25s;
-    // opacity: 0;
+  // background: linear-gradient(to top, rgb(34, 34, 34), rgba(34, 34, 34, .85));
+  // transition: opacity .25s, top .25s;
+  // opacity: 0;
 
 
-    // .buttons-wrapper {
-    //   display: flex;
-    // }
+  // .buttons-wrapper {
+  //   display: flex;
+  // }
 
   button {
     // background: none;
@@ -142,9 +162,18 @@
     padding: 0 .5rem;
     // text-transform: lowercase;
     cursor: pointer;
-    &:hover {background: rgba(#fff, .2);}
-    &:focus {outline: none;}
-    i {margin: 0 !important;}
+
+    &:hover {
+      background: rgba(#fff, .2);
+    }
+
+    &:focus {
+      outline: none;
+    }
+
+    i {
+      margin: 0 !important;
+    }
 
     // @include small-mobile {
     //   min-width: 2rem;
@@ -155,7 +184,6 @@
   &__spacer {
     flex: 1 1 auto;
   }
-
 
 
   &__playback-rate,
@@ -177,6 +205,14 @@
     position: relative;
   }
 
+  &__toggle {
+    align-self: center;
+
+    &.ui.toggle.checkbox input~label {
+      color: white !important;
+    }
+  }
+
   // &__seekbar {
   //   flex: 1 0 100%;
   //   height: 20px;
@@ -192,145 +228,145 @@
 
 .video-selection {
   .ui.list {
-		padding: .7em;
-	}
+    padding: .7em;
+  }
 
-	.ui.divider {
-		border-top-width: 5px !important;
-	}
+  .ui.divider {
+    border-top-width: 5px !important;
+  }
 
   &.ui.modal {
-		@include landscape {
-			font-size: 3rem;
-			width: 14em;
+    @include landscape {
+      font-size: 3rem;
+      width: 14em;
 
-			i {
-				font-size: 2rem;
-			}
-		}
+      i {
+        font-size: 2rem;
+      }
+    }
 
-		@include portrait {
-			font-size: 4rem;
+    @include portrait {
+      font-size: 4rem;
 
-			i {
-				font-size: 3rem;
-			}
-		}
+      i {
+        font-size: 3rem;
+      }
+    }
 
-		.list .item {
-			display: flex;
-			justify-content: space-between;
+    .list .item {
+      display: flex;
+      justify-content: space-between;
 
-			&:after {
-				content: none;
-			}
+      &:after {
+        content: none;
+      }
 
-			&.selected {
-				background: rgba(0,0,0,.1)!important;
-				color: rgba(0,0,0,.9)!important;
-			}
+      &.selected {
+        background: rgba(0, 0, 0, .1) !important;
+        color: rgba(0, 0, 0, .9) !important;
+      }
 
-			.description {
-				color: rgba(0,0,0,.4);
-			}
-		}
-	}
+      .description {
+        color: rgba(0, 0, 0, .4);
+      }
+    }
+  }
 }
 
 .audio-selection {
   .ui.list {
-		padding: .7em;
+    padding: .7em;
 
-		.header {
-			display: flex;
-			flex-direction: row;
+    .header {
+      display: flex;
+      flex-direction: row;
 
-			@include landscape {
-				font-size: 2rem;
-				margin: 0;
-				i {
-					font-size: 3rem;
-				}
-				div {
-					margin-left: .5em;
-				}
-			}
-			@include portrait {
-				font-size: 3.5rem;
-				i {
-					font-size: 5rem;
-				}
-				div {
-					margin-left: .5em;
-				}
-			}
-		}
-	}
+      @include landscape {
+        font-size: 2rem;
+        margin: 0;
+        i {
+          font-size: 3rem;
+        }
+        div {
+          margin-left: .5em;
+        }
+      }
+      @include portrait {
+        font-size: 3.5rem;
+        i {
+          font-size: 5rem;
+        }
+        div {
+          margin-left: .5em;
+        }
+      }
+    }
+  }
 
-	.ui.divider {
-		border-top-width: 5px !important;
-	}
+  .ui.divider {
+    border-top-width: 5px !important;
+  }
 
   &.ui.modal {
-		@include landscape {
-			font-size: 2rem;
-			width: 20em;
+    @include landscape {
+      font-size: 2rem;
+      width: 20em;
 
-			i {
-				font-size: 1.5rem;
-			}
-		}
+      i {
+        font-size: 1.5rem;
+      }
+    }
 
-		@include portrait {
-			font-size: 4rem;
+    @include portrait {
+      font-size: 4rem;
 
-			i {
-				font-size: 3rem;
-			}
-		}
+      i {
+        font-size: 3rem;
+      }
+    }
 
-		.list .item {
+    .list .item {
 
-			&.selected {
-				background: rgba(0,0,0,.1)!important;
-				color: rgba(0,0,0,.9)!important;
-			}
-		}
-	}
+      &.selected {
+        background: rgba(0, 0, 0, .1) !important;
+        color: rgba(0, 0, 0, .9) !important;
+      }
+    }
+  }
 }
 
 .toolbar {
   &.ui.menu {
     border-radius: 0;
-		justify-content: center;
+    justify-content: center;
     align-items: center;
     margin: 0;
 
-		@include landscape {
-			font-size: 1rem;
-		}
-		@include portrait {
-			font-size: 2.18rem;
-		}
+    @include landscape {
+      font-size: 1rem;
+    }
+    @include portrait {
+      font-size: 2.18rem;
+    }
 
     .item:before {
       width: 0;
     }
   }
 
-	&.full-screen {
-		max-height: 3.5em;
+  &.full-screen {
+    max-height: 3.5em;
 
-		&.ui.menu {
-			left: 50%;
-			transform: translate(-50%,0%);
-		}
+    &.ui.menu {
+      left: 50%;
+      transform: translate(-50%, 0%);
+    }
 
-		.mediaplayer__volume {
-			position: absolute;
-			top: 0;
-		}
-	}
+    .mediaplayer__volume {
+      position: absolute;
+      top: 0;
+    }
+  }
 
   &.full-screen.ui.menu {
     font-size: 0.81rem;
@@ -344,20 +380,21 @@
   }
 
   &.ui.labeled.icon.menu .item {
-		min-width: 5em;
+    min-width: 5em;
 
-		&.audio-selection {
-			flex-direction: row;
-			i {
-				margin-right: 0.3em !important;
-			}
-		}
+    &.audio-selection {
+      flex-direction: row;
 
-		&.disabled {
-			color: rgba(255,255,255,.3) !important;
-		}
+      i {
+        margin-right: 0.3em !important;
+      }
+    }
 
-    >.icon {
+    &.disabled {
+      color: rgba(255, 255, 255, .3) !important;
+    }
+
+    > .icon {
       &.expand,
       &.compress,
       &.stop {
@@ -366,7 +403,7 @@
       }
     }
 
-    >.icon.stop {
+    > .icon.stop {
       font-size: 1.4em !important;
       margin: 0 !important;
     }
@@ -375,14 +412,14 @@
 
 .center-play {
   font-size: 6rem;
-	z-index: 10;
-	position: absolute;
-	display: flex;
-	justify-content: center;
-	align-items: center;
-	width: 100%;
-	height: 100%;
-	color: white;
+  z-index: 10;
+  position: absolute;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  color: white;
 }
 
 .video.video--broadcast {

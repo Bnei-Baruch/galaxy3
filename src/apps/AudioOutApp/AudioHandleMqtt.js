@@ -8,6 +8,7 @@ import ConfigStore from "../../shared/ConfigStore";
 
 class AudioHandleMqtt extends Component {
   state = {
+    janus: null,
     feeds: [],
     mids: [],
     name: "",
@@ -15,39 +16,34 @@ class AudioHandleMqtt extends Component {
     myid: null,
   };
 
-  componentDidUpdate(prevProps) {
-    let {g} = this.props;
-    let {room} = this.state;
-    if (g && JSON.stringify(g) !== JSON.stringify(prevProps.g) && g.room !== room) {
-      if (room) {
-        this.exitVideoRoom(room, () => {
-          this.initVideoRoom(g.room, g.janus);
-        });
-      } else {
-        this.initVideoRoom(g.room, g.janus);
+
+  initJanus = (inst, callback) => {
+    const {user} = this.props;
+    const token = ConfigStore.globalConfig.gateways.rooms[inst].token
+
+    log.info("[audio] Init  Janus");
+    let janus = new JanusMqtt(user, inst)
+
+    janus.init(token).then(data => {
+      log.info("[audio] init respond ", data);
+      this.setState({janus: data}, () => {
+        callback();
+      })
+    }).catch(err => {
+      log.error("[audio] Janus init", err);
+    })
+
+    janus.onStatus = (srv, status) => {
+      if(status !== "online") {
+        log.error("Janus offline")
       }
-    }
-    if (g === null && room) {
-      this.exitVideoRoom(room);
     }
   };
 
   initVideoRoom = (room, inst) => {
     log.info("[audio] Init room: ", room, inst, ConfigStore.globalConfig)
     const {user} = this.props;
-    const token = ConfigStore.globalConfig.gateways.rooms[inst].token
-
-    log.info("[audio] token", user, token)
-
-    let janus = new JanusMqtt(user, inst)
-
-    janus.onStatus = (srv, status) => {
-      if(status !== "online") {
-        setTimeout(() => {
-          this.initVideoRoom(room, inst);
-        }, 5000)
-      }
-    }
+    const {janus} = this.state;
 
     let videoroom = new PublisherPlugin();
     videoroom.subTo = this.onJoinFeed;
@@ -58,32 +54,21 @@ class AudioHandleMqtt extends Component {
     subscriber.onTrack = this.onRemoteTrack;
     subscriber.onUpdate = this.onUpdateStreams;
 
-    janus.init(token).then(data => {
-      log.info("[audio] Janus init", data)
+    janus.attach(videoroom).then(data => {
+      log.info('[audio] Publisher Handle: ', data)
 
-      janus.attach(videoroom).then(data => {
-        log.info('[audio] Publisher Handle: ', data)
-
-        videoroom.join(room, user).then(data => {
-          log.info('[audio] Joined respond :', data)
-          this.setState({janus, videoroom, user, room, remoteFeed: null});
-          this.onJoinMe(data.publishers, room)
-        }).catch(err => {
-          log.error('[audio] Join error :', err);
-        })
+      videoroom.join(room, user).then(data => {
+        log.info('[audio] Joined respond :', data);
+        this.setState({videoroom, room, remoteFeed: null});
+        this.onJoinMe(data.publishers, room)
+      }).catch(err => {
+        log.error('[audio] Join error :', err);
       })
+    })
 
-      janus.attach(subscriber).then(data => {
-        this.setState({subscriber});
-        log.info('[audio] Subscriber Handle: ', data)
-      })
-
-    }).catch(err => {
-      log.error("[audio] Janus init", err);
-      this.exitRoom(/* reconnect= */ true, () => {
-        log.error("[audio] error initializing janus", err);
-        this.reinitClient(retry);
-      });
+    janus.attach(subscriber).then(data => {
+      this.setState({subscriber});
+      log.info('[audio] Subscriber Handle: ', data);
     })
   }
 
@@ -144,19 +129,38 @@ class AudioHandleMqtt extends Component {
     }
   }
 
+  exitVideoRoom = () => {
+    const {videoroom, subscriber, janus} = this.state;
+    this.setState({feeds: [], mids: [], room: null, remoteFeed: false, creatingFeed: false});
+    janus?.detach(subscriber)
+    if(videoroom) {
+      videoroom?.leave().then(r => {
+        log.info("[audio] leave respond:", r);
+        janus.detach(videoroom)
+      }).catch(() => {
+        janus.detach(videoroom)
+      });
+    } else {
+      janus?.detach(videoroom)
+    }
+  };
 
+  exitJanus = (inst, callback) => {
+    let {janus} = this.state;
 
-  exitVideoRoom = (roomid, callback) => {
-    const {videoroom, janus} = this.state;
-    this.setState({feeds: [], mids: [], room: null, remoteFeed: false,});
+    if(!janus) {
+      this.initJanus(inst, callback)
+      return
+    }
 
-    videoroom.leave().then(r => {
-      log.info("[audio] leave respond:", r);
-
+    log.info("[audio] Exit Janus");
+    if(inst === janus.srv) {
+      callback();
+    } else {
       janus.destroy().then(() => {
-        if(typeof callback === "function") callback();
+        this.initJanus(inst, callback)
       })
-    });
+    }
   };
 
   subscribeTo = (room, subscription) => {
@@ -174,6 +178,7 @@ class AudioHandleMqtt extends Component {
       return;
     }
 
+    this.setState({creatingFeed: true});
     subscriber.join(subscription, room).then(data => {
       log.info('[audio] Subscriber join: ', data)
       this.onUpdateStreams(data.streams);
@@ -243,7 +248,6 @@ class AudioHandleMqtt extends Component {
 
   render() {
     const {feeds} = this.state;
-    const {audio} = this.props;
 
     let program_feeds = feeds.map((feed) => {
       //let name = users[feed.display.id] && users[feed.display.id].display ? users[feed.display.id].display : "";
@@ -261,7 +265,6 @@ class AudioHandleMqtt extends Component {
               id={"pa" + id}
               autoPlay={true}
               controls={true}
-              muted={!audio}
               playsInline={true}
             />
           </div>

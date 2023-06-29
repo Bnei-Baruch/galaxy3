@@ -1,7 +1,8 @@
 import React, {Component, Fragment} from "react";
-import {Label, Dropdown, Header, Icon, Grid, Image} from "semantic-ui-react";
+import classNames from "classnames";
+import {Dropdown, Grid, Header, Icon, Image, Label, Radio} from "semantic-ui-react";
 import NewWindow from "@hinaser/react-new-window";
-import {videos_options2, audiog_options2, NO_VIDEO_OPTION_VALUE} from "../../shared/consts";
+import {audiog_options2, NO_VIDEO_OPTION_VALUE, NOTRL_STREAM_ID, videos_options2} from "../../shared/consts";
 import "./BroadcastStream.scss";
 import Volume from "./components/Volume";
 import JanusStream from "../../shared/streaming-utils";
@@ -11,17 +12,17 @@ import audioOnly from "../../shared/audio_only.svg";
 import {SubtitlesContainer} from "./subtitles/SubtitlesContainer";
 
 class VirtualStreaming extends Component {
-  constructor(props) {
-    super(props);
-    this.handleFullScreenChange = this.handleFullScreenChange.bind(this);
-  }
-
   state = {
     room: Number(localStorage.getItem("room")) || null,
     user: {},
     cssFixInterval: null,
     talking: false,
   };
+
+  constructor(props) {
+    super(props);
+    this.handleFullScreenChange = this.handleFullScreenChange.bind(this);
+  }
 
   videoRef(ref) {
     JanusStream.attachVideoStream(ref);
@@ -47,7 +48,7 @@ class VirtualStreaming extends Component {
   cssFix() {
     const d = document.getElementsByClassName("controls__dropdown");
     if (d) {
-      const o = document.getElementById("video0");
+      const o = document.getElementById("video1");
       if (o) {
         Array.from(d).forEach((x) => {
           x.style.maxHeight = `${o.offsetHeight - 50}px`;
@@ -83,8 +84,26 @@ class VirtualStreaming extends Component {
     this.props.setVideo(videos);
   }
 
+  toogleTranslation = () => {
+    if (this.props.audios === NOTRL_STREAM_ID) {
+      let prev_lang = Number(localStorage.getItem("trl_lang")) || 2;
+      const audio_option = audiog_options2.find((option) => option.value === prev_lang);
+      this.props.setAudio(prev_lang, audio_option.eng_text);
+    }
+    if (this.props.audios !== NOTRL_STREAM_ID) {
+      let prev_lang = Number(localStorage.getItem("trl_lang"))
+      let curr_lang = Number(localStorage.getItem("vrt_lang")) || 2;
+      if(!prev_lang) {
+        const audio_option = audiog_options2.find((option) => option.value === curr_lang);
+        localStorage.setItem("trl_lang", curr_lang);
+        localStorage.setItem("vrt_langtext", audio_option.eng_text);
+      }
+      this.props.setAudio(NOTRL_STREAM_ID, "Original");
+    }
+  };
+
   render() {
-    const {attached, closeShidur, t, videos, layout, audios, setAudio} = this.props;
+    const {attached, closeShidur, t, videos, layout, audios, setAudio, isDoubleSize} = this.props;
     const {room, talking} = this.state;
 
     if (!room) {
@@ -97,10 +116,10 @@ class VirtualStreaming extends Component {
     const playerLang = audio_option.langKey || audio_option.key;
     const inLine = (
       <div
-        className="video video--broadcast"
-        key="v0"
+        className={classNames("video video--broadcast", {"is-double-size": isDoubleSize})}
+        key="v1"
         ref={(ref) => this.setVideoWrapperRef(ref)}
-        id="video0"
+        id="video1"
         style={{height: !attached ? "100%" : null, width: !attached ? "100%" : null}}
       >
         <div className="video__overlay">
@@ -195,8 +214,6 @@ class VirtualStreaming extends Component {
                           key={i}
                           text={option.text}
                           selected={option.value === audios}
-                          // icon={option.icon}
-                          flag={option.flag}
                           description={option.description}
                           action={option.action}
                           onClick={() => setAudio(option.value, option.eng_text)}
@@ -206,6 +223,13 @@ class VirtualStreaming extends Component {
                   </Dropdown.Menu>
                 </Dropdown>
                 <Volume media={JanusStream.audioElement} />
+                <Radio
+                  toggle
+                  className="controls__toggle"
+                  checked={this.props.audios !== NOTRL_STREAM_ID}
+                  onChange={this.toogleTranslation}
+                  label={t(`oldClient.${this.props.audios !== NOTRL_STREAM_ID ? "translationOn" : "translationOff"}`)}
+                />
                 <div className="controls__spacer"></div>
                 <button onClick={this.toggleFullScreen}>
                   <Icon name={isFullScreen(this.videoWrapper) ? "compress" : "expand"} />

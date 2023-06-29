@@ -121,6 +121,29 @@ class ToranToolsHttp extends Component {
     }
   };
 
+  clearGroup = (e, data, i) => {
+    if (this.state.delay) return;
+    e.preventDefault();
+    if (e.type === "contextmenu") {
+      if(data.extra?.group) {
+        delete data.extra?.group;
+        delete data.users;
+        api.updateRoom(data.room, data);
+      }
+      this.setDelay();
+    }
+  };
+
+  clearVip = (vip_rooms) => {
+    if(!confirm("Going to clear selected VIP groups! Are you sure?")) return
+    console.log(vip_rooms)
+    for (let i = 0; i < vip_rooms.length; i++) {
+      vip_rooms[i].extra = null;
+      delete vip_rooms[i].users;
+      api.updateRoom(vip_rooms[i].room, vip_rooms[i]);
+    }
+  }
+
   sortGroups = () => {
     let sorted_feeds = this.props.groups.slice();
     sorted_feeds.sort((a, b) => {
@@ -141,6 +164,7 @@ class ToranToolsHttp extends Component {
     if (presets[p].length === 0) {
       delete group.users;
       presets[p][0] = group;
+      mqtt.send(JSON.stringify({type: "state", presets}), true, "galaxy/service/presets");
       this.props.setProps({presets});
       return;
     }
@@ -150,6 +174,7 @@ class ToranToolsHttp extends Component {
       //remove from presets
       if (presets[p][i].room === group.room) {
         presets[p].splice(i, 1);
+        mqtt.send(JSON.stringify({type: "state", presets}), true, "galaxy/service/presets");
         this.props.setProps({presets});
         return;
       }
@@ -161,6 +186,7 @@ class ToranToolsHttp extends Component {
     //Add to presets
     delete group.users;
     presets[p].push(group);
+    mqtt.send(JSON.stringify({type: "state", presets}), true, "galaxy/service/presets");
     this.props.setProps({presets});
 
     console.log(presets);
@@ -169,6 +195,7 @@ class ToranToolsHttp extends Component {
   removeFromPreset = (p, i) => {
     let {presets} = this.props;
     presets[p].splice(i, 1);
+    mqtt.send(JSON.stringify({type: "state", presets}), true, "galaxy/service/presets");
     this.props.setProps({presets});
   };
 
@@ -256,6 +283,20 @@ class ToranToolsHttp extends Component {
       if (group) return;
       this.vipRoom("vip3")
     }
+    if(c === "Vip4") {
+      let {vip4_rooms} = this.props;
+      let {menu_group} = this.state;
+      let group = vip4_rooms.find((r) => r.room === menu_group.room);
+      if (group) return;
+      this.vipRoom("vip4")
+    }
+    if(c === "Vip5") {
+      let {vip5_rooms} = this.props;
+      let {menu_group} = this.state;
+      let group = vip5_rooms.find((r) => r.room === menu_group.room);
+      if (group) return;
+      this.vipRoom("vip5")
+    }
     this.setState({menu_open: false})
   };
 
@@ -266,6 +307,8 @@ class ToranToolsHttp extends Component {
       vip1_rooms,
       vip2_rooms,
       vip3_rooms,
+      vip4_rooms,
+      vip5_rooms,
       group_user,
       groups,
       groups_queue,
@@ -311,7 +354,7 @@ class ToranToolsHttp extends Component {
       const next = data.description === next_group;
       const active = group && group.room === room;
       const pn = (<Label circular content={pnum[room]} />);
-      const vip = extra?.vip || extra?.vip1 || extra?.vip3 ? (<Label size='mini' color='green' circular content="vip1" />) : null;
+      const vip = extra?.vip || extra?.vip2 || extra?.vip3 || extra?.vip4 || extra?.vip5 ? (<Label size='mini' color='green' circular content="vip1" />) : null;
       //const pr = presets.find(pst => pst.room === room);
       const pr = false;
       const p = pr ? (
@@ -322,7 +365,7 @@ class ToranToolsHttp extends Component {
       return (
         <Table.Row
           positive={group && group.description === description}
-          className={active ? "active" : next ? "warning" : extra?.vip || extra?.vip1 || extra?.vip3 ? "vip" : "no"}
+          className={active ? "active" : next ? "warning" : extra?.vip || extra?.vip2 || extra?.vip3 || extra?.vip4 || extra?.vip5 ? "vip" : "no"}
           key={room}
           onClick={() => this.selectGroup(data, i)}
           onContextMenu={(e) => this.selectMenuGroup(e, data)}
@@ -371,7 +414,7 @@ class ToranToolsHttp extends Component {
       const next = data.description === next_group;
       const active = group && group.room === room;
       const pn = (<Label circular content={pnum[room]} />);
-      const vip = extra?.vip || extra?.vip1 || extra?.vip3 ? (<Label size='mini' color='green' circular content="vip" />) : null;
+      const vip = extra?.vip || extra?.vip2 || extra?.vip3 || extra?.vip4 || extra?.vip5 ? (<Label size='mini' color='green' circular content="vip" />) : null;
       //const pr = presets.find(pst => pst.room === room);
       const pr = false;
       const p = pr ? (
@@ -382,7 +425,7 @@ class ToranToolsHttp extends Component {
       return (
         <Table.Row
           positive={group && group.description === description}
-          className={active ? "active" : next ? "warning" : extra?.vip || extra?.vip1 || extra?.vip3 ? "vip" : "no"}
+          className={active ? "active" : next ? "warning" : extra?.vip || extra?.vip2 || extra?.vip3 || extra?.vip4 || extra?.vip5 ? "vip" : "no"}
           key={room}
           onClick={() => this.selectGroup(data, i)}
           onContextMenu={(e) => this.selectMenuGroup(e, data)}
@@ -402,7 +445,7 @@ class ToranToolsHttp extends Component {
       const next = data.description === next_group;
       const active = group && group.room === room;
       const pn = (<Label circular content={pnum[room]} />);
-      const vip = extra?.vip || extra?.vip1 || extra?.vip3 ? (<Label size='mini' color='green' circular content="vip" />) : null;
+      const vip = extra?.vip || extra?.vip2 || extra?.vip3 || extra?.vip4 || extra?.vip5 ? (<Label size='mini' color='green' circular content="vip" />) : null;
       //const pr = presets.find(pst => pst.room === room);
       const pr = false;
       const p = pr ? (
@@ -415,7 +458,7 @@ class ToranToolsHttp extends Component {
       return (
         <Table.Row
           positive={group && group.description === description}
-          className={active ? "active" : next ? "warning" : extra?.vip || extra?.vip1 || extra?.vip3 ? "vip" : "no"}
+          className={active ? "active" : next ? "warning" : extra?.vip || extra?.vip2 || extra?.vip3 || extra?.vip4 || extra?.vip5 ? "vip" : "no"}
           key={room}
           onClick={() => this.selectGroup(data, i)}
           onContextMenu={(e) => this.selectMenuGroup(e, data)}
@@ -503,6 +546,44 @@ class ToranToolsHttp extends Component {
       );
     });
 
+    let vip4_list = vip4_rooms.map((data, i) => {
+      const {room, num_users, description, questions} = data;
+      const qs = !roomsStatistics[room] || roomsStatistics[room]["on_air"] === 0;
+      const pn = (<Label circular content={pnum[room]} />);
+      return (
+        <Table.Row
+          className="vip"
+          key={room}
+          onClick={() => this.selectGroup(data, i)}
+          onContextMenu={(e) => this.restoreRoom(e, data, i)}
+        >
+          <Table.Cell width={1}>{pn}</Table.Cell>
+          <Table.Cell width={5}>{description}</Table.Cell>
+          <Table.Cell width={1}>{num_users}</Table.Cell>
+          <Table.Cell width={1}>{questions && qs ? qf : questions ? q : ""}</Table.Cell>
+        </Table.Row>
+      );
+    });
+
+    let vip5_list = vip5_rooms.map((data, i) => {
+      const {room, num_users, description, questions} = data;
+      const qs = !roomsStatistics[room] || roomsStatistics[room]["on_air"] === 0;
+      const pn = (<Label circular content={pnum[room]} />);
+      return (
+        <Table.Row
+          className="vip"
+          key={room}
+          onClick={() => this.selectGroup(data, i)}
+          onContextMenu={(e) => this.restoreRoom(e, data, i)}
+        >
+          <Table.Cell width={1}>{pn}</Table.Cell>
+          <Table.Cell width={5}>{description}</Table.Cell>
+          <Table.Cell width={1}>{num_users}</Table.Cell>
+          <Table.Cell width={1}>{questions && qs ? qf : questions ? q : ""}</Table.Cell>
+        </Table.Row>
+      );
+    });
+
     let groups_user_list = group_user.map((data, i) => {
       const {room, num_users, description, questions} = data;
       const qs = !roomsStatistics[room] || roomsStatistics[room]["on_air"] === 0;
@@ -512,6 +593,7 @@ class ToranToolsHttp extends Component {
           className="vip"
           key={room}
           onClick={() => this.selectGroup(data, i)}
+          onContextMenu={(e) => this.clearGroup(e, data, i)}
         >
           <Table.Cell width={1}>{pn}</Table.Cell>
           <Table.Cell width={5}>{description}</Table.Cell>
@@ -527,7 +609,7 @@ class ToranToolsHttp extends Component {
     });
 
     let pst_buttons = Object.keys(presets).map((p) => {
-      const ps = p === "3" || p === "4" ? "top right" : "top left";
+      const ps = p === "5" || p === "6" || p === "7" || p === "8" ? "top right" : "top left";
       let preset = presets[p].map((data, i) => {
         const {description} = data;
         return (
@@ -577,6 +659,8 @@ class ToranToolsHttp extends Component {
                     { key: 'vip1', content: 'Vip1', icon: 'star' },
                     { key: 'vip2', content: 'Vip2', icon: 'star' },
                     { key: 'vip3', content: 'Vip3', icon: 'star' },
+                    { key: 'vip4', content: 'Vip4', icon: 'star' },
+                    { key: 'vip5', content: 'Vip5', icon: 'star' },
                     { key: 'groups', content: 'Groups', icon: 'star' },
                   ]}
                   onItemClick={(e, data) => this.selectMenu(data.content)}
@@ -737,24 +821,6 @@ class ToranToolsHttp extends Component {
               onClick={() => this.galaxyMode("lesson")}
             />
             <Button
-              disabled={galaxy_mode === "vip1"}
-              color="grey"
-              content="VIP1"
-              onClick={() => this.galaxyMode("vip1")}
-            />
-            <Button
-              disabled={galaxy_mode === "vip2"}
-              color="grey"
-              content="VIP2"
-              onClick={() => this.galaxyMode("vip2")}
-            />
-            <Button
-              disabled={galaxy_mode === "vip3"}
-              color="grey"
-              content="VIP3"
-              onClick={() => this.galaxyMode("vip3")}
-            />
-            <Button
               disabled={galaxy_mode === "groups"}
               color="grey"
               content="Groups"
@@ -767,10 +833,54 @@ class ToranToolsHttp extends Component {
               onClick={() => this.galaxyMode("shidur")}
             />
           </Button.Group>
+          <Button.Group attached="top" size="mini">
+            <Button
+              selected={galaxy_mode === "vip1"}
+              color="grey"
+              content="VIP1"
+              onClick={() => this.galaxyMode("vip1")}
+              onDoubleClick={() => this.clearVip(vip1_rooms)}
+            />
+            <Button
+              selected={galaxy_mode === "vip2"}
+              color="grey"
+              content="VIP2"
+              onClick={() => this.galaxyMode("vip2")}
+              onDoubleClick={() => this.clearVip(vip2_rooms)}
+            />
+            <Button
+              selected={galaxy_mode === "vip3"}
+              color="grey"
+              content="VIP3"
+              onClick={() => this.galaxyMode("vip3")}
+              onDoubleClick={() => this.clearVip(vip3_rooms)}
+            />
+            <Button
+              selected={galaxy_mode === "vip4"}
+              color="grey"
+              content="VIP4"
+              onClick={() => this.galaxyMode("vip4")}
+              onDoubleClick={() => this.clearVip(vip4_rooms)}
+            />
+            <Button
+              selected={galaxy_mode === "vip5"}
+              color="grey"
+              content="VIP5"
+              onClick={() => this.galaxyMode("vip5")}
+              onDoubleClick={() => this.clearVip(vip5_rooms)}
+            />
+          </Button.Group>
           <Segment attached textAlign="center" className="disabled_groups">
             <Table selectable compact="very" basic structured className="admin_table" unstackable>
               <Table.Body>
-                {galaxy_mode === "lesson" ? rooms_list : galaxy_mode === "vip1" ? vip1_list : galaxy_mode === "vip2" ? vip2_list : galaxy_mode === "vip3" ? vip3_list : galaxy_mode === "groups" ? groups_user_list : disabled_list}
+                {galaxy_mode === "lesson" ?
+                  rooms_list : galaxy_mode === "vip1" ?
+                    vip1_list : galaxy_mode === "vip2" ?
+                      vip2_list : galaxy_mode === "vip3" ?
+                        vip3_list : galaxy_mode === "vip4" ?
+                          vip4_list : galaxy_mode === "vip5" ?
+                            vip5_list : galaxy_mode === "groups" ?
+                              groups_user_list : disabled_list}
               </Table.Body>
             </Table>
           </Segment>

@@ -7,6 +7,7 @@ import log from "loglevel";
 
 class PreviewPanelMqtt extends Component {
   state = {
+    delay: false,
     feeds: [],
     subscriber: null,
     mids: [],
@@ -20,18 +21,34 @@ class PreviewPanelMqtt extends Component {
 
   componentDidUpdate(prevProps) {
     let {pg} = this.props;
-    let {room} = this.state;
+    let {room, feeds} = this.state;
     if (pg && JSON.stringify(pg) !== JSON.stringify(prevProps.pg) && pg.room !== room) {
       if (this.state.subscriber) this.state.subscriber.detach();
+      feeds.forEach(f => {
+        let e = this.refs["pv" + f.id];
+        if (e) {
+          e.src = "";
+          e.srcObject = null;
+          e.remove();
+        }
+      })
       this.setState({remoteFeed: null, mids: [], feeds: [], subscriber: null}, () => {
         this.attachPreview(this.props.pg);
       });
     }
   }
 
-  // componentWillUnmount() {
-  //   if (this.state.subscriber) this.state.subscriber.detach();
-  // }
+  setDelay = () => {
+    this.setState({delay: true});
+    setTimeout(() => {
+      this.setState({delay: false});
+    }, 3000);
+  };
+
+  nextGroup = () => {
+    this.setDelay()
+    this.props.nextInQueue();
+  };
 
   attachPreview = (g) => {
     if(!g) return
@@ -127,7 +144,7 @@ class PreviewPanelMqtt extends Component {
   }
 
   render() {
-    const {mids} = this.state;
+    const {mids, delay} = this.state;
     const width = "400";
     const height = "300";
     const autoPlay = true;
@@ -171,10 +188,11 @@ class PreviewPanelMqtt extends Component {
                 />
                 <Button
                   className="hide_button"
+                  disabled={delay}
                   size="mini"
                   color="grey"
                   icon="share"
-                  onClick={this.props.nextInQueue}
+                  onClick={this.nextGroup}
                 />
               </div>
             ) : (
