@@ -93,7 +93,20 @@ class VideoHandleMqtt extends Component {
   onJoinMe = (list, room) => {
     const {mit} = this.state;
     let feeds = list
-      .sort((a, b) => JSON.parse(a.display).timestamp - JSON.parse(b.display).timestamp)
+      .sort((a, b) => {
+        const a_display = JSON.parse(a.display);
+        const b_display = JSON.parse(b.display);
+        // Groups should go first before non-groups.
+        // When both are groups or both non-groups use timestamp
+        // to order.
+        if (!!a_display.is_group && !b_display.is_group) {
+          return -1;
+        }
+        if (!a_display.is_group && !!b_display.is_group) {
+          return 1;
+        }
+        return a_display.timestamp - b_display.timestamp;
+      })
       .filter((feeder) => JSON.parse(feeder.display).role === "user");
     log.info("["+mit+"] Got publishers list: ", feeds);
     let subscription = [];
@@ -262,8 +275,12 @@ class VideoHandleMqtt extends Component {
     let feed = mids[mid].feed_id;
     if (track.kind === "video" && on) {
       let stream = new MediaStream([track]);
-      let remotevideo = this.refs["pv" + feed];
-      if (remotevideo) remotevideo.srcObject = stream;
+      for (const key of Object.keys(this.refs)) {
+        if (key.startsWith("pv" + feed)) {
+          const remoteVideo = this.refs[key];
+          if (remoteVideo) remoteVideo.srcObject = stream;
+        }
+      }
     }
   }
 
@@ -276,14 +293,50 @@ class VideoHandleMqtt extends Component {
     const controls = false;
     const muted = true;
     //const q = (<b style={{color: "red", fontSize: "20px", fontFamily: "Verdana", fontWeight: "bold"}}>?</b>);
+    
+    let finalFeeds = feeds.slice();
+    let final_num_videos = num_videos;
+    
+    // Following code allows faking cameras by duplicating feeds
+    // used for dev testing only (set > 0 to add videos).
+    /*
+    const devPrependGroupVideos = 3;
+    const devAppendVideos = 2;
+    const visibleFeed = finalFeeds.find(feed => g && g.users && !!g.users.find((u) => feed.id === u.rfid && u.camera));
+    if (devPrependGroupVideos && visibleFeed) {
+      for (let i = 0; i < devPrependGroupVideos ; i++) {
+        const first = Object.assign({}, visibleFeed);
+        first.display = Object.assign({}, first.display);
+        first.display.is_group = true;
+        finalFeeds.unshift(first);
+      }
+      final_num_videos += devAppendVideos;
+    }
+    if (devAppendVideos && visibleFeed) {
+      for (let i = 0; i < devAppendVideos; i++) {
+        const last = Object.assign({}, visibleFeed);
+        last.display = Object.assign({}, last.display);
+        last.display.is_group = false;
+        finalFeeds.push(last);
+      }
+      final_num_videos += devAppendVideos;
+    }
+    */
 
-    let program_feeds = feeds.map((feed) => {
+    // Add num of videos due to double size group videos.
+    finalFeeds.map(feed => {
+      if (feed.display.is_group) {
+        final_num_videos += 3;
+      }
+    });
+
+    let program_feeds = finalFeeds.map((feed, idx) => {
       let camera = g && g.users && !!g.users.find((u) => feed.id === u.rfid && u.camera);
       if (feed) {
         let id = feed.id;
         let talk = feed.talking;
         return (
-          <div className={camera ? "video" : "hidden"} key={"prov" + id} ref={"provideo" + id} id={"provideo" + id}>
+          <div className={camera ? (feed.display.is_group ? "video is-double-size" : "video") : "hidden"} key={"prov" + idx} ref={"provideo" + id} id={"provideo" + id}>
             <div className={classNames("video__overlay", {talk: talk})}>
               {/*{question ? <div className="question">*/}
               {/*    <svg viewBox="0 0 50 50">*/}
@@ -294,8 +347,8 @@ class VideoHandleMqtt extends Component {
             </div>
             <video
               key={id}
-              ref={"pv" + id}
-              id={"pv" + id}
+              ref={"pv" + id + `_${idx}`}
+              id={"pv" + id + `_${idx}`}
               width={width}
               height={height}
               autoPlay={autoPlay}
@@ -310,7 +363,7 @@ class VideoHandleMqtt extends Component {
     });
 
     return (
-      <div className={`vclient__main-wrapper no-of-videos-${num_videos} layout--equal broadcast--off`}>
+      <div className={`vclient__main-wrapper no-of-videos-${final_num_videos} layout--equal broadcast--off`}>
         <div className="videos-panel">
           <div className="videos">
             <div className="videos__wrapper">{program_feeds}</div>
