@@ -160,7 +160,7 @@ class VirtualMqttClient extends Component {
     user.extra = {};
 
     let browser = platform.parse(system);
-    if (!/Safari|Firefox|Chrome/.test(browser.name)) {
+    if (!/Safari|Firefox|Chrome|Edge/.test(browser.name)) {
       alert(t("oldClient.browserNotSupported"));
       return;
     }
