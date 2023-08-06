@@ -51,17 +51,30 @@ const useStyles = makeStyles()(() => ({
   }
 }));
 
+const STORAGE_KEY = "donation_modal"
+const needRender = () => {
+  const _now = new Date()
+  const _day = _now.getDay()
+  if (_day > 1) return false
+  if (_day === 1 && _now.getHours() > 6) return false
+  return localStorage.getItem(STORAGE_KEY) !== _now.getMonth().toString();
+
+}
 const DonationModal = () => {
   const {t} = useTranslation();
   const [open, setOpen] = useState(true)
   const theme = useTheme();
-  const {palette: {background: {paper}, mode, primary: {contrastText}}} = theme;
+  const {palette: {background: {paper}, primary: {contrastText}}} = theme;
   const language = getLanguage();
 
   const isRtl = language === "he";
   const {classes} = useStyles(isRtl);
 
-  const onClose = () => setOpen(false)
+  if (!needRender()) return null
+  const onClose = () => {
+    localStorage.setItem(STORAGE_KEY, (new Date()).getMonth().toString())
+    setOpen(false)
+  }
 
   return (
     <Modal
@@ -114,7 +127,7 @@ const DonationModal = () => {
           </Typography>
         </Box>
         <Box textAlign={isRtl ? "left" : "right"}>
-          <Button className={classes.btn}>
+          <Button className={classes.btn} onClick={onClose}>
             {t("settings.donationBtn")}
           </Button>
         </Box>
