@@ -224,7 +224,7 @@ export class PublisherPlugin extends EventEmitter {
       this.iceState = e.target.connectionState
 
       if(this.iceState === "disconnected") {
-        this.iceRestart()
+        //this.iceRestart()
       }
 
       // ICE restart does not help here, peer connection will be down
@@ -255,7 +255,7 @@ export class PublisherPlugin extends EventEmitter {
           log.debug("[publisher] ICE Restart try: " + count)
         }
       }, 1000);
-    },1000)
+    },3000)
   }
 
   success(janus, janusHandleId) {
@@ -332,7 +332,7 @@ export class PublisherPlugin extends EventEmitter {
 
   webrtcState(isReady) {
     log.info('[publisher] webrtcState: RTCPeerConnection is: ' + (isReady ? "up" : "down"))
-    if(isReady === "down") this.iceFailed("publisher")
+    if(!isReady) this.iceFailed("publisher")
   }
 
   detach() {

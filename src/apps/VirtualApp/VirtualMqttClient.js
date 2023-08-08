@@ -274,14 +274,18 @@ class VirtualMqttClient extends Component {
     const config = GxyJanus.instanceConfig(user.janus);
     log.info("[client] Got config: ", config);
     this.initJanus(user, config, retry);
-    if (!reconnect) {
-      JanusStream.initStreaming();
-    }
+    JanusStream.initStreaming();
   };
 
   reinitClient = (retry) => {
     retry++;
     log.error("[client] reinitializing try: ", retry);
+    if(!mqtt.isConnected) {
+      log.error("[client] mqtt is not connected, waiting 5 sec");
+      setTimeout(() => {
+        this.reinitClient(retry);
+      }, 5000);
+    }
     if (retry < 10) {
       setTimeout(() => {
         this.initClient(true, retry);
@@ -297,7 +301,7 @@ class VirtualMqttClient extends Component {
     iceFailed = (data) => {
         log.warn("[client] iceFailed for: ", data);
         alert("ICE Failed for: - " + data);
-        this.exitRoom(true, () => {})
+      this.exitRoom();
     };
 
   initJanus = (user, config, retry) => {
@@ -503,17 +507,18 @@ class VirtualMqttClient extends Component {
   exitRoom = (reconnect, callback) => {
     this.setState({delay: true});
     const {videoroom} = this.state;
+    this.resetClient(reconnect, callback);
 
-    if(videoroom) {
-      videoroom.leave().then((data) => {
-        log.info("[client] leave respond:", data);
-        this.resetClient(reconnect, callback);
-      }).catch(e => {
-        this.resetClient(reconnect, callback);
-      });
-    } else {
-      this.resetClient(reconnect, callback);
-    }
+    // if(videoroom) {
+    //   videoroom.leave().then((data) => {
+    //     log.info("[client] leave respond:", data);
+    //     this.resetClient(reconnect, callback);
+    //   }).catch(e => {
+    //     this.resetClient(reconnect, callback);
+    //   });
+    // } else {
+    //   this.resetClient(reconnect, callback);
+    // }
   };
 
   resetClient = (reconnect, callback) => {
