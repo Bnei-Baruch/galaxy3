@@ -294,6 +294,12 @@ class VirtualMqttClient extends Component {
     }
   };
 
+    iceFailed = (data) => {
+        log.warn("[client] iceFailed for: ", data);
+        alert("ICE Failed for: - " + data);
+        this.exitRoom(true, () => {})
+    };
+
   initJanus = (user, config, retry) => {
     let janus = new JanusMqtt(user, config.name);
     janus.onStatus = (srv, status) => {
@@ -314,10 +320,12 @@ class VirtualMqttClient extends Component {
     videoroom.subTo = this.makeSubscription;
     videoroom.unsubFrom = this.unsubscribeFrom;
     videoroom.talkEvent = this.handleTalking;
+    videoroom.iceFailed = this.iceFailed;
 
     let subscriber = new SubscriberPlugin(config.iceServers);
     subscriber.onTrack = this.onRemoteTrack;
     subscriber.onUpdate = this.onUpdateStreams;
+    subscriber.iceFailed = this.iceFailed;
 
     janus.init(config.token).then((data) => {
         log.info("[client] Janus init", data);
