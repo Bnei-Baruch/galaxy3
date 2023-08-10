@@ -92,7 +92,9 @@ class VideoHandleMqtt extends Component {
 
   onJoinMe = (list, room) => {
     const {mit} = this.state;
-    let feeds = list.filter((feeder) => JSON.parse(feeder.display).role === "user");
+    let feeds = list
+      .sort((a, b) => JSON.parse(a.display).timestamp - JSON.parse(b.display).timestamp)
+      .filter((feeder) => JSON.parse(feeder.display).role === "user");
     log.info("["+mit+"] Got publishers list: ", feeds);
     let subscription = [];
     for (let f in feeds) {
@@ -275,36 +277,13 @@ class VideoHandleMqtt extends Component {
     const muted = true;
     //const q = (<b style={{color: "red", fontSize: "20px", fontFamily: "Verdana", fontWeight: "bold"}}>?</b>);
 
-    let finalFeeds = feeds.slice();
-    let final_num_videos = num_videos;
-
-    // Add num of videos due to double size group videos.
-    finalFeeds.map(feed => {
-      if (feed.display.is_group) {
-        final_num_videos += 3;
-      }
-    });
-
-    finalFeeds.sort((a, b) => {
-      // Groups should go first before non-groups.
-      // When both are groups or both non-groups use timestamp
-      // to order.
-      if (!!a.display.is_group && !b.display.is_group) {
-        return -1;
-      }
-      if (!a.display.is_group && !!b.display.is_group) {
-        return 1;
-      }
-      return a.display.timestamp - b.display.timestamp;
-    });
-
-    let program_feeds = finalFeeds.map((feed, idx) => {
+    let program_feeds = feeds.map((feed) => {
       let camera = g && g.users && !!g.users.find((u) => feed.id === u.rfid && u.camera);
       if (feed) {
         let id = feed.id;
-        let talk = feed.talking;
+        let talk = feed.talking && this.props.qst;
         return (
-          <div className={camera ? (feed.display.is_group ? "video is-double-size" : "video") : "hidden"} key={"prov" + id} ref={"provideo" + id} id={"provideo" + id}>
+          <div className={camera ? "video" : "hidden"} key={"prov" + id} ref={"provideo" + id} id={"provideo" + id}>
             <div className={classNames("video__overlay", {talk: talk})}>
               {/*{question ? <div className="question">*/}
               {/*    <svg viewBox="0 0 50 50">*/}

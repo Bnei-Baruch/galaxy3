@@ -84,9 +84,9 @@ class VideoOutMqtt extends Component {
     api.setBasicAuth(API_BACKEND_USERNAME, API_BACKEND_PASSWORD);
 
     api.fetchConfig().then((data) => {
-        ConfigStore.setGlobalConfig(data);
-        GxyJanus.setGlobalConfig(data);
-      }).then(() => this.initGateways(user))
+      ConfigStore.setGlobalConfig(data);
+      GxyJanus.setGlobalConfig(data);
+    }).then(() => this.initGateways(user))
       .catch((err) => {
         log.error("[SDIOut] error initializing app", err);
         this.setState({appInitError: err});
@@ -159,8 +159,8 @@ class VideoOutMqtt extends Component {
 
   reloadConfig = () => {
     api.fetchConfig().then((data) => {
-        GxyJanus.setGlobalConfig(data);
-      })
+      GxyJanus.setGlobalConfig(data);
+    })
       .catch((err) => {
         log.error("[User] error reloading config", err);
       });
