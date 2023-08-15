@@ -7,6 +7,13 @@ import {makeStyles} from "tss-react/mui";
 import {useTheme} from "@mui/material/styles";
 import {getLanguage} from "../../../i18n/i18n";
 
+
+const URL_BY_LANG = {
+  "he": "https://www.kab1.com/?utm_source=arvut_system&utm_medium=popup&utm_campaign=donations&utm_id=donations&utm_term=heb&utm_content=popup_link_donate",
+  "en": "https://www.kab1.com/en?utm_source=arvut_system&utm_medium=popup&utm_campaign=donations&utm_id=donations&utm_term=eng&utm_content=popup_link_donate",
+  "ru": "https://www.kab1.com/ru?utm_source=arvut_system&utm_medium=popup&utm_campaign=donations&utm_id=donations&utm_term=rus&utm_content=popup_link_donate",
+  "es": "https://www.kab1.com/es?utm_source=arvut_system&utm_medium=popup&utm_campaign=donations&utm_id=donations&utm_term=spa&utm_content=popup_link_donate"
+}
 const useStyles = makeStyles()(() => ({
   modal: {
     border: "none",
@@ -53,6 +60,7 @@ const useStyles = makeStyles()(() => ({
 
 const STORAGE_KEY = "donation_modal"
 const needRender = () => {
+  return true
   const _now = new Date()
   const _day = _now.getDay()
   if (_day > 1) return false
@@ -127,7 +135,13 @@ const DonationModal = () => {
           </Typography>
         </Box>
         <Box textAlign={isRtl ? "left" : "right"}>
-          <Button className={classes.btn} onClick={onClose}>
+          <Button
+            component={"a"}
+            target="_blank"
+            href={URL_BY_LANG[language] || URL_BY_LANG["en"]}
+            className={classes.btn}
+            onClick={onClose}
+          >
             {t("settings.donationBtn")}
           </Button>
         </Box>
