@@ -60,7 +60,6 @@ const useStyles = makeStyles()(() => ({
 
 const STORAGE_KEY = "donation_modal"
 const needRender = () => {
-  return true
   const _now = new Date()
   const _day = _now.getDay()
   if (_day > 1) return false
