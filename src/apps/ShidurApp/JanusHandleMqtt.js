@@ -172,7 +172,7 @@ class JanusHandleMqtt extends Component {
   subscribeTo = (room, subscription) => {
     let {janus, creatingFeed, remoteFeed, subscriber, mit} = this.state
 
-    if (remoteFeed) {
+    if (remoteFeed && subscriber) {
       subscriber.sub(subscription);
       return;
     }
