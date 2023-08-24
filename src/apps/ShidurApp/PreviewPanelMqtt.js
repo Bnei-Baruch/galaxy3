@@ -95,7 +95,7 @@ class PreviewPanelMqtt extends Component {
     let janus = gateways[inst];
     let {creatingFeed, remoteFeed, subscriber, room} = this.state
 
-    if (remoteFeed) {
+    if (remoteFeed && subscriber) {
       subscriber.sub(subscription);
       return;
     }

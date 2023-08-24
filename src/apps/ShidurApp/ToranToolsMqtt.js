@@ -98,7 +98,7 @@ class ToranToolsMqtt extends Component {
     let {disabled_rooms} = this.props;
     let exist = disabled_rooms.find((r) => r.room === group.room);
     if (exist) return;
-    api.updateRoom(group.room, group);
+    //api.updateRoom(group.room, group);
     this.setDelay();
   };
 
@@ -115,7 +115,7 @@ class ToranToolsMqtt extends Component {
     if (e.type === "contextmenu") {
       data.extra = null;
       delete data.users;
-      api.updateRoom(data.room, data);
+      //api.updateRoom(data.room, data);
       this.setDelay();
     }
   };
@@ -139,7 +139,7 @@ class ToranToolsMqtt extends Component {
     for (let i = 0; i < vip_rooms.length; i++) {
       vip_rooms[i].extra = null;
       delete vip_rooms[i].users;
-      api.updateRoom(vip_rooms[i].room, vip_rooms[i]);
+      //api.updateRoom(vip_rooms[i].room, vip_rooms[i]);
     }
   }
 

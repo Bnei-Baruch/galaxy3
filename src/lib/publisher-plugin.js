@@ -54,20 +54,22 @@ export class PublisherPlugin extends EventEmitter {
   }
 
   leave() {
-    const body = {request: "leave", room: this.roomId};
-    return new Promise((resolve, reject) => {
-      this.transaction('message', { body }, 'event').then((param) => {
-        log.info("[publisher] leave: ", param)
-        const {data, json } = param
+    if(this.roomId) {
+      const body = {request: "leave", room: this.roomId};
+      return new Promise((resolve, reject) => {
+        this.transaction('message', { body }, 'event').then((param) => {
+          log.info("[publisher] leave: ", param)
+          const {data, json } = param
 
-        if(data)
-          resolve(data);
+          if(data)
+            resolve(data);
 
-      }).catch((err) => {
-        log.debug('[publisher] error leave room', err)
-        reject(err)
+        }).catch((err) => {
+          log.debug('[publisher] error leave room', err)
+          reject(err)
+        })
       })
-    })
+    }
   }
 
   publish(video, audio) {
@@ -332,7 +334,7 @@ export class PublisherPlugin extends EventEmitter {
 
   webrtcState(isReady) {
     log.info('[publisher] webrtcState: RTCPeerConnection is: ' + (isReady ? "up" : "down"))
-    if(!isReady) this.iceFailed("publisher")
+    //if(!isReady) this.iceFailed("publisher")
   }
 
   detach() {

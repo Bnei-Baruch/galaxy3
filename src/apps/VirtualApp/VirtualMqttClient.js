@@ -5,7 +5,7 @@ import {checkNotification, geoInfo, getDateString, notifyMe, sendUserState, upda
 import "./VirtualClient.scss";
 import "./VideoConteiner.scss";
 import "./CustomIcons.scss";
-import "eqcss";
+//import "eqcss";
 import VirtualChat from "./VirtualChat";
 import {media_object, NO_VIDEO_OPTION_VALUE, sketchesByLang, VIDEO_360P_OPTION_VALUE} from "../../shared/consts";
 import {GEO_IP_INFO, PAY_USER_FEE} from "../../shared/env";

@@ -162,7 +162,9 @@ export class SubscriberPlugin extends EventEmitter {
         };
       }
 
-      return this.transaction('trickle', { candidate })
+      if(candidate) {
+        return this.transaction('trickle', { candidate })
+      }
     };
 
     this.pc.onconnectionstatechange = (e) => {
@@ -280,7 +282,7 @@ export class SubscriberPlugin extends EventEmitter {
 
   webrtcState (isReady) {
     log.info('[subscriber] webrtcState: RTCPeerConnection is: ' + (isReady ? "up" : "down"))
-    if(!isReady) this.iceFailed("subscriber")
+    //if(!isReady) this.iceFailed("subscriber")
   }
 
   detach () {
