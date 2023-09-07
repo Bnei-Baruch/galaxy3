@@ -160,8 +160,9 @@ export class SubscriberPlugin extends EventEmitter {
           "sdpMLineIndex": e.candidate.sdpMLineIndex
         };
       }
-
-      return this.transaction('trickle', { candidate })
+      if(candidate) {
+        return this.transaction('trickle', { candidate })
+      }
     };
 
     this.pc.onconnectionstatechange = (e) => {
