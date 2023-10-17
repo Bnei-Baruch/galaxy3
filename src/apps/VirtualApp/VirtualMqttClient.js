@@ -47,6 +47,7 @@ import {SubscriberPlugin} from "../../lib/subscriber-plugin";
 import log from "loglevel";
 import Donations from "./buttons/Donations";
 import version from './Version.js';
+import {PopUp} from "./components/PopUp"
 
 const sortAndFilterFeeds = (feeds) =>
   feeds
@@ -67,6 +68,7 @@ const sortAndFilterFeeds = (feeds) =>
 const userFeeds = (feeds) => feeds.filter((feed) => feed.display.role === userRolesEnum.user);
 const monitoringData =  new MonitoringData();
 
+
 class VirtualMqttClient extends Component {
   state = {
     chatMessagesCount: 0,
@@ -77,6 +79,7 @@ class VirtualMqttClient extends Component {
     video: null,
     janus: null,
     exit_room: true,
+    show_notification: false,
     feeds: [],
     rooms: [],
     room: "",
@@ -301,10 +304,10 @@ class VirtualMqttClient extends Component {
 
     iceFailed = (data) => {
       const {exit_room} = this.state;
-      if(!exit_room) {
-        log.warn("[client] iceFailed for: ", data);
-        alert("ICE Failed for: - " + data);
+      if(!exit_room && data === "publisher") {
+        this.setState({show_notification: true});
         this.exitRoom();
+        log.warn("[client] iceFailed for: ", data);
       }
     };
 
@@ -1514,7 +1517,7 @@ class VirtualMqttClient extends Component {
   }
 
   render() {
-    const {delay, appInitError, attachedSource, cammuted, currentLayout, feeds, media, muteOtherCams, myid, numberOfVirtualUsers, room, rooms, selected_room, shidur, user, videos, isSettings, audios, shidurForGuestReady, isGroup, hideDisplays, isKliOlamiShown, kliOlamiAttached} = this.state;
+    const {show_notification, delay, appInitError, attachedSource, cammuted, currentLayout, feeds, media, muteOtherCams, myid, numberOfVirtualUsers, room, rooms, selected_room, shidur, user, videos, isSettings, audios, shidurForGuestReady, isGroup, hideDisplays, isKliOlamiShown, kliOlamiAttached} = this.state;
 
     if (appInitError) {
       return (
@@ -1618,6 +1621,7 @@ class VirtualMqttClient extends Component {
 
     return (
       <Fragment>
+        <PopUp show={show_notification} setClose={() => this.setState({show_notification: false})}/>
         {user && Boolean(room) && (
           <SettingsJoined
             userDisplay={user.display}
