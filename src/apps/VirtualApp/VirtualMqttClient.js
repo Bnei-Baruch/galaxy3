@@ -76,6 +76,7 @@ class VirtualMqttClient extends Component {
     audio: null,
     video: null,
     janus: null,
+    exit_room: true,
     feeds: [],
     rooms: [],
     room: "",
@@ -299,9 +300,12 @@ class VirtualMqttClient extends Component {
   };
 
     iceFailed = (data) => {
+      const {exit_room} = this.state;
+      if(!exit_room) {
         log.warn("[client] iceFailed for: ", data);
         alert("ICE Failed for: - " + data);
-      this.exitRoom();
+        this.exitRoom();
+      }
     };
 
   initJanus = (user, config, retry) => {
@@ -442,6 +446,7 @@ class VirtualMqttClient extends Component {
   };
 
   joinRoom = (reconnect, janus, videoroom, user) => {
+    this.setState({exit_room: false});
     let {selected_room, media, cammuted, isGroup} = this.state;
     const {video: {device}} = media;
 
@@ -505,20 +510,20 @@ class VirtualMqttClient extends Component {
   };
 
   exitRoom = (reconnect, callback) => {
-    this.setState({delay: true});
+    this.setState({delay: true, exit_room: true});
     const {videoroom} = this.state;
     this.resetClient(reconnect, callback);
 
-    // if(videoroom) {
-    //   videoroom.leave().then((data) => {
-    //     log.info("[client] leave respond:", data);
-    //     this.resetClient(reconnect, callback);
-    //   }).catch(e => {
-    //     this.resetClient(reconnect, callback);
-    //   });
-    // } else {
-    //   this.resetClient(reconnect, callback);
-    // }
+    if(videoroom) {
+      videoroom.leave().then((data) => {
+        log.info("[client] leave respond:", data);
+        this.resetClient(reconnect, callback);
+      }).catch(e => {
+        this.resetClient(reconnect, callback);
+      });
+    } else {
+      this.resetClient(reconnect, callback);
+    }
   };
 
   resetClient = (reconnect, callback) => {
