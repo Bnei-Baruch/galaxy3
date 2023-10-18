@@ -16,6 +16,7 @@ export class PublisherPlugin extends EventEmitter {
     this.unsubFrom = null
     this.talkEvent = null
     this.iceState = null
+    this.iceFailed = null
     this.pc = new RTCPeerConnection({
       iceServers: list
     })
@@ -227,12 +228,12 @@ export class PublisherPlugin extends EventEmitter {
       this.iceState = e.target.connectionState
 
       if(this.iceState === "disconnected") {
-        this.iceRestart()
+        //this.iceRestart()
       }
 
       // ICE restart does not help here, peer connection will be down
       if(this.iceState === "failed") {
-        //TODO: handle failed ice state
+        this.iceFailed("publisher")
       }
 
     };
@@ -253,11 +254,12 @@ export class PublisherPlugin extends EventEmitter {
         } else if (count >= 10) {
           clearInterval(chk);
           log.error("[publisher] - ICE Restart failed - ");
+          this.iceFailed("publisher")
         } else {
           log.debug("[publisher] ICE Restart try: " + count)
         }
       }, 1000);
-    },1000)
+    },3000)
   }
 
   success(janus, janusHandleId) {
@@ -334,7 +336,7 @@ export class PublisherPlugin extends EventEmitter {
 
   webrtcState(isReady) {
     log.info('[publisher] webrtcState: RTCPeerConnection is: ' + (isReady ? "up" : "down"))
-    //this.emit('webrtcState', isReady, cause)
+    if(!isReady) this.iceFailed("publisher")
   }
 
   detach() {

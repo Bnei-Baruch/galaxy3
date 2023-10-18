@@ -15,6 +15,7 @@ export class SubscriberPlugin extends EventEmitter {
     this.onTrack = null
     this.onUpdate = null
     this.iceState = null
+    this.iceFailed = null
     this.pc = new RTCPeerConnection({
       iceServers: list
     })
@@ -169,12 +170,12 @@ export class SubscriberPlugin extends EventEmitter {
       log.info("[subscriber] ICE State: ", e.target.connectionState)
       this.iceState = e.target.connectionState
       if(this.iceState === "disconnected") {
-        this.iceRestart()
+        //this.iceRestart()
       }
 
       // ICE restart does not help here, peer connection will be down
       if(this.iceState === "failed") {
-        //TODO: handle failed ice state
+        this.iceFailed("subscriber")
       }
 
     }
@@ -212,6 +213,7 @@ export class SubscriberPlugin extends EventEmitter {
         } else if (count >= 10) {
           clearInterval(chk);
           log.error("[subscriber] - ICE Restart failed - ");
+          this.iceFailed("subscriber")
         } else {
           log.debug("[subscriber] ICE Restart try: " + count)
         }
@@ -279,7 +281,7 @@ export class SubscriberPlugin extends EventEmitter {
 
   webrtcState (isReady) {
     log.info('[subscriber] webrtcState: RTCPeerConnection is: ' + (isReady ? "up" : "down"))
-    //this.emit('webrtcState', isReady, cause)
+    if(!isReady) this.iceFailed("subscriber")
   }
 
   detach () {

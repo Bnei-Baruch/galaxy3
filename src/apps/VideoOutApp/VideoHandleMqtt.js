@@ -281,7 +281,7 @@ class VideoHandleMqtt extends Component {
       let camera = g && g.users && !!g.users.find((u) => feed.id === u.rfid && u.camera);
       if (feed) {
         let id = feed.id;
-        let talk = feed.talking;
+        let talk = feed.talking && this.props.qst;
         return (
           <div className={camera ? "video" : "hidden"} key={"prov" + id} ref={"provideo" + id} id={"provideo" + id}>
             <div className={classNames("video__overlay", {talk: talk})}>
