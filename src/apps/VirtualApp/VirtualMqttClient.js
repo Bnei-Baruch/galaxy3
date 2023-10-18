@@ -307,6 +307,7 @@ class VirtualMqttClient extends Component {
       if(!exit_room && data === "publisher") {
         this.setState({show_notification: true});
         this.exitRoom();
+        captureMessage("reconnect", {});
         log.warn("[client] iceFailed for: ", data);
       }
     };
