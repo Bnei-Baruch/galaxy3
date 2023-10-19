@@ -270,7 +270,7 @@ class VirtualMqttClient extends Component {
 
   initClient = (reconnect, retry = 0) => {
     this.setState({delay: true});
-    const {user} = this.state;
+    const {user, shidur} = this.state;
     if (this.state.janus) {
       this.state.janus.destroy();
     }
@@ -278,7 +278,9 @@ class VirtualMqttClient extends Component {
     const config = GxyJanus.instanceConfig(user.janus);
     log.info("[client] Got config: ", config);
     this.initJanus(user, config, retry);
-    JanusStream.initStreaming();
+    if (!reconnect && shidur) {
+      JanusStream.initStreaming();
+    }
   };
 
   reinitClient = (retry) => {
@@ -757,7 +759,7 @@ class VirtualMqttClient extends Component {
 
     if (type === "client-reconnect" && user.id === id) {
       this.exitRoom(true, () => {
-        this.initClient(true);
+        this.reinitClient(0);
       });
     } else if (type === "client-reload" && user.id === id) {
       window.location.reload();
