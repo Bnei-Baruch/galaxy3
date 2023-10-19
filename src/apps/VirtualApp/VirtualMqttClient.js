@@ -516,7 +516,6 @@ class VirtualMqttClient extends Component {
   exitRoom = (reconnect, callback) => {
     this.setState({delay: true, exit_room: true});
     const {videoroom} = this.state;
-    this.resetClient(reconnect, callback);
 
     if(videoroom) {
       videoroom.leave().then((data) => {
