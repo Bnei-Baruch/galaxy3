@@ -47,13 +47,8 @@ export class SubscriberPlugin extends EventEmitter {
         }
 
         if(json?.jsep) {
-          this.pc.setRemoteDescription(new RTCSessionDescription(json.jsep)).then(() => {
-            return this.pc.createAnswer()
-          }).then(answer => {
-            log.info('[subscriber] answerCreated')
-            this.pc.setLocalDescription(answer)
-            this.start(answer)
-          })
+          log.debug('[subscriber] Got jsep: ', json.jsep)
+          this.handleJsep(json.jsep)
         }
 
         if(data)
@@ -71,7 +66,7 @@ export class SubscriberPlugin extends EventEmitter {
     return new Promise((resolve, reject) => {
       this.transaction('message', { body }, 'event').then((param) => {
         log.info("[subscriber] Unsubscribe from: ", param)
-        const {data, json } = param;
+        const {data, json} = param;
 
         if(data?.videoroom === "updated") {
           log.info('[subscriber] Streams updated: ', data.streams)
@@ -79,13 +74,8 @@ export class SubscriberPlugin extends EventEmitter {
         }
 
         if(json?.jsep) {
-          this.pc.setRemoteDescription(new RTCSessionDescription(json.jsep)).then(() => {
-            return this.pc.createAnswer()
-          }).then(answer => {
-            log.info('[subscriber] answerCreated')
-            this.pc.setLocalDescription(answer)
-            this.start(answer)
-          })
+          log.debug('[subscriber] Got jsep: ', json.jsep)
+          this.handleJsep(json.jsep)
         }
 
         if(data)
@@ -98,13 +88,13 @@ export class SubscriberPlugin extends EventEmitter {
     })
   };
 
-  join (subscription, roomId) {
+  join(subscription, roomId) {
     this.roomId = roomId
     const body = {request: "join", room: roomId, ptype: "subscriber", streams: subscription};
     return new Promise((resolve, reject) => {
       this.transaction('message', { body }, 'event').then((param) => {
         log.info("[subscriber] join: ", param)
-        const {data, json } = param
+        const {data, json} = param
 
         if(data)
           resolve(data);
@@ -113,15 +103,7 @@ export class SubscriberPlugin extends EventEmitter {
 
         if(json?.jsep) {
           log.debug('[subscriber] Got jsep: ', json.jsep)
-          this.pc.setRemoteDescription(new RTCSessionDescription(json.jsep)).then(() => {
-            return this.pc.createAnswer()
-          }).then(answer => {
-            log.debug('[subscriber] Answer created', answer)
-            this.pc.setLocalDescription(answer).then(data => {
-              log.debug('[subscriber] setLocalDescription', data)
-            }).catch(error => log.error(error, answer))
-            this.start(answer)
-          })
+          this.handleJsep(json.jsep)
         }
 
       }).catch((err) => {
@@ -136,17 +118,26 @@ export class SubscriberPlugin extends EventEmitter {
     return this.transaction('message', { body }, 'event').then((param) => {
       log.info('[subscriber] iceRestart: ', param)
       const { json } = param || {}
-      this.pc.setRemoteDescription(new RTCSessionDescription(json.jsep)).then(() => {
-        return this.pc.createAnswer()
-      }).then(answer => {
-        log.info('[subscriber] iceRestart answerCreated', answer)
-        this.pc.setLocalDescription(answer)
-        this.start(answer)
-      })
+      if(json?.jsep) {
+        log.debug('[subscriber] Got jsep: ', json.jsep)
+        this.handleJsep(json.jsep)
+      }
     })
   }
 
-  start (answer) {
+  handleJsep(jsep) {
+    this.pc.setRemoteDescription(new RTCSessionDescription(jsep)).then(() => {
+      return this.pc.createAnswer()
+    }).then(answer => {
+      log.debug('[subscriber] Answer created', answer)
+      this.pc.setLocalDescription(answer).then(data => {
+        log.debug('[subscriber] setLocalDescription', data)
+      }).catch(error => log.error(error, answer))
+      this.start(answer)
+    })
+  }
+
+  start(answer) {
     const body = { request: 'start', room: this.roomId }
     return new Promise((resolve, reject) => {
       const jsep = answer
@@ -155,7 +146,7 @@ export class SubscriberPlugin extends EventEmitter {
         log.info("[subscriber] start: ", param)
         resolve()
       }).catch((err) => {
-        log.error('[subscriber] start', err, answer)
+        log.error('[subscriber] start', err, jsep)
         reject(err)
       })
     })
@@ -256,13 +247,7 @@ export class SubscriberPlugin extends EventEmitter {
 
     if(json?.jsep) {
       log.debug('[subscriber] Handle jsep: ', json.jsep)
-      this.pc.setRemoteDescription(new RTCSessionDescription(json.jsep)).then(() => {
-        return this.pc.createAnswer()
-      }).then(answer => {
-        log.info('[subscriber] answerCreated: ', answer)
-        this.pc.setLocalDescription(answer)
-        this.start(answer)
-      })
+      this.handleJsep(json.jsep)
     }
   }
 
