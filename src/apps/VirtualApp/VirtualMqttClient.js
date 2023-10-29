@@ -47,6 +47,7 @@ import {SubscriberPlugin} from "../../lib/subscriber-plugin";
 import log from "loglevel";
 import Donations from "./buttons/Donations";
 import version from './Version.js';
+import {PopUp} from "./components/PopUp"
 
 const sortAndFilterFeeds = (feeds) =>
   feeds
@@ -67,6 +68,7 @@ const sortAndFilterFeeds = (feeds) =>
 const userFeeds = (feeds) => feeds.filter((feed) => feed.display.role === userRolesEnum.user);
 const monitoringData =  new MonitoringData();
 
+
 class VirtualMqttClient extends Component {
   state = {
     chatMessagesCount: 0,
@@ -76,6 +78,8 @@ class VirtualMqttClient extends Component {
     audio: null,
     video: null,
     janus: null,
+    exit_room: true,
+    show_notification: false,
     feeds: [],
     rooms: [],
     room: "",
@@ -129,6 +133,7 @@ class VirtualMqttClient extends Component {
   checkPermission = (user) => {
     log.info(" :: Version :: ", version);
     user.role = getUserRole();
+    user.isClient = true;
     if (user.role !== null) {
       this.initApp(user);
     } else {
@@ -266,7 +271,7 @@ class VirtualMqttClient extends Component {
 
   initClient = (reconnect, retry = 0) => {
     this.setState({delay: true});
-    const {user} = this.state;
+    const {user, shidur} = this.state;
     if (this.state.janus) {
       this.state.janus.destroy();
     }
@@ -274,7 +279,7 @@ class VirtualMqttClient extends Component {
     const config = GxyJanus.instanceConfig(user.janus);
     log.info("[client] Got config: ", config);
     this.initJanus(user, config, retry);
-    if (!reconnect) {
+    if (!reconnect && shidur) {
       JanusStream.initStreaming();
     }
   };
@@ -282,6 +287,12 @@ class VirtualMqttClient extends Component {
   reinitClient = (retry) => {
     retry++;
     log.error("[client] reinitializing try: ", retry);
+    if(!mqtt.isConnected) {
+      log.error("[client] mqtt is not connected, waiting 5 sec");
+      setTimeout(() => {
+        this.reinitClient(retry);
+      }, 5000);
+    }
     if (retry < 10) {
       setTimeout(() => {
         this.initClient(true, retry);
@@ -293,6 +304,16 @@ class VirtualMqttClient extends Component {
       });
     }
   };
+
+    iceFailed = (data) => {
+      const {exit_room} = this.state;
+      if(!exit_room && data === "publisher") {
+        this.setState({show_notification: true});
+        this.exitRoom();
+        captureMessage("reconnect", {});
+        log.warn("[client] iceFailed for: ", data);
+      }
+    };
 
   initJanus = (user, config, retry) => {
     let janus = new JanusMqtt(user, config.name);
@@ -314,10 +335,12 @@ class VirtualMqttClient extends Component {
     videoroom.subTo = this.makeSubscription;
     videoroom.unsubFrom = this.unsubscribeFrom;
     videoroom.talkEvent = this.handleTalking;
+    videoroom.iceFailed = this.iceFailed;
 
     let subscriber = new SubscriberPlugin(config.iceServers);
     subscriber.onTrack = this.onRemoteTrack;
     subscriber.onUpdate = this.onUpdateStreams;
+    subscriber.iceFailed = this.iceFailed;
 
     janus.init(config.token).then((data) => {
         log.info("[client] Janus init", data);
@@ -430,6 +453,7 @@ class VirtualMqttClient extends Component {
   };
 
   joinRoom = (reconnect, janus, videoroom, user) => {
+    this.setState({exit_room: false});
     let {selected_room, media, cammuted, isGroup} = this.state;
     const {video: {device}} = media;
 
@@ -493,7 +517,7 @@ class VirtualMqttClient extends Component {
   };
 
   exitRoom = (reconnect, callback) => {
-    this.setState({delay: true});
+    this.setState({delay: true, exit_room: true});
     const {videoroom} = this.state;
 
     if(videoroom) {
@@ -736,7 +760,7 @@ class VirtualMqttClient extends Component {
 
     if (type === "client-reconnect" && user.id === id) {
       this.exitRoom(true, () => {
-        this.initClient(true);
+        this.reinitClient(0);
       });
     } else if (type === "client-reload" && user.id === id) {
       window.location.reload();
@@ -1496,7 +1520,7 @@ class VirtualMqttClient extends Component {
   }
 
   render() {
-    const {delay, appInitError, attachedSource, cammuted, currentLayout, feeds, media, muteOtherCams, myid, numberOfVirtualUsers, room, rooms, selected_room, shidur, user, videos, isSettings, audios, shidurForGuestReady, isGroup, hideDisplays, isKliOlamiShown, kliOlamiAttached} = this.state;
+    const {show_notification, delay, appInitError, attachedSource, cammuted, currentLayout, feeds, media, muteOtherCams, myid, numberOfVirtualUsers, room, rooms, selected_room, shidur, user, videos, isSettings, audios, shidurForGuestReady, isGroup, hideDisplays, isKliOlamiShown, kliOlamiAttached} = this.state;
 
     if (appInitError) {
       return (
@@ -1600,6 +1624,7 @@ class VirtualMqttClient extends Component {
 
     return (
       <Fragment>
+        <PopUp show={show_notification} setClose={() => this.setState({show_notification: false})}/>
         {user && Boolean(room) && (
           <SettingsJoined
             userDisplay={user.display}

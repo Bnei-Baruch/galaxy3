@@ -106,6 +106,22 @@ export const resources = {
         helloUser: "Hello {{name}}",
         beforeConnecting: "before connecting with the TEN, please check your settings and device setup:",
         backToTen: "BACK TO TEN",
+        donationHeader: "Dear Friends,",
+        donationBtn: "To participate in the donation >>",
+        donationContent: `
+        <p>
+            A moment before you enter the ten room for the next Kabbalah lesson, just before you smile at your friends, read source excerpts with them, ask Rav Laitman a question and hold a workshop, we want to make a request to you.        </p>
+        <p>
+            To date, we have distributed unprecedented amounts of valuable and unique materials all over the world, and it's all thanks to you, thousands of loyal volunteers. But it's not enough.
+        </p>
+        <p>
+            Day by day the world falls into a more acute crisis in all areas of life, and it needs contents that only our organization can provide; Contents that explain the importance of connection between people and bring them closer to the solution for all crises.       </p>
+        <p>
+            This is why now, more than ever, we invite you to donate and participate in increasing the dissemination of our contents to humanity.
+        </p>
+        <p>
+            The management of the "Bnei Baruch - Kabbalah La’Am" association.
+        </p>`
       },
       feedback: {
         feedbackHelp: "Feedback/Help",
@@ -329,6 +345,24 @@ export const resources = {
         beforeConnecting:
           "Antes de conectarte con la DECENA, por favor chequea tus configuraciones y la del dispositivo:",
         backToTen: "VOLVER A DECENA",
+        donationHeader: "Queridos amigos y amigas,",
+        donationBtn: "Para participar en la donación >>",
+        donationContent: `
+        <p>
+        Justo antes de entrar a la sala de la decena para la próxima clase de Cabalá, leer extractos de las fuentes originales con ellos, hacerle una pregunta al Rav Laitman y realizar un taller, queremos hacerles una solicitud.
+        </p>
+        <p>
+        Hasta la fecha, hemos difundido cantidades sin precedentes de material valioso y único en todo el mundo, y todo gracias a ustedes, miles de fieles voluntarios.
+        </p>
+        <p>
+        Pero no es suficiente. Día a día el mundo cae en una crisis más aguda en todos los ámbitos de la vida, y necesita contenidos que solo nuestra organización puede brindar; contenidos que explican la importancia de una buena relación entre las personas y las acerca a la solución de todas las crisis.
+        </p>
+        <p>
+        Por eso ahora, más que nunca, les invitamos a donar económicamente y a participar en la expansión de la difusión de nuestro contenido a la humanidad.
+        </p>
+        <p>
+        Dirección de la Asociación Bnei Baruj
+        </p>`
       },
       feedback: {
         feedbackHelp: "Comentarios/Ayuda",
@@ -551,6 +585,24 @@ export const resources = {
         helloUser: "שלום {{name}}",
         beforeConnecting: "לפני החיבור לעשיריה, אנא אנא בידקו את ההגדרות שלכם.:",
         backToTen: "בחזרה לעשיריה",
+        donationHeader: "חברים יקרים,",
+        donationBtn: "להשתתפות בתרומה >>",
+        donationContent: `
+        <p>
+        רגע לפני שאתם נכנסים לחדר העשירייה לשיעור הקבלה הבא, רגע לפני שתחייכו לחברים, תקראו יחד איתם קטעי מקור, תשאלו את הרב לייטמן שאלה ותערכו סדנה, אנחנו רוצים לבקש מכם בקשה.
+        </p>
+        <p>
+        עד היום הפצנו בכל העולם כמויות חסרות תקדים של חומר ערכי וייחודי, והכול בזכותכם, אלפי מתנדבים ומתנדבות נאמנים. אבל זה לא מספיק.
+        </p>
+        <p>
+        מיום ליום העולם נקלע למשבר חריף יותר בכל תחומי החיים, והוא זקוק לתכנים שרק הארגון שלנו מסוגל לספק; תכנים המסבירים את חשיבות הקשר בין בני אדם ומקרבים אותם לפתרון כל המשברים.
+        </p>
+        <p>
+        לכן עכשיו, יותר מתמיד, אנחנו מזמינים אתכם לתרום כספית ולהשתתף בהגברת הפצת התכנים שלנו לאנושות.
+        </p>
+        <p>
+        הנהלת עמותת "בני ברוך - קבלה לעם"
+        </p>`
       },
       feedback: {
         feedbackHelp: "משוב/עזרה",
@@ -764,6 +816,24 @@ export const resources = {
         helloUser: "Здравствуйте {{name}}",
         beforeConnecting: "перед соединением с Десяткой, проверьте настройки и установки устройств:",
         backToTen: "НАЗАД К ДЕСЯТКЕ",
+        donationHeader: "Дорогие товарищи и подруги!",
+        donationBtn: "Примите участие в акции >>",
+        donationContent: `
+        <p>
+        Прежде чем вы войдете в комнату десятки на очередной каббалистический урок, прежде чем улыбнетесь друг другу, прочитаете вместе отрывки из первоисточников, зададите вопрос Михаэлю Лайтману и проведете семинар, мы хотим обратиться к вам с просьбой.
+        </p>
+        <p>
+        На сегодняшний день мы распространили беспрецедентное количество ценных и уникальных материалов по всему миру, и все это благодаря вам, тысячам преданных волонтеров.
+        </p>
+        <p>
+        Но этого недостаточно. День ото дня мир погружается во все более острый кризис во всех сферах жизни, и ему необходим контент, который может предоставить только наша организация: контент, объясняющий важность доброй связи между людьми и приближающий человечество к разрешению всех кризисных ситуаций.
+        </p>
+        <p>
+        Сегодня, как никогда ранее, важна ваша активность, и поэтому мы приглашаем вас сделать финансовое пожертвование и принять участие в распространении нашего контента среди человечества. 
+        </p>
+        <p>
+        Руководство ассоциации "Бней Барух - Каббала ле-ам".
+        </p>`
       },
       feedback: {
         feedbackHelp: "Фидбек/Помощь",

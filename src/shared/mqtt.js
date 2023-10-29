@@ -1,4 +1,4 @@
-import mqtt from "mqtt";
+import * as mqtt from 'mqtt';
 import {MQTT_URL, MSG_URL} from "./env";
 import {isServiceID, userRolesEnum} from "./enums";
 import {randomString} from "./tools";
@@ -6,8 +6,8 @@ import GxyJanus from "./janus-utils";
 import log from "loglevel";
 import {captureMessage} from "./sentry";
 
-const mqttTimeout = 30 // Seconds
-const mqttKeepalive = 10 // Seconds
+const mqttTimeout = 5 // Seconds
+const mqttKeepalive = 2 // Seconds
 
 class MqttMsg {
   constructor() {
@@ -61,7 +61,7 @@ class MqttMsg {
       };
     }
 
-    const url = user.role !== userRolesEnum.user && !service ? MQTT_URL : MSG_URL;
+    const url = user.role !== userRolesEnum.user && !service && user?.isClient ? MQTT_URL : MSG_URL;
     this.mq = mqtt.connect(`wss://${url}`, options);
     this.mq.setMaxListeners(50)
 

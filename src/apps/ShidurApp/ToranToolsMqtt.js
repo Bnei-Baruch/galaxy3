@@ -328,8 +328,8 @@ class ToranToolsMqtt extends Component {
       roomsStatistics,
     } = this.props;
     const {open, delay, vote, galaxy_mode, menu_open, qst_filter, pg} = this.state;
-    const q = <b style={{color: "red", fontColor: "green", fontSize: "20px", fontFamily: "Verdana", fontWeight: "bold"}}>?</b>;
-    const qf = <b style={{color: "red", fontColor: "yellow", fontSize: "20px", fontFamily: "Verdana", fontWeight: "bold"}}>?</b>;
+    const q = <b style={{color: "red", fontSize: "20px", fontFamily: "Verdana", fontWeight: "bold"}}>?</b>;
+    const qf = <b style={{color: "red", backgroundColor: "yellow", fontSize: "20px", fontFamily: "Verdana", fontWeight: "bold"}}>?</b>;
     const next_group = groups[groups_queue] ? groups[groups_queue].description : groups[0] ? groups[0].description : "";
     const ng = groups[groups_queue] || null;
 
