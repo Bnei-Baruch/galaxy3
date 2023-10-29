@@ -176,12 +176,12 @@ export class SubscriberPlugin extends EventEmitter {
       log.info("[subscriber] ICE State: ", e.target.connectionState)
       this.iceState = e.target.connectionState
       if(this.iceState === "disconnected") {
-        //this.iceRestart()
+        this.iceRestart()
       }
 
       // ICE restart does not help here, peer connection will be down
       if(this.iceState === "failed") {
-        this.iceFailed("subscriber")
+        //this.iceFailed("subscriber")
       }
 
     }
@@ -281,7 +281,7 @@ export class SubscriberPlugin extends EventEmitter {
 
   webrtcState (isReady) {
     log.info('[subscriber] webrtcState: RTCPeerConnection is: ' + (isReady ? "up" : "down"))
-    if(!isReady) this.iceFailed("subscriber")
+    if(!isReady && typeof this.iceFailed === "function") this.iceFailed("subscriber")
   }
 
   detach () {

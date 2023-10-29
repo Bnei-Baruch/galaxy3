@@ -194,7 +194,7 @@ export class PublisherPlugin extends EventEmitter {
         const {data, json} = param || {}
         const jsep = json.jsep
         log.info('[publisher] Configure respond: ', param)
-        //this.pc.setRemoteDescription(jsep).then(e => log.info(e)).catch(e => log.error(e))
+        this.pc.setRemoteDescription(jsep).then(e => log.info(e)).catch(e => log.error(e))
       })
     })
   }
@@ -228,12 +228,12 @@ export class PublisherPlugin extends EventEmitter {
       this.iceState = e.target.connectionState
 
       if(this.iceState === "disconnected") {
-        //this.iceRestart()
+        this.iceRestart()
       }
 
       // ICE restart does not help here, peer connection will be down
       if(this.iceState === "failed") {
-        this.iceFailed("publisher")
+        //this.iceFailed("publisher")
       }
 
     };
@@ -336,7 +336,7 @@ export class PublisherPlugin extends EventEmitter {
 
   webrtcState(isReady) {
     log.info('[publisher] webrtcState: RTCPeerConnection is: ' + (isReady ? "up" : "down"))
-    if(!isReady) this.iceFailed("publisher")
+    if(!isReady && typeof this.iceFailed === "function") this.iceFailed("publisher")
   }
 
   detach() {

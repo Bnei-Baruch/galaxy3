@@ -6,8 +6,8 @@ import GxyJanus from "./janus-utils";
 import log from "loglevel";
 import {captureMessage} from "./sentry";
 
-const mqttTimeout = 30 // Seconds
-const mqttKeepalive = 10 // Seconds
+const mqttTimeout = 5 // Seconds
+const mqttKeepalive = 2 // Seconds
 
 class MqttMsg {
   constructor() {
