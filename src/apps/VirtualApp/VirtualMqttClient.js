@@ -133,6 +133,7 @@ class VirtualMqttClient extends Component {
   checkPermission = (user) => {
     log.info(" :: Version :: ", version);
     user.role = getUserRole();
+    user.isClient = true;
     if (user.role !== null) {
       this.initApp(user);
     } else {
