@@ -446,17 +446,19 @@ class AdminRootMqtt extends Component {
 
   sendRemoteCommand = (command_type, value) => {
     const {feed_user, current_room, command_status} = this.state;
+    const {camera, question, rfid} = feed_user
     const cmd = {
       type: command_type,
       room: current_room,
       status: command_status,
       id: feed_user?.id,
-      user: feed_user,
+      user: {camera, question, rfid},
     };
 
     if(feed_user && command_type === "client-bitrate")
       cmd.bitrate = value;
 
+    log.info("[admin] sending cmd json", cmd);
     let topic = command_type.match(/^(reload-config|client-reload-all)$/)
       ? "galaxy/users/broadcast"
       : "galaxy/room/" + current_room;
