@@ -755,7 +755,7 @@ class VirtualMqttClient extends Component {
   };
 
   handleCmdData = (data) => {
-    const {user, cammuted} = this.state;
+    const {user, cammuted, videoroom} = this.state;
     const {type, id, bitrate} = data;
 
     if (type === "client-reconnect" && user.id === id) {
@@ -784,7 +784,7 @@ class VirtualMqttClient extends Component {
       const isGroup = bitrate !== 64000;
       user.extra.isGroup = isGroup;
       this.setState({isGroup, user});
-      this.videoroom.setBitrate(bitrate);
+      if(videoroom) videoroom.setBitrate(bitrate);
     } else if (type === "audio-out") {
       this.handleAudioOut(data);
     } else if (type === "reload-config") {
