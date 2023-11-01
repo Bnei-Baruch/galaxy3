@@ -90,7 +90,7 @@ export class SubscriberPlugin extends EventEmitter {
 
   join(subscription, roomId) {
     this.roomId = roomId
-    const body = {request: "join", room: roomId, ptype: "subscriber", streams: subscription};
+    const body = {request: "join", use_msid: true, room: roomId, ptype: "subscriber", streams: subscription};
     return new Promise((resolve, reject) => {
       this.transaction('message', { body }, 'event').then((param) => {
         log.info("[subscriber] join: ", param)
