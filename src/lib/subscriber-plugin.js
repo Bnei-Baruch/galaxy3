@@ -178,13 +178,11 @@ export class SubscriberPlugin extends EventEmitter {
       if(this.iceState === "disconnected") {
         this.iceRestart()
       }
-
       // ICE restart does not help here, peer connection will be down
       if(this.iceState === "failed") {
         //this.iceFailed("subscriber")
       }
-
-    }
+    };
 
     this.pc.ontrack = (e) => {
       log.info("[subscriber] Got track: ", e)
@@ -201,7 +199,6 @@ export class SubscriberPlugin extends EventEmitter {
       e.track.onended = (ev) => {
         log.debug("[subscriber] onended event: ", ev)
       }
-
     };
   }
 

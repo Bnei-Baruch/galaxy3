@@ -242,13 +242,12 @@ class JanusHandleMqtt extends Component {
     this.setState({mids});
   }
 
-  onRemoteTrack = (track, mid, on) => {
-    let {mids} = this.state;
-    let feed = mids[mid].feed_id;
-    if (track.kind === "video" && on) {
-      let stream = new MediaStream([track]);
-      let remotevideo = this.refs["pv" + feed];
-      if (remotevideo) remotevideo.srcObject = stream;
+  onRemoteTrack = (track, stream, on) => {
+    let feed = stream.id;
+    if (on && track.kind === "video") {
+        log.debug("[client] Created remote video stream:", stream);
+        const remotevideo = this.refs["pv" + feed];
+        if (remotevideo) remotevideo.srcObject = stream;
     }
   }
 

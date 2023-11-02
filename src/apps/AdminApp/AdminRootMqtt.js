@@ -274,31 +274,22 @@ class AdminRootMqtt extends Component {
     this.setState({mids});
   }
 
-  onRemoteTrack = (track, mid, on) => {
-    log.debug("[admin]  ::: Got a remote track event ::: (remote feed)");
-    if (!mid) {
-      mid = track.id.split("janus")[1];
-    }
-    let {mids} = this.state;
-    let feed = mids[mid].feed_id;
-    log.info("[admin] >> This track is coming from feed " + feed + ":", mid);
+  onRemoteTrack = (track, stream, on) => {
+    let mid = track.id;
+    let feed = stream.id;
+    log.info("[admin] >> This track is coming from feed " + feed + ":", mid, track);
     if (on) {
-      // If we're here, a new track was added
       if (track.kind === "audio") {
-        // New audio track: create a stream out of it, and use a hidden <audio> element
-        let stream = new MediaStream([track]);
-        log.info("[admin] Created remote audio stream:", stream);
+        log.debug("[admin] Created remote audio stream:", stream);
         let remoteaudio = this.refs["remoteAudio" + feed];
-        remoteaudio.srcObject = stream;
+        if (remoteaudio) remoteaudio.srcObject = stream;
       } else if (track.kind === "video") {
+        log.debug("[admin] Created remote video stream:", stream);
         const remotevideo = this.refs["remoteVideo" + feed];
-        // New video track: create a stream out of it
-        const stream = new MediaStream([track]);
-        log.info("[admin] Created remote video stream:", stream);
-        remotevideo.srcObject = stream;
+        if (remotevideo) remotevideo.srcObject = stream;
       }
     }
-  }
+  };
 
   makeSubscription = (newFeeds) => {
     log.info("[admin] makeSubscription", newFeeds);

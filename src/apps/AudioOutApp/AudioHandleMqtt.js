@@ -229,22 +229,16 @@ class AudioHandleMqtt extends Component {
     this.setState({mids});
   }
 
-  onRemoteTrack = (track, mid, on) => {
-    if (!mid) mid = track.id.split("janus")[1];
-    log.info("[audio] Remote track (mid=" + mid + ") " + (on ? "added" : "removed") + ":", track);
-
-    let {mids} = this.state;
-    let feed = mids[mid].feed_id;
-    log.info(" >> This track is coming from feed " + feed + ":", mid);
-
-    if (track.kind === "audio" && on) {
-      let stream = new MediaStream([track]);
-      log.info(`[audio] Created remote audio stream`, stream);
-      let remoteaudio = this.refs["pa" + feed];
-      if (remoteaudio) remoteaudio.srcObject = stream;
+  onRemoteTrack = (track, stream, on) => {
+    let mid = track.id;
+    let feed = stream.id;
+    log.info("[audio] >> This track is coming from feed " + feed + ":", mid, track);
+    if (on && track.kind === "audio") {
+        log.debug("[audio] Created remote audio stream:", stream);
+        let remoteaudio = this.refs["pa" + feed];
+        if (remoteaudio) remoteaudio.srcObject = stream;
     }
-
-  }
+  };
 
   render() {
     const {feeds} = this.state;
