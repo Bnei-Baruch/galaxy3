@@ -188,7 +188,7 @@ export class SubscriberPlugin extends EventEmitter {
 
     this.pc.ontrack = (e) => {
       log.info("[subscriber] Got track: ", e)
-      this.onTrack(e.track, e.transceiver.mid, true)
+      this.onTrack(e.track, e.streams[0], true)
 
       e.track.onmute = (ev) => {
         log.debug("[subscriber] onmute event: ", ev)
