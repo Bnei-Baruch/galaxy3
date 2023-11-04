@@ -3,8 +3,8 @@ import {createRoot} from 'react-dom/client';
 import "./index.css";
 import App from "./App";
 import log from "loglevel";
-// import {initSentry} from "./shared/sentry";
-//
+//import {initSentry} from "./shared/sentry";
+
 // if(process.env.NODE_ENV === "production") {
 //   initSentry();
 // }
