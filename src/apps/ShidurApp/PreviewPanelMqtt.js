@@ -135,9 +135,9 @@ class PreviewPanelMqtt extends Component {
     this.setState({mids});
   }
 
-  onRemoteTrack = (track, mid, on) => {
+  onRemoteTrack = (track, stream, on) => {
+    const mid = track.id;
     if (track.kind === "video" && on) {
-      let stream = new MediaStream([track]);
       let remotevideo = this.refs["pv" + mid];
       if (remotevideo) remotevideo.srcObject = stream;
     }

@@ -689,18 +689,16 @@ class VirtualMqttClient extends Component {
     this.setState({mids});
   };
 
-  onRemoteTrack = (track, mid, on) => {
-    if (!mid) mid = track.id.split("janus")[1];
-    let feed = this.state.mids[mid].feed_id;
+  onRemoteTrack = (track, stream, on) => {
+    let mid = track.id;
+    let feed = stream.id;
     log.info("[client] >> This track is coming from feed " + feed + ":", mid, track);
     if (on) {
       if (track.kind === "audio") {
-        let stream = new MediaStream([track]);
         log.debug("[client] Created remote audio stream:", stream);
         let remoteaudio = this.refs["remoteAudio" + feed];
         if (remoteaudio) remoteaudio.srcObject = stream;
       } else if (track.kind === "video") {
-        let stream = new MediaStream([track]);
         log.debug("[client] Created remote video stream:", stream);
         const remotevideo = this.refs["remoteVideo" + feed];
         if (remotevideo) remotevideo.srcObject = stream;
@@ -755,7 +753,7 @@ class VirtualMqttClient extends Component {
   };
 
   handleCmdData = (data) => {
-    const {user, cammuted} = this.state;
+    const {user, cammuted, videoroom} = this.state;
     const {type, id, bitrate} = data;
 
     if (type === "client-reconnect" && user.id === id) {
@@ -784,7 +782,7 @@ class VirtualMqttClient extends Component {
       const isGroup = bitrate !== 64000;
       user.extra.isGroup = isGroup;
       this.setState({isGroup, user});
-      this.videoroom.setBitrate(bitrate);
+      if(videoroom) videoroom.setBitrate(bitrate);
     } else if (type === "audio-out") {
       this.handleAudioOut(data);
     } else if (type === "reload-config") {

@@ -90,7 +90,7 @@ export class SubscriberPlugin extends EventEmitter {
 
   join(subscription, roomId) {
     this.roomId = roomId
-    const body = {request: "join", room: roomId, ptype: "subscriber", streams: subscription};
+    const body = {request: "join", use_msid: true, room: roomId, ptype: "subscriber", streams: subscription};
     return new Promise((resolve, reject) => {
       this.transaction('message', { body }, 'event').then((param) => {
         log.info("[subscriber] join: ", param)
@@ -178,17 +178,15 @@ export class SubscriberPlugin extends EventEmitter {
       if(this.iceState === "disconnected") {
         this.iceRestart()
       }
-
       // ICE restart does not help here, peer connection will be down
       if(this.iceState === "failed") {
         //this.iceFailed("subscriber")
       }
-
-    }
+    };
 
     this.pc.ontrack = (e) => {
       log.info("[subscriber] Got track: ", e)
-      this.onTrack(e.track, e.transceiver.mid, true)
+      this.onTrack(e.track, e.streams[0], true)
 
       e.track.onmute = (ev) => {
         log.debug("[subscriber] onmute event: ", ev)
@@ -201,7 +199,6 @@ export class SubscriberPlugin extends EventEmitter {
       e.track.onended = (ev) => {
         log.debug("[subscriber] onended event: ", ev)
       }
-
     };
   }
 
@@ -210,7 +207,7 @@ export class SubscriberPlugin extends EventEmitter {
       let count = 0;
       let chk = setInterval(() => {
         count++;
-        if (count < 10 && this.iceState !== "disconnected" || !this.janus.isConnected) {
+        if (count < 10 && this.iceState !== "disconnected" || !this.janus?.isConnected) {
           clearInterval(chk);
         } else if (mqtt.mq.connected) {
           log.debug("[subscriber] - Trigger ICE Restart - ");
