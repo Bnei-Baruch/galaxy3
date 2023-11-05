@@ -48,6 +48,7 @@ import log from "loglevel";
 import Donations from "./buttons/Donations";
 import version from './Version.js';
 import {PopUp} from "./components/PopUp"
+import {BroadcastNotification} from "./components/BroadcastNotification";
 
 const sortAndFilterFeeds = (feeds) =>
   feeds
@@ -71,6 +72,8 @@ const monitoringData =  new MonitoringData();
 
 class VirtualMqttClient extends Component {
   state = {
+    show_message: false,
+    broadcast_message: null,
     chatMessagesCount: 0,
     creatingFeed: false,
     delay: true,
@@ -254,6 +257,8 @@ class VirtualMqttClient extends Component {
           if (message?.type === "client-chat") {
             message.time = getDateString();
             notifyMe("Arvut System", message.text, true);
+          } else if(message?.type === "broadcast-message" && user.role === userRolesEnum.user) {
+            this.setState({broadcast_message: message.text, show_message: true})
           } else {
             this.handleCmdData(message);
           }
@@ -1518,7 +1523,7 @@ class VirtualMqttClient extends Component {
   }
 
   render() {
-    const {show_notification, delay, appInitError, attachedSource, cammuted, currentLayout, feeds, media, muteOtherCams, myid, numberOfVirtualUsers, room, rooms, selected_room, shidur, user, videos, isSettings, audios, shidurForGuestReady, isGroup, hideDisplays, isKliOlamiShown, kliOlamiAttached} = this.state;
+    const {show_message, broadcast_message, show_notification, delay, appInitError, attachedSource, cammuted, currentLayout, feeds, media, muteOtherCams, myid, numberOfVirtualUsers, room, rooms, selected_room, shidur, user, videos, isSettings, audios, shidurForGuestReady, isGroup, hideDisplays, isKliOlamiShown, kliOlamiAttached} = this.state;
 
     if (appInitError) {
       return (
@@ -1623,6 +1628,7 @@ class VirtualMqttClient extends Component {
     return (
       <Fragment>
         <PopUp show={show_notification} setClose={() => this.setState({show_notification: false})}/>
+        <BroadcastNotification show={show_message} msg={broadcast_message} setClose={() => this.setState({show_message: false})} />
         {user && Boolean(room) && (
           <SettingsJoined
             userDisplay={user.display}

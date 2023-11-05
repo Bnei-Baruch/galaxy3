@@ -6,7 +6,16 @@ import DialogContent from '@mui/material/DialogContent';
 import DialogContentText from '@mui/material/DialogContentText';
 import DialogTitle from '@mui/material/DialogTitle';
 
-export const PopUp = ({show, setClose}) => {
+//export const UI_LANGUAGES = ["en", "es", "he", "ru"];
+
+export const DEFAULT_LANGUAGE = "en";
+
+export const getLanguage = () => localStorage.getItem("lng") || DEFAULT_LANGUAGE;
+
+export const BroadcastNotification = ({show, msg, setClose}) => {
+
+    const lang = getLanguage()
+    const message = msg[lang]
 
     return (
         <div>
@@ -22,7 +31,7 @@ export const PopUp = ({show, setClose}) => {
                 </DialogTitle>
                 <DialogContent>
                     <DialogContentText id="alert-dialog-description">
-                        Publisher PeerConnection is disconnected
+                        {message}
                     </DialogContentText>
                 </DialogContent>
                 <DialogActions>
