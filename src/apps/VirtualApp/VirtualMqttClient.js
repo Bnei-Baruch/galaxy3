@@ -227,6 +227,7 @@ class VirtualMqttClient extends Component {
       } else {
         this.setState({mqttOn: true});
 
+        mqtt.join("galaxy/users/notification");
         mqtt.join("galaxy/users/broadcast");
         mqtt.join("galaxy/users/" + user.id);
 
@@ -257,14 +258,20 @@ class VirtualMqttClient extends Component {
           if (message?.type === "client-chat") {
             message.time = getDateString();
             notifyMe("Arvut System", message.text, true);
-          } else if(message?.type === "broadcast-message" && user.role === userRolesEnum.user) {
+          } else {
+            this.handleCmdData(message);
+          }
+        });
+
+        // Notification message
+        mqtt.mq.on("MqttNotificationMessage", (data) => {
+          let message = JSON.parse(data);
+          if(message?.type === "broadcast-message" && user.role === userRolesEnum.user) {
             const readed = localStorage.getItem("msg_id");
             if(readed !== message.id) {
               localStorage.setItem("msg_id" , message.id);
               this.setState({broadcast_message: message.text, show_message: true})
             }
-          } else {
-            this.handleCmdData(message);
           }
         });
 

@@ -159,6 +159,8 @@ class MqttMsg {
           }
           else if (service === "users" && id === "broadcast")
             this.mq.emit("MqttBroadcastMessage", data);
+          else if (service === "users" && id === "notification")
+            this.mq.emit("MqttNotificationMessage", data);
           else
             this.mq.emit("MqttPrivateMessage", data);
           break;
