@@ -4,7 +4,7 @@ import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import DialogContentText from '@mui/material/DialogContentText';
-import DialogTitle from '@mui/material/DialogTitle';
+//import DialogTitle from '@mui/material/DialogTitle';
 
 //export const UI_LANGUAGES = ["en", "es", "he", "ru"];
 
@@ -26,12 +26,12 @@ export const BroadcastNotification = ({show, msg, setClose}) => {
                 aria-describedby="alert-dialog-description"
                 style={{zIndex:1301}}
             >
-                <DialogTitle id="alert-dialog-title">
-                    {"Arvut System Notification"}
-                </DialogTitle>
+                {/*<DialogTitle id="alert-dialog-title">*/}
+                {/*    {"Arvut System Notification"}*/}
+                {/*</DialogTitle>*/}
                 <DialogContent>
                     <DialogContentText id="alert-dialog-description">
-                        {message}
+                        <div dangerouslySetInnerHTML={{__html: message}}></div>
                     </DialogContentText>
                 </DialogContent>
                 <DialogActions>

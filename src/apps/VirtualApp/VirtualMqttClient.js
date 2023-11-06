@@ -73,7 +73,7 @@ const monitoringData =  new MonitoringData();
 class VirtualMqttClient extends Component {
   state = {
     show_message: false,
-    broadcast_message: null,
+    broadcast_message: {en:""},
     chatMessagesCount: 0,
     creatingFeed: false,
     delay: true,
@@ -258,7 +258,11 @@ class VirtualMqttClient extends Component {
             message.time = getDateString();
             notifyMe("Arvut System", message.text, true);
           } else if(message?.type === "broadcast-message" && user.role === userRolesEnum.user) {
-            this.setState({broadcast_message: message.text, show_message: true})
+            const readed = localStorage.getItem("msg_id");
+            if(readed !== message.id) {
+              localStorage.setItem("msg_id" , message.id);
+              this.setState({broadcast_message: message.text, show_message: true})
+            }
           } else {
             this.handleCmdData(message);
           }
