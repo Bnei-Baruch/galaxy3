@@ -9,6 +9,7 @@ import logo from "./KL_Tree_128.png";
 import mqtt from "../../shared/mqtt";
 import version from './Version.js';
 import log from "loglevel";
+import NotificationManager from "./NotificationManager";
 
 class AdminApp extends Component {
   state = {
@@ -31,6 +32,8 @@ class AdminApp extends Component {
       role = "admin";
     } else if (roles.has("gxy_viewer")) {
       role = "viewer";
+    } else if (roles.has("gxy_notify")) {
+      role = "notify";
     }
 
     delete user.roles;
@@ -39,10 +42,13 @@ class AdminApp extends Component {
     let gxy_admin = !!role;
     let gxy_monitor = gxy_admin || kc.hasRealmRole("gxy_support");
     let gxy_rooms = kc.hasRealmRole("gxy_root");
+    let gxy_notify = kc.hasRealmRole("gxy_notify");
 
     if (gxy_monitor) {
-      this.setState({user, gxy_admin, gxy_monitor, gxy_rooms}, () => {
-        this.initMQTT(user);
+      this.setState({user, gxy_admin, gxy_monitor, gxy_rooms, gxy_notify}, () => {
+        if(!gxy_notify) {
+          this.initMQTT(user);
+        }
         this.initApps();
       });
     } else {
@@ -61,7 +67,7 @@ class AdminApp extends Component {
   };
 
   initApps = () => {
-    const {user, gxy_admin, gxy_monitor, gxy_rooms} = this.state;
+    const {user, gxy_admin, gxy_monitor, gxy_rooms, gxy_notify} = this.state;
 
     const loading = <Tab.Pane loading />;
 
@@ -78,6 +84,7 @@ class AdminApp extends Component {
     let login = <LoginPage user={user} checkPermission={this.checkPermission} />;
 
     let home = <Suspense fallback={loading}>{user ? welcome : login}</Suspense>;
+
     let admin = (
       <Suspense fallback={loading}>
         <AdminRootMqtt user={user} />
@@ -91,6 +98,11 @@ class AdminApp extends Component {
     let room = (
       <Suspense fallback={loading}>
         <RoomManager user={user} />
+      </Suspense>
+    );
+    let notifications = (
+      <Suspense fallback={loading}>
+        <NotificationManager user={user} />
       </Suspense>
     );
 
@@ -110,6 +122,10 @@ class AdminApp extends Component {
       {
         menuItem: {key: "aricha", icon: "edit", content: "Rooms", disabled: !gxy_rooms},
         render: () => <Tab.Pane attached={false}>{room}</Tab.Pane>,
+      },
+      {
+        menuItem: {key: "notes", icon: "envelope", content: "Notifications", disabled: !gxy_notify},
+        render: () => <Tab.Pane attached={false}>{notifications}</Tab.Pane>,
       },
     ];
 
