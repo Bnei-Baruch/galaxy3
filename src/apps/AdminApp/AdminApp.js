@@ -6,7 +6,6 @@ import LoginPage from "../../components/LoginPage";
 import AdminRootMqtt from "./AdminRootMqtt";
 import MonitorApp from "./components/MonitorApp";
 import logo from "./KL_Tree_128.png";
-import mqtt from "../../shared/mqtt";
 import version from './Version.js';
 import log from "loglevel";
 import NotificationManager from "./NotificationManager";
@@ -46,24 +45,12 @@ class AdminApp extends Component {
 
     if (gxy_monitor) {
       this.setState({user, gxy_admin, gxy_monitor, gxy_rooms, gxy_notify}, () => {
-        if(!gxy_notify) {
-          this.initMQTT(user);
-        }
         this.initApps();
       });
     } else {
       alert("Access denied!");
       kc.logout();
     }
-  };
-
-  initMQTT = (user) => {
-    mqtt.init(user, (data) => {
-      console.log("[Admin] mqtt init: ", data);
-      mqtt.join("galaxy/users/broadcast");
-      mqtt.join("galaxy/users/" + user.id);
-      mqtt.watch(() => {});
-    });
   };
 
   initApps = () => {

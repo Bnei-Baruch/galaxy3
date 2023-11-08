@@ -104,24 +104,31 @@ class AdminRootMqtt extends Component {
   withAudio = () => this.isAllowed("admin");
 
   initApp = (user) => {
-    this.setState({user});
-    updateSentryUser(user);
+    mqtt.init(user, (data) => {
+      console.log("[Admin] mqtt init: ", data);
+      mqtt.join("galaxy/users/broadcast");
+      mqtt.join("galaxy/users/" + user.id);
+      mqtt.watch(() => {});
 
-    api
-      .fetchConfig()
-      .then((data) => {
-        ConfigStore.setGlobalConfig(data);
-        this.setState({
-          premodStatus: ConfigStore.dynamicConfig(ConfigStore.PRE_MODERATION_KEY) === "true",
+      this.setState({user});
+      updateSentryUser(user);
+
+      api
+        .fetchConfig()
+        .then((data) => {
+          ConfigStore.setGlobalConfig(data);
+          this.setState({
+            premodStatus: ConfigStore.dynamicConfig(ConfigStore.PRE_MODERATION_KEY) === "true",
+          });
+          GxyJanus.setGlobalConfig(data);
+        })
+        .then(() => this.setState({gatewaysInitialized: true}))
+        .then(this.pollRooms)
+        .catch((error) => {
+          log.error("[admin] error initializing app", error);
+          this.setState({appInitError: error});
         });
-        GxyJanus.setGlobalConfig(data);
-      })
-      .then(() => this.setState({gatewaysInitialized: true}))
-      .then(this.pollRooms)
-      .catch((error) => {
-        log.error("[admin] error initializing app", error);
-        this.setState({appInitError: error});
-      });
+    });
   };
 
   initJanus = (user, gxy) => {
