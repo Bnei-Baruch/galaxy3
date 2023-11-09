@@ -4,13 +4,9 @@ import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import DialogContentText from '@mui/material/DialogContentText';
-//import DialogTitle from '@mui/material/DialogTitle';
+import {LANG_MAP} from "../../../shared/consts";
 
-//export const UI_LANGUAGES = ["en", "es", "he", "ru"];
-
-export const DEFAULT_LANGUAGE = "en";
-
-export const getLanguage = () => localStorage.getItem("lng") || DEFAULT_LANGUAGE;
+export const getLanguage = () => LANG_MAP[localStorage.getItem("vrt_langtext")] || "en";
 
 export const BroadcastNotification = ({show, msg, setClose}) => {
 

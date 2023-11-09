@@ -378,6 +378,13 @@ export const LANGUAGES = [
   {code: "za", name: "Zhuang, Chuang", nativeName: "Saɯ cueŋƅ, Saw cuengh"},
 ];
 
+export const LANG_MAP = {
+    Spanish: "es",
+    English: "en",
+    Hebrew: "he",
+    Russian: "ru"
+}
+
 export const sketchesByLang = {he: "Hebrew", ru: "Russian", es: "Spanish", en: "English"};
 
 export const mqtt_sys = {
