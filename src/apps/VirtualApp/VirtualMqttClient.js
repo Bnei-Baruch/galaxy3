@@ -484,7 +484,7 @@ class VirtualMqttClient extends Component {
     this.micMute();
 
     const {id, timestamp, role, username} = user;
-    const d = {id, timestamp, role, display: username, is_group: isGroup};
+    const d = {id, timestamp, role, display: username, is_group: isGroup, is_desktop: true};
 
     videoroom.join(selected_room, d).then((data) => {
         log.info("[client] Joined respond :", data);
