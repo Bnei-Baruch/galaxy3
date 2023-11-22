@@ -103,7 +103,11 @@ class VideoHandleMqtt extends Component {
       let talking = feeds[f]["talking"];
       let streams = feeds[f]["streams"];
       feeds[f].display = display;
-      feeds[f].talking = talking;
+      if (feeds[f].display?.is_desktop) {
+        feeds[f].talking = talking;
+      } else {
+        feeds[f].talking = false;
+      }
       for (let i in streams) {
         let stream = streams[i];
         stream["id"] = id;
@@ -134,6 +138,9 @@ class VideoHandleMqtt extends Component {
       if (display.role !== "user") return;
       let streams = feed[f]["streams"];
       feed[f].display = display;
+      if (!feeds[f].display?.is_desktop) {
+        feeds[f].talking = false;
+      }
       for (let i in streams) {
         let stream = streams[i];
         stream["id"] = id;
