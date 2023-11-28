@@ -247,11 +247,11 @@ class VideoHandleMqtt extends Component {
   handleTalking = (id, talking) => {
     const feeds = Object.assign([], this.state.feeds);
     for (let i = 0; i < feeds.length; i++) {
-      if (feeds[i] && feeds[i].id === id && feeds[i].display?.is_desktop) {
+      if (feeds[i] && feeds[i].id === id && feeds[i]?.display?.is_desktop) {
         feeds[i].talking = talking;
+        this.setState({feeds});
       }
     }
-    this.setState({feeds});
   }
 
   onUpdateStreams = (streams) => {
