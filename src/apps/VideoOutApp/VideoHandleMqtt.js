@@ -138,8 +138,8 @@ class VideoHandleMqtt extends Component {
       if (display.role !== "user") return;
       let streams = feed[f]["streams"];
       feed[f].display = display;
-      if (!feeds[f].display?.is_desktop) {
-        feeds[f].talking = false;
+      if (!feed[f].display?.is_desktop) {
+        feed[f].talking = false;
       }
       for (let i in streams) {
         let stream = streams[i];
