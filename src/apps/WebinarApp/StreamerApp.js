@@ -470,6 +470,10 @@ class StreamerApp extends Component {
 
         log.info("[client] Pulbishers list: ", data.publishers);
 
+        videoroom.rtpForward("1222", user.id).then(data => {
+          log.info("[client] rtpForward respond :", data);
+        })
+
         //this.makeSubscription(data.publishers);
       }).catch((err) => {
         log.error("[client] Publish error :", err);

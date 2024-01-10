@@ -164,6 +164,25 @@ export class PublisherPlugin extends EventEmitter {
     })
   }
 
+  rtpForward(room, publisher_id) {
+    const video = {mid: "0", port: 10000, rtcp_port: 10002}
+    const audio = {mid: "1", port: 10100, rtcp_port: 10102}
+    const body = {request: "rtp_forward", secret: "adminpwd", room, publisher_id, host: "127.0.0.1", host_family: "ipv4", streams: [video, audio]};
+    return new Promise((resolve, reject) => {
+      this.transaction('message', { body }, 'success').then((param) => {
+        log.info("[publisher] rtp forward: ", param)
+        const {data, json } = param
+
+        if(data)
+          resolve(data);
+
+      }).catch((err) => {
+        log.debug('[publisher] error rtp forward', err)
+        reject(err)
+      })
+    })
+  }
+
   audio(stream) {
     let audioTransceiver = null;
     let tr = this.pc.getTransceivers();
