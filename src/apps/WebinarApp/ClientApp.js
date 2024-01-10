@@ -36,7 +36,7 @@ import mqtt from "../../shared/mqtt";
 
 class ClientApp extends Component {
 
-    state = {
+    state= {
         count: 0,
         audioContext: null,
       media: media_object,
@@ -117,40 +117,42 @@ class ClientApp extends Component {
       user.ip = data && data.ip ? data.ip : "127.0.0.1";
       user.country = data && data.country ? data.country : "XX";
 
-      this.setState({user});
+      this.initDevices();
+      this.setState({delay: false, user});
       updateSentryUser(user);
 
-      api.fetchConfig().then((data) => {
-        log.debug("[client] got config: ", data);
-        ConfigStore.setGlobalConfig(data);
-        const premodStatus = ConfigStore.dynamicConfig(ConfigStore.PRE_MODERATION_KEY) === "true";
-        this.setState({premodStatus});
-        GxyJanus.setGlobalConfig(data);
-      }).then(() => {
-        api.fetchAvailableRooms({with_num_users: true}).then(data => {
-          const {rooms} = data;
-          this.setState({rooms});
-          this.initDevices();
-          const {selected_room} = this.state;
-          if (selected_room !== "") {
-            const room = rooms.find((r) => r.room === selected_room);
-            if (room) {
-              user.room = selected_room;
-              user.janus = room.janus;
-              user.group = room.description;
-              this.setState({delay: false, user});
-              updateSentryUser(user);
-            } else {
-              this.setState({selected_room: "", delay: false});
-            }
-          } else {
-            this.setState({delay: false});
-          }
-        }).catch((err) => {
-          log.error("[client] error initializing app", err);
-          this.setState({appInitError: err});
-        });
-      })
+    //   api.fetchConfig().then((data) => {
+    //     log.debug("[client] got config: ", data);
+    //     ConfigStore.setGlobalConfig(data);
+    //     const premodStatus = ConfigStore.dynamicConfig(ConfigStore.PRE_MODERATION_KEY) === "true";
+    //     this.setState({premodStatus});
+    //     GxyJanus.setGlobalConfig(data);
+    //   }).then(() => {
+    //     api.fetchAvailableRooms({with_num_users: true}).then(data => {
+    //       const {rooms} = data;
+    //       this.setState({rooms});
+    //       this.initDevices();
+    //       const {selected_room} = this.state;
+    //       if (selected_room !== "") {
+    //         const room = rooms.find((r) => r.room === selected_room);
+    //         if (room) {
+    //           user.room = selected_room;
+    //           user.janus = room.janus;
+    //           user.group = room.description;
+    //           this.setState({delay: false, user});
+    //           updateSentryUser(user);
+    //         } else {
+    //           this.setState({selected_room: "", delay: false});
+    //         }
+    //       } else {
+    //         this.setState({delay: false});
+    //       }
+    //     }).catch((err) => {
+    //       log.error("[client] error initializing app", err);
+    //       this.setState({appInitError: err});
+    //     });
+    //   })
+    //
     });
   };
 
@@ -216,11 +218,11 @@ class ClientApp extends Component {
         });
 
         // Clients not authorized to app may see shidur only
-        if (user.role !== userRolesEnum.user) {
-          localStorage.setItem("room", "-1");
-          this.setState({user});
-          JanusStream.initStreaming( "str1");
-        }
+        // if (user.role !== userRolesEnum.user) {
+        //   localStorage.setItem("room", "-1");
+        //   this.setState({user});
+        //   JanusStream.initStreaming( "str1");
+        // }
       }
     });
   };
@@ -254,9 +256,13 @@ class ClientApp extends Component {
         this.setState({cammuted: true});
       }
 
-      if (video.stream) {
+      if(video.stream) {
         let myvideo = this.refs.localVideo;
         if (myvideo) myvideo.srcObject = video.stream;
+      }
+
+      if(audio.stream) {
+        this.micVolume()
       }
 
       const localVideoTrack = video?.stream ? video.stream?.getVideoTracks()[0] : null;
@@ -297,6 +303,32 @@ class ClientApp extends Component {
         }
       }
     });
+  };
+
+  micMute = ()=> {
+    const {media: {audio: {stream}},muted} = this.state;
+    if (stream) {
+      if (muted) this.micVolume();
+      stream.getAudioTracks()[0].enabled = muted;
+      muted ? devices.audio.context.resume() : devices.audio.context.suspend();
+      this.setState({muted: !muted});
+    }
+  };
+
+  micVolume = ()=> {
+    const c = this.refs.canvas1;
+    let cc = c.getContext("2d");
+    let gradient = cc.createLinearGradient(0, 0, 0, 55);
+    gradient.addColorStop(1, "green");
+    gradient.addColorStop(0.35, "#80ff00");
+    gradient.addColorStop(0.1, "orange");
+    gradient.addColorStop(0, "red");
+    devices.micLevel = (volume) => {
+      log.trace("[client] volume: ", volume);
+      cc.clearRect(0, 0, c.width, c.height);
+      cc.fillStyle = gradient;
+      cc.fillRect(0, c.height - volume * 300, c.width, c.height);
+    };
   };
 
     selfTest = () => {
@@ -644,12 +676,6 @@ class ClientApp extends Component {
         let msg = {type: "question", status: !question, room, user};
         sendProtocolMessage(protocol, user, msg );
         this.setState({question: !question});
-    };
-
-    micMute = () => {
-        let {videoroom, muted} = this.state;
-        muted ? videoroom.unmuteAudio() : videoroom.muteAudio();
-        this.setState({muted: !muted});
     };
 
     onNewMsg = () => {
