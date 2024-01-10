@@ -10,7 +10,7 @@ import {
   checkNotification,
   testDevices,
   testMic,
-  notifyMe, getDateString
+  notifyMe, getDateString, updateGxyUser
 } from "../../shared/tools";
 import './ClientApp.scss'
 import './VideoConteiner.scss'
@@ -24,7 +24,7 @@ import {GEO_IP_INFO, PAY_USER_FEE} from "../../shared/env";
 import log from "loglevel";
 import version from "../VirtualApp/Version";
 import {getUserRole, userRolesEnum} from "../../shared/enums";
-import {updateSentryUser} from "../../shared/sentry";
+import {captureMessage, updateSentryUser} from "../../shared/sentry";
 import devices from "../../lib/devices";
 import JanusStream from "../../shared/streaming-utils";
 import {initCrisp} from "../VirtualApp/components/Support";
@@ -33,6 +33,10 @@ import api from "../../shared/Api";
 import ConfigStore from "../../shared/ConfigStore";
 import GxyJanus from "../../shared/janus-utils";
 import mqtt from "../../shared/mqtt";
+import {JanusMqtt} from "../../lib/janus-mqtt";
+import {PublisherPlugin} from "../../lib/publisher-plugin";
+import {SubscriberPlugin} from "../../lib/subscriber-plugin";
+import {isFullScreen, toggleFullScreen} from "../VirtualApp/FullScreenHelper";
 
 class ClientApp extends Component {
 
@@ -354,161 +358,193 @@ class ClientApp extends Component {
         },1000);
     };
 
-    iceState = () => {
-        let count = 0;
-        let chk = setInterval(() => {
-            count++;
-            let {ice} = this.state;
-            if(count < 11 && ice === "connected") {
-                clearInterval(chk);
-            }
-            if(count >= 10) {
-                clearInterval(chk);
-                this.exitRoom(false);
-                alert("Network setting is changed!");
-                window.location.reload();
-            }
-        },3000);
-    };
+  initJanus = (retry) => {
+    const {user} = this.state;
+    let janus = new JanusMqtt(user, "gxydev");
+    janus.onStatus = (srv, status) => {
+      if (status === "offline") {
+        alert("Janus Server - " + srv + " - Offline");
+        window.location.reload();
+      }
 
-    mediaState = (media) => {
-        // Handle video
-        if(media === "video") {
-            let count = 0;
-            let chk = setInterval(() => {
-                count++;
-                let {video,ice} = this.state;
-
-                // Video is back stop counter
-                if(count < 11 && video) {
-                    clearInterval(chk);
-                }
-
-                // Network problem handled in iceState
-                if(count < 11 && ice === "disconnected") {
-                    clearInterval(chk);
-                }
-
-                // Video still not back disconnecting
-                if(count >= 10) {
-                    clearInterval(chk);
-                    this.exitRoom(false);
-                    alert("Server stopped receiving our media! Check your video device.");
-                }
-            },3000);
-        }
-
-        //Handle audio
-        if(media === "audio") {
-            let count = 0;
-            let chk = setInterval(() => {
-                count++;
-                let {audio,video,ice,question} = this.state;
-
-                // Audio is back stop counter
-                if(count < 11 && audio) {
-                    clearInterval(chk);
-                }
-
-                // Network problem handled in iceState
-                if(count < 11 && ice === "disconnected") {
-                    clearInterval(chk);
-                }
-
-                // The problem with both devices, leave resolve it in video loop
-                if(count < 11 && !audio && !video) {
-                    clearInterval(chk);
-                }
-
-                // Audio still not back
-                if(count >= 10 && !audio && video) {
-                    clearInterval(chk);
-                    if(question)
-                        this.handleQuestion();
-                    alert("Server stopped receiving our Audio! Check your Mic");
-                }
-            },3000);
-        }
-    };
-
-    initVideoRoom = (reconnect) => {
-        if(this.state.videoroom)
-            this.state.videoroom.detach();
-        if(this.state.protocol)
-            this.state.protocol.detach();
-        if(this.state.kicked) {
-            client.signoutRedirect();
-            return
-        }
-        this.state.janus.attach({
-            plugin: "janus.plugin.videoroom",
-            opaqueId: "videoroom_user",
-            success: (videoroom) => {
-                Janus.log(" :: My handle: ", videoroom);
-                Janus.log("Plugin attached! (" + videoroom.getPlugin() + ", id=" + videoroom.getId() + ")");
-                Janus.log("  -- This is a publisher/manager");
-                let {user} = this.state;
-                user.handle = videoroom.getId();
-                this.setState({videoroom, user, protocol: null});
-                this.initDevices(true);
-                if(reconnect) {
-                    setTimeout(() => {
-                        this.joinRoom(reconnect);
-                    }, 5000);
-                }
-            },
-            error: (error) => {
-                Janus.log("Error attaching plugin: " + error);
-            },
-            consentDialog: (on) => {
-                Janus.debug("Consent dialog should be " + (on ? "on" : "off") + " now");
-            },
-            iceState: (state) => {
-                Janus.log("ICE state changed to " + state);
-                this.setState({ice: state});
-                if(state === "disconnected") {
-                    // FIXME: ICE restart does not work properly, so we will do silent reconnect
-                    this.iceState();
-                }
-            },
-            mediaState: (media, on) => {
-                Janus.log("Janus " + (on ? "started" : "stopped") + " receiving our " + media);
-                this.setState({[media]: on});
-                if(!on) {
-                    this.mediaState(media);
-                }
-            },
-            webrtcState: (on) => {
-                Janus.log("Janus says our WebRTC PeerConnection is " + (on ? "up" : "down") + " now");
-            },
-            slowLink: (uplink, lost, mid) => {
-                Janus.log("Janus reports problems " + (uplink ? "sending" : "receiving") +
-                    " packets on mid " + mid + " (" + lost + " lost packets)");
-            },
-            onmessage: (msg, jsep) => {
-                this.onMessage(this.state.videoroom, msg, jsep, false);
-            },
-            onlocaltrack: (track, on) => {
-                Janus.log(" ::: Got a local track event :::");
-                Janus.log("Local track " + (on ? "added" : "removed") + ":", track);
-                if(!this.state.mystream)
-                    this.setState({mystream: track});
-            },
-            onremotestream: (stream) => {
-                // The publisher stream is sendonly, we don't expect anything here
-            },
-            ondataopen: (data) => {
-                Janus.log("The DataChannel is available!(publisher)");
-            },
-            ondata: (data) => {
-                Janus.debug("We got data from the DataChannel! (publisher) " + data);
-            },
-            oncleanup: () => {
-                Janus.log(" ::: Got a cleanup notification: we are unpublished now :::");
-            }
+      if (status === "error") {
+        log.error("[client] Janus error, reconnecting...");
+        this.exitRoom(true, () => {
+          this.reinitClient(retry);
         });
+      }
     };
 
+    let videoroom = new PublisherPlugin();
+    // videoroom.subTo = this.makeSubscription;
+    // videoroom.unsubFrom = this.unsubscribeFrom;
+    videoroom.talkEvent = this.handleTalking;
+    videoroom.iceFailed = this.iceFailed;
+
+    // let subscriber = new SubscriberPlugin();
+    // subscriber.onTrack = this.onRemoteTrack;
+    // subscriber.onUpdate = this.onUpdateStreams;
+    // subscriber.iceFailed = this.iceFailed;
+
+    janus.init().then((data) => {
+      log.info("[client] Janus init", data);
+
+      janus.attach(videoroom).then((data) => {
+        log.info("[client] Publisher Handle: ", data);
+        this.joinRoom(false, janus, videoroom, user);
+      });
+
+      // janus.attach(subscriber).then((data) => {
+      //   this.setState({subscriber});
+      //   log.info("[client] Subscriber Handle: ", data);
+      // });
+    })
+      .catch((err) => {
+        log.error("[client] Janus init", err);
+        this.exitRoom(true, () => {
+          this.reinitClient(retry);
+        });
+      });
+  };
+
+  iceFailed = (data) => {
+    const {exit_room} = this.state;
+    if(!exit_room && data === "publisher") {
+      this.setState({show_notification: true});
+      this.exitRoom();
+      captureMessage("reconnect", {});
+      log.warn("[client] iceFailed for: ", data);
+    }
+  };
+
+  joinRoom = (reconnect, janus, videoroom, user) => {
+    this.setState({exit_room: false});
+    let {selected_room, media, cammuted, isGroup} = this.state;
+    const {video: {device}} = media;
+
+    user.camera = !!device && cammuted === false;
+    user.question = false;
+    user.timestamp = Date.now();
+    user.session = janus.sessionId;
+    user.handle = videoroom.janusHandleId;
+
+    this.setState({janus, videoroom, user});
+
+    this.micMute();
+
+    const {id, timestamp, role, username} = user;
+    const d = {id, timestamp, role, display: username, is_group: isGroup, is_desktop: true};
+
+    videoroom.join(selected_room.toString(), d).then((data) => {
+      log.info("[client] Joined respond :", data);
+
+      // Feeds count with user role
+      // let feeds_count = userFeeds(data.publishers).length;
+      // if (feeds_count > 25) {
+      //   alert(t("oldClient.maxUsersInRoom"));
+      //   this.exitRoom(false);
+      //   return;
+      // }
+
+      const {id, room} = data;
+      user.rfid = data.id;
+
+      const {audio, video} = this.state.media;
+      videoroom.publish(video.stream, audio.stream).then((json) => {
+        user.extra.streams = json.streams;
+        user.extra.isGroup = this.state.isGroup;
+
+        const vst = json.streams.find((v) => v.type === "video" && v.h264_profile);
+        if(vst && vst?.h264_profile !== "42e01f") {
+          captureMessage("h264_profile", vst);
+        }
+
+        this.setState({user, myid: id, delay: false, sourceLoading: false});
+        //updateSentryUser(user);
+        //updateGxyUser(user);
+        //this.keepAlive();
+
+        mqtt.join("galaxy/room/" + selected_room);
+        mqtt.join("galaxy/room/" + selected_room + "/chat", true);
+        //if(isGroup) videoroom.setBitrate(600000);
+
+        log.info("[client] Pulbishers list: ", data.publishers);
+
+        //this.makeSubscription(data.publishers);
+      }).catch((err) => {
+        log.error("[client] Publish error :", err);
+        this.exitRoom(false);
+      });
+    }).catch((err) => {
+      log.error("[client] Join error :", err);
+      this.exitRoom(false);
+    });
+  };
+
+  exitRoom = (reconnect, callback) => {
+    this.setState({delay: true, exit_room: true});
+    const {videoroom} = this.state;
+
+    if(videoroom) {
+      videoroom.leave().then((data) => {
+        log.info("[client] leave respond:", data);
+        this.resetClient(reconnect, callback);
+      }).catch(e => {
+        this.resetClient(reconnect, callback);
+      });
+    } else {
+      this.resetClient(reconnect, callback);
+    }
+  };
+
+  resetClient = (reconnect, callback) => {
+    let {janus, room, shidur} = this.state;
+
+    //this.clearKeepAlive();
+
+    localStorage.setItem("question", false);
+
+    // const params = {with_num_users: true};
+    // api.fetchAvailableRooms(params).then(data => {
+    //   const {rooms} = data;
+    //   this.setState({rooms});
+    // }).catch((err) => {
+    //   log.error("[client] Error exiting room", err);
+    // });
+
+    mqtt.exit("galaxy/room/" + room);
+    mqtt.exit("galaxy/room/" + room + "/chat");
+
+    if(shidur && !reconnect) {
+      JanusStream.destroy();
+    }
+
+    if(!reconnect && isFullScreen()) {
+      toggleFullScreen();
+    }
+
+    if(janus) janus.destroy();
+
+    this.setState({
+      muted: false,
+      question: false,
+      feeds: [],
+      mids: [],
+      localAudioTrack: null,
+      localVideoTrack: null,
+      remoteFeed: null,
+      videoroom: null,
+      subscriber: null,
+      janus: null,
+      delay: reconnect,
+      room: reconnect ? room : "",
+      chatMessagesCount: 0,
+      isSettings: false,
+      sourceLoading: true
+    });
+
+    if(typeof callback === "function") callback();
+  }
     publishOwnFeed = (useVideo) => {
         let {videoroom,audio_device,video_device,video_setting} = this.state;
         const width = video_setting.width;
@@ -592,82 +628,6 @@ class ClientApp extends Component {
         }
     };
 
-    sendDataMessage = (key,value) => {
-        let {videoroom,user} = this.state;
-        user[key] = value;
-        var message = JSON.stringify(user);
-        Janus.log(":: Sending message: ",message);
-        videoroom.data({ text: message })
-    };
-
-    joinRoom = (reconnect) => {
-        let {janus,videoroom,selected_room,user,tested} = this.state;
-        user.display = user.title || user.name;
-        user.self_test = tested;
-        user.sound_test = reconnect ? JSON.parse(localStorage.getItem("sound_test")) : false;
-        user.question = false;
-        localStorage.setItem("username", user.display);
-        initGxyProtocol(janus, user, protocol => {
-            this.setState({protocol});
-            if(reconnect && JSON.parse(localStorage.getItem("question"))) {
-                // Send question event if before join it was true
-                user.question = true;
-                let msg = { type: "question", status: true, room: selected_room, user};
-                setTimeout(() => {
-                    sendProtocolMessage(protocol, user, msg );
-                }, 5000);
-            }
-        }, ondata => {
-            Janus.log("-- :: It's protocol public message: ", ondata);
-            const {type,error_code,id,room} = ondata;
-            if(type === "error" && error_code === 420) {
-                alert(ondata.error);
-                this.state.protocol.hangup();
-            } else if(type === "joined") {
-                let register = { "request": "join", "room": selected_room, "ptype": "publisher", "display": JSON.stringify(user) };
-                videoroom.send({"message": register});
-                this.setState({user, muted: false, room: selected_room});
-                this.chat.initChatRoom(user);
-            } else if(type === "chat-broadcast" && room === GROUPS_ROOM) {
-                this.chat.showMessage(ondata);
-            } else if(type === "client-reconnect" && user.id === id) {
-                this.exitRoom(true);
-            } else if(type === "client-reload" && user.id === id) {
-                window.location.reload();
-            } else if(type === "client-disconnect" && user.id === id) {
-                this.exitRoom();
-            } else if(type === "client-kicked" && user.id === id) {
-                this.setState({kicked: true}, () => {
-                    this.exitRoom();
-                });
-            } else if(type === "client-question" && user.id === id) {
-                this.handleQuestion();
-            } else if(type === "client-mute" && user.id === id) {
-                this.micMute();
-            } else if(type === "sound_test" && user.id === id) {
-                let {user} = this.state;
-                user.sound_test = true;
-                localStorage.setItem("sound_test", true);
-                this.setState({user});
-            }
-        });
-    };
-
-    exitRoom = (reconnect) => {
-        let {videoroom,protocol} = this.state;
-        let leave = {request : "leave"};
-        videoroom.send({"message": leave});
-        localStorage.setItem("question", false);
-        this.setState({muted: false, mystream: null, room: "", i: "", feeds: [], question: false});
-        this.chat.exitChatRoom(GROUPS_ROOM);
-        let pl = {textroom : "leave", transaction: Janus.randomString(12),"room": PROTOCOL_ROOM};
-        protocol.data({text: JSON.stringify(pl),
-            success: () => {
-                this.initVideoRoom(reconnect);
-            }
-        });
-    };
-
     handleQuestion = () => {
         //TODO: only when shidur user is online will be avelable send question event, so we need to add check
         let {protocol, user, room, question} = this.state;
@@ -698,7 +658,7 @@ class ClientApp extends Component {
 
   render() {
 
-      const {audio,user, media ,video_device,audio_device,muted,mystream,room,count,question,selftest,tested,progress,geoinfo} = this.state;
+      const {janus, audio,user, media ,video_device,audio_device,muted,mystream,room,count,question,selftest,tested,progress,geoinfo} = this.state;
       const width = "134";
       const height = "100";
       const autoPlay = true;
@@ -744,11 +704,11 @@ class ClientApp extends Component {
           <div className={classNames('gclient', { 'gclient--chat-open': this.state.visible })} >
               <div className="gclient__toolbar">
                   <Menu icon='labeled' secondary size="mini">
-                      <Menu.Item disabled={!video_device || progress} onClick={this.initConnection}>
-                          <Icon color={mystream ? 'green' : 'red'} name='power off'/>
-                          {!mystream ? "Disconnected" : "Connected"}
+                      <Menu.Item disabled={!media.video.device || progress} onClick={this.initJanus}>
+                          <Icon color={janus ? 'green' : 'red'} name='power off'/>
+                          {janus ? "Disconnect" : "Connect"}
                       </Menu.Item>
-                      <Menu.Item disabled={!mystream} onClick={() => this.setState({ visible: !this.state.visible, count: 0 })}>
+                      <Menu.Item onClick={() => this.setState({ visible: !this.state.visible, count: 0 })}>
                           <Icon name="comments"/>
                           {this.state.visible ? "Close" : "Open"} Chat
                           {count > 0 ? l : ""}
