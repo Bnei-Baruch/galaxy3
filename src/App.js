@@ -6,7 +6,8 @@ import i18n from "i18next";
 import "./i18n/i18n";
 // import GalaxyApp from "./apps/GalaxyApp";
 // import VirtualMqttClient from "./apps/VirtualApp/VirtualMqttClient";
-import ClientApp from "./apps/WebinarApp/ClientApp";
+// import ClientApp from "./apps/WebinarApp/ClientApp";
+import StreamerApp from "./apps/WebinarApp/StreamerApp";
 // import AdminApp from "./apps/AdminApp/AdminApp";
 // import ShidurAppMqtt from "./apps/ShidurApp/ShidurAppMqtt";
 // import ShidurAppHttp from "./apps/ShidurApp/ShidurAppHttp";
@@ -21,7 +22,8 @@ class App extends Component {
       <I18nextProvider i18n={i18n}>
         {/*{<GalaxyApp />}*/}
         {/*<VirtualMqttClient />*/}
-        <ClientApp />
+        {/*<ClientApp />*/}
+        <StreamerApp />
         {/*<AdminApp />*/}
         {/*<ShidurAppMqtt />*/}
         {/*<ShidurAppHttp />*/}
