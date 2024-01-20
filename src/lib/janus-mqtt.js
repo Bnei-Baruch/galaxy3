@@ -18,6 +18,8 @@ export class JanusMqtt {
     this.sendCreate = true
     this.keeptry = 0
     this.token = null
+    this.connect = null
+    this.disconnect = null
     this.onMessage = this.onMessage.bind(this)
   }
 
@@ -62,7 +64,15 @@ export class JanusMqtt {
         reject,
         replyType: 'success'
       }
-      mqtt.send(JSON.stringify(msg), false, this.txTopic, this.rxTopic + "/" + this.user.id, this.user)
+
+      this.connect = function () {
+        mqtt.send(JSON.stringify(msg), false, this.txTopic, this.rxTopic + "/" + this.user.id, this.user)
+      }
+
+      this.disconnect = function (json) {
+        reject(json)
+      }
+
     })
 
   }
@@ -261,6 +271,8 @@ export class JanusMqtt {
 
     if(tD === "status" && json.online) {
       log.debug("[janus] Janus Server - " + this.srv + " - Online")
+      if(typeof this.connect === "function")
+        this.connect()
       if(typeof this.onStatus === "function")
         this.onStatus(this.srv, "online")
       return
@@ -269,6 +281,8 @@ export class JanusMqtt {
     if(tD === "status" && !json.online) {
       this.isConnected = false
       log.debug("[janus] Janus Server - " + this.srv + " - Offline")
+      if(typeof this.disconnect === "function")
+        this.disconnect(json)
       if(typeof this.onStatus === "function")
         this.onStatus(this.srv, "offline")
       return
