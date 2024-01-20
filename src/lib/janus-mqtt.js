@@ -71,6 +71,7 @@ export class JanusMqtt {
 
       this.disconnect = function (json) {
         reject(json)
+        this._cleanupTransactions()
       }
 
     })
