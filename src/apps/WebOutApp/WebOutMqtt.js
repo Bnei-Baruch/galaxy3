@@ -117,16 +117,11 @@ class WebOutApp extends Component {
     gateways[gxy].init(token).then(data => {
       log.info("["+gxy+"] Janus init success", data)
     }).catch(err => {
-      log.error("["+gxy+"] Janus init", err);
+      log.error("["+gxy+"] Janus init error: ", err);
+      setTimeout(() => {
+        this.initJanus(user, gxy);
+      }, 10000)
     })
-    gateways[gxy].onStatus = (srv, status) => {
-      if (status !== "online") {
-        log.error("["+srv+"] Janus: ", status);
-        setTimeout(() => {
-          this.initJanus(user, srv);
-        }, 10000)
-      }
-    }
   }
 
   setProps = (props) => {
