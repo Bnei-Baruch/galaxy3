@@ -120,11 +120,9 @@ class AudioHandleMqtt extends Component {
       }
     }
     const isExistFeed = feeds.find((f) => f.id === feed[0].id);
-    if (!isExistFeed) {
+    if (!isExistFeed && subscription.length > 0) {
       feeds.push(feed[0]);
       this.setState({feeds});
-    }
-    if (subscription.length > 0) {
       this.subscribeTo(room, subscription);
     }
   }
