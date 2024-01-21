@@ -168,7 +168,6 @@ class VirtualMqttClient extends Component {
     user.extra = {};
 
     let browser = platform.parse(system);
-    console.log(browser)
     if (!/Safari|Firefox|Chrome|Edge/.test(browser.name)) {
       alert(t("oldClient.browserNotSupported"));
       return;
@@ -191,7 +190,7 @@ class VirtualMqttClient extends Component {
           api.fetchAvailableRooms({with_num_users: true}).then(data => {
             const {rooms} = data;
             this.setState({rooms});
-            //this.initDevices();
+            this.initDevices();
             const {selected_room} = this.state;
             if (selected_room !== "") {
               const room = rooms.find((r) => r.room === selected_room);
