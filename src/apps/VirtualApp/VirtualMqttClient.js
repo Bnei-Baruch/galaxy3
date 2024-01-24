@@ -218,6 +218,7 @@ class VirtualMqttClient extends Component {
     mqtt.init(user, (reconnected, error) => {
       if (error) {
         log.info("[client] MQTT disconnected");
+        captureMessage("disconnected", {});
         this.setState({mqttOn: false});
         window.location.reload();
         alert("- Lost Connection to Arvut System -");
