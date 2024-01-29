@@ -136,16 +136,11 @@ class ShidurAppMqtt extends Component {
     gateways[gxy] = new JanusMqtt(user, gxy, gxy);
     gateways[gxy].init(token).then(data => {
       log.info("["+gxy+"] Janus init success", data)
-      gateways[gxy].onStatus = (srv, status) => {
-        if (status !== "online") {
-          log.error("["+srv+"] Janus: ", status);
-          setTimeout(() => {
-            this.initJanus(user, srv);
-          }, 10000)
-        }
-      }
     }).catch(err => {
       log.error("["+gxy+"] Janus init", err);
+      setTimeout(() => {
+        this.initJanus(user, gxy);
+      }, 10000)
     })
   };
 

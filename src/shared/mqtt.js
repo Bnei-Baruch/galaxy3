@@ -6,8 +6,8 @@ import GxyJanus from "./janus-utils";
 import log from "loglevel";
 import {captureMessage} from "./sentry";
 
-const mqttTimeout = 5 // Seconds
-const mqttKeepalive = 2 // Seconds
+const mqttTimeout = 30 // Seconds
+const mqttKeepalive = 10 // Seconds
 
 class MqttMsg {
   constructor() {
@@ -98,6 +98,15 @@ class MqttMsg {
     if (!this.mq) return;
     log.info("[mqtt] Subscribe to: ", topic);
     let options = chat ? {qos: 0, nl: false} : {qos: 1, nl: true};
+    this.mq.subscribe(topic, {...options}, (err) => {
+      err && log.error("[mqtt] Error: ", err);
+    });
+  };
+
+  sub = (topic, qos) => {
+    if (!this.mq) return;
+    log.info("[mqtt] Subscribe to: ", topic);
+    let options = {qos, nl: true};
     this.mq.subscribe(topic, {...options}, (err) => {
       err && log.error("[mqtt] Error: ", err);
     });
