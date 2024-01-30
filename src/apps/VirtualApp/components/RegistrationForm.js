@@ -192,8 +192,10 @@ export const RegistrationForm = ({
 
     try {
       await updateKCStatus();
+      window.location.reload()
     } catch (e) {
       console.log("change kc status error", e);
+      window.location.reload()
     }
     setIsProgress(false);
     onSubmit();

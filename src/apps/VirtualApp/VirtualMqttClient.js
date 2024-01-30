@@ -1524,7 +1524,7 @@ class VirtualMqttClient extends Component {
   };
 
   updateUserRole = () => {
-    getUser(this.checkPermission);
+    //getUser(this.checkPermission);
   };
 
   setIsRoomChat = (isRoomChat) => this.setState({isRoomChat});
