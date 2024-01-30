@@ -25,9 +25,9 @@ export class JanusMqtt {
 
   init(token) {
     this.token = token
-    mqtt.join(this.rxTopic + "/" + this.user.id, false);
-    mqtt.join(this.rxTopic, false);
-    mqtt.join(this.stTopic, false);
+    mqtt.sub(this.rxTopic + "/" + this.user.id, 0);
+    mqtt.sub(this.rxTopic, 0);
+    mqtt.sub(this.stTopic, 1);
 
     mqtt.mq.on(this.srv, this.onMessage);
 
