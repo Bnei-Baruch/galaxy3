@@ -130,6 +130,13 @@
     height: 100%;
   }
 
+  .camera-off-name {
+    background: none;
+    font-size: 3rem;
+    text-align: center;
+    vertical-align: baseline;
+  }
+
   .question {
     &:before {
       display: block;
