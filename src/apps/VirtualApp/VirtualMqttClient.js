@@ -1434,9 +1434,9 @@ class VirtualMqttClient extends Component {
     );
   };
 
-  renderNewVersionContent = (layout, isDeb, source, rooms_list, otherFeedHasQuestion, adevices_list, vdevices_list, noOfVideos, remoteVideos) => {
+  renderNewVersionContent = (layout, isDeb, source, otherFeedHasQuestion, noOfVideos, remoteVideos) => {
     const {i18n} = this.props;
-    const {attachedSource, chatVisible, room, shidur, user, rightAsideName, leftAsideSize, leftAsideName, sourceLoading, isKliOlamiShown, kliOlamiAttached} = this.state;
+    const {attachedSource, chatVisible, room, shidur, user, rightAsideName, leftAsideSize, leftAsideName, isKliOlamiShown, kliOlamiAttached} = this.state;
 
     const notApproved = user && user.role !== userRolesEnum.user;
 
@@ -1448,8 +1448,10 @@ class VirtualMqttClient extends Component {
         isDoubleSize={"double" === layout}
       />
     );
+
     const noBroadcastPanel = layout !== "split" ||
       (((room === "" || !shidur) || !attachedSource) && (!isKliOlamiShown || !kliOlamiAttached));
+    
     return (
       <div className={classNames("vclient", {"vclient--chat-open": chatVisible})}>
         {this.renderTopBar(isDeb)}
@@ -1556,13 +1558,14 @@ class VirtualMqttClient extends Component {
         />
       );
     }
-    let rooms_list = rooms.map((data, i) => {
-      const {room, description, num_users} = data;
-      return {key: i, text: description, description: num_users, value: room};
-    });
 
-    let adevices_list = this.mapDevices(media.audio.devices);
-    let vdevices_list = this.mapDevices(media.video.devices);
+    // let rooms_list = rooms.map((data, i) => {
+    //   const {room, description, num_users} = data;
+    //   return {key: i, text: description, description: num_users, value: room};
+    // });
+
+    // let adevices_list = this.mapDevices(media.audio.devices);
+    // let vdevices_list = this.mapDevices(media.video.devices);
 
     let otherFeedHasQuestion = false;
     let localPushed = false;
@@ -1570,6 +1573,7 @@ class VirtualMqttClient extends Component {
     let remoteVideos = sortAndFilterFeeds(feeds).reduce((result, feed) => {
       const {question, id} = feed;
       otherFeedHasQuestion = otherFeedHasQuestion || (question && id !== myid);
+      
       if (!localPushed && ((!feed.display.is_group && isGroup) ||
           (feed.display.is_group === isGroup && feed.display.timestamp >= user.timestamp))) {
         localPushed = true;
@@ -1577,12 +1581,15 @@ class VirtualMqttClient extends Component {
           result.push(this.renderLocalMedia(width, height, i, isGroup));
         }
       }
+
       if (feed.display.is_group) {
         groupsNum += 1;
       }
+      
       result.push(this.renderMedia(feed, width, height, layout));
       return result;
     }, []);
+
     if (!localPushed) {
       for (let i = 0; i < parseInt(numberOfVirtualUsers, 10); i++) {
         remoteVideos.push(this.renderLocalMedia(width, height, i, isGroup));
@@ -1591,6 +1598,7 @@ class VirtualMqttClient extends Component {
 
     const groupMultiplier = "equal" === layout ? 0 : 3;
     let noOfVideos = remoteVideos.length + groupMultiplier * groupsNum;
+    
     if (room !== "" && shidur && attachedSource) {
       if ("double" === layout) {
         noOfVideos += 4;
@@ -1598,6 +1606,7 @@ class VirtualMqttClient extends Component {
         noOfVideos += 1;
       }
     }
+    
     if (isKliOlamiShown && kliOlamiAttached) {
       if ("double" === layout) {
         noOfVideos += 4;
@@ -1610,7 +1619,7 @@ class VirtualMqttClient extends Component {
 
     const isDeb = new URL(window.location.href).searchParams.has("deb");
 
-    let content = this.renderNewVersionContent(layout, isDeb, source, rooms_list, otherFeedHasQuestion, adevices_list, vdevices_list, noOfVideos, remoteVideos);
+    let content = this.renderNewVersionContent(layout, isDeb, source, otherFeedHasQuestion, noOfVideos, remoteVideos);
 
     return (
       <Fragment>
