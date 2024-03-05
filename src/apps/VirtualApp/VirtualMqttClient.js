@@ -1113,10 +1113,9 @@ class VirtualMqttClient extends Component {
 
   renderWindow = (talking, question, display, cammute, isGroup) => {
     const {muteOtherCams, hideDisplays} = this.state;
-    const mute = cammute || muteOtherCams;
+    const mute = cammute || muteOtherCams || hideDisplays;
 
     return (
-      <div>
         <div className={classNames("video__overlay", { "talk-frame": talking })}>
           {question ? (
             <div className="question">
@@ -1129,12 +1128,14 @@ class VirtualMqttClient extends Component {
           ) : (
             ""
           )}
-          <div className="video__title">
+          {
+            mute && <span className="camera-off-name">{display}</span>
+          }
+          <div className="video__title"> 
             {!talking ? <Icon name="microphone slash" size="small" color="red" /> : ""}
             {isGroup ? <Icon name="group" size="small" style={{ margin: "0 .7em 0 .7em" }} /> : ""}
-            {mute || hideDisplays
-              ? <span className="camera-off-name">{display}</span> 
-              : <Popup
+            {!mute &&
+              <Popup
                   content={display}
                   mouseEnterDelay={200}
                   mouseLeaveDelay={500}
@@ -1143,15 +1144,14 @@ class VirtualMqttClient extends Component {
                 /> 
             }
           </div>
-        </div>
-        <svg
+        {/* <svg
           className={classNames("nowebcam", { hidden: !mute })}
           viewBox="0 0 32 18"
           preserveAspectRatio="xMidYMid meet"
         >
           {isGroup && <text x="16" y="9" textAnchor="middle" alignmentBaseline="central" dominantBaseline="central">&#xf0c0;</text>}
           {!isGroup && <text x="16" y="9" textAnchor="middle" alignmentBaseline="central" dominantBaseline="central">&#xf2bd;</text>}
-        </svg>
+        </svg> */}
       </div>
     );
   };
@@ -1466,15 +1466,15 @@ class VirtualMqttClient extends Component {
           >
             <div
               className={`
-            vclient__main-wrapper
-            no-of-videos-${noOfVideos}
-            layout--${layout}
-            broadcast--${(room !== "" && shidur) ? "on" : "off"}
-            broadcast--${!attachedSource ? "popup" : "inline"}
-            kli-olami--${isKliOlamiShown ? "on" : "off"}
-            kli-olami--${!kliOlamiAttached ? "popup" : "inline"}
-            ${noBroadcastPanel ? "no-broadcast-panel" : ""}
-           `}
+                  vclient__main-wrapper
+                  no-of-videos-${noOfVideos}
+                  layout--${layout}
+                  broadcast--${(room !== "" && shidur) ? "on" : "off"}
+                  broadcast--${!attachedSource ? "popup" : "inline"}
+                  kli-olami--${isKliOlamiShown ? "on" : "off"}
+                  kli-olami--${!kliOlamiAttached ? "popup" : "inline"}
+                  ${noBroadcastPanel ? "no-broadcast-panel" : ""}
+              `}
             >
               <div className="broadcast-panel">
                 <div className="broadcast__wrapper">
@@ -1585,7 +1585,7 @@ class VirtualMqttClient extends Component {
       if (feed.display.is_group) {
         groupsNum += 1;
       }
-      
+
       result.push(this.renderMedia(feed, width, height, layout));
       return result;
     }, []);
