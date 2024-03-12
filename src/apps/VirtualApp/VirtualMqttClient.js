@@ -1059,13 +1059,51 @@ class VirtualMqttClient extends Component {
   };
 
   renderLocalMedia = (width, height, index, isGroup) => {
-    const { user, cammuted, question, muted, } = this.state;
+    const {user, cammuted, question, muted, hideDisplays} = this.state;
     const display = user ? user.username : "";
 
     return (
       <div className="video" key={index}>
-         { this.renderWindow(!muted, question, display, cammuted, isGroup)}
-        
+        <div className={classNames("video__overlay", {"talk-frame": !muted})}>
+          {question ? (
+            <div className="question">
+              <svg viewBox="0 0 50 50">
+                <text x="25" y="25" textAnchor="middle" alignmentBaseline="central" dominantBaseline="central">
+                  &#xF128;
+                </text>
+              </svg>
+            </div>
+          ) : (
+            ""
+          )}
+          {
+            (hideDisplays || cammuted) && <span className="camera-off-name">{display}</span>
+          }
+          <div className="video__title">
+            {muted ? <Icon name="microphone slash" size="small" color="red" /> : ""}
+            {isGroup ? <Icon name="group" size="small" style={{margin: "0 .7em 0 .7em"}} /> : ""}
+            {
+              !(hideDisplays || cammuted) && (
+                <Popup
+                  content={display}
+                  mouseEnterDelay={200}
+                  mouseLeaveDelay={500}
+                  on="hover"
+                  trigger={<div className="title-name">{display}</div>}
+                />
+              )
+            }
+            <Icon style={{marginLeft: "0.3rem"}} name="signal" size="small" color={this.connectionColor()} />
+          </div>
+        </div>
+        {/* <svg
+          className={classNames("nowebcam", {hidden: !cammuted})}
+          viewBox="0 0 32 18"
+          preserveAspectRatio="xMidYMid meet"
+        >
+          {isGroup && <text x="16" y="9" textAnchor="middle" alignmentBaseline="central" dominantBaseline="central">&#xf0c0;</text>}
+          {!isGroup && <text x="16" y="9" textAnchor="middle" alignmentBaseline="central" dominantBaseline="central">&#xf2bd;</text>}
+        </svg> */}
         <video
           className={classNames("mirror", {hidden: cammuted})}
           ref="localVideo"
@@ -1082,79 +1120,74 @@ class VirtualMqttClient extends Component {
   };
 
   renderMedia = (feed, width, height, layout) => {
-    const {id, talking, question, cammute, display: {display, is_group: isGroup}} = feed;
+  const {id, talking, question, cammute, display: {display, is_group: isGroup}} = feed;
+  const {muteOtherCams, hideDisplays} = this.state;
+  const muteCamera = cammute || muteOtherCams || hideDisplays;
 
-    return (
-      <div className={classNames("video", {"is-double-size": isGroup && layout !== "equal"})} key={"v" + id} ref={"video" + id} id={"video" + id}>
-        { this.renderWindow(talking, question, display, cammute, isGroup)}
-
-        <video
-          key={"v" + id}
-          ref={"remoteVideo" + id}
-          id={"remoteVideo" + id}
-          width={width}
-          height={height}
-          autoPlay={true}
-          controls={false}
-          muted={true}
-          playsInline={true}
-        />
-        <audio
-          key={"a" + id}
-          ref={"remoteAudio" + id}
-          id={"remoteAudio" + id}
-          autoPlay={true}
-          controls={false}
-          playsInline={true}
-        />
-      </div>
-    );
-  };
-
-  renderWindow = (talking, question, display, cammute, isGroup) => {
-    const {muteOtherCams, hideDisplays} = this.state;
-    const mute = cammute || muteOtherCams || hideDisplays;
-
-    return (
-        <div className={classNames("video__overlay", { "talk-frame": talking })}>
-          {question ? (
-            <div className="question">
-              <svg viewBox="0 0 50 50">
-                <text x="25" y="25" textAnchor="middle" alignmentBaseline="central" dominantBaseline="central">
-                  &#xF128;
-                </text>
-              </svg>
-            </div>
-          ) : (
-            ""
-          )}
-          {
-            mute && <span className="camera-off-name">{display}</span>
-          }
-          <div className="video__title"> 
-            {!talking ? <Icon name="microphone slash" size="small" color="red" /> : ""}
-            {isGroup ? <Icon name="group" size="small" style={{ margin: "0 .7em 0 .7em" }} /> : ""}
-            {!mute &&
-              <Popup
-                  content={display}
-                  mouseEnterDelay={200}
-                  mouseLeaveDelay={500}
-                  on="hover"
-                  trigger={<span className="title-name">{display}</span>} 
-                /> 
-            }
+  return (
+    <div className={classNames("video", {"is-double-size": isGroup && layout !== "equal"})} key={"v" + id} ref={"video" + id} id={"video" + id}>
+      <div className={classNames("video__overlay", {"talk-frame": talking})}>
+        {question ? (
+          <div className="question">
+            <svg viewBox="0 0 50 50">
+              <text x="25" y="25" textAnchor="middle" alignmentBaseline="central" dominantBaseline="central">
+                &#xF128;
+              </text>
+            </svg>
           </div>
-        {/* <svg
-          className={classNames("nowebcam", { hidden: !mute })}
-          viewBox="0 0 32 18"
-          preserveAspectRatio="xMidYMid meet"
-        >
-          {isGroup && <text x="16" y="9" textAnchor="middle" alignmentBaseline="central" dominantBaseline="central">&#xf0c0;</text>}
-          {!isGroup && <text x="16" y="9" textAnchor="middle" alignmentBaseline="central" dominantBaseline="central">&#xf2bd;</text>}
-        </svg> */}
+        ) : (
+          ""
+        )}
+        {
+          muteCamera && <span className="camera-off-name">{display}</span>
+        }
+        <div className="video__title">
+          {!talking ? <Icon name="microphone slash" size="small" color="red"/> : ""}
+          {isGroup ? <Icon name="group" size="small" style={{margin: "0 .7em 0 .7em"}} /> : ""}
+          {
+            !muteCamera && (
+              <Popup
+                content={display}
+                mouseEnterDelay={200}
+                mouseLeaveDelay={500}
+                on="hover"
+                trigger={<span className="title-name">{display}</span>}
+              />
+            )
+          }
+        </div>
       </div>
-    );
-  };
+      {/* <svg
+        className={classNames("nowebcam", {hidden: !mute})}
+        viewBox="0 0 32 18"
+        preserveAspectRatio="xMidYMid meet"
+      >
+        {isGroup && <text x="16" y="9" textAnchor="middle" alignmentBaseline="central" dominantBaseline="central">&#xf0c0;</text>}
+        {!isGroup && <text x="16" y="9" textAnchor="middle" alignmentBaseline="central" dominantBaseline="central">&#xf2bd;</text>}
+      </svg> */}
+      <video
+        className={classNames("mirror", {hidden: muteCamera})}
+        key={"v" + id}
+        ref={"remoteVideo" + id}
+        id={"remoteVideo" + id}
+        width={width}
+        height={height}
+        autoPlay={true}
+        controls={false}
+        muted={true}
+        playsInline={true}
+      />
+      <audio
+        key={"a" + id}
+        ref={"remoteAudio" + id}
+        id={"remoteAudio" + id}
+        autoPlay={true}
+        controls={false}
+        playsInline={true}
+      />
+    </div>
+  );
+};    
 
   renderBottomBar = (layout, otherFeedHasQuestion) => {
     const {t} = this.props;
