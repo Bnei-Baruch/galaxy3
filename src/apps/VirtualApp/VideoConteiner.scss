@@ -160,7 +160,17 @@
 
   }
 
-	&__title {
+  .camera-off-name {
+    font-size: 4rem;
+    color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    top: 50%;
+    position: relative;
+  }
+
+  &__title {
 		position: absolute;
 		bottom: 0;
 		left: 0;
@@ -189,7 +199,6 @@
       max-width: 5rem;
       white-space: nowrap;
     }
-		// color:yellow;
 	}
 
   video {
@@ -251,7 +260,7 @@ body:before {
             grid-template-rows: repeat(#{ceil(math.div($i, $x))}, minmax(0, 1fr));
           }
 
-          &.layout--double,
+          // &.layout--double,
           &.layout--equal {
             @include wq-overlay-full-height();
           }
@@ -261,7 +270,7 @@ body:before {
   }
 }
 
-.layout--double {
-  // // .broadcast--on.broadcast--inline.layout--double {
+// .layout--double {
+//   // // .broadcast--on.broadcast--inline.layout--double {
 
-}
+// }

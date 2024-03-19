@@ -1060,126 +1060,88 @@ class VirtualMqttClient extends Component {
 
   renderLocalMedia = (width, height, index, isGroup) => {
     const {user, cammuted, question, muted, hideDisplays} = this.state;
+    const muteCamera = hideDisplays || cammuted;
+    const userName = user ? user.username : "";
 
     return (
       <div className="video" key={index}>
-        <div className={classNames("video__overlay", {"talk-frame": !muted})}>
-          {question ? (
-            <div className="question">
-              <svg viewBox="0 0 50 50">
-                <text x="25" y="25" textAnchor="middle" alignmentBaseline="central" dominantBaseline="central">
-                  &#xF128;
-                </text>
-              </svg>
-            </div>
-          ) : (
-            ""
-          )}
-          <div className="video__title">
-            {muted ? <Icon name="microphone slash" size="small" color="red" /> : ""}
-            {isGroup ? <Icon name="group" size="small" style={{margin: "0 .7em 0 .7em"}} /> : ""}
-            {
-              (!hideDisplays || cammuted) && (
-                <Popup
-                  content={user ? user.username : ""}
-                  mouseEnterDelay={200}
-                  mouseLeaveDelay={500}
-                  on="hover"
-                  trigger={<div className="title-name">{user ? user.username : ""}</div>}
-                />
-              )
-            }
-            <Icon style={{marginLeft: "0.3rem"}} name="signal" size="small" color={this.connectionColor()} />
-          </div>
-        </div>
-        <svg
-          className={classNames("nowebcam", {hidden: !cammuted})}
-          viewBox="0 0 32 18"
-          preserveAspectRatio="xMidYMid meet"
-        >
-          {isGroup && <text x="16" y="9" textAnchor="middle" alignmentBaseline="central" dominantBaseline="central">&#xf0c0;</text>}
-          {!isGroup && <text x="16" y="9" textAnchor="middle" alignmentBaseline="central" dominantBaseline="central">&#xf2bd;</text>}
-        </svg>
-        <video
-          className={classNames("mirror", {hidden: cammuted})}
-          ref="localVideo"
-          id="localVideo"
-          width={width}
-          height={height}
-          autoPlay={true}
-          controls={false}
-          muted={true}
-          playsInline={true}
-        />
+         {this.renderVideoOverlay(!muted, question, muteCamera, userName, isGroup)}
+
+         {this.renderVideo(cammuted, "localVideo", width, height)}
       </div>
     );
-  };
+  }
 
   renderMedia = (feed, width, height, layout) => {
-    const {id, talking, question, cammute, display: {display, is_group: isGroup}} = feed;
+    const {id, talking, question, cammute, display: {display: userName, is_group: isGroup}} = feed;
     const {muteOtherCams, hideDisplays} = this.state;
-    const mute = cammute || muteOtherCams;
+    const muteCamera = cammute || muteOtherCams || hideDisplays;
+
+    const videoId = "video" + id;
+    const remoteVideoId = "remoteVideo" + id;
+    const remoteAudioId = "remoteAudio" + id;
 
     return (
-      <div className={classNames("video", {"is-double-size": isGroup && layout !== "equal"})} key={"v" + id} ref={"video" + id} id={"video" + id}>
-        <div className={classNames("video__overlay", {"talk-frame": talking})}>
-          {question ? (
-            <div className="question">
-              <svg viewBox="0 0 50 50">
-                <text x="25" y="25" textAnchor="middle" alignmentBaseline="central" dominantBaseline="central">
-                  &#xF128;
-                </text>
-              </svg>
-            </div>
-          ) : (
-            ""
-          )}
-          <div className="video__title">
-            {!talking ? <Icon name="microphone slash" size="small" color="red"/> : ""}
-            {isGroup ? <Icon name="group" size="small" style={{margin: "0 .7em 0 .7em"}} /> : ""}
-            {
-              (!hideDisplays || mute) && (
-                <Popup
-                  content={display}
-                  mouseEnterDelay={200}
-                  mouseLeaveDelay={500}
-                  on="hover"
-                  trigger={<span className="title-name">{display}</span>}
-                />
-              )
-            }
-          </div>
-        </div>
-        <svg
-          className={classNames("nowebcam", {hidden: !mute})}
-          viewBox="0 0 32 18"
-          preserveAspectRatio="xMidYMid meet"
-        >
-          {isGroup && <text x="16" y="9" textAnchor="middle" alignmentBaseline="central" dominantBaseline="central">&#xf0c0;</text>}
-          {!isGroup && <text x="16" y="9" textAnchor="middle" alignmentBaseline="central" dominantBaseline="central">&#xf2bd;</text>}
-        </svg>
-        <video
-          key={"v" + id}
-          ref={"remoteVideo" + id}
-          id={"remoteVideo" + id}
-          width={width}
-          height={height}
-          autoPlay={true}
-          controls={false}
-          muted={true}
-          playsInline={true}
-        />
+      <div className={classNames("video", {"is-double-size": isGroup && layout !== "equal"})} key={"v" + id} ref={videoId} id={videoId}>
+        {this.renderVideoOverlay(talking, question, muteCamera, userName, isGroup)}
+
+        {this.renderVideo(muteCamera, remoteVideoId, width, height)}
+      
         <audio
           key={"a" + id}
-          ref={"remoteAudio" + id}
-          id={"remoteAudio" + id}
+          ref={remoteAudioId}
+          id={remoteAudioId}
           autoPlay={true}
           controls={false}
           playsInline={true}
         />
       </div>
     );
+  };    
+
+  renderVideoOverlay = (talking, question, muteCamera, userName, isGroup) => {
+    return (
+      <div className={classNames("video__overlay", { "talk-frame": talking })}>
+        {question ? (
+          <div className="question">
+            <svg viewBox="0 0 50 50">
+              <text x="25" y="25" textAnchor="middle" alignmentBaseline="central" dominantBaseline="central">
+                &#xF128;
+              </text>
+            </svg>
+          </div>
+        ) : (
+          ""
+        )}
+        {muteCamera && <span className="camera-off-name">{userName}</span>}
+        <div className="video__title">
+          {!talking ? <Icon name="microphone slash" size="small" color="red" /> : ""}
+          {isGroup ? <Icon name="group" size="small" style={{ margin: "0 .7em 0 .7em" }} /> : ""}
+          {!muteCamera && (
+            <Popup
+              content={userName}
+              mouseEnterDelay={200}
+              mouseLeaveDelay={500}
+              on="hover"
+              trigger={<span className="title-name">{userName}</span>} />
+          )}
+        </div>
+      </div>
+    );
   };
+
+  renderVideo = (cammuted, id, width, height) => 
+   <video
+     className={classNames("mirror", { hidden: cammuted })}
+     ref={id}
+     id={id}
+     width={width}
+     height={height}
+     autoPlay={true}
+     controls={false}
+     muted={true}
+     playsInline={true} 
+   />;
 
   renderBottomBar = (layout, otherFeedHasQuestion) => {
     const {t} = this.props;
@@ -1459,9 +1421,9 @@ class VirtualMqttClient extends Component {
     );
   };
 
-  renderNewVersionContent = (layout, isDeb, source, rooms_list, otherFeedHasQuestion, adevices_list, vdevices_list, noOfVideos, remoteVideos) => {
+  renderNewVersionContent = (layout, isDeb, source, otherFeedHasQuestion, noOfVideos, remoteVideos) => {
     const {i18n} = this.props;
-    const {attachedSource, chatVisible, room, shidur, user, rightAsideName, leftAsideSize, leftAsideName, sourceLoading, isKliOlamiShown, kliOlamiAttached} = this.state;
+    const {attachedSource, chatVisible, room, shidur, user, rightAsideName, leftAsideSize, leftAsideName, isKliOlamiShown, kliOlamiAttached} = this.state;
 
     const notApproved = user && user.role !== userRolesEnum.user;
 
@@ -1473,8 +1435,10 @@ class VirtualMqttClient extends Component {
         isDoubleSize={"double" === layout}
       />
     );
+
     const noBroadcastPanel = layout !== "split" ||
       (((room === "" || !shidur) || !attachedSource) && (!isKliOlamiShown || !kliOlamiAttached));
+    
     return (
       <div className={classNames("vclient", {"vclient--chat-open": chatVisible})}>
         {this.renderTopBar(isDeb)}
@@ -1489,15 +1453,15 @@ class VirtualMqttClient extends Component {
           >
             <div
               className={`
-            vclient__main-wrapper
-            no-of-videos-${noOfVideos}
-            layout--${layout}
-            broadcast--${(room !== "" && shidur) ? "on" : "off"}
-            broadcast--${!attachedSource ? "popup" : "inline"}
-            kli-olami--${isKliOlamiShown ? "on" : "off"}
-            kli-olami--${!kliOlamiAttached ? "popup" : "inline"}
-            ${noBroadcastPanel ? "no-broadcast-panel" : ""}
-           `}
+                  vclient__main-wrapper
+                  no-of-videos-${noOfVideos}
+                  layout--${layout}
+                  broadcast--${(room !== "" && shidur) ? "on" : "off"}
+                  broadcast--${!attachedSource ? "popup" : "inline"}
+                  kli-olami--${isKliOlamiShown ? "on" : "off"}
+                  kli-olami--${!kliOlamiAttached ? "popup" : "inline"}
+                  ${noBroadcastPanel ? "no-broadcast-panel" : ""}
+              `}
             >
               <div className="broadcast-panel">
                 <div className="broadcast__wrapper">
@@ -1581,13 +1545,14 @@ class VirtualMqttClient extends Component {
         />
       );
     }
-    let rooms_list = rooms.map((data, i) => {
-      const {room, description, num_users} = data;
-      return {key: i, text: description, description: num_users, value: room};
-    });
 
-    let adevices_list = this.mapDevices(media.audio.devices);
-    let vdevices_list = this.mapDevices(media.video.devices);
+    // let rooms_list = rooms.map((data, i) => {
+    //   const {room, description, num_users} = data;
+    //   return {key: i, text: description, description: num_users, value: room};
+    // });
+
+    // let adevices_list = this.mapDevices(media.audio.devices);
+    // let vdevices_list = this.mapDevices(media.video.devices);
 
     let otherFeedHasQuestion = false;
     let localPushed = false;
@@ -1595,6 +1560,7 @@ class VirtualMqttClient extends Component {
     let remoteVideos = sortAndFilterFeeds(feeds).reduce((result, feed) => {
       const {question, id} = feed;
       otherFeedHasQuestion = otherFeedHasQuestion || (question && id !== myid);
+      
       if (!localPushed && ((!feed.display.is_group && isGroup) ||
           (feed.display.is_group === isGroup && feed.display.timestamp >= user.timestamp))) {
         localPushed = true;
@@ -1602,12 +1568,15 @@ class VirtualMqttClient extends Component {
           result.push(this.renderLocalMedia(width, height, i, isGroup));
         }
       }
+
       if (feed.display.is_group) {
         groupsNum += 1;
       }
+
       result.push(this.renderMedia(feed, width, height, layout));
       return result;
     }, []);
+
     if (!localPushed) {
       for (let i = 0; i < parseInt(numberOfVirtualUsers, 10); i++) {
         remoteVideos.push(this.renderLocalMedia(width, height, i, isGroup));
@@ -1616,6 +1585,7 @@ class VirtualMqttClient extends Component {
 
     const groupMultiplier = "equal" === layout ? 0 : 3;
     let noOfVideos = remoteVideos.length + groupMultiplier * groupsNum;
+    
     if (room !== "" && shidur && attachedSource) {
       if ("double" === layout) {
         noOfVideos += 4;
@@ -1623,6 +1593,7 @@ class VirtualMqttClient extends Component {
         noOfVideos += 1;
       }
     }
+    
     if (isKliOlamiShown && kliOlamiAttached) {
       if ("double" === layout) {
         noOfVideos += 4;
@@ -1635,7 +1606,7 @@ class VirtualMqttClient extends Component {
 
     const isDeb = new URL(window.location.href).searchParams.has("deb");
 
-    let content = this.renderNewVersionContent(layout, isDeb, source, rooms_list, otherFeedHasQuestion, adevices_list, vdevices_list, noOfVideos, remoteVideos);
+    let content = this.renderNewVersionContent(layout, isDeb, source, otherFeedHasQuestion, noOfVideos, remoteVideos);
 
     return (
       <Fragment>
