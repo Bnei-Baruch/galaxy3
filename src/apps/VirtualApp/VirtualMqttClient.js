@@ -1499,7 +1499,9 @@ class VirtualMqttClient extends Component {
   }
 
   render() {
-    const {show_message, broadcast_message, show_notification, delay, appInitError, attachedSource, cammuted, currentLayout, feeds, media, muteOtherCams, myid, numberOfVirtualUsers, room, rooms, selected_room, shidur, user, videos, isSettings, audios, shidurForGuestReady, isGroup, hideDisplays, isKliOlamiShown, kliOlamiAttached} = this.state;
+    const {show_message, broadcast_message, show_notification, delay, appInitError, attachedSource, cammuted, currentLayout, 
+      feeds, media, muteOtherCams, myid, numberOfVirtualUsers, room, rooms, selected_room, shidur, user, videos, isSettings, 
+      audios, shidurForGuestReady, isGroup, hideDisplays, isKliOlamiShown, kliOlamiAttached} = this.state;
 
     if (appInitError) {
       return (
@@ -1546,13 +1548,7 @@ class VirtualMqttClient extends Component {
       );
     }
 
-    // let rooms_list = rooms.map((data, i) => {
-    //   const {room, description, num_users} = data;
-    //   return {key: i, text: description, description: num_users, value: room};
-    // });
-
-    // let adevices_list = this.mapDevices(media.audio.devices);
-    // let vdevices_list = this.mapDevices(media.video.devices);
+    console.log('feeds:', feeds);
 
     let otherFeedHasQuestion = false;
     let localPushed = false;
