@@ -98,7 +98,7 @@ const Settings = (props) => {
     stopLocalMedia,
     cammuted,
     toggleUsersDisplays,
-    hideDisplays,
+    hideUserDisplays,
   } = props;
 
   useEffect(() => {
@@ -327,7 +327,7 @@ const Settings = (props) => {
           />
           <FormControlLabel
             label={<Typography color="textPrimary">{t("oldClient.hideDisplays")}</Typography>}
-            control={<Checkbox checked={hideDisplays} onChange={handleUsersDisplays} name="hideDisplays"
+            control={<Checkbox checked={hideUserDisplays} onChange={handleUsersDisplays} name="hideDisplays"
                                color="primary"/>}
           />
           <FormControlLabel
