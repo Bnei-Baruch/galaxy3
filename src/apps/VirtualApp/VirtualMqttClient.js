@@ -1059,13 +1059,12 @@ class VirtualMqttClient extends Component {
   };
 
   renderLocalMedia = (width, height, index, isGroup) => {
-    const {user, cammuted, question, muted, hideDisplays} = this.state;
-    const muteCamera = hideDisplays || cammuted;
+    const {user, cammuted, question, muted } = this.state;
     const userName = user ? user.username : "";
 
     return (
       <div className="video" key={index}>
-         {this.renderVideoOverlay(!muted, question, muteCamera, userName, isGroup)}
+         {this.renderVideoOverlay(!muted, question, cammuted, userName, isGroup)}
 
          {this.renderVideo(cammuted, "localVideo", width, height)}
       </div>
@@ -1075,7 +1074,7 @@ class VirtualMqttClient extends Component {
   renderMedia = (feed, width, height, layout) => {
     const {id, talking, question, cammute, display: {display: userName, is_group: isGroup}} = feed;
     const {muteOtherCams, hideDisplays} = this.state;
-    const muteCamera = cammute || muteOtherCams || hideDisplays;
+    const muteCamera = cammute || muteOtherCams;
 
     const videoId = "video" + id;
     const remoteVideoId = "remoteVideo" + id;
@@ -1100,6 +1099,8 @@ class VirtualMqttClient extends Component {
   };    
 
   renderVideoOverlay = (talking, question, muteCamera, userName, isGroup) => {
+    const { hideDisplays } = this.state;
+
     return (
       <div className={classNames("video__overlay", { "talk-frame": talking })}>
         {question ? (
@@ -1117,7 +1118,7 @@ class VirtualMqttClient extends Component {
         <div className="video__title">
           {!talking ? <Icon name="microphone slash" size="small" color="red" /> : ""}
           {isGroup ? <Icon name="group" size="small" style={{ margin: "0 .7em 0 .7em" }} /> : ""}
-          {!muteCamera && (
+          {!muteCamera && !hideDisplays && (
             <Popup
               content={userName}
               mouseEnterDelay={200}
@@ -1547,8 +1548,6 @@ class VirtualMqttClient extends Component {
         />
       );
     }
-
-    console.log('feeds:', feeds);
 
     let otherFeedHasQuestion = false;
     let localPushed = false;
