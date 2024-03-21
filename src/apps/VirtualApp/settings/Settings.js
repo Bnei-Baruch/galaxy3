@@ -319,7 +319,7 @@ const Settings = (props) => {
           />
           <FormControlLabel
             label={<Typography color="textPrimary">{t("oldClient.darkTheme")}</Typography>}
-            control={<Checkbox checked={isDark} onChange={toggleTheme} name="isAudioMode" color="primary"/>}
+            control={<Checkbox checked={isDark} onChange={toggleTheme} name="isDark" color="primary"/>}
           />
           <FormControlLabel
             label={<Typography color="textPrimary">Group</Typography>}

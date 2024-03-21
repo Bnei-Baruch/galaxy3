@@ -982,6 +982,7 @@ class VirtualMqttClient extends Component {
 
   otherCamsMuteToggle = () => {
     const {feeds, muteOtherCams} = this.state;
+    
     if (!muteOtherCams) {
       // Should hide/mute now all videos.
       this.unsubscribeFrom(
@@ -998,6 +999,7 @@ class VirtualMqttClient extends Component {
       this.setState({videos: VIDEO_360P_OPTION_VALUE, isKliOlamiShown: true});
       JanusStream.setVideo(VIDEO_360P_OPTION_VALUE);
     }
+    
     this.setState({muteOtherCams: !muteOtherCams});
   };
 

@@ -288,7 +288,7 @@ const SettingsJoined = (props) => {
           />
           <FormControlLabel
             label={<Typography color="textPrimary">{t("oldClient.darkTheme")}</Typography>}
-            control={<Checkbox checked={isDark} onChange={toggleTheme} name="isAudioMode" color="secondary" />}
+            control={<Checkbox checked={isDark} onChange={toggleTheme} name="isDark" color="secondary" />}
           />
           <FormControlLabel
             label={<Typography color="textPrimary">{t("oldClient.hideDisplays")}</Typography>}
