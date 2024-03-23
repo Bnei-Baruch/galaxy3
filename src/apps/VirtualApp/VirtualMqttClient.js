@@ -120,7 +120,7 @@ class VirtualMqttClient extends Component {
     audios: {audios: Number(localStorage.getItem("vrt_lang")) || 2},
     mqttOn: false,
     isGroup: false,
-    hideDisplays: localStorage.getItem("hideDisplays")?.toLowerCase() === "true" || false,
+    hideUserDisplays: localStorage.getItem("hideUserDisplays")?.toLowerCase() === "true" || false,
   };
 
   componentDidUpdate(prevProps, prevState) {
@@ -982,6 +982,7 @@ class VirtualMqttClient extends Component {
 
   otherCamsMuteToggle = () => {
     const {feeds, muteOtherCams} = this.state;
+    
     if (!muteOtherCams) {
       // Should hide/mute now all videos.
       this.unsubscribeFrom(
@@ -998,6 +999,7 @@ class VirtualMqttClient extends Component {
       this.setState({videos: VIDEO_360P_OPTION_VALUE, isKliOlamiShown: true});
       JanusStream.setVideo(VIDEO_360P_OPTION_VALUE);
     }
+    
     this.setState({muteOtherCams: !muteOtherCams});
   };
 
@@ -1020,9 +1022,9 @@ class VirtualMqttClient extends Component {
   }
 
   toggleUsersDisplays = () => {
-    const hideDisplays = !this.state.hideDisplays
-    localStorage.setItem("hideDisplays", hideDisplays);
-    this.setState({hideDisplays});
+    const hideUserDisplays = !this.state.hideUserDisplays
+    localStorage.setItem("hideUserDisplays", hideUserDisplays);
+    this.setState({hideUserDisplays});
   }
 
   updateLayout = (currentLayout) => {
@@ -1059,13 +1061,12 @@ class VirtualMqttClient extends Component {
   };
 
   renderLocalMedia = (width, height, index, isGroup) => {
-    const {user, cammuted, question, muted, hideDisplays} = this.state;
-    const muteCamera = hideDisplays || cammuted;
+    const {user, cammuted, question, muted } = this.state;
     const userName = user ? user.username : "";
 
     return (
       <div className="video" key={index}>
-         {this.renderVideoOverlay(!muted, question, muteCamera, userName, isGroup)}
+         {this.renderVideoOverlay(!muted, question, cammuted, userName, isGroup)}
 
          {this.renderVideo(cammuted, "localVideo", width, height)}
       </div>
@@ -1073,9 +1074,9 @@ class VirtualMqttClient extends Component {
   }
 
   renderMedia = (feed, width, height, layout) => {
-    const {id, talking, question, cammute, display: {display: userName, is_group: isGroup}} = feed;
-    const {muteOtherCams, hideDisplays} = this.state;
-    const muteCamera = cammute || muteOtherCams || hideDisplays;
+    const { id, talking, question, cammute, display: {display: userName, is_group: isGroup}} = feed;
+    const { muteOtherCams } = this.state;
+    const muteCamera = cammute || muteOtherCams;
 
     const videoId = "video" + id;
     const remoteVideoId = "remoteVideo" + id;
@@ -1100,6 +1101,8 @@ class VirtualMqttClient extends Component {
   };    
 
   renderVideoOverlay = (talking, question, muteCamera, userName, isGroup) => {
+    const { hideUserDisplays } = this.state;
+
     return (
       <div className={classNames("video__overlay", { "talk-frame": talking })}>
         {question ? (
@@ -1117,7 +1120,7 @@ class VirtualMqttClient extends Component {
         <div className="video__title">
           {!talking ? <Icon name="microphone slash" size="small" color="red" /> : ""}
           {isGroup ? <Icon name="group" size="small" style={{ margin: "0 .7em 0 .7em" }} /> : ""}
-          {!muteCamera && (
+          {!muteCamera && !hideUserDisplays && (
             <Popup
               content={userName}
               mouseEnterDelay={200}
@@ -1499,7 +1502,9 @@ class VirtualMqttClient extends Component {
   }
 
   render() {
-    const {show_message, broadcast_message, show_notification, delay, appInitError, attachedSource, cammuted, currentLayout, feeds, media, muteOtherCams, myid, numberOfVirtualUsers, room, rooms, selected_room, shidur, user, videos, isSettings, audios, shidurForGuestReady, isGroup, hideDisplays, isKliOlamiShown, kliOlamiAttached} = this.state;
+    const {show_message, broadcast_message, show_notification, delay, appInitError, attachedSource, cammuted, currentLayout, 
+      feeds, media, muteOtherCams, myid, numberOfVirtualUsers, room, rooms, selected_room, shidur, user, videos, isSettings, 
+      audios, shidurForGuestReady, isGroup, hideUserDisplays, isKliOlamiShown, kliOlamiAttached} = this.state;
 
     if (appInitError) {
       return (
@@ -1545,14 +1550,6 @@ class VirtualMqttClient extends Component {
         />
       );
     }
-
-    // let rooms_list = rooms.map((data, i) => {
-    //   const {room, description, num_users} = data;
-    //   return {key: i, text: description, description: num_users, value: room};
-    // });
-
-    // let adevices_list = this.mapDevices(media.audio.devices);
-    // let vdevices_list = this.mapDevices(media.video.devices);
 
     let otherFeedHasQuestion = false;
     let localPushed = false;
@@ -1631,7 +1628,7 @@ class VirtualMqttClient extends Component {
             audioDevice={media.audio?.device}
             setAudioDevice={this.setAudioDevice.bind(this)}
             audios={audios.audios}
-            hideDisplays={hideDisplays}
+            hideUserDisplays={hideUserDisplays}
             toggleUsersDisplays={this.toggleUsersDisplays.bind(this)}
           />
         )}
@@ -1659,7 +1656,7 @@ class VirtualMqttClient extends Component {
             delay={delay}
             startLocalMedia={this.startLocalMedia.bind(this)}
             stopLocalMedia={this.stopLocalMedia.bind(this)}
-            hideDisplays={hideDisplays}
+            hideUserDisplays={hideUserDisplays}
             toggleUsersDisplays={this.toggleUsersDisplays.bind(this)}
           />
         )}

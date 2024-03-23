@@ -82,7 +82,7 @@ const SettingsJoined = (props) => {
     isAudioMode,
     setAudioDevice,
     audioDevice = audio.devices[0]?.deviceId,
-    hideDisplays,
+    hideUserDisplays,
     toggleUsersDisplays,
   } = props;
 
@@ -288,11 +288,11 @@ const SettingsJoined = (props) => {
           />
           <FormControlLabel
             label={<Typography color="textPrimary">{t("oldClient.darkTheme")}</Typography>}
-            control={<Checkbox checked={isDark} onChange={toggleTheme} name="isAudioMode" color="secondary" />}
+            control={<Checkbox checked={isDark} onChange={toggleTheme} name="isDark" color="secondary" />}
           />
           <FormControlLabel
             label={<Typography color="textPrimary">{t("oldClient.hideDisplays")}</Typography>}
-            control={<Checkbox checked={hideDisplays} onChange={handleUsersDisplays} name="hideDisplays" color="primary"/>}
+            control={<Checkbox checked={hideUserDisplays} onChange={handleUsersDisplays} name="hideDisplays" color="primary"/>}
           />
         </Grid>
         <Grid item xs={12}>
