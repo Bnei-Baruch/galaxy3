@@ -1135,7 +1135,7 @@ class VirtualMqttClient extends Component {
 
   renderVideo = (cammuted, id, width, height) => 
    <video
-     className={classNames("mirror", { hidden: cammuted })}
+     className={classNames("", { hidden: cammuted })}
      ref={id}
      id={id}
      width={width}
