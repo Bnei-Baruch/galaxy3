@@ -1116,7 +1116,11 @@ class VirtualMqttClient extends Component {
         ) : (
           ""
         )}
-        {muteCamera && <span className="camera-off-name">{userName}</span>}
+        {muteCamera && 
+          <div className="camera-off-name">
+              <span>{userName}</span>
+          </div>
+        }
         <div className="video__title">
           {!talking ? <Icon name="microphone slash" size="small" color="red" /> : ""}
           {isGroup ? <Icon name="group" size="small" style={{ margin: "0 .7em 0 .7em" }} /> : ""}

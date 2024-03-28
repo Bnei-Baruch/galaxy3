@@ -166,8 +166,15 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    top: 50%;
-    position: relative;
+    top: 40%;
+    position: relative;    
+  }
+
+  .camera-off-name > span {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: initial;
   }
 
   &__title {
