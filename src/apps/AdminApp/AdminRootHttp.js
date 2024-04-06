@@ -499,8 +499,7 @@ class AdminRootHttp extends Component {
       user: feed_user,
     };
 
-    if(feed_user && command_type === "client-bitrate")
-      cmd.bitrate = value;
+    if (feed_user && command_type === "client-bitrate") cmd.bitrate = value;
 
     let topic = command_type.match(/^(reload-config|client-reload-all)$/)
       ? "galaxy/users/broadcast"
@@ -873,7 +872,7 @@ class AdminRootHttp extends Component {
               <List as="ul">
                 <List.Item as="li">
                   Set user bitrate:
-                  <br />  <br />
+                  <br /> <br />
                   <Select
                     options={bitrate_options}
                     value={bitrate}
@@ -882,7 +881,12 @@ class AdminRootHttp extends Component {
                 </List.Item>
                 <List.Item as="li">
                   <br />
-                  <Button color="green" content="Set" fluid onClick={() => this.sendRemoteCommand("client-bitrate", bitrate)} />
+                  <Button
+                    color="green"
+                    content="Set"
+                    fluid
+                    onClick={() => this.sendRemoteCommand("client-bitrate", bitrate)}
+                  />
                 </List.Item>
               </List>
             }
