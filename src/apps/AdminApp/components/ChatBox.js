@@ -4,7 +4,6 @@ import {getDateString, notifyMe} from "../../../shared/tools";
 import mqtt from "../../../shared/mqtt";
 
 class ChatBox extends Component {
-
   state = {
     msg_type: "public",
     messages: [],
@@ -28,7 +27,7 @@ class ChatBox extends Component {
     // Public chat
     mqtt.mq.on("MqttChatEvent", (data) => {
       let json = JSON.parse(data);
-      if(json?.type === "client-chat") {
+      if (json?.type === "client-chat") {
         this.onChatMessage(json);
       }
     });
@@ -37,7 +36,7 @@ class ChatBox extends Component {
     mqtt.mq.on("MqttPrivateMessage", (data) => {
       let json = JSON.parse(data);
       json["whisper"] = true;
-      if(json?.type === "client-chat") {
+      if (json?.type === "client-chat") {
         this.onChatMessage(json);
       }
     });
@@ -45,7 +44,7 @@ class ChatBox extends Component {
     // Broadcast message
     mqtt.mq.on("MqttBroadcastMessage", (data) => {
       let message = JSON.parse(data);
-      if(message?.type === "client-chat") {
+      if (message?.type === "client-chat") {
         message.time = getDateString(message["date"]);
         notifyMe("Arvut System", message.text, true);
       }
@@ -53,7 +52,9 @@ class ChatBox extends Component {
   };
 
   newBroadcastMessage = () => {
-    const {user: {role, display, username}} = this.props;
+    const {
+      user: {role, display, username},
+    } = this.props;
     const {input_value} = this.state;
 
     const msg = {user: {role, display, username}, type: "client-chat", text: input_value};
@@ -71,7 +72,6 @@ class ChatBox extends Component {
     message.time = getDateString();
 
     if (message.whisper) {
-
       // Private message
       console.log("[VirtualChat]:: It's private message: ", message);
       let {privates} = this.state;
@@ -79,7 +79,6 @@ class ChatBox extends Component {
       this.setState({privates});
       this.scrollToBottom();
     } else {
-
       // Public message
       let {messages} = this.state;
       message.to = this.props.selected_group;
@@ -92,7 +91,11 @@ class ChatBox extends Component {
   };
 
   newChatMessage = () => {
-    const {user: {role, display, id}, selected_room, selected_user} = this.props;
+    const {
+      user: {role, display, id},
+      selected_room,
+      selected_user,
+    } = this.props;
     let {input_value, msg_type} = this.state;
 
     if (msg_type === "all") {
@@ -118,15 +121,14 @@ class ChatBox extends Component {
     const topic = msg_type === "private" ? `galaxy/users/${selected_user.id}` : `galaxy/room/${selected_room}/chat`;
 
     mqtt.send(JSON.stringify(msg), false, topic);
-    console.log(msg)
+    console.log(msg);
     this.setState({input_value: ""});
 
     // TODO: Make private dialog exchange
   };
 
   scrollToBottom = () => {
-    if(this.refs?.end)
-      this.refs.end.scrollIntoView({behavior: "smooth"});
+    if (this.refs?.end) this.refs.end.scrollIntoView({behavior: "smooth"});
   };
 
   handleInputChange = (e, data) => {
@@ -144,8 +146,8 @@ class ChatBox extends Component {
       {key: "private", text: to, value: "private"},
     ];
 
-    if(user.role === "root") {
-      send_options.push({key: "all", text: "Everyone", value: "all"})
+    if (user.role === "root") {
+      send_options.push({key: "all", text: "Everyone", value: "all"});
     }
 
     const list_msgs = messages.map((msg, i) => {
