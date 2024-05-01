@@ -384,7 +384,7 @@ class VirtualMqttClient extends Component {
 
         janus.attach(videoroom).then((data) => {
           log.info("[client] Publisher Handle: ", data);
-          this.joinRoom(false, janus, videoroom, user);
+          this.joinRoom(true, janus, videoroom, user);
         });
 
         janus.attach(subscriber).then((data) => {
@@ -506,15 +506,20 @@ class VirtualMqttClient extends Component {
 
     this.setState({janus, videoroom, user, room: selected_room});
 
+    this.joinRoomInternal(user, isGroup, videoroom, selected_room, reconnect);
+  };
+
+  joinRoomInternal(user, isGroup, videoroom, selected_room, reconnect = true) {
     this.micMute();
 
-    const {id, timestamp, role, username} = user;
-    const d = {id, timestamp, role, display: username, is_group: isGroup, is_desktop: true};
+    const { id, timestamp, role, username } = user;
+    const d = { id, timestamp, role, display: username, is_group: isGroup, is_desktop: true };
 
     videoroom
       .join(selected_room, d)
       .then((data) => {
         log.info("[client] Joined respond :", data);
+        console.log('join room data:', data);
 
         // Feeds count with user role
         let feeds_count = userFeeds(data.publishers).length;
@@ -524,10 +529,10 @@ class VirtualMqttClient extends Component {
           return;
         }
 
-        const {id, room} = data;
+        const { id, room } = data;
         user.rfid = data.id;
 
-        const {audio, video} = this.state.media;
+        const { audio, video } = this.state.media;
         videoroom
           .publish(video.stream, audio.stream)
           .then((json) => {
@@ -539,7 +544,7 @@ class VirtualMqttClient extends Component {
               captureMessage("h264_profile", vst);
             }
 
-            this.setState({user, myid: id, delay: false, sourceLoading: false});
+            this.setState({ user, myid: id, delay: false, sourceLoading: false });
             updateSentryUser(user);
             updateGxyUser(user);
             //this.keepAlive();
@@ -548,20 +553,20 @@ class VirtualMqttClient extends Component {
             mqtt.join("galaxy/room/" + selected_room + "/chat", true);
             if (isGroup) videoroom.setBitrate(600000);
 
-            log.info("[client] Pulbishers list: ", data.publishers);
+            log.info("[client] Publishers list: ", data.publishers);
 
             this.makeSubscription(data.publishers);
           })
           .catch((err) => {
             log.error("[client] Publish error :", err);
-            this.exitRoom(false);
+            this.exitRoom(reconnect);
           });
       })
       .catch((err) => {
         log.error("[client] Join error :", err);
-        this.exitRoom(false);
+        this.exitRoom(reconnect);
       });
-  };
+  }
 
   exitRoom = (reconnect, callback) => {
     this.setState({delay: true, exit_room: true});
@@ -572,6 +577,8 @@ class VirtualMqttClient extends Component {
         .leave()
         .then((data) => {
           log.info("[client] leave respond:", data);
+          console.log('leave data:', data);
+
           this.resetClient(reconnect, callback);
         })
         .catch((e) => {
@@ -583,27 +590,36 @@ class VirtualMqttClient extends Component {
   };
 
   resetClient = (reconnect, callback) => {
-    let {janus, room, shidur} = this.state;
+    if (reconnect){
+        console.log('reconnecting...')
 
-    //this.clearKeepAlive();
+        mqtt.exit("galaxy/room/" + room);
+        mqtt.exit("galaxy/room/" + room + "/chat");
 
-    localStorage.setItem("question", false);
+        this.reconnect();
+    }
+    else {
+      let {janus, room, shidur} = this.state;
+      console.log('resetClient', janus, ' room: ', room, ' shidur: ', shidur);
 
-    const params = {with_num_users: true};
-    api
-      .fetchAvailableRooms(params)
-      .then((data) => {
-        const {rooms} = data;
-        this.setState({rooms});
-      })
-      .catch((err) => {
-        log.error("[client] Error exiting room", err);
-      });
+      this.clearKeepAlive();
 
-    mqtt.exit("galaxy/room/" + room);
-    mqtt.exit("galaxy/room/" + room + "/chat");
+      localStorage.setItem("question", false);
 
-    if (!reconnect) {
+      const params = {with_num_users: true}; 
+      api
+        .fetchAvailableRooms(params)
+        .then((data) => {
+          const {rooms} = data;
+          this.setState({rooms});
+        })
+        .catch((err) => {
+          log.error("[client] Error exiting room", err);
+        });
+
+      mqtt.exit("galaxy/room/" + room);
+      mqtt.exit("galaxy/room/" + room + "/chat");
+
       if (shidur) {
         JanusStream.destroy();
       }
@@ -611,30 +627,44 @@ class VirtualMqttClient extends Component {
       if (isFullScreen()) {
         toggleFullScreen();
       }
+
+      if (janus) janus.destroy();
+
+      this.setState({
+        muted: false,
+        question: false,
+        feeds: [],
+        mids: [],
+        localAudioTrack: null,
+        localVideoTrack: null,
+        remoteFeed: null,
+        videoroom: null,
+        subscriber: null,
+        janus: null,
+        delay: reconnect,
+        room: reconnect ? room : "",
+        chatMessagesCount: 0,
+        isSettings: false,
+        sourceLoading: true,
+      });
+  
+      if (typeof callback === "function") callback();
     }
-
-    if (janus) janus.destroy();
-
-    this.setState({
-      muted: false,
-      question: false,
-      feeds: [],
-      mids: [],
-      localAudioTrack: null,
-      localVideoTrack: null,
-      remoteFeed: null,
-      videoroom: null,
-      subscriber: null,
-      janus: null,
-      delay: reconnect,
-      room: reconnect ? room : "",
-      chatMessagesCount: 0,
-      isSettings: false,
-      sourceLoading: true,
-    });
-
-    if (typeof callback === "function") callback();
   };
+
+  reconnect = () => {
+    console.log('reconnect')
+    const {videoroom, room, user, isGroup} = this.state;
+
+    this.setState({exit_room: false});
+
+    // const {id, timestamp, role, username} = user;
+    // const d = {id, timestamp, role, display: username, is_group: isGroup, is_desktop: true};
+
+    if (videoroom){
+      this.joinRoomInternal(user, isGroup, videoroom, room);
+    }
+  }
 
   makeSubscription = (newFeeds) => {
     log.info("[client] makeSubscription", newFeeds);
@@ -1032,7 +1062,6 @@ class VirtualMqttClient extends Component {
   otherCamsMuteToggle = () => {
     const {feeds, muteOtherCams} = this.state;
 
-
     if (!muteOtherCams) {
       // Should hide/mute now all videos.
       this.unsubscribeFrom(
@@ -1113,7 +1142,6 @@ class VirtualMqttClient extends Component {
 
   renderLocalMedia = (width, height, index, isGroup) => {
     const {user, cammuted, question, muted} = this.state;
-    const {user, cammuted, question, muted} = this.state;
     const userName = user ? user.username : "";
 
     return (
@@ -1163,7 +1191,6 @@ class VirtualMqttClient extends Component {
         />
       </div>
     );
-  };
   };
 
   renderVideoOverlay = (talking, question, muteCamera, userName, isGroup) => {
@@ -1382,6 +1409,7 @@ class VirtualMqttClient extends Component {
             user={user}
             i18n={i18n}
           />
+          <ButtonMD onClick={() => this.reconnect()}> Reconnect </ButtonMD>
           <ButtonMD
             color="info"
             variant="contained"
