@@ -16,7 +16,7 @@ import {LINK_STATE_GOOD, LINK_STATE_INIT, LINK_STATE_MEDIUM, LINK_STATE_WEAK, Mo
 import api from "../../shared/Api";
 import VirtualStreaming from "./VirtualStreaming";
 import JanusStream from "../../shared/streaming-utils";
-import {getUser, kc} from "../../components/UserManager";
+import {kc} from "../../components/UserManager";
 import LoginPage from "../../components/LoginPage";
 import {captureMessage, updateSentryUser} from "../../shared/sentry";
 import GxyJanus from "../../shared/janus-utils";
@@ -49,6 +49,9 @@ import Donations from "./buttons/Donations";
 import version from './Version.js';
 import {PopUp} from "./components/PopUp"
 import {BroadcastNotification} from "./components/BroadcastNotification";
+import VideoPanelOptions from "./components/VideoPanelOptions/VideoPanelOptions";
+import GlobalOptions, {GlobalOptionsContext} from "./components/GlobalOptions/GlobalOptions";
+import HideSelfBtn from "./buttons/HideSelfBtn";
 
 const sortAndFilterFeeds = (feeds) =>
   feeds
@@ -1061,14 +1064,15 @@ class VirtualMqttClient extends Component {
   };
 
   renderLocalMedia = (width, height, index, isGroup) => {
-    const {user, cammuted, question, muted } = this.state;
+    const {user, cammuted, question, muted} = this.state;
     const userName = user ? user.username : "";
 
     return (
-      <div className="video" key={index}>
-         {this.renderVideoOverlay(!muted, question, cammuted, userName, isGroup)}
+      <div className={classNames("video", {"hidden": this.context.hideSelf})} key={index}>
+        <VideoPanelOptions/>
+        {this.renderVideoOverlay(!muted, question, cammuted, userName, isGroup)}
 
-         {this.renderVideo(cammuted, "localVideo", width, height)}
+        {this.renderVideo(cammuted, "localVideo", width, height)}
       </div>
     );
   }
@@ -1165,11 +1169,12 @@ class VirtualMqttClient extends Component {
               disabled={media.video.device === null || delay}
               isOn={cammuted}
             />
+            <HideSelfBtn/>
           </ButtonGroup>
 
           <ButtonGroup className={classNames("bottom-toolbar__item")} variant="contained" disableElevation>
-            <Fullscreen t={t} isOn={isFullScreen()} action={toggleFullScreen} />
-            <KliOlamiToggle isOn={isKliOlamiShown} action={this.toggleQuad} />
+            <Fullscreen t={t} isOn={isFullScreen()} action={toggleFullScreen}/>
+            <KliOlamiToggle isOn={isKliOlamiShown} action={this.toggleQuad}/>
             <CloseBroadcast
               t={t}
               isOn={shidur}
@@ -1586,7 +1591,9 @@ class VirtualMqttClient extends Component {
 
     const groupMultiplier = "equal" === layout ? 0 : 3;
     let noOfVideos = remoteVideos.length + groupMultiplier * groupsNum;
-    
+    if (this.context.hideSelf)
+      noOfVideos -= 1;
+
     if (room !== "" && shidur && attachedSource) {
       if ("double" === layout) {
         noOfVideos += 4;
@@ -1670,13 +1677,16 @@ class VirtualMqttClient extends Component {
   }
 }
 
+VirtualMqttClient.contextType = GlobalOptionsContext
 const WrappedClass = withTranslation()(withTheme(VirtualMqttClient));
 
 export default class WrapperForThemes extends React.Component {
   render() {
     return (
       <ThemeSwitcher>
-        <WrappedClass />
+        <GlobalOptions>
+          <WrappedClass/>
+        </GlobalOptions>
       </ThemeSwitcher>
     );
   }

@@ -217,6 +217,13 @@
   }
 }
 
+.video-panel-options {
+  position: absolute;
+  right: 0;
+  top: 0;
+  z-index: 100;
+}
+
 .broadcast-panel {
 
   background: #000;
@@ -391,7 +398,7 @@
   opacity: .45;
 }
 
-#localVideo{
+#localVideo {
   transform: rotateY(180deg);
   -webkit-transform: rotateY(180deg);
   -moz-transform: rotateY(180deg);

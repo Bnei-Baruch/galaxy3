@@ -1,0 +1,27 @@
+import React, {useContext} from "react";
+import {IconButton, Tooltip} from "@mui/material";
+import {GlobalOptionsContext} from "../components/GlobalOptions/GlobalOptions";
+import FeaturedVideoIcon from "@mui/icons-material/FeaturedVideo";
+import {useTranslation} from "react-i18next";
+
+const HideSelfBtn = () => {
+  const {t} = useTranslation()
+  const {hideSelf, toggleHideSelf} = useContext(GlobalOptionsContext)
+  if (!hideSelf) return null
+
+  return (
+    <Tooltip title={t("oldClient.stopVideo")} disableTouchListener={true}>
+      <span>
+        <IconButton
+          aria-label={"oldClient.startVideo"}
+          onClick={toggleHideSelf}
+          size="large"
+        >
+          <FeaturedVideoIcon color="secondary"/>
+        </IconButton>
+      </span>
+    </Tooltip>
+  );
+};
+
+export default HideSelfBtn;
