@@ -1,9 +1,9 @@
 .usersvideo_grid {
   display: grid;
-  grid-template-columns: 800px 800px;
+  grid-template-columns: 960px 960px;
   position:relative;
-  width: 1600px;
-  height: 900px;
+  width: 1920px;
+  height: 1080px;
 }
 
 .usersvideo_box {
@@ -11,8 +11,8 @@
   color: #fff;
   font-size: 100%;
   position:relative;
-  height: 450px;
-  width: 800px;
+  height: 540px;
+  width: 960px;
 }
 
 .usersvideo_qst {
@@ -20,8 +20,8 @@
   color: #fff;
   font-size: 100%;
   position:relative;
-  height: 450px;
-  width: 800px;
+  height: 540px;
+  width: 960px;
   border:5px solid rgba(255, 0, 0, 1);
 }
 
@@ -40,8 +40,8 @@
   color: #fff;
   font-size: 150%;
   position:relative;
-  height: 900px;
-  width: 1600px;
+  height: 1080px;
+  width: 1920px;
 }
 
 .video_title {
@@ -49,18 +49,17 @@
   // line-height: 1.3285em;
   position: absolute;
   // right: 65px;
-  line-height: 70px;;
+  line-height: 100px;;
   right:2px;
   top:2px;
   color: #FFF;
   text-align: center;
-  font-size: 60px;
+  font-size: 75px;
   background-color: #2185d0;
   // width: auto;
   padding: 0px 25px;
   // float: right !important;
   z-index: 2;
-  font-weight: bold;
 }
 
 // .videos-panel {
