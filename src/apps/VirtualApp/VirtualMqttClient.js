@@ -51,7 +51,7 @@ import {PopUp} from "./components/PopUp"
 import {BroadcastNotification} from "./components/BroadcastNotification";
 import VideoPanelOptions from "./components/VideoPanelOptions/VideoPanelOptions";
 import GlobalOptions, {GlobalOptionsContext} from "./components/GlobalOptions/GlobalOptions";
-import HideSelfBtn from "./buttons/HideSelfBtn";
+import ShowSelfBtn from "./buttons/ShowSelfBtn";
 
 const sortAndFilterFeeds = (feeds) =>
   feeds
@@ -1169,7 +1169,7 @@ class VirtualMqttClient extends Component {
               disabled={media.video.device === null || delay}
               isOn={cammuted}
             />
-            <HideSelfBtn/>
+            <ShowSelfBtn/>
           </ButtonGroup>
 
           <ButtonGroup className={classNames("bottom-toolbar__item")} variant="contained" disableElevation>

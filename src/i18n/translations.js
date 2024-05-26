@@ -198,6 +198,8 @@ export const resources = {
         close: "Close",
         cancel: "Cancel",
         continueAsGuest: "Continue as a Guest",
+        hideSelfView: "Hide self view",
+        showSelfView: "Show self view"
       },
       workshop: {
         hideQuestion: "Hide question",
@@ -439,6 +441,8 @@ export const resources = {
         ok: "OK",
         cancel: "Cancel",
         continueAsGuest: "Continuar como invitado",
+        hideSelfView: "Ocultar vista propia",
+        showSelfView: "Mostrar visión propia"
       },
       registration: {
         continueAsGuest: "Continuar como invitado",
@@ -674,6 +678,8 @@ export const resources = {
         ok: "אשר",
         cancel: "בטל",
         continueAsGuest: "המשך כאורח",
+        hideSelfView: "הסתר תצוגה עצמית",
+        showSelfView: "הצג תצוגה עצמית"
       },
       workshop: {
         hideQuestion: "להחביא את השאלה",
@@ -908,6 +914,8 @@ export const resources = {
         continueAsGuest: "Продолжить как гость",
         terms: "Условия использования системы Арвут",
         close: "Закрыть",
+        hideSelfView: "Скрыть свое видео",
+        showSelfView: "Развернуть свое видео"
       },
       workshop: {
         hideQuestion: "Скрыть вопрос",

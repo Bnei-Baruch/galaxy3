@@ -4,16 +4,15 @@ import {GlobalOptionsContext} from "../components/GlobalOptions/GlobalOptions";
 import FeaturedVideoIcon from "@mui/icons-material/FeaturedVideo";
 import {useTranslation} from "react-i18next";
 
-const HideSelfBtn = () => {
+const ShowSelfBtn = () => {
   const {t} = useTranslation()
   const {hideSelf, toggleHideSelf} = useContext(GlobalOptionsContext)
   if (!hideSelf) return null
 
   return (
-    <Tooltip title={t("oldClient.stopVideo")} disableTouchListener={true}>
+    <Tooltip title={t("galaxyApp.showSelfView")} disableTouchListener={true}>
       <span>
         <IconButton
-          aria-label={"oldClient.startVideo"}
           onClick={toggleHideSelf}
           size="large"
         >
@@ -24,4 +23,4 @@ const HideSelfBtn = () => {
   );
 };
 
-export default HideSelfBtn;
+export default ShowSelfBtn;

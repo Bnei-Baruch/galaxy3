@@ -4,10 +4,12 @@ import MoreVertIcon from "@mui/icons-material/MoreVert";
 import FeaturedVideoIcon from '@mui/icons-material/FeaturedVideo';
 import {GlobalOptionsContext} from "../GlobalOptions/GlobalOptions";
 import {grey} from "@mui/material/colors";
+import {useTranslation} from "react-i18next";
 
 const VideoPanelOptions = () => {
   const {toggleHideSelf} = useContext(GlobalOptionsContext)
   const [anchorEl, setAnchorEl] = React.useState(null);
+  const {t} = useTranslation()
 
   const open = Boolean(anchorEl);
 
@@ -34,7 +36,7 @@ const VideoPanelOptions = () => {
           <ListItemIcon>
             <FeaturedVideoIcon/>
           </ListItemIcon>
-          <ListItemText>Hide self</ListItemText>
+          <ListItemText>{t("galaxyApp.hideSelfView")}</ListItemText>
         </MenuItem>
       </Menu>
     </div>
