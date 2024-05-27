@@ -113,16 +113,17 @@ export const geoInfo = (url, cb) =>
     .catch((ex) => console.log(`get geoInfo`, ex));
 
 export const updateGxyUser = (user) => {
-  api
-    .updateUser(user.id, user)
-    .then((data) => {
-      if (data.result === "success") {
-        //console.log("[User] success updating user state", user.id);
-      }
-    })
-    .catch((err) => {
-      //console.error("[User] error updating user state", user.id, err);
-    });
+  mqtt.send(JSON.stringify(user), false, "gxydb/users")
+  // api
+  //   .updateUser(user.id, user)
+  //   .then((data) => {
+  //     if (data.result === "success") {
+  //       //console.log("[User] success updating user state", user.id);
+  //     }
+  //   })
+  //   .catch((err) => {
+  //     //console.error("[User] error updating user state", user.id, err);
+  //   });
 };
 
 export const recordAudio = (stream) =>
