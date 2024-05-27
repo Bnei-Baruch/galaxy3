@@ -104,24 +104,31 @@ class AdminRootMqtt extends Component {
   withAudio = () => this.isAllowed("admin");
 
   initApp = (user) => {
-    this.setState({user});
-    updateSentryUser(user);
+    mqtt.init(user, (data) => {
+      console.log("[Admin] mqtt init: ", data);
+      mqtt.join("galaxy/users/broadcast");
+      mqtt.join("galaxy/users/" + user.id);
+      mqtt.watch(() => {});
 
-    api
-      .fetchConfig()
-      .then((data) => {
-        ConfigStore.setGlobalConfig(data);
-        this.setState({
-          premodStatus: ConfigStore.dynamicConfig(ConfigStore.PRE_MODERATION_KEY) === "true",
+      this.setState({user});
+      updateSentryUser(user);
+
+      api
+        .fetchConfig()
+        .then((data) => {
+          ConfigStore.setGlobalConfig(data);
+          this.setState({
+            premodStatus: ConfigStore.dynamicConfig(ConfigStore.PRE_MODERATION_KEY) === "true",
+          });
+          GxyJanus.setGlobalConfig(data);
+        })
+        .then(() => this.setState({gatewaysInitialized: true}))
+        .then(this.pollRooms)
+        .catch((error) => {
+          log.error("[admin] error initializing app", error);
+          this.setState({appInitError: error});
         });
-        GxyJanus.setGlobalConfig(data);
-      })
-      .then(() => this.setState({gatewaysInitialized: true}))
-      .then(this.pollRooms)
-      .catch((error) => {
-        log.error("[admin] error initializing app", error);
-        this.setState({appInitError: error});
-      });
+    });
   };
 
   initJanus = (user, gxy) => {
@@ -274,31 +281,22 @@ class AdminRootMqtt extends Component {
     this.setState({mids});
   }
 
-  onRemoteTrack = (track, mid, on) => {
-    log.debug("[admin]  ::: Got a remote track event ::: (remote feed)");
-    if (!mid) {
-      mid = track.id.split("janus")[1];
-    }
-    let {mids} = this.state;
-    let feed = mids[mid].feed_id;
-    log.info("[admin] >> This track is coming from feed " + feed + ":", mid);
+  onRemoteTrack = (track, stream, on) => {
+    let mid = track.id;
+    let feed = stream.id;
+    log.info("[admin] >> This track is coming from feed " + feed + ":", mid, track);
     if (on) {
-      // If we're here, a new track was added
       if (track.kind === "audio") {
-        // New audio track: create a stream out of it, and use a hidden <audio> element
-        let stream = new MediaStream([track]);
-        log.info("[admin] Created remote audio stream:", stream);
+        log.debug("[admin] Created remote audio stream:", stream);
         let remoteaudio = this.refs["remoteAudio" + feed];
-        remoteaudio.srcObject = stream;
+        if (remoteaudio) remoteaudio.srcObject = stream;
       } else if (track.kind === "video") {
+        log.debug("[admin] Created remote video stream:", stream);
         const remotevideo = this.refs["remoteVideo" + feed];
-        // New video track: create a stream out of it
-        const stream = new MediaStream([track]);
-        log.info("[admin] Created remote video stream:", stream);
-        remotevideo.srcObject = stream;
+        if (remotevideo) remotevideo.srcObject = stream;
       }
     }
-  }
+  };
 
   makeSubscription = (newFeeds) => {
     log.info("[admin] makeSubscription", newFeeds);
@@ -446,17 +444,19 @@ class AdminRootMqtt extends Component {
 
   sendRemoteCommand = (command_type, value) => {
     const {feed_user, current_room, command_status} = this.state;
+    const {camera, question, rfid} = feed_user
     const cmd = {
       type: command_type,
       room: current_room,
       status: command_status,
       id: feed_user?.id,
-      user: feed_user,
+      user: {camera, question, rfid},
     };
 
     if(feed_user && command_type === "client-bitrate")
       cmd.bitrate = value;
 
+    log.info("[admin] sending cmd json", cmd);
     let topic = command_type.match(/^(reload-config|client-reload-all)$/)
       ? "galaxy/users/broadcast"
       : "galaxy/room/" + current_room;

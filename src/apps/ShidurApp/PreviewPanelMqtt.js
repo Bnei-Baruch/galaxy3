@@ -7,6 +7,7 @@ import log from "loglevel";
 
 class PreviewPanelMqtt extends Component {
   state = {
+    delay: false,
     feeds: [],
     subscriber: null,
     mids: [],
@@ -37,9 +38,17 @@ class PreviewPanelMqtt extends Component {
     }
   }
 
-  // componentWillUnmount() {
-  //   if (this.state.subscriber) this.state.subscriber.detach();
-  // }
+  setDelay = () => {
+    this.setState({delay: true});
+    setTimeout(() => {
+      this.setState({delay: false});
+    }, 3000);
+  };
+
+  nextGroup = () => {
+    this.setDelay()
+    this.props.nextInQueue();
+  };
 
   attachPreview = (g) => {
     if(!g) return
@@ -140,16 +149,16 @@ class PreviewPanelMqtt extends Component {
     this.setState({mids});
   }
 
-  onRemoteTrack = (track, mid, on) => {
+  onRemoteTrack = (track, stream, on) => {
+    const mid = track.id;
     if (track.kind === "video" && on) {
-      let stream = new MediaStream([track]);
       let remotevideo = this.refs["pv" + mid];
       if (remotevideo) remotevideo.srcObject = stream;
     }
   }
 
   render() {
-    const {mids} = this.state;
+    const {mids, delay} = this.state;
     const width = "400";
     const height = "300";
     const autoPlay = true;
@@ -193,10 +202,11 @@ class PreviewPanelMqtt extends Component {
                 />
                 <Button
                   className="hide_button"
+                  disabled={delay}
                   size="mini"
                   color="grey"
                   icon="share"
-                  onClick={this.props.nextInQueue}
+                  onClick={this.nextGroup}
                 />
               </div>
             ) : (

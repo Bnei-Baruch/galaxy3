@@ -16,6 +16,7 @@ export class PublisherPlugin extends EventEmitter {
     this.unsubFrom = null
     this.talkEvent = null
     this.iceState = null
+    this.iceFailed = null
     this.pc = new RTCPeerConnection({
       iceServers: list
     })
@@ -53,20 +54,22 @@ export class PublisherPlugin extends EventEmitter {
   }
 
   leave() {
-    const body = {request: "leave", room: this.roomId};
-    return new Promise((resolve, reject) => {
-      this.transaction('message', { body }, 'event').then((param) => {
-        log.info("[publisher] leave: ", param)
-        const {data, json } = param
+    if(this.roomId) {
+      const body = {request: "leave", room: this.roomId};
+      return new Promise((resolve, reject) => {
+        this.transaction('message', { body }, 'event').then((param) => {
+          log.info("[publisher] leave: ", param)
+          const {data, json } = param
 
-        if(data)
-          resolve(data);
+          if(data)
+            resolve(data);
 
-      }).catch((err) => {
-        log.debug('[publisher] error leave room', err)
-        reject(err)
+        }).catch((err) => {
+          log.debug('[publisher] error leave room', err)
+          reject(err)
+        })
       })
-    })
+    }
   }
 
   publish(video, audio) {
@@ -191,7 +194,7 @@ export class PublisherPlugin extends EventEmitter {
         const {data, json} = param || {}
         const jsep = json.jsep
         log.info('[publisher] Configure respond: ', param)
-        //this.pc.setRemoteDescription(jsep).then(e => log.info(e)).catch(e => log.error(e))
+        this.pc.setRemoteDescription(jsep).then(e => log.info(e)).catch(e => log.error(e))
       })
     })
   }
@@ -211,7 +214,9 @@ export class PublisherPlugin extends EventEmitter {
         };
       }
 
-      return this.transaction('trickle', { candidate })
+      if(candidate) {
+        return this.transaction('trickle', { candidate })
+      }
     };
 
     this.pc.ontrack = (e) => {
@@ -228,7 +233,7 @@ export class PublisherPlugin extends EventEmitter {
 
       // ICE restart does not help here, peer connection will be down
       if(this.iceState === "failed") {
-        //TODO: handle failed ice state
+        //this.iceFailed("publisher")
       }
 
     };
@@ -239,7 +244,7 @@ export class PublisherPlugin extends EventEmitter {
       let count = 0;
       let chk = setInterval(() => {
         count++;
-        if (count < 10 && this.iceState !== "disconnected" || !this.janus.isConnected) {
+        if (count < 10 && this.iceState !== "disconnected" || !this.janus?.isConnected) {
           clearInterval(chk);
         } else if (mqtt.mq.connected) {
           log.debug("[publisher] - Trigger ICE Restart - ");
@@ -249,11 +254,12 @@ export class PublisherPlugin extends EventEmitter {
         } else if (count >= 10) {
           clearInterval(chk);
           log.error("[publisher] - ICE Restart failed - ");
+          this.iceFailed("publisher")
         } else {
           log.debug("[publisher] ICE Restart try: " + count)
         }
       }, 1000);
-    },1000)
+    },3000)
   }
 
   success(janus, janusHandleId) {
@@ -330,7 +336,7 @@ export class PublisherPlugin extends EventEmitter {
 
   webrtcState(isReady) {
     log.info('[publisher] webrtcState: RTCPeerConnection is: ' + (isReady ? "up" : "down"))
-    //this.emit('webrtcState', isReady, cause)
+    if(!isReady && typeof this.iceFailed === "function") this.iceFailed("publisher")
   }
 
   detach() {

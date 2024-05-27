@@ -96,13 +96,13 @@ export const TopMenu = ({t, openSettings, open = false, setOpen, notApproved, i1
         <Divider />
 
         <ListItem style={{fontWeight: "bold"}}>{t("oldClient.usefulLinks")}</ListItem>
-        <ListItemButton Click={() => window.open("https://kabbalahgroup.info/internet/", "_blank")}>
+        <ListItemButton onClick={() => window.open("https://kabbalahgroup.info/internet/", "_blank")}>
           <ListItemText>{t("oldClient.SvivaTova")}</ListItemText>
         </ListItemButton>
-        <ListItemButton Click={() => window.open("https://bb.kli.one", "_blank")}>
+        <ListItemButton onClick={() => window.open("https://bb.kli.one", "_blank")}>
           <ListItemText>{t("oldClient.LiveGroups")}</ListItemText>
         </ListItemButton>
-        <ListItemButton Click={() => window.open("https://ktuviot.kbb1.com/three_languages", "_blank")}>
+        <ListItemButton onClick={() => window.open("https://ktuviot.kbb1.com/three_languages", "_blank")}>
           <ListItemText>{t("oldClient.WorkshopQuestions")}</ListItemText>
         </ListItemButton>
         <ListItemButton onClick={() => window.open("https://kabbalahmedia.info/", "_blank")}>

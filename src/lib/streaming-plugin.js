@@ -130,8 +130,7 @@ export class StreamingPlugin extends EventEmitter {
       log.info("[streaming] ICE State: ", e.target.connectionState)
       this.iceState = e.target.connectionState
       if(this.iceState === "disconnected") {
-        //FIXME: We still get janus crash here
-        //this.iceRestart()
+        this.iceRestart()
       }
 
       // ICE restart does not help here, peer connection will be down
@@ -153,7 +152,7 @@ export class StreamingPlugin extends EventEmitter {
       let count = 0;
       let chk = setInterval(() => {
         count++;
-        if (count < 10 && this.iceState !== "disconnected" || !this.janus.isConnected) {
+        if (count < 10 && this.iceState !== "disconnected" || !this.janus?.isConnected) {
           clearInterval(chk);
         } else if (mqtt.mq.connected) {
           log.debug("[streaming] - Trigger ICE Restart - ");

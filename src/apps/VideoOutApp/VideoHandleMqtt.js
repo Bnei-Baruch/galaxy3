@@ -252,7 +252,7 @@ class VideoHandleMqtt extends Component {
   handleTalking = (id, talking) => {
     const feeds = Object.assign([], this.state.feeds);
     for (let i = 0; i < feeds.length; i++) {
-      if (feeds[i] && feeds[i].id === id) {
+      if (feeds[i] && feeds[i].id === id && feeds[i].display?.is_desktop) {
         feeds[i].talking = talking;
       }
     }
@@ -269,11 +269,9 @@ class VideoHandleMqtt extends Component {
     this.setState({mids});
   }
 
-  onRemoteTrack = (track, mid, on) => {
-    let {mids} = this.state;
-    let feed = mids[mid].feed_id;
+  onRemoteTrack = (track, stream, on) => {
+    const feed = stream.id;
     if (track.kind === "video" && on) {
-      let stream = new MediaStream([track]);
       let remotevideo = this.refs["pv" + feed];
       if (remotevideo) remotevideo.srcObject = stream;
     }
@@ -293,7 +291,7 @@ class VideoHandleMqtt extends Component {
       let camera = g && g.users && !!g.users.find((u) => feed.id === u.rfid && u.camera);
       if (feed) {
         let id = feed.id;
-        let talk = feed.talking;
+        let talk = feed.talking && this.props.qst;
         return (
           <div className={camera ? "video" : "hidden"} key={"prov" + id} ref={"provideo" + id} id={"provideo" + id}>
             <div className={classNames("video__overlay", {talk: talk})}>

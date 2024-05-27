@@ -71,7 +71,7 @@
 
   position: absolute;
   display: grid;
-  grid-auto-flow: column;
+  grid-auto-flow: column dense;
   // justify-content: center;
   // align-items: center;
   // align-content: center;
@@ -90,6 +90,11 @@
 
 
 .video {
+  &.is-double-size {
+    grid-row: span 2;
+    grid-column: span 2;
+  }
+
 	grid-row: span 1;
 	grid-column: span 1;
 	// height: percentage(1/1);
@@ -155,7 +160,24 @@
 
   }
 
-	&__title {
+  .camera-off-name {
+    font-size: 4rem;
+    color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    top: 40%;
+    position: relative;    
+  }
+
+  .camera-off-name > span {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: initial;
+  }
+
+  &__title {
 		position: absolute;
 		bottom: 0;
 		left: 0;
@@ -184,7 +206,6 @@
       max-width: 5rem;
       white-space: nowrap;
     }
-		// color:yellow;
 	}
 
   video {
@@ -241,43 +262,12 @@ body:before {
         $x: nth($pair, 2);
         .no-of-videos-#{$i} {
           :self {
-            grid-auto-flow: row;
+            grid-auto-flow: row dense;
             grid-template-columns: repeat(#{$x}, minmax(0, 1fr));
             grid-template-rows: repeat(#{ceil(math.div($i, $x))}, minmax(0, 1fr));
           }
 
-          &.layout--double {
-            :self {
-              &:before {
-                // content: "#{ceil($i/$x)}";
-              }
-            }
-
-            $h: ceil(math.div($i, $x));
-            @if $x != 1 {
-
-              $i: $i+3;
-              .video:first-child {
-
-                grid-column: span 2;
-                grid-row: span 2;
-              }
-            } @else {
-
-              .video:first-child {
-
-                grid-column: span 1 !important;
-                grid-row: span 1 !important;
-              }
-            }
-
-            :self {
-              grid-template-columns: repeat(#{$x}, minmax(0, 1fr));
-              grid-template-rows: repeat(#{ceil(math.div($i, $x))}, minmax(0, 1fr));
-            }
-          }
-
-          &.layout--double,
+          // &.layout--double,
           &.layout--equal {
             @include wq-overlay-full-height();
           }
@@ -287,7 +277,7 @@ body:before {
   }
 }
 
-.layout--double {
-  // // .broadcast--on.broadcast--inline.layout--double {
+// .layout--double {
+//   // // .broadcast--on.broadcast--inline.layout--double {
 
-}
+// }

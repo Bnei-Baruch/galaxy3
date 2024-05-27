@@ -1,4 +1,4 @@
-import mqtt from "mqtt";
+import mqtt from 'mqtt';
 import {MQTT_URL, MSG_URL} from "./env";
 import {isServiceID, userRolesEnum} from "./enums";
 import {randomString} from "./tools";
@@ -61,8 +61,7 @@ class MqttMsg {
       };
     }
 
-    //const url = user.role !== userRolesEnum.user && !service ? MQTT_URL : MSG_URL;
-    const url = MSG_URL
+    const url = user.role !== userRolesEnum.user && !service && user?.isClient ? MQTT_URL : MSG_URL;
     this.mq = mqtt.connect(`wss://${url}`, options);
     this.mq.setMaxListeners(50)
 
@@ -99,6 +98,15 @@ class MqttMsg {
     if (!this.mq) return;
     log.info("[mqtt] Subscribe to: ", topic);
     let options = chat ? {qos: 0, nl: false} : {qos: 1, nl: true};
+    this.mq.subscribe(topic, {...options}, (err) => {
+      err && log.error("[mqtt] Error: ", err);
+    });
+  };
+
+  sub = (topic, qos) => {
+    if (!this.mq) return;
+    log.info("[mqtt] Subscribe to: ", topic);
+    let options = {qos, nl: true};
     this.mq.subscribe(topic, {...options}, (err) => {
       err && log.error("[mqtt] Error: ", err);
     });
@@ -160,6 +168,10 @@ class MqttMsg {
           }
           else if (service === "users" && id === "broadcast")
             this.mq.emit("MqttBroadcastMessage", data);
+          else if (service === "users" && id === "notification")
+            this.mq.emit("MqttNotificationMessage", data);
+          else if (service === "users" && id === "notification_test")
+            this.mq.emit("MqttTestMessage", data);
           else
             this.mq.emit("MqttPrivateMessage", data);
           break;

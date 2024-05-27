@@ -15,6 +15,7 @@ export class SubscriberPlugin extends EventEmitter {
     this.onTrack = null
     this.onUpdate = null
     this.iceState = null
+    this.iceFailed = null
     this.pc = new RTCPeerConnection({
       iceServers: list
     })
@@ -46,13 +47,8 @@ export class SubscriberPlugin extends EventEmitter {
         }
 
         if(json?.jsep) {
-          this.pc.setRemoteDescription(new RTCSessionDescription(json.jsep)).then(() => {
-            return this.pc.createAnswer()
-          }).then(answer => {
-            log.info('[subscriber] answerCreated')
-            this.pc.setLocalDescription(answer)
-            this.start(answer)
-          })
+          log.debug('[subscriber] Got jsep: ', json.jsep)
+          this.handleJsep(json.jsep)
         }
 
         if(data)
@@ -70,7 +66,17 @@ export class SubscriberPlugin extends EventEmitter {
     return new Promise((resolve, reject) => {
       this.transaction('message', { body }, 'event').then((param) => {
         log.info("[subscriber] Unsubscribe from: ", param)
-        const {data, json } = param
+        const {data, json} = param;
+
+        if(data?.videoroom === "updated") {
+          log.info('[subscriber] Streams updated: ', data.streams)
+          this.onUpdate(data.streams)
+        }
+
+        if(json?.jsep) {
+          log.debug('[subscriber] Got jsep: ', json.jsep)
+          this.handleJsep(json.jsep)
+        }
 
         if(data)
           resolve(data);
@@ -82,13 +88,13 @@ export class SubscriberPlugin extends EventEmitter {
     })
   };
 
-  join (subscription, roomId) {
+  join(subscription, roomId) {
     this.roomId = roomId
-    const body = {request: "join", room: roomId, ptype: "subscriber", streams: subscription};
+    const body = {request: "join", use_msid: true, room: roomId, ptype: "subscriber", streams: subscription};
     return new Promise((resolve, reject) => {
       this.transaction('message', { body }, 'event').then((param) => {
         log.info("[subscriber] join: ", param)
-        const {data, json } = param
+        const {data, json} = param
 
         if(data)
           resolve(data);
@@ -97,15 +103,7 @@ export class SubscriberPlugin extends EventEmitter {
 
         if(json?.jsep) {
           log.debug('[subscriber] Got jsep: ', json.jsep)
-          this.pc.setRemoteDescription(new RTCSessionDescription(json.jsep)).then(() => {
-            return this.pc.createAnswer()
-          }).then(answer => {
-            log.debug('[subscriber] Answer created', answer)
-            this.pc.setLocalDescription(answer).then(data => {
-              log.debug('[subscriber] setLocalDescription', data)
-            }).catch(error => log.error(error, answer))
-            this.start(answer)
-          })
+          this.handleJsep(json.jsep)
         }
 
       }).catch((err) => {
@@ -120,17 +118,26 @@ export class SubscriberPlugin extends EventEmitter {
     return this.transaction('message', { body }, 'event').then((param) => {
       log.info('[subscriber] iceRestart: ', param)
       const { json } = param || {}
-      this.pc.setRemoteDescription(new RTCSessionDescription(json.jsep)).then(() => {
-        return this.pc.createAnswer()
-      }).then(answer => {
-        log.info('[subscriber] iceRestart answerCreated', answer)
-        this.pc.setLocalDescription(answer)
-        this.start(answer)
-      })
+      if(json?.jsep) {
+        log.debug('[subscriber] Got jsep: ', json.jsep)
+        this.handleJsep(json.jsep)
+      }
     })
   }
 
-  start (answer) {
+  handleJsep(jsep) {
+    this.pc.setRemoteDescription(new RTCSessionDescription(jsep)).then(() => {
+      return this.pc.createAnswer()
+    }).then(answer => {
+      log.debug('[subscriber] Answer created', answer)
+      this.pc.setLocalDescription(answer).then(data => {
+        log.debug('[subscriber] setLocalDescription', data)
+      }).catch(error => log.error(error, answer))
+      this.start(answer)
+    })
+  }
+
+  start(answer) {
     const body = { request: 'start', room: this.roomId }
     return new Promise((resolve, reject) => {
       const jsep = answer
@@ -139,7 +146,7 @@ export class SubscriberPlugin extends EventEmitter {
         log.info("[subscriber] start: ", param)
         resolve()
       }).catch((err) => {
-        log.error('[subscriber] start', err, answer)
+        log.error('[subscriber] start', err, jsep)
         reject(err)
       })
     })
@@ -160,8 +167,9 @@ export class SubscriberPlugin extends EventEmitter {
           "sdpMLineIndex": e.candidate.sdpMLineIndex
         };
       }
-
-      return this.transaction('trickle', { candidate })
+      if(candidate) {
+        return this.transaction('trickle', { candidate })
+      }
     };
 
     this.pc.onconnectionstatechange = (e) => {
@@ -170,17 +178,15 @@ export class SubscriberPlugin extends EventEmitter {
       if(this.iceState === "disconnected") {
         this.iceRestart()
       }
-
       // ICE restart does not help here, peer connection will be down
       if(this.iceState === "failed") {
-        //TODO: handle failed ice state
+        //this.iceFailed("subscriber")
       }
-
-    }
+    };
 
     this.pc.ontrack = (e) => {
       log.info("[subscriber] Got track: ", e)
-      this.onTrack(e.track, e.transceiver.mid, true)
+      this.onTrack(e.track, e.streams[0], true)
 
       e.track.onmute = (ev) => {
         log.debug("[subscriber] onmute event: ", ev)
@@ -193,7 +199,6 @@ export class SubscriberPlugin extends EventEmitter {
       e.track.onended = (ev) => {
         log.debug("[subscriber] onended event: ", ev)
       }
-
     };
   }
 
@@ -202,7 +207,7 @@ export class SubscriberPlugin extends EventEmitter {
       let count = 0;
       let chk = setInterval(() => {
         count++;
-        if (count < 10 && this.iceState !== "disconnected" || !this.janus.isConnected) {
+        if (count < 10 && this.iceState !== "disconnected" || !this.janus?.isConnected) {
           clearInterval(chk);
         } else if (mqtt.mq.connected) {
           log.debug("[subscriber] - Trigger ICE Restart - ");
@@ -211,6 +216,7 @@ export class SubscriberPlugin extends EventEmitter {
         } else if (count >= 10) {
           clearInterval(chk);
           log.error("[subscriber] - ICE Restart failed - ");
+          this.iceFailed("subscriber")
         } else {
           log.debug("[subscriber] ICE Restart try: " + count)
         }
@@ -238,13 +244,7 @@ export class SubscriberPlugin extends EventEmitter {
 
     if(json?.jsep) {
       log.debug('[subscriber] Handle jsep: ', json.jsep)
-      this.pc.setRemoteDescription(new RTCSessionDescription(json.jsep)).then(() => {
-        return this.pc.createAnswer()
-      }).then(answer => {
-        log.info('[subscriber] answerCreated: ', answer)
-        this.pc.setLocalDescription(answer)
-        this.start(answer)
-      })
+      this.handleJsep(json.jsep)
     }
   }
 
@@ -280,7 +280,7 @@ export class SubscriberPlugin extends EventEmitter {
 
   webrtcState (isReady) {
     log.info('[subscriber] webrtcState: RTCPeerConnection is: ' + (isReady ? "up" : "down"))
-    //this.emit('webrtcState', isReady, cause)
+    if(!isReady && typeof this.iceFailed === "function") this.iceFailed("subscriber")
   }
 
   detach() {

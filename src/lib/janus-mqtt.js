@@ -18,14 +18,16 @@ export class JanusMqtt {
     this.sendCreate = true
     this.keeptry = 0
     this.token = null
+    this.connect = null
+    this.disconnect = null
     this.onMessage = this.onMessage.bind(this)
   }
 
   init(token) {
     this.token = token
-    mqtt.join(this.rxTopic + "/" + this.user.id, false);
-    mqtt.join(this.rxTopic, false);
-    mqtt.join(this.stTopic, false);
+    mqtt.sub(this.rxTopic + "/" + this.user.id, 0);
+    mqtt.sub(this.rxTopic, 0);
+    mqtt.sub(this.stTopic, 1);
 
     mqtt.mq.on(this.srv, this.onMessage);
 
@@ -62,7 +64,16 @@ export class JanusMqtt {
         reject,
         replyType: 'success'
       }
-      mqtt.send(JSON.stringify(msg), false, this.txTopic, this.rxTopic + "/" + this.user.id, this.user)
+
+      this.connect = function () {
+        mqtt.send(JSON.stringify(msg), false, this.txTopic, this.rxTopic + "/" + this.user.id, this.user)
+      }
+
+      this.disconnect = function (json) {
+        reject(json)
+        this._cleanupTransactions()
+      }
+
     })
 
   }
@@ -148,6 +159,10 @@ export class JanusMqtt {
         session_id: (payload && parseInt(payload.session_id, 10)) || this.sessionId,
         transaction: transactionId
       })
+
+      if(type === "keepalive" && this.user.role === "user" && this.txTopic.match('gxy')) {
+        request.user = this.user
+      }
 
       this.transactions[request.transaction] = {resolve, reject, replyType, request}
       mqtt.send(JSON.stringify(request), false, this.txTopic, this.rxTopic + "/" + this.user.id, this.user)
@@ -261,6 +276,8 @@ export class JanusMqtt {
 
     if(tD === "status" && json.online) {
       log.debug("[janus] Janus Server - " + this.srv + " - Online")
+      if(typeof this.connect === "function")
+        this.connect()
       if(typeof this.onStatus === "function")
         this.onStatus(this.srv, "online")
       return
@@ -269,6 +286,8 @@ export class JanusMqtt {
     if(tD === "status" && !json.online) {
       this.isConnected = false
       log.debug("[janus] Janus Server - " + this.srv + " - Offline")
+      if(typeof this.disconnect === "function")
+        this.disconnect(json)
       if(typeof this.onStatus === "function")
         this.onStatus(this.srv, "offline")
       return

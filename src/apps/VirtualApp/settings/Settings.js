@@ -26,6 +26,7 @@ import {AccountCircle, Mic, Videocam} from "@mui/icons-material";
 import {ThemeContext} from "../components/ThemeSwitcher/ThemeSwitcher";
 import {Support} from "../components/Support";
 import JanusStream from "../../../shared/streaming-utils";
+import DonationModal from "../components/DonationModal";
 
 const settingsList = vsettings_list.map(({key, text, value}) => ({key, text, value: JSON.stringify(value)}));
 const mapDevice = ({label, deviceId}) => ({text: label, value: deviceId});
@@ -97,7 +98,7 @@ const Settings = (props) => {
     stopLocalMedia,
     cammuted,
     toggleUsersDisplays,
-    hideDisplays,
+    hideUserDisplays,
   } = props;
 
   useEffect(() => {
@@ -318,7 +319,7 @@ const Settings = (props) => {
           />
           <FormControlLabel
             label={<Typography color="textPrimary">{t("oldClient.darkTheme")}</Typography>}
-            control={<Checkbox checked={isDark} onChange={toggleTheme} name="isAudioMode" color="primary"/>}
+            control={<Checkbox checked={isDark} onChange={toggleTheme} name="isDark" color="primary"/>}
           />
           <FormControlLabel
             label={<Typography color="textPrimary">Group</Typography>}
@@ -326,7 +327,7 @@ const Settings = (props) => {
           />
           <FormControlLabel
             label={<Typography color="textPrimary">{t("oldClient.hideDisplays")}</Typography>}
-            control={<Checkbox checked={hideDisplays} onChange={handleUsersDisplays} name="hideDisplays"
+            control={<Checkbox checked={hideUserDisplays} onChange={handleUsersDisplays} name="hideDisplays"
                                color="primary"/>}
           />
           <FormControlLabel
@@ -355,9 +356,12 @@ const Settings = (props) => {
   };
 
   return (
-    <Modal open={true} componentsProps={{backdrop: {style: {backgroundColor: paper}}}} className={classes.modal}>
-      <Box className={classes.paper}>{renderContent()}</Box>
-    </Modal>
+    <>
+      <Modal open={true} componentsProps={{backdrop: {style: {backgroundColor: paper}}}} className={classes.modal}>
+        <Box className={classes.paper}>{renderContent()}</Box>
+      </Modal>
+      <DonationModal/>
+    </>
   );
 };
 

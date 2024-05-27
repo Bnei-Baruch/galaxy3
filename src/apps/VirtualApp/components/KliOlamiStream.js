@@ -1,4 +1,5 @@
 import React, {Component} from "react";
+import classNames from "classnames";
 import {Janus} from "../../../lib/janus";
 import NewWindow from "@hinaser/react-new-window";
 import {isFullScreen, toggleFullScreen} from "../FullScreenHelper";
@@ -67,12 +68,12 @@ class KliOlamiStream extends Component {
   }
 
   render() {
-    const {attached, close, toggleAttach} = this.props;
+    const {attached, close, toggleAttach, isDoubleSize} = this.props;
     const {stream, fullScreen} = this.state;
 
     const inLine = stream && (
       <div
-        className="video video--broadcast"
+        className={classNames("video video--broadcast", {"is-double-size": isDoubleSize})}
         key="v0"
         ref={(ref) => this.setVideoWrapperRef(ref)}
         id="video0"

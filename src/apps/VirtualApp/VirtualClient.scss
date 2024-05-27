@@ -20,6 +20,10 @@
   border-bottom-right-radius: 0;
 }
 
+.notification {
+  color: black !important;
+}
+
 // end of material fixes
 
 
@@ -213,12 +217,20 @@
   }
 }
 
+.video-panel-options {
+  position: absolute;
+  right: 0;
+  top: 0;
+  z-index: 100;
+}
+
 .broadcast-panel {
 
   background: #000;
   // padding: 1.6em;
   position: relative;
   display: none;
+
 
   .layout--split & {
     display: block;
@@ -230,6 +242,10 @@
 
     // width: 300px;
   }
+}
+
+.no-broadcast-panel .broadcast-panel {
+  display: none;
 }
 
 .chat-panel {
@@ -382,3 +398,8 @@
   opacity: .45;
 }
 
+#localVideo {
+  transform: rotateY(180deg);
+  -webkit-transform: rotateY(180deg);
+  -moz-transform: rotateY(180deg);
+}
