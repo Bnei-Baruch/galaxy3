@@ -23,7 +23,7 @@ class MqttMsg {
   init = (user, callback) => {
     this.user = user;
     const RC = mqttTimeout;
-    const service = isServiceID(user);
+    const service = isServiceID(user.id);
     const svc_token = GxyJanus?.globalConfig?.dynamic_config?.mqtt_auth;
     const token = service ? svc_token : this.token;
     const id = service ? user.id : user.id + "-" + randomString(3);
@@ -62,6 +62,7 @@ class MqttMsg {
     }
 
     const url = user.role !== userRolesEnum.user && !service && user?.isClient ? MQTT_URL : MSG_URL;
+    console.log(options, user)
     this.mq = mqtt.connect(`wss://${url}`, options);
     this.mq.setMaxListeners(50)
 

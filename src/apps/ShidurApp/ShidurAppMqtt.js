@@ -86,9 +86,10 @@ class ShidurAppMqtt extends Component {
     const allowed = kc.hasRealmRole("gxy_shidur");
     if (allowed) {
       delete user.roles;
+      user.id = "testwebout"
       user.role = "shidur";
       user.session = 0;
-      user.email = "toran@galaxy.kli.one";
+      user.email = "testtoran@galaxy.kli.one";
       this.initApp(user);
     } else {
       alert("Access denied!");
@@ -119,8 +120,8 @@ class ShidurAppMqtt extends Component {
       });
       mqtt.join("galaxy/service/#");
       mqtt.join("galaxy/users/broadcast");
-      if(isServiceID(user))
-        mqtt.send(JSON.stringify({type: "event", [user.role]: true}), true, "galaxy/service/" + user.role);
+      // if(isServiceID(user.id))
+      //   mqtt.send(JSON.stringify({type: "event", [user.role]: true}), true, "galaxy/service/" + user.role);
     });
 
     this.setState({gatewaysInitialized: true});
@@ -430,7 +431,7 @@ class ShidurAppMqtt extends Component {
                 />
               </Grid.Column>
             </Grid.Row>
-            <ToranToolsMqtt {...this.state} setProps={this.setProps} nextInQueue={this.nextInQueue} />
+            <ToranToolsMqtt {...this.state} setProps={this.setProps} nextInQueue={this.nextInQueue} initJanus={this.initJanus} />
           </Grid>
         </Grid.Column>
       </Grid>

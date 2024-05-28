@@ -70,6 +70,7 @@ class UsersHandle extends Component {
     const janus = gateways[mit]
     if(janus?.isConnected !== true) {
       setTimeout(() => {
+        log.info("["+mit+"] Not connected, waiting... ", janus)
         this.initVideoHandles(room, user, mit)
       }, 1000)
       return

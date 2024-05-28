@@ -90,6 +90,10 @@ class PreviewPanelMqtt extends Component {
 
           if(janus?.isConnected !== true) {
             this.props.initJanus(g.janus, p)
+            setTimeout(() => {
+              log.info("["+g.janus+"] Not connected, waiting... ", janus)
+              this.attachPreview(g)
+            }, 3000)
           }
         }
       });

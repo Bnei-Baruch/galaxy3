@@ -28,5 +28,5 @@ export const getUserRole = () => {
 };
 
 export const isServiceID = (id) => {
-  return [SNDMAN_ID, SDIOUT_ID, QSTOUT_ID, STORAN_ID, AUDOUT_ID, "webout", "qstout", "sdiout"].includes(id);
+  return [SNDMAN_ID, SDIOUT_ID, QSTOUT_ID, STORAN_ID, AUDOUT_ID, "webout", "qstout", "sdiout", "testwebout"].includes(id);
 };

@@ -42,40 +42,8 @@ class ToranToolsMqtt extends Component {
 
   initJanus = (gxy, p) => {
     log.info("["+gxy+"] Janus init")
-    const {gateways, gxy_list} = this.state;
-    const {user} = this.props;
-    const token = ConfigStore.globalConfig.gateways.rooms[gxy].token
-    gateways[gxy] = new JanusMqtt(user, gxy, gxy);
-    gateways[gxy].init(token).then(data => {
-      log.info("["+gxy+"] Janus init success", data);
-      gxy_list[p] = gxy;
-      this.cleanSession();
-      gateways[gxy].onStatus = (srv, status) => {
-        if (status !== "online") {
-          log.error("["+srv+"] Janus: ", status);
-          setTimeout(() => {
-            this.initJanus(srv);
-          }, 10000)
-        }
-      }
-    }).catch(err => {
-      log.error("["+gxy+"] Janus init", err);
-    })
+    this.props.initJanus(gxy)
   };
-
-  cleanSession = () => {
-    const {gateways, gxy_list} = this.state;
-    Object.keys(gateways).forEach(key => {
-      const session = gateways[key];
-      const sessionEmpty = Object.keys(session.pluginHandles).length === 0;
-      const gxyOnProgram = gxy_list.find(g => g === key);
-      if(sessionEmpty && !gxyOnProgram) {
-        log.info("[Preview] -- CLEAN SERVER -- ", key)
-        session.destroy();
-        delete gateways[key]
-      }
-    })
-  }
 
   selectGroup = (group, i) => {
     if (this.state.delay) return;
@@ -682,7 +650,7 @@ class ToranToolsMqtt extends Component {
                 <div className="shidur_overlay">
                   <span>{ng.description}</span>
                 </div>
-                <PreviewPanelMqtt pg={ng} p={0} gateways={gateways} next closePopup={this.closePopup} initJanus={this.initJanus} />
+                <PreviewPanelMqtt pg={ng} p={0} gateways={this.props.gateways} next closePopup={this.closePopup} initJanus={this.initJanus} />
               </Segment>
             ) : (
               ""

@@ -49,7 +49,7 @@ class WebOutApp extends Component {
     this.initApp();
     setTimeout(() => {
       this.fetchRooms()
-    },1000)
+    },3000)
   }
 
   componentWillUnmount() {
@@ -76,7 +76,7 @@ class WebOutApp extends Component {
           this.setState({shidur_mode: ""});
         }
 
-        groups = rooms.filter((r) => r.users.filter((r) => r.camera).length > 3);
+        groups = rooms.filter((r) => r.users.filter((r) => r.camera).length > 1);
 
         let quads = [
           ...this.col1.state.vquad,
@@ -156,6 +156,7 @@ class WebOutApp extends Component {
   };
 
   cleanSession = (uniq_list) => {
+    log.info("[WebOut] -- uniq_list -- ", uniq_list)
     const {gateways} = this.state;
     Object.keys(gateways).forEach(key => {
       const session = gateways[key];

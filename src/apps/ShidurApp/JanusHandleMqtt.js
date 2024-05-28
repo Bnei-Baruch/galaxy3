@@ -51,6 +51,7 @@ class JanusHandleMqtt extends Component {
     const janus = gateways[mit]
     if(janus?.isConnected !== true) {
       setTimeout(() => {
+        log.info("["+mit+"] Not connected, waiting... ", janus)
         this.initVideoHandles(room, user, mit)
       }, 1000)
       return
@@ -144,8 +145,8 @@ class JanusHandleMqtt extends Component {
 
   exitPlugins = (callback) => {
     const {subscriber, videoroom, janus, mit, feeds} = this.state;
-    if(subscriber) janus.detach(subscriber)
-    janus.detach(videoroom).then(() => {
+    if(subscriber) janus?.detach(subscriber)
+    janus?.detach(videoroom).then(() => {
       feeds.forEach(f => {
         let e = this.refs["pv" + f.id];
         if (e) {
