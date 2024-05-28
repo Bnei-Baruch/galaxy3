@@ -49,7 +49,6 @@ import Donations from "./buttons/Donations";
 import version from './Version.js';
 import {PopUp} from "./components/PopUp"
 import {BroadcastNotification} from "./components/BroadcastNotification";
-import VideoPanelOptions from "./components/VideoPanelOptions/VideoPanelOptions";
 import GlobalOptions, {GlobalOptionsContext} from "./components/GlobalOptions/GlobalOptions";
 import ShowSelfBtn from "./buttons/ShowSelfBtn";
 
@@ -1069,7 +1068,6 @@ class VirtualMqttClient extends Component {
 
     return (
       <div className={classNames("video", {"hidden": this.context.hideSelf})} key={index}>
-        <VideoPanelOptions/>
         {this.renderVideoOverlay(!muted, question, cammuted, userName, isGroup)}
 
         {this.renderVideo(cammuted, "localVideo", width, height)}

@@ -1,22 +1,25 @@
 import React, {useContext} from "react";
-import {IconButton, Tooltip} from "@mui/material";
-import {GlobalOptionsContext} from "../components/GlobalOptions/GlobalOptions";
-import FeaturedVideoIcon from "@mui/icons-material/FeaturedVideo";
 import {useTranslation} from "react-i18next";
+import {IconButton, Tooltip} from "@mui/material";
+import PortraitIcon from '@mui/icons-material/Portrait';
+
+import {GlobalOptionsContext} from "../components/GlobalOptions/GlobalOptions";
 
 const ShowSelfBtn = () => {
   const {t} = useTranslation()
   const {hideSelf, toggleHideSelf} = useContext(GlobalOptionsContext)
-  if (!hideSelf) return null
 
   return (
-    <Tooltip title={t("galaxyApp.showSelfView")} disableTouchListener={true}>
+    <Tooltip
+      title={t(`galaxyApp.${hideSelf ? 'show' : 'hide'}SelfView`)}
+      disableTouchListener={true}
+    >
       <span>
         <IconButton
           onClick={toggleHideSelf}
           size="large"
         >
-          <FeaturedVideoIcon color="secondary"/>
+          <PortraitIcon color={hideSelf ? "secondary" : "primary"}/>
         </IconButton>
       </span>
     </Tooltip>
