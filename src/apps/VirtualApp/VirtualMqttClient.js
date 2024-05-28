@@ -1167,7 +1167,6 @@ class VirtualMqttClient extends Component {
               disabled={media.video.device === null || delay}
               isOn={cammuted}
             />
-            <ShowSelfBtn/>
           </ButtonGroup>
 
           <ButtonGroup className={classNames("bottom-toolbar__item")} variant="contained" disableElevation>
@@ -1179,6 +1178,7 @@ class VirtualMqttClient extends Component {
               action={this.toggleShidur.bind(this)}
               disabled={room === "" || sourceLoading}
             />
+            <ShowSelfBtn/>
             <Layout
               t={t}
               active={layout}
