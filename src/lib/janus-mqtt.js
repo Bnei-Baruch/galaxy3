@@ -160,6 +160,10 @@ export class JanusMqtt {
         transaction: transactionId
       })
 
+      if(type === "keepalive" && this.user.role === "user" && this.txTopic.match('gxy')) {
+        request.user = this.user
+      }
+
       this.transactions[request.transaction] = {resolve, reject, replyType, request}
       mqtt.send(JSON.stringify(request), false, this.txTopic, this.rxTopic + "/" + this.user.id, this.user)
     })

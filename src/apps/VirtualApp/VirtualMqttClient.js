@@ -16,7 +16,7 @@ import {LINK_STATE_GOOD, LINK_STATE_INIT, LINK_STATE_MEDIUM, LINK_STATE_WEAK, Mo
 import api from "../../shared/Api";
 import VirtualStreaming from "./VirtualStreaming";
 import JanusStream from "../../shared/streaming-utils";
-import {getUser, kc} from "../../components/UserManager";
+import {kc} from "../../components/UserManager";
 import LoginPage from "../../components/LoginPage";
 import {captureMessage, updateSentryUser} from "../../shared/sentry";
 import GxyJanus from "../../shared/janus-utils";
@@ -49,6 +49,8 @@ import Donations from "./buttons/Donations";
 import version from './Version.js';
 import {PopUp} from "./components/PopUp"
 import {BroadcastNotification} from "./components/BroadcastNotification";
+import GlobalOptions, {GlobalOptionsContext} from "./components/GlobalOptions/GlobalOptions";
+import ShowSelfBtn from "./buttons/ShowSelfBtn";
 
 const sortAndFilterFeeds = (feeds) =>
   feeds
@@ -514,7 +516,7 @@ class VirtualMqttClient extends Component {
             this.setState({user, myid: id, delay: false, sourceLoading: false});
             updateSentryUser(user);
             updateGxyUser(user);
-            this.keepAlive();
+            //this.keepAlive();
 
             mqtt.join("galaxy/room/" + selected_room);
             mqtt.join("galaxy/room/" + selected_room + "/chat", true);
@@ -552,7 +554,7 @@ class VirtualMqttClient extends Component {
   resetClient = (reconnect, callback) => {
     let {janus, room, shidur} = this.state;
 
-    this.clearKeepAlive();
+    //this.clearKeepAlive();
 
     localStorage.setItem("question", false);
 
@@ -817,7 +819,7 @@ class VirtualMqttClient extends Component {
 
     // after 20 seconds, increase interval from 2 to 30 seconds.
     setTimeout(() => {
-      this.clearKeepAlive();
+      //this.clearKeepAlive();
       this.setState({keepalive: setInterval(this.sendKeepAlive, 30 * 1000)});
     }, 20 * 1000);
   };
@@ -982,7 +984,7 @@ class VirtualMqttClient extends Component {
 
   otherCamsMuteToggle = () => {
     const {feeds, muteOtherCams} = this.state;
-    
+
     if (!muteOtherCams) {
       // Should hide/mute now all videos.
       this.unsubscribeFrom(
@@ -999,7 +1001,7 @@ class VirtualMqttClient extends Component {
       this.setState({videos: VIDEO_360P_OPTION_VALUE, isKliOlamiShown: true});
       JanusStream.setVideo(VIDEO_360P_OPTION_VALUE);
     }
-    
+
     this.setState({muteOtherCams: !muteOtherCams});
   };
 
@@ -1061,14 +1063,14 @@ class VirtualMqttClient extends Component {
   };
 
   renderLocalMedia = (width, height, index, isGroup) => {
-    const {user, cammuted, question, muted } = this.state;
+    const {user, cammuted, question, muted} = this.state;
     const userName = user ? user.username : "";
 
     return (
-      <div className="video" key={index}>
-         {this.renderVideoOverlay(!muted, question, cammuted, userName, isGroup)}
+      <div className={classNames("video", {"hidden": this.context.hideSelf})} key={index}>
+        {this.renderVideoOverlay(!muted, question, cammuted, userName, isGroup)}
 
-         {this.renderVideo(cammuted, "localVideo", width, height)}
+        {this.renderVideo(cammuted, "localVideo", width, height)}
       </div>
     );
   }
@@ -1087,7 +1089,7 @@ class VirtualMqttClient extends Component {
         {this.renderVideoOverlay(talking, question, muteCamera, userName, isGroup)}
 
         {this.renderVideo(muteCamera, remoteVideoId, width, height)}
-      
+
         <audio
           key={"a" + id}
           ref={remoteAudioId}
@@ -1098,7 +1100,7 @@ class VirtualMqttClient extends Component {
         />
       </div>
     );
-  };    
+  };
 
   renderVideoOverlay = (talking, question, muteCamera, userName, isGroup) => {
     const { hideUserDisplays } = this.state;
@@ -1116,7 +1118,7 @@ class VirtualMqttClient extends Component {
         ) : (
           ""
         )}
-        {muteCamera && 
+        {muteCamera &&
           <div className="camera-off-name">
               <span>{userName}</span>
           </div>
@@ -1137,7 +1139,7 @@ class VirtualMqttClient extends Component {
     );
   };
 
-  renderVideo = (cammuted, id, width, height) => 
+  renderVideo = (cammuted, id, width, height) =>
    <video
      className={classNames("", { hidden: cammuted })}
      ref={id}
@@ -1147,7 +1149,7 @@ class VirtualMqttClient extends Component {
      autoPlay={true}
      controls={false}
      muted={true}
-     playsInline={true} 
+     playsInline={true}
    />;
 
   renderBottomBar = (layout, otherFeedHasQuestion) => {
@@ -1168,14 +1170,15 @@ class VirtualMqttClient extends Component {
           </ButtonGroup>
 
           <ButtonGroup className={classNames("bottom-toolbar__item")} variant="contained" disableElevation>
-            <Fullscreen t={t} isOn={isFullScreen()} action={toggleFullScreen} />
-            <KliOlamiToggle isOn={isKliOlamiShown} action={this.toggleQuad} />
+            <Fullscreen t={t} isOn={isFullScreen()} action={toggleFullScreen}/>
+            <KliOlamiToggle isOn={isKliOlamiShown} action={this.toggleQuad}/>
             <CloseBroadcast
               t={t}
               isOn={shidur}
               action={this.toggleShidur.bind(this)}
               disabled={room === "" || sourceLoading}
             />
+            <ShowSelfBtn/>
             <Layout
               t={t}
               active={layout}
@@ -1445,7 +1448,7 @@ class VirtualMqttClient extends Component {
 
     const noBroadcastPanel = layout !== "split" ||
       (((room === "" || !shidur) || !attachedSource) && (!isKliOlamiShown || !kliOlamiAttached));
-    
+
     return (
       <div className={classNames("vclient", {"vclient--chat-open": chatVisible})}>
         {this.renderTopBar(isDeb)}
@@ -1506,8 +1509,8 @@ class VirtualMqttClient extends Component {
   }
 
   render() {
-    const {show_message, broadcast_message, show_notification, delay, appInitError, attachedSource, cammuted, currentLayout, 
-      feeds, media, muteOtherCams, myid, numberOfVirtualUsers, room, rooms, selected_room, shidur, user, videos, isSettings, 
+    const {show_message, broadcast_message, show_notification, delay, appInitError, attachedSource, cammuted, currentLayout,
+      feeds, media, muteOtherCams, myid, numberOfVirtualUsers, room, rooms, selected_room, shidur, user, videos, isSettings,
       audios, shidurForGuestReady, isGroup, hideUserDisplays, isKliOlamiShown, kliOlamiAttached} = this.state;
 
     if (appInitError) {
@@ -1561,7 +1564,7 @@ class VirtualMqttClient extends Component {
     let remoteVideos = sortAndFilterFeeds(feeds).reduce((result, feed) => {
       const {question, id} = feed;
       otherFeedHasQuestion = otherFeedHasQuestion || (question && id !== myid);
-      
+
       if (!localPushed && ((!feed.display.is_group && isGroup) ||
           (feed.display.is_group === isGroup && feed.display.timestamp >= user.timestamp))) {
         localPushed = true;
@@ -1586,7 +1589,9 @@ class VirtualMqttClient extends Component {
 
     const groupMultiplier = "equal" === layout ? 0 : 3;
     let noOfVideos = remoteVideos.length + groupMultiplier * groupsNum;
-    
+    if (this.context.hideSelf)
+      noOfVideos -= 1;
+
     if (room !== "" && shidur && attachedSource) {
       if ("double" === layout) {
         noOfVideos += 4;
@@ -1594,7 +1599,7 @@ class VirtualMqttClient extends Component {
         noOfVideos += 1;
       }
     }
-    
+
     if (isKliOlamiShown && kliOlamiAttached) {
       if ("double" === layout) {
         noOfVideos += 4;
@@ -1670,13 +1675,16 @@ class VirtualMqttClient extends Component {
   }
 }
 
+VirtualMqttClient.contextType = GlobalOptionsContext
 const WrappedClass = withTranslation()(withTheme(VirtualMqttClient));
 
 export default class WrapperForThemes extends React.Component {
   render() {
     return (
       <ThemeSwitcher>
-        <WrappedClass />
+        <GlobalOptions>
+          <WrappedClass/>
+        </GlobalOptions>
       </ThemeSwitcher>
     );
   }
