@@ -3,9 +3,10 @@ import {WEB_SOCKET_WORKSHOP_QUESTION} from "../../../shared/env";
 import {MSGS_TYPES} from "./MessageManager";
 import mqtt from "../../../shared/mqtt";
 import kc from "../../../components/UserManager";
-import {getUserRole, userRolesEnum} from "../../../shared/enums";
+import {getUserRole} from "../../../shared/enums";
 
 let currentMqttLang;
+//TODO: can be removed
 export const initWQ = (onMessage) => {
   const ws = new ReconnectingWebSocket(WEB_SOCKET_WORKSHOP_QUESTION);
   ws.onmessage = ({data}) => {
@@ -55,10 +56,14 @@ export const initSubtitle = (lang, onMessage, attempts = 0) => {
     );
   }
 
-  const topic = role !== userRolesEnum.user ? "msg/subtitles/galaxy/" : "subtitles/galaxy/";
-  currentMqttLang && mqtt.exit(topic + currentMqttLang);
+  const topic = "subtitles/morning_lesson/";
+  if (currentMqttLang) {
+    mqtt.exit(topic + currentMqttLang + '/slide');
+    mqtt.exit(topic + currentMqttLang + '/question');
+  }
   currentMqttLang = lang;
-  mqtt.join(topic + lang);
+  mqtt.join(topic + lang + '/slide');
+  mqtt.join(topic + lang + '/question');
 
   mqtt.mq.on("MqttSubtitlesEvent", (json) => {
     let msg = JSON.parse(json);
@@ -69,12 +74,12 @@ export const initSubtitle = (lang, onMessage, attempts = 0) => {
   });
 };
 
-const mqttToMsgAdapter = ({message, language}) => {
+const mqttToMsgAdapter = ({slide, lang, type}) => {
   return {
-    message: message?.content ? message.content : message,
-    type: MSGS_TYPES.subtitle,
+    message: slide,
+    type: type,
     date: Date.now(),
-    language,
+    language: lang,
   };
 };
 

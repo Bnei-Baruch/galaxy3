@@ -2,7 +2,7 @@ import {subtitle_options} from "../../../shared/consts";
 
 export const MSGS_TYPES = {
   subtitle: "subtitle",
-  workshop: "workshop",
+  workshop: "question",
 };
 
 export class MessageManager {
