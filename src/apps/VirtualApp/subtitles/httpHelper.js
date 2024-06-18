@@ -5,6 +5,7 @@ import mqtt from "../../../shared/mqtt";
 import kc from "../../../components/UserManager";
 import {getUserRole} from "../../../shared/enums";
 
+const TOPIC = "subtitles/morning_lesson/";
 let currentMqttLang;
 //TODO: can be removed
 export const initWQ = (onMessage) => {
@@ -56,14 +57,8 @@ export const initSubtitle = (lang, onMessage, attempts = 0) => {
     );
   }
 
-  const topic = "subtitles/morning_lesson/";
-  if (currentMqttLang) {
-    mqtt.exit(topic + currentMqttLang + '/slide');
-    mqtt.exit(topic + currentMqttLang + '/question');
-  }
-  currentMqttLang = lang;
-  mqtt.join(topic + lang + '/slide');
-  mqtt.join(topic + lang + '/question');
+  mqtt.join(`${TOPIC}${lang}/slide`);
+  mqtt.join(`${TOPIC}${lang}/question`);
 
   mqtt.mq.on("MqttSubtitlesEvent", (json) => {
     let msg = JSON.parse(json);
@@ -72,6 +67,14 @@ export const initSubtitle = (lang, onMessage, attempts = 0) => {
     if (msg.message === "clear") msg = buildClear();
     onMessage(mqttToMsgAdapter(msg));
   });
+};
+
+export const exitSubtitle = lang => {
+  if (!lang) return;
+
+  mqtt.exit(`${TOPIC}${lang}/slide`);
+  mqtt.exit(`${TOPIC}${lang}/question`);
+  mqtt.mq.removeAllListeners("MqttSubtitlesEvent")
 };
 
 const mqttToMsgAdapter = ({slide, lang, type}) => {

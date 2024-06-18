@@ -1,7 +1,7 @@
 import React, {useEffect, useState} from "react";
 import "./subtitles.scss";
 import {MessageManager, MSGS_TYPES} from "./MessageManager";
-import {initSubtitle, initWQ} from "./httpHelper";
+import {exitSubtitle, initSubtitle, initWQ} from "./httpHelper";
 import {SubtitlesView} from "./SubtitlesView";
 
 export const WQ_LANG = "wq-language";
@@ -35,15 +35,17 @@ export const SubtitlesContainer = ({playerLang, layout}) => {
 
   useEffect(() => {
     subtitleLang && initSubtitle(subtitleLang, onMsgHandler);
+    return () => exitSubtitle(subtitleLang, onMsgHandler);
   }, [subtitleLang]);
 
-  useEffect( () => {
+  useEffect(() => {
     async function fetchData() {
       if (wqLang) {
         const l = messageManager.getWQByLang(wqLang);
         setLast(l);
       }
     }
+
     fetchData()
   }, [wqLang]);
 
