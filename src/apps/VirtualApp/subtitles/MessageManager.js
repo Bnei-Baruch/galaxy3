@@ -24,9 +24,8 @@ export class MessageManager {
     this.getAvailableLangs = this.getAvailableLangs.bind(this);
   }
 
-  push(data, lang) {
-    const {message, language, type} = data;
-    const msg = {message, type, language, addedAt: Date.now()};
+  push(msg, lang) {
+    const {language, type} = msg;
 
     switch (type) {
       case MSGS_TYPES.subtitle:
@@ -63,7 +62,7 @@ export class MessageManager {
             (m.type === MSGS_TYPES.subtitle && m.language === lang) ||
             (m.type === MSGS_TYPES.workshop && m.language === wLang)
         )
-        .sort((a, b) => b.addedAt - a.addedAt)[0]
+        .sort((a, b) => b.date - a.date)[0]
     );
   }
 
