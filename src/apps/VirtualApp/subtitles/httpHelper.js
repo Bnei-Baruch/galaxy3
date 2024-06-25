@@ -3,6 +3,7 @@ import kc from "../../../components/UserManager";
 import {getUserRole} from "../../../shared/enums";
 import markdownit from 'markdown-it'
 
+const md = markdownit({html: true})
 const TOPIC = "subtitles/morning_lesson/";
 
 export const initSubtitle = (lang, onMessage, attempts = 0) => {
@@ -50,9 +51,8 @@ export const exitSubtitle = lang => {
 };
 
 const mqttToMsgAdapter = ({slide, lang, type, date}) => {
-  const md = markdownit()
   return {
-    message: md.renderInline(slide),
+    message: md.render(slide),
     type: type,
     date,
     language: lang,
