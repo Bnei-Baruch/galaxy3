@@ -21,7 +21,7 @@ export const SubtitlesContainer = ({playerLang, layout}) => {
   const onMsgHandler = (data) => {
     let item;
     const lang = data.type === MSGS_TYPES.workshop ? langForCloser.wqLang : subtitleLang;
-    if (data.message === "clear") {
+    if (data.visible === false) {
       item = messageManager.clear(data, lang);
     } else {
       item = messageManager.push(data, lang);

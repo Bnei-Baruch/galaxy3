@@ -50,12 +50,13 @@ export const exitSubtitle = lang => {
   mqtt.mq.removeAllListeners("MqttSubtitlesEvent")
 };
 
-const mqttToMsgAdapter = ({slide, lang, type, date}) => {
+const mqttToMsgAdapter = ({slide, lang, type, date, visible}) => {
   return {
     message: md.render(slide),
     type: type,
     date,
     language: lang,
+    visible
   };
 };
 
