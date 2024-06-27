@@ -40,15 +40,9 @@ export class MessageManager {
     return this.last(lang);
   }
 
-  clear({type}, language) {
-    switch (type) {
-      case MSGS_TYPES.subtitle:
-        this.subtitleMsgs = [];
-        break;
-      case MSGS_TYPES.workshop:
-        this.wqMsgs = [];
-        break;
-    }
+  clear(language) {
+    this.subtitleMsgs = [];
+    this.wqMsgs = [];
     return this.last(language);
   }
 

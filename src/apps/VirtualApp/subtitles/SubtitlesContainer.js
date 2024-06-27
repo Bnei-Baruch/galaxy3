@@ -22,7 +22,7 @@ export const SubtitlesContainer = ({playerLang, layout}) => {
     let item;
     const lang = data.type === MSGS_TYPES.workshop ? langForCloser.wqLang : subtitleLang;
     if (data.visible === false) {
-      item = messageManager.clear(data, lang);
+      item = messageManager.clear(lang);
     } else {
       item = messageManager.push(data, lang);
     }
