@@ -197,23 +197,25 @@ class ShidurAppMqtt extends Component {
 
           if (preusers_count !== "Off") {
             pre_groups = rooms.filter((r) => !r.extra?.disabled && r.users.filter((r) => r.camera).length < preusers_count);
-            let new_groups = rooms.filter((r) => r.users.filter((r) => r.camera).length >= preusers_count && !r.extra?.disabled || r.extra?.group);
+            groups = rooms.filter((r) => r.users.filter((r) => r.camera).length >= preusers_count && !r.extra?.disabled || r.extra?.group);
 
-            for (let i=0; i<groups.length; i++) {
-              let exist_group = new_groups.find(g => g.room === groups[i].room);
-              if(exist_group) {
-                groups[i] = exist_group;
-              } else {
-                groups.splice(i, 1);
-              }
-            }
-
-            for (let i=0; i<new_groups.length; i++) {
-              let exist_group = groups.find(g => g.room === new_groups[i].room);
-              if(!exist_group) {
-                groups.push(new_groups[i]);
-              }
-            }
+            // IT's come from https://github.com/Bnei-Baruch/galaxy3/commit/86295a4b917f9a2fb2be0f02ea346e48b5e69b4a
+            // Looks like it's needed anymore
+            // for (let i=0; i<groups.length; i++) {
+            //   let exist_group = new_groups.find(g => g.room === groups[i].room);
+            //   if(exist_group) {
+            //     groups[i] = exist_group;
+            //   } else {
+            //     groups.splice(i, 1);
+            //   }
+            // }
+            //
+            // for (let i=0; i<new_groups.length; i++) {
+            //   let exist_group = groups.find(g => g.room === new_groups[i].room);
+            //   if(!exist_group) {
+            //     groups.push(new_groups[i]);
+            //   }
+            // }
 
           } else {
             pre_groups = rooms;
