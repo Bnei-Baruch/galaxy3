@@ -813,7 +813,7 @@ class ToranToolsHttp extends Component {
             <Button
               disabled={shidur_mode === "kvutzot"}
               color="teal"
-              content="Beyahad"
+              content="kvutzot"
               onClick={() => this.shidurMode("kvutzot")}
             />
           </Button.Group>
