@@ -186,6 +186,8 @@ class ShidurAppMqtt extends Component {
           rooms = rooms.filter((r) => r.description.match(/^W /));
         } else if (shidur_mode === "gvarim") {
           rooms = rooms.filter((r) => !r.description.match(/^W /));
+        } else if (shidur_mode === "kvutzot") {
+          rooms = rooms.filter((r) => r.extra?.group);
         } else if (shidur_mode === "beyahad") {
           this.setState({shidur_mode: ""});
         }

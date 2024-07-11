@@ -826,10 +826,16 @@ class ToranToolsMqtt extends Component {
               onClick={() => this.galaxyMode("groups")}
             />
             <Button
-              disabled={galaxy_mode === "shidur"}
-              color="grey"
-              content="Disabled"
-              onClick={() => this.galaxyMode("shidur")}
+              disabled={shidur_mode === "beyahad" || shidur_mode === ""}
+              color="teal"
+              content="Beyahad"
+              onClick={() => this.shidurMode("beyahad")}
+            />
+            <Button
+              disabled={shidur_mode === "kvutzot"}
+              color="teal"
+              content="Beyahad"
+              onClick={() => this.shidurMode("kvutzot")}
             />
           </Button.Group>
           <Button.Group attached="top" size="mini">
