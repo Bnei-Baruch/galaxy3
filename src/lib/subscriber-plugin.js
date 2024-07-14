@@ -3,6 +3,7 @@ import {EventEmitter} from "events";
 import log from "loglevel";
 import mqtt from "../shared/mqtt";
 import {STUN_SRV_GXY} from "../shared/env";
+import {Janus} from "./janus";
 
 export class SubscriberPlugin extends EventEmitter {
   constructor (list = [{urls: STUN_SRV_GXY}]) {
@@ -173,7 +174,7 @@ export class SubscriberPlugin extends EventEmitter {
     };
 
     this.pc.onconnectionstatechange = (e) => {
-      log.info("[subscriber] ICE State: ", e.target.connectionState)
+      log.debug("[subscriber] ICE State: ", e.target.connectionState)
       this.iceState = e.target.connectionState
       if(this.iceState === "disconnected") {
         this.iceRestart()
@@ -185,7 +186,7 @@ export class SubscriberPlugin extends EventEmitter {
     };
 
     this.pc.ontrack = (e) => {
-      log.info("[subscriber] Got track: ", e)
+      log.debug("[subscriber] Got track: ", e)
       this.onTrack(e.track, e.streams[0], true)
 
       e.track.onmute = (ev) => {
@@ -283,9 +284,6 @@ export class SubscriberPlugin extends EventEmitter {
 
   detach () {
     if(this.pc) {
-      this.pc.onicecandidate = null;
-      this.pc.ontrack = null;
-      this.pc.oniceconnectionstatechange = null;
       this.pc.getTransceivers().forEach((transceiver) => {
         if(transceiver) {
           if(transceiver.receiver && transceiver.receiver.track)
@@ -294,6 +292,12 @@ export class SubscriberPlugin extends EventEmitter {
         }
       });
       this.pc.close()
+      this.pc.onicecandidate = null;
+      this.pc.ontrack = null;
+      this.pc.oniceconnectionstatechange = null;
+      this.pc.onremovetrack = null;
+      this.pc.onicecandidate = null;
+      this.pc.onsignalingstatechange = null;
       this.removeAllListeners()
       this.pc = null
       this.janus = null

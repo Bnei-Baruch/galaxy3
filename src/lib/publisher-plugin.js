@@ -341,9 +341,6 @@ export class PublisherPlugin extends EventEmitter {
 
   detach() {
     if(this.pc) {
-      this.pc.onicecandidate = null;
-      this.pc.ontrack = null;
-      this.pc.oniceconnectionstatechange = null;
       this.pc.getTransceivers().forEach((transceiver) => {
         if(transceiver) {
           this.pc.removeTrack(transceiver.sender);
@@ -351,6 +348,9 @@ export class PublisherPlugin extends EventEmitter {
         }
       });
       this.pc.close()
+      this.pc.onicecandidate = null;
+      this.pc.ontrack = null;
+      this.pc.oniceconnectionstatechange = null;
       this.removeAllListeners()
       this.pc = null
       this.janus = null
