@@ -23,24 +23,29 @@ class PreviewPanelMqtt extends Component {
     let {pg} = this.props;
     let {room, feeds} = this.state;
     if (pg && JSON.stringify(pg) !== JSON.stringify(prevProps.pg) && pg.room !== room) {
-      const {gateways} = this.props;
-      let janus = gateways[prevProps.pg.janus];
-      if (this.state.subscriber) {
-        feeds.forEach(f => {
-          let e = this.refs["pv" + f.id];
-          if (e) {
-            e.src = "";
-            e.srcObject = null;
-            e.remove();
-          }
-        })
-        janus.detach(this.state.subscriber).then(a => {
-          this.setState({remoteFeed: null, mids: [], feeds: [], subscriber: null}, () => {
-            this.attachPreview(this.props.pg);
-          });
-        })
-      }
+      this.cleanUp(() => {
+        this.attachPreview(this.props.pg);
+      })
+    }
+  }
 
+  cleanUp = (callback) => {
+    let {feeds} = this.state;
+    if (this.state.subscriber) {
+      feeds.forEach(f => {
+        let e = this.refs["pv" + f.id];
+        if (e) {
+          e.src = "";
+          e.srcObject = null;
+          e.remove();
+        }
+      })
+      this.state.subscriber.detach();
+      this.setState({remoteFeed: null, mids: [], feeds: [], subscriber: null}, () => {
+        if(typeof callback === "function") callback();
+      });
+    } else {
+      if(typeof callback === "function") callback();
     }
   }
 
@@ -48,12 +53,14 @@ class PreviewPanelMqtt extends Component {
     this.setState({delay: true});
     setTimeout(() => {
       this.setState({delay: false});
-    }, 3000);
+    }, 1000);
   };
 
   nextGroup = () => {
     this.setDelay()
-    this.props.nextInQueue();
+    this.cleanUp(() => {
+      this.props.nextInQueue();
+    })
   };
 
   attachPreview = (g) => {
@@ -149,6 +156,12 @@ class PreviewPanelMqtt extends Component {
     }
   }
 
+  handleButton = (c, pg) => {
+    this.cleanUp(() => {
+      this.props.closePopup(c, pg)
+    })
+  }
+
   render() {
     const {mids, delay} = this.state;
     const width = "400";
@@ -190,7 +203,7 @@ class PreviewPanelMqtt extends Component {
                   size="mini"
                   color="red"
                   icon="close"
-                  onClick={() => this.props.closePopup(true, this.props.pg)}
+                  onClick={() => this.handleButton(true, this.props.pg)}
                 />
                 <Button
                   className="hide_button"
@@ -208,14 +221,14 @@ class PreviewPanelMqtt extends Component {
                   size="mini"
                   color="red"
                   icon="close"
-                  onClick={() => this.props.closePopup(true, this.props.pg)}
+                  onClick={() => this.handleButton(true, this.props.pg)}
                 />
                 <Button
                   className="hide_button"
                   size="mini"
                   color="orange"
                   icon="window minimize"
-                  onClick={() => this.props.closePopup(false, this.props.pg)}
+                  onClick={() => this.handleButton(false, this.props.pg)}
                 />
               </div>
             )}
