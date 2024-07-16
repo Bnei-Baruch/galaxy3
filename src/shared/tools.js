@@ -1,31 +1,31 @@
-import {Janus} from "../lib/janus";
+//import {Janus} from "../lib/janus";
 import {STUN_SRV_GXY, WKLI_ENTER, WKLI_LEAVE} from "./env";
 import api from "./Api";
 import mqtt from "./mqtt";
 
-export const initJanus = (cb, er, server, token = "", iceServers = [{urls: STUN_SRV_GXY}]) => {
-  Janus.init({
-    debug: process.env.NODE_ENV !== "production" ? ["log", "error"] : ["log", "error"],
-    callback: () => {
-      let janus = new Janus({
-        server,
-        token,
-        iceServers,
-        success: () => {
-          Janus.log(" :: Connected to JANUS");
-          cb(janus);
-        },
-        error: (error) => {
-          Janus.error(error);
-          er(error);
-        },
-        destroyed: () => {
-          Janus.error(" :: Janus destroyed :: ");
-        },
-      });
-    },
-  });
-};
+// export const initJanus = (cb, er, server, token = "", iceServers = [{urls: STUN_SRV_GXY}]) => {
+//   Janus.init({
+//     debug: process.env.NODE_ENV !== "production" ? ["log", "error"] : ["log", "error"],
+//     callback: () => {
+//       let janus = new Janus({
+//         server,
+//         token,
+//         iceServers,
+//         success: () => {
+//           Janus.log(" :: Connected to JANUS");
+//           cb(janus);
+//         },
+//         error: (error) => {
+//           Janus.error(error);
+//           er(error);
+//         },
+//         destroyed: () => {
+//           Janus.error(" :: Janus destroyed :: ");
+//         },
+//       });
+//     },
+//   });
+// };
 
 export const notifyMe = (title, message, tout) => {
   if (!!window.Notification) {

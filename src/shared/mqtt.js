@@ -4,7 +4,6 @@ import {isServiceID, userRolesEnum} from "./enums";
 import {randomString} from "./tools";
 import GxyJanus from "./janus-utils";
 import log from "loglevel";
-import {captureMessage} from "./sentry";
 
 const mqttTimeout = 30 // Seconds
 const mqttKeepalive = 10 // Seconds
@@ -161,7 +160,6 @@ class MqttMsg {
               } catch (e) {
                 log.error(e);
                 log.error("[mqtt] Not valid JSON, ", data.toString());
-                captureMessage("MQTT: Fail to parse JSON", data.toString(), "error");
                 return;
               }
             }

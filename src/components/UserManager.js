@@ -1,6 +1,5 @@
 import Keycloak from "keycloak-js";
 import api from "../shared/Api";
-import {updateSentryUser} from "../shared/sentry";
 
 const logging = new URLSearchParams(window.location.search).has('loglevel');
 
@@ -52,7 +51,6 @@ const setData = () => {
   const {realm_access: {roles}, sub, given_name, name, email, family_name} = kc.tokenParsed;
   const user = {display: name, email, roles, id: sub, username: given_name, familyname: family_name};
   api.setAccessToken(kc.token);
-  updateSentryUser(user);
   return user;
 };
 
