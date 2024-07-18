@@ -8,7 +8,6 @@ import log from "loglevel";
 class PreviewPanelMqtt extends Component {
   state = {
     delay: false,
-    feeds: [],
     subscriber: null,
     mids: [],
     name: "",
@@ -21,7 +20,7 @@ class PreviewPanelMqtt extends Component {
 
   componentDidUpdate(prevProps) {
     let {pg} = this.props;
-    let {room, feeds} = this.state;
+    let {room} = this.state;
     if (pg && JSON.stringify(pg) !== JSON.stringify(prevProps.pg) && pg.room !== room) {
       this.cleanUp(() => {
         this.attachPreview(this.props.pg);
@@ -30,9 +29,9 @@ class PreviewPanelMqtt extends Component {
   }
 
   cleanUp = (callback) => {
-    let {feeds} = this.state;
-    feeds.forEach(f => {
-      let e = this.refs["pv" + f.id];
+    let {mids} = this.state;
+    mids.forEach(f => {
+      let e = this.refs["pv" + f.mid];
       if (e) {
         e.src = "";
         e.srcObject = null;
@@ -41,7 +40,7 @@ class PreviewPanelMqtt extends Component {
     })
     if (this.state.subscriber) {
       this.state.subscriber.detach();
-      this.setState({remoteFeed: null, mids: [], feeds: [], subscriber: null}, () => {
+      this.setState({remoteFeed: null, mids: [], subscriber: null}, () => {
         if(typeof callback === "function") callback();
       });
     } else {
