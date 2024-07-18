@@ -31,15 +31,15 @@ class PreviewPanelMqtt extends Component {
 
   cleanUp = (callback) => {
     let {feeds} = this.state;
+    feeds.forEach(f => {
+      let e = this.refs["pv" + f.id];
+      if (e) {
+        e.src = "";
+        e.srcObject = null;
+        e.remove();
+      }
+    })
     if (this.state.subscriber) {
-      feeds.forEach(f => {
-        let e = this.refs["pv" + f.id];
-        if (e) {
-          e.src = "";
-          e.srcObject = null;
-          e.remove();
-        }
-      })
       this.state.subscriber.detach();
       this.setState({remoteFeed: null, mids: [], feeds: [], subscriber: null}, () => {
         if(typeof callback === "function") callback();
