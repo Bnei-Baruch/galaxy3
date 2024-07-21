@@ -25,7 +25,7 @@ class PreviewPanelHttp extends Component {
     if (pg && JSON.stringify(pg) !== JSON.stringify(prevProps.pg) && pg.room !== room) {
       if (this.state.remoteFeed) this.state.remoteFeed.detach();
       mids.forEach(f => {
-        let e = this.refs["pv" + f.mid];
+        let e = this.refs["pv" + f.feed_id];
         if (e) {
           e.src = "";
           e.srcObject = null;

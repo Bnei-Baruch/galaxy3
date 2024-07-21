@@ -96,7 +96,7 @@ class ShidurAppMqtt extends Component {
   };
 
   initApp = (user) => {
-    log.info(" :: Version :: ", version);
+    console.log(" :: Version :: ", version);
     this.setState({user});
     api.fetchConfig().then(data => {
       ConfigStore.setGlobalConfig(data);
@@ -292,7 +292,7 @@ class ShidurAppMqtt extends Component {
     } else if (data.type === "reload-config") {
       this.reloadConfig();
     } else if (data.type === "state") {
-      console.log(data)
+      log.info(data)
       this.setState({...data})
     }
   };
