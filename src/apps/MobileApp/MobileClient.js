@@ -4,15 +4,7 @@ import {Janus} from "../../lib/janus";
 import classNames from "classnames";
 import Dots from "react-carousel-dots";
 import {Accordion, Button, Icon, Image, Input, Label, Menu, Modal, Select} from "semantic-ui-react";
-import {
-  checkNotification,
-  geoInfo,
-  getDateString,
-  initJanus,
-  notifyMe,
-  sendUserState,
-  updateGxyUser,
-} from "../../shared/tools";
+import {checkNotification, geoInfo, getDateString, initJanus, notifyMe, sendUserState, updateGxyUser} from "../../shared/tools";
 import "./MobileClient.scss";
 import "./MobileConteiner.scss";
 import "eqcss";
@@ -308,7 +300,8 @@ class MobileClient extends Component {
     const bridge = user.role !== "user" ? "msg/" : "";
 
     mqtt.init(user, (reconnected, error) => {
-      if (error) {
+
+      if(error) {
         console.log("MQTT disconnected");
         this.setState({mqttOn: false});
         captureMessage("MQTT Offline", {source: "mqtt"});
@@ -316,7 +309,7 @@ class MobileClient extends Component {
         if (this.state.question) {
           this.handleQuestion();
         }
-      } else if (reconnected) {
+      } else if(reconnected) {
         captureMessage("MQTT Online", {source: "mqtt"});
         //notifyMe("Arvut System", "MQTT Online", true);
         this.setState({mqttOn: true});
@@ -334,7 +327,7 @@ class MobileClient extends Component {
         // Public chat
         mqtt.mq.on("MqttChatEvent", (data) => {
           let json = JSON.parse(data);
-          if (json?.type === "client-chat") {
+          if(json?.type === "client-chat") {
             this.chat.onChatMessage(json);
           }
         });
@@ -342,7 +335,7 @@ class MobileClient extends Component {
         // Private chat
         mqtt.mq.on("MqttPrivateMessage", (data) => {
           let message = JSON.parse(data);
-          if (message?.type === "client-chat") {
+          if(message?.type === "client-chat") {
             notifyMe("Arvut System", message.text, true);
           }
           //TODO: Make private dialog exchange
@@ -351,7 +344,7 @@ class MobileClient extends Component {
         // Broadcast message
         mqtt.mq.on("MqttBroadcastMessage", (data) => {
           let message = JSON.parse(data);
-          if (message?.type === "client-chat") {
+          if(message?.type === "client-chat") {
             message.time = getDateString();
             notifyMe("Arvut System", message.text, true);
           } else {
@@ -359,7 +352,8 @@ class MobileClient extends Component {
           }
         });
       }
-    });
+
+    })
   };
 
   initClient = (reconnect, retry = 0) => {
@@ -417,69 +411,67 @@ class MobileClient extends Component {
   initDevices = () => {
     const {t} = this.props;
 
-    devices
-      .init((media) => {
-        setTimeout(() => {
-          if (media.audio.device) {
-            this.setAudioDevice(media.audio.device);
-          } else {
-            log.warn("[client] No left audio devices");
-            //FIXME: remove it from pc?
-          }
-          if (!media.video.device) {
-            log.warn("[client] No left video devices");
-            //FIXME: remove it from pc?
-          }
-        }, 1000);
-      })
-      .then((data) => {
-        log.info("[client] init devices: ", data);
-        const {audio, video} = data;
-        if (audio.error && video.error) {
-          alert(t("oldClient.noInputDevices"));
-          this.setState({cammuted: true});
-        } else if (audio.error) {
-          alert("audio device not detected");
-        } else if (video.error) {
-          alert(t("oldClient.videoNotDetected"));
-          this.setState({cammuted: true});
+    devices.init(media => {
+      setTimeout(() => {
+        if(media.audio.device) {
+          this.setAudioDevice(media.audio.device)
+        } else {
+          log.warn("[client] No left audio devices")
+          //FIXME: remove it from pc?
         }
-
-        if (video.stream) {
-          let myvideo = this.refs.localVideo;
-          if (myvideo) myvideo.srcObject = video.stream;
+        if(!media.video.device) {
+          log.warn("[client] No left video devices")
+          //FIXME: remove it from pc?
         }
+      }, 1000)
+    }).then(data => {
+      log.info("[client] init devices: ", data);
+      const {audio, video} = data;
+      if (audio.error && video.error) {
+        alert(t("oldClient.noInputDevices"));
+        this.setState({cammuted: true});
+      } else if (audio.error) {
+        alert("audio device not detected");
+      } else if (video.error) {
+        alert(t("oldClient.videoNotDetected"));
+        this.setState({cammuted: true});
+      }
 
-        this.setState({media: data});
-      });
+      if (video.stream) {
+        let myvideo = this.refs.localVideo;
+        if (myvideo) myvideo.srcObject = video.stream;
+      }
+
+      this.setState({media: data})
+    })
   };
 
   setVideoSize = (setting) => {
-    devices.setVideoSize(setting).then((media) => {
-      if (media.video.stream) {
+    devices.setVideoSize(setting).then(media => {
+      if(media.video.stream) {
         let myvideo = this.refs.localVideo;
         myvideo.srcObject = media.video.stream;
         this.setState({media});
       }
-    });
+    })
   };
 
   setVideoDevice = (device) => {
-    return devices.setVideoDevice(device).then((media) => {
-      if (media.video.device) {
+    return devices.setVideoDevice(device).then(media => {
+      if(media.video.device) {
         let myvideo = this.refs.localVideo;
         myvideo.srcObject = media.video.stream;
         this.setState({media});
       }
-    });
+    })
   };
 
   setAudioDevice = (device, cam_mute) => {
-    devices.setAudioDevice(device, cam_mute).then((media) => {
-      if (media.audio.device) {
+    devices.setAudioDevice(device, cam_mute).then(media => {
+      if(media.audio.device) {
         this.setState({media});
       }
-    });
+    })
   };
 
   selectRoom = (selected_room) => {
@@ -682,9 +674,7 @@ class MobileClient extends Component {
 
   joinRoom = (reconnect, videoroom, user) => {
     let {selected_room, media, cammuted} = this.state;
-    const {
-      video: {device},
-    } = media;
+    const {video: {device}} = media;
     user.camera = !!device && cammuted === false;
     user.question = false;
     user.timestamp = Date.now();
@@ -859,9 +849,7 @@ class MobileClient extends Component {
           mqtt.join("galaxy/room/" + msg["room"] + "/chat", true);
         }, 3000);
 
-        const {
-          media: {audio, video},
-        } = this.state;
+        const {media: {audio, video}} = this.state;
         this.publishOwnFeed(!!video.device, !!audio.device);
 
         // Any new feed to attach to?
@@ -1164,7 +1152,7 @@ class MobileClient extends Component {
         // FIXME: Can this be done by notifying only the joined feed?
         setTimeout(() => {
           if (this.state.question || this.state.cammuted) {
-            sendUserState(this.state.user);
+            sendUserState(this.state.user)
           }
         }, 3000);
       }
@@ -1455,7 +1443,7 @@ class MobileClient extends Component {
 
     updateSentryUser(user);
     updateGxyUser(user);
-    sendUserState(user);
+    sendUserState(user)
   };
 
   handleAudioOut = (data) => {
@@ -1508,20 +1496,20 @@ class MobileClient extends Component {
 
       updateSentryUser(user);
       updateGxyUser(user);
-      sendUserState(user);
+      sendUserState(user)
     }
   };
 
   micMute = () => {
     const {videoroom, muted} = this.state;
-    if (muted) this.micVolume();
+    if(muted) this.micVolume()
     muted ? videoroom.unmuteAudio() : videoroom.muteAudio();
-    muted ? devices.audio.context.resume() : devices.audio.context.suspend();
+    muted ? devices.audio.context.resume() : devices.audio.context.suspend()
     this.setState({muted: !muted});
   };
 
   micVolume = () => {
-    const c = this.refs.canvas1;
+    const c = this.refs.canvas1
     let cc = c.getContext("2d");
     let gradient = cc.createLinearGradient(0, 0, 0, 55);
     gradient.addColorStop(1, "green");
@@ -1533,8 +1521,8 @@ class MobileClient extends Component {
       cc.clearRect(0, 0, c.width, c.height);
       cc.fillStyle = gradient;
       cc.fillRect(0, c.height - volume * 300, c.width, c.height);
-    };
-  };
+    }
+  }
 
   toggleShidur = () => {
     const {virtualStreamingJanus, shidur, user} = this.state;
@@ -2097,9 +2085,7 @@ class MobileClient extends Component {
 
             <VirtualChat
               t={t}
-              ref={(chat) => {
-                this.chat = chat;
-              }}
+              ref={(chat) => {this.chat = chat;}}
               visible={chatVisible}
               room={room}
               user={user}

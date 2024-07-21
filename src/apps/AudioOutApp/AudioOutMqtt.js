@@ -9,7 +9,7 @@ import GxyJanus from "../../shared/janus-utils";
 import {AUDOUT_ID} from "../../shared/consts";
 import mqtt from "../../shared/mqtt";
 import ConfigStore from "../../shared/ConfigStore";
-import version from "./Version.js";
+import version from './Version.js';
 
 class AudioOutMqtt extends Component {
   state = {
@@ -25,7 +25,7 @@ class AudioOutMqtt extends Component {
       id: AUDOUT_ID,
       name: "audout",
       email: "audout@galaxy.kli.one",
-    },
+    }
   };
 
   componentDidMount() {
@@ -103,12 +103,7 @@ class AudioOutMqtt extends Component {
         <div className="usersvideo_grid">
           <div className="video_full">
             <div className="title">{name}</div>
-            <AudioHandleMqtt
-              user={user}
-              ref={(out) => {
-                this.out = out;
-              }}
-            />
+            <AudioHandleMqtt user={user} ref={(out) => {this.out = out}} />
           </div>
         </div>
       </Segment>

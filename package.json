@@ -62,7 +62,7 @@
     "start": "webpack-dev-server --mode=development --no-open --hot",
     "build": "webpack --mode=production",
     "deploy": "webpack --mode=production && scripts/deploy.sh",
-    "format": "yarn run prettier --no-bracket-spacing --print-width 120 --no-single-quote --write src/**/*.js"
+    "format": "yarn run prettier --no-bracket-spacing --print-width 120 --no-single-quote --write 'src/**/*.js'"
   },
   "browserslist": {
     "production": [

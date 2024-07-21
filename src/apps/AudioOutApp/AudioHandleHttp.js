@@ -26,11 +26,11 @@ class AudioHandleHttp extends Component {
     if (g === null && room) {
       this.exitVideoRoom(room, () => {});
     }
-  }
+  };
 
   componentWillUnmount() {
     this.exitVideoRoom(this.state.room, () => {});
-  }
+  };
 
   initVideoRoom = (roomid, inst) => {
     const gateway = this.props.gateways[inst];
@@ -241,12 +241,12 @@ class AudioHandleHttp extends Component {
       slowLink: (uplink, nacks) => {
         gateway.warn(
           `[room ${roomid}] [remoteFeed] Janus reports problems ` +
-            (uplink ? "sending" : "receiving") +
-            " packets on this PeerConnection (remote feed, " +
-            nacks +
-            " NACKs/s " +
-            (uplink ? "received" : "sent") +
-            ")"
+          (uplink ? "sending" : "receiving") +
+          " packets on this PeerConnection (remote feed, " +
+          nacks +
+          " NACKs/s " +
+          (uplink ? "received" : "sent") +
+          ")"
         );
       },
       onmessage: (msg, jsep) => {
@@ -372,6 +372,7 @@ class AudioHandleHttp extends Component {
 
     return <div>{program_feeds}</div>;
   }
+
 }
 
 export default AudioHandleHttp;

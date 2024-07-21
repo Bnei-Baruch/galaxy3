@@ -6,7 +6,7 @@ import LoginPage from "../../components/LoginPage";
 import AdminRootMqtt from "./AdminRootMqtt";
 import MonitorApp from "./components/MonitorApp";
 import logo from "./KL_Tree_128.png";
-import version from "./Version.js";
+import version from './Version.js';
 import log from "loglevel";
 import NotificationManager from "./NotificationManager";
 
