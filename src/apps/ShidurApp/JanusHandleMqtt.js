@@ -137,15 +137,7 @@ class JanusHandleMqtt extends Component {
   }
 
   exitPlugins = (callback) => {
-    const {subscriber, videoroom, janus, mit, feeds} = this.state;
-    feeds.forEach(f => {
-      let e = this.refs["pv" + f.id];
-      if (e) {
-        e.src = "";
-        e.srcObject = null;
-        e.remove();
-      }
-    })
+    const {subscriber, videoroom, janus, mit} = this.state;
     if(janus) {
       if(subscriber) janus.detach(subscriber)
       janus.detach(videoroom).then(() => {
@@ -157,7 +149,15 @@ class JanusHandleMqtt extends Component {
   }
 
   exitVideoRoom = (roomid, callback) => {
-    const {videoroom, mit} = this.state;
+    const {videoroom, mit, feeds} = this.state;
+    feeds.forEach(f => {
+      let e = this.refs["pv" + f.id];
+      if (e) {
+        e.src = "";
+        e.srcObject = null;
+        e.remove();
+      }
+    })
     if(videoroom) {
       videoroom.leave().then(r => {
         log.info("["+mit+"] leave respond:", r);
